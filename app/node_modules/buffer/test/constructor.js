@@ -41,6 +41,45 @@ test('new buffer from buffer', function (t) {
   t.end()
 })
 
+test('new buffer from ArrayBuffer', function (t) {
+  if (typeof ArrayBuffer !== 'undefined') {
+    var arraybuffer = new Uint8Array([0, 1, 2, 3]).buffer
+    var b = new B(arraybuffer)
+    t.equal(b.length, 4)
+    t.equal(b[0], 0)
+    t.equal(b[1], 1)
+    t.equal(b[2], 2)
+    t.equal(b[3], 3)
+    t.equal(b[4], undefined)
+  }
+  t.end()
+})
+
+test('new buffer from ArrayBuffer, shares memory', function (t) {
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    var u = new Uint8Array([0, 1, 2, 3])
+    var arraybuffer = u.buffer
+    var b = new B(arraybuffer)
+    t.equal(b.length, 4)
+    t.equal(b[0], 0)
+    t.equal(b[1], 1)
+    t.equal(b[2], 2)
+    t.equal(b[3], 3)
+    t.equal(b[4], undefined)
+
+    // changing the Uint8Array (and thus the ArrayBuffer), changes the Buffer
+    u[0] = 10
+    t.equal(b[0], 10)
+    u[1] = 11
+    t.equal(b[1], 11)
+    u[2] = 12
+    t.equal(b[2], 12)
+    u[3] = 13
+    t.equal(b[3], 13)
+  }
+  t.end()
+})
+
 test('new buffer from Uint8Array', function (t) {
   if (typeof Uint8Array !== 'undefined') {
     var b1 = new Uint8Array([0, 1, 2, 3])

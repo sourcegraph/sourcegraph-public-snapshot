@@ -16,6 +16,14 @@
 	display: flex;
 }
 
+.visible {
+	display: inherit;
+}
+
+.invisible {
+	display: none;
+}
+
 .container-fixed {
 	composes: center pt5 pb5 from base;
 	width: 100%;
@@ -52,6 +60,12 @@
 	composes: pt4 pb4 from base;
 }
 
+.multiple-install {
+	display: inline-flex;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
 .img {
 	min-width: 60px;
 	height: 60px;
@@ -60,9 +74,7 @@
 }
 
 .tool-item {
-	display: flex;
-	flex-direction: row;
-	composes: pt7 pl4 pr4 pb5 center from base;
+	composes: mt6 pl4 pr4 mb5 center from base;
 	composes: col-10 from grid;
 	align-content: center;
 	text-align: center;
@@ -77,11 +89,17 @@
 	text-align: left;
 }
 
-.tool-img {
+.large-img {
+	width: 100px;
+	height: 100px;
+}
+
+.tool-img-container {
 	display: block;
 	min-width: 100px;
+	max-width: 100px;
 	height: 100px;
-	align-self: center;
+	align-self: flex-start;
 	composes: pl5 pr3 pt4 pb3 hidden-s from base;
 }
 
@@ -96,4 +114,54 @@
 	composes: col-11 from grid;
 	align-self: center;
 	flex: 0;
+}
+
+.question-container {
+	display: flex;
+	flex-direction: column;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+.dont-see-link {
+	cursor: pointer;
+}
+
+.dont-see-div {
+	composes: pb3 from base;
+}
+
+.required {
+	color: red;
+}
+
+.form-style {
+	composes: center from base;
+	composes: col-10 from base;
+	max-width: 400px;
+}
+
+.form-style > li {
+	padding: 0;
+	display: block;
+	list-style: none;
+	padding: 10px 0 0 0;
+}
+
+.label {
+	padding:0 0 3px 0;
+	padding:0px;
+	display:block;
+	font-weight: bold;
+	text-align:left;
+}
+
+.check-icon {
+	composes: green-8 from colors;
+	vertical-align: middle;
+	padding-right: 5px;
+}
+
+@media media-sm {
+	.mv2-sm { composes: mv2 from base; }
 }

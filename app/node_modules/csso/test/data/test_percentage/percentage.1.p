@@ -1,2 +1,0 @@
-['percentage', 
-  ['number', '.10']]

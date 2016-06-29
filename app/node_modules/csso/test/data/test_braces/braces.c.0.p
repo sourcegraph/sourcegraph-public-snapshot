@@ -1,2 +1,0 @@
-['braces', '(', ')', 
-  ['comment', 'test']]

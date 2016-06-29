@@ -32,7 +32,7 @@ func TestCookieMiddleware(t *testing.T) {
 	}))
 	defer server.Close()
 
-	sc, err := NewSessionCookie(Session{AccessToken: "mytoken"})
+	sc, err := NewSessionCookie(Session{AccessToken: "mytoken"}, false)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,0 +1,73 @@
+@value base "sourcegraph/components/styles/_base.css";
+@value grid "sourcegraph/components/styles/_grid.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+
+.container {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	composes: center from base;
+}
+
+.table-row {
+	display: flex;
+	flex: 1 1 auto;
+	composes: col-5-ns col-12 from grid;
+	justify-content: center;
+	flex-direction: row;
+	padding-top: 10px;
+}
+
+.full-input {
+	display: flex;
+	flex: 1;
+}
+
+.input-field {
+	display: flex;
+	flex: 1 1 auto;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	padding-left: 5px;
+	border: none;
+	background: transparent;
+	box-shadow: 0 1px 2px rgba(0,0,0,0.2) inset, 0 -1px 0 rgba(0,0,0,0.05) inset;
+	border-radius: 2px;
+
+}
+
+.button {
+	flex: 1 1 auto;
+}
+
+.input-select, select {
+	cursor: pointer;
+	background-repeat: no-repeat;
+	border:thin solid #dddddd;
+	font-weight:300;
+	display:inline;
+	vertical-align:middle;
+	color:#333;
+	padding: auto 0;
+	overflow:hidden;
+	box-sizing:border-box;
+	min-width: 100%;
+
+}
+
+.input-select {
+	width:200px;
+	font-size:1.25rem;
+	text-indent:5px;
+	padding:.5rem 0;
+}
+
+select::-ms-expand {
+	display: none;
+}
+
+:focus {
+	outline:none;
+}

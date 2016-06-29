@@ -21,22 +21,24 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	sstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
+// dbDefKey DB-maps a DefKey (excluding commit-id) object. We keep
+// this in a separate table to reduce duplication in the global_refs
+// table (postgresql does not do string interning)
+type dbDefKey struct {
+	ID       int64  `db:"id"`
+	Repo     string `db:"repo"`
+	UnitType string `db:"unit_type"`
+	Unit     string `db:"unit"`
+	Path     string `db:"path"`
+}
+
 func init() {
-	// dbDefKey DB-maps a DefKey (excluding commit-id) object. We keep
-	// this in a seperate table to reduce duplication in the global_refs
-	// table (postgresql does not do string interning)
-	type dbDefKey struct {
-		ID       int64  `db:"id"`
-		Repo     string `db:"repo"`
-		UnitType string `db:"unit_type"`
-		Unit     string `db:"unit"`
-		Path     string `db:"path"`
-	}
 	GraphSchema.Map.AddTableWithName(dbDefKey{}, "def_keys").SetKeys(true, "id").SetUniqueTogether("repo", "unit_type", "unit", "path")
 
 	// dbGlobalRef DB-maps a GlobalRef object.
@@ -121,23 +123,6 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		Count     int
 	}
 
-	// Force op.Def.Repo results to be first on the first page
-	var dbRefResult []*dbRefLocationsResult
-	dbRefResultDone := make(chan error, 1)
-	if opt.PageOrDefault() == 1 && len(opt.Repos) == 0 {
-		go func() {
-			start = time.Now()
-			args := []interface{}{defKeyID, defRepoPath, opt.PerPageOrDefault()}
-			inner := "SELECT repo, file, count FROM global_refs_new WHERE def_key_id=$1 AND repo=$2 LIMIT $3"
-			sql := "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM (" + inner + ") res ORDER BY count DESC"
-			_, err := graphDBH(ctx).Select(&dbRefResult, sql, args...)
-			observe("locationsrepo", start)
-			dbRefResultDone <- err
-		}()
-	} else {
-		dbRefResultDone <- nil
-	}
-
 	var args []interface{}
 	arg := func(a interface{}) string {
 		v := gorp.PostgresDialect{}.BindVar(len(args))
@@ -145,35 +130,26 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		return v
 	}
 
+	var sql string
 	innerSelectSQL := `SELECT repo, file, count FROM global_refs_new`
-	innerSelectSQL += ` WHERE def_key_id=` + arg(defKeyID) + ` AND repo != ` + arg(defRepoPath)
+	innerSelectSQL += ` WHERE def_key_id=` + arg(defKeyID)
 	if len(opt.Repos) > 0 {
 		repoBindVars := make([]string, len(opt.Repos))
 		for i, r := range opt.Repos {
-			repo, err := store.ReposFromContext(ctx).Get(ctx, r)
-			if err != nil {
-				return nil, err
-			}
-			repoBindVars[i] = arg(repo.URI)
+			repoBindVars[i] = arg(r)
 		}
 		innerSelectSQL += " AND repo in (" + strings.Join(repoBindVars, ",") + ")"
 	}
 	innerSelectSQL += fmt.Sprintf(" LIMIT %s OFFSET %s", arg(opt.PerPageOrDefault()), arg(opt.Offset()))
 
-	sql := "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM (" + innerSelectSQL + ") res"
+	sql = "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM (" + innerSelectSQL + ") res"
 	orderBySQL := " ORDER BY repo_count DESC, count DESC"
-
 	sql += orderBySQL
 
-	var dbRefResultMore []*dbRefLocationsResult
-	if _, err := graphDBH(ctx).Select(&dbRefResultMore, sql, args...); err != nil {
+	var dbRefResult []*dbRefLocationsResult
+	if _, err := graphDBH(ctx).Select(&dbRefResult, sql, args...); err != nil {
 		return nil, err
 	}
-	err = <-dbRefResultDone
-	if err != nil {
-		return nil, err
-	}
-	dbRefResult = append(dbRefResult, dbRefResultMore...)
 
 	// repoRefs holds the ordered list of repos referencing this def. The list is sorted by
 	// decreasing ref counts per repo, and the file list in each individual DefRepoRef is
@@ -211,6 +187,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	observe("locations", start)
 	start = time.Now()
 
+	// SECURITY: filter private repos user doesn't have access to.
 	repoRefs, err = filterVisibleRepos(ctx, repoRefs)
 	if err != nil {
 		return nil, err
@@ -316,35 +293,29 @@ func (g *globalRefs) getRefStats(ctx context.Context, defKeyID int64) (int64, er
 }
 
 func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error {
-	repo, err := store.ReposFromContext(ctx).Get(ctx, op.Repo)
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", op.Repo); err != nil {
+		return err
+	}
+	dbh := graphDBH(ctx)
+
+	repo, commitID, err := resolveRevisionDefaultBranch(ctx, op.Repo)
 	if err != nil {
 		return err
 	}
 
-	// We run this here just to ensure we have a version row to lock (if
-	// missing it does an insert)
-	if _, err := g.version(graphDBH(ctx), repo.URI); err != nil {
-		return err
+	trackedRepo := repotrackutil.GetTrackedRepo(repo)
+	observe := func(part string, start time.Time) {
+		// We also add logs because update operations are relatively
+		// slow and low volume compared to queries
+		d := time.Since(start)
+		log15.Debug("TRACE GlobalRefs.Update", "repo", repo, "part", part, "duration", d)
+		globalRefsUpdateDuration.WithLabelValues(trackedRepo, part).Observe(d.Seconds())
 	}
+	defer observe("total", time.Now())
 
-	// Do everything in one transaction, to ensure we don't have
-	// concurrent updates to repo
-	return dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
-		return g.update(ctx, tx, op)
-	})
-}
-
-func (g *globalRefs) update(ctx context.Context, tx gorp.SqlExecutor, op *sourcegraph.DefsRefreshIndexOp) error {
-	repo := op.Repo
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", repo); err != nil {
-		return err
-	}
-
-	repoPath, commitID, err := resolveRevisionDefaultBranch(ctx, repo)
-	if err != nil {
-		return err
-	}
-	oldCommitID, err := g.version(tx, repoPath)
+	start := time.Now()
+	oldCommitID, err := g.version(dbh, repo)
+	observe("version", start)
 	if err != nil {
 		return err
 	}
@@ -356,14 +327,11 @@ func (g *globalRefs) update(ctx context.Context, tx gorp.SqlExecutor, op *source
 		log15.Debug("GlobalRefs.Update re-indexing commit", "repo", repo, "commitID", commitID)
 	}
 
-	// Update and lock version row
-	if err := g.versionUpdate(tx, repoPath, commitID); err != nil {
-		return err
-	}
-
+	start = time.Now()
 	allRefs, err := store.GraphFromContext(ctx).Refs(
-		sstore.ByRepoCommitIDs(sstore.Version{Repo: repoPath, CommitID: commitID}),
+		sstore.ByRepoCommitIDs(sstore.Version{Repo: repo, CommitID: commitID}),
 	)
+	observe("graphstore", start)
 	if err != nil {
 		return err
 	}
@@ -382,7 +350,7 @@ func (g *globalRefs) update(ctx context.Context, tx gorp.SqlExecutor, op *source
 		// stage. Rather not index at all. Alerting on this error
 		// should be handled upstream.
 		if r.DefRepo == "" || r.DefUnit == "" || r.DefUnitType == "" || r.DefPath == "" {
-			return fmt.Errorf("graphstore contains invalid reference: repo=%s commit=%s ref=%+v", repoPath, commitID, r)
+			return fmt.Errorf("graphstore contains invalid reference: repo=%s commit=%s ref=%+v", repo, commitID, r)
 		}
 		// Ignore ref to builtin defs of golang/go repo (string, int, bool, etc) as this
 		// doesn't add significant value; yet it adds up to a lot of space in the db,
@@ -397,44 +365,38 @@ func (g *globalRefs) update(ctx context.Context, tx gorp.SqlExecutor, op *source
 
 	// Get all defKeyIDs outside of the transaction, since doing it inside
 	// of the transaction can lead to conflicts with other imports
-	//
-	// NOTE: we are using graphDBH(ctx) on purpose, we want to do these
-	// updates outside of the transaction since other repo updates could
-	// be creating the same def_keys.
+	start = time.Now()
 	defKeyIDs := map[graph.DefKey]int64{}
-	defKeyInsertSQL := `INSERT INTO def_keys(repo, unit_type, unit, path) VALUES($1, $2, $3, $4);`
-	defKeyGetSQL := `SELECT id FROM def_keys WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND path=$4`
-	for _, r := range refs {
-		defKeyIDKey := graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}
-		defKeyID, ok := defKeyIDs[defKeyIDKey]
-		if ok {
-			continue
+	{
+		// Find unique defKeys so we can bulk upsert and get the def_key ids
+		defKeys := map[graph.DefKey]struct{}{}
+		for _, r := range refs {
+			k := graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}
+			defKeys[k] = struct{}{}
+		}
+		defs := make([]*graph.Def, 0, len(defKeys))
+		for k := range defKeys {
+			defs = append(defs, &graph.Def{DefKey: k})
 		}
 
-		// Optimistically get the def key id, otherwise fallback to insertion
-		defKeyID, err := graphDBH(ctx).SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+		start := time.Now()
+		err := updateDefKeys(ctx, dbh, repo, defs)
+		observe("defkeysupdate", start)
 		if err != nil {
 			return err
 		}
-		if defKeyID != 0 {
-			defKeyIDs[defKeyIDKey] = defKeyID
-			continue
-		}
 
-		if _, err = graphDBH(ctx).Exec(defKeyInsertSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath); err != nil && !isPQErrorUniqueViolation(err) {
-			return err
-		}
-
-		defKeyID, err = graphDBH(ctx).SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+		start = time.Now()
+		dbDefKeys, err := getDefKeys(ctx, dbh, defKeys)
+		observe("defkeysget", start)
 		if err != nil {
 			return err
 		}
-		if defKeyID == 0 {
-			return fmt.Errorf("Could not create or find defKeyID for (%s, %s, %s, %s)", r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+		for _, dk := range dbDefKeys {
+			defKeyIDs[graph.DefKey{Repo: dk.Repo, UnitType: dk.UnitType, Unit: dk.Unit, Path: dk.Path}] = dk.ID
 		}
-
-		defKeyIDs[defKeyIDKey] = defKeyID
 	}
+	observe("defkeys", start)
 
 	tmpCreateSQL := `CREATE TEMPORARY TABLE global_refs_tmp (
 	def_key_id bigint,
@@ -449,46 +411,58 @@ ON COMMIT DROP;`
 	FROM global_refs_tmp
 	GROUP BY def_key_id, repo, file;`
 
-	// Create a temporary table to load all new ref data.
-	if _, err := tx.Exec(tmpCreateSQL); err != nil {
-		return err
-	}
-
-	stmt, err := dbutil.Prepare(tx, pq.CopyIn("global_refs_tmp", "def_key_id", "repo", "file"))
-	if err != nil {
-		return fmt.Errorf("global_refs_tmp prepare failed: %s", err)
-	}
-
-	// Insert refs into temporary table
-	for _, r := range refs {
-		defKeyID := defKeyIDs[graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}]
-		if _, err := stmt.Exec(defKeyID, repoPath, r.File); err != nil {
-			return fmt.Errorf("global_refs_tmp stmt insert failed: %s", err)
+	// Do actual update in one transaction, to ensure we don't have concurrent
+	// updates to repo
+	defer observe("transaction", time.Now())
+	return dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
+		// Create a temporary table to load all new ref data.
+		if _, err := tx.Exec(tmpCreateSQL); err != nil {
+			return err
 		}
-	}
 
-	// We need to do an empty Exec() to flush any remaining
-	// inserts that are in the drivers buffer
-	if _, err = stmt.Exec(); err != nil {
-		return fmt.Errorf("global_refs_tmp stmt final insert failed: %s", err)
-	}
+		stmt, err := dbutil.Prepare(tx, pq.CopyIn("global_refs_tmp", "def_key_id", "repo", "file"))
+		if err != nil {
+			return fmt.Errorf("global_refs_tmp prepare failed: %s", err)
+		}
 
-	// Purge all existing ref data for files in this source unit.
-	if _, err := tx.Exec(finalDeleteSQL, repoPath); err != nil {
-		return err
-	}
+		// Insert refs into temporary table
+		start = time.Now()
+		for _, r := range refs {
+			defKeyID := defKeyIDs[graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}]
+			if _, err := stmt.Exec(defKeyID, repo, r.File); err != nil {
+				return fmt.Errorf("global_refs_tmp stmt insert failed: %s", err)
+			}
+		}
 
-	// Insert refs into global refs table
-	if _, err := tx.Exec(finalInsertSQL); err != nil {
-		return err
-	}
+		// We need to do an empty Exec() to flush any remaining
+		// inserts that are in the drivers buffer
+		if _, err = stmt.Exec(); err != nil {
+			return fmt.Errorf("global_refs_tmp stmt final insert failed: %s", err)
+		}
+		observe("copyin", start)
 
-	// Update version row again, to have a more relevant timestamp
-	if err := g.versionUpdate(tx, repoPath, commitID); err != nil {
-		return err
-	}
+		// Purge all existing ref data for files in this source unit.
+		start = time.Now()
+		if _, err := tx.Exec(finalDeleteSQL, repo); err != nil {
+			return err
+		}
+		observe("purge", start)
 
-	return nil
+		// Insert refs into global refs table
+		start = time.Now()
+		if _, err := tx.Exec(finalInsertSQL); err != nil {
+			return err
+		}
+		observe("insert", start)
+
+		// Update version row again, to have a more relevant timestamp
+		start = time.Now()
+		if err := g.versionUpdate(tx, repo, commitID); err != nil {
+			return err
+		}
+		observe("versionupdate", start)
+		return nil
+	})
 }
 
 // version returns the commit_id that global_refs has indexed for repo
@@ -513,6 +487,7 @@ func (g *globalRefs) versionUpdate(tx gorp.SqlExecutor, repoPath string, commitI
 	return err
 }
 
+// StatRefresh refreshes the global_refs_stats tables. This should ONLY be called from test code.
 func (g *globalRefs) StatRefresh(ctx context.Context) error {
 	_, err := graphDBH(ctx).Exec("REFRESH MATERIALIZED VIEW CONCURRENTLY global_refs_stats;")
 	return err
@@ -523,8 +498,44 @@ var globalRefsDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Subsystem: "global_refs",
 	Name:      "duration_seconds",
 	Help:      "Duration for querying global_refs_new",
+	MaxAge:    time.Hour,
+}, []string{"repo", "part"})
+var globalRefsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+	Namespace: "src",
+	Subsystem: "global_refs",
+	Name:      "update_duration_seconds",
+	Help:      "Duration for updating global_refs_new",
+	MaxAge:    time.Hour,
 }, []string{"repo", "part"})
 
 func init() {
 	prometheus.MustRegister(globalRefsDuration)
+	prometheus.MustRegister(globalRefsUpdateDuration)
+}
+
+func resolveRevisionDefaultBranch(ctx context.Context, repo int32) (repoPath, commitID string, err error) {
+	repoObj, err := store.ReposFromContext(ctx).Get(ctx, repo)
+	if err != nil {
+		return
+	}
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoObj.ID)
+	if err != nil {
+		return
+	}
+	c, err := vcsrepo.ResolveRevision(repoObj.DefaultBranch)
+	if err != nil {
+		// TODO(keegancsmith) Remove once we always have the
+		// DefaultBranch stored in our own DB. https://app.asana.com/0/87040567695724/147734985562458
+		if !strings.HasPrefix(strings.ToLower(repoObj.URI), "github.com/") {
+			return
+		}
+		ghrepo, err := github.ReposFromContext(ctx).Get(ctx, repoObj.URI)
+		if err != nil {
+			return "", "", err
+		}
+		if c, err = vcsrepo.ResolveRevision(ghrepo.DefaultBranch); err != nil {
+			return "", "", err
+		}
+	}
+	return repoObj.URI, string(c), nil
 }

@@ -9,26 +9,6 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/unit"
 )
 
-type GlobalDefs struct {
-	Search_           func(ctx context.Context, op *store.GlobalDefSearchOp) (*sourcegraph.SearchResultsList, error)
-	Update_           func(ctx context.Context, op store.GlobalDefUpdateOp) error
-	RefreshRefCounts_ func(ctx context.Context, op store.GlobalDefUpdateOp) error
-}
-
-func (s *GlobalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*sourcegraph.SearchResultsList, error) {
-	return s.Search_(ctx, op)
-}
-
-func (s *GlobalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) error {
-	return s.Update_(ctx, op)
-}
-
-func (s *GlobalDefs) RefreshRefCounts(ctx context.Context, op store.GlobalDefUpdateOp) error {
-	return s.RefreshRefCounts_(ctx, op)
-}
-
-var _ store.GlobalDefs = (*GlobalDefs)(nil)
-
 type GlobalRefs struct {
 	Get_    func(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
 	Update_ func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error
@@ -44,6 +24,16 @@ func (s *GlobalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 
 var _ store.GlobalRefs = (*GlobalRefs)(nil)
 
+type DefExamples struct {
+	Get_ func(ctx context.Context, op *sourcegraph.DefsListExamplesOp) (*sourcegraph.RefLocationsList, error)
+}
+
+func (s *DefExamples) Get(ctx context.Context, op *sourcegraph.DefsListExamplesOp) (*sourcegraph.RefLocationsList, error) {
+	return s.Get_(ctx, op)
+}
+
+var _ store.DefExamples = (*DefExamples)(nil)
+
 type GlobalDeps struct {
 	Upsert_  func(ctx context.Context, resolutions []*unit.Resolution) error
 	Resolve_ func(ctx context.Context, raw *unit.Key) ([]unit.Key, error)
@@ -58,3 +48,21 @@ func (s *GlobalDeps) Resolve(ctx context.Context, raw *unit.Key) ([]unit.Key, er
 }
 
 var _ store.GlobalDeps = (*GlobalDeps)(nil)
+
+type Defs struct {
+	Search_                func(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error)
+	UpdateFromSrclibStore_ func(ctx context.Context, op store.DefUpdateOp) error
+	Update_                func(ctx context.Context, op store.DefUpdateOp) error
+}
+
+func (s *Defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error) {
+	return s.Search_(ctx, op)
+}
+
+func (s *Defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) error {
+	return s.UpdateFromSrclibStore_(ctx, op)
+}
+
+func (s *Defs) Update(ctx context.Context, op store.DefUpdateOp) error { return s.Update_(ctx, op) }
+
+var _ store.Defs = (*Defs)(nil)

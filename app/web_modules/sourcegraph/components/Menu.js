@@ -8,6 +8,7 @@ import styles from "./styles/menu.css";
 class Menu extends React.Component {
 	static propTypes = {
 		children: React.PropTypes.any,
+		className: React.PropTypes.string,
 	};
 
 	renderMenuItems() {
@@ -17,7 +18,7 @@ class Menu extends React.Component {
 	}
 
 	render() {
-		return <div styleName="container">{this.renderMenuItems()}</div>;
+		return <div className={this.props.className} styleName="container">{this.renderMenuItems()}</div>;
 	}
 }
 

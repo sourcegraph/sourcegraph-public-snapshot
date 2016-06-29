@@ -61,8 +61,6 @@ func TestRepoPattern(t *testing.T) {
 	}
 }
 
-const commitID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-
 func TestRevPattern(t *testing.T) {
 	pat, err := regexp.Compile("^" + RevPattern + "$")
 	if err != nil {

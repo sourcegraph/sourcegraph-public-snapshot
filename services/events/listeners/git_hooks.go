@@ -150,7 +150,10 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 			CommitID: event.Commit,
 			Tag:      event.Tag,
 			Branch:   event.Branch,
-			Config:   sourcegraph.BuildConfig{Queue: true},
+			Config: sourcegraph.BuildConfig{
+				Queue:    true,
+				Priority: -50,
+			},
 		})
 		if err != nil {
 			log15.Warn("postPushHook: failed to create build", "err", err, "repo", repo, "commit", event.Commit, "branch", event.Branch, "tag", event.Tag)

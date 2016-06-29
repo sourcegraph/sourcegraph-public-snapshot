@@ -10,13 +10,16 @@ import (
 // TypeScript toolchain
 func init() {
 	graph.RegisterMakeDefFormatter("PipPackage", newBasicFormatter("Python"))
+	graph.RegisterMakeDefFormatter("PythonProgram", newBasicFormatter("Python"))
 	graph.RegisterMakeDefFormatter("DjangoApp", newBasicFormatter("Python"))
+	graph.RegisterMakeDefFormatter("BashDirectory", newBasicFormatter("Bash"))
 	graph.RegisterMakeDefFormatter("basic-css", newBasicFormatter("CSS"))
 	graph.RegisterMakeDefFormatter("basic-php", newBasicFormatter("PHP"))
 	graph.RegisterMakeDefFormatter("basic-objc", newBasicFormatter("Objective-C"))
 	graph.RegisterMakeDefFormatter("TypeScriptModule", newBasicFormatter("TypeScript"))
 	graph.RegisterMakeDefFormatter("CommonJSPackage", newBasicFormatter("JavaScript"))
 	graph.RegisterMakeDefFormatter("myunittype", newBasicFormatter("Generic")) // for quick lang prototypes
+	graph.RegisterMakeDefFormatter("ManPages", newBasicFormatter("Man"))
 }
 
 // DefData should be kept in sync with the def 'Data' field emitted by the
@@ -29,7 +32,7 @@ type DefData struct {
 	Separator string
 }
 
-// Constructs new def formatter for defs made by basic formatterx
+// Constructs new def formatter for defs made by basic formatter
 func newBasicFormatter(lang string) graph.MakeDefFormatter {
 	return func(s *graph.Def) graph.DefFormatter {
 		var si DefData

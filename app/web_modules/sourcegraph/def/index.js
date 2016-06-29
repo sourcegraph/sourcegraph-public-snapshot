@@ -3,6 +3,7 @@
 import {abs, getRouteParams} from "sourcegraph/app/routePatterns";
 import {repoPath, repoRev, repoParam} from "sourcegraph/repo";
 
+export type Options = Object;
 export type Repo = Object;
 export type Def = Object;
 export type DefKey = {
@@ -66,4 +67,10 @@ export type RefLocationsKey = {
 	page?: number;
 	perPage?: number;
 	repos: Array<string>;
+}
+
+export type ExamplesKey = {
+	repo: string;
+	commitID: string;
+	def: string;
 }

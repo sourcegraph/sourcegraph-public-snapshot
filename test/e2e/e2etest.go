@@ -29,6 +29,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/test/e2e/e2etestuser"
 
+	"github.com/jpillora/backoff"
 	"github.com/nlopes/slack"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rogpeppe/rog-go/parallel"
@@ -105,9 +106,18 @@ func (t *T) Endpoint(e string) string {
 // GRPCClient returns a new authenticated Sourcegraph gRPC client. It uses the
 // server's ID key, and thus has 100% unrestricted access. Use with caution!
 func (t *T) GRPCClient() (context.Context, *sourcegraph.Client) {
+	endpoint := t.Target
+	if grpc := os.Getenv("TARGET_GRPC"); grpc != "" {
+		var err error
+		endpoint, err = url.Parse(grpc)
+		if err != nil {
+			t.Fatalf("could not parge TARGET_GRPC as url: %s", err)
+		}
+	}
+
 	// Create context with gRPC endpoint and idKey credentials.
 	ctx := context.Background()
-	ctx = sourcegraph.WithGRPCEndpoint(ctx, t.Target)
+	ctx = sourcegraph.WithGRPCEndpoint(ctx, endpoint)
 	ctx = sourcegraph.WithCredentials(ctx, sharedsecret.TokenSource(t.tr.idKey, "internal:e2etest"))
 
 	// Create client.
@@ -330,14 +340,20 @@ func init() {
 // run runs the test suite over and over again against $TARGET, if $TARGET is set,
 // otherwise it runs the test suite just once.
 func (t *testRunner) run() {
+	b := &backoff.Backoff{
+		Min: time.Second,
+		Max: 10 * time.Minute,
+	}
 	shouldLogSuccess := 0
 	for {
 		if t.runTests(shouldLogSuccess < 5) {
+			b.Reset()
 			shouldLogSuccess++
 			if shouldLogSuccess == 5 {
 				t.slackMessage(typeNormal, ":star: *Five consecutive successes!* (silencing output until next failure)", "")
 			}
 		} else {
+			time.Sleep(b.Duration())
 			shouldLogSuccess = 0
 		}
 

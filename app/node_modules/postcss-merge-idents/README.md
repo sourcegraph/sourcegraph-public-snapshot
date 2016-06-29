@@ -2,6 +2,7 @@
 
 > Merge keyframe and counter style identifiers.
 
+
 ## Install
 
 With [npm](https://npmjs.org/package/postcss-merge-idents) do:
@@ -9,6 +10,7 @@ With [npm](https://npmjs.org/package/postcss-merge-idents) do:
 ```
 npm install postcss-merge-idents --save
 ```
+
 
 ## Example
 
@@ -55,19 +57,23 @@ depend on the duplicated property.
 }
 ```
 
+
 ## Usage
 
 See the [PostCSS documentation](https://github.com/postcss/postcss#usage) for
 examples for your environment.
+
 
 ## Contributing
 
 Pull requests are welcome. If you add functionality, then please add unit tests
 to cover it.
 
+
 ## License
 
 MIT © [Ben Briggs](http://beneb.info)
+
 
 [ci]:      https://travis-ci.org/ben-eb/postcss-merge-idents
 [deps]:    https://gemnasium.com/ben-eb/postcss-merge-idents

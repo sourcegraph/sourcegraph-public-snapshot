@@ -1,3 +1,7 @@
+### 0.10.0 / 2015-07-08
+
+* Add the standard `code` and `reason` parameters to the `close` method
+
 ### 0.9.4 / 2015-03-08
 
 * Don't send input to the driver before `start()` is called

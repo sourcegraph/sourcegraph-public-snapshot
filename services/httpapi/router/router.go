@@ -26,12 +26,15 @@ const (
 	BuildTaskLog             = "build.task.log"
 	ChannelListen            = "channel.listen"
 	ChannelSend              = "channel.send"
+	Commit                   = "commit"
 	Coverage                 = "coverage"
 	Def                      = "def"
 	DefRefs                  = "def.refs"
 	DefRefLocations          = "def.ref.locations"
+	DefExamples              = "def.examples"
 	DefAuthors               = "def.authors"
 	Defs                     = "defs"
+	DeltaFiles               = "delta.files"
 	GlobalSearch             = "global.search"
 	Repo                     = "repo"
 	RepoResolve              = "repo.resolve"
@@ -59,6 +62,7 @@ const (
 	ResolveCustomImportsTree = "resolve-custom-import.tree"
 
 	InternalAppdashRecordSpan = "internal.appdash.record-span"
+	EmailSubscription         = "email-subscription"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -75,6 +79,8 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/logout").Methods("POST").Name(Logout)
 	base.Path("/forgot").Methods("POST").Name(ForgotPassword)
 	base.Path("/reset").Methods("POST").Name(ResetPassword)
+
+	base.Path("/email-subscription").Methods("POST").Name(EmailSubscription)
 
 	base.Path("/annotations").Methods("GET").Name(Annotations)
 
@@ -98,6 +104,9 @@ func New(base *mux.Router) *mux.Router {
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
 	base.Path(repoPath).Methods("GET").Name(Repo)
+
+	// Additional paths added will be treated as a repo. To add a new path that should not be treated as a repo
+	// add above repo paths.
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repoRev := base.PathPrefix(repoPath + routevar.RepoRevSuffix + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/resolve").Methods("GET").Name(RepoResolve)
@@ -106,6 +115,8 @@ func New(base *mux.Router) *mux.Router {
 	repo.Path("/commits").Methods("GET").Name(RepoCommits) // uses Head/Base query params, not {Rev} route var
 	repoRev.Path("/tree-list").Methods("GET").Name(RepoTreeList)
 	repoRev.Path("/rev").Methods("GET").Name(RepoResolveRev)
+	repoRev.Path("/commit").Methods("GET").Name(Commit)
+	repoRev.Path("/delta/{DeltaBaseRev}/-/files").Methods("GET").Name(DeltaFiles)
 	repoRev.Path("/inventory").Methods("GET").Name(RepoInventory)
 	repoRev.Path("/tree-search").Methods("GET").Name(RepoTreeSearch)
 	repoRev.Path("/tree{Path:.*}").Name(RepoTree)
@@ -129,6 +140,7 @@ func New(base *mux.Router) *mux.Router {
 	def.Path("/authors").Methods("GET").Name(DefAuthors)
 	def.Path("/refs").Methods("GET").Name(DefRefs)
 	def.Path("/ref-locations").Methods("GET").Name(DefRefLocations)
+	def.Path("/examples").Methods("GET").Name(DefExamples)
 	repoRev.Path(defPath).Methods("GET").Name(Def) // match subroutes first
 
 	base.Path("/channel/{Channel}").Methods("GET").Name(ChannelListen)

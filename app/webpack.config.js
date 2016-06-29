@@ -1,15 +1,14 @@
-var webpack = require("webpack");
-var ExtractTextPlugin = require("extract-text-webpack-plugin");
-var autoprefixer = require("autoprefixer");
-var glob = require("glob");
-var url = require("url");
-var log = require("logalot");
-var FlowStatusWebpackPlugin = require("flow-status-webpack-plugin");
+const webpack = require("webpack");
+const autoprefixer = require("autoprefixer");
+const url = require("url");
+const log = require("logalot");
+const FlowStatusWebpackPlugin = require("flow-status-webpack-plugin");
+const ProgressBarPlugin = require("progress-bar-webpack-plugin");
 
 // Check dev dependencies.
 if (process.env.NODE_ENV === "development") {
-	const flow = require('flow-bin/lib');
-	flow.run(['--version'], function (err) {
+	const flow = require("flow-bin/lib");
+	flow.run(["--version"], (err) => {
 		if (err) {
 			log.error(err.message);
 			log.error("ERROR: flow is not properly installed. Run 'rm app/node_modules/flow-bin/vendor/flow; make dep' to fix.");
@@ -26,7 +25,7 @@ if (process.env.NODE_ENV === "development") {
 	}
 }
 
-var commonPlugins = [
+const plugins = [
 	new webpack.NormalModuleReplacementPlugin(/\/iconv-loader$/, "node-noop"),
 	new webpack.ProvidePlugin({
 		fetch: "imports?this=>global!exports?global.fetch!isomorphic-fetch",
@@ -40,10 +39,16 @@ var commonPlugins = [
 	new webpack.IgnorePlugin(/\.json$/),
 	new webpack.IgnorePlugin(/\_test\.js$/),
 	new webpack.optimize.OccurrenceOrderPlugin(),
+	new webpack.optimize.LimitChunkCountPlugin({maxChunks: 1}),
+	new ProgressBarPlugin(),
 ];
 
+if (process.env.NODE_ENV !== "production") {
+	plugins.push(new FlowStatusWebpackPlugin({quietSuccess: true}));
+}
+
 if (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) {
-	commonPlugins.push(
+	plugins.push(
 		new webpack.optimize.DedupePlugin(),
 		new webpack.optimize.UglifyJsPlugin({
 			compress: {
@@ -53,43 +58,49 @@ if (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) {
 	);
 }
 
+const useHot = process.env.NODE_ENV !== "production" || process.env.WEBPACK_QUICK;
+if (useHot) {
+	plugins.push(
+		new webpack.HotModuleReplacementPlugin()
+	);
+}
+
+// port to listen
 var webpackDevServerPort = 8080;
 if (process.env.WEBPACK_DEV_SERVER_URL) {
 	webpackDevServerPort = url.parse(process.env.WEBPACK_DEV_SERVER_URL).port;
 }
+// address to listen on
+const webpackDevServerAddr = process.env.WEBPACK_DEV_SERVER_ADDR || "127.0.0.1";
+// public address of webpack dev server
+var publicWebpackDevServer = "localhost:8080";
+if (process.env.PUBLIC_WEBPACK_DEV_SERVER_URL) {
+	var uStruct = url.parse(process.env.PUBLIC_WEBPACK_DEV_SERVER_URL);
+	publicWebpackDevServer = uStruct.host;
+}
 
-var eslintPreloader = {
-	test:	/\.js$/,
-	exclude: [__dirname+"/node_modules"],
-	loader: "eslint-loader",
-};
 
-function config(opts) {
-	return Object.assign({}, {
-		resolve: {
-			modulesDirectories: ["web_modules", "node_modules"],
-		},
-	}, opts);
-};
-
-var browserConfig = {
+module.exports = {
 	name: "browser",
 	target: "web",
 	cache: true,
-	entry: "./web_modules/sourcegraph/init/browser.js",
-	devtool: "source-map",
+	entry: [
+		"./web_modules/sourcegraph/init/browser.js",
+	],
+	resolve: {
+			modules: [`${__dirname}/web_modules`, "node_modules"],
+	},
+	devtool: (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) ? "source-map" : "eval",
 	output: {
-		path: __dirname+"/assets",
+		path: `${__dirname}/assets`,
 		filename: "[name].browser.js",
 		sourceMapFilename: "[file].map",
 	},
-	plugins: commonPlugins.concat([
-		new FlowStatusWebpackPlugin({restartFlow: false}),
-		new ExtractTextPlugin("[name].css", {allChunks: true, ignoreOrder: true}),
-		new webpack.optimize.LimitChunkCountPlugin({maxChunks: 1}),
-	]),
+	plugins: plugins,
 	module: {
-		preLoaders: [eslintPreloader],
+		preLoaders: [
+			{test:	/\.js$/, exclude: /node_modules/, loader: "eslint-loader"},
+		],
 		loaders: [
 			{test: /\.js$/, exclude: /node_modules/, loader: "babel-loader?cacheDirectory"},
 			{test: /\.json$/, exclude: /node_modules/, loader: "json-loader"},
@@ -97,18 +108,27 @@ var browserConfig = {
 			{test: /\.svg$/, loader: "file-loader?name=fonts/[name].[ext]"},
 			{
 				test: /\.css$/,
-				loader: require.resolve("./non-caching-extract-text-loader") + "?{remove:true}!" +
-						"css-loader?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss-loader",
+				loader: "style!css?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss",
 			},
 		],
 		noParse: /\.min\.js$/,
 	},
 	postcss: [require("postcss-modules-values"), autoprefixer({remove: false})],
 	devServer: {
+		host: webpackDevServerAddr,
+		public: publicWebpackDevServer,
 		port: webpackDevServerPort,
 		headers: {"Access-Control-Allow-Origin": "*"},
 		noInfo: true,
+		quiet: true,
+		hot: useHot,
 	},
 };
 
-module.exports = config(browserConfig);
+if (useHot) {
+	module.exports.entry.unshift("webpack/hot/only-dev-server");
+	module.exports.entry.unshift("react-hot-loader/patch");
+}
+if (process.env.NODE_ENV !== "production") {
+	module.exports.entry.unshift(`webpack-dev-server/client?http://${publicWebpackDevServer}`);
+}

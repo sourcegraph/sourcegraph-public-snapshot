@@ -1,0 +1,49 @@
+@value base "sourcegraph/components/styles/_base.css";
+@value grid "sourcegraph/components/styles/_grid.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+@value layout "sourcegraph/components/styles/_layout.css";
+
+.repos {
+	width: 100%;
+}
+
+.row {}
+.cell {
+	composes: pv4 from base;
+}
+
+.button {
+	composes: tr from typography;
+	flex: 0 0 150px;
+}
+
+.content { flex: 1 1 auto; }
+
+.privateRepos {
+ 	text-align: center;
+ 	flex: 1 1 auto;	
+}
+
+.filter-input {
+	composes: pb4 from base;
+}
+
+.repo-link {
+	composes: f4 from typography;
+}
+.repo-link a {
+	font-weight: bold;
+}
+.description {
+	composes: mt0 from base;
+	composes: cool-mid-gray from colors;
+	composes: mb0 from base;
+}
+.indicator {
+	composes: mv4 from base;
+}
+.github-button {
+	float: right;
+	composes: ml5 from base;
+}

@@ -12,13 +12,13 @@ Instructions for deploying srclib updates to Sourcegraph.com
 
 ```
 make clean && make srclib
-make build && make push
+make build
 ```
 
 If updating a single toolchain, run:
 
 ```
-TOOLCHAINS=$TOOLCHAIN_NAME make build && TOOLCHAINS=$TOOLCHAIN_NAME make push
+TOOLCHAINS=$TOOLCHAIN_NAME make build
 ```
 
 0. Update `srclib_images.go`.

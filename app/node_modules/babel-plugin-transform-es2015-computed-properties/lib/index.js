@@ -1,14 +1,16 @@
-"use strict";
-
-var _getIterator = require("babel-runtime/core-js/get-iterator")["default"];
+/*istanbul ignore next*/"use strict";
 
 exports.__esModule = true;
 
-exports["default"] = function (_ref4) {
-  var t = _ref4.types;
-  var template = _ref4.template;
+var _getIterator2 = require("babel-runtime/core-js/get-iterator");
 
-  var buildMutatorMapAssign = template("\n    MUTATOR_MAP_REF[KEY] = MUTATOR_MAP_REF[KEY] || {};\n    MUTATOR_MAP_REF[KEY].KIND = VALUE;\n  ");
+var _getIterator3 = _interopRequireDefault(_getIterator2);
+
+exports.default = function ( /*istanbul ignore next*/_ref) {
+  /*istanbul ignore next*/var t = _ref.types;
+  /*istanbul ignore next*/var template = _ref.template;
+
+  var buildMutatorMapAssign = template( /*istanbul ignore next*/"\n    MUTATOR_MAP_REF[KEY] = MUTATOR_MAP_REF[KEY] || {};\n    MUTATOR_MAP_REF[KEY].KIND = VALUE;\n  ");
 
   function getValue(prop) {
     if (t.isObjectProperty(prop)) {
@@ -26,11 +28,11 @@ exports["default"] = function (_ref4) {
     }
   }
 
-  function pushMutatorDefine(_ref5, prop) {
-    var objId = _ref5.objId;
-    var body = _ref5.body;
-    var getMutatorId = _ref5.getMutatorId;
-    var scope = _ref5.scope;
+  function pushMutatorDefine( /*istanbul ignore next*/_ref2, prop) {
+    /*istanbul ignore next*/var objId = _ref2.objId;
+    /*istanbul ignore next*/var body = _ref2.body;
+    /*istanbul ignore next*/var getMutatorId = _ref2.getMutatorId;
+    /*istanbul ignore next*/var scope = _ref2.scope;
 
     var key = !prop.computed && t.isIdentifier(prop.key) ? t.stringLiteral(prop.key.name) : prop.key;
 
@@ -40,7 +42,7 @@ exports["default"] = function (_ref4) {
       key = maybeMemoise;
     }
 
-    body.push.apply(body, buildMutatorMapAssign({
+    /*istanbul ignore next*/body.push. /*istanbul ignore next*/apply(body, buildMutatorMapAssign({
       MUTATOR_MAP_REF: getMutatorId(),
       KEY: key,
       VALUE: getValue(prop),
@@ -49,19 +51,20 @@ exports["default"] = function (_ref4) {
   }
 
   function loose(info) {
-    for (var _iterator = info.computedProps, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _getIterator(_iterator);;) {
-      var _ref;
+    for ( /*istanbul ignore next*/var _iterator = info.computedProps, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : (0, _getIterator3.default)(_iterator);;) {
+      /*istanbul ignore next*/
+      var _ref3;
 
       if (_isArray) {
         if (_i >= _iterator.length) break;
-        _ref = _iterator[_i++];
+        _ref3 = _iterator[_i++];
       } else {
         _i = _iterator.next();
         if (_i.done) break;
-        _ref = _i.value;
+        _ref3 = _i.value;
       }
 
-      var prop = _ref;
+      var prop = _ref3;
 
       if (prop.kind === "get" || prop.kind === "set") {
         pushMutatorDefine(info, prop);
@@ -72,24 +75,26 @@ exports["default"] = function (_ref4) {
   }
 
   function spec(info) {
-    var objId = info.objId;
-    var body = info.body;
-    var computedProps = info.computedProps;
-    var state = info.state;
+    /*istanbul ignore next*/var objId = info.objId;
+    /*istanbul ignore next*/var body = info.body;
+    /*istanbul ignore next*/var computedProps = info.computedProps;
+    /*istanbul ignore next*/var state = info.state;
 
-    for (var _iterator2 = computedProps, _isArray2 = Array.isArray(_iterator2), _i2 = 0, _iterator2 = _isArray2 ? _iterator2 : _getIterator(_iterator2);;) {
-      var _ref2;
+
+    for ( /*istanbul ignore next*/var _iterator2 = computedProps, _isArray2 = Array.isArray(_iterator2), _i2 = 0, _iterator2 = _isArray2 ? _iterator2 : (0, _getIterator3.default)(_iterator2);;) {
+      /*istanbul ignore next*/
+      var _ref4;
 
       if (_isArray2) {
         if (_i2 >= _iterator2.length) break;
-        _ref2 = _iterator2[_i2++];
+        _ref4 = _iterator2[_i2++];
       } else {
         _i2 = _iterator2.next();
         if (_i2.done) break;
-        _ref2 = _i2.value;
+        _ref4 = _i2.value;
       }
 
-      var prop = _ref2;
+      var prop = _ref4;
 
       var key = t.toComputedKey(prop);
 
@@ -109,16 +114,28 @@ exports["default"] = function (_ref4) {
 
   return {
     visitor: {
-      ObjectExpression: {
+      ObjectExpression: { /*istanbul ignore next*/
         exit: function exit(path, state) {
-          var node = path.node;
-          var parent = path.parent;
-          var scope = path.scope;
+          /*istanbul ignore next*/var node = path.node;
+          /*istanbul ignore next*/var parent = path.parent;
+          /*istanbul ignore next*/var scope = path.scope;
 
           var hasComputed = false;
-          var _arr = node.properties;
-          for (var _i3 = 0; _i3 < _arr.length; _i3++) {
-            var prop = _arr[_i3];
+          for ( /*istanbul ignore next*/var _iterator3 = node.properties, _isArray3 = Array.isArray(_iterator3), _i3 = 0, _iterator3 = _isArray3 ? _iterator3 : (0, _getIterator3.default)(_iterator3);;) {
+            /*istanbul ignore next*/
+            var _ref5;
+
+            if (_isArray3) {
+              if (_i3 >= _iterator3.length) break;
+              _ref5 = _iterator3[_i3++];
+            } else {
+              _i3 = _iterator3.next();
+              if (_i3.done) break;
+              _ref5 = _i3.value;
+            }
+
+            var prop = _ref5;
+
             hasComputed = prop.computed === true;
             if (hasComputed) break;
           }
@@ -131,28 +148,29 @@ exports["default"] = function (_ref4) {
           var computedProps = [];
           var foundComputed = false;
 
-          for (var _iterator3 = node.properties, _isArray3 = Array.isArray(_iterator3), _i4 = 0, _iterator3 = _isArray3 ? _iterator3 : _getIterator(_iterator3);;) {
-            var _ref3;
+          for ( /*istanbul ignore next*/var _iterator4 = node.properties, _isArray4 = Array.isArray(_iterator4), _i4 = 0, _iterator4 = _isArray4 ? _iterator4 : (0, _getIterator3.default)(_iterator4);;) {
+            /*istanbul ignore next*/
+            var _ref6;
 
-            if (_isArray3) {
-              if (_i4 >= _iterator3.length) break;
-              _ref3 = _iterator3[_i4++];
+            if (_isArray4) {
+              if (_i4 >= _iterator4.length) break;
+              _ref6 = _iterator4[_i4++];
             } else {
-              _i4 = _iterator3.next();
+              _i4 = _iterator4.next();
               if (_i4.done) break;
-              _ref3 = _i4.value;
+              _ref6 = _i4.value;
             }
 
-            var prop = _ref3;
+            var _prop = _ref6;
 
-            if (prop.computed) {
+            if (_prop.computed) {
               foundComputed = true;
             }
 
             if (foundComputed) {
-              computedProps.push(prop);
+              computedProps.push(_prop);
             } else {
-              initProps.push(prop);
+              initProps.push(_prop);
             }
           }
 
@@ -165,7 +183,7 @@ exports["default"] = function (_ref4) {
           var callback = spec;
           if (state.opts.loose) callback = loose;
 
-          var mutatorRef = undefined;
+          var mutatorRef = /*istanbul ignore next*/void 0;
 
           var getMutatorId = function getMutatorId() {
             if (!mutatorRef) {
@@ -202,5 +220,8 @@ exports["default"] = function (_ref4) {
     }
   };
 };
+
+/*istanbul ignore next*/
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 module.exports = exports["default"];

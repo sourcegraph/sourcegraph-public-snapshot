@@ -68,7 +68,7 @@ func getSavedToken(endpointURL *url.URL) string {
 	)
 	cl, err := sourcegraph.NewClientFromContext(sourcegraph.WithGRPCEndpoint(ctx, endpointURL))
 	if err != nil {
-		log15.Error("Failed to verify saved auth credentials for %s", "endpointURL", endpointURL, "error", err)
+		log15.Error("Failed to verify saved auth credentials", "endpointURL", endpointURL, "error", err)
 		return ""
 	}
 	_, err = cl.Auth.Identify(ctx, &pbtypes.Void{})

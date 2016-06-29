@@ -11,12 +11,13 @@
 
 module.exports = function (context) {
 
+  var sourceCode = context.getSourceCode();
   var configuration = context.options[0] || {};
   var maximum = configuration.maximum || 1;
 
   function getPropName(propNode) {
     if (propNode.type === 'JSXSpreadAttribute') {
-      return context.getSource(propNode.argument);
+      return sourceCode.getText(propNode.argument);
     }
     return propNode.name.name;
   }
@@ -40,7 +41,10 @@ module.exports = function (context) {
         }
         if (props[line].length > maximum) {
           var name = getPropName(props[line][maximum]);
-          context.report(props[line][maximum], 'Prop `' + name + '` must be placed on a new line');
+          context.report({
+            node: props[line][maximum],
+            message: 'Prop `' + name + '` must be placed on a new line'
+          });
           break;
         }
       }

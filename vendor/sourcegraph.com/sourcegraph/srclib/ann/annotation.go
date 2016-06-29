@@ -22,7 +22,7 @@ func (a *Ann) LinkURL() (*url.URL, error) {
 	}
 	var urlStr string
 	if err := json.Unmarshal(a.Data, &urlStr); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not unmarshal annotation link URL: %s. JSON was %v", err, a.Data)
 	}
 	return url.Parse(urlStr)
 }

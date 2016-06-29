@@ -49,11 +49,14 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/snapshotprof"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/server"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -157,15 +160,9 @@ type ServeCmd struct {
 	// Flags containing sensitive information must be added to this struct.
 	ServeCmdPrivate
 
-	Prefetch bool `long:"prefetch" description:"prefetch directory children" env:"SRC_PREFETCH"`
-
 	WorkCmd
 
 	GraphStoreOpts `group:"Graph data storage (defs, refs, etc.)" namespace:"graphstore"`
-
-	NoInitialOnboarding bool `long:"no-initial-onboarding" description:"don't add sample repositories to server during initial server setup" env:"SRC_NO_INITIAL_ONBOARDING"`
-
-	RegisterURL string `long:"register" description:"register this server as a client of another Sourcegraph server (empty to disable)" value-name:"URL" default:"https://sourcegraph.com"`
 
 	ReposDir   string `long:"fs.repos-dir" description:"root dir containing repos" default:"$SGPATH/repos" env:"SRC_REPOS_DIR"`
 	GitServers string `long:"git-servers" description:"addresses of the remote git servers; a local git server process is used by default" env:"SRC_GIT_SERVERS"`
@@ -451,7 +448,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		log15.Info("Skip starting worker process.")
 	} else {
 		go func() {
-			if err := worker.RunWorker(idKey, endpoint.URLOrDefault(), c.WorkCmd.Parallel, c.WorkCmd.DequeueMsec); err != nil {
+			if err := worker.RunWorker(context.Background(), idKey, endpoint.URLOrDefault(), c.WorkCmd.Parallel, c.WorkCmd.DequeueMsec); err != nil {
 				log.Fatal("Worker exited with error:", err)
 			}
 		}()
@@ -463,6 +460,35 @@ func (c *ServeCmd) Execute(args []string) error {
 		return err
 	}
 	go statsutil.ComputeUsageStats(usageStatsCtx, 10*time.Minute)
+
+	// HACK(keegancsmith) async is the only user of this at the moment,
+	// but other background workers that need access to the store will
+	// likely pop up in the future. We need to make this less hacky
+	internalServerCtx := func(name string) (context.Context, error) {
+		ctx := clientCtx
+		for _, f := range serverctx.Funcs {
+			ctx, err = f(ctx)
+			if err != nil {
+				return nil, err
+			}
+		}
+		ctx = svc.WithServices(ctx, server.Config(serverCtxFunc))
+		scope := "internal:" + name
+		ctx = authpkg.WithActor(ctx, authpkg.Actor{Scope: map[string]bool{scope: true}})
+		ctx, err = c.authenticateScopedContext(ctx, idKey, []string{scope})
+		if err != nil {
+			return nil, err
+		}
+		return ctx, nil
+	}
+
+	// Start background async workers. It is a service, so needs the
+	// stores setup in the context
+	asyncCtx, err := internalServerCtx("async")
+	if err != nil {
+		return err
+	}
+	backend.StartAsyncWorkers(asyncCtx)
 
 	select {}
 }

@@ -111,7 +111,6 @@ func TestRepos_CreateDeleteWorks_lg(t *testing.T) {
 			New: &sourcegraph.ReposCreateOp_NewRepo{
 				URI:      repo,
 				CloneURL: fsServer.Config.Serve.AppURL + "/myrepo",
-				Mirror:   true,
 			},
 		},
 	})

@@ -1,8 +1,6 @@
 package coverageutil
 
-import (
-	"github.com/chris-ramon/douceur/parser"
-)
+import "github.com/chris-ramon/douceur/parser"
 
 // cssTokenizer produces tokens from CSS source code
 type cssTokenizer struct {
@@ -17,15 +15,17 @@ func (s *cssTokenizer) Init(src []byte) {
 
 	text := string(src)
 	s.errors = make([]string, 0)
-	css, err := parser.Parse(text)
-	s.tokens = make([]*Token, 0)
-	s.index = 0
-	s.calcLineOffsets(text)
 
+	css, err := parser.Parse(text)
 	if err != nil {
 		s.errors = append(s.errors, err.Error())
 		return
 	}
+
+	s.tokens = make([]*Token, 0)
+	s.index = 0
+	s.calcLineOffsets(text)
+
 	for _, r := range css.Rules {
 		for _, sel := range r.Selectors {
 			s.tokens = append(s.tokens, &Token{s.byteOffset(sel.Line, sel.Column), sel.Line, sel.Value})

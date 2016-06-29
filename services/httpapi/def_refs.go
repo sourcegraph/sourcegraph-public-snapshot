@@ -2,9 +2,6 @@ package httpapi
 
 import (
 	"net/http"
-	"sort"
-
-	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -119,71 +116,38 @@ func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	// TEMPORARY FIX: refs are not available for the current repo because the HEAD commit
-	// of the default branch of the repo hasn't been built yet after the switch to pgsql
-	// global refs store. Fallback to fetching local repo refs from graph store.
-	//
-	// TODO(slimsag): remove this kludge after migration is complete for all existing repos.
-	containsDefRepo := false
-	for _, refs := range refLocations.RepoRefs {
-		if refs.Repo == def.Repo {
-			containsDefRepo = true
-			break
-		}
-	}
-	if (len(refLocations.RepoRefs) == 0 || !containsDefRepo) && opt.PageOrDefault() == 1 {
-		log15.Debug("Missing local refs on DefInfo", "def", defSpec.String(), "lenRepoRefs", len(refLocations.RepoRefs))
-		// Scope the local repo ref search to the def's commit ID.
-		defSpec.CommitID = def.CommitID
-		refs, err := cl.Defs.ListRefs(ctx, &sourcegraph.DefsListRefsOp{
-			Def: defSpec,
-			Opt: &sourcegraph.DefListRefsOptions{
-				Repo:        defSpec.Repo,
-				ListOptions: opt.ListOptions,
-			},
-		})
-		if err != nil {
-			return err
-		}
-
-		refsPerFile := make(map[string]int32)
-		totalCount := int32(0)
-		for _, ref := range refs.Refs {
-			refsPerFile[ref.File]++
-			totalCount++
-		}
-
-		if totalCount > 0 {
-			fl := sortByRefCount(refsPerFile)
-
-			localRefs := &sourcegraph.DefRepoRef{
-				Repo:  repo.URI,
-				Count: totalCount,
-				Files: fl,
-			}
-
-			refLocations.RepoRefs = append(refLocations.RepoRefs, localRefs)
-			lastIdx := len(refLocations.RepoRefs) - 1
-			refLocations.RepoRefs[0], refLocations.RepoRefs[lastIdx] = refLocations.RepoRefs[lastIdx], refLocations.RepoRefs[0]
-		}
-	}
-
 	return writeJSON(w, refLocations)
 }
 
-type fileList []*sourcegraph.DefFileRef
+func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
+	ctx, cl := handlerutil.Client(r)
 
-func (f fileList) Len() int           { return len(f) }
-func (f fileList) Less(i, j int) bool { return f[i].Count < f[j].Count }
-func (f fileList) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
-
-func sortByRefCount(refsPerFile map[string]int32) fileList {
-	fl := make(fileList, len(refsPerFile))
-	i := 0
-	for k, v := range refsPerFile {
-		fl[i] = &sourcegraph.DefFileRef{Path: k, Count: v}
-		i++
+	var opt sourcegraph.DefsListExamplesOp
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
+		return err
 	}
-	sort.Sort(sort.Reverse(fl))
-	return fl
+
+	dc, repo, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
+	if err != nil {
+		return err
+	}
+
+	def := dc.Def
+	defSpec := sourcegraph.DefSpec{
+		Repo:     repo.ID,
+		Unit:     def.Unit,
+		UnitType: def.UnitType,
+		Path:     def.Path,
+	}
+	opt.Def = defSpec
+
+	opt.ListOptions.PerPage = 3
+	opt.ListOptions.Page = 1
+
+	refLocations, err := cl.Defs.ListExamples(ctx, &opt)
+	if err != nil {
+		return err
+	}
+
+	return writeJSON(w, refLocations)
 }

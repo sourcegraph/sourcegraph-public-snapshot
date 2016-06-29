@@ -23,16 +23,17 @@ type Stores struct {
 	BuildLogs          BuildLogs
 	Builds             Builds
 	Channel            Channel
+	DefExamples        DefExamples
+	Defs               Defs
 	Directory          Directory
 	ExternalAuthTokens ExternalAuthTokens
-	GlobalDefs         GlobalDefs
 	GlobalDeps         GlobalDeps
 	GlobalRefs         GlobalRefs
 	Graph              srcstore.MultiRepoStoreImporterIndexer
 	Orgs               Orgs
 	Password           Password
+	Queue              Queue
 	RepoConfigs        RepoConfigs
-	RepoPerms          RepoPerms
 	RepoStatuses       RepoStatuses
 	RepoVCS            RepoVCS
 	Repos              Repos
@@ -46,16 +47,17 @@ const (
 	_BuildLogsKey
 	_BuildsKey
 	_ChannelKey
+	_DefExamplesKey
+	_DefsKey
 	_DirectoryKey
 	_ExternalAuthTokensKey
-	_GlobalDefsKey
 	_GlobalDepsKey
 	_GlobalRefsKey
 	_GraphKey
 	_OrgsKey
 	_PasswordKey
+	_QueueKey
 	_RepoConfigsKey
-	_RepoPermsKey
 	_RepoStatusesKey
 	_RepoVCSKey
 	_ReposKey
@@ -76,14 +78,17 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	if s.Channel != nil {
 		ctx = WithChannel(ctx, s.Channel)
 	}
+	if s.DefExamples != nil {
+		ctx = WithDefExamples(ctx, s.DefExamples)
+	}
+	if s.Defs != nil {
+		ctx = WithDefs(ctx, s.Defs)
+	}
 	if s.Directory != nil {
 		ctx = WithDirectory(ctx, s.Directory)
 	}
 	if s.ExternalAuthTokens != nil {
 		ctx = WithExternalAuthTokens(ctx, s.ExternalAuthTokens)
-	}
-	if s.GlobalDefs != nil {
-		ctx = WithGlobalDefs(ctx, s.GlobalDefs)
 	}
 	if s.GlobalDeps != nil {
 		ctx = WithGlobalDeps(ctx, s.GlobalDeps)
@@ -100,11 +105,11 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	if s.Password != nil {
 		ctx = WithPassword(ctx, s.Password)
 	}
+	if s.Queue != nil {
+		ctx = WithQueue(ctx, s.Queue)
+	}
 	if s.RepoConfigs != nil {
 		ctx = WithRepoConfigs(ctx, s.RepoConfigs)
-	}
-	if s.RepoPerms != nil {
-		ctx = WithRepoPerms(ctx, s.RepoPerms)
 	}
 	if s.RepoStatuses != nil {
 		ctx = WithRepoStatuses(ctx, s.RepoStatuses)
@@ -177,6 +182,34 @@ func ChannelFromContext(ctx context.Context) Channel {
 	return s
 }
 
+// WithDefExamples returns a copy of parent with the given DefExamples store.
+func WithDefExamples(parent context.Context, s DefExamples) context.Context {
+	return context.WithValue(parent, _DefExamplesKey, s)
+}
+
+// DefExamplesFromContext gets the context's DefExamples store. If the store is not present, it panics.
+func DefExamplesFromContext(ctx context.Context) DefExamples {
+	s, ok := ctx.Value(_DefExamplesKey).(DefExamples)
+	if !ok || s == nil {
+		panic("no DefExamples set in context")
+	}
+	return s
+}
+
+// WithDefs returns a copy of parent with the given Defs store.
+func WithDefs(parent context.Context, s Defs) context.Context {
+	return context.WithValue(parent, _DefsKey, s)
+}
+
+// DefsFromContext gets the context's Defs store. If the store is not present, it panics.
+func DefsFromContext(ctx context.Context) Defs {
+	s, ok := ctx.Value(_DefsKey).(Defs)
+	if !ok || s == nil {
+		panic("no Defs set in context")
+	}
+	return s
+}
+
 // WithDirectory returns a copy of parent with the given Directory store.
 func WithDirectory(parent context.Context, s Directory) context.Context {
 	return context.WithValue(parent, _DirectoryKey, s)
@@ -201,20 +234,6 @@ func ExternalAuthTokensFromContext(ctx context.Context) ExternalAuthTokens {
 	s, ok := ctx.Value(_ExternalAuthTokensKey).(ExternalAuthTokens)
 	if !ok || s == nil {
 		panic("no ExternalAuthTokens set in context")
-	}
-	return s
-}
-
-// WithGlobalDefs returns a copy of parent with the given GlobalDefs store.
-func WithGlobalDefs(parent context.Context, s GlobalDefs) context.Context {
-	return context.WithValue(parent, _GlobalDefsKey, s)
-}
-
-// GlobalDefsFromContext gets the context's GlobalDefs store. If the store is not present, it panics.
-func GlobalDefsFromContext(ctx context.Context) GlobalDefs {
-	s, ok := ctx.Value(_GlobalDefsKey).(GlobalDefs)
-	if !ok || s == nil {
-		panic("no GlobalDefs set in context")
 	}
 	return s
 }
@@ -289,6 +308,20 @@ func PasswordFromContext(ctx context.Context) Password {
 	return s
 }
 
+// WithQueue returns a copy of parent with the given Queue store.
+func WithQueue(parent context.Context, s Queue) context.Context {
+	return context.WithValue(parent, _QueueKey, s)
+}
+
+// QueueFromContext gets the context's Queue store. If the store is not present, it panics.
+func QueueFromContext(ctx context.Context) Queue {
+	s, ok := ctx.Value(_QueueKey).(Queue)
+	if !ok || s == nil {
+		panic("no Queue set in context")
+	}
+	return s
+}
+
 // WithRepoConfigs returns a copy of parent with the given RepoConfigs store.
 func WithRepoConfigs(parent context.Context, s RepoConfigs) context.Context {
 	return context.WithValue(parent, _RepoConfigsKey, s)
@@ -299,20 +332,6 @@ func RepoConfigsFromContext(ctx context.Context) RepoConfigs {
 	s, ok := ctx.Value(_RepoConfigsKey).(RepoConfigs)
 	if !ok || s == nil {
 		panic("no RepoConfigs set in context")
-	}
-	return s
-}
-
-// WithRepoPerms returns a copy of parent with the given RepoPerms store.
-func WithRepoPerms(parent context.Context, s RepoPerms) context.Context {
-	return context.WithValue(parent, _RepoPermsKey, s)
-}
-
-// RepoPermsFromContext gets the context's RepoPerms store. If the store is not present, it panics.
-func RepoPermsFromContext(ctx context.Context) RepoPerms {
-	s, ok := ctx.Value(_RepoPermsKey).(RepoPerms)
-	if !ok || s == nil {
-		panic("no RepoPerms set in context")
 	}
 	return s
 }

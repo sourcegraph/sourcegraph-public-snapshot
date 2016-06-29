@@ -17,7 +17,7 @@ func TestWorker_BuildRepo_noSrclib_pass(t *testing.T) {
 	}
 
 	_, done, build, buildLog := testWorker_buildRepo(t, map[string]string{
-		".drone.yml": `
+		".sg-drone.yml": `
 build:
   image: library/alpine:3.2
   commands:
@@ -41,7 +41,7 @@ func TestWorker_BuildRepo_noSrclib_fail(t *testing.T) {
 	}
 
 	_, done, build, buildLog := testWorker_buildRepo(t, map[string]string{
-		".drone.yml": `
+		".sg-drone.yml": `
 build:
   image: library/alpine:3.2
   commands:
@@ -72,7 +72,7 @@ func TestWorker_BuildRepo_srclibExplicit_pass(t *testing.T) {
 
 	ctx, done, build, buildLog := testWorker_buildRepo(t, map[string]string{
 		"f": "f",
-		".drone.yml": `
+		".sg-drone.yml": `
 build:
   srclib-sample:
     image: ` + sampleImage + `

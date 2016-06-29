@@ -22,16 +22,17 @@ type Stores struct {
 	BuildLogs          BuildLogs
 	Builds             Builds
 	Channel            Channel
+	DefExamples        DefExamples
+	Defs               Defs
 	Directory          Directory
 	ExternalAuthTokens ExternalAuthTokens
-	GlobalDefs         GlobalDefs
 	GlobalDeps         GlobalDeps
 	GlobalRefs         GlobalRefs
 	Graph              srcstore.MockMultiRepoStore
 	Orgs               Orgs
 	Password           Password
+	Queue              Queue
 	RepoConfigs        RepoConfigs
-	RepoPerms          RepoPerms
 	RepoStatuses       RepoStatuses
 	RepoVCS            RepoVCS
 	Repos              Repos
@@ -44,16 +45,17 @@ func (s *Stores) Stores() store.Stores {
 		BuildLogs:          &s.BuildLogs,
 		Builds:             &s.Builds,
 		Channel:            &s.Channel,
+		DefExamples:        &s.DefExamples,
+		Defs:               &s.Defs,
 		Directory:          &s.Directory,
 		ExternalAuthTokens: &s.ExternalAuthTokens,
-		GlobalDefs:         &s.GlobalDefs,
 		GlobalDeps:         &s.GlobalDeps,
 		GlobalRefs:         &s.GlobalRefs,
 		Graph:              &s.Graph,
 		Orgs:               &s.Orgs,
 		Password:           &s.Password,
+		Queue:              &s.Queue,
 		RepoConfigs:        &s.RepoConfigs,
-		RepoPerms:          &s.RepoPerms,
 		RepoStatuses:       &s.RepoStatuses,
 		RepoVCS:            &s.RepoVCS,
 		Repos:              &s.Repos,

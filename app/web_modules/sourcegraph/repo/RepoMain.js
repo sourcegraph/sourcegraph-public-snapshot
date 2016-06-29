@@ -14,10 +14,18 @@ import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import {trimRepo} from "sourcegraph/repo";
 import context from "sourcegraph/app/context";
 import {guessBranchName} from "sourcegraph/build/Build";
-
 import Header from "sourcegraph/components/Header";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 const TREE_SEARCH_MODAL_NAME = "TreeSearch";
+
+function repoPageTitle(repo: Object): string {
+	let title = trimRepo(repo.URI);
+	if (repo.Description) {
+		title += `: ${repo.Description.slice(0, 40)}${repo.Description.length > 40 ? "..." : ""}`;
+	}
+	return title;
+}
 
 class RepoMain extends React.Component {
 	static propTypes = {
@@ -37,6 +45,7 @@ class RepoMain extends React.Component {
 
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
+		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props) {
@@ -153,30 +162,27 @@ class RepoMain extends React.Component {
 		}
 	}
 
-	// canonicalURL returns the canonical URL for current page.
-	canonicalURL(): string {
-		// HACK: Assume that default branch name is always "master". This may not always be true,
-		//       but it is for most git repos. Try this first, since it'll be accurate for most
-		//       repos, and figure out the actual default branch later as a followup.
-		let path = this.props.location.pathname.replace("@master/", "/");
-		return `https://sourcegraph.com${path}`;
-	}
-
 	render() {
 		const err = (this.props.repoResolution && this.props.repoResolution.Error) || (this.props.repoObj && this.props.repoObj.Error);
 		if (err) {
 			let msg;
 			if (err.response && err.response.status === 401) {
+				this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_ERROR, "ViewRepoMainError", {repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "401"});
 				msg = `Sign in to add repositories.`;
 			} else if (err.response && err.response.status === 404) {
+				this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_ERROR, "ViewRepoMainError", {repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404"});
 				msg = `Repository not found.`;
 			} else {
 				msg = `Repository is not available.`;
 			}
+
 			return (
-				<Header
-					title={`${httpStatusCode(err)}`}
-					subtitle={msg} />
+				<div>
+				<Helmet title={"Sourcegraph - Not Found"} />
+					<Header
+						title={`${httpStatusCode(err)}`}
+						subtitle={msg} />
+				</div>
 			);
 		}
 
@@ -197,27 +203,16 @@ class RepoMain extends React.Component {
 			);
 		}
 
-		let description = null;
-		if (this.props.repoObj && this.props.repoObj.Description && this.props.repoObj.Description.length > 159) {
-			description = this.props.repoObj.Description.substr(0, 159).concat("…");
-		}
+		// Determine if the repo route is the main route (not one of its
+		// children like DefInfo, for example).
+		const mainRoute = this.props.routes[this.props.routes.length - 1];
+		const isMainRoute = mainRoute === this.props.route.indexRoute || mainRoute === this.props.route.indexRoute;
+		const title = this.props.repoObj && !this.props.repoObj.Error ? repoPageTitle(this.props.repoObj) : null;
+
 		return (
-			<div>
-				{description ?
-					<Helmet
-						title={trimRepo(this.props.repo)}
-						meta={[
-							{name: "description", content: description},
-						]}
-						link={[
-							{rel: "canonical", href: this.canonicalURL()},
-						]} /> :
-					<Helmet
-						title={trimRepo(this.props.repo)}
-						link={[
-							{rel: "canonical", href: this.canonicalURL()},
-						]} />
-				}
+			<div styleName="outer-container">
+				{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
+				{isMainRoute && title && <Helmet title={title} />}
 				{this.props.main}
 				{(!this.props.route || !this.props.route.disableTreeSearchOverlay) && this.props.location.state && this.props.location.state.modal === TREE_SEARCH_MODAL_NAME &&
 					<Modal onDismiss={this._dismissTreeSearchModal}>

@@ -1,1 +1,0 @@
-a{padding-top:1px;padding-right:1px;padding-bottom:1px}

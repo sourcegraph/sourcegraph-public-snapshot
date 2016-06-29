@@ -15,7 +15,7 @@ After installing PostgreSQL, set up up a `sourcegraph` user and database:
 ```
 sudo su - postgres # this line only needed for Linux
 createuser --superuser sourcegraph
-sql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
+psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
 createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
 ```
 

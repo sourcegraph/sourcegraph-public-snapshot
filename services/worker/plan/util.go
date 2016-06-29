@@ -10,7 +10,7 @@ func buildLogMsg(title, msg string) droneyaml.BuildItem {
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
 				Image:       "library/alpine:3.2",
-				Environment: droneyaml.MapEqualSlice{"MSG=" + msg},
+				Environment: droneyaml.MapEqualSlice([]string{"MSG=" + msg}),
 			},
 			Commands: []string{`echo "$MSG"`},
 		},

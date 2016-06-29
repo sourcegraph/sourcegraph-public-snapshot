@@ -1,1 +1,0 @@
-a{border-color:rgba(255,255,255,0) rgba(255,255,255,0) rgba(255,255,255,0) #fd0}b{border-color:rgba(0,0,0,.2) rgba(0,0,0,.1) rgba(0,0,0,.2) rgba(0,0,0,.1)}c{border-color:hsl(0,0%,10%) #000 rgba(127,127,127,.5) hsla(0,10%,10%,.1)}

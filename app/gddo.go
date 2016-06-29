@@ -15,7 +15,7 @@ import (
 
 func init() {
 	if feature.Features.GodocRefs {
-		internal.Handlers[router.GDDORefs] = serveGDDORefs
+		internal.Handlers[router.GDDORefs] = internal.Handler(serveGDDORefs)
 	}
 }
 

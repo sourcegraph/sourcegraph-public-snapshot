@@ -19,9 +19,11 @@ import {urlToBlob} from "sourcegraph/blob/routes";
 import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import {RepoLink} from "sourcegraph/components";
-import {TriangleRightIcon, TriangleDownIcon} from "sourcegraph/components/Icons";
+import {FaAngleDown, FaAngleRight} from "sourcegraph/components/Icons";
 import breadcrumb from "sourcegraph/util/breadcrumb";
+import stripDomain from "sourcegraph/util/stripDomain";
 import styles from "./styles/Refs.css";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above/below a ref
 
@@ -39,6 +41,8 @@ export default class RefsContainer extends Container {
 		refetch: React.PropTypes.bool,
 		initNumSnippets: React.PropTypes.number, // number of snippets to initially expand
 		fileCollapseThreshold: React.PropTypes.number, // number of files to show before "and X more..."-style paginator
+		rangeLimit: React.PropTypes.number,
+		showRepoTitle: React.PropTypes.bool,
 	};
 
 	static contextTypes = {
@@ -88,34 +92,17 @@ export default class RefsContainer extends Container {
 		state.commitID = props.commitID || null;
 		state.def = props.def || null;
 		state.defObj = props.defObj || null;
+		state.showRepoTitle = props.showRepoTitle || false;
 
 		state.refRepo = props.repoRefs.Repo || null;
 		state.refRev = state.refRepo === state.repo ? state.rev : null;
 		state.repoRefLocations = props.repoRefs || null;
+		state.rangeLimit = props.rangeLimit || null;
 		if (state.repoRefLocations) {
 			state.fileLocations = state.repoRefLocations.Files;
-			// TODO state.fileLocations = state.fileLocations.sort((a, b) => b.Count - a.Count); // flatten
 		}
 
 		state.refs = props.refs || DefStore.refs.get(state.repo, state.rev, state.def, state.refRepo, null);
-		if (state.refs && !state.refs.Error && state.fileLocations) {
-			// TODO: cleanup data fetching logic so this doesn't need to be handled as a special case...
-			// state.refs does *not* include the def itself, and this component fetches blobs based on
-			// file locations of state.refs; however, state.fileLocations comes from the ref-locations
-			// endpoint and *does* include the file location of the def.  Once refs are fetched,
-			// prune state.fileLocations to include only files which have non-def refs.
-			// This also resolves an issue where refs pagination causes some of the refLocations
-			// files to not be fetched (since no refs match these file locations).
-			const fileIndex = {};
-			state.refs.forEach((ref) => fileIndex[ref.File] = true);
-
-			const fileIndexExclusions = {};
-			state.fileLocations = state.fileLocations.filter((loc, i) => {
-				if (fileIndex[loc.Path]) return true;
-				fileIndexExclusions[i] = true;
-				return false;
-			});
-		}
 
 		if (state.fileLocations && !state.initExpanded) {
 			// Auto-expand N snippets by default.
@@ -180,12 +167,8 @@ export default class RefsContainer extends Container {
 	}
 
 	onStateTransition(prevState, nextState) {
-		// optimization: since multiple RefContainers may be shown on a page, fetching refs for every container
-		// when the component is mounted will cause unnecessary re-render cycles across components.
-		// Instead, lazily fetch ref data on mouseover.
 		const refPropsUpdated = prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def || prevState.refRepo !== nextState.refRepo;
-		const initialLoad = !prevState.repo && !prevState.rev && !prevState.commitID && !prevState.def && !prevState.refRepo;
-		if ((initialLoad && nextState.prefetch) || (refPropsUpdated && !initialLoad) || (nextState.mouseover && !prevState.mouseover)) {
+		if (refPropsUpdated) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.repo, nextState.rev, nextState.def, nextState.refRepo));
 		}
 
@@ -206,25 +189,33 @@ export default class RefsContainer extends Container {
 	}
 
 	renderFileHeader(repo, rev, path, count, i) {
+		let trimmedPath = stripDomain(repo);
+		trimmedPath = trimmedPath.concat("/", path);
 		let pathBreadcrumb = breadcrumb(
-			path,
-			(j) => <span key={j} className={styles.sep}> / </span>,
-			(_, component, j, isLast) => <span className={styles.pathPart} key={j}>{component}</span>
+			trimmedPath,
+			(j) => <span key={j}> / </span>,
+			(_, component, j, isLast) => {
+				let span = <span key={j}>{component}</span>;
+				if (isLast) {
+					return <Link className={styles.pathEnd} to={urlToBlob(repo, rev, path)} key={j}> {span} </Link>;
+				}
+				return span;
+			}
 		);
 		return (
 			<div key={path} className={styles.filename} onClick={(e) => {
 				if (e.button !== 0) return; // only expand on main button click
 				this._toggleFile(path);
 			}}>
-				{this.state.shownFiles.has(path) ? <TriangleDownIcon className={styles.toggleIcon} /> : <TriangleRightIcon className={styles.toggleIcon} />}
+				<div className={styles.breadcrumbIcon}>
+					{this.state.shownFiles.has(path) ? <FaAngleDown className={styles.toggleIcon} /> : <FaAngleRight className={styles.toggleIcon} />}
+				</div>
 				<div className={styles.pathContainer}>
 					{pathBreadcrumb}
-					<span className={styles.refsLabel}>{`${count} ref${count > 1 ? "s" : ""}`}</span>
+					{count &&
+						<span className={styles.refsLabel}>{`${count} ref${count > 1 ? "s" : ""}`}</span>
+					}
 				</div>
-				<Link className={styles.viewFile}
-					to={urlToBlob(repo, rev, path)}>
-					<span className={styles.pageLink}>View</span>
-				</Link>
 			</div>
 		);
 	}
@@ -242,7 +233,7 @@ export default class RefsContainer extends Container {
 			newOpenFiles.delete(path);
 		} else {
 			newOpenFiles.add(path);
-			this.context.eventLogger.logEvent("RefsFileExpanded");
+			this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REFERENCES, AnalyticsConstants.ACTION_TOGGLE, "RefsFileExpanded", {repo: this.props.repo, def: this.props.def});
 		}
 		this.setState({shownFiles: newOpenFiles});
 	}
@@ -259,35 +250,56 @@ export default class RefsContainer extends Container {
 		}
 
 		return (
+			<div>
+			{this.state.showRepoTitle &&
+				<h2 className={styles.repo}>
+					<RepoLink className={styles.repoLink} repo={this.state.refRepo} />
+				</h2>
+			}
 			<div className={styles.container}
-				onMouseOver={() => this.setState({mouseover: true, mouseout: false})}
-				onMouseOut={() => this.setState({mouseover: false, mouseout: true})}>
+				onMouseEnter={() => {
+					if (!this.state.mouseover) this.setState({mouseover: true, mouseout: false});
+				}}
+				onMouseLeave={() => this.setState({mouseover: false, mouseout: true})}
+				onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}>
 				{/* mouseover state is for optimization which will only re-render the moused-over blob when a def is highlighted */}
 				{/* this is important since there may be many ref containers on the page */}
 				<div>
-					<h2 className={styles.repo}>
-						<RepoLink className={styles.repoLink} repo={this.state.refRepo} />
-					</h2>
 					<div className={styles.refs}>
 						{this.state.fileLocations && this.state.fileLocations.map((loc, i) => {
 							if (!this.state.showAllFiles && i >= this.state.fileCollapseThreshold) return null;
 							if (!this.state.shownFiles.has(loc.Path)) return this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i);
 
+							let err;
 							let file = this.filesByName ? this.filesByName[loc.Path] : null;
+							if (file && file.Error) {
+								switch (file.Error.response.status) {
+								case 413:
+									err = "Sorry, this file is too large to display.";
+									break;
+								default:
+									err = "File is not available.";
+								}
+							}
+							if (this.state.refs && this.state.refs.Error) {
+								err = `Error loading references for ${loc.Path}.`;
+							} else if (this.state.refs && this.state.refs.filter((r) => r.File === loc.Path).length === 0) {
+								err = `No references found for ${loc.Path}`;
+							}
+
+							if (err) {
+								return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<p className={styles.fileError}>{err}</p></div>;
+							}
 							if (!file) {
 								return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<BlobContentPlaceholder key={i} numLines={10} /></div>;
 							}
-							if (file.Error) {
-								let msg;
-								switch (file.Error.response.status) {
-								case 413:
-									msg = "Sorry, this file is too large to display.";
-									break;
-								default:
-									msg = "File is not available.";
-								}
-								return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<p className={styles.fileError}>{msg}</p></div>;
+
+							let ranges = this.ranges[loc.Path];
+							if (this.state.rangeLimit) {
+								ranges = ranges.slice(0, this.state.rangeLimit);
+								ranges.map((r) => [r[0], Math.min(r[0] + 10, r[1])]);
 							}
+
 							return (
 								<div key={i}>
 									{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}
@@ -301,7 +313,7 @@ export default class RefsContainer extends Container {
 										activeDefRepo={this.state.repo}
 										activeDef={this.state.def}
 										lineNumbers={true}
-										displayRanges={this.ranges[loc.Path] || null}
+										displayRanges={ranges || null}
 										highlightedDef={this.state.highlightedDef || null}
 										highlightedDefObj={this.state.highlightedDefObj || null} />
 								</div>
@@ -310,12 +322,13 @@ export default class RefsContainer extends Container {
 					</div>
 					{!this.state.showAllFiles && this.state.fileLocations && this.state.fileLocations.length > this.state.fileCollapseThreshold &&
 						<div className={styles.filename} onClick={() => this.setState({showAllFiles: true})}>
-							<TriangleRightIcon className={styles.toggleIcon} />
+							<FaAngleRight className={styles.toggleIcon} />
 							{this.paginatorText()}
 						</div>
 					}
 				</div>
 				{this.state.highlightedDefObj && !this.state.highlightedDefObj.Error && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
+			</div>
 			</div>
 		);
 	}

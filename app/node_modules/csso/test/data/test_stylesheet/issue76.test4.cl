@@ -1,1 +1,0 @@
-b,c{color:red}a{margin:2px 1px}

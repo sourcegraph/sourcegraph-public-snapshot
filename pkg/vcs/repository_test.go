@@ -349,8 +349,8 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 			Name: "b0", Head: "c4a53701494d1d788b1ceeb8bf32e90224962473",
 			Commit: &vcs.Commit{
 				ID:        "c4a53701494d1d788b1ceeb8bf32e90224962473",
-				Author:    vcs.Signature{"b", "b@b.com", mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-				Committer: &vcs.Signature{"b", "b@b.com", mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Author:    vcs.Signature{Name: "b", Email: "b@b.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Committer: &vcs.Signature{Name: "b", Email: "b@b.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 				Message:   "foo1",
 				Parents:   []vcs.CommitID{"a3c1537db9797215208eec56f8e7c9c37f8358ca"},
 			},
@@ -359,8 +359,8 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 			Name: "master", Head: "a3c1537db9797215208eec56f8e7c9c37f8358ca",
 			Commit: &vcs.Commit{
 				ID:        "a3c1537db9797215208eec56f8e7c9c37f8358ca",
-				Author:    vcs.Signature{"a", "a@a.com", mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-				Committer: &vcs.Signature{"a", "a@a.com", mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Committer: &vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 				Message:   "foo0",
 				Parents:   nil,
 			},
@@ -437,8 +437,8 @@ func TestRepository_GetCommit(t *testing.T) {
 	}
 	wantGitCommit := &vcs.Commit{
 		ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-		Author:    vcs.Signature{"a", "a@a.com", mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-		Committer: &vcs.Signature{"c", "c@c.com", mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+		Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+		Committer: &vcs.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 		Message:   "bar",
 		Parents:   []vcs.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 	}
@@ -486,15 +486,15 @@ func TestRepository_Commits(t *testing.T) {
 	wantGitCommits := []*vcs.Commit{
 		{
 			ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			Author:    vcs.Signature{"a", "a@a.com", mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-			Committer: &vcs.Signature{"c", "c@c.com", mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+			Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+			Committer: &vcs.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 			Message:   "bar",
 			Parents:   []vcs.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 		},
 		{
 			ID:        "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
-			Author:    vcs.Signature{"a", "a@a.com", mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Committer: &vcs.Signature{"a", "a@a.com", mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Committer: &vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Message:   "foo",
 			Parents:   nil,
 		},
@@ -561,8 +561,8 @@ func TestRepository_Commits_options(t *testing.T) {
 	wantGitCommits := []*vcs.Commit{
 		{
 			ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			Author:    vcs.Signature{"a", "a@a.com", mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-			Committer: &vcs.Signature{"c", "c@c.com", mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+			Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+			Committer: &vcs.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 			Message:   "bar",
 			Parents:   []vcs.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 		},
@@ -570,8 +570,8 @@ func TestRepository_Commits_options(t *testing.T) {
 	wantGitCommits2 := []*vcs.Commit{
 		{
 			ID:        "ade564eba4cf904492fb56dcd287ac633e6e082c",
-			Author:    vcs.Signature{"a", "a@a.com", mustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
-			Committer: &vcs.Signature{"c", "c@c.com", mustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
+			Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
+			Committer: &vcs.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
 			Message:   "qux",
 			Parents:   []vcs.CommitID{"b266c7e3ca00b1a17ad0b1449825d0854225c007"},
 		},
@@ -645,8 +645,8 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	wantGitCommits := []*vcs.Commit{
 		{
 			ID:        "546a3ef26e581624ef997cb8c0ba01ee475fc1dc",
-			Author:    vcs.Signature{"a", "a@a.com", mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Committer: &vcs.Signature{"a", "a@a.com", mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Committer: &vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Message:   "commit2",
 			Parents:   []vcs.CommitID{"a04652fa1998a0a7d2f2f77ecb7021de943d3aab"},
 		},
@@ -940,7 +940,7 @@ func TestRepository_FileSystem(t *testing.T) {
 			t.Errorf("%s: fs2.Stat(dir1/file1): %s", label, err)
 			continue
 		}
-		file1, err = fs2.Open("dir1/file1")
+		_, err = fs2.Open("dir1/file1")
 		if err != nil {
 			t.Errorf("%s: fs2.Open(dir1/file1): %s", label, err)
 			continue
@@ -985,6 +985,78 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 		if file1Info := dir1Entries[0]; file1Info.Name() != "file1" {
 			t.Errorf("%s: got dir1 entry name == %q, want 'file1'", label, file1Info.Name())
+		}
+	}
+}
+
+func TestRepository_FileSystem_quoteChars(t *testing.T) {
+	t.Parallel()
+
+	// The repo contains 3 files: one whose filename includes a
+	// non-ASCII char, one whose filename contains a double quote, and
+	// one whose filename contains a backslash. These should be parsed
+	// and unquoted properly.
+	//
+	// Filenames with double quotes are always quoted in some versions
+	// of git, so we might encounter quoted paths even if
+	// core.quotepath is off. We test twice, with it both on AND
+	// off. (Note: Although
+	// https://www.kernel.org/pub/software/scm/git/docs/git-config.html
+	// says that double quotes, backslashes, and single quotes are
+	// always quoted, this is not true on all git versions, such as
+	// @sqs's current git version 2.7.0.)
+	wantNames := []string{"⊗.txt", `".txt`, `\.txt`}
+	sort.Strings(wantNames)
+	gitCommands := []string{
+		`touch ⊗.txt '".txt' \\.txt`,
+		`git add ⊗.txt '".txt' \\.txt`,
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+	tests := map[string]struct {
+		repo vcs.Repository
+	}{
+		"git cmd (quotepath=on)": {
+			repo: makeGitRepositoryCmd(t, append([]string{"git config core.quotepath on"}, gitCommands...)...),
+		},
+		"git cmd (quotepath=off)": {
+			repo: makeGitRepositoryCmd(t, append([]string{"git config core.quotepath off"}, gitCommands...)...),
+		},
+	}
+
+	for label, test := range tests {
+		commitID, err := test.repo.ResolveRevision("master")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		fs := vcs.FileSystem(test.repo, commitID)
+
+		entries, err := fs.ReadDir(".")
+		if err != nil {
+			t.Errorf("%s: fs.ReadDir(.): %s", label, err)
+			continue
+		}
+		names := make([]string, len(entries))
+		for i, e := range entries {
+			names[i] = e.Name()
+		}
+		sort.Strings(names)
+
+		if !reflect.DeepEqual(names, wantNames) {
+			t.Errorf("%s: got names %v, want %v", label, names, wantNames)
+			continue
+		}
+
+		for _, name := range wantNames {
+			stat, err := fs.Stat(name)
+			if err != nil {
+				t.Errorf("%s: Stat(%q): %s", label, name, err)
+				continue
+			}
+			if stat.Name() != name {
+				t.Errorf("%s: got Name == %q, want %q", label, stat.Name(), name)
+				continue
+			}
 		}
 	}
 }

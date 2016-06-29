@@ -101,6 +101,17 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 		b.Priority += 20
 	}
 
+	// If this is the first ever build for a repo, give it a high priority
+	hasBuild, err := s.List(ctx, &sourcegraph.BuildListOptions{
+		Repo: repo.ID,
+		ListOptions: sourcegraph.ListOptions{
+			PerPage: 1,
+		},
+	})
+	if err == nil && len(hasBuild.Builds) == 0 {
+		b.Priority += 20
+	}
+
 	b, err = store.BuildsFromContext(ctx).Create(ctx, b)
 	if err != nil {
 		return nil, err

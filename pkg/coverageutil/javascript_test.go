@@ -30,7 +30,7 @@ func TestJavaScript(testing *testing.T) {
 			},
 			{
 				"regular expressions and comments",
-				"/abc/ /abc/d a / b //abcdef\nccc",
+				"/abc/ /abc/d a / b //abcdef\nccc\n /* // abc */",
 				[]Token{{13, 1, "a"}, {17, 1, "b"}, {28, 2, "ccc"}},
 			},
 		})

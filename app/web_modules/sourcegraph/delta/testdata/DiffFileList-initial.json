@@ -1,117 +1,57 @@
 {
 	"renderOutput": {
-		"type": "div",
+		"type": "WrappedComponent",
 		"props": {
-			"className": "file-list",
+			"styleName": "container",
 			"children": [
 				{
-					"type": "a",
+					"type": "div",
 					"props": {
-						"className": "file-list-header",
+						"styleName": "header",
 						"children": [
 							{
-								"type": "i",
+								"type": "WrappedComponent",
 								"props": {
-									"className": "fa fa-icon fa-minus-square-o"
-								}
-							},
-							{
-								"type": "b",
-								"props": {
-									"children": [
-										"Files"
-									]
-								}
-							},
-							" ",
-							{
-								"type": "span",
-								"props": {
-									"className": "count",
-									"children": [
-										"( 3 )"
-									]
-								}
-							},
-							{
-								"type": "span",
-								"props": {
-									"className": "pull-right stats",
 									"children": [
 										{
-											"type": "span",
+											"type": "div",
+											"key": ".0",
 											"props": {
-												"className": "additions-color",
-												"children": [
-													"+5"
-												]
-											}
-										},
-										{
-											"type": "span",
-											"props": {
-												"className": "deletions-color",
-												"children": [
-													"-7"
-												]
-											}
-										}
-									]
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "ul",
-					"props": {
-						"className": "file-list-items",
-						"children": [
-							{
-								"type": "li",
-								"key": "ab",
-								"props": {
-									"className": "file-list-item",
-									"children": [
-										{
-											"type": "a",
-											"props": {
-												"href": "#F0",
+												"styleName": "label",
 												"children": [
 													{
-														"type": "code",
+														"type": "WrappedComponent",
+														"key": ".0",
 														"props": {
-															"className": "change-type changes-color",
-															"children": [
-																"•"
-															]
+															"Stat": {
+																"Added": 5,
+																"Changed": 6,
+																"Deleted": 7
+															}
 														}
 													},
 													{
 														"type": "span",
+														"key": ".1",
 														"props": {
+															"styleName": "count",
 															"children": [
-																"a ",
-																{
-																	"type": "i",
-																	"props": {
-																		"className": "fa fa-icon fa-long-arrow-right"
-																	}
-																},
-																" "
+																"3"
 															]
 														}
 													},
-													"b",
+													" changed files",
 													{
-														"type": "div",
+														"type": "span",
+														"key": ".3",
 														"props": {
-															"className": "pull-right stats",
+															"styleName": "overall-stats",
 															"children": [
 																{
 																	"type": "span",
+																	"key": ".0",
 																	"props": {
-																		"className": "additions-color",
+																		"styleName": "stat added",
 																		"children": [
 																			"+5"
 																		]
@@ -119,147 +59,212 @@
 																},
 																{
 																	"type": "span",
+																	"key": ".1",
 																	"props": {
-																		"className": "deletions-color",
+																		"styleName": "stat deleted",
 																		"children": [
-																			"-7"
+																			"–7"
 																		]
-																	}
-																},
-																{
-																	"type": "DiffStatScale",
-																	"props": {
-																		"Stat": {
-																			"Added": 5,
-																			"Changed": 6,
-																			"Deleted": 7
-																		}
 																	}
 																}
 															]
 														}
+													},
+													" ",
+													{
+														"type": "WrappedComponent",
+														"key": ".5",
+														"props": {}
 													}
 												]
 											}
-										}
-									]
-								}
-							},
-							{
-								"type": "li",
-								"key": "/dev/nullb",
-								"props": {
-									"className": "file-list-item",
-									"children": [
+										},
 										{
-											"type": "a",
+											"type": "WrappedComponent",
+											"key": ".1",
 											"props": {
-												"href": "#F1",
 												"children": [
 													{
-														"type": "code",
-														"props": {
-															"className": "change-type additions-color",
-															"children": [
-																"+"
-															]
-														}
-													},
-													"b",
-													{
 														"type": "div",
+														"key": ".$ab",
 														"props": {
-															"className": "pull-right stats",
+															"styleName": "file-item",
 															"children": [
 																{
-																	"type": "span",
+																	"type": "a",
+																	"key": ".0",
 																	"props": {
-																		"className": "additions-color",
+																		"href": "#F0",
+																		"styleName": "file",
 																		"children": [
-																			"+5"
+																			{
+																				"type": "code",
+																				"key": ".2",
+																				"props": {
+																					"styleName": "change-type changed",
+																					"children": [
+																						"•"
+																					]
+																				}
+																			},
+																			{
+																				"type": "span",
+																				"key": ".3",
+																				"props": {
+																					"children": [
+																						"a → "
+																					]
+																				}
+																			},
+																			"b"
 																		]
 																	}
 																},
 																{
 																	"type": "span",
+																	"key": ".1",
 																	"props": {
-																		"className": "deletions-color",
+																		"styleName": "file-stats",
 																		"children": [
-																			"-7"
+																			{
+																				"type": "span",
+																				"key": ".0",
+																				"props": {
+																					"styleName": "stat added",
+																					"children": [
+																						"+5"
+																					]
+																				}
+																			},
+																			{
+																				"type": "span",
+																				"key": ".1",
+																				"props": {
+																					"styleName": "stat deleted",
+																					"children": [
+																						"–7"
+																					]
+																				}
+																			}
 																		]
-																	}
-																},
-																{
-																	"type": "DiffStatScale",
-																	"props": {
-																		"Stat": {
-																			"Added": 5,
-																			"Changed": 6,
-																			"Deleted": 7
-																		}
 																	}
 																}
 															]
 														}
-													}
-												]
-											}
-										}
-									]
-								}
-							},
-							{
-								"type": "li",
-								"key": "a/dev/null",
-								"props": {
-									"className": "file-list-item",
-									"children": [
-										{
-											"type": "a",
-											"props": {
-												"href": "#F2",
-												"children": [
+													},
 													{
-														"type": "code",
+														"type": "div",
+														"key": ".$/dev/nullb",
 														"props": {
-															"className": "change-type deletions-color",
+															"styleName": "file-item",
 															"children": [
-																"−"
+																{
+																	"type": "a",
+																	"key": ".0",
+																	"props": {
+																		"href": "#F1",
+																		"styleName": "file",
+																		"children": [
+																			{
+																				"type": "code",
+																				"key": ".0",
+																				"props": {
+																					"styleName": "change-type added",
+																					"children": [
+																						"+"
+																					]
+																				}
+																			},
+																			"b"
+																		]
+																	}
+																},
+																{
+																	"type": "span",
+																	"key": ".1",
+																	"props": {
+																		"styleName": "file-stats",
+																		"children": [
+																			{
+																				"type": "span",
+																				"key": ".0",
+																				"props": {
+																					"styleName": "stat added",
+																					"children": [
+																						"+5"
+																					]
+																				}
+																			},
+																			{
+																				"type": "span",
+																				"key": ".1",
+																				"props": {
+																					"styleName": "stat deleted",
+																					"children": [
+																						"–7"
+																					]
+																				}
+																			}
+																		]
+																	}
+																}
 															]
 														}
 													},
-													"a",
 													{
 														"type": "div",
+														"key": ".$a/dev/null",
 														"props": {
-															"className": "pull-right stats",
+															"styleName": "file-item",
 															"children": [
 																{
-																	"type": "span",
+																	"type": "a",
+																	"key": ".0",
 																	"props": {
-																		"className": "additions-color",
+																		"href": "#F2",
+																		"styleName": "file",
 																		"children": [
-																			"+5"
+																			{
+																				"type": "code",
+																				"key": ".1",
+																				"props": {
+																					"styleName": "change-type deleted",
+																					"children": [
+																						"–"
+																					]
+																				}
+																			},
+																			"a"
 																		]
 																	}
 																},
 																{
 																	"type": "span",
+																	"key": ".1",
 																	"props": {
-																		"className": "deletions-color",
+																		"styleName": "file-stats",
 																		"children": [
-																			"-7"
+																			{
+																				"type": "span",
+																				"key": ".0",
+																				"props": {
+																					"styleName": "stat added",
+																					"children": [
+																						"+5"
+																					]
+																				}
+																			},
+																			{
+																				"type": "span",
+																				"key": ".1",
+																				"props": {
+																					"styleName": "stat deleted",
+																					"children": [
+																						"–7"
+																					]
+																				}
+																			}
 																		]
-																	}
-																},
-																{
-																	"type": "DiffStatScale",
-																	"props": {
-																		"Stat": {
-																			"Added": 5,
-																			"Changed": 6,
-																			"Deleted": 7
-																		}
 																	}
 																}
 															]
@@ -274,7 +279,8 @@
 						]
 					}
 				}
-			]
+			],
+			"hover": false
 		}
 	}
 }

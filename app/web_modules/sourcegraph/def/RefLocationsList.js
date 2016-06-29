@@ -7,9 +7,11 @@ import {urlToDefInfo} from "sourcegraph/def/routes";
 import styles from "sourcegraph/def/styles/Def.css";
 import CSSModules from "react-css-modules";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
-import {urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
+import Button from "sourcegraph/components/Button";
+import {urlToGitHubOAuth, privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import {trimRepo} from "sourcegraph/repo";
 import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class RefLocationsList extends React.Component {
 	static propTypes = {
@@ -49,7 +51,10 @@ class RefLocationsList extends React.Component {
 						</header>
 					</div>
 				))}
-				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.length > 0 && this.props.showMax && (!refLocs.TotalRepos || refLocs.TotalRepos > this.props.showMax) && <span styleName="sectionTitle"><Link to={urlToDefInfo(def, this.props.rev)}>See more usages...</Link></span>}
+				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.length > 0 && this.props.showMax && (!refLocs.TotalRepos || refLocs.TotalRepos > this.props.showMax) &&
+				<Link to={urlToDefInfo(def, this.props.rev)}>
+					<Button styleName="view-all-button" color="blue">View all references</Button>
+				</Link>}
 				{/* Show a CTA for signup, but only if there are other external refs (so we don't
 					annoyingly show it for every single internal ref. */}
 				{(refLocs.RepoRefs && refLocs.RepoRefs.length > 1 && (!this.context.signedIn || noGitHubPrivateReposScope)) &&
@@ -57,7 +62,7 @@ class RefLocationsList extends React.Component {
 						{!this.context.signedIn &&
 							<LocationStateToggleLink styleName="cta-link"
 								location={this.props.location}
-								onClick={() => this.context.eventLogger.logEvent("Conversion_SignInFromRefList")}
+								onClick={() => this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "Conversion_SignInFromRefList", {page_name: location.pathname})}
 								href="/login"
 								modalName="login">
 								<strong>Sign in</strong> for results from your code
@@ -65,8 +70,8 @@ class RefLocationsList extends React.Component {
 						}
 						{this.context.signedIn && noGitHubPrivateReposScope &&
 							<a styleName="cta-link"
-								href={urlToPrivateGitHubOAuth}
-								onClick={() => this.context.eventLogger.logEvent("Conversion_AuthPrivateCodeFromRefList")}>
+								href={urlToGitHubOAuth(privateGitHubOAuthScopes, this.props.location)}
+								onClick={() => this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "Conversion_AuthPrivateCodeFromRefList", {page_name: location.pathname})}>
 								<strong>Authorize</strong> to see results from your private code
 							</a>
 						}

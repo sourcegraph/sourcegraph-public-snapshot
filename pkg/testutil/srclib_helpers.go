@@ -1,8 +1,6 @@
 package testutil
 
 import (
-	"fmt"
-	"reflect"
 	"strconv"
 	"testing"
 
@@ -56,40 +54,6 @@ func CheckImport(t *testing.T, ctx context.Context, repo int32, repoPath string,
 		}
 		if want := defSpec.Path + "x"; def.Name != want {
 			t.Errorf("got def name %q, want %q", def.Name, want)
-		}
-	}
-
-	// Search by def name (hits the index).
-	for _, defSpec := range sampleDefs {
-		query := defSpec.Path + "x" // "x" suffix prevents undesired prefix matches
-		defs, err := cl.Defs.List(ctx, &sourcegraph.DefListOptions{
-			RepoRevs: []string{fmt.Sprintf("%s@%s", repoPath, commitID)},
-			Query:    query,
-		})
-		if err != nil {
-			t.Errorf("failed to query defs for %q: %s", query, err)
-			continue
-		}
-		if len(defs.Defs) != 1 {
-			t.Errorf("query %q: got len(defs) == %d, want 1", query, len(defs.Defs))
-			continue
-		}
-
-		def := defs.Defs[0]
-
-		// Not important to test; omitting this lets us not hardcode
-		// it in sampleDefs, which looks nicer.
-		def.CommitID = ""
-		defSpec.CommitID = ""
-		for _, def := range defs.Defs {
-			def.CommitID = ""
-		}
-
-		if name, want := def.Name, defSpec.Path+"x"; name != want {
-			t.Errorf("got def name %q, want %q", name, want)
-		}
-		if !reflect.DeepEqual(def.DefSpec(repo), defSpec) {
-			t.Errorf("got def %#v, want %#v", def.DefSpec(repo), defSpec)
 		}
 	}
 }

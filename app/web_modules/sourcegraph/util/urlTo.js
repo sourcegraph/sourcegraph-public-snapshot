@@ -11,5 +11,22 @@ export default function urlTo(name: RouteName, params: RouteParams): string {
 	return formatPattern(`/${abs[name]}`, params);
 }
 
-export const urlToGitHubOAuth = "/-/github-oauth/initiate";
-export const urlToPrivateGitHubOAuth = `${urlToGitHubOAuth}?scopes=read:org,repo,user:email`;
+// urlToGitHubOAuth
+export function urlToGitHubOAuth(scopes: ?string, returnTo: ?(string | Location)): string {
+	scopes = scopes ? `scopes=${encodeURIComponent(scopes)}` : null;
+	if (returnTo && typeof returnTo !== "string") {
+		returnTo = `${returnTo.pathname}${returnTo.search}${returnTo.hash}`;
+	}
+	returnTo = returnTo ? `return-to=${encodeURIComponent(returnTo)}` : null;
+
+	let q;
+	if (scopes && returnTo) {
+		q = `${scopes}&${returnTo}`;
+	} else if (scopes) {
+		q = scopes;
+	} else if (returnTo) {
+		q = returnTo;
+	}
+	return `/-/github-oauth/initiate${q ? `?${q}` : ""}`;
+}
+export const privateGitHubOAuthScopes = "read:org,repo,user:email";

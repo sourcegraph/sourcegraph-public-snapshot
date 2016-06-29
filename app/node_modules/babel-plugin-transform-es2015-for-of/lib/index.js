@@ -1,23 +1,23 @@
-/* eslint max-len: 0 */
-
-"use strict";
+/*istanbul ignore next*/"use strict";
 
 exports.__esModule = true;
 
-exports["default"] = function (_ref) {
-  var messages = _ref.messages;
-  var template = _ref.template;
-  var t = _ref.types;
+exports.default = function ( /*istanbul ignore next*/_ref) {
+  /*istanbul ignore next*/var /* eslint max-len: 0 */
 
-  var buildForOfArray = template("\n    for (var KEY = 0; KEY < ARR.length; KEY++) BODY;\n  ");
+  messages = _ref.messages;
+  /*istanbul ignore next*/var template = _ref.template;
+  /*istanbul ignore next*/var t = _ref.types;
 
-  var buildForOfLoose = template("\n    for (var LOOP_OBJECT = OBJECT,\n             IS_ARRAY = Array.isArray(LOOP_OBJECT),\n             INDEX = 0,\n             LOOP_OBJECT = IS_ARRAY ? LOOP_OBJECT : LOOP_OBJECT[Symbol.iterator]();;) {\n      var ID;\n      if (IS_ARRAY) {\n        if (INDEX >= LOOP_OBJECT.length) break;\n        ID = LOOP_OBJECT[INDEX++];\n      } else {\n        INDEX = LOOP_OBJECT.next();\n        if (INDEX.done) break;\n        ID = INDEX.value;\n      }\n    }\n  ");
+  var buildForOfArray = template( /*istanbul ignore next*/"\n    for (var KEY = 0; KEY < ARR.length; KEY++) BODY;\n  ");
 
-  var buildForOf = template("\n    var ITERATOR_COMPLETION = true;\n    var ITERATOR_HAD_ERROR_KEY = false;\n    var ITERATOR_ERROR_KEY = undefined;\n    try {\n      for (var ITERATOR_KEY = OBJECT[Symbol.iterator](), STEP_KEY; !(ITERATOR_COMPLETION = (STEP_KEY = ITERATOR_KEY.next()).done); ITERATOR_COMPLETION = true) {\n      }\n    } catch (err) {\n      ITERATOR_HAD_ERROR_KEY = true;\n      ITERATOR_ERROR_KEY = err;\n    } finally {\n      try {\n        if (!ITERATOR_COMPLETION && ITERATOR_KEY.return) {\n          ITERATOR_KEY.return();\n        }\n      } finally {\n        if (ITERATOR_HAD_ERROR_KEY) {\n          throw ITERATOR_ERROR_KEY;\n        }\n      }\n    }\n  ");
+  var buildForOfLoose = template( /*istanbul ignore next*/"\n    for (var LOOP_OBJECT = OBJECT,\n             IS_ARRAY = Array.isArray(LOOP_OBJECT),\n             INDEX = 0,\n             LOOP_OBJECT = IS_ARRAY ? LOOP_OBJECT : LOOP_OBJECT[Symbol.iterator]();;) {\n      var ID;\n      if (IS_ARRAY) {\n        if (INDEX >= LOOP_OBJECT.length) break;\n        ID = LOOP_OBJECT[INDEX++];\n      } else {\n        INDEX = LOOP_OBJECT.next();\n        if (INDEX.done) break;\n        ID = INDEX.value;\n      }\n    }\n  ");
+
+  var buildForOf = template( /*istanbul ignore next*/"\n    var ITERATOR_COMPLETION = true;\n    var ITERATOR_HAD_ERROR_KEY = false;\n    var ITERATOR_ERROR_KEY = undefined;\n    try {\n      for (var ITERATOR_KEY = OBJECT[Symbol.iterator](), STEP_KEY; !(ITERATOR_COMPLETION = (STEP_KEY = ITERATOR_KEY.next()).done); ITERATOR_COMPLETION = true) {\n      }\n    } catch (err) {\n      ITERATOR_HAD_ERROR_KEY = true;\n      ITERATOR_ERROR_KEY = err;\n    } finally {\n      try {\n        if (!ITERATOR_COMPLETION && ITERATOR_KEY.return) {\n          ITERATOR_KEY.return();\n        }\n      } finally {\n        if (ITERATOR_HAD_ERROR_KEY) {\n          throw ITERATOR_ERROR_KEY;\n        }\n      }\n    }\n  ");
 
   function _ForOfStatementArray(path) {
-    var node = path.node;
-    var scope = path.scope;
+    /*istanbul ignore next*/var node = path.node;
+    /*istanbul ignore next*/var scope = path.scope;
 
     var nodes = [];
     var right = node.right;
@@ -59,7 +59,7 @@ exports["default"] = function (_ref) {
   }
 
   return {
-    visitor: {
+    visitor: { /*istanbul ignore next*/
       ForOfStatement: function ForOfStatement(path, state) {
         if (path.get("right").isArrayExpression()) {
           return path.replaceWithMultiple(_ForOfStatementArray.call(this, path, state));
@@ -68,7 +68,7 @@ exports["default"] = function (_ref) {
         var callback = spec;
         if (state.opts.loose) callback = loose;
 
-        var node = path.node;
+        /*istanbul ignore next*/var node = path.node;
 
         var build = callback(path, state);
         var declar = build.declar;
@@ -100,12 +100,13 @@ exports["default"] = function (_ref) {
   };
 
   function loose(path, file) {
-    var node = path.node;
-    var scope = path.scope;
+    /*istanbul ignore next*/var node = path.node;
+    /*istanbul ignore next*/var scope = path.scope;
+
 
     var left = node.left;
-    var declar = undefined,
-        id = undefined;
+    var declar = /*istanbul ignore next*/void 0,
+        id = /*istanbul ignore next*/void 0;
 
     if (t.isIdentifier(left) || t.isPattern(left) || t.isMemberExpression(left)) {
       // for (i of test), for ({ i } of test)
@@ -145,12 +146,12 @@ exports["default"] = function (_ref) {
   }
 
   function spec(path, file) {
-    var node = path.node;
-    var scope = path.scope;
-    var parent = path.parent;
+    /*istanbul ignore next*/var node = path.node;
+    /*istanbul ignore next*/var scope = path.scope;
+    /*istanbul ignore next*/var parent = path.parent;
 
     var left = node.left;
-    var declar = undefined;
+    var declar = /*istanbul ignore next*/void 0;
 
     var stepKey = scope.generateUidIdentifier("step");
     var stepValue = t.memberExpression(stepKey, t.identifier("value"));
@@ -199,4 +200,4 @@ exports["default"] = function (_ref) {
   }
 };
 
-module.exports = exports["default"];
+/*istanbul ignore next*/module.exports = exports["default"];

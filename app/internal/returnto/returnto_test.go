@@ -1,24 +1,44 @@
 package returnto
 
-import "testing"
+import (
+	"net/http"
+	"net/url"
+	"testing"
+)
 
-func TestCheckSafe(t *testing.T) {
+func TestURLFromRequest(t *testing.T) {
 	tests := []struct {
 		url     string
+		want    string
 		wantErr bool
 	}{
-		{"foo", false},
-		{"foo/bar", false},
-		{"/foo/bar", false},
-		{"http://foo", true},
-		{"https://foo", true},
-		{"//foo", true},
+		{url: "", want: "/"},
+		{url: "?return-to=foo", wantErr: true},
+		{url: "?return-to=foo/bar", wantErr: true},
+		{url: "?return-to=/foo/bar", want: "/foo/bar"},
+		{url: "?return-to=/foo/bar%3Fa=b", want: "/foo/bar?a=b"},
+		{url: "?return-to=/foo/bar%3Freturn-to=b", want: "/foo/bar"},
+		{url: "?return-to=http://foo", wantErr: true},
+		{url: "?return-to=https://foo", wantErr: true},
+		{url: "?return-to=//foo", wantErr: true},
 	}
 
 	for _, test := range tests {
-		err := CheckSafe(test.url)
-		if gotErr := (err != nil); gotErr != test.wantErr {
-			t.Errorf("got error %q, want error is (%v)", err, test.wantErr)
+		u, err := url.Parse(test.url)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+		d, err := URLFromRequest(&http.Request{URL: u})
+		if (err != nil) != test.wantErr {
+			t.Errorf("%s: got err %v, want error? %v", test.url, err, test.wantErr)
+			continue
+		}
+		if err != nil {
+			continue
+		}
+		if d.String() != test.want {
+			t.Errorf("%s: got %q, want %q", test.url, d, test.want)
 		}
 	}
 }

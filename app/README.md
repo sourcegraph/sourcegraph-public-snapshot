@@ -47,9 +47,6 @@ NODE_PATH=web_modules NODE_ENV=test ./node_modules/.bin/mocha --compilers js:bab
   would *always* throw an exception when rendering react components
   becuase styles will never be found). **NOTE:** You'll need to
   repeat this step if you ever update react-css-modules.
-* extract-text-webpack-plugin had to be patched manually to mitigate
-  `OrderUndefinedError`. The patch follows the changes in this (currently open)
-  [pull request](https://github.com/webpack/extract-text-webpack-plugin/pull/166).
 * amplitude-js had to be patched manually for loading via ES6 modules. The patch
   consists of updating the package.json "main" script to reference `amplitude.js`,
   not `src/index.js`. **NOTE:** You'll need to repeat this step if you ever

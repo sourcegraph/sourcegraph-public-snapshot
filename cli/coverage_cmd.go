@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -23,6 +24,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/coverageutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker/plan"
 )
@@ -46,13 +48,15 @@ func init() {
 }
 
 type coverageCmd struct {
-	Repo       string `long:"repo" description:"repo URI"`
-	Lang       string `long:"lang" description:"coverage language"`
-	Refresh    bool   `long:"refresh" description:"refresh repo VCS data (or clone the repo if it doesn't exist); queue a new build"`
-	Dry        bool   `long:"dry" description:"do a dry run (don't save coverage data)"`
-	Progress   bool   `long:"progress" description:"show progress"`
-	ReportRefs bool   `long:"refs" description:"report issues with references"`
-	ReportDefs bool   `long:"defs" description:"report issues with definitions"`
+	Repo        string `long:"repo" description:"repo URI"`
+	Lang        string `long:"lang" description:"coverage language"`
+	Limit       int    `long:"limit" description:"max number of repos to run coverage for"`
+	Refresh     bool   `long:"refresh" description:"refresh repo VCS data (or clone the repo if it doesn't exist); queue a new build"`
+	Dry         bool   `long:"dry" description:"do a dry run (don't save coverage data)"`
+	Progress    bool   `long:"progress" description:"show progress"`
+	ReportRefs  bool   `long:"refs" description:"report issues with references"`
+	ReportDefs  bool   `long:"defs" description:"report issues with definitions"`
+	ReportEmpty bool   `long:"empty" description:"report empty files"`
 }
 
 // fileCoverage contains coverage data for a single file or repository
@@ -162,13 +166,13 @@ func (c *coverageCache) getSrclibDataVersion(cl *sourcegraph.Client, ctx context
 		sdv, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{RepoRev: *repoRev})
 		if err != nil {
 			log15.Debug("get srclib data version", "err", err)
-			return ""
-		}
-		if sdv.CommitID == "" {
+		} else if sdv.CommitID == "" {
 			log15.Debug("empty srclib data version", "err", err)
-			return ""
+		} else {
+			dataVer = sdv.CommitID
 		}
-		dataVer = sdv.CommitID
+	} else {
+		return dataVer
 	}
 
 	c.SrclibDataVersionCache[*repoRev] = dataVer
@@ -192,11 +196,10 @@ func (c *coverageCache) getResolvedRev(cl *sourcegraph.Client, ctx context.Conte
 	}
 
 	if repoRev.Rev == "" {
-		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: res.Repo})
-		if err != nil {
-			return sourcegraph.RepoRevSpec{}, err
-		}
-		repoRev.Rev = repo.DefaultBranch
+		// Assume default branch is master to prevent call to Repos.Get.
+		// This may break for some repos (in which case we may want to hardcode mappings
+		// for exception cases).
+		repoRev.Rev = "master"
 	}
 
 	resRev, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: res.Repo, Rev: repoRev.Rev})
@@ -211,7 +214,7 @@ func (c *coverageCache) getResolvedRev(cl *sourcegraph.Client, ctx context.Conte
 
 // fetchAndIndexDefs fetches (and indexes) all of the defs for a repo@rev, then caches the result.
 // If the cache already contains data for repo@rev, it is returned immediately.
-func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec) *defIndex {
+func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, repoURI string) *defIndex {
 	// First resolve the rev to an absolute commit ID.
 	repoRev.CommitID = c.getSrclibDataVersion(cl, ctx, repoRev)
 	if repoRev.CommitID == "" {
@@ -226,15 +229,9 @@ func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Co
 		return idx
 	}
 
-	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoRev.Repo})
-	if err != nil {
-		log15.Error("Error getting repo to list defs.", "err", err, "repo", repoRev.Repo)
-		return nil
-	}
-
 	opt := sourcegraph.DefListOptions{
 		IncludeTest: true,
-		RepoRevs:    []string{fmt.Sprintf("%s@%s", repo.URI, repoRev.CommitID)},
+		RepoRevs:    []string{fmt.Sprintf("%s@%s", repoURI, repoRev.CommitID)},
 	}
 	opt.PerPage = 100000000 // TODO(rothfels): srclib def store doesn't properly handle pagination
 	opt.Page = 1
@@ -265,38 +262,35 @@ func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Co
 
 func (c *coverageCmd) Execute(args []string) error {
 	cl := cliClient
-	var langs []string
-	langRepos := make(map[string][]string)
+	if c.Lang == "" {
+		return fmt.Errorf("must specify language")
+	}
+
+	var repos []string
 	if specificRepo := c.Repo; specificRepo != "" {
-		if c.Lang == "" {
-			return fmt.Errorf("must specify language")
-		}
-		langs = []string{c.Lang}
-		langRepos[c.Lang] = []string{specificRepo}
-	} else if l := c.Lang; l != "" {
-		langs = []string{l}
-		langRepos[l] = langRepos_[l]
+		repos = []string{specificRepo}
 	} else {
-		// select top 5 repos for each lang
-		langs = append(langs, langs_...)
-		for _, lang := range langs {
-			repos := langRepos_[lang]
-			if len(repos) > 5 {
-				repos = repos[:5]
-			}
-			langRepos[lang] = repos
-		}
+		repos = langRepos_[c.Lang]
+	}
+
+	if c.Limit > 0 && len(repos) > c.Limit {
+		repos = repos[:c.Limit]
 	}
 
 	// If c.Refresh, then just call `src repo sync` for every repo
 	if c.Refresh {
-		var allRepos []string
-		for _, repos := range langRepos {
-			allRepos = append(allRepos, repos...)
-		}
+		slack.PostMessage(slack.PostOpts{
+			Msg:        fmt.Sprintf("Running coverage --refresh --lang=%s", c.Lang),
+			IconEmoji:  ":sourcegraph:",
+			Channel:    "global-graph",
+			WebhookURL: os.Getenv("SG_SLACK_GRAPH_WEBHOOK_URL"),
+		})
 
-		syncCmd := &repoSyncCmd{Force: true}
-		syncCmd.Args.URIs = allRepos
+		syncCmd := &repoSyncCmd{
+			Force:         true,
+			buildPriority: 0, // prioritize over background updates
+		}
+		syncCmd.Args.URIs = repos
 		err := syncCmd.Execute(nil)
 		if err != nil {
 			log15.Error("repo sync", "err", err)
@@ -304,36 +298,37 @@ func (c *coverageCmd) Execute(args []string) error {
 		return err
 	}
 
-	langCvg := make(map[string][]*repoCoverage)
-
 	p := parallel.NewRun(30)
-	var mu sync.Mutex
 
-	for _, lang := range langs {
+	start := time.Now()
+	slack.PostMessage(slack.PostOpts{
+		Msg:        fmt.Sprintf("Running coverage --lang=%s", c.Lang),
+		IconEmoji:  ":chart_with_upwards_trend:",
+		Channel:    "global-graph",
+		WebhookURL: os.Getenv("SG_SLACK_GRAPH_WEBHOOK_URL"),
+	})
 
-		lang := lang
-		repos := langRepos[lang]
-		for _, repo := range repos {
-			repo := repo
-
-			p.Do(func() error {
-				cov, err := getCoverage(cl, cliContext, repo, lang, c.Dry, c.Progress, c.ReportRefs, c.ReportDefs)
-				if err != nil {
-					return fmt.Errorf("error getting coverage for %s: %s", repo, err)
-				}
-				{
-					mu.Lock()
-					defer mu.Unlock()
-					if _, ok := langCvg[lang]; !ok {
-						langCvg[lang] = make([]*repoCoverage, 0)
-					}
-					langCvg[lang] = append(langCvg[lang], cov)
-				}
-				return nil
-			})
-		}
+	for _, repo := range repos {
+		repo := repo
+		p.Do(func() error {
+			_, err := getCoverage(cl, cliContext, repo, c.Lang, c.Dry, c.Progress, c.ReportRefs, c.ReportDefs, c.ReportEmpty)
+			if err != nil {
+				return fmt.Errorf("error getting coverage for %s: %s", repo, err)
+			}
+			return nil
+		})
 	}
-	if err := p.Wait(); err != nil {
+
+	err := p.Wait()
+
+	slack.PostMessage(slack.PostOpts{
+		Msg:        fmt.Sprintf("Completed coverage --lang=%s (duration: %f mins)", c.Lang, time.Since(start).Minutes()),
+		IconEmoji:  ":checkered-flag:",
+		Channel:    "global-graph",
+		WebhookURL: os.Getenv("SG_SLACK_GRAPH_WEBHOOK_URL"),
+	})
+
+	if err != nil {
 		if errs, ok := err.(parallel.Errors); ok {
 			var errMsgs []string
 			for _, e := range errs {
@@ -366,7 +361,7 @@ type annToken struct {
 }
 
 // getFileCoverage computes the coverage data for a single file in a repository
-func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, repoPath, path, lang string, reportRefs, reportDefs bool) (*fileCoverage, error) {
+func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, repoPath, path, lang string, reportRefs, reportDefs, reportEmpty bool) (*fileCoverage, error) {
 	fileCvg := &fileCoverage{Path: path}
 
 	var tokenizer coverageutil.Tokenizer
@@ -466,7 +461,7 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 			continue
 		}
 
-		defIdx := cache.fetchAndIndexDefs(cl, ctx, &annRepoRev)
+		defIdx := cache.fetchAndIndexDefs(cl, ctx, &annRepoRev, annInfo.RepoRev.Repo)
 		if defIdx == nil {
 			continue
 		}
@@ -487,11 +482,15 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 
 	}
 
+	if fileCvg.Refs == 0 && reportEmpty {
+		log15.Warn("uncovered file", "repo", repoPath, "rev", repoRev.CommitID, "path", path)
+	}
+
 	return fileCvg, nil
 }
 
 // getCoverage computes coverage data for the given repository
-func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang string, dryRun, progress, reportRefs, reportDefs bool) (*repoCoverage, error) {
+func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang string, dryRun, progress, reportRefs, reportDefs, reportEmpty bool) (*repoCoverage, error) {
 	if err := ensureRepoExists(cl, ctx, repoPath); err != nil {
 		return nil, err
 	}
@@ -522,7 +521,7 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang str
 				if progress {
 					log15.Info("processing", path, lang)
 				}
-				fileCvg, err := getFileCoverage(cl, ctx, &repoRevSpec, repoPath, path, lang, reportRefs, reportDefs)
+				fileCvg, err := getFileCoverage(cl, ctx, &repoRevSpec, repoPath, path, lang, reportRefs, reportDefs, reportEmpty)
 				if err != nil {
 					return err
 				}

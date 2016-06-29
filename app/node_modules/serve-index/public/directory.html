@@ -52,11 +52,11 @@
       }
 
       function search() {
-        var str = $('search').value
-          , links = $('files').all('a');
+        var str = $('search').value.toLowerCase();
+        var links = $('files').all('a');
 
         links.each(function(link){
-          var text = link.textContent;
+          var text = link.textContent.toLowerCase();
 
           if ('..' == text) return;
           if (str.length && ~text.indexOf(str)) {

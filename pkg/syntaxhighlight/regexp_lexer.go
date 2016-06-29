@@ -88,7 +88,6 @@ func (self *RegexpLexer) NextToken() *Token {
 			found = true
 			self.pos += matcher[1]
 			self.statestack = updateStack(self.statestack[0:], rule)
-			rules = self.rules[self.statestack[len(self.statestack)-1]]
 			break
 		}
 		if !found {
@@ -99,7 +98,6 @@ func (self *RegexpLexer) NextToken() *Token {
 			return self.consumeCache()
 		}
 	}
-	return nil
 }
 
 // Emits one token from cache if any

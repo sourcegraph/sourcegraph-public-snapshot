@@ -103,11 +103,27 @@ func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRef
 	return store.GlobalRefsFromContext(ctx).Get(ctx, op)
 }
 
+func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExamplesOp) (*sourcegraph.RefLocationsList, error) {
+	return store.DefExamplesFromContext(ctx).Get(ctx, op)
+}
+
 func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
 	if op.RefreshRefLocations {
 		if err := store.GlobalRefsFromContext(ctx).Update(ctx, op); err != nil {
 			return nil, err
 		}
 	}
+
+	// Update defs table
+	if err := store.DefsFromContext(ctx).UpdateFromSrclibStore(ctx, store.DefUpdateOp{
+		Repo:     op.Repo,
+		CommitID: op.CommitID,
+		// TODO(beyang): this should be specified by the caller, since the last built is not necessarily the latest revision
+		Latest:        true,
+		RefreshCounts: true,
+	}); err != nil {
+		return nil, err
+	}
+
 	return &pbtypes.Void{}, nil
 }

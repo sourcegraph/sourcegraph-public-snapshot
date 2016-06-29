@@ -9,11 +9,38 @@ import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {sortBranches, sortTags} from "sourcegraph/repo/vcs";
 import EventLogger from "sourcegraph/util/EventLogger";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+
+const Origin_GitHub = 0; // Origin.ServiceType enum value for GitHub origin
 
 const RepoBackend = {
 	fetch: singleflightFetch(defaultFetch),
 
 	__onDispatch(action) {
+		if (action instanceof RepoActions.WantRemoteRepos) {
+			let repos = RepoStore.remoteRepos.list();
+			if (repos === null) {
+				RepoBackend.fetch("/.api/remote-repos")
+					.then(checkStatus)
+					.then((resp) => resp.json())
+					.catch((err) => ({Error: err}))
+					.then((data) => Dispatcher.Stores.dispatch(new RepoActions.RemoteReposFetched(data)));
+			}
+			return;
+		} else if (action instanceof RepoActions.WantCommit) {
+			let commit = RepoStore.commits.get(action.repo, action.rev);
+			if (commit === null) {
+				RepoBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/commit`)
+					.then(checkStatus)
+					.then((resp) => resp.json())
+					.catch((err) => ({Error: err}))
+					.then((data) => {
+						Dispatcher.Stores.dispatch(new RepoActions.FetchedCommit(action.repo, action.rev, data));
+					});
+			}
+			return;
+		}
+
 		switch (action.constructor) {
 
 		case RepoActions.WantRepo:
@@ -75,8 +102,13 @@ const RepoBackend = {
 
 		case RepoActions.WantCreateRepo:
 			{
-				let body = {Op: {FromGitHubID: action.remoteRepo.GitHubID}};
-				if (!action.remoteRepo.GitHubID) { // non-GitHub repositories
+				let body;
+				if (action.remoteRepo.GitHubID) {
+					body = {
+						Op: {Origin: {ID: action.remoteRepo.GitHubID.toString(), Service: Origin_GitHub}},
+					};
+				} else {
+					// Non-GitHub repositories.
 					body = {
 						Op: {
 							New: {
@@ -101,7 +133,7 @@ const RepoBackend = {
 						Dispatcher.Stores.dispatch(new RepoActions.RepoCreated(action.repo, data));
 						if (!data.Error) {
 							const eventProps = {language: action.remoteRepo.Language, private: Boolean(action.remoteRepo.Private)};
-							EventLogger.logEvent("AddRepo", eventProps);
+							EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_SUCCESS, "AddRepo", eventProps);
 							EventLogger.logIntercomEvent("add-repo", eventProps);
 						}
 					})

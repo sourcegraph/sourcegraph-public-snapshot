@@ -1,3 +1,7 @@
+# 2.0.0
+
+* Upgraded to PostCSS 5.
+
 # 1.0.1
 
 * Fixes an integration issue with cssnano & cssnext, caused by processors that

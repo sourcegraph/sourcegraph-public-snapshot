@@ -5,12 +5,14 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import context from "sourcegraph/app/context";
 import type {SiteConfig} from "sourcegraph/app/siteConfig";
 import type {AuthInfo, User} from "sourcegraph/user";
-import {getViewName, getRoutePattern} from "sourcegraph/app/routePatterns";
+import {getViewName, getRoutePattern, getRouteParams} from "sourcegraph/app/routePatterns";
 import type {Route} from "react-router";
-import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import UserStore from "sourcegraph/user/UserStore";
+import {getLanguageExtensionForPath, defPathToLanguage} from "sourcegraph/util/inventory";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 export const EventLocation = {
 	Login: "Login",
@@ -125,6 +127,7 @@ export class EventLogger {
 
 			if (authInfo) {
 				if (this._amplitude && authInfo.Login) this._amplitude.setUserId(authInfo.Login || null);
+				if (window.ga && authInfo.Login) window.ga("set", "userId", authInfo.Login);
 				if (authInfo.UID) this.setIntercomProperty("user_id", authInfo.UID.toString());
 				if (authInfo.IntercomHash) this.setIntercomProperty("user_hash", authInfo.IntercomHash);
 				if (this._fullStory && authInfo.Login) {
@@ -154,25 +157,55 @@ export class EventLogger {
 		this._primaryEmail = primaryEmail;
 	}
 
+
+	getAmplitudeIdentificationProps() {
+		if (!this._amplitude || !this._amplitude.options) {
+			return null;
+		}
+
+		return {detail: {deviceId: this._amplitude.options.deviceId, userId: UserStore.activeAuthInfo() ? UserStore.activeAuthInfo().Login : null}};
+	}
 	// sets current user's properties
 	setUserProperty(property, value) {
 		this._amplitude.identify(new this._amplitude.Identify().set(property, value));
 	}
 
-	// records events for the current user, if user agent is not bot
-	logEvent(eventName, eventProperties) {
-		if (typeof window !== "undefined" && window.localStorage["event-log"]) {
-			console.debug("%cEVENT %s", "color: #aaa", eventName, eventProperties);
+	// Use logViewEvent as the default way to log view events for Amplitude and GA
+	// location is the URL, page is the path.
+	logViewEvent(title, page, eventProperties) {
+
+		if (this.userAgentIsBot || !page) {
+			return;
 		}
-		this._amplitude.logEvent(eventName, eventProperties);
+
+		// Log Amplitude "View" event
+		this._amplitude.logEvent(title, eventProperties);
+
+		// Log GA "pageview" event without props.
+		window.ga("send", {
+			hitType: "pageview",
+			page: page,
+			title: title,
+		});
 	}
 
-	logEventForPage(eventName, pageName, eventProperties) {
-		if (!pageName) throw new Error("PageName must be defined");
+	// Default tracking call to all of our analytics servies.
+	// Required fields: eventCategory, eventAction, eventLabel
+	// Optional fields: eventProperties
+	// Example Call: logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SUCCESS, "SignupCompletion", AnalyticsConstants.PAGE_HOME, {signup_channel: GitHub})
+	logEventForCategory(eventCategory, eventAction, eventLabel, eventProperties) {
+		if (this.userAgentIsBot || !eventLabel) {
+			return;
+		}
 
-		let props = eventProperties ? eventProperties : {};
-		props["page_name"] = pageName;
-		this.logEvent(eventName, props);
+		this._amplitude.logEvent(eventLabel, {...eventProperties, eventCategory: eventCategory, eventAction: eventAction, is_authed: this._user ? "true" : "false"});
+
+		window.ga("send", {
+			hitType: "event",
+			eventCategory: eventCategory || "",
+			eventAction: eventAction || "",
+			eventLabel: eventLabel,
+		});
 	}
 
 	// sets current user's property value
@@ -187,7 +220,7 @@ export class EventLogger {
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case DashboardActions.RemoteReposFetched:
+		case RepoActions.RemoteReposFetched:
 			if (action.data.RemoteRepos) {
 				let orgs = {};
 				for (let repo of action.data.RemoteRepos) {
@@ -214,27 +247,43 @@ export class EventLogger {
 			if (action.eventName) {
 				if (action.signupChannel) {
 					this.setUserProperty("signup_channel", action.signupChannel);
-					this.logEvent(action.eventName, {error: Boolean(action.resp.Error), signup_channel: action.signupChannel});
+					this.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SUCCESS, action.eventName, {error: Boolean(action.resp.Error), signup_channel: action.signupChannel});
 				} else {
-					this.logEvent(action.eventName, {error: Boolean(action.resp.Error)});
+					this.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SUCCESS, action.eventName, {error: Boolean(action.resp.Error)});
 				}
 			}
 			break;
-
+		case UserActions.EmailSubscriptionCompleted:
+			if (action.eventName) {
+				this.logEventForCategory(AnalyticsConstants.CATEGORY_ENGAGEMENT, AnalyticsConstants.ACTION_SUCCESS, action.eventName);
+			}
+			break;
 		case DefActions.DefsFetched:
 			if (action.eventName) {
 				let eventProps = {
 					query: action.query,
 					overlay: action.overlay,
 				};
-				this.logEvent(action.eventName, eventProps);
+				this.logEventForCategory(AnalyticsConstants.CATEGORY_DEF, AnalyticsConstants.ACTION_FETCH, action.eventName, eventProps);
 			}
 			break;
+
+		case DefActions.HighlightDef:
+			{
+				if (action.url) { // we also emit HighlightDef when the def is un-highlighted
+					let eventProps = {
+						language: action.language || "unknown",
+					};
+					this.logEventForCategory(AnalyticsConstants.CATEGORY_DEF, AnalyticsConstants.ACTION_HOVER, action.eventName, eventProps);
+				}
+				break;
+			}
+
 		default:
 			// All dispatched actions to stores will automatically be tracked by the eventName
 			// of the action (if set). Override this behavior by including another case above.
 			if (action.eventName) {
-				this.logEvent(action.eventName);
+				this.logEventForCategory(AnalyticsConstants.CATEGORY_UNKNOWN, AnalyticsConstants.ACTION_FETCH, action.eventName);
 			}
 			break;
 		}
@@ -295,6 +344,8 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 			// values are updated.
 			if (this.props.location.pathname !== nextProps.location.pathname) {
 				this._logView(nextProps.routes, nextProps.location);
+				// $FlowHack
+				document.dispatchEvent(new CustomEvent("sourcegraph:identify", this.context.eventLogger.getAmplitudeIdentificationProps()));
 			}
 
 			this._checkEventQuery();
@@ -328,7 +379,7 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 					this.context.eventLogger.setUserProperty("github_authed", this.props.location.query._githubAuthed);
 				}
 
-				this.context.eventLogger.logEvent(this.props.location.query._event, eventProperties);
+				this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_EXTERNAL, AnalyticsConstants.ACTION_REDIRECT, this.props.location.query._event, eventProperties);
 
 				// Won't take effect until we call replace below, but prevents this
 				// from being called 2x before the setTimeout block runs.
@@ -350,12 +401,22 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 		}
 
 		_logView(routes: Array<Route>, location: Location) {
-			let eventProps = {
-				url: location.pathname,
+			let eventProps: {
+				url: string;
+				referred_by_browser_ext?: string;
+				referred_by_sourcegraph_editor?: string;
+				language?: string;
 			};
-			// TODO:matt remove this once all plugins are switched to new version
-			// This is temporarily here for backwards compat
-			if (location.query && location.query["utm_source"] === "chromeext") {
+
+			if (location.query && location.query["utm_source"] === "integration" && location.query["type"]) {
+				eventProps = {
+					// Alfred, ChromeExtension, FireFoxExtension, SublimeEditor, VIMEditor.
+					referred_by_integration: location.query["type"],
+					url: location.pathname,
+				};
+			} else if (location.query && location.query["utm_source"] === "chromeext") {
+				// TODO:matt remove this once all plugins are switched to new version
+				// This is temporarily here for backwards compat
 				eventProps = {
 					referred_by_browser_ext: "chrome",
 					url: location.pathname,
@@ -370,13 +431,30 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 					url: location.pathname,
 					referred_by_sourcegraph_editor: location.query["editor_type"],
 				};
+			} else {
+				eventProps = {
+					url: location.pathname,
+				};
 			}
 
+			const routePattern = getRoutePattern(routes);
 			const viewName = getViewName(routes);
+			const routeParams = getRouteParams(routePattern, location.pathname);
+
 			if (viewName) {
-				this.context.eventLogger.logEvent(viewName, eventProps);
+				if (viewName === "ViewBlob" && routeParams) {
+					const filePath = routeParams.splat[routeParams.splat.length - 1];
+					const lang = getLanguageExtensionForPath(filePath);
+					if (lang) eventProps.language = lang;
+				} else if ((viewName === "ViewDef" || viewName === "ViewDefInfo") && routeParams) {
+					const defPath = routeParams.splat[routeParams.splat.length - 1];
+					const lang = defPathToLanguage(defPath);
+					if (lang) eventProps.language = lang;
+				}
+
+				this.context.eventLogger.logViewEvent(viewName, location.pathname, {...eventProps, pattern: getRoutePattern(routes)});
 			} else {
-				this.context.eventLogger.logEvent("UnmatchedRoute", {
+				this.context.eventLogger.logViewEvent("UnmatchedRoute", location.pathname, {
 					...eventProps,
 					pattern: getRoutePattern(routes),
 				});

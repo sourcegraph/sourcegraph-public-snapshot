@@ -1,3 +1,7 @@
+### 0.6.5 / 2016-05-20
+
+* Don't mutate buffers passed in by the application when masking
+
 ### 0.6.4 / 2016-01-07
 
 * If a number is given as input for a frame payload, send it as a string

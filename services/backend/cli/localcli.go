@@ -26,4 +26,6 @@ var Flags struct {
 	// for very large repos because it walks the entire tree for a
 	// commit.
 	DisableRepoInventory bool `long:"local.disable-repo-inventory" description:"disable repo inventorying (walks all files to determine langs used, etc.; slow for very large repos)"`
+
+	NumAsyncWorkers int `long:"local.num-async-workers" description:"number of async workers to run" default:"4" env:"SRC_NUM_ASYNC_WORKERS"`
 }

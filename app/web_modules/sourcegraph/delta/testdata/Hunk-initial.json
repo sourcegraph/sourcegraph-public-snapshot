@@ -2,7 +2,7 @@
 	"renderOutput": {
 		"type": "table",
 		"props": {
-			"className": "line-numbered-code theme-default file-diff-hunk",
+			"styleName": "lines",
 			"children": [
 				{
 					"type": "tbody",
@@ -10,31 +10,51 @@
 						"children": [
 							{
 								"type": "tr",
+								"key": ".0",
 								"props": {
-									"className": "line hunk-header",
+									"styleName": "line",
 									"children": [
 										{
 											"type": "td",
+											"key": ".0",
 											"props": {
-												"className": "line-number",
+												"styleName": "line-number-cell",
 												"children": [
-													"..."
+													{
+														"type": "span",
+														"props": {
+															"styleName": "line-number",
+															"children": [
+																"..."
+															]
+														}
+													}
 												]
 											}
 										},
 										{
 											"type": "td",
+											"key": ".1",
 											"props": {
-												"className": "line-number",
+												"styleName": "line-number-cell",
 												"children": [
-													"..."
+													{
+														"type": "span",
+														"props": {
+															"styleName": "line-number",
+															"children": [
+																"..."
+															]
+														}
+													}
 												]
 											}
 										},
 										{
 											"type": "td",
+											"key": ".2",
 											"props": {
-												"className": "line-content",
+												"styleName": "line-content",
 												"children": [
 													"@@ -5,20 +5,20 @@ mysection"
 												]
@@ -45,9 +65,8 @@
 							},
 							{
 								"type": "BlobLine",
-								"key": "0",
+								"key": ".1:$0",
 								"props": {
-									"className": "new-line",
 									"newLineNumber": 5,
 									"contents": "+ a",
 									"startByte": 0
@@ -55,9 +74,8 @@
 							},
 							{
 								"type": "BlobLine",
-								"key": "1",
+								"key": ".1:$1",
 								"props": {
-									"className": "old-line",
 									"oldLineNumber": 6,
 									"contents": "- b",
 									"startByte": 4
@@ -65,9 +83,8 @@
 							},
 							{
 								"type": "BlobLine",
-								"key": "2",
+								"key": ".1:$2",
 								"props": {
-									"className": "",
 									"oldLineNumber": 7,
 									"newLineNumber": 6,
 									"contents": " c",
@@ -76,9 +93,8 @@
 							},
 							{
 								"type": "BlobLine",
-								"key": "3",
+								"key": ".1:$3",
 								"props": {
-									"className": "old-line",
 									"oldLineNumber": 8,
 									"contents": "- d",
 									"startByte": 11
@@ -86,9 +102,8 @@
 							},
 							{
 								"type": "BlobLine",
-								"key": "4",
+								"key": ".1:$4",
 								"props": {
-									"className": "old-line",
 									"oldLineNumber": 9,
 									"contents": "- e",
 									"startByte": 15

@@ -3,8 +3,8 @@
 	Author Tobias Koppers @sokra
 */
 var Module = require("./Module");
-var OriginalSource = require("webpack-core/lib/OriginalSource");
-var RawSource = require("webpack-core/lib/RawSource");
+var OriginalSource = require("webpack-sources").OriginalSource;
+var RawSource = require("webpack-sources").RawSource;
 var WebpackMissingModule = require("./dependencies/WebpackMissingModule");
 var DelegatedSourceDependency = require("./dependencies/DelegatedSourceDependency");
 
@@ -19,6 +19,7 @@ function DelegatedModule(sourceRequest, request, type, userRequest) {
 module.exports = DelegatedModule;
 
 DelegatedModule.prototype = Object.create(Module.prototype);
+DelegatedModule.prototype.constructor = DelegatedModule;
 
 DelegatedModule.prototype.delegated = true;
 

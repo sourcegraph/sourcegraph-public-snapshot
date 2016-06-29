@@ -58,6 +58,16 @@ bytes(1024 * 1.7, {decimalPlaces: 0});
 
 Parse the string value into an integer in bytes. If no unit is given, it is assumed the value is in bytes.
 
+Supported units and abbreviations are as follows and are case-insensitive:
+
+  * "b" for bytes
+  * "kb" for kilobytes
+  * "mb" for megabytes
+  * "gb" for gigabytes
+  * "tb" for terabytes
+
+The units are in powers of two, not ten. This means 1kb = 1024b according to this parser.
+
 **Arguments**
 
 | Name          | Type   | Description        |

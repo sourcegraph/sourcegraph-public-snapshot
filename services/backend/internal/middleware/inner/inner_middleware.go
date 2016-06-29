@@ -38,6 +38,8 @@ func Services() svc.Services {
 
 		Annotations: wrappedAnnotations{},
 
+		Async: wrappedAsync{},
+
 		Auth: wrappedAuth{},
 
 		Builds: wrappedBuilds{},
@@ -189,6 +191,21 @@ func (s wrappedAnnotations) List(ctx context.Context, param *sourcegraph.Annotat
 	res, err = backend.Services.Annotations.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Annotations.List returned nil, nil")
+	}
+	return
+}
+
+type wrappedAsync struct{}
+
+func (s wrappedAsync) RefreshIndexes(ctx context.Context, param *sourcegraph.AsyncRefreshIndexesOp) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Async", "RefreshIndexes", param)
+	defer func() {
+		trace.After(ctx, "Async", "RefreshIndexes", param, err, time.Since(start))
+	}()
+	res, err = backend.Services.Async.RefreshIndexes(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Async.RefreshIndexes returned nil, nil")
 	}
 	return
 }
@@ -444,6 +461,19 @@ func (s wrappedDefs) ListRefLocations(ctx context.Context, param *sourcegraph.De
 	res, err = backend.Services.Defs.ListRefLocations(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Defs.ListRefLocations returned nil, nil")
+	}
+	return
+}
+
+func (s wrappedDefs) ListExamples(ctx context.Context, param *sourcegraph.DefsListExamplesOp) (res *sourcegraph.RefLocationsList, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Defs", "ListExamples", param)
+	defer func() {
+		trace.After(ctx, "Defs", "ListExamples", param, err, time.Since(start))
+	}()
+	res, err = backend.Services.Defs.ListExamples(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.ListExamples returned nil, nil")
 	}
 	return
 }
@@ -958,19 +988,6 @@ func (s wrappedSearch) Search(ctx context.Context, param *sourcegraph.SearchOp) 
 	res, err = backend.Services.Search.Search(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Search.Search returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedSearch) RefreshIndex(ctx context.Context, param *sourcegraph.SearchRefreshIndexOp) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Search", "RefreshIndex", param)
-	defer func() {
-		trace.After(ctx, "Search", "RefreshIndex", param, err, time.Since(start))
-	}()
-	res, err = backend.Services.Search.RefreshIndex(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Search.RefreshIndex returned nil, nil")
 	}
 	return
 }

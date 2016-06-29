@@ -14,7 +14,6 @@ import (
 	srclibstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 func TestSrclibImport(t *testing.T) {
@@ -22,6 +21,7 @@ func TestSrclibImport(t *testing.T) {
 
 	const (
 		wantRepo     = "r"
+		wantRepoID   = 1
 		wantCommitID = "c"
 	)
 
@@ -31,16 +31,14 @@ func TestSrclibImport(t *testing.T) {
 		"a/b/t.graph.json": graph.Output{Defs: []*graph.Def{{DefKey: graph.DefKey{Path: "p"}, Name: "n", File: "f"}}},
 	}
 
-	calledReposResolve := mock.Repos.MockResolve_Local(t, wantRepo, 1)
+	calledReposResolve := mock.Repos.MockResolve_Local(t, wantRepo, wantRepoID)
 	calledReposGet := mock.Repos.MockGet_Return(t, &sourcegraph.Repo{
-		ID:   1,
-		URI:  wantRepo,
-		Fork: true, // specify fork to prevent background index refreshes
+		ID:  wantRepoID,
+		URI: wantRepo,
 	})
 	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, wantCommitID)
-	mock.Search.RefreshIndex_ = func(ctx context.Context, in *sourcegraph.SearchRefreshIndexOp) (*pbtypes.Void, error) {
-		return nil, nil
-	}
+	calledRefreshIndexes := mock.Async.MockRefreshIndexes(t, &sourcegraph.AsyncRefreshIndexesOp{Repo: wantRepoID, Source: "import " + wantCommitID, Force: true})
+	calledRefreshIndex := mock.Defs.MockRefreshIndex(t, &sourcegraph.DefsRefreshIndexOp{Repo: wantRepoID, CommitID: wantCommitID})
 
 	// Mock the srclib store interface (and replace the old
 	// newSrclibStoreClient value when done).
@@ -127,6 +125,12 @@ func TestSrclibImport(t *testing.T) {
 	}
 	if !*calledReposResolveRev {
 		t.Error("!calledReposResolveRev")
+	}
+	if !*calledRefreshIndexes {
+		t.Error("!calledRefreshIndexes")
+	}
+	if !*calledRefreshIndex {
+		t.Error("!calledRefreshIndex")
 	}
 }
 

@@ -1,5 +1,5 @@
 import React from "react";
-import {TriangleDownIcon, CheckIcon} from "sourcegraph/components/Icons";
+import {CheckIcon, FaAngleDown} from "sourcegraph/components/Icons";
 import CSSModules from "react-css-modules";
 import styles from "./styles/dropdown.css";
 
@@ -44,7 +44,6 @@ class Dropdown extends React.Component {
 		}
 	}
 
-	// _onToggleDropdown specifically only handles triganle icon click event.
 	_onToggleDropdown(ev) {
 		if (this.props.disabled) return;
 		ev.preventDefault();
@@ -77,7 +76,7 @@ class Dropdown extends React.Component {
 			<div styleName={this.props.disabled ? "wrapper-disabled" : "wrapper"} className={this.props.className}
 				ref={(e) => this._wrapper = e}>
 				<span onClick={this.getMenuClickCallback(this.state.selectedValue)}>{this.props.icon} {this.props.title}</span>
-				<span styleName="toggle" onClick={this._onToggleDropdown}><TriangleDownIcon /></span>
+				<span className={`toggle ${this.state.open ? "open-arrow" : ""}`} onClick={this._onToggleDropdown}><FaAngleDown styleName="center-icon"/></span>
 				<div styleName="dropdown-menu">
 					<div role="menu"
 						styleName={this.state.open ? "dropdown-menu-open" : "dropdown-menu-closed"}>

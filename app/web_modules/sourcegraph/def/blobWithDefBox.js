@@ -9,8 +9,8 @@ import DefStore from "sourcegraph/def/DefStore";
 // passes a DefPopup child to be displayed in the blob margin.
 export default ({
 	reconcileState(state, props) {
-		const defPos = DefStore.defs.getPos(state.repo, state.commitID, state.def);
-		state.path = defPos && !defPos.Error ? defPos.File : null;
+		const defPos = state.commitID ? DefStore.defs.getPos(state.repo, state.commitID, state.def) : null;
+		state.path = defPos && !defPos.Error ? defPos.File : state.path;
 		state.startByte = defPos && !defPos.Error ? defPos.DefStart : null;
 		state.endByte = defPos && !defPos.Error ? defPos.DefEnd : null;
 	},

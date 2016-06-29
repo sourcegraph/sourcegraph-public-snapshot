@@ -25,9 +25,6 @@ func robotsTxtHelper(w io.Writer, allowRobots bool, sitemapUrl string) {
 	fmt.Fprintln(&buf, "User-agent: *")
 	if allowRobots {
 		fmt.Fprintln(&buf, "Allow: /")
-		// Disallow URLs with revisions
-		fmt.Fprintln(&buf, "Disallow: /*/*/*@*/")
-		fmt.Fprintln(&buf, "Disallow: /*/*@*/")
 
 	} else {
 		fmt.Fprintln(&buf, "Disallow: /")

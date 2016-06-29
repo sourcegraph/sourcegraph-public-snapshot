@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"reflect"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -8,6 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/graph"
+	"sourcegraph.com/sqs/pbtypes"
 )
 
 func (s *DefsServer) MockGet(t *testing.T, wantDef sourcegraph.DefSpec) (called *bool) {
@@ -43,6 +45,18 @@ func (s *DefsServer) MockList(t *testing.T, wantDefs ...*sourcegraph.Def) (calle
 	s.List_ = func(ctx context.Context, opt *sourcegraph.DefListOptions) (*sourcegraph.DefList, error) {
 		*called = true
 		return &sourcegraph.DefList{Defs: wantDefs}, nil
+	}
+	return
+}
+
+func (s *DefsServer) MockRefreshIndex(t *testing.T, wantOp *sourcegraph.DefsRefreshIndexOp) (called *bool) {
+	called = new(bool)
+	s.RefreshIndex_ = func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
+		*called = true
+		if !reflect.DeepEqual(op, wantOp) {
+			t.Fatalf("unexpected DefsRefreshIndexOp, got %+v != %+v", op, wantOp)
+		}
+		return &pbtypes.Void{}, nil
 	}
 	return
 }

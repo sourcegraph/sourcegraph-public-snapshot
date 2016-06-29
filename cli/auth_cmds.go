@@ -81,7 +81,10 @@ func (c *authCookieCmd) Execute(args []string) error {
 	fmt.Fprintln(os.Stderr, "// Auth cookie for the given OAuth2 access token:")
 	fmt.Fprintln(os.Stderr)
 
-	sess, err := appauth.NewSessionCookie(appauth.Session{AccessToken: c.AccessToken})
+	// Since there is no context object to derive the isSecure flag from, isSecure
+	// is arbitrarilly set to false. This is of no consequence since this field isn't used
+	// anyway.
+	sess, err := appauth.NewSessionCookie(appauth.Session{AccessToken: c.AccessToken}, false)
 	if err != nil {
 		return err
 	}
@@ -106,6 +109,9 @@ func (c *authJWTCmd) Execute(args []string) error {
 	tok, err := jwt.Parse(string(data), func(*jwt.Token) (interface{}, error) {
 		return nil, nil
 	})
+	if err != nil {
+		return err
+	}
 	fmt.Println("(NO VERIFICATION PERFORMED; COULD BE FORGED)")
 	fmt.Println()
 	fmt.Println("## Header")

@@ -27,3 +27,10 @@ func AppURL(ctx context.Context) *url.URL {
 	}
 	return url
 }
+
+// AppURLOrNil returns the context's base URL that was previously configured
+// using WithURL or nil.
+func AppURLOrNil(ctx context.Context) *url.URL {
+	url, _ := ctx.Value(appURLKey).(*url.URL)
+	return url
+}

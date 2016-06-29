@@ -23,6 +23,18 @@ func addOldDefRedirectRoute(genURLRouter *Router, matchRouter *mux.Router) {
 		def := routevar.ToDefAtRev(v)
 		http.Redirect(w, r, genURLRouter.URLToDef(def).String(), http.StatusMovedPermanently)
 	})
+
+	// Match old "DEF/-/refs" URLs. These are also handled in
+	// JavaScript, but the prefetching on the server will try to
+	// handle them before JS can handle them unless we deal with them
+	// here.
+	matchRouter.Path("/" + routevar.Repo + routevar.RepoRevSuffix + "/-/def/" + routevar.Def + "/-/refs").Methods("GET").Name(OldDefRedirect).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		def := routevar.ToDefAtRev(mux.Vars(r))
+		u := genURLRouter.URLToDef(def)
+		u.Path = strings.Replace(u.Path, "/def/", "/info/", 1)
+		u.RawQuery = ""
+		http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
+	})
 }
 
 // pathUnescape is a limited version of url.QueryEscape that only unescapes '?'.

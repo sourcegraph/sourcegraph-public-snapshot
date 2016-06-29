@@ -19,6 +19,16 @@ describe('constants', () => {
     test('@value red blue;', ':export {\n  red: blue\n}')
   })
 
+  it('gives an error when there is no semicolon between lines', () => {
+    const input = '@value red blue\n@value green yellow'
+    let processor = postcss([constants])
+    const result = processor.process(input)
+    const warnings = result.warnings()
+
+    assert.equal(warnings.length, 1)
+    assert.equal(warnings[0].text, 'Invalid value definition: red blue\n@value green yellow')
+  })
+
   it('should export a more complex constant', () => {
     test('@value small (max-width: 599px);', ':export {\n  small: (max-width: 599px)\n}')
   })

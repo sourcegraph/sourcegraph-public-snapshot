@@ -1,1 +1,0 @@
-E:nth-last-child(n){p:v}

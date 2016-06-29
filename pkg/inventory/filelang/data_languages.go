@@ -2626,20 +2626,6 @@ var Langs = (Languages)(Languages{
 		Filenames:    ([]string)(nil),
 	}),
 	(*Language)(&Language{
-		Name:    (string)("JSX"),
-		Type:    (string)("programming"),
-		Aliases: ([]string)(nil),
-		Wrap:    (bool)(false),
-		Extensions: ([]string)([]string{
-			(string)(".jsx"),
-		}),
-		Interpreters: ([]string)(nil),
-		Searchable:   (bool)(false),
-		Color:        (string)(""),
-		Group:        (string)("JavaScript"),
-		Filenames:    ([]string)(nil),
-	}),
-	(*Language)(&Language{
 		Name:    (string)("Jade"),
 		Type:    (string)("markup"),
 		Aliases: ([]string)(nil),
@@ -2737,6 +2723,7 @@ var Langs = (Languages)(Languages{
 			(string)(".sublime_session"),
 			(string)(".xsjs"),
 			(string)(".xsjslib"),
+			(string)(".jsx"),
 		}),
 		Interpreters: ([]string)([]string{
 			(string)("node"),

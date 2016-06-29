@@ -29,6 +29,7 @@ type contextKey int
 
 const (
 	minimalClientKey contextKey = iota
+	reposKey
 )
 
 // NewContextWithMockClient creates a new mock client for testing purpose.

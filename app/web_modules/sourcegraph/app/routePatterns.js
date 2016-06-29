@@ -7,8 +7,11 @@ export type RouteName = "styleguide" |
 	"search" |
 	"home" |
 	"tools" |
-	"myRepos" |
+	"tool" |
 	"tour" |
+	"settings" |
+	"settingsRepos" |
+	"commit" |
 	"def" |
 	"defInfo" |
 	"repo" |
@@ -31,6 +34,8 @@ export type RouteName = "styleguide" |
 	"coverage" |
 	"adminCoverage";
 
+// NOTE: If you add a top-level route (e.g., "/tour"), add it to the
+// topLevel list in app/internal/ui/router.go.
 export const rel: {[key: RouteName]: string} = {
 	search: "search",
 	about: "about",
@@ -42,13 +47,16 @@ export const rel: {[key: RouteName]: string} = {
 	styleguide: "styleguide",
 	home: "",
 	tools: "tools",
-	myRepos: "repositories",
+	tool: "tools/*",
 	tour: "tour",
+	settings: "settings/",
+	settingsRepos: "repos",
 	login: "login",
 	signup: "join",
 	forgot: "forgot",
 	reset: "reset",
 	admin: "-/",
+	commit: "commit",
 	def: "def/*",
 	defInfo: "info/*",
 	repo: "*", // matches both "repo" and "repo@rev"
@@ -70,8 +78,10 @@ export const abs: {[key: RouteName]: string} = {
 	styleguide: rel.styleguide,
 	home: rel.home,
 	tools: rel.tools,
-	myRepos: rel.myRepos,
+	tool: rel.tool,
 	tour: rel.tour,
+	settings: rel.settings,
+	settingsRepos: `${rel.settings}/${rel.settingsRepos}`,
 	login: rel.login,
 	signup: rel.signup,
 	forgot: rel.forgot,
@@ -79,6 +89,7 @@ export const abs: {[key: RouteName]: string} = {
 	admin: rel.admin,
 	adminBuilds: `${rel.admin}${rel.builds}`,
 	adminCoverage: `${rel.admin}${rel.coverage}`,
+	commit: `${rel.repo}/-/${rel.commit}`,
 	def: `${rel.repo}/-/${rel.def}`,
 	defInfo: `${rel.repo}/-/${rel.defInfo}`,
 	repo: rel.repo,

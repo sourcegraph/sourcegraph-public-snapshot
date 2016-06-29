@@ -8,7 +8,7 @@ import {urlToSearch} from "sourcegraph/search/routes";
 class DashboardContainer extends React.Component {
 	static propTypes = {
 		location: React.PropTypes.object.isRequired,
-	}
+	};
 
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,

@@ -1,4 +1,6 @@
 import React from "react";
+import styles from "sourcegraph/delta/styles/DiffStatScale.css";
+import CSSModules from "react-css-modules";
 
 class DiffStatScale extends React.Component {
 	render() {
@@ -48,12 +50,12 @@ class DiffStatScale extends React.Component {
 		}
 
 		return (
-			<span className="diff-stat-scale">
-				<span className="stat-added">{bar(sds.ScaledAdded)}</span>
-				<span className="stat-changed">{bar(sds.ScaledChanged)}</span>
-				<span className="stat-deleted">{bar(sds.ScaledDeleted)}</span>
+			<span styleName="diff-stat-scale">
+				<span styleName="stat-added">{bar(sds.ScaledAdded)}</span>
+				<span styleName="stat-changed">{bar(sds.ScaledChanged)}</span>
+				<span styleName="stat-deleted">{bar(sds.ScaledDeleted)}</span>
 				{filler > 0 ? (
-					<span className="stat-filler">{bar(filler)}</span>
+					<span styleName="stat-filler">{bar(filler)}</span>
 				) : null}
 			</span>
 		);
@@ -67,4 +69,4 @@ DiffStatScale.propTypes = {
 	}).isRequired,
 	Size: React.PropTypes.number,
 };
-export default DiffStatScale;
+export default CSSModules(DiffStatScale, styles);

@@ -1,0 +1,9 @@
+clone:
+  path: sourcegraph.com/sourcegraph/sourcegraph
+
+build:
+  image: golang:1.6
+  commands:
+    - go get -t $(go list ./... | grep -v /vendor/)
+    - go build $(go list ./... | grep -v /vendor/)
+  allow_failure: true

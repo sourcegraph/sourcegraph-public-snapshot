@@ -48,7 +48,7 @@ func init() {
 	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		`ALTER TABLE repo_build_task ALTER COLUMN started_at TYPE timestamp with time zone USING started_at::timestamp with time zone;`,
 		`ALTER TABLE repo_build_task ALTER COLUMN ended_at TYPE timestamp with time zone USING ended_at::timestamp with time zone;`,
-
+		`ALTER TABLE repo_build_task ALTER COLUMN label TYPE text;`,
 		// Set id to 1 + the max previous task ID for the build.
 		// This looks like the where clause is on non-indexed columns. With a huge table this might mean that every insert is quite expensive.
 		// Maybe worth indexing those two columns.

@@ -616,6 +616,7 @@ type DefsClient struct {
 	List_             func(ctx context.Context, in *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
 	ListRefs_         func(ctx context.Context, in *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
 	ListRefLocations_ func(ctx context.Context, in *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
+	ListExamples_     func(ctx context.Context, in *sourcegraph.DefsListExamplesOp) (*sourcegraph.RefLocationsList, error)
 	ListAuthors_      func(ctx context.Context, in *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error)
 	RefreshIndex_     func(ctx context.Context, in *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error)
 }
@@ -636,6 +637,10 @@ func (s *DefsClient) ListRefLocations(ctx context.Context, in *sourcegraph.DefsL
 	return s.ListRefLocations_(ctx, in)
 }
 
+func (s *DefsClient) ListExamples(ctx context.Context, in *sourcegraph.DefsListExamplesOp, opts ...grpc.CallOption) (*sourcegraph.RefLocationsList, error) {
+	return s.ListExamples_(ctx, in)
+}
+
 func (s *DefsClient) ListAuthors(ctx context.Context, in *sourcegraph.DefsListAuthorsOp, opts ...grpc.CallOption) (*sourcegraph.DefAuthorList, error) {
 	return s.ListAuthors_(ctx, in)
 }
@@ -651,6 +656,7 @@ type DefsServer struct {
 	List_             func(v0 context.Context, v1 *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
 	ListRefs_         func(v0 context.Context, v1 *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
 	ListRefLocations_ func(v0 context.Context, v1 *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
+	ListExamples_     func(v0 context.Context, v1 *sourcegraph.DefsListExamplesOp) (*sourcegraph.RefLocationsList, error)
 	ListAuthors_      func(v0 context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error)
 	RefreshIndex_     func(v0 context.Context, v1 *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error)
 }
@@ -671,6 +677,10 @@ func (s *DefsServer) ListRefLocations(v0 context.Context, v1 *sourcegraph.DefsLi
 	return s.ListRefLocations_(v0, v1)
 }
 
+func (s *DefsServer) ListExamples(v0 context.Context, v1 *sourcegraph.DefsListExamplesOp) (*sourcegraph.RefLocationsList, error) {
+	return s.ListExamples_(v0, v1)
+}
+
 func (s *DefsServer) ListAuthors(v0 context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error) {
 	return s.ListAuthors_(v0, v1)
 }
@@ -680,6 +690,26 @@ func (s *DefsServer) RefreshIndex(v0 context.Context, v1 *sourcegraph.DefsRefres
 }
 
 var _ sourcegraph.DefsServer = (*DefsServer)(nil)
+
+type AsyncClient struct {
+	RefreshIndexes_ func(ctx context.Context, in *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error)
+}
+
+func (s *AsyncClient) RefreshIndexes(ctx context.Context, in *sourcegraph.AsyncRefreshIndexesOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	return s.RefreshIndexes_(ctx, in)
+}
+
+var _ sourcegraph.AsyncClient = (*AsyncClient)(nil)
+
+type AsyncServer struct {
+	RefreshIndexes_ func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error)
+}
+
+func (s *AsyncServer) RefreshIndexes(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
+	return s.RefreshIndexes_(v0, v1)
+}
+
+var _ sourcegraph.AsyncServer = (*AsyncServer)(nil)
 
 type DeltasClient struct {
 	Get_       func(ctx context.Context, in *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error)
@@ -822,31 +852,21 @@ func (s *AnnotationsServer) List(v0 context.Context, v1 *sourcegraph.Annotations
 var _ sourcegraph.AnnotationsServer = (*AnnotationsServer)(nil)
 
 type SearchClient struct {
-	Search_       func(ctx context.Context, in *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
-	RefreshIndex_ func(ctx context.Context, in *sourcegraph.SearchRefreshIndexOp) (*pbtypes.Void, error)
+	Search_ func(ctx context.Context, in *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
 }
 
 func (s *SearchClient) Search(ctx context.Context, in *sourcegraph.SearchOp, opts ...grpc.CallOption) (*sourcegraph.SearchResultsList, error) {
 	return s.Search_(ctx, in)
 }
 
-func (s *SearchClient) RefreshIndex(ctx context.Context, in *sourcegraph.SearchRefreshIndexOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.RefreshIndex_(ctx, in)
-}
-
 var _ sourcegraph.SearchClient = (*SearchClient)(nil)
 
 type SearchServer struct {
-	Search_       func(v0 context.Context, v1 *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
-	RefreshIndex_ func(v0 context.Context, v1 *sourcegraph.SearchRefreshIndexOp) (*pbtypes.Void, error)
+	Search_ func(v0 context.Context, v1 *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
 }
 
 func (s *SearchServer) Search(v0 context.Context, v1 *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error) {
 	return s.Search_(v0, v1)
-}
-
-func (s *SearchServer) RefreshIndex(v0 context.Context, v1 *sourcegraph.SearchRefreshIndexOp) (*pbtypes.Void, error) {
-	return s.RefreshIndex_(v0, v1)
 }
 
 var _ sourcegraph.SearchServer = (*SearchServer)(nil)

@@ -35,26 +35,6 @@ type Tokenizer interface {
 	Errors() []string
 }
 
-// NOOP tokenizer
-type noopTokenizer struct{}
-
-func (noop *noopTokenizer) Init(src []byte) {
-}
-
-func (noop *noopTokenizer) Next() *Token {
-	return nil
-}
-
-func (noop *noopTokenizer) Done() {
-}
-
-func (noop *noopTokenizer) Errors() []string {
-	return nil
-}
-
-// singleton
-var noop = &noopTokenizer{}
-
 // tokenizerFactory makes tokenizers
 type tokenizerFactory func() Tokenizer
 

@@ -34,6 +34,11 @@ func TestDefsService_List_Repos(t *testing.T) {
 	if !*calledReposResolve {
 		t.Error("!calledReposResolve")
 	}
+
+	_, err = s.List(ctx, &sourcegraph.DefListOptions{})
+	if err == nil {
+		t.Error("Expected error for def list request with unspecified repository revision and empty query but got none.")
+	}
 }
 
 func TestDefListOptions_Offset(t *testing.T) {

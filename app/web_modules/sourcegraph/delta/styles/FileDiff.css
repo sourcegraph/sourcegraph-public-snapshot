@@ -1,0 +1,30 @@
+@value vars "sourcegraph/components/styles/_vars.css";
+@value base "sourcegraph/components/styles/_base.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value layout "sourcegraph/components/styles/_layout.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+@value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
+
+.container {
+
+}
+
+.header {
+	display: flex;
+	composes: bg-light-gray from colors;
+	composes: pv2 ph3 br2 from base;
+}
+.info {
+	flex: 1 0;
+}
+.name {
+	font-weight: bold;
+}
+.actions {
+	flex: 0 1;
+}
+.action {
+	composes: pl2 from base;
+}
+.hunk {
+}

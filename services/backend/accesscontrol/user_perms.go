@@ -87,7 +87,7 @@ func VerifyActorHasGitHubRepoAccess(ctx context.Context, actor auth.Actor, metho
 
 	if strings.HasPrefix(strings.ToLower(repoURI), "github.com/") {
 		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
-			_, err := (&github.Repos{}).Get(ctx, repoURI)
+			_, err := github.ReposFromContext(ctx).Get(ctx, repoURI)
 			if err != nil {
 				// We don't know if the error is unauthenticated or unauthorized, so return unauthenticated
 				// so that git clients will try again, providing authentication information.

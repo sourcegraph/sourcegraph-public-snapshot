@@ -27,6 +27,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 	return writeJSON(w, def)
 }
 
+// DEPRECATED
 func serveDefs(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 

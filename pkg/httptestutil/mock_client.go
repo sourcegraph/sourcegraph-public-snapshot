@@ -15,6 +15,7 @@ type MockClients struct {
 	// TODO(sqs): move this to ./api/sourcegraph
 	Annotations  mock.AnnotationsClient
 	Accounts     mock.AccountsClient
+	Async        mock.AsyncClient
 	Auth         mock.AuthClient
 	Builds       mock.BuildsClient
 	Defs         mock.DefsClient
@@ -34,6 +35,7 @@ func (c *MockClients) Client() *sourcegraph.Client {
 	return &sourcegraph.Client{
 		Annotations:  &c.Annotations,
 		Accounts:     &c.Accounts,
+		Async:        &c.Async,
 		Auth:         &c.Auth,
 		Builds:       &c.Builds,
 		Defs:         &c.Defs,

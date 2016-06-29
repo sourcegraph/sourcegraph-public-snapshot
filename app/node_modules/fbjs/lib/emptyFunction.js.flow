@@ -7,9 +7,10 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule emptyFunction
+ * @flow
  */
 
-function makeEmptyFunction(arg) {
+function makeEmptyFunction<T>(arg: T): (...args: Array<any>) => T {
   return function () {
     return arg;
   };
@@ -20,7 +21,7 @@ function makeEmptyFunction(arg) {
  * primarily useful idiomatically for overridable function endpoints which
  * always need to be callable, since JS lacks a null-call idiom ala Cocoa.
  */
-function emptyFunction() {}
+const emptyFunction: (...args: Array<any>) => void = function () {};
 
 emptyFunction.thatReturns = makeEmptyFunction;
 emptyFunction.thatReturnsFalse = makeEmptyFunction(false);

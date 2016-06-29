@@ -13,61 +13,11 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/executil"
 )
-
-// resolveRevWithRefreshAndRetry tries to resolve a rev spec to a
-// commit ID. If it doesn't exist, it triggers a refresh of the repo's
-// VCS data and then retries (until maxGetCommitVCSRefreshWait has
-// elapsed).
-func resolveRevWithRefreshAndRetry(t *testing.T, ctx context.Context, repo int32, rev string) string {
-	cl, _ := sourcegraph.NewClientFromContext(ctx)
-
-	wait := time.Second * 9 * ciFactor
-
-	timeout := time.After(wait)
-	done := make(chan struct{})
-	var res *sourcegraph.ResolvedRev
-	var err error
-	go func() {
-		refreshTriggered := false
-		for {
-			res, err = cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo, Rev: rev})
-
-			// Keep retrying if it's a NotFound, but stop trying if we succeeded, or if it's some other
-			// error.
-			if err == nil || grpc.Code(err) != codes.NotFound {
-				break
-			}
-
-			if !refreshTriggered {
-				if _, err = cl.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repo}); err != nil {
-					err = fmt.Errorf("failed to trigger VCS refresh for repo %d: %s", repo, err)
-					break
-				}
-				t.Logf("repo %d revision %s not on remote; triggered refresh of VCS data, waiting %s", repo, rev, wait)
-				refreshTriggered = true
-			}
-			time.Sleep(time.Second)
-		}
-		done <- struct{}{}
-	}()
-	select {
-	case <-done:
-		if err != nil {
-			t.Fatal(err)
-		}
-		return res.CommitID
-	case <-timeout:
-		t.Fatalf("repo %d revision %s not found on remote, even after triggering a VCS refresh and waiting %s (vcsstore should not have taken so long)", repo, rev, wait)
-		panic("unreachable")
-	}
-}
 
 // CreateRepo creates a new repo. Callers must call the returned
 // done() func when done (if err is non-nil) to free up resources.

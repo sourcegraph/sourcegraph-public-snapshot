@@ -1,3 +1,7 @@
+# 1.1.1 (2016-06-22)
+
+  - add more context to errors if they are not instanceof Error
+
 # 1.1.0 (2015-09-29)
 
   - add Emitter#listerCount (to match node v4 api)

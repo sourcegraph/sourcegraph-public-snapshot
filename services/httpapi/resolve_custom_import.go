@@ -15,20 +15,6 @@ type resolvedPath struct {
 	Path string
 }
 
-// isGoRepoPath returns whether pkg is (likely to be) a Go stdlib
-// package import path.
-func isGoRepoPath(pkg string) bool {
-	// If no path components have a ".", then guess that it's a Go
-	// stdlib package.
-	parts := strings.Split(pkg, "/")
-	for _, p := range parts {
-		if strings.Contains(p, ".") {
-			return false
-		}
-	}
-	return true
-}
-
 // serveResolveCustomImportsInfo returns the def/ref info path after resolving custom import paths
 func serveResolveCustomImportsInfo(w http.ResponseWriter, r *http.Request) error {
 	q := r.URL.Query()

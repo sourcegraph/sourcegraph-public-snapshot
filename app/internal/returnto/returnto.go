@@ -25,29 +25,41 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"strings"
 )
 
 // ParamName is the URL query param name for the "return-to" URL.
 const ParamName = "return-to"
 
-// CheckSafe returns a non-nil error if urlStr points to an
-// external site. This helps prevent app endpoints from being used as
-// [open redirects](https://www.owasp.org/index.php/Open_redirect).
-//
-// All endpoints that redirect based on user input should run the
-// target URL through CheckSafe.
-func CheckSafe(urlStr string) error {
-	u, err := url.Parse(urlStr)
+// URLFromRequest determines the proper return-to URL to use from the
+// given request. It uses the URL passed in the "return-to" URL query
+// parameter. If it's empty, the URL path "/" is returned. If it is
+// invalid, an error is returned.
+func URLFromRequest(r *http.Request) (*url.URL, error) {
+	v := r.URL.Query().Get("return-to")
+	if v == "" {
+		return &url.URL{Path: "/"}, nil
+	}
+	u, err := url.Parse(v)
 	if err != nil {
-		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
+		return nil, err
 	}
-	if u.Scheme != "" || u.Host != "" || u.User != nil {
-		return &errcode.HTTPErr{
-			Status: http.StatusForbidden,
-			Err:    fmt.Errorf("suspicious URL pointing to an external site: %q", urlStr),
-		}
+	if u.Scheme != "" || u.Host != "" || u.User != nil || u.Opaque != "" {
+		return nil, fmt.Errorf("suspicious return-to URL pointing to an external site: %q", v)
 	}
-	return nil
+
+	// Remove any nested return-to URLs to avoid an infinite loop.
+	q := u.Query()
+	if q.Get("return-to") != "" {
+		q.Del("return-to")
+		u.RawQuery = q.Encode()
+	}
+
+	if u.Path == "" {
+		u.Path = "/"
+	}
+	if !strings.HasPrefix(u.Path, "/") {
+		return nil, fmt.Errorf("return-to URL must have absolute path, starting with '/': %s", v)
+	}
+	return u, nil
 }

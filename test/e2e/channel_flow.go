@@ -3,7 +3,9 @@ package e2e
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"os"
 
 	"sourcegraph.com/sourcegraph/go-selenium"
 )
@@ -23,6 +25,11 @@ func testChannelFlow(t *T) error {
 	err := wd.Get(t.Endpoint("/-/channel/e2etest"))
 	if err != nil {
 		return err
+	}
+
+	grpcEnv := os.Getenv("TARGET_GRPC")
+	if grpcEnv == "" {
+		return errors.New("TARGET_GRPC environment variable not set")
 	}
 
 	// wait for channel initialization page
@@ -59,7 +66,13 @@ func testChannelFlow(t *T) error {
 		return err
 	}
 
-	_, err = http.Post("https://grpc.sourcegraph.com/.api/channel/e2etest", "application/json; charset=utf-8", body)
+	// add ending slash if there isn't one already
+	if grpcEnv[len(grpcEnv)-1:] != "/" {
+		grpcEnv += "/"
+	}
+	grpcEndp := grpcEnv + ".api/channel/e2etest"
+
+	_, err = http.Post(grpcEndp, "application/json; charset=utf-8", body)
 	if err != nil {
 		return err
 	}
@@ -82,7 +95,7 @@ func testChannelFlow(t *T) error {
 		return err
 	}
 
-	_, err = http.Post("https://grpc.sourcegraph.com/.api/channel/e2etest", "application/json; charset=utf-8", body)
+	_, err = http.Post(grpcEndp, "application/json; charset=utf-8", body)
 	if err != nil {
 		return err
 	}

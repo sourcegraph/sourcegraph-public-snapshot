@@ -5,8 +5,6 @@
 var path = require("path");
 var ConstDependency = require("./dependencies/ConstDependency");
 
-var ModuleAliasPlugin = require("enhanced-resolve/lib/ModuleAliasPlugin");
-
 var NullFactory = require("./NullFactory");
 
 function CompatibilityPlugin() {}
@@ -17,11 +15,6 @@ CompatibilityPlugin.prototype.apply = function(compiler) {
 		compilation.dependencyFactories.set(ConstDependency, new NullFactory());
 		compilation.dependencyTemplates.set(ConstDependency, new ConstDependency.Template());
 	});
-	compiler.resolvers.normal.apply(
-		new ModuleAliasPlugin({
-			"enhanced-require": path.join(__dirname, "..", "buildin", "return-require.js")
-		})
-	);
 	compiler.parser.plugin("call require", function(expr) {
 		// support for browserify style require delegator: "require(o, !0)"
 		if(expr.arguments.length !== 2) return;
@@ -35,7 +28,6 @@ CompatibilityPlugin.prototype.apply = function(compiler) {
 			if(last.critical && last.request === "." && last.userRequest === "." && last.recursive)
 				this.state.current.dependencies.pop();
 		}
-		dep.critical = "This seems to be a pre-built javascript file. Though this is possible, it's not recommended. Try to require the original source to get better results.";
 		this.state.current.addDependency(dep);
 		return true;
 	});

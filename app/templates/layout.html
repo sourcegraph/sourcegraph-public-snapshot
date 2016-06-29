@@ -11,19 +11,6 @@
 		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 		<meta name="theme-color" content="#0fb6f2">
 
-		<link rel="image_src" content={{assetURL "/img/sourcegraph-mark.png"}}>
-		<meta property="og:title" content="Sourcegraph">
-		<meta property="og:image" content={{assetURL "/img/sourcegraph-mark.png"}}>
-		<meta property="og:image:height" content="90">
-		<meta property="og:image:width" content="90">
-		<meta property="og:type" content="website">
-		<meta property="og:description" content="How developers discover and understand code. Sourcegraph is a fast, global, semantic code search and cross-reference engine.">
-		<meta name="twitter:card" content="summary">
-		<meta name="twitter:site" content="Sourcegraph">
-		<meta name="twitter:title" content="Sourcegraph">
-		<meta name="twitter:image" content={{assetURL "/img/sourcegraph-mark.png"}}>
-		<meta name="twitter:description" content="How developers discover and understand code. Sourcegraph is a fast, global, semantic code search and cross-reference engine.">
-
 		{{/* This makes it so that the top fixed navbar slides down as you scroll down on iOS, which we need to fix. But overall it is better to have the text appear at a legible size. */}}
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
 
@@ -35,8 +22,6 @@
 
 		{{/* Insert this inline script before any resources to allow parallel resource fetches. */}}
 		{{template "Scripts" $}}
-
-		<link href="{{assetURL "/main.css"}}" rel="stylesheet">
 
 		{{template "Head" $}}
 
@@ -56,8 +41,8 @@
 		{{template "Footer" $}}
 
 		{{if .Debug}}
-			<div id="debug">
-				<div class="verbose">
+			<div ignore-csp id="debug" style="position:fixed;bottom:42px;left:0;padding:5px 8px;font-family:monospace;font-size:0.75em;background-color:#efefef;z-index:99999;color:#999">
+				<div ignore-csp class="verbose" style="display:none">
 				{{if not (eq buildvar.Version "dev")}}{{buildvar.Version}}<br>{{end}}
 				{{if buildvar.CommitID}}
 					@{{buildvar.CommitID|maxLen 7}} &nbsp;
@@ -72,10 +57,6 @@
 
 		{{if appconf.CustomFeedbackForm}}
 			<div id="custom-feedback-form">{{customFeedbackForm}}</div>
-		{{end}}
-
-		{{with appconf.WebpackDevServerURL}}
-			<script src="{{.}}/webpack-dev-server.js"></script>
 		{{end}}
 
 		<script src="{{assetURL "/main.browser.js"}}"></script>

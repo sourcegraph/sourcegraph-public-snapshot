@@ -1,9 +1,6 @@
 package localstore
 
 import (
-	"bytes"
-	"io/ioutil"
-	"net/http"
 	"reflect"
 	"sort"
 	"testing"
@@ -19,17 +16,96 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-func repoURIs(repos []*sourcegraph.Repo) []string {
+func sortedRepoURIs(repos []*sourcegraph.Repo) []string {
 	var uris []string
 	for _, repo := range repos {
 		uris = append(uris, repo.URI)
 	}
 	sort.Strings(uris)
 	return uris
+}
+
+func TestRepos_Get(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+
+	var s repos
+	ctx, _, done := testContext()
+	defer done()
+
+	want := s.mustCreate(ctx, t, &sourcegraph.Repo{URI: "r"})
+
+	repo, err := s.Get(ctx, want[0].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !jsonutil.JSONEqual(t, repo, want[0]) {
+		t.Errorf("got %v, want %v", repo, want[0])
+	}
+}
+
+func TestRepos_Get_origin(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+
+	var s repos
+	ctx, _, done := testContext()
+	defer done()
+
+	wantOrigin := &sourcegraph.Origin{ID: "id", Service: sourcegraph.Origin_GitHub, APIBaseURL: "u"}
+	want := s.mustCreate(ctx, t, &sourcegraph.Repo{URI: "r", Origin: wantOrigin})
+
+	repo, err := s.Get(ctx, want[0].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !jsonutil.JSONEqual(t, repo, want[0]) {
+		t.Errorf("got %v, want %v", repo, want[0])
+	}
+	if !reflect.DeepEqual(repo.Origin, wantOrigin) {
+		t.Errorf("got origin %v, want %v", repo.Origin, wantOrigin)
+	}
+}
+
+// Test that GitHub repos that don't have the OriginRepoID, etc.,
+// fields set are auto-migrated by the Get method to have those fields
+// set.
+//
+// NOTE: We can remove this auto-migration when the database has
+// numeric repo IDs set for all GitHub repos.
+func TestRepos_Get_migration_setGitHubOriginRepoID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+
+	var s repos
+	ctx, mock, done := testContext()
+	defer done()
+	ctx = store.WithRepos(ctx, &repos{})
+
+	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.RemoteRepo{GitHubID: 123})
+
+	wantOrigin := &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub, APIBaseURL: "https://api.github.com"}
+	created := s.mustCreate(ctx, t, &sourcegraph.Repo{URI: "github.com/a/b", Mirror: true})
+
+	repo, err := s.Get(ctx, created[0].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(repo.Origin, wantOrigin) {
+		t.Errorf("got origin %v, want %v", repo.Origin, wantOrigin)
+	}
 }
 
 func TestRepos_List(t *testing.T) {
@@ -135,7 +211,7 @@ func TestRepos_List_query(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%q: got repos %v, want %v", test.query, got, test.want)
 		}
 	}
@@ -175,28 +251,10 @@ func TestRepos_List_URIs(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%v: got repos %v, want %v", test.uris, got, test.want)
 		}
 	}
-}
-
-type RepoGetterMockPublicRepo struct{}
-
-func (r *RepoGetterMockPublicRepo) Get(ctx context.Context, uri string) (*sourcegraph.RemoteRepo, error) {
-	return &sourcegraph.RemoteRepo{Private: false}, nil
-}
-
-type RepoGetterMockPrivateRepo struct{}
-
-func (r *RepoGetterMockPrivateRepo) Get(ctx context.Context, uri string) (*sourcegraph.RemoteRepo, error) {
-	return &sourcegraph.RemoteRepo{Private: true}, nil
-}
-
-type RepoGetterMockUnauthorizedRepo struct{}
-
-func (r *RepoGetterMockUnauthorizedRepo) Get(ctx context.Context, uri string) (*sourcegraph.RemoteRepo, error) {
-	return nil, grpc.Errorf(codes.Unauthenticated, "%s", "github.Repos.Get")
 }
 
 func TestRepos_List_GitHubURIs_PublicRepo(t *testing.T) {
@@ -204,10 +262,10 @@ func TestRepos_List_GitHubURIs_PublicRepo(t *testing.T) {
 		t.Skip()
 	}
 
-	repoGetter = &RepoGetterMockPublicRepo{}
-
-	ctx, _, done := testContext()
+	ctx, mock, done := testContext()
 	defer done()
+
+	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.RemoteRepo{Private: false})
 
 	s := &repos{}
 
@@ -225,17 +283,7 @@ func TestRepos_List_GitHubURIs_PublicRepo(t *testing.T) {
 	}
 
 	want := []string{"a/b"}
-	if got := repoURIs(repoList); !reflect.DeepEqual(got, want) {
-		t.Fatalf("got repos: %v, want %v", got, want)
-	}
-
-	repoList, err = s.List(ctx, &sourcegraph.RepoListOptions{SlowlyIncludePublicGitHubRepos: true})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want = []string{"a/b", "github.com/public"}
-	if got := repoURIs(repoList); !reflect.DeepEqual(got, want) {
+	if got := sortedRepoURIs(repoList); !reflect.DeepEqual(got, want) {
 		t.Fatalf("got repos: %v, want %v", got, want)
 	}
 }
@@ -245,10 +293,10 @@ func TestRepos_List_GitHubURIs_PrivateRepo(t *testing.T) {
 		t.Skip()
 	}
 
-	repoGetter = &RepoGetterMockPrivateRepo{}
-
-	ctx, _, done := testContext()
+	ctx, mock, done := testContext()
 	defer done()
+
+	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.RemoteRepo{Private: false})
 
 	s := &repos{}
 
@@ -261,7 +309,7 @@ func TestRepos_List_GitHubURIs_PrivateRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := repoURIs(repoList); len(got) != 0 {
+	if got := sortedRepoURIs(repoList); len(got) != 0 {
 		t.Fatal("List should not have returned any repos, got:", got)
 	}
 }
@@ -271,8 +319,6 @@ func TestRepos_List_GithubURIs_UnauthenticatedRepo(t *testing.T) {
 		t.Skip()
 	}
 
-	repoGetter = &RepoGetterMockUnauthorizedRepo{}
-
 	ctx, _, done := testContext()
 	defer done()
 
@@ -287,28 +333,10 @@ func TestRepos_List_GithubURIs_UnauthenticatedRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := repoURIs(repoList); len(got) != 0 {
+	if got := sortedRepoURIs(repoList); len(got) != 0 {
 		t.Fatal("List should not have returned any repos, got:", got)
 	}
 
-}
-
-type mockGitHubRepos struct {
-	Get_     func(owner, repo string) (*gogithub.Repository, *gogithub.Response, error)
-	GetByID_ func(id int) (*gogithub.Repository, *gogithub.Response, error)
-	List_    func(user string, opt *gogithub.RepositoryListOptions) ([]gogithub.Repository, *gogithub.Response, error)
-}
-
-func (s mockGitHubRepos) Get(owner, repo string) (*gogithub.Repository, *gogithub.Response, error) {
-	return s.Get_(owner, repo)
-}
-
-func (s mockGitHubRepos) GetByID(id int) (*gogithub.Repository, *gogithub.Response, error) {
-	return s.GetByID_(id)
-}
-
-func (s mockGitHubRepos) List(user string, opt *gogithub.RepositoryListOptions) ([]gogithub.Repository, *gogithub.Response, error) {
-	return s.List_(user, opt)
 }
 
 func TestRepos_Search(t *testing.T) {
@@ -316,25 +344,12 @@ func TestRepos_Search(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, _, done := testContext()
+	ctx, mock, done := testContext()
 	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 	defer done()
 	ctx = store.WithRepos(ctx, &repos{})
 
-	var calledGet bool
-	client := gogithub.NewClient(&http.Client{})
-	ctx = github.NewContextWithMockClient(ctx, true, client, client, mockGitHubRepos{
-		Get_: func(owner, repo string) (*gogithub.Repository, *gogithub.Response, error) {
-			calledGet = true
-			return &gogithub.Repository{
-				ID:       gogithub.Int(123),
-				Name:     gogithub.String("repo"),
-				FullName: gogithub.String("owner/repo"),
-				Owner:    &gogithub.User{ID: gogithub.Int(1)},
-				CloneURL: gogithub.String("https://github.com/owner/repo.git"),
-				Private:  gogithub.Bool(false),
-			}, nil, nil
-		}})
+	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.RemoteRepo{})
 
 	testRepos := []*sourcegraph.Repo{
 		{URI: "github.com/sourcegraph/srclib", Owner: "sourcegraph", Name: "srclib", Mirror: true},
@@ -373,12 +388,9 @@ func TestRepos_Search(t *testing.T) {
 		for _, r := range results {
 			repos = append(repos, r.Repo)
 		}
-		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%q: got repos %v, want %v", test.query, got, test.want)
 		}
-	}
-	if !calledGet {
-		t.Error("!calledGet")
 	}
 }
 
@@ -387,23 +399,16 @@ func TestRepos_Search_PrivateRepo(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, _, done := testContext()
+	ctx, mock, done := testContext()
 	defer done()
 	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 	ctx = store.WithRepos(ctx, &repos{})
 
-	var calledGet bool
-	client := gogithub.NewClient(&http.Client{})
-	ctx = github.NewContextWithMockClient(ctx, false, client, client, mockGitHubRepos{
-		Get_: func(owner, repo string) (*gogithub.Repository, *gogithub.Response, error) {
-			calledGet = true
-			resp := &http.Response{
-				StatusCode: http.StatusNotFound,
-				Body:       ioutil.NopCloser(bytes.NewReader(nil)),
-				Request:    &http.Request{},
-			}
-			return nil, &gogithub.Response{Response: resp}, gogithub.CheckResponse(resp)
-		}})
+	var calledGetGitHubRepo bool
+	mock.githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, error) {
+		calledGetGitHubRepo = true
+		return nil, grpc.Errorf(codes.NotFound, "")
+	}
 
 	s := repos{}
 	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/sourcegraph/private-test", Owner: "sourcegraph", Name: "private-test", Mirror: true}); err != nil {
@@ -427,12 +432,12 @@ func TestRepos_Search_PrivateRepo(t *testing.T) {
 		for _, r := range results {
 			repos = append(repos, r.Repo)
 		}
-		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%q: got repos %v, want %v", test.query, got, test.want)
 		}
 	}
-	if !calledGet {
-		t.Error("!calledGet")
+	if !calledGetGitHubRepo {
+		t.Error("!calledGetGitHubRepo")
 	}
 }
 
@@ -610,4 +615,22 @@ func TestRepos_Update_PushedAt(t *testing.T) {
 	if want := newTime; !repo.PushedAt.Time().Equal(want) {
 		t.Errorf("got PushedAt %q, want %q", repo.PushedAt.Time(), want)
 	}
+}
+
+type mockGitHubRepos struct {
+	Get_     func(owner, repo string) (*gogithub.Repository, *gogithub.Response, error)
+	GetByID_ func(id int) (*gogithub.Repository, *gogithub.Response, error)
+	List_    func(user string, opt *gogithub.RepositoryListOptions) ([]gogithub.Repository, *gogithub.Response, error)
+}
+
+func (s mockGitHubRepos) Get(owner, repo string) (*gogithub.Repository, *gogithub.Response, error) {
+	return s.Get_(owner, repo)
+}
+
+func (s mockGitHubRepos) GetByID(id int) (*gogithub.Repository, *gogithub.Response, error) {
+	return s.GetByID_(id)
+}
+
+func (s mockGitHubRepos) List(user string, opt *gogithub.RepositoryListOptions) ([]gogithub.Repository, *gogithub.Response, error) {
+	return s.List_(user, opt)
 }

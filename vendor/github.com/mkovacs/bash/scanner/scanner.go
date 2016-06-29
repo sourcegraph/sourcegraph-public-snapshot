@@ -83,7 +83,7 @@ func (s *Scanner) transition(tf transitionFunc) {
 }
 
 func isOperator(ch rune) bool {
-	return unicode.IsSymbol(ch) || unicode.IsPunct(ch)
+	return ch != '_' && (unicode.IsSymbol(ch) || unicode.IsPunct(ch))
 }
 
 func isWordChar(ch rune) bool {
@@ -153,7 +153,7 @@ func tfIdent(s *Scanner) error {
 		s.emit(Ident)
 		s.transition(tfSpace)
 	// TODO: make sure there are no overlapping cases
-	case isWordChar(ch):
+	case isWordChar(ch) || ch == '-':
 		s.consume()
 		s.accept()
 	case isOperator(ch):

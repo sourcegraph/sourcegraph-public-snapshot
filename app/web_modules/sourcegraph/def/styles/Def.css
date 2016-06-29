@@ -116,3 +116,6 @@
 	composes: light-gray from colors;
 	composes: f6 from typography;
 }
+.view-all-button {
+	composes: mt2 from base;
+}

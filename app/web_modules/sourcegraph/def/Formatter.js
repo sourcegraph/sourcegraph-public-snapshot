@@ -37,7 +37,7 @@ export function qualifiedNameAndType(def, opts: ?DefFormatOptions) {
 
 // defTitleOK reports if it's safe to call defTitle with def.
 export function defTitleOK(def: Def): bool {
-	return def && def.FmtStrings && def.Unit;
+	return def && def.FmtStrings;
 }
 
 // defTitle returns a title for def.
@@ -45,23 +45,5 @@ export function defTitleOK(def: Def): bool {
 // omits type information, and produces a string rather than HTML.
 // defTitle is safe to call if and only if defTitleOK returns true for def.
 export function defTitle(def: Def): string {
-	const f = def.FmtStrings;
-
-	let name = f.Name.ScopeQualified;
-	if (f.Name.Unqualified && name) {
-		let parts = name.split(f.Name.Unqualified);
-		name = [
-			parts.slice(0, parts.length - 1).join(f.Name.Unqualified),
-			f.Name.Unqualified,
-		].join("");
-	}
-
-	// Last '/'-separated element of unit.
-	let unit = def.Unit;
-	let i = unit.lastIndexOf("/");
-	if (i !== -1) {
-		unit = unit.substring(i + 1);
-	}
-
-	return `${unit}.${name}`;
+	return def.FmtStrings.Name.DepQualified;
 }

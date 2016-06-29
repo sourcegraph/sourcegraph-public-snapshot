@@ -16,8 +16,6 @@ import (
 // This file deals with remote repos (e.g., GitHub repos) that are not
 // persisted locally.
 
-var getGitHubRepo = (&github.Repos{}).Get
-
 func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
 	// First, look up locally.
 	repo, err := store.ReposFromContext(ctx).GetByURI(ctx, op.Path)
@@ -25,7 +23,7 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*so
 		return &sourcegraph.RepoResolution{Repo: repo.ID, CanonicalPath: op.Path}, nil
 	} else if errcode.GRPC(err) == codes.NotFound {
 		// Next, see if it's a GitHub repo.
-		repo, err := getGitHubRepo(ctx, op.Path)
+		repo, err := github.ReposFromContext(ctx).Get(ctx, op.Path)
 		if err == nil {
 			// If canonical location differs, try looking up locally at canonical location.
 			if canonicalPath := "github.com/" + repo.Owner + "/" + repo.Name; op.Path != canonicalPath {
@@ -53,7 +51,7 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*so
 }
 
 func (s *repos) ListRemote(ctx context.Context, opt *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error) {
-	repos, err := (&github.Repos{}).ListAccessible(ctx, &gogithub.RepositoryListOptions{
+	repos, err := github.ReposFromContext(ctx).ListAccessible(ctx, &gogithub.RepositoryListOptions{
 		ListOptions: gogithub.ListOptions{
 			PerPage: int(opt.ListOptions.PerPage),
 			Page:    int(opt.ListOptions.Page),

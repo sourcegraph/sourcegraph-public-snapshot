@@ -11,6 +11,8 @@
 	display: inline-block;
 	flex: 0 0 auto;
 }
+
+.nav { display: flex; }
 .repoName {
 	composes: b db mr3 from base;
 }
@@ -22,6 +24,7 @@
 	.repo-nav-context {
 		overflow: hidden;
 		text-overflow: ellipsis;
+		flex: 1;
 	}
 }
 
@@ -43,4 +46,10 @@
 	composes: f4 from typography;
 	composes: col-9 from grid;
 	composes: modal from "sourcegraph/components/styles/modal.css";
+}
+
+.outer-container {
+	display: flex;
+	flex-direction: column;
+	flex: auto;
 }

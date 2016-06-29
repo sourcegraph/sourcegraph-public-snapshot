@@ -10,8 +10,6 @@ import (
 	"os"
 	pathpkg "path"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -102,36 +100,28 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 		return fmt.Errorf("srclib import of %s failed: %s", repo.URI, err)
 	}
 
+	// Update defs table in DB
+	if _, err := cl.Defs.RefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
+		Repo:     repoRev.Repo,
+		CommitID: repoRev.CommitID,
+	}); err != nil {
+		return err
+	}
+
 	if repo.Fork {
 		// Don't index forks in global search
 		return nil
 	}
 
-	// Best-effort global search re-index, don't block import
-	go func() {
-		_, err := cl.Defs.RefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
-			Repo:                repoRev.Repo,
-			RefreshRefLocations: true,
-		})
-		if err != nil {
-			log15.Error("def indexing failed", "repo", repoRev.Repo, "commit", repoRev.CommitID, "err", err)
-			// No point running search indexing, since it depends on ref indexing
-			return
-		} else {
-			log15.Info("def indexing succeeded", "repo", repoRev.Repo, "commit", repoRev.CommitID)
-		}
-
-		_, err = cl.Search.RefreshIndex(ctx, &sourcegraph.SearchRefreshIndexOp{
-			Repos:         []int32{repoRev.Repo},
-			RefreshCounts: true,
-			RefreshSearch: true,
-		})
-		if err != nil {
-			log15.Error("search indexing failed", "repo", repoRev.Repo, "commit", repoRev.CommitID, "err", err)
-		} else {
-			log15.Info("search indexing succeeded", "repo", repoRev.Repo, "commit", repoRev.CommitID)
-		}
-	}()
+	// global * reindex, doesn't block import
+	_, err = cl.Async.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
+		Repo:   repoRev.Repo,
+		Source: fmt.Sprintf("import %s", repoRev.CommitID),
+		Force:  true,
+	})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 func (s *Repos) MockGet(t *testing.T, wantRepo int32) (called *bool) {
@@ -31,6 +32,19 @@ func (s *Repos) MockGet_Path(t *testing.T, wantRepo int32, repoPath string) (cal
 			return nil, grpc.Errorf(codes.NotFound, "repo %v not found", wantRepo)
 		}
 		return &sourcegraph.Repo{ID: repo, URI: repoPath}, nil
+	}
+	return
+}
+
+func (s *Repos) MockUpdate(t *testing.T, wantRepo int32) (called *bool) {
+	called = new(bool)
+	s.Update_ = func(ctx context.Context, repoUpdate store.RepoUpdate) error {
+		*called = true
+		if repoUpdate.ReposUpdateOp.Repo != wantRepo {
+			t.Errorf("got repo %q, want %q", repoUpdate.ReposUpdateOp.Repo, wantRepo)
+			return grpc.Errorf(codes.NotFound, "repo %v not found", wantRepo)
+		}
+		return nil
 	}
 	return
 }

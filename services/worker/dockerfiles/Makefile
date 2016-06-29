@@ -2,24 +2,20 @@
 #
 # Note: this Makefile should be run from its containing directory.
 
-TOOLCHAINS ?= srclib-go srclib-java srclib-typescript srclib-python srclib-basic srclib-javascript srclib-csharp srclib-css
+TOOLCHAINS ?= $(patsubst Dockerfile.%, %, $(wildcard Dockerfile.*))
 
-.PHONY: default build push pull $(TOOLCHAINS) clean
+.PHONY: default build $(TOOLCHAINS) clean
 
 default:
 	@echo "See README.md for instructions"
 
 build: $(TOOLCHAINS)
 
-push:
-	for t in $(TOOLCHAINS); do docker push sourcegraph/$$t; done;
-
-pull:
-	for t in $(TOOLCHAINS); do docker pull sourcegraph/$$t; done;
-
 $(TOOLCHAINS): srclib
 	@$(eval COMMIT = $(shell git ls-remote https://github.com/sourcegraph/$@ master | awk '{ print $$1 }'))
-	docker build --build-arg TOOLCHAIN_URL=https://github.com/sourcegraph/$@/tarball/${COMMIT} -t sourcegraph/$@ -f ./Dockerfile.$@ .
+	docker build --build-arg TOOLCHAIN_URL=https://github.com/sourcegraph/$@/tarball/${COMMIT} -t sourcegraph/$@:${COMMIT} -f ./Dockerfile.$@ .
+	docker push sourcegraph/$@:${COMMIT}
+	@echo Update the image in ../plan/srclib_images.go to sourcegraph/$@:${COMMIT}
 
 # Generates srclib binary
 srclib:

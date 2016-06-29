@@ -46,6 +46,7 @@ func (r *ReposCreateOp) UnmarshalJSON(data []byte) error {
 		Op struct {
 			New          *ReposCreateOp_NewRepo
 			FromGitHubID *int32
+			Origin       *Origin
 		}
 	}
 	if err := json.Unmarshal(data, &m); err != nil {
@@ -56,6 +57,8 @@ func (r *ReposCreateOp) UnmarshalJSON(data []byte) error {
 		*r = ReposCreateOp{Op: &ReposCreateOp_New{New: m.Op.New}}
 	case m.Op.FromGitHubID != nil:
 		*r = ReposCreateOp{Op: &ReposCreateOp_FromGitHubID{FromGitHubID: *m.Op.FromGitHubID}}
+	case m.Op.Origin != nil:
+		*r = ReposCreateOp{Op: &ReposCreateOp_Origin{Origin: m.Op.Origin}}
 	}
 	return nil
 }

@@ -1,9 +1,21 @@
 {
-	"presets": ["es2015", "react"],
+	"presets": ["es2015-webpack", "react"],
 	"plugins": [
+		"react-hot-loader/babel",
 		"transform-flow-strip-types",
 		"transform-object-rest-spread",
 		"syntax-trailing-function-commas",
 		"transform-class-properties",
-	]
+	],
+	"env": {
+		"test": {
+			"presets": ["es2015", "react"],
+			"plugins": [
+				"transform-flow-strip-types",
+				"transform-object-rest-spread",
+				"syntax-trailing-function-commas",
+				"transform-class-properties",
+			]
+		}
+	}
 }

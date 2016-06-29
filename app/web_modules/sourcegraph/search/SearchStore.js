@@ -5,36 +5,31 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 
-function keyForResults(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number): string {
-	return `${query}#${repos ? repos.join(":") : ""}#${notRepos ? notRepos.join(":") : ""}#${limit || ""}`;
+function keyForResults(query: string, repos: ?Array<string>, notRepos: ?Array<string>, commitID: ?string, limit: ?number): string {
+	return `${query}#${repos ? repos.join(":") : ""}#${notRepos ? notRepos.join(":") : ""}#${commitID ? commitID : ""}#${limit || ""}`;
 }
 
 export class SearchStore extends Store {
+	content: any;
+
 	reset(data?: {results: any}) {
-		this.results = deepFreeze({
-			content: data && data.results ? data.results : {},
-			get(query, repos, notRepos, limit) {
-				return this.content[keyForResults(query, repos, notRepos, limit)] || null;
-			},
-		});
+		this.content = deepFreeze(data && data.results ? data.results : {});
 	}
 
-	toJSON() {
-		return {results: this.results};
+	get(query: string, repos: ?Array<string>, notRepos: ?Array<string>, commitID: ?string, limit: number): ?any {
+		return this.content[keyForResults(query, repos, notRepos, commitID, limit)] || null;
 	}
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case SearchActions.ResultsFetched:
-			this.results = deepFreeze({
-				...this.results,
-				content: {
-					...this.results.content,
-					[keyForResults(action.query, action.repos, action.notRepos, action.limit)]: action.defs,
-				},
+		case SearchActions.ResultsFetched: {
+			let p: SearchActions.ResultsFetchedPayload = action.p;
+			this.content = deepFreeze({
+				...this.content,
+				[keyForResults(p.query, p.repos, p.notRepos, p.commitID, p.limit)]: p.defs,
 			});
 			break;
-
+		}
 		default:
 			return; // don't emit change
 		}
@@ -43,4 +38,5 @@ export class SearchStore extends Store {
 	}
 }
 
-export default new SearchStore(Dispatcher.Stores);
+let store_: SearchStore = new SearchStore(Dispatcher.Stores);
+export default store_;

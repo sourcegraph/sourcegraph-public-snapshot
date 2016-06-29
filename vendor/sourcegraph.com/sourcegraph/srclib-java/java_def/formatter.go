@@ -52,8 +52,6 @@ func (f defFormatter) DefKeyword() string {
 		return "enum"
 	case "PACKAGE":
 		return "package"
-	case "PARAMETER", "LOCAL_VARIABLE":
-		return f.data.TypeExpression
 	case "METHOD":
 		return "method"
 	case "CONSTRUCTOR":
@@ -82,16 +80,10 @@ func (f defFormatter) Name(qual graph.Qualification) string {
 
 func (f defFormatter) Type(qual graph.Qualification) string {
 	switch f.data.JavaKind {
-	case "CLASS":
-		return "class"
-	case "INTERFACE":
-		return "interface"
-	case "ENUM":
-		return "enum"
-	case "PACKAGE":
-		return "package"
+	case "CLASS", "INTERFACE", "ENUM", "PACKAGE":
+		return ""
 	default:
-		return f.data.TypeExpression
+		return strings.Replace(strings.Replace(f.data.TypeExpression, ",", ", ", -1), ")", ") ", -1)
 	}
 }
 

@@ -6,7 +6,7 @@ class Collapsible extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			shown: !Boolean(props.collapsed),
+			shown: !props.collapsed,
 		};
 		this._onClick = this._onClick.bind(this);
 	}
@@ -39,6 +39,7 @@ Collapsible.propTypes = {
 		if (props.children.length !== 2) {
 			return new Error("Collapsible must be constructed with exactly two children.");
 		}
+		return null;
 	},
 	collapsed: React.PropTypes.bool,
 	onToggle: React.PropTypes.func,

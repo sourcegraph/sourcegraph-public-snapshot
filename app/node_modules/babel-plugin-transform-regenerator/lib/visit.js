@@ -1,40 +1,42 @@
-/**
- * Copyright (c) 2014, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * https://raw.github.com/facebook/regenerator/master/LICENSE file. An
- * additional grant of patent rights can be found in the PATENTS file in
- * the same directory.
- */
+/*istanbul ignore next*/"use strict";
 
-"use strict";
+var /*istanbul ignore next*/_assert = require("assert");
 
-var _interopRequireDefault = require("babel-runtime/helpers/interop-require-default")["default"];
-
-var _interopRequireWildcard = require("babel-runtime/helpers/interop-require-wildcard")["default"];
-
-var _assert = require("assert");
-
+/*istanbul ignore next*/
 var _assert2 = _interopRequireDefault(_assert);
 
-var _babelTypes = require("babel-types");
+var /*istanbul ignore next*/_babelTypes = require("babel-types");
 
+/*istanbul ignore next*/
 var t = _interopRequireWildcard(_babelTypes);
 
-var _hoist = require("./hoist");
+var /*istanbul ignore next*/_hoist = require("./hoist");
 
-var _emit = require("./emit");
+var /*istanbul ignore next*/_emit = require("./emit");
 
-var _util = require("./util");
+var /*istanbul ignore next*/_util = require("./util");
 
+/*istanbul ignore next*/
 var util = _interopRequireWildcard(_util);
 
-var getMarkInfo = require("private").makeAccessor();
+/*istanbul ignore next*/
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var getMarkInfo = require("private").makeAccessor(); /**
+                                                      * Copyright (c) 2014, Facebook, Inc.
+                                                      * All rights reserved.
+                                                      *
+                                                      * This source code is licensed under the BSD-style license found in the
+                                                      * https://raw.github.com/facebook/regenerator/master/LICENSE file. An
+                                                      * additional grant of patent rights can be found in the PATENTS file in
+                                                      * the same directory.
+                                                      */
 
 exports.visitor = {
   Function: {
-    exit: function exit(path, state) {
+    exit: function /*istanbul ignore next*/exit(path, state) {
       var node = path.node;
 
       if (node.generator) {
@@ -94,7 +96,7 @@ exports.visitor = {
 
       // Turn all declarations into vars, and replace the original
       // declarations with equivalent assignment expressions.
-      var vars = _hoist.hoist(path);
+      var vars = /*istanbul ignore next*/(0, _hoist.hoist)(path);
 
       var didRenameArguments = renameArguments(path, argsId);
       if (didRenameArguments) {
@@ -102,7 +104,7 @@ exports.visitor = {
         vars.declarations.push(t.variableDeclarator(argsId, t.identifier("arguments")));
       }
 
-      var emitter = new _emit.Emitter(contextId);
+      var emitter = new /*istanbul ignore next*/_emit.Emitter(contextId);
       emitter.explode(path.get("body"));
 
       if (vars && vars.declarations.length > 0) {
@@ -186,7 +188,7 @@ function getOuterFnExpr(funPath) {
 
 function getRuntimeMarkDecl(blockPath) {
   var block = blockPath.node;
-  _assert2["default"].ok(Array.isArray(block.body));
+  /*istanbul ignore next*/_assert2.default.ok(Array.isArray(block.body));
 
   var info = getMarkInfo(block);
   if (info.decl) {
@@ -216,11 +218,11 @@ function renameArguments(funcPath, argsId) {
 }
 
 var argumentsVisitor = {
-  "FunctionExpression|FunctionDeclaration": function FunctionExpressionFunctionDeclaration(path) {
+  "FunctionExpression|FunctionDeclaration": function /*istanbul ignore next*/FunctionExpressionFunctionDeclaration(path) {
     path.skip();
   },
 
-  Identifier: function Identifier(path, state) {
+  Identifier: function /*istanbul ignore next*/Identifier(path, state) {
     if (path.node.name === "arguments" && util.isReference(path)) {
       path.replaceWith(state.argsId);
       state.didRenameArguments = true;
@@ -228,9 +230,10 @@ var argumentsVisitor = {
   }
 };
 
-var functionSentVisitor = {
+var functionSentVisitor = { /*istanbul ignore next*/
   MetaProperty: function MetaProperty(path) {
-    var node = path.node;
+    /*istanbul ignore next*/var node = path.node;
+
 
     if (node.meta.name === "function" && node.property.name === "sent") {
       path.replaceWith(t.memberExpression(this.context, t.identifier("_sent")));
@@ -239,11 +242,11 @@ var functionSentVisitor = {
 };
 
 var awaitVisitor = {
-  Function: function Function(path) {
+  Function: function /*istanbul ignore next*/Function(path) {
     path.skip(); // Don't descend into nested function scopes.
   },
 
-  AwaitExpression: function AwaitExpression(path) {
+  AwaitExpression: function /*istanbul ignore next*/AwaitExpression(path) {
     // Convert await expressions to yield expressions.
     var argument = path.node.argument;
 

@@ -1,30 +1,85 @@
-/* eslint max-len: 0 */
-
-"use strict";
-
-var _interopRequireDefault = require("babel-runtime/helpers/interop-require-default")["default"];
-
-var _interopRequireWildcard = require("babel-runtime/helpers/interop-require-wildcard")["default"];
+/*istanbul ignore next*/"use strict";
 
 exports.__esModule = true;
 
-var _babelHelperGetFunctionArity = require("babel-helper-get-function-arity");
+exports.default = function ( /*istanbul ignore next*/_ref) {
+  /*istanbul ignore next*/var node = _ref.node;
+  /*istanbul ignore next*/var parent = _ref.parent;
+  /*istanbul ignore next*/var scope = _ref.scope;
+  /*istanbul ignore next*/var id = _ref.id;
 
+  // has an `id` so we don't need to infer one
+  if (node.id) return;
+
+  if ((t.isObjectProperty(parent) || t.isObjectMethod(parent, { kind: "method" })) && (!parent.computed || t.isLiteral(parent.key))) {
+    // { foo() {} };
+    id = parent.key;
+  } else if (t.isVariableDeclarator(parent)) {
+    // let foo = function () {};
+    id = parent.id;
+
+    if (t.isIdentifier(id)) {
+      var binding = scope.parent.getBinding(id.name);
+      if (binding && binding.constant && scope.getBinding(id.name) === binding) {
+        // always going to reference this method
+        node.id = id;
+        node.id[t.NOT_LOCAL_BINDING] = true;
+        return;
+      }
+    }
+  } else if (t.isAssignmentExpression(parent)) {
+    // foo = function () {};
+    id = parent.left;
+  } else if (!id) {
+    return;
+  }
+
+  var name = /*istanbul ignore next*/void 0;
+  if (id && t.isLiteral(id)) {
+    name = id.value;
+  } else if (id && t.isIdentifier(id)) {
+    name = id.name;
+  } else {
+    return;
+  }
+
+  name = t.toBindingIdentifierName(name);
+  id = t.identifier(name);
+
+  // The id shouldn't be considered a local binding to the function because
+  // we are simply trying to set the function name and not actually create
+  // a local binding.
+  id[t.NOT_LOCAL_BINDING] = true;
+
+  var state = visit(node, name, scope);
+  return wrap(state, node, id, scope) || node;
+};
+
+var /*istanbul ignore next*/_babelHelperGetFunctionArity = require("babel-helper-get-function-arity");
+
+/*istanbul ignore next*/
 var _babelHelperGetFunctionArity2 = _interopRequireDefault(_babelHelperGetFunctionArity);
 
-var _babelTemplate = require("babel-template");
+var /*istanbul ignore next*/_babelTemplate = require("babel-template");
 
+/*istanbul ignore next*/
 var _babelTemplate2 = _interopRequireDefault(_babelTemplate);
 
-var _babelTypes = require("babel-types");
+var /*istanbul ignore next*/_babelTypes = require("babel-types");
 
+/*istanbul ignore next*/
 var t = _interopRequireWildcard(_babelTypes);
 
-var buildPropertyMethodAssignmentWrapper = _babelTemplate2["default"]("\n  (function (FUNCTION_KEY) {\n    function FUNCTION_ID() {\n      return FUNCTION_KEY.apply(this, arguments);\n    }\n\n    FUNCTION_ID.toString = function () {\n      return FUNCTION_KEY.toString();\n    }\n\n    return FUNCTION_ID;\n  })(FUNCTION)\n");
+/*istanbul ignore next*/
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
-var buildGeneratorPropertyMethodAssignmentWrapper = _babelTemplate2["default"]("\n  (function (FUNCTION_KEY) {\n    function* FUNCTION_ID() {\n      return yield* FUNCTION_KEY.apply(this, arguments);\n    }\n\n    FUNCTION_ID.toString = function () {\n      return FUNCTION_KEY.toString();\n    };\n\n    return FUNCTION_ID;\n  })(FUNCTION)\n");
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var visitor = {
+var buildPropertyMethodAssignmentWrapper = /*istanbul ignore next*/(0, _babelTemplate2.default)( /*istanbul ignore next*/"\n  (function (FUNCTION_KEY) {\n    function FUNCTION_ID() {\n      return FUNCTION_KEY.apply(this, arguments);\n    }\n\n    FUNCTION_ID.toString = function () {\n      return FUNCTION_KEY.toString();\n    }\n\n    return FUNCTION_ID;\n  })(FUNCTION)\n"); /* eslint max-len: 0 */
+
+var buildGeneratorPropertyMethodAssignmentWrapper = /*istanbul ignore next*/(0, _babelTemplate2.default)( /*istanbul ignore next*/"\n  (function (FUNCTION_KEY) {\n    function* FUNCTION_ID() {\n      return yield* FUNCTION_KEY.apply(this, arguments);\n    }\n\n    FUNCTION_ID.toString = function () {\n      return FUNCTION_KEY.toString();\n    };\n\n    return FUNCTION_ID;\n  })(FUNCTION)\n");
+
+var visitor = { /*istanbul ignore next*/
   "ReferencedIdentifier|BindingIdentifier": function ReferencedIdentifierBindingIdentifier(path, state) {
     // check if this node matches our function id
     if (path.node.name !== state.name) return;
@@ -61,7 +116,7 @@ function wrap(state, method, id, scope) {
       // shim in dummy params to retain function arity, if you try to read the
       // source then you'll get the original since it's proxied so it's all good
       var params = _template.callee.body.body[0].params;
-      for (var i = 0, len = _babelHelperGetFunctionArity2["default"](method); i < len; i++) {
+      for (var i = 0, len = /*istanbul ignore next*/(0, _babelHelperGetFunctionArity2.default)(method); i < len; i++) {
         params.push(scope.generateUidIdentifier("x"));
       }
 
@@ -119,57 +174,4 @@ function visit(node, name, scope) {
   return state;
 }
 
-exports["default"] = function (_ref) {
-  var node = _ref.node;
-  var parent = _ref.parent;
-  var scope = _ref.scope;
-  var id = _ref.id;
-
-  // has an `id` so we don't need to infer one
-  if (node.id) return;
-
-  if ((t.isObjectProperty(parent) || t.isObjectMethod(parent, { kind: "method" })) && (!parent.computed || t.isLiteral(parent.key))) {
-    // { foo() {} };
-    id = parent.key;
-  } else if (t.isVariableDeclarator(parent)) {
-    // let foo = function () {};
-    id = parent.id;
-
-    if (t.isIdentifier(id)) {
-      var binding = scope.parent.getBinding(id.name);
-      if (binding && binding.constant && scope.getBinding(id.name) === binding) {
-        // always going to reference this method
-        node.id = id;
-        node.id[t.NOT_LOCAL_BINDING] = true;
-        return;
-      }
-    }
-  } else if (t.isAssignmentExpression(parent)) {
-    // foo = function () {};
-    id = parent.left;
-  } else if (!id) {
-    return;
-  }
-
-  var name = undefined;
-  if (id && t.isLiteral(id)) {
-    name = id.value;
-  } else if (id && t.isIdentifier(id)) {
-    name = id.name;
-  } else {
-    return;
-  }
-
-  name = t.toBindingIdentifierName(name);
-  id = t.identifier(name);
-
-  // The id shouldn't be considered a local binding to the function because
-  // we are simply trying to set the function name and not actually create
-  // a local binding.
-  id[t.NOT_LOCAL_BINDING] = true;
-
-  var state = visit(node, name, scope);
-  return wrap(state, node, id, scope) || node;
-};
-
-module.exports = exports["default"];
+/*istanbul ignore next*/module.exports = exports["default"];

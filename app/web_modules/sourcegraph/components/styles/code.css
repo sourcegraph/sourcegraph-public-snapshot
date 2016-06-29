@@ -1,36 +1,36 @@
 @media screen {
 	:global .code a {
 		text-decoration: none;
-		color: #0287bd;
+		color: #00a4de;
 	}
 	:global .pln {
-		color: #1f1f1f;
+		color: #435c79;
 	}
 	:global .str {
-		color: #ea4702;
+		color: #f14648;
 	}
 	:global .kwd {
-		color: #0287bd;
+		color: #00a4de;
 	}
 	:global .com {
-		color: #9b9b9b;
+		color: #89a4bc;
 	}
 	:global .typ {
-		color: #8804c3;
+		color: #8f2dba;
 	}
 	:global .lit {
-		color: #ea4702;
+		color: #f14648;
 	}
 	:global .pun,
 	:global .opn,
 	:global .clo {
-		color: #414f5c;
+		color: #435c79;
 	}
 	:global .tag {
-		color: #0287bd;
+		color: #00a4de;
 	}
 	:global .atn {
-		color: #8804c3;
+		color: #8f2dba;
 	}
 	:global .atv {
 		color: #15b8ae;
@@ -40,57 +40,6 @@
 		color: #15b8ae;
 	}
 	:global .fun {
-		color: #0287bd;
+		color: #00a4de;
 	}
 }
-
-/*
-PREVIOUS THEME
-
-@value colors "sourcegraph/components/styles/_colors.css";
-@value c_yellow from colors;
-:global .code {
-	color: #222222;
-	background-color: white;
-}
-:global .code .hl, :global .code a:hover {
-	background-color: c_yellow;
-	outline: solid 1px c_yellow;
-}
-:global .pln {
-	color: #222222;
-}
-:global .str {
-	color: #f64800;
-}
-:global .kwd {
-	color: #0d9acd;;
-}
-:global .com {
-	color: #9b9b9b;
-}
-:global .typ {
-	color: #b114f7;
-}
-:global .lit {
-	color: #0dceb7;
-}
-:global .pun, :global .opn, :global .clo {
-	color: #344a66;
-}
-:global .tag {
-	color: #0d9acd;;
-}
-:global .atn {
-	color: #222222;
-}
-:global .atv {
-	color: #0dceb7;
-}
-:global .dec, :global .var {
-	color: #0dceb7;
-}
-:global .fun {
-	color: #ef3e82;
-}
-*/

@@ -7,6 +7,7 @@ var loaderUtils = require("loader-utils"),
 module.exports = function() {};
 module.exports.pitch = function(remainingRequest) {
 	if(this.cacheable) this.cacheable();
+	var query = loaderUtils.parseQuery(this.query);
 	return [
 		"var refs = 0;",
 		"var dispose;",
@@ -15,7 +16,7 @@ module.exports.pitch = function(remainingRequest) {
 		"exports.use = exports.ref = function() {",
 		"	if(!(refs++)) {",
 		"		exports.locals = content.locals;",
-		"		dispose = require(" + loaderUtils.stringifyRequest(this, "!" + path.join(__dirname, "addStyles.js")) + ")(content);",
+		"		dispose = require(" + loaderUtils.stringifyRequest(this, "!" + path.join(__dirname, "addStyles.js")) + ")(content, " + JSON.stringify(query) + ");",
 		"	}",
 		"	return exports;",
 		"};",

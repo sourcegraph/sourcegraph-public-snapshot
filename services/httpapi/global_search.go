@@ -18,6 +18,11 @@ type DefSearchResult struct {
 	Score    float32
 }
 
+type SearchOptions struct {
+	Kinds     []string
+	Languages []string
+}
+
 func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
@@ -28,6 +33,7 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 		Limit        int32
 		PrefixMatch  bool
 		IncludeRepos bool
+		Fast         bool
 	}
 	if err := schemaDecoder.Decode(&params, r.URL.Query()); err != nil {
 		return err
@@ -54,6 +60,7 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 			ListOptions:  sourcegraph.ListOptions{PerPage: params.Limit},
 			PrefixMatch:  params.PrefixMatch,
 			IncludeRepos: params.IncludeRepos,
+			Fast:         params.Fast,
 		},
 	}
 
@@ -61,7 +68,6 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-
 	repos := make([]*RepoSearchResult, 0, len(results.RepoResults))
 	for _, r := range results.RepoResults {
 		repos = append(repos, &RepoSearchResult{
@@ -71,7 +77,9 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 
 	var defs []*DefSearchResult
 	for _, r := range results.DefResults {
-		r.Def.CommitID = "master" // HACK
+		if r.Def.CommitID == "" {
+			r.Def.CommitID = "master" // HACK
+		}
 		defs = append(defs, &DefSearchResult{
 			Def:      r.Def,
 			RefCount: r.RefCount,
@@ -79,11 +87,21 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 		})
 	}
 
+	var options []*SearchOptions
+	for _, r := range results.SearchQueryOptions {
+		options = append(options, &SearchOptions{
+			Kinds:     r.Kinds,
+			Languages: r.Languages,
+		})
+	}
+
 	return json.NewEncoder(w).Encode(struct {
-		Repos []*RepoSearchResult
-		Defs  []*DefSearchResult
+		Repos   []*RepoSearchResult
+		Defs    []*DefSearchResult
+		Options []*SearchOptions
 	}{
-		Repos: repos,
-		Defs:  defs,
+		Repos:   repos,
+		Defs:    defs,
+		Options: options,
 	})
 }

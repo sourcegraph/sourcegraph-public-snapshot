@@ -40,7 +40,7 @@ type checkCmd struct {
 	Debug  bool   `long:"debug" description:"execute the build in debug mode"`
 	Dir    string `long:"dir" description:"directory tree to check" default:"."`
 
-	ShowConfig bool `long:"show-config" description:"show .drone.yml config file (with inference & srclib additions) and exit"`
+	ShowConfig bool `long:"show-config" description:"show .sg-drone.yml config file (with inference & srclib additions) and exit"`
 }
 
 func (c *checkCmd) Execute(args []string) error {
@@ -102,8 +102,8 @@ func (c *checkCmd) configureBuilder(ctx context.Context) (*builder.Builder, erro
 		},
 	}
 
-	// .drone.yml
-	yamlBytes, err := vfs.ReadFile(fs, ".drone.yml")
+	// .sg-drone.yml
+	yamlBytes, err := vfs.ReadFile(fs, ".sg-drone.yml")
 	if err != nil && !os.IsNotExist(err) {
 		return nil, err
 	} else if err == nil {

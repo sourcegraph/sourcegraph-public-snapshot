@@ -3,11 +3,12 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalSearch.css";
 import base from "sourcegraph/components/styles/_base.css";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
-import {urlToGitHubOAuth, urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
+import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import {Link} from "react-router";
 import GlobalSearch from "sourcegraph/search/GlobalSearch";
 import {EventLocation} from "sourcegraph/util/EventLogger";
 import {Panel} from "sourcegraph/components";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class GlobalSearchContainer extends React.Component {
 
@@ -27,12 +28,12 @@ class GlobalSearchContainer extends React.Component {
 	renderCTAButtons() {
 		return (
 			<div className={base.mt4} styleName="inline-block">
-				{!this.context.signedIn && <GitHubAuthButton href={urlToGitHubOAuth} onClick={() => this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", EventLocation.Dashboard, {scopes: "", upgrade: false})}>Sign in with GitHub</GitHubAuthButton>}
+				{!this.context.signedIn && <GitHubAuthButton returnTo={this.props.location} onClick={() => this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow", {page_name: EventLocation.Dashboard, scopes: "", upgrade: false})}>Sign in with GitHub</GitHubAuthButton>}
 				{this.context.signedIn && !this.context.githubToken &&
-					<GitHubAuthButton href={urlToGitHubOAuth} onClick={() => this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", EventLocation.Dashboard, {scopes: "", upgrade: true})}>Link GitHub account</GitHubAuthButton>
+					<GitHubAuthButton returnTo={this.props.location} onClick={() => this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow", {page_name: EventLocation.Dashboard, scopes: "", upgrade: true})}>Link GitHub account</GitHubAuthButton>
 				}
 				{this.context.signedIn && this.context.githubToken && (!this.context.githubToken.scope || !(this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org") && this.context.githubToken.scope.includes("user:email"))) &&
-					<GitHubAuthButton href={urlToPrivateGitHubOAuth} onClick={() => this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", EventLocation.Dashboard, {scopes: "read:org,repo,user:email", upgrade: true})}>Use with private repositories</GitHubAuthButton>
+					<GitHubAuthButton returnTo={this.props.location} scopes={privateGitHubOAuthScopes} onClick={() => this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow", {page_name: EventLocation.Dashboard, scopes: privateGitHubOAuthScopes, upgrade: true})}>Use with private repositories</GitHubAuthButton>
 				}
 			</div>
 		);

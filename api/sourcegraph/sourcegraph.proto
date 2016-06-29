@@ -16,6 +16,47 @@ option (gogoproto.unmarshaler_all) = true;
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.sizer_all) = true;
 
+// Origin represents the origin of a resource that canonically lives
+// on an external service (e.g., a repo hosted on GitHub).
+message Origin {
+	// ServiceType indicates which service is running on an origin. A
+	// repo whose origin service is GitHub, for example, should be
+	// accessed using a GitHub API client.
+	//
+	// If there are multiple API versions for a service, separate
+	// entries may be added per API version. In that case, the
+	// APIBaseURL may need to differ as well. The API client code is
+	// responsible for handling these cases.
+	enum ServiceType {
+		// GitHub indicates that the origin is GitHub.com or a GitHub
+		// Enterprise server. If the latter, the origin base URL indicates
+		// the URL to the GitHub Enterprise server's API.
+		GitHub = 0;
+	}
+
+	// ID is an identifier for the resource on its origin
+	// service. Although numeric IDs are used on many services (GitHub
+	// and Bitbucket, for example), this field is a string so that it
+	// supports non-numeric IDs (which are used on Google Cloud
+	// Platform and probably other services that Sourcegraph might
+	// support in the future).
+	//
+	// If the ID is numeric, this string is the base-10 string
+	// representation of the numeric ID (e.g., "1234"), with no
+	// leading 0s.
+	string ID = 1;
+
+	// Service is the type service that the resource canonically lives
+	// on. It is used to determine which API client should be used to
+	// access it on the origin service (e.g., GitHub vs. Bitbucket).
+	ServiceType Service = 2 [(gogoproto.jsontag) = ""]; // don't omitempty
+
+	// APIBaseURL is the base URL to the API of the origin service for
+	// the resource. (E.g., "https://api.github.com" for
+	// GitHub.com-hosted repos.)
+	string APIBaseURL = 3;
+}
+
 // CombinedStatus is the combined status (i.e., incorporating statuses from all
 // contexts) of the repository at a specific rev.
 message CombinedStatus {
@@ -113,7 +154,9 @@ message Repo {
 	bool Fork = 12;
 
 	// Mirror indicates whether this repo's canonical location is on
-	// another server. Mirror repos track their upstream.
+	// another server. Mirror repos track their upstream. If this repo
+	// canonically lives on a repo hosting that can supply additional
+	// metadata (such as GitHub), the Origin field should be set.
 	bool Mirror = 13;
 
 	// Private is whether this repository is private.
@@ -130,6 +173,10 @@ message Repo {
 
 	// PushedAt is when this repository's was last (VCS-)pushed to.
 	pbtypes.Timestamp PushedAt = 17;
+
+	// Origin describes the repo's canonical location. It is only
+	// populated for mirror repos; for non-mirror repos, it is null.
+	Origin Origin = 19;
 }
 
 message RepoListOptions {
@@ -145,7 +192,6 @@ message RepoListOptions {
 	bool NoFork = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Type = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Owner = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
-	bool SlowlyIncludePublicGitHubRepos = 12 [(gogoproto.moretags) = "url:\",omitempty\""];
 	ListOptions ListOptions = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
@@ -419,7 +465,20 @@ message ReposCreateOp {
 
 	oneof Op {
 		NewRepo New = 1;
-		int32 FromGitHubID = 2;
+
+		// FromGitHubID creates a new repo that mirrors a repo hosted
+		// on GitHub.com.
+		//
+		// DEPRECATED: Use Origin instead.
+		int32 FromGitHubID = 2 [deprecated=true];
+
+		// Origin creates a new repo mirrored from an external
+		// service.
+		//
+		// The Origin's APIBaseURL can be either a blank string (for
+		// default API endpoint for the service), or the an actual API
+		// endpoint URL.
+		Origin Origin = 3;
 	}
 }
 
@@ -438,6 +497,18 @@ message ReposUpdateOp {
 
 	// DefaultBranch is the repo's new default branch.
 	string DefaultBranch = 6;
+
+	enum BoolType {
+		NONE = 0;
+		TRUE = 1;
+		FALSE = 2;
+	}
+
+	// Fork is whether this repository is a fork.
+	BoolType Fork = 7;
+
+	// Private is whether this repository is private.
+	BoolType Private = 8;
 };
 
 message ReposListCommitsOp {
@@ -671,10 +742,10 @@ message BuildConfig {
 	// sooner).
 	int32 Priority = 4;
 
-	// BuilderConfig is the actual .drone.yml config file that was
+	// BuilderConfig is the actual .sg-drone.yml config file that was
 	// used to run this build in CI. It reflects all automatic
 	// additions/changes made by the worker (i.e., it is not
-	// necessarily the same .drone.yml config file as the one in the
+	// necessarily the same .sg-drone.yml config file as the one in the
 	// repository).
 	string BuilderConfig = 16;
 }
@@ -1480,7 +1551,7 @@ message RefList {
 message DefListRefLocationsOptions {
 	// Repos is the list of repos to restrict the results to.
 	// If empty, all repos are searched for references.
-	repeated int32 Repos = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	repeated string Repos = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// ListOptions specifies options for paginating
 	// the result.
@@ -1495,6 +1566,16 @@ message DefsListRefLocationsOp {
 
 	// Opt controls the scope of the search for ref locations of this def.
 	DefListRefLocationsOptions Opt = 2;
+}
+
+// DefsListExamples holds the options for fetching
+// usage examples referencing the specified def.
+message DefsListExamplesOp {
+	// Def identifies the definition whose examples are requested.
+	DefSpec Def = 1 [(gogoproto.nullable) = false];
+
+	// ListOptions specifies options for paginating the result.
+	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // RefLocationsList lists the repos and files that reference a def.
@@ -1730,6 +1811,9 @@ message DefsRefreshIndexOp {
 	// Force ensures we reindex, even if we have already indexed the latest
 	// commit for repo
 	bool Force = 3;
+
+	// CommitID is the commit for which defs should be synced from srclib-store to DB.
+	string CommitID = 4;
 }
 
 // DefsService communicates with the def- and graph-related endpoints in the
@@ -1747,14 +1831,37 @@ service Defs {
 	// ListRefLocations lists repos and files that refer to def.
 	rpc ListRefLocations(DefsListRefLocationsOp) returns (RefLocationsList);
 
+	// ListExamples lists usage examples for a given def.
+	rpc ListExamples(DefsListExamplesOp) returns (RefLocationsList);
+
 	// ListAuthors lists people who committed parts of def's definition.
 	rpc ListAuthors(DefsListAuthorsOp) returns (DefAuthorList);
 
-    	// RefreshIndex updates the precomputed indexes used for answering
+	// RefreshIndex updates the precomputed indexes used for answering
 	// ListRefLocations queries. The indexes are built from the current
 	// snapshot of the code graph. This operation is idempotent, and
 	// should be executed regularly to keep the indexes up-to-date.
 	rpc RefreshIndex(DefsRefreshIndexOp) returns (pbtypes.Void);
+}
+
+message AsyncRefreshIndexesOp {
+	// Repo will have all of its indexes refreshed.
+	int32 Repo = 1;
+
+	// Source helps tie back async jobs to their source.
+	string Source = 2;
+
+	// Force will ensure all indexes are refreshed, even if the index
+	// already includes the latest commit.
+	bool Force = 3;
+}
+
+// AsyncService provides services which are usually triggered by frontend
+// actions, but do not block responses
+service Async {
+	// RefreshIndexes refreshes indexes we keep on a repo (GlobalRefs,
+	// Defs, etc)
+	rpc RefreshIndexes(AsyncRefreshIndexesOp) returns (pbtypes.Void);
 }
 
 message AuthorshipInfo {
@@ -2054,6 +2161,28 @@ message SearchOptions {
 	// If empty, then no repositories are excluded.
 	repeated int32 NotRepos = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 
+	// Languages, if specified, limits the returned results to just the
+	// specified languages.
+	//
+	// The values are case-insensitive, e.g. "java", "Java", and "jAvA" will
+	// all match the Java programming language.
+	repeated string Languages = 6;
+
+	// NotLanguages, if specified, excludes the specified languages from the
+	// returned results.
+	//
+	// The values are case-insensitive, e.g. "java", "Java", and "jAvA" will
+	// all exclude the Java programming language.
+	repeated string NotLanguages = 7;
+
+	// Kinds, if specified, limits the returned results to just the specified
+	// kinds of definitions (func, var, etc).
+	repeated string Kinds = 8;
+
+	// NotKinds, if specified, excludes the specified kinds of definitions
+	// (func, var, etc) from the returned results.
+	repeated string NotKinds = 9;
+
 	// ListOptions specifies options for paginating
 	// the result.
 	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
@@ -2063,6 +2192,14 @@ message SearchOptions {
 
 	// PrefixMatch indicates whether to include defs prefix match on search results.
 	bool PrefixMatch = 5;
+
+	// Fast specifies that the client would like results returned more quickly at
+	// the cost of missing lower ranked results. If there are no high-ranking results
+	// and Fast is set to true, there may be no results returned at all.
+	bool Fast = 10;
+
+	// Latest indicates that the search should only search over the latest indexed revision of repositories.
+	bool Latest = 11;
 }
 
 // SearchOp holds the options for global search for a given query.
@@ -2098,32 +2235,14 @@ message SearchResultsList {
 	repeated RepoSearchResult RepoResults = 1;
 	// DefResults is the list of def search results
 	repeated DefSearchResult DefResults = 2;
-}
-
-message SearchRefreshIndexOp {
-	// Repos is the list of repos whose graph data is to be re-indexed
-	// for global search.
-	repeated int32 Repos = 1;
-
-	// RefreshCounts refreshes the global xref counts for the specified
-	// repositories.
-	bool RefreshCounts = 2;
-
-	// RefreshSearch refreshes the global search index for the specified
-	// repositories.
-	bool RefreshSearch = 3;
+	// SearchOptions is a list of options to a global search query.
+	repeated SearchOptions SearchQueryOptions = 3;
 }
 
 // Search provides global search over all code indexed by Sourcegraph.
 service Search {
 	// Search returns a list of defs matching the given query string.
 	rpc Search(SearchOp) returns (SearchResultsList);
-
-	// RefreshIndex updates the precomputed indexes used for efficiently
-	// answering search queries. The indexes are built from the current
-	// snapshot of the code graph. This operation is idempotent, and
-	// should be executed regularly to keep the indexes up-to-date.
-	rpc RefreshIndex(SearchRefreshIndexOp) returns (pbtypes.Void);
 }
 
 // Channel manages a realtime communication channel between a client

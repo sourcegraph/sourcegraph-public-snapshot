@@ -31,7 +31,7 @@ Watcher.prototype.constructor = Watcher;
 
 Watcher.prototype.checkStartTime = function checkStartTime(mtime, initial) {
 	if(typeof this.startTime !== "number") return !initial;
-	var startTime = this.startTime && Math.floor(this.startTime / FS_ACCURENCY) * FS_ACCURENCY;
+	var startTime = this.startTime;
 	return startTime <= mtime;
 };
 
@@ -42,6 +42,7 @@ Watcher.prototype.close = function close() {
 
 function DirectoryWatcher(directoryPath, options) {
 	EventEmitter.call(this);
+	this.options = options;
 	this.path = directoryPath;
 	this.files = {};
 	this.directories = {};
@@ -53,6 +54,7 @@ function DirectoryWatcher(directoryPath, options) {
 		atomic: false,
 		alwaysStat: true,
 		ignorePermissionErrors: true,
+		ignored: options.ignored,
 		usePolling: options.poll ? true : undefined,
 		interval: typeof options.poll === "number" ? options.poll : undefined
 	});
@@ -77,7 +79,12 @@ DirectoryWatcher.prototype.constructor = DirectoryWatcher;
 DirectoryWatcher.prototype.setFileTime = function setFileTime(filePath, mtime, initial, type) {
 	var now = Date.now();
 	var old = this.files[filePath];
+
 	this.files[filePath] = [initial ? Math.min(now, mtime) : now, mtime];
+
+	// we add the fs accurency to reach the maximum possible mtime
+	mtime = mtime + FS_ACCURENCY;
+
 	if(!old) {
 		if(mtime) {
 			if(this.watchers[withoutCase(filePath)]) {
@@ -95,6 +102,7 @@ DirectoryWatcher.prototype.setFileTime = function setFileTime(filePath, mtime, i
 			});
 		}
 	} else if(!initial && !mtime) {
+		delete this.files[filePath];
 		if(this.watchers[withoutCase(filePath)]) {
 			this.watchers[withoutCase(filePath)].forEach(function(w) {
 				w.emit("remove");
@@ -195,8 +203,9 @@ DirectoryWatcher.prototype.watch = function watch(filePath, startTime) {
 	}
 	process.nextTick(function() {
 		if(data) {
-			if(data[0] > startTime)
-				watcher.emit("change", data[1]);
+			var ts = data[0] === data[1] ? data[0] + FS_ACCURENCY : data[0];
+			if(ts > startTime)
+				watcher.emit("change", data[1] + FS_ACCURENCY);
 		} else if(this.initialScan && this.initialScanRemoved.indexOf(filePath) >= 0) {
 			watcher.emit("remove");
 		}
@@ -291,7 +300,7 @@ DirectoryWatcher.prototype.getTimes = function() {
 	Object.keys(this.files).forEach(function(file) {
 		var data = this.files[file];
 		if(data[1]) {
-			var time = Math.max(data[0], data[1]);
+			var time = Math.max(data[0], data[1] + FS_ACCURENCY);
 			obj[file] = time;
 			if(time > selfTime)
 				selfTime = time;

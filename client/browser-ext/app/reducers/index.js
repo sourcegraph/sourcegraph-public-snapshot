@@ -11,61 +11,41 @@ const accessToken = function(state = null, action) {
 	}
 }
 
-const repo = function(state = "github.com/gorilla/mux", action) {
+const resolvedRev = function(state = {content: {}}, action) {
 	switch (action.type) {
-	case ActionTypes.SET_REPO_REV:
-		return action.repo ? action.repo : state;
-	default:
-		return state;
-	}
-}
+	case ActionTypes.RESOLVED_REV:
+		if (!action.json && !state.content[keyFor(action.repo, action.rev)]) return state; // no update needed; avoid re-rending components
 
-const rev = function(state = "master", action) {
-	switch (action.type) {
-	case ActionTypes.SET_REPO_REV:
-		return action.rev ? action.rev : state;
-	default:
-		return state;
-	}
-}
-
-const path = function(state = null, action) {
-	switch (action.type) {
-	case ActionTypes.SET_PATH:
-		return action.path ? action.path : null;
-	default:
-		return state;
-	}
-}
-
-const defPath = function(state = null, action) {
-	switch (action.type) {
-	case ActionTypes.SET_DEF_PATH:
-		return action.defPath ? action.defPath : null;
-	default:
-		return state;
-	}
-}
-
-const query = function(state = "", action) {
-	switch (action.type) {
-	case ActionTypes.SET_QUERY:
-		return action.query;
-	default:
-		return state;
-	}
-}
-
-const srclibDataVersion = function(state = {content: {}, fetches: {}, timestamps: {}}, action) {
-	switch (action.type) {
-	case ActionTypes.WANT_SRCLIB_DATA_VERSION:
 		return {
 			...state,
-			fetches: {
-				...state.fetches,
-				[keyFor(action.repo, action.rev, action.path)]: true,
+			content: {
+				...state.content,
+				[keyFor(action.repo, action.rev)]: action.json ? action.json : null,
 			}
 		};
+	default:
+		return state;
+	}
+}
+
+const build = function(state = {content: {}}, action) {
+	switch (action.type) {
+	case ActionTypes.FETCHED_BUILD:
+	case ActionTypes.CREATED_BUILD:
+		return {
+			...state,
+			content: {
+				...state.content,
+				[keyFor(action.repo, action.commitID)]: action.json ? action.json : null,
+			}
+		};
+	default:
+		return state;
+	}
+}
+
+const srclibDataVersion = function(state = {content: {}, fetches: {}}, action) {
+	switch (action.type) {
 	case ActionTypes.FETCHED_SRCLIB_DATA_VERSION:
 		return {
 			...state,
@@ -76,22 +56,6 @@ const srclibDataVersion = function(state = {content: {}, fetches: {}, timestamps
 			content: {
 				...state.content,
 				[keyFor(action.repo, action.rev, action.path)]: action.json ? action.json : null,
-			},
-			timestamps: {
-				...state.timestamps,
-				[keyFor(action.repo, action.rev, action.path)]: action.json ? Date.now() : null,
-			}
-		};
-	case ActionTypes.EXPIRE_SRCLIB_DATA_VERSION:
-		return {
-			...state,
-			content: {
-				...state.content,
-				[keyFor(action.repo, action.rev, action.path)]: null,
-			},
-			timestamps: {
-				...state.timestamps,
-				[keyFor(action.repo, action.rev, action.path)]: null,
 			}
 		};
 	default:
@@ -99,42 +63,16 @@ const srclibDataVersion = function(state = {content: {}, fetches: {}, timestamps
 	}
 }
 
-const def = function(state = {content: {}, fetches: {}, timestamps: {}}, action) {
+const def = function(state = {content: {}}, action) {
 	switch (action.type) {
-	case ActionTypes.WANT_DEF:
-		return {
-			...state,
-			fetches: {
-				...state.fetches,
-				[keyFor(action.repo, action.rev, action.defPath)]: true,
-			}
-		};
 	case ActionTypes.FETCHED_DEF:
+		if (!action.json && !state.content[keyFor(action.repo, action.rev, action.defPath)]) return state; // no update needed; avoid re-rending components
+
 		return {
 			...state,
-			fetches: {
-				...state.fetches,
-				[keyFor(action.repo, action.rev, action.defPath)]: action.err ? action.err : false,
-			},
 			content: {
 				...state.content,
 				[keyFor(action.repo, action.rev, action.defPath)]: action.json ? action.json : null,
-			},
-			timestamps: {
-				...state.timestamps,
-				[keyFor(action.repo, action.rev, action.defPath)]: action.json ? Date.now() : null,
-			}
-		};
-	case ActionTypes.EXPIRE_DEF:
-		return {
-			...state,
-			content: {
-				...state.content,
-				[keyFor(action.repo, action.rev, action.defPath)]: null,
-			},
-			timestamps: {
-				...state.timestamps,
-				[keyFor(action.repo, action.rev, action.defPath)]: null,
 			}
 		};
 	default:
@@ -143,7 +81,7 @@ const def = function(state = {content: {}, fetches: {}, timestamps: {}}, action)
 }
 
 
-const defs = function(state = {content: {}, fetches: {}, timestamps: {}}, action) {
+const defs = function(state = {content: {}, fetches: {}}, action) {
 	switch (action.type) {
 	case ActionTypes.WANT_DEFS:
 		return {
@@ -163,22 +101,6 @@ const defs = function(state = {content: {}, fetches: {}, timestamps: {}}, action
 			content: {
 				...state.content,
 				[keyFor(action.repo, action.rev, action.path, action.query)]: action.json ? action.json : null,
-			},
-			timestamps: {
-				...state.timestamps,
-				[keyFor(action.repo, action.rev, action.path, action.query)]: action.json ? Date.now() : null,
-			}
-		};
-	case ActionTypes.EXPIRE_DEFS:
-		return {
-			...state,
-			content: {
-				...state.content,
-				[keyFor(action.repo, action.rev, action.path, action.query)]: null,
-			},
-			timestamps: {
-				...state.timestamps,
-				[keyFor(action.repo, action.rev, action.path, action.query)]: null,
 			}
 		};
 	default:
@@ -186,42 +108,16 @@ const defs = function(state = {content: {}, fetches: {}, timestamps: {}}, action
 	}
 }
 
-const annotations = function(state = {content: {}, fetches: {}, timestamps: {}}, action) {
+const annotations = function(state = {content: {}}, action) {
 	switch (action.type) {
-	case ActionTypes.WANT_ANNOTATIONS:
-		return {
-			...state,
-			fetches: {
-				...state.fetches,
-				[keyFor(action.repo, action.rev, action.path)]: true,
-			}
-		};
 	case ActionTypes.FETCHED_ANNOTATIONS:
+		if (!action.json && !state.content[keyFor(action.repo, action.rev, action.path)]) return state; // no update needed; avoid re-rending components
+
 		return {
 			...state,
-			fetches: {
-				...state.fetches,
-				[keyFor(action.repo, action.rev, action.path)]: action.err ? action.err : false,
-			},
 			content: {
 				...state.content,
 				[keyFor(action.repo, action.rev, action.path)]: action.json ? action.json : null,
-			},
-			timestamps: {
-				...state.timestamps,
-				[keyFor(action.repo, action.rev, action.path)]: action.json ? Date.now() : null,
-			}
-		};
-	case ActionTypes.EXPIRE_ANNOTATIONS:
-		return {
-			...state,
-			content: {
-				...state.content,
-				[keyFor(action.repo, action.rev, action.path)]: null,
-			},
-			timestamps: {
-				...state.timestamps,
-				[keyFor(action.repo, action.rev, action.path)]: null,
 			}
 		};
 	default:
@@ -229,4 +125,4 @@ const annotations = function(state = {content: {}, fetches: {}, timestamps: {}},
 	}
 }
 
-export default combineReducers({accessToken, repo, rev, path, defPath, query, srclibDataVersion, def, defs, annotations});
+export default combineReducers({accessToken, resolvedRev, srclibDataVersion, build, def, defs, annotations});

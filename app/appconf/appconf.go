@@ -15,28 +15,13 @@ import (
 
 // Flags configure the app. The values are set by CLI flags (or during testing).
 var Flags struct {
-	NoUIBuild bool `long:"app.no-ui-build" description:"disable manual building of repositories from the UI" env:"SRC_APP_NO_UI_BUILD"`
-
-	// DisableTreeEntryCommits is sometimes necessary for extremely
-	// large Git repositories when `git log -- PATH` takes a very long
-	// time.
-	DisableTreeEntryCommits bool `long:"app.disable-tree-entry-commits" description:"do not show the latest commit for tree files/dirs" env:"SRC_APP_DISABLE_TREE_ENTRY_COMMITS"`
-
-	DisableRepoTreeSearch bool `long:"app.disable-repo-tree-search" description:"do not show repo fulltext search results (only defs) (slower for large repos)" env:"SRC_APP_DISABLE_REPO_TREE_SEARCH"`
-
 	DisableSearch bool `long:"app.disable-search" description:"if set, search will be entirely disabled / never allowed" env:"SRC_APP_DISABLE_SEARCH"`
 
-	DisableApps bool `long:"app.disable-apps" description:"if set, disable the changes and issues applications" env:"SRC_APP_DISABLE_APPS"`
-
 	DisableSupportServices bool `long:"app.disable-support-services" description:"disable 3rd party support services, including Zendesk, FullStory, Google Analytics" env:"SRC_APP_DISABLE_SUPPORT_SERVICES"`
-
-	CustomNavLayout template.HTML `long:"app.custom-nav-layout" description:"custom layout to display in place of the search form (HTML)" env:"SRC_APP_CUSTOM_NAV_LAYOUT"`
 
 	GoogleAnalyticsTrackingID string `long:"app.google-analytics-tracking-id" description:"Google Analytics tracking ID (UA-########-#)" env:"GOOGLE_ANALYTICS_TRACKING_ID"`
 
 	CustomFeedbackForm template.HTML `long:"app.custom-feedback-form" description:"custom feedback form to display (HTML)" env:"CUSTOM_FEEDBACK_FORM"`
-
-	CheckForUpdates time.Duration `long:"app.check-for-updates" description:"rate at which to check for updates and display a notification (not download/install) (0 to disable)" default:"30m" env:"SRC_APP_CHECK_FOR_UPDATES"`
 
 	DisableExternalLinks bool `long:"app.disable-external-links" description:"Disable links to external websites" env:"SRC_APP_DISABLE_EXTERNAL_LINKS"`
 

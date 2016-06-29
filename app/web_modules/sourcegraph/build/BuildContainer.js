@@ -99,7 +99,7 @@ class BuildContainer extends Container {
 					}}>Rebuild</Button>}
 				</div>
 				<BuildHeader build={this.state.build} commit={this.state.commit} />
-				{this.state.commit && <span styleName="commit"><Commit commit={this.state.commit} repo={this.state.repo}/></span>}
+				{this.state.commit && <div styleName="commit"><Commit commit={this.state.commit} repo={this.state.repo} full={false} /></div>}
 				{this.state.tasks && this.state.tasks.BuildTasks && <BuildTasks tasks={this.state.tasks.BuildTasks} logs={this.state.logs} />}
 			</div>
 		);

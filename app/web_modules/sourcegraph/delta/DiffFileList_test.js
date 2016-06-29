@@ -6,26 +6,29 @@ import DiffFileList from "sourcegraph/delta/DiffFileList";
 
 import testdataInitial from "sourcegraph/delta/testdata/DiffFileList-initial.json";
 
-const sampleFiles = [
-	{
-		OrigName: "a",
-		NewName: "b",
-	},
-	{
-		OrigName: "/dev/null",
-		NewName: "b",
-	},
-	{
-		OrigName: "a",
-		NewName: "/dev/null",
-	},
-];
-
 const sampleStats = {
 	Added: 5,
 	Changed: 6,
 	Deleted: 7,
 };
+
+const sampleFiles = [
+	{
+		OrigName: "a",
+		NewName: "b",
+		Stats: sampleStats,
+	},
+	{
+		OrigName: "/dev/null",
+		NewName: "b",
+		Stats: sampleStats,
+	},
+	{
+		OrigName: "a",
+		NewName: "/dev/null",
+		Stats: sampleStats,
+	},
+];
 
 describe("DiffFileList", () => {
 	it("should render", () => {

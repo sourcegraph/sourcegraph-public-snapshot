@@ -41,7 +41,7 @@ var CSSCore = {
    * @param {string} className the CSS className
    * @return {DOMElement} the element passed in
    */
-  addClass: function (element, className) {
+  addClass: function addClass(element, className) {
     !!/\s/.test(className) ? process.env.NODE_ENV !== 'production' ? invariant(false, 'CSSCore.addClass takes only a single class name. "%s" contains ' + 'multiple classes.', className) : invariant(false) : void 0;
 
     if (className) {
@@ -61,7 +61,7 @@ var CSSCore = {
    * @param {string} className the CSS className
    * @return {DOMElement} the element passed in
    */
-  removeClass: function (element, className) {
+  removeClass: function removeClass(element, className) {
     !!/\s/.test(className) ? process.env.NODE_ENV !== 'production' ? invariant(false, 'CSSCore.removeClass takes only a single class name. "%s" contains ' + 'multiple classes.', className) : invariant(false) : void 0;
 
     if (className) {
@@ -83,7 +83,7 @@ var CSSCore = {
    * @param {*} bool condition to whether to add or remove the class
    * @return {DOMElement} the element passed in
    */
-  conditionClass: function (element, className, bool) {
+  conditionClass: function conditionClass(element, className, bool) {
     return (bool ? CSSCore.addClass : CSSCore.removeClass)(element, className);
   },
 
@@ -94,7 +94,7 @@ var CSSCore = {
    * @param {string} className the CSS className
    * @return {boolean} true if the element has the class, false if not
    */
-  hasClass: function (element, className) {
+  hasClass: function hasClass(element, className) {
     !!/\s/.test(className) ? process.env.NODE_ENV !== 'production' ? invariant(false, 'CSS.hasClass takes only a single class name.') : invariant(false) : void 0;
     if (element.classList) {
       return !!className && element.classList.contains(className);
@@ -109,7 +109,7 @@ var CSSCore = {
    * @param {string} selector the CSS selector
    * @return {boolean} true if the element matches the selector, false if not
    */
-  matchesSelector: function (element, selector) {
+  matchesSelector: function matchesSelector(element, selector) {
     var matchesImpl = element.matches || element.webkitMatchesSelector || element.mozMatchesSelector || element.msMatchesSelector || function (s) {
       return matchesSelector_SLOW(element, s);
     };

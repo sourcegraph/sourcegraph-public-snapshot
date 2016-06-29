@@ -67,12 +67,15 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.BuildTaskLog).Handler(handler(serveBuildTaskLog))
 	m.Get(apirouter.ChannelListen).HandlerFunc(serveChannelListen)
 	m.Get(apirouter.ChannelSend).Handler(handler(serveChannelSend))
+	m.Get(apirouter.Commit).Handler(handler(serveCommit))
 	m.Get(apirouter.Coverage).Handler(handler(serveCoverage))
 	m.Get(apirouter.Def).Handler(handler(serveDef))
 	m.Get(apirouter.DefAuthors).Handler(handler(serveDefAuthors))
 	m.Get(apirouter.DefRefs).Handler(handler(serveDefRefs))
 	m.Get(apirouter.DefRefLocations).Handler(handler(serveDefRefLocations))
+	m.Get(apirouter.DefExamples).Handler(handler(serveDefExamples))
 	m.Get(apirouter.Defs).Handler(handler(serveDefs))
+	m.Get(apirouter.DeltaFiles).Handler(handler(serveDeltaFiles))
 	m.Get(apirouter.GlobalSearch).Handler(handler(serveGlobalSearch))
 	m.Get(apirouter.Repo).Handler(handler(serveRepo))
 	m.Get(apirouter.RepoResolve).Handler(handler(serveRepoResolve))
@@ -99,6 +102,8 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.User).Handler(handler(serveUser))
 	m.Get(apirouter.UserEmails).Handler(handler(serveUserEmails))
 	m.Get(apirouter.InternalAppdashRecordSpan).Handler(handler(serveInternalAppdashRecordSpan))
+
+	m.Get(apirouter.EmailSubscription).Handler(handler(serveEmailSubscription))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())

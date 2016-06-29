@@ -1,6 +1,7 @@
 package routevar
 
 import (
+	"path"
 	"regexp"
 	"strings"
 )
@@ -101,6 +102,14 @@ func RepoRevRouteVars(s RepoRev) map[string]string {
 	}
 	m["Rev"] = rev
 	return m
+}
+
+func ToTreeEntry(routeVars map[string]string) TreeEntry {
+	rr := ToRepoRev(routeVars)
+	return TreeEntry{
+		RepoRev: rr,
+		Path:    path.Clean(strings.TrimPrefix(routeVars["Path"], "/")),
+	}
 }
 
 func TreeEntryRouteVars(s TreeEntry) map[string]string {

@@ -37,7 +37,7 @@ var Scroll = {
    * @param {DOMElement} element
    * @return {number}
    */
-  getTop: function (element) {
+  getTop: function getTop(element) {
     var doc = element.ownerDocument;
     return _isViewportScrollElement(element, doc) ?
     // In practice, they will either both have the same value,
@@ -50,7 +50,7 @@ var Scroll = {
    * @param {DOMElement} element
    * @param {number} newTop
    */
-  setTop: function (element, newTop) {
+  setTop: function setTop(element, newTop) {
     var doc = element.ownerDocument;
     if (_isViewportScrollElement(element, doc)) {
       doc.body.scrollTop = doc.documentElement.scrollTop = newTop;
@@ -63,7 +63,7 @@ var Scroll = {
    * @param {DOMElement} element
    * @return {number}
    */
-  getLeft: function (element) {
+  getLeft: function getLeft(element) {
     var doc = element.ownerDocument;
     return _isViewportScrollElement(element, doc) ? doc.body.scrollLeft || doc.documentElement.scrollLeft : element.scrollLeft;
   },
@@ -72,7 +72,7 @@ var Scroll = {
    * @param {DOMElement} element
    * @param {number} newLeft
    */
-  setLeft: function (element, newLeft) {
+  setLeft: function setLeft(element, newLeft) {
     var doc = element.ownerDocument;
     if (_isViewportScrollElement(element, doc)) {
       doc.body.scrollLeft = doc.documentElement.scrollLeft = newLeft;

@@ -10,6 +10,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
+	githubmock "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/mocks"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
@@ -20,6 +22,7 @@ func testContext() (context.Context, *mocks) {
 	ctx := context.Background()
 	ctx = store.WithStores(ctx, m.stores.Stores())
 	ctx = svc.WithServices(ctx, m.servers.servers())
+	ctx = github.WithRepos(ctx, &m.githubRepos)
 	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"})
 	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 1, Login: "test"})
 	ctx = accesscontrol.WithInsecureSkip(ctx, true)
@@ -27,8 +30,9 @@ func testContext() (context.Context, *mocks) {
 }
 
 type mocks struct {
-	stores  mockstore.Stores
-	servers mockServers
+	stores      mockstore.Stores
+	servers     mockServers
+	githubRepos githubmock.GitHubRepoGetter
 }
 
 type mockServers struct {
@@ -44,6 +48,7 @@ type mockServers struct {
 	RepoStatuses mock.RepoStatusesServer
 	RepoTree     mock.RepoTreeServer
 	Repos        mock.ReposServer
+	Search       mock.SearchServer
 	Users        mock.UsersServer
 }
 
@@ -60,6 +65,7 @@ func (s *mockServers) servers() svc.Services {
 		RepoStatuses: &s.RepoStatuses,
 		RepoTree:     &s.RepoTree,
 		Repos:        &s.Repos,
+		Search:       &s.Search,
 		Users:        &s.Users,
 	}
 }

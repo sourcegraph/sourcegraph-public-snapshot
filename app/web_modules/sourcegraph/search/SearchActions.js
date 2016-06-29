@@ -2,40 +2,41 @@
 
 import type {Def} from "sourcegraph/def";
 
-export class WantResults {
+export type WantResultsPayload = {
 	query: string;
-	repos: ?Array<string>;
-	notRepos: ?Array<string>;
-	limit: ?number;
-	prefixMatch: ?bool;
-	includeRepos: ?bool;
+	repos?: ?Array<string>;
+	notRepos?: ?Array<string>;
+	commitID?: string;
+	limit: number;
+	prefixMatch?: bool;
+	includeRepos?: bool;
+	fast?: bool;
+}
 
-	constructor(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number, prefixMatch: ?bool, includeRepos: ?bool) {
-		this.query = query;
-		this.repos = repos;
-		this.notRepos = notRepos;
-		this.limit = limit;
-		this.prefixMatch = prefixMatch;
-		this.includeRepos = includeRepos;
+export class WantResults {
+	p: WantResultsPayload;
+
+	constructor(params: WantResultsPayload) {
+		this.p = params;
 	}
 }
 
-export class ResultsFetched {
+export type ResultsFetchedPayload = {
 	query: string;
-	repos: ?Array<string>;
-	notRepos: ?Array<string>;
-	limit: ?number;
-	prefixMatch: ?bool;
-	includeRepos: ?bool;
+	repos?: ?Array<string>;
+	notRepos?: ?Array<string>;
+	commitID?: string;
+	limit?: number;
+	prefixMatch?: bool;
+	includeRepos?: bool;
 	defs: Array<Def>;
+	options: Array<Object>;
+}
 
-	constructor(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number, prefixMatch: ?bool, includeRepos: ?bool, defs: Array<Def>) {
-		this.query = query;
-		this.limit = limit;
-		this.repos = repos;
-		this.notRepos = notRepos;
-		this.prefixMatch = prefixMatch;
-		this.includeRepos = includeRepos;
-		this.defs = defs;
+export class ResultsFetched {
+	p: ResultsFetchedPayload;
+
+	constructor(params: ResultsFetchedPayload) {
+		this.p = params;
 	}
 }

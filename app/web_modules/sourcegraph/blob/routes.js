@@ -3,8 +3,10 @@
 import {rel} from "sourcegraph/app/routePatterns";
 import urlTo from "sourcegraph/util/urlTo";
 import {makeRepoRev} from "sourcegraph/repo";
+import lineColBoundToHash from "sourcegraph/blob/lineColBoundToHash";
+import withLastSrclibDataVersion from "sourcegraph/blob/withLastSrclibDataVersion";
 
-export const routes = [
+export const routes: Array<Route> = [
 	{
 		path: rel.blob,
 		keepScrollPositionOnRouteChangeKey: "file",
@@ -13,12 +15,10 @@ export const routes = [
 				callback(null, {
 					main: require("sourcegraph/blob/BlobLoader").default,
 					repoNavContext: require("sourcegraph/blob/RepoNavContext").default,
-				}, [
-					require("sourcegraph/blob/lineColBoundToHash").default,
-					require("sourcegraph/blob/withLastSrclibDataVersion").default,
-				]);
+				});
 			});
 		},
+		blobLoaderHelpers: [lineColBoundToHash, withLastSrclibDataVersion],
 	},
 ];
 

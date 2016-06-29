@@ -8,6 +8,7 @@ import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {trackPromise} from "sourcegraph/app/status";
 import {encodeDefPath} from "sourcegraph/def";
+import get from "lodash/object/get";
 
 const DefBackend = {
 	fetch: singleflightFetch(defaultFetch),
@@ -84,6 +85,28 @@ const DefBackend = {
 				break;
 			}
 
+		case DefActions.WantExamples:
+			{
+				let a = (action: DefActions.WantExamples);
+				let examples = DefStore.getExamples(a.resource);
+				if (examples === null) {
+					let url = a.url();
+					trackPromise(
+						DefBackend.fetch(url)
+							.then(checkStatus)
+							.then((resp) => resp.json())
+							.catch((err) => ({Error: err}))
+							.then(convNotFound)
+							.then((data) => {
+								if (!data || !data.Error) {
+									Dispatcher.Stores.dispatch(new DefActions.ExamplesFetched(action, data));
+								}
+							})
+					);
+				}
+				break;
+			}
+
 		case DefActions.WantRefs:
 			{
 				let refs = DefStore.refs.get(action.repo, action.commitID, action.def, action.refRepo, action.refFile);
@@ -95,6 +118,7 @@ const DefBackend = {
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
+							.then(convNotFound)
 							.then((data) => {
 								Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.repo, action.commitID, action.def, action.refRepo, action.refFile, data));
 							})
@@ -105,6 +129,13 @@ const DefBackend = {
 		}
 	},
 };
+
+function convNotFound(data) {
+	if (get(data, "Error.response.status") === 404) {
+		return {};
+	}
+	return data;
+}
 
 Dispatcher.Backends.register(DefBackend.__onDispatch);
 

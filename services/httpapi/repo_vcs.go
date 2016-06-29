@@ -31,6 +31,31 @@ func serveRepoResolveRev(w http.ResponseWriter, r *http.Request) error {
 	return writeJSON(w, res)
 }
 
+func serveCommit(w http.ResponseWriter, r *http.Request) error {
+	ctx, cl := handlerutil.Client(r)
+
+	rawRepoRev := routevar.ToRepoRev(mux.Vars(r))
+	abs := len(rawRepoRev.Rev) == 40 // absolute commit ID?
+
+	repoRev, err := resolveLocalRepoRev(ctx, rawRepoRev)
+	if err != nil {
+		return err
+	}
+	commit, err := cl.Repos.GetCommit(ctx, repoRev)
+	if err != nil {
+		return err
+	}
+
+	var cacheControl string
+	if abs {
+		cacheControl = "private, max-age=3600"
+	} else {
+		cacheControl = "private, max-age=15"
+	}
+	w.Header().Set("cache-control", cacheControl)
+	return writeJSON(w, commit)
+}
+
 func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 

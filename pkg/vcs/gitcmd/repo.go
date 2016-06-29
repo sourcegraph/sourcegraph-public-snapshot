@@ -390,8 +390,8 @@ func (r *Repository) commitLog(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, err
 
 		commits[i] = &vcs.Commit{
 			ID:        vcs.CommitID(parts[0]),
-			Author:    vcs.Signature{string(parts[1]), string(parts[2]), pbtypes.NewTimestamp(time.Unix(authorTime, 0))},
-			Committer: &vcs.Signature{string(parts[4]), string(parts[5]), pbtypes.NewTimestamp(time.Unix(committerTime, 0))},
+			Author:    vcs.Signature{Name: string(parts[1]), Email: string(parts[2]), Date: pbtypes.NewTimestamp(time.Unix(authorTime, 0))},
+			Committer: &vcs.Signature{Name: string(parts[4]), Email: string(parts[5]), Date: pbtypes.NewTimestamp(time.Unix(committerTime, 0))},
 			Message:   string(bytes.TrimSuffix(parts[7], []byte{'\n'})),
 			Parents:   parents,
 		}
@@ -864,6 +864,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 		"ls-tree",
 		"--long", // show size
 		"--full-name",
+		"-z",
 		string(commit),
 	}
 	if recurse {
@@ -885,7 +886,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 	}
 
 	prefixLen := strings.LastIndexByte(strings.TrimPrefix(path, "./"), '/') + 1
-	lines := strings.Split(string(out), "\n")
+	lines := strings.Split(string(out), "\x00")
 	fis := make([]os.FileInfo, len(lines)-1)
 	for i, line := range lines {
 		if i == len(lines)-1 {

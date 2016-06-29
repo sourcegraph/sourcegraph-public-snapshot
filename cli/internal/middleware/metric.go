@@ -1,18 +1,21 @@
 package middleware
 
 import (
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
-
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/oauth2"
+	"gopkg.in/inconshreveable/log15.v2"
+	"net/http"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"strconv"
+	"strings"
+	"time"
 )
 
 var metricLabels = []string{"route", "method", "code", "repo"}
@@ -38,8 +41,33 @@ func init() {
 // Metrics captures and exports metrics to prometheus for our HTTP handlers
 func Metrics(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		uid := "0"
+		sessionID := "unknown"
+		tok := ""
 		start := time.Now()
 		rwIntercept := &ResponseWriterStatusIntercept{ResponseWriter: rw}
+
+		sess, err := appauth.ReadSessionCookie(r)
+		if err == nil {
+			tok = sess.AccessToken
+			ctx := httpctx.FromRequest(r)
+			if ctx != nil {
+				for _, cookie := range r.Cookies() {
+					// each environment uses a different cookie name, but they all start with 'amplitude'
+					if strings.Contains(cookie.Name, "amplitude") {
+						sessionID = cookie.Value
+					}
+				}
+			}
+			ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok, TokenType: "Bearer"}))
+			actor, err := accesstoken.ParseAndVerify(idkey.FromContext(ctx), tok)
+			if err != nil {
+				log15.Debug("Cookie parse:", "errror", err)
+			} else {
+				uid = strconv.Itoa(actor.UID)
+			}
+		}
+
 		next.ServeHTTP(rwIntercept, r)
 
 		// If we have an error, name is an empty string which
@@ -51,6 +79,7 @@ func Metrics(next http.Handler) http.Handler {
 		if code == 0 {
 			code = 200
 		}
+
 		duration := time.Now().Sub(start)
 		labels := prometheus.Labels{
 			"route":  name,
@@ -61,7 +90,7 @@ func Metrics(next http.Handler) http.Handler {
 		requestDuration.With(labels).Observe(duration.Seconds())
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
-		log15.Debug("TRACE HTTP", "method", r.Method, "URL", r.URL.String(), "routename", name, "spanID", traceutil.SpanID(r), "code", code, "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent(), "duration", duration)
+		log15.Debug("TRACE HTTP", "method", r.Method, "URL", r.URL.String(), "routename", name, "spanID", traceutil.SpanID(r), "code", code, "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent(), "uid", uid, "duration", duration, "session", sessionID)
 	})
 }
 

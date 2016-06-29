@@ -25,9 +25,9 @@ simpler.
 The principle is: srclib and srclib toolchains assume the build system has
 already fetched deps, compiled, etc.
 
-Implicit srclib configuration is when there is no `.drone.yml` and Sourcegraph
+Implicit srclib configuration is when there is no `.sg-drone.yml` and Sourcegraph
 creates one based on the filenames (.java,. go, etc.) it sees. Explicit srclib
-configuration is when you have a .drone.yml with srclib steps in it; in that
+configuration is when you have a .sg-drone.yml with srclib steps in it; in that
 case, no implicit configuration is performed (e.g., say you had some .py files
 but didn't want to run srclib-python).
 
@@ -37,7 +37,7 @@ By default, Sourcegraphs adds up to one build step per language
 Presence of this step depends on language (some may not have centralized
 'build source code' entry point).
 
-If build step defined in `.drone.yml` or added implicitly refers to Docker image
+If build step defined in `.sg-drone.yml` or added implicitly refers to Docker image
 built by Sourcegraph (identified by the presence of `srclib` substring in
 image's name) it is assumed that indexing step was explicitly configured and
 won't be added after the 'build' and 'test' steps. There is an exception to this:

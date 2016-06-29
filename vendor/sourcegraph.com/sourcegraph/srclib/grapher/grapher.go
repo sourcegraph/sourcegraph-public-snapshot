@@ -100,7 +100,7 @@ func NormalizeData(unitType, dir string, o *graph.Output) error {
 		}
 	}
 
-	if unitType != "GoPackage" && unitType != "Dockerfile" {
+	if unitType != "GoPackage" && unitType != "Dockerfile" && unitType != "BashDirectory" && unitType != "ManPages" {
 		ensureOffsetsAreByteOffsets(dir, o)
 	}
 

@@ -20,6 +20,7 @@ import (
 var Services = svc.Services{
 	Accounts:          Accounts,
 	Annotations:       Annotations,
+	Async:             Async,
 	Auth:              Auth,
 	Builds:            Builds,
 	Channel:           Channel,

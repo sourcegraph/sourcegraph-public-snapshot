@@ -12,18 +12,20 @@ import base from "sourcegraph/components/styles/_base.css";
 import {LoginForm} from "sourcegraph/user/Login";
 import {SignupForm} from "sourcegraph/user/Signup";
 import {EllipsisHorizontal, CheckIcon} from "sourcegraph/components/Icons";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig, signedIn, router, eventLogger}) {
 	if (location.pathname === "/styleguide") return <span />;
 	return (
-		<nav styleName="navbar" role="navigation">
+		<nav id="global-nav" styleName="navbar" role="navigation">
 
 			{location.state && location.state.modal === "login" &&
 				<LocationStateModal modalName="login" location={location}
-					onDismiss={(v) => eventLogger.logEvent("DismissLoginModal")}>
+					onDismiss={(v) => eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 					<div styleName="modal">
 						<LoginForm
 							onLoginSuccess={dismissModal("login", location, router)}
+							returnTo={location}
 							location={location} />
 					</div>
 				</LocationStateModal>
@@ -31,10 +33,11 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 
 			{location.state && location.state.modal === "signup" &&
 				<LocationStateModal modalName="signup" location={location}
-					onDismiss={(v) => eventLogger.logEvent("DismissSignupModal")}>
+					onDismiss={(v) => eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 					<div styleName="modal">
 						<SignupForm
 							onSignupSuccess={dismissModal("signup", location, router, {_onboarding: "new-user", _signupChannel: "email"})}
+							returnTo={location}
 							location={location} />
 					</div>
 				</LocationStateModal>
@@ -49,8 +52,8 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 					<Link to="/tour">
 						<TabItem active={location.pathname === "/tour"} icon="tour">Tour</TabItem>
 					</Link>
-					<Link to="/repositories">
-						<TabItem active={location.pathname === "/repositories"} icon="repository">My Repositories</TabItem>
+					<Link to="/settings/repos">
+						<TabItem active={location.pathname === "/settings/repos"} icon="repository">Repositories</TabItem>
 					</Link>
 					<Link to="/tools">
 						<TabItem hideMobile={true} active={location.pathname === "/tools"} icon="tools">Tools</TabItem>
@@ -65,6 +68,9 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 					<Link to="/about" styleName="logged-out-nav-item">About</Link>
 					<Link to="/pricing" styleName="logged-out-nav-item">Pricing</Link>
 					<a href="https://text.sourcegraph.com" styleName="logged-out-nav-item">Blog</a>
+					<Link to="/settings/repos">
+						<TabItem active={location.pathname === "/settings/repos"}>Repositories</TabItem>
+					</Link>
 				</div>}
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal styleName="icon-ellipsis" title="Your editor could not identify the symbol"/>}
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 1 && <CheckIcon styleName="icon-check" title="Sourcegraph successfully looked up symbol" />}
@@ -75,6 +81,8 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 						<Menu>
 							<Link to="/about" role="menu-item">About</Link>
 							<Link to="/contact" role="menu-item">Contact</Link>
+							<Link to="/pricing" role="menu-item">Pricing</Link>
+							<a href="https://text.sourcegraph.com" target="_blank" role="menu-item">Blog</a>
 							<a href="https://boards.greenhouse.io/sourcegraph" target="_blank" role="menu-item">We're hiring</a>
 							<Link to="/security" role="menu-item">Security</Link>
 							<Link to="/-/privacy" role="menu-item">Privacy</Link>
@@ -89,13 +97,13 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 					<div styleName="tr" className={`${base.pv2} ${base.pr2}`}>
 						<div styleName="action">
 							<LocationStateToggleLink href="/login" modalName="login" location={location}
-								onToggle={(v) => v && eventLogger.logEvent("ShowLoginModal")}>
+								onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ShowLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 								<Button color="blue" outline={true}>Sign in</Button>
 							</LocationStateToggleLink>
 						</div>
 						<div styleName="action hidden-s">
 							<LocationStateToggleLink href="/join" modalName="signup" location={location}
-								onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal")}>
+								onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ViewSignupModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 								<Button color="blue">Sign up</Button>
 							</LocationStateToggleLink>
 						</div>

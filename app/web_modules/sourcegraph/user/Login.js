@@ -17,6 +17,10 @@ export class LoginForm extends Container {
 	static propTypes = {
 		onLoginSuccess: React.PropTypes.func.isRequired,
 		location: React.PropTypes.object.isRequired,
+
+		// returnTo is where the user should be redirected after an OAuth login flow,
+		// either a URL path or a Location object.
+		returnTo: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.object]).isRequired,
 	};
 
 	state = {
@@ -66,7 +70,7 @@ export class LoginForm extends Container {
 			<form {...this.props} onSubmit={this._handleSubmit} styleName="form">
 				<Heading level="3" align="center" underline="orange">Sign in to Sourcegraph</Heading>
 				{this.state.githubError && <div styleName="error">Sorry, signing in via GitHub didn't work. (Check your organization's GitHub 3rd-party application settings.) Try <Link to="/join?github-error=from-login">creating a separate Sourcegraph account</Link>.</div>}
-				<GitHubAuthButton tabIndex="1" block={true}>Continue with GitHub</GitHubAuthButton>
+				<GitHubAuthButton returnTo={this.state.returnTo} tabIndex="1" block={true}>Continue with GitHub</GitHubAuthButton>
 				<p styleName="divider">or</p>
 				<label>
 					<span>Username</span>
@@ -118,6 +122,7 @@ function Login(props, {router}) {
 		<div styleName="full-page">
 			<Helmet title="Sign In" />
 			<LoginForm {...props}
+				returnTo="/"
 				onLoginSuccess={() => router.replace("/")} />
 		</div>
 	);

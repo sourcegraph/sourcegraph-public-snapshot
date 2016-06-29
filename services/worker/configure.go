@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dockerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
@@ -39,14 +40,20 @@ func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.
 		return nil, err
 	}
 
-	// Read existing .drone.yml file.
+	// Read existing .sg-drone.yml file.
 	file, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
-		Entry: sourcegraph.TreeEntrySpec{RepoRev: repoRev, Path: ".drone.yml"},
+		Entry: sourcegraph.TreeEntrySpec{RepoRev: repoRev, Path: ".sg-drone.yml"},
 	})
 	if err != nil && grpc.Code(err) != codes.NotFound {
 		return nil, err
 	} else if err == nil {
 		b.Payload.Yaml = string(file.Contents)
+		b.DroneYMLFileExists = true
+	}
+
+	// Virtual .sg-drone.yml for Kubernetes repo
+	if repo.URI == "github.com/kubernetes/kubernetes" {
+		b.Payload.Yaml = "clone:\n  path: k8s.io/kubernetes"
 		b.DroneYMLFileExists = true
 	}
 
@@ -197,6 +204,11 @@ func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.
 // getContainerAppURL gets the Sourcegraph server's app URL from the
 // POV of the Docker containers.
 func getAppURL(ctx context.Context) (*url.URL, error) {
+	u := conf.AppURLOrNil(ctx)
+	if u != nil {
+		return u, nil
+	}
+
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		return nil, err

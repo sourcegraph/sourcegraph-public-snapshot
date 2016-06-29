@@ -4,7 +4,7 @@
 
 ## Install
 
-With [npm](https://npmjs.org/package/postcss-minify-selectors) do:
+With [npm](https://www.npmjs.com/package/postcss-minify-selectors) do:
 
 ```
 npm install postcss-minify-selectors --save

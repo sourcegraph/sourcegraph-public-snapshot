@@ -14,7 +14,6 @@ import (
 	droneexec "github.com/drone/drone-exec/exec"
 	droneparser "github.com/drone/drone-exec/parser"
 	dronerunner "github.com/drone/drone-exec/runner"
-	droneyaml "github.com/drone/drone-exec/yaml"
 	"github.com/drone/drone/yaml/matrix"
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -36,7 +35,7 @@ type Builder struct {
 
 	// Other options
 
-	// DroneYMLFileExists is true if the repo has a .drone.yml
+	// DroneYMLFileExists is true if the repo has a .sg-drone.yml
 	// file. This is necessary because an empty string in Payload.Yaml
 	// could mean either "empty file" or "no file".
 	DroneYMLFileExists bool
@@ -56,11 +55,9 @@ type Builder struct {
 	CreateTasks func(ctx context.Context, labels []string) ([]TaskState, error)
 
 	// FinalBuildConfig, if non-nil, is called with the final build
-	// configuration (.drone.yml) after inferred and srclib steps have
+	// configuration (.sg-drone.yml) after inferred and srclib steps have
 	// been added.
 	FinalBuildConfig func(ctx context.Context, configYAML string) error
-
-	config droneyaml.Config // the .drone.yml config (possibly inferred)
 }
 
 // TaskState manages a task's state. An implementation could, for
@@ -180,7 +177,7 @@ func (b *Builder) plan(ctx context.Context) (finalConfig string, axes []matrix.A
 
 	var planLabel string
 	if b.DroneYMLFileExists {
-		planLabel = "Add srclib indexing steps to existing .drone.yml"
+		planLabel = "Add srclib indexing steps to existing .sg-drone.yml"
 	} else {
 		planLabel = "Infer build & test configuration"
 	}
@@ -200,6 +197,16 @@ func (b *Builder) plan(ctx context.Context) (finalConfig string, axes []matrix.A
 
 				if err == nil {
 					w := state.Log()
+					langs := make([]*inventory.Lang, 0, len(inv.Languages))
+					skipped := make([]*inventory.Lang, 0, len(inv.Languages))
+					for _, l := range inv.Languages {
+						if _, ok := skipLangs[l.Name]; ok {
+							skipped = append(skipped, l)
+						} else {
+							langs = append(langs, l)
+						}
+					}
+					inv.Languages = langs
 					if len(inv.Languages) == 0 {
 						if !b.DroneYMLFileExists {
 							fmt.Fprintln(w, "No recognized programming languages were detected in this repository.")
@@ -207,6 +214,12 @@ func (b *Builder) plan(ctx context.Context) (finalConfig string, axes []matrix.A
 					} else {
 						fmt.Fprintf(w, "Detected %d programming languages in use by this repository:\n", len(inv.Languages))
 						for _, lang := range inv.Languages {
+							fmt.Fprintf(w, " - %s\n", lang.Name)
+						}
+					}
+					if len(skipped) > 0 {
+						fmt.Fprintf(w, "\nFound %d languages in use by this repository that will not be built or analysed:\n", len(skipped))
+						for _, lang := range skipped {
 							fmt.Fprintf(w, " - %s\n", lang.Name)
 						}
 					}
@@ -224,13 +237,13 @@ func (b *Builder) plan(ctx context.Context) (finalConfig string, axes []matrix.A
 
 				w := state.Log()
 				if b.DroneYMLFileExists {
-					fmt.Fprintln(w, "# Using .drone.yml file with srclib indexing steps added.")
+					fmt.Fprintln(w, "# Using .sg-drone.yml file with srclib indexing steps added.")
 				} else {
-					fmt.Fprintln(w, "# Because this repository has no .drone.yml file, Sourcegraph attempted to infer this repository's build and test configuration.")
+					fmt.Fprintln(w, "# Because this repository has no .sg-drone.yml file, Sourcegraph attempted to infer this repository's build and test configuration.")
 					fmt.Fprintln(w, "#")
-					fmt.Fprintln(w, "# If this configuration is incorrect or incomplete, add a .drone.yml file to your repository (using this as a starter) with the correct configuration. See http://readme.drone.io/usage/overview/ for instructions.")
+					fmt.Fprintln(w, "# If this configuration is incorrect or incomplete, add a .sg-drone.yml file to your repository (using this as a starter) with the correct configuration. See http://readme.drone.io/usage/overview/ for instructions.")
 					fmt.Fprintln(w, "#")
-					fmt.Fprintln(w, "# Tip: You can test your .drone.yml locally by running `src check` in your repository, after downloading the `src` CLI.")
+					fmt.Fprintln(w, "# Tip: You can test your .sg-drone.yml locally by running `src check` in your repository, after downloading the `src` CLI.")
 				}
 
 				fmt.Fprintln(state.Log())
@@ -410,12 +423,18 @@ func (noopMonitor) End(ok, allowFailure bool) {}
 
 func (noopMonitor) Logger() (stdout, stderr io.Writer) { return ioutil.Discard, ioutil.Discard }
 
+// skipLangs are languages we shouldn't build or analyse. They are usually
+// languages that are common in repos, but including them in warnings would be
+// noisy.
 var skipLangs = map[string]struct{}{
-	"Shell":     struct{}{},
-	"Makefile":  struct{}{},
-	"Batchfile": struct{}{},
-	"fish":      struct{}{},
-	"Tcsh":      struct{}{},
-	"SaltStack": struct{}{},
-	"PLpgSQL":   struct{}{},
+	"Ant Build System": struct{}{},
+	"Batchfile":        struct{}{},
+	"Dockerfile":       struct{}{},
+	"Graphviz (DOT)":   struct{}{},
+	"Makefile":         struct{}{},
+	"Markdown":         struct{}{},
+	"PLpgSQL":          struct{}{},
+	"SaltStack":        struct{}{},
+	"Tcsh":             struct{}{},
+	"fish":             struct{}{},
 }

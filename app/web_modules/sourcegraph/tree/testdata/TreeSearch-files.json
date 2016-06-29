@@ -16,10 +16,39 @@
 									"type": "text",
 									"id": "search-input",
 									"block": true,
+									"onFocus": {
+										"dispatchedToStores": [],
+										"dispatchedToBackends": [
+											{
+												"$constructor": "WantResults",
+												"p": {
+													"query": "",
+													"notRepos": [
+														"repo"
+													],
+													"limit": 3
+												}
+											}
+										]
+									},
+									"onBlur": {
+										"dispatchedToStores": [],
+										"dispatchedToBackends": [
+											{
+												"$constructor": "WantResults",
+												"p": {
+													"query": "",
+													"notRepos": [
+														"repo"
+													],
+													"limit": 3
+												}
+											}
+										]
+									},
 									"autoFocus": true,
 									"defaultValue": "",
 									"placeholder": "Jump to symbols or files...",
-									"maxLength": 32,
 									"spellCheck": false
 								}
 							}
@@ -38,209 +67,17 @@
 				},
 				{
 					"type": "div",
-					"key": ".0:$_nosymbol0",
+					"key": ".3",
 					"props": {
-						"styleName": "list-item",
+						"styleName": "list-header",
 						"children": [
-							{
-								"type": "div",
-								"props": {
-									"styleName": "content-placeholder",
-									"style": {
-										"width": "59%"
-									},
-									"children": [
-										{
-											"type": "code",
-											"props": {
-												"children": [
-													" "
-												]
-											}
-										}
-									]
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "div",
-					"key": ".0:$_nosymbol1",
-					"props": {
-						"styleName": "list-item",
-						"children": [
-							{
-								"type": "div",
-								"props": {
-									"styleName": "content-placeholder",
-									"style": {
-										"width": "38%"
-									},
-									"children": [
-										{
-											"type": "code",
-											"props": {
-												"children": [
-													" "
-												]
-											}
-										}
-									]
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "div",
-					"key": ".0:$_nosymbol2",
-					"props": {
-						"styleName": "list-item",
-						"children": [
-							{
-								"type": "div",
-								"props": {
-									"styleName": "content-placeholder",
-									"style": {
-										"width": "77%"
-									},
-									"children": [
-										{
-											"type": "code",
-											"props": {
-												"children": [
-													" "
-												]
-											}
-										}
-									]
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "div",
-					"key": ".0:$_nosymbol3",
-					"props": {
-						"styleName": "list-item",
-						"children": [
-							{
-								"type": "div",
-								"props": {
-									"styleName": "content-placeholder",
-									"style": {
-										"width": "56%"
-									},
-									"children": [
-										{
-											"type": "code",
-											"props": {
-												"children": [
-													" "
-												]
-											}
-										}
-									]
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "div",
-					"key": ".0:$_nosymbol4",
-					"props": {
-						"styleName": "list-item",
-						"children": [
-							{
-								"type": "div",
-								"props": {
-									"styleName": "content-placeholder",
-									"style": {
-										"width": "35%"
-									},
-									"children": [
-										{
-											"type": "code",
-											"props": {
-												"children": [
-													" "
-												]
-											}
-										}
-									]
-								}
-							}
+							"Files"
 						]
 					}
 				},
 				{
 					"type": "div",
 					"key": ".4",
-					"props": {
-						"styleName": "list-header",
-						"children": [
-							"Files in",
-							{
-								"type": "span",
-								"key": ".1",
-								"props": {
-									"styleName": "file-path",
-									"children": [
-										{
-											"type": "WrappedComponent",
-											"key": ".0",
-											"props": {
-												"repo": "repo/"
-											}
-										},
-										{
-											"type": "",
-											"key": ".1:$0",
-											"props": {
-												"to": "/repo@rev/-/tree/p1",
-												"styleName": "path-inactive",
-												"children": [
-													"p1"
-												],
-												"onlyActiveOnIndex": false,
-												"style": {}
-											}
-										},
-										{
-											"type": "span",
-											"key": ".1:$-1",
-											"props": {
-												"styleName": "path-sep",
-												"children": [
-													"/"
-												]
-											}
-										},
-										{
-											"type": "",
-											"key": ".1:$1",
-											"props": {
-												"to": "/repo@rev/-/tree/p1/p2",
-												"styleName": "path-active",
-												"children": [
-													"p2"
-												],
-												"onlyActiveOnIndex": false,
-												"style": {}
-											}
-										}
-									]
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "div",
-					"key": ".5",
 					"props": {
 						"styleName": "list-item-group",
 						"children": [
@@ -249,6 +86,21 @@
 								"key": ".$f=2/repo@rev/-/tree/p1",
 								"props": {
 									"styleName": "list-item-selected parent-dir",
+									"onMouseOver": {
+										"dispatchedToStores": [],
+										"dispatchedToBackends": [
+											{
+												"$constructor": "WantResults",
+												"p": {
+													"query": "",
+													"notRepos": [
+														"repo"
+													],
+													"limit": 3
+												}
+											}
+										]
+									},
 									"to": "/repo@rev/-/tree/p1",
 									"children": [
 										".."
@@ -262,6 +114,21 @@
 								"key": ".$f=2/repo@rev/-/blob/p1/p2/f3",
 								"props": {
 									"styleName": "list-item ",
+									"onMouseOver": {
+										"dispatchedToStores": [],
+										"dispatchedToBackends": [
+											{
+												"$constructor": "WantResults",
+												"p": {
+													"query": "",
+													"notRepos": [
+														"repo"
+													],
+													"limit": 3
+												}
+											}
+										]
+									},
 									"to": "/repo@rev/-/blob/p1/p2/f3",
 									"children": [
 										{
@@ -293,6 +160,26 @@
 			"$constructor": "WantFileList",
 			"repo": "repo",
 			"commitID": "c"
+		},
+		{
+			"$constructor": "WantResults",
+			"p": {
+				"query": "",
+				"repos": [
+					"repo"
+				],
+				"limit": 10
+			}
+		},
+		{
+			"$constructor": "WantResults",
+			"p": {
+				"query": "",
+				"notRepos": [
+					"repo"
+				],
+				"limit": 3
+			}
 		}
 	]
 }

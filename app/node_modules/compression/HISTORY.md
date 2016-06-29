@@ -1,3 +1,16 @@
+1.6.2 / 2016-05-12
+==================
+
+  * deps: accepts@~1.3.3
+    - deps: mime-types@~2.1.11
+    - deps: negotiator@0.6.1
+  * deps: bytes@2.3.0
+    - Drop partial bytes on all parsed units
+    - Fix parsing byte string that looks like hex
+    - perf: hoist regular expressions
+  * deps: compressible@~2.0.8
+    - deps: mime-db@'>= 1.23.0 < 2'
+
 1.6.1 / 2016-01-19
 ==================
 

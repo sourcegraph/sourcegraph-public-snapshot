@@ -2,9 +2,11 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
+			"styleName": "container",
 			"children": [
 				{
-					"type": "DiffFileList",
+					"type": "WrappedComponent",
+					"key": ".0",
 					"props": {
 						"files": [
 							{
@@ -20,47 +22,63 @@
 					}
 				},
 				{
-					"type": "FileDiff",
-					"key": "ab",
+					"type": "div",
+					"key": ".1:$ab",
 					"props": {
-						"id": "F0",
-						"diff": {
-							"OrigName": "a",
-							"NewName": "b"
-						},
-						"baseRepo": "br",
-						"baseRev": "bv",
-						"headRepo": "hr",
-						"headRev": "hv",
-						"annotations": {
-							"content": {}
-						},
-						"defs": {
-							"content": {},
-							"pos": {}
-						}
+						"styleName": "file-diff",
+						"children": [
+							{
+								"type": "WrappedComponent",
+								"props": {
+									"id": "F0",
+									"diff": {
+										"OrigName": "a",
+										"NewName": "b"
+									},
+									"baseRepo": "br",
+									"baseRev": "bv",
+									"headRepo": "hr",
+									"headRev": "hv",
+									"annotations": {
+										"content": {}
+									},
+									"defs": {
+										"content": {},
+										"pos": {}
+									}
+								}
+							}
+						]
 					}
 				},
 				{
-					"type": "FileDiff",
-					"key": "cd",
+					"type": "div",
+					"key": ".1:$cd",
 					"props": {
-						"id": "F1",
-						"diff": {
-							"OrigName": "c",
-							"NewName": "d"
-						},
-						"baseRepo": "br",
-						"baseRev": "bv",
-						"headRepo": "hr",
-						"headRev": "hv",
-						"annotations": {
-							"content": {}
-						},
-						"defs": {
-							"content": {},
-							"pos": {}
-						}
+						"styleName": "file-diff",
+						"children": [
+							{
+								"type": "WrappedComponent",
+								"props": {
+									"id": "F1",
+									"diff": {
+										"OrigName": "c",
+										"NewName": "d"
+									},
+									"baseRepo": "br",
+									"baseRev": "bv",
+									"headRepo": "hr",
+									"headRev": "hv",
+									"annotations": {
+										"content": {}
+									},
+									"defs": {
+										"content": {},
+										"pos": {}
+									}
+								}
+							}
+						]
 					}
 				}
 			]

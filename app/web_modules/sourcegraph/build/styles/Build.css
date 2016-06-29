@@ -32,8 +32,8 @@
 }
 
 .header {
-	composes: col-6 col-3-ns from grid;
-	composes: pa3 mh3 ba from base;
+	composes: col-4 col-3-ns from grid;
+	composes: pv3 mr3 ba from base;
 	composes: b--black-20 from base;
 	text-align: center;
 }
@@ -53,7 +53,7 @@
 }
 
 .commit {
-	composes: pa4 from base;
+	composes: pv3 from base;
 }
 
 .tasks {

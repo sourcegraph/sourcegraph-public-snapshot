@@ -6,7 +6,6 @@ import (
 	"go/ast"
 	"go/format"
 	"go/parser"
-	"go/printer"
 	"go/token"
 	"log"
 	"os"
@@ -146,15 +145,4 @@ func Generate(outFile string, tmpl *template.Template, files []string, filter fu
 	if _, err := f.Write(src); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func astString(fset *token.FileSet, x ast.Expr) string {
-	if x == nil {
-		return ""
-	}
-	var buf bytes.Buffer
-	if err := printer.Fprint(&buf, fset, x); err != nil {
-		panic(err)
-	}
-	return buf.String()
 }

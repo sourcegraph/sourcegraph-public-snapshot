@@ -1,8 +1,8 @@
 {
   "version": "0.0.0",
-  "name": "Sourcegraph browser extension for GitHub",
+  "name": "Sourcegraph for GitHub",
   "manifest_version": 2,
-  "description": "Sourcegraph browser extension for GitHub",
+  "description": "DEV",
   "browser_action": {
     "default_title": "Sourcegraph"
   },
@@ -17,6 +17,6 @@
   "background": {
     "page": "background.html"
   },
-  "permissions": [ "tabs", "storage", "https://github.com/*", "https://www.github.com/*", "https://sourcegraph.com/*", "https://www.sourcegraph.com/*" ],
+  "permissions": [ "tabs", "storage", "https://github.com/*", "https://sourcegraph.com/*" ],
   "content_security_policy": "default-src 'self'; script-src 'self' https://localhost:3000 'unsafe-eval'; connect-src https://sourcegraph.com/ https://localhost:3000 wss://localhost:3000; style-src https://github.com/ 'unsafe-inline' 'self' blob:; img-src 'self' data:;"
 }

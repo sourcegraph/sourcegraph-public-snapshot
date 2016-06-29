@@ -4,6 +4,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 import {Link} from "react-router";
 import {browserHistory} from "react-router";
+import {rel} from "sourcegraph/app/routePatterns";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import SearchStore from "sourcegraph/search/SearchStore";
@@ -13,13 +14,14 @@ import trimLeft from "lodash/string/trimLeft";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
-import type {Repo, Def} from "sourcegraph/def";
+import type {Options, Repo, Def} from "sourcegraph/def";
 
 import {Input, Icon} from "sourcegraph/components";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalSearch.css";
 import base from "sourcegraph/components/styles/_base.css";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 export const RESULTS_LIMIT = 20;
 
@@ -42,31 +44,24 @@ class GlobalSearch extends Container {
 
 		this.state = {
 			query: "",
-			matchingResults: {Repos: [], Defs: []},
+			matchingResults: {Repos: [], Defs: [], Options: []},
 			selectionIndex: 0,
-			focused: false,
 		};
-		this._queryInput = null;
 		this._handleKeyDown = this._handleKeyDown.bind(this);
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
 		this._handleInput = this._handleInput.bind(this);
 		this._onSelection = debounce(this._onSelection.bind(this), 100, {leading: false, trailing: true}); // Prevent rapid repeated selections
 		this._onChangeQuery = this._onChangeQuery.bind(this);
-		this._debouncedSetQuery = debounce((query) => {
-			if (query !== this.state.query) {
-				this._onChangeQuery(query);
-			}
-		}, 200, {leading: false, trailing: true});
 	}
 
 	state: {
 		query: string;
 		matchingResults: {
 			Repos: Array<Repo>,
-			Defs: Array<Def>
+			Defs: Array<Def>,
+			Options: Array<Options>,
 		};
-		focused: boolean;
 		selectionIndex: number;
 	};
 
@@ -75,6 +70,7 @@ class GlobalSearch extends Container {
 		if (global.document) {
 			document.addEventListener("keydown", this._handleKeyDown);
 		}
+		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
 	}
 
 	componentWillUnmount() {
@@ -82,20 +78,49 @@ class GlobalSearch extends Container {
 		if (global.document) {
 			document.removeEventListener("keydown", this._handleKeyDown);
 		}
+		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
+
+	_dispatcherToken: string;
 
 	stores(): Array<Object> { return [SearchStore]; }
 
 	reconcileState(state: GlobalSearch.state, props) {
 		Object.assign(state, props);
-		state.matchingResults = SearchStore.results.get(state.query, null, null, RESULTS_LIMIT,
+		state.matchingResults = SearchStore.get(state.query, null, null, null, RESULTS_LIMIT,
 			this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
 	}
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.query !== nextState.query) {
-			Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, null, RESULTS_LIMIT,
-			this.props.location.query.prefixMatch, this.props.location.query.includeRepos));
+			debounce((query) => {
+				Dispatcher.Backends.dispatch(new SearchActions.WantResults({
+					query: nextState.query,
+					limit: RESULTS_LIMIT,
+					prefixMatch: this.props.location.query.prefixMatch,
+					includeRepos: this.props.location.query.includeRepos,
+					fast: true,
+				}));
+			}, 200, {leading: false, trailing: true})(nextState.query);
+		}
+	}
+
+	__onDispatch(action) {
+		if (action.constructor === SearchActions.ResultsFetched) {
+			let globalSearchEventDict = {};
+			globalSearchEventDict["globalSearchQuery"] = this.state.query;
+			globalSearchEventDict["page name"] = this.props.location.pathname.slice(1) === rel.search ? "Global search homepage" : "Global search repo page";
+			if (this.state.matchingResults !== null) {
+				if (this.state.matchingResults.Options) {
+					if (this.state.matchingResults.Options[0]["Languages"] !== null) {
+						globalSearchEventDict["languages"] = this.state.matchingResults.Options[0]["Languages"];
+					}
+					if (this.state.matchingResults.Options[0]["Kinds"] !== null) {
+						globalSearchEventDict["kinds"] = this.state.matchingResults.Options[0]["Kinds"];
+					}
+				}
+			}
+			this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_SUCCESS, "GlobalSearchInitiated", globalSearchEventDict);
 		}
 	}
 
@@ -104,8 +129,6 @@ class GlobalSearch extends Container {
 			q: query || undefined, // eslint-disable-line no-undefined
 			prefixMatch: this.props.location.query.prefixMatch || undefined, // eslint-disable-line no-undefined
 			includeRepos: this.props.location.query.includeRepos || undefined}}); // eslint-disable-line no-undefined
-		this.setState({query: query});
-		this.context.eventLogger.logEvent("GlobalSearchInitiated", {globalSearchQuery: query});
 	}
 
 	_navigateTo(url: string) {
@@ -163,9 +186,8 @@ class GlobalSearch extends Container {
 	}
 
 	_handleInput(e: KeyboardEvent) {
-		if (this.state.focused) {
-			this._debouncedSetQuery(this._queryInput ? this._queryInput.value : "");
-		}
+		if (!(e.currentTarget instanceof HTMLInputElement)) return;
+		this._onChangeQuery(e.currentTarget.value);
 	}
 
 	_scrollToVisibleSelection() {
@@ -205,7 +227,7 @@ class GlobalSearch extends Container {
 		if (this.state.matchingResults.Repos) {
 			if (i < this.state.matchingResults.Repos.length) {
 				const url = `/${this.state.matchingResults.Repos[i].URI}`;
-				this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url});
+				this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url, indexSelected: i, page_name: this.props.location.pathname});
 				this._navigateTo(url);
 				return;
 			}
@@ -215,7 +237,14 @@ class GlobalSearch extends Container {
 
 		const def = this.state.matchingResults.Defs[i - offset];
 		const url = urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def);
-		this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url});
+
+		let eventProps = {globalSearchQuery: this.state.query, selectedItem: url, indexSelected: i, totalResults: this.state.matchingResults.Defs.length, page_name: this.props.location.pathname};
+		if (def.FmtStrings && def.FmtStrings.Kind && def.FmtStrings.Language && def.Repo) {
+			eventProps = {...eventProps, languageSelected: def.FmtStrings.Language, kindSelected: def.FmtStrings.Kind, repoSelected: def.Repo};
+		}
+
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", eventProps);
+
 		this._navigateTo(url);
 	}
 
@@ -265,7 +294,6 @@ class GlobalSearch extends Container {
 		if (this.state.matchingResults.Defs) {
 			numDefs = this.state.matchingResults.Defs.length > RESULTS_LIMIT ? RESULTS_LIMIT : this.state.matchingResults.Defs.length;
 		}
-
 		for (let i = 0; i < numRepos; i++) {
 			let repo = this.state.matchingResults.Repos[i];
 			const selected = this._normalizedSelectionIndex() === i;
@@ -277,7 +305,7 @@ class GlobalSearch extends Container {
 					ref={selected ? this._setSelectedItem : null}
 					to={repo.URI}
 					key={repo.URI}
-					onClick={() => this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: repo.URI})}>
+					onClick={() => this._onSelection()}>
 					<div styleName="cool-gray flex-container" className={base.pt4}>
 						<div styleName="flex-icon hidden-s">
 							<Icon icon="repository-gray" width="32px" />
@@ -319,7 +347,7 @@ class GlobalSearch extends Container {
 					ref={selected ? this._setSelectedItem : null}
 					to={defURL}
 					key={defURL}
-					onClick={() => this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: defURL})}>
+					onClick={() => this._onSelection()}>
 					<div styleName="cool-gray flex-container" className={base.pt4}>
 						<div styleName="flex-icon hidden-s">
 							<Icon icon="doc-code" width="32px" />
@@ -346,14 +374,11 @@ class GlobalSearch extends Container {
 			<div styleName="search-input relative">
 				<Input type="text"
 					block={true}
-					onFocus={() => this.setState({focused: true})}
-					onBlur={() => this.setState({focused: false})}
-					onInput={this._handleInput}
+					onChange={this._handleInput}
+					value={this.state.query}
 					autoFocus={true}
-					defaultValue={this.state.query}
-					placeholder="Search for symbols, functions and definitions..."
-					spellCheck={false}
-					domRef={(e) => this._queryInput = e} />
+					placeholder="Search code and cross-references"
+					spellCheck={false} />
 			</div>
 			<div>
 				{this._results()}

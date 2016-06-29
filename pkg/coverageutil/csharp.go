@@ -10,7 +10,9 @@ import (
 // It's based on scanner.Scanner with adjustments to handle C#-specific
 // things such as:
 // - strings can be multiline
-// numeric literals may have a suffix
+// - numeric literals may have a suffix
+// - verbatim strings
+// - preprocessor directives
 type csharpScanner struct {
 	*scanner.Scanner
 }
@@ -52,6 +54,13 @@ func (s *csharpScanner) scan() rune {
 				s.consumeVerbatimString()
 				return s.scan()
 			}
+		}
+	case ch == '#':
+		{
+			for ch >= 0 && ch != '\n' {
+				ch = s.Next()
+			}
+			return s.scan()
 		}
 	case unicode.IsSpace(ch):
 		{

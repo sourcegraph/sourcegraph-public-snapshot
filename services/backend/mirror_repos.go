@@ -131,7 +131,10 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 		Repo:     repo.ID,
 		CommitID: res.CommitID,
 		Branch:   repo.DefaultBranch,
-		Config:   sourcegraph.BuildConfig{Queue: true},
+		Config: sourcegraph.BuildConfig{
+			Queue:    true,
+			Priority: -50,
+		},
 	})
 	if err != nil {
 		log15.Warn("cloneRepo: failed to create build", "err", err, "repo", repo.URI, "commit", res.CommitID, "branch", repo.DefaultBranch)
@@ -184,7 +187,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 			}
 
 			// Determine the new branch head revision.
-			head, err := vcsRepo.ResolveRevision(change.Branch)
+			head, err := vcsRepo.ResolveRevision("refs/heads/" + change.Branch)
 			if err != nil {
 				return err
 			}
@@ -214,7 +217,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 		}
 
 		// Determine new branch head revision.
-		head, err := vcsRepo.ResolveRevision(oldBranch.Name)
+		head, err := vcsRepo.ResolveRevision("refs/heads/" + oldBranch.Name)
 		if err == vcs.ErrRevisionNotFound {
 			// Branch was deleted.
 			// TODO: what about GitPayload.ContentEncoding field?

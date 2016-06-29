@@ -38,7 +38,7 @@ module.exports = compressible
  * @public
  */
 
-function compressible(type) {
+function compressible (type) {
   if (!type || typeof type !== 'string') {
     return false
   }

@@ -22,3 +22,8 @@ declare module "lodash/number/random" {
 	declare function random(lower: number, upper: ?number, floating: ?boolean): any;
 	declare var exports: typeof random;
 }
+
+declare module "lodash/object/get" {
+	declare function get(object: Object, path: Array<string> | string, defaultValue: ?any): any;
+	declare var exports: typeof get;
+}

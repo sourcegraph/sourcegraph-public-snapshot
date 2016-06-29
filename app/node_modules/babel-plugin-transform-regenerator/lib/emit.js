@@ -1,43 +1,51 @@
-/**
- * Copyright (c) 2014, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * https://raw.github.com/facebook/regenerator/master/LICENSE file. An
- * additional grant of patent rights can be found in the PATENTS file in
- * the same directory.
- */
+/*istanbul ignore next*/"use strict";
 
-"use strict";
+var _stringify = require("babel-runtime/core-js/json/stringify");
 
-var _interopRequireDefault = require("babel-runtime/helpers/interop-require-default")["default"];
+var _stringify2 = _interopRequireDefault(_stringify);
 
-var _interopRequireWildcard = require("babel-runtime/helpers/interop-require-wildcard")["default"];
+var /*istanbul ignore next*/_assert = require("assert");
 
-var _assert = require("assert");
-
+/*istanbul ignore next*/
 var _assert2 = _interopRequireDefault(_assert);
 
-var _babelTypes = require("babel-types");
+var /*istanbul ignore next*/_babelTypes = require("babel-types");
 
+/*istanbul ignore next*/
 var t = _interopRequireWildcard(_babelTypes);
 
-var _leap = require("./leap");
+var /*istanbul ignore next*/_leap = require("./leap");
 
+/*istanbul ignore next*/
 var leap = _interopRequireWildcard(_leap);
 
-var _meta = require("./meta");
+var /*istanbul ignore next*/_meta = require("./meta");
 
+/*istanbul ignore next*/
 var meta = _interopRequireWildcard(_meta);
 
-var _util = require("./util");
+var /*istanbul ignore next*/_util = require("./util");
 
+/*istanbul ignore next*/
 var util = _interopRequireWildcard(_util);
 
-var hasOwn = Object.prototype.hasOwnProperty;
+/*istanbul ignore next*/
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var hasOwn = Object.prototype.hasOwnProperty; /**
+                                               * Copyright (c) 2014, Facebook, Inc.
+                                               * All rights reserved.
+                                               *
+                                               * This source code is licensed under the BSD-style license found in the
+                                               * https://raw.github.com/facebook/regenerator/master/LICENSE file. An
+                                               * additional grant of patent rights can be found in the PATENTS file in
+                                               * the same directory.
+                                               */
 
 function Emitter(contextId) {
-  _assert2["default"].ok(this instanceof Emitter);
+  /*istanbul ignore next*/_assert2.default.ok(this instanceof Emitter);
   t.assertIdentifier(contextId);
 
   // Used to generate unique temporary names.
@@ -92,7 +100,7 @@ Ep.mark = function (loc) {
   } else {
     // Locations can be marked redundantly, but their values cannot change
     // once set the first time.
-    _assert2["default"].strictEqual(loc.value, index);
+    /*istanbul ignore next*/_assert2.default.strictEqual(loc.value, index);
   }
   this.marked[index] = true;
   return loc;
@@ -172,7 +180,7 @@ Ep.jumpIfNot = function (test, toLoc) {
   t.assertExpression(test);
   t.assertLiteral(toLoc);
 
-  var negatedTest = undefined;
+  var negatedTest = /*istanbul ignore next*/void 0;
   if (t.isUnaryExpression(test) && test.operator === "!") {
     // Avoid double negation.
     negatedTest = test.argument;
@@ -193,8 +201,8 @@ Ep.makeTempVar = function () {
 };
 
 Ep.getContextFunction = function (id) {
-  return t.functionExpression(id || null, /*Anonymous*/
-  [this.contextId], t.blockStatement([this.getDispatchLoop()]), false, // Not a generator anymore!
+  return t.functionExpression(id || null /*Anonymous*/
+  , [this.contextId], t.blockStatement([this.getDispatchLoop()]), false, // Not a generator anymore!
   false // Nor an expression.
   );
 };
@@ -213,7 +221,7 @@ Ep.getContextFunction = function (id) {
 Ep.getDispatchLoop = function () {
   var self = this;
   var cases = [];
-  var current = undefined;
+  var current = /*istanbul ignore next*/void 0;
 
   // If we encounter a break, continue, or return statement in a switch
   // case, we can skip the rest of the statements until the next case.
@@ -259,7 +267,7 @@ Ep.getTryLocsList = function () {
 
   return t.arrayExpression(this.tryEntries.map(function (tryEntry) {
     var thisLocValue = tryEntry.firstLoc.value;
-    _assert2["default"].ok(thisLocValue >= lastLocValue, "try entries out of order");
+    /*istanbul ignore next*/_assert2.default.ok(thisLocValue >= lastLocValue, "try entries out of order");
     lastLocValue = thisLocValue;
 
     var ce = tryEntry.catchEntry;
@@ -312,20 +320,20 @@ Ep.explode = function (path, ignoreResult) {
       throw new Error(node.type + " nodes should be handled by their parents");
 
     default:
-      throw new Error("unknown Node of type " + JSON.stringify(node.type));
+      throw new Error("unknown Node of type " + /*istanbul ignore next*/(0, _stringify2.default)(node.type));
   }
 };
 
 function getDeclError(node) {
-  return new Error("all declarations should have been transformed into " + "assignments before the Exploder began its work: " + JSON.stringify(node));
+  return new Error("all declarations should have been transformed into " + "assignments before the Exploder began its work: " + /*istanbul ignore next*/(0, _stringify2.default)(node));
 }
 
 Ep.explodeStatement = function (path, labelId) {
   var stmt = path.node;
   var self = this;
-  var before = undefined,
-      after = undefined,
-      head = undefined;
+  var before = /*istanbul ignore next*/void 0,
+      after = /*istanbul ignore next*/void 0,
+      head = /*istanbul ignore next*/void 0;
 
   t.assertStatement(stmt);
 
@@ -541,7 +549,7 @@ Ep.explodeStatement = function (path, labelId) {
       self.mark(after);
       if (defaultLoc.value === -1) {
         self.mark(defaultLoc);
-        _assert2["default"].strictEqual(after.value, defaultLoc.value);
+        /*istanbul ignore next*/_assert2.default.strictEqual(after.value, defaultLoc.value);
       }
 
       break;
@@ -595,6 +603,7 @@ Ep.explodeStatement = function (path, labelId) {
         self.explodeStatement(path.get("block"));
 
         if (catchLoc) {
+          /*istanbul ignore next*/
           (function () {
             if (finallyLoc) {
               // If we have both a catch block and a finally block, then
@@ -645,18 +654,18 @@ Ep.explodeStatement = function (path, labelId) {
       break;
 
     default:
-      throw new Error("unknown Statement of type " + JSON.stringify(stmt.type));
+      throw new Error("unknown Statement of type " + /*istanbul ignore next*/(0, _stringify2.default)(stmt.type));
   }
 };
 
 var catchParamVisitor = {
-  Identifier: function Identifier(path, state) {
+  Identifier: function /*istanbul ignore next*/Identifier(path, state) {
     if (path.node.name === state.catchParamName && util.isReference(path)) {
       path.replaceWith(state.safeParam);
     }
   },
 
-  Scope: function Scope(path, state) {
+  Scope: function /*istanbul ignore next*/Scope(path, state) {
     if (path.scope.hasOwnBinding(state.catchParamName)) {
       // Don't descend into nested scopes that shadow the catch
       // parameter with their own declarations.
@@ -667,10 +676,10 @@ var catchParamVisitor = {
 
 Ep.emitAbruptCompletion = function (record) {
   if (!isValidCompletion(record)) {
-    _assert2["default"].ok(false, "invalid completion record: " + JSON.stringify(record));
+    /*istanbul ignore next*/_assert2.default.ok(false, "invalid completion record: " + /*istanbul ignore next*/(0, _stringify2.default)(record));
   }
 
-  _assert2["default"].notStrictEqual(record.type, "normal", "normal completions are not abrupt");
+  /*istanbul ignore next*/_assert2.default.notStrictEqual(record.type, "normal", "normal completions are not abrupt");
 
   var abruptArgs = [t.stringLiteral(record.type)];
 
@@ -738,7 +747,7 @@ Ep.updateContextPrevLoc = function (loc) {
       loc.value = this.listing.length;
     } else {
       // Otherwise assert that the location matches the current offset.
-      _assert2["default"].strictEqual(loc.value, this.listing.length);
+      /*istanbul ignore next*/_assert2.default.strictEqual(loc.value, this.listing.length);
     }
   } else {
     loc = this.getUnmarkedCurrentLoc();
@@ -759,8 +768,8 @@ Ep.explodeExpression = function (path, ignoreResult) {
   }
 
   var self = this;
-  var result = undefined; // Used optionally by several cases below.
-  var after = undefined;
+  var result = /*istanbul ignore next*/void 0; // Used optionally by several cases below.
+  var after = /*istanbul ignore next*/void 0;
 
   function finish(expr) {
     t.assertExpression(expr);
@@ -793,7 +802,7 @@ Ep.explodeExpression = function (path, ignoreResult) {
   // control the precise order in which the generated code realizes the
   // side effects of those subexpressions.
   function explodeViaTempVar(tempVar, childPath, ignoreChildResult) {
-    _assert2["default"].ok(!ignoreChildResult || !tempVar, "Ignoring the result of a child expression but forcing it to " + "be assigned to a temporary variable?");
+    /*istanbul ignore next*/_assert2.default.ok(!ignoreChildResult || !tempVar, "Ignoring the result of a child expression but forcing it to " + "be assigned to a temporary variable?");
 
     var result = self.explodeExpression(childPath, ignoreChildResult);
 
@@ -829,7 +838,7 @@ Ep.explodeExpression = function (path, ignoreResult) {
       var calleePath = path.get("callee");
       var argsPath = path.get("arguments");
 
-      var newCallee = undefined;
+      var newCallee = /*istanbul ignore next*/void 0;
       var newArgs = [];
 
       var hasLeapingArgs = false;
@@ -924,7 +933,7 @@ Ep.explodeExpression = function (path, ignoreResult) {
       if (expr.operator === "&&") {
         self.jumpIfNot(left, after);
       } else {
-        _assert2["default"].strictEqual(expr.operator, "||");
+        /*istanbul ignore next*/_assert2.default.strictEqual(expr.operator, "||");
         self.jumpIf(left, after);
       }
 
@@ -991,6 +1000,6 @@ Ep.explodeExpression = function (path, ignoreResult) {
       return self.contextProperty("sent");
 
     default:
-      throw new Error("unknown Expression of type " + JSON.stringify(expr.type));
+      throw new Error("unknown Expression of type " + /*istanbul ignore next*/(0, _stringify2.default)(expr.type));
   }
 };

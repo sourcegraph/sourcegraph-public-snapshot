@@ -115,6 +115,27 @@ func (s *javascriptScanner) consumeRegexp() rune {
 			}
 			return ch
 		}
+	case ch == '*':
+		{
+			// multiline comment
+			ch = s.Next()
+			state := 0
+			for ch >= 0 {
+				if ch == '*' {
+					state = 1
+				} else if ch == '/' {
+					if state == 1 {
+						return ch
+					} else {
+						state = 0
+					}
+				} else {
+					state = 0
+				}
+				ch = s.Next()
+			}
+			return ch
+		}
 	}
 
 	ch = s.Next()
@@ -143,7 +164,7 @@ func (s *javascriptScanner) consumeRegexp() rune {
 func newJavascriptScanner() *javascriptScanner {
 	s := &javascriptScanner{&scanner.Scanner{}}
 	s.IsIdentRune = func(ch rune, i int) bool {
-		return ch == '_' || ch == '$' || ch == '$' || unicode.IsLetter(ch) || unicode.IsDigit(ch) && i > 0
+		return ch == '_' || ch == '$' || unicode.IsLetter(ch) || unicode.IsDigit(ch) && i > 0
 	}
 	return s
 }
@@ -220,6 +241,7 @@ var javascriptKeywords = map[string]bool{
 	"true":         true,
 	"false":        true,
 	"undefined":    true,
+	"from":         true,
 }
 
 // Initializes text scanner that extracts only idents
@@ -270,7 +292,7 @@ func init() {
 		if lang != "JavaScript" {
 			return nil
 		}
-		if !strings.HasSuffix(path, ".js") {
+		if !strings.HasSuffix(path, ".js") && !strings.HasSuffix(path, ".jsx") {
 			return nil
 		}
 		if strings.HasSuffix(path, ".min.js") {
@@ -281,7 +303,8 @@ func init() {
 			// fallback
 			abs = path
 		}
-		if strings.Contains(filepath.ToSlash(abs), "/node_modules/") {
+		abs = filepath.ToSlash(abs)
+		if strings.Contains(abs, "/node_modules/") || strings.Contains(abs, "/bower_components/") {
 			return nil
 		}
 		return factory

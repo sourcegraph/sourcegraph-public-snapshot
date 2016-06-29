@@ -84,13 +84,13 @@
 	<!-- Start of Google Analytics script -->
 	{{if googleAnalyticsTrackingID}}
 		<script ignore-csp>
-				(function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,"script","https://www.google-analytics.com/analytics.js","ga");
-				window.ga("create", {{googleAnalyticsTrackingID}}, "auto");
-				window.ga("require", "linkid", "https://www.google-analytics.com/plugins/ua/linkid.js");
-				window.ga("require", "urlChangeTracker");
-				window.ga("set", "dimension1", Boolean({{if .Actor.IsAuthenticated}}{{.Actor.Login}}{{else}}false{{end}}));
-				window.ga("set", "dimension4", "web");
-				window.ga("send", "pageview");
+			(function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,"script","https://www.google-analytics.com/analytics.js","ga");
+			window.ga("create", {{googleAnalyticsTrackingID}}, "auto");
+			window.ga("require", "linkid", "https://www.google-analytics.com/plugins/ua/linkid.js");
+			window.ga("require", "urlChangeTracker");
+			window.ga("set", "dimension1", Boolean({{if .Actor.IsAuthenticated}}{{.Actor.Login}}{{else}}false{{end}}));
+			window.ga("set", "dimension4", "web");
+			window.ga("send", "pageview");
 		</script>
 	{{end}}
 	<!-- End of Google Analytics script -->

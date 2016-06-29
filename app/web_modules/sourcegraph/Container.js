@@ -19,8 +19,10 @@ class Container extends Component {
 	}
 
 	componentWillUnmount() {
-		this._containerStoreGroup.release();
-		this._containerSubscriptions.forEach((subscription) => { subscription.remove(); });
+		if (this._containerStoreGroup) this._containerStoreGroup.release();
+		if (this._containerSubscriptions) {
+			this._containerSubscriptions.forEach((subscription) => { subscription.remove(); });
+		}
 	}
 }
 

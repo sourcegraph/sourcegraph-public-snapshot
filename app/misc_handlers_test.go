@@ -41,14 +41,6 @@ func TestRobotsTxt(t *testing.T) {
 			"/sourcegraph/sourcegraph/-/info/GoPackage/github.com/mediocregopher/radix.v2/util/-/Cmder",
 			true,
 		},
-		{
-			"/github.com/golang/go@test/-/info/GoPackage/net/http/httptrace/-/ClientTrace",
-			false,
-		},
-		{
-			"/sourcegraph/sourcegraph@test/-/info/GoPackage/github.com/mediocregopher/radix.v2/util/-/Cmder",
-			false,
-		},
 	}
 	var b bytes.Buffer
 	writer := bufio.NewWriter(&b)
@@ -58,7 +50,7 @@ func TestRobotsTxt(t *testing.T) {
 	for _, test := range tests {
 		got := robots.TestAgent(test.url, "GoogleBot")
 		if got != test.want {
-			t.Errorf("%q: got %q, want %q", test.url, got, test.want)
+			t.Errorf("%q: got %t, want %t", test.url, got, test.want)
 		}
 	}
 }

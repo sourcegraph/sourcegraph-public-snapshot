@@ -1,0 +1,11 @@
+@value vars "sourcegraph/components/styles/_vars.css";
+@value base "sourcegraph/components/styles/_base.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value layout "sourcegraph/components/styles/_layout.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+@value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
+
+.container {
+	composes: containerFixed from layout;
+	composes: pa3 from base;
+}
