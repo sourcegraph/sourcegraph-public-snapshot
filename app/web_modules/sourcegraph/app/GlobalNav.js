@@ -252,7 +252,7 @@ class SearchForm extends React.Component {
 						icon={true}
 						autoComplete="off"
 						styleName="search-input"
-						value={this.state.query || ""}
+						query={this.state.query || ""}
 						domRef={e => this._input = e}
 						autoFocus={this.props.location.pathname.slice(1) === rel.search}
 						onFocus={this._handleFocus}

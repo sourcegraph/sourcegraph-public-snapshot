@@ -94,7 +94,7 @@ class DashboardContainer extends Container {
 					<GlobalSearchInput
 						name="q"
 						border={true}
-						value={this.props.location.query.q || ""}
+						query={this.props.location.query.q || ""}
 						autoFocus={true}
 						domRef={e => this._input = e}
 						styleName="search-input"
