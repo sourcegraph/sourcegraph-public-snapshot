@@ -49,9 +49,19 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 
 			<div styleName="flex flex-fill flex-center tl navbar-inner" className={base.bn}>
 				{!isHomepage && <Link to="/" styleName="logo-link flex-fixed">
-					<Logo styleName={`logo ${showLogoMarkOnly ? "logomark" : ""}`}
-						width={showLogoMarkOnly ? "21px" : "144px"}
-						type={showLogoMarkOnly ? "logomark" : "logotype"}/>
+					{showLogoMarkOnly ?
+						<Logo styleName={"logo logomark"}
+							width={"21px"}
+							type={"logomark"}/> :
+						<span>
+							<Logo styleName={"logo logomark small-only"}
+								width={"21px"}
+								type={"logomark"}/>
+							<Logo styleName={"logo not-small-only"}
+								width={"144px"}
+								type={"logotype"}/>
+						</span>
+					}
 				</Link>}
 
 				<div styleName="search">

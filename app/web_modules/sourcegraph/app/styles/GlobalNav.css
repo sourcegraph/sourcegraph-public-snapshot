@@ -6,7 +6,7 @@
 @value layout "sourcegraph/components/styles/_layout.css";
 @value link "sourcegraph/components/styles/link.css";
 
-@value media-xs from vars;
+@value media-xs, media-sm, media-ns from vars;
 @value navbarHeight: 48px;
 
 @value c_cool-pale-gray-8 from colors;
@@ -192,7 +192,16 @@
 		overflow: hidden;
 	}
 }
-
+@media screen and media-sm {
+	.not-small-only {
+		display: none;
+	}
+}
+@media screen and media-ns {
+	.small-only {
+		display: none;
+	}
+}
 
 .user {
 	display: flex;
