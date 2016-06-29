@@ -25,8 +25,7 @@ import {repoPath, repoParam} from "sourcegraph/repo";
 function GlobalNav({navContext, location, params, channelStatusCode}, {user, siteConfig, signedIn, router, eventLogger}) {
 	if (location.pathname === "/styleguide") return <span />;
 	const repoSplat = repoParam(params.splat);
-	let repo;
-	if (repoSplat) repo = repoPath(repoSplat);
+	let repo = repoSplat ? repoPath(repoSplat) : null;
 	return (
 		<nav id="global-nav" styleName="navbar" role="navigation">
 
@@ -193,9 +192,8 @@ class SearchForm extends React.Component {
 
 	_handleGlobalClick(ev: Event) {
 		// Clicking outside of the open results panel should close it.
-		invariant(this._container, "container not available");
 		invariant(ev.target instanceof Node, "target is not a node");
-		if (this.state.open && !this._container.contains(ev.target)) {
+		if (this.state.open && (!this._container || !this._container.contains(ev.target))) {
 			this.setState({open: false});
 		}
 	}
