@@ -57,6 +57,21 @@ multiple tabs. Currently, only the user access token is synchronized.
 Actions are provided on a Component's this.props via the @connect decorator.
 Use these to make API requests and update application state.
 
+## Requirements
+
+- `npm` >= 3.6.0
+- `node` >= 5.6.0
+
+The latest stable version of node will suffice, which you can install as follows after you have installed npm:
+
+```
+sudo npm cache clean -f
+sudo npm install -g n
+sudo n stable
+
+sudo ln -sf /usr/local/n/versions/node/<VERSION>/bin/node /usr/bin/node
+```
+
 ## Installation
 
 ```bash
