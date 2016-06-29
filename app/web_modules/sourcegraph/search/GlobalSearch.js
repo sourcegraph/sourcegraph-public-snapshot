@@ -96,7 +96,7 @@ class GlobalSearch extends Container {
 		super.componentWillUnmount();
 		if (global.document) {
 			document.removeEventListener("keydown", this._handleKeyDown);
-			document.addEventListener("keyup", this._handleKeyUp);
+			document.removeEventListener("keyup", this._handleKeyUp);
 		}
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
