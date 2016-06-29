@@ -132,7 +132,6 @@ class SearchSettings extends Container {
 							</LocationStateToggleLink> :
 							<Button
 								key={lang}
-								color="blue"
 								color={!langs.includes(lang) ? "default" : "blue"}
 								size="small"
 								styleName="choice-button"
