@@ -27,7 +27,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 	const isHomepage = location.pathname === "/";
 	const isStaticPage = isPage(location.pathname);
 
-	const showLogoMarkOnly = !isStaticPage;
+	const showLogoMarkOnly = !isStaticPage || user;
 
 	if (location.pathname === "/styleguide") return <span />;
 	const repoSplat = repoParam(params.splat);
