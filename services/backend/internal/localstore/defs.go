@@ -14,12 +14,37 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	sstore "sourcegraph.com/sourcegraph/srclib/store"
 )
+
+// dbLang is a numerical identifier that identifies the language of a definition
+// in the database. NOTE: this values of existing dbLang constants should NOT be
+// changed. Doing so would require a database migration.
+type dbLang uint16
+
+const (
+	dbLangGo     = 1
+	dbLangJava   = 2
+	dbLangPython = 3
+)
+
+var toDBLang_ = map[string]dbLang{
+	"go":     dbLangGo,
+	"java":   dbLangJava,
+	"python": dbLangPython,
+}
+
+func toDBLang(lang string) (dbLang, error) {
+	if l, exists := toDBLang_[lang]; exists {
+		return l, nil
+	}
+	return 0, fmt.Errorf("unrecognized language %s", lang)
+}
 
 type dbRepoRev struct {
 	ID     int64  `db:"id"`
@@ -30,9 +55,9 @@ type dbRepoRev struct {
 	// the process of being uploaded but is not yet available for querying. 1
 	// indicates that the revision is the latest indexed revision of the
 	// repository. 2 indicates that the revision is indexed, but not the latest
-	// indexed revision. In the global_defs table, definitions whose revisions
-	// have state 2 are garbage collected. State increases monotically over time
-	// (i.e., something in state 2 never transitions to state 1)
+	// indexed revision. In the defs table, definitions whose revisions have state
+	// 2 are garbage collected. State increases monotically over time (i.e.,
+	// something in state 2 never transitions to state 1)
 	State uint8 `db:"state"`
 }
 
@@ -179,6 +204,10 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 		return &sourcegraph.SearchResultsList{}, nil
 	}
 
+	obs := newDefsSearchObserver("defs2", "")
+	totalEnd := obs.start("search_total")
+	defer totalEnd()
+
 	bowQuery := search.UserQueryToksToTSQuery(op.TokQuery)
 	lastTok := ""
 	if len(op.TokQuery) > 0 {
@@ -320,13 +349,19 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 	fastSQL := strings.Join([]string{selectSQL, fastWhereSQL, orderSQL, limitSQL}, "\n")
 
 	var dbSearchResults []*dbDefSearchResult
+	end := obs.start("select_fast")
 	if _, err := graphDBH(ctx).Select(&dbSearchResults, fastSQL, args...); err != nil {
+		end()
 		return nil, fmt.Errorf("error fast-fetching from defs2: %s", err)
 	}
+	end()
 	if len(dbSearchResults) == 0 { // if no fast results, search for slow results
+		end := obs.start("select_slow")
 		if _, err := graphDBH(ctx).Select(&dbSearchResults, sql, args...); err != nil {
+			end()
 			return nil, fmt.Errorf("error fetching from defs2: %s", err)
 		}
+		end()
 	}
 
 	var results []*sourcegraph.DefSearchResult
@@ -377,11 +412,13 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.UpdateFromSrclibStore", op.Repo); err != nil {
 		return err
 	}
-
 	repo, err := store.ReposFromContext(ctx).Get(ctx, op.Repo)
 	if err != nil {
 		return err
 	}
+	obs := newDefsUpdateObserver("defs2", repo.URI)
+	totalEnd := obs.start("srclibstore_total")
+	defer totalEnd()
 
 	if len(op.CommitID) == 0 {
 		rr, err := getRepoRevLatest(graphDBH(ctx), repo.URI)
@@ -393,9 +430,11 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 		return fmt.Errorf("commit ID must be 40 characters long, was: %q", op.CommitID)
 	}
 
+	end := obs.start("graphstore")
 	defs_, err := store.GraphFromContext(ctx).Defs(
 		sstore.ByRepoCommitIDs(sstore.Version{Repo: repo.URI, CommitID: op.CommitID}),
 	)
+	end()
 	if err != nil {
 		return err
 	}
@@ -413,6 +452,10 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 	if err != nil {
 		return err
 	}
+
+	obs := newDefsUpdateObserver("defs2", repo.URI)
+	totalEnd := obs.start("update_total")
+	defer totalEnd()
 
 	// Validate input
 	if op.Repo == 0 || op.CommitID == "" {
@@ -442,9 +485,12 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 	dbh := graphDBH(ctx)
 
 	// Update def_keys
+	end := obs.start("update_def_keys")
 	if err := updateDefKeys(ctx, dbh, repo.URI, chosenDefs); err != nil {
+		end()
 		return err
 	}
+	end()
 
 	defKeys := make(map[graph.DefKey]struct{})
 	for _, def := range chosenDefs {
@@ -452,7 +498,9 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 		dk.Repo, dk.CommitID = repo.URI, ""
 		defKeys[dk] = struct{}{}
 	}
+	end = obs.start("get_def_keys")
 	dbDefKeys, err := getDefKeys(ctx, dbh, defKeys)
+	end()
 	if err != nil {
 		return err
 	}
@@ -463,10 +511,15 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 
 	// Update repo_revs
 	repoRevsInsertSQL := `INSERT INTO repo_revs(repo, commit, state) (SELECT $1 AS repo, $2 AS commit, 0 AS state WHERE NOT EXISTS (SELECT 1 FROM repo_revs WHERE repo=$1 AND commit=$2))`
+	end = obs.start("update_repo_revs_update")
 	if _, err := dbh.Exec(repoRevsInsertSQL, repo.URI, op.CommitID); err != nil {
+		end()
 		return fmt.Errorf("repo_rev update failed: %s", err)
 	}
+	end()
+	end = obs.start("update_repo_revs_select")
 	repoRevID, err := dbh.SelectInt(`SELECT id FROM repo_revs WHERE repo=$1 AND commit=$2`, repo.URI, op.CommitID)
+	end()
 	if err != nil {
 		return fmt.Errorf("repo_rev id fetch failed: %s", err)
 	}
@@ -506,13 +559,17 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 		log15.Warn("could not determine language for all defs", "noLang", langWarnCount, "allDefs", len(chosenDefs))
 	}
 
+	end = obs.start("update_insert")
 	if err := dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
 		return execDBDefInsert(tx, repoRevID, dbDefs)
 	}); err != nil {
+		end()
 		return err
 	}
+	end()
 
 	// Update state column
+	end = obs.start("update_state")
 	if err := dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
 		if op.Latest {
 			var repoRevs []*dbRepoRev
@@ -558,13 +615,18 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 		}
 		return nil
 	}); err != nil {
+		end()
 		return err
 	}
+	end()
 
 	if op.RefreshCounts {
+		end = obs.start("update_ref_ct")
 		if err := s.UpdateRefCounts(ctx, repo.URI); err != nil {
+			end()
 			return err
 		}
+		end()
 	}
 	return nil
 }
@@ -710,4 +772,24 @@ func getRepoRevLatest(dbh gorp.SqlExecutor, repo string) (*dbRepoRev, error) {
 		return nil, fmt.Errorf("repo %s has more than one latest version", repo)
 	}
 	return rr[0], nil
+}
+
+func shouldIndex(d *graph.Def) bool {
+	// Ignore broken defs
+	if d.Path == "" {
+		return false
+	}
+	// Ignore local defs (KLUDGE)
+	if d.Local || strings.Contains(d.Path, "$") {
+		return false
+	}
+	// Ignore vendored defs
+	if filelang.IsVendored(d.File, false) {
+		return false
+	}
+	// Ignore defs in Go test files
+	if strings.HasSuffix(d.File, "_test.go") {
+		return false
+	}
+	return true
 }

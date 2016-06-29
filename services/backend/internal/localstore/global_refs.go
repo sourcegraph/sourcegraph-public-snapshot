@@ -21,6 +21,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	sstore "sourcegraph.com/sourcegraph/srclib/store"
@@ -510,4 +511,31 @@ var globalRefsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 func init() {
 	prometheus.MustRegister(globalRefsDuration)
 	prometheus.MustRegister(globalRefsUpdateDuration)
+}
+
+func resolveRevisionDefaultBranch(ctx context.Context, repo int32) (repoPath, commitID string, err error) {
+	repoObj, err := store.ReposFromContext(ctx).Get(ctx, repo)
+	if err != nil {
+		return
+	}
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoObj.ID)
+	if err != nil {
+		return
+	}
+	c, err := vcsrepo.ResolveRevision(repoObj.DefaultBranch)
+	if err != nil {
+		// TODO(keegancsmith) Remove once we always have the
+		// DefaultBranch stored in our own DB. https://app.asana.com/0/87040567695724/147734985562458
+		if !strings.HasPrefix(strings.ToLower(repoObj.URI), "github.com/") {
+			return
+		}
+		ghrepo, err := github.ReposFromContext(ctx).Get(ctx, repoObj.URI)
+		if err != nil {
+			return "", "", err
+		}
+		if c, err = vcsrepo.ResolveRevision(ghrepo.DefaultBranch); err != nil {
+			return "", "", err
+		}
+	}
+	return repoObj.URI, string(c), nil
 }

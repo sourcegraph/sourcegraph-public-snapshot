@@ -21,7 +21,6 @@ func init() {
 		Directory:          &directory{},
 		ExternalAuthTokens: &externalAuthTokens{},
 		Defs:               &defs{},
-		GlobalDefs:         &globalDefs{},
 		GlobalDeps:         &globalDeps{},
 		GlobalRefs:         &globalRefs{},
 		Password:           &password{},

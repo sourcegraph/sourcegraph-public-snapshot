@@ -852,31 +852,21 @@ func (s *AnnotationsServer) List(v0 context.Context, v1 *sourcegraph.Annotations
 var _ sourcegraph.AnnotationsServer = (*AnnotationsServer)(nil)
 
 type SearchClient struct {
-	Search_       func(ctx context.Context, in *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
-	RefreshIndex_ func(ctx context.Context, in *sourcegraph.SearchRefreshIndexOp) (*pbtypes.Void, error)
+	Search_ func(ctx context.Context, in *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
 }
 
 func (s *SearchClient) Search(ctx context.Context, in *sourcegraph.SearchOp, opts ...grpc.CallOption) (*sourcegraph.SearchResultsList, error) {
 	return s.Search_(ctx, in)
 }
 
-func (s *SearchClient) RefreshIndex(ctx context.Context, in *sourcegraph.SearchRefreshIndexOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.RefreshIndex_(ctx, in)
-}
-
 var _ sourcegraph.SearchClient = (*SearchClient)(nil)
 
 type SearchServer struct {
-	Search_       func(v0 context.Context, v1 *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
-	RefreshIndex_ func(v0 context.Context, v1 *sourcegraph.SearchRefreshIndexOp) (*pbtypes.Void, error)
+	Search_ func(v0 context.Context, v1 *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
 }
 
 func (s *SearchServer) Search(v0 context.Context, v1 *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error) {
 	return s.Search_(v0, v1)
-}
-
-func (s *SearchServer) RefreshIndex(v0 context.Context, v1 *sourcegraph.SearchRefreshIndexOp) (*pbtypes.Void, error) {
-	return s.RefreshIndex_(v0, v1)
 }
 
 var _ sourcegraph.SearchServer = (*SearchServer)(nil)

@@ -992,19 +992,6 @@ func (s wrappedSearch) Search(ctx context.Context, param *sourcegraph.SearchOp) 
 	return
 }
 
-func (s wrappedSearch) RefreshIndex(ctx context.Context, param *sourcegraph.SearchRefreshIndexOp) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Search", "RefreshIndex", param)
-	defer func() {
-		trace.After(ctx, "Search", "RefreshIndex", param, err, time.Since(start))
-	}()
-	res, err = backend.Services.Search.RefreshIndex(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Search.RefreshIndex returned nil, nil")
-	}
-	return
-}
-
 type wrappedUsers struct{}
 
 func (s wrappedUsers) Get(ctx context.Context, param *sourcegraph.UserSpec) (res *sourcegraph.User, err error) {

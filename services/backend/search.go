@@ -10,7 +10,6 @@ import (
 	srch "sourcegraph.com/sourcegraph/sourcegraph/pkg/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"sourcegraph.com/sqs/pbtypes"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -198,28 +197,4 @@ func hydrateDefsResults(ctx context.Context, defs []*sourcegraph.DefSearchResult
 		}
 	}
 	return hydratedResults, nil
-}
-
-func (s *search) RefreshIndex(ctx context.Context, op *sourcegraph.SearchRefreshIndexOp) (*pbtypes.Void, error) {
-	// Currently, the only pre-computation we do is aggregating the global ref counts
-	// for every def. This will pre-compute the ref counts based on the current state
-	// of the GlobalRefs table for all defs in the given repos.
-	var updateOp store.GlobalDefUpdateOp
-	for _, repo := range op.Repos {
-		updateOp.RepoUnits = append(updateOp.RepoUnits, store.RepoUnit{Repo: repo})
-	}
-
-	if op.RefreshSearch {
-		if err := store.GlobalDefsFromContext(ctx).Update(ctx, updateOp); err != nil {
-			return nil, err
-		}
-	}
-
-	if op.RefreshCounts {
-		if err := store.GlobalDefsFromContext(ctx).RefreshRefCounts(ctx, updateOp); err != nil {
-			return nil, err
-		}
-	}
-
-	return &pbtypes.Void{}, nil
 }
