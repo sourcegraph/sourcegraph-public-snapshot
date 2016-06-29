@@ -235,7 +235,7 @@ func QueryTokens(strippedQuery string) []string {
 	return toks
 }
 
-func BagOfWordsToTokens2(words []string, wordCounts map[string]int) []string {
+func BagOfWordsToTokens(words []string, wordCounts map[string]int) []string {
 	var v []string
 	for _, word := range words {
 		if word == "" {

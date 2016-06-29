@@ -549,10 +549,10 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 				Language:  languageID,
 				UpdatedAt: &now,
 			},
-			ToksA: strings.Join(search.BagOfWordsToTokens2(tsvector.AToks, tsvector.A), " "),
-			ToksB: strings.Join(search.BagOfWordsToTokens2(tsvector.BToks, tsvector.B), " "),
-			ToksC: strings.Join(search.BagOfWordsToTokens2(tsvector.CToks, tsvector.C), " "),
-			ToksD: strings.Join(search.BagOfWordsToTokens2(tsvector.DToks, tsvector.D), " "),
+			ToksA: strings.Join(search.BagOfWordsToTokens(tsvector.AToks, tsvector.A), " "),
+			ToksB: strings.Join(search.BagOfWordsToTokens(tsvector.BToks, tsvector.B), " "),
+			ToksC: strings.Join(search.BagOfWordsToTokens(tsvector.CToks, tsvector.C), " "),
+			ToksD: strings.Join(search.BagOfWordsToTokens(tsvector.DToks, tsvector.D), " "),
 		}
 	}
 	if langWarnCount > 0 {
