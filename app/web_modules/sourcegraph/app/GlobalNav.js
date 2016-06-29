@@ -21,9 +21,13 @@ import SearchSettings from "sourcegraph/search/SearchSettings";
 import invariant from "invariant";
 import {rel} from "sourcegraph/app/routePatterns";
 import {repoPath, repoParam} from "sourcegraph/repo";
+import {isPage} from "sourcegraph/page";
 
 function GlobalNav({navContext, location, params, channelStatusCode}, {user, siteConfig, signedIn, router, eventLogger}) {
 	const isHomepage = location.pathname === "/";
+	const isStaticPage = isPage(location.pathname);
+
+	const showLogoMarkOnly = !isStaticPage;
 
 	if (location.pathname === "/styleguide") return <span />;
 	const repoSplat = repoParam(params.splat);
@@ -43,11 +47,11 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 				</LocationStateModal>
 			}
 
-			<div styleName="flex flex-fill flex-center tl" className={base.bn}>
-				{!isHomepage && <Link to="/">
-					<Logo styleName={`logo flex-fixed ${signedIn ? "logomark" : ""}`}
-						width={signedIn ? "24px" : "165px"}
-						type={signedIn ? "logomark" : "logotype"}/>
+			<div styleName="flex flex-fill flex-center tl navbar-inner" className={base.bn}>
+				{!isHomepage && <Link to="/" styleName="logo-link flex-fixed">
+					<Logo styleName={`logo ${showLogoMarkOnly ? "logomark" : ""}`}
+						width={showLogoMarkOnly ? "24px" : "165px"}
+						type={showLogoMarkOnly ? "logomark" : "logotype"}/>
 				</Link>}
 
 				<div styleName="search">

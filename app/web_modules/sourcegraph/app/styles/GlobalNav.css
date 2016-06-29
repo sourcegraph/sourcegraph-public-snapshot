@@ -9,6 +9,9 @@
 @value media-sm from vars;
 @value navbarHeight: 48px;
 
+@value c_cool-pale-gray-8 from colors;
+@value nav-border-color c_cool-pale-gray-8;
+
 .tl { composes: tl from typography; }
 .tr {	composes: tr from typography; }
 .flex { display: flex; }
@@ -26,9 +29,6 @@
 .navbar {
 	composes: bb cf from base;
 	composes: bg-white from colors;
-	display: flex;
-	align-items: center;
-	flex-wrap: nowrap;
 	z-index: 100;
 	position: fixed;
 	top: 0;
@@ -37,7 +37,7 @@
 }
 .navbar-non-homepage {
 	composes: navbar;
-	composes: b--cool-pale-gray-8 from colors;
+	border-color: nav-border-color;
 }
 .navbar-homepage {
 	composes: navbar;
@@ -49,7 +49,22 @@
 	padding-top: navbarHeight;
 }
 
-.logo { composes: mt2 mh3 from base; }
+.navbar-inner {
+	display: flex;
+	align-items: center;
+	flex-wrap: nowrap;
+	height: navbarHeight;
+}
+
+@value logo-height 24.578px;
+.logo-link {
+	padding-top: calc((navbarHeight - logo-height)/2);
+	padding-bottom: calc((navbarHeight - logo-height)/2);
+	composes: ph3 br from base;
+	border-color: nav-border-color;
+}
+.logo {
+}
 .logomark:hover {
 	animation: spin 0.5s ease-in-out 1;
 }
