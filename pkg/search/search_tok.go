@@ -235,19 +235,6 @@ func QueryTokens(strippedQuery string) []string {
 	return toks
 }
 
-func BagOfWordsToTokens(bag map[string]int) []string {
-	var v []string
-	for word, count := range bag {
-		if word == "" {
-			continue
-		}
-		for i := 0; i < count; i++ {
-			v = append(v, word)
-		}
-	}
-	return v
-}
-
 func BagOfWordsToTokens2(words []string, wordCounts map[string]int) []string {
 	var v []string
 	for _, word := range words {
