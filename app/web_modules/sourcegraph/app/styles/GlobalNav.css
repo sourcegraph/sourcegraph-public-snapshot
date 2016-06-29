@@ -128,14 +128,10 @@
 	composes: white bg-blue-8 b--blue from colors;
 }
 
-.nav-link {
-	font-weight: bold;
-}
-
 @value search-form-max-width 1000px;
 .search {
 	flex: 1 0;
-	composes: mr3 from base;
+	composes: mr1 from base;
 	composes: br from base;
 	border-color: nav-border-color;
 }

@@ -6,7 +6,7 @@
 @value media-ns: (min-width: 48em);
 
 /* Type variables */
-@value desktop-base-size: 14px;
+@value desktop-base-size: 15px;
 @value mobile-base-size: 12px;
 
 @value font-size-1: 3.35rem;

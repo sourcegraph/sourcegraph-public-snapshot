@@ -206,7 +206,7 @@ class DefInfo extends Container {
 			);
 		}
 		return (
-			<FlexContainer styleName="bg-cool-pale-gray-2">
+			<FlexContainer styleName="bg-cool-pale-gray-2 flex-grow">
 				<div styleName="container-fixed" className={base.mv5}>
 					{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
 					<Helmet title={defTitleOK(def) ? `${defTitle(def)} · ${trimRepo(this.state.repo)}` : trimRepo(this.state.repo)} />
@@ -220,24 +220,6 @@ class DefInfo extends Container {
 
 							{def.DocHTML &&
 								<div>
-									<Dropdown
-										className={base.mt0}
-										title="Translate"
-										initialValue={this.state.currentLang}
-										disabled={this.state.repoObj ? this.state.repoObj.Private : false}
-										onMenuClick={(val) => this._onTranslateDefInfo(val)}
-										onItemClick={(val) => this._onTranslateDefInfo(val)}
-										items={[
-											{name: "English", value: "en"},
-											{name: "简体中文", value: "zh-CN"},
-											{name: "繁體中文", value: "zh-TW"},
-											{name: "日本語", value: "ja"},
-											{name: "Français", value: "fr"},
-											{name: "Español", value: "es"},
-											{name: "Русский", value: "ru"},
-											{name: "Italiano", value: "it"},
-										]} />
-
 									{this.state.showTranslatedString &&
 										<div className={base.mt1}>
 											<LanguageIcon styleName="icon" />
@@ -278,28 +260,43 @@ class DefInfo extends Container {
 								{def && def.Repo && <Link to={urlToRepo(def.Repo)} styleName="link-subtle">{def.Repo}</Link>}
 								&nbsp; &middot; &nbsp;
 								<Link title="View definition in code" to={defURL} styleName="link-subtle">View definition</Link>
+								&nbsp; &middot; &nbsp;
+								<Dropdown
+									className={base.mt0}
+									styleName="link-subtle"
+									title="Translate"
+									initialValue={this.state.currentLang}
+									disabled={this.state.repoObj ? this.state.repoObj.Private : false}
+									onMenuClick={(val) => this._onTranslateDefInfo(val)}
+									onItemClick={(val) => this._onTranslateDefInfo(val)}
+									items={[
+										{name: "English", value: "en"},
+										{name: "简体中文", value: "zh-CN"},
+										{name: "繁體中文", value: "zh-TW"},
+										{name: "日本語", value: "ja"},
+										{name: "Français", value: "fr"},
+										{name: "Español", value: "es"},
+										{name: "Русский", value: "ru"},
+										{name: "Italiano", value: "it"},
+									]} />
 							</div>
 
 							<div>
-								<Heading level="2" styleName="examples-heading">4 usage examples</Heading>
-								<Panel hoverLevel="low">
-									<ExamplesContainer
-										repo={this.props.repo}
-										rev={this.props.rev}
-										commitID={this.props.commitID}
-										def={this.props.def}
-										defObj={this.props.defObj} />
-								</Panel>
-								<Heading level="2" styleName="refs-heading">10 references in 4 repositories</Heading>
-								<Panel hoverLevel="low">
-										{/* TODO(sqs): to be implemented */}
-										<RepoRefsContainer
-											repo={this.props.repo}
-											rev={this.props.rev}
-											commitID={this.props.commitID}
-											def={this.props.def}
-											defObj={this.props.defObj} />
-								</Panel>
+								<Heading level="5">4 usage examples</Heading>
+								<ExamplesContainer
+									repo={this.props.repo}
+									rev={this.props.rev}
+									commitID={this.props.commitID}
+									def={this.props.def}
+									defObj={this.props.defObj} />
+								<Heading level="5">10 references in 4 repositories</Heading>
+								{/* TODO(sqs): to be implemented */}
+								<RepoRefsContainer
+									repo={this.props.repo}
+									rev={this.props.rev}
+									commitID={this.props.commitID}
+									def={this.props.def}
+									defObj={this.props.defObj} />
 							</div>
 						</div>
 					}

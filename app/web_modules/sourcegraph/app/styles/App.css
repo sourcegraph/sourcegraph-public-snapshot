@@ -42,14 +42,14 @@ Prevent scrolling the main content when a modal is being displayed.
 
 /* Responsive type scaling */
 
-body {
+html {
 	color: c_cool-gray;
 	font-size: desktop-base-size;
 	line-height: 1.6;
 }
 
 @media only screen and media-sm {
-	body {
+	html {
 		font-size: mobile-base-size;
 	}
 }

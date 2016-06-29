@@ -71,7 +71,7 @@
    identical markup in Go (where we can't as easily obtain the class mapping). */
 .lines {
 	composes: code from typography;
-	font-size: 1.15rem;
+	font-size: 0.865rem;
 	table-layout: fixed;
 	border-spacing: 0;
 }

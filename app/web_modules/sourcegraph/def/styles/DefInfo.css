@@ -12,6 +12,7 @@
 .link-subtle { composes: link-subtle from typography; }
 .normal { composes: normal from typography; }
 .f5 { composes: f5 from typography; }
+.flex-grow { flex-grow: 1; }
 
 .section {
 	composes: ph4 from base;
