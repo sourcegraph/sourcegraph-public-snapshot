@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Check: httpapi package should not depend on auth in anyway. The httpapi layer
+# should be agnostic to the identity and permission of the actor. NOTE: ideally
+# this would include recursive dependencies, but there are a few warts in the
+# import structure that prevent this from being enforced.
+illegal_imports=$(go list -f '{{.Imports}}' 'sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/...' | grep 'sourcegraph.com/sourcegraph/sourcegraph/pkg/auth')
+
+if [[ ! -z "$illegal_imports" ]]; then
+		echo 'Found illegal import of "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth" from "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/..."';
+		exit 1;
+fi
+
