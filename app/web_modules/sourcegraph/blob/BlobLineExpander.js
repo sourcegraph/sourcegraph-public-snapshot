@@ -36,8 +36,7 @@ class BlobLineExpander extends Component {
 					{/* TODO support doing the up/down arrow logic automatically */}
 					<div styleName="line-expander-icon">...</div>
 				</td>
-				<td>
-				</td>
+				{this.state.lineNumbers && <td></td>}
 			</tr>
 		);
 	}

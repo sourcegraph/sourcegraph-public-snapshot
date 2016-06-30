@@ -20,6 +20,7 @@ import type {Def} from "sourcegraph/def";
 class Blob extends Component {
 	static propTypes = {
 		contents: React.PropTypes.string,
+		textSize: React.PropTypes.oneOf(["normal", "large"]),
 		annotations: React.PropTypes.shape({
 			Annotations: React.PropTypes.array,
 			LineStartBytes: React.PropTypes.array,
@@ -103,6 +104,7 @@ class Blob extends Component {
 		visStartLine: number;
 		visEndLine: number;
 		displayLineExpanders: ?string;
+		textSize: string;
 	} = {
 		repo: "",
 		rev: "",
@@ -126,6 +128,7 @@ class Blob extends Component {
 		visStartLine: 0,
 		visEndLine: 0,
 		displayLineExpanders: null,
+		textSize: "normal",
 	};
 
 	componentDidMount() {
@@ -161,6 +164,7 @@ class Blob extends Component {
 		state.endLine = props.endLine || null;
 		state.endCol = props.endCol || null;
 		state.endByte = props.endByte || null;
+		state.textSize = props.textSize || "normal";
 		state.scrollToStartLine = Boolean(props.scrollToStartLine);
 		state.contentsOffsetLine = props.contentsOffsetLine || 0;
 		state.lineNumbers = Boolean(props.lineNumbers);
@@ -385,7 +389,8 @@ class Blob extends Component {
 					<BlobLineExpander key={`expand-${i}`}
 						direction={renderedLines === 0 ? "up" : null}
 						expandRange={expandTo}
-						onExpand={this._expandRange} />
+						onExpand={this._expandRange}
+						lineNumbers={this.state.lineNumbers} />
 				);
 				lastRangeEnd = lineNumber;
 			}
@@ -398,6 +403,7 @@ class Blob extends Component {
 					lineNumber={this.state.lineNumbers ? lineNumber : null}
 					startByte={this.state.lineStartBytes[i]}
 					contents={line}
+					textSize={this.state.textSize}
 					annotations={this.state.lineAnns ? (this.state.lineAnns[i] || null) : null}
 					selected={this.state.highlightSelectedLines && this.state.startLine && this.state.endLine && this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
 					highlightedDef={this.state.highlightedDef}
@@ -413,7 +419,8 @@ class Blob extends Component {
 				<BlobLineExpander key={`expand-${this.state.lines.length}`}
 					expandRange={[lastDisplayedLine, lastDisplayedLine+30]}
 					onExpand={this._expandRange}
-					direction={"down"} />
+					direction={"down"}
+					lineNumbers={this.state.lineNumbers} />
 			);
 		}
 

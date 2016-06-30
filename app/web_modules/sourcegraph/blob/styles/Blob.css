@@ -10,7 +10,10 @@
 @value contentWidth 690px;
 @value marginWidth 290px;
 @value codeLineHeight 20px;
-@value firstCodeLineTopPadding 8px;
+@value firstCodeLineTopPadding 16px;
+
+.normal { composes: f7 from typography; }
+.large { composes: f6 from typography; }
 
 .pathComponent {}
 .inactivePathComponent {
@@ -71,9 +74,9 @@
    identical markup in Go (where we can't as easily obtain the class mapping). */
 .lines {
 	composes: code from typography;
-	font-size: 0.865rem;
 	table-layout: fixed;
 	border-spacing: 0;
+	min-width: 100%;
 }
 .lineNumberCell {
 	composes: bg-cool-pale-gray-2 from colors;
@@ -144,8 +147,7 @@
 	background-color: #ffe998;
 }
 .line-expander {
-	composes: faded-blue from colors;
-	background-color: rgba(64,120,192,.06);
+	composes: cool-mid-gray bg-cool-pale-gray-2 from colors;
 	line-height: 0.7;
 	text-align: center;
 }

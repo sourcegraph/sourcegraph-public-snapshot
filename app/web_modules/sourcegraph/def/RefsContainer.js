@@ -302,7 +302,6 @@ export default class RefsContainer extends Container {
 
 							return (
 								<div key={i}>
-									{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}
 									<Blob
 										repo={this.state.refRepo}
 										rev={this.state.refRev}
@@ -312,10 +311,12 @@ export default class RefsContainer extends Container {
 										skipAnns={file.ContentsString && file.ContentsString.length >= 40*2500}
 										activeDefRepo={this.state.repo}
 										activeDef={this.state.def}
-										lineNumbers={true}
+										lineNumbers={false}
 										displayRanges={ranges || null}
 										highlightedDef={this.state.highlightedDef || null}
-										highlightedDefObj={this.state.highlightedDefObj || null} />
+										highlightedDefObj={this.state.highlightedDefObj || null}
+										textSize="large"
+										className={styles.blob} />
 								</div>
 							);
 						})}

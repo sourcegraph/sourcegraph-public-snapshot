@@ -9,11 +9,13 @@
 
 .container {
 	composes: mt3 mb3 br2 ba bw1 from base;
-	composes: b--light-gray-2 from colors;
+	composes: b--cool-pale-gray from colors;
 	display: flex;
 	flex-direction: column;
 }
-
+.blob {
+	border: 5px solid red;
+}
 .repo {
 	composes: mv3 from base;
 	composes: f4 fw5 from typography;
@@ -37,7 +39,7 @@
 }
 
 .refs {
-	border-color: #d8d8d8;
+	composes: b--cool-pale-gray from colors;
 	flex: 1 1 auto;
 }
 

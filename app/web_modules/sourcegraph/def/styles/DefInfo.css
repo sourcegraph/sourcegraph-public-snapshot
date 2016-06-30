@@ -5,14 +5,17 @@
 @value vars "sourcegraph/components/styles/_vars.css";
 @value layout "sourcegraph/components/styles/_layout.css";
 
+.container-fixed { composes: containerFixed from layout; }
+.flex-grow { flex-grow: 1; }
+
 .cool-mid-gray { composes: cool-mid-gray from colors; }
 .bg-cool-pale-gray-2 { composes: bg-cool-pale-gray-2 from colors; }
-.container-fixed { composes: containerFixed from layout; }
+.b--cool-pale-gray { composes: b--cool-pale-gray from colors; }
+
 .break-word { word-wrap: break-word; }
 .link-subtle { composes: link-subtle from typography; }
 .normal { composes: normal from typography; }
-.f5 { composes: f5 from typography; }
-.flex-grow { flex-grow: 1; }
+.f7 { composes: f7 from typography; }
 
 .section {
 	composes: ph4 from base;
@@ -26,14 +29,6 @@
 
 .section-label:after {
 	content: none;
-}
-
-.def-title {
-	composes: code fw1 f4 from typography;
-}
-
-.def-title:hover {
-	text-decoration: underline;
 }
 
 .def {
@@ -59,14 +54,6 @@
 .description p {
 	margin-top: 1.0rem;
 	margin-bottom: 1.0rem;
-}
-
-.description-expander {
-	composes: mb3 from base;
-	composes: f5 from typography;
-	composes: description;
-	composes: link from "sourcegraph/components/styles/link.css";
-	cursor: pointer;
 }
 
 .actions {
@@ -120,5 +107,9 @@
 	.description, .section-label {
 		margin-left: 10px;
 		margin-right: 10px;
+	}
+	.full-width-sm {
+		margin-left: -2rem;
+		margin-right: -2rem;
 	}
 }

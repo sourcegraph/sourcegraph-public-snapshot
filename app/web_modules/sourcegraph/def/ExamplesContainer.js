@@ -16,6 +16,7 @@ class ExamplesContainer extends Container {
 		commitID: React.PropTypes.string,
 		def: React.PropTypes.string,
 		defObj: React.PropTypes.object,
+		className: React.PropTypes.string,
 	};
 
 	constructor(props) {
@@ -51,7 +52,7 @@ class ExamplesContainer extends Container {
 
 		const expandedSnippets = 3;
 		return (
-			<div>
+			<div className={this.props.className}>
 				{!refLocs && <i>Loading...</i>}
 				{refLocs && !refLocs.RepoRefs && <i>No examples found</i>}
 				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <RefsContainer

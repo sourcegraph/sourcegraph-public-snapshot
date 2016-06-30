@@ -28,7 +28,7 @@ import {Dropdown, Panel, Header, Heading, FlexContainer} from "sourcegraph/compo
 
 
 // Number of characters of the Docstring to show before showing the "collapse" options.
-const DESCRIPTION_CHAR_CUTOFF = 500;
+const DESCRIPTION_CHAR_CUTOFF = 305;
 //
 class DefInfo extends Container {
 	static contextTypes = {
@@ -207,19 +207,19 @@ class DefInfo extends Container {
 		}
 		return (
 			<FlexContainer styleName="bg-cool-pale-gray-2 flex-grow">
-				<div styleName="container-fixed" className={base.mv5}>
+				<div styleName="container-fixed" className={base.mv3}>
 					{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
 					<Helmet title={defTitleOK(def) ? `${defTitle(def)} · ${trimRepo(this.state.repo)}` : trimRepo(this.state.repo)} />
 					{def &&
-						<div className={base.mv4}>
-							<Heading level="4" styleName="break-word normal" className={base.mv2}>
+						<div className={`${base.mv4} ${base.ph4}`}>
+							<Heading level="5" styleName="break-word" className={base.mv2}>
 								<Link title="View definition in code" to={defURL} styleName="link-subtle">
-									<code>{qualifiedNameAndType(def, {unqualifiedNameClass: styles.def})}</code>
+									<code styleName="normal">{qualifiedNameAndType(def, {unqualifiedNameClass: styles.def})}</code>
 								</Link>
 							</Heading>
 
 							{def.DocHTML &&
-								<div>
+								<div className={base.mb3}>
 									{this.state.showTranslatedString &&
 										<div className={base.mt1}>
 											<LanguageIcon styleName="icon" />
@@ -229,14 +229,13 @@ class DefInfo extends Container {
 									{this.state.showTranslatedString && <hr/>}
 									<div dangerouslySetInnerHTML={hiddenDescr && {__html: this.splitHTMLDescr(def.DocHTML.__html, DESCRIPTION_CHAR_CUTOFF)} || def.DocHTML}></div>
 									{hiddenDescr &&
-										<div styleName="description-expander" onClick={this._onViewMore}>View More...</div>
+										<a href="#" onClick={this._onViewMore} styleName="f7">View More...</a>
 									}
 									{!hiddenDescr && this.shouldHideDescr(def, DESCRIPTION_CHAR_CUTOFF) &&
-										<div styleName="description-expander" onClick={this._onViewLess}>Collapse</div>
+										<a href="#" onClick={this._onViewLess} styleName="f7">Collapse</a>
 									}
 								</div>
 							}
-
 
 							{/* TODO DocHTML will not be set if the this def was loaded via the
 								serveDefs endpoint instead of the serveDef endpoint. In this case
@@ -245,18 +244,19 @@ class DefInfo extends Container {
 							*/}
 
 							{!def.DocHTML && def.Docs && def.Docs.length &&
-								<div>
+								<div className={base.mb3}>
 									<div styleName="description">{hiddenDescr && this.splitPlainDescr(def.Docs[0].Data, DESCRIPTION_CHAR_CUTOFF) || def.Docs[0].Data}</div>
 									{hiddenDescr &&
-										<div styleName="description-expander" onClick={this._onViewMore}>View More...</div>
+										<a href="#" onClick={this._onViewMore} styleName="f7">View More...</a>
 									}
 									{!hiddenDescr && this.shouldHideDescr(def, DESCRIPTION_CHAR_CUTOFF) &&
-										<div styleName="description-expander" onClick={this._onViewLess}>Collapse</div>
+										<a href="#" onClick={this._onViewLess} styleName="f7">Collapse</a>
+
 									}
 								</div>
 							}
 
-							<div styleName="f5 cool-mid-gray">
+							<div styleName="f7 cool-mid-gray">
 								{def && def.Repo && <Link to={urlToRepo(def.Repo)} styleName="link-subtle">{def.Repo}</Link>}
 								&nbsp; &middot; &nbsp;
 								<Link title="View definition in code" to={defURL} styleName="link-subtle">View definition</Link>
@@ -281,15 +281,30 @@ class DefInfo extends Container {
 									]} />
 							</div>
 
+							<hr className={base.mv4} styleName="b--cool-pale-gray" />
+
+							<div className={base.mb5}>
+								<Heading level="7" className={base.mb3} styleName="cool-mid-gray">
+									4 usage examples
+								</Heading>
+								<Panel
+									hoverLevel="low"
+									styleName="full-width-sm b--cool-pale-gray"
+									className={base.ba}>
+
+									<ExamplesContainer
+										repo={this.props.repo}
+										rev={this.props.rev}
+										commitID={this.props.commitID}
+										def={this.props.def}
+										defObj={this.props.defObj}
+										className={base.pa4} />
+								</Panel>
+							</div>
 							<div>
-								<Heading level="5">4 usage examples</Heading>
-								<ExamplesContainer
-									repo={this.props.repo}
-									rev={this.props.rev}
-									commitID={this.props.commitID}
-									def={this.props.def}
-									defObj={this.props.defObj} />
-								<Heading level="5">10 references in 4 repositories</Heading>
+								<Heading level="7" styleName="cool-mid-gray">
+									10 references in 4 repositories
+								</Heading>
 								{/* TODO(sqs): to be implemented */}
 								<RepoRefsContainer
 									repo={this.props.repo}
