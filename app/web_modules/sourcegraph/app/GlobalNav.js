@@ -137,8 +137,6 @@ GlobalNav.contextTypes = {
 export default CSSModules(GlobalNav, styles, {allowMultiple: true});
 
 class SearchForm extends React.Component {
-	// TODO(sqs): dismiss when click/focus outside
-
 	static propTypes = {
 		repo: React.PropTypes.string,
 		location: React.PropTypes.object.isRequired,
