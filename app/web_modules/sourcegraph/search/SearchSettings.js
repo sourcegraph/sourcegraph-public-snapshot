@@ -162,7 +162,7 @@ class SearchSettings extends Container {
 					<span styleName="label">Include:</span>
 					<div>
 						{this.state.repo && <Button
-							color={!scope.repo ? "blue" : "default"}
+							color={scope.repo ? "blue" : "default"}
 							size="small"
 							styleName="choice-button"
 							onClick={() => this._setScope({repo: !scope.repo})}
