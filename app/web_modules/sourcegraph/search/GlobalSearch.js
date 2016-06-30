@@ -65,7 +65,7 @@ class GlobalSearch extends Container {
 		this._handleKeyUp = this._handleKeyUp.bind(this);
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
-		this._onSelection = debounce(this._onSelection.bind(this), 100, {leading: false, trailing: true}); // Prevent rapid repeated selections
+		this._onSelection = debounce(this._onSelection.bind(this), 200, {leading: false, trailing: true}); // Prevent rapid repeated selections
 	}
 
 	state: {
