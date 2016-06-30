@@ -367,35 +367,11 @@ func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	// of the transaction can lead to conflicts with other imports
 	start = time.Now()
 	defKeyIDs := map[graph.DefKey]int64{}
-	{
-		// Find unique defKeys so we can bulk upsert and get the def_key ids
-		defKeys := map[graph.DefKey]struct{}{}
-		for _, r := range refs {
-			k := graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}
-			defKeys[k] = struct{}{}
-		}
-		defs := make([]*graph.Def, 0, len(defKeys))
-		for k := range defKeys {
-			defs = append(defs, &graph.Def{DefKey: k})
-		}
-
-		start := time.Now()
-		err := updateDefKeys(ctx, dbh, repo, defs)
-		observe("defkeysupdate", start)
-		if err != nil {
-			return err
-		}
-
-		start = time.Now()
-		dbDefKeys, err := getDefKeys(ctx, dbh, defKeys)
-		observe("defkeysget", start)
-		if err != nil {
-			return err
-		}
-		for _, dk := range dbDefKeys {
-			defKeyIDs[graph.DefKey{Repo: dk.Repo, UnitType: dk.UnitType, Unit: dk.Unit, Path: dk.Path}] = dk.ID
-		}
+	for _, r := range refs {
+		k := graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}
+		defKeyIDs[k] = -1
 	}
+	getOrInsertDefKeys(ctx, dbh, defKeyIDs)
 	observe("defkeys", start)
 
 	tmpCreateSQL := `CREATE TEMPORARY TABLE global_refs_tmp (
