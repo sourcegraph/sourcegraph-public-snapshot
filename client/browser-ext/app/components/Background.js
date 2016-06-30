@@ -2,7 +2,6 @@ import React from "react";
 import {bindActionCreators} from "redux";
 import {connect} from "react-redux";
 
-import {useAccessToken} from "../actions/xhr";
 import * as Actions from "../actions";
 import styles from "./App.css";
 import {keyFor} from "../reducers/helpers";
@@ -14,7 +13,6 @@ let createdReposCache = {};
 
 @connect(
 	(state) => ({
-		accessToken: state.accessToken,
 		def: state.def,
 	}),
 	(dispatch) => ({
@@ -23,7 +21,6 @@ let createdReposCache = {};
 )
 export default class Background extends React.Component {
 	static propTypes = {
-		accessToken: React.PropTypes.string,
 		def: React.PropTypes.object.isRequired,
 		actions: React.PropTypes.object.isRequired,
 	};
@@ -39,15 +36,6 @@ export default class Background extends React.Component {
 	}
 
 	componentDidMount() {
-		if (this.props.accessToken) useAccessToken(this.props.accessToken);
-
-		// Capture user's access token if on sourcegraph.com.
-		if (utils.isSourcegraphURL()) {
-			const regexp = /accessToken\\":\\"([-A-Za-z0-9_.]+)\\"/;
-			const matchResult = document.head.innerHTML.match(regexp);
-			if (matchResult) this.props.actions.setAccessToken(matchResult[1]);
-		}
-
 		if (this._updateIntervalID === null) {
 			this._updateIntervalID = setInterval(this._refreshVCS.bind(this), 1000 * 60 * 5); // refresh every 5min
 		}
@@ -116,43 +104,37 @@ export default class Background extends React.Component {
 	}
 
 	_refresh() {
-		// First, get the current browser state (which could have been updated by another tab).
-		chrome.runtime.sendMessage(null, {type: "get"}, {}, (state) => {
-			const accessToken = state.accessToken;
-			if (accessToken) this.props.actions.setAccessToken(accessToken);
+		if (utils.isSourcegraphURL()) return;
 
-			if (utils.isSourcegraphURL()) return;
+		let urlProps = utils.parseURLWithSourcegraphDef();
 
-			let urlProps = utils.parseURLWithSourcegraphDef();
+		// TODO: Branches that are not built on Sourcegraph will not get annotations, need to trigger
+		if (urlProps.repoURI) {
+			this.props.actions.refreshVCS(urlProps.repoURI);
+		}
+		if (urlProps.path) {
+			// Strip hash (e.g. line location) from path.
+			const hashLoc = urlProps.path.indexOf("#");
+			if (hashLoc !== -1) urlProps.path = urlProps.path.substring(0, hashLoc);
+		}
 
-			// TODO: Branches that are not built on Sourcegraph will not get annotations, need to trigger
-			if (urlProps.repoURI) {
-				this.props.actions.refreshVCS(urlProps.repoURI);
+		if (urlProps.repoURI && urlProps.defPath && !urlProps.isDelta) {
+			this.props.actions.getDef(urlProps.repoURI, urlProps.rev, urlProps.defPath);
+		}
+
+		if (urlProps.repoURI && !createdReposCache[urlProps.repoURI]) {
+			createdReposCache[urlProps.repoURI] = true;
+			this.props.actions.ensureRepoExists(urlProps.repoURI);
+		}
+
+		const directURLToDef = this._directURLToDef(urlProps);
+		if (directURLToDef) {
+			if (!window.location.href.includes(directURLToDef.hash)) {
+				pjaxGoTo(`${directURLToDef.pathname}${directURLToDef.hash}`, true);
 			}
-			if (urlProps.path) {
-				// Strip hash (e.g. line location) from path.
-				const hashLoc = urlProps.path.indexOf("#");
-				if (hashLoc !== -1) urlProps.path = urlProps.path.substring(0, hashLoc);
-			}
+		}
 
-			if (urlProps.repoURI && urlProps.defPath && !urlProps.isDelta) {
-				this.props.actions.getDef(urlProps.repoURI, urlProps.rev, urlProps.defPath);
-			}
-
-			if (urlProps.repoURI && !createdReposCache[urlProps.repoURI]) {
-				createdReposCache[urlProps.repoURI] = true;
-				this.props.actions.ensureRepoExists(urlProps.repoURI);
-			}
-
-			const directURLToDef = this._directURLToDef(urlProps);
-			if (directURLToDef) {
-				if (!window.location.href.includes(directURLToDef.hash)) {
-					pjaxGoTo(`${directURLToDef.pathname}${directURLToDef.hash}`, true);
-				}
-			}
-
-			this._renderDefInfo(this.props, urlProps);
-		});
+		this._renderDefInfo(this.props, urlProps);
 
 		chrome.runtime.sendMessage(null, {type: "getIdentity"}, {}, (identity) => {
 			if (identity) {
