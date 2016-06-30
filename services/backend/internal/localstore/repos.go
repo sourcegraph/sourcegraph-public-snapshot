@@ -185,6 +185,9 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 // finishGetRepo checks permissions and fills in additional fields on
 // repo. It MUST be called after fetching a repo from the DB before
 // returning the repo.
+//
+// NOTE: The repo returned is the same as the repo passed in. Provided as a
+// convenience.
 func finishGetRepo(ctx context.Context, repo *sourcegraph.Repo) (*sourcegraph.Repo, error) {
 	// Avoid an infinite loop (since
 	// accesscontrol.VerifyUserHasReadAccess calls (*repos).Get).
@@ -280,7 +283,10 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	}
 
 	for _, repo := range repos {
-		setCloneURLField(ctx, repo)
+		_, err := finishGetRepo(ctx, repo)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return repos, nil
@@ -399,7 +405,6 @@ func (s *repos) Search(ctx context.Context, query string) ([]*sourcegraph.RepoSe
 		} else if repo.Owner == owner || repo.Name == name {
 			prepo.priority = 1
 		}
-		setCloneURLField(ctx, repo)
 		priorityRepos = append(priorityRepos, prepo)
 	}
 
@@ -408,7 +413,7 @@ func (s *repos) Search(ctx context.Context, query string) ([]*sourcegraph.RepoSe
 	// Critical permissions check. DO NOT REMOVE.
 	var results []*sourcegraph.RepoSearchResult
 	for _, prepo := range priorityRepos {
-		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Search", prepo.ID); err != nil {
+		if _, err := finishGetRepo(ctx, prepo.Repo); err != nil {
 			continue
 		}
 		results = append(results, &sourcegraph.RepoSearchResult{
