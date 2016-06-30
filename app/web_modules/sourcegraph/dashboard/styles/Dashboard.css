@@ -147,8 +147,9 @@
 .query {
 	font-size: 0.95rem;
 	composes: mr2 mb2 from base;
-	border-width: 1px;
+	border-width: 1px !important;;
 	border-color: c_blue-2;
+	border-radius: 50px;
 }
 .query:hover {
 	border-color: c_dark-blue-2;
