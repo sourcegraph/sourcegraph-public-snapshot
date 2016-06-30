@@ -70,6 +70,8 @@ class HeadingsComponent extends React.Component {
 								<Heading level="3" className={base.mb3}>Heading 3</Heading>
 								<Heading level="4" className={base.mb3}>Heading 4</Heading>
 								<Heading level="5" className={base.mb3}>Heading 5</Heading>
+								<Heading level="6" className={base.mb3}>Heading 6</Heading>
+								<Heading level="7" className={base.mb3}>Heading 7</Heading>
 							</div>
 							<hr />
 							<code>
@@ -81,6 +83,8 @@ class HeadingsComponent extends React.Component {
 <Heading level="3">Heading 3</Heading>
 <Heading level="4">Heading 4</Heading>
 <Heading level="5">Heading 5</Heading>
+<Heading level="6">Heading 6</Heading>
+<Heading level="7">Heading 7</Heading>
 	`
 }
 								</pre>

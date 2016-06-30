@@ -7,10 +7,7 @@
 .h3 { composes: f3 b from typography; }
 .h4 { composes: f4 b from typography; }
 .h5 { composes: f5 b from typography; }
-.h6 {
-	composes: f6 b from typography;
-	text-transform: uppercase;
-}
+.h6 { composes: f6 b from typography; }
 .h7 {
 	composes: f7 b from typography;
 	text-transform: uppercase;
