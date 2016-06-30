@@ -7,6 +7,9 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rogpeppe/rog-go/parallel"
@@ -22,7 +25,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	sstore "sourcegraph.com/sourcegraph/srclib/store"
 )
@@ -225,25 +227,13 @@ func filterVisibleRepos(ctx context.Context, repoRefs []*sourcegraph.DefRepoRef)
 	hasAccess := make([]bool, len(repoRefs))
 	par := parallel.NewRun(30)
 	var mu sync.Mutex
-	for i_, r_ := range repoRefs {
-		i, r := i_, r_
+	for i, r := range repoRefs {
+		i, r := i, r
 		par.Do(func() error {
-			// TODO(keegancsmith) once forks are removed from
-			// global_refs, we should just check
-			// accesscontrol.VerifyUserHasReadAccess
-			// https://app.asana.com/0/138665145800110/137848642885286
-			res, err := svc.Repos(ctx).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: r.Repo})
-			if err != nil {
-				log15.Info("GlobalRefs.Get: error resolving repo.", "err", err, "repo", r.Repo)
-			} else {
-				repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: res.Repo})
-				if err != nil {
-					log15.Info("GlobalRefs.Get: error getting repo.", "err", err, "repo", res.Repo)
-				} else if !repo.Fork {
-					mu.Lock()
-					hasAccess[i] = true
-					mu.Unlock()
-				}
+			if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GlobalRefs.Get", r.Repo); err == nil {
+				mu.Lock()
+				hasAccess[i] = true
+				mu.Unlock()
 			}
 			return nil
 		})
@@ -298,11 +288,17 @@ func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	}
 	dbh := graphDBH(ctx)
 
-	repo, commitID, err := resolveRevisionDefaultBranch(ctx, op.Repo)
+	repoObj, commitID, err := resolveRevisionDefaultBranch(ctx, op.Repo)
 	if err != nil {
 		return err
 	}
 
+	if repoObj.Fork {
+		// We don't index forks
+		return grpc.Errorf(codes.InvalidArgument, "GlobalRefs does not index forks. repo=%s", op.Repo)
+	}
+
+	repo := repoObj.URI
 	trackedRepo := repotrackutil.GetTrackedRepo(repo)
 	observe := func(part string, start time.Time) {
 		// We also add logs because update operations are relatively
@@ -489,8 +485,8 @@ func init() {
 	prometheus.MustRegister(globalRefsUpdateDuration)
 }
 
-func resolveRevisionDefaultBranch(ctx context.Context, repo int32) (repoPath, commitID string, err error) {
-	repoObj, err := store.ReposFromContext(ctx).Get(ctx, repo)
+func resolveRevisionDefaultBranch(ctx context.Context, repo int32) (repoObj *sourcegraph.Repo, commitID string, err error) {
+	repoObj, err = store.ReposFromContext(ctx).Get(ctx, repo)
 	if err != nil {
 		return
 	}
@@ -507,11 +503,11 @@ func resolveRevisionDefaultBranch(ctx context.Context, repo int32) (repoPath, co
 		}
 		ghrepo, err := github.ReposFromContext(ctx).Get(ctx, repoObj.URI)
 		if err != nil {
-			return "", "", err
+			return nil, "", err
 		}
 		if c, err = vcsrepo.ResolveRevision(ghrepo.DefaultBranch); err != nil {
-			return "", "", err
+			return nil, "", err
 		}
 	}
-	return repoObj.URI, string(c), nil
+	return repoObj, string(c), nil
 }
