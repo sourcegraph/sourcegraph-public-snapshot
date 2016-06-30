@@ -173,7 +173,11 @@ class GlobalSearch extends Container {
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (prevState.query !== nextState.query || prevState.githubToken !== nextState.githubToken || prevState.settings !== nextState.settings) {
+		if (prevState.query !== nextState.query ||
+			prevState.githubToken !== nextState.githubToken ||
+			prevState.settings !== nextState.settings ||
+			prevState.publicRepos !== nextState.publicRepos ||
+			prevState.privateRepos !== nextState.privateRepos) {
 			debounce((query) => {
 				const langs = this._langs(nextState);
 				for (const lang of langs) {
