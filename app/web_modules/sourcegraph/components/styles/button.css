@@ -32,20 +32,17 @@
     border: 0;
 }
 
-.btn[disabled],
-.disabled,
-.disabled:hover,
-.disabled:focus,
-.disabled:active {
-    background: c_cool-gray-5;
-    background-image: none;
-    border: none;
-    box-shadow: none;
-    color: c_cool-gray;
-    cursor: not-allowed;
-    filter: alpha(opacity=70);
-    opacity: 0.70;
-		padding: 0.65rem 1rem;
+.disabled {
+    composes: btn;
+    background: c_cool-gray-5 !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    color: c_cool-gray !important;
+    cursor: not-allowed !important;
+    filter: alpha(opacity=70) !important;
+    opacity: 0.70 !important;
+    composes: ba bw2 from base;
+    border-color: transparent !important;
 }
 
 /* Button – Size modifiers */
@@ -165,8 +162,8 @@
 .solid {
 	composes: btn;
 	composes: white from colors;
-	border-style: solid;
-	border-width: 2px;
+    composes: ba bw2 from base;
+	border-color: transparent;
 }
 .solid:hover { color: white; }
 

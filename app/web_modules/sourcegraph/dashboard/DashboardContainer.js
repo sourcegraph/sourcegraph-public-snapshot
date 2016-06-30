@@ -82,6 +82,7 @@ class DashboardContainer extends Container {
 	}
 
 	render() {
+		const langSelected = this.state.langs && this.state.langs.length > 0;
 		return (
 			<div>
 				<Helmet title="Home" />
@@ -109,12 +110,12 @@ class DashboardContainer extends Container {
 						styleName="search-input"
 						onChange={e => this.state.langs && this.state.langs.length > 0 && this._handleInput(e)} />
 					<div styleName="search-actions">
-						<Button styleName="search-button" type="button" color="blue">Find usage examples</Button>
+						<Button styleName="search-button" type="button" color="blue" disabled={!langSelected}>Find usage examples</Button>
 					</div>
 
 					{<TitledSection title="Top searches" className={styles["top-queries-panel"]}>
-						{this.state.langs && this.state.langs.length > 0 && <Queries langs={this.state.langs} onSelectQuery={this._onSelectQuery} />}
-						{!(this.state.langs && this.state.langs.length > 0) && <p styleName={`notice ${this.state.focused ? "notice-pulse" : ""}`}>Select a language below to see top queries.</p>}
+						{langSelected && <Queries langs={this.state.langs} onSelectQuery={this._onSelectQuery} />}
+						{!langSelected && <p styleName={`notice ${this.state.focused ? "notice-pulse" : ""}`}>Select a language below to get started.</p>}
 					</TitledSection>}
 
 					{<TitledSection title="Search options" className={styles["search-settings-panel"]}>
