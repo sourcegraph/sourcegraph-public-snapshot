@@ -120,23 +120,6 @@
 	composes: cool-mid-gray from colors;
 	text-align: center;
 }
-
-.notice-pulse {
-	animation-name: pulsate;
-	animation-duration: 1s;
-	animation-iteration-count: infinite;
-}
-@keyframes pulsate {
-	0% {
-		transform: scale(1);
-	}
-	50% {
-		transform: scale(1.05);
-	}
-	100% {
-		transform: scale(1)
-    }
-}
 .search-settings-panel {
 	composes: pt2 pb1 from base;
 }

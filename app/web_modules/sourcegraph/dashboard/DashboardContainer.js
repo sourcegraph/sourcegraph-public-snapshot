@@ -43,9 +43,7 @@ class DashboardContainer extends Container {
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (nextState.langs && nextState.langs.length > 0 && nextState.langs !== prevState.langs) {
-			if (this._input && this._input.value) this._goToSearch(this._input.value);
-		}
+		if (this._input && this._input.value) this._goToSearch(this._input.value);
 	}
 
 	_goToSearch(query: string) {
@@ -103,19 +101,17 @@ class DashboardContainer extends Container {
 						name="q"
 						border={true}
 						query={this.props.location.query.q || ""}
-						onFocus={() => this.setState({focused: true})}
-						onBlur={() => this.setState({focused: false})}
 						autoFocus={this.context.signedIn}
 						domRef={e => this._input = e}
 						styleName="search-input"
-						onChange={e => this.state.langs && this.state.langs.length > 0 && this._handleInput(e)} />
+						onChange={this._handleInput} />
 					<div styleName="search-actions">
-						<Button styleName="search-button" type="button" color="blue" disabled={!langSelected}>Find usage examples</Button>
+						<Button styleName="search-button" type="button" color="blue">Find usage examples</Button>
 					</div>
 
 					{<TitledSection title="Top searches" className={styles["top-queries-panel"]}>
 						{langSelected && <Queries langs={this.state.langs} onSelectQuery={this._onSelectQuery} />}
-						{!langSelected && <p styleName={`notice ${this.state.focused ? "notice-pulse" : ""}`}>Select a language below to get started.</p>}
+						{!langSelected && <p styleName="notice">Select a language below to get started.</p>}
 					</TitledSection>}
 
 					{<TitledSection title="Search options" className={styles["search-settings-panel"]}>
