@@ -44,5 +44,9 @@ func SdumpExpr(a ...interface{}) string {
 
 // FdumpExpr dumps goon expressions to a writer.
 func FdumpExpr(w io.Writer, a ...interface{}) (n int, err error) {
-	return w.Write(bdumpNamed(reflectsource.GetParentArgExprAllAsString(), a...))
+	names := reflectsource.GetParentArgExprAllAsString()
+	if len(names) >= 1 {
+		names = names[1:] // First argument is the writer, skip it.
+	}
+	return w.Write(bdumpNamed(names, a...))
 }

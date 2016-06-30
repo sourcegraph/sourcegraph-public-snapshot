@@ -711,10 +711,10 @@
 			"revisionTime": "2016-02-03T07:44:56-05:00"
 		},
 		{
-			"checksumSHA1": "6zfHoy5pQ9ARu8kEaOf0mivfqEY=",
+			"checksumSHA1": "EsfIKo3y9MYHEstEGww8j5syZF8=",
 			"path": "github.com/shurcooL/go-goon",
-			"revision": "be9d6f45ee9e21422b3a4e7e7a8f4e930a1f1b3a",
-			"revisionTime": "2016-03-26T22:10:52Z"
+			"revision": "7013555098e0efb77afd1b0c5d3e64de1e7f4265",
+			"revisionTime": "2016-06-23T06:09:00Z"
 		},
 		{
 			"checksumSHA1": "Gmkf4ymM0ZNSYiIVEsLRgFavgII=",
