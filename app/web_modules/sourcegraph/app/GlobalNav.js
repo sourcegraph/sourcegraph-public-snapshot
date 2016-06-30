@@ -241,7 +241,7 @@ class SearchForm extends React.Component {
 	}
 
 	_handleFocus(ev: Event) {
-		const update = {focused: true, open: true};
+		const update: {focused: boolean; open: boolean; query?: string} = {focused: true, open: true};
 		if (this._input && this._input.value) {
 			update.query = this._input.value;
 		}
