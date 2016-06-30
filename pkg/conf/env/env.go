@@ -9,14 +9,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
-	"strconv"
 )
-
-var Debug bool
-
-func init() {
-	Debug, _ = strconv.ParseBool(os.Getenv("DEBUG"))
-}
 
 // CurrentUserHomeDir tries to get the current user's home directory in a
 // cross-platform manner.
