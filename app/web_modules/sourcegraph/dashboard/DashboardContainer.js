@@ -96,7 +96,9 @@ class DashboardContainer extends Container {
 						name="q"
 						border={true}
 						query={this.props.location.query.q || ""}
-						autoFocus={true}
+						onFocus={() => this.setState({focused: true})}
+						onBlur={() => this.setState({focused: false})}
+						autoFocus={this.context.signedIn}
 						domRef={e => this._input = e}
 						styleName="search-input"
 						onChange={this._handleInput} />
@@ -106,7 +108,7 @@ class DashboardContainer extends Container {
 
 					{<TitledSection title="Top searches" className={styles["top-queries-panel"]}>
 						{this.state.langs && this.state.langs.length > 0 && <Queries langs={this.state.langs} onSelectQuery={this._onSelectQuery} />}
-						{!(this.state.langs && this.state.langs.length > 0) && <p styleName="notice">Select a language below to see top queries.</p>}
+						{!(this.state.langs && this.state.langs.length > 0) && <p styleName={`notice ${this.state.focused ? "notice-pulse" : ""}`}>Select a language below to see top queries.</p>}
 					</TitledSection>}
 
 					{<TitledSection title="Search options" className={styles["search-settings-panel"]}>
