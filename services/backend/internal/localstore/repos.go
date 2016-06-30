@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/lib/pq"
+	"github.com/rogpeppe/rog-go/parallel"
 	gogithub "github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -287,11 +288,17 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		return nil, err
 	}
 
+	// Do access checks in parallel since it may do remote calls
+	par := parallel.NewRun(30)
 	for _, repo := range repos {
-		_, err := finishGetRepo(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
+		repo := repo
+		par.Do(func() error {
+			_, err := finishGetRepo(ctx, repo)
+			return err
+		})
+	}
+	if err := par.Wait(); err != nil {
+		return nil, err
 	}
 
 	return repos, nil
