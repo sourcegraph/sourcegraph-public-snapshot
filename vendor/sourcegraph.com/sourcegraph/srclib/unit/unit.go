@@ -3,7 +3,6 @@ package unit
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -200,8 +199,7 @@ func (u *SourceUnit) UnmarshalJSON(b []byte) error {
 	for k, vJSON := range su.Config {
 		var v string
 		if err := json.Unmarshal(*vJSON, &v); err != nil {
-			log.Printf("warning: could not unmarshal config string: %s, JSON was %v", err, vJSON)
-			continue
+			return fmt.Errorf("could not unmarshal config string: %s, JSON was %v", err, vJSON)
 		}
 		cfg[k] = v
 	}
