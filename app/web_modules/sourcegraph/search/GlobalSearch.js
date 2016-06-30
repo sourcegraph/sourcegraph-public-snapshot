@@ -115,6 +115,15 @@ class GlobalSearch extends Container {
 			{};
 	}
 
+	_scopeProperties(state) {
+		const scope = this._scope(state);
+		return Object.keys(scope).filter((key) => key === "repo" ? this.state.repo && Boolean(scope[key]) : Boolean(scope[key]));
+	}
+
+	_pageName() {
+		return this.props.location.pathname.slice(1) === rel.search ? `/${rel.search}` : "(global nav)";
+	}
+
 	_canSearch(state) {
 		const scope = this._scope(state);
 		return scope.public || scope.private || scope.repo || (scope.popular || !state.githubToken);
@@ -202,13 +211,12 @@ class GlobalSearch extends Container {
 
 	__onDispatch(action) {
 		if (action.constructor === SearchActions.ResultsFetched) {
-			let globalSearchEventDict = {};
-			globalSearchEventDict["globalSearchQuery"] = this.state.query;
-			globalSearchEventDict["page name"] = this.props.location.pathname.slice(1) === rel.search ? "Global search homepage" : "Global search repo page";
-			if (this.state.matchingResults !== null) {
-				globalSearchEventDict["languages"] = this._langs(this.state);
-			}
-			this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_SUCCESS, "GlobalSearchInitiated", globalSearchEventDict);
+			let eventProps = {};
+			eventProps["globalSearchQuery"] = this.state.query;
+			eventProps["page name"] = this._pageName();
+			eventProps["languages"] = this._langs(this.state);
+			eventProps["repo_scope"] = this._scopeProperties(this.state);
+			this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_SUCCESS, "GlobalSearchInitiated", eventProps);
 		}
 	}
 
@@ -318,11 +326,14 @@ class GlobalSearch extends Container {
 			return;
 		}
 
+		let eventProps = {globalSearchQuery: this.state.query, indexSelected: i, page_name: this._pageName(), languages: this._langs(this.state), repo_scope: this._scopeProperties(this.state)};
+
 		let offset = 0;
 		if (this.state.matchingResults.Repos) {
 			if (i < this.state.matchingResults.Repos.length) {
 				const url = `/${this.state.matchingResults.Repos[i].URI}`;
-				this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url, indexSelected: i, page_name: this.props.location.pathname});
+				eventProps.selectedItem = url;
+				this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", eventProps);
 				this._navigateTo(url);
 				return;
 			}
@@ -333,7 +344,8 @@ class GlobalSearch extends Container {
 		const def = this.state.matchingResults.Defs[i - offset];
 		const url = urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def);
 
-		let eventProps = {globalSearchQuery: this.state.query, selectedItem: url, indexSelected: i, totalResults: this.state.matchingResults.Defs.length, page_name: this.props.location.pathname};
+		eventProps.selectedItem = url;
+		eventProps.totalResults = this.state.matchingResults.Defs.length;
 		if (def.FmtStrings && def.FmtStrings.Kind && def.FmtStrings.Language && def.Repo) {
 			eventProps = {...eventProps, languageSelected: def.FmtStrings.Language, kindSelected: def.FmtStrings.Kind, repoSelected: def.Repo};
 		}
