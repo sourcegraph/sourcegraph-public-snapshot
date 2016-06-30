@@ -529,7 +529,7 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 			langWarnCount++
 		}
 
-		tsvector := search.ToTSVector(def)
+		aToks, bToks, cToks, dToks := search.ToTSVector(def)
 
 		dbDefs[i] = &dbDefInsert{
 			dbDefShared: dbDefShared{
@@ -540,10 +540,10 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 				Language:  languageID,
 				UpdatedAt: &now,
 			},
-			ToksA: strings.Join(search.BagOfWordsToTokens(tsvector.AToks, tsvector.A), " "),
-			ToksB: strings.Join(search.BagOfWordsToTokens(tsvector.BToks, tsvector.B), " "),
-			ToksC: strings.Join(search.BagOfWordsToTokens(tsvector.CToks, tsvector.C), " "),
-			ToksD: strings.Join(search.BagOfWordsToTokens(tsvector.DToks, tsvector.D), " "),
+			ToksA: strings.Join(aToks, " "),
+			ToksB: strings.Join(bToks, " "),
+			ToksC: strings.Join(cToks, " "),
+			ToksD: strings.Join(dToks, " "),
 		}
 	}
 	if langWarnCount > 0 {
