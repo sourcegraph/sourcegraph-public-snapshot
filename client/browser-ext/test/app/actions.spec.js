@@ -59,16 +59,12 @@ describe("actions", () => {
 
 		it("200s", () => {
 			fetchMock.mock(repoCreateAPI, "POST", 200);
-		    return assertAsyncActionsDispatched(actions.ensureRepoExists(repo), {createdRepos: {}}, [{type: types.CREATED_REPO, repo}]);
+		    return assertAsyncActionsDispatched(actions.ensureRepoExists(repo), {}, []);
 		});
 
 		it("409s", () => {
 			fetchMock.mock(repoCreateAPI, "POST", 409);
-		    return assertAsyncActionsDispatched(actions.ensureRepoExists(repo), {createdRepos: {}}, [{type: types.CREATED_REPO, repo}]);
-		});
-
-		it("noops when status is cached", () => {
-			return assertAsyncActionsDispatched(actions.ensureRepoExists(repo), {createdRepos: {[repo]: true}}, []);
+		    return assertAsyncActionsDispatched(actions.ensureRepoExists(repo), {}, []);
 		});
 	});
 
