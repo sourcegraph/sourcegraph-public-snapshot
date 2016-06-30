@@ -49,7 +49,7 @@ class DashboardContainer extends Container {
 	}
 
 	_goToSearch(query: string) {
-		this.context.router.replace(locationForSearch(this.props.location, query, true, true));
+		this.context.router.push(locationForSearch(this.props.location, query, true, true));
 	}
 
 	_handleInput: Function;
