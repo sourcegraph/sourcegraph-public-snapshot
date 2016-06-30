@@ -196,7 +196,7 @@ func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var deps []string
-	if _, ok := q["Dependencies"]; ok {
+	if _, ok := q["IncludeDeps"]; ok {
 		uris := []string{}
 		for _, r := range remoteRepos.RemoteRepos {
 			// TODO better domain stripping
