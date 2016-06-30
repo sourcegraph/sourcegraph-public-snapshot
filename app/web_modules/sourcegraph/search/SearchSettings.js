@@ -176,10 +176,9 @@ class SearchSettings extends Container {
 								if (this.props.githubToken) this._setScope({popular: !scope.popular});
 							}}
 							outline={this.state.githubToken && !scope.popular}>Popular libraries</Button>
-						{/* TEMPORARY: do not inlude the CTAs below */}
-						{false && (!this.state.signedIn || !this.props.githubToken) &&
+						{(!this.state.signedIn || !this.props.githubToken) &&
 							<GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>Your public projects + deps</GitHubAuthButton>}
-						{false && this.props.githubToken &&
+						{this.props.githubToken &&
 							<Button
 								color={!scope.public ? "default" : "blue"}
 								size="small"
@@ -187,9 +186,9 @@ class SearchSettings extends Container {
 								onClick={() => this._setScope({public: !scope.public})}
 								outline={!scope.public}>Your public projects + deps</Button>
 						}
-						{false && (!this.state.signedIn || !this._hasPrivateGitHubToken()) &&
+						{(!this.state.signedIn || !this._hasPrivateGitHubToken()) &&
 							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>Your private projects + deps</GitHubAuthButton>}
-						{false && this._hasPrivateGitHubToken() &&
+						{this._hasPrivateGitHubToken() &&
 							<Button
 								color={!scope.private ? "default" : "blue"}
 								size="small"

@@ -139,6 +139,13 @@ class GlobalSearch extends Container {
 		return uniq(repos);
 	}
 
+	_chunkReposScope(scope) {
+		let arrays = [];
+		let batchSize = 10;
+		while (scope.length > 0) arrays.push(scope.splice(0, batchSize));
+		return arrays;
+	}
+
 	_parseRemoteRepoURIsAndDeps(repos, deps) {
 		let uris = [];
 		for (let repo of repos) {
@@ -170,13 +177,16 @@ class GlobalSearch extends Container {
 		state.matchingResults = this._langs(state).reduce((memo, lang) => {
 			const reposScope = this._reposScope(state, lang);
 			if (reposScope && reposScope.length > 0) {
-				const results = SearchStore.get(`${lang} ${state.query}`, this._reposScope(state, lang), null, null, RESULTS_LIMIT,
-					this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
-				if (results) {
-					memo.fetching = false;
-					if (results.Repos) memo.Repos.push(...results.Repos);
-					if (results.Defs) memo.Defs.push(...results.Defs);
-					if (results.Options) memo.Options.push(...results.Options);
+				const batches = this._chunkReposScope(reposScope);
+				for (const batch of batches) {
+					const results = SearchStore.get(`${lang} ${state.query}`, batch, null, null, RESULTS_LIMIT,
+						this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
+					if (results && !results.Error) {
+						memo.fetching = false;
+						if (results.Repos) memo.Repos.push(...results.Repos);
+						if (results.Defs) memo.Defs.push(...results.Defs);
+						if (results.Options) memo.Options.push(...results.Options);
+					}
 				}
 			}
 			return memo;
@@ -198,14 +208,17 @@ class GlobalSearch extends Container {
 		for (const lang of langs) {
 			const reposScope = this._reposScope(state, lang);
 			if (!reposScope || reposScope.length === 0 || !this._canSearch(state)) continue;
-			Dispatcher.Backends.dispatch(new SearchActions.WantResults({
-				query: `${lang} ${state.query}`,
-				limit: RESULTS_LIMIT,
-				prefixMatch: this.props.location.query.prefixMatch,
-				includeRepos: this.props.location.query.includeRepos,
-				fast: true,
-				repos: reposScope,
-			}));
+			const batches = this._chunkReposScope(reposScope);
+			for (const batch of batches) {
+				Dispatcher.Backends.dispatch(new SearchActions.WantResults({
+					query: `${lang} ${state.query}`,
+					limit: RESULTS_LIMIT,
+					prefixMatch: this.props.location.query.prefixMatch,
+					includeRepos: this.props.location.query.includeRepos,
+					fast: true,
+					repos: batch,
+				}));
+			}
 		}
 	}
 
