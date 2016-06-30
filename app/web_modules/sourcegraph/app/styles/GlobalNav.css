@@ -69,7 +69,7 @@
 @keyframes spin { 50% { transform: rotate(180deg) scale(1.2) } 100% { transform: rotate(180deg) scale(1)} }
 
 .action {
-	composes: ml3 from base;
+	composes: mh2 from base;
 	display: inline-block;
 	white-space: nowrap;
 	cursor: pointer;
@@ -135,7 +135,6 @@
 @value search-form-max-width 1000px;
 .search {
 	flex: 1 0;
-	composes: mr3 from base;
 	composes: br from base;
 	border-color: nav-border-color;
 }

@@ -106,7 +106,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 				</div>}
 
 				{!signedIn &&
-					<div styleName="tr" className={`${base.pv2} ${base.pr2}`}>
+					<div styleName="tr" className={`${base.pv2} ${base.ph1}`}>
 						<div styleName="action">
 							<LocationStateToggleLink href="/login" modalName="login" location={location}
 								onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ShowLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
