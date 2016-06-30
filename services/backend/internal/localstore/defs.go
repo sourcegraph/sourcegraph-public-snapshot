@@ -208,7 +208,7 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 	totalEnd := obs.start("search_total")
 	defer totalEnd()
 
-	bowQuery := search.UserQueryToksToTSQuery(op.TokQuery)
+	bowQuery := strings.Join(op.TokQuery, " & ")
 	lastTok := ""
 	if len(op.TokQuery) > 0 {
 		lastTok = op.TokQuery[len(op.TokQuery)-1]

@@ -68,11 +68,3 @@ func appendRepeated(s []string, w string, count int) []string {
 	}
 	return s
 }
-
-func UserQueryToksToTSQuery(toks []string) string {
-	if len(toks) == 0 {
-		return ""
-	}
-	tokMatch := strings.Join(toks, " & ")
-	return tokMatch
-}
