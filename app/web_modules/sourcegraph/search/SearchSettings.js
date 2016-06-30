@@ -147,7 +147,7 @@ class SearchSettings extends Container {
 							styleName="choice-button"
 							onClick={() => this.setState({betaLanguage: "more"})}
 							outline={true}>
-								More languages
+								More...
 						</Button>
 					</LocationStateToggleLink>
 				</div>
