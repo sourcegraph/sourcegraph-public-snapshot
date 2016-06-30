@@ -241,7 +241,11 @@ class SearchForm extends React.Component {
 	}
 
 	_handleFocus(ev: Event) {
-		this.setState({focused: true, open: true});
+		const update = {focused: true, open: true};
+		if (this._input && this._input.value) {
+			update.query = this._input.value;
+		}
+		this.setState(update);
 	}
 
 	_handleBlur(ev: Event) {
@@ -271,20 +275,17 @@ class SearchForm extends React.Component {
 						onClick={this._handleFocus}
 						onChange={this._handleChange} />
 				</form>
-				{this.props.showResultsPanel && this.state.open && <SearchResultsPanel repo={this.props.repo} location={this.props.location} />}
+				{this.props.showResultsPanel && this.state.open && <SearchResultsPanel query={this.state.query || ""} repo={this.props.repo} location={this.props.location} />}
 			</div>
 		);
 	}
 }
 SearchForm = CSSModules(SearchForm, styles);
 
-let SearchResultsPanel = ({repo, location}: {repo: ?string, location: RouterLocation}) => {
-	const q = queryFromStateOrURL(location);
-	return (
-		<Panel hoverLevel="high" styleName="search-panel">
-			<SearchSettings styleName="search-settings" innerClassName={styles["search-settings-inner"]} location={location} repo={repo} />
-			<GlobalSearch styleName="search-results" query={q || ""} repo={repo} location={location} resultClassName={styles["search-result"]} />
-		</Panel>
-	);
-};
+let SearchResultsPanel = ({repo, location, query}: {repo: ?string, location: RouterLocation, query: string}) =>
+	<Panel hoverLevel="high" styleName="search-panel">
+		<SearchSettings styleName="search-settings" innerClassName={styles["search-settings-inner"]} location={location} repo={repo} />
+		<GlobalSearch styleName="search-results" query={query} repo={repo} location={location} resultClassName={styles["search-result"]} />
+	</Panel>;
+
 SearchResultsPanel = CSSModules(SearchResultsPanel, styles);
