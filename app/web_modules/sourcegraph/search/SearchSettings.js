@@ -213,7 +213,7 @@ class SearchSettings extends Container {
 				{this.props.location.state && this.props.location.state.modal === "beta" && this.state.betaLanguage &&
 					<LocationStateModal modalName="beta" location={this.props.location}>
 						<div styleName="modal">
-							<h2 styleName="modalTitle">Participate in the Sourcegraph beta {`${this.state.betaLanguage === "more" ? "" : `for ${langName(this.state.betaLanguage)}`}`}</h2>
+							<h2 styleName="modalTitle">Participate in the Sourcegraph beta for {`${this.state.betaLanguage === "more" ? "your preferred language" : `${langName(this.state.betaLanguage)}`}`}</h2>
 							<InterestForm
 								rowClass={styles.modalRow}
 								language={this.state.betaLanguage === "more" ? null : this.state.betaLanguage}
