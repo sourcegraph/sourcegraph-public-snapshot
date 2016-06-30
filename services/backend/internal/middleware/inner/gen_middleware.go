@@ -40,6 +40,7 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sqs/pbtypes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/middleware/inner/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
@@ -66,8 +67,15 @@ func Services() svc.Services {
 		  	trace.After(ctx, "<<<$service.Name>>>", "<<<.Name>>>", param, err, time.Since(start))
 			}()
 			res, err = backend.Services.<<<$service.Name>>>.<<<.Name>>>(ctx, param)
-			if res == nil && err == nil {
-				err = grpc.Errorf(codes.Internal, "<<<$service.Name>>>.<<<.Name>>> returned nil, nil")
+			if err != nil {
+				actor := auth.ActorFromContext(ctx)
+				code := grpc.Code(err)
+				if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+					// Sanitize, because these errors should not be user visible.
+					err = grpc.Errorf(code, "<<<$service.Name>>>.<<<.Name>>> failed with internal error. Please report this to Sourcegraph support.")
+				} else if res == nil && err == nil {
+					err = grpc.Errorf(codes.Internal, "<<<$service.Name>>>.<<<.Name>>> returned nil, nil")
+				}
 			}
 			return
 		}
