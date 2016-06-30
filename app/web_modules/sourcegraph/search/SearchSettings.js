@@ -131,6 +131,7 @@ class SearchSettings extends Container {
 								</Button>
 							</LocationStateToggleLink> :
 							<Button
+								id={`e2etest-search-lang-select-${lang}`}
 								key={lang}
 								color={!langs.includes(lang) ? "default" : "blue"}
 								size="small"
