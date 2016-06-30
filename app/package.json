@@ -62,6 +62,7 @@
     "lodash.debounce": "^4.0.6",
     "lodash.get": "^4.3.0",
     "lodash.trimleft": "^3.0.4",
+    "lodash.uniq": "^4.3.0",
     "raven-js": "1.1.19",
     "react": "^15.1.0",
     "react-css-modules": "^3.7.6",

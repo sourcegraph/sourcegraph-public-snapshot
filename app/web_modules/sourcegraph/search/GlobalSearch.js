@@ -11,7 +11,7 @@ import SearchStore from "sourcegraph/search/SearchStore";
 import RepoStore from "sourcegraph/repo/RepoStore";
 import "sourcegraph/search/SearchBackend";
 import UserStore from "sourcegraph/user/UserStore";
-import uniq from "lodash/array/uniq";
+import uniq from "lodash.uniq";
 import debounce from "lodash.debounce";
 import trimLeft from "lodash.trimleft";
 import * as SearchActions from "sourcegraph/search/SearchActions";

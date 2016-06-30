@@ -8,19 +8,9 @@ declare module "lodash.trimleft" {
 	declare var exports: typeof trimLeft;
 }
 
-declare module "lodash/array/last" {
-	declare function last(array: Array<any>): any;
-	declare var exports: typeof last;
-}
-
-declare module "lodash/array/uniq" {
+declare module "lodash.uniq" {
 	declare function uniq(array: Array<any>): Array<any>;
 	declare var exports: typeof uniq;
-}
-
-declare module "lodash/number/random" {
-	declare function random(lower: number, upper: ?number, floating: ?boolean): any;
-	declare var exports: typeof random;
 }
 
 declare module "lodash.get" {
