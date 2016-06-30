@@ -7,11 +7,14 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import * as UserActions from "sourcegraph/user/UserActions";
 import base from "sourcegraph/components/styles/_base.css";
 import {languages, editors} from "./HomeUtils";
+import {langName} from "sourcegraph/Language";
 
 class InterestForm extends React.Component {
 
 	static propTypes = {
 		onSubmit: React.PropTypes.func.isRequired,
+		rowClass: React.PropTypes.string,
+		language: React.PropTypes.string,
 	}
 
 	constructor(props) {
@@ -49,32 +52,32 @@ class InterestForm extends React.Component {
 			<form onSubmit={this._sendForm.bind(this)}>
 				{this.state.formError && <div>{this.state.formError}</div>}
 				<div styleName="container">
-					<div styleName="table-row">
+					<div styleName="table-row" className={this.props.rowClass}>
 						<span styleName="full-input">
 							<input styleName="input-field" type="text" name="firstName" placeholder="Name" required={true}/>
 						</span>
 					</div>
-					<div styleName="table-row">
+					<div styleName="table-row" className={this.props.rowClass}>
 						<span styleName="full-input">
 							<input styleName="input-field" type="email" name="emailAddress" placeholder="Email address" required={true}/>
 						</span>
 					</div>
-					<div styleName="table-row">
+					<div styleName="table-row" className={this.props.rowClass}>
 						<span styleName="full-input">
 							<Selector title="Preferred editor" valueArray={editors} />
 						</span>
 					</div>
-					<div styleName="table-row">
+					<div styleName="table-row" className={this.props.rowClass}>
 						<span styleName="full-input">
-							<Selector title="Preferred language" valueArray={languages} />
+							<Selector title="Preferred language" valueArray={languages} defaultValue={this.props.language ? langName(this.props.language) : null} />
 						</span>
 					</div>
-					<div styleName="table-row">
+					<div styleName="table-row" className={this.props.rowClass}>
 						<span styleName="full-input">
 							<textarea styleName="input-field" name="message" placeholder="Other / comments"></textarea>
 						</span>
 					</div>
-					<div styleName="table-row" className={base.pb4}>
+					<div styleName="table-row" className={`${base.pb4} ${this.props.rowClass || ""}`}>
 						<span styleName="full-input">
 							<Button styleName="button" type="submit" color="purple">Get early access</Button>
 						</span>

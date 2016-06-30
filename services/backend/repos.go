@@ -35,6 +35,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/test/e2e/e2etestuser"
+	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -97,6 +98,34 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 		return nil, err
 	}
 	return &sourcegraph.RepoList{Repos: repos}, nil
+}
+
+//  ListDeps lists dependencies for a given list of repo URIs.
+//
+// TODO properly support using repo IDs instead of URIs.
+func (s *repos) ListDeps(ctx context.Context, repos *sourcegraph.URIList) (*sourcegraph.URIList, error) {
+	repoFilters := []srcstore.UnitFilter{
+		srcstore.ByRepos(repos.URIs...),
+	}
+	units, err := store.GraphFromContext(ctx).Units(repoFilters...)
+	if err != nil {
+		return nil, err
+	}
+
+	deps := make(map[string]struct{})
+	for _, u := range units {
+		for _, d := range u.Info.Dependencies {
+			deps[d.Name] = struct{}{}
+		}
+	}
+	uris := []string{}
+	for d, _ := range deps {
+		uris = append(uris, d)
+	}
+
+	return &sourcegraph.URIList{
+		URIs: uris,
+	}, nil
 }
 
 func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {

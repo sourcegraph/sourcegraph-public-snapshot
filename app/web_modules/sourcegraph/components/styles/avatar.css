@@ -34,16 +34,3 @@
 	max-width: 4rem;
 	max-height: 4rem;
 }
-
-.small:hover {
-	transition: transform .2s ease-out;
-	transform: scale(1.2);
-}
-.medium:hover {
-	transition: transform .2s ease-out;
-	transform: scale(1.2);
-}
-.large:hover {
-	transition: transform .2s ease-out;
-	transform: scale(1.2);
-}

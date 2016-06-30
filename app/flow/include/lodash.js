@@ -8,6 +8,11 @@ declare module "lodash.trimleft" {
 	declare var exports: typeof trimLeft;
 }
 
+declare module "lodash.uniq" {
+	declare function uniq(array: Array<any>): Array<any>;
+	declare var exports: typeof uniq;
+}
+
 declare module "lodash.get" {
 	declare function get(object: Object, path: Array<string> | string, defaultValue: ?any): any;
 	declare var exports: typeof get;

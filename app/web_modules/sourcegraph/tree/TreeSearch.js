@@ -10,33 +10,20 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import debounce from "lodash.debounce";
 import trimLeft from "lodash.trimleft";
 import TreeStore from "sourcegraph/tree/TreeStore";
-import DefStore from "sourcegraph/def/DefStore";
-import SearchStore from "sourcegraph/search/SearchStore";
 import "sourcegraph/tree/TreeBackend";
-import "sourcegraph/def/DefBackend";
-import "sourcegraph/search/SearchBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
-import * as DefActions from "sourcegraph/def/DefActions";
-import * as SearchActions from "sourcegraph/search/SearchActions";
 import Header from "sourcegraph/components/Header";
-import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToBlob} from "sourcegraph/blob/routes";
-import {urlToDef} from "sourcegraph/def/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
-import {urlToBuilds} from "sourcegraph/build/routes";
-import type {Def} from "sourcegraph/def";
 import type {Route} from "react-router";
 
-import {Input, Loader} from "sourcegraph/components";
+import {Input} from "sourcegraph/components";
 import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/Tree.css";
 
-const SYMBOL_LIMIT = 5;
-const GLOBAL_DEFS_LIMIT = 3;
-const LOCAL_DEFS_LIMIT = 10;
 const FILE_LIMIT = 15;
 const EMPTY_PATH = [];
 
@@ -93,10 +80,6 @@ type TreeSearchState = {
 	query: string;
 	focused: boolean;
 	selectionIndex: number;
-	matchingDefs: ?{Defs: Array<Def>};
-	lastDefinedMatchingDefs?: ?{Defs: Array<Def>};
-	xdefs: ?{Defs: Array<Def>};
-	defListFilePathPrefix: ?string;
 	fileResults: any; // Array<any> | {Error: any};
 	srclibDataVersion?: Object;
 	fileTree?: any;
@@ -134,10 +117,7 @@ class TreeSearch extends Container {
 			repo: "",
 			query: "",
 			focused: !props.overlay,
-			matchingDefs: null,
-			xdefs: null,
 			selectionIndex: 0,
-			defListFilePathPrefix: null,
 			onChangeQuery: (query: string) => { /* do nothing */ },
 			onSelectPath: (path: string) => { /* do nothing */ },
 			fileResults: [],
@@ -167,10 +147,9 @@ class TreeSearch extends Container {
 		if (global.document) {
 			document.removeEventListener("keydown", this._handleKeyDown);
 		}
-		if (this._srclibBuildingInterval) clearInterval(this._srclibBuildingInterval);
 	}
 
-	stores(): Array<Object> { return [TreeStore, DefStore, SearchStore]; }
+	stores(): Array<Object> { return [TreeStore]; }
 
 	reconcileState(state: TreeSearchState, props: TreeSearchProps): void {
 		// $FlowHack
@@ -180,84 +159,13 @@ class TreeSearch extends Container {
 
 		state.fileTree = TreeStore.fileTree.get(state.repo, state.commitID);
 		state.fileList = TreeStore.fileLists.get(state.repo, state.commitID);
-
-		// Limit defs to the current directory unless we're querying. That
-		// should be global to be consistent with file list behavior (for which
-		// searches are global).
-		state.defListFilePathPrefix = state.query || state.path === "/" ? null : `${state.path}/`;
-		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.commitID);
-
-		if (state.rev && state.rev.length === 40) {
-			state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query, state.defListFilePathPrefix) : null;
-		} else {
-			state.matchingDefs = SearchStore.get(state.query, [this.props.repo], null, null, LOCAL_DEFS_LIMIT);
-		}
-
-		state.xdefs = SearchStore.get(state.query, null, [this.props.repo], null, GLOBAL_DEFS_LIMIT);
 	}
 
 	onStateTransition(prevState: TreeSearchState, nextState: TreeSearchState) {
 		const prefetch = nextState.prefetch && nextState.prefetch !== prevState.prefetch;
 		if (prefetch || nextState.repo !== prevState.repo || nextState.commitID !== prevState.commitID) {
 			if (nextState.commitID) {
-				Dispatcher.Backends.dispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.commitID));
 				Dispatcher.Backends.dispatch(new TreeActions.WantFileList(nextState.repo, nextState.commitID));
-			}
-		}
-
-		// If there was previously a response from the server but no srclib
-		// data version, i.e., if the repository has not been built recently
-		// then poll against the server for an update periodically.
-		const pollSrclibVersion = nextState.srclibDataVersion && !nextState.srclibDataVersion.CommitID;
-		if (pollSrclibVersion && nextState.commitID && !this._srclibBuildingInterval) {
-			const pollInterval = 500;
-			this._srclibBuildingInterval = setInterval(() => {
-				Dispatcher.Backends.dispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.commitID, null, true));
-			}, pollInterval);
-		} else if (!pollSrclibVersion && this._srclibBuildingInterval) {
-			clearInterval(this._srclibBuildingInterval);
-			this._srclibBuildingInterval = null;
-		}
-
-		if (prevState.query !== nextState.query || prevState.repo !== nextState.repo) {
-			if (nextState.rev && nextState.rev.length === 40) {
-				if (prevState.srclibDataVersion !== nextState.srclibDataVersion || prevState.query !== nextState.query || prevState.defListFilePathPrefix !== nextState.defListFilePathPrefix) {
-					// Only fetch on the client, not server, so that we don't
-					// cache stale def lists prior to the repo's first build.
-					if (typeof document !== "undefined" && nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
-						Dispatcher.Backends.dispatch(
-							new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query, nextState.defListFilePathPrefix, nextState.overlay || false),
-						);
-					}
-				}
-			} else {
-				Dispatcher.Backends.dispatch(new SearchActions.WantResults({
-					query: nextState.query,
-					repos: [nextState.repo],
-					limit: LOCAL_DEFS_LIMIT,
-				}));
-			}
-		}
-		Dispatcher.Backends.dispatch(new SearchActions.WantResults({
-			query: nextState.query,
-			notRepos: [nextState.repo],
-			limit: GLOBAL_DEFS_LIMIT,
-		}));
-
-		if (prevState.matchingDefs && prevState.matchingDefs !== nextState.matchingDefs) {
-			nextState.lastDefinedMatchingDefs = prevState.matchingDefs;
-		}
-
-		if (prevState.matchingDefs !== nextState.matchingDefs) {
-			// Keep selectionIndex on same file item even after def results are loaded. Prevents
-			// the selection from jumping around as more data comes in.
-			const prevNumDefs = Math.min(SYMBOL_LIMIT, prevState.matchingDefs && prevState.matchingDefs.Defs ? prevState.matchingDefs.Defs.filter(this._symbolFilter).length : 0);
-			const nextNumDefs = Math.min(SYMBOL_LIMIT, nextState.matchingDefs && nextState.matchingDefs.Defs ? nextState.matchingDefs.Defs.filter(this._symbolFilter).length : 0);
-			const defWasSelected = nextState.selectionIndex < prevNumDefs || (prevState.fileResults && prevState.fileResults.length === 0);
-			if (defWasSelected) {
-				nextState.selectionIndex = 0;
-			} else {
-				nextState.selectionIndex += (nextNumDefs - prevNumDefs);
 			}
 		}
 
@@ -392,16 +300,6 @@ class TreeSearch extends Container {
 		this._selectedItem = e;
 	}
 
-	_numSymbolResults(): number {
-		if (!this.state.matchingDefs || !this.state.matchingDefs.Defs) return 0;
-		return Math.min(this.state.matchingDefs.Defs.filter(this._symbolFilter).length, SYMBOL_LIMIT);
-	}
-
-	_numXDefResults(): number {
-		if (!this.state.xdefs || !this.state.xdefs.Defs) return 0;
-		return this.state.xdefs.Defs.length;
-	}
-
 	_numFileResults(): number {
 		if (!this.state.fileResults) return 0;
 		let numFileResults = Math.min(this.state.fileResults.length, FILE_LIMIT);
@@ -412,7 +310,7 @@ class TreeSearch extends Container {
 	}
 
 	_numResults(): number {
-		return this._numFileResults() + this._numSymbolResults() + this._numXDefResults();
+		return this._numFileResults();
 	}
 
 	_normalizedSelectionIndex(): number {
@@ -421,40 +319,20 @@ class TreeSearch extends Container {
 
 	_onSelection() {
 		const i = this._normalizedSelectionIndex();
-		if (i < this._numSymbolResults()) {
-			// Def result
-			if (!this.state.matchingDefs || !this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.length === 0) return;
-			const def = this.state.matchingDefs.Defs.filter(this._symbolFilter)[i];
-			this._navigateTo(urlToDef(def, this.state.rev));
-		} else if (i >= this._numSymbolResults() && i < this._numSymbolResults() + this._numXDefResults()) {
-			// XDef result
-			if (!this.state.xdefs || !this.state.xdefs.Defs || this.state.xdefs.Defs.length === 0) return;
-			let d = i - this._numSymbolResults();
-			// $FlowHack: this.state.xdefs is non-null
-			const def = this.state.xdefs.Defs[d];
-			this._navigateTo(urlToDef(def));
+		if (!this.state.fileResults) return;
+		let result = this.state.fileResults[i];
+		if (!result) return;
+		if (result.isDirectory) {
+			this.state.onSelectPath(result.path);
 		} else {
-			// File or dir result
-			if (!this.state.fileResults) return;
-			let d = i - (this._numSymbolResults() + this._numXDefResults());
-			let result = this.state.fileResults[d];
-			if (!result) return;
-			if (result.isDirectory) {
-				this.state.onSelectPath(result.path);
-			} else {
-				this._navigateTo(result.url);
-			}
+			this._navigateTo(result.url);
 		}
 	}
 
 	// returns the selected directory name, or null
 	_getSelectedPathPart(): ?string {
 		const i = this._normalizedSelectionIndex();
-		if (i < this._numSymbolResults()) {
-			return null;
-		}
-
-		const result = this.state.fileResults[i - this._numSymbolResults()];
+		const result = this.state.fileResults[i];
 		if (result.isDirectory) return result.name;
 		return null;
 	}
@@ -462,16 +340,12 @@ class TreeSearch extends Container {
 	// returns the selected file name, or null
 	_getSelectedFile(): ?string {
 		const i = this._normalizedSelectionIndex();
-		if (i < this._numSymbolResults()) {
-			return null;
-		}
-
-		const result = this.state.fileResults[i - this._numSymbolResults()];
+		const result = this.state.fileResults[i];
 		if (!result.isDirectory) return result.name;
 		return null;
 	}
 
-	_listItems(offset: number): Array<any> {
+	_listItems(): Array<any> {
 		const items = this.state.fileResults;
 		const emptyItem = <div styleName="list-item list-item-empty" key="_nofiles"><i>No matches.</i></div>;
 		if (!items || items.length === 0) return [emptyItem];
@@ -486,7 +360,7 @@ class TreeSearch extends Container {
 			let item = items[i],
 				itemURL = item.url;
 
-			const selected = this._normalizedSelectionIndex() - offset === i;
+			const selected = this._normalizedSelectionIndex() === i;
 
 			let icon;
 			if (item.isParentDirectory) icon = null;
@@ -496,7 +370,7 @@ class TreeSearch extends Container {
 			let key = `f:${itemURL}`;
 			list.push(
 				<Link styleName={`${selected ? "list-item-selected" : "list-item"} ${item.isParentDirectory ? "parent-dir" : ""}`}
-					onMouseOver={(ev) => this._mouseSelectItem(ev, i + this._numSymbolResults() + this._numXDefResults())}
+					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : null}
 					to={itemURL}
 					key={key}>
@@ -537,63 +411,6 @@ class TreeSearch extends Container {
 		this._ignoreMouseSelection = true;
 	}
 
-	_symbolFilter(def) {
-		// Do not show package results.
-		return def.Kind !== "package";
-	}
-
-	_symbolItems(offset: number): ?Array<any> {
-		if (!this.state.srclibDataVersion || !this.state.srclibDataVersion.CommitID) return null;
-
-		const contentPlaceholderItem = (i) => (
-			<div styleName="list-item" key={`_nosymbol${i}`}>
-				<div styleName="content-placeholder" style={{width: `${20 + ((i+1)*39)%60}%`}}><code>&nbsp;</code></div>
-			</div>
-		);
-		if (!this.state.matchingDefs) {
-			let numPlaceholders = 1;
-			if (!this.state.query) {
-				numPlaceholders = SYMBOL_LIMIT;
-			} else if (this.state.lastDefinedMatchingDefs && this.state.lastDefinedMatchingDefs.Defs) {
-				numPlaceholders = Math.min(Math.max(1, this.state.lastDefinedMatchingDefs.Defs.length), SYMBOL_LIMIT);
-			}
-			const placeholders = [];
-			for (let i = 0; i < numPlaceholders; i++) {
-				placeholders.push(contentPlaceholderItem(i));
-			}
-			return placeholders;
-		}
-
-		if (this.state.matchingDefs && (!this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.filter(this._symbolFilter).length === 0)) {
-			return [<div styleName="list-item list-item-empty" key="_nosymbol"><i>No matches.</i></div>];
-		}
-
-		const defs = this.state.matchingDefs.Defs.filter(this._symbolFilter);
-		let list = [],
-			limit = defs.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : defs.length;
-		for (let i = 0; i < limit; i++) {
-			let def = defs[i];
-			list.push(this._defToLink(def, this.state.rev, offset + i, "i"));
-		}
-
-		return list;
-	}
-
-	_defToLink(def: Def, rev: ?string, i: number, prefix: string) {
-		const selected = this._normalizedSelectionIndex() === i;
-		let defURL = urlToDef(def, rev);
-		let key = `${prefix}:${defURL}`;
-		return (
-				<Link styleName={selected ? "list-item-selected" : "list-item"}
-					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
-					ref={selected ? this._setSelectedItem : null}
-					to={defURL}
-					key={key}>
-						<code>{qualifiedNameAndType(def)}</code>
-				</Link>
-		);
-	}
-
 	render() {
 		if (this.state.fileResults && this.state.fileResults.Error) {
 			let code = httpStatusCode(this.state.fileResults.Error);
@@ -604,9 +421,7 @@ class TreeSearch extends Container {
 			);
 		}
 
-		let symbolItems = this._symbolItems(0) || [];
-		let listItems = this._listItems(this._numSymbolResults() + this._numXDefResults()) || [];
-
+		let listItems = this._listItems() || [];
 		return (
 			<div styleName="tree-common">
 				<div styleName="input-container">
@@ -618,23 +433,9 @@ class TreeSearch extends Container {
 						onInput={this._handleInput}
 						autoFocus={true}
 						defaultValue={this.state.query}
-						placeholder="Jump to symbols or files..."
+						placeholder="Jump to files..."
 						spellCheck={false}
 						domRef={(e) => this._queryInput = e} />
-				</div>
-				<div styleName="list-header">
-					Symbols in current repository
-				</div>
-				<div>
-					{symbolItems}
-					{this.state.srclibDataVersion && !this.state.srclibDataVersion.CommitID &&
-						<div styleName="list-item list-item-empty">
-							<span style={{paddingRight: "1rem"}}><Loader /></span>
-							<i>Sourcegraph is analyzing your code &mdash;
-								<Link styleName="link" to={urlToBuilds(this.state.repo)}>results will be available soon!</Link>
-							</i>
-						</div>
-					}
 				</div>
 
 				<div styleName="list-header">

@@ -38,7 +38,6 @@ Prevent scrolling the main content when a modal is being displayed.
 
 .main-container-homepage {
 	composes: main-container;
-	composes: bg-pale-blue from colors;
 }
 
 /* Responsive type scaling */

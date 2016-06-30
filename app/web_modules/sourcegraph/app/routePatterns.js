@@ -8,7 +8,6 @@ export type RouteName = "styleguide" |
 	"home" |
 	"tools" |
 	"tool" |
-	"tour" |
 	"settings" |
 	"settingsRepos" |
 	"commit" |
@@ -34,7 +33,7 @@ export type RouteName = "styleguide" |
 	"coverage" |
 	"adminCoverage";
 
-// NOTE: If you add a top-level route (e.g., "/tour"), add it to the
+// NOTE: If you add a top-level route (e.g., "/about"), add it to the
 // topLevel list in app/internal/ui/router.go.
 export const rel: {[key: RouteName]: string} = {
 	search: "search",
@@ -48,7 +47,6 @@ export const rel: {[key: RouteName]: string} = {
 	home: "",
 	tools: "tools",
 	tool: "tools/*",
-	tour: "tour",
 	settings: "settings/",
 	settingsRepos: "repos",
 	login: "login",
@@ -79,7 +77,6 @@ export const abs: {[key: RouteName]: string} = {
 	home: rel.home,
 	tools: rel.tools,
 	tool: rel.tool,
-	tour: rel.tour,
 	settings: rel.settings,
 	settingsRepos: `${rel.settings}/${rel.settingsRepos}`,
 	login: rel.login,

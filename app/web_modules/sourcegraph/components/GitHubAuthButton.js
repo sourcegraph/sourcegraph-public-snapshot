@@ -20,12 +20,13 @@ class GitHubAuthButton extends React.Component {
 			React.PropTypes.element,
 			React.PropTypes.string,
 		]),
+		size: React.PropTypes.string,
 	};
 	static contextTypes = {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 	static defaultProps = {
-		scopes: null,
+		scopes: "",
 		returnTo: null,
 		color: "blue",
 		outline: false,
@@ -33,13 +34,13 @@ class GitHubAuthButton extends React.Component {
 	};
 
 	render() {
-		const {scopes, returnTo, outline, color, block, children} = this.props;
+		const {scopes, returnTo, outline, color, block, children, size} = this.props;
 		const url = urlToGitHubOAuth(scopes, returnTo);
 		return (
 			<a href={url}
 				onClick={() => this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow")} {...this.props}>
-				<Button type="button" outline={outline} formNoValidate={true} color={color} block={block}>
-					<GitHubIcon className={type.f4} />&nbsp; {children}
+				<Button type="button" outline={outline} formNoValidate={true} color={color} block={block} size={size}>
+					<GitHubIcon className={size === "small" ? type.f5 : type.f4} />&nbsp; {children}
 				</Button>
 			</a>
 		);

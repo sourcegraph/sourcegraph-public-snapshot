@@ -1,0 +1,30 @@
+@value vars "sourcegraph/components/styles/_vars.css";
+@value base "sourcegraph/components/styles/_base.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value layout "sourcegraph/components/styles/_layout.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+
+@value c_black-10 from colors;
+
+@value SearchSettings "sourcegraph/search/styles/SearchSettings.css";
+.search-settings {
+	composes: groups-bb from SearchSettings;
+	box-shadow: inset 0 7px 10px -7px c_black-10;
+}
+.search-settings-inner {
+	composes: ph3 mh2 from base;
+}
+
+.results {
+	composes: mh0 from base;
+}
+
+.bottom-border {
+	composes: bb from base;
+	composes: b--cool-pale-gray from colors;
+}
+
+.result {
+	composes: bottom-border;
+	composes: ph4 pt3 pb3 from base;
+}

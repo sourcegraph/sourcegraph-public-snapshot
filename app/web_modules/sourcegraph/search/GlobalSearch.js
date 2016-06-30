@@ -8,30 +8,38 @@ import {rel} from "sourcegraph/app/routePatterns";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import SearchStore from "sourcegraph/search/SearchStore";
+import RepoStore from "sourcegraph/repo/RepoStore";
 import "sourcegraph/search/SearchBackend";
+import UserStore from "sourcegraph/user/UserStore";
+import uniq from "lodash.uniq";
 import debounce from "lodash.debounce";
 import trimLeft from "lodash.trimleft";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
 import type {Options, Repo, Def} from "sourcegraph/def";
-
-import {Input, Icon} from "sourcegraph/components";
-
+import {Icon} from "sourcegraph/components";
+import {trimRepo} from "sourcegraph/repo";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalSearch.css";
 import base from "sourcegraph/components/styles/_base.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import popularRepos from "./popularRepos";
 
 export const RESULTS_LIMIT = 20;
+
+const resultIconSize = "24px";
 
 // GlobalSearch is the global search bar + results component.
 // Tech debt: this duplicates a lot of code with TreeSearch and we
 // should consider merging them at some point.
 class GlobalSearch extends Container {
 	static propTypes = {
+		repo: React.PropTypes.string,
 		location: React.PropTypes.object.isRequired,
 		query: React.PropTypes.string.isRequired,
+		className: React.PropTypes.string,
+		resultClassName: React.PropTypes.string,
 	};
 
 	static contextTypes = {
@@ -45,30 +53,42 @@ class GlobalSearch extends Container {
 		this.state = {
 			query: "",
 			matchingResults: {Repos: [], Defs: [], Options: []},
-			selectionIndex: 0,
+			className: null,
+			resultClassName: null,
+			selectionIndex: -1,
+			githubToken: null,
+			privateRepos: [],
+			publicRepos: [],
+			clickModifier: false,
 		};
 		this._handleKeyDown = this._handleKeyDown.bind(this);
+		this._handleKeyUp = this._handleKeyUp.bind(this);
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
-		this._handleInput = this._handleInput.bind(this);
-		this._onSelection = debounce(this._onSelection.bind(this), 100, {leading: false, trailing: true}); // Prevent rapid repeated selections
-		this._onChangeQuery = this._onChangeQuery.bind(this);
+		this._onSelection = debounce(this._onSelection.bind(this), 200, {leading: false, trailing: true});
+		this._dispatchQuery = debounce(this._dispatchQuery.bind(this), 200, {leading: false, trailing: true});
 	}
 
 	state: {
 		query: string;
+		className: ?string;
+		resultClassName: ?string;
 		matchingResults: {
 			Repos: Array<Repo>,
 			Defs: Array<Def>,
 			Options: Array<Options>,
 		};
 		selectionIndex: number;
+		privateRepos: Array<Repo>;
+		publicRepos: Array<Repo>;
+		clickModifier: boolean;
 	};
 
 	componentDidMount() {
 		super.componentDidMount();
 		if (global.document) {
 			document.addEventListener("keydown", this._handleKeyDown);
+			document.addEventListener("keyup", this._handleKeyUp);
 		}
 		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
 	}
@@ -77,73 +97,149 @@ class GlobalSearch extends Container {
 		super.componentWillUnmount();
 		if (global.document) {
 			document.removeEventListener("keydown", this._handleKeyDown);
+			document.removeEventListener("keyup", this._handleKeyUp);
 		}
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
 
 	_dispatcherToken: string;
 
-	stores(): Array<Object> { return [SearchStore]; }
+	_langs(state) {
+		if (!state) state = this.state;
+		return state.settings && state.settings.search && state.settings.search.languages ? state.settings.search.languages : [];
+	}
+
+	_scope(state) {
+		if (!state) state = this.state;
+		return state.settings && state.settings.search && state.settings.search.scope ? state.settings.search.scope :
+			{};
+	}
+
+	_scopeProperties(state) {
+		const scope = this._scope(state);
+		return Object.keys(scope).filter((key) => key === "repo" ? this.state.repo && Boolean(scope[key]) : Boolean(scope[key]));
+	}
+
+	_pageName() {
+		return this.props.location.pathname.slice(1) === rel.search ? `/${rel.search}` : "(global nav)";
+	}
+
+	_canSearch(state) {
+		const scope = this._scope(state);
+		return scope.public || scope.private || scope.repo || (scope.popular || !state.githubToken);
+	}
+
+	_reposScope(state, lang) {
+		const scope = this._scope(state);
+		let repos = [];
+		if (state.repo && scope.repo) repos.push(state.repo);
+		if ((scope.popular || !state.githubToken) && lang) repos.push(...popularRepos[lang]);
+		if (scope.public) repos.push(...state.publicRepos);
+		if (scope.private) repos.push(...state.privateRepos);
+		return uniq(repos);
+	}
+
+	_parseRemoteRepoURIsAndDeps(repos, deps) {
+		let uris = [];
+		for (let repo of repos) {
+			uris.push(`github.com/${repo.Owner}/${repo.Name}`);
+		}
+		if (deps) uris.push(...deps.filter((dep) => dep.startsWith("github.com")));
+		return uris;
+	}
+
+	stores(): Array<Object> { return [SearchStore, UserStore, RepoStore]; }
 
 	reconcileState(state: GlobalSearch.state, props) {
 		Object.assign(state, props);
-		state.matchingResults = SearchStore.get(state.query, null, null, null, RESULTS_LIMIT,
-			this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
+		state.githubToken = UserStore.activeGitHubToken;
+		state.settings = UserStore.settings.get();
+		state.className = props.className || "";
+		state.resultClassName = props.resultClassName || "";
+
+		const scope = this._scope(state);
+		if (scope.public) {
+			const repos = RepoStore.remoteRepos.getOpt({deps: true, private: false});
+			state.publicRepos = this._parseRemoteRepoURIsAndDeps(repos && repos.RemoteRepos ? repos.RemoteRepos : [], repos && repos.Dependencies ? repos.Dependencies : null);
+		}
+		if (scope.private) {
+			const repos = RepoStore.remoteRepos.getOpt({deps: true, private: true}) || [];
+			state.privateRepos = this._parseRemoteRepoURIsAndDeps(repos && repos.RemoteRepos ? repos.RemoteRepos : [], repos && repos.Dependencies ? repos.Dependencies : null);
+		}
+
+		state.matchingResults = this._langs(state).reduce((memo, lang) => {
+			const reposScope = this._reposScope(state, lang);
+			if (reposScope && reposScope.length > 0) {
+				const results = SearchStore.get(`${lang} ${state.query}`, this._reposScope(state, lang), null, null, RESULTS_LIMIT,
+					this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
+				if (results) {
+					memo.fetching = false;
+					if (results.Repos) memo.Repos.push(...results.Repos);
+					if (results.Defs) memo.Defs.push(...results.Defs);
+					if (results.Options) memo.Options.push(...results.Options);
+				}
+			}
+			return memo;
+		}, {Repos: [], Defs: [], Options: [], fetching: true});
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (prevState.query !== nextState.query) {
-			debounce((query) => {
-				Dispatcher.Backends.dispatch(new SearchActions.WantResults({
-					query: nextState.query,
-					limit: RESULTS_LIMIT,
-					prefixMatch: this.props.location.query.prefixMatch,
-					includeRepos: this.props.location.query.includeRepos,
-					fast: true,
-				}));
-			}, 200, {leading: false, trailing: true})(nextState.query);
+		if (prevState.query !== nextState.query ||
+			prevState.githubToken !== nextState.githubToken ||
+			prevState.settings !== nextState.settings ||
+			prevState.publicRepos !== nextState.publicRepos ||
+			prevState.privateRepos !== nextState.privateRepos) {
+			this._dispatchQuery(nextState);
+		}
+	}
+
+	_dispatchQuery(state) {
+		const langs = this._langs(state);
+		for (const lang of langs) {
+			const reposScope = this._reposScope(state, lang);
+			if (!reposScope || reposScope.length === 0 || !this._canSearch(state)) continue;
+			Dispatcher.Backends.dispatch(new SearchActions.WantResults({
+				query: `${lang} ${state.query}`,
+				limit: RESULTS_LIMIT,
+				prefixMatch: this.props.location.query.prefixMatch,
+				includeRepos: this.props.location.query.includeRepos,
+				fast: true,
+				repos: reposScope,
+			}));
 		}
 	}
 
 	__onDispatch(action) {
 		if (action.constructor === SearchActions.ResultsFetched) {
-			let globalSearchEventDict = {};
-			globalSearchEventDict["globalSearchQuery"] = this.state.query;
-			globalSearchEventDict["page name"] = this.props.location.pathname.slice(1) === rel.search ? "Global search homepage" : "Global search repo page";
-			if (this.state.matchingResults !== null) {
-				if (this.state.matchingResults.Options) {
-					if (this.state.matchingResults.Options[0]["Languages"] !== null) {
-						globalSearchEventDict["languages"] = this.state.matchingResults.Options[0]["Languages"];
-					}
-					if (this.state.matchingResults.Options[0]["Kinds"] !== null) {
-						globalSearchEventDict["kinds"] = this.state.matchingResults.Options[0]["Kinds"];
-					}
-				}
-			}
-			this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_SUCCESS, "GlobalSearchInitiated", globalSearchEventDict);
+			let eventProps = {};
+			eventProps["globalSearchQuery"] = this.state.query;
+			eventProps["page name"] = this._pageName();
+			eventProps["languages"] = this._langs(this.state);
+			eventProps["repo_scope"] = this._scopeProperties(this.state);
+			this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_SUCCESS, "GlobalSearchInitiated", eventProps);
 		}
 	}
 
-	_onChangeQuery(query: string) {
-		this.context.router.replace({...this.props.location, query: {
-			q: query || undefined, // eslint-disable-line no-undefined
-			prefixMatch: this.props.location.query.prefixMatch || undefined, // eslint-disable-line no-undefined
-			includeRepos: this.props.location.query.includeRepos || undefined}}); // eslint-disable-line no-undefined
-	}
-
 	_navigateTo(url: string) {
-		browserHistory.push(url);
+		if (!this.state.clickModifier) {
+			browserHistory.push(url);
+		}
 	}
 
 	_handleKeyDown(e: KeyboardEvent) {
+		let code = e.keyCode;
+		if (e.metaKey) {
+			// http://stackoverflow.com/questions/3902635/how-does-one-capture-a-macs-command-key-via-javascript
+			code = 17;
+		}
 		let idx, max;
-		switch (e.keyCode) {
+		switch (code) {
 		case 40: // ArrowDown
 			idx = this._normalizedSelectionIndex();
 			max = this._numResults();
 
 			this.setState({
-				selectionIndex: idx + 1 >= max ? 0 : idx + 1,
+				selectionIndex: idx + 1 >= max ? -1 : idx + 1,
 			}, this._scrollToVisibleSelection);
 
 			this._temporarilyIgnoreMouseSelection();
@@ -155,7 +251,7 @@ class GlobalSearch extends Container {
 			max = this._numResults();
 
 			this.setState({
-				selectionIndex: idx < 1 ? max-1 : idx-1,
+				selectionIndex: idx < 0 ? max-1 : idx-1,
 			}, this._scrollToVisibleSelection);
 
 			this._temporarilyIgnoreMouseSelection();
@@ -175,19 +271,26 @@ class GlobalSearch extends Container {
 			break;
 
 		case 13: // Enter
-			this._onSelection();
-			this._temporarilyIgnoreMouseSelection();
-			e.preventDefault();
+			// Ignore global search enter keypress (to submit search form).
+			if (this._normalizedSelectionIndex() !== -1) {
+				this._onSelection();
+				this._temporarilyIgnoreMouseSelection();
+				e.preventDefault();
+			}
 			break;
+
+		case 17: // ctrl (or meta, see above)
+			this.setState({clickModifier: true});
+			break;
+
 		default:
-			// Changes to the input value are handled by _handleInput.
+			// Changes to the input value are handled by the parent component.
 			break;
 		}
 	}
 
-	_handleInput(e: KeyboardEvent) {
-		if (!(e.currentTarget instanceof HTMLInputElement)) return;
-		this._onChangeQuery(e.currentTarget.value);
+	_handleKeyUp(e: KeyboardEvent) {
+		this.setState({clickModifier: false});
 	}
 
 	_scrollToVisibleSelection() {
@@ -223,11 +326,14 @@ class GlobalSearch extends Container {
 			return;
 		}
 
+		let eventProps = {globalSearchQuery: this.state.query, indexSelected: i, page_name: this._pageName(), languages: this._langs(this.state), repo_scope: this._scopeProperties(this.state)};
+
 		let offset = 0;
 		if (this.state.matchingResults.Repos) {
 			if (i < this.state.matchingResults.Repos.length) {
 				const url = `/${this.state.matchingResults.Repos[i].URI}`;
-				this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url, indexSelected: i, page_name: this.props.location.pathname});
+				eventProps.selectedItem = url;
+				this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", eventProps);
 				this._navigateTo(url);
 				return;
 			}
@@ -238,7 +344,8 @@ class GlobalSearch extends Container {
 		const def = this.state.matchingResults.Defs[i - offset];
 		const url = urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def);
 
-		let eventProps = {globalSearchQuery: this.state.query, selectedItem: url, indexSelected: i, totalResults: this.state.matchingResults.Defs.length, page_name: this.props.location.pathname};
+		eventProps.selectedItem = url;
+		eventProps.totalResults = this.state.matchingResults.Defs.length;
 		if (def.FmtStrings && def.FmtStrings.Kind && def.FmtStrings.Language && def.Repo) {
 			eventProps = {...eventProps, languageSelected: def.FmtStrings.Language, kindSelected: def.FmtStrings.Kind, repoSelected: def.Repo};
 		}
@@ -276,17 +383,29 @@ class GlobalSearch extends Container {
 		this._ignoreMouseSelection = true;
 	}
 
-	_results(): Array<any> {
-		if (!this.state.query) return [<div styleName="result" key="_nosymbol"></div>];
+	_results(): React$Element | Array<React$Element> {
+		const langs = this._langs(this.state);
+		const scope = this._scope(this.state);
 
-		const noResultsItem = <div styleName="tc f4" className={base.pv5} key="_nosymbol">Sorry, we couldn't find anything.</div>;
-		if (!this.state.matchingResults) {
-			return [<div key="1" styleName="tc f4" className={base.pv5}>Loading results...</div>];
+		if (!langs || langs.length === 0) {
+			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`} styleName="result result-error">Select a language to search.</div>];
+		}
+
+		if (!scope || !(scope.popular || (this.state.repo && scope.repo) || scope.private || scope.public)) {
+			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`} styleName="result result-error">Select repositories to include.</div>];
+		}
+
+		if (!this.state.query) return <div className={`${base.pt4} ${base.ph4}`} styleName="result">Type a query&hellip;</div>;
+
+		if (!this.state.matchingResults || this.state.matchingResults && this.state.matchingResults.fetching) {
+			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`}styleName="result">Loading results...</div>];
 		}
 
 		if (this.state.matchingResults &&
 			(!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) &&
-			(!this.state.matchingResults.Repos || this.state.matchingResults.Repos.length === 0)) return [noResultsItem];
+			(!this.state.matchingResults.Repos || this.state.matchingResults.Repos.length === 0)) {
+			return [<div className={`${base.ph4} ${base.pt4}`} styleName="result" key="_nosymbol">No results found.</div>];
+		}
 
 		let list = [], numDefs = 0,
 			numRepos = this.state.matchingResults.Repos ? this.state.matchingResults.Repos.length : 0;
@@ -301,24 +420,22 @@ class GlobalSearch extends Container {
 			const firstLineDocString = firstLine(repo.Description);
 			list.push(
 				<Link styleName={selected ? "block result-selected" : "block result"}
+					className={this.state.resultClassName}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : null}
 					to={repo.URI}
 					key={repo.URI}
 					onClick={() => this._onSelection()}>
-					<div styleName="cool-gray flex-container" className={base.pt4}>
+					<div styleName="cool-gray flex-container">
 						<div styleName="flex-icon hidden-s">
-							<Icon icon="repository-gray" width="32px" />
+							<Icon icon="repository-gray" width={resultIconSize} />
 						</div>
-						<div styleName="flex bottom-border" className={base.pb3}>
-							<code styleName="f4 block" className={base.mb2}>
+						<div styleName="flex" className={base.pb4}>
+							<code styleName="block title">
 								Repository
 								<span styleName="bold"> {repo.URI.split(/[// ]+/).pop()}</span>
 							</code>
-							<p>
-								from {repo.URI}
-								<span styleName="cool-mid-gray">{firstLineDocString ? ` – ${firstLineDocString}` : ""}</span>
-							</p>
+							{firstLineDocString && <p styleName="docstring">{firstLineDocString}</p>}
 						</div>
 					</div>
 				</Link>
@@ -343,23 +460,19 @@ class GlobalSearch extends Container {
 			const firstLineDocString = firstLine(docstring);
 			list.push(
 				<Link styleName={selected ? "block result-selected" : "block result"}
+					className={this.state.resultClassName}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : null}
 					to={defURL}
 					key={defURL}
 					onClick={() => this._onSelection()}>
-					<div styleName="cool-gray flex-container" className={base.pt4}>
-						<div styleName="flex-icon hidden-s">
-							<Icon icon="doc-code" width="32px" />
-						</div>
-						<div styleName="flex bottom-border" className={base.pb3}>
-							<code styleName="f4 block" className={base.mb2}>
+					<div styleName="cool-gray flex-container" className={base.pt3}>
+						<div styleName="flex" className={base.pb4}>
+							<p styleName="repo">{trimRepo(def.Repo)}</p>
+							<code styleName="block title">
 								{qualifiedNameAndType(def, {nameQual: "DepQualified"})}
 							</code>
-							<p>
-								from {def.Repo}
-								<span styleName="cool-mid-gray">{firstLineDocString ? ` – ${firstLineDocString}` : ""}</span>
-							</p>
+							{firstLineDocString && <p styleName="docstring">{firstLineDocString}</p>}
 						</div>
 					</div>
 				</Link>
@@ -370,19 +483,8 @@ class GlobalSearch extends Container {
 	}
 
 	render() {
-		return (<div styleName="center flex">
-			<div styleName="search-input relative">
-				<Input type="text"
-					block={true}
-					onChange={this._handleInput}
-					value={this.state.query}
-					autoFocus={true}
-					placeholder="Search code and cross-references"
-					spellCheck={false} />
-			</div>
-			<div>
-				{this._results()}
-			</div>
+		return (<div styleName="center flex" className={this.state.className}>
+			{this._results()}
 		</div>);
 	}
 }

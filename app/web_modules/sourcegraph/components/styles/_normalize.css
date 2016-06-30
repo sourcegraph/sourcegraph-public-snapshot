@@ -220,7 +220,7 @@ code,
 kbd,
 pre,
 samp {
-	font-family: Consolas, monaco, monospace; /* 1 */
+	font-family: Menlo, Consolas, monaco, monospace; /* 1 */
 	font-size: 1em; /* 2 */
 }
 

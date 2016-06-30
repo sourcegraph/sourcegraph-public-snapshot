@@ -24,11 +24,11 @@ const reactElement = React.PropTypes.oneOfType([
 ]);
 
 export default class App extends React.Component {
-
 	static propTypes = {
 		main: reactElement,
 		navContext: reactElement,
 		location: React.PropTypes.object.isRequired,
+		params: React.PropTypes.object,
 		channelStatusCode: React.PropTypes.number,
 	};
 
@@ -71,7 +71,7 @@ export default class App extends React.Component {
 		return (
 			<div styleName={this.state.styleName}>
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
-				<GlobalNav location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
+				<GlobalNav params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
 				<div styleName="main-content">
 					{this.props.navContext && <div styleName="breadcrumb">{this.props.navContext}</div>}
 					{this.props.main}
@@ -80,7 +80,6 @@ export default class App extends React.Component {
 			</div>
 		);
 	}
-
 }
 
 export const rootRoute: Route = {

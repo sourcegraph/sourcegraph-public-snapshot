@@ -6,6 +6,7 @@ import styles from "./styles/icon.css";
 export const FileIcon = iconWrapper(require("react-icons/lib/go/file-text"));
 export const FolderIcon = iconWrapper(require("react-icons/lib/go/file-directory"));
 export const GitHubIcon = iconWrapper(require("react-icons/lib/go/mark-github"));
+export const CloudDownloadIcon = iconWrapper(require("react-icons/lib/go/cloud-download"));
 export const TriangleUpIcon = iconWrapper(require("react-icons/lib/go/triangle-up"));
 export const TriangleDownIcon = iconWrapper(require("react-icons/lib/go/triangle-down"));
 export const TriangleLeftIcon = iconWrapper(require("react-icons/lib/go/triangle-left"));
@@ -19,6 +20,9 @@ export const CloseIcon = iconWrapper(require("react-icons/lib/fa/close"));
 export const EllipsisHorizontal = iconWrapper(require("react-icons/lib/fa/ellipsis-v"));
 export const FaAngleDown = iconWrapper(require("react-icons/lib/fa/angle-down"));
 export const FaAngleRight = iconWrapper(require("react-icons/lib/fa/angle-right"));
+export const FaChevronDown = iconWrapper(require("react-icons/lib/fa/chevron-down"));
+export const PlayIcon = iconWrapper(require("react-icons/lib/fa/play-circle"));
+export const ToolsIcon = iconWrapper(require("react-icons/lib/go/tools"));
 
 // iconWrapper lets you pass a style directly to any of the exported components, e.g.
 // <RepoIcon styleName="foo" />

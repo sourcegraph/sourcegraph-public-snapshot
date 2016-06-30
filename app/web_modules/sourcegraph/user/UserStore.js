@@ -37,6 +37,32 @@ export class UserStore extends Store {
 				return this.content[state] || null;
 			},
 		});
+
+		if (global.window) {
+			let storedUserSettings = window.localStorage.getItem("userSettings");
+			if (!storedUserSettings) {
+				storedUserSettings = {
+					search: {
+						languages: [],
+						scope: {
+							popular: true,
+							public: false,
+							private: false,
+							repo: true,
+						},
+					},
+				};
+			} else {
+				storedUserSettings = JSON.parse(storedUserSettings);
+			}
+
+			this.settings = deepFreeze({
+				content: storedUserSettings,
+				get(/* no args, stored on user's browser */) {
+					return this.content || null;
+				},
+			});
+		}
 	}
 
 	toJSON() {
@@ -48,6 +74,7 @@ export class UserStore extends Store {
 			emails: this.emails,
 			pendingAuthActions: this.pendingAuthActions,
 			authResponses: this.authResponses,
+			settings: this.settings,
 		};
 	}
 
@@ -113,6 +140,11 @@ export class UserStore extends Store {
 			return;
 		} else if (action instanceof UserActions.FetchedGitHubToken) {
 			this.activeGitHubToken = action.token;
+			this.__emitChange();
+			return;
+		} else if (action instanceof UserActions.UpdateSettings) {
+			if (global.window) window.localStorage.setItem("userSettings", JSON.stringify(action.settings));
+			this.settings = deepFreeze({...this.settings, content: action.settings});
 			this.__emitChange();
 			return;
 		}

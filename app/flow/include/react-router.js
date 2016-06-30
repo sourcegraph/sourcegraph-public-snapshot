@@ -27,6 +27,11 @@ declare module "react-router" {
 		routes: Array<Route>;
 		params: RouteParams;
 	};
+
+	declare type RouterLocation = Location & {
+		query: {[key: string]: string | string[]};
+		state: {[key: string]: any};
+	};
 }
 
 declare module "react-router/lib/PatternUtils" {

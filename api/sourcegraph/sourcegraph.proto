@@ -311,6 +311,8 @@ service Repos {
 	rpc ListBranches(ReposListBranchesOp) returns (BranchList);
 	rpc ListTags(ReposListTagsOp) returns (TagList);
 
+	rpc ListDeps(URIList) returns (URIList);
+
 	// ListCommitters returns the list of authors who have contributed
 	// to the main branch of the repo.
 	rpc ListCommitters(ReposListCommittersOp) returns (CommitterList);
@@ -372,6 +374,10 @@ message UploadPackOp {
 	bool advertiseRefs = 4;
 }
 
+message URIList {
+	repeated string URIs = 1;
+}
+
 message Packet {
 	bytes data = 1;
 }
@@ -411,6 +417,10 @@ message RepoResolution {
 // ReposListRemoteOptions specifies options for Repos.ListRemote.
 message ReposListRemoteOptions {
 	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	// Type of repositories to list.  Possible values are currently ones
+	// supported by the GitHub API, including: all, owner, public,
+	// private, member. Default is "all".
+	string Type = 2;
 }
 
 // RemoteRepoList is a list of remote repos.

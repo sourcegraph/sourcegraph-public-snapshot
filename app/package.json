@@ -48,6 +48,7 @@
     "react-hot-loader": "^3.0.0-beta.2",
     "redbox-react": "^1.2.9",
     "style-loader": "^0.13.1",
+    "url-loader": "^0.5.7",
     "webpack": "^2.1.0-beta.14",
     "webpack-dev-server": "^2.1.0-beta.0"
   },
@@ -61,6 +62,7 @@
     "lodash.debounce": "^4.0.6",
     "lodash.get": "^4.3.0",
     "lodash.trimleft": "^3.0.4",
+    "lodash.uniq": "^4.3.0",
     "raven-js": "1.1.19",
     "react": "^15.1.0",
     "react-css-modules": "^3.7.6",

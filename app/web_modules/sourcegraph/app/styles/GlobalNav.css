@@ -6,8 +6,11 @@
 @value layout "sourcegraph/components/styles/_layout.css";
 @value link "sourcegraph/components/styles/link.css";
 
-@value media-sm from vars;
+@value media-xs, media-sm, media-ns from vars;
 @value navbarHeight: 48px;
+
+@value c_cool-pale-gray-8 from colors;
+@value nav-border-color c_cool-pale-gray-8;
 
 .tl { composes: tl from typography; }
 .tr {	composes: tr from typography; }
@@ -21,33 +24,22 @@
 .block { display: block; }
 .hidden-s { composes: hidden-s from base; }
 
-@media media-sm {
-	.logged-out-nav {
-		float: none;
-		display: block;
-		margin: auto;
-		margin-top: 1rem;
-	}
-}
-
-.username {	padding-top: 10px; }
-
-.logged-out-nav-item {
-	composes: link-subtle from link;
-	composes: pa2 ml2 from base;
-}
-
 .navbar {
 	composes: bb cf from base;
-	composes: bg-white b--cool-pale-gray-8 from colors;
-	display: flex;
-	align-items: center;
-	flex-wrap: nowrap;
+	composes: bg-white from colors;
 	z-index: 100;
 	position: fixed;
 	top: 0;
 	width: 100%;
 	height: navbarHeight;
+}
+.navbar-non-homepage {
+	composes: navbar;
+	border-color: nav-border-color;
+}
+.navbar-homepage {
+	composes: navbar;
+	border-color: transparent;
 }
 
 .navbar + * {
@@ -55,17 +47,33 @@
 	padding-top: navbarHeight;
 }
 
-.logo { composes: mt2 mh3 from base; }
+.navbar-inner {
+	display: flex;
+	align-items: center;
+	flex-wrap: nowrap;
+	height: navbarHeight;
+}
+
+@value logo-height 21.508px;
+.logo-link {
+	padding: calc((navbarHeight - logo-height)/2);
+	composes: br from base;
+	border-color: nav-border-color;
+}
+.logo {
+	display: block;
+}
 .logomark:hover {
 	animation: spin 0.5s ease-in-out 1;
 }
 @keyframes spin { 50% { transform: rotate(180deg) scale(1.2) } 100% { transform: rotate(180deg) scale(1)} }
 
 .action {
-	composes: ml3 from base;
+	composes: mh2 from base;
 	display: inline-block;
 	white-space: nowrap;
 	cursor: pointer;
+	font-weight: bold;
 }
 
 /* TODO: Abstract this – styles should be contained in their components */
@@ -118,4 +126,91 @@
 .icon-ellipsis {
 	composes: icon;
 	composes: white bg-blue-8 b--blue from colors;
+}
+
+.nav-link {
+	font-weight: bold;
+}
+
+@value search-form-max-width 1000px;
+.search {
+	flex: 1 0;
+	composes: br from base;
+	border-color: nav-border-color;
+}
+.search-form-container {
+	max-width: search-form-max-width;
+	position: relative; /* so that search-panel is same width as its parent (this class) */
+}
+.search-form {
+	display: flex;
+}
+.search-form > div { /* make search input share width */
+	flex: 1 0;
+}
+.search-input {
+	height: navbarHeight;
+	composes: f4 from typography;
+}
+.search-icon {
+	font-size: 1.3rem;
+}
+.search-panel {
+	position: absolute;
+	width: 100%;
+	max-width: search-form-max-width;
+}
+@value SearchSettings "sourcegraph/search/styles/SearchSettings.css";
+.search-settings {
+	composes: groups-bb from SearchSettings;
+}
+.search-settings-inner {
+	composes: ph3 from base;
+}
+.search-results {
+	max-height: 85vh;
+	min-height: 60px;
+	overflow: auto;
+}
+.search-result {
+	composes: ph3 pt3 from base;
+}
+@media screen and media-xs {
+	.search-form-container {
+		position: static;
+	}
+	.search-panel {
+		height: calc(100vh - navbarHeight);
+		overflow: auto;
+		left: 0;
+		top: navbarHeight;
+	}
+	.search-results {
+		max-height: none;
+		min-height: none;
+		overflow: hidden;
+	}
+}
+@media screen and media-sm {
+	.not-small-only {
+		display: none;
+	}
+}
+@media screen and media-ns {
+	.small-only {
+		display: none;
+	}
+}
+
+.user {
+	display: flex;
+	align-items: center;
+}
+.user-menu-icon {
+	composes: cool-mid-gray from colors;
+	font-size: 0.8rem;
+	margin-left: 6px;
+}
+.current-user {
+	color: cool-mid-gray;
 }

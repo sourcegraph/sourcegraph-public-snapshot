@@ -65,6 +65,7 @@ type ReposClient struct {
 	ListCommits_                 func(ctx context.Context, in *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
 	ListBranches_                func(ctx context.Context, in *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error)
 	ListTags_                    func(ctx context.Context, in *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error)
+	ListDeps_                    func(ctx context.Context, in *sourcegraph.URIList) (*sourcegraph.URIList, error)
 	ListCommitters_              func(ctx context.Context, in *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
 	GetSrclibDataVersionForPath_ func(ctx context.Context, in *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
 	ConfigureApp_                func(ctx context.Context, in *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error)
@@ -125,6 +126,10 @@ func (s *ReposClient) ListTags(ctx context.Context, in *sourcegraph.ReposListTag
 	return s.ListTags_(ctx, in)
 }
 
+func (s *ReposClient) ListDeps(ctx context.Context, in *sourcegraph.URIList, opts ...grpc.CallOption) (*sourcegraph.URIList, error) {
+	return s.ListDeps_(ctx, in)
+}
+
 func (s *ReposClient) ListCommitters(ctx context.Context, in *sourcegraph.ReposListCommittersOp, opts ...grpc.CallOption) (*sourcegraph.CommitterList, error) {
 	return s.ListCommitters_(ctx, in)
 }
@@ -165,6 +170,7 @@ type ReposServer struct {
 	ListCommits_                 func(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
 	ListBranches_                func(v0 context.Context, v1 *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error)
 	ListTags_                    func(v0 context.Context, v1 *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error)
+	ListDeps_                    func(v0 context.Context, v1 *sourcegraph.URIList) (*sourcegraph.URIList, error)
 	ListCommitters_              func(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
 	GetSrclibDataVersionForPath_ func(v0 context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
 	ConfigureApp_                func(v0 context.Context, v1 *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error)
@@ -223,6 +229,10 @@ func (s *ReposServer) ListBranches(v0 context.Context, v1 *sourcegraph.ReposList
 
 func (s *ReposServer) ListTags(v0 context.Context, v1 *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error) {
 	return s.ListTags_(v0, v1)
+}
+
+func (s *ReposServer) ListDeps(v0 context.Context, v1 *sourcegraph.URIList) (*sourcegraph.URIList, error) {
+	return s.ListDeps_(v0, v1)
 }
 
 func (s *ReposServer) ListCommitters(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error) {
