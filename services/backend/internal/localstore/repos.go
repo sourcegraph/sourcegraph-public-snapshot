@@ -224,7 +224,12 @@ func finishGetRepo(ctx context.Context, repo *sourcegraph.Repo) (*sourcegraph.Re
 		repo.DefaultBranch = "master"
 	}
 
-	setCloneURLField(ctx, repo)
+	// The clone field is not set in the DB since it would become stale if
+	// the AppURL configuration changed.
+	if !repo.Mirror {
+		repo.HTTPCloneURL = conf.AppURL(ctx).ResolveReference(approuter.Rel.URLToRepo(repo.URI)).String()
+	}
+
 	return repo, nil
 }
 
@@ -425,16 +430,6 @@ func (s *repos) Search(ctx context.Context, query string) ([]*sourcegraph.RepoSe
 }
 
 var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty result set")
-
-// setCloneURLField sets the *CloneURL fields on the repo based on the
-// ctx's app URL. These values are not stored in the database because
-// if they were, the values would be stale if the configuration
-// changes.
-func setCloneURLField(ctx context.Context, repo *sourcegraph.Repo) {
-	if !repo.Mirror {
-		repo.HTTPCloneURL = conf.AppURL(ctx).ResolveReference(approuter.Rel.URLToRepo(repo.URI)).String()
-	}
-}
 
 func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}, error) {
 	var selectSQL, fromSQL, whereSQL, orderBySQL string
