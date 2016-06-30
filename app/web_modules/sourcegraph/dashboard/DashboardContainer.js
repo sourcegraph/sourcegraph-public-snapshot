@@ -151,17 +151,14 @@ const topQueries: {[key: LanguageID]: string[]} = {
 	],
 	java: [
 		"file open",
-		"new timezone",
-		"parse url",
+		"date time",
 	],
 	golang: [
 		"new http request",
 		"read file",
 		"json encoder",
 		"http get",
-		"new docker client",
 		"sql query",
-		"walk filesystem",
 		"indent json",
 	],
 };
