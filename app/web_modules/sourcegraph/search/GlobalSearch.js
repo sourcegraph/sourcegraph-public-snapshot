@@ -66,7 +66,7 @@ class GlobalSearch extends Container {
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
 		this._onSelection = debounce(this._onSelection.bind(this), 200, {leading: false, trailing: true});
-		this._dispatchQuery = debounce(this._dispatchQuery.bind(this), 200, {leadnig: false, trailing: true});
+		this._dispatchQuery = debounce(this._dispatchQuery.bind(this), 200, {leading: false, trailing: true});
 	}
 
 	state: {
