@@ -677,6 +677,7 @@ func splitCaseWords(w string) []string {
 	return camelcase.Split(w)
 }
 
+// allCombinations returns all strings that can be built by concatenating a subset of the given strings without reordering.
 func allCombinations(s []string) []string {
 	if len(s) == 0 {
 		return []string{""}
