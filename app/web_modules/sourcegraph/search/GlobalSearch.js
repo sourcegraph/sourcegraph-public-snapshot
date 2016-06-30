@@ -326,7 +326,7 @@ class GlobalSearch extends Container {
 			return;
 		}
 
-		let eventProps: {globalSearchQuery: string; indexSelected: number; page_name: string; languages: Array<string>; repo_scope: Array<string>; selectedItem?: string; totalResults?: number; languageSelected?: string; kindSelected?: string; repoSelected?: string} = {globalSearchQuery: this.state.query, indexSelected: i, page_name: this._pageName(), languages: this._langs(this.state), repo_scope: this._scopeProperties(this.state)};
+		let eventProps: any = {globalSearchQuery: this.state.query, indexSelected: i, page_name: this._pageName(), languages: this._langs(this.state), repo_scope: this._scopeProperties(this.state)};
 
 		let offset = 0;
 		if (this.state.matchingResults.Repos) {
