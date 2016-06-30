@@ -42,6 +42,12 @@ class DashboardContainer extends Container {
 		state.langs = settings && settings.search ? settings.search.languages : null;
 	}
 
+	onStateTransition(prevState, nextState) {
+		if (nextState.langs && nextState.langs.length > 0 && nextState.langs !== prevState.langs) {
+			if (this._input && this._input.value) this._goToSearch(this._input.value);
+		}
+	}
+
 	_goToSearch(query: string) {
 		this.context.router.replace(locationForSearch(this.props.location, query, true, true));
 	}
@@ -101,7 +107,7 @@ class DashboardContainer extends Container {
 						autoFocus={this.context.signedIn}
 						domRef={e => this._input = e}
 						styleName="search-input"
-						onChange={this._handleInput} />
+						onChange={e => this.state.langs && this.state.langs.length > 0 && this._handleInput(e)} />
 					<div styleName="search-actions">
 						<Button styleName="search-button" type="button" color="blue">Find usage examples</Button>
 					</div>

@@ -124,7 +124,7 @@
 .notice-pulse {
 	animation-name: pulsate;
 	animation-duration: 1s;
-	animation-iteration-count: 3;
+	animation-iteration-count: infinite;
 }
 @keyframes pulsate {
 	0% {
