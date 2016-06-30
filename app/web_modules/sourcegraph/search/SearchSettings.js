@@ -219,8 +219,7 @@ class SearchSettings extends Container {
 				{this.props.location.state && this.props.location.state.modal === "beta" && this.state.betaLanguage &&
 					<LocationStateModal modalName="beta" location={this.props.location}>
 						<div styleName="modal">
-							<h2 styleName="modalTitle">Join the Sourcegraph beta list</h2>
-							<h3 styleName="modalTitle">We don't support {langName(this.state.betaLanguage)} yet, but will soon</h3>
+							<h2 styleName="modalTitle">Participate in the Sourcegraph beta for {langName(this.state.betaLanguage)}</h2>
 							<InterestForm
 								rowClass={styles.modalRow}
 								language={this.state.betaLanguage}
