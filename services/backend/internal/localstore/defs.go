@@ -645,16 +645,17 @@ func toTextSearchTokens(def *graph.Def) (aToks []string, bToks []string, cToks [
 	defParts := delims.Split(def.Path, -1)
 	for _, w := range defParts {
 		bToks = appendRepeated(bToks, w, 2)
+		for _, c := range allCombinations(splitCaseWords(w)) {
+			if c != "" {
+				cToks = appendRepeated(cToks, c, 1)
+			}
+		}
 	}
 	lastDefPart := defParts[len(defParts)-1]
 	aToks = appendRepeated(aToks, lastDefPart, 3) // mega extra points for matching the last component of the def path (typically the "name" of the def)
-	for _, w := range splitCaseWords(lastDefPart) {
-		aToks = appendRepeated(aToks, w, 1) // more points for matching last component of def path
-	}
-	// CamelCase and snake_case tokens in the definition path
-	for _, part := range defParts {
-		for _, w := range splitCaseWords(part) {
-			cToks = appendRepeated(cToks, w, 1)
+	for _, c := range allCombinations(splitCaseWords(lastDefPart)) {
+		if c != "" {
+			aToks = appendRepeated(aToks, c, 1) // more points for matching last component of def path
 		}
 	}
 
@@ -674,6 +675,21 @@ func splitCaseWords(w string) []string {
 		return strings.Split(w, "_")
 	}
 	return camelcase.Split(w)
+}
+
+func allCombinations(s []string) []string {
+	if len(s) == 0 {
+		return []string{""}
+	}
+	var permutations []string
+	for _, tail := range allCombinations(s[1:]) {
+		permutations = append(
+			permutations,
+			s[0]+tail,
+			tail,
+		)
+	}
+	return permutations
 }
 
 func appendRepeated(s []string, w string, count int) []string {
