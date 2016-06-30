@@ -26,7 +26,7 @@ import base from "sourcegraph/components/styles/_base.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import popularRepos from "./popularRepos";
 
-export const RESULTS_LIMIT = 10;
+export const RESULTS_LIMIT = 20;
 
 const resultIconSize = "24px";
 
@@ -65,7 +65,8 @@ class GlobalSearch extends Container {
 		this._handleKeyUp = this._handleKeyUp.bind(this);
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
-		this._onSelection = debounce(this._onSelection.bind(this), 200, {leading: false, trailing: true}); // Prevent rapid repeated selections
+		this._onSelection = debounce(this._onSelection.bind(this), 200, {leading: false, trailing: true});
+		this._dispatchQuery = debounce(this._dispatchQuery.bind(this), 200, {leadnig: false, trailing: true});
 	}
 
 	state: {
@@ -179,21 +180,23 @@ class GlobalSearch extends Container {
 			prevState.settings !== nextState.settings ||
 			prevState.publicRepos !== nextState.publicRepos ||
 			prevState.privateRepos !== nextState.privateRepos) {
-			debounce((query) => {
-				const langs = this._langs(nextState);
-				for (const lang of langs) {
-					const reposScope = this._reposScope(nextState, lang);
-					if (!reposScope || reposScope.length === 0 || !this._canSearch(nextState)) continue;
-					Dispatcher.Backends.dispatch(new SearchActions.WantResults({
-						query: `${lang} ${nextState.query}`,
-						limit: RESULTS_LIMIT,
-						prefixMatch: this.props.location.query.prefixMatch,
-						includeRepos: this.props.location.query.includeRepos,
-						fast: true,
-						repos: reposScope,
-					}));
-				}
-			}, 200, {leading: false, trailing: true})(nextState.query);
+			this._dispatchQuery(nextState);
+		}
+	}
+
+	_dispatchQuery(state) {
+		const langs = this._langs(state);
+		for (const lang of langs) {
+			const reposScope = this._reposScope(state, lang);
+			if (!reposScope || reposScope.length === 0 || !this._canSearch(state)) continue;
+			Dispatcher.Backends.dispatch(new SearchActions.WantResults({
+				query: `${lang} ${state.query}`,
+				limit: RESULTS_LIMIT,
+				prefixMatch: this.props.location.query.prefixMatch,
+				includeRepos: this.props.location.query.includeRepos,
+				fast: true,
+				repos: reposScope,
+			}));
 		}
 	}
 
