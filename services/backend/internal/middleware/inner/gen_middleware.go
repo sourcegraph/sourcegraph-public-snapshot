@@ -40,7 +40,6 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sqs/pbtypes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/middleware/inner/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
@@ -70,7 +69,7 @@ func Services() svc.Services {
 			if res == nil && err == nil {
 				err = grpc.Errorf(codes.Internal, "<<<$service.Name>>>.<<<.Name>>> returned nil, nil")
 			}
-			if err != nil && !auth.DebugMode(ctx) {
+			if err != nil && !DebugMode(ctx) {
 				if code := grpc.Code(err); (code == codes.Unknown || code == codes.Internal) {
 					// Sanitize, because these errors should not be user visible.
 					err = grpc.Errorf(code, "<<<$service.Name>>>.<<<.Name>>> failed with internal error.")

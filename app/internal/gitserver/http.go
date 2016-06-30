@@ -16,7 +16,6 @@ import (
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	gitrouter "sourcegraph.com/sourcegraph/sourcegraph/app/internal/gitserver/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
@@ -55,7 +54,7 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	errBody := err.Error()
 
 	var displayErrBody string
-	if ctx := httpctx.FromRequest(r); auth.DebugMode(ctx) {
+	if ctx := httpctx.FromRequest(r); handlerutil.DebugMode(ctx) {
 		// Only display error message to admins or locally, since it
 		// can contain sensitive info (like API keys in net/http error
 		// messages).

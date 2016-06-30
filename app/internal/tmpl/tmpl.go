@@ -24,6 +24,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -194,7 +195,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 
 			CurrentSpanID:    traceutil.SpanID(req),
 			CurrentRouteVars: mux.Vars(req),
-			Debug:            auth.DebugMode(ctx),
+			Debug:            handlerutil.DebugMode(ctx),
 
 			DisableExternalLinks: appconf.Flags.DisableExternalLinks,
 			Features:             feature.Features,

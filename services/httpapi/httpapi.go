@@ -15,7 +15,6 @@ import (
 	"github.com/justinas/nosurf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -175,7 +174,7 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	errBody := err.Error()
 
 	var displayErrBody string
-	if ctx := httpctx.FromRequest(r); auth.DebugMode(ctx) {
+	if ctx := httpctx.FromRequest(r); handlerutil.DebugMode(ctx) {
 		// Only display error message to admins or locally, since it
 		// can contain sensitive info (like API keys in net/http error
 		// messages).
@@ -218,7 +217,7 @@ func handleErrorWithGRPC(w http.ResponseWriter, r *http.Request, status int, err
 	errBody := err.Error()
 
 	var displayErrBody string
-	if ctx := httpctx.FromRequest(r); auth.DebugMode(ctx) {
+	if ctx := httpctx.FromRequest(r); handlerutil.DebugMode(ctx) {
 		// Only display error message to admins or locally, since it
 		// can contain sensitive info (like API keys in net/http error
 		// messages).

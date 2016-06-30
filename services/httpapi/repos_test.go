@@ -9,8 +9,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -199,32 +197,12 @@ func TestRepo_caching_modifiedSince(t *testing.T) {
 	}
 }
 
-func TestRepos_admin(t *testing.T) {
+func TestRepos(t *testing.T) {
 	c, mock := newTest()
-	mock.Ctx = authpkg.WithActor(mock.Ctx, authpkg.Actor{UID: 1, Login: "test", Admin: true})
 
 	wantRepos := &sourcegraph.RepoList{
 		Repos: []*sourcegraph.Repo{{URI: "r/r"}},
 	}
-
-	calledList := mock.Repos.MockList(t, "r/r")
-
-	var repos *sourcegraph.RepoList
-	if err := c.GetJSON("/repos", &repos); err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(repos, wantRepos) {
-		t.Errorf("got %+v, want %+v", repos, wantRepos)
-	}
-	if !*calledList {
-		t.Error("!calledList")
-	}
-}
-
-func TestRepos_nonadmin(t *testing.T) {
-	c, mock := newTest()
-
-	wantRepos := &sourcegraph.RepoList{}
 
 	calledList := mock.Repos.MockList(t)
 

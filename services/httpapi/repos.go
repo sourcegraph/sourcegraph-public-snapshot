@@ -14,7 +14,6 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 
@@ -115,17 +114,6 @@ func serveRepos(w http.ResponseWriter, r *http.Request) error {
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
 	if err != nil {
 		return err
-	}
-
-	// The only locally hosted repos are sourcegraph repos. We want
-	// to prevent these repos showing up on a users homepage, unless they
-	// are Sourcegraph staff. Only Sourcegraph staff have write
-	// access. This means that only we will see these repos on our
-	// dashboard, which is the purpose of this if-statement. When we have
-	// a fuller security model or user-selectable repo lists, we can
-	// remove this.
-	if !authpkg.ActorFromContext(ctx).HasWriteAccess() {
-		return writeJSON(w, &sourcegraph.RepoList{})
 	}
 
 	repos, err := cl.Repos.List(ctx, &opt)
