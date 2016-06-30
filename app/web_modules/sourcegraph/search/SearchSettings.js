@@ -55,7 +55,8 @@ class SearchSettings extends Container {
 			const scope = nextState.settings.search.scope;
 			if (scope.public) {
 				Dispatcher.Backends.dispatch(new RepoActions.WantRemoteRepos({deps: true, private: false}));
-			} else if (scope.private) {
+			}
+			if (scope.private) {
 				Dispatcher.Backends.dispatch(new RepoActions.WantRemoteRepos({deps: true, private: true}));
 			}
 		}
