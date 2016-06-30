@@ -2,14 +2,14 @@ package backend
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
+	"sync"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	srch "sourcegraph.com/sourcegraph/sourcegraph/pkg/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"sourcegraph.com/sqs/pbtypes"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -72,7 +72,7 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 		if strings.HasSuffix(token, ".com") || strings.HasSuffix(token, ".org") {
 			descToks = append(descToks, token)
 		} else {
-			descToks = append(descToks, srch.QueryTokens(token)...)
+			descToks = append(descToks, queryTokens(token)...)
 		}
 	}
 
@@ -114,6 +114,23 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 	return results, nil
 }
 
+var delims = regexp.MustCompile(`[/.:\$\(\)\*\%\#\@\[\]\{\}]+`)
+
+// strippedQuery is the user query after it has been stripped of special filter terms
+func queryTokens(strippedQuery string) []string {
+	prototoks := delims.Split(strippedQuery, -1)
+	if len(prototoks) == 0 {
+		return nil
+	}
+	toks := make([]string, 0, len(prototoks))
+	for _, tokmaybe := range prototoks {
+		if tokmaybe != "" {
+			toks = append(toks, tokmaybe)
+		}
+	}
+	return toks
+}
+
 func hydrateDefsResults(ctx context.Context, defs []*sourcegraph.DefSearchResult) ([]*sourcegraph.DefSearchResult, error) {
 	if len(defs) == 0 {
 		return defs, nil
@@ -134,16 +151,57 @@ func hydrateDefsResults(ctx context.Context, defs []*sourcegraph.DefSearchResult
 		dk_ := dk
 		defkeys = append(defkeys, &dk_)
 	}
-	deflist, err := svc.Defs(ctx).List(ctx, &sourcegraph.DefListOptions{
-		DefKeys:  defkeys,
-		RepoRevs: reporevs,
-	})
-	if err != nil {
-		return nil, err
+
+	// fetch definition metadata in parallel
+	var (
+		deflist []*sourcegraph.Def
+		mu      sync.Mutex
+		wg      sync.WaitGroup
+		errs    []error
+	)
+	wg.Add(len(defkeys))
+	for _, dk := range defkeys {
+		dk := dk
+		go func() {
+			defer wg.Done()
+
+			rp, err := store.ReposFromContext(ctx).GetByURI(ctx, dk.Repo)
+			if err != nil {
+				mu.Lock()
+				errs = append(errs, err)
+				mu.Unlock()
+				return
+			}
+			df, err := svc.Defs(ctx).Get(ctx, &sourcegraph.DefsGetOp{
+				Def: sourcegraph.DefSpec{
+					Repo:     rp.ID,
+					CommitID: dk.CommitID,
+					UnitType: dk.UnitType,
+					Unit:     dk.Unit,
+					Path:     dk.Path,
+				},
+				Opt: &sourcegraph.DefGetOptions{Doc: true},
+			})
+			if err != nil {
+				mu.Lock()
+				errs = append(errs, err)
+				mu.Unlock()
+				return
+			}
+			{
+				mu.Lock()
+				deflist = append(deflist, df)
+				mu.Unlock()
+			}
+		}()
+	}
+	wg.Wait()
+	if errs != nil {
+		return nil, fmt.Errorf("fetching definition metadata failed with errors: %+v", errs)
 	}
 
 	hydratedDefs := make(map[graph.DefKey]*sourcegraph.Def)
-	for _, def := range deflist.Defs {
+	for _, def := range deflist {
 		hydratedDefs[def.DefKey] = def
 	}
 	hydratedResults := make([]*sourcegraph.DefSearchResult, 0, len(defs))
@@ -156,28 +214,4 @@ func hydrateDefsResults(ctx context.Context, defs []*sourcegraph.DefSearchResult
 		}
 	}
 	return hydratedResults, nil
-}
-
-func (s *search) RefreshIndex(ctx context.Context, op *sourcegraph.SearchRefreshIndexOp) (*pbtypes.Void, error) {
-	// Currently, the only pre-computation we do is aggregating the global ref counts
-	// for every def. This will pre-compute the ref counts based on the current state
-	// of the GlobalRefs table for all defs in the given repos.
-	var updateOp store.GlobalDefUpdateOp
-	for _, repo := range op.Repos {
-		updateOp.RepoUnits = append(updateOp.RepoUnits, store.RepoUnit{Repo: repo})
-	}
-
-	if op.RefreshSearch {
-		if err := store.GlobalDefsFromContext(ctx).Update(ctx, updateOp); err != nil {
-			return nil, err
-		}
-	}
-
-	if op.RefreshCounts {
-		if err := store.GlobalDefsFromContext(ctx).RefreshRefCounts(ctx, updateOp); err != nil {
-			return nil, err
-		}
-	}
-
-	return &pbtypes.Void{}, nil
 }

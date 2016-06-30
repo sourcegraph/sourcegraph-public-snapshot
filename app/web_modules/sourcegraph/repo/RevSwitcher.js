@@ -1,7 +1,7 @@
 import React from "react";
 import fuzzysearch from "fuzzysearch";
 import Dispatcher from "sourcegraph/Dispatcher";
-import debounce from "lodash/function/debounce";
+import debounce from "lodash.debounce";
 import "sourcegraph/repo/RepoBackend";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as TreeActions from "sourcegraph/tree/TreeActions";

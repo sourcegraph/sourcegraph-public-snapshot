@@ -9,7 +9,7 @@ import BlobLine from "sourcegraph/blob/BlobLine";
 import BlobLineExpander from "sourcegraph/blob/BlobLineExpander";
 import type {Range} from "sourcegraph/blob/BlobLineExpander";
 import Dispatcher from "sourcegraph/Dispatcher";
-import debounce from "lodash/function/debounce";
+import debounce from "lodash.debounce";
 import fileLines from "sourcegraph/util/fileLines";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {computeLineStartBytes} from "sourcegraph/blob/lineFromByte";

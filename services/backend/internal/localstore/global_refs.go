@@ -21,6 +21,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	sstore "sourcegraph.com/sourcegraph/srclib/store"
@@ -366,35 +367,11 @@ func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	// of the transaction can lead to conflicts with other imports
 	start = time.Now()
 	defKeyIDs := map[graph.DefKey]int64{}
-	{
-		// Find unique defKeys so we can bulk upsert and get the def_key ids
-		defKeys := map[graph.DefKey]struct{}{}
-		for _, r := range refs {
-			k := graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}
-			defKeys[k] = struct{}{}
-		}
-		defs := make([]*graph.Def, 0, len(defKeys))
-		for k := range defKeys {
-			defs = append(defs, &graph.Def{DefKey: k})
-		}
-
-		start := time.Now()
-		err := updateDefKeys(ctx, dbh, repo, defs)
-		observe("defkeysupdate", start)
-		if err != nil {
-			return err
-		}
-
-		start = time.Now()
-		dbDefKeys, err := getDefKeys(ctx, dbh, defKeys)
-		observe("defkeysget", start)
-		if err != nil {
-			return err
-		}
-		for _, dk := range dbDefKeys {
-			defKeyIDs[graph.DefKey{Repo: dk.Repo, UnitType: dk.UnitType, Unit: dk.Unit, Path: dk.Path}] = dk.ID
-		}
+	for _, r := range refs {
+		k := graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}
+		defKeyIDs[k] = -1
 	}
+	getOrInsertDefKeys(ctx, dbh, defKeyIDs)
 	observe("defkeys", start)
 
 	tmpCreateSQL := `CREATE TEMPORARY TABLE global_refs_tmp (
@@ -510,4 +487,31 @@ var globalRefsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 func init() {
 	prometheus.MustRegister(globalRefsDuration)
 	prometheus.MustRegister(globalRefsUpdateDuration)
+}
+
+func resolveRevisionDefaultBranch(ctx context.Context, repo int32) (repoPath, commitID string, err error) {
+	repoObj, err := store.ReposFromContext(ctx).Get(ctx, repo)
+	if err != nil {
+		return
+	}
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoObj.ID)
+	if err != nil {
+		return
+	}
+	c, err := vcsrepo.ResolveRevision(repoObj.DefaultBranch)
+	if err != nil {
+		// TODO(keegancsmith) Remove once we always have the
+		// DefaultBranch stored in our own DB. https://app.asana.com/0/87040567695724/147734985562458
+		if !strings.HasPrefix(strings.ToLower(repoObj.URI), "github.com/") {
+			return
+		}
+		ghrepo, err := github.ReposFromContext(ctx).Get(ctx, repoObj.URI)
+		if err != nil {
+			return "", "", err
+		}
+		if c, err = vcsrepo.ResolveRevision(ghrepo.DefaultBranch); err != nil {
+			return "", "", err
+		}
+	}
+	return repoObj.URI, string(c), nil
 }

@@ -17,7 +17,7 @@ var (
 	droneSrclibJSONImage       = "sourcegraph/srclib-json:da879fdce0b22a422c9607f054a9f8f03b2c69f5"
 	droneSrclibJavaImage       = "sourcegraph/srclib-java:2fb7ab2648527bbe4ba16812558ac9be64da8098"
 	droneSrclibJavaScriptImage = "sourcegraph/srclib-javascript:75be57e78746b9e281eaa72ecf0ca41d6424f4ed"
-	droneSrclibPythonImage     = "sourcegraph/srclib-python:67d4f6181f7474a8482e003f6ace35a43a44e213"
+	droneSrclibPythonImage     = "sourcegraph/srclib-python:15a68f256c68a13b7a2e3497535804345e930e4a"
 	droneSrclibTypeScriptImage = "sourcegraph/srclib-typescript:04e5b07b925a646ecc296535fa6d7b9d010c53bb"
 )
 

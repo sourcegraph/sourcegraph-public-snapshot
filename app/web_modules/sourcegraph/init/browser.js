@@ -9,7 +9,7 @@ import {rootRoute} from "sourcegraph/app/App";
 import {reset as resetStores} from "sourcegraph/init/stores";
 import * as context from "sourcegraph/app/context";
 import resetOnAuthChange from "sourcegraph/app/resetOnAuthChange";
-import shouldUpdateScroll from "sourcegraph/app/shouldUpdateScroll";
+import {shouldUpdateScroll, hashLinkScroll} from "sourcegraph/app/routerScrollBehavior";
 import {AppContainer} from "react-hot-loader";
 import Redbox from "redbox-react";
 
@@ -59,6 +59,7 @@ function matchWithRedirectHandling(recursed) {
 				<AppContainer errorReporter={Redbox}>
 					<Router
 						key={hotReloadCounter}
+						onUpdate={hashLinkScroll}
 						{...renderProps}
 						render={applyRouterMiddleware(useScroll(shouldUpdateScroll))} />
 				</AppContainer>,

@@ -199,8 +199,30 @@ export const filterEventAttributes = (el) => {
   const keys = Object.keys(props).filter(k => EVENT_ATTRIBUTES[k]);
 
   return (keys && keys.length) ?
-      keys.reduce((result, k) => ({ ...result, [k]: props[k] }), {}) :
-      null;
+    keys.reduce((result, k) => ({ ...result, [k]: props[k] }), {}) :
+    null;
+};
+
+const getEventHandler = (originalHandler, data, index) => {
+  return (e) => {
+    originalHandler(data, index, e);
+
+    return null;
+  };
+};
+
+export const filterEventsOfChild = (props, data, index) => {
+  if (!_.isObject(props)) { return null; }
+
+  const events = Object.keys(props).filter(k => (
+    EVENT_ATTRIBUTES[k] && _.isFunction(props[k])
+  ));
+
+  return (events && events.length) ?
+    events.reduce((result, e) => ({
+      ...result, [e]: getEventHandler(props[e], data, index),
+    }), {}) :
+    null;
 };
 
 /**
@@ -221,4 +243,31 @@ export const validateWidthHeight = (el) => {
 };
 
 export const isSsr = () => (typeof document === 'undefined');
+
+const SVG_TAGS = ['a', 'altGlyph', 'altGlyphDef', 'altGlyphItem', 'animate',
+'animateColor', 'animateMotion', 'animateTransform', 'circle', 'clipPath',
+'color-profile', 'cursor', 'defs', 'desc', 'ellipse', 'feBlend', 'feColormatrix',
+'feComponentTransfer', 'feComposite', 'feConvolveMatrix', 'feDiffuseLighting',
+'feDisplacementMap', 'feDistantLight', 'feFlood', 'feFuncA', 'feFuncB', 'feFuncG',
+'feFuncR', 'feGaussianBlur', 'feImage', 'feMerge', 'feMergeNode', 'feMorphology',
+'feOffset', 'fePointLight', 'feSpecularLighting', 'feSpotLight', 'feTile',
+'feTurbulence', 'filter', 'font', 'font-face', 'font-face-format', 'font-face-name',
+'font-face-url', 'foreignObject', 'g', 'glyph', 'glyphRef', 'hkern', 'image',
+'line', 'lineGradient', 'marker', 'mask', 'metadata', 'missing-glyph', 'mpath',
+'path', 'pattern', 'polygon', 'polyline', 'radialGradient', 'rect', 'script',
+'set', 'stop', 'style', 'svg', 'switch', 'symbol', 'text', 'textPath', 'title',
+'tref', 'tspan', 'use', 'view', 'vkern'];
+
+export const filterSvgElements = (children) => {
+  const svgElements = [];
+
+  React.Children.forEach(children, entry => {
+    if (entry && entry.type && _.isString(entry.type) &&
+      SVG_TAGS.indexOf(entry.type) >= 0) {
+      svgElements.push(entry);
+    }
+  });
+
+  return svgElements;
+};
 

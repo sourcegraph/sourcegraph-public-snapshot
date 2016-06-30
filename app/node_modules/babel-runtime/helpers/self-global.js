@@ -1,4 +1,1 @@
-"use strict";
-
-exports["default"] = typeof global === "undefined" ? self : global;
-exports.__esModule = true;
+module.exports = require("./selfGlobal.js");

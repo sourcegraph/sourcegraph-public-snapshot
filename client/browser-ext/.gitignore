@@ -10,3 +10,4 @@ dev/
 *.pem
 *.xpi
 update.xml
+npm-debug.log.*

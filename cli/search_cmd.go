@@ -20,12 +20,11 @@ func init() {
 }
 
 type searchCmd struct {
-	Refresh       string `long:"refresh" description:"repository URI for which to update the search index and counts (implies --refresh-counts)"`
-	RefreshAsync  bool   `long:"refresh-async" description:"queues refresh instead of blocking"`
-	RefreshCounts string `long:"refresh-counts" description:"repository URI for which to update the search counts"`
-	RefreshDefs2  string `long:"refresh-defs2" description:""`
-	Limit         int32  `long:"limit" description:"limit # of search results" default:"10"`
-	Args          struct {
+	Refresh      string `long:"refresh" description:"repository URI for which to update the search index and counts (implies --refresh-counts)"`
+	RefreshAsync bool   `long:"refresh-async" description:"queues refresh instead of blocking"`
+	RefreshDefs2 string `long:"refresh-defs2" description:""`
+	Limit        int32  `long:"limit" description:"limit # of search results" default:"10"`
+	Args         struct {
 		Query []string `name:"QUERY" description:"search query"`
 	} `positional-args:"yes" required:"yes"`
 }
@@ -76,32 +75,6 @@ func (c *searchCmd) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
-		log.Printf("Search.RefreshIndex")
-		_, err = cl.Search.RefreshIndex(cliContext, &sourcegraph.SearchRefreshIndexOp{
-			Repos:         []int32{res.Repo},
-			RefreshCounts: true,
-			RefreshSearch: true,
-		})
-		if err != nil {
-			return err
-		}
-		log.Printf("refresh complete")
-		return nil
-	} else if c.RefreshCounts != "" {
-		res, err := cl.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: c.RefreshCounts})
-		if err != nil {
-			return err
-		}
-
-		log.Printf("Search.RefreshIndex (counts only)")
-		_, err = cl.Search.RefreshIndex(cliContext, &sourcegraph.SearchRefreshIndexOp{
-			Repos:         []int32{res.Repo},
-			RefreshCounts: true,
-		})
-		if err != nil {
-			return err
-		}
-		log.Printf("refresh complete")
 		return nil
 	}
 

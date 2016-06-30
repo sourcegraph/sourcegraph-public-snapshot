@@ -8,7 +8,7 @@ import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {trackPromise} from "sourcegraph/app/status";
 import {encodeDefPath} from "sourcegraph/def";
-import get from "lodash/object/get";
+import get from "lodash.get";
 
 const DefBackend = {
 	fetch: singleflightFetch(defaultFetch),

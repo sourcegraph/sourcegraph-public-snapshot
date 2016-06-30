@@ -107,7 +107,7 @@ export function calendar(year, month, week, day, hour, minute, second, milliseco
     return r ? t.reverse() : t;
   };
 
-  scale.tickFormat = function(specifier) {
+  scale.tickFormat = function(count, specifier) {
     return specifier == null ? tickFormat : format(specifier);
   };
 

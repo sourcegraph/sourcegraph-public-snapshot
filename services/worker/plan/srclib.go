@@ -97,6 +97,9 @@ var mustSucceedLangs = map[string]struct{}{
 	"Python": struct{}{},
 }
 
+// 8GB
+const defaultMemLimit int64 = 8 * 1000 * 1000 * 1000
+
 // Note: If you push new Docker images for the srclib build steps, you
 // MUST update the SHA256 digest, or else users will continue using
 // the old Docker image. Also ensure you `docker push` the new Docker
@@ -107,7 +110,8 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "Go (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: droneSrclibGoImage,
+				Image:  droneSrclibGoImage,
+				Memory: defaultMemLimit,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -117,7 +121,8 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "JavaScript (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: droneSrclibJavaScriptImage,
+				Image:  droneSrclibJavaScriptImage,
+				Memory: defaultMemLimit,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -127,7 +132,8 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "Java (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: droneSrclibJavaImage,
+				Image:  droneSrclibJavaImage,
+				Memory: defaultMemLimit,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -137,7 +143,8 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "Bash (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: droneSrclibBashImage,
+				Image:  droneSrclibBashImage,
+				Memory: defaultMemLimit,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -147,7 +154,8 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "TypeScript (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: droneSrclibTypeScriptImage,
+				Image:  droneSrclibTypeScriptImage,
+				Memory: defaultMemLimit,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -157,7 +165,8 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "C# (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: droneSrclibCSharpImage,
+				Image:  droneSrclibCSharpImage,
+				Memory: defaultMemLimit,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -167,7 +176,8 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "CSS (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: droneSrclibCSSImage,
+				Image:  droneSrclibCSSImage,
+				Memory: defaultMemLimit,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -177,7 +187,8 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "Python (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: droneSrclibPythonImage,
+				Image:  droneSrclibPythonImage,
+				Memory: defaultMemLimit,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -187,7 +198,8 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "HTML (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: droneSrclibCSSImage,
+				Image:  droneSrclibCSSImage,
+				Memory: defaultMemLimit,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -198,7 +210,8 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "JSON (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: droneSrclibJSONImage,
+				Image:  droneSrclibJSONImage,
+				Memory: defaultMemLimit,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,

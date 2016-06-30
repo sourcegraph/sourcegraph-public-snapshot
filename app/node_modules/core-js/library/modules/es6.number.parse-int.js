@@ -1,4 +1,4 @@
+var $export   = require('./_export')
+  , $parseInt = require('./_parse-int');
 // 20.1.2.13 Number.parseInt(string, radix)
-var $export = require('./$.export');
-
-$export($export.S, 'Number', {parseInt: parseInt});
+$export($export.S + $export.F * (Number.parseInt != $parseInt), 'Number', {parseInt: $parseInt});
