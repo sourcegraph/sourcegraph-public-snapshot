@@ -67,14 +67,13 @@ func Services() svc.Services {
 		  	trace.After(ctx, "<<<$service.Name>>>", "<<<.Name>>>", param, err, time.Since(start))
 			}()
 			res, err = backend.Services.<<<$service.Name>>>.<<<.Name>>>(ctx, param)
-			if err != nil {
-				actor := auth.ActorFromContext(ctx)
-				code := grpc.Code(err)
-				if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+			if res == nil && err == nil {
+				err = grpc.Errorf(codes.Internal, "<<<$service.Name>>>.<<<.Name>>> returned nil, nil")
+			}
+			if err != nil && !auth.DebugMode(ctx) {
+				if code := grpc.Code(err); (code == codes.Unknown || code == codes.Internal) {
 					// Sanitize, because these errors should not be user visible.
-					err = grpc.Errorf(code, "<<<$service.Name>>>.<<<.Name>>> failed with internal error. Please report this to Sourcegraph support.")
-				} else if res == nil && err == nil {
-					err = grpc.Errorf(codes.Internal, "<<<$service.Name>>>.<<<.Name>>> returned nil, nil")
+					err = grpc.Errorf(code, "<<<$service.Name>>>.<<<.Name>>> failed with internal error.")
 				}
 			}
 			return

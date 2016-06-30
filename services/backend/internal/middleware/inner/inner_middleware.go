@@ -82,14 +82,13 @@ func (s wrappedMultiRepoImporter) Import(ctx context.Context, param *pb.ImportOp
 		trace.After(ctx, "MultiRepoImporter", "Import", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.MultiRepoImporter.Import(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "MultiRepoImporter.Import returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "MultiRepoImporter.Import failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "MultiRepoImporter.Import returned nil, nil")
+			err = grpc.Errorf(code, "MultiRepoImporter.Import failed with internal error.")
 		}
 	}
 	return
@@ -102,14 +101,13 @@ func (s wrappedMultiRepoImporter) CreateVersion(ctx context.Context, param *pb.C
 		trace.After(ctx, "MultiRepoImporter", "CreateVersion", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.MultiRepoImporter.CreateVersion(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "MultiRepoImporter.CreateVersion returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "MultiRepoImporter.CreateVersion failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "MultiRepoImporter.CreateVersion returned nil, nil")
+			err = grpc.Errorf(code, "MultiRepoImporter.CreateVersion failed with internal error.")
 		}
 	}
 	return
@@ -122,14 +120,13 @@ func (s wrappedMultiRepoImporter) Index(ctx context.Context, param *pb.IndexOp) 
 		trace.After(ctx, "MultiRepoImporter", "Index", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.MultiRepoImporter.Index(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "MultiRepoImporter.Index returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "MultiRepoImporter.Index failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "MultiRepoImporter.Index returned nil, nil")
+			err = grpc.Errorf(code, "MultiRepoImporter.Index failed with internal error.")
 		}
 	}
 	return
@@ -144,14 +141,13 @@ func (s wrappedAccounts) Create(ctx context.Context, param *sourcegraph.NewAccou
 		trace.After(ctx, "Accounts", "Create", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Accounts.Create(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Accounts.Create returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Accounts.Create failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Accounts.Create returned nil, nil")
+			err = grpc.Errorf(code, "Accounts.Create failed with internal error.")
 		}
 	}
 	return
@@ -164,14 +160,13 @@ func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *source
 		trace.After(ctx, "Accounts", "RequestPasswordReset", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Accounts.RequestPasswordReset(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Accounts.RequestPasswordReset returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Accounts.RequestPasswordReset failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Accounts.RequestPasswordReset returned nil, nil")
+			err = grpc.Errorf(code, "Accounts.RequestPasswordReset failed with internal error.")
 		}
 	}
 	return
@@ -184,14 +179,13 @@ func (s wrappedAccounts) ResetPassword(ctx context.Context, param *sourcegraph.N
 		trace.After(ctx, "Accounts", "ResetPassword", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Accounts.ResetPassword(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Accounts.ResetPassword returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Accounts.ResetPassword failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Accounts.ResetPassword returned nil, nil")
+			err = grpc.Errorf(code, "Accounts.ResetPassword failed with internal error.")
 		}
 	}
 	return
@@ -204,14 +198,13 @@ func (s wrappedAccounts) Update(ctx context.Context, param *sourcegraph.User) (r
 		trace.After(ctx, "Accounts", "Update", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Accounts.Update(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Accounts.Update returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Accounts.Update failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Accounts.Update returned nil, nil")
+			err = grpc.Errorf(code, "Accounts.Update failed with internal error.")
 		}
 	}
 	return
@@ -224,14 +217,13 @@ func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.PersonSp
 		trace.After(ctx, "Accounts", "Delete", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Accounts.Delete(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Accounts.Delete returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Accounts.Delete failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Accounts.Delete returned nil, nil")
+			err = grpc.Errorf(code, "Accounts.Delete failed with internal error.")
 		}
 	}
 	return
@@ -246,14 +238,13 @@ func (s wrappedAnnotations) List(ctx context.Context, param *sourcegraph.Annotat
 		trace.After(ctx, "Annotations", "List", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Annotations.List(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Annotations.List returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Annotations.List failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Annotations.List returned nil, nil")
+			err = grpc.Errorf(code, "Annotations.List failed with internal error.")
 		}
 	}
 	return
@@ -268,14 +259,13 @@ func (s wrappedAsync) RefreshIndexes(ctx context.Context, param *sourcegraph.Asy
 		trace.After(ctx, "Async", "RefreshIndexes", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Async.RefreshIndexes(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Async.RefreshIndexes returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Async.RefreshIndexes failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Async.RefreshIndexes returned nil, nil")
+			err = grpc.Errorf(code, "Async.RefreshIndexes failed with internal error.")
 		}
 	}
 	return
@@ -290,14 +280,13 @@ func (s wrappedAuth) GetAccessToken(ctx context.Context, param *sourcegraph.Acce
 		trace.After(ctx, "Auth", "GetAccessToken", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Auth.GetAccessToken(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Auth.GetAccessToken returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Auth.GetAccessToken failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Auth.GetAccessToken returned nil, nil")
+			err = grpc.Errorf(code, "Auth.GetAccessToken failed with internal error.")
 		}
 	}
 	return
@@ -310,14 +299,13 @@ func (s wrappedAuth) Identify(ctx context.Context, param *pbtypes.Void) (res *so
 		trace.After(ctx, "Auth", "Identify", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Auth.Identify(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Auth.Identify returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Auth.Identify failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Auth.Identify returned nil, nil")
+			err = grpc.Errorf(code, "Auth.Identify failed with internal error.")
 		}
 	}
 	return
@@ -330,14 +318,13 @@ func (s wrappedAuth) GetExternalToken(ctx context.Context, param *sourcegraph.Ex
 		trace.After(ctx, "Auth", "GetExternalToken", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Auth.GetExternalToken(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Auth.GetExternalToken returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Auth.GetExternalToken failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Auth.GetExternalToken returned nil, nil")
+			err = grpc.Errorf(code, "Auth.GetExternalToken failed with internal error.")
 		}
 	}
 	return
@@ -350,14 +337,13 @@ func (s wrappedAuth) SetExternalToken(ctx context.Context, param *sourcegraph.Ex
 		trace.After(ctx, "Auth", "SetExternalToken", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Auth.SetExternalToken(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Auth.SetExternalToken returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Auth.SetExternalToken failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Auth.SetExternalToken returned nil, nil")
+			err = grpc.Errorf(code, "Auth.SetExternalToken failed with internal error.")
 		}
 	}
 	return
@@ -370,14 +356,13 @@ func (s wrappedAuth) DeleteAndRevokeExternalToken(ctx context.Context, param *so
 		trace.After(ctx, "Auth", "DeleteAndRevokeExternalToken", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Auth.DeleteAndRevokeExternalToken(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Auth.DeleteAndRevokeExternalToken returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Auth.DeleteAndRevokeExternalToken failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Auth.DeleteAndRevokeExternalToken returned nil, nil")
+			err = grpc.Errorf(code, "Auth.DeleteAndRevokeExternalToken failed with internal error.")
 		}
 	}
 	return
@@ -392,14 +377,13 @@ func (s wrappedBuilds) Get(ctx context.Context, param *sourcegraph.BuildSpec) (r
 		trace.After(ctx, "Builds", "Get", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Builds.Get(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.Get returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Builds.Get failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Builds.Get returned nil, nil")
+			err = grpc.Errorf(code, "Builds.Get failed with internal error.")
 		}
 	}
 	return
@@ -412,14 +396,13 @@ func (s wrappedBuilds) List(ctx context.Context, param *sourcegraph.BuildListOpt
 		trace.After(ctx, "Builds", "List", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Builds.List(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.List returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Builds.List failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Builds.List returned nil, nil")
+			err = grpc.Errorf(code, "Builds.List failed with internal error.")
 		}
 	}
 	return
@@ -432,14 +415,13 @@ func (s wrappedBuilds) Create(ctx context.Context, param *sourcegraph.BuildsCrea
 		trace.After(ctx, "Builds", "Create", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Builds.Create(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.Create returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Builds.Create failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Builds.Create returned nil, nil")
+			err = grpc.Errorf(code, "Builds.Create failed with internal error.")
 		}
 	}
 	return
@@ -452,14 +434,13 @@ func (s wrappedBuilds) Update(ctx context.Context, param *sourcegraph.BuildsUpda
 		trace.After(ctx, "Builds", "Update", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Builds.Update(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.Update returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Builds.Update failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Builds.Update returned nil, nil")
+			err = grpc.Errorf(code, "Builds.Update failed with internal error.")
 		}
 	}
 	return
@@ -472,14 +453,13 @@ func (s wrappedBuilds) ListBuildTasks(ctx context.Context, param *sourcegraph.Bu
 		trace.After(ctx, "Builds", "ListBuildTasks", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Builds.ListBuildTasks(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.ListBuildTasks returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Builds.ListBuildTasks failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Builds.ListBuildTasks returned nil, nil")
+			err = grpc.Errorf(code, "Builds.ListBuildTasks failed with internal error.")
 		}
 	}
 	return
@@ -492,14 +472,13 @@ func (s wrappedBuilds) CreateTasks(ctx context.Context, param *sourcegraph.Build
 		trace.After(ctx, "Builds", "CreateTasks", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Builds.CreateTasks(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.CreateTasks returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Builds.CreateTasks failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Builds.CreateTasks returned nil, nil")
+			err = grpc.Errorf(code, "Builds.CreateTasks failed with internal error.")
 		}
 	}
 	return
@@ -512,14 +491,13 @@ func (s wrappedBuilds) UpdateTask(ctx context.Context, param *sourcegraph.Builds
 		trace.After(ctx, "Builds", "UpdateTask", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Builds.UpdateTask(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.UpdateTask returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Builds.UpdateTask failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Builds.UpdateTask returned nil, nil")
+			err = grpc.Errorf(code, "Builds.UpdateTask failed with internal error.")
 		}
 	}
 	return
@@ -532,14 +510,13 @@ func (s wrappedBuilds) GetTaskLog(ctx context.Context, param *sourcegraph.Builds
 		trace.After(ctx, "Builds", "GetTaskLog", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Builds.GetTaskLog(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.GetTaskLog returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Builds.GetTaskLog failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Builds.GetTaskLog returned nil, nil")
+			err = grpc.Errorf(code, "Builds.GetTaskLog failed with internal error.")
 		}
 	}
 	return
@@ -552,14 +529,13 @@ func (s wrappedBuilds) DequeueNext(ctx context.Context, param *sourcegraph.Build
 		trace.After(ctx, "Builds", "DequeueNext", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Builds.DequeueNext(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.DequeueNext returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Builds.DequeueNext failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Builds.DequeueNext returned nil, nil")
+			err = grpc.Errorf(code, "Builds.DequeueNext failed with internal error.")
 		}
 	}
 	return
@@ -574,14 +550,13 @@ func (s wrappedChannel) Send(ctx context.Context, param *sourcegraph.ChannelSend
 		trace.After(ctx, "Channel", "Send", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Channel.Send(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Channel.Send returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Channel.Send failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Channel.Send returned nil, nil")
+			err = grpc.Errorf(code, "Channel.Send failed with internal error.")
 		}
 	}
 	return
@@ -596,14 +571,13 @@ func (s wrappedDefs) Get(ctx context.Context, param *sourcegraph.DefsGetOp) (res
 		trace.After(ctx, "Defs", "Get", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Defs.Get(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.Get returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Defs.Get failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Defs.Get returned nil, nil")
+			err = grpc.Errorf(code, "Defs.Get failed with internal error.")
 		}
 	}
 	return
@@ -616,14 +590,13 @@ func (s wrappedDefs) List(ctx context.Context, param *sourcegraph.DefListOptions
 		trace.After(ctx, "Defs", "List", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Defs.List(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.List returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Defs.List failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Defs.List returned nil, nil")
+			err = grpc.Errorf(code, "Defs.List failed with internal error.")
 		}
 	}
 	return
@@ -636,14 +609,13 @@ func (s wrappedDefs) ListRefs(ctx context.Context, param *sourcegraph.DefsListRe
 		trace.After(ctx, "Defs", "ListRefs", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Defs.ListRefs(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.ListRefs returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Defs.ListRefs failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Defs.ListRefs returned nil, nil")
+			err = grpc.Errorf(code, "Defs.ListRefs failed with internal error.")
 		}
 	}
 	return
@@ -656,14 +628,13 @@ func (s wrappedDefs) ListRefLocations(ctx context.Context, param *sourcegraph.De
 		trace.After(ctx, "Defs", "ListRefLocations", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Defs.ListRefLocations(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.ListRefLocations returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Defs.ListRefLocations failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Defs.ListRefLocations returned nil, nil")
+			err = grpc.Errorf(code, "Defs.ListRefLocations failed with internal error.")
 		}
 	}
 	return
@@ -676,14 +647,13 @@ func (s wrappedDefs) ListExamples(ctx context.Context, param *sourcegraph.DefsLi
 		trace.After(ctx, "Defs", "ListExamples", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Defs.ListExamples(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.ListExamples returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Defs.ListExamples failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Defs.ListExamples returned nil, nil")
+			err = grpc.Errorf(code, "Defs.ListExamples failed with internal error.")
 		}
 	}
 	return
@@ -696,14 +666,13 @@ func (s wrappedDefs) ListAuthors(ctx context.Context, param *sourcegraph.DefsLis
 		trace.After(ctx, "Defs", "ListAuthors", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Defs.ListAuthors(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.ListAuthors returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Defs.ListAuthors failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Defs.ListAuthors returned nil, nil")
+			err = grpc.Errorf(code, "Defs.ListAuthors failed with internal error.")
 		}
 	}
 	return
@@ -716,14 +685,13 @@ func (s wrappedDefs) RefreshIndex(ctx context.Context, param *sourcegraph.DefsRe
 		trace.After(ctx, "Defs", "RefreshIndex", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Defs.RefreshIndex(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.RefreshIndex returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Defs.RefreshIndex failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Defs.RefreshIndex returned nil, nil")
+			err = grpc.Errorf(code, "Defs.RefreshIndex failed with internal error.")
 		}
 	}
 	return
@@ -738,14 +706,13 @@ func (s wrappedDeltas) Get(ctx context.Context, param *sourcegraph.DeltaSpec) (r
 		trace.After(ctx, "Deltas", "Get", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Deltas.Get(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Deltas.Get returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Deltas.Get failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Deltas.Get returned nil, nil")
+			err = grpc.Errorf(code, "Deltas.Get failed with internal error.")
 		}
 	}
 	return
@@ -758,14 +725,13 @@ func (s wrappedDeltas) ListFiles(ctx context.Context, param *sourcegraph.DeltasL
 		trace.After(ctx, "Deltas", "ListFiles", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Deltas.ListFiles(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Deltas.ListFiles returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Deltas.ListFiles failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Deltas.ListFiles returned nil, nil")
+			err = grpc.Errorf(code, "Deltas.ListFiles failed with internal error.")
 		}
 	}
 	return
@@ -780,14 +746,13 @@ func (s wrappedMeta) Status(ctx context.Context, param *pbtypes.Void) (res *sour
 		trace.After(ctx, "Meta", "Status", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Meta.Status(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Meta.Status returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Meta.Status failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Meta.Status returned nil, nil")
+			err = grpc.Errorf(code, "Meta.Status failed with internal error.")
 		}
 	}
 	return
@@ -800,14 +765,13 @@ func (s wrappedMeta) Config(ctx context.Context, param *pbtypes.Void) (res *sour
 		trace.After(ctx, "Meta", "Config", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Meta.Config(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Meta.Config returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Meta.Config failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Meta.Config returned nil, nil")
+			err = grpc.Errorf(code, "Meta.Config failed with internal error.")
 		}
 	}
 	return
@@ -822,14 +786,13 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, param *sourcegraph.M
 		trace.After(ctx, "MirrorRepos", "RefreshVCS", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.MirrorRepos.RefreshVCS(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "MirrorRepos.RefreshVCS returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "MirrorRepos.RefreshVCS failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "MirrorRepos.RefreshVCS returned nil, nil")
+			err = grpc.Errorf(code, "MirrorRepos.RefreshVCS failed with internal error.")
 		}
 	}
 	return
@@ -844,14 +807,13 @@ func (s wrappedNotify) GenericEvent(ctx context.Context, param *sourcegraph.Noti
 		trace.After(ctx, "Notify", "GenericEvent", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Notify.GenericEvent(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Notify.GenericEvent returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Notify.GenericEvent failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Notify.GenericEvent returned nil, nil")
+			err = grpc.Errorf(code, "Notify.GenericEvent failed with internal error.")
 		}
 	}
 	return
@@ -866,14 +828,13 @@ func (s wrappedOrgs) Get(ctx context.Context, param *sourcegraph.OrgSpec) (res *
 		trace.After(ctx, "Orgs", "Get", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Orgs.Get(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Orgs.Get returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Orgs.Get failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Orgs.Get returned nil, nil")
+			err = grpc.Errorf(code, "Orgs.Get failed with internal error.")
 		}
 	}
 	return
@@ -886,14 +847,13 @@ func (s wrappedOrgs) List(ctx context.Context, param *sourcegraph.OrgsListOp) (r
 		trace.After(ctx, "Orgs", "List", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Orgs.List(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Orgs.List returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Orgs.List failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Orgs.List returned nil, nil")
+			err = grpc.Errorf(code, "Orgs.List failed with internal error.")
 		}
 	}
 	return
@@ -906,14 +866,13 @@ func (s wrappedOrgs) ListMembers(ctx context.Context, param *sourcegraph.OrgsLis
 		trace.After(ctx, "Orgs", "ListMembers", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Orgs.ListMembers(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Orgs.ListMembers returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Orgs.ListMembers failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Orgs.ListMembers returned nil, nil")
+			err = grpc.Errorf(code, "Orgs.ListMembers failed with internal error.")
 		}
 	}
 	return
@@ -928,14 +887,13 @@ func (s wrappedPeople) Get(ctx context.Context, param *sourcegraph.PersonSpec) (
 		trace.After(ctx, "People", "Get", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.People.Get(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "People.Get returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "People.Get failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "People.Get returned nil, nil")
+			err = grpc.Errorf(code, "People.Get failed with internal error.")
 		}
 	}
 	return
@@ -950,14 +908,13 @@ func (s wrappedRepoStatuses) GetCombined(ctx context.Context, param *sourcegraph
 		trace.After(ctx, "RepoStatuses", "GetCombined", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.RepoStatuses.GetCombined(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RepoStatuses.GetCombined returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "RepoStatuses.GetCombined failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "RepoStatuses.GetCombined returned nil, nil")
+			err = grpc.Errorf(code, "RepoStatuses.GetCombined failed with internal error.")
 		}
 	}
 	return
@@ -970,14 +927,13 @@ func (s wrappedRepoStatuses) GetCoverage(ctx context.Context, param *pbtypes.Voi
 		trace.After(ctx, "RepoStatuses", "GetCoverage", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.RepoStatuses.GetCoverage(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RepoStatuses.GetCoverage returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "RepoStatuses.GetCoverage failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "RepoStatuses.GetCoverage returned nil, nil")
+			err = grpc.Errorf(code, "RepoStatuses.GetCoverage failed with internal error.")
 		}
 	}
 	return
@@ -990,14 +946,13 @@ func (s wrappedRepoStatuses) Create(ctx context.Context, param *sourcegraph.Repo
 		trace.After(ctx, "RepoStatuses", "Create", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.RepoStatuses.Create(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RepoStatuses.Create returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "RepoStatuses.Create failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "RepoStatuses.Create returned nil, nil")
+			err = grpc.Errorf(code, "RepoStatuses.Create failed with internal error.")
 		}
 	}
 	return
@@ -1012,14 +967,13 @@ func (s wrappedRepoTree) Get(ctx context.Context, param *sourcegraph.RepoTreeGet
 		trace.After(ctx, "RepoTree", "Get", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.RepoTree.Get(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RepoTree.Get returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "RepoTree.Get failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "RepoTree.Get returned nil, nil")
+			err = grpc.Errorf(code, "RepoTree.Get failed with internal error.")
 		}
 	}
 	return
@@ -1032,14 +986,13 @@ func (s wrappedRepoTree) Search(ctx context.Context, param *sourcegraph.RepoTree
 		trace.After(ctx, "RepoTree", "Search", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.RepoTree.Search(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RepoTree.Search returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "RepoTree.Search failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "RepoTree.Search returned nil, nil")
+			err = grpc.Errorf(code, "RepoTree.Search failed with internal error.")
 		}
 	}
 	return
@@ -1052,14 +1005,13 @@ func (s wrappedRepoTree) List(ctx context.Context, param *sourcegraph.RepoTreeLi
 		trace.After(ctx, "RepoTree", "List", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.RepoTree.List(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RepoTree.List returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "RepoTree.List failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "RepoTree.List returned nil, nil")
+			err = grpc.Errorf(code, "RepoTree.List failed with internal error.")
 		}
 	}
 	return
@@ -1074,14 +1026,13 @@ func (s wrappedRepos) Get(ctx context.Context, param *sourcegraph.RepoSpec) (res
 		trace.After(ctx, "Repos", "Get", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.Get(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.Get returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.Get failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.Get returned nil, nil")
+			err = grpc.Errorf(code, "Repos.Get failed with internal error.")
 		}
 	}
 	return
@@ -1094,14 +1045,13 @@ func (s wrappedRepos) Resolve(ctx context.Context, param *sourcegraph.RepoResolv
 		trace.After(ctx, "Repos", "Resolve", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.Resolve(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.Resolve returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.Resolve failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.Resolve returned nil, nil")
+			err = grpc.Errorf(code, "Repos.Resolve failed with internal error.")
 		}
 	}
 	return
@@ -1114,14 +1064,13 @@ func (s wrappedRepos) List(ctx context.Context, param *sourcegraph.RepoListOptio
 		trace.After(ctx, "Repos", "List", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.List(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.List returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.List failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.List returned nil, nil")
+			err = grpc.Errorf(code, "Repos.List failed with internal error.")
 		}
 	}
 	return
@@ -1134,14 +1083,13 @@ func (s wrappedRepos) ListRemote(ctx context.Context, param *sourcegraph.ReposLi
 		trace.After(ctx, "Repos", "ListRemote", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.ListRemote(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ListRemote returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.ListRemote failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.ListRemote returned nil, nil")
+			err = grpc.Errorf(code, "Repos.ListRemote failed with internal error.")
 		}
 	}
 	return
@@ -1154,14 +1102,13 @@ func (s wrappedRepos) Create(ctx context.Context, param *sourcegraph.ReposCreate
 		trace.After(ctx, "Repos", "Create", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.Create(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.Create returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.Create failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.Create returned nil, nil")
+			err = grpc.Errorf(code, "Repos.Create failed with internal error.")
 		}
 	}
 	return
@@ -1174,14 +1121,13 @@ func (s wrappedRepos) Update(ctx context.Context, param *sourcegraph.ReposUpdate
 		trace.After(ctx, "Repos", "Update", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.Update(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.Update returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.Update failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.Update returned nil, nil")
+			err = grpc.Errorf(code, "Repos.Update failed with internal error.")
 		}
 	}
 	return
@@ -1194,14 +1140,13 @@ func (s wrappedRepos) Delete(ctx context.Context, param *sourcegraph.RepoSpec) (
 		trace.After(ctx, "Repos", "Delete", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.Delete(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.Delete returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.Delete failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.Delete returned nil, nil")
+			err = grpc.Errorf(code, "Repos.Delete failed with internal error.")
 		}
 	}
 	return
@@ -1214,14 +1159,13 @@ func (s wrappedRepos) GetConfig(ctx context.Context, param *sourcegraph.RepoSpec
 		trace.After(ctx, "Repos", "GetConfig", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.GetConfig(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.GetConfig returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.GetConfig failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.GetConfig returned nil, nil")
+			err = grpc.Errorf(code, "Repos.GetConfig failed with internal error.")
 		}
 	}
 	return
@@ -1234,14 +1178,13 @@ func (s wrappedRepos) GetCommit(ctx context.Context, param *sourcegraph.RepoRevS
 		trace.After(ctx, "Repos", "GetCommit", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.GetCommit(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.GetCommit returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.GetCommit failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.GetCommit returned nil, nil")
+			err = grpc.Errorf(code, "Repos.GetCommit failed with internal error.")
 		}
 	}
 	return
@@ -1254,14 +1197,13 @@ func (s wrappedRepos) ResolveRev(ctx context.Context, param *sourcegraph.ReposRe
 		trace.After(ctx, "Repos", "ResolveRev", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.ResolveRev(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ResolveRev returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.ResolveRev failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.ResolveRev returned nil, nil")
+			err = grpc.Errorf(code, "Repos.ResolveRev failed with internal error.")
 		}
 	}
 	return
@@ -1274,14 +1216,13 @@ func (s wrappedRepos) ListCommits(ctx context.Context, param *sourcegraph.ReposL
 		trace.After(ctx, "Repos", "ListCommits", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.ListCommits(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ListCommits returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.ListCommits failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.ListCommits returned nil, nil")
+			err = grpc.Errorf(code, "Repos.ListCommits failed with internal error.")
 		}
 	}
 	return
@@ -1294,14 +1235,13 @@ func (s wrappedRepos) ListBranches(ctx context.Context, param *sourcegraph.Repos
 		trace.After(ctx, "Repos", "ListBranches", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.ListBranches(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ListBranches returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.ListBranches failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.ListBranches returned nil, nil")
+			err = grpc.Errorf(code, "Repos.ListBranches failed with internal error.")
 		}
 	}
 	return
@@ -1314,14 +1254,13 @@ func (s wrappedRepos) ListTags(ctx context.Context, param *sourcegraph.ReposList
 		trace.After(ctx, "Repos", "ListTags", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.ListTags(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ListTags returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.ListTags failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.ListTags returned nil, nil")
+			err = grpc.Errorf(code, "Repos.ListTags failed with internal error.")
 		}
 	}
 	return
@@ -1347,14 +1286,13 @@ func (s wrappedRepos) ListCommitters(ctx context.Context, param *sourcegraph.Rep
 		trace.After(ctx, "Repos", "ListCommitters", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.ListCommitters(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ListCommitters returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.ListCommitters failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.ListCommitters returned nil, nil")
+			err = grpc.Errorf(code, "Repos.ListCommitters failed with internal error.")
 		}
 	}
 	return
@@ -1367,14 +1305,13 @@ func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, param *so
 		trace.After(ctx, "Repos", "GetSrclibDataVersionForPath", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.GetSrclibDataVersionForPath(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.GetSrclibDataVersionForPath returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.GetSrclibDataVersionForPath failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.GetSrclibDataVersionForPath returned nil, nil")
+			err = grpc.Errorf(code, "Repos.GetSrclibDataVersionForPath failed with internal error.")
 		}
 	}
 	return
@@ -1387,14 +1324,13 @@ func (s wrappedRepos) ConfigureApp(ctx context.Context, param *sourcegraph.RepoC
 		trace.After(ctx, "Repos", "ConfigureApp", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.ConfigureApp(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ConfigureApp returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.ConfigureApp failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.ConfigureApp returned nil, nil")
+			err = grpc.Errorf(code, "Repos.ConfigureApp failed with internal error.")
 		}
 	}
 	return
@@ -1407,14 +1343,13 @@ func (s wrappedRepos) GetInventory(ctx context.Context, param *sourcegraph.RepoR
 		trace.After(ctx, "Repos", "GetInventory", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.GetInventory(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.GetInventory returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.GetInventory failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.GetInventory returned nil, nil")
+			err = grpc.Errorf(code, "Repos.GetInventory failed with internal error.")
 		}
 	}
 	return
@@ -1427,14 +1362,13 @@ func (s wrappedRepos) ReceivePack(ctx context.Context, param *sourcegraph.Receiv
 		trace.After(ctx, "Repos", "ReceivePack", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.ReceivePack(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ReceivePack returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.ReceivePack failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.ReceivePack returned nil, nil")
+			err = grpc.Errorf(code, "Repos.ReceivePack failed with internal error.")
 		}
 	}
 	return
@@ -1447,14 +1381,13 @@ func (s wrappedRepos) UploadPack(ctx context.Context, param *sourcegraph.UploadP
 		trace.After(ctx, "Repos", "UploadPack", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Repos.UploadPack(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.UploadPack returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.UploadPack failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Repos.UploadPack returned nil, nil")
+			err = grpc.Errorf(code, "Repos.UploadPack failed with internal error.")
 		}
 	}
 	return
@@ -1469,14 +1402,13 @@ func (s wrappedSearch) Search(ctx context.Context, param *sourcegraph.SearchOp) 
 		trace.After(ctx, "Search", "Search", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Search.Search(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Search.Search returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Search.Search failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Search.Search returned nil, nil")
+			err = grpc.Errorf(code, "Search.Search failed with internal error.")
 		}
 	}
 	return
@@ -1491,14 +1423,13 @@ func (s wrappedUsers) Get(ctx context.Context, param *sourcegraph.UserSpec) (res
 		trace.After(ctx, "Users", "Get", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Users.Get(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Users.Get returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Users.Get failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Users.Get returned nil, nil")
+			err = grpc.Errorf(code, "Users.Get failed with internal error.")
 		}
 	}
 	return
@@ -1511,14 +1442,13 @@ func (s wrappedUsers) GetWithEmail(ctx context.Context, param *sourcegraph.Email
 		trace.After(ctx, "Users", "GetWithEmail", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Users.GetWithEmail(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Users.GetWithEmail returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Users.GetWithEmail failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Users.GetWithEmail returned nil, nil")
+			err = grpc.Errorf(code, "Users.GetWithEmail failed with internal error.")
 		}
 	}
 	return
@@ -1531,14 +1461,13 @@ func (s wrappedUsers) ListEmails(ctx context.Context, param *sourcegraph.UserSpe
 		trace.After(ctx, "Users", "ListEmails", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Users.ListEmails(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Users.ListEmails returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Users.ListEmails failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Users.ListEmails returned nil, nil")
+			err = grpc.Errorf(code, "Users.ListEmails failed with internal error.")
 		}
 	}
 	return
@@ -1551,14 +1480,13 @@ func (s wrappedUsers) List(ctx context.Context, param *sourcegraph.UsersListOpti
 		trace.After(ctx, "Users", "List", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Users.List(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Users.List returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Users.List failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Users.List returned nil, nil")
+			err = grpc.Errorf(code, "Users.List failed with internal error.")
 		}
 	}
 	return
@@ -1571,14 +1499,13 @@ func (s wrappedUsers) Count(ctx context.Context, param *pbtypes.Void) (res *sour
 		trace.After(ctx, "Users", "Count", param, err, time.Since(start))
 	}()
 	res, err = backend.Services.Users.Count(ctx, param)
-	if err != nil {
-		actor := auth.ActorFromContext(ctx)
-		code := grpc.Code(err)
-		if !actor.Admin && (code == codes.Unknown || code == codes.Internal) {
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Users.Count returned nil, nil")
+	}
+	if err != nil && !auth.DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Users.Count failed with internal error. Please report this to Sourcegraph support.")
-		} else if res == nil && err == nil {
-			err = grpc.Errorf(codes.Internal, "Users.Count returned nil, nil")
+			err = grpc.Errorf(code, "Users.Count failed with internal error.")
 		}
 	}
 	return
