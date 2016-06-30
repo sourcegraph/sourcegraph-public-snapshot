@@ -642,8 +642,8 @@ func toTextSearchTokens(def *graph.Def) (aToks []string, bToks []string, cToks [
 	}
 	bToks = appendRepeated(bToks, unitParts[len(unitParts)-1], 2)
 
-	defParts := delims.Split(def.Path, -1)
-	for _, w := range defParts {
+	pathParts := delims.Split(def.Path, -1)
+	for _, w := range pathParts {
 		bToks = appendRepeated(bToks, w, 2)
 		for _, c := range allCombinations(splitCaseWords(w)) {
 			if c != "" {
@@ -651,9 +651,9 @@ func toTextSearchTokens(def *graph.Def) (aToks []string, bToks []string, cToks [
 			}
 		}
 	}
-	lastDefPart := defParts[len(defParts)-1]
-	aToks = appendRepeated(aToks, lastDefPart, 3) // mega extra points for matching the last component of the def path (typically the "name" of the def)
-	for _, c := range allCombinations(splitCaseWords(lastDefPart)) {
+	lastPathPart := pathParts[len(pathParts)-1]
+	aToks = appendRepeated(aToks, lastPathPart, 3) // mega extra points for matching the last component of the def path (typically the "name" of the def)
+	for _, c := range allCombinations(splitCaseWords(lastPathPart)) {
 		if c != "" {
 			aToks = appendRepeated(aToks, c, 1) // more points for matching last component of def path
 		}
