@@ -163,8 +163,11 @@ func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
 	q := r.URL.Query()
-	_, privateOnly := q["Private"]
 	var repoType string
+	var privateOnly bool
+	if p, ok := q["Private"]; ok && len(p) > 0 {
+		privateOnly, _ = strconv.ParseBool(p[0])
+	}
 	if privateOnly {
 		repoType = "private"
 	}
