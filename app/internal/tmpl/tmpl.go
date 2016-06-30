@@ -195,7 +195,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 
 			CurrentSpanID:    traceutil.SpanID(req),
 			CurrentRouteVars: mux.Vars(req),
-			Debug:            handlerutil.DebugMode(ctx),
+			Debug:            handlerutil.DebugMode,
 
 			DisableExternalLinks: appconf.Flags.DisableExternalLinks,
 			Features:             feature.Features,

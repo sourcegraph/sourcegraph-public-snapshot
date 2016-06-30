@@ -54,7 +54,7 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	errBody := err.Error()
 
 	var displayErrBody string
-	if ctx := httpctx.FromRequest(r); handlerutil.DebugMode(ctx) {
+	if handlerutil.DebugMode {
 		// Only display error message to admins or locally, since it
 		// can contain sensitive info (like API keys in net/http error
 		// messages).

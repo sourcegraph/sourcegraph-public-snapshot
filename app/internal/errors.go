@@ -11,7 +11,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 )
 
@@ -91,7 +90,7 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 		if e := recover(); e != nil {
 			log15.Error("panic during execution of error template", "error", e, "error_id", errorID, "func_name", "HandleError", "tmpl_name", "error/error.html")
 			err := fmt.Errorf("panic during execution of error template (error id %v): %v", errorID, e)
-			if ctx := httpctx.FromRequest(req); !handlerutil.DebugMode(ctx) {
+			if !handlerutil.DebugMode {
 				err = errPublicFacingErrorMessage
 			}
 			http.Error(resp, err.Error(), http.StatusInternalServerError)
@@ -118,7 +117,7 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 	if err2 != nil {
 		log15.Error("error during execution of error template", "error", err2, "error_id", errorID)
 		err := fmt.Errorf("error during execution of error template (error id %v): %v", errorID, err2)
-		if ctx := httpctx.FromRequest(req); !handlerutil.DebugMode(ctx) {
+		if !handlerutil.DebugMode {
 			err = errPublicFacingErrorMessage
 		}
 		http.Error(resp, err.Error(), http.StatusInternalServerError)

@@ -20,7 +20,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 	apirouter "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
 )
@@ -174,7 +173,7 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	errBody := err.Error()
 
 	var displayErrBody string
-	if ctx := httpctx.FromRequest(r); handlerutil.DebugMode(ctx) {
+	if handlerutil.DebugMode {
 		// Only display error message to admins or locally, since it
 		// can contain sensitive info (like API keys in net/http error
 		// messages).
@@ -217,7 +216,7 @@ func handleErrorWithGRPC(w http.ResponseWriter, r *http.Request, status int, err
 	errBody := err.Error()
 
 	var displayErrBody string
-	if ctx := httpctx.FromRequest(r); handlerutil.DebugMode(ctx) {
+	if handlerutil.DebugMode {
 		// Only display error message to admins or locally, since it
 		// can contain sensitive info (like API keys in net/http error
 		// messages).
