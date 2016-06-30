@@ -163,13 +163,14 @@ class GlobalSearch extends Container {
 				const results = SearchStore.get(`${lang} ${state.query}`, this._reposScope(state, lang), null, null, RESULTS_LIMIT,
 					this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
 				if (results) {
+					memo.fetching = false;
 					if (results.Repos) memo.Repos.push(...results.Repos);
 					if (results.Defs) memo.Defs.push(...results.Defs);
 					if (results.Options) memo.Options.push(...results.Options);
 				}
 			}
 			return memo;
-		}, {Repos: [], Defs: [], Options: []});
+		}, {Repos: [], Defs: [], Options: [], fetching: true});
 	}
 
 	onStateTransition(prevState, nextState) {
@@ -372,8 +373,8 @@ class GlobalSearch extends Container {
 
 		const invalidFiltersItem = <div className={`${base.pt4} ${base.ph4}`} styleName="result" key="_nosymbol">Update your search filters and try again.</div>;
 		const noResultsItem = <div className={`${base.ph4} ${base.pt4}`} styleName="result" key="_nosymbol">No results found.</div>;
-		if (!this.state.matchingResults) {
-			return [<div key="1" styleName="result" className={base.pv5}>Loading results...</div>];
+		if (!this.state.matchingResults || this.state.matchingResults && this.state.matchingResults.fetching) {
+			return [<div key="1" className={`${base.ph4} ${base.pt4}`}styleName="result">Loading results...</div>];
 		}
 
 		const langs = this._langs(this.state);
