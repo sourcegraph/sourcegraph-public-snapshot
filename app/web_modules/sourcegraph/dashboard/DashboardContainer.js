@@ -101,7 +101,7 @@ class DashboardContainer extends Container {
 						name="q"
 						border={true}
 						query={this.props.location.query.q || ""}
-						autoFocus={this.context.signedIn}
+						autoFocus={true}
 						domRef={e => this._input = e}
 						styleName="search-input"
 						onChange={this._handleInput} />
