@@ -67,23 +67,17 @@ class Repos extends React.Component {
 		return (
 			<div className={base.pb4}>
 				<div>
+					<div>
+						<Input type="text"
+							placeholder="Find a repository..."
+							domRef={(e) => this._filterInput = e}
+							spellCheck={false}
+							styleName="filter-input"
+							onChange={this._handleFilter} />
+						{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github-button">Connect your private repositories</GitHubAuthButton>}
+						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} styleName="github-button">Connect with GitHub</GitHubAuthButton>}
+					</div>
 					<Table styleName="repos">
-						<thead>
-							<tr>
-								<td>
-									<Input type="text"
-										placeholder="Find a repository..."
-										domRef={(e) => this._filterInput = e}
-										spellCheck={false}
-										styleName="filter-input"
-										onChange={this._handleFilter} />
-								</td>
-								<td>
-									{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github-button">Connect your private repositories</GitHubAuthButton>}
-									{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} styleName="github-button">Connect with GitHub</GitHubAuthButton>}
-								</td>
-							</tr>
-						</thead>
 						<tbody>
 							{repos.length > 0 && repos.map((repo, i) =>
 								<tr styleName="row" key={i}>

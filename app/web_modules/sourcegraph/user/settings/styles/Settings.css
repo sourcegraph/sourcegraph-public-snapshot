@@ -6,7 +6,15 @@
 @value button "sourcegraph/components/styles/button.css";
 @value vars "sourcegraph/components/styles/_vars.css";
 
+@value media-sm from vars;
+
 .container {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+}
+
+.main {
 	composes: containerFixed from layout;
 	composes: ma4 from base;
 	display: flex;
@@ -20,4 +28,10 @@
 .panel {
 	composes: ph5 from base;
 	flex: 1 1;
+}
+
+@media screen and media-sm {
+	.nav {
+		display: none;
+	}
 }
