@@ -11,7 +11,6 @@ import styles from "./styles/Dashboard.css";
 import {locationForSearch} from "sourcegraph/search/routes";
 import GlobalSearchInput from "sourcegraph/search/GlobalSearchInput";
 import {Button, Logo} from "sourcegraph/components";
-import {ToolsIcon} from "sourcegraph/components/Icons";
 import SearchSettings from "sourcegraph/search/SearchSettings";
 import type {LanguageID} from "sourcegraph/Language";
 import invariant from "invariant";
