@@ -13,12 +13,14 @@ func init() {
 func testSearchFlow(t *T) error {
 	wd := t.WebDriver
 
-	err := wd.Get(t.Endpoint("/github.com/gorilla/mux"))
+	err := wd.Get(t.Endpoint("/search"))
 	if err != nil {
 		return err
 	}
 
-	searchInput := t.WaitForElement(selenium.ById, "search-input")
+	selectLang := t.FindElement(selenium.ById, "e2etest-search-lang-select-golang")
+	selectLang.Click()
+	searchInput := t.WaitForElement(selenium.ById, "e2etest-search-input")
 	searchInput.SendKeys("RouteMatch")
 
 	t.WaitForElement(selenium.ByLinkText, "type RouteMatch struct", MatchAttribute("href", `/github\.com/gorilla/mux(@[^/]+)?/-/def/GoPackage/github.com/gorilla/mux/-/RouteMatch`))

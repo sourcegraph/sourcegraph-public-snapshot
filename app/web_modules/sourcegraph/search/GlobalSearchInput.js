@@ -39,6 +39,7 @@ function GlobalSearchInput(props) {
 	return (
 		<Input
 			{...passProps}
+			id="e2etest-search-input"
 			type="text"
 			onMouseDown={props.icon ? positionCursorAtEndIfIconClicked : null}
 			block={true}
