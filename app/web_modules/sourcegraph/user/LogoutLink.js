@@ -42,6 +42,20 @@ export default class LogoutLink extends Container {
 		this.setState({submitted: true}, () => {
 			Dispatcher.Stores.dispatch(new UserActions.SubmitLogout());
 			Dispatcher.Backends.dispatch(new UserActions.SubmitLogout());
+
+			const settings = UserStore.settings.get();
+			const newSettings = {
+				...settings,
+				search: {
+					...settings.search,
+					scope: {
+						...(settings.search && settings.search.scope),
+						popular: true,
+					},
+				},
+			};
+
+			Dispatcher.Stores.dispatch(new UserActions.UpdateSettings(newSettings));
 		});
 	}
 
