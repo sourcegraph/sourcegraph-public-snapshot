@@ -139,6 +139,16 @@ class SearchSettings extends Container {
 									{langName(lang)}
 							</Button>
 						))}
+					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location}>
+						<Button
+							color="default"
+							size="small"
+							styleName="choice-button"
+							onClick={() => this.setState({betaLanguage: "more"})}
+							outline={true}>
+								More languages
+						</Button>
+					</LocationStateToggleLink>
 				</div>
 			</div>
 		);
@@ -203,10 +213,10 @@ class SearchSettings extends Container {
 				{this.props.location.state && this.props.location.state.modal === "beta" && this.state.betaLanguage &&
 					<LocationStateModal modalName="beta" location={this.props.location}>
 						<div styleName="modal">
-							<h2 styleName="modalTitle">Participate in the Sourcegraph beta for {langName(this.state.betaLanguage)}</h2>
+							<h2 styleName="modalTitle">Participate in the Sourcegraph beta {`${this.state.betaLanguage === "more" ? "" : `for ${langName(this.state.betaLanguage)}`}`}</h2>
 							<InterestForm
 								rowClass={styles.modalRow}
-								language={this.state.betaLanguage}
+								language={this.state.betaLanguage === "more" ? null : this.state.betaLanguage}
 								onSubmit={dismissModal("beta", this.props.location, this.context.router)} />
 						</div>
 					</LocationStateModal>
