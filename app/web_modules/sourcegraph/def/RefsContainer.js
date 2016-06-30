@@ -23,7 +23,10 @@ import {FaAngleDown, FaAngleRight} from "sourcegraph/components/Icons";
 import breadcrumb from "sourcegraph/util/breadcrumb";
 import stripDomain from "sourcegraph/util/stripDomain";
 import styles from "./styles/Refs.css";
+import base from "sourcegraph/components/styles/_base.css";
+import colors from "sourcegraph/components/styles/_colors.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {Repository} from "sourcegraph/components/symbols";
 
 const SNIPPET_REF_CONTEXT_LINES = 0; // Number of additional lines to show above/below a ref
 
@@ -249,12 +252,14 @@ export default class RefsContainer extends Container {
 			);
 		}
 
+		console.log(DefStore.authors.get(this.state.repo, this.state.commitID, this.state.def));
+
 		return (
-			<div>
+			<div className={`${base.pa4} ${base.bb} ${colors["b--cool-pale-gray"]}`}>
 			{this.state.showRepoTitle &&
-				<h2 className={styles.repo}>
+				<div>
 					<RepoLink className={styles.repoLink} repo={this.state.refRepo} />
-				</h2>
+				</div>
 			}
 			<div className={styles.container}
 				onMouseEnter={() => {

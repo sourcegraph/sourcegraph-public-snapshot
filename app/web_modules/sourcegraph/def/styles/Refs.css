@@ -8,7 +8,7 @@
 @value media-sm from vars;
 
 .container {
-	composes: mt3 mb3 br2 ba bw1 from base;
+	composes: br2 ba bw1 from base;
 	composes: b--cool-pale-gray from colors;
 	display: flex;
 	flex-direction: column;

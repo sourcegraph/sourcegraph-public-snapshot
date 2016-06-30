@@ -4,7 +4,7 @@ import RefsContainer from "sourcegraph/def/RefsContainer";
 import DefStore from "sourcegraph/def/DefStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {Button} from "sourcegraph/components";
+import {Button, Heading} from "sourcegraph/components";
 import "sourcegraph/blob/BlobBackend";
 import CSSModules from "react-css-modules";
 import styles from "./styles/DefInfo.css";
@@ -70,15 +70,15 @@ class RepoRefsContainer extends Container {
 
 		return (
 			<div>
-				<div styleName="section-label">
+				<Heading level="7" styleName="cool-mid-gray">
 					{refLocs && refLocs.TotalRepos &&
 						`Referenced in ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`
 					}
 					{refLocs && !refLocs.TotalRepos && refLocs.RepoRefs &&
 						`Referenced in ${refLocs.RepoRefs.length}+ repositories`
 					}
-				</div>
-				<hr style={{marginTop: 0, clear: "both"}}/>
+				</Heading>
+
 				{!refLocs && <i>Loading...</i>}
 				{refLocs && !refLocs.RepoRefs && <i>No references found</i>}
 				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <RefsContainer

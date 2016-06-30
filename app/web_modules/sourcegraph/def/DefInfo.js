@@ -24,7 +24,7 @@ import breadcrumb from "sourcegraph/util/breadcrumb";
 import {trimRepo} from "sourcegraph/repo";
 import {urlToRepo} from "sourcegraph/repo/routes";
 import {LanguageIcon} from "sourcegraph/components/Icons";
-import {Dropdown, Panel, Header, Heading, FlexContainer} from "sourcegraph/components";
+import {Dropdown, Header, Heading, FlexContainer} from "sourcegraph/components";
 
 
 // Number of characters of the Docstring to show before showing the "collapse" options.
@@ -284,27 +284,14 @@ class DefInfo extends Container {
 							<hr className={base.mv4} styleName="b--cool-pale-gray" />
 
 							<div className={base.mb5}>
-								<Heading level="7" className={base.mb3} styleName="cool-mid-gray">
-									4 usage examples
-								</Heading>
-								<Panel
-									hoverLevel="low"
-									styleName="full-width-sm b--cool-pale-gray"
-									className={base.ba}>
-
-									<ExamplesContainer
-										repo={this.props.repo}
-										rev={this.props.rev}
-										commitID={this.props.commitID}
-										def={this.props.def}
-										defObj={this.props.defObj}
-										className={base.pa4} />
-								</Panel>
+								<ExamplesContainer
+									repo={this.props.repo}
+									rev={this.props.rev}
+									commitID={this.props.commitID}
+									def={this.props.def}
+									defObj={this.props.defObj} />
 							</div>
 							<div>
-								<Heading level="7" styleName="cool-mid-gray">
-									10 references in 4 repositories
-								</Heading>
 								{/* TODO(sqs): to be implemented */}
 								<RepoRefsContainer
 									repo={this.props.repo}
