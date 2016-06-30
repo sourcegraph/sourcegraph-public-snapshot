@@ -7,10 +7,22 @@ import type from "./styles/_typography.css";
 import {Button} from "sourcegraph/components";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
+type Props = {
+	scopes: string,
+	returnTo?: ?(string | Location),
+	color: string,
+	outline: bool,
+	block: bool,
+	size?: string,
+	children?: any,
+};
+
 class GitHubAuthButton extends React.Component {
 	static propTypes = {
 		scopes: React.PropTypes.string, // OAuth2 scopes
-		returnTo: React.PropTypes.object, // return-to location
+
+		// return-to location after GitHub OAuth is complete
+		returnTo: React.PropTypes.oneOfType([React.PropTypes.object, React.PropTypes.string]),
 
 		color: React.PropTypes.string,
 		outline: React.PropTypes.bool,
@@ -25,13 +37,14 @@ class GitHubAuthButton extends React.Component {
 	static contextTypes = {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
-	static defaultProps = {
+	static defaultProps: Props = {
 		scopes: "",
 		returnTo: null,
 		color: "blue",
 		outline: false,
 		block: false,
 	};
+	props: Props;
 
 	render() {
 		const {scopes, returnTo, outline, color, block, children, size} = this.props;

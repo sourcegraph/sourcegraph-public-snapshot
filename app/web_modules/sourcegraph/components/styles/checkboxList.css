@@ -1,0 +1,13 @@
+@value base "sourcegraph/components/styles/_base.css";
+@value grid "sourcegraph/components/styles/_grid.css";
+
+.fieldset {
+	composes: ph4 from base;
+}
+
+.checkbox {
+	composes: pt1 ph2 from base;
+	min-width: 8rem;
+	display: inline-block;
+	user-select: none;
+}
