@@ -26,7 +26,6 @@ import styles from "./styles/Refs.css";
 import base from "sourcegraph/components/styles/_base.css";
 import colors from "sourcegraph/components/styles/_colors.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {Repository} from "sourcegraph/components/symbols";
 
 const SNIPPET_REF_CONTEXT_LINES = 0; // Number of additional lines to show above/below a ref
 
@@ -252,8 +251,6 @@ export default class RefsContainer extends Container {
 			);
 		}
 
-		console.log(DefStore.authors.get(this.state.repo, this.state.commitID, this.state.def));
-
 		return (
 			<div className={`${base.pa4} ${base.bb} ${colors["b--cool-pale-gray"]}`}>
 			{this.state.showRepoTitle &&
@@ -261,80 +258,82 @@ export default class RefsContainer extends Container {
 					<RepoLink className={styles.repoLink} repo={this.state.refRepo} />
 				</div>
 			}
-			<div className={styles.container}
-				onMouseEnter={() => {
-					if (!this.state.mouseover) this.setState({mouseover: true, mouseout: false});
-				}}
-				onMouseLeave={() => this.setState({mouseover: false, mouseout: true})}
-				onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}>
-				{/* mouseover state is for optimization which will only re-render the moused-over blob when a def is highlighted */}
-				{/* this is important since there may be many ref containers on the page */}
-				<div>
-					<div className={styles.refs}>
-						{this.state.fileLocations && this.state.fileLocations.map((loc, i) => {
-							if (!this.state.showAllFiles && i >= this.state.fileCollapseThreshold) return null;
-							if (!this.state.shownFiles.has(loc.Path)) return this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i);
+				<div className={styles.container}
+					onMouseEnter={() => {
+						if (!this.state.mouseover) this.setState({mouseover: true, mouseout: false});
+					}}
+					onMouseLeave={() => this.setState({mouseover: false, mouseout: true})}
+					onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}>
+					{/* mouseover state is for optimization which will only re-render the moused-over blob when a def is highlighted */}
+					{/* this is important since there may be many ref containers on the page */}
+					<div>
+						<div className={styles.refs}>
+							{this.state.fileLocations && this.state.fileLocations.map((loc, i) => {
+								if (!this.state.showAllFiles && i >= this.state.fileCollapseThreshold) return null;
+								if (!this.state.shownFiles.has(loc.Path)) return this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i);
 
-							let err;
-							let file = this.filesByName ? this.filesByName[loc.Path] : null;
-							if (file && file.Error) {
-								switch (file.Error.response.status) {
-								case 413:
-									err = "Sorry, this file is too large to display.";
-									break;
-								default:
-									err = "File is not available.";
+								let err;
+								let file = this.filesByName ? this.filesByName[loc.Path] : null;
+								if (file && file.Error) {
+									switch (file.Error.response.status) {
+									case 413:
+										err = "Sorry, this file is too large to display.";
+										break;
+									default:
+										err = "File is not available.";
+									}
 								}
-							}
-							if (this.state.refs && this.state.refs.Error) {
-								err = `Error loading references for ${loc.Path}.`;
-							} else if (this.state.refs && this.state.refs.filter((r) => r.File === loc.Path).length === 0) {
-								err = `No references found for ${loc.Path}`;
-							}
+								if (this.state.refs && this.state.refs.Error) {
+									err = `Error loading references for ${loc.Path}.`;
+								} else if (this.state.refs && this.state.refs.filter((r) => r.File === loc.Path).length === 0) {
+									err = `No references found for ${loc.Path}`;
+								}
 
-							if (err) {
-								return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<p className={styles.fileError}>{err}</p></div>;
-							}
-							if (!file) {
-								return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<BlobContentPlaceholder key={i} numLines={10} /></div>;
-							}
+								if (err) {
+									return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<p className={styles.fileError}>{err}</p></div>;
+								}
+								if (!file) {
+									return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<BlobContentPlaceholder key={i} numLines={10} /></div>;
+								}
 
-							let ranges = this.ranges[loc.Path];
-							if (this.state.rangeLimit) {
-								ranges = ranges.slice(0, this.state.rangeLimit);
-								ranges.map((r) => [r[0], Math.min(r[0] + 10, r[1])]);
-							}
+								let ranges = this.ranges[loc.Path];
+								if (this.state.rangeLimit) {
+									ranges = ranges.slice(0, this.state.rangeLimit);
+									ranges.map((r) => [r[0], Math.min(r[0] + 10, r[1])]);
+								}
 
-							return (
-								<div key={i}>
-									<Blob
-										repo={this.state.refRepo}
-										rev={this.state.refRev}
-										path={loc.Path}
-										contents={file.ContentsString}
-										annotations={this.anns[loc.Path] || null}
-										skipAnns={file.ContentsString && file.ContentsString.length >= 40*2500}
-										activeDefRepo={this.state.repo}
-										activeDef={this.state.def}
-										lineNumbers={false}
-										displayRanges={ranges || null}
-										highlightedDef={this.state.highlightedDef || null}
-										highlightedDefObj={this.state.highlightedDefObj || null}
-										textSize="large"
-										className={styles.blob} />
-								</div>
-							);
-						})}
-					</div>
-					{!this.state.showAllFiles && this.state.fileLocations && this.state.fileLocations.length > this.state.fileCollapseThreshold &&
-						<div className={styles.filename} onClick={() => this.setState({showAllFiles: true})}>
-							<FaAngleRight className={styles.toggleIcon} />
-							{this.paginatorText()}
+								return (
+									<div key={i}>
+										<Blob
+											repo={this.state.refRepo}
+											rev={this.state.refRev}
+											path={loc.Path}
+											contents={file.ContentsString}
+											annotations={this.anns[loc.Path] || null}
+											skipAnns={file.ContentsString && file.ContentsString.length >= 40*2500}
+											activeDefRepo={this.state.repo}
+											activeDef={this.state.def}
+											lineNumbers={false}
+											displayRanges={ranges || null}
+											highlightedDef={this.state.highlightedDef || null}
+											highlightedDefObj={this.state.highlightedDefObj || null}
+											textSize="large"
+											className={styles.blob} />
+									</div>
+								);
+							})}
 						</div>
-					}
+
+						{!this.state.showAllFiles && this.state.fileLocations && this.state.fileLocations.length > this.state.fileCollapseThreshold &&
+							<div className={styles.filename} onClick={() => this.setState({showAllFiles: true})}>
+								<FaAngleRight className={styles.toggleIcon} />
+								{this.paginatorText()}
+							</div>
+						}
+					</div>
+					{this.state.highlightedDefObj && !this.state.highlightedDefObj.Error && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
 				</div>
-				{this.state.highlightedDefObj && !this.state.highlightedDefObj.Error && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
-			</div>
+				{this.state.refRepo && <div className={`${base.mt3} ${styles.f7}`}>Used in <Link to={this.state.refRepo}>{this.state.refRepo}</Link></div>}
 			</div>
 		);
 	}

@@ -96,6 +96,7 @@ class Blob extends Component {
 		endCol: ?number;
 		endByte: ?number;
 		lineStartBytes: number[];
+		lineNumbers: boolean;
 		activeDef: ?string;
 		activeDefRepo: ?string;
 		highlightedDef: ?string;
@@ -118,6 +119,7 @@ class Blob extends Component {
 		lineAnns: [],
 		lineStartBytes: [],
 		lines: [],
+		lineNumbers: true,
 		expandedRanges: [],
 		startLine: null,
 		startCol: null,
@@ -389,8 +391,7 @@ class Blob extends Component {
 					<BlobLineExpander key={`expand-${i}`}
 						direction={renderedLines === 0 ? "up" : null}
 						expandRange={expandTo}
-						onExpand={this._expandRange}
-						lineNumbers={this.state.lineNumbers} />
+						onExpand={this._expandRange} />
 				);
 				lastRangeEnd = lineNumber;
 			}
@@ -419,8 +420,7 @@ class Blob extends Component {
 				<BlobLineExpander key={`expand-${this.state.lines.length}`}
 					expandRange={[lastDisplayedLine, lastDisplayedLine+30]}
 					onExpand={this._expandRange}
-					direction={"down"}
-					lineNumbers={this.state.lineNumbers} />
+					direction={"down"}/>
 			);
 		}
 

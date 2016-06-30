@@ -7,6 +7,8 @@
 @value c_dark-blue from colors;
 @value media-sm from vars;
 
+.f7 { composes: f7 from typography; }
+
 .container {
 	composes: br2 ba bw1 from base;
 	composes: b--cool-pale-gray from colors;
