@@ -84,12 +84,13 @@ class DashboardContainer extends Container {
 					<Logo type="logotype" styleName="logo" />
 
 					<h2 styleName="description">
-						<strong>Instant&nbsp;usage&nbsp;examples and other&nbsp;helpful&nbsp;info as&nbsp;you&nbsp;code,</strong> automatically&nbsp;drawn&nbsp;from public&nbsp;and&nbsp;(your&nbsp;own)&nbsp;private&nbsp;code.
+						<strong>Instant&nbsp;usage&nbsp;examples and more&nbsp; as&nbsp;you&nbsp;code,</strong> automatically&nbsp;drawn&nbsp;from public&nbsp;and&nbsp;(your&nbsp;own)&nbsp;private&nbsp;code.
 					</h2>
 
 					<div styleName="user-actions">
 						{!this.context.signedIn && <LocationStateToggleLink href="/login" modalName="login" location={this.props.location}><Button styleName="action-link" type="button" color="blue" outline={true}>Sign in</Button></LocationStateToggleLink>}
-						<Link to="/tools"><Button styleName="action-link" type="button" color="blue" outline={true}><ToolsIcon styleName="action-icon" />Upgrade your workflow</Button></Link>
+						<Link to="/tools"><Button styleName="action-link" type="button" color="blue" outline={true}>Install Chrome extension</Button></Link>
+						<Link to="/tools"><Button styleName="action-link" type="button" color="blue" outline={true}>Install editor plugin</Button></Link>
 					</div>
 
 					<GlobalSearchInput
