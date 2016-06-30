@@ -1,6 +1,5 @@
 import React from "react";
 import Container from "sourcegraph/Container";
-import RefsContainer from "sourcegraph/def/RefsContainer";
 import DefStore from "sourcegraph/def/DefStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
@@ -8,9 +7,11 @@ import {Button, Heading} from "sourcegraph/components";
 import "sourcegraph/blob/BlobBackend";
 import CSSModules from "react-css-modules";
 import styles from "./styles/DefInfo.css";
+import base from "sourcegraph/components/styles/_base.css";
 import {RefLocsPerPage} from "sourcegraph/def";
 import "whatwg-fetch";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {Repository} from "sourcegraph/components/symbols";
 
 class RepoRefsContainer extends Container {
 	static propTypes = {
@@ -70,7 +71,7 @@ class RepoRefsContainer extends Container {
 
 		return (
 			<div>
-				<Heading level="7" styleName="cool-mid-gray">
+				<Heading level="7" styleName="cool-mid-gray" className={base.mb4}>
 					{refLocs && refLocs.TotalRepos &&
 						`Referenced in ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`
 					}
@@ -81,18 +82,12 @@ class RepoRefsContainer extends Container {
 
 				{!refLocs && <i>Loading...</i>}
 				{refLocs && !refLocs.RepoRefs && <i>No references found</i>}
-				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <RefsContainer
-					key={i}
-					repo={this.props.repo}
-					rev={this.props.rev}
-					commitID={this.props.commitID}
-					def={this.props.def}
-					defObj={this.props.defObj}
-					repoRefs={repoRefs}
-					prefetch={i === 0}
-					initNumSnippets={i === 0 ? 1 : 0}
-					fileCollapseThreshold={5}
-					showRepoTitle={true}/>)}
+				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <div key={i} className={base.mb4}>
+						<Repository width={24} styleName="v-mid" className={base.mr3} /> {repoRefs.Repo}
+						{repoRefs.Files && repoRefs.Files.length > 0 &&
+							repoRefs.Files.map((file, j) => <div key={j}>{file.Count} references in {file.Path}</div>)
+						}
+				</div>)}
 				{/* Display the paginator if we have more files repos or repos to show. */}
 				{refLocs && refLocs.RepoRefs &&
 					(fileCount >= RefLocsPerPage || refLocs.TotalRepos > refLocs.RepoRefs.length || !refLocs.TotalRepos) &&

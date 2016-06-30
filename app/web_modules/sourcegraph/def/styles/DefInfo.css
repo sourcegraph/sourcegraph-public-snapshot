@@ -17,6 +17,8 @@
 .normal { composes: normal from typography; }
 .f7 { composes: f7 from typography; }
 
+.v-mid {composes: v-mid from typography; }
+
 .section {
 	composes: ph4 from base;
 }
