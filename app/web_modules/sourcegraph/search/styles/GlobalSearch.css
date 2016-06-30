@@ -49,6 +49,10 @@
 	line-height: 1;
 }
 
+.result-error {
+	composes: red from colors;
+}
+
 .result-selected {
 	composes: result;
 	composes: bg-blue-1 from colors;

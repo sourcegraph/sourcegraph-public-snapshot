@@ -282,7 +282,7 @@ let SearchResultsPanel = ({repo, location}: {repo: ?string, location: RouterLoca
 	const q = queryFromStateOrURL(location);
 	return (
 		<Panel hoverLevel="high" styleName="search-panel">
-			<SearchSettings styleName="search-settings" innerClassName={styles["search-settings-inner"]} location={location} showAlerts={true} repo={repo} />
+			<SearchSettings styleName="search-settings" innerClassName={styles["search-settings-inner"]} location={location} repo={repo} />
 			<GlobalSearch styleName="search-results" query={q || ""} repo={repo} location={location} resultClassName={styles["search-result"]} />
 		</Panel>
 	);

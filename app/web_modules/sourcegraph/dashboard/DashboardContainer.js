@@ -110,7 +110,7 @@ class DashboardContainer extends Container {
 					</TitledSection>}
 
 					{<TitledSection title="Search options" className={styles["search-settings-panel"]}>
-						<SearchSettings showAlerts={false} location={this.props.location} styleName="search-settings" />
+						<SearchSettings location={this.props.location} styleName="search-settings" />
 					</TitledSection>}
 				</div>
 			</div>

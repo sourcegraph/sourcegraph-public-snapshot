@@ -25,7 +25,6 @@ class SearchSettings extends Container {
 		repo: React.PropTypes.string,
 		className: React.PropTypes.string,
 		innerClassName: React.PropTypes.string,
-		showAlerts: React.PropTypes.bool.isRequired,
 		githubToken: React.PropTypes.object,
 	};
 
@@ -193,28 +192,13 @@ class SearchSettings extends Container {
 	}
 
 	render() {
-		const langChosen = this.state.settings && this.state.settings.search && this.state.settings.search.languages && this.state.settings.search.languages.length > 0;
-		const scope = this._scope();
-
 		return (
 			<div styleName="groups" className={this.props.className}>
 				<div styleName="groups-inner" className={this.props.innerClassName}>
 					<div styleName="row">
 						{this._renderLanguages()}
 					</div>
-					{!langChosen && this.state.showAlerts && <div styleName="row">
-						<div styleName="group">
-							<Alert>Select a language to search.</Alert>
-						</div>
-					</div>}
 					{this._renderScope()}
-					{this.state.signedIn && this.state.showAlerts && !scope.public && !scope.private && (!scope.repo || !this.state.repo) && !scope.popular &&
-						<div styleName="row">
-							<div styleName="group">
-								<Alert>Select repositories to include.</Alert>
-							</div>
-						</div>
-					}
 				</div>
 				{this.props.location.state && this.props.location.state.modal === "beta" && this.state.betaLanguage &&
 					<LocationStateModal modalName="beta" location={this.props.location}>
@@ -231,11 +215,5 @@ class SearchSettings extends Container {
 		);
 	}
 }
+
 export default withUserContext(CSSModules(SearchSettings, styles));
-
-const Alert = CSSModules(({children}: {children: React$Element | Array<React$Element>}) => (
-	<span styleName="alert">
-		{children}
-	</span>
-), styles);
-

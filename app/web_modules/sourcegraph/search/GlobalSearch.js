@@ -106,7 +106,7 @@ class GlobalSearch extends Container {
 
 	_langs(state) {
 		if (!state) state = this.state;
-		return state.settings && state.settings.search && state.settings.search.languages ? Array.from(state.settings.search.languages) : [];
+		return state.settings && state.settings.search && state.settings.search.languages ? state.settings.search.languages : [];
 	}
 
 	_scope(state) {
@@ -372,21 +372,28 @@ class GlobalSearch extends Container {
 	}
 
 	_results(): React$Element | Array<React$Element> {
-		if (!this.state.query) return <div className={`${base.pt4} ${base.ph4}`} styleName="result">Type a query&hellip;</div>;
+		const langs = this._langs(this.state);
+		const scope = this._scope(this.state);
 
-		const invalidFiltersItem = <div className={`${base.pt4} ${base.ph4}`} styleName="result" key="_nosymbol">Update your search filters and try again.</div>;
-		const noResultsItem = <div className={`${base.ph4} ${base.pt4}`} styleName="result" key="_nosymbol">No results found.</div>;
-		if (!this.state.matchingResults || this.state.matchingResults && this.state.matchingResults.fetching) {
-			return [<div key="1" className={`${base.ph4} ${base.pt4}`}styleName="result">Loading results...</div>];
+		if (!langs || langs.length === 0) {
+			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`} styleName="result result-error">Select a language to search.</div>];
 		}
 
-		const langs = this._langs(this.state);
-		const reposScope = langs && langs.reduce((memo, lang) => memo.concat(...this._reposScope(this.state, lang)), []);
-		if (!langs || langs.length === 0 || !reposScope || reposScope.length === 0) return [invalidFiltersItem];
+		if (!scope || !(scope.popular || (this.state.repo && scope.repo) || scope.private || scope.public)) {
+			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`} styleName="result result-error">Select repositories to include.</div>];
+		}
+
+		if (!this.state.query) return <div className={`${base.pt4} ${base.ph4}`} styleName="result">Type a query&hellip;</div>;
+
+		if (!this.state.matchingResults || this.state.matchingResults && this.state.matchingResults.fetching) {
+			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`}styleName="result">Loading results...</div>];
+		}
 
 		if (this.state.matchingResults &&
 			(!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) &&
-			(!this.state.matchingResults.Repos || this.state.matchingResults.Repos.length === 0)) return [noResultsItem];
+			(!this.state.matchingResults.Repos || this.state.matchingResults.Repos.length === 0)) {
+			return [<div className={`${base.ph4} ${base.pt4}`} styleName="result" key="_nosymbol">No results found.</div>];
+		}
 
 		let list = [], numDefs = 0,
 			numRepos = this.state.matchingResults.Repos ? this.state.matchingResults.Repos.length : 0;
