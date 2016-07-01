@@ -217,14 +217,14 @@ class GlobalSearch extends Container {
 			if (state._queries) {
 				state.matchingResults = state._queries.reduce((memo, q) => {
 					const results = SearchStore.get(q.query, q.repos, q.notRepos, q.commitID, q.limit, q.prefixMatch, q.includeRepos, q.fast);
+					if (results) memo.outstandingFetches -= 1;
 					if (results && !results.Error) {
-						memo.fetching = false;
 						if (results.Repos) memo.Repos.push(...results.Repos);
 						if (results.Defs) memo.Defs.push(...results.Defs);
 						if (results.Options) memo.Options.push(...results.Options);
 					}
 					return memo;
-				}, {Repos: [], Defs: [], Options: [], fetching: true});
+				}, {Repos: [], Defs: [], Options: [], outstandingFetches: state._queries.length});
 			} else {
 				state.matchingResults = null;
 			}
@@ -426,7 +426,8 @@ class GlobalSearch extends Container {
 
 		if (!this.state.query) return <div className={`${base.pt4} ${base.ph4}`} styleName="result">Type a query&hellip;</div>;
 
-		if (!this.state.matchingResults || this.state.matchingResults && this.state.matchingResults.fetching) {
+		if (!this.state.matchingResults ||
+			((!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) && this.state.matchingResults.outstandingFetches !== 0)) {
 			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`}styleName="result">Loading results...</div>];
 		}
 
