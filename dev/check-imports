@@ -8,7 +8,7 @@
 found_violation=
 declare -a no_auth_pkgs=("sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/..." "sourcegraph.com/sourcegraph/sourcegraph/app/...")
 for pkg in "${no_auth_pkgs[@]}"; do
-		illegal_imports=$(go list -f '{{.Deps}}' "$pkg" | grep 'sourcegraph.com/sourcegraph/sourcegraph/pkg/auth')
+		illegal_imports=$(go list -f '{{join .Deps "\n"}}' "$pkg" | grep 'sourcegraph.com/sourcegraph/sourcegraph/pkg/auth')
 		if [[ ! -z "$illegal_imports" ]]; then
 				echo "Found illegal import of sourcegraph.com/sourcegraph/sourcegraph/pkg/auth from $pkg";
 		fi
