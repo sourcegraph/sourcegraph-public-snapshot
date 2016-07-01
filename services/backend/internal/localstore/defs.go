@@ -626,6 +626,22 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 		}
 		end()
 	}
+
+	// Garbage-collect old def and repo_revs rows
+	rrOld, err := getRepoRevsOld(ctx, dbh, repo.URI)
+	if err != nil {
+		return err
+	}
+	for _, rr := range rrOld {
+		// Delete defs before repo revs, so this gets retried on next update if this fails for some reason.
+		if _, err := dbh.Exec(`DELETE FROM defs2 WHERE rid=$1 and state=2`, rr.ID); err != nil {
+			return err
+		}
+		if _, err := dbh.Exec(`DELETE FROM repo_revs WHERE id=$1 and state=2`, rr.ID); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -757,6 +773,14 @@ func getRepoRev(ctx context.Context, dbh gorp.SqlExecutor, id int64) (*dbRepoRev
 		return nil, err
 	}
 	return &d, nil
+}
+
+func getRepoRevsOld(ctx context.Context, dbh gorp.SqlExecutor, repo string) ([]*dbRepoRev, error) {
+	var rr []*dbRepoRev
+	if _, err := dbh.Select(&rr, `SELECT * FROM repo_revs WHERE repo=$1 and state=2`, repo); err != nil {
+		return nil, err
+	}
+	return rr, nil
 }
 
 func getOrInsertDefKeys(ctx context.Context, dbh gorp.SqlExecutor, defKeys map[graph.DefKey]int64) error {
