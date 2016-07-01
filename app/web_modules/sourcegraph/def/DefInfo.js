@@ -199,7 +199,6 @@ class DefInfo extends Container {
 		let hiddenDescr = this.state.defDescrHidden;
 		let refLocs = this.state.refLocations;
 		let defBlobUrl = def ? urlToDef(def, this.state.rev) : "";
-		let refsSorting = this.state.refsSorting;
 
 		if (refLocs && refLocs.Error) {
 			return (
