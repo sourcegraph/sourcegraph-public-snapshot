@@ -13,10 +13,10 @@
 		{{if deployedGitCommitID}}
 			sentryTags["Deployed commit"] = "{{deployedGitCommitID}}";
 		{{end}}
-		{{if .Actor.IsAuthenticated}}
-			sentryTags["Authed"] = "{{.Actor.Login}}" ? "yes" : "no";
-			sentryTags["Authed UID"] = "{{.Actor.UID}}";
-			sentryTags["Authed user"] = "{{.Actor.Login}}";
+		{{if .AuthInfo.UID}}
+			sentryTags["Authed"] = "{{.AuthInfo.Login}}" ? "yes" : "no";
+			sentryTags["Authed UID"] = "{{.AuthInfo.UID}}";
+			sentryTags["Authed user"] = "{{.AuthInfo.Login}}";
 		{{end}}
 		{{if .CurrentSpanID}}
 			{{if .CurrentSpanID.Trace}}
@@ -44,11 +44,11 @@
 		{{if deployedGitCommitID}}
 			splunkTags["Deployed commit"] = "{{deployedGitCommitID}}";
 		{{end}}
-		{{if .Actor.IsAuthenticated}}
+		{{if .AuthInfo.UID}}
 			splunkTags["User"] = {
-				Authed: "{{.Actor.Login}}" ? true : false,
-				UID: {{.Actor.UID}},
-				Login: "{{.Actor.Login}}",
+				Authed: "{{.AuthInfo.Login}}" ? true : false,
+				UID: {{.AuthInfo.UID}},
+				Login: "{{.AuthInfo.Login}}",
 			};
 		{{end}}
 		{{if .CurrentSpanID}}
@@ -88,7 +88,7 @@
 			window.ga("create", {{googleAnalyticsTrackingID}}, "auto");
 			window.ga("require", "linkid", "https://www.google-analytics.com/plugins/ua/linkid.js");
 			window.ga("require", "urlChangeTracker");
-			window.ga("set", "dimension1", Boolean({{if .Actor.IsAuthenticated}}{{.Actor.Login}}{{else}}false{{end}}));
+			window.ga("set", "dimension1", Boolean({{if .AuthInfo.UID}}{{.AuthInfo.Login}}{{else}}false{{end}}));
 			window.ga("set", "dimension4", "web");
 			window.ga("send", "pageview");
 		</script>

@@ -4,12 +4,8 @@ import (
 	"net/http"
 
 	"github.com/dgrijalva/jwt-go"
-	"gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 type Middleware func(next http.Handler) http.Handler
@@ -19,33 +15,6 @@ func WithMiddleware(h http.Handler, mw ...Middleware) http.Handler {
 		return h
 	}
 	return mw[0](WithMiddleware(h, mw[1:]...))
-}
-
-// ActorMiddleware fetches the actor info and stores it in the
-// context for downstream HTTP handlers. A middleware that calls
-// sourcegraph.WithCredentials based on the request's auth must
-// already have run for ActorMiddleware to work.
-func ActorMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx, cl := Client(r)
-
-		if cred := sourcegraph.CredentialsFromContext(ctx); cred != nil && fetchUserForCredentials(cred) {
-			authInfo, err := cl.Auth.Identify(ctx, &pbtypes.Void{})
-			if err == nil {
-				ctx = auth.WithActor(ctx, auth.Actor{
-					UID:   int(authInfo.UID),
-					Login: authInfo.Login,
-					Write: authInfo.Write,
-					Admin: authInfo.Admin,
-				})
-				httpctx.SetForRequest(r, ctx)
-			} else if err != nil {
-				log15.Error("Auth.Identify in ActorMiddleware failed.", "err", err)
-			}
-		}
-
-		next.ServeHTTP(w, r)
-	})
 }
 
 // fetchUserForCredentials is whether ActorMiddleware should try to

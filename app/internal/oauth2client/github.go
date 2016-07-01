@@ -23,13 +23,13 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/returnto"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/schemautil"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/oauth2util"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
+	"sourcegraph.com/sqs/pbtypes"
 )
 
 const (
@@ -143,8 +143,10 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	}()
 
 	ctx, cl := handlerutil.Client(r)
-
-	actor := auth.ActorFromContext(ctx)
+	authInfo, err := cl.Auth.Identify(ctx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
 
 	var opt oauth2util.ReceiveParams
 	if err := schemautil.Decode(&opt, r.URL.Query()); err != nil {
@@ -185,9 +187,9 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	// If this GitHub user is already authed with us, then continue
 	// logging in. Otherwise continue to create an account.
 	if tok.UID == 0 {
-		if actor.IsAuthenticated() {
+		if authInfo.UID != 0 {
 			// Logged in as a Sourcegraph user, has not yet linked GitHub.
-			return linkAccountWithGitHub(w, r, ctx, cl, int32(actor.UID), ghUser, tok, true, state.ReturnTo)
+			return linkAccountWithGitHub(w, r, ctx, cl, authInfo.UID, ghUser, tok, true, state.ReturnTo)
 		}
 
 		// Not logged in as a Sourcegraph user, has not ever linked
@@ -197,10 +199,10 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 
 	// Logged in as a Sourcegraph user, has already linked GitHub.
 	//
-	// Elevate the actor to the Sourcegraph user identified by the
-	// just-authenticated linked GitHub account. The user must have
-	// previously linked the accounts for the Auth.GetAccessToken call to
-	// return this Sourcegraph UID, so we can do this safely.
+	// Elevate the credentials to the Sourcegraph user identified by the
+	// just-authenticated linked GitHub account. The user must have previously
+	// linked the accounts for the Auth.GetAccessToken call to return this
+	// Sourcegraph UID, so we can do this safely.
 	ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{
 		AccessToken: tok.AccessToken,
 		TokenType:   "Bearer",
