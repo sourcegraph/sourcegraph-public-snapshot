@@ -280,6 +280,10 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 				}
 				repoArgs = append(repoArgs, arg(rr.ID))
 			}
+			if len(repoArgs) == 0 {
+				log15.Warn("All repos specified in def search are unindexed; no results may be returned.", "repos", op.Opt.Repos)
+				return &sourcegraph.SearchResultsList{}, nil
+			}
 			if len(repoArgs) > 0 {
 				wheres = append(wheres, `rid IN (`+strings.Join(repoArgs, ",")+`)`)
 			}
