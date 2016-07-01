@@ -13,12 +13,12 @@
 .node:before {
 	content: "";
 	display: block;
-	width: 1px;
+	width: 2px;
 	background-color: c_cool-pale-gray;
 	position: absolute;
 	top: 0.6rem;
 	bottom: 0.6rem;
-	left: 0.3rem;
+	left: 0.35rem;
 }
 
 .node li {
@@ -33,7 +33,7 @@
 	border: 2px c_blue solid;
 	border-radius: 50%;
 	display: inline-block;
-	width: 7px;
-	height: 7px;
+	width: 8px;
+	height: 8px;
 	margin-right: 16px;
 }
