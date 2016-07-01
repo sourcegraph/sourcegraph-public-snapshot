@@ -12,6 +12,7 @@ import (
 )
 
 func TestGitServer(t *testing.T) {
+	t.Skip("Flaky https://app.asana.com/0/87040567695724/150658343890371")
 	if testing.Short() {
 		t.Skip()
 	}

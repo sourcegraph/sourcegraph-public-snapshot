@@ -1,0 +1,13 @@
+@value base "sourcegraph/components/styles/_base.css";
+@value grid "sourcegraph/components/styles/_grid.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+
+.row {
+	composes: col-8-ns col-12 from grid;
+	padding-top: 10px;
+}
+
+.textarea {
+	width: 100%;
+}

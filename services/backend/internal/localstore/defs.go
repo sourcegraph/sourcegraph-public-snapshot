@@ -10,6 +10,7 @@ import (
 
 	"github.com/fatih/camelcase"
 	"github.com/lib/pq"
+	"github.com/microcosm-cc/bluemonday"
 
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -279,6 +280,10 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 					return nil, fmt.Errorf("error getting latest repo revision: %s", err)
 				}
 				repoArgs = append(repoArgs, arg(rr.ID))
+			}
+			if len(repoArgs) == 0 {
+				log15.Warn("All repos specified in def search are unindexed; no results may be returned.", "repos", op.Opt.Repos)
+				return &sourcegraph.SearchResultsList{}, nil
 			}
 			if len(repoArgs) > 0 {
 				wheres = append(wheres, `rid IN (`+strings.Join(repoArgs, ",")+`)`)
@@ -621,6 +626,22 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 		}
 		end()
 	}
+
+	// Garbage-collect old def and repo_revs rows
+	rrOld, err := getRepoRevsOld(ctx, dbh, repo.URI)
+	if err != nil {
+		return err
+	}
+	for _, rr := range rrOld {
+		// Delete defs before repo revs, so this gets retried on next update if this fails for some reason.
+		if _, err := dbh.Exec(`DELETE FROM defs2 WHERE rid=$1 and state=2`, rr.ID); err != nil {
+			return err
+		}
+		if _, err := dbh.Exec(`DELETE FROM repo_revs WHERE id=$1 and state=2`, rr.ID); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -666,6 +687,11 @@ func toTextSearchTokens(def *graph.Def) (aToks []string, bToks []string, cToks [
 	cToks = appendRepeated(cToks, fileParts[len(fileParts)-1], 2)
 
 	aToks = appendRepeated(aToks, def.Name, 1)
+
+	for _, doc := range def.Docs {
+		docWithoutTags := bluemonday.StrictPolicy().Sanitize(doc.Data)
+		dToks = append(dToks, docWithoutTags) // no need to split because it is getting processed by PostgreSQL's to_tsvector
+	}
 
 	return
 }
@@ -747,6 +773,14 @@ func getRepoRev(ctx context.Context, dbh gorp.SqlExecutor, id int64) (*dbRepoRev
 		return nil, err
 	}
 	return &d, nil
+}
+
+func getRepoRevsOld(ctx context.Context, dbh gorp.SqlExecutor, repo string) ([]*dbRepoRev, error) {
+	var rr []*dbRepoRev
+	if _, err := dbh.Select(&rr, `SELECT * FROM repo_revs WHERE repo=$1 and state=2`, repo); err != nil {
+		return nil, err
+	}
+	return rr, nil
 }
 
 func getOrInsertDefKeys(ctx context.Context, dbh gorp.SqlExecutor, defKeys map[graph.DefKey]int64) error {

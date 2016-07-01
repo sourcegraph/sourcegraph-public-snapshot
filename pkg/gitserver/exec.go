@@ -135,7 +135,10 @@ func (c *Cmd) DividedOutput() ([]byte, []byte, error) {
 	stdout := chanrpcutil.ReadAll(reply.Stdout)
 	stderr := chanrpcutil.ReadAll(reply.Stderr)
 
-	processResult := <-reply.ProcessResult
+	processResult, ok := <-reply.ProcessResult
+	if !ok {
+		return nil, nil, errors.New("connection to gitserver lost")
+	}
 	if processResult.Error != "" {
 		err = errors.New(processResult.Error)
 	}

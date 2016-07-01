@@ -19,6 +19,7 @@ import {withUserContext} from "sourcegraph/app/user";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import InterestForm from "sourcegraph/home/InterestForm";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class SearchSettings extends Container {
 	static propTypes = {
@@ -31,6 +32,7 @@ class SearchSettings extends Container {
 
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
+		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	state: {
@@ -55,10 +57,10 @@ class SearchSettings extends Container {
 		if (prevState.settings !== nextState.settings && nextState.settings && nextState.settings.search && nextState.settings.search.scope) {
 			const scope = nextState.settings.search.scope;
 			if (scope.public) {
-				Dispatcher.Backends.dispatch(new RepoActions.WantRemoteRepos({deps: true, private: false}));
+				Dispatcher.Backends.dispatch(new RepoActions.WantRemoteRepos({private: false}));
 			}
 			if (scope.private) {
-				Dispatcher.Backends.dispatch(new RepoActions.WantRemoteRepos({deps: true, private: true}));
+				Dispatcher.Backends.dispatch(new RepoActions.WantRemoteRepos({private: true}));
 			}
 		}
 	}
@@ -94,17 +96,26 @@ class SearchSettings extends Container {
 		};
 
 		Dispatcher.Stores.dispatch(new UserActions.UpdateSettings(newSettings));
+
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_TOGGLE, "SearchLanguageToggled", {language: lang, enabled: !enabled, languages: langs});
 	}
 
-	_setScope(scope: any, currState: any) {
-		if (!currState) currState = this.state;
+	_setScope(scope: Object) {
+		this.context.eventLogger.logEventForCategory(
+			AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK,
+			"SearchScopeChanged",
+			{
+				old: this.state.settings.search && this.state.settings.search.scope,
+				update: scope,
+			},
+		);
 
 		const newSettings = {
-			...currState.settings,
+			...this.state.settings,
 			search: {
-				...currState.settings.search,
+				...this.state.settings.search,
 				scope: {
-					...(currState.settings.search && currState.settings.search.scope),
+					...(this.state.settings.search && this.state.settings.search.scope),
 					...scope,
 				},
 			},
@@ -178,26 +189,25 @@ class SearchSettings extends Container {
 								if (this.props.githubToken) this._setScope({popular: !scope.popular});
 							}}
 							outline={this.state.githubToken && !scope.popular}>Popular libraries</Button>
-						{/* TEMPORARILY DISABLE THE FILTERS BELOW */}
-						{false && (!this.state.signedIn || !this.props.githubToken) &&
-							<GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>Your public projects + deps</GitHubAuthButton>}
-						{false && this.props.githubToken &&
+						{(!this.state.signedIn || !this.props.githubToken) &&
+							<GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>My public projects</GitHubAuthButton>}
+						{this.props.githubToken &&
 							<Button
 								color={!scope.public ? "default" : "blue"}
 								size="small"
 								styleName="choice-button"
 								onClick={() => this._setScope({public: !scope.public})}
-								outline={!scope.public}>Your public projects + deps</Button>
+								outline={!scope.public}>My public projects</Button>
 						}
-						{false && (!this.state.signedIn || !this._hasPrivateGitHubToken()) &&
-							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>Your private projects + deps</GitHubAuthButton>}
-						{false && this._hasPrivateGitHubToken() &&
+						{(!this.state.signedIn || !this._hasPrivateGitHubToken()) &&
+							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>My private projects</GitHubAuthButton>}
+						{this._hasPrivateGitHubToken() &&
 							<Button
 								color={!scope.private ? "default" : "blue"}
 								size="small"
 								styleName="choice-button"
 								onClick={() => this._setScope({private: !scope.private})}
-								outline={!scope.private}>Your private projects + deps</Button>
+								outline={!scope.private}>My private projects</Button>
 						}
 					</div>
 				</div>

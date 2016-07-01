@@ -22,6 +22,7 @@ import invariant from "invariant";
 import {rel} from "sourcegraph/app/routePatterns";
 import {repoPath, repoParam} from "sourcegraph/repo";
 import {isPage} from "sourcegraph/page";
+import debounce from "lodash.debounce";
 
 function GlobalNav({navContext, location, params, channelStatusCode}, {user, siteConfig, signedIn, router, eventLogger}) {
 	const isHomepage = location.pathname === "/";
@@ -236,8 +237,15 @@ class SearchForm extends React.Component {
 
 	_handleChange(ev: KeyboardEvent) {
 		invariant(ev.currentTarget instanceof HTMLInputElement, "invalid currentTarget");
-		this.props.router.replace(locationForSearch(this.props.location, ev.currentTarget.value, false, this.props.location.pathname.slice(1) === rel.search));
+		const value = ev.currentTarget.value;
+		this.setState({query: value});
+		if (value) this.setState({open: true});
+		this._goToDebounced(this.props.router.replace, locationForSearch(this.props.location, value, false, this.props.location.pathname.slice(1) === rel.search));
 	}
+
+	_goToDebounced = debounce((routerFunc: any, loc: Location) => {
+		routerFunc(loc);
+	}, 200, {leading: false, trailing: true});
 
 	_handleFocus(ev: Event) {
 		const update: {focused: boolean; open: boolean; query?: string} = {focused: true, open: true};

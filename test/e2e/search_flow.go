@@ -23,7 +23,7 @@ func testSearchFlow(t *T) error {
 	searchInput := t.WaitForElement(selenium.ById, "e2etest-search-input")
 	searchInput.SendKeys("RouteMatch")
 
-	t.WaitForElement(selenium.ByLinkText, "type RouteMatch struct", MatchAttribute("href", `/github\.com/gorilla/mux(@[^/]+)?/-/def/GoPackage/github.com/gorilla/mux/-/RouteMatch`))
+	t.WaitForElement(selenium.ByTagName, "a", MatchAttribute("href", `/github\.com/gorilla/mux(@[^/]+)?/-/info/GoPackage/github.com/gorilla/mux/-/RouteMatch`))
 
 	return nil
 }

@@ -27,6 +27,16 @@ export const routes: Array<Route> = [
 		},
 	},
 	{
+		path: rel.beta,
+		getComponents: (location, callback) => {
+			require.ensure([], (require) => {
+				callback(null, {
+					main: require("sourcegraph/page/BetaPage").default,
+				});
+			});
+		},
+	},
+	{
 		path: rel.contact,
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {

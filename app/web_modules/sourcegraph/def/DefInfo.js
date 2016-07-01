@@ -136,6 +136,8 @@ class DefInfo extends Container {
 		state.defObj = props.defObj || null;
 		state.defCommitID = props.defObj ? props.defObj.CommitID : null;
 		state.authors = state.defObj ? DefStore.authors.get(state.repo, state.defObj.CommitID, state.def) : null;
+		state.refsSorting = props.location.query.refs || "top";
+
 		if (state.defObj && state.defDescrHidden === null) {
 			state.defDescrHidden = this.shouldHideDescr(state.defObj, DESCRIPTION_CHAR_CUTOFF);
 		}
@@ -197,6 +199,7 @@ class DefInfo extends Container {
 		let hiddenDescr = this.state.defDescrHidden;
 		let refLocs = this.state.refLocations;
 		let defBlobUrl = def ? urlToDef(def, this.state.rev) : "";
+		let refsSorting = this.state.refsSorting;
 
 		if (refLocs && refLocs.Error) {
 			return (
