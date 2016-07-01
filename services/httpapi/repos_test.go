@@ -204,7 +204,7 @@ func TestRepos(t *testing.T) {
 		Repos: []*sourcegraph.Repo{{URI: "r/r"}},
 	}
 
-	calledList := mock.Repos.MockList(t)
+	calledList := mock.Repos.MockList(t, "r/r")
 
 	var repos *sourcegraph.RepoList
 	if err := c.GetJSON("/repos", &repos); err != nil {
@@ -213,8 +213,8 @@ func TestRepos(t *testing.T) {
 	if !reflect.DeepEqual(repos, wantRepos) {
 		t.Errorf("got %+v, want %+v", repos, wantRepos)
 	}
-	if *calledList {
-		t.Error("calledList")
+	if !*calledList {
+		t.Error("!calledList")
 	}
 }
 
