@@ -6,7 +6,7 @@
 #
 FROM python:3.5.1-slim
 RUN apt-get update
-RUN apt-get install -qq make git tar
+RUN apt-get install -qq make git tar python2.7
 RUN pip3.5 install virtualenv
 
 #
