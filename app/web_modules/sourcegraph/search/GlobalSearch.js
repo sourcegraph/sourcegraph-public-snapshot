@@ -217,7 +217,7 @@ class GlobalSearch extends Container {
 	}
 
 	__onDispatch(action) {
-		if (action.constructor === SearchActions.ResultsFetched) {
+		if (action instanceof SearchActions.ResultsFetched) {
 			let eventProps = {};
 			eventProps["globalSearchQuery"] = this.state.query;
 			eventProps["page name"] = this._pageName();
