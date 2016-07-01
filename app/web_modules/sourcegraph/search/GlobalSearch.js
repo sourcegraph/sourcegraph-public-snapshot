@@ -443,12 +443,12 @@ class GlobalSearch extends Container {
 						<div styleName="flex-icon hidden-s">
 							<Icon icon="repository-gray" width={resultIconSize} />
 						</div>
-						<div styleName="flex" className={base.pb4}>
-							<code styleName="block title">
+						<div styleName="flex">
+							<code styleName="block f5">
 								Repository
 								<span styleName="bold"> {repo.URI.split(/[// ]+/).pop()}</span>
 							</code>
-							{firstLineDocString && <p styleName="docstring">{firstLineDocString}</p>}
+							{firstLineDocString && <p styleName="cool-mid-gray" className={base.mt0}>{firstLineDocString}</p>}
 						</div>
 					</div>
 				</Link>
@@ -480,12 +480,12 @@ class GlobalSearch extends Container {
 					key={defURL}
 					onClick={() => this._onSelection()}>
 					<div styleName="cool-gray flex-container" className={base.pt3}>
-						<div styleName="flex" className={base.pb4}>
-							<p styleName="repo">{trimRepo(def.Repo)}</p>
-							<code styleName="block title">
+						<div styleName="flex">
+							<p styleName="cool-mid-gray block-s" className={`${base.ma0} ${base.pl4} ${base.pr2} ${base.fr}`}>{trimRepo(def.Repo)}</p>
+							<code styleName="block f5" className={base.pb3}>
 								{qualifiedNameAndType(def, {nameQual: "DepQualified"})}
 							</code>
-							{firstLineDocString && <p styleName="docstring">{firstLineDocString}</p>}
+							{firstLineDocString && <p styleName="cool-mid-gray" className={base.mt0}>{firstLineDocString}</p>}
 						</div>
 					</div>
 				</Link>

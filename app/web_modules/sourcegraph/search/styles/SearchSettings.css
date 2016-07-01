@@ -22,7 +22,6 @@
 }
 .label {
 	composes: pr2 from base;
-	composes: f5 from typography;
 	min-width: 72px;
 	flex: 0 0;
 	display: inline-block;

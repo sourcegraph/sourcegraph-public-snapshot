@@ -97,7 +97,7 @@
 	composes: bg-cool-gray white from colors;
 }
 .content {
-	composes: f5 from typography;
+	composes: f7 from typography;
 	line-height: 1.5;
 }
 .tooltipTitle {
