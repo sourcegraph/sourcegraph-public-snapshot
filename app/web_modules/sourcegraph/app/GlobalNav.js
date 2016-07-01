@@ -179,7 +179,6 @@ class SearchForm extends React.Component {
 			if (nextQuery && !this.state.query) this.setState({open: true});
 			this.setState({query: nextQuery});
 		}
-		if (!nextQuery && !this.state.focused) this.setState({open: false});
 	}
 
 	componentWillUnmount() {
