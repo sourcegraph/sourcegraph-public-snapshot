@@ -65,7 +65,7 @@ class GlobalSearch extends Container {
 		this.state = {
 			query: "",
 			repo: null,
-			matchingResults: {Repos: [], Defs: [], Options: []},
+			matchingResults: {Repos: [], Defs: [], Options: [], outstandingFetches: 0},
 			className: null,
 			resultClassName: null,
 			selectionIndex: -1,
@@ -91,6 +91,7 @@ class GlobalSearch extends Container {
 			Repos: Array<Repo>,
 			Defs: Array<Def>,
 			Options: Array<Options>,
+			outstandingFetches: number,
 		};
 		selectionIndex: number;
 
