@@ -3,7 +3,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import {Link} from "react-router";
-import {browserHistory} from "react-router";
 import {rel} from "sourcegraph/app/routePatterns";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -235,7 +234,7 @@ class GlobalSearch extends Container {
 
 	_navigateTo(url: string) {
 		if (!this.state.clickModifier) {
-			browserHistory.push(url);
+			this.context.router.push(url);
 		}
 	}
 
