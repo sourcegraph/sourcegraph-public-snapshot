@@ -285,7 +285,7 @@ class GlobalSearch extends Container {
 		case 13: // Enter
 			// Ignore global search enter keypress (to submit search form).
 			if (this._normalizedSelectionIndex() !== -1) {
-				this._onSelection();
+				this._onSelection(false);
 				this._temporarilyIgnoreMouseSelection();
 				e.preventDefault();
 			}
@@ -332,7 +332,9 @@ class GlobalSearch extends Container {
 		return Math.min(this.state.selectionIndex, this._numResults() - 1);
 	}
 
-	_onSelection() {
+	// _onSelection handles a selection of a result. The trackOnly param means that the
+	// result should not actually be navigated to.
+	_onSelection(trackOnly: bool) {
 		const i = this._normalizedSelectionIndex();
 		if (i === -1) {
 			return;
@@ -346,7 +348,7 @@ class GlobalSearch extends Container {
 				const url = `/${this.state.matchingResults.Repos[i].URI}`;
 				eventProps.selectedItem = url;
 				this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", eventProps);
-				this._navigateTo(url);
+				if (!trackOnly) this._navigateTo(url);
 				return;
 			}
 
@@ -364,7 +366,7 @@ class GlobalSearch extends Container {
 
 		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", eventProps);
 
-		this._navigateTo(url);
+		if (!trackOnly) this._navigateTo(url);
 	}
 
 	_selectItem(i: number): void {
@@ -437,7 +439,7 @@ class GlobalSearch extends Container {
 					ref={selected ? this._setSelectedItem : null}
 					to={repo.URI}
 					key={repo.URI}
-					onClick={() => this._onSelection()}>
+					onClick={() => this._onSelection(true)}>
 					<div styleName="cool-gray flex-container">
 						<div styleName="flex-icon hidden-s">
 							<Icon icon="repository-gray" width={resultIconSize} />
@@ -477,7 +479,7 @@ class GlobalSearch extends Container {
 					ref={selected ? this._setSelectedItem : null}
 					to={defURL}
 					key={defURL}
-					onClick={() => this._onSelection()}>
+					onClick={() => this._onSelection(true)}>
 					<div styleName="cool-gray flex-container" className={base.pt3}>
 						<div styleName="flex" className={base.pb4}>
 							<p styleName="repo">{trimRepo(def.Repo)}</p>
