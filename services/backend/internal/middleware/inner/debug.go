@@ -17,6 +17,7 @@ func init() {
 
 // DebugMode returns true if and only if the application should make debug
 // information such as error messages visible to clients of the gRPC service.
+// DebugMode should NEVER return true in production.
 func DebugMode(ctx context.Context) bool {
 	if debug {
 		return true

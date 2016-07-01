@@ -1,10 +1,7 @@
 #!/bin/bash
 
-# Check: httpapi package should not depend on auth in anyway. The httpapi layer
-# should be agnostic to the identity and permission of the actor. NOTE: ideally
-# this would include recursive dependencies, but there are a few warts in the
-# import structure that prevent this from being enforced.
-
+# Check that the app and httpapi packages do not depend on the auth package. The
+# app and httpapi layers should be agnostic to the identity of the actor.
 found_violation=
 declare -a no_auth_pkgs=("sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/..." "sourcegraph.com/sourcegraph/sourcegraph/app/...")
 for pkg in "${no_auth_pkgs[@]}"; do
