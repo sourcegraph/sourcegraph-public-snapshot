@@ -293,7 +293,7 @@ export default class RefsContainer extends Container {
 									return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<p className={styles.fileError}>{err}</p></div>;
 								}
 								if (!file) {
-									return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<BlobContentPlaceholder key={i} numLines={10} /></div>;
+									return <div key={i}><BlobContentPlaceholder key={i} numLines={6} /></div>;
 								}
 
 								let ranges = this.ranges[loc.Path];

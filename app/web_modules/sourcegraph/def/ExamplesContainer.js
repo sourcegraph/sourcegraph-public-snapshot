@@ -8,7 +8,8 @@ import "sourcegraph/blob/BlobBackend";
 import CSSModules from "react-css-modules";
 import styles from "./styles/DefInfo.css";
 import base from "sourcegraph/components/styles/_base.css";
-import {Panel, Heading} from "sourcegraph/components";
+import typography from "sourcegraph/components/styles/_typography.css";
+import {Panel, Heading, Loader} from "sourcegraph/components";
 import "whatwg-fetch";
 
 class ExamplesContainer extends Container {
@@ -64,7 +65,7 @@ class ExamplesContainer extends Container {
 					styleName="full-width-sm b--cool-pale-gray"
 					className={base.ba}>
 					<div className={this.props.className}>
-						{!refLocs && <i>Loading...</i>}
+						{!refLocs && <p className={typography.tc}> <Loader className={base.mv4} /></p>}
 						{refLocs && !refLocs.RepoRefs && <i>No examples found</i>}
 						{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <RefsContainer
 							key={i}

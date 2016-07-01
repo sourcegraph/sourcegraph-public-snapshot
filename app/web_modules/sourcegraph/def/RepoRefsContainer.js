@@ -8,6 +8,8 @@ import "sourcegraph/blob/BlobBackend";
 import CSSModules from "react-css-modules";
 import styles from "./styles/DefInfo.css";
 import base from "sourcegraph/components/styles/_base.css";
+import typography from "sourcegraph/components/styles/_typography.css";
+
 import {Link} from "react-router";
 import {RefLocsPerPage} from "sourcegraph/def";
 import "whatwg-fetch";
@@ -81,7 +83,7 @@ class RepoRefsContainer extends Container {
 					}
 				</Heading>
 
-				{!refLocs && <i>Loading...</i>}
+				{!refLocs && <p className={typography.tc}> <Loader className={base.mv4} /></p>}
 				{refLocs && !refLocs.RepoRefs && <i>No references found</i>}
 				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <div key={i} className={base.mt4}>
 					<Link to={repoRefs.Repo} className={base.mb3}>
