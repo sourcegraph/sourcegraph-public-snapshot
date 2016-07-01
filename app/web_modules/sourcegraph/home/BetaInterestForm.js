@@ -85,7 +85,7 @@ class BetaInterestForm extends React.Component {
 
 	render() {
 		if (this.state.resp && !this.state.resp.Error) {
-			return (<p>Thank you for registering. You will hear back from us soon.</p>);
+			return (<p>Thank you for registering. You will hear from us soon.</p>);
 		}
 
 		return (

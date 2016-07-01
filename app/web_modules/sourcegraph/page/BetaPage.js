@@ -15,25 +15,32 @@ function BetaPage(props, {signedIn}): React$Element {
 			<Helmet title="Beta" />
 			<Hero pattern="objects" className={base.pv5}>
 				<div styleName="container">
-					<Heading level="2" color="orange">Become a Sourcegraph beta tester!</Heading>
+					<Heading level="2" color="blue">Get the future Sourcegraph sooner</Heading>
 				</div>
 			</Hero>
 			<div styleName="content">
-				<p styleName="p">At Sourcegraph, we're constantly finding new ways to keep you <em>in flow</em> while you code. If you&#39;re up for trying out some beta-quality software, apply today and help us bring the future sooner.</p>
+				<p styleName="p">Sourcegraph is all about keeping you <em>in flow</em> while you code, no matter what tools or languages you use. By joining the Sourcegraph beta program, you can help us build Sourcegraph for your preferred environment&mdash;and help shape the future of the product.</p>
 
-				<Heading level="3" underline="blue" className={styles.h5}>What is beta access?</Heading>
-				<p styleName="p">As a Sourcegraph beta tester, you'll get access to the latest and greatest (but potentially unstable) features that we're preparing for all Sourcegraph users. This includes:</p>
+				<Heading level="3" underline="blue" className={styles.h5}>Sourcegraph beta program</Heading>
+				<p styleName="p">As a Sourcegraph beta participant, you'll get early access to future releases, including:</p>
 				<ul>
-					<li><p styleName="p">More languages: JavaScript, Python, C#, etc., as we build and improve them.</p></li>
-					<li><p styleName="p">Sourcegraph for your editor of choice.</p></li>
-					<li><p styleName="p">Sourcegraph for Firefox, Safari, etc.</p></li>
+					<li styleName="p">Support for more programming languages</li>
+					<li styleName="p">More editor integrations</li>
+					<li styleName="p">Browser extensions for Firefox, Safari, Internet Explorer, etc.</li>
+				</ul>
+				<p styleName="p">Here's how it works:</p>
+				<ul>
+					<li styleName="p">Fill out the form below to join. We'll be in touch when we have something ready for you.</li>
+					<li styleName="p">Please don't write publicly about unreleased features.</li>
+					<li styleName="p"><a href="https://github.com/sourcegraph/sourcegraph/blob/master/CONTRIBUTING.md#reporting-bugs-and-creating-issues" target="_blank">Report bugs</a> that you encounter.</li>
+					<li styleName="p">Share feedback with us and help shape the future of Sourcegraph.</li>
 				</ul>
 				<br/>
 				<Heading level="3" underline="blue" className={styles.h4}>Register for beta access</Heading>
 
 				{!signedIn && <div styleName="cta">
 					<p styleName="p">You must sign in to continue.</p>
-					<GitHubAuthButton returnTo="/beta" color="purple" className={base.mr3}>
+					<GitHubAuthButton returnTo="/beta" color="blue" className={base.mr3}>
 						<strong>Sign in with GitHub</strong>
 					</GitHubAuthButton>
 				</div>}
