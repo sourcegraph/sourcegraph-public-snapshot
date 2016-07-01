@@ -23,12 +23,18 @@ class TreeMain extends React.Component {
 		router: React.PropTypes.object.isRequired,
 	};
 
+	state: {
+		query: string;
+	} = {
+		query: "",
+	};
+
 	_onSelectPath(path: string) {
 		this.context.router.push(urlToTree(this.props.repo, this.props.rev, path));
 	}
 
 	_onChangeQuery(query: string) {
-		this.context.router.replace({...this.props.location, query: {q: query || undefined}}); // eslint-disable-line no-undefined
+		this.setState({query: query});
 	}
 
 	render() {
@@ -45,7 +51,7 @@ class TreeMain extends React.Component {
 					rev={this.props.rev}
 					commitID={this.props.commitID}
 					path={path}
-					query={this.props.location.query.q || ""}
+					query={this.state.query || ""}
 					location={this.props.location}
 					route={this.props.route}
 					onChangeQuery={this._onChangeQuery.bind(this)}
