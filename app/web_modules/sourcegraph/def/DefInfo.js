@@ -237,7 +237,6 @@ class DefInfo extends Container {
 							{def.DocHTML &&
 								<div>
 									<div className={base.mb3}>
-										{this.state.showTranslatedString && <hr className={base.mv4} styleName="b--cool-pale-gray" />}
 										{this.state.showTranslatedString &&
 											<div className={base.mt1}>
 												<LanguageIcon styleName="icon" />
@@ -251,6 +250,7 @@ class DefInfo extends Container {
 										{!hiddenDescr && this.shouldHideDescr(def, DESCRIPTION_CHAR_CUTOFF) &&
 											<a href="#" onClick={this._onViewLess} styleName="f7">Collapse</a>
 										}
+										{this.state.showTranslatedString && <hr className={base.mv4} styleName="b--cool-pale-gray" />}
 									</div>
 
 									<div styleName="f7 cool-mid-gray">
