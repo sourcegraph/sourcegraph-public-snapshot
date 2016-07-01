@@ -16,3 +16,6 @@
 @value font-size-5: 1.25rem;
 @value font-size-6: 1rem;
 @value font-size-7: .85rem;
+
+@value code-font-size-1: 1rem;
+@value code-font-size-2: 0.9rem;

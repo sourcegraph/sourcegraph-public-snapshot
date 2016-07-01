@@ -9,12 +9,10 @@
 @value c_blue, c_cool-pale-gray-5, c_yellow-5 from colors;
 @value contentWidth 690px;
 @value marginWidth 290px;
-@value codeLineHeight 20px;
 @value firstCodeLineTopPadding 16px;
 
-.normal { composes: f7 from typography; }
-.large { composes: f6 from typography; }
-.large .lineCell { padding: 0.5rem 0; }
+.normal { composes: code-normal from typography; }
+.large { composes: code-large from typography; }
 
 .pathComponent {}
 .inactivePathComponent {
@@ -86,10 +84,7 @@
 	min-width: 40px;
 }
 
-.lineCell {
-	line-height: codeLineHeight;
-	composes: pv0 from base;
-}
+.lineCell { composes: pv0 from base; }
 .line {}
 .lineNumber {
 	composes: lineCell;
