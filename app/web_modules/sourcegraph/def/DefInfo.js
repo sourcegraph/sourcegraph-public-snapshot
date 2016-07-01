@@ -213,9 +213,7 @@ class DefInfo extends Container {
 					{def &&
 						<div className={`${base.mv4} ${base.ph4}`}>
 							<Heading level="5" styleName="break-word" className={base.mv2}>
-								<Link title="View definition in code" to={defBlobUrl} styleName="link-subtle">
-									<code styleName="normal">{qualifiedNameAndType(def, {unqualifiedNameClass: styles.def})}</code>
-								</Link>
+								<code styleName="normal">{qualifiedNameAndType(def, {unqualifiedNameClass: styles.def})}</code>
 							</Heading>
 
 							{def.DocHTML &&

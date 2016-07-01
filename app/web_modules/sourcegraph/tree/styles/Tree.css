@@ -12,7 +12,7 @@
 }
 
 .tree-common {
-	composes: f4 from typography;
+	composes: f5 from typography;
 	composes: bg-white from colors;
 	width: 100%;
 }
@@ -28,7 +28,7 @@
 	align-items: center;
 	composes: mh3 pb1 from base;
 	composes: ftracked f6 from typography;
-	composes: gray from colors;
+	composes: cool-mid-gray from colors;
 }
 
 .list-item-group {
@@ -39,7 +39,7 @@
 	display: flex;
 	align-items: center;
 	composes: pa3 mh3 bt from base;
-	composes: blue b--black-20 from colors;
+	composes: blue b--cool-pale-gray from colors;
 	word-wrap: break-word;
 	overflow: hidden;
 	text-overflow: ellipsis;
