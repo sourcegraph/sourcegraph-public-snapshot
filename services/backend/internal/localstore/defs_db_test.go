@@ -1,6 +1,8 @@
 package localstore
 
 import (
+	"math"
+	"reflect"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -181,4 +183,22 @@ func testDefs(t *testing.T, outerTest outerCase) {
 			t.Errorf("for query %+v, got %+v, want %+v", test.query, got.DefResults, test.expResults)
 		}
 	}
+}
+
+func verifyResultsMatch(got, want []*sourcegraph.DefSearchResult) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for i := range got {
+		if !reflect.DeepEqual(got[i].Def, want[i].Def) {
+			return false
+		}
+		if got[i].RefCount != want[i].RefCount {
+			return false
+		}
+		if math.Abs(float64(got[i].Score-want[i].Score)) >= 0.0001 {
+			return false
+		}
+	}
+	return true
 }

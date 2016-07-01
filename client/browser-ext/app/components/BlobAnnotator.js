@@ -256,8 +256,7 @@ export default class BlobAnnotator extends Component {
 	}
 
 	_buildStatus(build) {
-		if (!build) return "";
-		if (build.Failure || build.Killed) return "n/a";
+		if (!build || build.Failure || build.Killed) return "n/a";
 		return "Indexing...";
 	}
 

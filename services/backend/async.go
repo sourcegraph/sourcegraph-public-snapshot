@@ -121,14 +121,5 @@ func (s *asyncWorker) refreshIndexes(ctx context.Context, op *sourcegraph.AsyncR
 		return grpc.Errorf(grpc.Code(err), "Def.RefreshIndex failed on repo %d from source %s: %s", op.Repo, op.Source, err)
 	}
 
-	_, err = svc.Search(ctx).RefreshIndex(ctx, &sourcegraph.SearchRefreshIndexOp{
-		Repos:         []int32{op.Repo},
-		RefreshCounts: true,
-		RefreshSearch: true,
-	})
-	if err != nil {
-		return grpc.Errorf(grpc.Code(err), "Search.RefreshIndex failed on repo %d from source %s: %s", op.Repo, op.Source, err)
-	}
-
 	return nil
 }

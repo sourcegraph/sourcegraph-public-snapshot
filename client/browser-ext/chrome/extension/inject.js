@@ -11,7 +11,7 @@ import {SearchIcon} from "../../app/components/Icons";
 import BlobAnnotator from "../../app/components/BlobAnnotator";
 import createStore from "../../app/store/configureStore";
 
-import {parseURL, isGitHubURL} from "../../app/utils";
+import {parseURL, isGitHubURL, isSourcegraphURL} from "../../app/utils";
 
 let isSearchAppShown = false; // global state indicating whether the search app is visible
 let store = createStore({});
@@ -164,7 +164,17 @@ function injectModules() {
 }
 
 window.addEventListener("load", () => {
-	injectModules();
+	chrome.runtime.sendMessage(null, {type: "get"}, {}, (state) => {
+		const accessToken = state.accessToken;
+		if (accessToken) {
+			store.dispatch(Actions.setAccessToken(accessToken));
+		} else if (isSourcegraphURL()) {
+			const regexp = /accessToken\\":\\"([-A-Za-z0-9_.]+)\\"/;
+			const matchResult = document.head.innerHTML.match(regexp);
+			if (matchResult) store.dispatch(Actions.setAccessToken(matchResult[1]));
+		}
+		injectModules();
+	});
 	chrome.runtime.sendMessage(null, {type: "getIdentity"}, {}, (identity) => {
 		if (identity) EventLogger.updateAmplitudePropsForUser(identity);
 	});

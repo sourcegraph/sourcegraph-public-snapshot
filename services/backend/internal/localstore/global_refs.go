@@ -7,6 +7,9 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rogpeppe/rog-go/parallel"
@@ -21,7 +24,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	sstore "sourcegraph.com/sourcegraph/srclib/store"
 )
@@ -224,25 +227,13 @@ func filterVisibleRepos(ctx context.Context, repoRefs []*sourcegraph.DefRepoRef)
 	hasAccess := make([]bool, len(repoRefs))
 	par := parallel.NewRun(30)
 	var mu sync.Mutex
-	for i_, r_ := range repoRefs {
-		i, r := i_, r_
+	for i, r := range repoRefs {
+		i, r := i, r
 		par.Do(func() error {
-			// TODO(keegancsmith) once forks are removed from
-			// global_refs, we should just check
-			// accesscontrol.VerifyUserHasReadAccess
-			// https://app.asana.com/0/138665145800110/137848642885286
-			res, err := svc.Repos(ctx).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: r.Repo})
-			if err != nil {
-				log15.Info("GlobalRefs.Get: error resolving repo.", "err", err, "repo", r.Repo)
-			} else {
-				repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: res.Repo})
-				if err != nil {
-					log15.Info("GlobalRefs.Get: error getting repo.", "err", err, "repo", res.Repo)
-				} else if !repo.Fork {
-					mu.Lock()
-					hasAccess[i] = true
-					mu.Unlock()
-				}
+			if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GlobalRefs.Get", r.Repo); err == nil {
+				mu.Lock()
+				hasAccess[i] = true
+				mu.Unlock()
 			}
 			return nil
 		})
@@ -297,11 +288,17 @@ func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	}
 	dbh := graphDBH(ctx)
 
-	repo, commitID, err := resolveRevisionDefaultBranch(ctx, op.Repo)
+	repoObj, commitID, err := resolveRevisionDefaultBranch(ctx, op.Repo)
 	if err != nil {
 		return err
 	}
 
+	if repoObj.Fork {
+		// We don't index forks
+		return grpc.Errorf(codes.InvalidArgument, "GlobalRefs does not index forks. repo=%s", op.Repo)
+	}
+
+	repo := repoObj.URI
 	trackedRepo := repotrackutil.GetTrackedRepo(repo)
 	observe := func(part string, start time.Time) {
 		// We also add logs because update operations are relatively
@@ -366,35 +363,11 @@ func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	// of the transaction can lead to conflicts with other imports
 	start = time.Now()
 	defKeyIDs := map[graph.DefKey]int64{}
-	{
-		// Find unique defKeys so we can bulk upsert and get the def_key ids
-		defKeys := map[graph.DefKey]struct{}{}
-		for _, r := range refs {
-			k := graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}
-			defKeys[k] = struct{}{}
-		}
-		defs := make([]*graph.Def, 0, len(defKeys))
-		for k := range defKeys {
-			defs = append(defs, &graph.Def{DefKey: k})
-		}
-
-		start := time.Now()
-		err := updateDefKeys(ctx, dbh, repo, defs)
-		observe("defkeysupdate", start)
-		if err != nil {
-			return err
-		}
-
-		start = time.Now()
-		dbDefKeys, err := getDefKeys(ctx, dbh, defKeys)
-		observe("defkeysget", start)
-		if err != nil {
-			return err
-		}
-		for _, dk := range dbDefKeys {
-			defKeyIDs[graph.DefKey{Repo: dk.Repo, UnitType: dk.UnitType, Unit: dk.Unit, Path: dk.Path}] = dk.ID
-		}
+	for _, r := range refs {
+		k := graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}
+		defKeyIDs[k] = -1
 	}
+	getOrInsertDefKeys(ctx, dbh, defKeyIDs)
 	observe("defkeys", start)
 
 	tmpCreateSQL := `CREATE TEMPORARY TABLE global_refs_tmp (
@@ -510,4 +483,31 @@ var globalRefsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 func init() {
 	prometheus.MustRegister(globalRefsDuration)
 	prometheus.MustRegister(globalRefsUpdateDuration)
+}
+
+func resolveRevisionDefaultBranch(ctx context.Context, repo int32) (repoObj *sourcegraph.Repo, commitID string, err error) {
+	repoObj, err = store.ReposFromContext(ctx).Get(ctx, repo)
+	if err != nil {
+		return
+	}
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoObj.ID)
+	if err != nil {
+		return
+	}
+	c, err := vcsrepo.ResolveRevision(repoObj.DefaultBranch)
+	if err != nil {
+		// TODO(keegancsmith) Remove once we always have the
+		// DefaultBranch stored in our own DB. https://app.asana.com/0/87040567695724/147734985562458
+		if !strings.HasPrefix(strings.ToLower(repoObj.URI), "github.com/") {
+			return
+		}
+		ghrepo, err := github.ReposFromContext(ctx).Get(ctx, repoObj.URI)
+		if err != nil {
+			return nil, "", err
+		}
+		if c, err = vcsrepo.ResolveRevision(ghrepo.DefaultBranch); err != nil {
+			return nil, "", err
+		}
+	}
+	return repoObj, string(c), nil
 }

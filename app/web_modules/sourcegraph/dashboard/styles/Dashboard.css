@@ -78,6 +78,7 @@
 .action-icon {
 	font-size: 120%;
 	vertical-align: text-top;
+	padding-right: 5px;
 }
 .action-link {
 	composes: action-button;
@@ -112,11 +113,12 @@
 .top-queries-panel {
 	composes: mt5 mb4 pb2 from base;
 	padding-top: 1.5rem; /* need in between pt3 and pt4 */
-	height: 128px;
+	min-height: 100px;
 }
 .notice {
 	composes: ma0 from base;
 	composes: cool-mid-gray from colors;
+	text-align: center;
 }
 .search-settings-panel {
 	composes: pt2 pb1 from base;
@@ -146,8 +148,9 @@
 .query {
 	font-size: 0.95rem;
 	composes: mr2 mb2 from base;
-	border-width: 1px;
+	border-width: 1px !important;;
 	border-color: c_blue-2;
+	border-radius: 50px;
 }
 .query:hover {
 	border-color: c_dark-blue-2;

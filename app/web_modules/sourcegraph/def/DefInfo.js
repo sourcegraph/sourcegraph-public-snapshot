@@ -196,7 +196,7 @@ class DefInfo extends Container {
 		let def = this.state.defObj;
 		let hiddenDescr = this.state.defDescrHidden;
 		let refLocs = this.state.refLocations;
-		let defURL = def ? urlToDef(def, this.state.rev) : "";
+		let defBlobUrl = def ? urlToDef(def, this.state.rev) : "";
 
 		if (refLocs && refLocs.Error) {
 			return (
@@ -213,7 +213,7 @@ class DefInfo extends Container {
 					{def &&
 						<div className={`${base.mv4} ${base.ph4}`}>
 							<Heading level="5" styleName="break-word" className={base.mv2}>
-								<Link title="View definition in code" to={defURL} styleName="link-subtle">
+								<Link title="View definition in code" to={defBlobUrl} styleName="link-subtle">
 									<code styleName="normal">{qualifiedNameAndType(def, {unqualifiedNameClass: styles.def})}</code>
 								</Link>
 							</Heading>
@@ -259,7 +259,7 @@ class DefInfo extends Container {
 							<div styleName="f7 cool-mid-gray">
 								{def && def.Repo && <Link to={urlToRepo(def.Repo)} styleName="link-subtle">{def.Repo}</Link>}
 								&nbsp; &middot; &nbsp;
-								<Link title="View definition in code" to={defURL} styleName="link-subtle">View definition</Link>
+								<Link title="View definition in code" to={defBlobUrl} styleName="link-subtle">View definition</Link>
 								&nbsp; &middot; &nbsp;
 								<Dropdown
 									className={base.mt0}

@@ -57,9 +57,6 @@ func (d *dumpState) dumpPtr(v reflect.Value) {
 		}
 	}
 
-	// Keep list of all dereferenced pointers to show later.
-	var pointerChain []uintptr
-
 	// Figure out how many levels of indirection there are by dereferencing
 	// pointers and unpacking interfaces down the chain while detecting circular
 	// references.
@@ -74,7 +71,6 @@ func (d *dumpState) dumpPtr(v reflect.Value) {
 		}
 		indirects++
 		addr := ve.Pointer()
-		pointerChain = append(pointerChain, addr)
 		if pd, ok := d.pointers[addr]; ok && pd < d.depth {
 			cycleFound = true
 			indirects--

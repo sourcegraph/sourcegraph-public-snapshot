@@ -41,20 +41,12 @@ func TestAsyncService_RefreshIndexes(t *testing.T) {
 		Repo:                wantRepo,
 		RefreshRefLocations: true,
 	})
-	calledSearch := mock.servers.Search.MockRefreshIndex(t, &sourcegraph.SearchRefreshIndexOp{
-		Repos:         []int32{wantRepo},
-		RefreshCounts: true,
-		RefreshSearch: true,
-	})
 	err = w.do(ctx, job)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !*calledDefs {
 		t.Error("Did not call Defs.RefreshIndex")
-	}
-	if !*calledSearch {
-		t.Error("Did not call Search.RefreshIndex")
 	}
 }
 

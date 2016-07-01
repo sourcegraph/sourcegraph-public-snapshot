@@ -1,8 +1,14 @@
 "use strict";
 
-var _Object$assign = require("babel-runtime/core-js/object/assign")["default"];
+exports.__esModule = true;
 
-exports["default"] = _Object$assign || function (target) {
+var _assign = require("../core-js/object/assign");
+
+var _assign2 = _interopRequireDefault(_assign);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = _assign2.default || function (target) {
   for (var i = 1; i < arguments.length; i++) {
     var source = arguments[i];
 
@@ -15,5 +21,3 @@ exports["default"] = _Object$assign || function (target) {
 
   return target;
 };
-
-exports.__esModule = true;

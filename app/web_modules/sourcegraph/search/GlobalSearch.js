@@ -11,9 +11,9 @@ import SearchStore from "sourcegraph/search/SearchStore";
 import RepoStore from "sourcegraph/repo/RepoStore";
 import "sourcegraph/search/SearchBackend";
 import UserStore from "sourcegraph/user/UserStore";
-import debounce from "lodash/function/debounce";
-import uniq from "lodash/array/uniq";
-import trimLeft from "lodash/string/trimLeft";
+import uniq from "lodash.uniq";
+import debounce from "lodash.debounce";
+import trimLeft from "lodash.trimleft";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
@@ -26,7 +26,7 @@ import base from "sourcegraph/components/styles/_base.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import popularRepos from "./popularRepos";
 
-export const RESULTS_LIMIT = 10;
+export const RESULTS_LIMIT = 20;
 
 const resultIconSize = "24px";
 
@@ -59,11 +59,14 @@ class GlobalSearch extends Container {
 			githubToken: null,
 			privateRepos: [],
 			publicRepos: [],
+			clickModifier: false,
 		};
 		this._handleKeyDown = this._handleKeyDown.bind(this);
+		this._handleKeyUp = this._handleKeyUp.bind(this);
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
-		this._onSelection = debounce(this._onSelection.bind(this), 100, {leading: false, trailing: true}); // Prevent rapid repeated selections
+		this._onSelection = debounce(this._onSelection.bind(this), 200, {leading: false, trailing: true});
+		this._dispatchQuery = debounce(this._dispatchQuery.bind(this), 200, {leading: false, trailing: true});
 	}
 
 	state: {
@@ -78,12 +81,14 @@ class GlobalSearch extends Container {
 		selectionIndex: number;
 		privateRepos: Array<Repo>;
 		publicRepos: Array<Repo>;
+		clickModifier: boolean;
 	};
 
 	componentDidMount() {
 		super.componentDidMount();
 		if (global.document) {
 			document.addEventListener("keydown", this._handleKeyDown);
+			document.addEventListener("keyup", this._handleKeyUp);
 		}
 		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
 	}
@@ -92,6 +97,7 @@ class GlobalSearch extends Container {
 		super.componentWillUnmount();
 		if (global.document) {
 			document.removeEventListener("keydown", this._handleKeyDown);
+			document.removeEventListener("keyup", this._handleKeyUp);
 		}
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
@@ -100,13 +106,22 @@ class GlobalSearch extends Container {
 
 	_langs(state) {
 		if (!state) state = this.state;
-		return state.settings && state.settings.search && state.settings.search.languages ? Array.from(state.settings.search.languages) : [];
+		return state.settings && state.settings.search && state.settings.search.languages ? state.settings.search.languages : [];
 	}
 
 	_scope(state) {
 		if (!state) state = this.state;
 		return state.settings && state.settings.search && state.settings.search.scope ? state.settings.search.scope :
 			{};
+	}
+
+	_scopeProperties(state) {
+		const scope = this._scope(state);
+		return Object.keys(scope).filter((key) => key === "repo" ? this.state.repo && Boolean(scope[key]) : Boolean(scope[key]));
+	}
+
+	_pageName() {
+		return this.props.location.pathname.slice(1) === rel.search ? `/${rel.search}` : "(global nav)";
 	}
 
 	_canSearch(state) {
@@ -122,6 +137,13 @@ class GlobalSearch extends Container {
 		if (scope.public) repos.push(...state.publicRepos);
 		if (scope.private) repos.push(...state.privateRepos);
 		return uniq(repos);
+	}
+
+	_chunkReposScope(scope) {
+		let arrays = [];
+		let batchSize = 10;
+		while (scope.length > 0) arrays.push(scope.splice(0, batchSize));
+		return arrays;
 	}
 
 	_parseRemoteRepoURIsAndDeps(repos, deps) {
@@ -155,57 +177,76 @@ class GlobalSearch extends Container {
 		state.matchingResults = this._langs(state).reduce((memo, lang) => {
 			const reposScope = this._reposScope(state, lang);
 			if (reposScope && reposScope.length > 0) {
-				const results = SearchStore.get(`${lang} ${state.query}`, this._reposScope(state, lang), null, null, RESULTS_LIMIT,
-					this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
-				if (results) {
-					if (results.Repos) memo.Repos.push(...results.Repos);
-					if (results.Defs) memo.Defs.push(...results.Defs);
-					if (results.Options) memo.Options.push(...results.Options);
+				const batches = this._chunkReposScope(reposScope);
+				for (const batch of batches) {
+					const results = SearchStore.get(`${lang} ${state.query}`, batch, null, null, RESULTS_LIMIT,
+						this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
+					if (results && !results.Error) {
+						memo.fetching = false;
+						if (results.Repos) memo.Repos.push(...results.Repos);
+						if (results.Defs) memo.Defs.push(...results.Defs);
+						if (results.Options) memo.Options.push(...results.Options);
+					}
 				}
 			}
 			return memo;
-		}, {Repos: [], Defs: [], Options: []});
+		}, {Repos: [], Defs: [], Options: [], fetching: true});
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (prevState.query !== nextState.query || prevState.githubToken !== nextState.githubToken || prevState.settings !== nextState.settings) {
-			debounce((query) => {
-				const langs = this._langs(nextState);
-				for (const lang of langs) {
-					const reposScope = this._reposScope(nextState, lang);
-					if (!reposScope || reposScope.length === 0 || !this._canSearch(nextState)) continue;
-					Dispatcher.Backends.dispatch(new SearchActions.WantResults({
-						query: `${lang} ${nextState.query}`,
-						limit: RESULTS_LIMIT,
-						prefixMatch: this.props.location.query.prefixMatch,
-						includeRepos: this.props.location.query.includeRepos,
-						fast: true,
-						repos: reposScope,
-					}));
-				}
-			}, 200, {leading: false, trailing: true})(nextState.query);
+		if (prevState.query !== nextState.query ||
+			prevState.githubToken !== nextState.githubToken ||
+			prevState.settings !== nextState.settings ||
+			prevState.publicRepos !== nextState.publicRepos ||
+			prevState.privateRepos !== nextState.privateRepos) {
+			this._dispatchQuery(nextState);
+		}
+	}
+
+	_dispatchQuery(state) {
+		const langs = this._langs(state);
+		for (const lang of langs) {
+			const reposScope = this._reposScope(state, lang);
+			if (!reposScope || reposScope.length === 0 || !this._canSearch(state)) continue;
+			const batches = this._chunkReposScope(reposScope);
+			for (const batch of batches) {
+				Dispatcher.Backends.dispatch(new SearchActions.WantResults({
+					query: `${lang} ${state.query}`,
+					limit: RESULTS_LIMIT,
+					prefixMatch: this.props.location.query.prefixMatch,
+					includeRepos: this.props.location.query.includeRepos,
+					fast: true,
+					repos: batch,
+				}));
+			}
 		}
 	}
 
 	__onDispatch(action) {
 		if (action.constructor === SearchActions.ResultsFetched) {
-			let globalSearchEventDict = {};
-			globalSearchEventDict["globalSearchQuery"] = this.state.query;
-			globalSearchEventDict["page name"] = this.props.location.pathname.slice(1) === rel.search ? "Global search homepage" : "Global search repo page";
-			if (this.state.matchingResults !== null) {
-				globalSearchEventDict["languages"] = this._langs(this.state);
-			}
-			this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_SUCCESS, "GlobalSearchInitiated", globalSearchEventDict);
+			let eventProps = {};
+			eventProps["globalSearchQuery"] = this.state.query;
+			eventProps["page name"] = this._pageName();
+			eventProps["languages"] = this._langs(this.state);
+			eventProps["repo_scope"] = this._scopeProperties(this.state);
+			this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_SUCCESS, "GlobalSearchInitiated", eventProps);
 		}
 	}
 
 	_navigateTo(url: string) {
-		browserHistory.push(url);
+		if (!this.state.clickModifier) {
+			browserHistory.push(url);
+		}
 	}
 
 	_handleKeyDown(e: KeyboardEvent) {
+		let code = e.keyCode;
+		if (e.metaKey) {
+			// http://stackoverflow.com/questions/3902635/how-does-one-capture-a-macs-command-key-via-javascript
+			code = 17;
+		}
 		let idx, max;
-		switch (e.keyCode) {
+		switch (code) {
 		case 40: // ArrowDown
 			idx = this._normalizedSelectionIndex();
 			max = this._numResults();
@@ -250,10 +291,19 @@ class GlobalSearch extends Container {
 				e.preventDefault();
 			}
 			break;
+
+		case 17: // ctrl (or meta, see above)
+			this.setState({clickModifier: true});
+			break;
+
 		default:
 			// Changes to the input value are handled by the parent component.
 			break;
 		}
+	}
+
+	_handleKeyUp(e: KeyboardEvent) {
+		this.setState({clickModifier: false});
 	}
 
 	_scrollToVisibleSelection() {
@@ -289,11 +339,14 @@ class GlobalSearch extends Container {
 			return;
 		}
 
+		let eventProps: any = {globalSearchQuery: this.state.query, indexSelected: i, page_name: this._pageName(), languages: this._langs(this.state), repo_scope: this._scopeProperties(this.state)};
+
 		let offset = 0;
 		if (this.state.matchingResults.Repos) {
 			if (i < this.state.matchingResults.Repos.length) {
 				const url = `/${this.state.matchingResults.Repos[i].URI}`;
-				this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url, indexSelected: i, page_name: this.props.location.pathname});
+				eventProps.selectedItem = url;
+				this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", eventProps);
 				this._navigateTo(url);
 				return;
 			}
@@ -304,7 +357,8 @@ class GlobalSearch extends Container {
 		const def = this.state.matchingResults.Defs[i - offset];
 		const url = urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def);
 
-		let eventProps = {globalSearchQuery: this.state.query, selectedItem: url, indexSelected: i, totalResults: this.state.matchingResults.Defs.length, page_name: this.props.location.pathname};
+		eventProps.selectedItem = url;
+		eventProps.totalResults = this.state.matchingResults.Defs.length;
 		if (def.FmtStrings && def.FmtStrings.Kind && def.FmtStrings.Language && def.Repo) {
 			eventProps = {...eventProps, languageSelected: def.FmtStrings.Language, kindSelected: def.FmtStrings.Kind, repoSelected: def.Repo};
 		}
@@ -343,21 +397,28 @@ class GlobalSearch extends Container {
 	}
 
 	_results(): React$Element | Array<React$Element> {
-		if (!this.state.query) return <div className={`${this.state.resultClassName} ${base.pt4}`} styleName="result">Type a query&hellip;</div>;
+		const langs = this._langs(this.state);
+		const scope = this._scope(this.state);
 
-		const invalidFiltersItem = <div className={`${this.state.resultClassName} ${base.pt4}`} styleName="result" key="_nosymbol">Update your search filters and try again.</div>;
-		const noResultsItem = <div className={`${this.state.resultClassName} ${base.pt4}`} styleName="result" key="_nosymbol">No results found.</div>;
-		if (!this.state.matchingResults) {
-			return [<div key="1" styleName="result" className={base.pv5}>Loading results...</div>];
+		if (!langs || langs.length === 0) {
+			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`} styleName="result result-error">Select a language to search.</div>];
 		}
 
-		const langs = this._langs(this.state);
-		const reposScope = langs && langs.reduce((memo, lang) => memo.concat(...this._reposScope(this.state, lang)), []);
-		if (!langs || langs.length === 0 || !reposScope || reposScope.length === 0) return [invalidFiltersItem];
+		if (!scope || !(scope.popular || (this.state.repo && scope.repo) || scope.private || scope.public)) {
+			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`} styleName="result result-error">Select repositories to include.</div>];
+		}
+
+		if (!this.state.query) return <div className={`${base.pt4} ${base.ph4}`} styleName="result">Type a query&hellip;</div>;
+
+		if (!this.state.matchingResults || this.state.matchingResults && this.state.matchingResults.fetching) {
+			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`}styleName="result">Loading results...</div>];
+		}
 
 		if (this.state.matchingResults &&
 			(!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) &&
-			(!this.state.matchingResults.Repos || this.state.matchingResults.Repos.length === 0)) return [noResultsItem];
+			(!this.state.matchingResults.Repos || this.state.matchingResults.Repos.length === 0)) {
+			return [<div className={`${base.ph4} ${base.pt4}`} styleName="result" key="_nosymbol">No results found.</div>];
+		}
 
 		let list = [], numDefs = 0,
 			numRepos = this.state.matchingResults.Repos ? this.state.matchingResults.Repos.length : 0;
@@ -382,7 +443,7 @@ class GlobalSearch extends Container {
 						<div styleName="flex-icon hidden-s">
 							<Icon icon="repository-gray" width={resultIconSize} />
 						</div>
-						<div styleName="flex bottom-border" className={base.pb4}>
+						<div styleName="flex" className={base.pb4}>
 							<code styleName="block title">
 								Repository
 								<span styleName="bold"> {repo.URI.split(/[// ]+/).pop()}</span>
@@ -419,10 +480,7 @@ class GlobalSearch extends Container {
 					key={defURL}
 					onClick={() => this._onSelection()}>
 					<div styleName="cool-gray flex-container" className={base.pt3}>
-						<div styleName="flex-icon hidden-s">
-							<Icon icon="doc-code" width={resultIconSize} />
-						</div>
-						<div styleName="flex bottom-border" className={base.pb4}>
+						<div styleName="flex" className={base.pb4}>
 							<p styleName="repo">{trimRepo(def.Repo)}</p>
 							<code styleName="block title">
 								{qualifiedNameAndType(def, {nameQual: "DepQualified"})}

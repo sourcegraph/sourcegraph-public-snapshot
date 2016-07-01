@@ -1,6 +1,8 @@
 // @flow
 
 import React from "react";
+import {Link} from "react-router";
+import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import Helmet from "react-helmet";
 import CSSModules from "react-css-modules";
 import Container from "sourcegraph/Container";
@@ -9,7 +11,6 @@ import styles from "./styles/Dashboard.css";
 import {locationForSearch} from "sourcegraph/search/routes";
 import GlobalSearchInput from "sourcegraph/search/GlobalSearchInput";
 import {Button, Logo} from "sourcegraph/components";
-import {CloudDownloadIcon, PlayIcon} from "sourcegraph/components/Icons";
 import SearchSettings from "sourcegraph/search/SearchSettings";
 import type {LanguageID} from "sourcegraph/Language";
 import invariant from "invariant";
@@ -41,8 +42,12 @@ class DashboardContainer extends Container {
 		state.langs = settings && settings.search ? settings.search.languages : null;
 	}
 
+	onStateTransition(prevState, nextState) {
+		if (this._input && this._input.value) this._goToSearch(this._input.value);
+	}
+
 	_goToSearch(query: string) {
-		this.context.router.replace(locationForSearch(this.props.location, query, true, true));
+		this.context.router.push(locationForSearch(this.props.location, query, true, true));
 	}
 
 	_handleInput: Function;
@@ -75,6 +80,7 @@ class DashboardContainer extends Container {
 	}
 
 	render() {
+		const langSelected = this.state.langs && this.state.langs.length > 0;
 		return (
 			<div>
 				<Helmet title="Home" />
@@ -82,19 +88,19 @@ class DashboardContainer extends Container {
 					<Logo type="logotype" styleName="logo" />
 
 					<h2 styleName="description">
-						<strong>Instant&nbsp;usage&nbsp;examples and other&nbsp;helpful&nbsp;info as&nbsp;you&nbsp;code,</strong> automatically&nbsp;drawn&nbsp;from public&nbsp;and&nbsp;(your&nbsp;own)&nbsp;private&nbsp;code.
+						<strong>Instant&nbsp;usage&nbsp;examples&nbsp;and&nbsp;more&nbsp;as&nbsp;you&nbsp;code,</strong> automatically&nbsp;drawn&nbsp;from public&nbsp;and&nbsp;(your&nbsp;own)&nbsp;private&nbsp;code.
 					</h2>
 
 					<div styleName="user-actions">
-						{!this.context.signedIn && <Button styleName="action-link" type="button" color="blue" outline={true}>Sign in</Button>}
-						<Button styleName="action-link" type="button" color="blue" outline={true}><CloudDownloadIcon styleName="action-icon" /> Download the app</Button>
-						<Button styleName="action-link" type="button" color="blue" outline={true}><PlayIcon styleName="action-icon" /> Watch the video</Button>
+						{!this.context.signedIn && <LocationStateToggleLink href="/login" modalName="login" location={this.props.location}><Button styleName="action-link" type="button" color="blue" outline={true}>Sign in</Button></LocationStateToggleLink>}
+						<Link to="/tools/browser"><Button styleName="action-link" type="button" color="blue" outline={true}>Install Chrome extension</Button></Link>
+						<Link to="/tools/editor"><Button styleName="action-link" type="button" color="blue" outline={true}>Install editor plugin</Button></Link>
 					</div>
 
 					<GlobalSearchInput
 						name="q"
 						border={true}
-						value={this.props.location.query.q || ""}
+						query={this.props.location.query.q || ""}
 						autoFocus={true}
 						domRef={e => this._input = e}
 						styleName="search-input"
@@ -104,12 +110,12 @@ class DashboardContainer extends Container {
 					</div>
 
 					{<TitledSection title="Top searches" className={styles["top-queries-panel"]}>
-						{this.state.langs && this.state.langs.length > 0 && <Queries langs={this.state.langs} onSelectQuery={this._onSelectQuery} />}
-						{!(this.state.langs && this.state.langs.length > 0) && <p styleName="notice">Select a language below to see top queries.</p>}
+						{langSelected && <Queries langs={this.state.langs} onSelectQuery={this._onSelectQuery} />}
+						{!langSelected && <p styleName="notice">Select a language below to get started.</p>}
 					</TitledSection>}
 
 					{<TitledSection title="Search options" className={styles["search-settings-panel"]}>
-						<SearchSettings showAlerts={false} location={this.props.location} styleName="search-settings" />
+						<SearchSettings location={this.props.location} styleName="search-settings" />
 					</TitledSection>}
 				</div>
 			</div>
@@ -145,17 +151,14 @@ const topQueries: {[key: LanguageID]: string[]} = {
 	],
 	java: [
 		"file open",
-		"new timezone",
-		"parse url",
+		"date time",
 	],
 	golang: [
 		"new http request",
 		"read file",
 		"json encoder",
 		"http get",
-		"new docker client",
 		"sql query",
-		"walk filesystem",
 		"indent json",
 	],
 };

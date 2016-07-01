@@ -11,7 +11,7 @@ function keyFor(repo, rev) {
 }
 
 function keyForOpt(opt) {
-	return `${opt.deps}:${opt.private}`;
+	return `${Boolean(opt.deps)}:${Boolean(opt.public)}:${Boolean(opt.private)}`;
 }
 
 export class RepoStore extends Store {

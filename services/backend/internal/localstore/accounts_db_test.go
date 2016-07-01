@@ -1,10 +1,12 @@
 package localstore
 
 import (
+	"database/sql"
 	"reflect"
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
@@ -176,6 +178,7 @@ func TestAccounts_RequestPasswordReset(t *testing.T) {
 	ctx, _, done := testContext()
 	defer done()
 
+	before := time.Now()
 	s := &accounts{}
 	u := &sourcegraph.User{UID: 123}
 	token, err := s.RequestPasswordReset(ctx, u)
@@ -186,6 +189,14 @@ func TestAccounts_RequestPasswordReset(t *testing.T) {
 	r := regexp.MustCompile(p)
 	if !r.MatchString(token.Token) {
 		t.Errorf("token should match %s", p)
+	}
+
+	req, err := unmarshalResetRequest(ctx, token.Token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !req.ExpiresAt.After(before) {
+		t.Errorf("token's expiration date: %v should be at some point in the future", req.ExpiresAt)
 	}
 }
 
@@ -205,10 +216,21 @@ func TestAccounts_ResetPassword_ok(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
+	oldReq, err := unmarshalResetRequest(ctx, token.Token)
+	if err != nil {
+		t.Fatal(err)
+	}
 	newPass := &sourcegraph.NewPassword{Password: "a", Token: &sourcegraph.PasswordResetToken{Token: token.Token}}
 	if err := s.ResetPassword(ctx, newPass); err != nil {
 		t.Fatal(err)
+	}
+
+	newReq, err := unmarshalResetRequest(ctx, newPass.Token.Token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if newReq.ExpiresAt.After(oldReq.ExpiresAt) {
+		t.Errorf("token's new expiration date: %v should be before its previous expiration date: %v", newReq.ExpiresAt, oldReq.ExpiresAt)
 	}
 }
 
@@ -226,6 +248,33 @@ func TestAccounts_ResetPassword_badtoken(t *testing.T) {
 	s := accounts{}
 	newPass := &sourcegraph.NewPassword{Password: "a", Token: &sourcegraph.PasswordResetToken{Token: "b"}}
 	if err := s.ResetPassword(ctx, newPass); err == nil {
-		t.Errorf("Should have gotten error reseting password, got nil instead")
+		t.Errorf("should have gotten error reseting password, got nil instead")
+	}
+}
+
+// TestAccounts_CleanExpiredResets tests that expired password reset requests are removed from the
+// database whenever cleanExpiredResets is called.
+func TestAccounts_CleanExpiredResets(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx, _, done := testContext()
+	defer done()
+
+	s := &accounts{}
+	u := &sourcegraph.User{UID: 123}
+	token, err := s.RequestPasswordReset(ctx, u)
+	if err != nil {
+		t.Fatal(err)
+	}
+	newPass := &sourcegraph.NewPassword{Password: "a", Token: &sourcegraph.PasswordResetToken{Token: token.Token}}
+	if err := s.ResetPassword(ctx, newPass); err != nil {
+		t.Fatal(err)
+	}
+	s.cleanExpiredResets(ctx)
+	_, err = unmarshalResetRequest(ctx, newPass.Token.Token)
+	if err != sql.ErrNoRows {
+		t.Fatalf("got this error: %s, should have gotten just a NoRow error instead when trying to retrieve a cleaned reset request", err)
 	}
 }

@@ -60,13 +60,15 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 		return nil, grpc.Errorf(codes.InvalidArgument, "password cannot be empty")
 	}
 
+	// don't want to leak existence of usernames
+	genericErr := grpc.Errorf(codes.PermissionDenied, "either incorrect login or password")
 	user, err := usersStore.Get(elevatedActor(ctx), sourcegraph.UserSpec{Login: cred.Login})
 	if err != nil {
-		return nil, grpc.Errorf(codes.PermissionDenied, "user not found")
+		return nil, genericErr
 	}
 
 	if store.PasswordFromContext(ctx).CheckUIDPassword(elevatedActor(ctx), user.UID, cred.Password) != nil {
-		return nil, grpc.Errorf(codes.PermissionDenied, "incorrect password for %q", cred.Login)
+		return nil, genericErr
 	}
 
 	a := authpkg.ActorFromContext(ctx)

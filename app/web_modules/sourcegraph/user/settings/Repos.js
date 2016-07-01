@@ -4,7 +4,7 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/Repos.css";
 import base from "sourcegraph/components/styles/_base.css";
 import {Input, Table} from "sourcegraph/components";
-import debounce from "lodash/function/debounce";
+import debounce from "lodash.debounce";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 
@@ -58,7 +58,7 @@ class Repos extends React.Component {
 	}
 
 	_hasPrivateGitHubToken() {
-		return this.context.githubToken && (!this.context.githubToken.scope || !(this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org") && this.context.githubToken.scope.includes("user:email")));
+		return this.context.githubToken && this.context.githubToken.scope && this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org") && this.context.githubToken.scope.includes("user:email");
 	}
 
 	render() {
@@ -67,23 +67,17 @@ class Repos extends React.Component {
 		return (
 			<div className={base.pb4}>
 				<div>
+					<div>
+						<Input type="text"
+							placeholder="Find a repository..."
+							domRef={(e) => this._filterInput = e}
+							spellCheck={false}
+							styleName="filter-input"
+							onChange={this._handleFilter} />
+						{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github-button">Connect your private repositories</GitHubAuthButton>}
+						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} styleName="github-button">Connect with GitHub</GitHubAuthButton>}
+					</div>
 					<Table styleName="repos">
-						<thead>
-							<tr>
-								<td>
-									<Input type="text"
-										placeholder="Find a repository..."
-										domRef={(e) => this._filterInput = e}
-										spellCheck={false}
-										styleName="filter-input"
-										onChange={this._handleFilter} />
-								</td>
-								<td>
-									{this._hasGithubToken && !this._hasPrivateGitHubToken && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github-button">Connect your private repositories</GitHubAuthButton>}
-									{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} styleName="github-button">Connect with GitHub</GitHubAuthButton>}
-								</td>
-							</tr>
-						</thead>
 						<tbody>
 							{repos.length > 0 && repos.map((repo, i) =>
 								<tr styleName="row" key={i}>

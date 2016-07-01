@@ -1,4 +1,6 @@
 require('../modules/es6.number.constructor');
+require('../modules/es6.number.to-fixed');
+require('../modules/es6.number.to-precision');
 require('../modules/es6.number.epsilon');
 require('../modules/es6.number.is-finite');
 require('../modules/es6.number.is-integer');
@@ -8,4 +10,4 @@ require('../modules/es6.number.max-safe-integer');
 require('../modules/es6.number.min-safe-integer');
 require('../modules/es6.number.parse-float');
 require('../modules/es6.number.parse-int');
-module.exports = require('../modules/$.core').Number;
+module.exports = require('../modules/_core').Number;

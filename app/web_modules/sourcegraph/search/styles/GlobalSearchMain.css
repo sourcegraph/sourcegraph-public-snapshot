@@ -4,29 +4,27 @@
 @value layout "sourcegraph/components/styles/_layout.css";
 @value typography "sourcegraph/components/styles/_typography.css";
 
-.container {
-	composes: containerFixedLeft from layout;
-	max-width: 900px;
-	composes: pr4 from base;
-}
-
-@value left-gutter 40px;
+@value c_black-10 from colors;
 
 @value SearchSettings "sourcegraph/search/styles/SearchSettings.css";
 .search-settings {
 	composes: groups-bb from SearchSettings;
+	box-shadow: inset 0 7px 10px -7px c_black-10;
 }
 .search-settings-inner {
-	composes: container;
-	padding-left: left-gutter;
-	composes: mh2 from base;
+	composes: ph3 mh2 from base;
 }
 
 .results {
-	composes: container;
-	padding-left: left-gutter;
-	composes: mh0 mt4 from base;
+	composes: mh0 from base;
 }
+
+.bottom-border {
+	composes: bb from base;
+	composes: b--cool-pale-gray from colors;
+}
+
 .result {
-	composes: pl3 mr3 pt3 mb3 from base;
+	composes: bottom-border;
+	composes: ph4 pt3 pb3 from base;
 }

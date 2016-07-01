@@ -51,7 +51,7 @@ func newListNode() *ListNode {
 }
 
 // DockerNode represents a Docker container that
-// should be laucned as part of the build process.
+// should be launched as part of the build process.
 type DockerNode struct {
 	NodeType
 
@@ -66,6 +66,8 @@ type DockerNode struct {
 	ExtraHosts  []string
 	Net         string
 	AuthConfig  yaml.AuthConfig
+	Memory      int64
+	CPUSetCPUs  string
 	Vargs       map[string]interface{}
 
 	AllowFailure bool
@@ -84,6 +86,8 @@ func newDockerNode(typ NodeType, c yaml.Container) *DockerNode {
 		ExtraHosts:  c.ExtraHosts,
 		Net:         c.Net,
 		AuthConfig:  c.AuthConfig,
+		Memory:      c.Memory,
+		CPUSetCPUs:  c.CPUSetCPUs,
 	}
 }
 

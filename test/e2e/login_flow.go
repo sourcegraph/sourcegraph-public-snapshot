@@ -6,9 +6,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-
 	"sourcegraph.com/sourcegraph/go-selenium"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 
 func init() {
@@ -85,6 +84,6 @@ func testLoginFlow(t *T) error {
 	submit := t.FindElement(selenium.ById, "e2etest-login-button")
 	submit.Click()
 
-	t.WaitForRedirect(t.Endpoint("/search"), "wait for redirect to search after sign-in")
+	t.WaitForRedirect(t.Endpoint("/"), "wait for redirect to home after sign-in")
 	return nil
 }

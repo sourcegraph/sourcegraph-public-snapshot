@@ -19,11 +19,7 @@ const common = {
 					main: withResolvedRepoRev(withRepoBuild(require("sourcegraph/repo/RepoMain").default), true),
 				};
 			}
-			callback(null, {
-				// Allow disabling the nav context on a per-route basis.
-				navContext: location.routes[location.routes.length - 1].repoNavContext === false ? null : _components.navContext,
-				main: _components.main,
-			});
+			callback(null, _components);
 		});
 	},
 };

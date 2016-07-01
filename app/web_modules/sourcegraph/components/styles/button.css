@@ -149,8 +149,8 @@
 .solid {
 	composes: btn;
 	composes: white from colors;
-	border-style: solid;
-	border-width: 2px;
+    composes: ba bw2 from base;
+	border-color: transparent;
 }
 .solid:hover { color: white; }
 

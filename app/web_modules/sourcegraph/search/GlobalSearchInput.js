@@ -39,6 +39,7 @@ function GlobalSearchInput(props) {
 	return (
 		<Input
 			{...passProps}
+			id="e2etest-search-input"
 			type="text"
 			onMouseDown={props.icon ? positionCursorAtEndIfIconClicked : null}
 			block={true}
@@ -46,10 +47,12 @@ function GlobalSearchInput(props) {
 			autoCapitalize="off"
 			spellCheck="off"
 			autoComplete="off"
+			defaultValue={props.query}
 			className={cls} />
 	);
 }
 GlobalSearchInput.propTypes = {
+	query: React.PropTypes.string.isRequired,
 	icon: React.PropTypes.bool, // whether to show a magnifying glass icon
 	border: React.PropTypes.bool,
 	className: React.PropTypes.string,

@@ -11,7 +11,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
@@ -615,22 +614,4 @@ func TestRepos_Update_PushedAt(t *testing.T) {
 	if want := newTime; !repo.PushedAt.Time().Equal(want) {
 		t.Errorf("got PushedAt %q, want %q", repo.PushedAt.Time(), want)
 	}
-}
-
-type mockGitHubRepos struct {
-	Get_     func(owner, repo string) (*gogithub.Repository, *gogithub.Response, error)
-	GetByID_ func(id int) (*gogithub.Repository, *gogithub.Response, error)
-	List_    func(user string, opt *gogithub.RepositoryListOptions) ([]gogithub.Repository, *gogithub.Response, error)
-}
-
-func (s mockGitHubRepos) Get(owner, repo string) (*gogithub.Repository, *gogithub.Response, error) {
-	return s.Get_(owner, repo)
-}
-
-func (s mockGitHubRepos) GetByID(id int) (*gogithub.Repository, *gogithub.Response, error) {
-	return s.GetByID_(id)
-}
-
-func (s mockGitHubRepos) List(user string, opt *gogithub.RepositoryListOptions) ([]gogithub.Repository, *gogithub.Response, error) {
-	return s.List_(user, opt)
 }

@@ -24,7 +24,6 @@ export class FileFetched {
 		this.commitID = commitID;
 		this.path = path;
 		this.file = file;
-		this.eventName = "FileFetched";
 	}
 }
 

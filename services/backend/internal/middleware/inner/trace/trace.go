@@ -44,6 +44,7 @@ func Before(ctx context.Context, server, method string, arg interface{}) context
 		spanID = appdash.NewSpanID(parent)
 	}
 	ctx = traceutil.NewContext(ctx, spanID)
+	requestGauge.WithLabelValues(server + "." + method).Inc()
 	return ctx
 }
 
@@ -61,17 +62,17 @@ var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Help:      "Total time spent on grpc endpoints.",
 	Buckets:   statsutil.UserLatencyBuckets,
 }, metricLabels)
-var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+var requestGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
 	Subsystem: "grpc",
-	Name:      "client_requests_last_timestamp_unixtime",
-	Help:      "Last time a request finished for a grpc endpoint.",
-}, metricLabels)
+	Name:      "client_requests",
+	Help:      "Current number of requests running for a method.",
+}, []string{"method"})
 
 func init() {
 	prometheus.MustRegister(requestCount)
 	prometheus.MustRegister(requestDuration)
-	prometheus.MustRegister(requestHeartbeat)
+	prometheus.MustRegister(requestGauge)
 }
 
 // After is called after a method executes and is passed the elapsed
@@ -107,7 +108,7 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 	}
 	requestCount.With(labels).Inc()
 	requestDuration.With(labels).Observe(elapsed.Seconds())
-	requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
+	requestGauge.WithLabelValues(name).Dec()
 
 	uid := strconv.Itoa(authpkg.ActorFromContext(ctx).UID)
 	log15.Debug("TRACE gRPC", "rpc", name, "uid", uid, "spanID", traceutil.SpanIDFromContext(ctx), "error", errStr, "duration", elapsed)

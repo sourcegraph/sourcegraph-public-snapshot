@@ -1,25 +1,32 @@
 "use strict";
 
-var _Object$getOwnPropertyNames = require("babel-runtime/core-js/object/get-own-property-names")["default"];
+exports.__esModule = true;
 
-var _Object$getOwnPropertyDescriptor = require("babel-runtime/core-js/object/get-own-property-descriptor")["default"];
+var _defineProperty = require("../core-js/object/define-property");
 
-var _Object$defineProperty = require("babel-runtime/core-js/object/define-property")["default"];
+var _defineProperty2 = _interopRequireDefault(_defineProperty);
 
-exports["default"] = function (obj, defaults) {
-  var keys = _Object$getOwnPropertyNames(defaults);
+var _getOwnPropertyDescriptor = require("../core-js/object/get-own-property-descriptor");
+
+var _getOwnPropertyDescriptor2 = _interopRequireDefault(_getOwnPropertyDescriptor);
+
+var _getOwnPropertyNames = require("../core-js/object/get-own-property-names");
+
+var _getOwnPropertyNames2 = _interopRequireDefault(_getOwnPropertyNames);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = function (obj, defaults) {
+  var keys = (0, _getOwnPropertyNames2.default)(defaults);
 
   for (var i = 0; i < keys.length; i++) {
     var key = keys[i];
-
-    var value = _Object$getOwnPropertyDescriptor(defaults, key);
+    var value = (0, _getOwnPropertyDescriptor2.default)(defaults, key);
 
     if (value && value.configurable && obj[key] === undefined) {
-      _Object$defineProperty(obj, key, value);
+      (0, _defineProperty2.default)(obj, key, value);
     }
   }
 
   return obj;
 };
-
-exports.__esModule = true;

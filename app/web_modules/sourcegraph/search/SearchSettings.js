@@ -26,7 +26,6 @@ class SearchSettings extends Container {
 		repo: React.PropTypes.string,
 		className: React.PropTypes.string,
 		innerClassName: React.PropTypes.string,
-		showAlerts: React.PropTypes.bool.isRequired,
 		githubToken: React.PropTypes.object,
 	};
 
@@ -57,7 +56,8 @@ class SearchSettings extends Container {
 			const scope = nextState.settings.search.scope;
 			if (scope.public) {
 				Dispatcher.Backends.dispatch(new RepoActions.WantRemoteRepos({deps: true, private: false}));
-			} else if (scope.private) {
+			}
+			if (scope.private) {
 				Dispatcher.Backends.dispatch(new RepoActions.WantRemoteRepos({deps: true, private: true}));
 			}
 		}
@@ -72,7 +72,7 @@ class SearchSettings extends Container {
 	}
 
 	_hasPrivateGitHubToken() {
-		return this.props.githubToken && (!this.props.githubToken.scope || !(this.props.githubToken.scope.includes("repo") && this.props.githubToken.scope.includes("read:org") && this.props.githubToken.scope.includes("user:email")));
+		return this.props.githubToken && this.props.githubToken.scope && this.props.githubToken.scope.includes("repo") && this.props.githubToken.scope.includes("read:org") && this.props.githubToken.scope.includes("user:email");
 	}
 
 	_toggleLang(lang: LanguageID) {
@@ -132,8 +132,9 @@ class SearchSettings extends Container {
 								</Button>
 							</LocationStateToggleLink> :
 							<Button
+								id={`e2etest-search-lang-select-${lang}`}
 								key={lang}
-								color="default"
+								color={!langs.includes(lang) ? "default" : "blue"}
 								size="small"
 								styleName="choice-button"
 								onClick={() => this._toggleLang(lang)}
@@ -141,6 +142,16 @@ class SearchSettings extends Container {
 									{langName(lang)}
 							</Button>
 						))}
+					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location}>
+						<Button
+							color="default"
+							size="small"
+							styleName="choice-button"
+							onClick={() => this.setState({betaLanguage: "more"})}
+							outline={true}>
+								More...
+						</Button>
+					</LocationStateToggleLink>
 				</div>
 			</div>
 		);
@@ -154,34 +165,35 @@ class SearchSettings extends Container {
 					<span styleName="label" className={base.pr3}>Include:</span>
 					<div>
 						{this.state.repo && <Button
-							color="default"
+							color={scope.repo ? "blue" : "default"}
 							size="small"
 							styleName="choice-button"
 							onClick={() => this._setScope({repo: !scope.repo})}
 							outline={!scope.repo}>{this.state.repo}</Button>}
 						<Button
-							color="default"
+							color={this.state.githubToken && !scope.popular ? "default" : "blue"}
 							size="small"
 							styleName="choice-button"
 							onClick={() => {
 								if (this.props.githubToken) this._setScope({popular: !scope.popular});
 							}}
 							outline={this.state.githubToken && !scope.popular}>Popular libraries</Button>
-						{(!this.state.signedIn || !this.props.githubToken) &&
+						{/* TEMPORARILY DISABLE THE FILTERS BELOW */}
+						{false && (!this.state.signedIn || !this.props.githubToken) &&
 							<GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>Your public projects + deps</GitHubAuthButton>}
-						{this.props.githubToken &&
+						{false && this.props.githubToken &&
 							<Button
-								color="default"
+								color={!scope.public ? "default" : "blue"}
 								size="small"
 								styleName="choice-button"
 								onClick={() => this._setScope({public: !scope.public})}
 								outline={!scope.public}>Your public projects + deps</Button>
 						}
-						{(!this.state.signedIn || !this._hasPrivateGitHubToken()) &&
+						{false && (!this.state.signedIn || !this._hasPrivateGitHubToken()) &&
 							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>Your private projects + deps</GitHubAuthButton>}
-						{this._hasPrivateGitHubToken() &&
+						{false && this._hasPrivateGitHubToken() &&
 							<Button
-								color="default"
+								color={!scope.private ? "default" : "blue"}
 								size="small"
 								styleName="choice-button"
 								onClick={() => this._setScope({private: !scope.private})}
@@ -194,37 +206,21 @@ class SearchSettings extends Container {
 	}
 
 	render() {
-		const langChosen = this.state.settings && this.state.settings.search && this.state.settings.search.languages && this.state.settings.search.languages.length > 0;
-		const scope = this._scope();
-
 		return (
 			<div styleName="groups" className={this.props.className}>
 				<div styleName="groups-inner" className={this.props.innerClassName}>
 					<div styleName="row">
 						{this._renderLanguages()}
 					</div>
-					{!langChosen && this.state.showAlerts && <div styleName="row">
-						<div styleName="group">
-							<Alert>Select a language to search.</Alert>
-						</div>
-					</div>}
 					{this._renderScope()}
-					{this.state.signedIn && this.state.showAlerts && !scope.public && !scope.private && (!scope.repo || !this.state.repo) && !scope.popular &&
-						<div styleName="row">
-							<div styleName="group">
-								<Alert>Select repositories to include.</Alert>
-							</div>
-						</div>
-					}
 				</div>
 				{this.props.location.state && this.props.location.state.modal === "beta" && this.state.betaLanguage &&
 					<LocationStateModal modalName="beta" location={this.props.location}>
 						<div styleName="modal">
-							<h2 styleName="modalTitle">Join the Sourcegraph beta list</h2>
-							<h3 styleName="modalTitle">We don't support {langName(this.state.betaLanguage)} yet, but will soon</h3>
+							<h2 styleName="modalTitle">Participate in the Sourcegraph beta for {`${this.state.betaLanguage === "more" ? "your preferred language" : `${langName(this.state.betaLanguage)}`}`}</h2>
 							<InterestForm
 								rowClass={styles.modalRow}
-								language={this.state.betaLanguage}
+								language={this.state.betaLanguage === "more" ? null : this.state.betaLanguage}
 								onSubmit={dismissModal("beta", this.props.location, this.context.router)} />
 						</div>
 					</LocationStateModal>
@@ -233,10 +229,5 @@ class SearchSettings extends Container {
 		);
 	}
 }
-export default withUserContext(CSSModules(SearchSettings, styles));
 
-const Alert = CSSModules(({children}: {children: React$Element | Array<React$Element>}) => (
-	<span styleName="alert">
-		{children}
-	</span>
-), styles);
+export default withUserContext(CSSModules(SearchSettings, styles));

@@ -27,7 +27,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 	const isHomepage = location.pathname === "/";
 	const isStaticPage = isPage(location.pathname);
 
-	const showLogoMarkOnly = !isStaticPage;
+	const showLogoMarkOnly = !isStaticPage || user;
 
 	if (location.pathname === "/styleguide") return <span />;
 	const repoSplat = repoParam(params.splat);
@@ -49,9 +49,19 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 
 			<div styleName="flex flex-fill flex-center tl navbar-inner" className={base.bn}>
 				{!isHomepage && <Link to="/" styleName="logo-link flex-fixed">
-					<Logo styleName={`logo ${showLogoMarkOnly ? "logomark" : ""}`}
-						width={showLogoMarkOnly ? "21px" : "144px"}
-						type={showLogoMarkOnly ? "logomark" : "logotype"}/>
+					{showLogoMarkOnly ?
+						<Logo styleName={"logo logomark"}
+							width={"21px"}
+							type={"logomark"}/> :
+						<span>
+							<Logo styleName={"logo logomark small-only"}
+								width={"21px"}
+								type={"logomark"}/>
+							<Logo styleName={"logo not-small-only"}
+								width={"144px"}
+								type={"logotype"}/>
+						</span>
+					}
 				</Link>}
 
 				<div styleName="search">
@@ -59,8 +69,8 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 				</div>
 
 				{user && <div styleName="flex flex-start flex-fixed">
-					<Link to="/settings/repos">
-						<TabItem active={location.pathname === "/settings/repos"}>Repositories</TabItem>
+					<Link to="/settings/repos" styleName="nav-link">
+						<TabItem hideMobile={true} active={location.pathname === "/settings/repos"}>Repositories</TabItem>
 					</Link>
 					<Link to="/tools">
 						<TabItem hideMobile={true} active={location.pathname === "/tools"}>Tools</TabItem>
@@ -78,6 +88,8 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 						</div>
 						<Menu>
 							<span styleName="current-user">Signed in as <strong>{user.Login}</strong></span>
+							<hr styleName="small-only" className={base.m0} />
+							<Link styleName="small-only" to="/settings/repos" role="menu-item">Repositories</Link>
 							<hr className={base.m0} />
 							<Link to="/about" role="menu-item">About</Link>
 							<Link to="/contact" role="menu-item">Contact</Link>
@@ -94,7 +106,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 				</div>}
 
 				{!signedIn &&
-					<div styleName="tr" className={`${base.pv2} ${base.pr2}`}>
+					<div styleName="tr" className={`${base.pv2} ${base.ph1}`}>
 						<div styleName="action">
 							<LocationStateToggleLink href="/login" modalName="login" location={location}
 								onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ShowLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
@@ -125,8 +137,6 @@ GlobalNav.contextTypes = {
 export default CSSModules(GlobalNav, styles, {allowMultiple: true});
 
 class SearchForm extends React.Component {
-	// TODO(sqs): dismiss when click/focus outside
-
 	static propTypes = {
 		repo: React.PropTypes.string,
 		location: React.PropTypes.object.isRequired,
@@ -169,7 +179,6 @@ class SearchForm extends React.Component {
 			if (nextQuery && !this.state.query) this.setState({open: true});
 			this.setState({query: nextQuery});
 		}
-		if (!nextQuery && !this.state.focused) this.setState({open: false});
 	}
 
 	componentWillUnmount() {
@@ -231,7 +240,11 @@ class SearchForm extends React.Component {
 	}
 
 	_handleFocus(ev: Event) {
-		this.setState({focused: true, open: true});
+		const update: {focused: boolean; open: boolean; query?: string} = {focused: true, open: true};
+		if (this._input && this._input.value) {
+			update.query = this._input.value;
+		}
+		this.setState(update);
 	}
 
 	_handleBlur(ev: Event) {
@@ -252,7 +265,7 @@ class SearchForm extends React.Component {
 						icon={true}
 						autoComplete="off"
 						styleName="search-input"
-						value={this.state.query || ""}
+						query={this.state.query || ""}
 						domRef={e => this._input = e}
 						autoFocus={this.props.location.pathname.slice(1) === rel.search}
 						onFocus={this._handleFocus}
@@ -261,20 +274,17 @@ class SearchForm extends React.Component {
 						onClick={this._handleFocus}
 						onChange={this._handleChange} />
 				</form>
-				{this.props.showResultsPanel && this.state.open && <SearchResultsPanel repo={this.props.repo} location={this.props.location} />}
+				{this.props.showResultsPanel && this.state.open && <SearchResultsPanel query={this.state.query || ""} repo={this.props.repo} location={this.props.location} />}
 			</div>
 		);
 	}
 }
 SearchForm = CSSModules(SearchForm, styles);
 
-let SearchResultsPanel = ({repo, location}: {repo: ?string, location: RouterLocation}) => {
-	const q = queryFromStateOrURL(location);
-	return (
-		<Panel hoverLevel="high" styleName="search-panel">
-			<SearchSettings styleName="search-settings" innerClassName={styles["search-settings-inner"]} location={location} showAlerts={true} repo={repo} />
-			<GlobalSearch styleName="search-results" query={q || ""} repo={repo} location={location} resultClassName={styles["search-result"]} />
-		</Panel>
-	);
-};
+let SearchResultsPanel = ({repo, location, query}: {repo: ?string, location: RouterLocation, query: string}) =>
+	<Panel hoverLevel="high" styleName="search-panel">
+		<SearchSettings styleName="search-settings" innerClassName={styles["search-settings-inner"]} location={location} repo={repo} />
+		<GlobalSearch styleName="search-results" query={query} repo={repo} location={location} resultClassName={styles["search-result"]} />
+	</Panel>;
+
 SearchResultsPanel = CSSModules(SearchResultsPanel, styles);
