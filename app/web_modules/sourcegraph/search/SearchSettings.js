@@ -99,15 +99,22 @@ class SearchSettings extends Container {
 		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_TOGGLE, "SearchLanguageToggled", {language: lang, enabled: !enabled, languages: langs});
 	}
 
-	_setScope(scope: any, currState: any) {
-		if (!currState) currState = this.state;
+	_setScope(scope: Object) {
+		this.context.eventLogger.logEventForCategory(
+			AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK,
+			"SearchScopeChanged",
+			{
+				old: this.state.settings.search && this.state.settings.search.scope,
+				update: scope,
+			},
+		);
 
 		const newSettings = {
-			...currState.settings,
+			...this.state.settings,
 			search: {
-				...currState.settings.search,
+				...this.state.settings.search,
 				scope: {
-					...(currState.settings.search && currState.settings.search.scope),
+					...(this.state.settings.search && this.state.settings.search.scope),
 					...scope,
 				},
 			},
