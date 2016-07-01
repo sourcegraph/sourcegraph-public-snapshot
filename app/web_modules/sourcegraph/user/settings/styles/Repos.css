@@ -24,12 +24,12 @@
 .content { flex: 1 1 auto; }
 
 .privateRepos {
- 	text-align: center;
- 	flex: 1 1 auto;	
+	text-align: center;
+	flex: 1 1 auto;
 }
 
 .filter-input {
-	composes: pb4 from base;
+	composes: mr3 mb2 from base;
 }
 
 .repo-link {
@@ -46,17 +46,13 @@
 .indicator {
 	composes: mv4 from base;
 }
-.github-button {
-	float: right;
-	composes: ml5 from base;
+
+.input-bar {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
 }
 
-@media screen and media-sm {
-	.github-button {
-		float: none;
-		margin-left: 0;
-	}
-	.github-button button {
-		margin-top: 10px;
-	}
+.github-button {
+	composes: mr3 mb2 from base;
 }

@@ -67,15 +67,15 @@ class Repos extends React.Component {
 		return (
 			<div className={base.pb4}>
 				<div>
-					<div>
+					<div styleName="input-bar">
 						<Input type="text"
 							placeholder="Find a repository..."
 							domRef={(e) => this._filterInput = e}
 							spellCheck={false}
 							styleName="filter-input"
 							onChange={this._handleFilter} />
-						{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github-button">Connect your private repositories</GitHubAuthButton>}
-						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} styleName="github-button">Connect with GitHub</GitHubAuthButton>}
+						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} styleName="github-button">Add public repositories</GitHubAuthButton>}
+						{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github-button">Add private repositories</GitHubAuthButton>}
 					</div>
 					<Table styleName="repos">
 						<tbody>
