@@ -235,47 +235,48 @@ class DefInfo extends Container {
 							}
 
 							{def.DocHTML &&
-								<div className={base.mb3}>
-								{this.state.showTranslatedString && <hr className={base.mv4} styleName="b--cool-pale-gray" />}
-									{this.state.showTranslatedString &&
-										<div className={base.mt1}>
-											<LanguageIcon styleName="icon" />
-											<div dangerouslySetInnerHTML={{__html: this.state.translations[this.state.currentLang]}}></div>
-										</div>
-									}
-									<div dangerouslySetInnerHTML={hiddenDescr && {__html: this.splitHTMLDescr(def.DocHTML.__html, DESCRIPTION_CHAR_CUTOFF)} || def.DocHTML}></div>
-									{hiddenDescr &&
-										<a href="#" onClick={this._onViewMore} styleName="f7">View More...</a>
-									}
-									{!hiddenDescr && this.shouldHideDescr(def, DESCRIPTION_CHAR_CUTOFF) &&
-										<a href="#" onClick={this._onViewLess} styleName="f7">Collapse</a>
-									}
-								</div>
-							}
-							{def.DocHTML &&
-								<div styleName="f7 cool-mid-gray">
-									{def && def.Repo && <Link to={urlToRepo(def.Repo)} styleName="link-subtle">{def.Repo}</Link>}
-									&nbsp; &middot; &nbsp;
-									<Link title="View definition in code" to={defBlobUrl} styleName="link-subtle">View definition</Link>
-									&nbsp; &middot; &nbsp;
-									<Dropdown
-										className={base.mt0}
-										styleName="link-subtle"
-										title="Translate"
-										initialValue={this.state.currentLang}
-										disabled={this.state.repoObj ? this.state.repoObj.Private : false}
-										onMenuClick={(val) => this._onTranslateDefInfo(val)}
-										onItemClick={(val) => this._onTranslateDefInfo(val)}
-										items={[
-											{name: "English", value: "en"},
-											{name: "简体中文", value: "zh-CN"},
-											{name: "繁體中文", value: "zh-TW"},
-											{name: "日本語", value: "ja"},
-											{name: "Français", value: "fr"},
-											{name: "Español", value: "es"},
-											{name: "Русский", value: "ru"},
-											{name: "Italiano", value: "it"},
-										]} />
+								<div>
+									<div className={base.mb3}>
+										{this.state.showTranslatedString && <hr className={base.mv4} styleName="b--cool-pale-gray" />}
+										{this.state.showTranslatedString &&
+											<div className={base.mt1}>
+												<LanguageIcon styleName="icon" />
+												<div dangerouslySetInnerHTML={{__html: this.state.translations[this.state.currentLang]}}></div>
+											</div>
+										}
+										<div dangerouslySetInnerHTML={hiddenDescr && {__html: this.splitHTMLDescr(def.DocHTML.__html, DESCRIPTION_CHAR_CUTOFF)} || def.DocHTML}></div>
+										{hiddenDescr &&
+											<a href="#" onClick={this._onViewMore} styleName="f7">View More...</a>
+										}
+										{!hiddenDescr && this.shouldHideDescr(def, DESCRIPTION_CHAR_CUTOFF) &&
+											<a href="#" onClick={this._onViewLess} styleName="f7">Collapse</a>
+										}
+									</div>
+
+									<div styleName="f7 cool-mid-gray">
+										{def && def.Repo && <Link to={urlToRepo(def.Repo)} styleName="link-subtle">{def.Repo}</Link>}
+										&nbsp; &middot; &nbsp;
+										<Link title="View definition in code" to={defBlobUrl} styleName="link-subtle">View definition</Link>
+										&nbsp; &middot; &nbsp;
+										<Dropdown
+											className={base.mt0}
+											styleName="link-subtle"
+											title="Translate"
+											initialValue={this.state.currentLang}
+											disabled={this.state.repoObj ? this.state.repoObj.Private : false}
+											onMenuClick={(val) => this._onTranslateDefInfo(val)}
+											onItemClick={(val) => this._onTranslateDefInfo(val)}
+											items={[
+												{name: "English", value: "en"},
+												{name: "简体中文", value: "zh-CN"},
+												{name: "繁體中文", value: "zh-TW"},
+												{name: "日本語", value: "ja"},
+												{name: "Français", value: "fr"},
+												{name: "Español", value: "es"},
+												{name: "Русский", value: "ru"},
+												{name: "Italiano", value: "it"},
+											]} />
+									</div>
 								</div>
 							}
 
