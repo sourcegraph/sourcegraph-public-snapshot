@@ -14,6 +14,7 @@ import {Button, Logo} from "sourcegraph/components";
 import SearchSettings from "sourcegraph/search/SearchSettings";
 import type {LanguageID} from "sourcegraph/Language";
 import invariant from "invariant";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 type OnSelectQueryListener = (ev: Event, query: string) => mixed;
 
@@ -25,6 +26,7 @@ class DashboardContainer extends Container {
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,
 		router: React.PropTypes.object.isRequired,
+		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props) {
@@ -60,6 +62,8 @@ class DashboardContainer extends Container {
 
 	_onSelectQuery: OnSelectQueryListener;
 	_onSelectQuery(ev: Event, query: string) {
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "ClickExistingQuery", {query: query, languages: this.state.langs});
+
 		invariant(this._input, "no input field");
 
 		// Make it feel more realistic.
