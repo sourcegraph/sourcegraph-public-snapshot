@@ -15,12 +15,16 @@ func TestToTextSearchTokens(t *testing.T) {
 		},
 		File: "file1/file2",
 		Name: "name",
+		Docs: []*graph.DefDoc{
+			&graph.DefDoc{Data: "foo <b>bar</b>"},
+			&graph.DefDoc{Data: "baz"},
+		},
 	})
 
 	expectedAToks := []string{"pathFooBar", "pathFooBar", "pathFooBar", "pathFooBar", "FooBar", "pathBar", "Bar", "pathFoo", "Foo", "path", "name"}
 	expectedBToks := []string{"repo1", "repo2", "repo2", "repo2", "unit1", "unit2", "unit2", "unit2", "path_x", "path_x", "pathFooBar", "pathFooBar"}
 	expectedCToks := []string{"pathx", "x", "path", "pathFooBar", "FooBar", "pathBar", "Bar", "pathFoo", "Foo", "path", "file1", "file2", "file2", "file2"}
-	expectedDToks := []string(nil)
+	expectedDToks := []string{"foo bar", "baz"}
 
 	if !stringSliceEqual(aToks, expectedAToks) {
 		t.Errorf("wrong aToks, expected %#v, got %#v", expectedAToks, aToks)

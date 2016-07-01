@@ -10,6 +10,7 @@ import (
 
 	"github.com/fatih/camelcase"
 	"github.com/lib/pq"
+	"github.com/microcosm-cc/bluemonday"
 
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -670,6 +671,11 @@ func toTextSearchTokens(def *graph.Def) (aToks []string, bToks []string, cToks [
 	cToks = appendRepeated(cToks, fileParts[len(fileParts)-1], 2)
 
 	aToks = appendRepeated(aToks, def.Name, 1)
+
+	for _, doc := range def.Docs {
+		docWithoutTags := bluemonday.StrictPolicy().Sanitize(doc.Data)
+		dToks = append(dToks, docWithoutTags) // no need to split because it is getting processed by PostgreSQL's to_tsvector
+	}
 
 	return
 }
