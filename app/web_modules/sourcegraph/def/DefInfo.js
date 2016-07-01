@@ -216,25 +216,6 @@ class DefInfo extends Container {
 								<code styleName="normal">{qualifiedNameAndType(def, {unqualifiedNameClass: styles.def})}</code>
 							</Heading>
 
-							{def.DocHTML &&
-								<div className={base.mb3}>
-									{this.state.showTranslatedString &&
-										<div className={base.mt1}>
-											<LanguageIcon styleName="icon" />
-											<div dangerouslySetInnerHTML={{__html: this.state.translations[this.state.currentLang]}}></div>
-										</div>
-									}
-									{this.state.showTranslatedString && <hr/>}
-									<div dangerouslySetInnerHTML={hiddenDescr && {__html: this.splitHTMLDescr(def.DocHTML.__html, DESCRIPTION_CHAR_CUTOFF)} || def.DocHTML}></div>
-									{hiddenDescr &&
-										<a href="#" onClick={this._onViewMore} styleName="f7">View More...</a>
-									}
-									{!hiddenDescr && this.shouldHideDescr(def, DESCRIPTION_CHAR_CUTOFF) &&
-										<a href="#" onClick={this._onViewLess} styleName="f7">Collapse</a>
-									}
-								</div>
-							}
-
 							{/* TODO DocHTML will not be set if the this def was loaded via the
 								serveDefs endpoint instead of the serveDef endpoint. In this case
 								we'll fallback to displaying plain text. We should be able to
@@ -244,6 +225,25 @@ class DefInfo extends Container {
 							{!def.DocHTML && def.Docs && def.Docs.length &&
 								<div className={base.mb3}>
 									<div>{hiddenDescr && this.splitPlainDescr(def.Docs[0].Data, DESCRIPTION_CHAR_CUTOFF) || def.Docs[0].Data}</div>
+									{hiddenDescr &&
+										<a href="#" onClick={this._onViewMore} styleName="f7">View More...</a>
+									}
+									{!hiddenDescr && this.shouldHideDescr(def, DESCRIPTION_CHAR_CUTOFF) &&
+										<a href="#" onClick={this._onViewLess} styleName="f7">Collapse</a>
+									}
+								</div>
+							}
+
+							{def.DocHTML &&
+								<div className={base.mb3}>
+								{this.state.showTranslatedString && <hr className={base.mv4} styleName="b--cool-pale-gray" />}
+									{this.state.showTranslatedString &&
+										<div className={base.mt1}>
+											<LanguageIcon styleName="icon" />
+											<div dangerouslySetInnerHTML={{__html: this.state.translations[this.state.currentLang]}}></div>
+										</div>
+									}
+									<div dangerouslySetInnerHTML={hiddenDescr && {__html: this.splitHTMLDescr(def.DocHTML.__html, DESCRIPTION_CHAR_CUTOFF)} || def.DocHTML}></div>
 									{hiddenDescr &&
 										<a href="#" onClick={this._onViewMore} styleName="f7">View More...</a>
 									}
