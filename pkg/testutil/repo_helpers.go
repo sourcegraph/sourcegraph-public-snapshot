@@ -229,10 +229,6 @@ func prepGitCommand(cmd *exec.Cmd) *exec.Cmd {
 func logCmdOutut(t *testing.T, cmd *exec.Cmd, out []byte) {
 	t.Logf(">>> START - %s", strings.Join(cmd.Args, " "))
 	t.Logf("=== ENV - %v", cmd.Env)
-	if testing.Verbose() {
-		t.Log(string(out))
-	} else {
-		t.Log(`=== (run with "go test -v" to see full command output)`)
-	}
+	t.Log(string(out))
 	t.Logf(">>> END - %s", strings.Join(cmd.Args, " "))
 }
