@@ -131,6 +131,10 @@
 .nav-link {
 	font-weight: bold;
 }
+.nav-link-first {
+	composes: nav-link;
+	composes: ml2 from base;
+}
 
 @value search-form-max-width 1000px;
 .search {
