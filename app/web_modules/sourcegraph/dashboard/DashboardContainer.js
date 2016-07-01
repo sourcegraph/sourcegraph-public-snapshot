@@ -62,7 +62,7 @@ class DashboardContainer extends Container {
 
 	_onSelectQuery: OnSelectQueryListener;
 	_onSelectQuery(ev: Event, query: string) {
-		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "ClickExistingQuery", {query: query, languages: this.state.langs});
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "ExistingQueryClicked", {query: query, languages: this.state.langs});
 
 		invariant(this._input, "no input field");
 
