@@ -90,6 +90,7 @@ template, /* 1 */
 
 a {
 	background-color: transparent;
+	cursor: pointer;
 }
 
 /**

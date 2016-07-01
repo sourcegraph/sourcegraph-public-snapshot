@@ -3,15 +3,16 @@ import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {Button, Heading} from "sourcegraph/components";
+import {Heading, List, Loader} from "sourcegraph/components";
 import "sourcegraph/blob/BlobBackend";
 import CSSModules from "react-css-modules";
 import styles from "./styles/DefInfo.css";
 import base from "sourcegraph/components/styles/_base.css";
+import {Link} from "react-router";
 import {RefLocsPerPage} from "sourcegraph/def";
 import "whatwg-fetch";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {Repository} from "sourcegraph/components/symbols";
+import {Repository, DownPointer} from "sourcegraph/components/symbols";
 
 class RepoRefsContainer extends Container {
 	static propTypes = {
@@ -82,23 +83,32 @@ class RepoRefsContainer extends Container {
 
 				{!refLocs && <i>Loading...</i>}
 				{refLocs && !refLocs.RepoRefs && <i>No references found</i>}
-				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <div key={i} className={base.mb4}>
-						<Repository width={24} styleName="v-mid" className={base.mr3} /> {repoRefs.Repo}
-						{repoRefs.Files && repoRefs.Files.length > 0 &&
-							repoRefs.Files.map((file, j) => <div key={j}>{file.Count} references in {file.Path}</div>)
-						}
+				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <div key={i} className={base.mt4}>
+					<Link to={repoRefs.Repo} className={base.mb3}>
+						<Repository width={24} className={base.mr3} /> <strong>{repoRefs.Repo}</strong>
+					</Link>
+					<List listStyle="node" className={base.mt2} style={{marginLeft: "6px"}}>
+					{repoRefs.Files && repoRefs.Files.length > 0 && repoRefs.Files.map((file, j) =>
+							<li key={j} className={`${base.mv3} ${base.pt1}`} styleName="cool-mid-gray f7 node-list-item">
+								{file.Count} references in <Link to={`${repoRefs.Repo}/-/blob/${file.Path}`}>{file.Path}</Link>
+							</li>)
+					}
+					</List>
 				</div>)}
 				{/* Display the paginator if we have more files repos or repos to show. */}
 				{refLocs && refLocs.RepoRefs &&
 					(fileCount >= RefLocsPerPage || refLocs.TotalRepos > refLocs.RepoRefs.length || !refLocs.TotalRepos) &&
 					!refLocs.StreamTerminated &&
-					<div styleName="pagination">
-						<Button color="blue" loading={this.state.nextPageLoading} onClick={this._onNextPage}>View More</Button>
-					</div>
+					<a onClick={this._onNextPage} styleName="f7 link-icon">
+						{this.state.nextPageLoading ?
+							<strong>Loading <Loader className={base.mr2} /> </strong> :
+							<strong>View more references <DownPointer styleName="icon-cool-mid-gray" width={9} className={base.ml1} /></strong>
+						}
+					</a>
 				}
 			</div>
 		);
 	}
 }
 
-export default CSSModules(RepoRefsContainer, styles);
+export default CSSModules(RepoRefsContainer, styles, {allowMultiple: true});

@@ -5,6 +5,8 @@
 @value vars "sourcegraph/components/styles/_vars.css";
 @value layout "sourcegraph/components/styles/_layout.css";
 
+@value c_blue-text, c_dark-blue  from colors;
+
 .container-fixed { composes: containerFixed from layout; }
 .flex-grow { flex-grow: 1; }
 
@@ -17,25 +19,14 @@
 .normal { composes: normal from typography; }
 .f7 { composes: f7 from typography; }
 
-.v-mid {composes: v-mid from typography; }
+.icon-cool-mid-gray { fill: c_blue-text; }
+.link-icon {}
+.link-icon:hover svg{ fill: c_dark-blue; }
 
-.section {
-	composes: ph4 from base;
-}
+/* Align with Repo text */
+.node-list-item:before { margin-right: 26px }
 
-.section-heading {
-	text-transform: uppercase;
-	composes: cool-mid-gray from colors;
-	font-size: 1.2rem; /* f4 too big, f5 too small */
-}
-
-.section-label:after {
-	content: none;
-}
-
-.def {
-	composes: purple from colors;
-}
+.def { composes: purple from colors; }
 
 .authors {
 	composes: mt2 ml2 mb2 from base;
@@ -49,67 +40,7 @@
 	float: left;
 }
 
-.description {
-	composes: normal-text from typography;
-	composes: mv2 from base;
-}
-.description p {
-	margin-top: 1.0rem;
-	margin-bottom: 1.0rem;
-}
-
-.actions {
-	composes: section;
-	display: flex;
-	justify-content: flex-start;
-	align-items: center;
-}
-.action {
-	composes: cool-mid-gray from colors;
-}
-.action:not(:last-child)::after {
-	content: "\00A0·\00A0";
-	font-weight: bold;
-	font-size: 1.4rem;
-	padding: 0 5px;
-}
-.translation-action {
-	composes: action;
-	display: flex;
-}
-
-
-.examples-container {
-	composes: mt5 from base;
-}
-.examples-panel {
-	background-color: white;
-}
-.examples-heading {
-	composes: section-heading;
-	composes: section;
-}
-
-.refs-container {
-	composes: mt5 from base;
-	composes: section;
-}
-.refs-heading {
-	composes: section-heading;
-}
-
-.pagination {
-	composes: pb5 from base;
-	display: flex;
-	justify-content: center;
-}
-
-
 @media screen and (max-width: 48em) {
-	.description, .section-label {
-		margin-left: 10px;
-		margin-right: 10px;
-	}
 	.full-width-sm {
 		margin-left: -2rem;
 		margin-right: -2rem;

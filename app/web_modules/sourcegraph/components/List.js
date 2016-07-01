@@ -3,7 +3,6 @@
 import React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/list.css";
-import base from "./styles/_base.css";
 
 class List extends React.Component {
 	static propTypes = {
@@ -21,7 +20,7 @@ class List extends React.Component {
 		const {className, children, listStyle} = this.props;
 
 		return (
-			<ul className={className} styleName={` ${listStyle}`}>
+			<ul className={className} styleName={`${listStyle}`} style={this.props.style}>
 				{children}
 			</ul>
 		);
