@@ -15,6 +15,7 @@ export {default as Panel} from "./Panel";
 export {default as Stepper} from "./Stepper";
 export {default as Icon} from "./Icon";
 export {default as ChecklistItem} from "./ChecklistItem";
+export {default as CheckboxList} from "./CheckboxList";
 export {default as Emoji} from "./Emoji";
 export {default as Tabs} from "./Tabs";
 export {default as TabItem} from "./TabItem";

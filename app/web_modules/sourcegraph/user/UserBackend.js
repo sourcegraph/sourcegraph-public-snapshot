@@ -157,7 +157,25 @@ const UserBackend = {
 					})
 			);
 			break;
-			// /-/email-subscription
+		case UserActions.SubmitBetaSubscription:
+			UserBackend.fetch(`/.api/beta-subscription`, {
+				method: "POST",
+				body: JSON.stringify({
+					Email: action.email,
+					FirstName: action.firstName,
+					LastName: action.lastName,
+					Languages: action.languages,
+					Editors: action.editors,
+					Message: action.message,
+				}),
+			})
+				.then(checkStatus)
+				.then((resp) => resp.json())
+				.catch((err) => ({Error: err}))
+				.then((data) => {
+					Dispatcher.Stores.dispatch(new UserActions.BetaSubscriptionCompleted(data));
+				});
+			break;
 		case UserActions.SubmitEmailSubscription:
 			trackPromise(
 				UserBackend.fetch(`/.api/email-subscription`, {
