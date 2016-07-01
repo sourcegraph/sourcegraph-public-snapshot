@@ -77,7 +77,7 @@ class RepoRefsContainer extends Container {
 						`Referenced in ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`
 					}
 					{refLocs && !refLocs.TotalRepos && refLocs.RepoRefs &&
-						`Referenced in ${refLocs.RepoRefs.length}+ repositories`
+						`Referenced in ${refLocs.RepoRefs.length}+ repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`
 					}
 				</Heading>
 
