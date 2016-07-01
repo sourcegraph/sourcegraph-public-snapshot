@@ -18,6 +18,7 @@ import {withUserContext} from "sourcegraph/app/user";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import InterestForm from "sourcegraph/home/InterestForm";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class SearchSettings extends Container {
 	static propTypes = {
@@ -30,6 +31,7 @@ class SearchSettings extends Container {
 
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
+		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	state: {
@@ -93,6 +95,8 @@ class SearchSettings extends Container {
 		};
 
 		Dispatcher.Stores.dispatch(new UserActions.UpdateSettings(newSettings));
+
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_TOGGLE, "SearchLanguageToggled", {language: lang, enabled: !enabled, languages: langs});
 	}
 
 	_setScope(scope: any, currState: any) {
