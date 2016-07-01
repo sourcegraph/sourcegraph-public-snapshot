@@ -92,7 +92,7 @@ class DashboardContainer extends Container {
 					<Logo type="logotype" styleName="logo" />
 
 					<h2 styleName="description">
-						<strong>Instant&nbsp;usage&nbsp;examples&nbsp;and&nbsp;more&nbsp;as&nbsp;you&nbsp;code,</strong> automatically&nbsp;drawn&nbsp;from public&nbsp;and&nbsp;(your&nbsp;own)&nbsp;private&nbsp;code.
+						<strong>Instant&nbsp;usage&nbsp;examples and&nbsp;more&nbsp;as&nbsp;you&nbsp;code,</strong> automatically&nbsp;drawn&nbsp;from public and (your&nbsp;own)&nbsp;private&nbsp;code.
 					</h2>
 
 					<div styleName="user-actions">
