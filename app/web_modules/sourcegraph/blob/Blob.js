@@ -119,7 +119,7 @@ class Blob extends Component {
 		lineAnns: [],
 		lineStartBytes: [],
 		lines: [],
-		lineNumbers: true,
+		lineNumbers: false,
 		expandedRanges: [],
 		startLine: null,
 		startCol: null,

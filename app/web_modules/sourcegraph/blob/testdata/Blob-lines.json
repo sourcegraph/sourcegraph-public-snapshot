@@ -19,6 +19,7 @@
 												"lineNumber": 1,
 												"startByte": 0,
 												"contents": "hello",
+												"textSize": "normal",
 												"selected": false,
 												"highlightedDef": "otherDef"
 											}
@@ -30,6 +31,7 @@
 												"lineNumber": 2,
 												"startByte": 6,
 												"contents": "world",
+												"textSize": "normal",
 												"selected": false,
 												"highlightedDef": "otherDef"
 											}
