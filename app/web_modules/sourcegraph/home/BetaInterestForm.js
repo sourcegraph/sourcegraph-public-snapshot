@@ -75,8 +75,8 @@ class BetaInterestForm extends React.Component {
 			this._email["value"].trim(),
 			firstName || "",
 			lastName || "",
-			this._editors.selected(),
 			this._languages.selected(),
+			this._editors.selected(),
 			this._message["value"].trim(),
 		));
 
