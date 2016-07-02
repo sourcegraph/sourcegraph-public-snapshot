@@ -59,7 +59,7 @@
 	font-weight: normal;
 	margin-left: auto;
 	margin-right: auto;
-	max-width: 400px; /* calibrated to produce the right linebreaks */
+	max-width: 440px; /* calibrated to produce the right linebreaks */
 }
 
 .actions {
