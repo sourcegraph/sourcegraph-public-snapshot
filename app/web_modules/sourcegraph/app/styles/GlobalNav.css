@@ -4,7 +4,6 @@
 @value typography "sourcegraph/components/styles/_typography.css";
 @value grid "sourcegraph/components/styles/_grid.css";
 @value layout "sourcegraph/components/styles/_layout.css";
-@value link "sourcegraph/components/styles/link.css";
 
 @value media-xs, media-sm, media-ns from vars;
 @value navbarHeight: 48px;
@@ -23,6 +22,7 @@
 .flex-start { justify-content: flex-start; }
 .block { display: block; }
 .hidden-s { composes: hidden-s from base; }
+.cool-mid-gray { composes: cool-mid-gray from colors; }
 
 .navbar {
 	composes: bb cf from base;
@@ -128,17 +128,10 @@
 	composes: white bg-blue-8 b--blue from colors;
 }
 
-.nav-link {
-	font-weight: bold;
-}
-.nav-link-first {
-	composes: nav-link;
-	composes: ml2 from base;
-}
-
 @value search-form-max-width 1000px;
 .search {
 	flex: 1 0;
+	composes: mr1 from base;
 	composes: br from base;
 	border-color: nav-border-color;
 }

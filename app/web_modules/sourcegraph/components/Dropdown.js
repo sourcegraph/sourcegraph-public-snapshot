@@ -1,7 +1,9 @@
 import React from "react";
-import {CheckIcon, FaAngleDown} from "sourcegraph/components/Icons";
 import CSSModules from "react-css-modules";
 import styles from "./styles/dropdown.css";
+import base from "./styles/_base.css";
+import {CheckIcon} from "sourcegraph/components/Icons";
+import {DownPointer} from "sourcegraph/components/symbols";
 
 // This component is a minimal Dropdown component with some code copied from
 // RevSwitcher.
@@ -76,7 +78,9 @@ class Dropdown extends React.Component {
 			<div styleName={this.props.disabled ? "wrapper-disabled" : "wrapper"} className={this.props.className}
 				ref={(e) => this._wrapper = e}>
 				<span onClick={this.getMenuClickCallback(this.state.selectedValue)}>{this.props.icon} {this.props.title}</span>
-				<span className={`toggle ${this.state.open ? "open-arrow" : ""}`} onClick={this._onToggleDropdown}><FaAngleDown styleName="center-icon"/></span>
+				<span className={`toggle ${this.state.open ? "open-arrow" : ""}`} onClick={this._onToggleDropdown}>
+					<DownPointer width={8} styleName="center-icon" className={base.ml1}/>
+				</span>
 				<div styleName="dropdown-menu">
 					<div role="menu"
 						styleName={this.state.open ? "dropdown-menu-open" : "dropdown-menu-closed"}>

@@ -34,7 +34,10 @@
 @value c_green-2 rgba(13, 181, 161, .2);
 @value c_dark-green rgba(5, 128, 128, 100);
 
-@value c_yellow #FFC770;
+@value c_yellow rgba(255, 199, 112, 1);
+@value c_yellow-8 rgba(255, 199, 112, 0.8);
+@value c_yellow-5 rgba(255, 199, 112, 0.5);
+@value c_yellow-2 rgba(255, 199, 112, 0.2);
 
 @value c_red rgba(246, 106, 106, 1);
 @value c_red-text rgba(242, 73, 73, 1);
@@ -107,6 +110,9 @@
 .green-2 { color: c_green-2; }
 .dark-green { color: c_dark-green; }
 .yellow { color: c_yellow; }
+.yellow-8 { color: c_yellow; }
+.yellow-5 { color: c_yellow; }
+.yellow-2 { color: c_yellow; }
 .orange { color: c_orange; }
 .orange-8 { color: c_orange-8; }
 .orange-5 { color: c_orange-5; }
@@ -202,6 +208,11 @@
 .bg-red-5 { background-color: c_red-5; }
 .bg-red-2 { background-color: c_red-2; }
 
+.bg-yellow { background-color: c_yellow; }
+.bg-yellow-8 { background-color: c_yellow; }
+.bg-yellow-5 { background-color: c_yellow; }
+.bg-yellow-2 { background-color: c_yellow; }
+
 .bg-purple { background-color: c_purple; }
 .bg-purple-8 { background-color: c_purple-8; }
 .bg-purple-5 { background-color: c_purple-5; }
@@ -290,6 +301,10 @@
 .b--red-8 { border-color: c_red-8; }
 .b--red-5 { border-color: c_red-5; }
 .b--red-2 { border-color: c_red-2; }
+.b--yellow { border-color: c_yellow; }
+.b--yellow-8 { border-color: c_yellow; }
+.b--yellow-5 { border-color: c_yellow; }
+.b--yellow-2 { border-color: c_yellow; }
 .b--purple { border-color: c_purple; }
 .b--purple-8 { border-color: c_purple-8; }
 .b--purple-5 { border-color: c_purple-5; }

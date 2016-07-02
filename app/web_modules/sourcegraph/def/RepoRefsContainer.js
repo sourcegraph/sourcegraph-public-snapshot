@@ -1,16 +1,20 @@
 import React from "react";
 import Container from "sourcegraph/Container";
-import RefsContainer from "sourcegraph/def/RefsContainer";
 import DefStore from "sourcegraph/def/DefStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {Button} from "sourcegraph/components";
+import {Heading, List, Loader} from "sourcegraph/components";
 import "sourcegraph/blob/BlobBackend";
 import CSSModules from "react-css-modules";
 import styles from "./styles/DefInfo.css";
+import base from "sourcegraph/components/styles/_base.css";
+import typography from "sourcegraph/components/styles/_typography.css";
+
+import {Link} from "react-router";
 import {RefLocsPerPage} from "sourcegraph/def";
 import "whatwg-fetch";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {Repository, DownPointer} from "sourcegraph/components/symbols";
 
 class RepoRefsContainer extends Container {
 	static propTypes = {
@@ -70,40 +74,43 @@ class RepoRefsContainer extends Container {
 
 		return (
 			<div>
-				<div styleName="section-label">
+				<Heading level="7" styleName="cool-mid-gray" className={base.mb4}>
 					{refLocs && refLocs.TotalRepos &&
 						`Referenced in ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`
 					}
 					{refLocs && !refLocs.TotalRepos && refLocs.RepoRefs &&
-						`Referenced in ${refLocs.RepoRefs.length}+ repositories`
+						`Referenced in ${refLocs.RepoRefs.length}+ repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`
 					}
-				</div>
-				<hr style={{marginTop: 0, clear: "both"}}/>
-				{!refLocs && <i>Loading...</i>}
+				</Heading>
+
+				{!refLocs && <p className={typography.tc}> <Loader className={base.mv4} /></p>}
 				{refLocs && !refLocs.RepoRefs && <i>No references found</i>}
-				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <RefsContainer
-					key={i}
-					repo={this.props.repo}
-					rev={this.props.rev}
-					commitID={this.props.commitID}
-					def={this.props.def}
-					defObj={this.props.defObj}
-					repoRefs={repoRefs}
-					prefetch={i === 0}
-					initNumSnippets={i === 0 ? 1 : 0}
-					fileCollapseThreshold={5}
-					showRepoTitle={true}/>)}
+				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <div key={i} className={base.mt4}>
+					<Link to={repoRefs.Repo} className={base.mb3}>
+						<Repository width={24} className={base.mr3} /> <strong>{repoRefs.Repo}</strong>
+					</Link>
+					<List listStyle="node" className={base.mt2} style={{marginLeft: "6px"}}>
+					{repoRefs.Files && repoRefs.Files.length > 0 && repoRefs.Files.map((file, j) =>
+							<li key={j} className={`${base.mv3} ${base.pt1}`} styleName="cool-mid-gray f7 node-list-item">
+								{file.Count} references in <Link to={`${repoRefs.Repo}/-/blob/${file.Path}`}>{file.Path}</Link>
+							</li>)
+					}
+					</List>
+				</div>)}
 				{/* Display the paginator if we have more files repos or repos to show. */}
 				{refLocs && refLocs.RepoRefs &&
 					(fileCount >= RefLocsPerPage || refLocs.TotalRepos > refLocs.RepoRefs.length || !refLocs.TotalRepos) &&
 					!refLocs.StreamTerminated &&
-					<div styleName="pagination">
-						<Button color="blue" loading={this.state.nextPageLoading} onClick={this._onNextPage}>View More</Button>
-					</div>
+					<a onClick={this._onNextPage} styleName="f7 link-icon">
+						{this.state.nextPageLoading ?
+							<strong>Loading <Loader className={base.mr2} /> </strong> :
+							<strong>View more references <DownPointer styleName="icon-cool-mid-gray" width={9} className={base.ml1} /></strong>
+						}
+					</a>
 				}
 			</div>
 		);
 	}
 }
 
-export default CSSModules(RepoRefsContainer, styles);
+export default CSSModules(RepoRefsContainer, styles, {allowMultiple: true});

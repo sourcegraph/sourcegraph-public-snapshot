@@ -12,7 +12,7 @@
 							{
 								"type": "header",
 								"props": {
-									"styleName": "active-group-header",
+									"styleName": "b",
 									"children": [
 										{
 											"type": "span",

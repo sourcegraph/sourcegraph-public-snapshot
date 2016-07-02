@@ -70,10 +70,10 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 				</div>
 
 				{user && <div styleName="flex flex-start flex-fixed">
-					<Link to="/settings/repos" styleName="nav-link-first">
+					<Link to="/settings/repos">
 						<TabItem hideMobile={true} active={location.pathname === "/settings/repos"}>Repositories</TabItem>
 					</Link>
-					<Link to="/tools" styleName="nav-link">
+					<Link to="/tools">
 						<TabItem hideMobile={true} active={location.pathname === "/tools"}>Tools</TabItem>
 					</Link>
 				</div>}

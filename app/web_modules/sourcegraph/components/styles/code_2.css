@@ -3,7 +3,7 @@
 @value typography "./_typography.css";
 
 .code {
-	composes: code f5 from typography;
+	composes: code f6 from typography;
 	composes: bg-cool-pale-gray cool-gray from colors;
 	composes: br2 pa1 mr1 from base;
 }

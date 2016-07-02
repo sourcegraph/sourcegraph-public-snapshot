@@ -56,6 +56,7 @@ class BlobLine extends Component {
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
 		state.path = props.path || null;
+		state.textSize = props.textSize || "normal";
 
 		// Update ownAnnURLs when they change.
 		if (state.annotations !== props.annotations) {
@@ -173,7 +174,7 @@ class BlobLine extends Component {
 		let isDiff = this.state.oldLineNumber || this.state.newLineNumber;
 
 		return (
-			<tr className={`${s.line} ${this.state.className || ""}`}
+			<tr className={`${s.line} ${s[this.state.textSize]} ${this.state.className || ""}`}
 				data-line={this.state.lineNumber}>
 				{this.state.lineNumber &&
 					<td className={s.lineNumberCell} onClick={(event) => {

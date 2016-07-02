@@ -4,6 +4,7 @@ import React from "react";
 import Container from "sourcegraph/Container";
 import CSSModules from "react-css-modules";
 import styles from "./styles/SearchSettings.css";
+import base from "sourcegraph/components/styles/_base.css";
 import {Button} from "sourcegraph/components";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -127,7 +128,7 @@ class SearchSettings extends Container {
 		const langs = this._langs();
 		return (
 			<div styleName="group">
-				<span styleName="label">Languages:</span>
+				<span styleName="label" className={base.pr3}>Languages:</span>
 				<div>
 					{allLangs.map(lang => (
 						lang === "python" || lang === "javascript" ?
@@ -172,7 +173,7 @@ class SearchSettings extends Container {
 		return (
 			<div styleName="row">
 				<div styleName="group">
-					<span styleName="label">Include:</span>
+					<span styleName="label" className={base.pr3}>Include:</span>
 					<div>
 						{this.state.repo && <Button
 							color={scope.repo ? "blue" : "default"}
