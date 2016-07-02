@@ -89,7 +89,7 @@ class BetaInterestForm extends React.Component {
 		}
 
 		return (
-			<form onSubmit={this._sendForm.bind(this)}>
+			<form styleName="form" onSubmit={this._sendForm.bind(this)}>
 					<div styleName="row">
 						<Input domRef={(c) => this._fullName = c} block={true} type="text" name="fullName" placeholder="Name" required={true} />
 					</div>
