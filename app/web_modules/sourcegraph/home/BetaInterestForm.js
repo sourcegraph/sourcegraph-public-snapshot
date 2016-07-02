@@ -11,6 +11,8 @@ import {languages, editors} from "./HomeUtils";
 import {langName} from "sourcegraph/Language";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
+type OnChangeListener = () => void;
+
 class BetaInterestForm extends React.Component {
 
 	static propTypes = {
@@ -23,6 +25,11 @@ class BetaInterestForm extends React.Component {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
+	constructor(props) {
+		super(props);
+		this._onChange = this._onChange.bind(this);
+	}
+
 	state = {
 		submitted: false,
 		formError: "",
@@ -31,6 +38,9 @@ class BetaInterestForm extends React.Component {
 
 	componentDidMount() {
 		this._dispatcherToken = Dispatcher.Stores.register(this._onDispatch.bind(this));
+
+		// Trigger _onChange now to save this.props.language if set.
+		if (this.props.language) this._onChange();
 	}
 
 	componentWillUnmount() {
@@ -50,6 +60,17 @@ class BetaInterestForm extends React.Component {
 		if (action instanceof UserActions.BetaSubscriptionCompleted) {
 			this.setState({resp: action.resp});
 		}
+	}
+
+	_onChange: OnChangeListener;
+	_onChange() {
+		window.localStorage["beta-interest-form"] = JSON.stringify({
+			fullName: this._fullName["value"],
+			email: this._email["value"],
+			editors: this._editors.selected(),
+			languages: this._languages.selected(),
+			message: this._message["value"],
+		});
 	}
 
 	_sendForm(ev) {
@@ -92,22 +113,37 @@ class BetaInterestForm extends React.Component {
 		}
 		let [formClass, language] = [this.props.formClass, this.props.language];
 
+		let defaultFullName, defaultEmail, defaultMessage;
+		let defaultEditors = [];
+		let defaultLanguages = [];
+		let ls = window.localStorage["beta-interest-form"];
+		if (ls) {
+			ls = JSON.parse(ls);
+			defaultFullName = ls.fullName;
+			defaultEmail = ls.email;
+			defaultEditors = ls.editors;
+			defaultLanguages = ls.languages;
+			defaultMessage = ls.message;
+		}
+
+		if (language) defaultLanguages.push(langName(language));
+
 		return (
-			<form styleName="form" className={formClass} onSubmit={this._sendForm.bind(this)}>
+			<form styleName="form" className={formClass} onSubmit={this._sendForm.bind(this)} onChange={this._onChange}>
 					<div styleName="row">
-						<Input domRef={(c) => this._fullName = c} block={true} type="text" name="fullName" placeholder="Name" required={true} />
+						<Input domRef={(c) => this._fullName = c} block={true} type="text" name="fullName" placeholder="Name" required={true} defaultValue={defaultFullName} />
 					</div>
 					<div styleName="row">
-						<Input domRef={(c) => this._email = c} block={true} type="email" name="email" placeholder="Email address" required={true} />
+						<Input domRef={(c) => this._email = c} block={true} type="email" name="email" placeholder="Email address" required={true} defaultValue={defaultEmail} />
 					</div>
 					<div styleName="row">
-						<CheckboxList ref={(c) => this._editors = c} title="Preferred editors" name="editors" labels={editors} />
+						<CheckboxList ref={(c) => this._editors = c} title="Preferred editors" name="editors" labels={editors} defaultValues={defaultEditors} />
 					</div>
 					<div styleName="row">
-						<CheckboxList ref={(c) => this._languages = c} title="Preferred languages" name="languages" labels={languages} defaultValue={language ? langName(language) : null} />
+						<CheckboxList ref={(c) => this._languages = c} title="Preferred languages" name="languages" labels={languages} defaultValues={defaultLanguages} />
 					</div>
 					<div styleName="row">
-						<textarea ref={(c) => this._message = c} styleName="textarea" name="message" placeholder="Other / comments"></textarea>
+						<textarea ref={(c) => this._message = c} styleName="textarea" name="message" placeholder="Other / comments" defaultValue={defaultMessage}></textarea>
 					</div>
 					<div styleName="row" className={base.pb4}>
 						<Button block={true} type="submit" color="purple">Participate in the beta</Button>
