@@ -18,7 +18,7 @@ import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import {withUserContext} from "sourcegraph/app/user";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
-import InterestForm from "sourcegraph/home/InterestForm";
+import BetaInterestForm from "sourcegraph/home/BetaInterestForm";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class SearchSettings extends Container {
@@ -227,9 +227,9 @@ class SearchSettings extends Container {
 				{this.props.location.state && this.props.location.state.modal === "beta" && this.state.betaLanguage &&
 					<LocationStateModal modalName="beta" location={this.props.location}>
 						<div styleName="modal">
-							<h2 styleName="modalTitle">Participate in the Sourcegraph beta for {`${this.state.betaLanguage === "more" ? "your preferred language" : `${langName(this.state.betaLanguage)}`}`}</h2>
-							<InterestForm
-								rowClass={styles.modalRow}
+							<h2 styleName="modalTitle">Join the {`${this.state.betaLanguage === "more" ? "Sourcegraph" : `${langName(this.state.betaLanguage)}`}`} beta</h2>
+							<BetaInterestForm
+								formClass={styles.modalForm}
 								language={this.state.betaLanguage === "more" ? null : this.state.betaLanguage}
 								onSubmit={dismissModal("beta", this.props.location, this.context.router)} />
 						</div>

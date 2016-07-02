@@ -10,6 +10,7 @@ class CheckboxList extends React.Component {
 		name: React.PropTypes.string.isRequired,
 		labels: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
 
+		defaultValue: React.PropTypes.string,
 		className: React.PropTypes.string,
 	};
 
@@ -25,10 +26,10 @@ class CheckboxList extends React.Component {
 	}
 
 	render() {
-		const {className, title, name, labels} = this.props;
+		const {className, title, name, labels, defaultValue} = this.props;
 		let checkboxes = [];
 		for (let label of labels) {
-			checkboxes.push(<span styleName="checkbox" key={label}><label><input type="checkbox" name={name} value={label} /> {label}</label></span>);
+			checkboxes.push(<span styleName="checkbox" key={label}><label><input type="checkbox" name={name} value={label} defaultChecked={label === defaultValue} /> {label}</label></span>);
 		}
 
 		return (
