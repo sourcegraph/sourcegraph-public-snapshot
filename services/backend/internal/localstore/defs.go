@@ -740,19 +740,27 @@ FROM (
 // referencing defs in the latest built revision of the specified repository
 // (repo).
 func (s *defs) UpdateRefCounts(ctx context.Context, repo string) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.UpdateRefCounts", repo); err != nil {
-		return err
-	}
 
-	rr, err := getRepoRevLatest(graphDBH(ctx), repo)
-	if err != nil {
-		return err
-	}
-
-	if _, err := graphDBH(ctx).Exec(updateRefCountSQL, rr.ID, rr.Repo); err != nil {
-		return err
-	}
+	// TODO(sjl) per Beyang, hotfix disabling this update until we can identify a fix for deadlocks
+	// I attempted to create a ts_vector index on global_refs_new.repo, but it didn't improve performance
+	// https://app.asana.com/0/87040567695724/150990295471745
 	return nil
+
+	/*
+		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.UpdateRefCounts", repo); err != nil {
+			return err
+		}
+
+		rr, err := getRepoRevLatest(graphDBH(ctx), repo)
+		if err != nil {
+			return err
+		}
+
+		if _, err := graphDBH(ctx).Exec(updateRefCountSQL, rr.ID, rr.Repo); err != nil {
+			return err
+		}
+		return nil
+	*/
 }
 
 func getDefKey(ctx context.Context, dbh gorp.SqlExecutor, id int64) (*dbDefKey, error) {
