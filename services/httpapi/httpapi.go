@@ -103,7 +103,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.UserEmails).Handler(handler(serveUserEmails))
 	m.Get(apirouter.InternalAppdashRecordSpan).Handler(handler(serveInternalAppdashRecordSpan))
 
-	m.Get(apirouter.EmailSubscription).Handler(handler(serveEmailSubscription))
 	m.Get(apirouter.BetaSubscription).Handler(handler(serveBetaSubscription))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
