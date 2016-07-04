@@ -91,10 +91,11 @@ const mustSucceedLangThreshold = 0.33
 // mustSucceedLangs are languages for which srclib must succeed if their
 // proportion of code bytes in a repository exceeds mustSucceedLangThreshold.
 var mustSucceedLangs = map[string]struct{}{
-	"Go":     struct{}{},
-	"Java":   struct{}{},
-	"C#":     struct{}{},
-	"Python": struct{}{},
+	"C#":         struct{}{},
+	"Go":         struct{}{},
+	"Java":       struct{}{},
+	"Javascript": struct{}{},
+	"Python":     struct{}{},
 }
 
 // 8GB
