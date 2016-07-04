@@ -371,7 +371,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 		failuresMu sync.Mutex
 		failures   int
 		start      = time.Now()
-		run        = parallel.NewRun(len(t.tests))
+		run        = parallel.NewRun(1) // currently not running tests in parallel because of Selenium errors
 		total      = 0
 	)
 	for _, testToCopy := range t.tests {
