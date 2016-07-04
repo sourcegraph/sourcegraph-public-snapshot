@@ -1,0 +1,50 @@
+{
+	"renderOutput": {
+		"type": "Collapsible",
+		"props": {
+			"collapsed": true,
+			"children": [
+				{
+					"type": "div",
+					"key": ".0",
+					"props": {
+						"styleName": "step-title success",
+						"children": [
+							"Warning: Can't automatically generate CI build config for C, Shell, C++, D, GAS, Logos, Perl, Nemerle; please create a .sg-drone.yml file",
+							{
+								"type": "span",
+								"key": ".1",
+								"props": {
+									"style": {
+										"float": "right"
+									},
+									"children": [
+										{
+											"type": "div",
+											"props": {}
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"key": ".1",
+					"props": {
+						"styleName": "step-body"
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantLog",
+			"repo": 57215,
+			"buildID": 8,
+			"taskID": 6
+		}
+	]
+}
