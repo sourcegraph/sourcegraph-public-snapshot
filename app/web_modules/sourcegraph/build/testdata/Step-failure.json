@@ -8,7 +8,7 @@
 					"type": "div",
 					"key": ".0",
 					"props": {
-						"styleName": "step-title success",
+						"styleName": "step-title danger",
 						"children": [
 							"Bash (indexing)",
 							{
