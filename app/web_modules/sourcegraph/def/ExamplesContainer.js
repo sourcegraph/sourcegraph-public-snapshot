@@ -65,7 +65,7 @@ class ExamplesContainer extends Container {
 					styleName="full-width-sm b--cool-pale-gray"
 					className={base.ba}>
 					<div className={this.props.className}>
-						{!refLocs && <p className={typography.tc}> <Loader className={base.mv4} /></p>}
+						{!refLocs && <div className={typography.tc}> <Loader className={base.mv4} /></div>}
 						{refLocs && !refLocs.RepoRefs && <i>No examples found</i>}
 						{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <RefsContainer
 							key={i}

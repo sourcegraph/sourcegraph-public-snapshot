@@ -85,7 +85,7 @@ class RepoRefsContainer extends Container {
 					}
 				</Heading>
 
-				{!refLocs && <p className={typography.tc}> <Loader className={base.mv4} /></p>}
+				{!refLocs && <div className={typography.tc}> <Loader className={base.mv4} /></div>}
 				{refLocs && !refLocs.RepoRefs && <i>No references found</i>}
 				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <div key={i} className={base.mt4}>
 					<Link to={urlToRepo(repoRefs.Repo)} className={base.mb3}>
