@@ -16,6 +16,7 @@ let _defComponents;
 export const routes: Array<Route> = [
 	{
 		path: rel.defInfo,
+		repoNavContext: false,
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
 				if (!_defInfoComponents) {
@@ -23,7 +24,6 @@ export const routes: Array<Route> = [
 					const withDef = require("sourcegraph/def/withDef").default;
 					_defInfoComponents = {
 						main: withResolvedRepoRev(withDef(require("sourcegraph/def/DefInfo").default)),
-						repoNavContext: withResolvedRepoRev(require("sourcegraph/def/DefNavContext").default),
 					};
 				}
 				callback(null, _defInfoComponents);
