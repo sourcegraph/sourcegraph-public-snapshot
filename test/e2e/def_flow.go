@@ -18,17 +18,13 @@ func testDefFlow(t *T) error {
 		return err
 	}
 
-	t.WaitForElement(selenium.ByLinkText, "header.go")
-	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'Get gets the first value associated with the given key')]")
-	// TODO(keegancsmith) Find a reliable way to tell if the code view has loaded
-
 	// Check that the def link appears
-	defLink := t.WaitForElement(selenium.ByLinkText, "(Header).Get(key string) string", MatchAttribute("href", `/github\.com/golang/go/-/def/GoPackage/net/http/-/Header/Get`))
+	defLink := t.WaitForElement(selenium.ByLinkText, "View definition", MatchAttribute("href", `/github\.com/golang/go/-/def/GoPackage/net/http/-/Header/Get`))
 	if err = defLink.Click(); err != nil {
 		return err
 	}
 
-	defLink = t.WaitForElement(selenium.ByLinkText, "(Header).Get(key string) string", MatchAttribute("href", `/github\.com/golang/go/-/info/GoPackage/net/http/-/Header/Get`))
+	defLink = t.WaitForElement(selenium.ByLinkText, "View all references", MatchAttribute("href", `/github\.com/golang/go/-/info/GoPackage/net/http/-/Header/Get`))
 	if err = defLink.Click(); err != nil {
 		return err
 	}
