@@ -28,7 +28,7 @@ import {Dropdown, Header, Heading, FlexContainer} from "sourcegraph/components";
 
 
 // Number of characters of the Docstring to show before showing the "collapse" options.
-const DESCRIPTION_CHAR_CUTOFF = 305;
+const DESCRIPTION_CHAR_CUTOFF = 80;
 //
 class DefInfo extends Container {
 	static contextTypes = {
