@@ -50,7 +50,17 @@ export function fastParseDefPath(url: string): ?string {
 }
 
 export function defPath(def: Def): string {
-	return `${def.UnitType}/${def.Unit}/-/${encodeDefPath(def.Path)}`;
+	return `${def.UnitType}/${maybeTransformUnit(def.Unit)}/-/${encodeDefPath(def.Path)}`;
+}
+
+// maybeTransformUnit handles if def.Unit is ".". URLs with a
+// "/./" will be automatically modified by the browser, so we
+// transform it to "/_._/".
+function maybeTransformUnit(unit: string): string {
+	if (unit === ".") {
+		return "_._";
+	}
+	return unit;
 }
 
 export function encodeDefPath(path: string): string {
