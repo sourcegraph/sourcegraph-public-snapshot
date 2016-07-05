@@ -9,7 +9,7 @@ import Component from "sourcegraph/Component";
 import {Link} from "react-router";
 import styles from "./styles/RevSwitcher.css";
 
-import {TriangleDownIcon, CheckIcon} from "sourcegraph/components/Icons";
+import {FaChevronDown, CheckIcon} from "sourcegraph/components/Icons";
 import {Input, Menu, Heading} from "sourcegraph/components";
 import CSSModules from "react-css-modules";
 import {urlWithRev} from "sourcegraph/repo/routes";
@@ -253,7 +253,7 @@ class RevSwitcher extends Component {
 				<span styleName="toggle"
 					title={title}
 					onClick={this._onToggleDropdown}>
-					<TriangleDownIcon />
+					<FaChevronDown />
 				</span>
 				<div styleName={this.state.open ? "dropdown-menu open" : "dropdown-menu closed"}>
 					<Menu>
