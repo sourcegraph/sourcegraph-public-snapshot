@@ -122,7 +122,7 @@ tr:hover .octicon-chevron-right {
 	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 	padding: 6px 12px;
 	font-size: 14px !important;
-	z-index: 20;
+	z-index: 40;
 	position: absolute;
 	word-wrap: break-word;
 	overflow: auto;
