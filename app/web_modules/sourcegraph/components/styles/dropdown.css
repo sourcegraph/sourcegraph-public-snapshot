@@ -8,7 +8,7 @@
 	display: inline-block;
 	line-height: 1.45;
 	cursor: pointer;
-	vertical-align: middle;
+	vertical-align: top;
 }
 
 .wrapper-disabled {
