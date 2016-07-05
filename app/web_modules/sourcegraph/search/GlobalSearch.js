@@ -372,7 +372,8 @@ class GlobalSearch extends Container {
 		}
 
 		const def = this.state.matchingResults.Defs[i - offset];
-		const url = urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def);
+		let url = urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def);
+		url = url.replace(/GoPackage\/pkg\//, "GoPackage/"); // TEMP HOTFIX
 
 		eventProps.selectedItem = url;
 		eventProps.totalResults = this.state.matchingResults.Defs.length;
@@ -494,7 +495,7 @@ class GlobalSearch extends Container {
 					className={this.state.resultClassName}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : null}
-					to={defURL}
+					to={defURL.replace(/GoPackage\/pkg\//, "GoPackage/")}
 					key={defURL}
 					onClick={() => this._onSelection(true)}>
 					<div styleName="cool-gray flex-container" className={base.pt3}>
