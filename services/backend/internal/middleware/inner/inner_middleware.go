@@ -942,19 +942,6 @@ func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, param *so
 	return
 }
 
-func (s wrappedRepos) ConfigureApp(ctx context.Context, param *sourcegraph.RepoConfigureAppOp) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Repos", "ConfigureApp", param)
-	defer func() {
-		trace.After(ctx, "Repos", "ConfigureApp", param, err, time.Since(start))
-	}()
-	res, err = backend.Services.Repos.ConfigureApp(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.ConfigureApp returned nil, nil")
-	}
-	return
-}
-
 func (s wrappedRepos) GetInventory(ctx context.Context, param *sourcegraph.RepoRevSpec) (res *inventory.Inventory, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "GetInventory", param)

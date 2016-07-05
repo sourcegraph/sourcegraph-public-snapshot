@@ -67,7 +67,6 @@ type ReposClient struct {
 	ListDeps_                    func(ctx context.Context, in *sourcegraph.URIList) (*sourcegraph.URIList, error)
 	ListCommitters_              func(ctx context.Context, in *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
 	GetSrclibDataVersionForPath_ func(ctx context.Context, in *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
-	ConfigureApp_                func(ctx context.Context, in *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error)
 	GetInventory_                func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
 	ReceivePack_                 func(ctx context.Context, in *sourcegraph.ReceivePackOp) (*sourcegraph.Packet, error)
 	UploadPack_                  func(ctx context.Context, in *sourcegraph.UploadPackOp) (*sourcegraph.Packet, error)
@@ -133,10 +132,6 @@ func (s *ReposClient) GetSrclibDataVersionForPath(ctx context.Context, in *sourc
 	return s.GetSrclibDataVersionForPath_(ctx, in)
 }
 
-func (s *ReposClient) ConfigureApp(ctx context.Context, in *sourcegraph.RepoConfigureAppOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.ConfigureApp_(ctx, in)
-}
-
 func (s *ReposClient) GetInventory(ctx context.Context, in *sourcegraph.RepoRevSpec, opts ...grpc.CallOption) (*inventory.Inventory, error) {
 	return s.GetInventory_(ctx, in)
 }
@@ -167,7 +162,6 @@ type ReposServer struct {
 	ListDeps_                    func(v0 context.Context, v1 *sourcegraph.URIList) (*sourcegraph.URIList, error)
 	ListCommitters_              func(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
 	GetSrclibDataVersionForPath_ func(v0 context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
-	ConfigureApp_                func(v0 context.Context, v1 *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error)
 	GetInventory_                func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
 	ReceivePack_                 func(v0 context.Context, v1 *sourcegraph.ReceivePackOp) (*sourcegraph.Packet, error)
 	UploadPack_                  func(v0 context.Context, v1 *sourcegraph.UploadPackOp) (*sourcegraph.Packet, error)
@@ -231,10 +225,6 @@ func (s *ReposServer) ListCommitters(v0 context.Context, v1 *sourcegraph.ReposLi
 
 func (s *ReposServer) GetSrclibDataVersionForPath(v0 context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
 	return s.GetSrclibDataVersionForPath_(v0, v1)
-}
-
-func (s *ReposServer) ConfigureApp(v0 context.Context, v1 *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error) {
-	return s.ConfigureApp_(v0, v1)
 }
 
 func (s *ReposServer) GetInventory(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {

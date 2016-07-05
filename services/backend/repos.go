@@ -13,8 +13,6 @@ import (
 
 	"strings"
 
-	"sort"
-
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -31,7 +29,6 @@ import (
 	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/platform"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/test/e2e/e2etestuser"
@@ -342,47 +339,6 @@ func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sou
 		conf = &sourcegraph.RepoConfig{}
 	}
 	return conf, nil
-}
-
-func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error) {
-	store := store.RepoConfigsFromContext(ctx)
-
-	if op.Enable {
-		// Check that app ID is a valid app. Allow disabling invalid
-		// apps so that obsolete apps can always be removed.
-		if _, present := platform.Apps[op.App]; !present {
-			return nil, grpc.Errorf(codes.InvalidArgument, "app %q is not a valid app ID", op.App)
-		}
-	}
-
-	conf, err := store.Get(ctx, op.Repo)
-	if err != nil {
-		return nil, err
-	}
-	if conf == nil {
-		conf = &sourcegraph.RepoConfig{}
-	}
-
-	// Make apps list unique and add/remove the new app.
-	apps := make(map[string]struct{}, len(conf.Apps))
-	for _, app := range conf.Apps {
-		apps[app] = struct{}{}
-	}
-	if op.Enable {
-		apps[op.App] = struct{}{}
-	} else {
-		delete(apps, op.App)
-	}
-	conf.Apps = make([]string, 0, len(apps))
-	for app := range apps {
-		conf.Apps = append(conf.Apps, app)
-	}
-	sort.Strings(conf.Apps)
-
-	if err := store.Update(ctx, op.Repo, *conf); err != nil {
-		return nil, err
-	}
-	return &pbtypes.Void{}, nil
 }
 
 func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {

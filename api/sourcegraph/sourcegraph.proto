@@ -96,9 +96,6 @@ message StreamResponse {
 // RepoConfig describes a repository's config. This config is
 // Sourcegraph-specific and is persisted locally.
 message RepoConfig {
-	// Apps is a list of app IDs denoting the applications that are
-	// enabled for this repository.
-	repeated string Apps = 1;
 }
 
 // Repo represents a source code repository.
@@ -337,9 +334,6 @@ service Repos {
 	// srclib data for older versions that is still accurate.
 	rpc GetSrclibDataVersionForPath(TreeEntrySpec) returns (SrclibDataVersion);
 
-	// ConfigureApp configures an application for a repository.
-	rpc ConfigureApp(RepoConfigureAppOp) returns (pbtypes.Void);
-
 	// GetInventory performs an inventory of the repository's contents
 	// at a specific commit. It returns a summary of the programming
 	// languages, etc., used by the repository, as evidenced by the
@@ -423,18 +417,6 @@ message RepoResolution {
 message SrclibDataVersion {
 	string CommitID = 1;
 	int32 CommitsBehind = 2;
-}
-
-message RepoConfigureAppOp {
-	// Repo is the repository whose applications are being configured.
-	int32 Repo = 1;
-
-	// App is the app ID to enable or disable.
-	string App = 2;
-
-	// Enable is true if the app should be enabled and false if it
-	// should be disabled.
-	bool Enable = 3;
 }
 
 message ReposCreateOp {
