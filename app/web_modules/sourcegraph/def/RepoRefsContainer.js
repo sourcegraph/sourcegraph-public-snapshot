@@ -15,6 +15,8 @@ import {RefLocsPerPage} from "sourcegraph/def";
 import "whatwg-fetch";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {Repository, DownPointer} from "sourcegraph/components/symbols";
+import {urlToRepo} from "sourcegraph/repo/routes";
+import {urlToBlob} from "sourcegraph/blob/routes";
 
 class RepoRefsContainer extends Container {
 	static propTypes = {
@@ -86,13 +88,13 @@ class RepoRefsContainer extends Container {
 				{!refLocs && <p className={typography.tc}> <Loader className={base.mv4} /></p>}
 				{refLocs && !refLocs.RepoRefs && <i>No references found</i>}
 				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <div key={i} className={base.mt4}>
-					<Link to={repoRefs.Repo} className={base.mb3}>
+					<Link to={urlToRepo(repoRefs.Repo)} className={base.mb3}>
 						<Repository width={24} className={base.mr3} /> <strong>{repoRefs.Repo}</strong>
 					</Link>
 					<List listStyle="node" className={base.mt2} style={{marginLeft: "6px"}}>
 					{repoRefs.Files && repoRefs.Files.length > 0 && repoRefs.Files.map((file, j) =>
 							<li key={j} className={`${base.mv3} ${base.pt1}`} styleName="cool-mid-gray f7 node-list-item">
-								{file.Count} references in <Link to={`${repoRefs.Repo}/-/blob/${file.Path}`}>{file.Path}</Link>
+								{file.Count} references in <Link to={urlToBlob(repoRefs.Repo, null, file.Path)}>{file.Path}</Link>
 							</li>)
 					}
 					</List>

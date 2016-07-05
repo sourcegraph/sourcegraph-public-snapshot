@@ -26,6 +26,7 @@ import styles from "./styles/Refs.css";
 import base from "sourcegraph/components/styles/_base.css";
 import colors from "sourcegraph/components/styles/_colors.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {urlToRepo} from "sourcegraph/repo/routes";
 
 const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above/below a ref
 
@@ -333,7 +334,7 @@ export default class RefsContainer extends Container {
 					</div>
 					{this.state.highlightedDefObj && !this.state.highlightedDefObj.Error && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
 				</div>
-				{this.state.refRepo && <div className={`${base.mt3} ${styles.f7}`}>Used in <Link to={this.state.refRepo}>{this.state.refRepo}</Link></div>}
+				{this.state.refRepo && <div className={`${base.mt3} ${styles.f7}`}>Used in <Link to={urlToRepo(this.state.refRepo)}>{this.state.refRepo}</Link></div>}
 			</div>
 		);
 	}
