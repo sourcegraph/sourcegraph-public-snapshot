@@ -1,0 +1,47 @@
+{
+	"renderOutput": {
+		"type": "Collapsible",
+		"props": {
+			"collapsed": true,
+			"children": [
+				{
+					"type": "div",
+					"key": ".0",
+					"props": {
+						"styleName": "step-title danger",
+						"children": [
+							"Bash (indexing)",
+							{
+								"type": "span",
+								"key": ".1",
+								"props": {
+									"style": {
+										"float": "right"
+									},
+									"children": [
+										"1s"
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"key": ".1",
+					"props": {
+						"styleName": "step-body"
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantLog",
+			"repo": 57215,
+			"buildID": 8,
+			"taskID": 8
+		}
+	]
+}
