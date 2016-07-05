@@ -514,7 +514,6 @@ class GlobalSearch extends Container {
 	}
 
 	render() {
-		console.log("NEW NEW NEW NEW");
 		return (<div styleName="center flex" className={this.state.className}>
 			{this._results()}
 		</div>);
