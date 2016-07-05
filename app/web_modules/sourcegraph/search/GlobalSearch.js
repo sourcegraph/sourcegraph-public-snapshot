@@ -12,7 +12,6 @@ import "sourcegraph/search/SearchBackend";
 import UserStore from "sourcegraph/user/UserStore";
 import uniq from "lodash.uniq";
 import debounce from "lodash.debounce";
-import trimLeft from "lodash.trimleft";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
@@ -449,7 +448,7 @@ class GlobalSearch extends Container {
 			let repo = this.state.matchingResults.Repos[i];
 			const selected = this._normalizedSelectionIndex() === i;
 
-			const firstLineDocString = firstLine(repo.Description);
+			const firstLineDocString = repo.Description;
 			list.push(
 				<Link styleName={selected ? "block result-selected" : "block result"}
 					className={this.state.resultClassName}
@@ -467,7 +466,7 @@ class GlobalSearch extends Container {
 								Repository
 								<span styleName="bold"> {repo.URI.split(/[// ]+/).pop()}</span>
 							</code>
-							{firstLineDocString && <p styleName="cool-mid-gray" className={base.mt0}>{firstLineDocString}</p>}
+							{firstLineDocString && <p styleName="docstring" className={base.mt0}>{firstLineDocString}</p>}
 						</div>
 					</div>
 				</Link>
@@ -489,7 +488,7 @@ class GlobalSearch extends Container {
 				});
 			}
 
-			const firstLineDocString = firstLine(docstring);
+			const firstLineDocString = docstring;
 			list.push(
 				<Link styleName={selected ? "block result-selected" : "block result"}
 					className={this.state.resultClassName}
@@ -499,12 +498,12 @@ class GlobalSearch extends Container {
 					key={defURL}
 					onClick={() => this._onSelection(true)}>
 					<div styleName="cool-gray flex-container" className={base.pt3}>
-						<div styleName="flex">
+						<div styleName="flex w100">
 							<p styleName="cool-mid-gray block-s" className={`${base.ma0} ${base.pl4} ${base.pr2} ${base.fr}`}>{trimRepo(def.Repo)}</p>
 							<code styleName="block f5" className={base.pb3}>
 								{qualifiedNameAndType(def, {nameQual: "DepQualified"})}
 							</code>
-							{firstLineDocString && <p styleName="cool-mid-gray" className={base.mt0}>{firstLineDocString}</p>}
+							{firstLineDocString && <p styleName="docstring" className={base.mt0}>{firstLineDocString}</p>}
 						</div>
 					</div>
 				</Link>
@@ -515,6 +514,7 @@ class GlobalSearch extends Container {
 	}
 
 	render() {
+		console.log("NEW NEW NEW NEW");
 		return (<div styleName="center flex" className={this.state.className}>
 			{this._results()}
 		</div>);
@@ -522,15 +522,3 @@ class GlobalSearch extends Container {
 }
 
 export default CSSModules(GlobalSearch, styles, {allowMultiple: true});
-
-function firstLine(text: string): string {
-	text = trimLeft(text);
-	let i = text.indexOf("\n");
-	if (i >= 0) {
-		text = text.substr(0, i);
-	}
-	if (text.length > 100) {
-		text = text.substr(0, 100);
-	}
-	return text;
-}

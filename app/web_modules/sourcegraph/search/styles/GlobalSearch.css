@@ -30,6 +30,7 @@
 	composes: tc from typography;
 	composes: pr3 from base;
 }
+.w100 { width: 100%; }
 
 @media media-sm {
 	.block-s {
@@ -67,4 +68,11 @@
 
 code.block {
 	word-break: break-all;
+}
+
+.docstring {
+	composes: cool-mid-gray from colors;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
