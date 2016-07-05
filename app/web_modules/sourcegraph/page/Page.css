@@ -12,7 +12,7 @@
 }
 .container-wide {
 	composes: container;
-	max-width: 820px !important;
+	max-width: 900px !important;
 }
 .content {
 	composes: container;
@@ -69,7 +69,7 @@
 }
 @media screen and (min-width: 48em) {
 	.plan {
-		flex: 1 1 30%;
+		flex: 1 1 28%;
 		max-width: 275px;
 		composes: mh3 from base;
 	}
