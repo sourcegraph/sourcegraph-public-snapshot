@@ -133,7 +133,6 @@ func serveRepos(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	writePaginationHeader(w, r.URL, opt.ListOptions, 0 /* TODO */)
 	if clientCached, err := writeCacheHeaders(w, r, time.Time{}, defaultCacheMaxAge); clientCached || err != nil {
 		return err
 	}

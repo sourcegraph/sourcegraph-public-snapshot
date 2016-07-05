@@ -273,16 +273,6 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		}
 		return nil, err
 	}
-
-	arg := func(a interface{}) string {
-		v := gorp.PostgresDialect{}.BindVar(len(args))
-		args = append(args, a)
-		return v
-	}
-
-	// LIMIT and OFFSET
-	sql += fmt.Sprintf(" LIMIT %s OFFSET %s", arg(opt.PerPageOrDefault()), arg(opt.Offset()))
-
 	repos, err := s.query(ctx, sql, args...)
 	if err != nil {
 		return nil, err

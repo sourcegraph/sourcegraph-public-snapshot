@@ -192,7 +192,6 @@ message RepoListOptions {
 	bool NoFork = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Type = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Owner = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
-	ListOptions ListOptions = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // RepoRevSpec specifies a repository at a specific commit.
