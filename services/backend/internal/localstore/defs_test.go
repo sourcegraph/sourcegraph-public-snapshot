@@ -11,7 +11,7 @@ func TestToTextSearchTokens(t *testing.T) {
 		DefKey: graph.DefKey{
 			Repo: "repo1/repo2",
 			Unit: "unit1/unit2",
-			Path: "path_x/pathFooBar",
+			Path: "path_x/pathFooBarHelloWorldThisIsLong",
 		},
 		File: "file1/file2",
 		Name: "name",
@@ -21,22 +21,22 @@ func TestToTextSearchTokens(t *testing.T) {
 		},
 	})
 
-	expectedAToks := []string{"pathFooBar", "pathFooBar", "pathFooBar", "pathFooBar", "FooBar", "pathBar", "Bar", "pathFoo", "Foo", "path", "name"}
-	expectedBToks := []string{"repo1", "repo2", "repo2", "repo2", "unit1", "unit2", "unit2", "unit2", "path_x", "path_x", "pathFooBar", "pathFooBar"}
-	expectedCToks := []string{"pathx", "x", "path", "pathFooBar", "FooBar", "pathBar", "Bar", "pathFoo", "Foo", "path", "file1", "file2", "file2", "file2"}
+	expectedAToks := []string{"pathFooBarHelloWorldThisIsLong", "pathFooBarHelloWorldThisIsLong", "pathFooBarHelloWorldThisIsLong", "pathFooBarHelloWorldThis", "FooBarHelloWorldThis", "pathBarHelloWorldThis", "BarHelloWorldThis", "pathFooHelloWorldThis", "FooHelloWorldThis", "pathHelloWorldThis", "HelloWorldThis", "pathFooBarWorldThis", "FooBarWorldThis", "pathBarWorldThis", "BarWorldThis", "pathFooWorldThis", "FooWorldThis", "pathWorldThis", "WorldThis", "pathFooBarHelloThis", "FooBarHelloThis", "pathBarHelloThis", "BarHelloThis", "pathFooHelloThis", "FooHelloThis", "pathHelloThis", "HelloThis", "pathFooBarThis", "FooBarThis", "pathBarThis", "BarThis", "pathFooThis", "FooThis", "pathThis", "This", "pathFooBarHelloWorld", "FooBarHelloWorld", "pathBarHelloWorld", "BarHelloWorld", "pathFooHelloWorld", "FooHelloWorld", "pathHelloWorld", "HelloWorld", "pathFooBarWorld", "FooBarWorld", "pathBarWorld", "BarWorld", "pathFooWorld", "FooWorld", "pathWorld", "World", "pathFooBarHello", "FooBarHello", "pathBarHello", "BarHello", "pathFooHello", "FooHello", "pathHello", "Hello", "pathFooBar", "FooBar", "pathBar", "Bar", "pathFoo", "Foo", "path", "Is", "Long", "name"}
+	expectedBToks := []string{"repo1", "repo2", "repo2", "repo2", "unit1", "unit2", "unit2", "unit2", "path_x", "path_x", "pathFooBarHelloWorldThisIsLong", "pathFooBarHelloWorldThisIsLong"}
+	expectedCToks := []string{"pathx", "x", "path", "pathFooBarHelloWorldThis", "FooBarHelloWorldThis", "pathBarHelloWorldThis", "BarHelloWorldThis", "pathFooHelloWorldThis", "FooHelloWorldThis", "pathHelloWorldThis", "HelloWorldThis", "pathFooBarWorldThis", "FooBarWorldThis", "pathBarWorldThis", "BarWorldThis", "pathFooWorldThis", "FooWorldThis", "pathWorldThis", "WorldThis", "pathFooBarHelloThis", "FooBarHelloThis", "pathBarHelloThis", "BarHelloThis", "pathFooHelloThis", "FooHelloThis", "pathHelloThis", "HelloThis", "pathFooBarThis", "FooBarThis", "pathBarThis", "BarThis", "pathFooThis", "FooThis", "pathThis", "This", "pathFooBarHelloWorld", "FooBarHelloWorld", "pathBarHelloWorld", "BarHelloWorld", "pathFooHelloWorld", "FooHelloWorld", "pathHelloWorld", "HelloWorld", "pathFooBarWorld", "FooBarWorld", "pathBarWorld", "BarWorld", "pathFooWorld", "FooWorld", "pathWorld", "World", "pathFooBarHello", "FooBarHello", "pathBarHello", "BarHello", "pathFooHello", "FooHello", "pathHello", "Hello", "pathFooBar", "FooBar", "pathBar", "Bar", "pathFoo", "Foo", "path", "Is", "Long", "file1", "file2", "file2", "file2"}
 	expectedDToks := []string{"foo bar", "baz"}
 
 	if !stringSliceEqual(aToks, expectedAToks) {
 		t.Errorf("wrong aToks, expected %#v, got %#v", expectedAToks, aToks)
 	}
 	if !stringSliceEqual(bToks, expectedBToks) {
-		t.Errorf("wrong aToks, expected %#v, got %#v", expectedBToks, bToks)
+		t.Errorf("wrong bToks, expected %#v, got %#v", expectedBToks, bToks)
 	}
 	if !stringSliceEqual(cToks, expectedCToks) {
-		t.Errorf("wrong aToks, expected %#v, got %#v", expectedCToks, cToks)
+		t.Errorf("wrong cToks, expected %#v, got %#v", expectedCToks, cToks)
 	}
 	if !stringSliceEqual(dToks, expectedDToks) {
-		t.Errorf("wrong aToks, expected %#v, got %#v", expectedDToks, dToks)
+		t.Errorf("wrong dToks, expected %#v, got %#v", expectedDToks, dToks)
 	}
 }
 

@@ -666,7 +666,7 @@ func toTextSearchTokens(def *graph.Def) (aToks []string, bToks []string, cToks [
 	pathParts := delims.Split(def.Path, -1)
 	for _, w := range pathParts {
 		bToks = appendRepeated(bToks, w, 2)
-		for _, c := range allCombinations(splitCaseWords(w)) {
+		for _, c := range boundedCombinations(splitCaseWords(w), 6) {
 			if c != "" {
 				cToks = appendRepeated(cToks, c, 1)
 			}
@@ -674,7 +674,7 @@ func toTextSearchTokens(def *graph.Def) (aToks []string, bToks []string, cToks [
 	}
 	lastPathPart := pathParts[len(pathParts)-1]
 	aToks = appendRepeated(aToks, lastPathPart, 3) // mega extra points for matching the last component of the def path (typically the "name" of the def)
-	for _, c := range allCombinations(splitCaseWords(lastPathPart)) {
+	for _, c := range boundedCombinations(splitCaseWords(lastPathPart), 6) {
 		if c != "" {
 			aToks = appendRepeated(aToks, c, 1) // more points for matching last component of def path
 		}
@@ -701,6 +701,13 @@ func splitCaseWords(w string) []string {
 		return strings.Split(w, "_")
 	}
 	return camelcase.Split(w)
+}
+
+func boundedCombinations(s []string, bound int) []string {
+	if len(s) > bound {
+		return append(allCombinations(s[:bound]), s[bound:]...)
+	}
+	return allCombinations(s)
 }
 
 // allCombinations returns all strings that can be built by concatenating a subset of the given strings without reordering.
