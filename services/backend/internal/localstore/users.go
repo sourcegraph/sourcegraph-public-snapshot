@@ -197,14 +197,6 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 	return toUsers(users), nil
 }
 
-func (s *users) Count(ctx context.Context) (int32, error) {
-	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Users.Count"); err != nil {
-		return 0, err
-	}
-	count, err := appDBH(ctx).SelectInt("SELECT count(*) FROM users WHERE NOT disabled;")
-	return int32(count), err
-}
-
 func (s *users) GetUIDByGitHubID(ctx context.Context, githubUID int) (int32, error) {
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Users.GetUIDByGitHubID", nil); err != nil {
 		return 0, err

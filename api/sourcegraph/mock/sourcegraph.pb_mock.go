@@ -506,7 +506,6 @@ type UsersClient struct {
 	GetWithEmail_ func(ctx context.Context, in *sourcegraph.EmailAddr) (*sourcegraph.User, error)
 	ListEmails_   func(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error)
 	List_         func(ctx context.Context, in *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error)
-	Count_        func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.UserCount, error)
 }
 
 func (s *UsersClient) Get(ctx context.Context, in *sourcegraph.UserSpec, opts ...grpc.CallOption) (*sourcegraph.User, error) {
@@ -525,10 +524,6 @@ func (s *UsersClient) List(ctx context.Context, in *sourcegraph.UsersListOptions
 	return s.List_(ctx, in)
 }
 
-func (s *UsersClient) Count(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.UserCount, error) {
-	return s.Count_(ctx, in)
-}
-
 var _ sourcegraph.UsersClient = (*UsersClient)(nil)
 
 type UsersServer struct {
@@ -536,7 +531,6 @@ type UsersServer struct {
 	GetWithEmail_ func(v0 context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.User, error)
 	ListEmails_   func(v0 context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error)
 	List_         func(v0 context.Context, v1 *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error)
-	Count_        func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.UserCount, error)
 }
 
 func (s *UsersServer) Get(v0 context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.User, error) {
@@ -553,10 +547,6 @@ func (s *UsersServer) ListEmails(v0 context.Context, v1 *sourcegraph.UserSpec) (
 
 func (s *UsersServer) List(v0 context.Context, v1 *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error) {
 	return s.List_(v0, v1)
-}
-
-func (s *UsersServer) Count(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.UserCount, error) {
-	return s.Count_(v0, v1)
 }
 
 var _ sourcegraph.UsersServer = (*UsersServer)(nil)

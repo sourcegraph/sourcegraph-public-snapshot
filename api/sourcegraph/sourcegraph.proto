@@ -984,10 +984,6 @@ message UserList {
 	repeated User Users = 1;
 }
 
-message UserCount {
-	int32 Count = 1;
-}
-
 // A Person represents either a registered user or a committer to a repository
 // (typically when their commit email can't be resolved to a user).
 message Person {
@@ -1271,9 +1267,6 @@ service Users {
 
 	// List users.
 	rpc List(UsersListOptions) returns (UserList);
-
-	// Count returns the number of users signed up on this instance.
-	rpc Count(pbtypes.Void) returns (UserCount);
 }
 
 // Auth manages authentication and authorization (via OAuth2).

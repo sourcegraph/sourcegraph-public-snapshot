@@ -29,29 +29,6 @@ var Accounts sourcegraph.AccountsServer = &accounts{}
 type accounts struct{}
 
 func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) (*sourcegraph.CreatedAccount, error) {
-	usersStore := store.UsersFromContext(ctx)
-
-	var write, admin bool
-	// If this is the first user, set them as admin.
-	numUsers, err := usersStore.Count(elevatedActor(ctx))
-	if err != nil {
-		return nil, err
-	}
-	if numUsers == 0 {
-		write = true
-		admin = true
-	}
-
-	acct, err := s.createWithPermissions(ctx, newAcct, write, admin)
-	if err != nil {
-		return nil, err
-	}
-	return acct, err
-}
-
-func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegraph.NewAccount, write, admin bool) (*sourcegraph.CreatedAccount, error) {
-	accountsStore := store.AccountsFromContext(ctx)
-
 	if newAcct.Login == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "empty login")
 	}
@@ -70,8 +47,6 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 		Login:        newAcct.Login,
 		RegisteredAt: &now,
 		UID:          newAcct.UID,
-		Write:        write,
-		Admin:        admin,
 	}
 
 	var email *sourcegraph.EmailAddr
@@ -79,7 +54,7 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 		email = &sourcegraph.EmailAddr{Email: newAcct.Email, Primary: true}
 	}
 
-	created, err := accountsStore.Create(elevatedActor(ctx), newUser, email)
+	created, err := store.AccountsFromContext(ctx).Create(elevatedActor(ctx), newUser, email)
 	if err != nil {
 		return nil, err
 	}
@@ -88,8 +63,6 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 	actor := authpkg.Actor{
 		UID:   int(userSpec.UID),
 		Login: userSpec.Login,
-		Write: write,
-		Admin: admin,
 	}
 	ctx = authpkg.WithActor(ctx, actor)
 

@@ -4,8 +4,6 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 var Users sourcegraph.UsersServer = &users{}
@@ -55,20 +53,4 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) (*s
 		return nil, err
 	}
 	return &sourcegraph.UserList{Users: users}, nil
-}
-
-func (s *users) Count(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.UserCount, error) {
-	count, err := store.UsersFromContext(ctx).Count(elevatedActor(ctx))
-	if err != nil {
-		return nil, err
-	}
-
-	if count > 0 {
-		// If the request is not authed with admin privileges, don't reveal the actual
-		// number of users.
-		if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Users.Count"); err != nil {
-			count = 1729 // https://en.wikipedia.org/wiki/Taxicab_number
-		}
-	}
-	return &sourcegraph.UserCount{Count: count}, nil
 }
