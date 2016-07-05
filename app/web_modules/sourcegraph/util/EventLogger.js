@@ -221,13 +221,13 @@ export class EventLogger {
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case RepoActions.RemoteReposFetched:
-			if (action.data.RemoteRepos) {
+			if (action.data.Repos) {
 				let orgs = {};
-				for (let repo of action.data.RemoteRepos) {
-					if (repo.OwnerIsOrg) orgs[repo.Owner] = true;
+				for (let repo of action.data.Repos) {
+					orgs[repo.Owner] = true;
 				}
 				this.setUserProperty("orgs", Object.keys(orgs));
-				this.setUserProperty("num_github_repos", action.data.RemoteRepos.length);
+				this.setUserProperty("num_github_repos", action.data.Repos.length);
 				this.setIntercomProperty("companies", Object.keys(orgs).map(org => ({id: `github_${org}`, name: org})));
 				if (orgs["sourcegraph"]) {
 					this.setUserProperty("is_sg_employee", "true");

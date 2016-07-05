@@ -27,7 +27,7 @@ func TestReposService_Get(t *testing.T) {
 		Mirror:  true,
 	}
 
-	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.RemoteRepo{})
+	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{})
 
 	calledGet := mock.stores.Repos.MockGet_Return(t, wantRepo)
 	calledUpdate := mock.stores.Repos.MockUpdate(t, 1)
@@ -59,7 +59,7 @@ func TestReposService_Get_UpdateMeta(t *testing.T) {
 		Mirror:  true,
 	}
 
-	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.RemoteRepo{
+	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{
 		Description: "This is a repository",
 	})
 
@@ -96,7 +96,7 @@ func TestReposService_Get_UnauthedUpdateMeta(t *testing.T) {
 		Mirror:  true,
 	}
 
-	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.RemoteRepo{
+	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{
 		Description: "This is a repository",
 	})
 
@@ -140,7 +140,7 @@ func TestReposService_Get_NonGitHub(t *testing.T) {
 		Mirror:  true,
 	}
 
-	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.RemoteRepo{})
+	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{})
 
 	calledGet := mock.stores.Repos.MockGet_Return(t, wantRepo)
 	calledUpdate := mock.stores.Repos.MockUpdate(t, 1)
@@ -210,12 +210,12 @@ func TestRepos_Create_Origin(t *testing.T) {
 	}
 
 	calledGet := false
-	mock.githubRepos.GetByID_ = func(ctx context.Context, id int) (*sourcegraph.RemoteRepo, error) {
+	mock.githubRepos.GetByID_ = func(ctx context.Context, id int) (*sourcegraph.Repo, error) {
 		if want := 123; id != want {
 			t.Errorf("got id %d, want %d", id, want)
 		}
 		calledGet = true
-		return &sourcegraph.RemoteRepo{GitHubID: 123}, nil
+		return &sourcegraph.Repo{Origin: &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub}}, nil
 	}
 
 	calledCreate := false

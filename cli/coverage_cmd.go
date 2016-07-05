@@ -616,7 +616,7 @@ func ensureRepoExists(cl *sourcegraph.Client, ctx context.Context, repo string) 
 		// Automatically create a local mirror.
 		log15.Info("Creating a local mirror of remote repo", "cloneURL", remoteRepo.HTTPCloneURL)
 		_, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
-			Op: &sourcegraph.ReposCreateOp_FromGitHubID{FromGitHubID: remoteRepo.GitHubID},
+			Op: &sourcegraph.ReposCreateOp_Origin{Origin: remoteRepo.Origin},
 		})
 		if err != nil {
 			return err

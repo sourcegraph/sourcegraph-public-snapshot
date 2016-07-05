@@ -190,8 +190,18 @@ message RepoListOptions {
 	string Sort = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Direction = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
 	bool NoFork = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// Type of repositories to list. Possible values are currently
+	// ones supported by the GitHub API, including: all, owner,
+	// public, private, member. Default is "all".
 	string Type = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
+
 	string Owner = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// IncludeRemote is whether to fetch remote (e.g., GitHub)
+	// repositories that the currently authenticated user has access
+	// to.
+	bool IncludeRemote = 12 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 // RepoRevSpec specifies a repository at a specific commit.
@@ -272,16 +282,12 @@ service Repos {
 	// Example use case: The app calls Resolve to support navigating
 	// directly to "https://sourcegraph.com/github.com/my/repo" when
 	// that has not been created yet. It calls Resolve with
-	// "github.com/my/repo". It will transparently call Repos.Create
-	// if it gets a RemoteRepo back from Resolve.
+	// "github.com/my/repo". The app will transparently call
+	// Repos.Create if it gets a remote Repo back from Resolve.
 	rpc Resolve(RepoResolveOp) returns (RepoResolution);
 
 	// List repositories.
 	rpc List(RepoListOptions) returns (RepoList);
-
-	// List remote repositories (on GitHub) associated with the
-	// currently authenticated actor.
-	rpc ListRemote(ReposListRemoteOptions) returns (RemoteRepoList);
 
 	// Create creates a new repository.
 	rpc Create(ReposCreateOp) returns (Repo);
@@ -410,21 +416,7 @@ message RepoResolution {
 
 	// RemoteRepo holds metadata about the repo that exists on a
 	// remote service (such as GitHub).
-	RemoteRepo RemoteRepo = 2;
-}
-
-// ReposListRemoteOptions specifies options for Repos.ListRemote.
-message ReposListRemoteOptions {
-	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-	// Type of repositories to list.  Possible values are currently ones
-	// supported by the GitHub API, including: all, owner, public,
-	// private, member. Default is "all".
-	string Type = 2;
-}
-
-// RemoteRepoList is a list of remote repos.
-message RemoteRepoList {
-	repeated RemoteRepo RemoteRepos = 1;
+	Repo RemoteRepo = 2;
 }
 
 // SrclibDataVersion specifies a srclib store version.
@@ -597,60 +589,6 @@ message MirrorReposRefreshVCSOp {
 message VCSCredentials {
 	// Pass is the password provided to the VCS.
 	string Pass = 1;
-}
-
-// RemoteRepo is a repo canonically stored on an external host, and
-// possibly mirrored on the local instance.
-message RemoteRepo {
-	// GitHubID is the repo's GitHub repository ID.
-	int32 GitHubID = 1;
-
-	// Owner is the login or org name of the repo's owner ("foo" in
-	// github.com/foo/bar).
-	string Owner = 2;
-
-	// OwnerIsOrg is true if the repo's owner is an org (not a user).
-	bool OwnerIsOrg = 15;
-
-	// Name is the repo's name ("bar" in github.com/foo/bar).
-	string Name = 3;
-
-	// VCS is "git".
-	string VCS = 4;
-
-	// CloneURL is the repo's HTTP (preferably HTTPS) clone URL.
-	string HTTPCloneURL = 5;
-
-	// DefaultBranch is the default Git branch for the repo.
-	string DefaultBranch = 6;
-
-	// Description is the repo's description from GitHub.
-	string Description = 7;
-
-	// Language is the repo's primary programming language, as
-	// reported by GitHub.
-	string Language = 8;
-
-	// UpdatedAt is the date of the most recent update (push or
-	// metadata edit) to the repo on GitHub.
-	pbtypes.Timestamp UpdatedAt = 9;
-
-	// PushedAt is the date of the most recent git push to the repo.
-	pbtypes.Timestamp PushedAt = 14;
-
-	// Private is true for private repos.
-	bool Private = 10;
-
-	// Fork is true for repos that were forked from another repo using
-	// GitHub's "fork" operation.
-	bool Fork = 11;
-
-	// Mirror is true for mirror repos (e.g., Apache Foundation
-	// open-source repo mirrors on GitHub.com).
-	bool Mirror = 12;
-
-	// Stars is the number of stargazers of the GitHub repo.
-	int32 Stars = 13;
 }
 
 // MirrorRepos handles operations related to maintaining mirrors on

@@ -99,10 +99,10 @@ func TestRepoResolve_Remote(t *testing.T) {
 	c, mock := newTest()
 
 	want := &repoResolution{
-		Data: sourcegraph.RepoResolution{RemoteRepo: &sourcegraph.RemoteRepo{Name: "r"}},
+		Data: sourcegraph.RepoResolution{RemoteRepo: &sourcegraph.Repo{Name: "r"}},
 	}
 
-	calledResolve := mock.Repos.MockResolve_Remote(t, "r", &sourcegraph.RemoteRepo{Name: "r"})
+	calledResolve := mock.Repos.MockResolve_Remote(t, "r", &sourcegraph.Repo{Name: "r"})
 
 	var res *repoResolution
 	if err := c.GetJSON("/repos/r/-/resolve", &res); err != nil {

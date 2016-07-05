@@ -55,7 +55,6 @@ type ReposClient struct {
 	Get_                         func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
 	Resolve_                     func(ctx context.Context, in *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
 	List_                        func(ctx context.Context, in *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
-	ListRemote_                  func(ctx context.Context, in *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error)
 	Create_                      func(ctx context.Context, in *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
 	Update_                      func(ctx context.Context, in *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
 	Delete_                      func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
@@ -84,10 +83,6 @@ func (s *ReposClient) Resolve(ctx context.Context, in *sourcegraph.RepoResolveOp
 
 func (s *ReposClient) List(ctx context.Context, in *sourcegraph.RepoListOptions, opts ...grpc.CallOption) (*sourcegraph.RepoList, error) {
 	return s.List_(ctx, in)
-}
-
-func (s *ReposClient) ListRemote(ctx context.Context, in *sourcegraph.ReposListRemoteOptions, opts ...grpc.CallOption) (*sourcegraph.RemoteRepoList, error) {
-	return s.ListRemote_(ctx, in)
 }
 
 func (s *ReposClient) Create(ctx context.Context, in *sourcegraph.ReposCreateOp, opts ...grpc.CallOption) (*sourcegraph.Repo, error) {
@@ -160,7 +155,6 @@ type ReposServer struct {
 	Get_                         func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
 	Resolve_                     func(v0 context.Context, v1 *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
 	List_                        func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
-	ListRemote_                  func(v0 context.Context, v1 *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error)
 	Create_                      func(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
 	Update_                      func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
 	Delete_                      func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
@@ -189,10 +183,6 @@ func (s *ReposServer) Resolve(v0 context.Context, v1 *sourcegraph.RepoResolveOp)
 
 func (s *ReposServer) List(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
 	return s.List_(v0, v1)
-}
-
-func (s *ReposServer) ListRemote(v0 context.Context, v1 *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error) {
-	return s.ListRemote_(v0, v1)
 }
 
 func (s *ReposServer) Create(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {

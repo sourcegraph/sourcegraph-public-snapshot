@@ -169,7 +169,7 @@ func timestampEqual(a, b *pbtypes.Timestamp) bool {
 // repoSetFromRemote updates repo with fields from ghrepo that are
 // different. If any fields are changed a non-nil store.RepoUpdate is returned
 // representing the update.
-func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.RemoteRepo) *store.RepoUpdate {
+func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *store.RepoUpdate {
 	updateOp := &store.RepoUpdate{
 		ReposUpdateOp: &sourcegraph.ReposUpdateOp{
 			Repo: repo.ID,

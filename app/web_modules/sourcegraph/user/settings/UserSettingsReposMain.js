@@ -38,6 +38,6 @@ export default class UserSettingsReposMain extends Container {
 	stores() { return [RepoStore]; }
 
 	render() {
-		return <Repos repos={this.state.remoteRepos ? this.state.remoteRepos.RemoteRepos : null} location={this.props.location} />;
+		return <Repos repos={this.state.remoteRepos ? this.state.remoteRepos.Repos : null} location={this.props.location} />;
 	}
 }

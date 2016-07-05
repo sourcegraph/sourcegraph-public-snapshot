@@ -171,22 +171,12 @@ func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
 		repoType = "private"
 	}
 
-	var err error
-	var reposOnPage *sourcegraph.RemoteRepoList
-	var remoteRepos = &sourcegraph.RemoteRepoList{}
-	for page := 1; ; page++ {
-		reposOnPage, err = cl.Repos.ListRemote(ctx, &sourcegraph.ReposListRemoteOptions{
-			Type:        repoType,
-			ListOptions: sourcegraph.ListOptions{PerPage: 100, Page: int32(page)},
-		})
-		if err != nil {
-			break
-		}
-
-		if len(reposOnPage.RemoteRepos) == 0 {
-			break
-		}
-		remoteRepos.RemoteRepos = append(remoteRepos.RemoteRepos, reposOnPage.RemoteRepos...)
+	remoteRepos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
+		Type:          repoType,
+		IncludeRemote: true,
+	})
+	if err != nil {
+		return err
 	}
 
 	// true if the user has not yet linked GitHub
@@ -200,7 +190,7 @@ func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
 	var deps []string
 	if _, ok := q["IncludeDeps"]; ok {
 		uris := []string{}
-		for _, r := range remoteRepos.RemoteRepos {
+		for _, r := range remoteRepos.Repos {
 			// TODO better domain stripping
 			uri := strings.TrimPrefix(r.HTTPCloneURL, "https://")
 			uri = strings.TrimSuffix(uri, ".git")
@@ -216,11 +206,11 @@ func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return writeJSON(w, struct {
-		sourcegraph.RemoteRepoList
+		sourcegraph.RepoList
 		Dependencies []string
 	}{
-		RemoteRepoList: *remoteRepos,
-		Dependencies:   deps,
+		RepoList:     *remoteRepos,
+		Dependencies: deps,
 	})
 }
 

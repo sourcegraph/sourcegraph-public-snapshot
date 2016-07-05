@@ -201,7 +201,7 @@ func verifyAccessAndSetAllFields(ctx context.Context, repo *sourcegraph.Repo) (*
 		//
 		// NOTE: This can be removed when all repos in the DB have their
 		// origin fields set.
-		if repo.Origin == nil {
+		if repo.Origin == nil && repo.ID != 0 {
 			ghRepo, err := github.ReposFromContext(ctx).Get(ctx, repo.URI)
 			if err != nil {
 				// Highly unlikely to fail since the
@@ -210,8 +210,10 @@ func verifyAccessAndSetAllFields(ctx context.Context, repo *sourcegraph.Repo) (*
 				// possible rare edge cases.
 				return nil, grpc.Errorf(codes.Internal, "while auto-migrating repo to add origin fields: %s", err)
 			}
-			if _, err := appDBH(ctx).Exec(`UPDATE repo SET origin_repo_id=$1, origin_service=$2, origin_api_base_url=$3 WHERE id=$4;`, ghRepo.GitHubID, sourcegraph.Origin_GitHub, "https://api.github.com", repo.ID); err != nil {
-				return nil, err
+			if ghRepo.Origin != nil {
+				if _, err := appDBH(ctx).Exec(`UPDATE repo SET origin_repo_id=$1, origin_service=$2, origin_api_base_url=$3 WHERE id=$4;`, ghRepo.Origin.ID, ghRepo.Origin.Service, "https://api.github.com", repo.ID); err != nil {
+					return nil, err
+				}
 			}
 		}
 	} else {
@@ -266,21 +268,36 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		opt = &sourcegraph.RepoListOptions{}
 	}
 
-	sql, args, err := s.listSQL(opt)
+	// Combine results from GitHub (repos accessible to the current
+	// user) and the DB (extra metadata, such as the repo's
+	// Sourcegraph ID).
+
+	// Fetch GitHub repos that the user can access. We include these
+	// repos in the result, and we pass these IDs to listFromDB
+	// because it otherwise has no way of knowing (at the PostgreSQL
+	// level) what repos the user can see.
+	var accessibleGitHubRepoIDs []string
+	ghRepos, err := s.listAllAccessibleGitHubRepos(ctx, opt)
 	if err != nil {
-		if err == errOptionsSpecifyEmptyResult {
-			err = nil
-		}
 		return nil, err
 	}
-	repos, err := s.query(ctx, sql, args...)
+	accessibleGitHubRepoIDs = make([]string, len(ghRepos))
+	for i, r := range ghRepos {
+		accessibleGitHubRepoIDs[i] = r.Origin.ID
+	}
+
+	// Fetch repos from the DB.
+	dbRepos, err := s.listFromDB(ctx, opt, accessibleGitHubRepoIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	// Do access checks in parallel since it may do remote calls
+	//
+	// No need to do access checks for ghRepos, since we JUST fetched
+	// them from GitHub.
 	par := parallel.NewRun(30)
-	for _, repo := range repos {
+	for _, repo := range dbRepos {
 		repo := repo
 		par.Do(func() error {
 			_, err := verifyAccessAndSetAllFields(ctx, repo)
@@ -291,7 +308,60 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		return nil, err
 	}
 
+	// Combine lists.
+	repos := dbRepos
+	byGitHubID := make(map[string]*sourcegraph.Repo, len(dbRepos))
+	for _, r := range dbRepos {
+		if o := r.Origin; o != nil && o.Service == sourcegraph.Origin_GitHub {
+			byGitHubID[o.ID] = r
+		}
+	}
+	for _, ghRepo := range ghRepos {
+		if _, present := byGitHubID[ghRepo.Origin.ID]; !present {
+			if opt.IncludeRemote {
+				repos = append(repos, ghRepo)
+			}
+		}
+	}
+
 	return repos, nil
+}
+
+func (s *repos) listAllAccessibleGitHubRepos(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
+	// Only users have "accessible" repos.
+	if !github.HasAuthedUser(ctx) {
+		return nil, nil
+	}
+
+	var allRepos []*sourcegraph.Repo
+	for page := 1; ; page++ {
+		repos, err := github.ReposFromContext(ctx).ListAccessible(ctx, &gogithub.RepositoryListOptions{
+			Type: opt.Type,
+			ListOptions: gogithub.ListOptions{
+				PerPage: 100,
+				Page:    page,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+		if len(repos) == 0 {
+			break
+		}
+		allRepos = append(allRepos, repos...)
+	}
+	return allRepos, nil
+}
+
+func (s *repos) listFromDB(ctx context.Context, opt *sourcegraph.RepoListOptions, allowGitHubRepoIDs []string) ([]*sourcegraph.Repo, error) {
+	sql, args, err := s.listSQL(opt, allowGitHubRepoIDs)
+	if err != nil {
+		if err == errOptionsSpecifyEmptyResult {
+			err = nil
+		}
+		return nil, err
+	}
+	return s.query(ctx, sql, args...)
 }
 
 type priorityRepo struct {
@@ -428,7 +498,7 @@ func (s *repos) Search(ctx context.Context, query string) ([]*sourcegraph.RepoSe
 
 var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty result set")
 
-func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}, error) {
+func (s *repos) listSQL(opt *sourcegraph.RepoListOptions, allowGitHubRepoIDs []string) (string, []interface{}, error) {
 	var selectSQL, fromSQL, whereSQL, orderBySQL string
 
 	var args []interface{}
@@ -487,8 +557,22 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 			return "", nil, errOptionsSpecifyEmptyResult
 		}
 
-		// Don't ever allow List to return any GitHub mirrors. Our DB doesn't cache the GitHub metadata, so we have no way of filtering appropriately on any columns (including even just returning public repos--what if they aren't public anymore?).
-		conds = append(conds, "uri NOT LIKE 'github.com/%'")
+		{
+			// Only allow List to return GitHub mirrors that have been
+			// explicitly determined to be accessible. Our DB doesn't
+			// cache the GitHub metadata, so we have no way of filtering
+			// appropriately on any columns (including even just returning
+			// public repos--what if they aren't public anymore?).
+			cond := "uri NOT LIKE 'github.com/%'"
+			if len(allowGitHubRepoIDs) > 0 {
+				bvs := make([]string, len(allowGitHubRepoIDs))
+				for i, v := range allowGitHubRepoIDs {
+					bvs[i] = arg(v)
+				}
+				cond = "(" + cond + " OR (origin_service=" + arg(sourcegraph.Origin_GitHub) + " AND origin_repo_id IN (" + strings.Join(bvs, ",") + ")))"
+			}
+			conds = append(conds, cond)
+		}
 
 		if conds != nil {
 			whereSQL = "(" + strings.Join(conds, ") AND (") + ")"

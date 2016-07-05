@@ -68,8 +68,8 @@ func testRepos_Get(t *testing.T, private bool) {
 	if !calledGet {
 		t.Error("!calledGet")
 	}
-	if want := int32(123); repo.GitHubID != want {
-		t.Errorf("got %d, want %d", repo.GitHubID, want)
+	if want := "123"; repo.Origin.ID != want {
+		t.Errorf("got %s, want %s", repo.Origin.ID, want)
 	}
 
 	// Test that repo is not cached and fetched from client on second request.
@@ -87,8 +87,8 @@ func testRepos_Get(t *testing.T, private bool) {
 	if !private && calledGet {
 		t.Error("calledGet, expected to hit cache")
 	}
-	if want := int32(123); repo.GitHubID != want {
-		t.Errorf("got %d, want %d", repo.GitHubID, want)
+	if want := "123"; repo.Origin.ID != want {
+		t.Errorf("got %s, want %s", repo.Origin.ID, want)
 	}
 }
 
@@ -296,8 +296,8 @@ func TestRepos_GetByID_existing(t *testing.T) {
 	if repo == nil {
 		t.Error("repo == nil")
 	}
-	if want := int32(123); repo.GitHubID != want {
-		t.Errorf("got %d, want %d", repo.GitHubID, want)
+	if want := "123"; repo.Origin.ID != want {
+		t.Errorf("got %s, want %s", repo.Origin.ID, want)
 	}
 }
 

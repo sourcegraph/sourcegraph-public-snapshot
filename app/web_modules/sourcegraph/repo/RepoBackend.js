@@ -11,7 +11,7 @@ import {sortBranches, sortTags} from "sourcegraph/repo/vcs";
 import EventLogger from "sourcegraph/util/EventLogger";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-const Origin_GitHub = 0; // Origin.ServiceType enum value for GitHub origin
+export const Origin_GitHub = 0; // Origin.ServiceType enum value for GitHub origin
 
 const RepoBackend = {
 	fetch: singleflightFetch(defaultFetch),
@@ -113,6 +113,10 @@ const RepoBackend = {
 				if (action.remoteRepo.GitHubID) {
 					body = {
 						Op: {Origin: {ID: action.remoteRepo.GitHubID.toString(), Service: Origin_GitHub}},
+					};
+				} else if (action.remoteRepo.Origin) {
+					body = {
+						Op: {Origin: action.remoteRepo.Origin},
 					};
 				} else {
 					// Non-GitHub repositories.
