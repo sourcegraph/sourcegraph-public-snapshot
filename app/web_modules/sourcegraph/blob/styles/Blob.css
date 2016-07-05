@@ -10,6 +10,7 @@
 @value contentWidth 690px;
 @value marginWidth 290px;
 @value firstCodeLineTopPadding 16px;
+@value code-normal-line-height from typography;
 
 .normal { composes: code-normal from typography; }
 .large { composes: code-large from typography; }
@@ -98,7 +99,7 @@
 }
 .lineNumber:before {
 	content: attr(data-line);
-	line-height: codeLineHeight;
+	line-height: code-normal-line-height;
 }
 .selectedLineNumber {
 	composes: lineNumber;
@@ -159,7 +160,7 @@
 .placeholderWhitespace {
 	float: right;
 	background-color: white;
-	height: codeLineHeight;
+	height: code-normal-line-height;
 }
 .lineContentPlaceholder {
 	composes: pa0 from base;

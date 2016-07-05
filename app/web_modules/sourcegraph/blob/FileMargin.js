@@ -2,8 +2,10 @@
 
 import React from "react";
 // $FlowHack
-import {codeLineHeight, firstCodeLineTopPadding} from "sourcegraph/blob/styles/Blob.css";
+import {firstCodeLineTopPadding} from "sourcegraph/blob/styles/Blob.css";
+import typographyStyles from "sourcegraph/components/styles/_typography.css";
 
+const codeLineHeight = typographyStyles["code-normal-line-height"];
 let computedCodeLineHeight = codeLineHeight;
 
 if (typeof document !== "undefined" && document.body.style.setProperty) {
