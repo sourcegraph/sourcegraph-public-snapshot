@@ -10,7 +10,7 @@ import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import Dispatcher from "sourcegraph/Dispatcher";
 import UserStore from "sourcegraph/user/UserStore";
 import * as UserActions from "sourcegraph/user/UserActions";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
+import * as RepoActions_typed from "sourcegraph/repo/RepoActions_typed";
 import type {Settings} from "sourcegraph/user";
 import {allLangs, langName} from "sourcegraph/Language";
 import type {LanguageID} from "sourcegraph/Language";
@@ -57,10 +57,10 @@ class SearchSettings extends Container {
 		if (prevState.settings !== nextState.settings && nextState.settings && nextState.settings.search && nextState.settings.search.scope) {
 			const scope = nextState.settings.search.scope;
 			if (scope.public) {
-				Dispatcher.Backends.dispatch(new RepoActions.WantRemoteRepos({private: false}));
+				Dispatcher.Backends.dispatch(new RepoActions_typed.WantRepos("Private=false"));
 			}
 			if (scope.private) {
-				Dispatcher.Backends.dispatch(new RepoActions.WantRemoteRepos({private: true}));
+				Dispatcher.Backends.dispatch(new RepoActions_typed.WantRepos("Private=true"));
 			}
 		}
 	}

@@ -7,7 +7,7 @@ import type {SiteConfig} from "sourcegraph/app/siteConfig";
 import type {AuthInfo, User} from "sourcegraph/user";
 import {getViewName, getRoutePattern, getRouteParams} from "sourcegraph/app/routePatterns";
 import type {Route} from "react-router";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
+import * as RepoActions_typed from "sourcegraph/repo/RepoActions_typed";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import UserStore from "sourcegraph/user/UserStore";
@@ -220,7 +220,7 @@ export class EventLogger {
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case RepoActions.RemoteReposFetched:
+		case RepoActions_typed.ReposFetched:
 			if (action.data.Repos) {
 				let orgs = {};
 				for (let repo of action.data.Repos) {

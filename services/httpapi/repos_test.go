@@ -221,25 +221,6 @@ func TestRepos_admin(t *testing.T) {
 	}
 }
 
-func TestRepos_nonadmin(t *testing.T) {
-	c, mock := newTest()
-
-	wantRepos := &sourcegraph.RepoList{}
-
-	calledList := mock.Repos.MockList(t)
-
-	var repos *sourcegraph.RepoList
-	if err := c.GetJSON("/repos", &repos); err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(repos, wantRepos) {
-		t.Errorf("got %+v, want %+v", repos, wantRepos)
-	}
-	if *calledList {
-		t.Error("calledList")
-	}
-}
-
 func TestRepoCreate(t *testing.T) {
 	c, mock := newTest()
 

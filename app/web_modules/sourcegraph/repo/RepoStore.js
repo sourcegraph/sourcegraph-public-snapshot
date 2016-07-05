@@ -4,35 +4,27 @@ import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
+import * as RepoActions_typed from "sourcegraph/repo/RepoActions_typed";
 import "sourcegraph/repo/RepoBackend";
 
 function keyFor(repo, rev) {
 	return `${repo}@${rev || ""}`;
 }
 
-function keyForOpt(opt) {
-	return `${Boolean(opt.deps)}:${Boolean(opt.public)}:${Boolean(opt.private)}`;
-}
-
 export class RepoStore extends Store {
-	reset(data?: {repos: any, remoteRepos: any, resolvedRevs: any, resolutions: any, branches: any, tags: any}) {
+	reset(data?: {repos: any, resolvedRevs: any, resolutions: any, branches: any, tags: any}) {
 		this.repos = deepFreeze({
 			content: data && data.repos ? data.repos.content : {},
 			get(repo) {
 				return this.content[keyFor(repo)] || null;
 			},
+			listContent: data && data.repos ? data.repos.listContent : {},
+			list(querystring: string) {
+				return this.listContent[querystring] || null;
+			},
 			cloning: data && data.repos ? data.repos.cloning : {},
 			isCloning(repo) {
 				return this.cloning[keyFor(repo)] || false;
-			},
-		});
-		this.remoteRepos = deepFreeze({
-			content: data && data.remoteRepos ? data.remoteRepos.content : {},
-			list() {
-				return this.content[""] || null;
-			},
-			getOpt(opt) {
-				return this.content[keyForOpt(opt)] || null;
 			},
 		});
 		this.resolvedRevs = deepFreeze({
@@ -80,7 +72,6 @@ export class RepoStore extends Store {
 	toJSON(): any {
 		return {
 			repos: this.repos,
-			remoteRepos: this.repos,
 			resolvedRevs: this.resolvedRevs,
 			resolutions: this.resolutions,
 			branches: this.branches,
@@ -90,14 +81,14 @@ export class RepoStore extends Store {
 	}
 
 	__onDispatch(action) {
-		if (action instanceof RepoActions.RemoteReposFetched) {
-			let newContent = {...this.remoteRepos.content};
-			if (action.opt) {
-				newContent[keyForOpt(action.opt)] = action.data;
-			} else {
-				newContent[""] = action.data;
-			}
-			this.remoteRepos = deepFreeze({...this.remoteRepos, content: newContent});
+		if (action instanceof RepoActions_typed.ReposFetched) {
+			this.repos = {
+				...this.repos,
+				listContent: {
+					...this.repos.listContent,
+					[action.querystring]: action.data,
+				},
+			};
 			this.__emitChange();
 			return;
 		} else if (action instanceof RepoActions.ResolvedRev) {
