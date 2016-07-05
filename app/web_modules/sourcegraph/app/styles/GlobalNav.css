@@ -7,6 +7,7 @@
 
 @value media-xs, media-sm, media-ns from vars;
 @value navbarHeight: 48px;
+@value icon-font-size: 0.8rem;
 
 @value c_cool-pale-gray-8 from colors;
 @value nav-border-color c_cool-pale-gray-8;
@@ -205,7 +206,7 @@
 }
 .user-menu-icon {
 	composes: cool-mid-gray from colors;
-	font-size: 0.8rem;
+	font-size: icon-font-size;
 	margin-left: 6px;
 }
 .current-user {

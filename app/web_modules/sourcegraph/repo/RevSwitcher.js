@@ -253,7 +253,7 @@ class RevSwitcher extends Component {
 				<span styleName="toggle"
 					title={title}
 					onClick={this._onToggleDropdown}>
-					<FaChevronDown />
+					<FaChevronDown styleName="toggle-icon" />
 				</span>
 				<div styleName={this.state.open ? "dropdown-menu open" : "dropdown-menu closed"}>
 					<Menu>
