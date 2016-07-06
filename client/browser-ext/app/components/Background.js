@@ -63,7 +63,7 @@ export default class Background extends React.Component {
 	}
 
 	_clickRef(ev) {
-		if (ev.target.dataset && typeof ev.target.dataset.sourcegraphRef !== "undefined") {
+		if (ev.target.dataset && typeof ev.target.dataset.sourcegraphRef !== "undefined" && !ev.metaKey && !ev.ctrlKey) {
 			let currLocation = utils.parseURLWithSourcegraphDef();
 			let urlProps = utils.parseURLWithSourcegraphDef({pathname: ev.target.pathname, hash: ev.target.hash});
 			this.props.actions.getDef(urlProps.repoURI, urlProps.rev, urlProps.defPath);
