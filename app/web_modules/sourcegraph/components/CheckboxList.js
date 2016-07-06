@@ -26,10 +26,7 @@ class CheckboxList extends React.Component {
 	}
 
 	_isDefaultValue(s: string): bool {
-		for (let d of this.props.defaultValues) {
-			if (s === d) return true;
-		}
-		return false;
+		return this.props.defaultValues && this.props.defaultValues.indexOf(s) !== -1;
 	}
 
 	render() {

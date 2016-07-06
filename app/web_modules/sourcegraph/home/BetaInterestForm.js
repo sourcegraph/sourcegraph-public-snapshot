@@ -17,7 +17,7 @@ class BetaInterestForm extends React.Component {
 
 	static propTypes = {
 		onSubmit: React.PropTypes.func,
-		formClass: React.PropTypes.string,
+		className: React.PropTypes.string,
 		language: React.PropTypes.string,
 	}
 
@@ -111,7 +111,7 @@ class BetaInterestForm extends React.Component {
 		if (this.state.resp && !this.state.resp.Error) {
 			return (<p>Thank you for registering. You will hear from us soon.</p>);
 		}
-		let [formClass, language] = [this.props.formClass, this.props.language];
+		let [className, language] = [this.props.className, this.props.language];
 
 		let defaultFullName, defaultEmail, defaultMessage;
 		let defaultEditors = [];
@@ -129,7 +129,7 @@ class BetaInterestForm extends React.Component {
 		if (language) defaultLanguages.push(langName(language));
 
 		return (
-			<form styleName="form" className={formClass} onSubmit={this._sendForm.bind(this)} onChange={this._onChange}>
+			<form styleName="form" className={className} onSubmit={this._sendForm.bind(this)} onChange={this._onChange}>
 					<div styleName="row">
 						<Input domRef={(c) => this._fullName = c} block={true} type="text" name="fullName" placeholder="Name" required={true} defaultValue={defaultFullName} />
 					</div>
