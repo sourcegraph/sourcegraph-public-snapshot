@@ -154,6 +154,7 @@
 	font-size: 1.3rem;
 }
 .search-panel {
+	border: solid #eee 1px;
 	position: absolute;
 	width: 100%;
 	max-width: search-form-max-width;
