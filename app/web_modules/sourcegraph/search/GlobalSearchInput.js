@@ -18,12 +18,16 @@ function positionCursorAtEndIfIconClicked(ev: MouseEvent) {
 	// See if we clicked on the magnifying glass.
 	const b = input.getBoundingClientRect();
 	const x = ev.clientX - b.left;
+	const y = ev.clientY - b.top;
+	// See if we clicked on the upper-padding of the element. Usually this moves
+	// the selector to the beginning of the input field which is undesierable.
+	const pt = parseInt(window.getComputedStyle(input, null).getPropertyValue("padding-top"), 10);
 
 	const indent = parseInt(styles["input-text-indent"], 10);
 	invariant(indent > 0, "couldn't find input text-indent");
 
 	// Focus at cursor if click is beyond the icon's bounds (with some pixels of buffer).
-	if (x > (indent + 1)) return;
+	if (x > (indent + 1) && y >= pt) return;
 
 	ev.preventDefault();
 	input.setSelectionRange(input.value.length, input.value.length);
