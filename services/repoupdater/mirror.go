@@ -58,9 +58,6 @@ func (r *mirrorRepoUpdater) mirrorRepos(ctx context.Context) error {
 		// the auth token to use for updating private mirrors.
 		// TODO: make it possible to background update private mirror repos.
 		Type: "public",
-		ListOptions: sourcegraph.ListOptions{
-			PerPage: 100000,
-		},
 	})
 	if err != nil {
 		return err

@@ -7,19 +7,14 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
-	"strings"
 	"time"
 
 	"golang.org/x/net/context"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 
 	"github.com/gorilla/mux"
 
@@ -117,23 +112,11 @@ func serveRepos(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	// The only locally hosted repos are sourcegraph repos. We want
-	// to prevent these repos showing up on a users homepage, unless they
-	// are Sourcegraph staff. Only Sourcegraph staff have write
-	// access. This means that only we will see these repos on our
-	// dashboard, which is the purpose of this if-statement. When we have
-	// a fuller security model or user-selectable repo lists, we can
-	// remove this.
-	if !authpkg.ActorFromContext(ctx).HasWriteAccess() {
-		return writeJSON(w, &sourcegraph.RepoList{})
-	}
-
 	repos, err := cl.Repos.List(ctx, &opt)
 	if err != nil {
 		return err
 	}
 
-	writePaginationHeader(w, r.URL, opt.ListOptions, 0 /* TODO */)
 	if clientCached, err := writeCacheHeaders(w, r, time.Time{}, defaultCacheMaxAge); clientCached || err != nil {
 		return err
 	}
@@ -157,72 +140,6 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	return writeJSON(w, &repo)
-}
-
-func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
-
-	q := r.URL.Query()
-	var repoType string
-	var privateOnly bool
-	if p, ok := q["Private"]; ok && len(p) > 0 {
-		privateOnly, _ = strconv.ParseBool(p[0])
-	}
-	if privateOnly {
-		repoType = "private"
-	}
-
-	var err error
-	var reposOnPage *sourcegraph.RemoteRepoList
-	var remoteRepos = &sourcegraph.RemoteRepoList{}
-	for page := 1; ; page++ {
-		reposOnPage, err = cl.Repos.ListRemote(ctx, &sourcegraph.ReposListRemoteOptions{
-			Type:        repoType,
-			ListOptions: sourcegraph.ListOptions{PerPage: 100, Page: int32(page)},
-		})
-		if err != nil {
-			break
-		}
-
-		if len(reposOnPage.RemoteRepos) == 0 {
-			break
-		}
-		remoteRepos.RemoteRepos = append(remoteRepos.RemoteRepos, reposOnPage.RemoteRepos...)
-	}
-
-	// true if the user has not yet linked GitHub
-	isAuthError := func(err error) bool {
-		return grpc.Code(err) == codes.Unauthenticated || grpc.Code(err) == codes.PermissionDenied
-	}
-	if err != nil && !isAuthError(err) {
-		return err
-	}
-
-	var deps []string
-	if _, ok := q["IncludeDeps"]; ok {
-		uris := []string{}
-		for _, r := range remoteRepos.RemoteRepos {
-			// TODO better domain stripping
-			uri := strings.TrimPrefix(r.HTTPCloneURL, "https://")
-			uri = strings.TrimSuffix(uri, ".git")
-			uris = append(uris, uri)
-		}
-		depList, err := cl.Repos.ListDeps(ctx, &sourcegraph.URIList{
-			URIs: uris,
-		})
-		if err != nil {
-			return err
-		}
-		deps = depList.URIs
-	}
-
-	return writeJSON(w, struct {
-		sourcegraph.RemoteRepoList
-		Dependencies []string
-	}{
-		RemoteRepoList: *remoteRepos,
-		Dependencies:   deps,
-	})
 }
 
 // getRepoLastBuildTime returns the time of the newest build for the

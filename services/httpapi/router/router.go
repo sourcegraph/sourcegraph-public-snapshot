@@ -53,7 +53,6 @@ const (
 	RepoTreeList             = "repo.tree-list"
 	RepoTreeSearch           = "repo-tree.search"
 	Repos                    = "repos"
-	RemoteRepos              = "repos.remote"
 	SourcegraphDesktop       = "sourcegraph-desktop"
 	SrclibImport             = "srclib.import"
 	SrclibDataVer            = "srclib.data-version"
@@ -92,7 +91,6 @@ func New(base *mux.Router) *mux.Router {
 
 	base.Path("/repos").Methods("GET").Name(Repos)
 	base.Path("/repos").Methods("POST").Name(RepoCreate)
-	base.Path("/remote-repos").Methods("GET").Name(RemoteRepos)
 
 	base.Path("/global-search").Methods("GET").Name(GlobalSearch)
 

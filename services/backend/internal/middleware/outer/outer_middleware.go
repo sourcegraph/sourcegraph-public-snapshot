@@ -1703,36 +1703,6 @@ func (s wrappedRepos) List(ctx context.Context, v1 *sourcegraph.RepoListOptions)
 	return rv, nil
 }
 
-func (s wrappedRepos) ListRemote(ctx context.Context, v1 *sourcegraph.ReposListRemoteOptions) (returnedResult *sourcegraph.RemoteRepoList, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Repos.ListRemote: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.ReposOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
-	}
-
-	rv, err := innerSvc.ListRemote(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
 func (s wrappedRepos) Create(ctx context.Context, v1 *sourcegraph.ReposCreateOp) (returnedResult *sourcegraph.Repo, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -2086,36 +2056,6 @@ func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, v1 *sourc
 	}
 
 	rv, err := innerSvc.GetSrclibDataVersionForPath(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedRepos) ConfigureApp(ctx context.Context, v1 *sourcegraph.RepoConfigureAppOp) (returnedResult *pbtypes.Void, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Repos.ConfigureApp: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.ReposOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
-	}
-
-	rv, err := innerSvc.ConfigureApp(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

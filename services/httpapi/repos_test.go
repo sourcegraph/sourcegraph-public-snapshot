@@ -99,10 +99,10 @@ func TestRepoResolve_Remote(t *testing.T) {
 	c, mock := newTest()
 
 	want := &repoResolution{
-		Data: sourcegraph.RepoResolution{RemoteRepo: &sourcegraph.RemoteRepo{Name: "r"}},
+		Data: sourcegraph.RepoResolution{RemoteRepo: &sourcegraph.Repo{Name: "r"}},
 	}
 
-	calledResolve := mock.Repos.MockResolve_Remote(t, "r", &sourcegraph.RemoteRepo{Name: "r"})
+	calledResolve := mock.Repos.MockResolve_Remote(t, "r", &sourcegraph.Repo{Name: "r"})
 
 	var res *repoResolution
 	if err := c.GetJSON("/repos/r/-/resolve", &res); err != nil {
@@ -218,25 +218,6 @@ func TestRepos_admin(t *testing.T) {
 	}
 	if !*calledList {
 		t.Error("!calledList")
-	}
-}
-
-func TestRepos_nonadmin(t *testing.T) {
-	c, mock := newTest()
-
-	wantRepos := &sourcegraph.RepoList{}
-
-	calledList := mock.Repos.MockList(t)
-
-	var repos *sourcegraph.RepoList
-	if err := c.GetJSON("/repos", &repos); err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(repos, wantRepos) {
-		t.Errorf("got %+v, want %+v", repos, wantRepos)
-	}
-	if *calledList {
-		t.Error("calledList")
 	}
 }
 

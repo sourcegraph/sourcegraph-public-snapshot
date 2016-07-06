@@ -241,26 +241,17 @@ type repoListCmd struct {
 }
 
 func (c *repoListCmd) Execute(args []string) error {
-	cl := cliClient
-
-	for page := 1; ; page++ {
-		repos, err := cl.Repos.List(cliContext, &sourcegraph.RepoListOptions{
-			Owner:       c.Owner,
-			Query:       c.Query,
-			Sort:        c.Sort,
-			Direction:   c.Direction,
-			ListOptions: sourcegraph.ListOptions{Page: int32(page)},
-		})
-
-		if err != nil {
-			return err
-		}
-		if len(repos.Repos) == 0 {
-			break
-		}
-		for _, repo := range repos.Repos {
-			fmt.Println(repo.URI)
-		}
+	repos, err := cliClient.Repos.List(cliContext, &sourcegraph.RepoListOptions{
+		Owner:     c.Owner,
+		Query:     c.Query,
+		Sort:      c.Sort,
+		Direction: c.Direction,
+	})
+	if err != nil {
+		return err
+	}
+	for _, repo := range repos.Repos {
+		fmt.Println(repo.URI)
 	}
 	return nil
 }

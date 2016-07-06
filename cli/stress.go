@@ -231,9 +231,7 @@ func humanizeByteDelta(pre, post uint64, iters int) string {
 func (c *stressCmd) fetchRepos(ctx context.Context) error {
 	cl := cliClient
 	if c.Repo == "" {
-		allRepos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
-			ListOptions: sourcegraph.ListOptions{PerPage: 20},
-		})
+		allRepos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{})
 		if err != nil {
 			return err
 		}

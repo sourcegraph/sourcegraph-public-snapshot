@@ -75,7 +75,7 @@ func (s *ReposClient) MockResolve_Local(t *testing.T, wantPath string, repoID in
 	return
 }
 
-func (s *ReposClient) MockResolve_Remote(t *testing.T, wantPath string, resolved *sourcegraph.RemoteRepo) (called *bool) {
+func (s *ReposClient) MockResolve_Remote(t *testing.T, wantPath string, resolved *sourcegraph.Repo) (called *bool) {
 	called = new(bool)
 	s.Resolve_ = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
 		*called = true

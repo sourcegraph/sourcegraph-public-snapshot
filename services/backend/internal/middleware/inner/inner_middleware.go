@@ -786,19 +786,6 @@ func (s wrappedRepos) List(ctx context.Context, param *sourcegraph.RepoListOptio
 	return
 }
 
-func (s wrappedRepos) ListRemote(ctx context.Context, param *sourcegraph.ReposListRemoteOptions) (res *sourcegraph.RemoteRepoList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Repos", "ListRemote", param)
-	defer func() {
-		trace.After(ctx, "Repos", "ListRemote", param, err, time.Since(start))
-	}()
-	res, err = backend.Services.Repos.ListRemote(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.ListRemote returned nil, nil")
-	}
-	return
-}
-
 func (s wrappedRepos) Create(ctx context.Context, param *sourcegraph.ReposCreateOp) (res *sourcegraph.Repo, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "Create", param)
@@ -951,19 +938,6 @@ func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, param *so
 	res, err = backend.Services.Repos.GetSrclibDataVersionForPath(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.GetSrclibDataVersionForPath returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedRepos) ConfigureApp(ctx context.Context, param *sourcegraph.RepoConfigureAppOp) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Repos", "ConfigureApp", param)
-	defer func() {
-		trace.After(ctx, "Repos", "ConfigureApp", param, err, time.Since(start))
-	}()
-	res, err = backend.Services.Repos.ConfigureApp(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.ConfigureApp returned nil, nil")
 	}
 	return
 }

@@ -7,7 +7,7 @@ import type {SiteConfig} from "sourcegraph/app/siteConfig";
 import type {AuthInfo, User} from "sourcegraph/user";
 import {getViewName, getRoutePattern, getRouteParams} from "sourcegraph/app/routePatterns";
 import type {Route} from "react-router";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
+import * as RepoActions_typed from "sourcegraph/repo/RepoActions_typed";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import UserStore from "sourcegraph/user/UserStore";
@@ -220,14 +220,14 @@ export class EventLogger {
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case RepoActions.RemoteReposFetched:
-			if (action.data.RemoteRepos) {
+		case RepoActions_typed.ReposFetched:
+			if (action.data.Repos) {
 				let orgs = {};
-				for (let repo of action.data.RemoteRepos) {
-					if (repo.OwnerIsOrg) orgs[repo.Owner] = true;
+				for (let repo of action.data.Repos) {
+					orgs[repo.Owner] = true;
 				}
 				this.setUserProperty("orgs", Object.keys(orgs));
-				this.setUserProperty("num_github_repos", action.data.RemoteRepos.length);
+				this.setUserProperty("num_github_repos", action.data.Repos.length);
 				this.setIntercomProperty("companies", Object.keys(orgs).map(org => ({id: `github_${org}`, name: org})));
 				if (orgs["sourcegraph"]) {
 					this.setUserProperty("is_sg_employee", "true");

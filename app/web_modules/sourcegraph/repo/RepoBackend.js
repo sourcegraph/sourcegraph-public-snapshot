@@ -1,6 +1,7 @@
 // @flow weak
 
 import * as RepoActions from "sourcegraph/repo/RepoActions";
+import * as RepoActions_typed from "sourcegraph/repo/RepoActions_typed";
 import RepoStore from "sourcegraph/repo/RepoStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
@@ -11,27 +12,20 @@ import {sortBranches, sortTags} from "sourcegraph/repo/vcs";
 import EventLogger from "sourcegraph/util/EventLogger";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-const Origin_GitHub = 0; // Origin.ServiceType enum value for GitHub origin
+export const Origin_GitHub = 0; // Origin.ServiceType enum value for GitHub origin
 
 const RepoBackend = {
 	fetch: singleflightFetch(defaultFetch),
 
 	__onDispatch(action) {
-		if (action instanceof RepoActions.WantRemoteRepos) {
-			let repos;
-			let queryString = "";
-			if (action.opt) {
-				repos = RepoStore.remoteRepos.getOpt(action.opt);
-				queryString = `?IncludeDeps=${Boolean(action.opt.deps)}&Private=${Boolean(action.opt.private)}`;
-			} else {
-				repos = RepoStore.remoteRepos.list();
-			}
+		if (action instanceof RepoActions_typed.WantRepos) {
+			const repos = RepoStore.repos.list(action.querystring);
 			if (repos === null) {
-				RepoBackend.fetch(`/.api/remote-repos${queryString}`)
+				RepoBackend.fetch(`/.api/repos?${action.querystring}`)
 					.then(checkStatus)
 					.then((resp) => resp.json())
 					.catch((err) => ({Error: err}))
-					.then((data) => Dispatcher.Stores.dispatch(new RepoActions.RemoteReposFetched(action.opt, data)));
+					.then((data) => Dispatcher.Stores.dispatch(new RepoActions_typed.ReposFetched(action.querystring, data)));
 			}
 			return;
 		} else if (action instanceof RepoActions.WantCommit) {
@@ -113,6 +107,10 @@ const RepoBackend = {
 				if (action.remoteRepo.GitHubID) {
 					body = {
 						Op: {Origin: {ID: action.remoteRepo.GitHubID.toString(), Service: Origin_GitHub}},
+					};
+				} else if (action.remoteRepo.Origin) {
+					body = {
+						Op: {Origin: action.remoteRepo.Origin},
 					};
 				} else {
 					// Non-GitHub repositories.

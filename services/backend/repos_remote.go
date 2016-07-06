@@ -3,7 +3,6 @@ package backend
 import (
 	"strings"
 
-	gogithub "github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -46,25 +45,11 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*so
 		switch {
 		case strings.HasPrefix(op.Path, "gopkg.in/"):
 			return &sourcegraph.RepoResolution{
-				RemoteRepo: &sourcegraph.RemoteRepo{HTTPCloneURL: "https://" + op.Path},
+				RemoteRepo: &sourcegraph.Repo{HTTPCloneURL: "https://" + op.Path},
 			}, nil
 		}
 	}
 
 	// Not found anywhere.
 	return nil, grpc.Errorf(codes.NotFound, "repo %q not found locally or remotely", op.Path)
-}
-
-func (s *repos) ListRemote(ctx context.Context, opt *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error) {
-	repos, err := github.ReposFromContext(ctx).ListAccessible(ctx, &gogithub.RepositoryListOptions{
-		Type: opt.Type,
-		ListOptions: gogithub.ListOptions{
-			PerPage: int(opt.ListOptions.PerPage),
-			Page:    int(opt.ListOptions.Page),
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &sourcegraph.RemoteRepoList{RemoteRepos: repos}, nil
 }
