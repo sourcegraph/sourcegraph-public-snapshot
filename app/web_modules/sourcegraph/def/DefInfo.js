@@ -19,8 +19,6 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import {urlToDef} from "sourcegraph/def/routes";
 import {qualifiedNameAndType, defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
-import stripDomain from "sourcegraph/util/stripDomain";
-import breadcrumb from "sourcegraph/util/breadcrumb";
 import {trimRepo} from "sourcegraph/repo";
 import {urlToRepo} from "sourcegraph/repo/routes";
 import {LanguageIcon} from "sourcegraph/components/Icons";
@@ -136,7 +134,6 @@ class DefInfo extends Container {
 		state.defObj = props.defObj || null;
 		state.defCommitID = props.defObj ? props.defObj.CommitID : null;
 		state.authors = state.defObj ? DefStore.authors.get(state.repo, state.defObj.CommitID, state.def) : null;
-		state.refsSorting = props.location.query.refs || "top";
 
 		if (state.defObj && state.defDescrHidden === null) {
 			state.defDescrHidden = this.shouldHideDescr(state.defObj, DESCRIPTION_CHAR_CUTOFF);
@@ -184,14 +181,6 @@ class DefInfo extends Container {
 		}
 
 		localStorage.setItem("defInfoCurrentLang", targetLang);
-	}
-
-	renderDefBreadcrumb(def) {
-		return breadcrumb(
-			stripDomain(def.Repo.concat("/", def.File)),
-			(j) => "/",
-			(_, component, j, isLast) => component
-		);
 	}
 
 	render() {
@@ -294,7 +283,6 @@ class DefInfo extends Container {
 									defObj={this.props.defObj} />
 							</div>
 							<div>
-								{/* TODO(sqs): to be implemented */}
 								<RepoRefsContainer
 									repo={this.props.repo}
 									rev={this.props.rev}
