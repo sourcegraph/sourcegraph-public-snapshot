@@ -14,6 +14,19 @@ export type DefKey = {
 	Path: string; // def path, not file path
 };
 
+export type AuthorshipInfo = {
+	LastCommitDate: string;
+	LastCommitID: string;
+};
+export type DefAuthorship = AuthorshipInfo & {
+	Bytes: number;
+	BytesProportion: number;
+};
+export type DefAuthor = DefAuthorship & {
+	Email: string;
+	AvatarURL: string;
+};
+
 export type Ref = Object;
 
 // Refs streaming pagnination assumes that the per page amount will be

@@ -73,7 +73,7 @@ class DefPopup extends Container {
 
 				{<header className={s.sectionTitle}>Authors</header>}
 				{!this.state.authors && <span styleName="loading">Loading...</span>}
-				{this.state.authors && <AuthorList authors={this.state.authors} />}
+				{this.state.authors && !this.state.authors.Error && this.state.authors.DefAuthors.length && <AuthorList authors={this.state.authors.DefAuthors} />}
 			</div>
 		);
 	}
