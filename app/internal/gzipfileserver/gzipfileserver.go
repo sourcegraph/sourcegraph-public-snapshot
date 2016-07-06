@@ -1,40 +1,38 @@
-// Package gzipfileserver provides an http.Handler that serves the given virtual file system with gzip compression,
-// without special handling of index.html.
+// Package gzipfileserver provides an http.Handler that serves the given
+// virtual file system with gzip compression, without special handling
+// of index.html, and without directory listing.
 package gzipfileserver
 
 import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
-	"html"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"path"
-	"sort"
 	"strings"
-	"time"
 )
 
 type gzipFileServer struct {
 	root http.FileSystem
 }
 
-// New returns a gzip file server, that serves the given virtual file system without special handling of index.html.
+// New returns a gzip file server, that serves the given virtual file system
+// with gzip compression, without special handling of index.html, and without
+// directory listing.
 func New(root http.FileSystem) http.Handler {
 	return &gzipFileServer{root: root}
 }
 
-func (f *gzipFileServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if !strings.HasPrefix(r.URL.Path, "/") {
-		r.URL.Path = "/" + r.URL.Path
+func (fs *gzipFileServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if !strings.HasPrefix(req.URL.Path, "/") {
+		req.URL.Path = "/" + req.URL.Path
 	}
-	f.serveFile(w, r, path.Clean(r.URL.Path))
-}
 
-// name is '/'-separated, not filepath.Separator.
-func (fs *gzipFileServer) serveFile(w http.ResponseWriter, req *http.Request, name string) {
+	// name is '/'-separated, not filepath.Separator.
+	name := path.Clean(req.URL.Path)
+
 	f, err := fs.root.Open(name)
 	if err != nil {
 		msg, code := toHTTPError(err)
@@ -43,7 +41,7 @@ func (fs *gzipFileServer) serveFile(w http.ResponseWriter, req *http.Request, na
 	}
 	defer f.Close()
 
-	d, err := f.Stat()
+	fi, err := f.Stat()
 	if err != nil {
 		msg, code := toHTTPError(err)
 		http.Error(w, msg, code)
@@ -53,7 +51,7 @@ func (fs *gzipFileServer) serveFile(w http.ResponseWriter, req *http.Request, na
 	// redirect to canonical path: / at end of directory url
 	// req.URL.Path always begins with /
 	url := req.URL.Path
-	if d.IsDir() {
+	if fi.IsDir() {
 		if url[len(url)-1] != '/' {
 			localRedirect(w, req, path.Base(url)+"/")
 			return
@@ -66,17 +64,15 @@ func (fs *gzipFileServer) serveFile(w http.ResponseWriter, req *http.Request, na
 	}
 
 	// A directory?
-	if d.IsDir() {
-		if checkLastModified(w, req, d.ModTime()) {
-			return
-		}
-		dirList(w, f, name)
+	if fi.IsDir() {
+		// gzipFileServer does not provide directory listings.
+		http.Error(w, "404 Page Not Found", http.StatusNotFound)
 		return
 	}
 
 	// If client doesn't accept gzip encoding, serve without compression.
 	if !isGzipEncodingAccepted(req) {
-		http.ServeContent(w, req, d.Name(), d.ModTime(), f)
+		http.ServeContent(w, req, fi.Name(), fi.ModTime(), f)
 		return
 	}
 
@@ -85,7 +81,7 @@ func (fs *gzipFileServer) serveFile(w http.ResponseWriter, req *http.Request, na
 		NotWorthGzipCompressing()
 	}
 	if _, ok := f.(notWorthGzipCompressing); ok {
-		http.ServeContent(w, req, d.Name(), d.ModTime(), f)
+		http.ServeContent(w, req, fi.Name(), fi.ModTime(), f)
 		return
 	}
 
@@ -95,19 +91,19 @@ func (fs *gzipFileServer) serveFile(w http.ResponseWriter, req *http.Request, na
 	}
 	if gzipFile, ok := f.(gzipByter); ok {
 		w.Header().Set("Content-Encoding", "gzip")
-		http.ServeContent(w, req, d.Name(), d.ModTime(), bytes.NewReader(gzipFile.GzipBytes()))
+		http.ServeContent(w, req, fi.Name(), fi.ModTime(), bytes.NewReader(gzipFile.GzipBytes()))
 		return
 	}
 
 	// Perform compression and serve gzip compressed bytes (if it's worth it).
 	if rs, err := gzipCompress(f); err == nil {
 		w.Header().Set("Content-Encoding", "gzip")
-		http.ServeContent(w, req, d.Name(), d.ModTime(), rs)
+		http.ServeContent(w, req, fi.Name(), fi.ModTime(), rs)
 		return
 	}
 
 	// Serve as is.
-	http.ServeContent(w, req, d.Name(), d.ModTime(), f)
+	http.ServeContent(w, req, fi.Name(), fi.ModTime(), f)
 }
 
 // gzipCompress compresses input from r and returns it as an io.ReadSeeker.
@@ -129,36 +125,6 @@ func gzipCompress(r io.Reader) (io.ReadSeeker, error) {
 	return bytes.NewReader(buf.Bytes()), nil
 }
 
-func dirList(w http.ResponseWriter, f http.File, name string) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprintf(w, "<pre>\n")
-	switch name {
-	case "/":
-		fmt.Fprintf(w, "<a href=\"%s\">%s</a>\n", "/", ".")
-	default:
-		fmt.Fprintf(w, "<a href=\"%s\">%s</a>\n", path.Clean(name+"/.."), "..")
-	}
-	for {
-		dirs, err := f.Readdir(100)
-		if err != nil || len(dirs) == 0 {
-			break
-		}
-		sort.Sort(byName(dirs))
-		for _, d := range dirs {
-			name := d.Name()
-			if d.IsDir() {
-				name += "/"
-			}
-			// name may contain '?' or '#', which must be escaped to remain
-			// part of the URL path, and not indicate the start of a query
-			// string or fragment.
-			url := url.URL{Path: name}
-			fmt.Fprintf(w, "<a href=\"%s\">%s</a>\n", url.String(), html.EscapeString(name))
-		}
-	}
-	fmt.Fprintf(w, "</pre>\n")
-}
-
 // localRedirect gives a Moved Permanently response.
 // It does not convert relative paths to absolute paths like Redirect does.
 func localRedirect(w http.ResponseWriter, r *http.Request, newPath string) {
@@ -169,39 +135,12 @@ func localRedirect(w http.ResponseWriter, r *http.Request, newPath string) {
 	w.WriteHeader(http.StatusMovedPermanently)
 }
 
-// modtime is the modification time of the resource to be served, or IsZero().
-// return value is whether this request is now complete.
-func checkLastModified(w http.ResponseWriter, r *http.Request, modtime time.Time) bool {
-	if modtime.IsZero() {
-		return false
-	}
-
-	// The Date-Modified header truncates sub-second precision, so
-	// use mtime < t+1s instead of mtime <= t to check for unmodified.
-	if t, err := time.Parse(http.TimeFormat, r.Header.Get("If-Modified-Since")); err == nil && modtime.Before(t.Add(1*time.Second)) {
-		h := w.Header()
-		delete(h, "Content-Type")
-		delete(h, "Content-Length")
-		w.WriteHeader(http.StatusNotModified)
-		return true
-	}
-	w.Header().Set("Last-Modified", modtime.UTC().Format(http.TimeFormat))
-	return false
-}
-
-// byName implements sort.Interface.
-type byName []os.FileInfo
-
-func (f byName) Len() int           { return len(f) }
-func (f byName) Less(i, j int) bool { return f[i].Name() < f[j].Name() }
-func (f byName) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
-
 // toHTTPError returns a non-specific HTTP error message and status code
 // for a given non-nil error value.
 func toHTTPError(err error) (msg string, httpStatus int) {
 	switch {
 	case os.IsNotExist(err):
-		return "404 page not found", http.StatusNotFound
+		return "404 Page Not Found", http.StatusNotFound
 	case os.IsPermission(err):
 		return "403 Forbidden", http.StatusForbidden
 	default:
