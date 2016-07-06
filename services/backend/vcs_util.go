@@ -23,10 +23,24 @@ func blameFileByteRange(r vcs.Repository, path string, opt *vcs.BlameOptions, st
 	var hunks2 []*vcs.Hunk // filtered
 	for _, h := range hunks {
 		if h.StartByte <= endByte && h.EndByte > startByte {
+			copied := false
 			if h.StartByte < startByte {
+				// Copy to avoid race condition that occurs by
+				// mutating h, which is cached in memory.
+				tmp := *h
+				h = &tmp
+				copied = true
+
 				h.StartByte = startByte
 			}
 			if h.EndByte > endByte {
+				// Take care (as noted above) to avoid mutating h,
+				// which is cached in memory.
+				if !copied {
+					tmp := *h
+					h = &tmp
+				}
+
 				h.EndByte = endByte
 			}
 			hunks2 = append(hunks2, h)
