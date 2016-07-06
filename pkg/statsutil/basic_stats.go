@@ -12,13 +12,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 
-var numReposGauge = prometheus.NewGauge(prometheus.GaugeOpts{
-	Namespace: "src",
-	Subsystem: "usage_stats",
-	Name:      "repos_total",
-	Help:      "Total repos on the local Sourcegraph instance.",
-})
-
 var buildLabels = []string{"build_type"}
 var numBuildsGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
@@ -26,13 +19,6 @@ var numBuildsGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Name:      "builds_total",
 	Help:      "Total builds on the local Sourcegraph instance.",
 }, buildLabels)
-
-var numUsersGauge = prometheus.NewGauge(prometheus.GaugeOpts{
-	Namespace: "src",
-	Subsystem: "usage_stats",
-	Name:      "users_total",
-	Help:      "Total users on the local Sourcegraph instance.",
-})
 
 var oldestEnqueuedBuildGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 	Namespace: "src",
@@ -42,9 +28,7 @@ var oldestEnqueuedBuildGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 })
 
 func init() {
-	prometheus.MustRegister(numReposGauge)
 	prometheus.MustRegister(numBuildsGauge)
-	prometheus.MustRegister(numUsersGauge)
 	prometheus.MustRegister(oldestEnqueuedBuildGauge)
 }
 
@@ -57,22 +41,11 @@ func ComputeUsageStats(ctx context.Context, interval time.Duration) {
 		return
 	}
 	for {
-		updateNumRepos(cl, ctx)
 		updateNumBuilds(cl, ctx)
-		updateNumUsers(cl, ctx)
 		updateOldestEnqueuedRepo(cl, ctx)
 
 		time.Sleep(interval)
 	}
-}
-
-func updateNumRepos(cl *sourcegraph.Client, ctx context.Context) {
-	reposList, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{})
-	if err != nil {
-		log15.Warn("ComputeUsageStats: could not compute number of repos", "error", err)
-		return
-	}
-	numReposGauge.Set(float64(len(reposList.Repos)))
 }
 
 func updateNumBuilds(cl *sourcegraph.Client, ctx context.Context) {
@@ -84,17 +57,6 @@ func updateNumBuilds(cl *sourcegraph.Client, ctx context.Context) {
 	for buildType, buildCount := range numBuilds {
 		numBuildsGauge.WithLabelValues(buildType).Set(float64(buildCount))
 	}
-}
-
-func updateNumUsers(cl *sourcegraph.Client, ctx context.Context) {
-	usersList, err := cl.Users.List(ctx, &sourcegraph.UsersListOptions{
-		ListOptions: sourcegraph.ListOptions{PerPage: 10000},
-	})
-	if err != nil {
-		log15.Warn("ComputeUsageStats: could not compute number of users", "error", err)
-		return
-	}
-	numUsersGauge.Set(float64(len(usersList.Users)))
 }
 
 func updateOldestEnqueuedRepo(cl *sourcegraph.Client, ctx context.Context) {
