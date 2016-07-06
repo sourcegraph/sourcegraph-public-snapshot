@@ -88,7 +88,7 @@ class FileDiff extends Component {
 
 	render() {
 		let diff = this.props.diff;
-		let hunkAnns = this._groupAnnotationsByHunk(diff.Hunks);
+		let hunkAnns = diff.Hunks ? this._groupAnnotationsByHunk(diff.Hunks) : null;
 		return (
 			<div styleName="container" id={this.props.id || ""}>
 				<header styleName="header">
@@ -107,7 +107,7 @@ class FileDiff extends Component {
 					</div>
 				</header>
 
-				{diff.Hunks.map((hunk, i) => (
+				{diff.Hunks && diff.Hunks.map((hunk, i) => (
 					<Hunk
 						key={i}
 						hunk={hunk}
