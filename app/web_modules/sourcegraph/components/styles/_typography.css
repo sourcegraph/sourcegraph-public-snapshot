@@ -47,10 +47,9 @@
 	line-height: 1.45;
 }
 
-@value code-normal-line-height 22px; /* used by JavaScript */
 .code-normal {
 	font-size: code-font-size-2;
-	line-height: code-normal-line-height;
+	line-height: 1.45;
 }
 
 .code-large {
