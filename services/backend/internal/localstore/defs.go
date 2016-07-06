@@ -329,12 +329,8 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 			wheres = append(wheres, `kind NOT IN (`+strings.Join(notKindList, ", ")+`)`)
 		}
 
-		if len(op.TokQuery) == 1 { // special-case single token queries for performance
-			wheres = append(wheres, `lower(name)=lower(`+arg(op.TokQuery[0])+`)`)
-		} else if bowQuery != "" {
-			wheres = append(wheres, "bow != ''")
-			wheres = append(wheres, `to_tsquery('english', `+arg(bowQuery)+`) @@ bow`)
-		}
+		wheres = append(wheres, "bow != ''")
+		wheres = append(wheres, `to_tsquery('english', `+arg(bowQuery)+`) @@ bow`)
 
 		whereSQL = fmt.Sprint(`WHERE (`+strings.Join(wheres, ") AND (")+`)`) + prefixSQL
 		fastWheres := append(wheres, "ref_ct > 10") // this corresponds to a partial index

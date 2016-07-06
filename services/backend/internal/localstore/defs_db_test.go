@@ -61,7 +61,9 @@ func TestDefs(t *testing.T) {
 			{
 				[]string{"xyz"},
 				sourcegraph.SearchOptions{Latest: true},
-				[]*sourcegraph.DefSearchResult{},
+				[]*sourcegraph.DefSearchResult{
+					{Def: sourcegraph.Def{Def: d_xyz_abc}},
+				},
 			},
 		},
 	}, {
@@ -72,6 +74,7 @@ func TestDefs(t *testing.T) {
 				sourcegraph.SearchOptions{Latest: true},
 				[]*sourcegraph.DefSearchResult{
 					{Def: sourcegraph.Def{Def: d_xyz_abc}},
+					{Def: sourcegraph.Def{Def: d_abc_xyz}},
 				},
 			},
 			{
