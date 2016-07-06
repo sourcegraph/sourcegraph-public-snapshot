@@ -978,6 +978,28 @@ message User {
 	// Admin is whether the user is a site admin for the site.
 	bool Admin = 12;
 
+	// Betas is a list of betas which the user is enrolled in. A user may be
+	// granted access to any arbitrary beta string, but "pending" and "accepted" are
+	// reserved. The three states are:
+	//
+	//  1. `len(Betas) == 0` (user is in no betas and has not requested beta access).
+	//  2. `len(Betas) == 1 && InBeta("pending")` (user has requested beta access).
+	//  4. `len(Betas) > 1 && InBeta("accepted")` (user granted access to one or more betas).
+	//
+	// The "pending" and "accepted" statuses are implicitly set as you would
+	// expect, thus their present in the list can generally be thought of as
+	// optional.
+	//
+	// To add a beta status, simply append it. The "pending" status will be
+	// removed and the "accepted" status added.
+	//
+	// To remove a beta status, simply remove it from the slice. If the user is
+	// in no more betas, the "accepted" status will be removed and "pending"
+	// added.
+	//
+	// Only admins may set a list of non-"pending" betas.
+	repeated string Betas = 14;
+
 	// Write is whether the user has write access for the site.
 	bool Write = 13;
 
@@ -1010,6 +1032,10 @@ message UsersListOptions {
 	// UIDs filters the resulting list to only contain users
 	// with one of these UIDs.
 	repeated int32 UIDs = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// AllBetas filters the resulting list to only contain users who are part of
+	// all the given betas. There is no equivilent OR operator yet.
+	repeated string AllBetas = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 message OrgsListOp {
@@ -1172,6 +1198,38 @@ message NewAccount {
 	int32 UID = 4;
 }
 
+// BetaRegistration represents the user information needed to register for the
+// beta program.
+message BetaRegistration {
+	// Email is the email to register for the beta program. If it is an empty
+	// string, the account's primary email address will be used.
+	//
+	// TODO(slimsag): this field is not currently supported. Do not use it.
+	string Email = 1;
+
+	// FirstName is the first name of the user.
+	string FirstName = 2;
+
+	// LastName is the last name of the user.
+	string LastName = 3;
+
+	// Languages is a list of programming languages the user is interested in.
+	repeated string Languages = 4;
+
+	// Editors is a list of editors the user is interested in.
+	repeated string Editors = 5;
+
+	// Message contains any additional comments the user may have.
+	string Message = 6;
+}
+
+// BetaResponse is a response to a user registering for beta access.
+message BetaResponse {
+	// EmailAddress is the email address that was registered and will be
+	// contacted once approved by an admin.
+	string EmailAddress = 1;
+}
+
 // UsersService communicates with the users-related endpoints in the Sourcegraph
 // API.
 service Users {
@@ -1186,6 +1244,10 @@ service Users {
 
 	// List users.
 	rpc List(UsersListOptions) returns (UserList);
+
+	// RegisterBeta registers the currently authenticated user for beta program
+	// access (to be granted at the discretion of an admin user in the future).
+	rpc RegisterBeta(BetaRegistration) returns (BetaResponse);
 }
 
 // Auth manages authentication and authorization (via OAuth2).

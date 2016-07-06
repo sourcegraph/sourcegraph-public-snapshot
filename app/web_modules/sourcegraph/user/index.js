@@ -7,7 +7,14 @@ import type {SearchSettings} from "sourcegraph/search";
 export type User = {
 	UID: number;
 	Login: string;
+	Betas?: string[];
 };
+
+// InBeta tells if the given user is a part of the given beta program.
+export function InBeta(u?: User, b: string): boolean {
+	if (!u || !u.Betas) return false;
+	return u.Betas.indexOf(b) !== -1;
+}
 
 export type AuthInfo = {
 	UID?: number;

@@ -28,3 +28,13 @@ func (u *User) Person() *Person {
 		AvatarURL:  u.AvatarURL,
 	}
 }
+
+// InBeta tells whether or not the given user is in the given beta.
+func (u *User) InBeta(beta string) bool {
+	for _, b := range u.Betas {
+		if b == beta {
+			return true
+		}
+	}
+	return false
+}

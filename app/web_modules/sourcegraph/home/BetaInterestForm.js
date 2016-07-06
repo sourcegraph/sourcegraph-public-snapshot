@@ -21,7 +21,7 @@ class BetaInterestForm extends React.Component {
 	}
 
 	static contextTypes = {
-		eventLogger: React.PropTypes.object.isRequired,
+		user: React.PropTypes.object,
 	};
 
 	constructor(props) {
@@ -50,7 +50,6 @@ class BetaInterestForm extends React.Component {
 
 	// TODO(slimsag): these should be 'element' type?
 	_fullName: any;
-	_email: any;
 	_editors: any;
 	_languages: any;
 	_message: any;
@@ -61,11 +60,22 @@ class BetaInterestForm extends React.Component {
 		}
 	}
 
+	_didRegister() {
+		return this.context.user && this.context.user.Betas;
+	}
+
+	_betasWithoutStatuses() {
+		let betas = [];
+		for (let beta of (this.context.user && this.context.user.Betas) || []) {
+			if (beta !== "pending" && beta !== "accepted") betas.push(beta);
+		}
+		return betas;
+	}
+
 	_onChange: OnChangeListener;
 	_onChange() {
 		window.localStorage["beta-interest-form"] = JSON.stringify({
 			fullName: this._fullName["value"],
-			email: this._email["value"],
 			editors: this._editors.selected(),
 			languages: this._languages.selected(),
 			message: this._message["value"],
@@ -92,10 +102,8 @@ class BetaInterestForm extends React.Component {
 			return;
 		}
 
-		if (this.props.onSubmit) this.props.onSubmit();
-
 		Dispatcher.Backends.dispatch(new UserActions.SubmitBetaSubscription(
-			this._email["value"].trim(),
+			"",
 			firstName || "",
 			lastName || "",
 			this._languages.selected(),
@@ -106,18 +114,24 @@ class BetaInterestForm extends React.Component {
 
 	render() {
 		if (this.state.resp && !this.state.resp.Error) {
-			return (<p>Thank you for registering. You will hear from us soon.</p>);
+			// Display a "Close" button if there is an onSubmit handler.
+			return (<span>
+				<p>Success! Return to this page any time to update your favorite editors / languages!</p>
+				<p>We'll contact you at <strong>{this.state.resp.EmailAddress}</strong> once a beta program has begun.</p>
+				{this.props.onSubmit && <Button block={true} type="submit" color="purple" onClick={this.props.onSubmit}>Close</Button>}
+			</span>);
 		}
 		let [className, language] = [this.props.className, this.props.language];
+		let betas = this._betasWithoutStatuses();
+		let didRegister = this._didRegister();
 
-		let defaultFullName, defaultEmail, defaultMessage;
+		let defaultFullName, defaultMessage;
 		let defaultEditors = [];
 		let defaultLanguages = [];
 		let ls = window.localStorage["beta-interest-form"];
 		if (ls) {
 			ls = JSON.parse(ls);
 			defaultFullName = ls.fullName;
-			defaultEmail = ls.email;
 			defaultEditors = ls.editors;
 			defaultLanguages = ls.languages;
 			defaultMessage = ls.message;
@@ -126,30 +140,35 @@ class BetaInterestForm extends React.Component {
 		if (language) defaultLanguages.push(langName(language));
 
 		return (
-			<form styleName="form" className={className} onSubmit={this._sendForm.bind(this)} onChange={this._onChange}>
-					<div styleName="row">
-						<Input domRef={(c) => this._fullName = c} block={true} type="text" name="fullName" placeholder="Name" required={true} defaultValue={defaultFullName} />
-					</div>
-					<div styleName="row">
-						<Input domRef={(c) => this._email = c} block={true} type="email" name="email" placeholder="Email address" required={true} defaultValue={defaultEmail} />
-					</div>
-					<div styleName="row">
-						<CheckboxList ref={(c) => this._editors = c} title="Preferred editors" name="editors" labels={editors} defaultValues={defaultEditors} />
-					</div>
-					<div styleName="row">
-						<CheckboxList ref={(c) => this._languages = c} title="Preferred languages" name="languages" labels={languages} defaultValues={defaultLanguages} />
-					</div>
-					<div styleName="row">
-						<textarea ref={(c) => this._message = c} styleName="textarea" name="message" placeholder="Other / comments" defaultValue={defaultMessage}></textarea>
-					</div>
-					<div styleName="row" className={base.pb4}>
-						<Button block={true} type="submit" color="purple">Participate in the beta</Button>
-					</div>
-					<div styleName="row" className={base.pb4}>
-						{this.state.formError && <strong>{this.state.formError}</strong>}
-						{this.state.resp && this.state.resp.Error && <div>{this.state.resp.Error.body}</div>}
-					</div>
-			</form>
+			<div>
+				{didRegister && betas.length === 0 && <span>
+					<p>You've already registered. We'll contact you once a beta program matching your interests has begun.</p>
+				</span>}
+				{betas.length === 1 && <p>You've been granted access to the <em>{betas[0]}</em> beta! Check your email for more information.</p>}
+				{betas.length > 1 && <p>You've been granted access to the following betas: <em>{betas.join(", ")}</em>. Check your email for more information.</p>}
+				{didRegister && <p>Feel free to update your favorite editors / languages using the form below.</p>}
+				<form styleName="form" className={className} onSubmit={this._sendForm.bind(this)} onChange={this._onChange}>
+						<div styleName="row">
+							<Input domRef={(c) => this._fullName = c} block={true} type="text" name="fullName" placeholder="Name" required={true} defaultValue={defaultFullName} />
+						</div>
+						<div styleName="row">
+							<CheckboxList ref={(c) => this._editors = c} title="Preferred editors" name="editors" labels={editors} defaultValues={defaultEditors} />
+						</div>
+						<div styleName="row">
+							<CheckboxList ref={(c) => this._languages = c} title="Preferred languages" name="languages" labels={languages} defaultValues={defaultLanguages} />
+						</div>
+						<div styleName="row">
+							<textarea ref={(c) => this._message = c} styleName="textarea" name="message" placeholder="Other / comments" defaultValue={defaultMessage}></textarea>
+						</div>
+						<div styleName="row" className={base.pb4}>
+							<Button block={true} type="submit" color="purple">{didRegister ? "Update my interests" : "Participate in the beta"}</Button>
+						</div>
+						<div styleName="row" className={base.pb4}>
+							{this.state.formError && <strong>{this.state.formError}</strong>}
+							{this.state.resp && this.state.resp.Error && <div>{this.state.resp.Error.body}</div>}
+						</div>
+				</form>
+			</div>
 		);
 	}
 }
