@@ -48,7 +48,7 @@ export default class Background extends React.Component {
 	}
 
 	componentWillUpdate(nextProps) {
-		this._refresh();
+		this._refresh(nextProps);
 	}
 
 	componentWillUnmount() {
@@ -103,14 +103,14 @@ export default class Background extends React.Component {
 		this._renderDefInfo(this.props, utils.parseURLWithSourcegraphDef());
 	}
 
-	_refresh() {
+	_refresh(props) {
 		if (utils.isSourcegraphURL()) return;
 
+		if (!props) props = this.props;
 		let urlProps = utils.parseURLWithSourcegraphDef();
 
-		// TODO: Branches that are not built on Sourcegraph will not get annotations, need to trigger
 		if (urlProps.repoURI) {
-			this.props.actions.refreshVCS(urlProps.repoURI);
+			props.actions.refreshVCS(urlProps.repoURI);
 		}
 		if (urlProps.path) {
 			// Strip hash (e.g. line location) from path.
@@ -119,12 +119,12 @@ export default class Background extends React.Component {
 		}
 
 		if (urlProps.repoURI && urlProps.defPath && !urlProps.isDelta) {
-			this.props.actions.getDef(urlProps.repoURI, urlProps.rev, urlProps.defPath);
+			props.actions.getDef(urlProps.repoURI, urlProps.rev, urlProps.defPath);
 		}
 
 		if (urlProps.repoURI && !createdReposCache[urlProps.repoURI]) {
 			createdReposCache[urlProps.repoURI] = true;
-			this.props.actions.ensureRepoExists(urlProps.repoURI);
+			props.actions.ensureRepoExists(urlProps.repoURI);
 		}
 
 		const directURLToDef = this._directURLToDef(urlProps);
@@ -134,12 +134,10 @@ export default class Background extends React.Component {
 			}
 		}
 
-		this._renderDefInfo(this.props, urlProps);
+		this._renderDefInfo(props, urlProps);
 
 		chrome.runtime.sendMessage(null, {type: "getIdentity"}, {}, (identity) => {
-			if (identity) {
-				EventLogger.updateAmplitudePropsForUser(identity);
-			}
+			if (identity) EventLogger.updateAmplitudePropsForUser(identity);
 		})
 	}
 
@@ -168,9 +166,7 @@ export default class Background extends React.Component {
 
 		// Hide when no def is present.
 		if (!def) {
-			if (e) {
-				e.remove();
-			}
+			if (e) e.remove();
 			return;
 		}
 
@@ -197,9 +193,8 @@ export default class Background extends React.Component {
 
 		// Anchor to def's start line.
 		let anchor = document.getElementById(`L${def.StartLine}`);
-		if (!anchor) {
-			return;
-		}
+		if (!anchor) return;
+
 		anchor = anchor.parentNode;
 		anchor.style.position = "relative";
 		anchor.appendChild(e);
