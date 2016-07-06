@@ -6,8 +6,8 @@ import {Heading, Panel, Button} from "sourcegraph/components";
 import {CloseIcon} from "sourcegraph/components/Icons";
 import Modal from "sourcegraph/components/Modal";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {TriangleRightIcon, TriangleDownIcon, CheckIcon} from "sourcegraph/components/Icons";
-import InterestForm from "./InterestForm";
+import {TriangleRightIcon, TriangleDownIcon} from "sourcegraph/components/Icons";
+import BetaInterestForm from "./BetaInterestForm";
 
 class ToolComponent extends React.Component {
 
@@ -48,35 +48,19 @@ class ToolComponent extends React.Component {
 		return this.state.formVisible;
 	}
 
-	_submitInterestForm() {
-		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ENGAGEMENT, AnalyticsConstants.ACTION_SUCCESS, "SubmitEmailSubscription", {page_name: this.props.supportedTool.hero.title});
-		window.localStorage["email_subscription_submitted"] = "true";
-		this.setState({
-			submitted: true,
-		});
-	}
-
 	_optionalFormView() {
 		if (!this.props.supportedTool.interestForm) {
 			return <div/>;
 		}
 
-		if (!this.state.submitted) {
-			return (<div>
-				<div styleName="dont-see-div">
-					<a styleName="dont-see-link" onClick={this._toggleView.bind(this)}>{this.state.formVisible ? <TriangleDownIcon /> : <TriangleRightIcon />}{this.props.supportedTool.interestForm.title}</a>
-				</div>
-				<div className={base.pb2} styleName={this.state.formVisible ? "visible" : "invisible"}>
-					<InterestForm onSubmit={this._submitInterestForm.bind(this)} />
-				</div>
-			</div>);
-		}
-
-		return (
-			<div className={base.mb3}>
-				<CheckIcon styleName="check-icon" /><span>{this.props.supportedTool.interestForm.submittedTitle}</span>
+		return (<div>
+			<div styleName="dont-see-div">
+				<a styleName="dont-see-link" onClick={this._toggleView.bind(this)}>{this.state.formVisible ? <TriangleDownIcon /> : <TriangleRightIcon />}{this.props.supportedTool.interestForm.title}</a>
 			</div>
-		);
+			<div styleName={`beta-container ${this.state.formVisible ? "visible" : "invisible"}`}>
+				<BetaInterestForm />
+			</div>
+		</div>);
 	}
 
 	render() {
