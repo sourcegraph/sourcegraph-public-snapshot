@@ -48,6 +48,7 @@ export default class Background extends React.Component {
 	}
 
 	componentWillUpdate(nextProps) {
+		// Call refresh with new props (since this.props are not updated until this method completes).
 		this._refresh(nextProps);
 	}
 
@@ -127,7 +128,7 @@ export default class Background extends React.Component {
 			props.actions.ensureRepoExists(urlProps.repoURI);
 		}
 
-		const directURLToDef = this._directURLToDef(urlProps);
+		const directURLToDef = this._directURLToDef(urlProps, props);
 		if (directURLToDef) {
 			if (!window.location.href.includes(directURLToDef.hash)) {
 				pjaxGoTo(`${directURLToDef.pathname}${directURLToDef.hash}`, true);
@@ -148,8 +149,10 @@ export default class Background extends React.Component {
 		}
 	}
 
-	_directURLToDef({repoURI, rev, defPath}) {
-		const defObj = this.props.def.content[keyFor(repoURI, rev, defPath)];
+	_directURLToDef({repoURI, rev, defPath}, props) {
+		if (!props) props = this.props;
+
+		const defObj = props.def.content[keyFor(repoURI, rev, defPath)];
 		if (defObj) {
 			const pathname = `/${repoURI.replace("github.com/", "")}/${defObj.File === "." ? "tree" : "blob"}/${rev}/${defObj.File}`;
 			const hash = `#sourcegraph&def=${defPath}&L${defObj.StartLine || 0}-${defObj.EndLine || 0}`;
