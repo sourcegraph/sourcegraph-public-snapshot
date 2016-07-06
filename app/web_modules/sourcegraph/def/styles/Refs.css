@@ -115,3 +115,9 @@
 	margin-top: 0;
 	margin-bottom: 0;
 }
+
+@media screen and (max-width: 48em) {
+	.full-width-sm {
+		padding: 0;
+	}
+}

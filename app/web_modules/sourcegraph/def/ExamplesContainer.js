@@ -57,7 +57,6 @@ class ExamplesContainer extends Container {
 		return (
 			<div>
 				<Heading level="7" className={base.mb3} styleName="cool-mid-gray">
-					{refLocs && refLocs.RepoRefs && `${refLocs.RepoRefs.length} ` || ""}
 					Usage Example{(refLocs && refLocs.RepoRefs && refLocs.RepoRefs.length > 1) ? "s" : ""}
 				</Heading>
 				<Panel

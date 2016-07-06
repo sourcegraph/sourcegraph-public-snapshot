@@ -59,8 +59,7 @@ class FileDiffs extends Container {
 						headRev={this.props.headRev}
 						highlightedDef={this.state.highlightedDef}
 						highlightedDefObj={this.state.highlightedDefObj}
-						annotations={this.state.annotations}
-						defs={this.state.defs} /></div>
+						annotations={this.state.annotations} /></div>
 				))}
 				{this.state.highlightedDefObj && !this.state.highlightedDefObj.Error && <DefTooltip currentRepo={this.state.baseRepo} def={this.state.highlightedDefObj} />}
 			</div>

@@ -24,8 +24,8 @@
 	composes: lineContent from Blob;
 }
 .new-line {
-	composes: bg-green-2 from colors;
+	background-color: #eaffea;
 }
 .old-line {
-	composes: bg-red-2 from colors;
+	background-color: #ffecec;
 }

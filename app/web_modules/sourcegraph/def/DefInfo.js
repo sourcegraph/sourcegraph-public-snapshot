@@ -31,7 +31,6 @@ const DESCRIPTION_CHAR_CUTOFF = 80;
 class DefInfo extends Container {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
-		features: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
@@ -142,9 +141,7 @@ class DefInfo extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.defCommitID !== nextState.defCommitID && nextState.defCommitID) {
-			if (this.context.features.Authors) {
-				Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.defCommitID, nextState.def));
-			}
+			Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.defCommitID, nextState.def));
 		}
 	}
 

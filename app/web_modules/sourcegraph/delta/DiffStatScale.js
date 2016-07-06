@@ -50,7 +50,7 @@ class DiffStatScale extends React.Component {
 		}
 
 		return (
-			<span styleName="diff-stat-scale">
+			<span styleName="diff-stat-scale" className={this.props.className}>
 				<span styleName="stat-added">{bar(sds.ScaledAdded)}</span>
 				<span styleName="stat-changed">{bar(sds.ScaledChanged)}</span>
 				<span styleName="stat-deleted">{bar(sds.ScaledDeleted)}</span>
@@ -68,5 +68,6 @@ DiffStatScale.propTypes = {
 		Deleted: React.PropTypes.number,
 	}).isRequired,
 	Size: React.PropTypes.number,
+	className: React.PropTypes.string,
 };
 export default CSSModules(DiffStatScale, styles);

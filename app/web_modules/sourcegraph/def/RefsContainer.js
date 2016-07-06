@@ -253,7 +253,7 @@ export default class RefsContainer extends Container {
 		}
 
 		return (
-			<div className={`${base.pa4} ${base.bb} ${colors["b--cool-pale-gray"]}`}>
+			<div className={`${base.pa4} ${base.bb} ${colors["b--cool-pale-gray"]} ${styles["full-width-sm"]}`}>
 			{this.state.showRepoTitle &&
 				<div>
 					<RepoLink className={styles.repoLink} repo={this.state.refRepo} />
@@ -294,7 +294,7 @@ export default class RefsContainer extends Container {
 									return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<p className={styles.fileError}>{err}</p></div>;
 								}
 								if (!file) {
-									return <div key={i}><BlobContentPlaceholder key={i} numLines={6} /></div>;
+									return <div key={i}><BlobContentPlaceholder key={i} numLines={SNIPPET_REF_CONTEXT_LINES * 2 + 1} /></div>;
 								}
 
 								let ranges = this.ranges[loc.Path];
@@ -334,7 +334,7 @@ export default class RefsContainer extends Container {
 					</div>
 					{this.state.highlightedDefObj && !this.state.highlightedDefObj.Error && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
 				</div>
-				{this.state.refRepo && <div className={`${base.mt3} ${styles.f7}`}>Used in <Link to={urlToRepo(this.state.refRepo)}>{this.state.refRepo}</Link></div>}
+				{this.state.refRepo && <div className={`${base.mt3} ${styles.f7} ${base["hidden-s"]}`}>Used in <Link to={urlToRepo(this.state.refRepo)}>{this.state.refRepo}</Link></div>}
 			</div>
 		);
 	}
