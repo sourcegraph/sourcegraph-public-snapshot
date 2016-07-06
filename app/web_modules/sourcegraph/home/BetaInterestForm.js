@@ -9,7 +9,6 @@ import * as UserActions from "sourcegraph/user/UserActions";
 import base from "sourcegraph/components/styles/_base.css";
 import {languages, editors} from "./HomeUtils";
 import {langName} from "sourcegraph/Language";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 type OnChangeListener = () => void;
 
@@ -103,8 +102,6 @@ class BetaInterestForm extends React.Component {
 			this._editors.selected(),
 			this._message["value"].trim(),
 		));
-
-		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ENGAGEMENT, AnalyticsConstants.ACTION_SUCCESS, "SubmitBetaSubscription");
 	}
 
 	render() {
