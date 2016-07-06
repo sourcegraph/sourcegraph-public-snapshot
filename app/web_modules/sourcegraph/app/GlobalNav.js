@@ -5,7 +5,7 @@ import {Link} from "react-router";
 import type {RouterLocation} from "react-router";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
-import {Avatar, Panel, Popover, Menu, Button, TabItem, Logo} from "sourcegraph/components";
+import {Avatar, Panel, Popover, Menu, TabItem, Logo} from "sourcegraph/components";
 import LogoutLink from "sourcegraph/user/LogoutLink";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalNav.css";
@@ -106,12 +106,12 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 					</Popover>
 				</div>}
 
-				{!signedIn &&
+				{!signedIn && location.pathname !== "/" &&
 					<div styleName="tr" className={`${base.pv2} ${base.ph1}`}>
 						<div styleName="action">
 							<LocationStateToggleLink href="/login" modalName="login" location={location}
 								onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ShowLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
-								<Button color="blue">Sign in</Button>
+								Sign in
 							</LocationStateToggleLink>
 						</div>
 					</div>
