@@ -290,7 +290,7 @@ class SearchForm extends React.Component {
 SearchForm = CSSModules(SearchForm, styles);
 
 let SearchResultsPanel = ({repo, location, query}: {repo: ?string, location: RouterLocation, query: string}) =>
-	<Panel hoverLevel="high" styleName="search-panel">
+	<Panel hoverLevel="low" styleName="search-panel">
 		<SearchSettings styleName="search-settings" innerClassName={styles["search-settings-inner"]} location={location} repo={repo} />
 		<GlobalSearch styleName="search-results" query={query} repo={repo} location={location} resultClassName={styles["search-result"]} />
 	</Panel>;
