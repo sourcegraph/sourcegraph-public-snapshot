@@ -28,9 +28,6 @@ const SearchBackend = {
 					if (p.notRepos) {
 						p.notRepos.forEach((repo) => q.push(`NotRepos=${encodeURIComponent(repo)}`));
 					}
-					if (p.prefixMatch) {
-						q.push(`PrefixMatch=${encodeURIComponent(p.prefixMatch.toString())}`);
-					}
 					if (p.includeRepos) {
 						q.push(`IncludeRepos=${encodeURIComponent(p.includeRepos.toString())}`);
 					}
@@ -53,7 +50,6 @@ const SearchBackend = {
 									notRepos: p.notRepos,
 									commitID: p.commitID,
 									limit: p.limit,
-									prefixMatch: p.prefixMatch,
 									includeRepos: p.includeRepos,
 									defs: data,
 									options: data.options,

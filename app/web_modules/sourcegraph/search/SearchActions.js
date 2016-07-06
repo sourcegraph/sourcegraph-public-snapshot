@@ -8,7 +8,6 @@ export type WantResultsPayload = {
 	notRepos?: ?Array<string>;
 	commitID?: string;
 	limit: number;
-	prefixMatch?: bool;
 	includeRepos?: bool;
 	fast?: bool;
 }
@@ -27,7 +26,6 @@ export type ResultsFetchedPayload = {
 	notRepos?: ?Array<string>;
 	commitID?: string;
 	limit?: number;
-	prefixMatch?: bool;
 	includeRepos?: bool;
 	defs: Array<Def>;
 	options: Array<Object>;

@@ -2112,9 +2112,6 @@ message SearchOptions {
 	// IncludeRepos indicates whether to include repository search results.
 	bool IncludeRepos = 4;
 
-	// PrefixMatch indicates whether to include defs prefix match on search results.
-	bool PrefixMatch = 5;
-
 	// Fast specifies that the client would like results returned more quickly at
 	// the cost of missing lower ranked results. If there are no high-ranking results
 	// and Fast is set to true, there may be no results returned at all.

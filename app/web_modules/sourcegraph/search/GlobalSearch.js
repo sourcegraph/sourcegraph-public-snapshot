@@ -200,7 +200,6 @@ class GlobalSearch extends Container {
 								query: `${lang} ${state.query}`,
 								repos: batch,
 								limit: RESULTS_LIMIT,
-								prefixMatch: state.location.query.prefixMatch,
 								includeRepos: props.location.query.includeRepos,
 								fast: true,
 							});
@@ -216,7 +215,7 @@ class GlobalSearch extends Container {
 		if (this.state._searchStore !== state._searchStore || this.state._queries !== state._queries) {
 			if (state._queries) {
 				state.matchingResults = state._queries.reduce((memo, q) => {
-					const results = SearchStore.get(q.query, q.repos, q.notRepos, q.commitID, q.limit, q.prefixMatch, q.includeRepos, q.fast);
+					const results = SearchStore.get(q.query, q.repos, q.notRepos, q.commitID, q.limit, q.includeRepos, q.fast);
 					if (results) memo.outstandingFetches -= 1;
 					if (results && !results.Error) {
 						if (results.Repos) memo.Repos.push(...results.Repos);

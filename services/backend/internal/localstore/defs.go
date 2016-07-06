@@ -331,18 +331,9 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 
 		if len(op.TokQuery) == 1 { // special-case single token queries for performance
 			wheres = append(wheres, `lower(name)=lower(`+arg(op.TokQuery[0])+`)`)
-
-			// Skip matching for too less characters.
-			if op.Opt.PrefixMatch && len(op.TokQuery[0]) > 2 {
-				prefixSQL = ` OR to_tsquery('english', ` + arg(op.TokQuery[0]+":*") + `) @@ bow`
-			}
 		} else if bowQuery != "" {
 			wheres = append(wheres, "bow != ''")
-			if op.Opt.PrefixMatch {
-				wheres = append(wheres, `to_tsquery('english', `+arg(bowQuery+":*")+`) @@ bow`)
-			} else {
-				wheres = append(wheres, `to_tsquery('english', `+arg(bowQuery)+`) @@ bow`)
-			}
+			wheres = append(wheres, `to_tsquery('english', `+arg(bowQuery)+`) @@ bow`)
 		}
 
 		whereSQL = fmt.Sprint(`WHERE (`+strings.Join(wheres, ") AND (")+`)`) + prefixSQL
