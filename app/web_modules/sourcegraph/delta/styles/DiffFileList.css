@@ -27,6 +27,9 @@
 	display: block;
 	cursor: pointer;
 }
+.scale {
+	composes: pr2 from base;
+}
 .count {
 
 }

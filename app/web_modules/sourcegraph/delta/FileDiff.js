@@ -106,7 +106,7 @@ class FileDiff extends Component {
 			<div styleName="container" id={this.props.id || ""}>
 				<header styleName="header">
 					<div styleName="info">
-						<DiffStatScale Stat={diff.Stats} />
+						<DiffStatScale Stat={diff.Stats} styleName="scale" />
 						<span styleName="name">
 							<span>{isDevNull(diff.OrigName) ? diff.NewName : diff.OrigName}</span>
 							{diff.NewName !== diff.OrigName && !isDevNull(diff.OrigName) && !isDevNull(diff.NewName) ? (

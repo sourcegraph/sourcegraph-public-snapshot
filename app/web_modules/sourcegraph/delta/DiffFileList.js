@@ -20,7 +20,7 @@ class DiffFileList extends React.Component {
 				<div styleName="header">
 				<Popover popoverClassName={styles.popover}>
 						<div styleName="label">
-							<DiffStatScale Stat={this.props.stats} />
+							<DiffStatScale Stat={this.props.stats} styleName="scale" />
 							<span styleName="count">{this.props.files.length}</span> changed files
 							<span styleName="overall-stats">
 								<span styleName="stat added">+{this.props.stats.Added}</span>
