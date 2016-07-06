@@ -30,6 +30,7 @@ export class EventLogger {
 	userAgentIsBot: bool;
 	_dispatcherToken: any;
 	_siteConfig: ?SiteConfig;
+	_currentPlatform: string = "Web";
 
 	constructor() {
 		this._intercomSettings = null;
@@ -41,6 +42,16 @@ export class EventLogger {
 		// You must separately log "frontend" actions of interest,
 		// with the relevant event properties.
 		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
+
+		if (typeof document !== "undefined") {
+			document.addEventListener("sourcegraph:platform:initalization", this._initializeForSourcegraphPlatform.bind(this));
+		}
+	}
+
+	_initializeForSourcegraphPlatform(event) {
+		if (event && event.detail && event.detail.currentPlatform) {
+			this._currentPlatform = event.detail.currentPlatform;
+		}
 	}
 
 	setSiteConfig(siteConfig: SiteConfig) {
@@ -179,7 +190,7 @@ export class EventLogger {
 		}
 
 		// Log Amplitude "View" event
-		this._amplitude.logEvent(title, eventProperties);
+		this._amplitude.logEvent(title, {...eventProperties, Platform: this._currentPlatform});
 
 		// Log GA "pageview" event without props.
 		window.ga("send", {
@@ -198,7 +209,7 @@ export class EventLogger {
 			return;
 		}
 
-		this._amplitude.logEvent(eventLabel, {...eventProperties, eventCategory: eventCategory, eventAction: eventAction, is_authed: this._user ? "true" : "false"});
+		this._amplitude.logEvent(eventLabel, {...eventProperties, eventCategory: eventCategory, eventAction: eventAction, is_authed: this._user ? "true" : "false", Platform: this._currentPlatform});
 
 		window.ga("send", {
 			hitType: "event",
