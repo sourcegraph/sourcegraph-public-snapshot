@@ -104,8 +104,7 @@
 						"basePath": "a",
 						"headRepo": "hr",
 						"headRev": "hv",
-						"headPath": "b",
-						"annotations": []
+						"headPath": "b"
 					}
 				}
 			]

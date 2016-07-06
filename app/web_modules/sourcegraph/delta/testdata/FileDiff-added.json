@@ -84,8 +84,7 @@
 						"basePath": "/dev/null",
 						"headRepo": "hr",
 						"headRev": "hv",
-						"headPath": "b",
-						"annotations": []
+						"headPath": "b"
 					}
 				}
 			]
