@@ -1049,3 +1049,16 @@ func (s wrappedUsers) List(ctx context.Context, param *sourcegraph.UsersListOpti
 	}
 	return
 }
+
+func (s wrappedUsers) RegisterBeta(ctx context.Context, param *sourcegraph.BetaRegistration) (res *sourcegraph.BetaResponse, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Users", "RegisterBeta", param)
+	defer func() {
+		trace.After(ctx, "Users", "RegisterBeta", param, err, time.Since(start))
+	}()
+	res, err = backend.Services.Users.RegisterBeta(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Users.RegisterBeta returned nil, nil")
+	}
+	return
+}
