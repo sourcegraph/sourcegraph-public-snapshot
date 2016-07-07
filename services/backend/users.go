@@ -5,6 +5,7 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/mailchimp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/mailchimp/chimputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
