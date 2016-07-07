@@ -52,6 +52,10 @@ function fastInsertRevIntoDefURL(urlNoRev: string, repo: string, rev: string): s
 }
 
 class BlobLine extends Component {
+	componentDidMount(nextProps, nextState) {
+		if (this.state.onMount) this.state.onMount();
+	}
+
 	reconcileState(state, props) {
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
@@ -85,6 +89,7 @@ class BlobLine extends Component {
 		state.contents = props.contents;
 		state.selected = Boolean(props.selected);
 		state.className = props.className || "";
+		state.onMount = props.onMount || null;
 	}
 
 	_hasLink(content) {
@@ -232,6 +237,7 @@ BlobLine.propTypes = {
 	selected: React.PropTypes.bool,
 	highlightedDef: React.PropTypes.string,
 	className: React.PropTypes.string,
+	onMount: React.PropTypes.func,
 };
 
 export default BlobLine;
