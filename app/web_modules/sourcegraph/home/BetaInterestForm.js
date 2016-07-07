@@ -105,7 +105,7 @@ class BetaInterestForm extends React.Component {
 			// Display a "Close" button if there is an onSubmit handler.
 			return (<span>
 				<p>Success! Return to this page any time to update your favorite editors / languages!</p>
-				<p>We'll contact you at <strong>{this.state.resp.EmailAddress}</strong> once a beta program has begun.</p>
+				<p>We'll contact you at <strong>{this.state.resp.EmailAddress}</strong> once a beta has begun.</p>
 				{this.props.onSubmit && <Button block={true} type="submit" color="purple" onClick={this.props.onSubmit}>Close</Button>}
 			</span>);
 		}
@@ -129,7 +129,7 @@ class BetaInterestForm extends React.Component {
 		return (
 			<div>
 				{betaRegistered && <span>
-					<p>You've already registered. We'll contact you once a beta program matching your interests has begun.</p>
+					<p>You've already registered. We'll contact you once a beta matching your interests has begun.</p>
 					<p>Feel free to update your favorite editors / languages using the form below.</p>
 				</span>}
 				<form styleName="form" className={className} onSubmit={this._sendForm.bind(this)} onChange={this._onChange}>
