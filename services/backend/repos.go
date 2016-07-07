@@ -84,16 +84,43 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 		return nil, err
 	}
 
+	// deletedRepoURI is used to prune repos from list. Its value should be something an existing repo cannot have, like empty string.
+	const deletedRepoURI = ""
+
 	par := parallel.NewRun(runtime.GOMAXPROCS(0))
 	for _, repo_ := range repos {
 		repo := repo_
 		par.Do(func() error {
-			return s.setRepoFieldsFromRemote(ctx, repo)
+			// TODO(shurcooL): Now that the store is doing more of this, investigate if setRepoFieldsFromRemote
+			//                 is still necceessary to do here, or if it can be optimized away.
+			err := s.setRepoFieldsFromRemote(ctx, repo)
+			if grpc.Code(err) == codes.NotFound {
+				// This can happen if a repo is disabled; it will be included by list operation,
+				// but getting it directly will result in 404. Treat it as a missing repository,
+				// mark it to be removed from the list afterwards.
+				log15.Debug("Repo from list not found on remote", "repo", repo.URI)
+				repo.URI = deletedRepoURI
+				return nil
+			}
+			return err
 		})
 	}
 	if err := par.Wait(); err != nil {
 		return nil, err
 	}
+
+	// Clear any missing repos with URI == deletedRepoURI after setRepoFieldsFromRemote step.
+	for i := 0; i < len(repos); {
+		if repos[i].URI == deletedRepoURI {
+			// Delete missing repo from list.
+			copy(repos[i:], repos[i+1:])
+			repos[len(repos)-1] = nil
+			repos = repos[:len(repos)-1]
+			continue
+		}
+		i++
+	}
+
 	return &sourcegraph.RepoList{Repos: repos}, nil
 }
 
