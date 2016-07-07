@@ -6,6 +6,8 @@ RUN apk add --update --update-cache \
   git \
   # for /etc/mime.types, needed by HTTP server
   mailcap \
+  # for depprof
+  graphviz \
   && rm -rf /var/cache/apk/*
 
 RUN { \
