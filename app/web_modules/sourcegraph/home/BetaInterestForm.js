@@ -9,6 +9,7 @@ import * as UserActions from "sourcegraph/user/UserActions";
 import base from "sourcegraph/components/styles/_base.css";
 import {languages, editors} from "./HomeUtils";
 import {langName} from "sourcegraph/Language";
+import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 
 type OnChangeListener = () => void;
 
@@ -18,10 +19,12 @@ class BetaInterestForm extends React.Component {
 		onSubmit: React.PropTypes.func,
 		className: React.PropTypes.string,
 		language: React.PropTypes.string,
+		loginReturnTo: React.PropTypes.string,
 	}
 
 	static contextTypes = {
 		user: React.PropTypes.object,
+		signedIn: React.PropTypes.bool.isRequired,
 	};
 
 	constructor(props) {
@@ -109,6 +112,17 @@ class BetaInterestForm extends React.Component {
 				{this.props.onSubmit && <Button block={true} type="submit" color="purple" onClick={this.props.onSubmit}>Close</Button>}
 			</span>);
 		}
+
+		if (!this.context.signedIn) {
+			return (<div styleName="cta">
+				<p styleName="p">You must sign in to continue.</p>
+				<GitHubAuthButton returnTo={this.props.loginReturnTo} color="blue" className={base.mr3}>
+					<strong>Sign in with GitHub</strong>
+				</GitHubAuthButton>
+			</div>);
+		}
+
+
 		let [className, language] = [this.props.className, this.props.language];
 		let betaRegistered = this.context.user && this.context.user.BetaRegistered;
 
