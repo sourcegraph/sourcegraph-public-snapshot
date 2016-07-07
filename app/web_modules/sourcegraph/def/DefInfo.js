@@ -130,7 +130,6 @@ class DefInfo extends Container {
 	}
 
 	reconcileState(state, props) {
-		console.log("now")
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
 		state.def = props.def || null;
@@ -138,10 +137,10 @@ class DefInfo extends Container {
 		state.defCommitID = props.defObj ? props.defObj.CommitID : null;
 		state.authors = state.defObj ? DefStore.authors.get(state.repo, state.defObj.CommitID, state.def) : null;
 		state.refLocations = state.def ? DefStore.getRefLocations({
-			repo: state.repo, def: state.def, repos: state.defRepos,
+			repo: state.repo, commitID: state.defCommitID, def: state.def,
 		}) : null;
 		state.examples = state.def ? DefStore.getExamples({
-			repo: state.repo, commitID: state.commitID, def: state.def, perPage: 1,
+			repo: state.repo, commitID: state.defCommitID, def: state.def,
 		}) : null;
 
 		if (state.defObj && state.defDescrHidden === null) {
@@ -152,6 +151,16 @@ class DefInfo extends Container {
 	onStateTransition(prevState, nextState) {
 		if (prevState.defCommitID !== nextState.defCommitID && nextState.defCommitID) {
 			Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.defCommitID, nextState.def));
+		}
+		if (nextState.currPage !== prevState.currPage || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
+			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
+				repo: nextState.repo, commitID: nextState.commitID, def: nextState.def, repos: nextState.defRepos, page: nextState.currPage,
+			}));
+		}
+		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
+			Dispatcher.Backends.dispatch(new DefActions.WantExamples({
+				repo: nextState.repo, commitID: nextState.commitID, def: nextState.def,
+			}));
 		}
 	}
 
@@ -191,8 +200,8 @@ class DefInfo extends Container {
 	}
 
 	render() {
-		let {defObj, defDescrHidden, refLocations, examples, repo} = this.state;
-		let defBlobUrl = defObj ? urlToDef(defObj, this.state.rev) : "";
+		const {defObj, defDescrHidden, refLocations, examples, repo, rev, defCommitID, def} = this.state;
+		let defBlobUrl = defObj ? urlToDef(defObj, rev) : "";
 
 		if (refLocations && refLocations.Error) {
 			return (
@@ -277,7 +286,7 @@ class DefInfo extends Container {
 									]} />
 							</div>
 
-							{!refLocations &&
+							{refLocations && !refLocations.RepoRefs &&
 								<div className={`${typography.tc} ${base.center} ${base.mv5}`} style={{maxWidth: "500px"}}>
 									<EmptyNodeIllo className={base.mv3} />
 									<Heading level="5">
@@ -295,29 +304,33 @@ class DefInfo extends Container {
 									}
 								</div>
 							}
-							{refLocations &&
+
+							{!refLocations && <div>Loading...</div>}
+
+							{refLocations && refLocations.RepoRefs &&
 								<div>
-									{examples &&
-										<div className={base.mb5}>
+									<div className={base.mt5}>
+										{examples &&
 											<ExamplesContainer
-												repo={this.props.repo}
-												rev={this.props.rev}
-												commitID={this.props.commitID}
-												def={this.props.def}
-												defObj={this.props.defObj} />
-										</div>
-									}
-									<div>
+												repo={repo}
+												rev={rev}
+												defCommitID={defCommitID}
+												def={def}
+												defObj={defObj}
+												examples={examples} />
+										}
+									</div>
+									<div className={base.mt5}>
 										<RepoRefsContainer
-											repo={this.props.repo}
-											rev={this.props.rev}
-											commitID={this.props.commitID}
-											def={this.props.def}
-											defObj={this.props.defObj} />
+											repo={repo}
+											rev={rev}
+											commitID={defCommitID}
+											def={def}
+											defObj={defObj}
+											refLocations={refLocations} />
 									</div>
 								</div>
 							}
-
 						</div>
 					}
 
