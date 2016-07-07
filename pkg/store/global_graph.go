@@ -50,6 +50,4 @@ type DefSearchOp struct {
 type DefUpdateOp struct {
 	Repo     int32
 	CommitID string
-
-	RefreshCounts bool
 }

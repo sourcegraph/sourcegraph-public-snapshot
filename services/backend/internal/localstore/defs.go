@@ -561,14 +561,12 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 	}
 	end()
 
-	if op.RefreshCounts {
-		end = obs.start("update_ref_ct")
-		if err := s.UpdateRefCounts(ctx, repo.URI); err != nil {
-			end()
-			return err
-		}
+	end = obs.start("update_ref_ct")
+	if err := s.UpdateRefCounts(ctx, repo.URI); err != nil {
 		end()
+		return err
 	}
+	end()
 
 	// Garbage-collect old def and repo_revs rows
 	rrOld, err := getRepoRevsOld(ctx, dbh, repo.URI)
