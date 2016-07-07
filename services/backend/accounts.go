@@ -86,35 +86,9 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 }
 
 func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error) {
-	// Handle updating betas according to the following three states:
-	//
-	//  1. `len(Betas) == 0` (user is in no betas and has not requested beta access).
-	//  2. `len(Betas) == 1 && InBeta("pending")` (user has requested beta access).
-	//  3. `len(Betas) > 1 && InBeta("accepted")` (user granted access to one or more betas).
-	//
+	// If there is at least one beta, ensure the BetaRegistered field is also set.
 	if len(in.Betas) > 0 {
-		// If the update contains two keywords, it is illegal.
-		if in.InBeta("pending") && in.InBeta("accepted") {
-			return nil, fmt.Errorf("cannot set betas %v: 'pending' and 'accepted' are exclusive", in.Betas)
-		}
-
-		// If the update adds a user beta string, then implicitly add the
-		// "accepted" keyword and remove the "pending" keyword.
-		if len(in.Betas) > 1 && in.InBeta("pending") {
-			in.Betas = append(in.Betas, "accepted")
-			for i, beta := range in.Betas {
-				if beta == "pending" {
-					in.Betas = append(in.Betas[:i], in.Betas[i+1:]...)
-					break
-				}
-			}
-		}
-
-		// If the update leaves only a keyword status, the user goes back to
-		// the "pending" status.
-		if len(in.Betas) == 1 && in.InBeta("accepted") {
-			in.Betas = []string{"pending"}
-		}
+		in.BetaRegistered = true
 	}
 
 	if err := store.AccountsFromContext(ctx).Update(ctx, in); err != nil {
@@ -124,9 +98,10 @@ func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.V
 	// SECURITY: It's important that this code runs AFTER store.AccountsFromContext(ctx).Update
 	// because that method ensures that tag updates were allowed / the user has
 	// the right permissions to perform the actions below.
-	if len(in.Betas) > 0 {
-		// We only update the "betas" field of Mailchimp here. Every other
-		// merge field has already been populated at the time they registered.
+	if len(in.Betas) > 0 || in.BetaRegistered {
+		// We only update the "betas" list and "beta registered" status field
+		// of Mailchimp here. Every other merge field has already been
+		// populated at the time they registered.
 		userSpec := in.Spec()
 		emails, err := svc.Users(ctx).ListEmails(ctx, &userSpec)
 		if err != nil {
@@ -145,7 +120,8 @@ func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.V
 			StatusIfNew:  "subscribed",
 			EmailAddress: email.Email,
 			MergeFields: map[string]interface{}{
-				"BETAS": mailchimp.Array(in.Betas),
+				"BETAS":   mailchimp.Array(in.Betas),
+				"BETAREG": mailchimp.Bool(in.BetaRegistered),
 			},
 		})
 		if err != nil {

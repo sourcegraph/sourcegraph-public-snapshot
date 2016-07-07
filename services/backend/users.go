@@ -83,11 +83,13 @@ func (s *users) RegisterBeta(ctx context.Context, opt *sourcegraph.BetaRegistrat
 	}
 	opt.Email = primary.Email
 
-	// If the account does not already have any betas, give them pending beta
-	// access.
+	// Ensure the BetaRegistered status is properly set for the user.
 	user, err := svc.Users(ctx).Get(ctx, &userSpec)
-	if len(user.Betas) == 0 {
-		user.Betas = append(user.Betas, "pending")
+	if err != nil {
+		return nil, err
+	}
+	if !user.BetaRegistered {
+		user.BetaRegistered = true
 		_, err = svc.Accounts(ctx).Update(ctx, user)
 		if err != nil {
 			return nil, err

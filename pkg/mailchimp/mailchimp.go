@@ -138,6 +138,7 @@ func wrapError(methodName string, err error) error {
 // Mailchimp as an 'array' of sorts. Basically:
 //
 //  mailchimpArray("a", "b", "c") == "a,b,c,"
+//  mailchimpArray(nil) == ""
 //
 // The trailing comma is significant because it allows matching a singular
 // element within mailchimp using the "contains" operator. For example:
@@ -157,7 +158,20 @@ func wrapError(methodName string, err error) error {
 //  "is": "Visual Studio"
 //
 func Array(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
 	return strings.Join(values, ",") + ","
+}
+
+// Bool returns a "true" or "false" string for the respective boolean value. It
+// is used to represent boolean values in Mailchimp as strings, as it has no
+// native support for them.
+func Bool(b bool) string {
+	if b {
+		return "true"
+	}
+	return "false"
 }
 
 // SubscriberHash returns the subscriber hash for the given email address.

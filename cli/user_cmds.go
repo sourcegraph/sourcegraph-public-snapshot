@@ -117,8 +117,10 @@ func (c *userCreateCmd) Execute(args []string) error {
 }
 
 type userListCmd struct {
-	AllBetas string `long:"all-betas" description:"only users participating in all the given betas"`
-	Args     struct {
+	AllBetas       string `long:"all-betas" description:"only users participating in all the given betas"`
+	RegisteredBeta bool   `long:"registered-beta" description:"filter by users who have registered for beta access"`
+	HaveBeta       bool   `long:"have-beta" description:"filter by users who have access to at least one beta"`
+	Args           struct {
 		Query string `name:"QUERY" description:"search query"`
 	} `positional-args:"yes"`
 }
@@ -128,9 +130,11 @@ func (c *userListCmd) Execute(args []string) error {
 
 	for page := 1; ; page++ {
 		users, err := cl.Users.List(cliContext, &sourcegraph.UsersListOptions{
-			Query:       c.Args.Query,
-			AllBetas:    strings.Split(c.AllBetas, ","),
-			ListOptions: sourcegraph.ListOptions{Page: int32(page)},
+			Query:          c.Args.Query,
+			AllBetas:       commaSplit(c.AllBetas),
+			RegisteredBeta: c.RegisteredBeta,
+			HaveBeta:       c.HaveBeta,
+			ListOptions:    sourcegraph.ListOptions{Page: int32(page)},
 		})
 
 		if err != nil {
@@ -254,14 +258,14 @@ func (c *userUpdateCmd) Execute(args []string) error {
 	}
 
 	if c.SetBetas != "" {
-		if err := updateBetas(strings.Split(c.SetBetas, ",")); err != nil {
+		if err := updateBetas(commaSplit(c.SetBetas)); err != nil {
 			return err
 		}
 	}
 	if c.AddBetas != "" {
 		newBetas := make([]string, len(user.Betas))
 		copy(newBetas, user.Betas)
-		for _, beta := range strings.Split(c.AddBetas, ",") {
+		for _, beta := range commaSplit(c.AddBetas) {
 			if !user.InBeta(beta) {
 				newBetas = append(newBetas, beta)
 			}
@@ -273,7 +277,7 @@ func (c *userUpdateCmd) Execute(args []string) error {
 	if c.RmBetas != "" {
 		var (
 			newBetas []string
-			rmBetas  = strings.Split(c.RmBetas, ",")
+			rmBetas  = commaSplit(c.RmBetas)
 		)
 		for _, beta := range user.Betas {
 			remove := false
@@ -293,6 +297,18 @@ func (c *userUpdateCmd) Execute(args []string) error {
 	}
 
 	return nil
+}
+
+// commaSplit splits the given string by "," and returns any non-whitespace strings.
+func commaSplit(s string) []string {
+	var out []string
+	for _, s := range strings.Split(s, ",") {
+		s = strings.TrimSpace(s)
+		if len(s) > 0 {
+			out = append(out, s)
+		}
+	}
+	return out
 }
 
 type userResetPasswordCmd struct {

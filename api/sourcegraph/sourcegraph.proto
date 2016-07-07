@@ -979,26 +979,19 @@ message User {
 	bool Admin = 12;
 
 	// Betas is a list of betas which the user is enrolled in. A user may be
-	// granted access to any arbitrary beta string, but "pending" and "accepted" are
-	// reserved. The three states are:
+	// granted access to any arbitrary beta string.
 	//
-	//  1. `len(Betas) == 0` (user is in no betas and has not requested beta access).
-	//  2. `len(Betas) == 1 && InBeta("pending")` (user has requested beta access).
-	//  4. `len(Betas) > 1 && InBeta("accepted")` (user granted access to one or more betas).
-	//
-	// The "pending" and "accepted" statuses are implicitly set as you would
-	// expect, thus their present in the list can generally be thought of as
-	// optional.
-	//
-	// To add a beta status, simply append it. The "pending" status will be
-	// removed and the "accepted" status added.
-	//
-	// To remove a beta status, simply remove it from the slice. If the user is
-	// in no more betas, the "accepted" status will be removed and "pending"
-	// added.
-	//
-	// Only admins may set a list of non-"pending" betas.
+	// Only admin users may set this field.
 	repeated string Betas = 14;
+
+	// BetaRegistered is whether or not the user has registered for beta access.
+	//
+	// If a user has registered for beta access, this field will always be true
+	// even if they are participating in a beta (len(User.Betas) > 0).
+	//
+	// Users should not set this field directly, instead use the Users.RegisterBeta
+	// method (which sets this field to true, among other things).
+	bool BetaRegistered = 15;
 
 	// Write is whether the user has write access for the site.
 	bool Write = 13;
@@ -1036,6 +1029,14 @@ message UsersListOptions {
 	// AllBetas filters the resulting list to only contain users who are part of
 	// all the given betas. There is no equivilent OR operator yet.
 	repeated string AllBetas = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// RegisteredBeta filters the resulting list to only users who have
+	// registered for beta access.
+	bool RegisteredBeta = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// HaveBeta filters the resulting list to only users who have access to at
+	// least one beta.
+	bool HaveBeta = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 message OrgsListOp {

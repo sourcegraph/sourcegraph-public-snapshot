@@ -41,6 +41,7 @@ type dbUser struct {
 	Write          bool
 	Admin          bool
 	Betas          *dbutil.StringSlice
+	BetaRegistered bool       `db:"beta_registered"`
 	RegisteredAt   *time.Time `db:"registered_at"`
 }
 
@@ -62,6 +63,7 @@ func (u *dbUser) toUser() *sourcegraph.User {
 		Write:          u.Write,
 		Admin:          u.Admin,
 		Betas:          betas,
+		BetaRegistered: u.BetaRegistered,
 		RegisteredAt:   ts(u.RegisteredAt),
 	}
 }
@@ -81,6 +83,7 @@ func (u *dbUser) fromUser(u2 *sourcegraph.User) {
 	if len(u2.Betas) > 0 {
 		u.Betas = &dbutil.StringSlice{Slice: u2.Betas}
 	}
+	u.BetaRegistered = u2.BetaRegistered
 	u.RegisteredAt = tm(u2.RegisteredAt)
 }
 
@@ -180,6 +183,15 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 	for _, beta := range opt.AllBetas {
 		bindVar := arg(beta)
 		sql += " AND " + bindVar + " = ANY(betas)"
+	}
+	if opt.RegisteredBeta {
+		// Filter by users who have registered for beta access.
+		sql += " AND beta_registered=true "
+	}
+	if opt.HaveBeta && len(opt.AllBetas) == 0 {
+		// Filter by users who have access to at least one beta. Note that
+		// len(opt.AllBetas) > 0 fulfils this requirement.
+		sql += " AND array_length(betas, 1) > 0 "
 	}
 
 	sort := opt.Sort
