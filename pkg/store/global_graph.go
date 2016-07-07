@@ -3,7 +3,6 @@ package store
 import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 )
 
@@ -39,7 +38,6 @@ type GlobalDeps interface {
 type Defs interface {
 	Search(ctx context.Context, op DefSearchOp) (*sourcegraph.SearchResultsList, error)
 	UpdateFromSrclibStore(ctx context.Context, op DefUpdateOp) error
-	Update(ctx context.Context, op DefUpdateOp) error
 }
 
 type DefSearchOp struct {
@@ -52,7 +50,6 @@ type DefSearchOp struct {
 type DefUpdateOp struct {
 	Repo     int32
 	CommitID string
-	Defs     []*graph.Def
 
 	RefreshCounts bool
 

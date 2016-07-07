@@ -391,6 +391,12 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.UpdateFromSrclibStore", op.Repo); err != nil {
 		return err
 	}
+
+	// Validate input
+	if op.Repo == 0 || op.CommitID == "" {
+		return fmt.Errorf("both op.Repo and op.CommitID must be non-empty")
+	}
+
 	repo, err := store.ReposFromContext(ctx).Get(ctx, op.Repo)
 	if err != nil {
 		return err
@@ -410,7 +416,7 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 	}
 
 	end := obs.start("graphstore")
-	defs_, err := store.GraphFromContext(ctx).Defs(
+	defs, err := store.GraphFromContext(ctx).Defs(
 		sstore.ByRepoCommitIDs(sstore.Version{Repo: repo.URI, CommitID: op.CommitID}),
 	)
 	end()
@@ -418,33 +424,7 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 		return err
 	}
 
-	op.Defs = defs_
-	return s.Update(ctx, op)
-}
-
-func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.Update", op.Repo); err != nil {
-		return err
-	}
-
-	repo, err := store.ReposFromContext(ctx).Get(ctx, op.Repo)
-	if err != nil {
-		return err
-	}
-
-	obs := newDefsUpdateObserver("defs2", repo.URI)
-	totalEnd := obs.start("update_total")
-	defer totalEnd()
-
-	// Validate input
-	if op.Repo == 0 || op.CommitID == "" {
-		return fmt.Errorf("both op.Repo and op.CommitID must be non-empty")
-	}
-	if len(op.CommitID) != 40 {
-		return fmt.Errorf("commit must be 40 characters long, was: %q", op.CommitID)
-	}
-
-	for _, def := range op.Defs {
+	for _, def := range defs {
 		if def.Repo != "" && def.Repo != repo.URI {
 			return fmt.Errorf("cannot update def with non-matching repo (%s != %s)", def.Repo, repo.URI)
 		}
@@ -455,7 +435,7 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 
 	// KLUDGE to improve search quality. This info ideally would be emitted by srclib toolchains.
 	var chosenDefs []*graph.Def
-	for _, d := range op.Defs {
+	for _, d := range defs {
 		if shouldIndex(d) {
 			chosenDefs = append(chosenDefs, d)
 		}
@@ -464,7 +444,7 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 	dbh := graphDBH(ctx)
 
 	// Update def_keys
-	end := obs.start("def_keys")
+	end = obs.start("def_keys")
 	defKeyIDs := make(map[graph.DefKey]int64)
 	for _, def := range chosenDefs {
 		rp := def.Repo
