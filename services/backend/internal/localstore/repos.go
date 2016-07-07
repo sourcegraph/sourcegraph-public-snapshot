@@ -342,20 +342,21 @@ func (s *repos) listAllAccessibleGitHubRepos(ctx context.Context, opt *sourcegra
 
 	var allRepos []*sourcegraph.Repo
 	for page := 1; ; page++ {
+		const perPage = 100
 		repos, err := github.ReposFromContext(ctx).ListAccessible(ctx, &gogithub.RepositoryListOptions{
 			Type: opt.Type,
 			ListOptions: gogithub.ListOptions{
-				PerPage: 100,
+				PerPage: perPage,
 				Page:    page,
 			},
 		})
 		if err != nil {
 			return nil, err
 		}
-		if len(repos) == 0 {
+		allRepos = append(allRepos, repos...)
+		if len(repos) < perPage {
 			break
 		}
-		allRepos = append(allRepos, repos...)
 	}
 	return allRepos, nil
 }
