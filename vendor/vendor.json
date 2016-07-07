@@ -648,6 +648,12 @@
 			"revisionTime": "2016-03-29T13:10:07Z"
 		},
 		{
+			"checksumSHA1": "nH2E62VXvJo5VyjwCWX0/PRQupc=",
+			"path": "github.com/neelance/depprof",
+			"revision": "ebba196d31a47558b60f67cdb328658f6e535df2",
+			"revisionTime": "2016-07-07T21:38:10Z"
+		},
+		{
 			"checksumSHA1": "+XhZPRZr5C/pAwHRHqyoZFTXkdE=",
 			"path": "github.com/nlopes/slack",
 			"revision": "e337a7316d3fe9aa55b7063035d6d32f3dbcaeb9",
