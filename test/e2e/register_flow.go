@@ -16,7 +16,6 @@ func init() {
 		Name:        "register_flow",
 		Description: "Registers a brand new user account via the join page.",
 		Func:        testRegisterFlow,
-		Quarantined: true,
 	})
 }
 
