@@ -10,7 +10,7 @@ import type {User, AuthInfo, ExternalToken} from "sourcegraph/user";
 
 const sampleAuthInfo: AuthInfo = {UID: 1, Login: "u"};
 const sampleGitHubToken: ExternalToken = {uid: 1, host: "example.com", scope: "s"};
-const sampleUser: User = {UID: 1, Login: "u"};
+const sampleUser: User = {UID: 1, Login: "u", Betas: [], BetaRegistered: false};
 
 const C = withUserContext((props) => null);
 const renderAndGetContext = (c) => {

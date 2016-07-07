@@ -10,7 +10,7 @@ import type {AuthInfo, User, EmailAddr, ExternalToken} from "sourcegraph/user";
 
 const sampleAuthInfo: AuthInfo = {UID: 1, Login: "u"};
 const sampleToken: ExternalToken = {uid: 1, host: "example.com", scope: "s"};
-const sampleUser: User = {UID: 1, Login: "u"};
+const sampleUser: User = {UID: 1, Login: "u", Betas: [], BetaRegistered: false};
 const sampleEmails: Array<EmailAddr> = [{Email: "a@a.com"}];
 
 describe("UserBackend", () => {

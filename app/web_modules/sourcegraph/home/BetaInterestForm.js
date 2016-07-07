@@ -60,18 +60,6 @@ class BetaInterestForm extends React.Component {
 		}
 	}
 
-	_didRegister() {
-		return this.context.user && this.context.user.Betas;
-	}
-
-	_betasWithoutStatuses() {
-		let betas = [];
-		for (let beta of (this.context.user && this.context.user.Betas) || []) {
-			if (beta !== "pending" && beta !== "accepted") betas.push(beta);
-		}
-		return betas;
-	}
-
 	_onChange: OnChangeListener;
 	_onChange() {
 		window.localStorage["beta-interest-form"] = JSON.stringify({
@@ -122,8 +110,7 @@ class BetaInterestForm extends React.Component {
 			</span>);
 		}
 		let [className, language] = [this.props.className, this.props.language];
-		let betas = this._betasWithoutStatuses();
-		let didRegister = this._didRegister();
+		let betaRegistered = this.context.user && this.context.user.BetaRegistered;
 
 		let defaultFullName, defaultMessage;
 		let defaultEditors = [];
@@ -141,12 +128,10 @@ class BetaInterestForm extends React.Component {
 
 		return (
 			<div>
-				{didRegister && betas.length === 0 && <span>
+				{betaRegistered && <span>
 					<p>You've already registered. We'll contact you once a beta program matching your interests has begun.</p>
+					<p>Feel free to update your favorite editors / languages using the form below.</p>
 				</span>}
-				{betas.length === 1 && <p>You've been granted access to the <em>{betas[0]}</em> beta! Check your email for more information.</p>}
-				{betas.length > 1 && <p>You've been granted access to the following betas: <em>{betas.join(", ")}</em>. Check your email for more information.</p>}
-				{didRegister && <p>Feel free to update your favorite editors / languages using the form below.</p>}
 				<form styleName="form" className={className} onSubmit={this._sendForm.bind(this)} onChange={this._onChange}>
 						<div styleName="row">
 							<Input domRef={(c) => this._fullName = c} block={true} type="text" name="fullName" placeholder="Name" required={true} defaultValue={defaultFullName} />
@@ -161,7 +146,7 @@ class BetaInterestForm extends React.Component {
 							<textarea ref={(c) => this._message = c} styleName="textarea" name="message" placeholder="Other / comments" defaultValue={defaultMessage}></textarea>
 						</div>
 						<div styleName="row" className={base.pb4}>
-							<Button block={true} type="submit" color="purple">{didRegister ? "Update my interests" : "Participate in the beta"}</Button>
+							<Button block={true} type="submit" color="purple">{betaRegistered ? "Update my interests" : "Participate in the beta"}</Button>
 						</div>
 						<div styleName="row" className={base.pb4}>
 							{this.state.formError && <strong>{this.state.formError}</strong>}
