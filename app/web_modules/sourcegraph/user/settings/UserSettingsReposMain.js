@@ -8,7 +8,7 @@ import RepoStore from "sourcegraph/repo/RepoStore";
 import Repos from "sourcegraph/user/settings/Repos";
 import * as RepoActions_typed from "sourcegraph/repo/RepoActions_typed";
 
-const reposQuerystring = "IncludeRemote=true";
+const reposQuerystring = "RemoteOnly=true";
 
 export default class UserSettingsReposMain extends Container {
 	static propTypes = {

@@ -314,6 +314,9 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 
 	// Combine lists.
 	repos := dbRepos
+	if opt.RemoteOnly {
+		repos = nil // Don't include all local repositories from DB.
+	}
 	byGitHubID := make(map[string]*sourcegraph.Repo, len(dbRepos))
 	for _, r := range dbRepos {
 		if o := r.Origin; o != nil && o.Service == sourcegraph.Origin_GitHub {
@@ -322,7 +325,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	}
 	for _, ghRepo := range ghRepos {
 		if _, present := byGitHubID[ghRepo.Origin.ID]; !present {
-			if opt.IncludeRemote {
+			if opt.RemoteOnly {
 				repos = append(repos, ghRepo)
 			}
 		}
@@ -339,20 +342,21 @@ func (s *repos) listAllAccessibleGitHubRepos(ctx context.Context, opt *sourcegra
 
 	var allRepos []*sourcegraph.Repo
 	for page := 1; ; page++ {
+		const perPage = 100
 		repos, err := github.ReposFromContext(ctx).ListAccessible(ctx, &gogithub.RepositoryListOptions{
 			Type: opt.Type,
 			ListOptions: gogithub.ListOptions{
-				PerPage: 100,
+				PerPage: perPage,
 				Page:    page,
 			},
 		})
 		if err != nil {
 			return nil, err
 		}
-		if len(repos) == 0 {
+		allRepos = append(allRepos, repos...)
+		if len(repos) < perPage {
 			break
 		}
-		allRepos = append(allRepos, repos...)
 	}
 	return allRepos, nil
 }
