@@ -11,6 +11,7 @@ import (
 	"github.com/fatih/camelcase"
 	"github.com/lib/pq"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -384,6 +385,11 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 			RefCount: int32(d.RefCount),
 			Score:    float32(d.Score),
 		})
+	}
+
+	defsSearchResultsLength.Observe(float64(len(results)))
+	if len(results) == 0 {
+		defsSearchResultsNone.Inc()
 	}
 
 	return &sourcegraph.SearchResultsList{DefResults: results}, nil
@@ -832,4 +838,23 @@ func shouldIndex(d *graph.Def) bool {
 		return false
 	}
 	return true
+}
+
+var defsSearchResultsLength = prometheus.NewSummary(prometheus.SummaryOpts{
+	Namespace: "src",
+	Subsystem: "defs",
+	Name:      "search_results_length",
+	Help:      "Number of results returned for a search",
+	MaxAge:    time.Hour,
+})
+var defsSearchResultsNone = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "defs",
+	Name:      "search_results_none_total",
+	Help:      "Number of times we returned no results",
+})
+
+func init() {
+	prometheus.MustRegister(defsSearchResultsLength)
+	prometheus.MustRegister(defsSearchResultsNone)
 }
