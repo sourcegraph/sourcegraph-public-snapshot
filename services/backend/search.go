@@ -76,11 +76,9 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 		}
 	}
 
-	opt := *op.Opt
-	opt.Latest = true
 	results, err := store.DefsFromContext(ctx).Search(ctx, store.DefSearchOp{
 		TokQuery: descToks,
-		Opt:      &opt,
+		Opt:      op.Opt,
 	})
 	if err != nil {
 		return nil, err

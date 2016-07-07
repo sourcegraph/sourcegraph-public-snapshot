@@ -183,16 +183,6 @@ type defs struct{}
 var _ store.Defs = (*defs)(nil)
 
 func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error) {
-	// Params checking
-	if !op.Opt.Latest {
-		if len(op.Opt.Repos) != 1 {
-			return nil, fmt.Errorf("Repos must have exactly one element if not searching latest")
-		}
-		if len(op.Opt.NotRepos) > 0 {
-			return nil, fmt.Errorf("NotRepos unsupported if not searching latest")
-		}
-	}
-
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
@@ -230,38 +220,33 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 	var whereSQL, fastWhereSQL, prefixSQL string
 	{
 		var wheres []string
+		wheres = append(wheres, "state=1")
 
-		if op.Opt.Latest {
-			wheres = append(wheres, "state=1")
-
-			if len(op.Opt.NotRepos) > 0 {
-				notRIDs := make([]int64, len(op.Opt.NotRepos))
-				for i, r := range op.Opt.NotRepos {
-					notRepo, err := store.ReposFromContext(ctx).Get(ctx, r)
-					if err != nil {
-						return nil, fmt.Errorf("error getting excluded repository: %s", err)
-					}
-					// NOTE(beyang): there's a race condition here as the latest repository
-					// revision could change between here and when the query to the defs
-					// table is made. In this case, we will fail to exclude results from
-					// repositories in NotRepos. Updates are infrequent enough that we
-					// accept this possibility.
-					rr, err := getRepoRevLatest(graphDBH(ctx), notRepo.URI)
-					if err == repoRevUnindexedErr {
-						return &sourcegraph.SearchResultsList{}, nil
-					} else if err != nil {
-						return nil, err
-					}
-					notRIDs[i] = rr.ID
+		if len(op.Opt.NotRepos) > 0 {
+			notRIDs := make([]int64, len(op.Opt.NotRepos))
+			for i, r := range op.Opt.NotRepos {
+				notRepo, err := store.ReposFromContext(ctx).Get(ctx, r)
+				if err != nil {
+					return nil, fmt.Errorf("error getting excluded repository: %s", err)
 				}
-				nrArgs := make([]string, len(notRIDs))
-				for i, r := range notRIDs {
-					nrArgs[i] = arg(r)
+				// NOTE(beyang): there's a race condition here as the latest repository
+				// revision could change between here and when the query to the defs
+				// table is made. In this case, we will fail to exclude results from
+				// repositories in NotRepos. Updates are infrequent enough that we
+				// accept this possibility.
+				rr, err := getRepoRevLatest(graphDBH(ctx), notRepo.URI)
+				if err == repoRevUnindexedErr {
+					return &sourcegraph.SearchResultsList{}, nil
+				} else if err != nil {
+					return nil, err
 				}
-				wheres = append(wheres, "rid NOT IN ("+strings.Join(nrArgs, ",")+")")
+				notRIDs[i] = rr.ID
 			}
-		} else {
-			wheres = append(wheres, "state=1 OR state=2")
+			nrArgs := make([]string, len(notRIDs))
+			for i, r := range notRIDs {
+				nrArgs[i] = arg(r)
+			}
+			wheres = append(wheres, "rid NOT IN ("+strings.Join(nrArgs, ",")+")")
 		}
 
 		// Repository/commit filtering.
