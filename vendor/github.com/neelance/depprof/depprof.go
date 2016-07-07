@@ -1,3 +1,4 @@
+// Package depprof is an experiment in creating a dependency graph by profiling at runtime.
 package depprof
 
 import (
@@ -18,6 +19,8 @@ type handler struct {
 	deps      map[[2]string]struct{}
 }
 
+// NewHandler starts profiling all packages that match the given filterPrefix and returns an
+// HTTP handler which gives access to the data collected.
 func NewHandler(filterPrefix string) http.Handler {
 	h := &handler{
 		filterPrefix: strings.TrimRight(filterPrefix, "/") + "/",
