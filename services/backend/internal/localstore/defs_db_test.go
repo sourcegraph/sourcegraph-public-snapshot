@@ -156,7 +156,7 @@ func testDefs(t *testing.T, outerTest outerCase) {
 	}
 
 	for _, repo := range rps {
-		op := store.DefUpdateOp{Repo: repo.ID, CommitID: commitID, Latest: true}
+		op := store.DefUpdateOp{Repo: repo.ID, CommitID: commitID}
 		err := g.UpdateFromSrclibStore(ctx, op)
 		if err != nil {
 			t.Fatal(err)

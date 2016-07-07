@@ -52,8 +52,4 @@ type DefUpdateOp struct {
 	CommitID string
 
 	RefreshCounts bool
-
-	// Latest is true if and only if the data imported in this update should be
-	// treated as the latest version of the default branch (e.g., tip of master)
-	Latest bool
 }

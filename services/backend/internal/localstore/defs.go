@@ -521,47 +521,38 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 	// Update state column
 	end = obs.start("update_state")
 	if err := dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
-		if op.Latest {
-			var repoRevs []*dbRepoRev
-			if _, err := tx.Select(&repoRevs, `SELECT * FROM repo_revs WHERE repo=$1 AND state=1`, repo.URI); err != nil {
-				return err
-			}
-			oldLatestRIDs := make([]int64, len(repoRevs))
-			for i, repoRev := range repoRevs {
-				oldLatestRIDs[i] = repoRev.ID
-			}
+		var repoRevs []*dbRepoRev
+		if _, err := tx.Select(&repoRevs, `SELECT * FROM repo_revs WHERE repo=$1 AND state=1`, repo.URI); err != nil {
+			return err
+		}
+		oldLatestRIDs := make([]int64, len(repoRevs))
+		for i, repoRev := range repoRevs {
+			oldLatestRIDs[i] = repoRev.ID
+		}
 
-			if _, err := tx.Exec(`UPDATE repo_revs SET state=2 WHERE repo=$1 AND state=1`, repo.URI); err != nil {
+		if _, err := tx.Exec(`UPDATE repo_revs SET state=2 WHERE repo=$1 AND state=1`, repo.URI); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(`UPDATE repo_revs SET state=1 WHERE id=$1`, repoRevID); err != nil {
+			return err
+		}
+		if len(oldLatestRIDs) > 0 {
+			var params = make([]string, len(oldLatestRIDs))
+			var args []interface{}
+			arg := func(v interface{}) string {
+				args = append(args, v)
+				return gorp.PostgresDialect{}.BindVar(len(args) - 1)
+			}
+			for i, rid := range oldLatestRIDs {
+				params[i] = arg(rid)
+			}
+			s := `UPDATE defs2 SET state=2 WHERE rid IN (` + strings.Join(params, ",") + `)`
+			if _, err := tx.Exec(s, args...); err != nil {
 				return err
 			}
-			if _, err := tx.Exec(`UPDATE repo_revs SET state=1 WHERE id=$1`, repoRevID); err != nil {
-				return err
-			}
-			if len(oldLatestRIDs) > 0 {
-				var params = make([]string, len(oldLatestRIDs))
-				var args []interface{}
-				arg := func(v interface{}) string {
-					args = append(args, v)
-					return gorp.PostgresDialect{}.BindVar(len(args) - 1)
-				}
-				for i, rid := range oldLatestRIDs {
-					params[i] = arg(rid)
-				}
-				s := `UPDATE defs2 SET state=2 WHERE rid IN (` + strings.Join(params, ",") + `)`
-				if _, err := tx.Exec(s, args...); err != nil {
-					return err
-				}
-			}
-			if _, err := tx.Exec(`UPDATE defs2 SET state=1 WHERE rid=$1`, repoRevID); err != nil {
-				return err
-			}
-		} else {
-			if _, err := tx.Exec("UPDATE repo_revs SET state=2 WHERE id=$1", repoRevID); err != nil {
-				return err
-			}
-			if _, err := tx.Exec("UPDATE defs2 SET state=2 WHERE rid=$1", repoRevID); err != nil {
-				return err
-			}
+		}
+		if _, err := tx.Exec(`UPDATE defs2 SET state=1 WHERE rid=$1`, repoRevID); err != nil {
+			return err
 		}
 		return nil
 	}); err != nil {
