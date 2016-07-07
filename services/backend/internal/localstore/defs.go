@@ -184,6 +184,7 @@ type defs struct{}
 var _ store.Defs = (*defs)(nil)
 
 func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error) {
+	startTime := time.Now()
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
@@ -391,6 +392,7 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 	if len(results) == 0 {
 		defsSearchResultsNone.Inc()
 	}
+	log15.Debug("TRACE defs.Search", "tokens", strings.Join(op.TokQuery, ","), "opts", fmt.Sprintf("%+v", op.Opt), "results_len", len(results), "duration", time.Since(startTime))
 
 	return &sourcegraph.SearchResultsList{DefResults: results}, nil
 }
