@@ -138,7 +138,7 @@ class DefInfo extends Container {
 		state.defCommitID = props.defObj ? props.defObj.CommitID : null;
 		state.authors = state.defObj ? DefStore.authors.get(state.repo, state.defObj.CommitID, state.def) : null;
 		state.refLocations = state.def && state.defObj ? DefStore.getRefLocations({
-			repo: state.repo, commitID: state.defCommitID, def: state.def, repos: "",
+			repo: state.repo, commitID: state.defCommitID, def: state.def, repos: [],
 		}) : null;
 		state.examples = state.def && state.defObj ? DefStore.getExamples({
 			repo: state.repo, commitID: state.defCommitID, def: state.def,
