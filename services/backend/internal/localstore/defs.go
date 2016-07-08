@@ -11,6 +11,7 @@ import (
 	"github.com/fatih/camelcase"
 	"github.com/lib/pq"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -183,6 +184,7 @@ type defs struct{}
 var _ store.Defs = (*defs)(nil)
 
 func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error) {
+	startTime := time.Now()
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
@@ -223,6 +225,7 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 		wheres = append(wheres, "state=1")
 
 		if len(op.Opt.NotRepos) > 0 {
+			end := obs.start("notrepos")
 			notRIDs := make([]int64, len(op.Opt.NotRepos))
 			for i, r := range op.Opt.NotRepos {
 				notRepo, err := store.ReposFromContext(ctx).Get(ctx, r)
@@ -247,10 +250,12 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 				nrArgs[i] = arg(r)
 			}
 			wheres = append(wheres, "rid NOT IN ("+strings.Join(nrArgs, ",")+")")
+			end()
 		}
 
 		// Repository/commit filtering.
 		if len(op.Opt.Repos) > 0 {
+			end := obs.start("repos")
 			var repoArgs []string
 			for _, repo := range op.Opt.Repos {
 				rp, err := store.ReposFromContext(ctx).Get(ctx, repo)
@@ -273,6 +278,7 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 			if len(repoArgs) > 0 {
 				wheres = append(wheres, `rid IN (`+strings.Join(repoArgs, ",")+`)`)
 			}
+			end()
 		}
 
 		// Language filtering.
@@ -343,6 +349,8 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 		end()
 	}
 
+	end = obs.start("resolveresults")
+	defer end()
 	var results []*sourcegraph.DefSearchResult
 	for _, d := range dbSearchResults {
 		// convert dbDef to Def
@@ -380,6 +388,12 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 		})
 	}
 
+	defsSearchResultsLength.Observe(float64(len(results)))
+	if len(results) == 0 {
+		defsSearchResultsNone.Inc()
+	}
+	log15.Debug("TRACE defs.Search", "tokens", strings.Join(op.TokQuery, ","), "opts", fmt.Sprintf("%+v", op.Opt), "results_len", len(results), "duration", time.Since(startTime))
+
 	return &sourcegraph.SearchResultsList{DefResults: results}, nil
 }
 
@@ -402,7 +416,7 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 		return err
 	}
 	obs := newDefsUpdateObserver("defs2", repo.URI)
-	totalEnd := obs.start("srclibstore_total")
+	totalEnd := obs.start("update_total")
 	defer totalEnd()
 
 	if len(op.CommitID) == 0 {
@@ -478,6 +492,7 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 	langWarnCount := 0
 	dbDefs := make([]*dbDefInsert, len(chosenDefs))
 	now := time.Now()
+	end = obs.start("compute_defs")
 	for i, def := range chosenDefs {
 		dk := def.DefKey
 		dk.Repo, dk.CommitID = repo.URI, ""
@@ -508,6 +523,7 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 	if langWarnCount > 0 {
 		log15.Warn("could not determine language for all defs", "noLang", langWarnCount, "allDefs", len(chosenDefs))
 	}
+	end()
 
 	end = obs.start("update_insert")
 	if err := dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
@@ -569,10 +585,13 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 	end()
 
 	// Garbage-collect old def and repo_revs rows
+	end = obs.start("gc_get_revs")
 	rrOld, err := getRepoRevsOld(ctx, dbh, repo.URI)
+	end()
 	if err != nil {
 		return err
 	}
+	end = obs.start("gc_delete")
 	for _, rr := range rrOld {
 		// Delete defs before repo revs, so this gets retried on next update if this fails for some reason.
 		if _, err := dbh.Exec(`DELETE FROM defs2 WHERE rid=$1 and state=2`, rr.ID); err != nil {
@@ -582,6 +601,7 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 			return err
 		}
 	}
+	end()
 
 	return nil
 }
@@ -820,4 +840,23 @@ func shouldIndex(d *graph.Def) bool {
 		return false
 	}
 	return true
+}
+
+var defsSearchResultsLength = prometheus.NewSummary(prometheus.SummaryOpts{
+	Namespace: "src",
+	Subsystem: "defs",
+	Name:      "search_results_length",
+	Help:      "Number of results returned for a search",
+	MaxAge:    time.Hour,
+})
+var defsSearchResultsNone = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "defs",
+	Name:      "search_results_none_total",
+	Help:      "Number of times we returned no results",
+})
+
+func init() {
+	prometheus.MustRegister(defsSearchResultsLength)
+	prometheus.MustRegister(defsSearchResultsNone)
 }
