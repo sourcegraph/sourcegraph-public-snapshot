@@ -12,7 +12,7 @@ import (
 
 	"github.com/gorilla/schema"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )

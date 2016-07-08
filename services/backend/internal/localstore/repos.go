@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 	gogithub "github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -300,10 +300,13 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	par := parallel.NewRun(30)
 	for _, repo := range dbRepos {
 		repo := repo
-		par.Do(func() error {
-			_, err := verifyAccessAndSetAllFields(ctx, repo)
-			return err
-		})
+		par.Acquire()
+		go func() {
+			defer par.Release()
+			if _, err := verifyAccessAndSetAllFields(ctx, repo); err != nil {
+				par.Error(err)
+			}
+		}()
 	}
 	if err := par.Wait(); err != nil {
 		return nil, err

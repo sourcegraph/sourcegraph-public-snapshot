@@ -654,6 +654,12 @@
 			"revisionTime": "2016-07-07T22:02:19Z"
 		},
 		{
+			"checksumSHA1": "K4L6qMn6mHxuWwEYhVBaCoDcSH0=",
+			"path": "github.com/neelance/parallel",
+			"revision": "4de9ce63d14c18517a79efe69e10e99d32c850c3",
+			"revisionTime": "2016-07-08T11:44:40Z"
+		},
+		{
 			"checksumSHA1": "+XhZPRZr5C/pAwHRHqyoZFTXkdE=",
 			"path": "github.com/nlopes/slack",
 			"revision": "e337a7316d3fe9aa55b7063035d6d32f3dbcaeb9",

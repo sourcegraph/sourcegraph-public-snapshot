@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -357,12 +357,14 @@ func (c *repoSyncCmd) Execute(args []string) error {
 	par := parallel.NewRun(30)
 	for _, repo_ := range c.Args.URIs {
 		repo := repo_
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
 			if err := c.sync(repo); err != nil {
-				return fmt.Errorf(red("%s:")+" %s", repo, err)
+				par.Error(fmt.Errorf(red("%s:")+" %s", repo, err))
+				return
 			}
-			return nil
-		})
+		}()
 	}
 	if err := par.Wait(); err != nil {
 		if errs, ok := err.(parallel.Errors); ok {
