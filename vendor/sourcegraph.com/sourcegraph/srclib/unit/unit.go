@@ -200,10 +200,6 @@ func (u *SourceUnit) UnmarshalJSON(b []byte) error {
 	for k, vJSON := range su.Config {
 		var v string
 		if err := json.Unmarshal(*vJSON, &v); err != nil {
-			// Logging the error individually and continuing so that one bad
-			// unit won't cause the entire operation to fail.
-			//
-			// TODO fix the underlying issue to prevent this.
 			log.Printf("could not unmarshal config string due to error %s; JSON was %q; source unit was (%s, %s, %s, %s), Config was %+v", err, *vJSON, su.Repo, su.CommitID, su.Type, su.Name, su.Config)
 			continue
 		}

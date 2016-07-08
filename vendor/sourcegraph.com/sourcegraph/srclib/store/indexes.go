@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 
 	"strings"
 	"sync"
@@ -150,7 +150,11 @@ func BuildIndexes(store interface{}, c IndexCriteria, indexChan chan<- IndexStat
 				par = parallel.NewRun(MaxIndexParallel)
 			}
 			sx_ := sx
-			par.Do(func() error { doBuild(sx_); return nil })
+			par.Acquire()
+			go func() {
+				defer par.Release()
+				doBuild(sx_)
+			}()
 
 			lastDependsOnChildren = sx.DependsOnChildren
 		}
@@ -350,15 +354,19 @@ func listIndexes(s interface{}, c IndexCriteria, ch chan<- IndexStatus, f func(*
 			par := parallel.NewRun(MaxIndexParallel)
 			for unit_, us_ := range uss {
 				unit, us := unit_, us_
-				par.Do(func() error {
+				par.Acquire()
+				go func() {
+					defer par.Release()
 					unitCopy := unit
-					return listIndexes(us, c, ch, func(x *IndexStatus) {
+					if err := listIndexes(us, c, ch, func(x *IndexStatus) {
 						x.Unit = &unitCopy
 						if f != nil {
 							f(x)
 						}
-					})
-				})
+					}); err != nil {
+						par.Error(err)
+					}
+				}()
 			}
 			if err := par.Wait(); err != nil {
 				return err

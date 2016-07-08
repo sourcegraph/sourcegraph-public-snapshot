@@ -702,11 +702,6 @@
 			"revisionTime": "2015-04-19T18:00:43Z"
 		},
 		{
-			"path": "github.com/rogpeppe/rog-go/parallel",
-			"revision": "f57ad5e24ab7813942c045f86eda1066eb969e98",
-			"revisionTime": "2015-01-10T16:24:53Z"
-		},
-		{
 			"checksumSHA1": "LFAxwezx2+akJHgNl8WBwYLLTHM=",
 			"path": "github.com/russross/blackfriday",
 			"revision": "2004188462c3946efefbdcd91aa83e49b4175bfb",
@@ -1306,9 +1301,10 @@
 			"revisionTime": "2016-03-16T13:57:33-07:00"
 		},
 		{
+			"checksumSHA1": "fCcJmxZyw+abt3nm6ZQd9h2KMVc=",
 			"path": "sourcegraph.com/sourcegraph/makex",
-			"revision": "9a03b093bc189b7f30af07076ff81a309d8c7621",
-			"revisionTime": "2015-12-12T22:14:40-08:00"
+			"revision": "3f62e8d29c0ff8c517a78ced8318b03110c3f532",
+			"revisionTime": "2016-07-08T12:54:03Z"
 		},
 		{
 			"checksumSHA1": "thalOxMGUln4he8/AKgUOVgEgmg=",
@@ -1330,8 +1326,8 @@
 		{
 			"checksumSHA1": "WciIxYphoS+FdwfMHnP3X0m/t3M=",
 			"path": "sourcegraph.com/sourcegraph/srclib",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
@@ -1381,116 +1377,116 @@
 		{
 			"checksumSHA1": "vohwB0yBW8/G9TgTvB7nCYDGrI4=",
 			"path": "sourcegraph.com/sourcegraph/srclib/ann",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
-			"checksumSHA1": "6Gr29dGzABWc6eUncFUs7LMVDVY=",
+			"checksumSHA1": "3PXnwFp9nV0gHLFd/mSjXxl77XU=",
 			"path": "sourcegraph.com/sourcegraph/srclib/buildstore",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
-			"checksumSHA1": "qqrCIB68s+WIhrRnIgdclzrMRVI=",
+			"checksumSHA1": "kLqkamCikN3u+iOTbqRy0bOsCO8=",
 			"path": "sourcegraph.com/sourcegraph/srclib/cli",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
-			"checksumSHA1": "kvnyBbEvqJqDFaiSJ6Hxc24jatw=",
+			"checksumSHA1": "3aZZDoRw3+iqgPpTOxvs0LTig0g=",
 			"path": "sourcegraph.com/sourcegraph/srclib/config",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
 			"checksumSHA1": "YgOvbeh6dThFvXuv/6ilRrpTAkY=",
 			"path": "sourcegraph.com/sourcegraph/srclib/cvg",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
 			"checksumSHA1": "vUECzhjLYS4ERgLkmb5MNIhRVEw=",
 			"path": "sourcegraph.com/sourcegraph/srclib/dep",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
 			"checksumSHA1": "HtQlMBtlxD6UuZTAOhPS2UiwobQ=",
 			"path": "sourcegraph.com/sourcegraph/srclib/flagutil",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
-			"checksumSHA1": "+e34O3jqh4Cwnee8BYhrBMyKMmY=",
+			"checksumSHA1": "RaJ/Sgh8tsMKZnmF3VgE0AJWJ8k=",
 			"path": "sourcegraph.com/sourcegraph/srclib/gendata",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
 			"checksumSHA1": "IlhJpzgSvjk9dQXGcZARbjn3D/I=",
 			"path": "sourcegraph.com/sourcegraph/srclib/graph",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
 			"checksumSHA1": "n9+uBskJ2Z+3wyL3piirywGB2Iw=",
 			"path": "sourcegraph.com/sourcegraph/srclib/grapher",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
 			"checksumSHA1": "4bz5pt5eM29kurcWK2WpjlHqRAo=",
 			"path": "sourcegraph.com/sourcegraph/srclib/plan",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
-			"checksumSHA1": "aYHKzr60hfMkP5DBy7q3hHaYWk0=",
+			"checksumSHA1": "QLbr3KRvqzE7NA0bxVIODGUwu1E=",
 			"path": "sourcegraph.com/sourcegraph/srclib/scan",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
-			"checksumSHA1": "Ya3QI4cPVkYEpWzJneYBT/55VbM=",
+			"checksumSHA1": "c2AkQ1/VI4ujiDDF9jmdq7SrEXg=",
 			"path": "sourcegraph.com/sourcegraph/srclib/store",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
 			"checksumSHA1": "Wcga6D9y/GoKviaX9tpvBPZ4DdE=",
 			"path": "sourcegraph.com/sourcegraph/srclib/store/pb",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
 			"checksumSHA1": "l35Md5Upf6nXt5S9VUpImmHyGkQ=",
 			"path": "sourcegraph.com/sourcegraph/srclib/store/pbio",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
 			"checksumSHA1": "l92oSpD/BquNpqY2uqk4o0XCcEM=",
 			"path": "sourcegraph.com/sourcegraph/srclib/store/phtable",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
 			"checksumSHA1": "ZlOdLig/z39GiVB6qJkwhNq/8nU=",
 			"path": "sourcegraph.com/sourcegraph/srclib/toolchain",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
-			"checksumSHA1": "UhLAdB3K50ymmCZHGI+tXGUhazA=",
+			"checksumSHA1": "8byZ8qRI2ZMOtzRiXufSMeTrlRI=",
 			"path": "sourcegraph.com/sourcegraph/srclib/unit",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
 			"checksumSHA1": "sX55Z0+7/lbGcM2XgxpFylHQCIc=",
 			"path": "sourcegraph.com/sourcegraph/srclib/util",
-			"revision": "8ab808e13fa06d763db0bcf918902d8458f9c7e5",
-			"revisionTime": "2016-06-30T03:42:07Z"
+			"revision": "309efcef61f45418c862e70f2f3d7f93cd9f424e",
+			"revisionTime": "2016-07-08T12:43:05Z"
 		},
 		{
 			"path": "sourcegraph.com/sqs/pbtypes",

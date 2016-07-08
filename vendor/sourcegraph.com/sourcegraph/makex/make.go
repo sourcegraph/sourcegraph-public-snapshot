@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 )
 
 // NewMaker creates a new Maker, which can build goals in a Makefile.
@@ -163,6 +163,11 @@ func (m *Maker) TargetSetsNeedingBuild() ([][]string, error) {
 	for _, targetSet := range m.topo {
 		var targetsNeedingBuild []string
 		for _, target := range targetSet {
+			// Always build .PHONY target
+			if isPhony(m, target) {
+				targetsNeedingBuild = append(targetsNeedingBuild, target)
+				continue
+			}
 			exists, err := m.pathExists(target)
 			if err != nil {
 				return nil, err
@@ -185,6 +190,10 @@ func (m *Maker) TargetSetsNeedingBuild() ([][]string, error) {
 				return nil, errNoRuleToMakeTarget(target)
 			}
 			for _, p := range rule.Prereqs() {
+				if isPhony(m, p) {
+					targetsNeedingBuild = append(targetsNeedingBuild, target)
+					break
+				}
 				m, err := m.modTime(p)
 				if err != nil {
 					return nil, err
@@ -245,7 +254,10 @@ func (m *Maker) Run() error {
 		par := parallel.NewRun(m.ParallelJobs)
 		for _, target := range targetSet {
 			rule := m.mf.Rule(target)
-			par.Do(func() error {
+			par.Acquire()
+			go func() {
+				defer par.Release()
+
 				stdout, stderr, log := m.ruleOutput(rule)
 				if m.Started != nil {
 					m.Started <- rule
@@ -281,16 +293,15 @@ func (m *Maker) Run() error {
 						if m.Failed != nil {
 							m.Failed <- err2
 						}
-						return err2
+						par.Error(err2)
+						return
 					}
 				}
 
 				if m.Succeeded != nil {
 					m.Succeeded <- rule
 				}
-
-				return nil
-			})
+			}()
 		}
 		err := par.Wait()
 		if err != nil {
@@ -330,3 +341,19 @@ type nopCloser struct {
 }
 
 func (nc nopCloser) Close() error { return nil }
+
+// isPhony returns true if target is a .PHONY's prerequisite
+func isPhony(m *Maker, target string) bool {
+	rule := m.mf.Rule(".PHONY")
+	if rule == nil {
+		return false
+	}
+
+	for _, p := range rule.Prereqs() {
+		if p == target {
+			return true
+		}
+	}
+
+	return false
+}

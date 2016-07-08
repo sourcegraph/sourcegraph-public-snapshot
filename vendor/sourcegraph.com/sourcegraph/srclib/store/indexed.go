@@ -11,7 +11,7 @@ import (
 
 	"compress/gzip"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 
 	"sort"
 	"strings"
@@ -379,16 +379,18 @@ func (s *indexedTreeStore) buildIndexes(xs map[string]Index, units []*unit.Sourc
 						continue
 					}
 
-					par.Do(func() error {
+					par.Acquire()
+					go func() {
+						defer par.Release()
 						x := us.indexes[defToRefsIndexName]
 						if err := prepareIndex(us.fs, defToRefsIndexName, x); err != nil {
-							return err
+							par.Error(err)
+							return
 						}
 						unitRefIndexesLock.Lock()
 						defer unitRefIndexesLock.Unlock()
 						unitRefIndexes[u] = x.(*defRefsIndex)
-						return nil
-					})
+					}()
 				}
 				getUnitRefIndexesErr = par.Wait()
 			}
@@ -429,16 +431,18 @@ func (s *indexedTreeStore) buildIndexes(xs map[string]Index, units []*unit.Sourc
 						continue
 					}
 
-					par.Do(func() error {
+					par.Acquire()
+					go func() {
+						defer par.Release()
 						x := us.indexes[defQueryIndexName]
 						if err := prepareIndex(us.fs, defQueryIndexName, x); err != nil {
-							return err
+							par.Error(err)
+							return
 						}
 						unitDefQueryIndexesLock.Lock()
 						defer unitDefQueryIndexesLock.Unlock()
 						unitDefQueryIndexes[u] = x.(*defQueryIndex)
-						return nil
-					})
+					}()
 				}
 				getUnitDefQueryIndexesErr = par.Wait()
 			}
@@ -452,42 +456,51 @@ func (s *indexedTreeStore) buildIndexes(xs map[string]Index, units []*unit.Sourc
 	par := parallel.NewRun(runtime.GOMAXPROCS(0))
 	for name_, x_ := range xs {
 		name, x := name_, x_
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
 			switch x := x.(type) {
 			case unitIndexBuilder:
 				units, err := getUnits()
 				if err != nil {
-					return err
+					par.Error(err)
+					return
 				}
 				if err := x.Build(units); err != nil {
-					return err
+					par.Error(err)
+					return
 				}
 			case unitRefIndexBuilder:
 				unitRefIndexes, err := getUnitRefIndexes()
 				if err != nil {
-					return err
+					par.Error(err)
+					return
 				}
 				if err := x.Build(unitRefIndexes); err != nil {
-					return err
+					par.Error(err)
+					return
 				}
 			case defQueryTreeIndexBuilder:
 				unitDefQueryIndexes, err := getUnitDefQueryIndexes()
 				if err != nil {
-					return err
+					par.Error(err)
+					return
 				}
 				if err := x.Build(unitDefQueryIndexes); err != nil {
-					return err
+					par.Error(err)
+					return
 				}
 			default:
-				return fmt.Errorf("don't know how to build index %q of type %T", name, x)
+				par.Error(fmt.Errorf("don't know how to build index %q of type %T", name, x))
+				return
 			}
 			if x, ok := x.(persistedIndex); ok {
 				if err := writeIndex(s.fs, name, x); err != nil {
-					return err
+					par.Error(err)
+					return
 				}
 			}
-			return nil
-		})
+		}()
 	}
 	return par.Wait()
 }
@@ -675,34 +688,41 @@ func (s *indexedUnitStore) buildIndexes(xs map[string]Index, data *graph.Output,
 	par := parallel.NewRun(runtime.GOMAXPROCS(0))
 	for name_, x_ := range xs {
 		name, x := name_, x_
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
 			switch x := x.(type) {
 			case defIndexBuilder:
 				defs, defOfs, err := getDefs()
 				if err != nil {
-					return err
+					par.Error(err)
+					return
 				}
 				if err := x.Build(defs, defOfs); err != nil {
-					return err
+					par.Error(err)
+					return
 				}
 			case refIndexBuilder:
 				refs, refFBRs, refOfs, err := getRefs()
 				if err != nil {
-					return err
+					par.Error(err)
+					return
 				}
 				if err := x.Build(refs, refFBRs, refOfs); err != nil {
-					return err
+					par.Error(err)
+					return
 				}
 			default:
-				return fmt.Errorf("don't know how to build index %q of type %T", name, x)
+				par.Error(fmt.Errorf("don't know how to build index %q of type %T", name, x))
+				return
 			}
 			if x, ok := x.(persistedIndex); ok {
 				if err := writeIndex(s.fs, name, x); err != nil {
-					return err
+					par.Error(err)
+					return
 				}
 			}
-			return nil
-		})
+		}()
 	}
 	return par.Wait()
 }

@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 
 	"github.com/kr/fs"
 	"golang.org/x/tools/godoc/vfs"
@@ -602,9 +602,12 @@ func (s *fsUnitStore) defsAtOffsets(ofs byteOffsets, fs []DefFilter) (defs []*gr
 	par := parallel.NewRun(p)
 	for _, ofs_ := range ofs {
 		ofs := ofs_
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
+
 			if _, moreOK := LimitRemaining(fs); !moreOK {
-				return nil
+				return
 			}
 
 			// Guess how many bytes this def is. The s3vfs (if that's the
@@ -612,20 +615,21 @@ func (s *fsUnitStore) defsAtOffsets(ofs byteOffsets, fs []DefFilter) (defs []*gr
 			const byteEstimate = 2 * decodeBufSize
 			r, err := rangeReader(s.fs, unitDefsFilename, f, ofs, byteEstimate)
 			if err != nil {
-				return err
+				par.Error(err)
+				return
 			}
 			dec := Codec.NewDecoder(r)
 			var def graph.Def
 			if _, err := dec.Decode(&def); err != nil {
-				return err
+				par.Error(err)
+				return
 			}
 			if ffs.SelectDef(&def) {
 				defsLock.Lock()
 				defs = append(defs, &def)
 				defsLock.Unlock()
 			}
-			return nil
-		})
+		}()
 	}
 	if err := par.Wait(); err != nil {
 		return defs, err
@@ -738,20 +742,25 @@ func (s *fsUnitStore) refsAtByteRanges(brs []byteRanges, fs []RefFilter) (refs [
 	par := parallel.NewRun(p)
 	for i_, br_ := range brs {
 		i, br := i_, br_
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
+
 			if _, moreOK := LimitRemaining(fs); !moreOK {
-				return nil
+				return
 			}
 
 			r, err := rangeReader(s.fs, unitRefsFilename, f, br.start(), readLengths[i])
 			if err != nil {
-				return err
+				par.Error(err)
+				return
 			}
 			dec := Codec.NewDecoder(r)
 			for range br[1:] {
 				var ref graph.Ref
 				if _, err := dec.Decode(&ref); err != nil {
-					return err
+					par.Error(err)
+					return
 				}
 				if ffs.SelectRef(&ref) {
 					refsLock.Lock()
@@ -759,8 +768,7 @@ func (s *fsUnitStore) refsAtByteRanges(brs []byteRanges, fs []RefFilter) (refs [
 					refsLock.Unlock()
 				}
 			}
-			return nil
-		})
+		}()
 	}
 	if err := par.Wait(); err != nil {
 		return refs, err
@@ -796,9 +804,12 @@ func (s *fsUnitStore) refsAtOffsets(ofs byteOffsets, fs []RefFilter) (refs []*gr
 	par := parallel.NewRun(p)
 	for _, ofs_ := range ofs {
 		ofs := ofs_
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
+
 			if _, moreOK := LimitRemaining(fs); !moreOK {
-				return nil
+				return
 			}
 
 			// Guess how many bytes this ref is. The s3vfs (if that's the
@@ -806,20 +817,21 @@ func (s *fsUnitStore) refsAtOffsets(ofs byteOffsets, fs []RefFilter) (refs []*gr
 			const byteEstimate = decodeBufSize
 			r, err := rangeReader(s.fs, unitRefsFilename, f, ofs, byteEstimate)
 			if err != nil {
-				return err
+				par.Error(err)
+				return
 			}
 			dec := Codec.NewDecoder(r)
 			var ref graph.Ref
 			if _, err := dec.Decode(&ref); err != nil {
-				return err
+				par.Error(err)
+				return
 			}
 			if ffs.SelectRef(&ref) {
 				refsLock.Lock()
 				refs = append(refs, &ref)
 				refsLock.Unlock()
 			}
-			return nil
-		})
+		}()
 	}
 	if err := par.Wait(); err != nil {
 		return refs, err

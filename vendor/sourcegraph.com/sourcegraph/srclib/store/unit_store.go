@@ -3,7 +3,7 @@ package store
 import (
 	"sync"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
@@ -61,10 +61,13 @@ func (s unitStores) Defs(fs ...DefFilter) ([]*graph.Def, error) {
 			continue
 		}
 
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
 			defs, err := us.Defs(filtersForUnit(u, fs).([]DefFilter)...)
 			if err != nil && !isStoreNotExist(err) {
-				return err
+				par.Error(err)
+				return
 			}
 			for _, def := range defs {
 				def.UnitType = u.Type
@@ -73,8 +76,7 @@ func (s unitStores) Defs(fs ...DefFilter) ([]*graph.Def, error) {
 			allDefsMu.Lock()
 			allDefs = append(allDefs, defs...)
 			allDefsMu.Unlock()
-			return nil
-		})
+		}()
 	}
 	err = par.Wait()
 	return allDefs, err
@@ -102,16 +104,19 @@ func (s unitStores) Refs(f ...RefFilter) ([]*graph.Ref, error) {
 
 		c_unitStores_Refs_last_numUnitsQueried.increment()
 
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
 			if _, moreOK := LimitRemaining(f); !moreOK {
-				return nil
+				return
 			}
 			fCopy := filtersForUnit(u, f).([]RefFilter)
 			fCopy = withImpliedUnit(fCopy, u)
 
 			refs, err := us.Refs(fCopy...)
 			if err != nil && !isStoreNotExist(err) {
-				return err
+				par.Error(err)
+				return
 			}
 			for _, ref := range refs {
 				ref.UnitType = u.Type
@@ -127,8 +132,7 @@ func (s unitStores) Refs(f ...RefFilter) ([]*graph.Ref, error) {
 			allRefsMu.Lock()
 			allRefs = append(allRefs, refs...)
 			allRefsMu.Unlock()
-			return nil
-		})
+		}()
 	}
 	err = par.Wait()
 	return allRefs, err

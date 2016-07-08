@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 	"sourcegraph.com/sourcegraph/srclib/flagutil"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 )
@@ -37,17 +37,20 @@ func ScanMulti(scanners [][]string, opt Options, treeConfig map[string]interface
 	run := parallel.NewRun(runtime.GOMAXPROCS(0))
 	for _, scanner_ := range scanners {
 		scanner := scanner_
-		run.Do(func() error {
+		run.Acquire()
+		go func() {
+			defer run.Release()
+
 			units2, err := Scan(scanner, opt, treeConfig)
 			if err != nil {
-				return fmt.Errorf("scanner %v: %s", scanner, err)
+				run.Error(fmt.Errorf("scanner %v: %s", scanner, err))
+				return
 			}
 
 			mu.Lock()
 			defer mu.Unlock()
 			units = append(units, units2...)
-			return nil
-		})
+		}()
 	}
 	err := run.Wait()
 	// Return error only if none of the commands succeeded.
