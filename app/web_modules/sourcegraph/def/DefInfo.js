@@ -24,7 +24,7 @@ import {trimRepo} from "sourcegraph/repo";
 import {urlToRepo} from "sourcegraph/repo/routes";
 import {LanguageIcon} from "sourcegraph/components/Icons";
 import {EmptyNodeIllo} from "sourcegraph/components/symbols";
-import {Dropdown, Header, Heading, FlexContainer, GitHubAuthButton} from "sourcegraph/components";
+import {Dropdown, Header, Heading, FlexContainer, GitHubAuthButton, Loader} from "sourcegraph/components";
 
 
 // Number of characters of the Docstring to show before showing the "collapse" options.
@@ -286,54 +286,59 @@ class DefInfo extends Container {
 									]} />
 							</div>
 
-							{refLocations && !refLocations.RepoRefs &&
-								<div className={`${typography.tc} ${base.center} ${base.mv5}`} style={{maxWidth: "500px"}}>
-									<EmptyNodeIllo className={base.mv3} />
-									<Heading level="5">
-										We can't find any usage examples or <br className={base["hidden-s"]} />
-										references for this definition
-									</Heading>
-									<p styleName="cool-mid-gray">
-										It looks like this node in the graph is missing.
-										{!this.context.signedIn &&
-											<span> Help us get more nodes in the graph by joining with Github.</span>
-										}
-									</p>
-									{!this.context.signedIn &&
-										<p className={base.mt4}><GitHubAuthButton size="small">Join with GitHub</GitHubAuthButton></p>
-									}
-								</div>
-							}
 
-							{!refLocations && <div>Loading...</div>}
+							{!refLocations && <div className={typography.tc}><Loader /></div>}
 
-							{refLocations && refLocations.RepoRefs &&
+							{refLocations &&
 								<div>
-									<div className={base.mt5}>
-										{examples &&
-											<ExamplesContainer
-												repo={repo}
-												rev={rev}
-												defCommitID={defCommitID}
-												def={def}
-												defObj={defObj}
-												examples={examples} />
-										}
-									</div>
-									<div className={base.mt5}>
-										<RepoRefsContainer
-											repo={repo}
-											rev={rev}
-											commitID={defCommitID}
-											def={def}
-											defObj={defObj}
-											refLocations={refLocations} />
-									</div>
+									{refLocations.RepoRefs &&
+										<div>
+											{examples &&
+												<div className={base.mt5}>
+													<ExamplesContainer
+														repo={repo}
+														rev={rev}
+														defCommitID={defCommitID}
+														def={def}
+														defObj={defObj}
+														examples={examples} />
+												</div>
+											}
+											<div className={base.mt5}>
+												<RepoRefsContainer
+													repo={repo}
+													rev={rev}
+													commitID={defCommitID}
+													def={def}
+													defObj={defObj}
+													refLocations={refLocations} />
+											</div>
+										</div>
+									}
+
+									{!refLocations.RepoRefs &&
+										<div className={`${typography.tc} ${base.center} ${base.mv5}`} style={{maxWidth: "500px"}}>
+											<EmptyNodeIllo className={base.mv3} />
+											<Heading level="5">
+												We can't find any usage examples or <br className={base["hidden-s"]} />
+												references for this definition
+											</Heading>
+											<p styleName="cool-mid-gray">
+												It looks like this node in the graph is missing.
+												{!this.context.signedIn &&
+													<span> Help us get more nodes in the graph by joining with Github.</span>
+												}
+											</p>
+											{!this.context.signedIn &&
+												<p className={base.mt4}><GitHubAuthButton size="small">Join with GitHub</GitHubAuthButton></p>
+											}
+										</div>
+									}
+
 								</div>
 							}
 						</div>
 					}
-
 				</div>
 			</FlexContainer>
 		);
