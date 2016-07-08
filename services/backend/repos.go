@@ -5,7 +5,6 @@ import (
 	"fmt"
 	pathpkg "path"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"time"
 
@@ -87,7 +86,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 	// deletedRepoURI is used to prune repos from list. Its value should be something an existing repo cannot have, like empty string.
 	const deletedRepoURI = ""
 
-	par := parallel.NewRun(runtime.GOMAXPROCS(0))
+	par := parallel.NewRun(30)
 	for _, repo_ := range repos {
 		repo := repo_
 		par.Do(func() error {
