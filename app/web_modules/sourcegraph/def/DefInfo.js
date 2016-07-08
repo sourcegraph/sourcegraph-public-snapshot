@@ -43,6 +43,7 @@ class DefInfo extends Container {
 		def: React.PropTypes.string.isRequired,
 		commitID: React.PropTypes.string,
 		rev: React.PropTypes.string,
+		defObj: React.PropTypes.object,
 	};
 
 	constructor(props) {
@@ -136,11 +137,11 @@ class DefInfo extends Container {
 		state.defObj = props.defObj || null;
 		state.defCommitID = props.defObj ? props.defObj.CommitID : null;
 		state.authors = state.defObj ? DefStore.authors.get(state.repo, state.defObj.CommitID, state.def) : null;
-		state.refLocations = state.def ? DefStore.getRefLocations({
-			repo: state.repo, commitID: props.commitID, def: state.def,
+		state.refLocations = state.def && state.defObj ? DefStore.getRefLocations({
+			repo: state.repo, commitID: state.defCommitID, def: state.def, repos: "",
 		}) : null;
-		state.examples = state.def ? DefStore.getExamples({
-			repo: state.repo, commitID: props.commitID, def: state.def,
+		state.examples = state.def && state.defObj ? DefStore.getExamples({
+			repo: state.repo, commitID: state.defCommitID, def: state.def,
 		}) : null;
 
 		if (state.defObj && state.defDescrHidden === null) {
@@ -152,14 +153,14 @@ class DefInfo extends Container {
 		if (prevState.defCommitID !== nextState.defCommitID && nextState.defCommitID) {
 			Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.defCommitID, nextState.def));
 		}
-		if (nextState.currPage !== prevState.currPage || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
+		if (nextState.currPage !== prevState.currPage || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def || nextState.defObj !== prevState.defObj) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
-				repo: nextState.repo, commitID: nextState.commitID, def: nextState.def, repos: nextState.defRepos, page: nextState.currPage,
+				repo: nextState.repo, commitID: nextState.defCommitID, def: nextState.def, repos: nextState.defRepos, page: nextState.currPage,
 			}));
 		}
-		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
+		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def || nextState.defObj !== prevState.defObj) {
 			Dispatcher.Backends.dispatch(new DefActions.WantExamples({
-				repo: nextState.repo, commitID: nextState.commitID, def: nextState.def,
+				repo: nextState.repo, commitID: nextState.defCommitID, def: nextState.def,
 			}));
 		}
 	}
@@ -298,7 +299,7 @@ class DefInfo extends Container {
 													<ExamplesContainer
 														repo={repo}
 														rev={rev}
-														defCommitID={defCommitID}
+														commitID={defCommitID}
 														def={def}
 														defObj={defObj}
 														examples={examples} />
