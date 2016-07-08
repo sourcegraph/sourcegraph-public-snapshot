@@ -94,6 +94,6 @@ export type RefLocationsKey = {
 
 export type ExamplesKey = {
 	repo: string;
-	commitID: ?string[];
-	def: ?string[];
+	commitID: ?string;
+	def: ?string;
 }
