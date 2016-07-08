@@ -197,35 +197,6 @@ export class BetaSubscriptionCompleted {
 	}
 }
 
-export class SubmitEmailSubscription {
-	email: string;
-	firstName: string;
-	lastName: string;
-	language: string;
-	editor: string;
-	message: string;
-	// eventName purposefully left out
-
-	constructor(email: string, firstName: string, lastName: string, language: string, editor: string, message: string) {
-		this.email = email;
-		this.firstName = firstName;
-		this.lastName = lastName;
-		this.language = language;
-		this.editor = editor;
-		this.message = message;
-	}
-}
-
-export class EmailSubscriptionCompleted {
-	resp: any;
-	eventName: string;
-
-	constructor(resp: any) {
-		this.resp = resp;
-		this.eventName = "EmailSubscriptionCompleted";
-	}
-}
-
 export class UpdateSettings {
 	settings: Settings;
 

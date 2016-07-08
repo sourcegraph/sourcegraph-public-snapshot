@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"runtime"
 	"sync"
 
 	"github.com/sqs/fileset"
@@ -29,7 +28,7 @@ func readDir(r vcs.Repository, commit vcs.CommitID, base string, recurseSingleSu
 		wg         sync.WaitGroup
 		recurseErr error
 		dirCount   = 0
-		sem        = make(chan bool, runtime.GOMAXPROCS(0))
+		sem        = make(chan bool, 8)
 		te         = make([]*sourcegraph.BasicTreeEntry, len(entries))
 	)
 	for i, fi := range entries {

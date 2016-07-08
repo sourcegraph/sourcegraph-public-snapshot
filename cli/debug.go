@@ -8,6 +8,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
+	"github.com/neelance/depprof"
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/expvarutil"
 )
@@ -26,6 +27,7 @@ func startDebugServer(addr string) {
 		pp.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
 		pp.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
 		pp.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
+		pp.Handle("/debug/depprof", depprof.NewHandler("sourcegraph.com/sourcegraph/sourcegraph"))
 		pp.Handle("/metrics", prometheus.Handler())
 		log.Println("warning: could not start pprof HTTP server:", http.ListenAndServe(addr, pp))
 	}()

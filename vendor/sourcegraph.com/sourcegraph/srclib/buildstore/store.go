@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 
 	"github.com/kr/fs"
 
@@ -125,7 +125,13 @@ func RemoveAll(path string, vfs rwvfs.WalkableFileSystem) error {
 	w := fs.WalkFS(path, vfs)
 
 	remove := func(par *parallel.Run, path string) {
-		par.Do(func() error { return vfs.Remove(path) })
+		par.Acquire()
+		go func() {
+			defer par.Release()
+			if err := vfs.Remove(path); err != nil {
+				par.Error(err)
+			}
+		}()
 	}
 
 	var dirs []string // remove dirs after removing all files

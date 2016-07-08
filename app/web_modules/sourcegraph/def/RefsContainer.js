@@ -251,6 +251,16 @@ export default class RefsContainer extends Container {
 			);
 		}
 
+		if (this.state.refs) {
+			for (let loc of this.state.fileLocations) {
+				// Do not display a file without refs.
+				if (this.state.refs.filter((r) => r.File === loc.Path).length === 0) {
+					console.error(`No references for ${this.state.def} found in ${this.state.refRepo}/${loc.Path}`);
+					return null;
+				}
+			}
+		}
+
 		return (
 			<div className={`${base.pa4} ${base.bb} ${colors["b--cool-pale-gray"]} ${styles["full-width-sm"]}`}>
 			{this.state.showRepoTitle &&
@@ -285,8 +295,6 @@ export default class RefsContainer extends Container {
 								}
 								if (this.state.refs && this.state.refs.Error) {
 									err = `Error loading references for ${loc.Path}.`;
-								} else if (this.state.refs && this.state.refs.filter((r) => r.File === loc.Path).length === 0) {
-									err = `No references found for ${loc.Path}`;
 								}
 
 								if (err) {

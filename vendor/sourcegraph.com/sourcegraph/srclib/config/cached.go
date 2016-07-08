@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 
 	"github.com/kr/fs"
 	"golang.org/x/tools/godoc/vfs"
@@ -51,20 +51,24 @@ func ReadCached(bdfs vfs.FileSystem) (*Tree, error) {
 	par := parallel.NewRun(runtime.GOMAXPROCS(0))
 	for i_, unitFile_ := range unitFiles {
 		i, unitFile := i_, unitFile_
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
 			f, err := bdfs.Open(unitFile)
 			if err != nil {
-				return err
+				par.Error(err)
+				return
 			}
 			if err := json.NewDecoder(f).Decode(&units[i]); err != nil {
 				f.Close()
-				return err
+				par.Error(err)
+				return
 			}
 			if err := f.Close(); err != nil {
-				return err
+				par.Error(err)
+				return
 			}
-			return nil
-		})
+		}()
 	}
 	if err := par.Wait(); err != nil {
 		return nil, err

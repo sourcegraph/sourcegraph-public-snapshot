@@ -31,7 +31,7 @@ func (s *GitHubRepoGetter) MockGet_Return(ctx context.Context, returns *sourcegr
 	}
 }
 
-func (s *GitHubRepoGetter) MockListAccessible_IDs(ctx context.Context, ids []string) (called *bool) {
+func (s *GitHubRepoGetter) MockListAccessible(ctx context.Context, repos []*sourcegraph.Repo) (called *bool) {
 	called = new(bool)
 	s.ListAccessible_ = func(ctx context.Context, opt *gogithub.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
 		*called = true
@@ -40,10 +40,6 @@ func (s *GitHubRepoGetter) MockListAccessible_IDs(ctx context.Context, ids []str
 			return nil, nil
 		}
 
-		repos := make([]*sourcegraph.Repo, len(ids))
-		for i, id := range ids {
-			repos[i] = &sourcegraph.Repo{Origin: &sourcegraph.Origin{ID: id}}
-		}
 		return repos, nil
 	}
 	return

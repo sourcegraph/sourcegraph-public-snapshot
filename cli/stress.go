@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 
 	"golang.org/x/net/context"
 
@@ -132,7 +132,9 @@ func (c *stressCmd) Execute(args []string) error {
 	const sep = "----------------------------------------------------------------"
 	for ii := 0; ii < c.N; ii++ {
 		i := ii
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
 			if i == 0 {
 				log.Println(sep)
 			}
@@ -144,7 +146,8 @@ func (c *stressCmd) Execute(args []string) error {
 				log.Println("# Git stress test")
 				results, err := c.runGitOps(ctx)
 				if err != nil {
-					return err
+					par.Error(err)
+					return
 				}
 				if results != "" {
 					fmt.Println(results)
@@ -155,7 +158,8 @@ func (c *stressCmd) Execute(args []string) error {
 				log.Println("# Repo page stress test")
 				results, err := c.runRepoPage(ctx)
 				if err != nil {
-					return err
+					par.Error(err)
+					return
 				}
 				if results != "" {
 					fmt.Println(results)
@@ -166,7 +170,8 @@ func (c *stressCmd) Execute(args []string) error {
 				log.Println("# File page stress test")
 				results, err := c.runFilePage(ctx)
 				if err != nil {
-					return err
+					par.Error(err)
+					return
 				}
 				if results != "" {
 					fmt.Println(results)
@@ -176,9 +181,7 @@ func (c *stressCmd) Execute(args []string) error {
 			log.Println(sep)
 
 			done()
-
-			return nil
-		})
+		}()
 	}
 	if err := par.Wait(); err != nil {
 		return err

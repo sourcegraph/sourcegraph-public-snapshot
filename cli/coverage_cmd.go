@@ -14,7 +14,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -298,8 +298,6 @@ func (c *coverageCmd) Execute(args []string) error {
 		return err
 	}
 
-	p := parallel.NewRun(30)
-
 	start := time.Now()
 	slack.PostMessage(slack.PostOpts{
 		Msg:        fmt.Sprintf("Running coverage --lang=%s", c.Lang),
@@ -308,17 +306,19 @@ func (c *coverageCmd) Execute(args []string) error {
 		WebhookURL: os.Getenv("SG_SLACK_GRAPH_WEBHOOK_URL"),
 	})
 
+	p := parallel.NewRun(30)
 	for _, repo := range repos {
 		repo := repo
-		p.Do(func() error {
+		p.Acquire()
+		go func() {
+			defer p.Release()
 			_, err := getCoverage(cl, cliContext, repo, c.Lang, c.Dry, c.Progress, c.ReportRefs, c.ReportDefs, c.ReportEmpty)
 			if err != nil {
-				return fmt.Errorf("error getting coverage for %s: %s", repo, err)
+				p.Error(fmt.Errorf("error getting coverage for %s: %s", repo, err))
+				return
 			}
-			return nil
-		})
+		}()
 	}
-
 	err := p.Wait()
 
 	slack.PostMessage(slack.PostOpts{
@@ -516,14 +516,16 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang str
 		var repoCvgMu sync.Mutex
 		for _, path := range tree.Files {
 			path := path
-
-			p.Do(func() error {
+			p.Acquire()
+			go func() {
+				defer p.Release()
 				if progress {
 					log15.Info("processing", path, lang)
 				}
 				fileCvg, err := getFileCoverage(cl, ctx, &repoRevSpec, repoPath, path, lang, reportRefs, reportDefs, reportEmpty)
 				if err != nil {
-					return err
+					p.Error(err)
+					return
 				}
 				if fileCvg != nil {
 					// fileCvg may be nil for files which are ignored / not indexed
@@ -531,9 +533,7 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang str
 					repoCvg.Files = append(repoCvg.Files, fileCvg)
 					repoCvgMu.Unlock()
 				}
-
-				return nil
-			})
+			}()
 		}
 
 		if err := p.Wait(); err != nil {

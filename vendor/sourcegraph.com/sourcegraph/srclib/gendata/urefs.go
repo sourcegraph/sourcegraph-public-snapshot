@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 
 	"sync"
 
@@ -64,10 +64,13 @@ func (c *URefsRepoCmd) Execute(args []string) error {
 		par := parallel.NewRun(runtime.GOMAXPROCS(0))
 		for _, ut := range units {
 			ut := ut
-			par.Do(func() error {
-				_, _, _, err := c.genUnit(ut, units)
-				return err
-			})
+			par.Acquire()
+			go func() {
+				defer par.Release()
+				if _, _, _, err := c.genUnit(ut, units); err != nil {
+					par.Error(err)
+				}
+			}()
 		}
 		if err := par.Wait(); err != nil {
 			return err
@@ -94,10 +97,14 @@ func (c *URefsRepoCmd) Execute(args []string) error {
 	for _, ut := range units {
 		ut := ut
 		ut.CommitID = c.CommitID
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
+
 			defs, refs, reffiles, err := c.genUnit(ut, units)
 			if err != nil {
-				return err
+				par.Error(err)
+				return
 			}
 
 			grmu.Lock()
@@ -110,8 +117,7 @@ func (c *URefsRepoCmd) Execute(args []string) error {
 			for _, ut2 := range units {
 				ut2.Files = append(ut2.Files, reffiles[ut2.Name]...)
 			}
-			return nil
-		})
+		}()
 	}
 	if err := par.Wait(); err != nil {
 		return err

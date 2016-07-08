@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 	gogithub "github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -272,10 +272,6 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		opt = &sourcegraph.RepoListOptions{}
 	}
 
-	// Combine results from GitHub (repos accessible to the current
-	// user) and the DB (extra metadata, such as the repo's
-	// Sourcegraph ID).
-
 	// Fetch GitHub repos that the user can access. We include these
 	// repos in the result, and we pass these IDs to listFromDB
 	// because it otherwise has no way of knowing (at the PostgreSQL
@@ -290,7 +286,8 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		accessibleGitHubRepoIDs[i] = r.Origin.ID
 	}
 
-	// Fetch repos from the DB.
+	// Fetch repos from the DB that are accessible to the user.
+	// This will include all local repos that are not from "github.com".
 	dbRepos, err := s.listFromDB(ctx, opt, accessibleGitHubRepoIDs)
 	if err != nil {
 		return nil, err
@@ -303,28 +300,49 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	par := parallel.NewRun(30)
 	for _, repo := range dbRepos {
 		repo := repo
-		par.Do(func() error {
-			_, err := verifyAccessAndSetAllFields(ctx, repo)
-			return err
-		})
+		par.Acquire()
+		go func() {
+			defer par.Release()
+			if _, err := verifyAccessAndSetAllFields(ctx, repo); err != nil {
+				par.Error(err)
+			}
+		}()
 	}
 	if err := par.Wait(); err != nil {
 		return nil, err
 	}
 
-	// Combine lists.
-	repos := dbRepos
-	byGitHubID := make(map[string]*sourcegraph.Repo, len(dbRepos))
-	for _, r := range dbRepos {
-		if o := r.Origin; o != nil && o.Service == sourcegraph.Origin_GitHub {
-			byGitHubID[o.ID] = r
+	dbReposOnGH := make(map[string]*sourcegraph.Repo, len(dbRepos)) // GitHub ID -> *sourcegraph.Repo in dbRepos.
+	for _, dbRepo := range dbRepos {
+		if o := dbRepo.Origin; o != nil && o.Service == sourcegraph.Origin_GitHub {
+			dbReposOnGH[o.ID] = dbRepo
 		}
 	}
-	for _, ghRepo := range ghRepos {
-		if _, present := byGitHubID[ghRepo.Origin.ID]; !present {
-			if opt.IncludeRemote {
+
+	var repos []*sourcegraph.Repo
+	if !opt.RemoteOnly {
+		// Combine results from GitHub (repos accessible to the current
+		// user) and the DB (extra metadata, such as the repo's
+		// Sourcegraph ID).
+
+		// Include all accessible repos that are in DB.
+		repos = dbRepos
+
+		// Add GitHub repos that aren't already present in DB.
+		for _, ghRepo := range ghRepos {
+			if _, ok := dbReposOnGH[ghRepo.Origin.ID]; !ok {
 				repos = append(repos, ghRepo)
 			}
+		}
+	} else {
+		// If opt.RemoteOnly is set, only return repos that are "accessible"
+		// according to the remote, but augment them with extra metadata from DB.
+		for _, ghRepo := range ghRepos {
+			if db, ok := dbReposOnGH[ghRepo.Origin.ID]; ok {
+				// Populate the Sourcegraph repo ID (from the database).
+				ghRepo.ID = db.ID
+			}
+			repos = append(repos, ghRepo)
 		}
 	}
 
@@ -339,20 +357,21 @@ func (s *repos) listAllAccessibleGitHubRepos(ctx context.Context, opt *sourcegra
 
 	var allRepos []*sourcegraph.Repo
 	for page := 1; ; page++ {
+		const perPage = 100
 		repos, err := github.ReposFromContext(ctx).ListAccessible(ctx, &gogithub.RepositoryListOptions{
 			Type: opt.Type,
 			ListOptions: gogithub.ListOptions{
-				PerPage: 100,
+				PerPage: perPage,
 				Page:    page,
 			},
 		})
 		if err != nil {
 			return nil, err
 		}
-		if len(repos) == 0 {
+		allRepos = append(allRepos, repos...)
+		if len(repos) < perPage {
 			break
 		}
-		allRepos = append(allRepos, repos...)
 	}
 	return allRepos, nil
 }

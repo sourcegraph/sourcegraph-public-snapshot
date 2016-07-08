@@ -195,10 +195,10 @@ message RepoListOptions {
 
 	string Owner = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	// IncludeRemote is whether to fetch remote (e.g., GitHub)
+	// RemoteOnly is whether to fetch remote (e.g., GitHub)
 	// repositories that the currently authenticated user has access
-	// to.
-	bool IncludeRemote = 12 [(gogoproto.moretags) = "url:\",omitempty\""];
+	// to, and return only those.
+	bool RemoteOnly = 12 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 // RepoRevSpec specifies a repository at a specific commit.
@@ -2116,9 +2116,6 @@ message SearchOptions {
 	// the cost of missing lower ranked results. If there are no high-ranking results
 	// and Fast is set to true, there may be no results returned at all.
 	bool Fast = 10;
-
-	// Latest indicates that the search should only search over the latest indexed revision of repositories.
-	bool Latest = 11;
 }
 
 // SearchOp holds the options for global search for a given query.

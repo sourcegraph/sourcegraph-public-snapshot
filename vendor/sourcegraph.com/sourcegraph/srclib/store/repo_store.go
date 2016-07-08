@@ -3,7 +3,7 @@ package store
 import (
 	"sync"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 )
@@ -124,10 +124,13 @@ func (s repoStores) Units(f ...UnitFilter) ([]*unit.SourceUnit, error) {
 			continue
 		}
 
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
 			units, err := rs.Units(filtersForRepo(repo, f).([]UnitFilter)...)
 			if err != nil && !isStoreNotExist(err) {
-				return err
+				par.Error(err)
+				return
 			}
 			for _, unit := range units {
 				unit.Repo = repo
@@ -135,8 +138,7 @@ func (s repoStores) Units(f ...UnitFilter) ([]*unit.SourceUnit, error) {
 			allUnitsMu.Lock()
 			allUnits = append(allUnits, units...)
 			allUnitsMu.Unlock()
-			return nil
-		})
+		}()
 	}
 	err = par.Wait()
 	return allUnits, err
@@ -159,10 +161,13 @@ func (s repoStores) Defs(f ...DefFilter) ([]*graph.Def, error) {
 			continue
 		}
 
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
 			defs, err := rs.Defs(filtersForRepo(repo, f).([]DefFilter)...)
 			if err != nil && !isStoreNotExist(err) {
-				return err
+				par.Error(err)
+				return
 			}
 			for _, def := range defs {
 				def.Repo = repo
@@ -170,8 +175,7 @@ func (s repoStores) Defs(f ...DefFilter) ([]*graph.Def, error) {
 			allDefsMu.Lock()
 			allDefs = append(allDefs, defs...)
 			allDefsMu.Unlock()
-			return nil
-		})
+		}()
 	}
 	err = par.Wait()
 	return allDefs, err

@@ -90,7 +90,7 @@ export function withAppdashRouteStateRecording(ChildComponent: Object): Object {
 			// document, and when the document.readyState was changed to "complete".
 			// i.e., the time it took to load the page.
 			const startTime = window.performance.timing.fetchStart;
-			const endTime = window.performance.timing.domComplete;
+			const endTime = window.performance.timing.domComplete > 0 ? window.performance.timing.domComplete : new Date().getTime();
 			const routeName = getRouteName(this.state.routes);
 			recordSpan({
 				name: `load page ${routeName}`,

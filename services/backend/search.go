@@ -5,6 +5,9 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -42,6 +45,14 @@ var tokenToLanguage = map[string]string{
 }
 
 func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error) {
+	observe := func(part string, start time.Time) {
+		d := time.Since(start)
+		log15.Debug("TRACE search", "query", op.Query, "part", part, "duration", d)
+		searchDuration.WithLabelValues(part).Observe(float64(d.Seconds()))
+	}
+	defer observe("total", time.Now())
+
+	start := time.Now()
 	var kinds []string
 	var descToks []string                            // "descriptor" tokens that don't have a special filter meaning.
 	for _, token := range strings.Fields(op.Query) { // at first tokenize on spaces
@@ -75,22 +86,25 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 			descToks = append(descToks, queryTokens(token)...)
 		}
 	}
+	observe("tokenize", start)
 
-	opt := *op.Opt
-	opt.Latest = true
+	start = time.Now()
 	results, err := store.DefsFromContext(ctx).Search(ctx, store.DefSearchOp{
 		TokQuery: descToks,
-		Opt:      &opt,
+		Opt:      op.Opt,
 	})
 	if err != nil {
 		return nil, err
 	}
+	observe("defs", start)
 
+	start = time.Now()
 	hydratedDefResults, err := hydrateDefsResults(ctx, results.DefResults)
 	if err != nil {
 		return nil, err
 	}
 	results.DefResults = hydratedDefResults
+	observe("hydrate", start)
 
 	// For global search analytics purposes
 	results.SearchQueryOptions = []*sourcegraph.SearchOptions{op.Opt}
@@ -107,6 +121,7 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 		return results, nil
 	}
 
+	defer observe("repos", time.Now())
 	results.RepoResults, err = store.ReposFromContext(ctx).Search(ctx, op.Query)
 	if err != nil {
 		return nil, err
@@ -214,4 +229,16 @@ func hydrateDefsResults(ctx context.Context, defs []*sourcegraph.DefSearchResult
 		}
 	}
 	return hydratedResults, nil
+}
+
+var searchDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+	Namespace: "src",
+	Subsystem: "search",
+	Name:      "duration_seconds",
+	Help:      "Duration of Search.Search queries",
+	MaxAge:    time.Hour,
+}, []string{"part"})
+
+func init() {
+	prometheus.MustRegister(searchDuration)
 }

@@ -30,9 +30,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/test/e2e/e2etestuser"
 
 	"github.com/jpillora/backoff"
+	"github.com/neelance/parallel"
 	"github.com/nlopes/slack"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/rogpeppe/rog-go/parallel"
 )
 
 // T is passed as context into all tests. It provides generic helper methods to
@@ -384,7 +384,9 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 		total++
 
 		test := testToCopy
-		run.Do(func() error {
+		run.Acquire()
+		go func() {
+			defer run.Release()
 			// Attempt the test a number of times, to weed out any flakiness that could occur.
 			for attempt := 0; attempt < *retriesFlag; attempt++ {
 				unitStart := time.Now()
@@ -397,7 +399,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 					t.log.Printf("[warning] [%v] unable to establish a session: %v\n", test.Name, err)
 					t.slackMessage(typeWarning, fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, err), "")
 					testCounter.WithLabelValues(test.Name, "error").Inc()
-					return nil
+					return
 				}
 
 				unitTime := time.Since(unitStart)
@@ -431,14 +433,14 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 					if err := t.slackFileUpload(failureType, screenshot, test.Name+".png"); err != nil {
 						t.log.Println("could not upload screenshot to Slack", test.Name, err)
 					}
-					return nil
+					return
 				}
 				t.log.Printf("[success] [%v] [%v]\n", test.Name, unitTime)
 				testCounter.WithLabelValues(test.Name, "success").Inc()
-				return nil
+				return
 			}
 			panic("never here")
-		})
+		}()
 	}
 	run.Wait()
 

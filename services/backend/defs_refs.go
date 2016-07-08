@@ -118,9 +118,6 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	if err := store.DefsFromContext(ctx).UpdateFromSrclibStore(ctx, store.DefUpdateOp{
 		Repo:     op.Repo,
 		CommitID: op.CommitID,
-		// TODO(beyang): this should be specified by the caller, since the last built is not necessarily the latest revision
-		Latest:        true,
-		RefreshCounts: true,
 	}); err != nil {
 		return nil, err
 	}
