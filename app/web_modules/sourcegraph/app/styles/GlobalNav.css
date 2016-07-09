@@ -32,7 +32,6 @@
 	position: fixed;
 	top: 0;
 	width: 100%;
-	height: navbarHeight;
 }
 .navbar-non-homepage {
 	composes: navbar;
@@ -48,18 +47,9 @@
 	padding-top: navbarHeight;
 }
 
-.navbar-inner {
-	display: flex;
-	align-items: center;
-	flex-wrap: nowrap;
-	height: navbarHeight;
-}
-
 @value logo-height 21.508px;
 .logo-link {
 	padding: calc((navbarHeight - logo-height)/2);
-	composes: br from base;
-	border-color: nav-border-color;
 }
 .logo {
 	display: block;
@@ -140,16 +130,10 @@
 	max-width: search-form-max-width;
 	position: relative; /* so that search-panel is same width as its parent (this class) */
 }
-.search-form {
-	display: flex;
-}
 .search-form > div { /* make search input share width */
 	flex: 1 0;
 }
-.search-input {
-	height: navbarHeight;
-	composes: f4 from typography;
-}
+
 .search-icon {
 	font-size: 1.3rem;
 }

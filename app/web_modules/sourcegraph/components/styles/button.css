@@ -17,7 +17,9 @@
 
 .btn {
     composes: tc from typography;
-    composes: ph3 pv2 br4 from base;
+    composes: ph3 br4 from base;
+		padding-top: 0.4rem;
+		padding-bottom: 0.4rem;
     box-sizing: border-box;
     cursor: pointer;
     display: inline-block;
@@ -252,5 +254,5 @@
     cursor: not-allowed;
     filter: alpha(opacity=70);
     opacity: 0.70;
-		padding: 0.65rem 1rem;
+		padding: 0.52rem 1rem;
 }

@@ -48,19 +48,19 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 				</LocationStateModal>
 			}
 
-			<div styleName="flex flex-fill flex-center tl navbar-inner" className={base.bn}>
+			<div styleName="flex flex-fill flex-center tl" className={base.bn}>
 				{!isHomepage && <Link to="/" styleName="logo-link flex-fixed">
 					{showLogoMarkOnly ?
-						<Logo styleName={"logo logomark"}
-							width={"21px"}
-							type={"logomark"}/> :
+						<Logo styleName="logo logomark"
+							width="21px"
+							type="logomark"/> :
 						<span>
-							<Logo styleName={"logo logomark small-only"}
-								width={"21px"}
-								type={"logomark"}/>
-							<Logo styleName={"logo not-small-only"}
-								width={"144px"}
-								type={"logotype"}/>
+							<Logo styleName="logo logomark small-only"
+								width="21px"
+								type="logomark"/>
+							<Logo styleName="logo not-small-only"
+								width="144px"
+								type="logotype"/>
 						</span>
 					}
 				</Link>}
@@ -262,17 +262,15 @@ class SearchForm extends React.Component {
 	render() {
 		return (
 			<div
-				styleName="search-form-container"
 				ref={e => this._container = e}>
 				<form
 					onSubmit={this._handleSubmit}
-					styleName="search-form"
+					styleName="flex"
 					autoComplete="off">
 					<GlobalSearchInput
 						name="q"
 						icon={true}
 						autoComplete="off"
-						styleName="search-input"
 						query={this.state.query || ""}
 						domRef={e => this._input = e}
 						autoFocus={this.props.location.pathname.slice(1) === rel.search}
