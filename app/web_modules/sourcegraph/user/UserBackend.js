@@ -63,7 +63,7 @@ const UserBackend = {
 						.then(checkStatus)
 						.then((resp) => resp.json())
 						.catch((err) => ({Error: err}))
-						.then((data) => Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(action.uid, data && data.EmailAddrs ? data.EmailAddrs : data)))
+						.then((data) => Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(action.uid, data && data.EmailAddrs ? data.EmailAddrs : [])))
 				);
 			}
 		}

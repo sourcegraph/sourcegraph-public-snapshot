@@ -132,6 +132,30 @@ func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.V
 	return &pbtypes.Void{}, nil
 }
 
+func (s *accounts) UpdateEmails(ctx context.Context, in *sourcegraph.UpdateEmailsOp) (*pbtypes.Void, error) {
+	emails, err := svc.Users(ctx).ListEmails(ctx, &in.UserSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, add := range in.Add.EmailAddrs {
+		exists := false
+		for _, existing := range emails.EmailAddrs {
+			if existing.Email == add.Email {
+				exists = true
+			}
+		}
+		if !exists {
+			emails.EmailAddrs = append(emails.EmailAddrs, add)
+		}
+	}
+
+	if err := store.AccountsFromContext(ctx).UpdateEmails(ctx, in.UserSpec, emails.EmailAddrs); err != nil {
+		return nil, err
+	}
+	return &pbtypes.Void{}, nil
+}
+
 var errEmailNotConfigured = errors.New("email is not configured")
 
 // sendEmail lets us avoid sending emails in tests.

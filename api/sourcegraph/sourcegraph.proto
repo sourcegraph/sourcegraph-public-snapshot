@@ -1048,10 +1048,18 @@ message EmailAddrList {
 	repeated EmailAddr EmailAddrs = 1;
 }
 
+// UpdateEmailsOp represents options for updating a user's email addresses.
+message UpdateEmailsOp {
+	// UserSpec is the user whose email addresses are to be updated.
+	UserSpec UserSpec = 1 [(gogoproto.nullable) = false];
+
+	// Add is a list of email addresses to add, if they do not already exist.
+	EmailAddrList Add = 2;
+}
+
 message OrgList {
 	repeated Org Orgs = 1;
 }
-
 
 // BuildsService communicates with the build-related endpoints in the Sourcegraph
 // API.
@@ -1132,6 +1140,9 @@ service Accounts {
 	// Update profile of existing account.
 	rpc Update(User) returns (pbtypes.Void);
 
+	// UpdateEmails updates the email addresses of an existing account.
+	rpc UpdateEmails(UpdateEmailsOp) returns (pbtypes.Void);
+
 	// Delete deletes a user account from this server.
 	rpc Delete(PersonSpec) returns (pbtypes.Void);
 }
@@ -1202,10 +1213,9 @@ message NewAccount {
 // BetaRegistration represents the user information needed to register for the
 // beta program.
 message BetaRegistration {
-	// Email is the email to register for the beta program. If it is an empty
-	// string, the account's primary email address will be used.
-	//
-	// TODO(slimsag): this field is not currently supported. Do not use it.
+	// Email is the primary email address for the user. It is only used if the
+	// user does not already have an email address set in their account, else
+	// this field is no-op.
 	string Email = 1;
 
 	// FirstName is the first name of the user.

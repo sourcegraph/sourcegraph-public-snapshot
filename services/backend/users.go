@@ -64,14 +64,6 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) (*s
 func (s *users) RegisterBeta(ctx context.Context, opt *sourcegraph.BetaRegistration) (*sourcegraph.BetaResponse, error) {
 	actor := authpkg.ActorFromContext(ctx)
 
-	// TODO(slimsag): In order to support the opt.Email field, we would need to
-	// keep a flag on email addresses identifying which one was used in
-	// registration with Mailchimp, such that we could later reference it in
-	// backends/accounts.go. Instead of doing this right now, we use the user's
-	// primary email address.
-	if opt.Email != "" {
-		return nil, fmt.Errorf("BetaRegistration.Email field is currently unsupported (leave it blank)")
-	}
 	userSpec := actor.UserSpec()
 	emails, err := svc.Users(ctx).ListEmails(ctx, &userSpec)
 	if err != nil {
@@ -79,9 +71,24 @@ func (s *users) RegisterBeta(ctx context.Context, opt *sourcegraph.BetaRegistrat
 	}
 	primary, err := emails.Primary()
 	if err != nil {
-		return nil, err
+		// User has no primary email, so use the one specified.
+		if opt.Email == "" {
+			return nil, fmt.Errorf("user has no primary email address, and BetaRegistration.Email is not set")
+		}
+		_, err := svc.Accounts(ctx).UpdateEmails(ctx, &sourcegraph.UpdateEmailsOp{
+			UserSpec: userSpec,
+			Add: &sourcegraph.EmailAddrList{
+				EmailAddrs: []*sourcegraph.EmailAddr{
+					&sourcegraph.EmailAddr{Email: opt.Email, Primary: true},
+				},
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		opt.Email = primary.Email
 	}
-	opt.Email = primary.Email
 
 	// Ensure the BetaRegistered status is properly set for the user.
 	user, err := svc.Users(ctx).Get(ctx, &userSpec)

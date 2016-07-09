@@ -10,10 +10,12 @@ import base from "sourcegraph/components/styles/_base.css";
 import {languages, editors} from "./HomeUtils";
 import {langName} from "sourcegraph/Language";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
+import UserStore from "sourcegraph/user/UserStore";
+import Container from "sourcegraph/Container";
 
 type OnChangeListener = () => void;
 
-class BetaInterestForm extends React.Component {
+class BetaInterestForm extends Container {
 
 	static propTypes = {
 		onSubmit: React.PropTypes.func,
@@ -24,6 +26,7 @@ class BetaInterestForm extends React.Component {
 
 	static contextTypes = {
 		user: React.PropTypes.object,
+		authInfo: React.PropTypes.object,
 		signedIn: React.PropTypes.bool.isRequired,
 	};
 
@@ -36,6 +39,7 @@ class BetaInterestForm extends React.Component {
 		submitted: false,
 		formError: "",
 		resp: null,
+		emails: null,
 	};
 
 	componentDidMount() {
@@ -49,10 +53,27 @@ class BetaInterestForm extends React.Component {
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
 
+	stores() { return [UserStore]; }
+
+	reconcileState(state, props) {
+		Object.assign(state, props);
+
+		if (this.context.authInfo) {
+			state.emails = UserStore.emails.get(this.context.authInfo.UID);
+		}
+	}
+
+	onStateTransition(prevState, nextState) {
+		if (!nextState.emails && this.context.authInfo) {
+			Dispatcher.Backends.dispatch(new UserActions.WantEmails(this.context.authInfo.UID));
+		}
+	}
+
 	_dispatcherToken: string;
 
 	// TODO(slimsag): these should be 'element' type?
 	_fullName: any;
+	_email: any;
 	_editors: any;
 	_languages: any;
 	_message: any;
@@ -67,6 +88,7 @@ class BetaInterestForm extends React.Component {
 	_onChange() {
 		window.localStorage["beta-interest-form"] = JSON.stringify({
 			fullName: this._fullName["value"],
+			email: this._email ? this._email["value"] : "",
 			editors: this._editors.selected(),
 			languages: this._languages.selected(),
 			message: this._message["value"],
@@ -94,7 +116,7 @@ class BetaInterestForm extends React.Component {
 		}
 
 		Dispatcher.Backends.dispatch(new UserActions.SubmitBetaSubscription(
-			"",
+			this._email ? this._email["value"].trim() : "",
 			firstName || "",
 			lastName || "",
 			this._languages.selected(),
@@ -125,14 +147,16 @@ class BetaInterestForm extends React.Component {
 
 		let [className, language] = [this.props.className, this.props.language];
 		let betaRegistered = this.context.user && this.context.user.BetaRegistered;
+		let emails = this.state.emails;
 
-		let defaultFullName, defaultMessage;
+		let defaultFullName, defaultEmail, defaultMessage;
 		let defaultEditors = [];
 		let defaultLanguages = [];
 		let ls = window.localStorage["beta-interest-form"];
 		if (ls) {
 			ls = JSON.parse(ls);
 			defaultFullName = ls.fullName;
+			defaultEmail = ls.email;
 			defaultEditors = ls.editors;
 			defaultLanguages = ls.languages;
 			defaultMessage = ls.message;
@@ -150,6 +174,9 @@ class BetaInterestForm extends React.Component {
 						<div styleName="row">
 							<Input domRef={(c) => this._fullName = c} block={true} type="text" name="fullName" placeholder="Name" required={true} defaultValue={defaultFullName} />
 						</div>
+						{(!emails || emails.length === 0) && <div styleName="row">
+							<Input domRef={(c) => this._email = c} block={true} type="email" name="email" placeholder="Email address" required={true} defaultValue={defaultEmail} />
+						</div>}
 						<div styleName="row">
 							<CheckboxList ref={(c) => this._editors = c} title="Preferred editors" name="editors" labels={editors} defaultValues={defaultEditors} />
 						</div>
