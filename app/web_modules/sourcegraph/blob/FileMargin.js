@@ -17,27 +17,36 @@ if (typeof document !== "undefined" && document.body.style.setProperty) {
 
 export default class FileMargin extends React.Component {
 
+	constructor(props) {
+		super(props);
+		this.state = {
+			offsetFromTop: 0,
+		};
+	}
+
+	componentWillReceiveProps() {
+		this.setState({offsetFromTop: this.getOffsetFromTop()});
+	}
+
 	getOffsetFromTop() {
 		if (this.props.selectionStartLine) {
 			return ReactDOM.findDOMNode(this.props.selectionStartLine).offsetTop;
 		}
-		return null;
+		return 0;
 	}
 
 	render() {
-		const offsetFromTop = this.getOffsetFromTop();
-
 		let passthroughProps = {...this.props};
 		delete passthroughProps.children;
 		delete passthroughProps.lineFromByte;
 
 		let i = -1;
 		return (
-			<div {...passthroughProps}>
+			<div {...passthroughProps} style={{position: "relative"}}>
 				{React.Children.map(this.props.children, (child) => {
 					i++;
 					return (
-						<div key={i} style={{position: "absolute", top: `${offsetFromTop + 91}px`}}>
+						<div key={i} style={{position: "absolute", top: `${this.state.offsetFromTop}px`}}>
 							{child}
 						</div>
 					);
