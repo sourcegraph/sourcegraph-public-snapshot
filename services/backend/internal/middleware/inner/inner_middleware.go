@@ -169,6 +169,19 @@ func (s wrappedAccounts) Update(ctx context.Context, param *sourcegraph.User) (r
 	return
 }
 
+func (s wrappedAccounts) UpdateEmails(ctx context.Context, param *sourcegraph.UpdateEmailsOp) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Accounts", "UpdateEmails", param)
+	defer func() {
+		trace.After(ctx, "Accounts", "UpdateEmails", param, err, time.Since(start))
+	}()
+	res, err = backend.Services.Accounts.UpdateEmails(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Accounts.UpdateEmails returned nil, nil")
+	}
+	return
+}
+
 func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.PersonSpec) (res *pbtypes.Void, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Accounts", "Delete", param)

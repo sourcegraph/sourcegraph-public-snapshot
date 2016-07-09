@@ -273,6 +273,36 @@ func (s wrappedAccounts) Update(ctx context.Context, v1 *sourcegraph.User) (retu
 	return rv, nil
 }
 
+func (s wrappedAccounts) UpdateEmails(ctx context.Context, v1 *sourcegraph.UpdateEmailsOp) (returnedResult *pbtypes.Void, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Accounts.UpdateEmails: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.AccountsOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Accounts")
+	}
+
+	rv, err := innerSvc.UpdateEmails(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
 func (s wrappedAccounts) Delete(ctx context.Context, v1 *sourcegraph.PersonSpec) (returnedResult *pbtypes.Void, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {

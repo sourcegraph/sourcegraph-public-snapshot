@@ -426,6 +426,7 @@ type AccountsClient struct {
 	RequestPasswordReset_ func(ctx context.Context, in *sourcegraph.PersonSpec) (*sourcegraph.PendingPasswordReset, error)
 	ResetPassword_        func(ctx context.Context, in *sourcegraph.NewPassword) (*pbtypes.Void, error)
 	Update_               func(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error)
+	UpdateEmails_         func(ctx context.Context, in *sourcegraph.UpdateEmailsOp) (*pbtypes.Void, error)
 	Delete_               func(ctx context.Context, in *sourcegraph.PersonSpec) (*pbtypes.Void, error)
 }
 
@@ -445,6 +446,10 @@ func (s *AccountsClient) Update(ctx context.Context, in *sourcegraph.User, opts 
 	return s.Update_(ctx, in)
 }
 
+func (s *AccountsClient) UpdateEmails(ctx context.Context, in *sourcegraph.UpdateEmailsOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	return s.UpdateEmails_(ctx, in)
+}
+
 func (s *AccountsClient) Delete(ctx context.Context, in *sourcegraph.PersonSpec, opts ...grpc.CallOption) (*pbtypes.Void, error) {
 	return s.Delete_(ctx, in)
 }
@@ -456,6 +461,7 @@ type AccountsServer struct {
 	RequestPasswordReset_ func(v0 context.Context, v1 *sourcegraph.PersonSpec) (*sourcegraph.PendingPasswordReset, error)
 	ResetPassword_        func(v0 context.Context, v1 *sourcegraph.NewPassword) (*pbtypes.Void, error)
 	Update_               func(v0 context.Context, v1 *sourcegraph.User) (*pbtypes.Void, error)
+	UpdateEmails_         func(v0 context.Context, v1 *sourcegraph.UpdateEmailsOp) (*pbtypes.Void, error)
 	Delete_               func(v0 context.Context, v1 *sourcegraph.PersonSpec) (*pbtypes.Void, error)
 }
 
@@ -473,6 +479,10 @@ func (s *AccountsServer) ResetPassword(v0 context.Context, v1 *sourcegraph.NewPa
 
 func (s *AccountsServer) Update(v0 context.Context, v1 *sourcegraph.User) (*pbtypes.Void, error) {
 	return s.Update_(v0, v1)
+}
+
+func (s *AccountsServer) UpdateEmails(v0 context.Context, v1 *sourcegraph.UpdateEmailsOp) (*pbtypes.Void, error) {
+	return s.UpdateEmails_(v0, v1)
 }
 
 func (s *AccountsServer) Delete(v0 context.Context, v1 *sourcegraph.PersonSpec) (*pbtypes.Void, error) {
