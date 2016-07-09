@@ -1509,7 +1509,10 @@ type User struct {
 	// Admin is whether the user is a site admin for the site.
 	Admin bool `protobuf:"varint,12,opt,name=Admin,proto3" json:"Admin,omitempty"`
 	// Betas is a list of betas which the user is enrolled in. A user may be
-	// granted access to any arbitrary beta string.
+	// granted access to any beta string listed in both:
+	//
+	//  pkg/betautil/betautil.go
+	//  app/web_modules/sourcegraph/util/betautil.js
 	//
 	// Only admin users may set this field.
 	Betas []string `protobuf:"bytes,14,rep,name=Betas" json:"Betas,omitempty"`

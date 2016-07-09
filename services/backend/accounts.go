@@ -16,6 +16,7 @@ import (
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/betautil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/mailchimp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/mailchimp/chimputil"
@@ -86,8 +87,15 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 }
 
 func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error) {
-	// If there is at least one beta, ensure the BetaRegistered field is also set.
 	if len(in.Betas) > 0 {
+		// Validate that the betas exist.
+		for _, beta := range in.Betas {
+			if !betautil.Betas[beta] {
+				return nil, fmt.Errorf("no such beta %q", beta)
+			}
+		}
+
+		// If there is at least one beta, ensure the BetaRegistered field is also set.
 		in.BetaRegistered = true
 	}
 
