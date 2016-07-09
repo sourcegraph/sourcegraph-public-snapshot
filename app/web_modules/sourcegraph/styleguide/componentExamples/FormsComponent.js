@@ -19,32 +19,71 @@ class StepperComponent extends React.Component {
 
 	render() {
 		return (
+
 			<div className={base.mv4}>
 				<Heading level="3" className={base.mb2}>Forms</Heading>
 
-				<div className={base.pa4}>
-					<Input placeholder="Placeholder text" block={true} label="Input label" helperText="This is optional helper text." className={base.mb4} />
-
-					<Input placeholder="Placeholder text" block={true} error={true} label="Input label" errorText="This is an error." className={base.mb4} />
-
-					<Select defaultValue="">
-						<option value="" disabled={true}>Placeholder</option>
-						<option>Option 1</option>
-						<option>Option 2</option>
-						<option>Option 3</option>
-					</Select>
-
-				</div>
 				<Panel hoverLevel="low">
+
+					<div className={base.pa4}>
+
+						<Input placeholder="Placeholder text" block={true} label="Input label" helperText="This is optional helper text." className={base.mb4} />
+						<Select defaultValue="" label="Select label" className={base.mb4}>
+							<option value="" disabled={true}>Placeholder</option>
+							<option>Option 1</option>
+							<option>Option 2</option>
+							<option>Option 3</option>
+						</Select>
+
+						<Input placeholder="Placeholder text" block={true} error={true} label="Input label" className={base.mb4} />
+
+						<Input placeholder="Placeholder text" block={true} error={true} label="Input label" errorText="This is an error." className={base.mb4} />
+
+						<Select defaultValue="" error={true} label="Select label" className={base.mb4}>
+							<option value="" disabled={true}>Placeholder</option>
+							<option>Option 1</option>
+							<option>Option 2</option>
+							<option>Option 3</option>
+						</Select>
+
+						<Select defaultValue="" error={true} label="Select label" errorText="This is an error" className={base.mb4}>
+							<option value="" disabled={true}>Placeholder</option>
+							<option>Option 1</option>
+							<option>Option 2</option>
+							<option>Option 3</option>
+						</Select>
+
+					</div>
+					<hr />
 					<code>
 						<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
 {
 `
-<Stepper steps={[null, null, null, null]} stepsComplete={0} color="blue" />
-<Stepper steps={[null, null, null, null]} stepsComplete={1} color="purple" />
-<Stepper steps={[null, null, null, null]} stepsComplete={2} color="green" />
-<Stepper steps={[null, null, null, null]} stepsComplete={3} color="orange" />
-<Stepper steps={["Step 1", "Step 2", "Step 3", "Step 4"]} stepsComplete={4} color="green" />
+<Input placeholder="Placeholder text" block={true} label="Input label" helperText="This is optional helper text." className={base.mb4} />
+<Select defaultValue="" label="Select label">
+	<option value="" disabled={true}>Placeholder</option>
+	<option>Option 1</option>
+	<option>Option 2</option>
+	<option>Option 3</option>
+</Select>
+
+<Input placeholder="Placeholder text" block={true} error={true} label="Input label" className={base.mb4} />
+
+<Input placeholder="Placeholder text" block={true} error={true} label="Input label" errorText="This is an error." className={base.mb4} />
+
+<Select defaultValue="" error={true} label="Select label" className={base.mb4}>
+	<option value="" disabled={true}>Placeholder</option>
+	<option>Option 1</option>
+	<option>Option 2</option>
+	<option>Option 3</option>
+</Select>
+
+<Select defaultValue="" error={true} label="Select label" errorText="This is an error" className={base.mb4}>
+	<option value="" disabled={true}>Placeholder</option>
+	<option>Option 1</option>
+	<option>Option 2</option>
+	<option>Option 3</option>
+</Select>
 
 `
 }

@@ -2,9 +2,7 @@
 @value colors "./_colors.css";
 @value typography "./_typography.css";
 
-@value c_blue-8 from colors;
-@value c_cool-mid-gray from colors;
-@value c_red from colors;
+@value c_cool-mid-gray, c_red, c_blue-8 from colors;
 
 .input:focus {
 	outline: none;
@@ -33,7 +31,8 @@
 
 .v-mid { composes: v-mid from typography;}
 .red { composes: red from colors; }
-.small { composes: f5 from typography; }
+.red-fill { fill: c_red; }
+.small { composes: f7 from typography; }
 .border-red { composes: b--red from colors; }
 .border-neutral { composes: b--cool-mid-gray-5 from colors; }
 

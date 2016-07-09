@@ -48,7 +48,7 @@ class ButtonsComponent extends React.Component {
 					<TabPanels active={this.state.activeExample}>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="5" className={base.mb3} color="cool-mid-gray">Solid</Heading>
+								<Heading level="7" className={base.mb3} color="cool-mid-gray">Solid</Heading>
 								<Button className={`${base.mb3} ${base.mr1}`}>Submit</Button>
 								<Button color="blue" className={`${base.mb3} ${base.mr1}`}>Submit</Button>
 								<Button color="purple" className={`${base.mb3} ${base.mr1}`}>Submit</Button>
@@ -58,7 +58,7 @@ class ButtonsComponent extends React.Component {
 								<Button disabled={true} className={`${base.mb3} ${base.mr1}`}>Disabled</Button>
 							</div>
 							<div className={base.pa4}>
-								<Heading level="5" className={base.mb3} color="cool-mid-gray">Outlined</Heading>
+								<Heading level="7" className={base.mb3} color="cool-mid-gray">Outlined</Heading>
 								<Button outline={true} className={`${base.mb3} ${base.mr1}`}>Submit</Button>
 								<Button color="blue" outline={true} className={`${base.mb3} ${base.mr1}`}>Submit</Button>
 								<Button color="purple" outline={true} className={`${base.mb3} ${base.mr1}`}>Submit</Button>
@@ -91,13 +91,13 @@ class ButtonsComponent extends React.Component {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="5" className={base.mb3} color="cool-mid-gray">Sizes</Heading>
+								<Heading level="7" className={base.mb3} color="cool-mid-gray">Sizes</Heading>
 								<Button color="blue" size="small" className={`${base.mb3} ${base.mr1}`}>Submit</Button>
 								<Button color="blue" className={`${base.mb3} ${base.mr1}`}>Submit</Button>
 								<Button color="blue" size="large" className={`${base.mb3} ${base.mr1}`}>Submit</Button>
 							</div>
 							<div className={base.pa4}>
-								<Heading level="5" className={base.mb3} color="cool-mid-gray">Block</Heading>
+								<Heading level="7" className={base.mb3} color="cool-mid-gray">Block</Heading>
 								<Button color="blue" block={true} className={base.mb3}>Submit</Button>
 							</div>
 							<hr />
