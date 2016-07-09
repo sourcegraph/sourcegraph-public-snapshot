@@ -327,7 +327,7 @@ class DefInfo extends Container {
 											<p styleName="cool-mid-gray">
 												It looks like this node in the graph is missing.
 												{!this.context.signedIn &&
-													<span> Help us get more nodes in the graph by joining with Github.</span>
+													<span> Help us get more nodes in the graph by joining with GitHub.</span>
 												}
 											</p>
 											{!this.context.signedIn &&
