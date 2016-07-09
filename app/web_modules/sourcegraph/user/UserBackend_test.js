@@ -90,7 +90,7 @@ describe("UserBackend", () => {
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
 				UserBackend.__onDispatch(new UserActions.WantEmails(1));
-			})).to.eql([new UserActions.FetchedEmails(1, {Error: "error"})]);
+			})).to.eql([new UserActions.FetchedEmails(1, [])]);
 		});
 	});
 });
