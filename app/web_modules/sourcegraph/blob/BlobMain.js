@@ -212,7 +212,8 @@ export default class BlobMain extends Container {
 					className={Style.margin}
 					style={(!this.state.blob || !this.state.anns) ? {visibility: "hidden"} : null}
 					lineFromByte={this.state.lineFromByte}
-					selectionStartLine={this.state.selectionStartLine ? this.state.selectionStartLine : null}>
+					selectionStartLine={this.state.selectionStartLine ? this.state.selectionStartLine : null}
+					startByte={this.state.startByte}>
 					{this.state.children}
 				</FileMargin>
 			</div>
