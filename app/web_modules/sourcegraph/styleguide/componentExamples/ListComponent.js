@@ -10,7 +10,7 @@ class ListComponent extends React.Component {
 	render() {
 		return (
 			<div className={base.mv4}>
-				<Heading level="3" className={base.mb2}>Stepper</Heading>
+				<Heading level="3" className={base.mb2}>Lists</Heading>
 
 				<Panel hoverLevel="low">
 					<div className={base.pa4}>

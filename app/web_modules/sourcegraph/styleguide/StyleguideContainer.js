@@ -1,6 +1,7 @@
 // @flow
 
 import React from "react";
+import {Link} from "react-router";
 import {Hero, Heading, FlexContainer, Tabs, TabItem, Affix} from "sourcegraph/components";
 import CSSModules from "react-css-modules";
 import base from "sourcegraph/components/styles/_base.css";
@@ -8,13 +9,6 @@ import styles from "./styles/StyleguideContainer.css";
 import ComponentsContainer from "./ComponentsContainer";
 
 class StyleguideContainer extends React.Component {
-
-	_pageLinkScroll(e) {
-		const anchorLabel = e.target.getAttribute("data-anchor");
-		const anchorEl = document.getElementById(anchorLabel);
-		anchorEl.scrollIntoView();
-		return false;
-	}
 
 	render() {
 		return (
@@ -29,15 +23,15 @@ class StyleguideContainer extends React.Component {
 					<Affix offset={20} style={{flex: "0 0 240px"}} className={base.orderlast}>
 						<Tabs direction="vertical" color="purple" className={base.ml5}>
 							<TabItem>
-								<a data-anchor="principles" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Principles</a>
+								<Link to="styleguide" hash="principles">Principles</Link>
 							</TabItem>
 
 							<Heading level="6" className={base.mt4}>Brand</Heading>
 							<TabItem>
-								<a data-anchor="brand-voice" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Voice</a>
+								<Link to="styleguide" hash="brand-voice">Voice</Link>
 							</TabItem>
 							<TabItem>
-								<a data-anchor="brand-logo" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Logo and Logotype</a>
+								<Link to="styleguide" hash="brand-logo">Logo and Logotype</Link>
 							</TabItem>
 							{/* <TabItem>Colors</TabItem>
 							<TabItem>Typography</TabItem>}
@@ -50,36 +44,36 @@ class StyleguideContainer extends React.Component {
 
 							<Heading level="6" className={base.mt4}>Layout Components</Heading>
 							<TabItem>
-								<a data-anchor="layout-flexcontainer" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>FlexContainer</a>
+								<Link to="styleguide" hash="layout-flexcontainer">FlexContainer</Link>
 							</TabItem>
 							<TabItem>
-								<a data-anchor="layout-affix" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Affix</a>
+								<Link to="styleguide" hash="layout-affix">Affix</Link>
 							</TabItem>
 
 							<Heading level="6" className={base.mt4}>UI Components</Heading>
 							<TabItem>
-								<a data-anchor="components-headings" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Headings</a>
+								<Link to="styleguide" hash="components-headings">Headings</Link>
 							</TabItem>
 							<TabItem>
-								<a data-anchor="components-forms" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Forms</a>
+								<Link to="styleguide" hash="components-forms">Forms</Link>
 							</TabItem>
 							<TabItem>
-								<a data-anchor="components-buttons" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Buttons</a>
+								<Link to="styleguide" hash="components-buttons">Buttons</Link>
 							</TabItem>
 							<TabItem>
-								<a data-anchor="components-tabs" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Tabs</a>
+								<Link to="styleguide" hash="components-tabs">Tabs</Link>
 							</TabItem>
 							<TabItem>
-								<a data-anchor="components-panels" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Panels</a>
+								<Link to="styleguide" hash="components-panels">Panels</Link>
 							</TabItem>
 							<TabItem>
-								<a data-anchor="components-stepper" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Stepper</a>
+								<Link to="styleguide" hash="components-stepper">Stepper</Link>
 							</TabItem>
 							<TabItem>
-								<a data-anchor="components-checklists" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Checklist Items</a>
+								<Link to="styleguide" hash="components-checklists">Checklist Items</Link>
 							</TabItem>
 							<TabItem>
-								<a data-anchor="components-table" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Table</a>
+								<Link to="styleguide" hash="components-table">Table</Link>
 							</TabItem>
 						</Tabs>
 					</Affix>
