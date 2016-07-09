@@ -5,14 +5,17 @@ import {Link} from "react-router";
 import type {RouterLocation} from "react-router";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
-import {Avatar, Panel, Popover, Menu, Button, TabItem, Logo} from "sourcegraph/components";
+import {Avatar, Panel, Popover, Menu, Logo, Heading} from "sourcegraph/components";
 import LogoutLink from "sourcegraph/user/LogoutLink";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalNav.css";
 import base from "sourcegraph/components/styles/_base.css";
+import colors from "sourcegraph/components/styles/_colors.css";
+import typography from "sourcegraph/components/styles/_typography.css";
+
 import {LoginForm} from "sourcegraph/user/Login";
 import {EllipsisHorizontal, CheckIcon} from "sourcegraph/components/Icons";
-import {FaChevronDown} from "sourcegraph/components/Icons";
+import {DownPointer} from "sourcegraph/components/symbols";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import GlobalSearchInput from "sourcegraph/search/GlobalSearchInput";
 import {locationForSearch, queryFromStateOrURL} from "sourcegraph/search/routes";
@@ -33,8 +36,12 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 	if (location.pathname === "/styleguide") return <span />;
 	const repoSplat = repoParam(params.splat);
 	let repo = repoSplat ? repoPath(repoSplat) : null;
+	if (isHomepage) return <span />;
 	return (
-		<nav id="global-nav" styleName={isHomepage ? "navbar-homepage" : "navbar-non-homepage"} role="navigation">
+		<nav
+			id="global-nav"
+			styleName="navbar"
+			className={colors["shadow-gray"]} role="navigation">
 
 			{location.state && location.state.modal === "login" &&
 				<LocationStateModal modalName="login" location={location}
@@ -65,18 +72,11 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 					}
 				</Link>}
 
-				<div styleName="search">
+				<div
+					styleName="flex-fill"
+					className={`${base["b--dotted"]} ${base.bn} ${base.brw2} ${colors["b--cool-pale-gray"]}`}>
 					{location.pathname !== "/" && <SearchForm repo={repo} location={location} router={router} showResultsPanel={location.pathname !== `/${rel.search}`} />}
 				</div>
-
-				{user && <div styleName="flex flex-start flex-fixed">
-					<Link to="/settings/repos">
-						<TabItem hideMobile={true} active={location.pathname === "/settings/repos"}>Repositories</TabItem>
-					</Link>
-					<Link to="/tools">
-						<TabItem hideMobile={true} active={location.pathname === "/tools"}>Tools</TabItem>
-					</Link>
-				</div>}
 
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal styleName="icon-ellipsis" title="Your editor could not identify the symbol"/>}
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 1 && <CheckIcon styleName="icon-check" title="Sourcegraph successfully looked up symbol" />}
@@ -85,33 +85,34 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 					<Popover left={true}>
 						<div styleName="user">
 							{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <div>{user.Login}</div>}
-							<FaChevronDown styleName="user-menu-icon" />
+							<DownPointer width={10} className={base.ml2} styleName="fill-cool-mid-gray" />
 						</div>
-						<Menu>
-							<span styleName="current-user">Signed in as <strong>{user.Login}</strong></span>
-							<hr styleName="small-only" className={base.m0} />
-							<Link styleName="small-only" to="/settings/repos" role="menu-item">Repositories</Link>
+						<Menu className={base.pa0}>
+							<div className={base.pa2}>
+								<Heading level="7" color="cool-mid-gray">Signed in as</Heading>
+								<div>
+									{user.Name}<br />
+									<span className={typography.f7} styleName="cool-mid-gray">{user.Login}</span>
+								</div>
+								<LogoutLink role="menu-item" />
+							</div>
+							<hr className={base.p0} />
+							<Link to="/settings/repos" role="menu-item">Repositories</Link>
+							<Link to="/tools" role="menu-item">Tools</Link>
 							<hr className={base.m0} />
-							<Link to="/about" role="menu-item">About</Link>
-							<Link to="/contact" role="menu-item">Contact</Link>
-							<Link to="/pricing" role="menu-item">Pricing</Link>
-							<a href="https://text.sourcegraph.com" target="_blank" role="menu-item">Blog</a>
-							<a href="https://boards.greenhouse.io/sourcegraph" target="_blank" role="menu-item">We're hiring</a>
-							<Link to="/security" role="menu-item">Security</Link>
-							<Link to="/-/privacy" role="menu-item">Privacy</Link>
-							<Link to="/-/terms" role="menu-item">Terms</Link>
-							<hr className={base.m0} />
-							<LogoutLink role="menu-item" />
+							<Link to="/security" role="menu-item" className={`${typography.f7} ${typography["link-subtle"]}`} styleName="cool-mid-gray">Security</Link>
+							<Link to="/-/privacy" role="menu-item" className={`${typography.f7} ${typography["link-subtle"]}`} styleName="cool-mid-gray">Privacy</Link>
+							<Link to="/-/terms" role="menu-item" className={`${typography.f7} ${typography["link-subtle"]}`} styleName="cool-mid-gray">Terms</Link>
 						</Menu>
 					</Popover>
 				</div>}
 
 				{!signedIn &&
-					<div styleName="tr" className={`${base.pv2} ${base.ph1}`}>
-						<div styleName="action">
+					<div className={`${base.pv2} ${base.pr3} ${base.pl3}`}>
+						<div>
 							<LocationStateToggleLink href="/login" modalName="login" location={location}
 								onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ShowLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
-								<Button color="blue">Sign in</Button>
+								Log in
 							</LocationStateToggleLink>
 						</div>
 					</div>

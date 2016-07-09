@@ -44,7 +44,7 @@ function GlobalSearchInput(props) {
 	return (
 		<div styleName="flex-fill relative" className={base.mr3}>
 			{props.icon &&
-				<Search width={18} style={{top: "11px", left: "10px"}} styleName="absolute cool-mid-gray-fill layer-btm" />
+				<Search width={16} style={{top: "11px", left: "10px"}} styleName="absolute cool-mid-gray-fill layer-btm" />
 			}
 			<Input
 				{...passProps}

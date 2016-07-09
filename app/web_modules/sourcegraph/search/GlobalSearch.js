@@ -424,7 +424,7 @@ class GlobalSearch extends Container {
 			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`} styleName="result result-error">Select repositories to include.</div>];
 		}
 
-		if (!this.state.query) return <div className={`${base.pt4} ${base.ph4}`} styleName="result">Type a query&hellip;</div>;
+		if (!this.state.query) return <div className={`${base.pv4} ${base.ph4}`} styleName="result">Type a query&hellip;</div>;
 
 		if (!this.state.matchingResults ||
 			((!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) && this.state.matchingResults.outstandingFetches !== 0)) {
@@ -434,7 +434,7 @@ class GlobalSearch extends Container {
 		if (this.state.matchingResults &&
 			(!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) &&
 			(!this.state.matchingResults.Repos || this.state.matchingResults.Repos.length === 0)) {
-			return [<div className={`${base.ph4} ${base.pt4}`} styleName="result" key="_nosymbol">No results found.</div>];
+			return [<div className={`${base.ph4} ${base.pv4}`} styleName="result" key="_nosymbol">No results found.</div>];
 		}
 
 		let list = [], numDefs = 0,
