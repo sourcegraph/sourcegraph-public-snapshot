@@ -12,23 +12,29 @@
 	z-index: 100;
 }
 
-.item {
-	composes: ph3 from base;
+.menu-item {
 	cursor: pointer;
+	padding-left: 24px;
+	padding-right: 24px;
 }
 
-.item a {
+.menu-item a {
 	padding-top: 0.5em;
 	padding-bottom: 0.5em;
 	color: c_cool-gray;
 	display: block;
 }
 
-.item:hover,
-.item:hover a {
+.menu-item:hover,
+.menu-item:hover a {
 	color: c_cool-gray;
 }
 
-.item:hover {	background-color: c_cool-pale-gray-5; }
+.menu-item:hover {	background-color: c_cool-pale-gray-5; }
 
-.inactive {	composes: pv2 ph3 from base; }
+.divider { composes: ph0 mh0 from base; }
+
+.inactive {
+	padding-left: 24px;
+	padding-right: 24px;
+}
