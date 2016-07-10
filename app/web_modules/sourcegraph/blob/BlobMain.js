@@ -188,7 +188,7 @@ export default class BlobMain extends Container {
 					<Blob
 						repo={this.state.repo}
 						rev={this.state.rev}
-						ref={(c) => { this.setState({selectionStartLine: c && c.refs && c.refs.startLineComponent ? c.refs.startLineComponent : null}); }}
+						ref={(c) => { this.setState({selectionStartLine: (c && c.refs && c.refs.startLineComponent) ? c.refs.startLineComponent : null}); }}
 						path={this.state.path}
 						contents={this.state.blob.ContentsString}
 						annotations={this.state.anns}
