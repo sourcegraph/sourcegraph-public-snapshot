@@ -35,13 +35,12 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 
 	if (location.pathname === "/styleguide") return <span />;
 	const repoSplat = repoParam(params.splat);
-	let repo = repoSplat ? repoPath(repoSplat) : null;
-	if (isHomepage) return <span />;
-	return (
+	let repo = repoSplat ? repoPath(repoSplat) : null;	return (
 		<nav
 			id="global-nav"
 			styleName="navbar"
-			className={colors["shadow-gray"]} role="navigation">
+			className={colors["shadow-gray"]} role="navigation"
+			style={isHomepage ? {visibility: "hidden"} : {}}>
 
 			{location.state && location.state.modal === "login" &&
 				<LocationStateModal modalName="login" location={location}
