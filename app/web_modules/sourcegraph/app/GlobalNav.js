@@ -43,6 +43,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 			style={isHomepage ? {visibility: "hidden"} : {}}>
 
 			{location.state && location.state.modal === "login" &&
+			// TODO: Decouple existence of modals and GlobalNav
 				<LocationStateModal modalName="login" location={location}
 					onDismiss={(v) => eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 					<div styleName="modal">
@@ -111,7 +112,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 						<div>
 							<LocationStateToggleLink href="/login" modalName="login" location={location}
 								onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ShowLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
-								Log in
+								Sign in
 							</LocationStateToggleLink>
 						</div>
 					</div>

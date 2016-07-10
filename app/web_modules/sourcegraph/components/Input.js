@@ -26,7 +26,7 @@ class Input extends React.Component {
 	render() {
 		const {style, domRef, block, className, placeholder, label, helperText, error, errorText} = this.props;
 		return (
-			<div className={className}>
+			<div className={className} style={block ? {width: "100%"} : {}}>
 				{label && <div className={base.mb2}>{label} <br /></div>}
 				<input
 					{...this.props}
