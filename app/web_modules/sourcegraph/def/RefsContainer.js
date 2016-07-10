@@ -77,7 +77,6 @@ export default class RefsContainer extends Container {
 		return Boolean(nextState.forceComponentUpdate);
 	}
 
-
 	stores() {
 		return [DefStore, BlobStore];
 	}

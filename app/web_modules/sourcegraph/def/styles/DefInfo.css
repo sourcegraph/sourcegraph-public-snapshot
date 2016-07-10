@@ -5,7 +5,17 @@
 @value vars "sourcegraph/components/styles/_vars.css";
 @value layout "sourcegraph/components/styles/_layout.css";
 
-@value c_blue-text, c_dark-blue  from colors;
+@value c_blue-text, c_dark-blue, c_cool-pale-gray, c_cool-gray from colors;
+@value code-font-size-2 from vars;
+
+pre {
+	background-color: c_cool-gray;
+	border-radius: 3px;
+	color: c_cool-pale-gray;
+	font-size: code-font-size-2;
+	line-height: 1.45em;
+	padding: 1rem;
+}
 
 .container-fixed { composes: containerFixed from layout; }
 .flex-grow { flex-grow: 1; }

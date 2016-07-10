@@ -15,6 +15,7 @@
 										{
 											"type": "BlobLine",
 											"key": "0",
+											"ref": "startLineComponent",
 											"props": {
 												"lineNumber": 1,
 												"startByte": 0,
