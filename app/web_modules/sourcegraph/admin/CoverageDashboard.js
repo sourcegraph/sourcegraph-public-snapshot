@@ -19,7 +19,7 @@ const langTargets = {
 	"CSS": 0.75,
 };
 
-class CoverageDashbaord extends Container {
+class CoverageDashboard extends Container {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -142,4 +142,4 @@ class CoverageDashbaord extends Container {
 	}
 }
 
-export default CSSModules(CoverageDashbaord, styles);
+export default CSSModules(CoverageDashboard, styles);
