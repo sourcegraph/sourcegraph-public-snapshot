@@ -87,22 +87,22 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 							{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <div>{user.Login}</div>}
 							<DownPointer width={10} className={base.ml2} styleName="fill-cool-mid-gray" />
 						</div>
-						<Menu className={base.pa0}>
-							<div className={base.pa2}>
+						<Menu className={base.pa0} style={{width: "220px"}}>
+							<div className={`${base.pa0} ${base.mb2} ${base.mt3}`}>
 								<Heading level="7" color="cool-mid-gray">Signed in as</Heading>
-								<div>
-									{user.Name}<br />
-									<span className={typography.f7} styleName="cool-mid-gray">{user.Login}</span>
-								</div>
-								<LogoutLink role="menu-item" />
+								{user.Login}
 							</div>
-							<hr className={base.p0} />
-							<Link to="/settings/repos" role="menu-item">Repositories</Link>
-							<Link to="/tools" role="menu-item">Tools</Link>
-							<hr className={base.m0} />
-							<Link to="/security" role="menu-item" className={`${typography.f7} ${typography["link-subtle"]}`} styleName="cool-mid-gray">Security</Link>
-							<Link to="/-/privacy" role="menu-item" className={`${typography.f7} ${typography["link-subtle"]}`} styleName="cool-mid-gray">Privacy</Link>
-							<Link to="/-/terms" role="menu-item" className={`${typography.f7} ${typography["link-subtle"]}`} styleName="cool-mid-gray">Terms</Link>
+							<LogoutLink role="menu-item" />
+
+							<hr role="divider" className={base.mv3} />
+							<Link to="/settings/repos" role="menu-item">Your repositories</Link>
+							<Link to="/tools" role="menu-item">Tools and integrations</Link>
+							<hr role="divider" className={base.mt3} />
+							<div styleName="cool-mid-gray" className={`${base.pv1} ${base.mb1} ${typography.tc}`}>
+								<Link to="/security" className={`${typography.f7} ${typography["link-subtle"]} ${base.pr3}`} styleName="cool-mid-gray">Security</Link>
+								<Link to="/-/privacy" className={`${typography.f7} ${typography["link-subtle"]} ${base.pr3}`} styleName="cool-mid-gray">Privacy</Link>
+								<Link to="/-/terms" className={`${typography.f7} ${typography["link-subtle"]}`}>Terms</Link>
+							</div>
 						</Menu>
 					</Popover>
 				</div>}
