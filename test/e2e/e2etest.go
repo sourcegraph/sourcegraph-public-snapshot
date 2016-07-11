@@ -169,6 +169,26 @@ func (t *T) WaitForElement(by, value string, filters ...ElementFilter) selenium.
 	return element
 }
 
+// Click waits up to 20s for an element that matches the given selector and
+// filters to appear, and then clicks it.
+//
+// ChromeDriver has a race condition where if an element moves while an
+// attempt to click on it happens, it throws an internal exception. This
+// function will retry on errors from Click to workaround the issue. This may
+// add an extra 20s on the wait time.
+func (t *T) Click(by, value string, filters ...ElementFilter) {
+	var err error
+	deadline := time.Now().Add(20 * time.Second)
+	for time.Now().Before(deadline) {
+		e := t.WaitForElement(by, value, filters...)
+		err = e.Click()
+		if err == nil {
+			return
+		}
+	}
+	t.Fatalf("Failed to click (%s, %s): %s", by, value, err)
+}
+
 type ElementFilter func(selenium.WebElement) bool
 
 func And(filters ...ElementFilter) ElementFilter {
