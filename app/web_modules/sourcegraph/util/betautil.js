@@ -10,3 +10,7 @@
 //
 //  export const AWESOME_STUFF = "Awesome Stuff";
 //
+
+export const JAVASCRIPT = "JavaScript";
+export const PYTHON = "Python";
+export const DESKTOP = "Desktop";
