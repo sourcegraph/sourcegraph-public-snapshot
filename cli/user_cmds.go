@@ -247,13 +247,7 @@ func (c *userUpdateCmd) Execute(args []string) error {
 		if _, err := cl.Accounts.Update(cliContext, user); err != nil {
 			return err
 		}
-		// Get the user again, because Update implicitly manages the pending
-		// and accepted beta statuses.
-		user, err = cl.Users.Get(cliContext, &userSpec)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("# updated betas for user %s from %s to %s\n", user.Login, quotedComma(oldBetas), quotedComma(user.Betas))
+		fmt.Printf("# updated betas for user %s from %s to %s\n", user.Login, quotedComma(oldBetas), quotedComma(betas))
 		return nil
 	}
 
