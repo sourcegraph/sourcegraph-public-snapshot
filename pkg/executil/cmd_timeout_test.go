@@ -7,7 +7,7 @@ import (
 )
 
 func TestCmdCombinedOutputWithTimeout_timeout(t *testing.T) {
-	out, err := CmdCombinedOutputWithTimeout(200*time.Millisecond, exec.Command("sh", "-c", "echo hello && sleep 0.201"))
+	out, err := CmdCombinedOutputWithTimeout(200*time.Millisecond, exec.Command("sh", "-c", "echo hello && sleep 0.300"))
 	if want := ErrCmdTimeout; err != want {
 		t.Errorf("got error %v, want %v", err, want)
 	}
