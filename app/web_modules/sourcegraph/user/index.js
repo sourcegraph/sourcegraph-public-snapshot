@@ -7,7 +7,28 @@ import type {SearchSettings} from "sourcegraph/search";
 export type User = {
 	UID: number;
 	Login: string;
+	Betas: string[];
+	BetaRegistered: bool;
 };
+
+// inBeta tells if the given user is a part of the given beta program.
+export function inBeta(u: ?User, b: string): boolean {
+	if (!u) return false;
+	return u.Betas.indexOf(b) !== -1;
+}
+
+// inAnyBeta tells if the given user is a part of ANY beta program.
+export function inAnyBeta(u: ?User): boolean {
+	if (!u) return false;
+	return u.Betas.length > 0;
+}
+
+// betaPending tells if the given user is registered for beta access but is not
+// yet participating in any beta programs.
+export function betaPending(u: ?User): boolean {
+	if (!u) return false;
+	return u.BetaRegistered && u.Betas.length === 0;
+}
 
 export type AuthInfo = {
 	UID?: number;

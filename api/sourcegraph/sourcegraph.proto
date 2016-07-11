@@ -978,6 +978,24 @@ message User {
 	// Admin is whether the user is a site admin for the site.
 	bool Admin = 12;
 
+	// Betas is a list of betas which the user is enrolled in. A user may be
+	// granted access to any beta string listed in both:
+	//
+	//  pkg/betautil/betautil.go
+	//  app/web_modules/sourcegraph/util/betautil.js
+	//
+	// Only admin users may set this field.
+	repeated string Betas = 14;
+
+	// BetaRegistered is whether or not the user has registered for beta access.
+	//
+	// If a user has registered for beta access, this field will always be true
+	// even if they are participating in a beta (len(User.Betas) > 0).
+	//
+	// Users should not set this field directly, instead use the Users.RegisterBeta
+	// method (which sets this field to true, among other things).
+	bool BetaRegistered = 15;
+
 	// Write is whether the user has write access for the site.
 	bool Write = 13;
 
@@ -1010,6 +1028,18 @@ message UsersListOptions {
 	// UIDs filters the resulting list to only contain users
 	// with one of these UIDs.
 	repeated int32 UIDs = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// AllBetas filters the resulting list to only contain users who are part of
+	// all the given betas. There is no equivilent OR operator yet.
+	repeated string AllBetas = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// RegisteredBeta filters the resulting list to only users who have
+	// registered for beta access.
+	bool RegisteredBeta = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// HaveBeta filters the resulting list to only users who have access to at
+	// least one beta.
+	bool HaveBeta = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 message OrgsListOp {
@@ -1021,10 +1051,18 @@ message EmailAddrList {
 	repeated EmailAddr EmailAddrs = 1;
 }
 
+// UpdateEmailsOp represents options for updating a user's email addresses.
+message UpdateEmailsOp {
+	// UserSpec is the user whose email addresses are to be updated.
+	UserSpec UserSpec = 1 [(gogoproto.nullable) = false];
+
+	// Add is a list of email addresses to add, if they do not already exist.
+	EmailAddrList Add = 2;
+}
+
 message OrgList {
 	repeated Org Orgs = 1;
 }
-
 
 // BuildsService communicates with the build-related endpoints in the Sourcegraph
 // API.
@@ -1105,6 +1143,9 @@ service Accounts {
 	// Update profile of existing account.
 	rpc Update(User) returns (pbtypes.Void);
 
+	// UpdateEmails updates the email addresses of an existing account.
+	rpc UpdateEmails(UpdateEmailsOp) returns (pbtypes.Void);
+
 	// Delete deletes a user account from this server.
 	rpc Delete(PersonSpec) returns (pbtypes.Void);
 }
@@ -1172,6 +1213,37 @@ message NewAccount {
 	int32 UID = 4;
 }
 
+// BetaRegistration represents the user information needed to register for the
+// beta program.
+message BetaRegistration {
+	// Email is the primary email address for the user. It is only used if the
+	// user does not already have an email address set in their account, else
+	// this field is no-op.
+	string Email = 1;
+
+	// FirstName is the first name of the user.
+	string FirstName = 2;
+
+	// LastName is the last name of the user.
+	string LastName = 3;
+
+	// Languages is a list of programming languages the user is interested in.
+	repeated string Languages = 4;
+
+	// Editors is a list of editors the user is interested in.
+	repeated string Editors = 5;
+
+	// Message contains any additional comments the user may have.
+	string Message = 6;
+}
+
+// BetaResponse is a response to a user registering for beta access.
+message BetaResponse {
+	// EmailAddress is the email address that was registered and will be
+	// contacted once approved by an admin.
+	string EmailAddress = 1;
+}
+
 // UsersService communicates with the users-related endpoints in the Sourcegraph
 // API.
 service Users {
@@ -1186,6 +1258,10 @@ service Users {
 
 	// List users.
 	rpc List(UsersListOptions) returns (UserList);
+
+	// RegisterBeta registers the currently authenticated user for beta program
+	// access (to be granted at the discretion of an admin user in the future).
+	rpc RegisterBeta(BetaRegistration) returns (BetaResponse);
 }
 
 // Auth manages authentication and authorization (via OAuth2).

@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"gopkg.in/gorp.v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 )
@@ -22,6 +23,7 @@ func init() {
 		"CREATE UNIQUE INDEX users_login ON users(login)",
 		`ALTER TABLE users ALTER COLUMN registered_at TYPE timestamp with time zone USING registered_at::timestamp with time zone;`,
 		`CREATE INDEX users_login_ci ON users((lower(login)) text_pattern_ops);`,
+		`ALTER TABLE users ALTER COLUMN betas TYPE text ARRAY USING betas::text[]`,
 	)
 }
 
@@ -38,10 +40,16 @@ type dbUser struct {
 	Disabled       bool   `db:"disabled"`
 	Write          bool
 	Admin          bool
+	Betas          *dbutil.StringSlice
+	BetaRegistered bool       `db:"beta_registered"`
 	RegisteredAt   *time.Time `db:"registered_at"`
 }
 
 func (u *dbUser) toUser() *sourcegraph.User {
+	var betas []string
+	if u.Betas != nil {
+		betas = u.Betas.Slice
+	}
 	return &sourcegraph.User{
 		UID:            int32(u.UID),
 		Login:          u.Login,
@@ -54,6 +62,8 @@ func (u *dbUser) toUser() *sourcegraph.User {
 		Disabled:       u.Disabled,
 		Write:          u.Write,
 		Admin:          u.Admin,
+		Betas:          betas,
+		BetaRegistered: u.BetaRegistered,
 		RegisteredAt:   ts(u.RegisteredAt),
 	}
 }
@@ -70,6 +80,10 @@ func (u *dbUser) fromUser(u2 *sourcegraph.User) {
 	u.Disabled = u2.Disabled
 	u.Write = u2.Write
 	u.Admin = u2.Admin
+	if len(u2.Betas) > 0 {
+		u.Betas = &dbutil.StringSlice{Slice: u2.Betas}
+	}
+	u.BetaRegistered = u2.BetaRegistered
 	u.RegisteredAt = tm(u2.RegisteredAt)
 }
 
@@ -164,6 +178,20 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 			uidBindVars[i] = arg(uid)
 		}
 		sql += " AND uid in (" + strings.Join(uidBindVars, ",") + ")"
+	}
+
+	for _, beta := range opt.AllBetas {
+		bindVar := arg(beta)
+		sql += " AND " + bindVar + " = ANY(betas)"
+	}
+	if opt.RegisteredBeta {
+		// Filter by users who have registered for beta access.
+		sql += " AND beta_registered=true "
+	}
+	if opt.HaveBeta && len(opt.AllBetas) == 0 {
+		// Filter by users who have access to at least one beta. Note that
+		// len(opt.AllBetas) > 0 fulfils this requirement.
+		sql += " AND array_length(betas, 1) > 0 "
 	}
 
 	sort := opt.Sort

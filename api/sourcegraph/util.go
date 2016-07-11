@@ -1,6 +1,9 @@
 package sourcegraph
 
-import "strings"
+import (
+	"errors"
+	"strings"
+)
 
 // Bool is a helper routine that allocates a new bool value to store v
 // and returns a pointer to it.
@@ -33,4 +36,14 @@ func ParseRepoAndCommitID(repoAndCommitID string) (uri, commitID string) {
 		return repoAndCommitID[:i], repoAndCommitID[i+1:]
 	}
 	return repoAndCommitID, ""
+}
+
+// Primary returns the primary email address in the list, or an error.
+func (e *EmailAddrList) Primary() (*EmailAddr, error) {
+	for _, email := range e.EmailAddrs {
+		if email.Primary {
+			return email, nil
+		}
+	}
+	return nil, errors.New("no primary email address")
 }

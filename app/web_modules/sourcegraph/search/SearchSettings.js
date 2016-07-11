@@ -230,6 +230,7 @@ class SearchSettings extends Container {
 							<h2 styleName="modalTitle">Join the {`${this.state.betaLanguage === "more" ? "Sourcegraph" : `${langName(this.state.betaLanguage)}`}`} beta</h2>
 							<BetaInterestForm
 								className={styles.modalForm}
+								loginReturnTo="/beta"
 								language={this.state.betaLanguage === "more" ? null : this.state.betaLanguage}
 								onSubmit={dismissModal("beta", this.props.location, this.context.router)} />
 						</div>
