@@ -226,7 +226,7 @@ class SearchForm extends React.Component {
 
 	_handleSubmit(ev: Event) {
 		ev.preventDefault();
-		this.props.router.push(locationForSearch(this.props.location, this.state.query, true, true));
+		this.props.router.push(locationForSearch(this.props.location, this.state.query, false, true));
 	}
 
 	_handleKeyDown(ev: KeyboardEvent) {
