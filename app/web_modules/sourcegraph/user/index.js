@@ -11,21 +11,21 @@ export type User = {
 	BetaRegistered: bool;
 };
 
-// InBeta tells if the given user is a part of the given beta program.
-export function InBeta(u: ?User, b: string): boolean {
+// inBeta tells if the given user is a part of the given beta program.
+export function inBeta(u: ?User, b: string): boolean {
 	if (!u) return false;
 	return u.Betas.indexOf(b) !== -1;
 }
 
-// InAnyBeta tells if the given user is a part of ANY beta program.
-export function InAnyBeta(u: ?User): boolean {
+// inAnyBeta tells if the given user is a part of ANY beta program.
+export function inAnyBeta(u: ?User): boolean {
 	if (!u) return false;
 	return u.Betas.length > 0;
 }
 
-// BetaPending tells if the given user is registered for beta access but is not
+// betaPending tells if the given user is registered for beta access but is not
 // yet participating in any beta programs.
-export function BetaPending(u: ?User): boolean {
+export function betaPending(u: ?User): boolean {
 	if (!u) return false;
 	return u.BetaRegistered && u.Betas.length === 0;
 }
