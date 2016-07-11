@@ -57,10 +57,10 @@ class SearchSettings extends Container {
 		if (prevState.settings !== nextState.settings && nextState.settings && nextState.settings.search && nextState.settings.search.scope) {
 			const scope = nextState.settings.search.scope;
 			if (scope.public) {
-				Dispatcher.Backends.dispatch(new RepoActions_typed.WantRepos("Private=false"));
+				Dispatcher.Backends.dispatch(new RepoActions_typed.WantRepos("RemoteOnly=true&Private=false"));
 			}
 			if (scope.private) {
-				Dispatcher.Backends.dispatch(new RepoActions_typed.WantRepos("Private=true"));
+				Dispatcher.Backends.dispatch(new RepoActions_typed.WantRepos("RemoteOnly=true&Private=true"));
 			}
 		}
 	}
