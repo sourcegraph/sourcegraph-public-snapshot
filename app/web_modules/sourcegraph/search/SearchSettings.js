@@ -81,8 +81,9 @@ class SearchSettings extends Container {
 		const langs = this._langs();
 		const enabled = langs.includes(lang);
 
-		if (enabled) langs.splice(langs.indexOf(lang), 1);
-		else {
+		if (enabled) {
+			langs.splice(langs.indexOf(lang), 1);
+		} else {
 			langs.push(lang);
 			langs.sort();
 		}
@@ -126,6 +127,7 @@ class SearchSettings extends Container {
 
 	_renderLanguages() {
 		const langs = this._langs();
+
 		return (
 			<div styleName="group">
 				<span styleName="label" className={base.pr3}>Languages:</span>
