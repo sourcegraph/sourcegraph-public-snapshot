@@ -252,6 +252,10 @@ export default class RefsContainer extends Container {
 		}
 
 		if (this.state.refs) {
+			if (this.state.refs.Error) {
+				console.error("Error fetching refs", this.state.refs.Error.response);
+				return null;
+			}
 			for (let loc of this.state.fileLocations) {
 				// Do not display a file without refs.
 				if (this.state.refs.filter((r) => r.File === loc.Path).length === 0) {
