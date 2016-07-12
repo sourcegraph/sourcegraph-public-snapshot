@@ -144,3 +144,30 @@ func TestCache_values(t *testing.T) {
 		}
 	}
 }
+
+func TestByteCache(t *testing.T) {
+	globalPrefix = "__test__TestByteCache"
+	clearAll(t, globalPrefix)
+	defer clearAll(t, globalPrefix)
+
+	c := NewByteCache("some_prefix")
+	_, ok := c.Get("a")
+	if ok {
+		t.Fatal("Initial Get should of found nothing")
+	}
+
+	c.Set("a", []byte("b"))
+	b, ok := c.Get("a")
+	if !ok {
+		t.Fatal("Expect to get a after setting")
+	}
+	if string(b) != "b" {
+		t.Fatalf("got %v, want %v", string(b), "b")
+	}
+
+	c.Delete("a")
+	_, ok = c.Get("a")
+	if ok {
+		t.Fatal("Get after delete should of found nothing")
+	}
+}

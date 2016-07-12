@@ -102,6 +102,21 @@ func (r *Redis) Get(key string) ([]byte, error) {
 	return resp.Bytes()
 }
 
+// Del is the Redis DEL command.
+func (r *Redis) Del(key string) error {
+	conn, cleanup, err := getConn()
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+
+	resp := conn.Cmd("DEL", r.rkey(key))
+	if resp.Err != nil {
+		return fmt.Errorf("Redis.Del error: %s", resp.Err)
+	}
+	return nil
+}
+
 // Set is the Redis SET command.
 func (r *Redis) Set(key string, val []byte) error {
 	conn, cleanup, err := getConn()
@@ -175,6 +190,38 @@ func (r *Cache) Add(key string, val interface{}, ttlSeconds int) error {
 		return r.r.SetEx(key, vjson, ttlSeconds)
 	}
 	return r.r.Set(key, vjson)
+}
+
+// ByteCache implements httpcache.Cache
+type ByteCache struct {
+	r          *Redis
+	ttlSeconds int
+}
+
+// NewByteCache creates a ByteCache
+func NewByteCache(keyPrefix string) *ByteCache {
+	// We always set the TTL just in case a user of the cache forgets to
+	// delete an entry.
+	return &ByteCache{
+		r:          &Redis{keyPrefix: keyPrefix},
+		ttlSeconds: 604800, // Hardcode 1 week
+	}
+}
+
+// Get implements httpcache.Cache.Get
+func (r *ByteCache) Get(key string) ([]byte, bool) {
+	b, err := r.r.Get(key)
+	return b, err == nil
+}
+
+// Delete implements httpcache.Cache.Set
+func (r *ByteCache) Set(key string, responseBytes []byte) {
+	_ = r.r.SetEx(key, responseBytes, r.ttlSeconds)
+}
+
+// Delete implements httpcache.Cache.Delete
+func (r *ByteCache) Delete(key string) {
+	_ = r.r.Del(key)
 }
 
 // ClearAllForTest clears all of the entries with a given prefix. This
