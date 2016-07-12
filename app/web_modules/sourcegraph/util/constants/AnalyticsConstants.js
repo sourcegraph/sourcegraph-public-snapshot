@@ -31,6 +31,8 @@ export const ACTION_SEARCH = "Search";
 export const ACTION_FETCH = "Fetch";
 export const ACTION_HOVER = "Hover";
 export const ACTION_REDIRECT = "Redirect";
+export const ACTION_SIGNUP = "Signup";
+export const ACTION_LOGIN = "Login";
 
 // Label constants
 // A string to provide additional dimensions to the event data.

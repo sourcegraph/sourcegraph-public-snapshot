@@ -277,7 +277,7 @@ export class EventLogger {
 			if (action.eventName) {
 				if (action.signupChannel) {
 					this.setUserProperty("signup_channel", action.signupChannel);
-					this.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SUCCESS, action.eventName, {error: Boolean(action.resp.Error), signup_channel: action.signupChannel});
+					this.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SIGNUP, action.eventName, {error: Boolean(action.resp.Error), signup_channel: action.signupChannel});
 				} else {
 					this.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SUCCESS, action.eventName, {error: Boolean(action.resp.Error)});
 				}
@@ -413,9 +413,10 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 
 				if (this.props.location.query._githubAuthed) {
 					this.context.eventLogger.setUserProperty("github_authed", this.props.location.query._githubAuthed);
+					this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SIGNUP, this.props.location.query._event, eventProperties);
+				} else {
+					this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_EXTERNAL, AnalyticsConstants.ACTION_REDIRECT, this.props.location.query._event, eventProperties);
 				}
-
-				this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_EXTERNAL, AnalyticsConstants.ACTION_REDIRECT, this.props.location.query._event, eventProperties);
 
 				// Won't take effect until we call replace below, but prevents this
 				// from being called 2x before the setTimeout block runs.
