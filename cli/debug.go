@@ -22,7 +22,7 @@ func startDebugServer(addr string) {
 		index := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`
 				<a href="/vars">Vars</a><br>
-				<a href="/pprof">PProf</a><br>
+				<a href="/debug/pprof">PProf</a><br>
 				<a href="/depprof">DepProf</a><br>
 				<a href="/metrics">Metrics</a><br>
 				<br>
@@ -31,14 +31,15 @@ func startDebugServer(addr string) {
 			`))
 		})
 		pp.Handle("/", index)
+		pp.Handle("/debug", index)
 		pp.Handle("/vars", http.HandlerFunc(expvarutil.ExpvarHandler))
 		pp.Handle("/gc", http.HandlerFunc(expvarutil.GCHandler))
 		pp.Handle("/freeosmemory", http.HandlerFunc(expvarutil.FreeOSMemoryHandler))
-		pp.Handle("/pprof/", http.HandlerFunc(pprof.Index))
-		pp.Handle("/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
-		pp.Handle("/pprof/profile", http.HandlerFunc(pprof.Profile))
-		pp.Handle("/pprof/symbol", http.HandlerFunc(pprof.Symbol))
-		pp.Handle("/pprof/trace", http.HandlerFunc(pprof.Trace))
+		pp.Handle("/debug/pprof/", http.HandlerFunc(pprof.Index))
+		pp.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
+		pp.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
+		pp.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
+		pp.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
 		pp.Handle("/depprof", depprof.NewHandler("sourcegraph.com/sourcegraph/sourcegraph"))
 		pp.Handle("/metrics", prometheus.Handler())
 		log.Println("warning: could not start pprof HTTP server:", http.ListenAndServe(addr, pp))
