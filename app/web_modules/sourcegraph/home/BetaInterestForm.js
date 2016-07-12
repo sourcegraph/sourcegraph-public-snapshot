@@ -46,7 +46,7 @@ class BetaInterestForm extends Container {
 		this._dispatcherToken = Dispatcher.Stores.register(this._onDispatch.bind(this));
 
 		// Trigger _onChange now to save this.props.language if set.
-		if (this.props.language) this._onChange();
+		if (this.context.signedIn && this.props.language) this._onChange();
 	}
 
 	componentWillUnmount() {
@@ -138,7 +138,7 @@ class BetaInterestForm extends Container {
 		if (!this.context.signedIn) {
 			return (<div styleName="cta">
 				<p styleName="p">You must sign in to continue.</p>
-				<GitHubAuthButton returnTo={this.props.loginReturnTo} color="blue" className={base.mr3}>
+				<GitHubAuthButton returnTo={this.props.loginReturnTo} color="blue" className={base.mr3} onClick={this.props.onSubmit ? this.props.onSubmit : () => {}}>
 					<strong>Sign in with GitHub</strong>
 				</GitHubAuthButton>
 			</div>);
