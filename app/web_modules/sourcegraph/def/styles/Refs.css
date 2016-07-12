@@ -7,6 +7,30 @@
 @value c_dark-blue from colors;
 @value media-sm from vars;
 
+
+.vote {
+	display: span;
+	float: left;
+	position: relative;
+	left: -23px;
+	width: 0;
+}
+
+.voteDone {
+	display: span;
+	float: left;
+	position: relative;
+	left: -23px;
+	width: 0;
+	visibility: hidden;
+	opacity: 0;
+	transition: visibility 0s 0.25s, opacity 0.25s linear;
+}
+
+.upvote, .downvote {
+	display: block;
+}
+
 .f7 { composes: f7 from typography; }
 
 .container {

@@ -57,6 +57,7 @@ class ExamplesContainer extends Container {
 						{refLocs && !refLocs.RepoRefs && <i>No examples found</i>}
 						{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <RefsContainer
 							key={i}
+							refIndex={i}
 							repo={this.props.repo}
 							rev={this.props.rev}
 							commitID={this.props.commitID}
