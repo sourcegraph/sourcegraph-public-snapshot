@@ -23,8 +23,7 @@ func runSearchFlow(t *T, query string) {
 
 	// Since the search results are listed in `code` tags,
 	// this will find the first search result (so it can be clicked)
-	searchResult := t.WaitForElement(selenium.ByTagName, "code")
-	searchResult.Click()
+	t.Click(selenium.ByTagName, "code")
 
 	// The usage examples are in `table` elements
 	t.WaitForElement(selenium.ByTagName, "table")
@@ -39,8 +38,7 @@ func testSearchFlow(t *T) error {
 	}
 
 	// set go as the language in the browser
-	selectLang := t.WaitForElement(selenium.ById, "e2etest-search-lang-select-golang")
-	selectLang.Click()
+	t.Click(selenium.ById, "e2etest-search-lang-select-golang")
 
 	queries := [5]string{"new http request", "read file", "json encoder", "sql query", "indent json"}
 	for _, q := range queries {
