@@ -9,11 +9,11 @@
 
 
 .vote {
-	display: span;
+	display: inline-block;
 	float: left;
 	position: relative;
 	left: -23px;
-	width: 0;
+	width: 20px;
 }
 
 .voteDone {
@@ -143,5 +143,9 @@
 @media screen and (max-width: 48em) {
 	.full-width-sm {
 		padding: 0;
+	}
+
+	.left-align-sm {
+		left: 0;
 	}
 }

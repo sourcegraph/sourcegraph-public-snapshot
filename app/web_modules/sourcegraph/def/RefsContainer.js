@@ -329,12 +329,13 @@ export default class RefsContainer extends Container {
 									ranges.map((r) => [r[0], Math.min(r[0] + 10, r[1])]);
 								}
 
+								let voteStyle = this.state.voteDone ? styles.voteDone : styles.vote;
 								return (
 									<div key={i}>
-										{this.context.user && this.context.user.Admin && <span className={`${this.state.voteDone ? styles.voteDone : styles.vote}`}>
+										{this.context.user && this.context.user.Admin && <div className={`${voteStyle} ${styles["left-align-sm"]}`}>
 											<a className={styles.upvote} onClick={() => this._vote(true, this.state.refRepo, loc.Path)}><FaThumbsUp /></a>
 											<a className={styles.downvote} onClick={() => this._vote(false, this.state.refRepo, loc.Path)}><FaThumbsDown /></a>
-										</span>}
+										</div>}
 										<Blob
 											repo={this.state.refRepo}
 											rev={this.state.refRev}
