@@ -57,6 +57,21 @@ func redisPool() (*pool.Pool, error) {
 	return connPool_, nil
 }
 
+// getConn returns a redis client from the pool. When you are done you must
+// call the cleanup function to return the connection to the pool.
+func getConn() (*redis.Client, func(), error) {
+	connPool, err := redisPool()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	conn, err := connPool.Get()
+	if err != nil {
+		return nil, nil, err
+	}
+	return conn, func() { connPool.Put(conn) }, nil
+}
+
 // Redis is a cache implemented on top of a Redis client. It is
 // designed to mimick the API of cache.Cache to make it easy to switch
 // instances of cache.Cache to Redis.
@@ -79,16 +94,11 @@ var ErrNotFound = errors.New("Redis key not found")
 func (r *Redis) Get(key string, dst interface{}) error {
 	rkey := fmt.Sprintf("%s:%s:%s", globalPrefix, r.keyPrefix, key)
 
-	connPool, err := redisPool()
+	conn, cleanup, err := getConn()
 	if err != nil {
 		return err
 	}
-
-	conn, err := connPool.Get()
-	if err != nil {
-		return err
-	}
-	defer connPool.Put(conn)
+	defer cleanup()
 
 	resp := conn.Cmd("GET", rkey)
 	if resp.IsType(redis.Nil) {
@@ -113,16 +123,11 @@ func (r *Redis) Get(key string, dst interface{}) error {
 func (r *Redis) Add(key string, val interface{}, ttlSeconds int) error {
 	rkey := fmt.Sprintf("%s:%s:%s", globalPrefix, r.keyPrefix, key)
 
-	connPool, err := redisPool()
+	conn, cleanup, err := getConn()
 	if err != nil {
 		return err
 	}
-
-	conn, err := connPool.Get()
-	if err != nil {
-		return err
-	}
-	defer connPool.Put(conn)
+	defer cleanup()
 
 	vjson, err := json.Marshal(val)
 	if err != nil {
@@ -146,16 +151,11 @@ func (r *Redis) Add(key string, val interface{}, ttlSeconds int) error {
 // ClearAllForTest clears all of the entries with a given prefix. This
 // is an O(n) operation and should only be used in tests.
 func ClearAllForTest(prefix string) error {
-	connPool, err := redisPool()
+	conn, cleanup, err := getConn()
 	if err != nil {
 		return err
 	}
-
-	conn, err := connPool.Get()
-	if err != nil {
-		return err
-	}
-	defer connPool.Put(conn)
+	defer cleanup()
 
 	resp := conn.Cmd("EVAL", `local keys = redis.call('keys', ARGV[1])
 if #keys > 0 then
