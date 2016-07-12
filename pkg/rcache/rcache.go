@@ -92,7 +92,7 @@ var ErrNotFound = errors.New("Redis key not found")
 // Get fetches the cached value for the given key into the
 // destination. If the key does not exist, it will return ErrNotFound.
 func (r *Redis) Get(key string, dst interface{}) error {
-	rkey := fmt.Sprintf("%s:%s:%s", globalPrefix, r.keyPrefix, key)
+	rkey := r.rkey(key)
 
 	conn, cleanup, err := getConn()
 	if err != nil {
@@ -121,7 +121,7 @@ func (r *Redis) Get(key string, dst interface{}) error {
 // Add adds a value to the Redis-backed cache with the specified key.
 // If ttlSeconds =< 0, then a TTL will not be set.
 func (r *Redis) Add(key string, val interface{}, ttlSeconds int) error {
-	rkey := fmt.Sprintf("%s:%s:%s", globalPrefix, r.keyPrefix, key)
+	rkey := r.rkey(key)
 
 	conn, cleanup, err := getConn()
 	if err != nil {
@@ -146,6 +146,11 @@ func (r *Redis) Add(key string, val interface{}, ttlSeconds int) error {
 		}
 	}
 	return nil
+}
+
+// rkey generates the actual key we use on redis.
+func (r *Redis) rkey(key string) string {
+	return fmt.Sprintf("%s:%s:%s", globalPrefix, r.keyPrefix, key)
 }
 
 // ClearAllForTest clears all of the entries with a given prefix. This
