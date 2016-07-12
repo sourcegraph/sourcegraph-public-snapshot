@@ -227,7 +227,7 @@ export class EventLogger {
 			return;
 		}
 
-		this._telligent("track", eventAction, {...eventProperties, eventCategory: eventCategory, eventAction: eventAction, is_authed: this._user ? "true" : "false", Platform: this._currentPlatform});
+		this._telligent("track", eventAction, {...eventProperties, eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction, is_authed: this._user ? "true" : "false", Platform: this._currentPlatform});
 		this._amplitude.logEvent(eventLabel, {...eventProperties, eventCategory: eventCategory, eventAction: eventAction, is_authed: this._user ? "true" : "false", Platform: this._currentPlatform});
 
 		window.ga("send", {
