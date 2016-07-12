@@ -37,9 +37,6 @@ func testSearchFlow(t *T) error {
 		t.Fatalf("TestSearchFlow: %s", err)
 	}
 
-	// set go as the language in the browser
-	t.Click(selenium.ById, "e2etest-search-lang-select-golang")
-
 	queries := [5]string{"new http request", "read file", "json encoder", "sql query", "indent json"}
 	for _, q := range queries {
 		runSearchFlow(t, q)
