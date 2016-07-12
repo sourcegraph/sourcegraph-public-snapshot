@@ -11,9 +11,9 @@ func clearAll(t *testing.T, prefix string) {
 	}
 }
 
-func TestRedis(t *testing.T) {
+func TestCache(t *testing.T) {
+	globalPrefix = "__test__TestCache"
 	clearAll(t, globalPrefix)
-	globalPrefix = "__test__TestRedis"
 	defer clearAll(t, globalPrefix)
 
 	type kvTTL struct {
@@ -47,7 +47,7 @@ func TestRedis(t *testing.T) {
 		}},
 	}
 
-	caches := make([]*Redis, len(cases))
+	caches := make([]*Cache, len(cases))
 	for i, test := range cases {
 		caches[i] = New(test.prefix)
 		for _, entry := range test.entries {
@@ -77,9 +77,9 @@ func TestRedis(t *testing.T) {
 	}
 }
 
-func TestRedis_values(t *testing.T) {
+func TestCache_values(t *testing.T) {
+	globalPrefix = "__test__TestCache_values"
 	clearAll(t, globalPrefix)
-	globalPrefix = "__test__TestRedis_values"
 	defer clearAll(t, globalPrefix)
 
 	cache := New("some_prefix")
