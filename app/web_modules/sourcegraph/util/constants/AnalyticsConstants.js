@@ -15,6 +15,7 @@ export const CATEGORY_REFERENCES = "References";
 export const CATEGORY_PRICING = "Pricing";
 export const CATEGORY_GLOBAL_SEARCH = "GlobalSearch";
 export const CATEGORY_EXTERNAL = "External";
+export const CATEGORY_INTERNAL = "Internal";
 export const CATEGORY_ENGAGEMENT = "ReEngagement";
 export const CATEGORY_UNKNOWN = "Unknown";
 

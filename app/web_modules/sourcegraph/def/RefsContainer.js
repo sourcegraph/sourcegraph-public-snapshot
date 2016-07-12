@@ -27,6 +27,7 @@ import base from "sourcegraph/components/styles/_base.css";
 import colors from "sourcegraph/components/styles/_colors.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {urlToRepo} from "sourcegraph/repo/routes";
+import {FaThumbsUp, FaThumbsDown} from "sourcegraph/components/Icons";
 
 const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above/below a ref
 
@@ -46,11 +47,13 @@ export default class RefsContainer extends Container {
 		fileCollapseThreshold: React.PropTypes.number, // number of files to show before "and X more..."-style paginator
 		rangeLimit: React.PropTypes.number,
 		showRepoTitle: React.PropTypes.bool,
+		refIndex: React.PropTypes.number,
 	};
 
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
+		user: React.PropTypes.object,
 	};
 
 	constructor(props) {
@@ -66,6 +69,7 @@ export default class RefsContainer extends Container {
 		this.ranges = {};
 		this.anns = {};
 		this._toggleFile = this._toggleFile.bind(this);
+		this._vote = this._vote.bind(this);
 	}
 
 	shouldComponentUpdate(nextProps, nextState, nextContext) {
@@ -240,6 +244,17 @@ export default class RefsContainer extends Container {
 		this.setState({shownFiles: newOpenFiles});
 	}
 
+	_vote(upvote, repo, path) {
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_INTERNAL, AnalyticsConstants.ACTION_CLICK, "UsageExampleVote", {
+			page: window.location.href,
+			upvote: upvote,
+			repo: repo,
+			path: path,
+			index: this.props.refIndex,
+		});
+		this.setState({voteDone: true});
+	}
+
 	render() {
 		if (this.state.fileLocations && this.state.fileLocations.length === 0) return null;
 
@@ -316,6 +331,10 @@ export default class RefsContainer extends Container {
 
 								return (
 									<div key={i}>
+										{this.context.user && this.context.user.Admin && <span className={`${this.state.voteDone ? styles.voteDone : styles.vote}`}>
+											<a className={styles.upvote} onClick={() => this._vote(true, this.state.refRepo, loc.Path)}><FaThumbsUp /></a>
+											<a className={styles.downvote} onClick={() => this._vote(false, this.state.refRepo, loc.Path)}><FaThumbsDown /></a>
+										</span>}
 										<Blob
 											repo={this.state.refRepo}
 											rev={this.state.refRev}

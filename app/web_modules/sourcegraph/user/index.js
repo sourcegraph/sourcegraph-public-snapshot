@@ -33,6 +33,7 @@ export function betaPending(u: ?User): boolean {
 export type AuthInfo = {
 	UID?: number;
 	Login?: string;
+	Admin?: boolean;
 };
 
 export type EmailAddr = {

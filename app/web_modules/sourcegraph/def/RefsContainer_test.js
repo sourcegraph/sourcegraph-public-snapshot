@@ -6,6 +6,7 @@ import {render} from "sourcegraph/util/renderTestUtils";
 
 const context = {
 	eventLogger: {logEvent: () => null},
+	user: null,
 };
 
 describe("RefsContainer", () => {
