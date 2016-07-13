@@ -78,9 +78,14 @@ func (e *internalError) Error() string {
 
 // Fatalf implements the TestingT and the selenium.TestingT interface.
 func (t *T) Fatalf(fmtStr string, v ...interface{}) {
-	currentURL, _ := t.WebDriver.CurrentURL()
-	fmtStr = fmtStr + " (on page %s)"
-	v = append(v, currentURL)
+	// We only need to append "(on page ...)" if we're being run by 'go test'
+	// because otherwise (*testRunner).runTest handles it in a more general
+	// purpose way (includes panics etc).
+	if t.testingT != nil {
+		currentURL, _ := t.WebDriver.CurrentURL()
+		fmtStr = fmtStr + " (on page %s)"
+		v = append(v, currentURL)
+	}
 	t.testingT.Fatalf(fmtStr, v...)
 }
 
