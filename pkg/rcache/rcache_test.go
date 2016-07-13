@@ -8,8 +8,8 @@ func clearAll(t *testing.T, prefix string) {
 	}
 }
 
-func TestCache(t *testing.T) {
-	globalPrefix = "__test__TestCache"
+func TestCache_namespace(t *testing.T) {
+	globalPrefix = "__test__TestCache_namespace"
 	clearAll(t, globalPrefix)
 	defer clearAll(t, globalPrefix)
 
@@ -44,9 +44,9 @@ func TestCache(t *testing.T) {
 		}},
 	}
 
-	caches := make([]*ByteCache, len(cases))
+	caches := make([]*Cache, len(cases))
 	for i, test := range cases {
-		caches[i] = NewByteCache(test.prefix, 123)
+		caches[i] = New(test.prefix, 123)
 		for _, entry := range test.entries {
 			caches[i].Set(entry.k, []byte(entry.v))
 		}
@@ -70,12 +70,12 @@ func TestCache(t *testing.T) {
 	}
 }
 
-func TestByteCache(t *testing.T) {
-	globalPrefix = "__test__TestByteCache"
+func TestCache_simple(t *testing.T) {
+	globalPrefix = "__test__TestCache_simple"
 	clearAll(t, globalPrefix)
 	defer clearAll(t, globalPrefix)
 
-	c := NewByteCache("some_prefix", 123)
+	c := New("some_prefix", 123)
 	_, ok := c.Get("a")
 	if ok {
 		t.Fatal("Initial Get should of found nothing")

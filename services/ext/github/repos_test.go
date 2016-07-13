@@ -20,7 +20,7 @@ func resetCache(t *testing.T) {
 	if err := rcache.ClearAllForTest(testGHCachePrefix); err != nil {
 		t.Fatal(err)
 	}
-	reposGithubPublicCache = rcache.NewByteCache(testGHCachePrefix, 1000)
+	reposGithubPublicCache = rcache.New(testGHCachePrefix, 1000)
 }
 
 // TestRepos_Get_existing_public tests the behavior of Repos.Get when called on a

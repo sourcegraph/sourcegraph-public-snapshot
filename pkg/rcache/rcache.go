@@ -151,33 +151,33 @@ func (r *Redis) rkey(key string) string {
 	return fmt.Sprintf("%s:%s:%s", globalPrefix, r.keyPrefix, key)
 }
 
-// ByteCache implements httpcache.Cache
-type ByteCache struct {
+// Cache implements httpcache.Cache
+type Cache struct {
 	r          *Redis
 	ttlSeconds int
 }
 
-// NewByteCache creates a ByteCache
-func NewByteCache(keyPrefix string, ttlSeconds int) *ByteCache {
-	return &ByteCache{
+// New creates a redis backed Cache
+func New(keyPrefix string, ttlSeconds int) *Cache {
+	return &Cache{
 		r:          &Redis{keyPrefix: keyPrefix},
 		ttlSeconds: ttlSeconds,
 	}
 }
 
 // Get implements httpcache.Cache.Get
-func (r *ByteCache) Get(key string) ([]byte, bool) {
+func (r *Cache) Get(key string) ([]byte, bool) {
 	b, err := r.r.Get(key)
 	return b, err == nil
 }
 
 // Delete implements httpcache.Cache.Set
-func (r *ByteCache) Set(key string, responseBytes []byte) {
+func (r *Cache) Set(key string, responseBytes []byte) {
 	_ = r.r.SetEx(key, responseBytes, r.ttlSeconds)
 }
 
 // Delete implements httpcache.Cache.Delete
-func (r *ByteCache) Delete(key string) {
+func (r *Cache) Delete(key string) {
 	_ = r.r.Del(key)
 }
 
