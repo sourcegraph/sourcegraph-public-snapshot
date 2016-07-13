@@ -451,11 +451,17 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 						failuresMu.Unlock()
 					}
 
-					t.log.Printf("[failure] [%v] [%v]: %v\n", test.Name, unitTime, err)
+					if t.slack != nil {
+						t.log.Printf("[failure] [%v] [%v]: %v\n", test.Name, unitTime, err)
+					}
 					testCounter.WithLabelValues(test.Name, "failure").Inc()
 
 					if err := t.slackFileUpload(failureType, screenshot, test.Name+".png"); err != nil {
 						t.log.Println("could not upload screenshot to Slack", test.Name, err)
+					}
+
+					if t.slack == nil {
+						t.log.Printf("[failure] [%v] [%v]: %v (see ./%s.png)\n", test.Name, unitTime, err, test.Name)
 					}
 					return
 				}
