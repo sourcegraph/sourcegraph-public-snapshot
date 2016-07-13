@@ -1,9 +1,6 @@
 package rcache
 
-import (
-	"reflect"
-	"testing"
-)
+import "testing"
 
 func clearAll(t *testing.T, prefix string) {
 	if err := ClearAllForTest(prefix); err != nil {
@@ -47,100 +44,28 @@ func TestCache(t *testing.T) {
 		}},
 	}
 
-	caches := make([]*Cache, len(cases))
+	caches := make([]*ByteCache, len(cases))
 	for i, test := range cases {
-		caches[i] = New(test.prefix)
+		caches[i] = NewByteCache(test.prefix, 123)
 		for _, entry := range test.entries {
-			if err := caches[i].Add(entry.k, entry.v, entry.ttl); err != nil {
-				t.Fatalf("error adding entry to redis (prefix=%s): %s", test.prefix, err)
-			}
+			caches[i].Set(entry.k, []byte(entry.v))
 		}
 	}
 	for i, test := range cases {
 		// test all the keys that should be present are found
 		for _, entry := range test.entries {
-			var res string
-			if err := caches[i].Get(entry.k, &res); err != nil {
-				t.Fatalf("error getting entry from redis (prefix=%s): %s", test.prefix, err)
+			b, ok := caches[i].Get(entry.k)
+			if !ok {
+				t.Fatalf("error getting entry from redis (prefix=%s)", test.prefix)
 			}
-			if res != entry.v {
-				t.Errorf("expected %s, got %s", entry.v, res)
+			if string(b) != entry.v {
+				t.Errorf("expected %s, got %s", entry.v, string(b))
 			}
 		}
 
 		// test not found case
-		var res interface{}
-		err := caches[i].Get("not-found", &res)
-		if err != ErrNotFound {
-			t.Errorf("expected error %q, got %q", err, ErrNotFound)
-		}
-	}
-}
-
-func TestCache_values(t *testing.T) {
-	globalPrefix = "__test__TestCache_values"
-	clearAll(t, globalPrefix)
-	defer clearAll(t, globalPrefix)
-
-	cache := New("some_prefix")
-
-	{
-		var v1, v1_got string
-		v1 = "asdf"
-		if err := cache.Add("k1", v1, -1); err != nil {
-			t.Fatal(err)
-		}
-		if err := cache.Get("k1", &v1_got); err != nil {
-			t.Fatal(err)
-		}
-		if v1 != v1_got {
-			t.Errorf("expected %s, got %s", v1, v1_got)
-		}
-	}
-
-	{
-		var v1, v1_got map[string]string
-		v1 = map[string]string{"a": "1", "b": "2", "c": "3"}
-		if err := cache.Add("k1", v1, -1); err != nil {
-			t.Fatal(err)
-		}
-		if err := cache.Get("k1", &v1_got); err != nil {
-			t.Fatal(err)
-		}
-		if !reflect.DeepEqual(v1, v1_got) {
-			t.Errorf("expected %s, got %s", v1, v1_got)
-		}
-	}
-
-	{
-		var v1, v1_got []string
-		v1 = []string{"1", "2", "3"}
-		if err := cache.Add("k1", v1, -1); err != nil {
-			t.Fatal(err)
-		}
-		if err := cache.Get("k1", &v1_got); err != nil {
-			t.Fatal(err)
-		}
-		if !reflect.DeepEqual(v1, v1_got) {
-			t.Errorf("expected %s, got %s", v1, v1_got)
-		}
-	}
-
-	{
-		type X struct {
-			A string
-			B int
-		}
-		var v1, v1_got X
-		v1 = X{A: "asdf", B: 23}
-		if err := cache.Add("k1", v1, -1); err != nil {
-			t.Fatal(err)
-		}
-		if err := cache.Get("k1", &v1_got); err != nil {
-			t.Fatal(err)
-		}
-		if !reflect.DeepEqual(v1, v1_got) {
-			t.Errorf("expected %v, got %v", v1, v1_got)
+		if _, ok := caches[i].Get("not-found"); ok {
+			t.Errorf("expected not found")
 		}
 	}
 }
