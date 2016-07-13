@@ -97,7 +97,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 							<Link to="/pricing" role="menu-item">Pricing</Link>
 							<a href="https://text.sourcegraph.com" target="_blank" role="menu-item">Blog</a>
 							<a href="https://boards.greenhouse.io/sourcegraph" target="_blank" role="menu-item">We're hiring</a>
-							<Link to="/beta" role="menu-item">Beta Program</Link>
+							<Link to="/beta" role="menu-item">Beta program</Link>
 							<Link to="/security" role="menu-item">Security</Link>
 							<Link to="/-/privacy" role="menu-item">Privacy</Link>
 							<Link to="/-/terms" role="menu-item">Terms</Link>
