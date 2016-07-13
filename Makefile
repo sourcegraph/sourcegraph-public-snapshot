@@ -109,6 +109,3 @@ check: ${GOBIN}/go-template-lint
 distclean:
 	go clean ./...
 	rm -rf ${GOBIN}/src
-
-docker-image:
-	docker build -t sourcegraph .
