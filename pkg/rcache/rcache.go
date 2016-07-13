@@ -1,7 +1,6 @@
 package rcache
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -150,46 +149,6 @@ func (r *Redis) SetEx(key string, val []byte, ttlSeconds int) error {
 // rkey generates the actual key we use on redis.
 func (r *Redis) rkey(key string) string {
 	return fmt.Sprintf("%s:%s:%s", globalPrefix, r.keyPrefix, key)
-}
-
-func New(keyPrefix string) *Cache {
-	return &Cache{
-		r: &Redis{keyPrefix: keyPrefix},
-	}
-}
-
-// Cache is a cache implemented on top of a Redis client. It is designed to
-// mimick the API of cache.Cache to make it easy to switch instances of
-// cache.Cache to Redis.
-type Cache struct {
-	r *Redis
-}
-
-// Get fetches the cached value for the given key into the
-// destination. If the key does not exist, it will return ErrNotFound.
-func (r *Cache) Get(key string, dst interface{}) error {
-	b, err := r.r.Get(key)
-	if err != nil {
-		return err
-	}
-	if err := json.Unmarshal(b, dst); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Add adds a value to the Redis-backed cache with the specified key.
-// If ttlSeconds =< 0, then a TTL will not be set.
-func (r *Cache) Add(key string, val interface{}, ttlSeconds int) error {
-	vjson, err := json.Marshal(val)
-	if err != nil {
-		return err
-	}
-
-	if ttlSeconds > 0 {
-		return r.r.SetEx(key, vjson, ttlSeconds)
-	}
-	return r.r.Set(key, vjson)
 }
 
 // ByteCache implements httpcache.Cache
