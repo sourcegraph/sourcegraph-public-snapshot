@@ -8,10 +8,12 @@
 @value media-sm from vars;
 
 
+.single-ref-container {
+	position: relative;
+}
 .vote {
 	display: inline-block;
-	float: left;
-	position: relative;
+	position: absolute;
 	left: -23px;
 	width: 20px;
 }
@@ -34,8 +36,6 @@
 .f7 { composes: f7 from typography; }
 
 .container {
-	composes: br2 ba bw1 from base;
-	composes: b--cool-pale-gray from colors;
 	display: flex;
 	flex-direction: column;
 }
@@ -66,6 +66,7 @@
 
 .refs {
 	composes: b--cool-pale-gray from colors;
+	composes: br2 ba bw1 from base;
 	flex: 1 1 auto;
 }
 
