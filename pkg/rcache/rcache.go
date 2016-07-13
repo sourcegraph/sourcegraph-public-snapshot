@@ -199,12 +199,10 @@ type ByteCache struct {
 }
 
 // NewByteCache creates a ByteCache
-func NewByteCache(keyPrefix string) *ByteCache {
-	// We always set the TTL just in case a user of the cache forgets to
-	// delete an entry.
+func NewByteCache(keyPrefix string, ttlSeconds int) *ByteCache {
 	return &ByteCache{
 		r:          &Redis{keyPrefix: keyPrefix},
-		ttlSeconds: 604800, // Hardcode 1 week
+		ttlSeconds: ttlSeconds,
 	}
 }
 

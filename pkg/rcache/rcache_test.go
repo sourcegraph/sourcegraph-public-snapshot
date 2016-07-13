@@ -150,7 +150,7 @@ func TestByteCache(t *testing.T) {
 	clearAll(t, globalPrefix)
 	defer clearAll(t, globalPrefix)
 
-	c := NewByteCache("some_prefix")
+	c := NewByteCache("some_prefix", 123)
 	_, ok := c.Get("a")
 	if ok {
 		t.Fatal("Initial Get should of found nothing")
