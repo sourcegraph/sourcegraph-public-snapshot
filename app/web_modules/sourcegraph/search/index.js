@@ -9,6 +9,8 @@ export type SearchScope = {
 	repo: boolean;
 };
 
+export const searchScopes = ["popular", "public", "private", "repo"];
+
 export type SearchSettings = {
 	languages: Array<LanguageID>;
 	scope: SearchScope,

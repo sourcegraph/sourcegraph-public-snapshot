@@ -11,8 +11,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import UserStore from "sourcegraph/user/UserStore";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as RepoActions_typed from "sourcegraph/repo/RepoActions_typed";
-import type {Settings} from "sourcegraph/user";
-import {allLangs, langName} from "sourcegraph/Language";
+import {allLangs, langName, langIsSupported} from "sourcegraph/Language";
 import type {LanguageID} from "sourcegraph/Language";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import {withUserContext} from "sourcegraph/app/user";
@@ -20,6 +19,7 @@ import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleL
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import BetaInterestForm from "sourcegraph/home/BetaInterestForm";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {searchScopes} from "sourcegraph/search";
 
 class SearchSettings extends Container {
 	static propTypes = {
@@ -35,10 +35,33 @@ class SearchSettings extends Container {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
-	state: {
-		settings: Settings;
-		betaLanguage: ?LanguageID;
-	};
+	constructor(props) {
+		super(props);
+		this.state = {settings: UserStore.settings.get()};
+
+	}
+
+	componentDidMount() {
+		super.componentDidMount();
+		const langFromQuery = this.props.location.query.lang ? this.props.location.query.lang : [];
+		const query = this.props.location.query;
+		if (this.props.location.pathname === "/search" && (query.lang || query.public || query.private || query.repo || query.popular)) {
+			const langs = typeof langFromQuery === "string" ? [langFromQuery] : langFromQuery;
+			const validLangParams = langs.filter(langIsSupported);
+			let scopeParams = {};
+			searchScopes.forEach((scopeName) => scopeParams[scopeName] = this.props.location.query[scopeName] === "true");
+
+			const newSettings = {
+				...this.state.settings,
+				search: {
+					...this.state.settings.search,
+					languages: validLangParams,
+					scope: scopeParams,
+				},
+			};
+			setTimeout(() => Dispatcher.Stores.dispatch(new UserActions.UpdateSettings(newSettings)));
+		}
+	}
 
 	stores() { return [UserStore]; }
 

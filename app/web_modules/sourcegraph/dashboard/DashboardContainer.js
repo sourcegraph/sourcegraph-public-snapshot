@@ -42,6 +42,7 @@ class DashboardContainer extends Container {
 
 		const settings = UserStore.settings.get();
 		state.langs = settings && settings.search ? settings.search.languages : null;
+		state.scope = settings && settings.search ? settings.search.scope : null;
 	}
 
 	onStateTransition(prevState, nextState) {
@@ -49,7 +50,7 @@ class DashboardContainer extends Container {
 	}
 
 	_goToSearch(query: string) {
-		this.context.router.push(locationForSearch(this.props.location, query, true, true));
+		this.context.router.push(locationForSearch(this.props.location, query, this.state.langs, this.state.scope, true, true));
 	}
 
 	_handleInput: Function;
