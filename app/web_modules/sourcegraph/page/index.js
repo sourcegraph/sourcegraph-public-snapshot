@@ -21,6 +21,7 @@ export const routes: Array<Route> = [
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
 				callback(null, {
+					navContext: null,
 					main: require("sourcegraph/page/AboutPage").default,
 				});
 			});
@@ -31,6 +32,7 @@ export const routes: Array<Route> = [
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
 				callback(null, {
+					navContext: null,
 					main: require("sourcegraph/page/BetaPage").default,
 				});
 			});
@@ -41,6 +43,7 @@ export const routes: Array<Route> = [
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
 				callback(null, {
+					navContext: null,
 					main: require("sourcegraph/page/ContactPage").default,
 				});
 			});
@@ -51,6 +54,7 @@ export const routes: Array<Route> = [
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
 				callback(null, {
+					navContext: null,
 					main: require("sourcegraph/page/SecurityPage").default,
 				});
 			});
@@ -61,6 +65,7 @@ export const routes: Array<Route> = [
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
 				callback(null, {
+					navContext: null,
 					main: require("sourcegraph/page/PricingPage").default,
 				});
 			});
@@ -71,6 +76,7 @@ export const routes: Array<Route> = [
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
 				callback(null, {
+					navContext: null,
 					main: require("sourcegraph/page/TermsPage").default,
 				});
 			});
@@ -81,6 +87,7 @@ export const routes: Array<Route> = [
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
 				callback(null, {
+					navContext: null,
 					main: require("sourcegraph/page/PrivacyPage").default,
 				});
 			});

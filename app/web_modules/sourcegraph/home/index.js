@@ -5,6 +5,7 @@ export const tools = {
 	getComponent: (location, callback) => {
 		require.ensure([], (require) => {
 			callback(null, {
+				navContext: null,
 				main: require("sourcegraph/home/ToolsContainer").default,
 			});
 		});
@@ -15,6 +16,7 @@ export const tool = {
 	getComponent: (location, callback) => {
 		require.ensure([], (require) => {
 			callback(null, {
+				navContext: null,
 				main: require("sourcegraph/home/ToolsContainer").default,
 			});
 		});
