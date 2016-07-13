@@ -113,30 +113,19 @@ func redisPool() (*pool.Pool, error) {
 	return connPool_, nil
 }
 
-// getConn returns a redis client from the pool. When you are done you must
-// call the cleanup function to return the connection to the pool.
-func getConn() (*redis.Client, func(), error) {
-	connPool, err := redisPool()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	conn, err := connPool.Get()
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, func() { connPool.Put(conn) }, nil
-}
-
 // cmd is a helper around redis.(*Client).Cmd. As a convenience it returns
 // Resp.Err as err if we get a response. This reduces the number of error
 // checks needed.
 func cmd(cmd string, args ...interface{}) (*redis.Resp, error) {
-	conn, cleanup, err := getConn()
+	connPool, err := redisPool()
 	if err != nil {
 		return nil, err
 	}
-	defer cleanup()
+	conn, err := connPool.Get()
+	if err != nil {
+		return nil, err
+	}
+	defer connPool.Put(conn)
 
 	resp := conn.Cmd(cmd, args...)
 	return resp, resp.Err
