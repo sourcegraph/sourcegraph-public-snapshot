@@ -5,6 +5,8 @@ import (
 	"os"
 	"sync"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 
 	"github.com/mediocregopher/radix.v2/pool"
@@ -119,14 +121,19 @@ func redisPool() (*pool.Pool, error) {
 func cmd(cmd string, args ...interface{}) (*redis.Resp, error) {
 	connPool, err := redisPool()
 	if err != nil {
+		log15.Warn("failed to connect to redis pool", "error", err)
 		return nil, err
 	}
 	conn, err := connPool.Get()
 	if err != nil {
+		log15.Warn("failed to get a connection from the redis pool", "error", err)
 		return nil, err
 	}
 	defer connPool.Put(conn)
 
 	resp := conn.Cmd(cmd, args...)
+	if resp.Err != nil {
+		log15.Warn("failed to execute redis command", "cmd", cmd, "args", args, "error", resp.Err)
+	}
 	return resp, resp.Err
 }
