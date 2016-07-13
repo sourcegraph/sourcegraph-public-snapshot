@@ -22,54 +22,6 @@ const (
 	dataVersion = "v1"
 )
 
-var (
-	connPool_    *pool.Pool
-	connPoolMu   sync.Mutex
-	globalPrefix string
-)
-
-// redisPool creates the Redis connection pool if it isn't already
-// open and returns it. Subsequent calls return the same pool.
-func redisPool() (*pool.Pool, error) {
-	connPoolMu.Lock()
-	defer connPoolMu.Unlock()
-
-	if connPool_ != nil {
-		return connPool_, nil
-	}
-
-	hostname := os.Getenv("SRC_APP_URL")
-	if hostname == "" {
-		hostname, _ = os.Hostname()
-	}
-	globalPrefix = fmt.Sprintf("%s:%s", hostname, dataVersion)
-
-	endpoint := conf.GetenvOrDefault("REDIS_MASTER_ENDPOINT", ":6379")
-
-	p, err := pool.New("tcp", endpoint, maxClients)
-	if err != nil {
-		return nil, fmt.Errorf("Could not connect to Redis server at %s: %s", endpoint, err)
-	}
-	connPool_ = p
-
-	return connPool_, nil
-}
-
-// getConn returns a redis client from the pool. When you are done you must
-// call the cleanup function to return the connection to the pool.
-func getConn() (*redis.Client, func(), error) {
-	connPool, err := redisPool()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	conn, err := connPool.Get()
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, func() { connPool.Put(conn) }, nil
-}
-
 // Cache implements httpcache.Cache
 type Cache struct {
 	keyPrefix  string
@@ -126,6 +78,54 @@ end`, 0, fmt.Sprintf("%s:*", fmt.Sprintf("%s:%s", globalPrefix, prefix)))
 		return fmt.Errorf("error clearing Redis test data: %s", err)
 	}
 	return nil
+}
+
+var (
+	connPool_    *pool.Pool
+	connPoolMu   sync.Mutex
+	globalPrefix string
+)
+
+// redisPool creates the Redis connection pool if it isn't already
+// open and returns it. Subsequent calls return the same pool.
+func redisPool() (*pool.Pool, error) {
+	connPoolMu.Lock()
+	defer connPoolMu.Unlock()
+
+	if connPool_ != nil {
+		return connPool_, nil
+	}
+
+	hostname := os.Getenv("SRC_APP_URL")
+	if hostname == "" {
+		hostname, _ = os.Hostname()
+	}
+	globalPrefix = fmt.Sprintf("%s:%s", hostname, dataVersion)
+
+	endpoint := conf.GetenvOrDefault("REDIS_MASTER_ENDPOINT", ":6379")
+
+	p, err := pool.New("tcp", endpoint, maxClients)
+	if err != nil {
+		return nil, fmt.Errorf("Could not connect to Redis server at %s: %s", endpoint, err)
+	}
+	connPool_ = p
+
+	return connPool_, nil
+}
+
+// getConn returns a redis client from the pool. When you are done you must
+// call the cleanup function to return the connection to the pool.
+func getConn() (*redis.Client, func(), error) {
+	connPool, err := redisPool()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	conn, err := connPool.Get()
+	if err != nil {
+		return nil, nil, err
+	}
+	return conn, func() { connPool.Put(conn) }, nil
 }
 
 // cmd is a helper around redis.(*Client).Cmd. As a convenience it returns
