@@ -86,17 +86,8 @@ func New(keyPrefix string, ttlSeconds int) *Cache {
 
 // Get implements httpcache.Cache.Get
 func (r *Cache) Get(key string) ([]byte, bool) {
-	conn, cleanup, err := getConn()
-	if err != nil {
-		return nil, false
-	}
-	defer cleanup()
-
-	resp := conn.Cmd("GET", r.rkey(key))
-	if resp.IsType(redis.Nil) {
-		return nil, false
-	}
-	if resp.Err != nil {
+	resp, err := cmd("GET", r.rkey(key))
+	if err != nil || resp.IsType(redis.Nil) {
 		return nil, false
 	}
 
@@ -109,24 +100,12 @@ func (r *Cache) Get(key string) ([]byte, bool) {
 
 // Delete implements httpcache.Cache.Set
 func (r *Cache) Set(key string, b []byte) {
-	conn, cleanup, err := getConn()
-	if err != nil {
-		return
-	}
-	defer cleanup()
-
-	_ = conn.Cmd("SETEX", r.rkey(key), r.ttlSeconds, b)
+	_, _ = cmd("SETEX", r.rkey(key), r.ttlSeconds, b)
 }
 
 // Delete implements httpcache.Cache.Delete
 func (r *Cache) Delete(key string) {
-	conn, cleanup, err := getConn()
-	if err != nil {
-		return
-	}
-	defer cleanup()
-
-	_ = conn.Cmd("DEL", r.rkey(key))
+	_, _ = cmd("DEL", r.rkey(key))
 }
 
 // rkey generates the actual key we use on redis.
@@ -137,20 +116,28 @@ func (r *Cache) rkey(key string) string {
 // ClearAllForTest clears all of the entries with a given prefix. This
 // is an O(n) operation and should only be used in tests.
 func ClearAllForTest(prefix string) error {
-	conn, cleanup, err := getConn()
-	if err != nil {
-		return err
-	}
-	defer cleanup()
-
-	resp := conn.Cmd("EVAL", `local keys = redis.call('keys', ARGV[1])
+	_, err := cmd("EVAL", `local keys = redis.call('keys', ARGV[1])
 if #keys > 0 then
 	return redis.call('del', unpack(keys))
 else
 	return ''
 end`, 0, fmt.Sprintf("%s:*", fmt.Sprintf("%s:%s", globalPrefix, prefix)))
-	if resp.Err != nil {
-		return fmt.Errorf("error clearing Redis test data: %s", resp.Err)
+	if err != nil {
+		return fmt.Errorf("error clearing Redis test data: %s", err)
 	}
 	return nil
+}
+
+// cmd is a helper around redis.(*Client).Cmd. As a convenience it returns
+// Resp.Err as err if we get a response. This reduces the number of error
+// checks needed.
+func cmd(cmd string, args ...interface{}) (*redis.Resp, error) {
+	conn, cleanup, err := getConn()
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
+
+	resp := conn.Cmd(cmd, args...)
+	return resp, resp.Err
 }
