@@ -153,7 +153,9 @@ func (t *T) WaitForElement(by, value string, filters ...ElementFilter) selenium.
 			if err != nil {
 				return false
 			}
-			t.Logf("WaitForElement: %d matches for (%s, %q)", len(elements), by, value)
+			if *verboseFlag {
+				t.Logf("WaitForElement: %d matches for (%s, %q)", len(elements), by, value)
+			}
 			f := And(filters...)
 			for _, e := range elements {
 				if f(e) {
@@ -161,7 +163,9 @@ func (t *T) WaitForElement(by, value string, filters ...ElementFilter) selenium.
 					return true
 				}
 			}
-			t.Logf("WaitForElement: failed to find filter match")
+			if *verboseFlag {
+				t.Logf("WaitForElement: failed to find filter match")
+			}
 			return false
 		},
 		fmt.Sprintf("Wait for element to appear: %s %q", by, value),
@@ -663,6 +667,7 @@ var tr = &testRunner{
 var (
 	runOnce     = flag.Bool("once", true, "run the tests only once (true) or forever (false)")
 	runFlag     = flag.String("run", "", "specify an exact test name to run (e.g. 'login_flow', 'register_flow')")
+	verboseFlag = flag.Bool("v", false, "verbosely log selenium actions (useful when debugging selenium)")
 	retriesFlag = flag.Int("retries", 3, "maximum number of times to retry a test before considering it failed")
 )
 
@@ -819,6 +824,9 @@ Flags:
 	flag.Parse()
 
 	// Prepare logging.
+	if !*verboseFlag {
+		selenium.Log = log.New(ioutil.Discard, "", 0)
+	}
 	tr.log = log.New(io.MultiWriter(os.Stderr, tr.slackLogBuffer), "", 0)
 
 	err := parseEnv()
