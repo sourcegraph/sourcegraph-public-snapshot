@@ -184,12 +184,9 @@ export default class RefsContainer extends Container {
 		}
 
 		if (nextState.refs && !nextState.refs.Error && (nextState.refs !== prevState.refs || nextState.shownFiles !== prevState.shownFiles)) {
-			for (let ref of nextState.refs) {
-				let refRev = ref.Repo === nextState.repo ? nextState.commitID : ref.CommitID;
-				if (nextState.shownFiles.has(ref.File)) {
-					Dispatcher.Backends.dispatch(new BlobActions.WantFile(ref.Repo, refRev, ref.File));
-					Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(ref.Repo, ref.CommitID, ref.File));
-				}
+			for (let file of nextState.shownFiles) {
+				Dispatcher.Backends.dispatch(new BlobActions.WantFile(nextState.repo, nextState.commitID, file));
+				Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(nextState.repo, nextState.commitID, file));
 			}
 		}
 	}
