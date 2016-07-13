@@ -1,7 +1,6 @@
 package rcache
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -71,114 +70,68 @@ func getConn() (*redis.Client, func(), error) {
 	return conn, func() { connPool.Put(conn) }, nil
 }
 
-// Redis exposes methods for speaking to the configured redis server. It
-// serves two main functions: Ensure we namespace keys and correct usage of
-// the connection pool.
-type Redis struct {
-	// keyPrefix is the prefix that is prepended to each key stored in
-	// Redis by this cache.
-	keyPrefix string
-}
-
-var ErrNotFound = errors.New("Redis key not found")
-
-// Get is the Redis GET command. error is ErrNotFound if missing.
-func (r *Redis) Get(key string) ([]byte, error) {
-	conn, cleanup, err := getConn()
-	if err != nil {
-		return nil, err
-	}
-	defer cleanup()
-
-	resp := conn.Cmd("GET", r.rkey(key))
-	if resp.IsType(redis.Nil) {
-		return nil, ErrNotFound
-	}
-	if resp.Err != nil {
-		return nil, fmt.Errorf("Redis.Get error: %s", resp.Err)
-	}
-
-	return resp.Bytes()
-}
-
-// Del is the Redis DEL command.
-func (r *Redis) Del(key string) error {
-	conn, cleanup, err := getConn()
-	if err != nil {
-		return err
-	}
-	defer cleanup()
-
-	resp := conn.Cmd("DEL", r.rkey(key))
-	if resp.Err != nil {
-		return fmt.Errorf("Redis.Del error: %s", resp.Err)
-	}
-	return nil
-}
-
-// Set is the Redis SET command.
-func (r *Redis) Set(key string, val []byte) error {
-	conn, cleanup, err := getConn()
-	if err != nil {
-		return err
-	}
-	defer cleanup()
-
-	resp := conn.Cmd("SET", r.rkey(key), val)
-	if resp.Err != nil {
-		return fmt.Errorf("Redis.Add error: %s", resp.Err)
-	}
-	return nil
-}
-
-// SetEx is the Redis SETEX command.
-func (r *Redis) SetEx(key string, val []byte, ttlSeconds int) error {
-	conn, cleanup, err := getConn()
-	if err != nil {
-		return err
-	}
-	defer cleanup()
-
-	resp := conn.Cmd("SETEX", r.rkey(key), ttlSeconds, val)
-	if resp.Err != nil {
-		return fmt.Errorf("Redis.Add error: %s", resp.Err)
-	}
-	return nil
-}
-
-// rkey generates the actual key we use on redis.
-func (r *Redis) rkey(key string) string {
-	return fmt.Sprintf("%s:%s:%s", globalPrefix, r.keyPrefix, key)
-}
-
 // Cache implements httpcache.Cache
 type Cache struct {
-	r          *Redis
+	keyPrefix  string
 	ttlSeconds int
 }
 
 // New creates a redis backed Cache
 func New(keyPrefix string, ttlSeconds int) *Cache {
 	return &Cache{
-		r:          &Redis{keyPrefix: keyPrefix},
+		keyPrefix:  keyPrefix,
 		ttlSeconds: ttlSeconds,
 	}
 }
 
 // Get implements httpcache.Cache.Get
 func (r *Cache) Get(key string) ([]byte, bool) {
-	b, err := r.r.Get(key)
-	return b, err == nil
+	conn, cleanup, err := getConn()
+	if err != nil {
+		return nil, false
+	}
+	defer cleanup()
+
+	resp := conn.Cmd("GET", r.rkey(key))
+	if resp.IsType(redis.Nil) {
+		return nil, false
+	}
+	if resp.Err != nil {
+		return nil, false
+	}
+
+	b, err := resp.Bytes()
+	if err != nil {
+		return nil, false
+	}
+	return b, true
 }
 
 // Delete implements httpcache.Cache.Set
-func (r *Cache) Set(key string, responseBytes []byte) {
-	_ = r.r.SetEx(key, responseBytes, r.ttlSeconds)
+func (r *Cache) Set(key string, b []byte) {
+	conn, cleanup, err := getConn()
+	if err != nil {
+		return
+	}
+	defer cleanup()
+
+	_ = conn.Cmd("SETEX", r.rkey(key), r.ttlSeconds, b)
 }
 
 // Delete implements httpcache.Cache.Delete
 func (r *Cache) Delete(key string) {
-	_ = r.r.Del(key)
+	conn, cleanup, err := getConn()
+	if err != nil {
+		return
+	}
+	defer cleanup()
+
+	_ = conn.Cmd("DEL", r.rkey(key))
+}
+
+// rkey generates the actual key we use on redis.
+func (r *Cache) rkey(key string) string {
+	return fmt.Sprintf("%s:%s:%s", globalPrefix, r.keyPrefix, key)
 }
 
 // ClearAllForTest clears all of the entries with a given prefix. This
