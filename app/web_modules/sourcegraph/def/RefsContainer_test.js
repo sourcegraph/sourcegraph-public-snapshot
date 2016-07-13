@@ -19,6 +19,6 @@ describe("RefsContainer", () => {
 	});
 
 	it("should render if the def and refs loaded", () => {
-		render(<RefsContainer repoRefs={{Repo: "github.com/gorilla/mux", Files: []}} defObj={{}} refs={[]} />, context);
+		render(<RefsContainer repoRefs={{Repo: "github.com/gorilla/mux", Files: []}} defObj={{}} refs={[{Repo: "repo", CommitID: "commit"}]} />, context);
 	});
 });
