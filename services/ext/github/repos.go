@@ -1,6 +1,7 @@
 package github
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -19,8 +20,7 @@ import (
 )
 
 var (
-	reposGithubPublicCacheTTL     = conf.GetenvIntOrDefault("SG_REPOS_GITHUB_PUBLIC_CACHE_TTL_SECONDS", 600)
-	reposGithubPublicCache        = rcache.New("gh_pub")
+	reposGithubPublicCache        = rcache.NewByteCache("gh_pub", conf.GetenvIntOrDefault("SG_REPOS_GITHUB_PUBLIC_CACHE_TTL_SECONDS", 600))
 	reposGithubPublicCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repos",
@@ -109,9 +109,13 @@ var errInapplicableCache = errors.New("cached value cannot be used in this scena
 // getFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
 func getFromCache(ctx context.Context, repo string) *cachedRepo {
+	b, ok := reposGithubPublicCache.Get(repo)
+	if !ok {
+		return nil
+	}
+
 	var cached cachedRepo
-	err := reposGithubPublicCache.Get(repo, &cached)
-	if err != nil {
+	if err := json.Unmarshal(b, &cached); err != nil {
 		return nil
 	}
 
@@ -126,7 +130,11 @@ func getFromCache(ctx context.Context, repo string) *cachedRepo {
 
 // addToCache will cache the value for repo.
 func addToCache(repo string, c *cachedRepo) {
-	_ = reposGithubPublicCache.Add(repo, c, reposGithubPublicCacheTTL)
+	b, err := json.Marshal(c)
+	if err != nil {
+		return
+	}
+	reposGithubPublicCache.Set(repo, b)
 }
 
 // getFromAPI attempts to get a response from the GitHub API without use of
