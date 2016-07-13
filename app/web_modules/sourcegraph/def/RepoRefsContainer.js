@@ -1,6 +1,8 @@
 import React from "react";
 import Container from "sourcegraph/Container";
+import Dispatcher from "sourcegraph/Dispatcher";
 import DefStore from "sourcegraph/def/DefStore";
+import * as DefActions from "sourcegraph/def/DefActions";
 import {Heading, List, Loader} from "sourcegraph/components";
 import "sourcegraph/blob/BlobBackend";
 import CSSModules from "react-css-modules";
@@ -48,6 +50,14 @@ class RepoRefsContainer extends Container {
 		state.refLocations = props.refLocations || null;
 		if (state.refLocations && state.refLocations.PagesFetched >= state.currPage) {
 			state.nextPageLoading = false;
+		}
+	}
+
+	onStateTransition(prevState, nextState) {
+		if (nextState.currPage !== prevState.currPage || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def || nextState.defObj !== prevState.defObj) {
+			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
+				repo: nextState.repo, commitID: nextState.defCommitID, def: nextState.def, repos: nextState.defRepos, page: nextState.currPage,
+			}));
 		}
 	}
 
