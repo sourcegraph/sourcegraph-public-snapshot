@@ -37,12 +37,13 @@ class DashboardContainer extends Container {
 
 	stores() { return [UserStore]; }
 
-	reconcileState(state, props) {
+	reconcileState(state, props, context) {
 		Object.assign(state, props);
 
 		const settings = UserStore.settings.get();
 		state.langs = settings && settings.search ? settings.search.languages : null;
 		state.scope = settings && settings.search ? settings.search.scope : null;
+		state.signedIn = context && context.signedIn;
 	}
 
 	onStateTransition(prevState, nextState) {
