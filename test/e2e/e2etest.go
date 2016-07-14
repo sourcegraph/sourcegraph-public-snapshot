@@ -503,10 +503,16 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 			t.slackLogBuffer.String(),
 		)
 
-		// emit the alert to monitoring-bot
-		err := t.sendAlert()
+		// Create an OpsGenie alert.
+		err := t.alertOpsGenie(fmt.Sprintf("[e2etest]: %v/%v tests failed against %v", failures, total, t.target.String()))
 		if err != nil {
-			t.log.Printf("[WARNING] error while sending alert to monitoring-bot %s", err)
+			t.log.Printf("[WARNING] error while sending alert to opsgenie %s\n", err)
+		}
+
+		// emit the alert to monitoring-bot
+		err = t.sendAlert()
+		if err != nil {
+			t.log.Printf("[WARNING] error while sending alert to monitoring-bot %s\n", err)
 		}
 	}
 	t.slackLogBuffer.Reset()
@@ -534,6 +540,45 @@ func (t *testRunner) sendAlert() error {
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("monitoring bot returned non-200 status code: %d", resp.StatusCode)
+	}
+	return nil
+}
+
+func (t *testRunner) alertOpsGenie(msg string) error {
+	key := os.Getenv("OPSGENIE_KEY")
+	if key == "" {
+		return nil
+	}
+
+	// We could use the OpsGenie Go SDK for this, but it's quite large and our
+	// usage of their API here is very small, so we don't right now.
+	payload := map[string]string{
+		"apiKey":  key,
+		"alias":   "e2etest", // using the same
+		"message": msg,
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("POST", "https://api.opsgenie.com/v1/json/alert", bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		data, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("opsgenie alert creation returned status=%d body=%q", resp.StatusCode, string(data))
 	}
 	return nil
 }
