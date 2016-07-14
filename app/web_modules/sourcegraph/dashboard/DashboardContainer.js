@@ -31,6 +31,9 @@ class DashboardContainer extends Container {
 
 	constructor(props) {
 		super(props);
+		this.state = {
+			isTyping: false,
+		};
 		this._handleInput = this._handleInput.bind(this);
 		this._onSelectQuery = this._onSelectQuery.bind(this);
 	}
@@ -72,6 +75,7 @@ class DashboardContainer extends Container {
 		const delay = (c: string) => 20 + (25 * Math.random()) + (c === " " ? 75 : 0);
 		const simulateTyping = (v: string, i: number = 0, then: Function) => {
 			if (i >= v.length) {
+				this.setState({isTyping: false});
 				then();
 				return;
 			}
@@ -79,10 +83,11 @@ class DashboardContainer extends Container {
 			this._input.value += c;
 			setTimeout(() => simulateTyping(v, i + 1, then), delay(c));
 		};
-
-		this._input.focus();
-		this._input.value = "";
-		simulateTyping(query, 0, () => setTimeout(() => this._goToSearch(query), 300));
+		if (!this.state.isTyping) {
+			this._input.focus();
+			this._input.value = "";
+			this.setState({isTyping: true}, () => simulateTyping(query, 0, () => setTimeout(() => this._goToSearch(query), 300)));
+		}
 	}
 
 	render() {
