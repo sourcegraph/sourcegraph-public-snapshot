@@ -133,7 +133,7 @@ func cmd(cmd string, args ...interface{}) *redis.Resp {
 
 	resp := conn.Cmd(cmd, args...)
 	if resp.Err != nil {
-		log15.Warn("failed to execute redis command", "cmd", cmd, "args", args, "error", resp.Err)
+		log15.Warn("failed to execute redis command", "cmd", cmd, "error", resp.Err)
 		return nil
 	}
 	return resp
