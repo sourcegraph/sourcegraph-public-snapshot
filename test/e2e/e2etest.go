@@ -513,6 +513,10 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 	return failures == 0
 }
 
+var opsGenieClient = &http.Client{
+	Timeout: 5 * time.Second,
+}
+
 func (t *testRunner) alertOpsGenie(msg string) error {
 	key := os.Getenv("OPSGENIE_KEY")
 	if key == "" {
@@ -536,7 +540,7 @@ func (t *testRunner) alertOpsGenie(msg string) error {
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := opsGenieClient.Do(req)
 	if err != nil {
 		return err
 	}
