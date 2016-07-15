@@ -26,7 +26,6 @@ import styles from "./styles/Refs.css";
 import base from "sourcegraph/components/styles/_base.css";
 import colors from "sourcegraph/components/styles/_colors.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {urlToRepo} from "sourcegraph/repo/routes";
 import {FaThumbsUp, FaThumbsDown} from "sourcegraph/components/Icons";
 
 const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above/below a ref
@@ -153,9 +152,11 @@ export default class RefsContainer extends Container {
 					const rangeKey = `${ref.File}${ref.Start}`;
 					if (!this.rangesMemo[rangeKey]) {
 						let contents = this.filesByName[ref.File].ContentsString;
+						const startByte = lineFromByte(contents, ref.Start);
 						this.ranges[ref.File].push([
-							Math.max(lineFromByte(contents, ref.Start) - SNIPPET_REF_CONTEXT_LINES, 0),
+							Math.max(startByte - SNIPPET_REF_CONTEXT_LINES, 0),
 							lineFromByte(contents, ref.End) + SNIPPET_REF_CONTEXT_LINES,
+							startByte,
 						]);
 						this.rangesMemo[rangeKey] = true;
 					}
@@ -296,7 +297,7 @@ export default class RefsContainer extends Container {
 					{/* mouseover state is for optimization which will only re-render the moused-over blob when a def is highlighted */}
 					{/* this is important since there may be many ref containers on the page */}
 					<div>
-						<div className={styles.refs}>
+						<div>
 							{this.state.fileLocations && this.state.fileLocations.map((loc, i) => {
 								if (!this.state.showAllFiles && i >= this.state.fileCollapseThreshold) return null;
 								if (!this.state.shownFiles.has(loc.Path)) return this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i);
@@ -331,26 +332,29 @@ export default class RefsContainer extends Container {
 
 								let voteStyle = this.state.voteDone ? styles.voteDone : styles.vote;
 								return (
-									<div key={i}>
+									<div key={i} className={styles["single-ref-container"]}>
 										{this.context.user && this.context.user.Admin && <div className={`${voteStyle} ${styles["left-align-sm"]}`}>
 											<a className={styles.upvote} onClick={() => this._vote(true, this.state.refRepo, loc.Path)}><FaThumbsUp /></a>
 											<a className={styles.downvote} onClick={() => this._vote(false, this.state.refRepo, loc.Path)}><FaThumbsDown /></a>
 										</div>}
-										<Blob
-											repo={this.state.refRepo}
-											rev={this.state.refRev}
-											path={loc.Path}
-											contents={file.ContentsString}
-											annotations={this.anns[loc.Path] || null}
-											skipAnns={file.ContentsString && file.ContentsString.length >= 40*2500}
-											activeDefRepo={this.state.repo}
-											activeDef={this.state.def}
-											lineNumbers={false}
-											displayRanges={ranges || null}
-											highlightedDef={this.state.highlightedDef || null}
-											highlightedDefObj={this.state.highlightedDefObj || null}
-											textSize="large"
-											className={styles.blob} />
+										<div className={styles.refs}>
+											<Blob
+												repo={this.state.refRepo}
+												rev={this.state.refRev}
+												path={loc.Path}
+												contents={file.ContentsString}
+												annotations={this.anns[loc.Path] || null}
+												skipAnns={file.ContentsString && file.ContentsString.length >= 40*2500}
+												activeDefRepo={this.state.repo}
+												activeDef={this.state.def}
+												lineNumbers={false}
+												displayRanges={ranges || null}
+												highlightedDef={this.state.highlightedDef || null}
+												highlightedDefObj={this.state.highlightedDefObj || null}
+												textSize="large"
+												className={styles.blob} />
+										</div>
+										{this.state.refRepo && <div className={`${base.mt3} ${styles.f7} ${base["hidden-s"]}`}>From <Link to={`${urlToBlob(this.state.refRepo, this.state.refRev, loc.Path)}${ranges ? `#L${ranges[0][2]}` : ""}`}>{this.state.refRepo}</Link></div>}
 									</div>
 								);
 							})}
@@ -365,7 +369,6 @@ export default class RefsContainer extends Container {
 					</div>
 					{this.state.highlightedDefObj && !this.state.highlightedDefObj.Error && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
 				</div>
-				{this.state.refRepo && <div className={`${base.mt3} ${styles.f7} ${base["hidden-s"]}`}>Used in <Link to={urlToRepo(this.state.refRepo)}>{this.state.refRepo}</Link></div>}
 			</div>
 		);
 	}
