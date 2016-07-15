@@ -112,6 +112,24 @@ func (t *T) Endpoint(e string) string {
 // server's ID key, and thus has 100% unrestricted access. Use with caution!
 func (t *T) GRPCClient() (context.Context, *sourcegraph.Client) {
 	endpoint := t.Target
+
+	// HACK: Because there is no gRPC service discovery system set up in
+	//       Sourcegraph, we hard-code gRPC endpoints here so that we don't
+	//       have to specify TARGET_GRPC every single time (one less thing
+	//       to think about).
+	switch endpoint.Host {
+	case "sourcegraph.com":
+		endpoint.Host = "grpc.sourcegraph.com"
+	case "staging.sourcegraph.com":
+		endpoint.Host = "grpc-staging.sourcegraph.com"
+	case "staging2.sourcegraph.com":
+		endpoint.Host = "grpc-staging2.sourcegraph.com"
+	case "staging3.sourcegraph.com":
+		endpoint.Host = "grpc-staging3.sourcegraph.com"
+	case "staging4.sourcegraph.com":
+		endpoint.Host = "grpc-staging4.sourcegraph.com"
+	}
+
 	if grpc := os.Getenv("TARGET_GRPC"); grpc != "" {
 		var err error
 		endpoint, err = url.Parse(grpc)
