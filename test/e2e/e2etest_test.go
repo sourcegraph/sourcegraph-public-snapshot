@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		fatalMsg = "parseEnv: " + err.Error()
 	}
-	*verboseFlag = testing.Verbose()
+	seleniumTrace = testing.Verbose()
 	os.Exit(m.Run())
 }
 

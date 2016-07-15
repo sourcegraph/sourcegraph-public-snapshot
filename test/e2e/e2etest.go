@@ -177,7 +177,7 @@ func (t *T) WaitForElement(by, value string, filters ...ElementFilter) selenium.
 			if err != nil {
 				return false
 			}
-			if *verboseFlag {
+			if seleniumTrace {
 				t.Logf("WaitForElement: %d matches for (%s, %q)", len(elements), by, value)
 			}
 			f := And(filters...)
@@ -187,7 +187,7 @@ func (t *T) WaitForElement(by, value string, filters ...ElementFilter) selenium.
 					return true
 				}
 			}
-			if *verboseFlag {
+			if seleniumTrace {
 				t.Logf("WaitForElement: failed to find filter match")
 			}
 			return false
@@ -715,8 +715,9 @@ var tr = &testRunner{
 var (
 	runOnce     = flag.Bool("once", true, "run the tests only once (true) or forever (false)")
 	runFlag     = flag.String("run", "", "specify an exact test name to run (e.g. 'login_flow', 'register_flow')")
-	verboseFlag = flag.Bool("v", false, "verbosely log selenium actions (useful when debugging selenium)")
 	retriesFlag = flag.Int("retries", 3, "maximum number of times to retry a test before considering it failed")
+
+	seleniumTrace = os.Getenv("SELENIUM_TRACE") != ""
 )
 
 func parseEnv() error {
@@ -728,6 +729,10 @@ func parseEnv() error {
 	}
 	if serverPort == "" {
 		serverPort = "4444" // default to standard Selenium port
+	}
+
+	if !seleniumTrace {
+		selenium.Log = log.New(ioutil.Discard, "", 0)
 	}
 
 	if !strings.Contains(serverAddr, "://") {
@@ -854,6 +859,8 @@ Environment:
       IP address of the Selenium server (consider consulting 'docker-machine ls' on certain Docker versions)
   SELENIUM_SERVER_PORT = "4444"
       port of the Selenium server
+  SELENIUM_TRACE (optional)
+      If specified, selenium actions will be verbosely logged. Useful when debugging selenium.
   ID_KEY_DATA (optional)
       If specified, the Base64-encoded string is used in place of '$SGPATH/id.pem' for authenticating
   SLACK_API_TOKEN (optional)
@@ -872,9 +879,6 @@ Flags:
 	flag.Parse()
 
 	// Prepare logging.
-	if !*verboseFlag {
-		selenium.Log = log.New(ioutil.Discard, "", 0)
-	}
 	tr.log = log.New(io.MultiWriter(os.Stderr, tr.slackLogBuffer), "", 0)
 
 	err := parseEnv()
