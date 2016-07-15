@@ -29,8 +29,24 @@ func TestRepoFlow(t *testing.T) {
 	runE2E(t, "repo_flow")
 }
 
-func TestSearchFlow(t *testing.T) {
-	runE2E(t, "search_flow")
+func TestSearchFlow0(t *testing.T) {
+	runE2E(t, "search_flow_0")
+}
+
+func TestSearchFlow1(t *testing.T) {
+	runE2E(t, "search_flow_1")
+}
+
+func TestSearchFlow2(t *testing.T) {
+	runE2E(t, "search_flow_2")
+}
+
+func TestSearchFlow3(t *testing.T) {
+	runE2E(t, "search_flow_3")
+}
+
+func TestSearchFlow4(t *testing.T) {
+	runE2E(t, "search_flow_4")
 }
 
 func TestChannelFlow(t *testing.T) {
