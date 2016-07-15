@@ -11,7 +11,10 @@ import (
 
 func init() {
 	sysreq.AddCheck("Redis", func(ctx context.Context) (problem, fix string, err error) {
-		if _, err := redisPool(); err != nil {
+		p := redisPool()
+		c := p.Get()
+		defer c.Close()
+		if _, err := c.Do("PING"); err != nil {
 			return "Redis is unavailable or misconfigured",
 				fmt.Sprintf("Start a Redis server listening at port %s", conf.GetenvOrDefault("REDIS_MASTER_ENDPOINT", ":6379")),
 				err

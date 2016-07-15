@@ -90,12 +90,12 @@ var (
 
 // redisPool creates the Redis connection pool if it isn't already
 // open and returns it. Subsequent calls return the same pool.
-func redisPool() (*redis.Pool, error) {
+func redisPool() *redis.Pool {
 	connPoolMu.Lock()
 	defer connPoolMu.Unlock()
 
 	if connPool_ != nil {
-		return connPool_, nil
+		return connPool_
 	}
 
 	hostname := os.Getenv("SRC_APP_URL")
@@ -122,17 +122,13 @@ func redisPool() (*redis.Pool, error) {
 		},
 	}
 
-	return connPool_, nil
+	return connPool_
 }
 
 // cmd is a helper around redis.(*Client).Cmd. If any error happens (including
 // resp.Err) cmd will log it and return nil.
 func cmd(cmd string, args ...interface{}) interface{} {
-	connPool, err := redisPool()
-	if err != nil {
-		log15.Warn("failed to connect to redis pool", "error", err)
-		return nil
-	}
+	connPool := redisPool()
 	conn := connPool.Get()
 	defer conn.Close()
 
