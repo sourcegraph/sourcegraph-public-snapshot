@@ -108,9 +108,8 @@ func (t *T) Endpoint(e string) string {
 	return u + e
 }
 
-// GRPCClient returns a new authenticated Sourcegraph gRPC client. It uses the
-// server's ID key, and thus has 100% unrestricted access. Use with caution!
-func (t *T) GRPCClient() (context.Context, *sourcegraph.Client) {
+// TargetGRPC returns the final gRPC target URL, e.g. https://grpc.sourcegraph.com.
+func (t *T) TargetGRPC() *url.URL {
 	cpy := *t.Target
 	endpoint := &cpy
 
@@ -138,10 +137,15 @@ func (t *T) GRPCClient() (context.Context, *sourcegraph.Client) {
 			t.Fatalf("could not parse TARGET_GRPC as url: %s", err)
 		}
 	}
+	return endpoint
+}
 
+// GRPCClient returns a new authenticated Sourcegraph gRPC client. It uses the
+// server's ID key, and thus has 100% unrestricted access. Use with caution!
+func (t *T) GRPCClient() (context.Context, *sourcegraph.Client) {
 	// Create context with gRPC endpoint and idKey credentials.
 	ctx := context.Background()
-	ctx = sourcegraph.WithGRPCEndpoint(ctx, endpoint)
+	ctx = sourcegraph.WithGRPCEndpoint(ctx, t.TargetGRPC())
 	ctx = sourcegraph.WithCredentials(ctx, sharedsecret.TokenSource(t.tr.idKey, "internal:e2etest"))
 
 	// Create client.
