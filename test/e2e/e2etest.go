@@ -508,40 +508,9 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 		if err != nil {
 			t.log.Printf("[WARNING] error while sending alert to opsgenie %s\n", err)
 		}
-
-		// emit the alert to monitoring-bot
-		err = t.sendAlert()
-		if err != nil {
-			t.log.Printf("[WARNING] error while sending alert to monitoring-bot %s\n", err)
-		}
 	}
 	t.slackLogBuffer.Reset()
 	return failures == 0
-}
-
-func (t *testRunner) sendAlert() error {
-	username := os.Getenv("MONITORING_BOT_USERNAME")
-	if username == "" {
-		return nil
-	}
-
-	u, err := url.Parse("https://monitoring-bot.sourcegraph.com/alert?source=e2etest")
-	if err != nil {
-		return err
-	}
-
-	u.User = url.UserPassword(username, os.Getenv("MONITORING_BOT_PASSWORD"))
-
-	resp, err := http.Get(u.String())
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("monitoring bot returned non-200 status code: %d", resp.StatusCode)
-	}
-	return nil
 }
 
 func (t *testRunner) alertOpsGenie(msg string) error {
