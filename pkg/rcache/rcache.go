@@ -3,7 +3,6 @@ package rcache
 import (
 	"fmt"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
@@ -83,21 +82,11 @@ end`, 0, fmt.Sprintf("%s:*", fmt.Sprintf("%s:%s", globalPrefix, prefix)))
 }
 
 var (
-	connPool_    *redis.Pool
-	connPoolMu   sync.Mutex
+	pool         *redis.Pool
 	globalPrefix string
 )
 
-// redisPool creates the Redis connection pool if it isn't already
-// open and returns it. Subsequent calls return the same pool.
-func redisPool() *redis.Pool {
-	connPoolMu.Lock()
-	defer connPoolMu.Unlock()
-
-	if connPool_ != nil {
-		return connPool_
-	}
-
+func init() {
 	hostname := os.Getenv("SRC_APP_URL")
 	if hostname == "" {
 		hostname, _ = os.Hostname()
@@ -106,7 +95,7 @@ func redisPool() *redis.Pool {
 
 	endpoint := conf.GetenvOrDefault("REDIS_MASTER_ENDPOINT", ":6379")
 
-	connPool_ := &redis.Pool{
+	pool = &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
@@ -121,15 +110,12 @@ func redisPool() *redis.Pool {
 			return err
 		},
 	}
-
-	return connPool_
 }
 
 // cmd is a helper around redis.(*Client).Cmd. If any error happens (including
 // resp.Err) cmd will log it and return nil.
 func cmd(cmd string, args ...interface{}) interface{} {
-	connPool := redisPool()
-	conn := connPool.Get()
+	conn := pool.Get()
 	defer conn.Close()
 
 	r, err := conn.Do(cmd, args...)
