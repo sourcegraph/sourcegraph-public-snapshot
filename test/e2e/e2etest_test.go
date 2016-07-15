@@ -30,13 +30,13 @@ func TestChannelFlow(t *testing.T) {
 	runE2E(t, "channel_flow")
 }
 
-var skipMsg string
+var fatalMsg string
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 	err := parseEnv()
 	if err != nil {
-		skipMsg = "parseEnv: " + err.Error()
+		fatalMsg = "parseEnv: " + err.Error()
 	}
 	*verboseFlag = testing.Verbose()
 	os.Exit(m.Run())
@@ -52,8 +52,8 @@ func runE2E(t *testing.T, name string) {
 	if test == nil {
 		t.Fatal("Could not find test")
 	}
-	if skipMsg != "" {
-		t.Skip(skipMsg)
+	if fatalMsg != "" {
+		t.Fatal(fatalMsg)
 	}
 	wd, err := tr.newWebDriver()
 	if err != nil {
