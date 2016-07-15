@@ -43,6 +43,7 @@ func TestMain(m *testing.M) {
 }
 
 func runE2E(t *testing.T, name string) {
+	t.Parallel()
 	var test *Test
 	for _, tst := range tr.tests {
 		if tst.Name == name {
