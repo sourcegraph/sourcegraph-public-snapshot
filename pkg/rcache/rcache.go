@@ -39,26 +39,36 @@ func New(keyPrefix string, ttlSeconds int) *Cache {
 
 // Get implements httpcache.Cache.Get
 func (r *Cache) Get(key string) ([]byte, bool) {
-	resp := cmd("GET", r.rkey(key))
-	if resp == nil {
-		return nil, false
-	}
+	c := pool.Get()
+	defer c.Close()
 
-	b, err := redis.Bytes(resp, nil)
-	if err != nil {
-		return nil, false
+	b, err := redis.Bytes(c.Do("GET", r.rkey(key)))
+	if err != nil && err != redis.ErrNil {
+		log15.Warn("failed to execute redis command", "cmd", "GET", "error", err)
 	}
-	return b, true
+	return b, err == nil
 }
 
 // Delete implements httpcache.Cache.Set
 func (r *Cache) Set(key string, b []byte) {
-	_ = cmd("SETEX", r.rkey(key), r.ttlSeconds, b)
+	c := pool.Get()
+	defer c.Close()
+
+	_, err := c.Do("SETEX", r.rkey(key), r.ttlSeconds, b)
+	if err != nil {
+		log15.Warn("failed to execute redis command", "cmd", "SETEX", "error", err)
+	}
 }
 
 // Delete implements httpcache.Cache.Delete
 func (r *Cache) Delete(key string) {
-	_ = cmd("DEL", r.rkey(key))
+	c := pool.Get()
+	defer c.Close()
+
+	_, err := c.Do("DEL", r.rkey(key))
+	if err != nil {
+		log15.Warn("failed to execute redis command", "cmd", "DEL", "error", err)
+	}
 }
 
 // rkey generates the actual key we use on redis.
@@ -69,16 +79,15 @@ func (r *Cache) rkey(key string) string {
 // ClearAllForTest clears all of the entries with a given prefix. This
 // is an O(n) operation and should only be used in tests.
 func ClearAllForTest(prefix string) error {
-	resp := cmd("EVAL", `local keys = redis.call('keys', ARGV[1])
+	c := pool.Get()
+	defer c.Close()
+	_, err := c.Do("EVAL", `local keys = redis.call('keys', ARGV[1])
 if #keys > 0 then
 	return redis.call('del', unpack(keys))
 else
 	return ''
 end`, 0, fmt.Sprintf("%s:*", fmt.Sprintf("%s:%s", globalPrefix, prefix)))
-	if err, ok := resp.(error); ok {
-		return fmt.Errorf("error clearing Redis test data: %s", err)
-	}
-	return nil
+	return err
 }
 
 var (
@@ -110,18 +119,4 @@ func init() {
 			return err
 		},
 	}
-}
-
-// cmd is a helper around redis.(*Client).Cmd. If any error happens (including
-// resp.Err) cmd will log it and return nil.
-func cmd(cmd string, args ...interface{}) interface{} {
-	conn := pool.Get()
-	defer conn.Close()
-
-	r, err := conn.Do(cmd, args...)
-	if err != nil {
-		log15.Warn("failed to execute redis command", "cmd", cmd, "error", err)
-		return nil
-	}
-	return r
 }
