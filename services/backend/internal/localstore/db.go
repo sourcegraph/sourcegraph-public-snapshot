@@ -55,7 +55,7 @@ func globalDBs() (*dbutil2.Handle, *dbutil2.Handle, error) {
 			return nil, nil, err
 		}
 		registerPrometheusCollector(globalAppDBH.DbMap.Db, "_app")
-		limitConnectionPool(globalAppDBH.DbMap.Db)
+		configureConnectionPool(globalAppDBH.DbMap.Db)
 
 		globalGraphDBH, err = openDB(getGraphDBDataSource(), GraphSchema, 0)
 		if err != nil {
@@ -66,7 +66,7 @@ func globalDBs() (*dbutil2.Handle, *dbutil2.Handle, error) {
 		// metric or limit the connection pool again on the same db handle.
 		if globalGraphDBH.DbMap.Db != globalAppDBH.DbMap.Db {
 			registerPrometheusCollector(globalGraphDBH.DbMap.Db, "_graph")
-			limitConnectionPool(globalGraphDBH.DbMap.Db)
+			configureConnectionPool(globalGraphDBH.DbMap.Db)
 		}
 	}
 
@@ -125,13 +125,10 @@ func registerPrometheusCollector(db *sql.DB, dbNameSuffix string) {
 	prometheus.MustRegister(c)
 }
 
-// limitConnectionPool sets reasonable sizes on the built in DB queue. By
+// configureConnectionPool sets reasonable sizes on the built in DB queue. By
 // default the connection pool is unbounded, which leads to the error `pq:
 // sorry too many clients already`.
-func limitConnectionPool(db *sql.DB) {
-	// The default value for max_connections is 100 in pgsql. Defaults
-	// allow for roughly 3 servers to burst. We don't change idle
-	// connection size, which defaults to 2
+func configureConnectionPool(db *sql.DB) {
 	var err error
 	maxOpen := 30
 	if e := os.Getenv("SRC_PGSQL_MAX_OPEN"); e != "" {
@@ -141,4 +138,5 @@ func limitConnectionPool(db *sql.DB) {
 		}
 	}
 	db.SetMaxOpenConns(maxOpen)
+	db.SetMaxIdleConns(maxOpen)
 }
