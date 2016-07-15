@@ -433,13 +433,13 @@ class GlobalSearch extends Container {
 
 		if (this.state.query && !this.state.matchingResults ||
 			((!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) && this.state.matchingResults.outstandingFetches !== 0) && this.state.query) {
-			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`}styleName="result">Loading results...</div>];
+			return [<div key="_nosymbol" className={`${base.ph4} ${base.pv4}`} styleName="result">Loading results...</div>];
 		}
 
 		if (this.state.query && this.state.matchingResults &&
 			(!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) &&
 			(!this.state.matchingResults.Repos || this.state.matchingResults.Repos.length === 0)) {
-			return [<div className={`${base.ph4} ${base.pt4}`} styleName="result" key="_nosymbol">No results found.</div>];
+			return [<div className={`${base.ph4} ${base.pv4}`} styleName="result" key="_nosymbol">No results found.</div>];
 		}
 
 		let list = [], numDefs = 0,
