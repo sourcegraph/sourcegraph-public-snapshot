@@ -114,10 +114,15 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 		}
 	}
 
+	rev, err := svc.Repos(ctx).ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: op.Repo})
+	if err != nil {
+		return nil, err
+	}
+
 	// Update defs table
 	if err := store.DefsFromContext(ctx).UpdateFromSrclibStore(ctx, store.DefUpdateOp{
 		Repo:     op.Repo,
-		CommitID: op.CommitID,
+		CommitID: rev.CommitID,
 	}); err != nil {
 		return nil, err
 	}

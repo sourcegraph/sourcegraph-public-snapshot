@@ -410,6 +410,9 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 	if op.Repo == 0 || op.CommitID == "" {
 		return fmt.Errorf("both op.Repo and op.CommitID must be non-empty")
 	}
+	if len(op.CommitID) != 40 {
+		return fmt.Errorf("commit ID must be 40 characters long, was: %q", op.CommitID)
+	}
 
 	repo, err := store.ReposFromContext(ctx).Get(ctx, op.Repo)
 	if err != nil {
@@ -418,16 +421,6 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 	obs := newDefsUpdateObserver("defs2", repo.URI)
 	totalEnd := obs.start("update_total")
 	defer totalEnd()
-
-	if len(op.CommitID) == 0 {
-		rr, err := getRepoRevLatest(graphDBH(ctx), repo.URI)
-		if err != nil {
-			return err
-		}
-		op.CommitID = rr.Commit
-	} else if len(op.CommitID) != 40 {
-		return fmt.Errorf("commit ID must be 40 characters long, was: %q", op.CommitID)
-	}
 
 	end := obs.start("graphstore")
 	defs, err := store.GraphFromContext(ctx).Defs(

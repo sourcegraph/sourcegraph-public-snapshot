@@ -38,18 +38,8 @@ func (c *searchCmd) Execute(args []string) error {
 			return err
 		}
 
-		repo, err := cl.Repos.Get(cliContext, &sourcegraph.RepoSpec{ID: res.Repo})
-		if err != nil {
-			return err
-		}
-		resRev, err := cl.Repos.ResolveRev(cliContext, &sourcegraph.ReposResolveRevOp{Repo: res.Repo, Rev: repo.DefaultBranch})
-		if err != nil {
-			return err
-		}
-
 		_, err = cl.Defs.RefreshIndex(cliContext, &sourcegraph.DefsRefreshIndexOp{
 			Repo:                res.Repo,
-			CommitID:            resRev.CommitID,
 			RefreshRefLocations: true,
 			Force:               true,
 		})
@@ -77,18 +67,8 @@ func (c *searchCmd) Execute(args []string) error {
 			return err
 		}
 
-		repo, err := cl.Repos.Get(cliContext, &sourcegraph.RepoSpec{ID: res.Repo})
-		if err != nil {
-			return err
-		}
-		resRev, err := cl.Repos.ResolveRev(cliContext, &sourcegraph.ReposResolveRevOp{Repo: res.Repo, Rev: repo.DefaultBranch})
-		if err != nil {
-			return err
-		}
-
 		_, err = cl.Defs.RefreshIndex(cliContext, &sourcegraph.DefsRefreshIndexOp{
 			Repo:                res.Repo,
-			CommitID:            resRev.CommitID,
 			RefreshRefLocations: true,
 			Force:               true,
 		})
