@@ -582,10 +582,6 @@ func (t *testRunner) alertOpsGenie(msg string) error {
 // runTest runs a single test and recovers from panics, should they occur. If
 // the test failed for any reason err != nil is returned. If it was possible to
 // capture a screenshot of the error, screenshot will be the encoded PNG bytes.
-//
-// warningChannel specifies whether or not the screenshot should be uploaded to
-// the warning Slack channel in the event of an error. Otherwise, it is
-// uploaded to the normal (failure) channel.
 func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 	wd, err := t.newWebDriver()
 	if err != nil {
