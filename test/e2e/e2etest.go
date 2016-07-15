@@ -135,7 +135,7 @@ func (t *T) GRPCClient() (context.Context, *sourcegraph.Client) {
 		var err error
 		endpoint, err = url.Parse(grpc)
 		if err != nil {
-			t.Fatalf("could not parge TARGET_GRPC as url: %s", err)
+			t.Fatalf("could not parse TARGET_GRPC as url: %s", err)
 		}
 	}
 
