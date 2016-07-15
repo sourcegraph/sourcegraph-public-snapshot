@@ -719,7 +719,7 @@ var tr = &testRunner{
 var (
 	runOnce     = flag.Bool("once", true, "run the tests only once (true) or forever (false)")
 	runFlag     = flag.String("run", "", "specify an exact test name to run (e.g. 'login_flow', 'register_flow')")
-	retriesFlag = flag.Int("retries", 3, "maximum number of times to retry a test before considering it failed")
+	retriesFlag = flag.Int("retries", 1, "maximum number of times to retry a test before considering it failed")
 
 	seleniumTrace = os.Getenv("SELENIUM_TRACE") != ""
 )
