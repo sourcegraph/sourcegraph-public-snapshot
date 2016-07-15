@@ -1,17 +1,16 @@
 package rcache
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"sync"
+	"time"
+
+	"github.com/garyburd/redigo/redis"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-
-	"github.com/mediocregopher/radix.v2/pool"
-	"github.com/mediocregopher/radix.v2/redis"
 )
 
 const (
@@ -42,11 +41,11 @@ func New(keyPrefix string, ttlSeconds int) *Cache {
 // Get implements httpcache.Cache.Get
 func (r *Cache) Get(key string) ([]byte, bool) {
 	resp := cmd("GET", r.rkey(key))
-	if resp == nil || resp.IsType(redis.Nil) {
+	if resp == nil {
 		return nil, false
 	}
 
-	b, err := resp.Bytes()
+	b, err := redis.Bytes(resp, nil)
 	if err != nil {
 		return nil, false
 	}
@@ -77,21 +76,21 @@ if #keys > 0 then
 else
 	return ''
 end`, 0, fmt.Sprintf("%s:*", fmt.Sprintf("%s:%s", globalPrefix, prefix)))
-	if resp == nil {
-		return errors.New("error clearing Redis test data")
+	if err, ok := resp.(error); ok {
+		return fmt.Errorf("error clearing Redis test data: %s", err)
 	}
 	return nil
 }
 
 var (
-	connPool_    *pool.Pool
+	connPool_    *redis.Pool
 	connPoolMu   sync.Mutex
 	globalPrefix string
 )
 
 // redisPool creates the Redis connection pool if it isn't already
 // open and returns it. Subsequent calls return the same pool.
-func redisPool() (*pool.Pool, error) {
+func redisPool() (*redis.Pool, error) {
 	connPoolMu.Lock()
 	defer connPoolMu.Unlock()
 
@@ -107,34 +106,40 @@ func redisPool() (*pool.Pool, error) {
 
 	endpoint := conf.GetenvOrDefault("REDIS_MASTER_ENDPOINT", ":6379")
 
-	p, err := pool.New("tcp", endpoint, maxClients)
-	if err != nil {
-		return nil, fmt.Errorf("Could not connect to Redis server at %s: %s", endpoint, err)
+	connPool_ := &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial: func() (redis.Conn, error) {
+			c, err := redis.Dial("tcp", endpoint)
+			if err != nil {
+				return nil, err
+			}
+			return c, err
+		},
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
 	}
-	connPool_ = p
 
 	return connPool_, nil
 }
 
 // cmd is a helper around redis.(*Client).Cmd. If any error happens (including
 // resp.Err) cmd will log it and return nil.
-func cmd(cmd string, args ...interface{}) *redis.Resp {
+func cmd(cmd string, args ...interface{}) interface{} {
 	connPool, err := redisPool()
 	if err != nil {
 		log15.Warn("failed to connect to redis pool", "error", err)
 		return nil
 	}
-	conn, err := connPool.Get()
-	if err != nil {
-		log15.Warn("failed to get a connection from the redis pool", "error", err)
-		return nil
-	}
-	defer connPool.Put(conn)
+	conn := connPool.Get()
+	defer conn.Close()
 
-	resp := conn.Cmd(cmd, args...)
-	if resp.Err != nil {
-		log15.Warn("failed to execute redis command", "cmd", cmd, "error", resp.Err)
+	r, err := conn.Do(cmd, args...)
+	if err != nil {
+		log15.Warn("failed to execute redis command", "cmd", cmd, "error", err)
 		return nil
 	}
-	return resp
+	return r
 }
