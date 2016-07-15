@@ -705,7 +705,7 @@ func parseEnv() error {
 	serverAddr := os.Getenv("SELENIUM_SERVER_IP")
 	serverPort := os.Getenv("SELENIUM_SERVER_PORT")
 	if serverAddr == "" {
-		return errors.New("unable to get SELENIUM_SERVER_IP from environment")
+		serverAddr = "localhost" // default to localhost
 	}
 	if serverPort == "" {
 		serverPort = "4444" // default to standard Selenium port
@@ -829,10 +829,10 @@ func Main() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, `
 Environment:
-  SELENIUM_SERVER_IP (required)
-      IP address of the Selenium server (run 'docker-machine ls' on OS X and Windows; use 'localhost' on Linux)
   TARGET (required)
       target Sourcegraph server to test against (e.g. 'http://192.168.1.1:3080', use LAN IP due to Docker!)
+  SELENIUM_SERVER_IP = "localhost"
+      IP address of the Selenium server (consider consulting 'docker-machine ls' on certain Docker versions)
   SELENIUM_SERVER_PORT = "4444"
       port of the Selenium server
   ID_KEY_DATA (optional)
