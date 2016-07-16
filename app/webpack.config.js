@@ -88,7 +88,7 @@ module.exports = {
 		"./web_modules/sourcegraph/init/browser.js",
 	],
 	resolve: {
-			modules: [`${__dirname}/web_modules`, "node_modules"],
+		modules: [`${__dirname}/web_modules`, "node_modules"],
 	},
 	devtool: (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) ? "source-map" : "eval",
 	output: {
