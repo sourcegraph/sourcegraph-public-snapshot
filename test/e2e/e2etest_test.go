@@ -5,9 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"hash/crc32"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/test/e2e/e2etestuser"
@@ -104,15 +106,24 @@ func runE2E(t *testing.T, name string) {
 	if fatalMsg != "" {
 		t.Fatal(fatalMsg)
 	}
-	wd, err := tr.newWebDriver()
+
+	err, screenshot := tr.runTest(test, t)
 	if err != nil {
-		t.Skip("newWebDriver:", err)
-	}
-	defer wd.Quit()
-	e2eT := tr.newT(test, wd)
-	e2eT.testingT = t
-	err = test.Func(e2eT)
-	if err != nil {
+		if screenshots := os.Getenv("WRITE_SCREENSHOTS"); screenshots != "" {
+			err2 := os.MkdirAll(screenshots, 0700)
+			if err2 != nil {
+				t.Fatal(err2)
+			}
+			path, err2 := filepath.Abs(filepath.Join(screenshots, test.Name+".png"))
+			if err2 != nil {
+				t.Fatal(err2)
+			}
+			err2 = ioutil.WriteFile(path, screenshot, 0666)
+			if err2 != nil {
+				t.Fatal(err2)
+			}
+			t.Logf("Wrote: %s\n", path)
+		}
 		t.Fatal(err)
 	}
 }

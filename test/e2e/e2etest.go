@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"testing"
 	"time"
 
 	"golang.org/x/net/context"
@@ -56,7 +57,7 @@ type T struct {
 	// calling Fatalf).
 	WebDriver selenium.WebDriver
 
-	// testingT provides a Fatalf implementation
+	// testingT provides a Logf implementation
 	testingT TestingT
 
 	tr *testRunner
@@ -64,7 +65,6 @@ type T struct {
 
 // Minimal interface for what testing.T provides
 type TestingT interface {
-	Fatalf(fmt string, v ...interface{})
 	Logf(fmt string, v ...interface{})
 }
 
@@ -76,17 +76,20 @@ func (e *internalError) Error() string {
 	return e.err.Error()
 }
 
+type fatalError struct {
+	err string
+}
+
+func (e *fatalError) Error() string {
+	return e.err
+}
+
 // Fatalf implements the TestingT and the selenium.TestingT interface.
 func (t *T) Fatalf(fmtStr string, v ...interface{}) {
-	// We only need to append "(on page ...)" if we're being run by 'go test'
-	// because otherwise (*testRunner).runTest handles it in a more general
-	// purpose way (includes panics etc).
-	if t.testingT != nil {
-		currentURL, _ := t.WebDriver.CurrentURL()
-		fmtStr = fmtStr + " (on page %s)"
-		v = append(v, currentURL)
-	}
-	t.testingT.Fatalf(fmtStr, v...)
+	// We throw a panic here and it is always recovered by runTest and
+	// subsequently handled. This isn't idiomatic, but it lets us write out
+	// screenshots after a go test has failed.
+	panic(&fatalError{err: fmt.Sprintf(fmtStr, v...)})
 }
 
 // Logf implements TestingT
@@ -446,7 +449,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 
 				// This error should not be bubbled up! That will cause the parallel.Run to short circuit,
 				// but we want all tests to run regardless.
-				err, screenshot := t.runTest(test)
+				err, screenshot := t.runTest(test, nil)
 				if _, ok := err.(*internalError); ok {
 					t.log.Printf("[warning] [%v] unable to establish a session: %v\n", test.Name, err)
 					t.slackMessage(typeWarning, fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, err), "")
@@ -582,7 +585,9 @@ func (t *testRunner) alertOpsGenie(msg string) error {
 // runTest runs a single test and recovers from panics, should they occur. If
 // the test failed for any reason err != nil is returned. If it was possible to
 // capture a screenshot of the error, screenshot will be the encoded PNG bytes.
-func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
+//
+// testingT is optional, and is set as T.testingT directly if specified.
+func (t *testRunner) runTest(test *Test, testingT *testing.T) (err error, screenshot []byte) {
 	wd, err := t.newWebDriver()
 	if err != nil {
 		return &internalError{err: err}, nil
@@ -616,6 +621,7 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 	}()
 
 	ctx := t.newT(test, wd)
+	ctx.testingT = testingT
 	return test.Func(ctx), nil
 }
 
@@ -861,6 +867,9 @@ Environment:
       port of the Selenium server
   SELENIUM_TRACE (optional)
       If specified, selenium actions will be verbosely logged. Useful when debugging selenium.
+  WRITE_SCREENSHOTS (optional)
+      If specified, screenshots of any failures will be written to the specified directory path
+      relative to the test/e2e package directory. Only used by 'go test'.
   ID_KEY_DATA (optional)
       If specified, the Base64-encoded string is used in place of '$SGPATH/id.pem' for authenticating
   SLACK_API_TOKEN (optional)
@@ -890,11 +899,6 @@ Flags:
 }
 
 type defaultTestingT struct{}
-
-// FatalF causes a panic (which is caught by the test executor).
-func (t defaultTestingT) Fatalf(fmtStr string, v ...interface{}) {
-	panic(fmt.Sprintf(fmtStr, v...))
-}
 
 func (t defaultTestingT) Logf(fmtStr string, v ...interface{}) {
 	log.Printf(fmtStr, v...)
