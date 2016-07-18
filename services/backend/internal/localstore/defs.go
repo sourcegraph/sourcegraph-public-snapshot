@@ -448,6 +448,10 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 		}
 	}
 
+	if len(chosenDefs) == 0 {
+		return fmt.Errorf("no indexable defs for %s %s", repo.URI, op.CommitID)
+	}
+
 	dbh := graphDBH(ctx)
 
 	// Update def_keys
