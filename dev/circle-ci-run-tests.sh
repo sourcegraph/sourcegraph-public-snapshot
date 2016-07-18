@@ -26,7 +26,7 @@ echo "$changed"
 
 pkgs=()
 covered=()
-for pkg in $(go list -f '{{ if or (gt (len .TestGoFiles) 0) (gt (len .XTestGoFiles ) 0) }}{{ .ImportPath }}{{ end }}' ./... | grep -v /vendor/ | sort); do
+for pkg in $(go list -f '{{ if or (gt (len .TestGoFiles) 0) (gt (len .XTestGoFiles ) 0) }}{{ .ImportPath }}{{ end }}' ./... | grep -v /vendor/ | grep -v test/e2e | sort); do
 	if (( i % CIRCLE_NODE_TOTAL == CIRCLE_NODE_INDEX ))
 	then
 		if [ "$CIRCLE_BRANCH" == 'master' ] || echo "$changed" | awk -v D="$(pwd)" '{ print D "/" $2 }' | egrep "$pkg/$"
