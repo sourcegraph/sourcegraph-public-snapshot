@@ -7,172 +7,52 @@
 .cool-mid-gray { composes: cool-mid-gray from colors; }
 
 .container {
-	composes: center pb6 from base;
-	composes: bg-white bg-pale-blue-gradient from colors;
+	composes: center pv4 ph2 from base;
+	composes: bg-white from colors;
 	min-height: 100vh;
 	width: 100%;
 }
 
-.beta-container {
+.menu {
+	composes: col-12 from grid;
 	composes: center from base;
-	composes: containerFixed from layout;
-	composes: col-12-ns col-11 from grid;
-	composes: ph4 from base;
 	max-width: 640px;
-	text-align: left;
-	justify-content: center;
-}
-
-.flex-container {
-	display: flex;
-}
-
-.visible {
-	display: flex;
-}
-
-.invisible {
-	display: none;
-}
-
-.container-fixed {
-	composes: center pt5 pb5 from base;
-	width: 100%;
-	max-width: 600px;
-}
-
-.panel-container {
-	display: flex;
-	composes: center from base;
-	width: 100%;
-	flex-direction: row;
-	justify-content: center;
-	flex-wrap: wrap;
-	margin-top: -40px;
-}
-
-.panel-item {
-	display: flex;
-	composes: pl4 pr4 pb5 from base;
-	align-content: center;
 	text-align: center;
-	max-width: 310px;
 }
 
-.panel-cta {
-	display: block;
-	text-align: left;
-}
-
-.button-container {
+.tool-list {
+	composes: pb4 from base;
 	display: flex;
-	flex-direction: row;
 	justify-content: center;
-	composes: pt4 pb4 from base;
 }
 
-.multiple-install {
-	display: inline-flex;
-	flex-wrap: wrap;
-	justify-content: center;
+.tool {
+	composes: ph3 from base;
+	min-width: 60px;
 }
 
 .img {
 	min-width: 60px;
 	height: 60px;
 	align-self: center;
-	composes: pl3 pr3 pt4 pb3 from base;
 }
 
-.tool-item {
-	composes: mt6 pl4 pr4 mb5 center from base;
-	composes: col-10 from grid;
-	align-content: center;
-	text-align: center;
-	max-width: 1100px;
-}
-
-.tool-item-paragraph {
+.caption {
+	composes: cool-gray from colors;
 	display: block;
-	composes: pt2 from base;
-	composes: cool-mid-gray from colors;
-	composes: col-10 from grid;
-	text-align: left;
 }
 
-.large-img {
-	width: 100px;
-	height: 100px;
-}
-
-.tool-img-container {
-	display: block;
-	min-width: 100px;
-	max-width: 100px;
-	height: 100px;
-	align-self: flex-start;
-	composes: pl5 pr3 pt4 pb3 hidden-s from base;
-}
-
-.tool-gif-container {
+.footer {
+	composes: bt center pv3 ph3 from base;
+	composes: bg-white b--light-gray from colors;
+	width: 100%;
+	position: absolute;
+	bottom: 0;
 	display: flex;
-	composes: pb4 hidden-s from base;
 	justify-content: center;
 }
 
-.tool-gif {
-	composes: pt2 from base;
-	composes: col-11 from grid;
-	align-self: center;
-	flex: 0;
-}
-
-.question-container {
-	display: flex;
-	flex-direction: column;
-	flex-wrap: wrap;
-	justify-content: center;
-}
-
-.dont-see-link {
-	cursor: pointer;
-}
-
-.dont-see-div {
-	composes: pb3 from base;
-}
-
-.required {
-	color: red;
-}
-
-.form-style {
-	composes: center from base;
-	composes: col-10 from base;
-	max-width: 400px;
-}
-
-.form-style > li {
-	padding: 0;
-	display: block;
-	list-style: none;
-	padding: 10px 0 0 0;
-}
-
-.label {
-	padding:0 0 3px 0;
-	padding:0px;
-	display:block;
-	font-weight: bold;
-	text-align:left;
-}
-
-.check-icon {
-	composes: green-8 from colors;
-	vertical-align: middle;
-	padding-right: 5px;
-}
-
-@media media-sm {
-	.mv2-sm { composes: mv2 from base; }
+.footer-btn {
+	width: 100%;
+	max-width: 420px;
 }
