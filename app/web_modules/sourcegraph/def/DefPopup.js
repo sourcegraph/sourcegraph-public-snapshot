@@ -40,9 +40,7 @@ class DefPopup extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.repo !== nextState.repo || prevState.commitID !== nextState.commitID || prevState.def !== nextState.def) {
-			if (this.context.features.Authors) {
-				Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.commitID, nextState.def));
-			}
+			Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.commitID, nextState.def));
 		}
 	}
 
@@ -73,7 +71,7 @@ class DefPopup extends Container {
 
 				{<header className={s.sectionTitle}>Authors</header>}
 				{!this.state.authors && <span styleName="loading">Loading...</span>}
-				{this.state.authors && <AuthorList authors={this.state.authors} />}
+				{this.state.authors && !this.state.authors.Error && this.state.authors.DefAuthors.length && <AuthorList authors={this.state.authors.DefAuthors} />}
 			</div>
 		);
 	}

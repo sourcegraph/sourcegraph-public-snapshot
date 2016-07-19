@@ -16,10 +16,14 @@ import (
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/betautil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/mailchimp"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/mailchimp/chimputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/test/e2e/e2etestuser"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -29,29 +33,6 @@ var Accounts sourcegraph.AccountsServer = &accounts{}
 type accounts struct{}
 
 func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) (*sourcegraph.CreatedAccount, error) {
-	usersStore := store.UsersFromContext(ctx)
-
-	var write, admin bool
-	// If this is the first user, set them as admin.
-	numUsers, err := usersStore.Count(elevatedActor(ctx))
-	if err != nil {
-		return nil, err
-	}
-	if numUsers == 0 {
-		write = true
-		admin = true
-	}
-
-	acct, err := s.createWithPermissions(ctx, newAcct, write, admin)
-	if err != nil {
-		return nil, err
-	}
-	return acct, err
-}
-
-func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegraph.NewAccount, write, admin bool) (*sourcegraph.CreatedAccount, error) {
-	accountsStore := store.AccountsFromContext(ctx)
-
 	if newAcct.Login == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "empty login")
 	}
@@ -70,8 +51,6 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 		Login:        newAcct.Login,
 		RegisteredAt: &now,
 		UID:          newAcct.UID,
-		Write:        write,
-		Admin:        admin,
 	}
 
 	var email *sourcegraph.EmailAddr
@@ -79,7 +58,7 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 		email = &sourcegraph.EmailAddr{Email: newAcct.Email, Primary: true}
 	}
 
-	created, err := accountsStore.Create(elevatedActor(ctx), newUser, email)
+	created, err := store.AccountsFromContext(ctx).Create(elevatedActor(ctx), newUser, email)
 	if err != nil {
 		return nil, err
 	}
@@ -88,8 +67,6 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 	actor := authpkg.Actor{
 		UID:   int(userSpec.UID),
 		Login: userSpec.Login,
-		Write: write,
-		Admin: admin,
 	}
 	ctx = authpkg.WithActor(ctx, actor)
 
@@ -110,10 +87,80 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 }
 
 func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error) {
+	if len(in.Betas) > 0 {
+		// Validate that the betas exist.
+		for _, beta := range in.Betas {
+			if !betautil.Betas[beta] {
+				return nil, fmt.Errorf("no such beta %q", beta)
+			}
+		}
+
+		// If there is at least one beta, ensure the BetaRegistered field is also set.
+		in.BetaRegistered = true
+	}
+
 	if err := store.AccountsFromContext(ctx).Update(ctx, in); err != nil {
 		return nil, err
 	}
 
+	// SECURITY: It's important that this code runs AFTER store.AccountsFromContext(ctx).Update
+	// because that method ensures that tag updates were allowed / the user has
+	// the right permissions to perform the actions below.
+	if len(in.Betas) > 0 || in.BetaRegistered {
+		// We only update the "betas" list and "beta registered" status field
+		// of Mailchimp here. Every other merge field has already been
+		// populated at the time they registered.
+		userSpec := in.Spec()
+		emails, err := svc.Users(ctx).ListEmails(ctx, &userSpec)
+		if err != nil {
+			return &pbtypes.Void{}, err
+		}
+		email, err := emails.Primary()
+		if err != nil {
+			return &pbtypes.Void{}, err
+		}
+
+		chimp, err := chimputil.Client()
+		if err != nil {
+			return &pbtypes.Void{}, err
+		}
+		_, err = chimp.PutListsMembers(chimputil.SourcegraphBetaListID, mailchimp.SubscriberHash(email.Email), &mailchimp.PutListsMembersOptions{
+			StatusIfNew:  "subscribed",
+			EmailAddress: email.Email,
+			MergeFields: map[string]interface{}{
+				"BETAS":   mailchimp.Array(in.Betas),
+				"BETAREG": mailchimp.Bool(in.BetaRegistered),
+			},
+		})
+		if err != nil {
+			return &pbtypes.Void{}, err
+		}
+	}
+
+	return &pbtypes.Void{}, nil
+}
+
+func (s *accounts) UpdateEmails(ctx context.Context, in *sourcegraph.UpdateEmailsOp) (*pbtypes.Void, error) {
+	emails, err := svc.Users(ctx).ListEmails(ctx, &in.UserSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, add := range in.Add.EmailAddrs {
+		exists := false
+		for _, existing := range emails.EmailAddrs {
+			if existing.Email == add.Email {
+				exists = true
+			}
+		}
+		if !exists {
+			emails.EmailAddrs = append(emails.EmailAddrs, add)
+		}
+	}
+
+	if err := store.AccountsFromContext(ctx).UpdateEmails(ctx, in.UserSpec, emails.EmailAddrs); err != nil {
+		return nil, err
+	}
 	return &pbtypes.Void{}, nil
 }
 

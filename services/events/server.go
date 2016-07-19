@@ -8,8 +8,9 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/rogpeppe/rog-go/parallel"
 	"gopkg.in/inconshreveable/log15.v2"
+
+	"github.com/neelance/parallel"
 )
 
 const maxParallelCallbacks = 8
@@ -38,7 +39,9 @@ func (s *eventServer) publish(id EventID, payload interface{}) {
 		}
 
 		args := []reflect.Value{idv, pv}
-		go s.parallel.Do(func() error {
+		go func() {
+			s.parallel.Acquire() // no s.parallel.Wait, thus no race condition
+			defer s.parallel.Release()
 			defer func() {
 				if err := recover(); err != nil {
 					log15.Error("panic in events.Publish", "error", err)
@@ -50,8 +53,7 @@ func (s *eventServer) publish(id EventID, payload interface{}) {
 				}
 			}()
 			cv.Call(args)
-			return nil
-		})
+		}()
 	}
 }
 

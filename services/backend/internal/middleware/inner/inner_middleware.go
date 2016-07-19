@@ -50,6 +50,8 @@ func Services() svc.Services {
 
 		Deltas: wrappedDeltas{},
 
+		Desktop: wrappedDesktop{},
+
 		Meta: wrappedMeta{},
 
 		MirrorRepos: wrappedMirrorRepos{},
@@ -204,6 +206,25 @@ func (s wrappedAccounts) Update(ctx context.Context, param *sourcegraph.User) (r
 		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
 			err = grpc.Errorf(code, "Accounts.Update failed with internal error.")
+		}
+	}
+	return
+}
+
+func (s wrappedAccounts) UpdateEmails(ctx context.Context, param *sourcegraph.UpdateEmailsOp) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Accounts", "UpdateEmails", param)
+	defer func() {
+		trace.After(ctx, "Accounts", "UpdateEmails", param, err, time.Since(start))
+	}()
+	res, err = backend.Services.Accounts.UpdateEmails(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Accounts.UpdateEmails returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Accounts.UpdateEmails failed with internal error.")
 		}
 	}
 	return
@@ -736,6 +757,27 @@ func (s wrappedDeltas) ListFiles(ctx context.Context, param *sourcegraph.DeltasL
 	return
 }
 
+type wrappedDesktop struct{}
+
+func (s wrappedDesktop) GetLatest(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.LatestDesktopVersion, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Desktop", "GetLatest", param)
+	defer func() {
+		trace.After(ctx, "Desktop", "GetLatest", param, err, time.Since(start))
+	}()
+	res, err = backend.Services.Desktop.GetLatest(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Desktop.GetLatest returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Desktop.GetLatest failed with internal error.")
+		}
+	}
+	return
+}
+
 type wrappedMeta struct{}
 
 func (s wrappedMeta) Status(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.ServerStatus, err error) {
@@ -1075,25 +1117,6 @@ func (s wrappedRepos) List(ctx context.Context, param *sourcegraph.RepoListOptio
 	return
 }
 
-func (s wrappedRepos) ListRemote(ctx context.Context, param *sourcegraph.ReposListRemoteOptions) (res *sourcegraph.RemoteRepoList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Repos", "ListRemote", param)
-	defer func() {
-		trace.After(ctx, "Repos", "ListRemote", param, err, time.Since(start))
-	}()
-	res, err = backend.Services.Repos.ListRemote(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.ListRemote returned nil, nil")
-	}
-	if err != nil && !DebugMode(ctx) {
-		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.ListRemote failed with internal error.")
-		}
-	}
-	return
-}
-
 func (s wrappedRepos) Create(ctx context.Context, param *sourcegraph.ReposCreateOp) (res *sourcegraph.Repo, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "Create", param)
@@ -1322,25 +1345,6 @@ func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, param *so
 	return
 }
 
-func (s wrappedRepos) ConfigureApp(ctx context.Context, param *sourcegraph.RepoConfigureAppOp) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Repos", "ConfigureApp", param)
-	defer func() {
-		trace.After(ctx, "Repos", "ConfigureApp", param, err, time.Since(start))
-	}()
-	res, err = backend.Services.Repos.ConfigureApp(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.ConfigureApp returned nil, nil")
-	}
-	if err != nil && !DebugMode(ctx) {
-		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.ConfigureApp failed with internal error.")
-		}
-	}
-	return
-}
-
 func (s wrappedRepos) GetInventory(ctx context.Context, param *sourcegraph.RepoRevSpec) (res *inventory.Inventory, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "GetInventory", param)
@@ -1497,20 +1501,20 @@ func (s wrappedUsers) List(ctx context.Context, param *sourcegraph.UsersListOpti
 	return
 }
 
-func (s wrappedUsers) Count(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.UserCount, err error) {
+func (s wrappedUsers) RegisterBeta(ctx context.Context, param *sourcegraph.BetaRegistration) (res *sourcegraph.BetaResponse, err error) {
 	start := time.Now()
-	ctx = trace.Before(ctx, "Users", "Count", param)
+	ctx = trace.Before(ctx, "Users", "RegisterBeta", param)
 	defer func() {
-		trace.After(ctx, "Users", "Count", param, err, time.Since(start))
+		trace.After(ctx, "Users", "RegisterBeta", param, err, time.Since(start))
 	}()
-	res, err = backend.Services.Users.Count(ctx, param)
+	res, err = backend.Services.Users.RegisterBeta(ctx, param)
 	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Users.Count returned nil, nil")
+		err = grpc.Errorf(codes.Internal, "Users.RegisterBeta returned nil, nil")
 	}
 	if err != nil && !DebugMode(ctx) {
 		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Users.Count failed with internal error.")
+			err = grpc.Errorf(code, "Users.RegisterBeta failed with internal error.")
 		}
 	}
 	return

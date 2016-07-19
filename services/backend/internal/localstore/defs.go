@@ -10,6 +10,8 @@ import (
 
 	"github.com/fatih/camelcase"
 	"github.com/lib/pq"
+	"github.com/microcosm-cc/bluemonday"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -182,16 +184,7 @@ type defs struct{}
 var _ store.Defs = (*defs)(nil)
 
 func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error) {
-	// Params checking
-	if !op.Opt.Latest {
-		if len(op.Opt.Repos) != 1 {
-			return nil, fmt.Errorf("Repos must have exactly one element if not searching latest")
-		}
-		if len(op.Opt.NotRepos) > 0 {
-			return nil, fmt.Errorf("NotRepos unsupported if not searching latest")
-		}
-	}
-
+	startTime := time.Now()
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
@@ -229,42 +222,40 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 	var whereSQL, fastWhereSQL, prefixSQL string
 	{
 		var wheres []string
+		wheres = append(wheres, "state=1")
 
-		if op.Opt.Latest {
-			wheres = append(wheres, "state=1")
-
-			if len(op.Opt.NotRepos) > 0 {
-				notRIDs := make([]int64, len(op.Opt.NotRepos))
-				for i, r := range op.Opt.NotRepos {
-					notRepo, err := store.ReposFromContext(ctx).Get(ctx, r)
-					if err != nil {
-						return nil, fmt.Errorf("error getting excluded repository: %s", err)
-					}
-					// NOTE(beyang): there's a race condition here as the latest repository
-					// revision could change between here and when the query to the defs
-					// table is made. In this case, we will fail to exclude results from
-					// repositories in NotRepos. Updates are infrequent enough that we
-					// accept this possibility.
-					rr, err := getRepoRevLatest(graphDBH(ctx), notRepo.URI)
-					if err == repoRevUnindexedErr {
-						return &sourcegraph.SearchResultsList{}, nil
-					} else if err != nil {
-						return nil, err
-					}
-					notRIDs[i] = rr.ID
+		if len(op.Opt.NotRepos) > 0 {
+			end := obs.start("notrepos")
+			notRIDs := make([]int64, len(op.Opt.NotRepos))
+			for i, r := range op.Opt.NotRepos {
+				notRepo, err := store.ReposFromContext(ctx).Get(ctx, r)
+				if err != nil {
+					return nil, fmt.Errorf("error getting excluded repository: %s", err)
 				}
-				nrArgs := make([]string, len(notRIDs))
-				for i, r := range notRIDs {
-					nrArgs[i] = arg(r)
+				// NOTE(beyang): there's a race condition here as the latest repository
+				// revision could change between here and when the query to the defs
+				// table is made. In this case, we will fail to exclude results from
+				// repositories in NotRepos. Updates are infrequent enough that we
+				// accept this possibility.
+				rr, err := getRepoRevLatest(graphDBH(ctx), notRepo.URI)
+				if err == repoRevUnindexedErr {
+					return &sourcegraph.SearchResultsList{}, nil
+				} else if err != nil {
+					return nil, err
 				}
-				wheres = append(wheres, "rid NOT IN ("+strings.Join(nrArgs, ",")+")")
+				notRIDs[i] = rr.ID
 			}
-		} else {
-			wheres = append(wheres, "state=1 OR state=2")
+			nrArgs := make([]string, len(notRIDs))
+			for i, r := range notRIDs {
+				nrArgs[i] = arg(r)
+			}
+			wheres = append(wheres, "rid NOT IN ("+strings.Join(nrArgs, ",")+")")
+			end()
 		}
 
 		// Repository/commit filtering.
 		if len(op.Opt.Repos) > 0 {
+			end := obs.start("repos")
 			var repoArgs []string
 			for _, repo := range op.Opt.Repos {
 				rp, err := store.ReposFromContext(ctx).Get(ctx, repo)
@@ -280,9 +271,14 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 				}
 				repoArgs = append(repoArgs, arg(rr.ID))
 			}
+			if len(repoArgs) == 0 {
+				log15.Warn("All repos specified in def search are unindexed; no results may be returned.", "repos", op.Opt.Repos)
+				return &sourcegraph.SearchResultsList{}, nil
+			}
 			if len(repoArgs) > 0 {
 				wheres = append(wheres, `rid IN (`+strings.Join(repoArgs, ",")+`)`)
 			}
+			end()
 		}
 
 		// Language filtering.
@@ -324,21 +320,8 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 			wheres = append(wheres, `kind NOT IN (`+strings.Join(notKindList, ", ")+`)`)
 		}
 
-		if len(op.TokQuery) == 1 { // special-case single token queries for performance
-			wheres = append(wheres, `lower(name)=lower(`+arg(op.TokQuery[0])+`)`)
-
-			// Skip matching for too less characters.
-			if op.Opt.PrefixMatch && len(op.TokQuery[0]) > 2 {
-				prefixSQL = ` OR to_tsquery('english', ` + arg(op.TokQuery[0]+":*") + `) @@ bow`
-			}
-		} else if bowQuery != "" {
-			wheres = append(wheres, "bow != ''")
-			if op.Opt.PrefixMatch {
-				wheres = append(wheres, `to_tsquery('english', `+arg(bowQuery+":*")+`) @@ bow`)
-			} else {
-				wheres = append(wheres, `to_tsquery('english', `+arg(bowQuery)+`) @@ bow`)
-			}
-		}
+		wheres = append(wheres, "bow != ''")
+		wheres = append(wheres, `to_tsquery('english', `+arg(bowQuery)+`) @@ bow`)
 
 		whereSQL = fmt.Sprint(`WHERE (`+strings.Join(wheres, ") AND (")+`)`) + prefixSQL
 		fastWheres := append(wheres, "ref_ct > 10") // this corresponds to a partial index
@@ -366,6 +349,8 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 		end()
 	}
 
+	end = obs.start("resolveresults")
+	defer end()
 	var results []*sourcegraph.DefSearchResult
 	for _, d := range dbSearchResults {
 		// convert dbDef to Def
@@ -403,6 +388,12 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 		})
 	}
 
+	defsSearchResultsLength.Observe(float64(len(results)))
+	if len(results) == 0 {
+		defsSearchResultsNone.Inc()
+	}
+	log15.Debug("TRACE defs.Search", "tokens", strings.Join(op.TokQuery, ","), "opts", fmt.Sprintf("%+v", op.Opt), "results_len", len(results), "duration", time.Since(startTime))
+
 	return &sourcegraph.SearchResultsList{DefResults: results}, nil
 }
 
@@ -414,26 +405,25 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.UpdateFromSrclibStore", op.Repo); err != nil {
 		return err
 	}
+
+	// Validate input
+	if op.Repo == 0 || op.CommitID == "" {
+		return fmt.Errorf("both op.Repo and op.CommitID must be non-empty")
+	}
+	if len(op.CommitID) != 40 {
+		return fmt.Errorf("commit ID must be 40 characters long, was: %q", op.CommitID)
+	}
+
 	repo, err := store.ReposFromContext(ctx).Get(ctx, op.Repo)
 	if err != nil {
 		return err
 	}
 	obs := newDefsUpdateObserver("defs2", repo.URI)
-	totalEnd := obs.start("srclibstore_total")
+	totalEnd := obs.start("update_total")
 	defer totalEnd()
 
-	if len(op.CommitID) == 0 {
-		rr, err := getRepoRevLatest(graphDBH(ctx), repo.URI)
-		if err != nil {
-			return err
-		}
-		op.CommitID = rr.Commit
-	} else if len(op.CommitID) != 40 {
-		return fmt.Errorf("commit ID must be 40 characters long, was: %q", op.CommitID)
-	}
-
 	end := obs.start("graphstore")
-	defs_, err := store.GraphFromContext(ctx).Defs(
+	defs, err := store.GraphFromContext(ctx).Defs(
 		sstore.ByRepoCommitIDs(sstore.Version{Repo: repo.URI, CommitID: op.CommitID}),
 	)
 	end()
@@ -441,33 +431,7 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 		return err
 	}
 
-	op.Defs = defs_
-	return s.Update(ctx, op)
-}
-
-func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.Update", op.Repo); err != nil {
-		return err
-	}
-
-	repo, err := store.ReposFromContext(ctx).Get(ctx, op.Repo)
-	if err != nil {
-		return err
-	}
-
-	obs := newDefsUpdateObserver("defs2", repo.URI)
-	totalEnd := obs.start("update_total")
-	defer totalEnd()
-
-	// Validate input
-	if op.Repo == 0 || op.CommitID == "" {
-		return fmt.Errorf("both op.Repo and op.CommitID must be non-empty")
-	}
-	if len(op.CommitID) != 40 {
-		return fmt.Errorf("commit must be 40 characters long, was: %q", op.CommitID)
-	}
-
-	for _, def := range op.Defs {
+	for _, def := range defs {
 		if def.Repo != "" && def.Repo != repo.URI {
 			return fmt.Errorf("cannot update def with non-matching repo (%s != %s)", def.Repo, repo.URI)
 		}
@@ -478,16 +442,20 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 
 	// KLUDGE to improve search quality. This info ideally would be emitted by srclib toolchains.
 	var chosenDefs []*graph.Def
-	for _, d := range op.Defs {
+	for _, d := range defs {
 		if shouldIndex(d) {
 			chosenDefs = append(chosenDefs, d)
 		}
 	}
 
+	if len(chosenDefs) == 0 {
+		return fmt.Errorf("no indexable defs for %s %s", repo.URI, op.CommitID)
+	}
+
 	dbh := graphDBH(ctx)
 
 	// Update def_keys
-	end := obs.start("def_keys")
+	end = obs.start("def_keys")
 	defKeyIDs := make(map[graph.DefKey]int64)
 	for _, def := range chosenDefs {
 		rp := def.Repo
@@ -521,6 +489,7 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 	langWarnCount := 0
 	dbDefs := make([]*dbDefInsert, len(chosenDefs))
 	now := time.Now()
+	end = obs.start("compute_defs")
 	for i, def := range chosenDefs {
 		dk := def.DefKey
 		dk.Repo, dk.CommitID = repo.URI, ""
@@ -551,6 +520,7 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 	if langWarnCount > 0 {
 		log15.Warn("could not determine language for all defs", "noLang", langWarnCount, "allDefs", len(chosenDefs))
 	}
+	end()
 
 	end = obs.start("update_insert")
 	if err := dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
@@ -564,47 +534,38 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 	// Update state column
 	end = obs.start("update_state")
 	if err := dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
-		if op.Latest {
-			var repoRevs []*dbRepoRev
-			if _, err := tx.Select(&repoRevs, `SELECT * FROM repo_revs WHERE repo=$1 AND state=1`, repo.URI); err != nil {
-				return err
-			}
-			oldLatestRIDs := make([]int64, len(repoRevs))
-			for i, repoRev := range repoRevs {
-				oldLatestRIDs[i] = repoRev.ID
-			}
+		var repoRevs []*dbRepoRev
+		if _, err := tx.Select(&repoRevs, `SELECT * FROM repo_revs WHERE repo=$1 AND state=1`, repo.URI); err != nil {
+			return err
+		}
+		oldLatestRIDs := make([]int64, len(repoRevs))
+		for i, repoRev := range repoRevs {
+			oldLatestRIDs[i] = repoRev.ID
+		}
 
-			if _, err := tx.Exec(`UPDATE repo_revs SET state=2 WHERE repo=$1 AND state=1`, repo.URI); err != nil {
+		if _, err := tx.Exec(`UPDATE repo_revs SET state=2 WHERE repo=$1 AND state=1`, repo.URI); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(`UPDATE repo_revs SET state=1 WHERE id=$1`, repoRevID); err != nil {
+			return err
+		}
+		if len(oldLatestRIDs) > 0 {
+			var params = make([]string, len(oldLatestRIDs))
+			var args []interface{}
+			arg := func(v interface{}) string {
+				args = append(args, v)
+				return gorp.PostgresDialect{}.BindVar(len(args) - 1)
+			}
+			for i, rid := range oldLatestRIDs {
+				params[i] = arg(rid)
+			}
+			s := `UPDATE defs2 SET state=2 WHERE rid IN (` + strings.Join(params, ",") + `)`
+			if _, err := tx.Exec(s, args...); err != nil {
 				return err
 			}
-			if _, err := tx.Exec(`UPDATE repo_revs SET state=1 WHERE id=$1`, repoRevID); err != nil {
-				return err
-			}
-			if len(oldLatestRIDs) > 0 {
-				var params = make([]string, len(oldLatestRIDs))
-				var args []interface{}
-				arg := func(v interface{}) string {
-					args = append(args, v)
-					return gorp.PostgresDialect{}.BindVar(len(args) - 1)
-				}
-				for i, rid := range oldLatestRIDs {
-					params[i] = arg(rid)
-				}
-				s := `UPDATE defs2 SET state=2 WHERE rid IN (` + strings.Join(params, ",") + `)`
-				if _, err := tx.Exec(s, args...); err != nil {
-					return err
-				}
-			}
-			if _, err := tx.Exec(`UPDATE defs2 SET state=1 WHERE rid=$1`, repoRevID); err != nil {
-				return err
-			}
-		} else {
-			if _, err := tx.Exec("UPDATE repo_revs SET state=2 WHERE id=$1", repoRevID); err != nil {
-				return err
-			}
-			if _, err := tx.Exec("UPDATE defs2 SET state=2 WHERE rid=$1", repoRevID); err != nil {
-				return err
-			}
+		}
+		if _, err := tx.Exec(`UPDATE defs2 SET state=1 WHERE rid=$1`, repoRevID); err != nil {
+			return err
 		}
 		return nil
 	}); err != nil {
@@ -613,14 +574,32 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 	}
 	end()
 
-	if op.RefreshCounts {
-		end = obs.start("update_ref_ct")
-		if err := s.UpdateRefCounts(ctx, repo.URI); err != nil {
-			end()
+	end = obs.start("update_ref_ct")
+	if err := s.UpdateRefCounts(ctx, repo.URI); err != nil {
+		end()
+		return err
+	}
+	end()
+
+	// Garbage-collect old def and repo_revs rows
+	end = obs.start("gc_get_revs")
+	rrOld, err := getRepoRevsOld(ctx, dbh, repo.URI)
+	end()
+	if err != nil {
+		return err
+	}
+	end = obs.start("gc_delete")
+	for _, rr := range rrOld {
+		// Delete defs before repo revs, so this gets retried on next update if this fails for some reason.
+		if _, err := dbh.Exec(`DELETE FROM defs2 WHERE rid=$1 and state=2`, rr.ID); err != nil {
 			return err
 		}
-		end()
+		if _, err := dbh.Exec(`DELETE FROM repo_revs WHERE id=$1 and state=2`, rr.ID); err != nil {
+			return err
+		}
 	}
+	end()
+
 	return nil
 }
 
@@ -645,7 +624,7 @@ func toTextSearchTokens(def *graph.Def) (aToks []string, bToks []string, cToks [
 	pathParts := delims.Split(def.Path, -1)
 	for _, w := range pathParts {
 		bToks = appendRepeated(bToks, w, 2)
-		for _, c := range allCombinations(splitCaseWords(w)) {
+		for _, c := range boundedCombinations(splitCaseWords(w), 6) {
 			if c != "" {
 				cToks = appendRepeated(cToks, c, 1)
 			}
@@ -653,7 +632,7 @@ func toTextSearchTokens(def *graph.Def) (aToks []string, bToks []string, cToks [
 	}
 	lastPathPart := pathParts[len(pathParts)-1]
 	aToks = appendRepeated(aToks, lastPathPart, 3) // mega extra points for matching the last component of the def path (typically the "name" of the def)
-	for _, c := range allCombinations(splitCaseWords(lastPathPart)) {
+	for _, c := range boundedCombinations(splitCaseWords(lastPathPart), 6) {
 		if c != "" {
 			aToks = appendRepeated(aToks, c, 1) // more points for matching last component of def path
 		}
@@ -667,6 +646,11 @@ func toTextSearchTokens(def *graph.Def) (aToks []string, bToks []string, cToks [
 
 	aToks = appendRepeated(aToks, def.Name, 1)
 
+	for _, doc := range def.Docs {
+		docWithoutTags := bluemonday.StrictPolicy().Sanitize(doc.Data)
+		dToks = append(dToks, docWithoutTags) // no need to split because it is getting processed by PostgreSQL's to_tsvector
+	}
+
 	return
 }
 
@@ -675,6 +659,13 @@ func splitCaseWords(w string) []string {
 		return strings.Split(w, "_")
 	}
 	return camelcase.Split(w)
+}
+
+func boundedCombinations(s []string, bound int) []string {
+	if len(s) > bound {
+		return append(allCombinations(s[:bound]), s[bound:]...)
+	}
+	return allCombinations(s)
 }
 
 // allCombinations returns all strings that can be built by concatenating a subset of the given strings without reordering.
@@ -714,19 +705,27 @@ FROM (
 // referencing defs in the latest built revision of the specified repository
 // (repo).
 func (s *defs) UpdateRefCounts(ctx context.Context, repo string) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.UpdateRefCounts", repo); err != nil {
-		return err
-	}
 
-	rr, err := getRepoRevLatest(graphDBH(ctx), repo)
-	if err != nil {
-		return err
-	}
-
-	if _, err := graphDBH(ctx).Exec(updateRefCountSQL, rr.ID, rr.Repo); err != nil {
-		return err
-	}
+	// TODO(sjl) per Beyang, hotfix disabling this update until we can identify a fix for deadlocks
+	// I attempted to create a ts_vector index on global_refs_new.repo, but it didn't improve performance
+	// https://app.asana.com/0/87040567695724/150990295471745
 	return nil
+
+	/*
+		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.UpdateRefCounts", repo); err != nil {
+			return err
+		}
+
+		rr, err := getRepoRevLatest(graphDBH(ctx), repo)
+		if err != nil {
+			return err
+		}
+
+		if _, err := graphDBH(ctx).Exec(updateRefCountSQL, rr.ID, rr.Repo); err != nil {
+			return err
+		}
+		return nil
+	*/
 }
 
 func getDefKey(ctx context.Context, dbh gorp.SqlExecutor, id int64) (*dbDefKey, error) {
@@ -747,6 +746,14 @@ func getRepoRev(ctx context.Context, dbh gorp.SqlExecutor, id int64) (*dbRepoRev
 		return nil, err
 	}
 	return &d, nil
+}
+
+func getRepoRevsOld(ctx context.Context, dbh gorp.SqlExecutor, repo string) ([]*dbRepoRev, error) {
+	var rr []*dbRepoRev
+	if _, err := dbh.Select(&rr, `SELECT * FROM repo_revs WHERE repo=$1 and state=2`, repo); err != nil {
+		return nil, err
+	}
+	return rr, nil
 }
 
 func getOrInsertDefKeys(ctx context.Context, dbh gorp.SqlExecutor, defKeys map[graph.DefKey]int64) error {
@@ -830,4 +837,23 @@ func shouldIndex(d *graph.Def) bool {
 		return false
 	}
 	return true
+}
+
+var defsSearchResultsLength = prometheus.NewSummary(prometheus.SummaryOpts{
+	Namespace: "src",
+	Subsystem: "defs",
+	Name:      "search_results_length",
+	Help:      "Number of results returned for a search",
+	MaxAge:    time.Hour,
+})
+var defsSearchResultsNone = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "defs",
+	Name:      "search_results_none_total",
+	Help:      "Number of times we returned no results",
+})
+
+func init() {
+	prometheus.MustRegister(defsSearchResultsLength)
+	prometheus.MustRegister(defsSearchResultsNone)
 }

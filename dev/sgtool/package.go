@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 )
 
 func init() {
@@ -93,7 +93,9 @@ func (c *PackageCmd) Execute(args []string) error {
 			return err
 		}
 		bins = append(bins, dest)
-		par.Do(func() (err error) {
+		par.Acquire()
+		go func() {
+			defer par.Release()
 			ldflags := make([]string, len(ldflagsInput))
 			copy(ldflags, ldflagsInput)
 
@@ -109,11 +111,10 @@ func (c *PackageCmd) Execute(args []string) error {
 			cmd.Dir = filepath.Join("cmd", "src")
 			cmd.Env = env
 			if err := execCmd(cmd); err != nil {
-				return err
-			} else {
-				return nil
+				par.Error(err)
+				return
 			}
-		})
+		}()
 	}
 	if err := par.Wait(); err != nil {
 		return err

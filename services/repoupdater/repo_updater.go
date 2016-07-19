@@ -1,7 +1,6 @@
 package repoupdater
 
 import (
-	"strconv"
 	"sync"
 	"time"
 
@@ -18,19 +17,18 @@ const (
 )
 
 var (
-	enqueueCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	enqueueCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "enqueue",
 		Help:      "Number of requests to enqueue repos (but not necessarily accepted into queue)",
-	}, []string{"repo"})
-
-	acceptedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	})
+	acceptedCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "enqueue_accepted",
 		Help:      "Number of requests to enqueue repos that were accepted / added to queue",
-	}, []string{"repo"})
+	})
 )
 
 func init() {
@@ -41,7 +39,7 @@ func init() {
 // Enqueue queues a mirror repo for refresh. If asUser is not nil, that user's
 // auth token will be used for performing the fetch from the remote host.
 func Enqueue(repo int32, asUser *sourcegraph.UserSpec) {
-	enqueueCounter.WithLabelValues(strconv.Itoa(int(repo))).Inc()
+	enqueueCounter.Inc()
 	RepoUpdater.enqueue(&repoUpdateOp{Repo: repo, AsUser: asUser})
 }
 
@@ -92,7 +90,7 @@ func (ru *repoUpdater) enqueue(op *repoUpdateOp) {
 
 	select {
 	case ru.queue <- op:
-		acceptedCounter.WithLabelValues(strconv.Itoa(int(op.Repo))).Inc()
+		acceptedCounter.Inc()
 		ru.recent[op.Repo] = now
 	default:
 		// Skip since queue is full.

@@ -33,10 +33,10 @@ export function buildClass(b) {
 }
 
 export function taskClass(task) {
-	if (task.Success && !task.Skipped) return "success";
-	if (task.Failure && !task.Skippe) return "danger";
 	if (task.Warnings) return "warning";
+	if (task.Failure && !task.Skipped) return "danger";
 	if (!task.Success && !task.Failure && !task.Skipped) return "info";
+	if (task.Success && !task.Skipped) return "success";
 	return "default";
 }
 

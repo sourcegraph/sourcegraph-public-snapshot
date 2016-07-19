@@ -5,39 +5,26 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 )
 
 func init() {
 	AppSchema.Map.AddTableWithName(dbRepoConfig{}, "repo_config").SetKeys(false, "Repo")
-	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
-		"ALTER TABLE repo_config ALTER COLUMN apps TYPE text[] USING array[apps]::text[];",
-	)
 }
 
 // dbRepoConfig DB-maps a sourcegraph.RepoConfig object.
 type dbRepoConfig struct {
 	// Repo is the ID of the repository that this config is for.
 	Repo int32 `db:"repo_id"`
-
-	Apps *dbutil.StringSlice
 }
 
 func (c *dbRepoConfig) toRepoConfig() *sourcegraph.RepoConfig {
-	if c.Apps == nil {
-		c.Apps = &dbutil.StringSlice{}
-	}
-
-	return &sourcegraph.RepoConfig{
-		Apps: c.Apps.Slice,
-	}
+	return &sourcegraph.RepoConfig{}
 }
 
 func (c *dbRepoConfig) fromRepoConfig(repo int32, c2 *sourcegraph.RepoConfig) {
 	c.Repo = repo
-	c.Apps = dbutil.NewSlice(c2.Apps)
 }
 
 // repoConfigs is a DB-backed implementation of the RepoConfigs store.

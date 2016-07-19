@@ -1,8 +1,6 @@
 MAKEFLAGS+=--no-print-directory
 
-.PHONY: app-dep build check compile-test dep deploy dist dist-dep distclean drop-test-dbs generate generate-dep gopath install serve-dep serve-metrics-dev smoke src test libvfsgen
-
-PRIVATE_HASH := 87ff6253d35505c92cb3190e422f64ec61cc227f
+.PHONY: app-dep check dep dist dist-dep distclean drop-test-dbs generate install serve-dep src test libvfsgen
 
 SGX_OS_NAME := $(shell uname -o 2>/dev/null || uname -s)
 
@@ -57,17 +55,6 @@ serve-dev: serve-dep
 	@echo
 	DEBUG=t rego -installenv=GOGC=off,GODEBUG=sbrk=1 -tags="$(GOTAGS)" sourcegraph.com/sourcegraph/sourcegraph/cmd/src $(SRCFLAGS) serve --reload --app.webpack-dev-server=$(WEBPACK_DEV_SERVER_URL) --app.disable-support-services $(SERVEFLAGS)
 
-serve-mothership-dev:
-	@echo See docs/dev/OAuth2.md Demo configuration
-	$(MAKE) serve-dev SERVEFLAGS="--http-addr=:13080 --app-url http://demo-mothership:13080 --appdash.disable-server $(SERVEFLAGS)"
-
-PROMETHEUS_STORAGE ?= $(shell eval `src config` && echo $${SGPATH}/prometheus)
-serve-metrics-dev:
-	@# Assumes your src is listening on the default address (localhost:3080)
-	@which prometheus &> /dev/null || (echo "Please ensure prometheus is on your \$$PATH http://prometheus.io/docs/introduction/install/" 1>&2; exit 1)
-	@echo Prometheus running on http://localhost:9090/
-	prometheus -storage.local.path ${PROMETHEUS_STORAGE} --config.file dev/prometheus.yml
-
 serve-dep:
 	go get sourcegraph.com/sqs/rego
 
@@ -77,13 +64,6 @@ serve-dep:
 	@[ "$(SGXOS)" = "windows" ] || [ `ulimit -n` -ge 10000 ] || (echo "Error: Please increase the open file limit by running\n\n  ulimit -n 10000\n" 1>&2; exit 1)
 
 	@[ -n "$(WEBPACK_DEV_SERVER_URL)" ] && [ "$(WEBPACK_DEV_SERVER_URL)" != " " ] && (curl -Ss -o /dev/null "$(WEBPACK_DEV_SERVER_URL)" || (cd app && WEBPACK_DEV_SERVER_URL="$(WEBPACK_DEV_SERVER_URL)" PUBLIC_WEBPACK_DEV_SERVER_URL="$(PUBLIC_WEBPACK_DEV_SERVER_URL)" WEBPACK_DEV_SERVER_ADDR="$(WEBPACK_DEV_SERVER_ADDR)" npm start &)) || echo Serving bundled assets, not using Webpack.
-
-smoke: src
-	dropdb --if-exists src-smoke
-	createdb src-smoke
-	PGDATABASE=src-smoke $(GOBIN)/src pgsql --db=app create
-	PGDATABASE=src-smoke $(GOBIN)/src pgsql --db=graph create
-	PGDATABASE=src-smoke go run ./test/smoke/basicgit/basicgit.go
 
 libvfsgen:
 	go get github.com/shurcooL/vfsgen
@@ -130,13 +110,3 @@ check: ${GOBIN}/go-template-lint
 distclean:
 	go clean ./...
 	rm -rf ${GOBIN}/src
-
-docker-image:
-	docker build -t sourcegraph .
-
-deploy-appdash:
-	echo Deploying appdash from inventory $(INV)...
-	ansible-playbook -i $(INV) deploy2/provision/appdash.yml
-
-gopath:
-	@echo $(GOPATH)

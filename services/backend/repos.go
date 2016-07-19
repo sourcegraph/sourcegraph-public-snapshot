@@ -5,15 +5,12 @@ import (
 	"fmt"
 	pathpkg "path"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"time"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 
 	"strings"
-
-	"sort"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -31,7 +28,6 @@ import (
 	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/platform"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/test/e2e/e2etestuser"
@@ -87,16 +83,47 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 		return nil, err
 	}
 
-	par := parallel.NewRun(runtime.GOMAXPROCS(0))
+	// deletedRepoURI is used to prune repos from list. Its value should be something an existing repo cannot have, like empty string.
+	const deletedRepoURI = ""
+
+	par := parallel.NewRun(30)
 	for _, repo_ := range repos {
 		repo := repo_
-		par.Do(func() error {
-			return s.setRepoFieldsFromRemote(ctx, repo)
-		})
+		par.Acquire()
+		go func() {
+			defer par.Release()
+			// TODO(shurcooL): Now that the store is doing more of this, investigate if setRepoFieldsFromRemote
+			//                 is still necceessary to do here, or if it can be optimized away.
+			if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
+				if grpc.Code(err) == codes.NotFound {
+					// This can happen if a repo is disabled; it will be included by list operation,
+					// but getting it directly will result in 404. Treat it as a missing repository,
+					// mark it to be removed from the list afterwards.
+					log15.Debug("Repo from list not found on remote", "repo", repo.URI)
+					repo.URI = deletedRepoURI
+					return
+				}
+				par.Error(err)
+				return
+			}
+		}()
 	}
 	if err := par.Wait(); err != nil {
 		return nil, err
 	}
+
+	// Clear any missing repos with URI == deletedRepoURI after setRepoFieldsFromRemote step.
+	for i := 0; i < len(repos); {
+		if repos[i].URI == deletedRepoURI {
+			// Delete missing repo from list.
+			copy(repos[i:], repos[i+1:])
+			repos[len(repos)-1] = nil
+			repos = repos[:len(repos)-1]
+			continue
+		}
+		i++
+	}
+
 	return &sourcegraph.RepoList{Repos: repos}, nil
 }
 
@@ -169,7 +196,7 @@ func timestampEqual(a, b *pbtypes.Timestamp) bool {
 // repoSetFromRemote updates repo with fields from ghrepo that are
 // different. If any fields are changed a non-nil store.RepoUpdate is returned
 // representing the update.
-func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.RemoteRepo) *store.RepoUpdate {
+func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *store.RepoUpdate {
 	updateOp := &store.RepoUpdate{
 		ReposUpdateOp: &sourcegraph.ReposUpdateOp{
 			Repo: repo.ID,
@@ -342,47 +369,6 @@ func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sou
 		conf = &sourcegraph.RepoConfig{}
 	}
 	return conf, nil
-}
-
-func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error) {
-	store := store.RepoConfigsFromContext(ctx)
-
-	if op.Enable {
-		// Check that app ID is a valid app. Allow disabling invalid
-		// apps so that obsolete apps can always be removed.
-		if _, present := platform.Apps[op.App]; !present {
-			return nil, grpc.Errorf(codes.InvalidArgument, "app %q is not a valid app ID", op.App)
-		}
-	}
-
-	conf, err := store.Get(ctx, op.Repo)
-	if err != nil {
-		return nil, err
-	}
-	if conf == nil {
-		conf = &sourcegraph.RepoConfig{}
-	}
-
-	// Make apps list unique and add/remove the new app.
-	apps := make(map[string]struct{}, len(conf.Apps))
-	for _, app := range conf.Apps {
-		apps[app] = struct{}{}
-	}
-	if op.Enable {
-		apps[op.App] = struct{}{}
-	} else {
-		delete(apps, op.App)
-	}
-	conf.Apps = make([]string, 0, len(apps))
-	for app := range apps {
-		conf.Apps = append(conf.Apps, app)
-	}
-	sort.Strings(conf.Apps)
-
-	if err := store.Update(ctx, op.Repo, *conf); err != nil {
-		return nil, err
-	}
-	return &pbtypes.Void{}, nil
 }
 
 func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {

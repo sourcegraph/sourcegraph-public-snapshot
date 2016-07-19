@@ -7,7 +7,7 @@ import (
 	"log"
 
 	"github.com/golang/groupcache/lru"
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -83,10 +83,22 @@ func (s *deltas) fillDelta(ctx context.Context, d *sourcegraph.Delta) (*sourcegr
 
 	par := parallel.NewRun(2)
 	if d.BaseCommit == nil {
-		par.Do(func() error { return getCommit(&d.Base, &d.BaseCommit) })
+		par.Acquire()
+		go func() {
+			defer par.Release()
+			if err := getCommit(&d.Base, &d.BaseCommit); err != nil {
+				par.Error(err)
+			}
+		}()
 	}
 	if d.HeadCommit == nil {
-		par.Do(func() error { return getCommit(&d.Head, &d.HeadCommit) })
+		par.Acquire()
+		go func() {
+			defer par.Release()
+			if err := getCommit(&d.Head, &d.HeadCommit); err != nil {
+				par.Error(err)
+			}
+		}()
 	}
 	if err := par.Wait(); err != nil {
 		return d, err

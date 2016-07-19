@@ -55,7 +55,6 @@ type ReposClient struct {
 	Get_                         func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
 	Resolve_                     func(ctx context.Context, in *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
 	List_                        func(ctx context.Context, in *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
-	ListRemote_                  func(ctx context.Context, in *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error)
 	Create_                      func(ctx context.Context, in *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
 	Update_                      func(ctx context.Context, in *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
 	Delete_                      func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
@@ -68,7 +67,6 @@ type ReposClient struct {
 	ListDeps_                    func(ctx context.Context, in *sourcegraph.URIList) (*sourcegraph.URIList, error)
 	ListCommitters_              func(ctx context.Context, in *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
 	GetSrclibDataVersionForPath_ func(ctx context.Context, in *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
-	ConfigureApp_                func(ctx context.Context, in *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error)
 	GetInventory_                func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
 	ReceivePack_                 func(ctx context.Context, in *sourcegraph.ReceivePackOp) (*sourcegraph.Packet, error)
 	UploadPack_                  func(ctx context.Context, in *sourcegraph.UploadPackOp) (*sourcegraph.Packet, error)
@@ -84,10 +82,6 @@ func (s *ReposClient) Resolve(ctx context.Context, in *sourcegraph.RepoResolveOp
 
 func (s *ReposClient) List(ctx context.Context, in *sourcegraph.RepoListOptions, opts ...grpc.CallOption) (*sourcegraph.RepoList, error) {
 	return s.List_(ctx, in)
-}
-
-func (s *ReposClient) ListRemote(ctx context.Context, in *sourcegraph.ReposListRemoteOptions, opts ...grpc.CallOption) (*sourcegraph.RemoteRepoList, error) {
-	return s.ListRemote_(ctx, in)
 }
 
 func (s *ReposClient) Create(ctx context.Context, in *sourcegraph.ReposCreateOp, opts ...grpc.CallOption) (*sourcegraph.Repo, error) {
@@ -138,10 +132,6 @@ func (s *ReposClient) GetSrclibDataVersionForPath(ctx context.Context, in *sourc
 	return s.GetSrclibDataVersionForPath_(ctx, in)
 }
 
-func (s *ReposClient) ConfigureApp(ctx context.Context, in *sourcegraph.RepoConfigureAppOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.ConfigureApp_(ctx, in)
-}
-
 func (s *ReposClient) GetInventory(ctx context.Context, in *sourcegraph.RepoRevSpec, opts ...grpc.CallOption) (*inventory.Inventory, error) {
 	return s.GetInventory_(ctx, in)
 }
@@ -160,7 +150,6 @@ type ReposServer struct {
 	Get_                         func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
 	Resolve_                     func(v0 context.Context, v1 *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
 	List_                        func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
-	ListRemote_                  func(v0 context.Context, v1 *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error)
 	Create_                      func(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
 	Update_                      func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
 	Delete_                      func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
@@ -173,7 +162,6 @@ type ReposServer struct {
 	ListDeps_                    func(v0 context.Context, v1 *sourcegraph.URIList) (*sourcegraph.URIList, error)
 	ListCommitters_              func(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
 	GetSrclibDataVersionForPath_ func(v0 context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
-	ConfigureApp_                func(v0 context.Context, v1 *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error)
 	GetInventory_                func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
 	ReceivePack_                 func(v0 context.Context, v1 *sourcegraph.ReceivePackOp) (*sourcegraph.Packet, error)
 	UploadPack_                  func(v0 context.Context, v1 *sourcegraph.UploadPackOp) (*sourcegraph.Packet, error)
@@ -189,10 +177,6 @@ func (s *ReposServer) Resolve(v0 context.Context, v1 *sourcegraph.RepoResolveOp)
 
 func (s *ReposServer) List(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
 	return s.List_(v0, v1)
-}
-
-func (s *ReposServer) ListRemote(v0 context.Context, v1 *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error) {
-	return s.ListRemote_(v0, v1)
 }
 
 func (s *ReposServer) Create(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
@@ -241,10 +225,6 @@ func (s *ReposServer) ListCommitters(v0 context.Context, v1 *sourcegraph.ReposLi
 
 func (s *ReposServer) GetSrclibDataVersionForPath(v0 context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
 	return s.GetSrclibDataVersionForPath_(v0, v1)
-}
-
-func (s *ReposServer) ConfigureApp(v0 context.Context, v1 *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error) {
-	return s.ConfigureApp_(v0, v1)
 }
 
 func (s *ReposServer) GetInventory(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
@@ -446,6 +426,7 @@ type AccountsClient struct {
 	RequestPasswordReset_ func(ctx context.Context, in *sourcegraph.PersonSpec) (*sourcegraph.PendingPasswordReset, error)
 	ResetPassword_        func(ctx context.Context, in *sourcegraph.NewPassword) (*pbtypes.Void, error)
 	Update_               func(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error)
+	UpdateEmails_         func(ctx context.Context, in *sourcegraph.UpdateEmailsOp) (*pbtypes.Void, error)
 	Delete_               func(ctx context.Context, in *sourcegraph.PersonSpec) (*pbtypes.Void, error)
 }
 
@@ -465,6 +446,10 @@ func (s *AccountsClient) Update(ctx context.Context, in *sourcegraph.User, opts 
 	return s.Update_(ctx, in)
 }
 
+func (s *AccountsClient) UpdateEmails(ctx context.Context, in *sourcegraph.UpdateEmailsOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	return s.UpdateEmails_(ctx, in)
+}
+
 func (s *AccountsClient) Delete(ctx context.Context, in *sourcegraph.PersonSpec, opts ...grpc.CallOption) (*pbtypes.Void, error) {
 	return s.Delete_(ctx, in)
 }
@@ -476,6 +461,7 @@ type AccountsServer struct {
 	RequestPasswordReset_ func(v0 context.Context, v1 *sourcegraph.PersonSpec) (*sourcegraph.PendingPasswordReset, error)
 	ResetPassword_        func(v0 context.Context, v1 *sourcegraph.NewPassword) (*pbtypes.Void, error)
 	Update_               func(v0 context.Context, v1 *sourcegraph.User) (*pbtypes.Void, error)
+	UpdateEmails_         func(v0 context.Context, v1 *sourcegraph.UpdateEmailsOp) (*pbtypes.Void, error)
 	Delete_               func(v0 context.Context, v1 *sourcegraph.PersonSpec) (*pbtypes.Void, error)
 }
 
@@ -495,6 +481,10 @@ func (s *AccountsServer) Update(v0 context.Context, v1 *sourcegraph.User) (*pbty
 	return s.Update_(v0, v1)
 }
 
+func (s *AccountsServer) UpdateEmails(v0 context.Context, v1 *sourcegraph.UpdateEmailsOp) (*pbtypes.Void, error) {
+	return s.UpdateEmails_(v0, v1)
+}
+
 func (s *AccountsServer) Delete(v0 context.Context, v1 *sourcegraph.PersonSpec) (*pbtypes.Void, error) {
 	return s.Delete_(v0, v1)
 }
@@ -506,7 +496,7 @@ type UsersClient struct {
 	GetWithEmail_ func(ctx context.Context, in *sourcegraph.EmailAddr) (*sourcegraph.User, error)
 	ListEmails_   func(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error)
 	List_         func(ctx context.Context, in *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error)
-	Count_        func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.UserCount, error)
+	RegisterBeta_ func(ctx context.Context, in *sourcegraph.BetaRegistration) (*sourcegraph.BetaResponse, error)
 }
 
 func (s *UsersClient) Get(ctx context.Context, in *sourcegraph.UserSpec, opts ...grpc.CallOption) (*sourcegraph.User, error) {
@@ -525,8 +515,8 @@ func (s *UsersClient) List(ctx context.Context, in *sourcegraph.UsersListOptions
 	return s.List_(ctx, in)
 }
 
-func (s *UsersClient) Count(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.UserCount, error) {
-	return s.Count_(ctx, in)
+func (s *UsersClient) RegisterBeta(ctx context.Context, in *sourcegraph.BetaRegistration, opts ...grpc.CallOption) (*sourcegraph.BetaResponse, error) {
+	return s.RegisterBeta_(ctx, in)
 }
 
 var _ sourcegraph.UsersClient = (*UsersClient)(nil)
@@ -536,7 +526,7 @@ type UsersServer struct {
 	GetWithEmail_ func(v0 context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.User, error)
 	ListEmails_   func(v0 context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error)
 	List_         func(v0 context.Context, v1 *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error)
-	Count_        func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.UserCount, error)
+	RegisterBeta_ func(v0 context.Context, v1 *sourcegraph.BetaRegistration) (*sourcegraph.BetaResponse, error)
 }
 
 func (s *UsersServer) Get(v0 context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.User, error) {
@@ -555,8 +545,8 @@ func (s *UsersServer) List(v0 context.Context, v1 *sourcegraph.UsersListOptions)
 	return s.List_(v0, v1)
 }
 
-func (s *UsersServer) Count(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.UserCount, error) {
-	return s.Count_(v0, v1)
+func (s *UsersServer) RegisterBeta(v0 context.Context, v1 *sourcegraph.BetaRegistration) (*sourcegraph.BetaResponse, error) {
+	return s.RegisterBeta_(v0, v1)
 }
 
 var _ sourcegraph.UsersServer = (*UsersServer)(nil)
@@ -880,6 +870,26 @@ func (s *SearchServer) Search(v0 context.Context, v1 *sourcegraph.SearchOp) (*so
 }
 
 var _ sourcegraph.SearchServer = (*SearchServer)(nil)
+
+type DesktopClient struct {
+	GetLatest_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.LatestDesktopVersion, error)
+}
+
+func (s *DesktopClient) GetLatest(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.LatestDesktopVersion, error) {
+	return s.GetLatest_(ctx, in)
+}
+
+var _ sourcegraph.DesktopClient = (*DesktopClient)(nil)
+
+type DesktopServer struct {
+	GetLatest_ func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.LatestDesktopVersion, error)
+}
+
+func (s *DesktopServer) GetLatest(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.LatestDesktopVersion, error) {
+	return s.GetLatest_(v0, v1)
+}
+
+var _ sourcegraph.DesktopServer = (*DesktopServer)(nil)
 
 type ChannelClient struct {
 	Listen_ func(ctx context.Context, in *sourcegraph.ChannelListenOp) (sourcegraph.Channel_ListenClient, error)

@@ -10,17 +10,23 @@ import withLastSrclibDataVersion from "sourcegraph/blob/withLastSrclibDataVersio
 import withDefAndRefLocations from "sourcegraph/def/withDefAndRefLocations";
 import blobWithDefBox from "sourcegraph/def/blobWithDefBox";
 
+let _defInfoComponents;
+let _defComponents;
+
 export const routes: Array<Route> = [
 	{
 		path: rel.defInfo,
+		repoNavContext: false,
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
-				const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
-				const withDef = require("sourcegraph/def/withDef").default;
-				callback(null, {
-					main: withResolvedRepoRev(withDef(require("sourcegraph/def/DefInfo").default)),
-					repoNavContext: withResolvedRepoRev(require("sourcegraph/def/DefNavContext").default),
-				});
+				if (!_defInfoComponents) {
+					const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
+					const withDef = require("sourcegraph/def/withDef").default;
+					_defInfoComponents = {
+						main: withResolvedRepoRev(withDef(require("sourcegraph/def/DefInfo").default)),
+					};
+				}
+				callback(null, _defInfoComponents);
 			});
 		},
 	},
@@ -29,11 +35,14 @@ export const routes: Array<Route> = [
 		keepScrollPositionOnRouteChangeKey: "file",
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
-				const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
-				callback(null, {
-					main: require("sourcegraph/blob/BlobLoader").default,
-					repoNavContext: withResolvedRepoRev(require("sourcegraph/def/DefNavContext").default),
-				});
+				if (!_defComponents) {
+					const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
+					_defComponents = {
+						main: require("sourcegraph/blob/BlobLoader").default,
+						repoNavContext: withResolvedRepoRev(require("sourcegraph/def/DefNavContext").default),
+					};
+				}
+				callback(null, _defComponents);
 			});
 		},
 		blobLoaderHelpers: [withLastSrclibDataVersion, withDefAndRefLocations, blobWithDefBox],

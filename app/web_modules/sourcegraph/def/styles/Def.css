@@ -3,6 +3,8 @@
 @value typography "sourcegraph/components/styles/_typography.css";
 @value blob "sourcegraph/blob/styles/Blob.css";
 
+.b { composes: b from typography; }
+
 .title {
 	composes: code fw5 from typography;
 	word-wrap: break-word;
@@ -24,8 +26,7 @@
 	composes: title;
 }
 .boxIcon {
-	composes: gray from colors;
-	composes: f4 from typography;
+	composes: cool-mid-gray from colors;
 	composes: pl3 from base;
 	line-height: normal;
 }
@@ -41,21 +42,17 @@
 }
 .sectionTitle {
 	composes: pt3 from base;
-	composes: f5 from typography;
 	font-weight: bold;
 }
 .badge-padding {
 	padding: 3px 5px;
 	composes: br2 from base;
-	composes: fw6 f5 from typography;
+	composes: b f7 from typography;
 	composes: bg-blue-1 blue from colors;
 }
 .badge {
 	composes: badge-padding;
 	vertical-align: 1px;
-}
-.active-group-header {
-	font-weight: bold;
 }
 .all-refs {
 	line-height: 1.7;
@@ -97,7 +94,7 @@
 	composes: bg-cool-gray white from colors;
 }
 .content {
-	composes: f5 from typography;
+	composes: f7 from typography;
 	line-height: 1.5;
 }
 .tooltipTitle {

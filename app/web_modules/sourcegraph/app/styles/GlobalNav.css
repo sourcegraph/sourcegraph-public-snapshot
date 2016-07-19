@@ -4,10 +4,10 @@
 @value typography "sourcegraph/components/styles/_typography.css";
 @value grid "sourcegraph/components/styles/_grid.css";
 @value layout "sourcegraph/components/styles/_layout.css";
-@value link "sourcegraph/components/styles/link.css";
 
 @value media-xs, media-sm, media-ns from vars;
 @value navbarHeight: 48px;
+@value icon-font-size: 0.8rem;
 
 @value c_cool-pale-gray-8 from colors;
 @value nav-border-color c_cool-pale-gray-8;
@@ -23,6 +23,7 @@
 .flex-start { justify-content: flex-start; }
 .block { display: block; }
 .hidden-s { composes: hidden-s from base; }
+.cool-mid-gray { composes: cool-mid-gray from colors; }
 
 .navbar {
 	composes: bb cf from base;
@@ -128,13 +129,10 @@
 	composes: white bg-blue-8 b--blue from colors;
 }
 
-.nav-link {
-	font-weight: bold;
-}
-
 @value search-form-max-width 1000px;
 .search {
 	flex: 1 0;
+	composes: mr1 from base;
 	composes: br from base;
 	border-color: nav-border-color;
 }
@@ -152,10 +150,12 @@
 	height: navbarHeight;
 	composes: f4 from typography;
 }
+
 .search-icon {
 	font-size: 1.3rem;
 }
 .search-panel {
+	border: solid #eee 1px;
 	position: absolute;
 	width: 100%;
 	max-width: search-form-max-width;
@@ -180,7 +180,6 @@
 		position: static;
 	}
 	.search-panel {
-		height: calc(100vh - navbarHeight);
 		overflow: auto;
 		left: 0;
 		top: navbarHeight;
@@ -208,9 +207,39 @@
 }
 .user-menu-icon {
 	composes: cool-mid-gray from colors;
-	font-size: 0.8rem;
+	font-size: icon-font-size;
 	margin-left: 6px;
 }
 .current-user {
 	color: cool-mid-gray;
+}
+
+.close-icon {
+	composes: hidden-ns from base;
+	border:1px solid transparent;
+	background-color: transparent;
+	display: inline-block;
+	vertical-align: middle;
+  	outline: 0;
+  	cursor: pointer;
+}
+
+.close-icon:after {
+	content: "X";
+	display: block;
+	width: 15px;
+	height: 15px;
+	background-color: #EEEEEE;
+	z-index:1;
+	right: 35px;
+	top: 0;
+	bottom: 0;
+	margin: auto;
+	padding: 2px;
+	border-radius: 50%;
+	text-align: center;
+	color: white;
+	font-weight: normal;
+	font-size: 10px;
+	cursor: pointer;
 }

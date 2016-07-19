@@ -16,8 +16,8 @@ var (
 	droneSrclibGoImage         = "sourcegraph/srclib-go:2bf78d43ec53d8fd81c77392b8ebe2f4181a4fd6"
 	droneSrclibJSONImage       = "sourcegraph/srclib-json:da879fdce0b22a422c9607f054a9f8f03b2c69f5"
 	droneSrclibJavaImage       = "sourcegraph/srclib-java:2fb7ab2648527bbe4ba16812558ac9be64da8098"
-	droneSrclibJavaScriptImage = "sourcegraph/srclib-javascript:75be57e78746b9e281eaa72ecf0ca41d6424f4ed"
-	droneSrclibPythonImage     = "sourcegraph/srclib-python:15a68f256c68a13b7a2e3497535804345e930e4a"
+	droneSrclibJavaScriptImage = "sourcegraph/srclib-javascript:3adeecd47155b75ea6d7836dc1035bc11e059876"
+	droneSrclibPythonImage     = "sourcegraph/srclib-python:a65ca94fa6e09eb9a752d4d6c6c4bd5e06f83699"
 	droneSrclibTypeScriptImage = "sourcegraph/srclib-typescript:04e5b07b925a646ecc296535fa6d7b9d010c53bb"
 )
 

@@ -3,7 +3,6 @@ package backend
 import (
 	"strings"
 
-	gogithub "github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -18,48 +17,39 @@ import (
 
 func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
 	// First, look up locally.
-	repo, err := store.ReposFromContext(ctx).GetByURI(ctx, op.Path)
-	if err == nil {
+	if repo, err := store.ReposFromContext(ctx).GetByURI(ctx, op.Path); err == nil {
 		return &sourcegraph.RepoResolution{Repo: repo.ID, CanonicalPath: op.Path}, nil
-	} else if errcode.GRPC(err) == codes.NotFound {
-		// Next, see if it's a GitHub repo.
-		repo, err := github.ReposFromContext(ctx).Get(ctx, op.Path)
-		if err == nil {
-			// If canonical location differs, try looking up locally at canonical location.
-			if canonicalPath := "github.com/" + repo.Owner + "/" + repo.Name; op.Path != canonicalPath {
-				if repo, err := store.ReposFromContext(ctx).GetByURI(ctx, canonicalPath); err == nil {
-					return &sourcegraph.RepoResolution{Repo: repo.ID, CanonicalPath: canonicalPath}, nil
-				}
-			}
-
-			if op.Remote {
-				return &sourcegraph.RepoResolution{RemoteRepo: repo}, nil
-			}
-			return nil, grpc.Errorf(codes.NotFound, "resolved repo not found locally: %s", op.Path)
-		} else if errcode.GRPC(err) == codes.NotFound {
-			if strings.HasPrefix(op.Path, "gopkg.in/") && op.Remote {
-				return &sourcegraph.RepoResolution{
-					RemoteRepo: &sourcegraph.RemoteRepo{HTTPCloneURL: "https://" + op.Path},
-				}, nil
-			}
-			return nil, grpc.Errorf(codes.NotFound, "repo %q not found locally or remotely", op.Path)
-		} else {
-			return nil, err
-		}
-	}
-	return nil, err
-}
-
-func (s *repos) ListRemote(ctx context.Context, opt *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error) {
-	repos, err := github.ReposFromContext(ctx).ListAccessible(ctx, &gogithub.RepositoryListOptions{
-		Type: opt.Type,
-		ListOptions: gogithub.ListOptions{
-			PerPage: int(opt.ListOptions.PerPage),
-			Page:    int(opt.ListOptions.Page),
-		},
-	})
-	if err != nil {
+	} else if errcode.GRPC(err) != codes.NotFound {
 		return nil, err
 	}
-	return &sourcegraph.RemoteRepoList{RemoteRepos: repos}, nil
+
+	// Next, see if it's a GitHub repo.
+	if repo, err := github.ReposFromContext(ctx).Get(ctx, op.Path); err == nil {
+		// If canonical location differs, try looking up locally at canonical location.
+		if canonicalPath := "github.com/" + repo.Owner + "/" + repo.Name; op.Path != canonicalPath {
+			if repo, err := store.ReposFromContext(ctx).GetByURI(ctx, canonicalPath); err == nil {
+				return &sourcegraph.RepoResolution{Repo: repo.ID, CanonicalPath: canonicalPath}, nil
+			}
+		}
+
+		if op.Remote {
+			return &sourcegraph.RepoResolution{RemoteRepo: repo}, nil
+		}
+		return nil, grpc.Errorf(codes.NotFound, "resolved repo not found locally: %s", op.Path)
+	} else if errcode.GRPC(err) != codes.NotFound {
+		return nil, err
+	}
+
+	// Try some remote aliases.
+	if op.Remote {
+		switch {
+		case strings.HasPrefix(op.Path, "gopkg.in/"):
+			return &sourcegraph.RepoResolution{
+				RemoteRepo: &sourcegraph.Repo{HTTPCloneURL: "https://" + op.Path},
+			}, nil
+		}
+	}
+
+	// Not found anywhere.
+	return nil, grpc.Errorf(codes.NotFound, "repo %q not found locally or remotely", op.Path)
 }

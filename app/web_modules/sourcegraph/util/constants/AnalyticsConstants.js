@@ -15,6 +15,7 @@ export const CATEGORY_REFERENCES = "References";
 export const CATEGORY_PRICING = "Pricing";
 export const CATEGORY_GLOBAL_SEARCH = "GlobalSearch";
 export const CATEGORY_EXTERNAL = "External";
+export const CATEGORY_INTERNAL = "Internal";
 export const CATEGORY_ENGAGEMENT = "ReEngagement";
 export const CATEGORY_UNKNOWN = "Unknown";
 
@@ -30,6 +31,8 @@ export const ACTION_SEARCH = "Search";
 export const ACTION_FETCH = "Fetch";
 export const ACTION_HOVER = "Hover";
 export const ACTION_REDIRECT = "Redirect";
+export const ACTION_SIGNUP = "Signup";
+export const ACTION_LOGIN = "Login";
 
 // Label constants
 // A string to provide additional dimensions to the event data.

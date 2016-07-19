@@ -9,8 +9,7 @@ import (
 
 func TestProtobuf_RepoListOptions(t *testing.T) {
 	v := RepoListOptions{
-		Owner:       "o",
-		ListOptions: ListOptions{Page: 5},
+		Owner: "o",
 	}
 	b, err := proto.Marshal(&v)
 	if err != nil {

@@ -11,8 +11,8 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/lib/pq"
+	"github.com/neelance/parallel"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/rogpeppe/rog-go/parallel"
 
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -229,14 +229,15 @@ func filterVisibleRepos(ctx context.Context, repoRefs []*sourcegraph.DefRepoRef)
 	var mu sync.Mutex
 	for i, r := range repoRefs {
 		i, r := i, r
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
 			if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GlobalRefs.Get", r.Repo); err == nil {
 				mu.Lock()
 				hasAccess[i] = true
 				mu.Unlock()
 			}
-			return nil
-		})
+		}()
 	}
 	if err := par.Wait(); err != nil {
 		return nil, err

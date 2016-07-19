@@ -48,20 +48,22 @@ func TestDefs(t *testing.T) {
 		queries: []queryCase{
 			{
 				[]string{"abc"},
-				sourcegraph.SearchOptions{Latest: true},
+				sourcegraph.SearchOptions{},
 				[]*sourcegraph.DefSearchResult{
 					{Def: sourcegraph.Def{Def: d_xyz_abc}},
 				},
 			},
 			{
 				[]string{"asdf"},
-				sourcegraph.SearchOptions{Latest: true},
+				sourcegraph.SearchOptions{},
 				[]*sourcegraph.DefSearchResult{},
 			},
 			{
 				[]string{"xyz"},
-				sourcegraph.SearchOptions{Latest: true},
-				[]*sourcegraph.DefSearchResult{},
+				sourcegraph.SearchOptions{},
+				[]*sourcegraph.DefSearchResult{
+					{Def: sourcegraph.Def{Def: d_xyz_abc}},
+				},
 			},
 		},
 	}, {
@@ -69,21 +71,22 @@ func TestDefs(t *testing.T) {
 		queries: []queryCase{
 			{
 				[]string{"abc"},
-				sourcegraph.SearchOptions{Latest: true},
+				sourcegraph.SearchOptions{},
 				[]*sourcegraph.DefSearchResult{
 					{Def: sourcegraph.Def{Def: d_xyz_abc}},
+					{Def: sourcegraph.Def{Def: d_abc_xyz}},
 				},
 			},
 			{
 				[]string{"pqr"},
-				sourcegraph.SearchOptions{Latest: true},
+				sourcegraph.SearchOptions{},
 				[]*sourcegraph.DefSearchResult{
 					{Def: sourcegraph.Def{Def: d_pqr}},
 				},
 			},
 			{
 				[]string{"abc", "xyz"},
-				sourcegraph.SearchOptions{Latest: true},
+				sourcegraph.SearchOptions{},
 				[]*sourcegraph.DefSearchResult{
 					{Def: sourcegraph.Def{Def: d_abc_xyz}},
 					{Def: sourcegraph.Def{Def: d_xyz_abc}},
@@ -91,7 +94,7 @@ func TestDefs(t *testing.T) {
 			},
 			{
 				[]string{"xyz", "abc"},
-				sourcegraph.SearchOptions{Latest: true},
+				sourcegraph.SearchOptions{},
 				[]*sourcegraph.DefSearchResult{
 					{Def: sourcegraph.Def{Def: d_xyz_abc}},
 					{Def: sourcegraph.Def{Def: d_abc_xyz}},
@@ -153,7 +156,7 @@ func testDefs(t *testing.T, outerTest outerCase) {
 	}
 
 	for _, repo := range rps {
-		op := store.DefUpdateOp{Repo: repo.ID, CommitID: commitID, Latest: true}
+		op := store.DefUpdateOp{Repo: repo.ID, CommitID: commitID}
 		err := g.UpdateFromSrclibStore(ctx, op)
 		if err != nil {
 			t.Fatal(err)
@@ -162,7 +165,6 @@ func testDefs(t *testing.T, outerTest outerCase) {
 
 	for _, test := range outerTest.queries {
 		got, err := g.Search(ctx, store.DefSearchOp{Opt: &test.opt, TokQuery: test.query})
-		// got, err := g.Search(ctx, store.DefSearchOp{Opt: &sourcegraph.SearchOptions{Repos: []int32{rps[0].ID}, Latest: true}, TokQuery: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}

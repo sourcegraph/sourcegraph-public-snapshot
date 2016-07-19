@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 
 	"sourcegraph.com/sourcegraph/srclib/dep"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -57,7 +57,13 @@ func (c *SimpleRepoCmd) Execute(args []string) error {
 		par := parallel.NewRun(runtime.GOMAXPROCS(0))
 		for _, ut_ := range units {
 			ut := ut_
-			par.Do(func() error { return c.genUnit(ut) })
+			par.Acquire()
+			go func() {
+				defer par.Release()
+				if err := c.genUnit(ut); err != nil {
+					par.Error(err)
+				}
+			}()
 		}
 		if err := par.Wait(); err != nil {
 			return err
@@ -79,7 +85,13 @@ func (c *SimpleRepoCmd) Execute(args []string) error {
 	for _, ut_ := range units {
 		ut := ut_
 		ut.CommitID = c.CommitID
-		par.Do(func() error { return c.genUnit(ut) })
+		par.Acquire()
+		go func() {
+			defer par.Release()
+			if err := c.genUnit(ut); err != nil {
+				par.Error(err)
+			}
+		}()
 	}
 	if err := par.Wait(); err != nil {
 		return err

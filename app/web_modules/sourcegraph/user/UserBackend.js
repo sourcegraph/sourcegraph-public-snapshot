@@ -63,7 +63,7 @@ const UserBackend = {
 						.then(checkStatus)
 						.then((resp) => resp.json())
 						.catch((err) => ({Error: err}))
-						.then((data) => Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(action.uid, data && data.EmailAddrs ? data.EmailAddrs : data)))
+						.then((data) => Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(action.uid, data && data.EmailAddrs ? data.EmailAddrs : [])))
 				);
 			}
 		}
@@ -175,30 +175,6 @@ const UserBackend = {
 				.then((data) => {
 					Dispatcher.Stores.dispatch(new UserActions.BetaSubscriptionCompleted(data));
 				});
-			break;
-		case UserActions.SubmitEmailSubscription:
-			trackPromise(
-				UserBackend.fetch(`/.api/email-subscription`, {
-					method: "POST",
-					body: JSON.stringify({
-						status: "subscribed",
-						email_address: action.email,
-						merge_fields: {
-							FNAME: action.firstName,
-							LNAME: action.lastName,
-							LANGUAGE: action.language,
-							EDITOR: action.editor,
-							MESSAGE: action.message,
-						},
-					}),
-				})
-					.then(checkStatus)
-					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
-					.then((data) => {
-						Dispatcher.Stores.dispatch(new UserActions.EmailSubscriptionCompleted(data));
-					})
-			);
 			break;
 		}
 	},

@@ -2,63 +2,45 @@
 @value grid "sourcegraph/components/styles/_grid.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 @value typography "sourcegraph/components/styles/_typography.css";
-@value headings "sourcegraph/components/styles/heading.css";
 @value vars "sourcegraph/components/styles/_vars.css";
-@value panel "sourcegraph/components/styles/panel.css";
+@value layout "sourcegraph/components/styles/_layout.css";
 
-.container {
-	composes: center mv5 from base;
-	composes: col-12-ns from grid;
-	max-width: 74rem;
-	min-height: 50vh;
-	background-color: white;
+@value c_blue-text, c_dark-blue, c_cool-pale-gray, c_cool-gray from colors;
+@value code-font-size-2 from vars;
+
+pre {
+	background-color: c_cool-gray;
+	border-radius: 3px;
+	color: c_cool-pale-gray;
+	font-size: code-font-size-2;
+	line-height: 1.45em;
+	padding: 1rem;
 }
 
-.bg {
-	composes: bg-cool-pale-gray-2 from colors;
-	flex: auto;
-}
+.container-fixed { composes: containerFixed from layout; }
+.flex-grow { flex-grow: 1; }
 
-.section {
-	composes: ph4 from base;
-}
+.cool-mid-gray { composes: cool-mid-gray from colors; }
+.bg-cool-pale-gray-2 { composes: bg-cool-pale-gray-2 from colors; }
+.b--cool-pale-gray { composes: b--cool-pale-gray from colors; }
 
-.section-label {
-	composes: mt3 mr3 mb3 from base;
-	composes: b normal-text from typography;
-}
+.break-word { word-wrap: break-word; }
+.link-subtle { composes: link-subtle from typography; }
+.normal { composes: normal from typography; }
+.f7 { composes: f7 from typography; }
 
-.section-label:after {
-	content: none;
-}
+.icon-cool-mid-gray { fill: c_blue-text; }
+.link-icon {}
+.link-icon:hover svg{ fill: c_dark-blue; }
 
-.def-title {
-	composes: code fw1 f4 from typography;
-}
+/* Align with Repo text */
+.node-list-item:before { margin-right: 26px }
 
-.def-title:hover {
-	text-decoration: underline;
-}
-
-.def {
-	composes: purple from colors;
-}
+.def { composes: purple from colors; }
 
 .authors {
 	composes: mt2 ml2 mb2 from base;
 	display: flex;
-}
-
-.blob-link {
-	composes: mb3 from base;
-	composes: f5 from typography;
-}
-
-.description-wrapper {
-	composes: section;
-	composes: pt0 from base;
-	border-top: 1px solid #eeeeee;
-	border-bottom: 1px solid #eeeeee;
 }
 
 .icon {
@@ -68,67 +50,9 @@
 	float: left;
 }
 
-.description {
-	composes: normal-text from typography;
-	margin-top: 1.5rem;
-	margin-bottom: 1.5rem;
-}
-
-.description-expander {
-	composes: mb3 from base;
-	composes: f5 from typography;
-	composes: description;
-	composes: link from "sourcegraph/components/styles/link.css";
-	cursor: pointer;
-}
-
-.link-and-authors {
-	composes: section;
-	composes: normal-text from typography;
-	display: flex;
-	justify-content: space-between;
-}
-
-.ref-tabs {
-	float: right;
-	line-height: 1.7;
-}
-
-.pagination {
-	composes: pb5 from base;
-	display: flex;
-	justify-content: center;
-}
-
-.translation-dropdown {
-	composes: blue bg-cool-pale-gray-5 from colors;
-	composes: fw6 from typography;
-	composes: pt2 pl3 pr3 pb2 from base;
-	border-bottom-right-radius: 2px;
-	border-bottom-left-radius: 2px;
-	float: right;
-}
-@value c_dark-blue from colors;
-.translation-dropdown:hover {
-	color: c_dark-blue;
-}
-
-.refs-container {
-	composes: section;
-	composes: pb2 from base;
-	border-top: 1px solid #eeeeee;
-}
-
-.def-header {
-	composes: mh4 mb1 pt3 from base;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
 @media screen and (max-width: 48em) {
-	.description, .section-label {
-		margin-left: 10px;
-		margin-right: 10px;
+	.full-width-sm {
+		margin-left: -2rem;
+		margin-right: -2rem;
 	}
 }

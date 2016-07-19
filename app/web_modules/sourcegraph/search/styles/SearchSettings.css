@@ -22,7 +22,6 @@
 }
 .label {
 	composes: pr2 from base;
-	composes: f5 from typography;
 	min-width: 72px;
 	flex: 0 0;
 	display: inline-block;
@@ -55,14 +54,15 @@
 .modal {
 	composes: modal from "sourcegraph/components/styles/modal.css";
 	composes: col-10 from grid;
-	max-width: 340px;
+	max-width: 440px;
 	min-width: 320px;
+	max-height: 85%;
 }
 
 .modalTitle {
 	text-align: center;
 }
 
-.modalRow {
+.modalForm {
 	width: 100% !important;
 }

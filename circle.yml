@@ -50,8 +50,6 @@ test:
     - ./dev/circle-ci-run-tests.sh:
         pwd: $REPO
         parallel: true
-    - make smoke:
-        pwd: $REPO
   post:
     - ./dev/circle-ci-gather-coverage.sh:
         pwd: $REPO

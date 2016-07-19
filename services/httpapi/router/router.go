@@ -53,7 +53,7 @@ const (
 	RepoTreeList             = "repo.tree-list"
 	RepoTreeSearch           = "repo-tree.search"
 	Repos                    = "repos"
-	RemoteRepos              = "repos.remote"
+	SourcegraphDesktop       = "sourcegraph-desktop"
 	SrclibImport             = "srclib.import"
 	SrclibDataVer            = "srclib.data-version"
 	User                     = "user"
@@ -62,7 +62,6 @@ const (
 	ResolveCustomImportsTree = "resolve-custom-import.tree"
 
 	InternalAppdashRecordSpan = "internal.appdash.record-span"
-	EmailSubscription         = "email-subscription"
 	BetaSubscription          = "beta-subscription"
 )
 
@@ -81,7 +80,6 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/forgot").Methods("POST").Name(ForgotPassword)
 	base.Path("/reset").Methods("POST").Name(ResetPassword)
 
-	base.Path("/email-subscription").Methods("POST").Name(EmailSubscription)
 	base.Path("/beta-subscription").Methods("POST").Name(BetaSubscription)
 
 	base.Path("/annotations").Methods("GET").Name(Annotations)
@@ -91,7 +89,6 @@ func New(base *mux.Router) *mux.Router {
 
 	base.Path("/repos").Methods("GET").Name(Repos)
 	base.Path("/repos").Methods("POST").Name(RepoCreate)
-	base.Path("/remote-repos").Methods("GET").Name(RemoteRepos)
 
 	base.Path("/global-search").Methods("GET").Name(GlobalSearch)
 
@@ -107,6 +104,7 @@ func New(base *mux.Router) *mux.Router {
 	repoPath := `/repos/` + routevar.Repo
 	base.Path(repoPath).Methods("GET").Name(Repo)
 
+	base.Path("/sourcegraph-desktop/").Methods("GET").Name(SourcegraphDesktop)
 	// Additional paths added will be treated as a repo. To add a new path that should not be treated as a repo
 	// add above repo paths.
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()

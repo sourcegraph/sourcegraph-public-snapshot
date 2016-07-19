@@ -5,13 +5,13 @@
 /* Type */
 
 @value desktop-base-size, mobile-base-size from vars;
-@value font-size-1, font-size-2, font-size-3, font-size-4, font-size-5, font-size-6 from vars;
+@value font-size-1, font-size-2, font-size-3, font-size-4, font-size-5, font-size-6, font-size-7, code-font-size-1, code-font-size-2 from vars;
 
 /* Responsive variables */
 @value media-sm, media-ns, media-md, media-lg from vars;
 
 /* Color variables */
-@value c_orange from colors;
+@value c_orange, c_blue-text, c_dark-blue, c_cool-gray-5 from colors;
 
 /*
 	 TYPE SCALE
@@ -42,6 +42,21 @@
 	font-size: font-size-6;
 	line-height: 1.45;
 }
+.f7 {
+	font-size: font-size-7;
+	line-height: 1.45;
+}
+
+.code-normal {
+	font-size: code-font-size-2;
+	line-height: 1.45;
+}
+
+.code-large {
+	font-size: code-font-size-1;
+	line-height: 1.65;
+}
+
 
 /*
 	 MEASURE
@@ -118,6 +133,31 @@ html {
 .tl { text-align: left; }
 .tr { text-align: right; }
 .tc { text-align: center; }
+
+
+/* LINKS */
+
+/* Can't use "composes" on tag names */
+a {
+	text-decoration: none;
+	color: c_blue-text;
+}
+a:hover {
+	text-decoration: none;
+	color: c_dark-blue;
+}
+
+.link {
+	text-decoration: none;
+	color: c_blue-text;
+}
+.link:hover {
+	text-decoration: none;
+	color: c_dark-blue;   /* TODO: can't use compose on pseudoelements. */
+}
+
+.link-subtle { color: inherit; }
+.link-subtle:hover { color: c_cool-gray-8; }
 
 /*
 	 TEXT DECORATION

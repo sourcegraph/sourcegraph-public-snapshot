@@ -3,11 +3,23 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value typography "sourcegraph/components/styles/_typography.css";
 
-.row {
+.form {
 	composes: col-8-ns col-12 from grid;
+}
+
+.row {
 	padding-top: 10px;
 }
 
 .textarea {
 	width: 100%;
+}
+
+.p {
+	composes: mt3 mb3 from base;
+}
+
+.cta {
+	composes: tc from typography;
+	composes: pt3 pb4 from base;
 }

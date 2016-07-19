@@ -38,6 +38,7 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 		Channel:           wrappedChannel{ctxFunc, services},
 		Defs:              wrappedDefs{ctxFunc, services},
 		Deltas:            wrappedDeltas{ctxFunc, services},
+		Desktop:           wrappedDesktop{ctxFunc, services},
 		Meta:              wrappedMeta{ctxFunc, services},
 		MirrorRepos:       wrappedMirrorRepos{ctxFunc, services},
 		Notify:            wrappedNotify{ctxFunc, services},
@@ -265,6 +266,36 @@ func (s wrappedAccounts) Update(ctx context.Context, v1 *sourcegraph.User) (retu
 	}
 
 	rv, err := innerSvc.Update(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
+func (s wrappedAccounts) UpdateEmails(ctx context.Context, v1 *sourcegraph.UpdateEmailsOp) (returnedResult *pbtypes.Void, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Accounts.UpdateEmails: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.AccountsOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Accounts")
+	}
+
+	rv, err := innerSvc.UpdateEmails(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1117,6 +1148,41 @@ func (s wrappedDeltas) ListFiles(ctx context.Context, v1 *sourcegraph.DeltasList
 	return rv, nil
 }
 
+type wrappedDesktop struct {
+	ctxFunc  ContextFunc
+	services svc.Services
+}
+
+func (s wrappedDesktop) GetLatest(ctx context.Context, v1 *pbtypes.Void) (returnedResult *sourcegraph.LatestDesktopVersion, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Desktop.GetLatest: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.DesktopOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Desktop")
+	}
+
+	rv, err := innerSvc.GetLatest(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
 type wrappedMeta struct {
 	ctxFunc  ContextFunc
 	services svc.Services
@@ -1667,36 +1733,6 @@ func (s wrappedRepos) List(ctx context.Context, v1 *sourcegraph.RepoListOptions)
 	return rv, nil
 }
 
-func (s wrappedRepos) ListRemote(ctx context.Context, v1 *sourcegraph.ReposListRemoteOptions) (returnedResult *sourcegraph.RemoteRepoList, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Repos.ListRemote: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.ReposOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
-	}
-
-	rv, err := innerSvc.ListRemote(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
 func (s wrappedRepos) Create(ctx context.Context, v1 *sourcegraph.ReposCreateOp) (returnedResult *sourcegraph.Repo, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -2057,36 +2093,6 @@ func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, v1 *sourc
 	return rv, nil
 }
 
-func (s wrappedRepos) ConfigureApp(ctx context.Context, v1 *sourcegraph.RepoConfigureAppOp) (returnedResult *pbtypes.Void, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Repos.ConfigureApp: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.ReposOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
-	}
-
-	rv, err := innerSvc.ConfigureApp(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
 func (s wrappedRepos) GetInventory(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (returnedResult *inventory.Inventory, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -2337,13 +2343,13 @@ func (s wrappedUsers) List(ctx context.Context, v1 *sourcegraph.UsersListOptions
 	return rv, nil
 }
 
-func (s wrappedUsers) Count(ctx context.Context, v1 *pbtypes.Void) (returnedResult *sourcegraph.UserCount, returnedError error) {
+func (s wrappedUsers) RegisterBeta(ctx context.Context, v1 *sourcegraph.BetaRegistration) (returnedResult *sourcegraph.BetaResponse, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
 			buf := make([]byte, size)
 			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Users.Count: %v\n\n%s", err, buf)
+			returnedError = grpc.Errorf(codes.Internal, "panic in Users.RegisterBeta: %v\n\n%s", err, buf)
 			returnedResult = nil
 		}
 	}()
@@ -2359,7 +2365,7 @@ func (s wrappedUsers) Count(ctx context.Context, v1 *pbtypes.Void) (returnedResu
 		return nil, grpc.Errorf(codes.Unimplemented, "Users")
 	}
 
-	rv, err := innerSvc.Count(ctx, v1)
+	rv, err := innerSvc.RegisterBeta(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

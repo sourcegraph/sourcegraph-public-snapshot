@@ -2,7 +2,6 @@ package cli
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 
@@ -24,15 +23,6 @@ func initRepoConfigCmds(repoGroup *flags.Command) {
 		"get a repo's config",
 		"The get subcommand gets a repository's configuration.",
 		&repoConfigGetCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = g.AddCommand("app",
-		"configure a repo app",
-		"The app subcommand configures a repo app (enabling or disabling it).",
-		&repoConfigAppCmd{},
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -67,54 +57,6 @@ func (c *repoConfigGetCmd) Execute(args []string) error {
 		return err
 	}
 	fmt.Println(string(b))
-
-	return nil
-}
-
-type repoConfigAppCmd struct {
-	Args struct {
-		Repo string `name:"REPO" description:"repository URI (e.g., host.com/myrepo)"`
-		App  string `name:"APP" description:"application ID"`
-	} `positional-args:"yes" required:"yes" count:"1"`
-
-	Enable  bool `long:"enable" description:"enable app"`
-	Disable bool `long:"disable" description:"disable app"`
-}
-
-func (c *repoConfigAppCmd) Execute(args []string) error {
-	cl := cliClient
-
-	if (!c.Enable && !c.Disable) || (c.Enable && c.Disable) {
-		return errors.New("exactly one of --enable and --disable must be specified")
-	}
-
-	res, err := cl.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: c.Args.Repo})
-	if err != nil {
-		return err
-	}
-
-	repo, err := cl.Repos.Get(cliContext, &sourcegraph.RepoSpec{ID: res.Repo})
-	if err != nil {
-		return err
-	}
-
-	_, err = cl.Repos.ConfigureApp(cliContext, &sourcegraph.RepoConfigureAppOp{
-		Repo:   repo.ID,
-		App:    c.Args.App,
-		Enable: c.Enable,
-	})
-	if err != nil {
-		return err
-	}
-
-	var verb string
-	switch {
-	case c.Enable:
-		verb = "enabled"
-	case c.Disable:
-		verb = "disabled"
-	}
-	fmt.Printf("# %s app %s for %s\n", verb, c.Args.App, repo.URI)
 
 	return nil
 }

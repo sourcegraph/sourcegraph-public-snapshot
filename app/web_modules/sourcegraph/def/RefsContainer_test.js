@@ -6,6 +6,7 @@ import {render} from "sourcegraph/util/renderTestUtils";
 
 const context = {
 	eventLogger: {logEvent: () => null},
+	user: null,
 };
 
 describe("RefsContainer", () => {
@@ -18,6 +19,6 @@ describe("RefsContainer", () => {
 	});
 
 	it("should render if the def and refs loaded", () => {
-		render(<RefsContainer repoRefs={{Repo: "github.com/gorilla/mux", Files: []}} defObj={{}} refs={[]} />, context);
+		render(<RefsContainer repoRefs={{Repo: "github.com/gorilla/mux", Files: []}} defObj={{}} refs={[{Repo: "repo", CommitID: "commit"}]} />, context);
 	});
 });

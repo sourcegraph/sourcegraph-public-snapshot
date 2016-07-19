@@ -11,11 +11,14 @@
 
 .header {
 	display: flex;
-	composes: bg-light-gray from colors;
+	composes: bg-light-blue from colors;
 	composes: pv2 ph3 br2 from base;
 }
 .info {
 	flex: 1 0;
+}
+.scale {
+	composes: pr2 from base;
 }
 .name {
 	font-weight: bold;

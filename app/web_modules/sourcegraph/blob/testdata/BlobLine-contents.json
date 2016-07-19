@@ -2,7 +2,7 @@
 	"renderOutput": {
 		"type": "tr",
 		"props": {
-			"className": "undefined ",
+			"className": "undefined undefined ",
 			"children": [
 				{
 					"type": "td",

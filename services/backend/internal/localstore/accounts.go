@@ -81,6 +81,12 @@ func (s *accounts) Update(ctx context.Context, modUser *sourcegraph.User) error 
 		return grpc.Errorf(codes.PermissionDenied, "need admin privileges to modify user permissions")
 	}
 
+	// Only admin users can set which betas a user is participating in
+	// (non-admin users set BetaRegistered to request access).
+	if !a.HasAdminAccess() && len(modUser.Betas) > 0 {
+		return grpc.Errorf(codes.PermissionDenied, "need admin privileges to grant access to betas")
+	}
+
 	var u dbUser
 	u.fromUser(modUser)
 	if _, err := appDBH(ctx).Update(&u); err != nil {

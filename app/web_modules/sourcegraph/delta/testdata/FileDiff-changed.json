@@ -25,7 +25,8 @@
 													"Added": 5,
 													"Changed": 6,
 													"Deleted": 7
-												}
+												},
+												"styleName": "scale"
 											}
 										},
 										{
@@ -104,8 +105,7 @@
 						"basePath": "a",
 						"headRepo": "hr",
 						"headRev": "hv",
-						"headPath": "b",
-						"annotations": []
+						"headPath": "b"
 					}
 				},
 				{
@@ -120,8 +120,7 @@
 						"basePath": "a",
 						"headRepo": "hr",
 						"headRev": "hv",
-						"headPath": "b",
-						"annotations": []
+						"headPath": "b"
 					}
 				}
 			]

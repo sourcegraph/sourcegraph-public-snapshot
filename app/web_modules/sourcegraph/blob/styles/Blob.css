@@ -6,11 +6,14 @@
 
 /* TODO (chexee): move some of these to vars or individual components */
 @value marginBoxBorderWidth 4px;
-@value c_blue from colors;
+@value c_blue, c_cool-pale-gray-5, c_yellow-5 from colors;
 @value contentWidth 690px;
 @value marginWidth 290px;
-@value codeLineHeight 20px;
-@value firstCodeLineTopPadding 8px;
+@value firstCodeLineTopPadding 16px;
+@value code-normal-line-height from typography;
+
+.normal { composes: code-normal from typography; }
+.large { composes: code-large from typography; }
 
 .pathComponent {}
 .inactivePathComponent {
@@ -71,9 +74,9 @@
    identical markup in Go (where we can't as easily obtain the class mapping). */
 .lines {
 	composes: code from typography;
-	font-size: 1.15rem;
 	table-layout: fixed;
 	border-spacing: 0;
+	min-width: 100%;
 }
 .lineNumberCell {
 	composes: bg-cool-pale-gray-2 from colors;
@@ -82,10 +85,7 @@
 	min-width: 40px;
 }
 
-.lineCell {
-	line-height: codeLineHeight;
-	composes: pv0 from base;
-}
+.lineCell { composes: pv0 from base; }
 .line {}
 .lineNumber {
 	composes: lineCell;
@@ -99,7 +99,7 @@
 }
 .lineNumber:before {
 	content: attr(data-line);
-	line-height: codeLineHeight;
+	line-height: code-normal-line-height;
 }
 .selectedLineNumber {
 	composes: lineNumber;
@@ -138,34 +138,27 @@
 	transition: background-color 0.2;
 	cursor: default;
 }
-.activeAnn {
-	color: black;
-	outline: solid 1px #ffe68d;
-	background-color: #ffe998;
-}
+.activeAnn { background-color: c_yellow-5; }
+
 .line-expander {
-	composes: faded-blue from colors;
-	background-color: rgba(64,120,192,.06);
+	composes: cool-mid-gray bg-cool-pale-gray-2 from colors;
 	line-height: 0.7;
-	text-align: center;
 }
 .line-expander-cell {
 	composes: line-expander;
 	cursor: pointer;
 }
 .line-expander-cell:hover {
-	color: white;
-	background-color: rgba(64,120,192,.9);
+	background-color: c_cool-pale-gray-5;
 }
 .line-expander-icon {
-	composes: pb2 from base;
-	text-align: center;
+	composes: pt1 pb2 pl2 from base;
 }
 
 .placeholderWhitespace {
 	float: right;
 	background-color: white;
-	height: codeLineHeight;
+	height: code-normal-line-height;
 }
 .lineContentPlaceholder {
 	composes: pa0 from base;

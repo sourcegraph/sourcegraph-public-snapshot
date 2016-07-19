@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
@@ -116,7 +117,10 @@ func (c *userCreateCmd) Execute(args []string) error {
 }
 
 type userListCmd struct {
-	Args struct {
+	AllBetas       string `long:"all-betas" description:"only users participating in all the given betas"`
+	RegisteredBeta bool   `long:"registered-beta" description:"filter by users who have registered for beta access"`
+	HaveBeta       bool   `long:"have-beta" description:"filter by users who have access to at least one beta"`
+	Args           struct {
 		Query string `name:"QUERY" description:"search query"`
 	} `positional-args:"yes"`
 }
@@ -126,8 +130,11 @@ func (c *userListCmd) Execute(args []string) error {
 
 	for page := 1; ; page++ {
 		users, err := cl.Users.List(cliContext, &sourcegraph.UsersListOptions{
-			Query:       c.Args.Query,
-			ListOptions: sourcegraph.ListOptions{Page: int32(page)},
+			Query:          c.Args.Query,
+			AllBetas:       commaSplit(c.AllBetas),
+			RegisteredBeta: c.RegisteredBeta,
+			HaveBeta:       c.HaveBeta,
+			ListOptions:    sourcegraph.ListOptions{Page: int32(page)},
 		})
 
 		if err != nil {
@@ -184,9 +191,19 @@ func (c *userGetCmd) Execute(args []string) error {
 	return nil
 }
 
+func quotedComma(strs []string) string {
+	for i, s := range strs {
+		strs[i] = fmt.Sprintf("%q", s)
+	}
+	return strings.Join(strs, ",")
+}
+
 type userUpdateCmd struct {
-	Access string `long:"access" description:"set access level for user (read|write|admin)"`
-	Args   struct {
+	Access   string `long:"access" description:"set access level for user (read|write|admin)"`
+	SetBetas string `long:"set-betas" description:"set given betas for user"`
+	AddBetas string `long:"add-betas" description:"add given betas to user"`
+	RmBetas  string `long:"rm-betas" description:"remove given betas from user"`
+	Args     struct {
 		User string `name:"User" description:"user login (or login@domain)"`
 	} `positional-args:"yes" required:"yes"`
 }
@@ -224,7 +241,68 @@ func (c *userUpdateCmd) Execute(args []string) error {
 		fmt.Printf("# updated access level for user %s to %s\n", user.Login, c.Access)
 	}
 
+	updateBetas := func(betas []string) error {
+		oldBetas := user.Betas
+		user.Betas = betas
+		if _, err := cl.Accounts.Update(cliContext, user); err != nil {
+			return err
+		}
+		fmt.Printf("# updated betas for user %s from %s to %s\n", user.Login, quotedComma(oldBetas), quotedComma(betas))
+		return nil
+	}
+
+	if c.SetBetas != "" {
+		if err := updateBetas(commaSplit(c.SetBetas)); err != nil {
+			return err
+		}
+	}
+	if c.AddBetas != "" {
+		newBetas := make([]string, len(user.Betas))
+		copy(newBetas, user.Betas)
+		for _, beta := range commaSplit(c.AddBetas) {
+			if !user.InBeta(beta) {
+				newBetas = append(newBetas, beta)
+			}
+		}
+		if err := updateBetas(newBetas); err != nil {
+			return err
+		}
+	}
+	if c.RmBetas != "" {
+		var (
+			newBetas []string
+			rmBetas  = commaSplit(c.RmBetas)
+		)
+		for _, beta := range user.Betas {
+			remove := false
+			for _, rmBeta := range rmBetas {
+				if rmBeta == beta {
+					remove = true
+					break
+				}
+			}
+			if !remove {
+				newBetas = append(newBetas, beta)
+			}
+		}
+		if err := updateBetas(newBetas); err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+// commaSplit splits the given string by "," and returns any non-whitespace strings.
+func commaSplit(s string) []string {
+	var out []string
+	for _, s := range strings.Split(s, ",") {
+		s = strings.TrimSpace(s)
+		if len(s) > 0 {
+			out = append(out, s)
+		}
+	}
+	return out
 }
 
 type userResetPasswordCmd struct {

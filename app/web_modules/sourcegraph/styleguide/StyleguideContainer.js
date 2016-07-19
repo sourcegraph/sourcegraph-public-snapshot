@@ -26,13 +26,13 @@ class StyleguideContainer extends React.Component {
 					</p>
 				</Hero>
 				<FlexContainer styleName="container-fixed">
-					<Affix offset={20} style={{flex: "0 0 220px"}} className={base.orderlast}>
+					<Affix offset={20} style={{flex: "0 0 240px"}} className={base.orderlast}>
 						<Tabs direction="vertical" color="purple" className={base.ml5}>
 							<TabItem>
 								<a data-anchor="principles" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Principles</a>
 							</TabItem>
 
-							<Heading level="5" className={base.mt4}>Brand</Heading>
+							<Heading level="6" className={base.mt4}>Brand</Heading>
 							<TabItem>
 								<a data-anchor="brand-voice" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Voice</a>
 							</TabItem>
@@ -42,13 +42,13 @@ class StyleguideContainer extends React.Component {
 							{/* <TabItem>Colors</TabItem>
 							<TabItem>Typography</TabItem>}
 
-							{/*  <Heading level="5" className={base.mt4}>Utilities</Heading>
+							{/*  <Heading level="6" className={base.mt4}>Utilities</Heading>
 							<TabItem>Padding</TabItem>
 							<TabItem>Margin</TabItem>
 							<TabItem>Colors</TabItem>
 							<TabItem>Layout</TabItem>*/}
 
-							<Heading level="5" className={base.mt4}>Layout Components</Heading>
+							<Heading level="6" className={base.mt4}>Layout Components</Heading>
 							<TabItem>
 								<a data-anchor="layout-flexcontainer" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>FlexContainer</a>
 							</TabItem>
@@ -56,7 +56,7 @@ class StyleguideContainer extends React.Component {
 								<a data-anchor="layout-affix" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Affix</a>
 							</TabItem>
 
-							<Heading level="5" className={base.mt4}>UI Components</Heading>
+							<Heading level="6" className={base.mt4}>UI Components</Heading>
 							<TabItem>
 								<a data-anchor="components-headings" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Headings</a>
 							</TabItem>

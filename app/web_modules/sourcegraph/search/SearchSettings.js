@@ -4,21 +4,22 @@ import React from "react";
 import Container from "sourcegraph/Container";
 import CSSModules from "react-css-modules";
 import styles from "./styles/SearchSettings.css";
+import base from "sourcegraph/components/styles/_base.css";
 import {Button} from "sourcegraph/components";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import Dispatcher from "sourcegraph/Dispatcher";
 import UserStore from "sourcegraph/user/UserStore";
 import * as UserActions from "sourcegraph/user/UserActions";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
-import type {Settings} from "sourcegraph/user";
-import {allLangs, langName} from "sourcegraph/Language";
+import * as RepoActions_typed from "sourcegraph/repo/RepoActions_typed";
+import {allLangs, langName, langIsSupported} from "sourcegraph/Language";
 import type {LanguageID} from "sourcegraph/Language";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import {withUserContext} from "sourcegraph/app/user";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
-import InterestForm from "sourcegraph/home/InterestForm";
+import BetaInterestForm from "sourcegraph/home/BetaInterestForm";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {searchScopes} from "sourcegraph/search";
 
 class SearchSettings extends Container {
 	static propTypes = {
@@ -34,10 +35,33 @@ class SearchSettings extends Container {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
-	state: {
-		settings: Settings;
-		betaLanguage: ?LanguageID;
-	};
+	constructor(props) {
+		super(props);
+		this.state = {settings: UserStore.settings.get()};
+
+	}
+
+	componentDidMount() {
+		super.componentDidMount();
+		const langFromQuery = this.props.location.query.lang ? this.props.location.query.lang : [];
+		const query = this.props.location.query;
+		if (this.props.location.pathname === "/search" && (query.lang || query.public || query.private || query.repo || query.popular)) {
+			const langs = typeof langFromQuery === "string" ? [langFromQuery] : langFromQuery;
+			const validLangParams = langs.filter(langIsSupported);
+			let scopeParams = {};
+			searchScopes.forEach((scopeName) => scopeParams[scopeName] = this.props.location.query[scopeName] === "true");
+
+			const newSettings = {
+				...this.state.settings,
+				search: {
+					...this.state.settings.search,
+					languages: validLangParams,
+					scope: scopeParams,
+				},
+			};
+			setTimeout(() => Dispatcher.Stores.dispatch(new UserActions.UpdateSettings(newSettings)));
+		}
+	}
 
 	stores() { return [UserStore]; }
 
@@ -56,10 +80,10 @@ class SearchSettings extends Container {
 		if (prevState.settings !== nextState.settings && nextState.settings && nextState.settings.search && nextState.settings.search.scope) {
 			const scope = nextState.settings.search.scope;
 			if (scope.public) {
-				Dispatcher.Backends.dispatch(new RepoActions.WantRemoteRepos({deps: true, private: false}));
+				Dispatcher.Backends.dispatch(new RepoActions_typed.WantRepos("RemoteOnly=true&Private=false"));
 			}
 			if (scope.private) {
-				Dispatcher.Backends.dispatch(new RepoActions.WantRemoteRepos({deps: true, private: true}));
+				Dispatcher.Backends.dispatch(new RepoActions_typed.WantRepos("RemoteOnly=true&Private=true"));
 			}
 		}
 	}
@@ -80,8 +104,9 @@ class SearchSettings extends Container {
 		const langs = this._langs();
 		const enabled = langs.includes(lang);
 
-		if (enabled) langs.splice(langs.indexOf(lang), 1);
-		else {
+		if (enabled) {
+			langs.splice(langs.indexOf(lang), 1);
+		} else {
 			langs.push(lang);
 			langs.sort();
 		}
@@ -125,9 +150,10 @@ class SearchSettings extends Container {
 
 	_renderLanguages() {
 		const langs = this._langs();
+
 		return (
 			<div styleName="group">
-				<span styleName="label">Languages:</span>
+				<span styleName="label" className={base.pr3}>Languages:</span>
 				<div>
 					{allLangs.map(lang => (
 						lang === "python" || lang === "javascript" ?
@@ -172,7 +198,7 @@ class SearchSettings extends Container {
 		return (
 			<div styleName="row">
 				<div styleName="group">
-					<span styleName="label">Include:</span>
+					<span styleName="label" className={base.pr3}>Include:</span>
 					<div>
 						{this.state.repo && <Button
 							color={scope.repo ? "blue" : "default"}
@@ -188,26 +214,25 @@ class SearchSettings extends Container {
 								if (this.props.githubToken) this._setScope({popular: !scope.popular});
 							}}
 							outline={this.state.githubToken && !scope.popular}>Popular libraries</Button>
-						{/* TEMPORARILY DISABLE THE FILTERS BELOW */}
-						{false && (!this.state.signedIn || !this.props.githubToken) &&
-							<GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>Your public projects + deps</GitHubAuthButton>}
-						{false && this.props.githubToken &&
+						{(!this.state.signedIn || !this.props.githubToken) &&
+							<GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>My public projects</GitHubAuthButton>}
+						{this.props.githubToken &&
 							<Button
 								color={!scope.public ? "default" : "blue"}
 								size="small"
 								styleName="choice-button"
 								onClick={() => this._setScope({public: !scope.public})}
-								outline={!scope.public}>Your public projects + deps</Button>
+								outline={!scope.public}>My public projects</Button>
 						}
-						{false && (!this.state.signedIn || !this._hasPrivateGitHubToken()) &&
-							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>Your private projects + deps</GitHubAuthButton>}
-						{false && this._hasPrivateGitHubToken() &&
+						{(!this.state.signedIn || !this._hasPrivateGitHubToken()) &&
+							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>My private projects</GitHubAuthButton>}
+						{this._hasPrivateGitHubToken() &&
 							<Button
 								color={!scope.private ? "default" : "blue"}
 								size="small"
 								styleName="choice-button"
 								onClick={() => this._setScope({private: !scope.private})}
-								outline={!scope.private}>Your private projects + deps</Button>
+								outline={!scope.private}>My private projects</Button>
 						}
 					</div>
 				</div>
@@ -227,9 +252,10 @@ class SearchSettings extends Container {
 				{this.props.location.state && this.props.location.state.modal === "beta" && this.state.betaLanguage &&
 					<LocationStateModal modalName="beta" location={this.props.location}>
 						<div styleName="modal">
-							<h2 styleName="modalTitle">Participate in the Sourcegraph beta for {`${this.state.betaLanguage === "more" ? "your preferred language" : `${langName(this.state.betaLanguage)}`}`}</h2>
-							<InterestForm
-								rowClass={styles.modalRow}
+							<h2 styleName="modalTitle">Join the {`${this.state.betaLanguage === "more" ? "Sourcegraph" : `${langName(this.state.betaLanguage)}`}`} beta</h2>
+							<BetaInterestForm
+								className={styles.modalForm}
+								loginReturnTo="/beta"
 								language={this.state.betaLanguage === "more" ? null : this.state.betaLanguage}
 								onSubmit={dismissModal("beta", this.props.location, this.context.router)} />
 						</div>

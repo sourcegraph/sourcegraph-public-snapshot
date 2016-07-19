@@ -99,8 +99,7 @@ func testRegisterFlow(t *T) error {
 	email.SendKeys(t.TestEmail)
 
 	// Click the submit button.
-	submit := t.FindElement(selenium.ById, "e2etest-register-button")
-	submit.Click()
+	t.Click(selenium.ById, "e2etest-register-button")
 
 	// Wait for redirect to Sourcegraph homepage.
 	t.WaitForRedirect(t.Endpoint("/"), "wait for redirect to home after register")

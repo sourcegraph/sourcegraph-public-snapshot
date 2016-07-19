@@ -133,5 +133,13 @@
 				}
 			]
 		}
-	}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantDefAuthors",
+			"repo": "r",
+			"commitID": "c",
+			"def": "undefined/undefined/-/undefined"
+		}
+	]
 }

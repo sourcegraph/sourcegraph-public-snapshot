@@ -8,25 +8,39 @@ import (
 )
 
 type GitHubRepoGetter struct {
-	Get_            func(context.Context, string) (*sourcegraph.RemoteRepo, error)
-	GetByID_        func(context.Context, int) (*sourcegraph.RemoteRepo, error)
-	ListAccessible_ func(context.Context, *gogithub.RepositoryListOptions) ([]*sourcegraph.RemoteRepo, error)
+	Get_            func(context.Context, string) (*sourcegraph.Repo, error)
+	GetByID_        func(context.Context, int) (*sourcegraph.Repo, error)
+	ListAccessible_ func(context.Context, *gogithub.RepositoryListOptions) ([]*sourcegraph.Repo, error)
 }
 
-func (s *GitHubRepoGetter) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, error) {
+func (s *GitHubRepoGetter) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 	return s.Get_(ctx, repo)
 }
 
-func (s *GitHubRepoGetter) GetByID(ctx context.Context, id int) (*sourcegraph.RemoteRepo, error) {
+func (s *GitHubRepoGetter) GetByID(ctx context.Context, id int) (*sourcegraph.Repo, error) {
 	return s.GetByID_(ctx, id)
 }
 
-func (s *GitHubRepoGetter) ListAccessible(ctx context.Context, opt *gogithub.RepositoryListOptions) ([]*sourcegraph.RemoteRepo, error) {
+func (s *GitHubRepoGetter) ListAccessible(ctx context.Context, opt *gogithub.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
 	return s.ListAccessible_(ctx, opt)
 }
 
-func (s *GitHubRepoGetter) MockGet_Return(ctx context.Context, returns *sourcegraph.RemoteRepo) {
-	s.Get_ = func(context.Context, string) (*sourcegraph.RemoteRepo, error) {
+func (s *GitHubRepoGetter) MockGet_Return(ctx context.Context, returns *sourcegraph.Repo) {
+	s.Get_ = func(context.Context, string) (*sourcegraph.Repo, error) {
 		return returns, nil
 	}
+}
+
+func (s *GitHubRepoGetter) MockListAccessible(ctx context.Context, repos []*sourcegraph.Repo) (called *bool) {
+	called = new(bool)
+	s.ListAccessible_ = func(ctx context.Context, opt *gogithub.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
+		*called = true
+
+		if opt != nil && opt.Page > 1 {
+			return nil, nil
+		}
+
+		return repos, nil
+	}
+	return
 }

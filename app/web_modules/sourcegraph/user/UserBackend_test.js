@@ -10,7 +10,7 @@ import type {AuthInfo, User, EmailAddr, ExternalToken} from "sourcegraph/user";
 
 const sampleAuthInfo: AuthInfo = {UID: 1, Login: "u"};
 const sampleToken: ExternalToken = {uid: 1, host: "example.com", scope: "s"};
-const sampleUser: User = {UID: 1, Login: "u"};
+const sampleUser: User = {UID: 1, Login: "u", Betas: [], BetaRegistered: false};
 const sampleEmails: Array<EmailAddr> = [{Email: "a@a.com"}];
 
 describe("UserBackend", () => {
@@ -90,7 +90,7 @@ describe("UserBackend", () => {
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
 				UserBackend.__onDispatch(new UserActions.WantEmails(1));
-			})).to.eql([new UserActions.FetchedEmails(1, {Error: "error"})]);
+			})).to.eql([new UserActions.FetchedEmails(1, [])]);
 		});
 	});
 });

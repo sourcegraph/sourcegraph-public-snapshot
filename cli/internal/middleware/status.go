@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"runtime"
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/envutil"
@@ -29,7 +28,6 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Hostname:   ", hostname)
 	fmt.Fprintln(w, "Git commit: ", envutil.GitCommitID)
 	fmt.Fprintln(w, "Uptime:     ", time.Since(sgxStarted))
-	fmt.Fprintln(w, "GOMAXPROCS: ", runtime.GOMAXPROCS(0))
 }
 
 // HealthCheck ensures that the statusHandler is accessible

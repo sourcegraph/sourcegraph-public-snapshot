@@ -34,6 +34,7 @@ class RepoMain extends React.Component {
 		rev: React.PropTypes.string,
 		commitID: React.PropTypes.string,
 		resolvedRev: React.PropTypes.object,
+		repoNavContext: React.PropTypes.object,
 		repoResolution: React.PropTypes.object,
 		build: React.PropTypes.object,
 		repoObj: React.PropTypes.object,
@@ -77,7 +78,12 @@ class RepoMain extends React.Component {
 		// navigating directories in the directory tree, viewing code
 		// files, etc. we trigger a MirroredRepos.RefreshVCS operation such
 		// that new changes on the remote are pulled.
-		this.context.router.listenBefore(() => Dispatcher.Backends.dispatch(new RepoActions.RefreshVCS(this.props.repo)));
+		this.context.router.listenBefore((loc) => {
+			// Don't incur the overhead of triggering this when only the internal state changes.
+			if (loc.pathname !== this.props.location.pathname) {
+				Dispatcher.Backends.dispatch(new RepoActions.RefreshVCS(this.props.repo));
+			}
+		});
 	}
 
 	componentWillReceiveProps(nextProps) {

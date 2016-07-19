@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"gopkg.in/inconshreveable/log15.v2"
 	"io"
 	"io/ioutil"
 	"log"
@@ -15,11 +16,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
-
-	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
@@ -460,6 +460,20 @@ func (c *ServeCmd) Execute(args []string) error {
 		return err
 	}
 	go statsutil.ComputeUsageStats(usageStatsCtx, 10*time.Minute)
+
+	// HACK(sjl) The Golang garbage collector is a bit conservative with memory that should
+	// be returned to host.  On larger nodes, this can get to be 10 gigabytes or
+	// more held idle.  By periodically advising the GC to return idle ram, the
+	// amount of unused memory is kept to a minimum and processes should no longer
+	// get OOMkilled due to spikes.  To fix this, we create a goroutine that
+	// calls freeOSMemory() on a loop for the life of the application.
+	// We should remove this when Golang's GC gets less agressive about holding on to allocated RAM.
+	go func() {
+		for {
+			debug.FreeOSMemory()
+			time.Sleep(60 * time.Second)
+		}
+	}()
 
 	// HACK(keegancsmith) async is the only user of this at the moment,
 	// but other background workers that need access to the store will

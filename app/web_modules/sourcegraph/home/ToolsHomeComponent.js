@@ -47,7 +47,6 @@ class ToolsHomeComponent extends Component {
 				youtube: "https://www.youtube.com/embed/ssON7dfaDZo",
 				interestForm: {
 					title: "Use another editor or language? Get early access to Sourcegraph for your editor and language of choice.",
-					submittedTitle: "We’ll email you when it’s ready.",
 				},
 			},
 		};

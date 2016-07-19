@@ -6,7 +6,9 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import "sourcegraph/repo/RepoBackend"; // for side effects
 import RepoStore from "sourcegraph/repo/RepoStore";
 import Repos from "sourcegraph/user/settings/Repos";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
+import * as RepoActions_typed from "sourcegraph/repo/RepoActions_typed";
+
+const reposQuerystring = "RemoteOnly=true";
 
 export default class UserSettingsReposMain extends Container {
 	static propTypes = {
@@ -24,20 +26,20 @@ export default class UserSettingsReposMain extends Container {
 
 	reconcileState(state, props, context) {
 		Object.assign(state, props);
-		state.remoteRepos = RepoStore.remoteRepos.list();
+		state.repos = RepoStore.repos.list(reposQuerystring);
 		state.githubToken = context.githubToken;
 		state.user = context.user;
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (nextState.remoteRepos !== prevState.remoteRepos) {
-			Dispatcher.Backends.dispatch(new RepoActions.WantRemoteRepos());
+		if (nextState.repos !== prevState.repos) {
+			Dispatcher.Backends.dispatch(new RepoActions_typed.WantRepos(reposQuerystring));
 		}
 	}
 
 	stores() { return [RepoStore]; }
 
 	render() {
-		return <Repos repos={this.state.remoteRepos ? this.state.remoteRepos.RemoteRepos : null} location={this.props.location} />;
+		return <Repos repos={this.state.repos ? this.state.repos.Repos : null} location={this.props.location} />;
 	}
 }

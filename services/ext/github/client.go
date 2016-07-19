@@ -108,3 +108,9 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 
 	return grpc.Errorf(statusCode, "%s", op)
 }
+
+// HasAuthedUser reports whether the context has an authenticated
+// GitHub user's credentials.
+func HasAuthedUser(ctx context.Context) bool {
+	return client(ctx).isAuthedUser
+}

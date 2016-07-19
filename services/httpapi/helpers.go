@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/go-querystring/query"
 
-	"strconv"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -73,7 +72,6 @@ func writePaginationHeader(w http.ResponseWriter, current *url.URL, listOpts sou
 	}
 
 	w.Header().Add("Link", strings.Join(linkStrs, ", "))
-	w.Header().Add("X-Total-Count", strconv.Itoa(total))
 }
 
 func urlWithListOptions(u *url.URL, listOpts sourcegraph.ListOptions) string {

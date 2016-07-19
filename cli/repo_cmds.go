@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -241,26 +241,17 @@ type repoListCmd struct {
 }
 
 func (c *repoListCmd) Execute(args []string) error {
-	cl := cliClient
-
-	for page := 1; ; page++ {
-		repos, err := cl.Repos.List(cliContext, &sourcegraph.RepoListOptions{
-			Owner:       c.Owner,
-			Query:       c.Query,
-			Sort:        c.Sort,
-			Direction:   c.Direction,
-			ListOptions: sourcegraph.ListOptions{Page: int32(page)},
-		})
-
-		if err != nil {
-			return err
-		}
-		if len(repos.Repos) == 0 {
-			break
-		}
-		for _, repo := range repos.Repos {
-			fmt.Println(repo.URI)
-		}
+	repos, err := cliClient.Repos.List(cliContext, &sourcegraph.RepoListOptions{
+		Owner:     c.Owner,
+		Query:     c.Query,
+		Sort:      c.Sort,
+		Direction: c.Direction,
+	})
+	if err != nil {
+		return err
+	}
+	for _, repo := range repos.Repos {
+		fmt.Println(repo.URI)
 	}
 	return nil
 }
@@ -366,12 +357,14 @@ func (c *repoSyncCmd) Execute(args []string) error {
 	par := parallel.NewRun(30)
 	for _, repo_ := range c.Args.URIs {
 		repo := repo_
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
 			if err := c.sync(repo); err != nil {
-				return fmt.Errorf(red("%s:")+" %s", repo, err)
+				par.Error(fmt.Errorf(red("%s:")+" %s", repo, err))
+				return
 			}
-			return nil
-		})
+		}()
 	}
 	if err := par.Wait(); err != nil {
 		if errs, ok := err.(parallel.Errors); ok {

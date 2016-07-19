@@ -33,7 +33,6 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 		Repos        []string
 		NotRepos     []string
 		Limit        int32
-		PrefixMatch  bool
 		IncludeRepos bool
 		Fast         bool
 	}
@@ -68,7 +67,6 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 			Repos:        paramsRepos,
 			NotRepos:     paramsNotRepos,
 			ListOptions:  sourcegraph.ListOptions{PerPage: params.Limit},
-			PrefixMatch:  params.PrefixMatch,
 			IncludeRepos: params.IncludeRepos,
 			Fast:         params.Fast,
 		},

@@ -69,13 +69,14 @@ function blobLoader(Component) {
 					});
 				}
 
-				Object.assign(state, props);
 
 				// This call is synchronous because we are guaranteed to already have
 				// loaded these components' modules.
 				invariant(props.route.blobLoaderHelpers, "route must define blobLoaderHelpers");
 				this._helpers = props.route.blobLoaderHelpers;
 			}
+
+			Object.assign(state, props);
 
 			if (this._helpers) {
 				this._helpers.forEach((h) => {

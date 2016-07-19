@@ -48,7 +48,7 @@
 .badge {
 	composes: br2 pv1 ph2 from base;
 	composes: bg-blue-1 blue from colors;
-	composes: f5 fw6 from typography;
+	composes: b f7 from typography;
 }
 
 .avatar {
@@ -57,5 +57,5 @@
 
 .timestamp {
 	composes: ml1 from base;
-	composes: light-silver from colors;
+	composes: cool-mid-gray from colors;
 }

@@ -14,6 +14,19 @@ export type DefKey = {
 	Path: string; // def path, not file path
 };
 
+export type AuthorshipInfo = {
+	LastCommitDate: string;
+	LastCommitID: string;
+};
+export type DefAuthorship = AuthorshipInfo & {
+	Bytes: number;
+	BytesProportion: number;
+};
+export type DefAuthor = DefAuthorship & {
+	Email: string;
+	AvatarURL: string;
+};
+
 export type Ref = Object;
 
 // Refs streaming pagnination assumes that the per page amount will be
@@ -50,7 +63,17 @@ export function fastParseDefPath(url: string): ?string {
 }
 
 export function defPath(def: Def): string {
-	return `${def.UnitType}/${def.Unit}/-/${encodeDefPath(def.Path)}`;
+	return `${def.UnitType}/${maybeTransformUnit(def.Unit)}/-/${encodeDefPath(def.Path)}`;
+}
+
+// maybeTransformUnit handles if def.Unit is ".". URLs with a
+// "/./" will be automatically modified by the browser, so we
+// transform it to "/_._/".
+function maybeTransformUnit(unit: string): string {
+	if (unit === ".") {
+		return "_._";
+	}
+	return unit;
 }
 
 export function encodeDefPath(path: string): string {
@@ -62,7 +85,7 @@ export function encodeDefPath(path: string): string {
 
 export type RefLocationsKey = {
 	repo: string;
-	commitID: string;
+	commitID: ?string[];
 	def: string;
 	page?: number;
 	perPage?: number;
@@ -71,6 +94,6 @@ export type RefLocationsKey = {
 
 export type ExamplesKey = {
 	repo: string;
-	commitID: string;
-	def: string;
+	commitID: ?string;
+	def: ?string;
 }

@@ -14,6 +14,22 @@ import {isDevNull} from "sourcegraph/delta/util";
 class FileDiff extends Component {
 	reconcileState(state, props) {
 		Object.assign(state, props);
+
+		let baseAnns = state.annotations.get(state.baseRepo, state.baseRev, state.diff.OrigName);
+		let headAnns = state.annotations.get(state.headRepo, state.headRev, state.diff.NewName);
+		if (!state.hunkAnns || baseAnns !== state.baseAnns || headAnns !== state.headAnns) {
+			if (state.diff.Hunks && state.hunkAnns && state.baseAnns && state.headAnns) {
+				state.hunkAnns = this._groupAnnotationsByHunk(state.diff.Hunks, state.baseAnns, state.headAnns);
+			} else {
+				state.hunkAnns = null;
+			}
+		}
+		state.baseAnns = baseAnns;
+		state.headAnns = headAnns;
+
+		// We've already pulled the info we need from annotations. Remove it on state so we don't
+		// rerender each time it is updated when it's not relevant to us.
+		delete state.annotations;
 	}
 
 	onStateTransition(prevState, nextState) {
@@ -29,9 +45,7 @@ class FileDiff extends Component {
 		}
 	}
 
-	_groupAnnotationsByHunk(hunks) {
-		let baseAnns = this.state.annotations.get(this.state.baseRepo, this.state.baseRev, this.state.diff.OrigName);
-		let headAnns = this.state.annotations.get(this.state.headRepo, this.state.headRev, this.state.diff.NewName);
+	_groupAnnotationsByHunk(hunks, baseAnns, headAnns) {
 		return hunks.map((hunk) => {
 			let baseStart = baseAnns ? baseAnns.LineStartBytes[hunk.OrigStartLine - 1] : null;
 			let baseEnd = baseAnns ? baseAnns.LineStartBytes[hunk.OrigStartLine + hunk.OrigLines - 1] : null;
@@ -88,12 +102,11 @@ class FileDiff extends Component {
 
 	render() {
 		let diff = this.props.diff;
-		let hunkAnns = this._groupAnnotationsByHunk(diff.Hunks);
 		return (
 			<div styleName="container" id={this.props.id || ""}>
 				<header styleName="header">
 					<div styleName="info">
-						<DiffStatScale Stat={diff.Stats} />
+						<DiffStatScale Stat={diff.Stats} styleName="scale" />
 						<span styleName="name">
 							<span>{isDevNull(diff.OrigName) ? diff.NewName : diff.OrigName}</span>
 							{diff.NewName !== diff.OrigName && !isDevNull(diff.OrigName) && !isDevNull(diff.NewName) ? (
@@ -107,7 +120,7 @@ class FileDiff extends Component {
 					</div>
 				</header>
 
-				{diff.Hunks.map((hunk, i) => (
+				{diff.Hunks && diff.Hunks.map((hunk, i) => (
 					<Hunk
 						key={i}
 						hunk={hunk}
@@ -119,7 +132,7 @@ class FileDiff extends Component {
 						headPath={diff.NewName}
 						highlightedDef={this.state.highlightedDef}
 						highlightedDefObj={this.state.highlightedDefObj}
-						annotations={hunkAnns[i]} />
+						annotations={this.state.hunkAnns ? this.state.hunkAnns[i] : null} />
 				))}
 			</div>
 		);

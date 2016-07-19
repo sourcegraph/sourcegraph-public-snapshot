@@ -102,8 +102,7 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 
 	// Update defs table in DB
 	if _, err := cl.Defs.RefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
-		Repo:     repoRev.Repo,
-		CommitID: repoRev.CommitID,
+		Repo: repoRev.Repo,
 	}); err != nil {
 		return err
 	}

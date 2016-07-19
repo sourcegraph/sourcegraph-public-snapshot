@@ -17,13 +17,16 @@
 }
 
 .horizontal {
-	composes: pb3 ph2 mh2 from base;
+	composes: pb2 ph2 mh2 from base;
 	padding-top: 12px;
 	display: inline-block;
 	margin-bottom: -1px;
 }
 
-.inactive { composes: cool-mid-gray from colors; }
+.inactive {
+	composes: cool-mid-gray b--transparent from colors;
+	composes: bb bw3 from base;
+}
 .inactive a { color: c_cool-mid-gray; }
 .vertical.inactive { padding-left: 1.3rem; }
 

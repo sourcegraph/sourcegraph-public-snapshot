@@ -24,7 +24,7 @@ the entire viewport height.
 }
 
 .breadcrumb {
-	composes: bb ph3 pv3 from base;
+	composes: bb ph3 pv2 from base;
 	composes: b--cool-pale-gray-8 bg-white from colors;
 }
 
@@ -42,14 +42,14 @@ Prevent scrolling the main content when a modal is being displayed.
 
 /* Responsive type scaling */
 
-body {
+html {
 	color: c_cool-gray;
 	font-size: desktop-base-size;
 	line-height: 1.6;
 }
 
 @media only screen and media-sm {
-	body {
+	html {
 		font-size: mobile-base-size;
 	}
 }

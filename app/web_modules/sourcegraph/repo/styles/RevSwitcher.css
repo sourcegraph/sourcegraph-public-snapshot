@@ -3,6 +3,8 @@
 @value grid "sourcegraph/components/styles/_grid.css";
 @value typography "sourcegraph/components/styles/_typography.css";
 @value vars "sourcegraph/components/styles/_vars.css";
+@value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
+
 @value c_cool-gray from colors;
 @value media-sm from vars;
 
@@ -20,6 +22,10 @@
 	composes: cool-mid-gray from colors;
 }
 .toggle:hover { color: c_cool-gray; }
+@value icon-font-size from GlobalNav;
+.toggle-icon {
+	font-size: icon-font-size;
+}
 
 .dropdown-menu {
 	position: absolute;

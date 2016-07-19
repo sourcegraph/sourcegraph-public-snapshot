@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -63,14 +63,16 @@ func (s *annotations) List(ctx context.Context, opt *sourcegraph.AnnotationsList
 	par := parallel.NewRun(len(funcs))
 	for _, f := range funcs {
 		f2 := f
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
 			anns, err := f2(ctx, opt, entry)
 			if err != nil {
-				return err
+				par.Error(err)
+				return
 			}
 			addAnns(anns)
-			return nil
-		})
+		}()
 	}
 	if err := par.Wait(); err != nil {
 		return nil, err

@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/alexsaveliev/go-colorable-wrapper"
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 
 	"golang.org/x/tools/godoc/vfs"
 
@@ -312,18 +312,26 @@ func Import(buildDataFS vfs.FileSystem, stor interface{}, opt ImportOpt) error {
 			if (opt.Unit != "" && rule.Unit.Name != opt.Unit) || (opt.UnitType != "" && rule.Unit.Type != opt.UnitType) {
 				continue
 			}
-			par.Do(func() error {
-				return importGraphData(rule.Target(), rule.Unit)
-			})
+			par.Acquire()
+			go func() {
+				defer par.Release()
+				if err := importGraphData(rule.Target(), rule.Unit); err != nil {
+					par.Error(err)
+				}
+			}()
 		case *grapher.GraphMultiUnitsRule:
 			for target_, sourceUnit_ := range rule.Targets() {
 				target, sourceUnit := target_, sourceUnit_
 				if (opt.Unit != "" && sourceUnit.Name != opt.Unit) || (opt.UnitType != "" && sourceUnit.Type != opt.UnitType) {
 					continue
 				}
-				par.Do(func() error {
-					return importGraphData(target, sourceUnit)
-				})
+				par.Acquire()
+				go func() {
+					defer par.Release()
+					if err := importGraphData(target, sourceUnit); err != nil {
+						par.Error(err)
+					}
+				}()
 			}
 		}
 	}
@@ -1175,18 +1183,20 @@ func brokenRefsOnly(refs []*graph.Ref, s interface{}) ([]*graph.Ref, error) {
 	)
 	for def_, refs_ := range uniqRefDefs {
 		def, refs := def_, refs_
-		par.Do(func() error {
+		par.Acquire()
+		go func() {
+			defer par.Release()
 			defs, err := s.(store.RepoStore).Defs(store.ByDefKey(def))
 			if err != nil {
-				return err
+				par.Error(err)
+				return
 			}
 			if len(defs) == 0 {
 				brokenRefMu.Lock()
 				brokenRefs = append(brokenRefs, refs...)
 				brokenRefMu.Unlock()
 			}
-			return nil
-		})
+		}()
 	}
 	err := par.Wait()
 	sort.Sort(graph.Refs(brokenRefs))

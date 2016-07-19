@@ -17,6 +17,7 @@
 .relative { position: relative; }
 
 .f4 { composes: f4 from typography; }
+.f5 { composes: f5 from typography; }
 .tc { composes: tc from typography; }
 .cool-gray { composes: cool-gray from colors; }
 .cool-mid-gray { composes: cool-mid-gray from colors; }
@@ -28,6 +29,14 @@
 .flex-icon {
 	composes: tc from typography;
 	composes: pr3 from base;
+}
+.w100 { width: 100%; }
+
+@media media-sm {
+	.block-s {
+		float: none;
+		padding-left: 0;
+	}
 }
 
 .bg {
@@ -43,11 +52,7 @@
 	font-weight: bold;
 }
 
-.result {
-	cursor: pointer;
-	display: block;
-	line-height: 1;
-}
+.result { cursor: pointer; }
 
 .result-error {
 	composes: red from colors;
@@ -61,21 +66,13 @@
 	color: c_cool-gray;
 }
 
-.title {
-	composes: f4 from typography;
-	composes: pb3 from base;
-	composes: blue from colors;
-}
-.repo {
-	float: right;
-	composes: cool-mid-gray from colors;
-	composes: ma0 pl4 pr2 from base;
-}
-.docstring {
-	composes: ma0 from base;
-	composes: cool-mid-gray from colors;
-}
-
 code.block {
 	word-break: break-all;
+}
+
+.docstring {
+	composes: cool-mid-gray from colors;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }

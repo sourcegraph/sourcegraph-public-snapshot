@@ -32,14 +32,11 @@ const (
 	reposKey
 )
 
-// NewContextWithMockClient creates a new mock client for testing purpose.
-func NewContextWithMockClient(ctx context.Context, isAuthedUser bool, userClient *github.Client, appClient *github.Client, mockRepos githubRepos) context.Context {
-	return newContext(ctx, &minimalClient{
-		repos:             mockRepos,
-		orgs:              userClient.Organizations,
-		appAuthorizations: appClient.Authorizations,
-		isAuthedUser:      isAuthedUser,
-	})
+// WithMockHasAuthedUser creates a new mock client that is nil and
+// will panic on any operation except for HasAuthedUser, which reports
+// the value of hasAuthedUser.
+func WithMockHasAuthedUser(ctx context.Context, hasAuthedUser bool) context.Context {
+	return newContext(ctx, &minimalClient{isAuthedUser: hasAuthedUser})
 }
 
 // NewContextWithClient creates a new child context with the specified

@@ -1,12 +1,14 @@
 @value base "sourcegraph/components/styles/_base.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 @value menu "sourcegraph/components/styles/menu.css";
+@value c_cool-mid-gray from colors;
+
 
 .wrapper {
 	display: inline-block;
 	line-height: 1.45;
 	cursor: pointer;
-	vertical-align: middle;
+	vertical-align: top;
 }
 
 .wrapper-disabled {
@@ -19,11 +21,12 @@
 	width: 10rem;
 }
 
-.icon {	
+.icon {
 	font-size: 1.5rem;
 }
 
-.center-icon{
+.center-icon {
+	fill: c_cool-mid-gray;
 	vertical-align: middle;
 }
 

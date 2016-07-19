@@ -48,7 +48,8 @@ export default class Background extends React.Component {
 	}
 
 	componentWillUpdate(nextProps) {
-		this._refresh();
+		// Call refresh with new props (since this.props are not updated until this method completes).
+		this._refresh(nextProps);
 	}
 
 	componentWillUnmount() {
@@ -62,7 +63,7 @@ export default class Background extends React.Component {
 	}
 
 	_clickRef(ev) {
-		if (ev.target.dataset && typeof ev.target.dataset.sourcegraphRef !== "undefined") {
+		if (ev.target.dataset && typeof ev.target.dataset.sourcegraphRef !== "undefined" && !ev.metaKey && !ev.ctrlKey) {
 			let currLocation = utils.parseURLWithSourcegraphDef();
 			let urlProps = utils.parseURLWithSourcegraphDef({pathname: ev.target.pathname, hash: ev.target.hash});
 			this.props.actions.getDef(urlProps.repoURI, urlProps.rev, urlProps.defPath);
@@ -103,14 +104,14 @@ export default class Background extends React.Component {
 		this._renderDefInfo(this.props, utils.parseURLWithSourcegraphDef());
 	}
 
-	_refresh() {
+	_refresh(props) {
 		if (utils.isSourcegraphURL()) return;
 
+		if (!props) props = this.props;
 		let urlProps = utils.parseURLWithSourcegraphDef();
 
-		// TODO: Branches that are not built on Sourcegraph will not get annotations, need to trigger
 		if (urlProps.repoURI) {
-			this.props.actions.refreshVCS(urlProps.repoURI);
+			props.actions.refreshVCS(urlProps.repoURI);
 		}
 		if (urlProps.path) {
 			// Strip hash (e.g. line location) from path.
@@ -119,27 +120,25 @@ export default class Background extends React.Component {
 		}
 
 		if (urlProps.repoURI && urlProps.defPath && !urlProps.isDelta) {
-			this.props.actions.getDef(urlProps.repoURI, urlProps.rev, urlProps.defPath);
+			props.actions.getDef(urlProps.repoURI, urlProps.rev, urlProps.defPath);
 		}
 
 		if (urlProps.repoURI && !createdReposCache[urlProps.repoURI]) {
 			createdReposCache[urlProps.repoURI] = true;
-			this.props.actions.ensureRepoExists(urlProps.repoURI);
+			props.actions.ensureRepoExists(urlProps.repoURI);
 		}
 
-		const directURLToDef = this._directURLToDef(urlProps);
+		const directURLToDef = this._directURLToDef(urlProps, props);
 		if (directURLToDef) {
 			if (!window.location.href.includes(directURLToDef.hash)) {
 				pjaxGoTo(`${directURLToDef.pathname}${directURLToDef.hash}`, true);
 			}
 		}
 
-		this._renderDefInfo(this.props, urlProps);
+		this._renderDefInfo(props, urlProps);
 
 		chrome.runtime.sendMessage(null, {type: "getIdentity"}, {}, (identity) => {
-			if (identity) {
-				EventLogger.updateAmplitudePropsForUser(identity);
-			}
+			if (identity) EventLogger.updateAmplitudePropsForUser(identity);
 		})
 	}
 
@@ -150,8 +149,10 @@ export default class Background extends React.Component {
 		}
 	}
 
-	_directURLToDef({repoURI, rev, defPath}) {
-		const defObj = this.props.def.content[keyFor(repoURI, rev, defPath)];
+	_directURLToDef({repoURI, rev, defPath}, props) {
+		if (!props) props = this.props;
+
+		const defObj = props.def.content[keyFor(repoURI, rev, defPath)];
 		if (defObj) {
 			const pathname = `/${repoURI.replace("github.com/", "")}/${defObj.File === "." ? "tree" : "blob"}/${rev}/${defObj.File}`;
 			const hash = `#sourcegraph&def=${defPath}&L${defObj.StartLine || 0}-${defObj.EndLine || 0}`;
@@ -168,9 +169,7 @@ export default class Background extends React.Component {
 
 		// Hide when no def is present.
 		if (!def) {
-			if (e) {
-				e.remove();
-			}
+			if (e) e.remove();
 			return;
 		}
 
@@ -197,9 +196,8 @@ export default class Background extends React.Component {
 
 		// Anchor to def's start line.
 		let anchor = document.getElementById(`L${def.StartLine}`);
-		if (!anchor) {
-			return;
-		}
+		if (!anchor) return;
+
 		anchor = anchor.parentNode;
 		anchor.style.position = "relative";
 		anchor.appendChild(e);

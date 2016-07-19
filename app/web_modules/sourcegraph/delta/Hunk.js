@@ -1,11 +1,16 @@
 import React from "react";
+import Component from "sourcegraph/Component";
 import styles from "sourcegraph/delta/styles/Hunk.css";
 import CSSModules from "react-css-modules";
 import {atob} from "abab";
 import BlobLine from "sourcegraph/blob/BlobLine";
 import fileLines from "sourcegraph/util/fileLines";
 
-class Hunk extends React.Component {
+class Hunk extends Component {
+	reconcileState(state, props) {
+		Object.assign(state, props);
+	}
+
 	render() {
 		let hunk = this.props.hunk;
 

@@ -52,10 +52,15 @@ function fastInsertRevIntoDefURL(urlNoRev: string, repo: string, rev: string): s
 }
 
 class BlobLine extends Component {
+	componentDidMount(nextProps, nextState) {
+		if (this.state.onMount) this.state.onMount();
+	}
+
 	reconcileState(state, props) {
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
 		state.path = props.path || null;
+		state.textSize = props.textSize || "normal";
 
 		// Update ownAnnURLs when they change.
 		if (state.annotations !== props.annotations) {
@@ -84,6 +89,7 @@ class BlobLine extends Component {
 		state.contents = props.contents;
 		state.selected = Boolean(props.selected);
 		state.className = props.className || "";
+		state.onMount = props.onMount || null;
 	}
 
 	_hasLink(content) {
@@ -173,7 +179,7 @@ class BlobLine extends Component {
 		let isDiff = this.state.oldLineNumber || this.state.newLineNumber;
 
 		return (
-			<tr className={`${s.line} ${this.state.className || ""}`}
+			<tr className={`${s.line} ${s[this.state.textSize]} ${this.state.className || ""}`}
 				data-line={this.state.lineNumber}>
 				{this.state.lineNumber &&
 					<td className={s.lineNumberCell} onClick={(event) => {
@@ -231,6 +237,7 @@ BlobLine.propTypes = {
 	selected: React.PropTypes.bool,
 	highlightedDef: React.PropTypes.string,
 	className: React.PropTypes.string,
+	onMount: React.PropTypes.func,
 };
 
 export default BlobLine;

@@ -43,7 +43,7 @@ export class UserStore extends Store {
 			if (!storedUserSettings) {
 				storedUserSettings = {
 					search: {
-						languages: [],
+						languages: ["golang"],
 						scope: {
 							popular: true,
 							public: false,

@@ -1,13 +1,13 @@
 package github
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-
-	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
@@ -20,8 +20,7 @@ import (
 )
 
 var (
-	reposGithubPublicCacheTTL     = conf.GetenvIntOrDefault("SG_REPOS_GITHUB_PUBLIC_CACHE_TTL_SECONDS", 600)
-	reposGithubPublicCache        = rcache.New("gh_pub")
+	reposGithubPublicCache        = rcache.New("gh_pub", conf.GetenvIntOrDefault("SG_REPOS_GITHUB_PUBLIC_CACHE_TTL_SECONDS", 600))
 	reposGithubPublicCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repos",
@@ -35,15 +34,15 @@ func init() {
 }
 
 type Repos interface {
-	Get(context.Context, string) (*sourcegraph.RemoteRepo, error)
-	GetByID(context.Context, int) (*sourcegraph.RemoteRepo, error)
-	ListAccessible(context.Context, *github.RepositoryListOptions) ([]*sourcegraph.RemoteRepo, error)
+	Get(context.Context, string) (*sourcegraph.Repo, error)
+	GetByID(context.Context, int) (*sourcegraph.Repo, error)
+	ListAccessible(context.Context, *github.RepositoryListOptions) ([]*sourcegraph.Repo, error)
 }
 
 type repos struct{}
 
-type cachedRemoteRepo struct {
-	sourcegraph.RemoteRepo
+type cachedRepo struct {
+	sourcegraph.Repo
 
 	// PublicNotFound indicates that the GitHub API returned a 404 when
 	// using an Unauthed request (repo may be exist privately).
@@ -52,7 +51,7 @@ type cachedRemoteRepo struct {
 
 var _ Repos = (*repos)(nil)
 
-func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, error) {
+func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 	// This function is called a lot, especially on popular public
 	// repos. For public repos we have the same result for everyone, so it
 	// is cacheable. (Permissions can change, but we no longer store that.) But
@@ -67,19 +66,19 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, 
 		return nil, grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
 	}
 
-	if cached, err := getFromCache(ctx, repo); err == nil {
+	if cached := getFromCache(ctx, repo); cached != nil {
 		reposGithubPublicCacheCounter.WithLabelValues("hit").Inc()
 		if cached.PublicNotFound {
 			return nil, grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
 		}
-		return &cached.RemoteRepo, nil
+		return &cached.Repo, nil
 	}
 
 	remoteRepo, err := getFromAPI(ctx, owner, repoName)
 	if grpc.Code(err) == codes.NotFound {
 		// Before we do anything, ensure we cache NotFound responses.
 		// Do this if client is unauthed or authed, it's okay since we're only caching not found responses here.
-		_ = reposGithubPublicCache.Add(repo, cachedRemoteRepo{PublicNotFound: true}, reposGithubPublicCacheTTL)
+		addToCache(repo, &cachedRepo{PublicNotFound: true})
 		reposGithubPublicCacheCounter.WithLabelValues("public-notfound").Inc()
 	}
 	if err != nil {
@@ -89,7 +88,7 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, 
 
 	// We are allowed to cache public repos
 	if !remoteRepo.Private {
-		_ = reposGithubPublicCache.Add(repo, remoteRepo, reposGithubPublicCacheTTL)
+		addToCache(repo, &cachedRepo{Repo: *remoteRepo})
 		reposGithubPublicCacheCounter.WithLabelValues("miss").Inc()
 	} else {
 		reposGithubPublicCacheCounter.WithLabelValues("private").Inc()
@@ -97,48 +96,58 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, 
 	return remoteRepo, nil
 }
 
-func (s *repos) GetByID(ctx context.Context, id int) (*sourcegraph.RemoteRepo, error) {
+func (s *repos) GetByID(ctx context.Context, id int) (*sourcegraph.Repo, error) {
 	ghrepo, resp, err := client(ctx).repos.GetByID(id)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.GetByID #%d", id))
 	}
-	return toRemoteRepo(ghrepo), nil
+	return toRepo(ghrepo), nil
 }
 
 var errInapplicableCache = errors.New("cached value cannot be used in this scenario")
 
 // getFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
-func getFromCache(ctx context.Context, repo string) (*cachedRemoteRepo, error) {
-	var cached cachedRemoteRepo
-	err := reposGithubPublicCache.Get(repo, &cached)
-	if err != nil {
-		if err != rcache.ErrNotFound {
-			log15.Error("github cache-get error", "repo", repo, "err", err)
-		}
-		return nil, err
+func getFromCache(ctx context.Context, repo string) *cachedRepo {
+	b, ok := reposGithubPublicCache.Get(repo)
+	if !ok {
+		return nil
+	}
+
+	var cached cachedRepo
+	if err := json.Unmarshal(b, &cached); err != nil {
+		return nil
 	}
 
 	// Do not use a cached NotFound if we are an authed user, since it may
 	// exist as a private repo for the user.
 	if client(ctx).isAuthedUser && cached.PublicNotFound {
-		return nil, errInapplicableCache
+		return nil
 	}
 
-	return &cached, nil
+	return &cached
+}
+
+// addToCache will cache the value for repo.
+func addToCache(repo string, c *cachedRepo) {
+	b, err := json.Marshal(c)
+	if err != nil {
+		return
+	}
+	reposGithubPublicCache.Set(repo, b)
 }
 
 // getFromAPI attempts to get a response from the GitHub API without use of
 // the redis cache.
-func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.RemoteRepo, error) {
+func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
 	ghrepo, resp, err := client(ctx).repos.Get(owner, repoName)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.Get %q", githubutil.RepoURI(owner, repoName)))
 	}
-	return toRemoteRepo(ghrepo), nil
+	return toRepo(ghrepo), nil
 }
 
-func toRemoteRepo(ghrepo *github.Repository) *sourcegraph.RemoteRepo {
+func toRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 	strv := func(s *string) string {
 		if s == nil {
 			return ""
@@ -151,10 +160,13 @@ func toRemoteRepo(ghrepo *github.Repository) *sourcegraph.RemoteRepo {
 		}
 		return *b
 	}
-	repo := sourcegraph.RemoteRepo{
-		GitHubID:      int32(*ghrepo.ID),
+	repo := sourcegraph.Repo{
+		URI: "github.com/" + *ghrepo.FullName,
+		Origin: &sourcegraph.Origin{
+			ID:      strconv.Itoa(*ghrepo.ID),
+			Service: sourcegraph.Origin_GitHub,
+		},
 		Name:          *ghrepo.Name,
-		VCS:           "git",
 		HTTPCloneURL:  strv(ghrepo.CloneURL),
 		DefaultBranch: strv(ghrepo.DefaultBranch),
 		Description:   strv(ghrepo.Description),
@@ -165,7 +177,6 @@ func toRemoteRepo(ghrepo *github.Repository) *sourcegraph.RemoteRepo {
 	}
 	if ghrepo.Owner != nil {
 		repo.Owner = strv(ghrepo.Owner.Login)
-		repo.OwnerIsOrg = strv(ghrepo.Owner.Type) == "Organization"
 	}
 	if ghrepo.UpdatedAt != nil {
 		ts := pbtypes.NewTimestamp(ghrepo.UpdatedAt.Time)
@@ -175,9 +186,6 @@ func toRemoteRepo(ghrepo *github.Repository) *sourcegraph.RemoteRepo {
 		ts := pbtypes.NewTimestamp(ghrepo.PushedAt.Time)
 		repo.PushedAt = &ts
 	}
-	if ghrepo.WatchersCount != nil {
-		repo.Stars = int32(*ghrepo.WatchersCount)
-	}
 	return &repo
 }
 
@@ -186,15 +194,15 @@ func toRemoteRepo(ghrepo *github.Repository) *sourcegraph.RemoteRepo {
 //
 // See https://developer.github.com/v3/repos/#list-your-repositories
 // for more information.
-func (s *repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.RemoteRepo, error) {
+func (s *repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
 	ghRepos, resp, err := client(ctx).repos.List("", opt)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, "github.Repos.ListAccessible")
 	}
 
-	var repos []*sourcegraph.RemoteRepo
+	var repos []*sourcegraph.Repo
 	for _, ghRepo := range ghRepos {
-		repos = append(repos, toRemoteRepo(&ghRepo))
+		repos = append(repos, toRepo(&ghRepo))
 	}
 	return repos, nil
 }

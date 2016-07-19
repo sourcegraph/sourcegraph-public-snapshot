@@ -20,6 +20,7 @@ import type {Def} from "sourcegraph/def";
 class Blob extends Component {
 	static propTypes = {
 		contents: React.PropTypes.string,
+		textSize: React.PropTypes.oneOf(["normal", "large"]),
 		annotations: React.PropTypes.shape({
 			Annotations: React.PropTypes.array,
 			LineStartBytes: React.PropTypes.array,
@@ -73,10 +74,6 @@ class Blob extends Component {
 			leading: false,
 			trailing: true,
 		});
-		this._updateVisibleLines = debounce(this._updateVisibleLines.bind(this), 200, {
-			leading: false,
-			trailing: true,
-		});
 		this._isMounted = false;
 	}
 
@@ -95,14 +92,16 @@ class Blob extends Component {
 		endCol: ?number;
 		endByte: ?number;
 		lineStartBytes: number[];
+		lineNumbers: boolean;
 		activeDef: ?string;
 		activeDefRepo: ?string;
 		highlightedDef: ?string;
 		contentsOffsetLine: number;
 		expandedRanges: Range[];
-		visStartLine: number;
-		visEndLine: number;
 		displayLineExpanders: ?string;
+		textSize: string;
+		scrollTarget: ?number;
+		scrollCallback: ?any;
 	} = {
 		repo: "",
 		rev: "",
@@ -116,6 +115,7 @@ class Blob extends Component {
 		lineAnns: [],
 		lineStartBytes: [],
 		lines: [],
+		lineNumbers: false,
 		expandedRanges: [],
 		startLine: null,
 		startCol: null,
@@ -123,9 +123,10 @@ class Blob extends Component {
 		endLine: null,
 		endCol: null,
 		endByte: null,
-		visStartLine: 0,
-		visEndLine: 0,
 		displayLineExpanders: null,
+		textSize: "normal",
+		scrollTarget: null,
+		scrollCallback: null,
 	};
 
 	componentDidMount() {
@@ -140,14 +141,11 @@ class Blob extends Component {
 		}, 0);
 
 		document.addEventListener("selectionchange", this._handleSelectionChange);
-		document.addEventListener("scroll", this._updateVisibleLines);
 		this._isMounted = true;
-		this._updateVisibleLines();
 	}
 
 	componentWillUnmount() {
 		document.removeEventListener("selectionchange", this._handleSelectionChange);
-		document.removeEventListener("scroll", this._updateVisibleLines);
 		this._isMounted = false;
 	}
 
@@ -155,12 +153,16 @@ class Blob extends Component {
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
 		state.path = props.path || null;
+
+		let oldStartLine = state.startLine;
 		state.startLine = props.startLine || null;
+
 		state.startCol = props.startCol || null;
 		state.startByte = props.startByte || null;
 		state.endLine = props.endLine || null;
 		state.endCol = props.endCol || null;
 		state.endByte = props.endByte || null;
+		state.textSize = props.textSize || "normal";
 		state.scrollToStartLine = Boolean(props.scrollToStartLine);
 		state.contentsOffsetLine = props.contentsOffsetLine || 0;
 		state.lineNumbers = Boolean(props.lineNumbers);
@@ -199,6 +201,24 @@ class Blob extends Component {
 		if (state.contents && state.startByte && state.endByte && state.startLine === null && state.endLine === null) {
 			state.startLine = lineFromByte(state.lines, state.startByte);
 			state.endLine = lineFromByte(state.lines, state.endByte);
+		}
+		if (state.startLine && oldStartLine !== state.startLine) {
+			let scrollCallback = () => {
+				if (this.state.scrollToStartLine) {
+					this._scrollTo(state.startLine);
+				}
+			};
+			let isVisible = this._lineIsVisible(state.startLine);
+
+			// In the case when the BlobLine that we want to scroll to hasn't loaded yet,
+			// particularly when navigating back to a blob page using the "back" button,
+			// we register a callback with the BlobLine that it invokes when it has finished loading.
+			if (isVisible === null) {
+				state.scrollTarget = state.startLine;
+				state.scrollCallback = scrollCallback;
+			} else if (isVisible === false) {
+				scrollCallback();
+			}
 		}
 	}
 
@@ -309,31 +329,6 @@ class Blob extends Component {
 		Dispatcher.Stores.dispatch(new BlobActions.SelectCharRange(this.state.repo, this.state.rev, this.state.path, startLine, startCol, startByte, endLine, endCol, endByte));
 	}
 
-	onStateTransition(prevState: Blob.state, nextState: Blob.state) {
-		if (nextState.startLine && prevState.startLine !== nextState.startLine) {
-			if (!this._lineIsVisible(nextState.startLine)) {
-				if (this.state.scrollToStartLine) {
-					this._scrollTo(nextState.startLine);
-				}
-			}
-		}
-	}
-
-	_updateVisibleLines() {
-		if (!this.refs.table) { return; }
-		let rect = this.refs.table.getBoundingClientRect();
-		let lineCount = this.state.lines.length;
-		if (this.state.displayRanges) {
-			// Sum all elided lines. We don't incur rendering overhead for elided lines.
-			lineCount += this.state.displayRanges.reduce((prev, cur) => prev + cur[1] - cur[0], 0);
-		}
-		let lineHeight = rect.height / lineCount;
-		let firstLine = this.state.displayRanges && this.state.displayRanges[0] ? this.state.displayRanges[0][0] : this.state.contentsOffsetLine;
-		let startLine = Math.max(0, (-1 * rect.top) / lineHeight) + firstLine;
-		let numLines = window.innerHeight / lineHeight;
-		this.setState({visStartLine: Math.ceil(startLine), visEndLine: Math.ceil(startLine + numLines)});
-	}
-
 	_scrollTo(line: number): void {
 		if (!this.refs.table) { return; }
 		let rect = this.refs.table.getBoundingClientRect();
@@ -341,14 +336,15 @@ class Blob extends Component {
 		window.scrollTo(0, y);
 	}
 
-	// _lineIsVisible returns true iff the line is scrolled into view.
-	_lineIsVisible(line: number): boolean {
+	// _lineIsVisible returns true the line has loaded and is scrolled into view, false
+	// if the line has loaded and isn't scrolled into view, or null if the line hasn't loaded yet.
+	_lineIsVisible(line: number): ?boolean {
 		if (!this._isMounted) return false;
 		if (typeof document === "undefined" || typeof window === "undefined") return false;
 		let top = document.body.scrollTop;
 		let bottom = top + window.innerHeight;
 		let $line = this.refs.table.querySelector(`[data-line="${line}"]`);
-		if (!$line) return false;
+		if (!$line) return null;
 		let elemTop = $line.offsetTop;
 		let elemBottom = elemTop + $line.clientHeight;
 		const deadZone = 150; // consider things not visible if they are near the screen top/bottom and hard to notice
@@ -368,7 +364,6 @@ class Blob extends Component {
 
 	render() {
 		if (!this.state.lines) return null;
-
 		let lastDisplayedLine = 0;
 		let lastRangeEnd = 0;
 		let lines = [];
@@ -390,14 +385,18 @@ class Blob extends Component {
 				lastRangeEnd = lineNumber;
 			}
 			lastDisplayedLine = lineNumber;
+
 			lines.push(
 				<BlobLine
+					onMount={this.state.scrollTarget && this.state.scrollTarget === i && this.state.scrollCallback ? this.state.scrollCallback : null}
+					ref={this.state.startLine === lineNumber ? "startLineComponent" : null}
 					repo={this.state.repo}
 					rev={this.state.rev}
 					path={this.state.path}
 					lineNumber={this.state.lineNumbers ? lineNumber : null}
 					startByte={this.state.lineStartBytes[i]}
 					contents={line}
+					textSize={this.state.textSize}
 					annotations={this.state.lineAnns ? (this.state.lineAnns[i] || null) : null}
 					selected={this.state.highlightSelectedLines && this.state.startLine && this.state.endLine && this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
 					highlightedDef={this.state.highlightedDef}
@@ -413,10 +412,9 @@ class Blob extends Component {
 				<BlobLineExpander key={`expand-${this.state.lines.length}`}
 					expandRange={[lastDisplayedLine, lastDisplayedLine+30]}
 					onExpand={this._expandRange}
-					direction={"down"} />
+					direction={"down"}/>
 			);
 		}
-
 		return (
 			<div className={s.scroller}>
 				<table className={s.lines} ref="table">
