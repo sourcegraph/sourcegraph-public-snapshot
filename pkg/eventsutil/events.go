@@ -6,7 +6,6 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 )
 
 func LogGitPush(ctx context.Context) {
@@ -24,7 +23,6 @@ func LogBuildCompleted(ctx context.Context, success bool) {
 }
 
 func LogEvent(ctx context.Context, event string, eventProperties map[string]string) {
-	login := auth.ActorFromContext(ctx).Login
 	deviceID := sourcegraphClientID
 
 	if eventProperties == nil {
@@ -38,7 +36,6 @@ func LogEvent(ctx context.Context, event string, eventProperties map[string]stri
 
 	Log(&sourcegraph.Event{
 		Type:            fmt.Sprintf("Server%s", event),
-		UserID:          login,
 		DeviceID:        deviceID,
 		EventProperties: eventProperties,
 	})

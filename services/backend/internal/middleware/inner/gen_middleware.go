@@ -69,6 +69,12 @@ func Services() svc.Services {
 			if res == nil && err == nil {
 				err = grpc.Errorf(codes.Internal, "<<<$service.Name>>>.<<<.Name>>> returned nil, nil")
 			}
+			if err != nil && !DebugMode(ctx) {
+				if code := grpc.Code(err); (code == codes.Unknown || code == codes.Internal) {
+					// Sanitize, because these errors should not be user visible.
+					err = grpc.Errorf(code, "<<<$service.Name>>>.<<<.Name>>> failed with internal error.")
+				}
+			}
 			return
 		}
 	<<<end>>>

@@ -105,6 +105,7 @@ check: ${GOBIN}/go-template-lint
 	bash dev/check-go-generate-all
 	bash dev/check-go-lint
 	bash dev/todo-security
+	bash dev/check-imports
 
 distclean:
 	go clean ./...

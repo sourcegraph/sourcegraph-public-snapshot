@@ -172,10 +172,9 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	errBody := err.Error()
 
 	var displayErrBody string
-	if handlerutil.DebugMode(r) {
-		// Only display error message to admins or locally, since it
-		// can contain sensitive info (like API keys in net/http error
-		// messages).
+	if handlerutil.DebugMode {
+		// Only display error message to admins when in debug mode, since it may
+		// contain sensitive info (like API keys in net/http error messages).
 		displayErrBody = string(errBody)
 	}
 	http.Error(w, displayErrBody, status)
@@ -215,10 +214,9 @@ func handleErrorWithGRPC(w http.ResponseWriter, r *http.Request, status int, err
 	errBody := err.Error()
 
 	var displayErrBody string
-	if handlerutil.DebugMode(r) {
-		// Only display error message to admins or locally, since it
-		// can contain sensitive info (like API keys in net/http error
-		// messages).
+	if handlerutil.DebugMode {
+		// Only display error message to admins when in debug mode, since it may
+		// contain sensitive info (like API keys in net/http error messages).
 		displayErrBody = string(errBody)
 	}
 	http.Error(w, displayErrBody, status)

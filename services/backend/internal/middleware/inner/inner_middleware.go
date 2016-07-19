@@ -86,6 +86,12 @@ func (s wrappedMultiRepoImporter) Import(ctx context.Context, param *pb.ImportOp
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "MultiRepoImporter.Import returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "MultiRepoImporter.Import failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -99,6 +105,12 @@ func (s wrappedMultiRepoImporter) CreateVersion(ctx context.Context, param *pb.C
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "MultiRepoImporter.CreateVersion returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "MultiRepoImporter.CreateVersion failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -111,6 +123,12 @@ func (s wrappedMultiRepoImporter) Index(ctx context.Context, param *pb.IndexOp) 
 	res, err = backend.Services.MultiRepoImporter.Index(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "MultiRepoImporter.Index returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "MultiRepoImporter.Index failed with internal error.")
+		}
 	}
 	return
 }
@@ -127,6 +145,12 @@ func (s wrappedAccounts) Create(ctx context.Context, param *sourcegraph.NewAccou
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Accounts.Create returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Accounts.Create failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -139,6 +163,12 @@ func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *source
 	res, err = backend.Services.Accounts.RequestPasswordReset(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Accounts.RequestPasswordReset returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Accounts.RequestPasswordReset failed with internal error.")
+		}
 	}
 	return
 }
@@ -153,6 +183,12 @@ func (s wrappedAccounts) ResetPassword(ctx context.Context, param *sourcegraph.N
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Accounts.ResetPassword returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Accounts.ResetPassword failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -165,6 +201,12 @@ func (s wrappedAccounts) Update(ctx context.Context, param *sourcegraph.User) (r
 	res, err = backend.Services.Accounts.Update(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Accounts.Update returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Accounts.Update failed with internal error.")
+		}
 	}
 	return
 }
@@ -179,6 +221,12 @@ func (s wrappedAccounts) UpdateEmails(ctx context.Context, param *sourcegraph.Up
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Accounts.UpdateEmails returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Accounts.UpdateEmails failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -191,6 +239,12 @@ func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.PersonSp
 	res, err = backend.Services.Accounts.Delete(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Accounts.Delete returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Accounts.Delete failed with internal error.")
+		}
 	}
 	return
 }
@@ -207,6 +261,12 @@ func (s wrappedAnnotations) List(ctx context.Context, param *sourcegraph.Annotat
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Annotations.List returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Annotations.List failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -221,6 +281,12 @@ func (s wrappedAsync) RefreshIndexes(ctx context.Context, param *sourcegraph.Asy
 	res, err = backend.Services.Async.RefreshIndexes(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Async.RefreshIndexes returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Async.RefreshIndexes failed with internal error.")
+		}
 	}
 	return
 }
@@ -237,6 +303,12 @@ func (s wrappedAuth) GetAccessToken(ctx context.Context, param *sourcegraph.Acce
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Auth.GetAccessToken returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Auth.GetAccessToken failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -249,6 +321,12 @@ func (s wrappedAuth) Identify(ctx context.Context, param *pbtypes.Void) (res *so
 	res, err = backend.Services.Auth.Identify(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Auth.Identify returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Auth.Identify failed with internal error.")
+		}
 	}
 	return
 }
@@ -263,6 +341,12 @@ func (s wrappedAuth) GetExternalToken(ctx context.Context, param *sourcegraph.Ex
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Auth.GetExternalToken returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Auth.GetExternalToken failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -276,6 +360,12 @@ func (s wrappedAuth) SetExternalToken(ctx context.Context, param *sourcegraph.Ex
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Auth.SetExternalToken returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Auth.SetExternalToken failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -288,6 +378,12 @@ func (s wrappedAuth) DeleteAndRevokeExternalToken(ctx context.Context, param *so
 	res, err = backend.Services.Auth.DeleteAndRevokeExternalToken(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Auth.DeleteAndRevokeExternalToken returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Auth.DeleteAndRevokeExternalToken failed with internal error.")
+		}
 	}
 	return
 }
@@ -304,6 +400,12 @@ func (s wrappedBuilds) Get(ctx context.Context, param *sourcegraph.BuildSpec) (r
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.Get returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Builds.Get failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -316,6 +418,12 @@ func (s wrappedBuilds) List(ctx context.Context, param *sourcegraph.BuildListOpt
 	res, err = backend.Services.Builds.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.List returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Builds.List failed with internal error.")
+		}
 	}
 	return
 }
@@ -330,6 +438,12 @@ func (s wrappedBuilds) Create(ctx context.Context, param *sourcegraph.BuildsCrea
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.Create returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Builds.Create failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -342,6 +456,12 @@ func (s wrappedBuilds) Update(ctx context.Context, param *sourcegraph.BuildsUpda
 	res, err = backend.Services.Builds.Update(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.Update returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Builds.Update failed with internal error.")
+		}
 	}
 	return
 }
@@ -356,6 +476,12 @@ func (s wrappedBuilds) ListBuildTasks(ctx context.Context, param *sourcegraph.Bu
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.ListBuildTasks returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Builds.ListBuildTasks failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -368,6 +494,12 @@ func (s wrappedBuilds) CreateTasks(ctx context.Context, param *sourcegraph.Build
 	res, err = backend.Services.Builds.CreateTasks(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.CreateTasks returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Builds.CreateTasks failed with internal error.")
+		}
 	}
 	return
 }
@@ -382,6 +514,12 @@ func (s wrappedBuilds) UpdateTask(ctx context.Context, param *sourcegraph.Builds
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.UpdateTask returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Builds.UpdateTask failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -395,6 +533,12 @@ func (s wrappedBuilds) GetTaskLog(ctx context.Context, param *sourcegraph.Builds
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.GetTaskLog returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Builds.GetTaskLog failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -407,6 +551,12 @@ func (s wrappedBuilds) DequeueNext(ctx context.Context, param *sourcegraph.Build
 	res, err = backend.Services.Builds.DequeueNext(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.DequeueNext returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Builds.DequeueNext failed with internal error.")
+		}
 	}
 	return
 }
@@ -423,6 +573,12 @@ func (s wrappedChannel) Send(ctx context.Context, param *sourcegraph.ChannelSend
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Channel.Send returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Channel.Send failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -438,6 +594,12 @@ func (s wrappedDefs) Get(ctx context.Context, param *sourcegraph.DefsGetOp) (res
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Defs.Get returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Defs.Get failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -450,6 +612,12 @@ func (s wrappedDefs) List(ctx context.Context, param *sourcegraph.DefListOptions
 	res, err = backend.Services.Defs.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Defs.List returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Defs.List failed with internal error.")
+		}
 	}
 	return
 }
@@ -464,6 +632,12 @@ func (s wrappedDefs) ListRefs(ctx context.Context, param *sourcegraph.DefsListRe
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Defs.ListRefs returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Defs.ListRefs failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -476,6 +650,12 @@ func (s wrappedDefs) ListRefLocations(ctx context.Context, param *sourcegraph.De
 	res, err = backend.Services.Defs.ListRefLocations(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Defs.ListRefLocations returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Defs.ListRefLocations failed with internal error.")
+		}
 	}
 	return
 }
@@ -490,6 +670,12 @@ func (s wrappedDefs) ListExamples(ctx context.Context, param *sourcegraph.DefsLi
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Defs.ListExamples returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Defs.ListExamples failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -503,6 +689,12 @@ func (s wrappedDefs) ListAuthors(ctx context.Context, param *sourcegraph.DefsLis
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Defs.ListAuthors returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Defs.ListAuthors failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -515,6 +707,12 @@ func (s wrappedDefs) RefreshIndex(ctx context.Context, param *sourcegraph.DefsRe
 	res, err = backend.Services.Defs.RefreshIndex(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Defs.RefreshIndex returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Defs.RefreshIndex failed with internal error.")
+		}
 	}
 	return
 }
@@ -531,6 +729,12 @@ func (s wrappedDeltas) Get(ctx context.Context, param *sourcegraph.DeltaSpec) (r
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Deltas.Get returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Deltas.Get failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -543,6 +747,12 @@ func (s wrappedDeltas) ListFiles(ctx context.Context, param *sourcegraph.DeltasL
 	res, err = backend.Services.Deltas.ListFiles(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Deltas.ListFiles returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Deltas.ListFiles failed with internal error.")
+		}
 	}
 	return
 }
@@ -559,6 +769,12 @@ func (s wrappedDesktop) GetLatest(ctx context.Context, param *pbtypes.Void) (res
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Desktop.GetLatest returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Desktop.GetLatest failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -574,6 +790,12 @@ func (s wrappedMeta) Status(ctx context.Context, param *pbtypes.Void) (res *sour
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Meta.Status returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Meta.Status failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -586,6 +808,12 @@ func (s wrappedMeta) Config(ctx context.Context, param *pbtypes.Void) (res *sour
 	res, err = backend.Services.Meta.Config(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Meta.Config returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Meta.Config failed with internal error.")
+		}
 	}
 	return
 }
@@ -602,6 +830,12 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, param *sourcegraph.M
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "MirrorRepos.RefreshVCS returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "MirrorRepos.RefreshVCS failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -616,6 +850,12 @@ func (s wrappedNotify) GenericEvent(ctx context.Context, param *sourcegraph.Noti
 	res, err = backend.Services.Notify.GenericEvent(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Notify.GenericEvent returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Notify.GenericEvent failed with internal error.")
+		}
 	}
 	return
 }
@@ -632,6 +872,12 @@ func (s wrappedOrgs) Get(ctx context.Context, param *sourcegraph.OrgSpec) (res *
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Orgs.Get returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Orgs.Get failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -645,6 +891,12 @@ func (s wrappedOrgs) List(ctx context.Context, param *sourcegraph.OrgsListOp) (r
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Orgs.List returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Orgs.List failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -657,6 +909,12 @@ func (s wrappedOrgs) ListMembers(ctx context.Context, param *sourcegraph.OrgsLis
 	res, err = backend.Services.Orgs.ListMembers(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Orgs.ListMembers returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Orgs.ListMembers failed with internal error.")
+		}
 	}
 	return
 }
@@ -673,6 +931,12 @@ func (s wrappedPeople) Get(ctx context.Context, param *sourcegraph.PersonSpec) (
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "People.Get returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "People.Get failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -688,6 +952,12 @@ func (s wrappedRepoStatuses) GetCombined(ctx context.Context, param *sourcegraph
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RepoStatuses.GetCombined returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "RepoStatuses.GetCombined failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -701,6 +971,12 @@ func (s wrappedRepoStatuses) GetCoverage(ctx context.Context, param *pbtypes.Voi
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RepoStatuses.GetCoverage returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "RepoStatuses.GetCoverage failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -713,6 +989,12 @@ func (s wrappedRepoStatuses) Create(ctx context.Context, param *sourcegraph.Repo
 	res, err = backend.Services.RepoStatuses.Create(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RepoStatuses.Create returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "RepoStatuses.Create failed with internal error.")
+		}
 	}
 	return
 }
@@ -729,6 +1011,12 @@ func (s wrappedRepoTree) Get(ctx context.Context, param *sourcegraph.RepoTreeGet
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RepoTree.Get returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "RepoTree.Get failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -742,6 +1030,12 @@ func (s wrappedRepoTree) Search(ctx context.Context, param *sourcegraph.RepoTree
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RepoTree.Search returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "RepoTree.Search failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -754,6 +1048,12 @@ func (s wrappedRepoTree) List(ctx context.Context, param *sourcegraph.RepoTreeLi
 	res, err = backend.Services.RepoTree.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RepoTree.List returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "RepoTree.List failed with internal error.")
+		}
 	}
 	return
 }
@@ -770,6 +1070,12 @@ func (s wrappedRepos) Get(ctx context.Context, param *sourcegraph.RepoSpec) (res
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.Get returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.Get failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -782,6 +1088,12 @@ func (s wrappedRepos) Resolve(ctx context.Context, param *sourcegraph.RepoResolv
 	res, err = backend.Services.Repos.Resolve(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.Resolve returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.Resolve failed with internal error.")
+		}
 	}
 	return
 }
@@ -796,6 +1108,12 @@ func (s wrappedRepos) List(ctx context.Context, param *sourcegraph.RepoListOptio
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.List returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.List failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -808,6 +1126,12 @@ func (s wrappedRepos) Create(ctx context.Context, param *sourcegraph.ReposCreate
 	res, err = backend.Services.Repos.Create(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.Create returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.Create failed with internal error.")
+		}
 	}
 	return
 }
@@ -822,6 +1146,12 @@ func (s wrappedRepos) Update(ctx context.Context, param *sourcegraph.ReposUpdate
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.Update returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.Update failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -834,6 +1164,12 @@ func (s wrappedRepos) Delete(ctx context.Context, param *sourcegraph.RepoSpec) (
 	res, err = backend.Services.Repos.Delete(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.Delete returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.Delete failed with internal error.")
+		}
 	}
 	return
 }
@@ -848,6 +1184,12 @@ func (s wrappedRepos) GetConfig(ctx context.Context, param *sourcegraph.RepoSpec
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.GetConfig returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.GetConfig failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -860,6 +1202,12 @@ func (s wrappedRepos) GetCommit(ctx context.Context, param *sourcegraph.RepoRevS
 	res, err = backend.Services.Repos.GetCommit(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.GetCommit returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.GetCommit failed with internal error.")
+		}
 	}
 	return
 }
@@ -874,6 +1222,12 @@ func (s wrappedRepos) ResolveRev(ctx context.Context, param *sourcegraph.ReposRe
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.ResolveRev returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.ResolveRev failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -886,6 +1240,12 @@ func (s wrappedRepos) ListCommits(ctx context.Context, param *sourcegraph.ReposL
 	res, err = backend.Services.Repos.ListCommits(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.ListCommits returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.ListCommits failed with internal error.")
+		}
 	}
 	return
 }
@@ -900,6 +1260,12 @@ func (s wrappedRepos) ListBranches(ctx context.Context, param *sourcegraph.Repos
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.ListBranches returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.ListBranches failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -912,6 +1278,12 @@ func (s wrappedRepos) ListTags(ctx context.Context, param *sourcegraph.ReposList
 	res, err = backend.Services.Repos.ListTags(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.ListTags returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.ListTags failed with internal error.")
+		}
 	}
 	return
 }
@@ -926,6 +1298,12 @@ func (s wrappedRepos) ListDeps(ctx context.Context, param *sourcegraph.URIList) 
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.ListDeps returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.ListDeps failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -938,6 +1316,12 @@ func (s wrappedRepos) ListCommitters(ctx context.Context, param *sourcegraph.Rep
 	res, err = backend.Services.Repos.ListCommitters(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.ListCommitters returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.ListCommitters failed with internal error.")
+		}
 	}
 	return
 }
@@ -952,6 +1336,12 @@ func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, param *so
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.GetSrclibDataVersionForPath returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.GetSrclibDataVersionForPath failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -964,6 +1354,12 @@ func (s wrappedRepos) GetInventory(ctx context.Context, param *sourcegraph.RepoR
 	res, err = backend.Services.Repos.GetInventory(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.GetInventory returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.GetInventory failed with internal error.")
+		}
 	}
 	return
 }
@@ -978,6 +1374,12 @@ func (s wrappedRepos) ReceivePack(ctx context.Context, param *sourcegraph.Receiv
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.ReceivePack returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.ReceivePack failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -990,6 +1392,12 @@ func (s wrappedRepos) UploadPack(ctx context.Context, param *sourcegraph.UploadP
 	res, err = backend.Services.Repos.UploadPack(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.UploadPack returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.UploadPack failed with internal error.")
+		}
 	}
 	return
 }
@@ -1006,6 +1414,12 @@ func (s wrappedSearch) Search(ctx context.Context, param *sourcegraph.SearchOp) 
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Search.Search returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Search.Search failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -1021,6 +1435,12 @@ func (s wrappedUsers) Get(ctx context.Context, param *sourcegraph.UserSpec) (res
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Users.Get returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Users.Get failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -1033,6 +1453,12 @@ func (s wrappedUsers) GetWithEmail(ctx context.Context, param *sourcegraph.Email
 	res, err = backend.Services.Users.GetWithEmail(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Users.GetWithEmail returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Users.GetWithEmail failed with internal error.")
+		}
 	}
 	return
 }
@@ -1047,6 +1473,12 @@ func (s wrappedUsers) ListEmails(ctx context.Context, param *sourcegraph.UserSpe
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Users.ListEmails returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Users.ListEmails failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -1060,6 +1492,12 @@ func (s wrappedUsers) List(ctx context.Context, param *sourcegraph.UsersListOpti
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Users.List returned nil, nil")
 	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Users.List failed with internal error.")
+		}
+	}
 	return
 }
 
@@ -1072,6 +1510,12 @@ func (s wrappedUsers) RegisterBeta(ctx context.Context, param *sourcegraph.BetaR
 	res, err = backend.Services.Users.RegisterBeta(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Users.RegisterBeta returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Users.RegisterBeta failed with internal error.")
+		}
 	}
 	return
 }

@@ -59,7 +59,11 @@ func getForTest(c interface {
 }
 
 func TestCatchAll(t *testing.T) {
-	c, _ := newTest()
+	c, mock := newTest()
+	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
+		return &sourcegraph.AuthInfo{}, nil
+	}
+
 	m, err := getForTest(c, "/tools", http.StatusOK)
 	if err != nil {
 		t.Fatal(err)
@@ -108,6 +112,10 @@ func TestRepo_OK(t *testing.T) {
 			Description: "d",
 		}, nil
 	}
+	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
+		return &sourcegraph.AuthInfo{}, nil
+	}
+
 	// (Should not try to resolve the revision; see serveRepo for why.)
 
 	wantMeta := meta{
@@ -134,6 +142,9 @@ func TestRepo_OK(t *testing.T) {
 
 func TestRepo_Error_Resolve(t *testing.T) {
 	c, mock := newTest()
+	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
+		return &sourcegraph.AuthInfo{}, nil
+	}
 
 	for url, req := range urls {
 		if req.repo == "" {
@@ -166,6 +177,9 @@ func TestRepo_Error_Get(t *testing.T) {
 			calledGet = true
 			return nil, grpc.Errorf(codes.NotFound, "")
 		}
+		mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
+			return &sourcegraph.AuthInfo{}, nil
+		}
 
 		if _, err := getForTest(c, url, http.StatusNotFound); err != nil {
 			t.Errorf("%s: %s", url, err)
@@ -194,6 +208,9 @@ func TestRepoRev_OK(t *testing.T) {
 		}, nil
 	}
 	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
+	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
+		return &sourcegraph.AuthInfo{}, nil
+	}
 
 	wantMeta := meta{
 		Title:        "r: d · Sourcegraph",
@@ -235,6 +252,9 @@ func TestRepoRev_Error(t *testing.T) {
 			calledReposResolveRev = true
 			return nil, grpc.Errorf(codes.NotFound, "")
 		}
+		mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
+			return &sourcegraph.AuthInfo{}, nil
+		}
 
 		if _, err := getForTest(c, url, http.StatusNotFound); err != nil {
 			t.Errorf("%s: %s", url, err)
@@ -264,6 +284,9 @@ func TestBlob_OK(t *testing.T) {
 			URI:         "r",
 			Description: "desc",
 		}, nil
+	}
+	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
+		return &sourcegraph.AuthInfo{}, nil
 	}
 	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
 	calledRepoTreeGet := mock.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
@@ -313,6 +336,9 @@ func TestBlob_NotFound_NonFile(t *testing.T) {
 			Type: sourcegraph.DirEntry,
 		},
 	})
+	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
+		return &sourcegraph.AuthInfo{}, nil
+	}
 
 	if _, err := getForTest(c, "/r@v/-/blob/d", http.StatusNotFound); err != nil {
 		t.Fatal(err)
@@ -333,6 +359,9 @@ func TestBlob_NotFound_NonFile(t *testing.T) {
 
 func TestBlob_Error(t *testing.T) {
 	c, mock := newTest()
+	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
+		return &sourcegraph.AuthInfo{}, nil
+	}
 
 	for url, req := range urls {
 		if req.repo == "" || req.rev == "" || req.blob == "" {
@@ -369,6 +398,9 @@ func TestBlob_Error(t *testing.T) {
 
 func TestDef_OK(t *testing.T) {
 	c, mock := newTest()
+	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
+		return &sourcegraph.AuthInfo{}, nil
+	}
 
 	tests := []struct {
 		rev       string
@@ -453,6 +485,9 @@ func TestDef_OK(t *testing.T) {
 
 func TestDef_Error(t *testing.T) {
 	c, mock := newTest()
+	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
+		return &sourcegraph.AuthInfo{}, nil
+	}
 
 	for url, req := range urls {
 		if req.repo == "" || req.rev == "" || req.defUnitType == "" || req.defUnit == "" || req.defPath == "" {
@@ -493,6 +528,9 @@ func TestDef_Error(t *testing.T) {
 
 func TestTree_OK(t *testing.T) {
 	c, mock := newTest()
+	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
+		return &sourcegraph.AuthInfo{}, nil
+	}
 
 	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
 	var calledGet bool
@@ -511,6 +549,9 @@ func TestTree_OK(t *testing.T) {
 			Type: sourcegraph.DirEntry,
 		},
 	})
+	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
+		return &sourcegraph.AuthInfo{}, nil
+	}
 
 	wantMeta := meta{
 		Title:        "d · r · Sourcegraph",
@@ -542,6 +583,9 @@ func TestTree_OK(t *testing.T) {
 
 func TestTree_NotFound_NonDir(t *testing.T) {
 	c, mock := newTest()
+	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
+		return &sourcegraph.AuthInfo{}, nil
+	}
 
 	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
 	calledGet := mock.Repos.MockGet(t, 1)
@@ -572,6 +616,9 @@ func TestTree_NotFound_NonDir(t *testing.T) {
 
 func TestTree_Error(t *testing.T) {
 	c, mock := newTest()
+	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
+		return &sourcegraph.AuthInfo{}, nil
+	}
 
 	for url, req := range urls {
 		if req.repo == "" || req.rev == "" || req.tree == "" {
