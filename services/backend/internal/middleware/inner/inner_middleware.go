@@ -759,20 +759,20 @@ func (s wrappedDeltas) ListFiles(ctx context.Context, param *sourcegraph.DeltasL
 
 type wrappedDesktop struct{}
 
-func (s wrappedDesktop) GetLatest(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.LatestDesktopVersion, err error) {
+func (s wrappedDesktop) LatestExists(ctx context.Context, param *sourcegraph.ClientDesktopVersion) (res *sourcegraph.LatestDesktopVersion, err error) {
 	start := time.Now()
-	ctx = trace.Before(ctx, "Desktop", "GetLatest", param)
+	ctx = trace.Before(ctx, "Desktop", "LatestExists", param)
 	defer func() {
-		trace.After(ctx, "Desktop", "GetLatest", param, err, time.Since(start))
+		trace.After(ctx, "Desktop", "LatestExists", param, err, time.Since(start))
 	}()
-	res, err = backend.Services.Desktop.GetLatest(ctx, param)
+	res, err = backend.Services.Desktop.LatestExists(ctx, param)
 	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Desktop.GetLatest returned nil, nil")
+		err = grpc.Errorf(codes.Internal, "Desktop.LatestExists returned nil, nil")
 	}
 	if err != nil && !DebugMode(ctx) {
 		if code := grpc.Code(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Desktop.GetLatest failed with internal error.")
+			err = grpc.Errorf(code, "Desktop.LatestExists failed with internal error.")
 		}
 	}
 	return

@@ -1153,13 +1153,13 @@ type wrappedDesktop struct {
 	services svc.Services
 }
 
-func (s wrappedDesktop) GetLatest(ctx context.Context, v1 *pbtypes.Void) (returnedResult *sourcegraph.LatestDesktopVersion, returnedError error) {
+func (s wrappedDesktop) LatestExists(ctx context.Context, v1 *sourcegraph.ClientDesktopVersion) (returnedResult *sourcegraph.LatestDesktopVersion, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
 			buf := make([]byte, size)
 			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Desktop.GetLatest: %v\n\n%s", err, buf)
+			returnedError = grpc.Errorf(codes.Internal, "panic in Desktop.LatestExists: %v\n\n%s", err, buf)
 			returnedResult = nil
 		}
 	}()
@@ -1175,7 +1175,7 @@ func (s wrappedDesktop) GetLatest(ctx context.Context, v1 *pbtypes.Void) (return
 		return nil, grpc.Errorf(codes.Unimplemented, "Desktop")
 	}
 
-	rv, err := innerSvc.GetLatest(ctx, v1)
+	rv, err := innerSvc.LatestExists(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

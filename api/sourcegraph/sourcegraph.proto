@@ -2236,12 +2236,17 @@ service Search {
 
 // Desktop provides the latest version of the Sourcegraph desktop app to enable auto-updating.
 service Desktop {
-	rpc GetLatest(pbtypes.Void) returns (LatestDesktopVersion);
+
+	rpc LatestExists(ClientDesktopVersion) returns (LatestDesktopVersion); 
+}
+
+message ClientDesktopVersion {
+	string ClientVersion = 1;
 }
 
 // LatestDesktopVersion is the latest version of the Sourcegraph desktop app.
 message LatestDesktopVersion {
-	string Version = 1;
+	bool NewVersion = 1;
 }
 
 // Channel manages a realtime communication channel between a client
