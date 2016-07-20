@@ -19,6 +19,7 @@
 .dropdown-menu {
 	position: absolute;
 	width: 10rem;
+	z-index: 1;
 }
 
 .icon {

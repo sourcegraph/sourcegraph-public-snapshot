@@ -25,6 +25,7 @@ import {urlToRepo} from "sourcegraph/repo/routes";
 import {LanguageIcon} from "sourcegraph/components/Icons";
 import {EmptyNodeIllo} from "sourcegraph/components/symbols";
 import {Dropdown, Header, Heading, FlexContainer, GitHubAuthButton, Loader} from "sourcegraph/components";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 
 // Number of characters of the Docstring to show before showing the "collapse" options.
@@ -169,6 +170,8 @@ class DefInfo extends Container {
 		let def = this.state.defObj;
 		let apiKey = "AIzaSyCKati7PcEa2fqyuoDDwd1ujXiBVOddwf4";
 		let targetLang = val;
+
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "TranslateButtonClicked", {translated_language: targetLang});
 
 		if (this.state.translations[targetLang]) {
 			// Toggle when target language is same as the current one,
