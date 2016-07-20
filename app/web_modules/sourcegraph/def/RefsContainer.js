@@ -184,7 +184,7 @@ export default class RefsContainer extends Container {
 			Dispatcher.Backends.dispatch(new DefActions.WantDef(repo, rev, def));
 		}
 
-		if (nextState.refs && !nextState.refs.Error && (nextState.refs !== prevState.refs || nextState.shownFiles !== prevState.shownFiles)) {
+		if (nextState.refs && nextState.refs.length > 0 && !nextState.refs.Error && (nextState.refs !== prevState.refs || nextState.shownFiles !== prevState.shownFiles)) {
 			let firstRef = nextState.refs[0]; // hack: assuming that all refs given to a RefsContainer are from the same repo and rev, thus using the first ref to determine which files we want to show
 			let repo = firstRef.Repo;
 			let rev = repo === nextState.repo ? nextState.commitID : firstRef.CommitID;
