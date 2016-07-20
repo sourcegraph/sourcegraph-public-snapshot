@@ -45,7 +45,7 @@ func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User, email 
 	err := dbutil.Transact(appDBH(ctx), func(tx gorp.SqlExecutor) error {
 		if err := tx.Insert(&u); err != nil {
 			if strings.Contains(err.Error(), `duplicate key value violates unique constraint "users_login"`) {
-				return &store.AccountAlreadyExistsError{Login: newUser.Login, UID: newUser.UID}
+				return grpc.Errorf(codes.AlreadyExists, "account %q already exists", newUser.Login)
 			}
 			return err
 		}

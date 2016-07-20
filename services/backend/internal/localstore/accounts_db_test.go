@@ -8,8 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 // TestAccounts_Create_ok tests the behavior of Accounts.Create when
@@ -76,8 +77,8 @@ func TestAccounts_Create_duplicate(t *testing.T) {
 	email = &sourcegraph.EmailAddr{Email: "email1@email.email"}
 
 	_, err := s.Create(ctx, &sourcegraph.User{Login: "u"}, email)
-	if _, ok := err.(*store.AccountAlreadyExistsError); !ok {
-		t.Fatalf("got err type %T, want %T", err, &store.AccountAlreadyExistsError{})
+	if grpc.Code(err) != codes.AlreadyExists {
+		t.Fatalf("got err code %d, want %d", grpc.Code(err), codes.AlreadyExists)
 	}
 }
 

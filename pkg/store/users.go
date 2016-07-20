@@ -86,18 +86,3 @@ func IsUserNotFound(err error) bool {
 	_, ok := err.(*UserNotFoundError)
 	return ok
 }
-
-// AccountAlreadyExistsError occurs when an account already exists
-// with the requested login.
-type AccountAlreadyExistsError struct {
-	Login string // the requested login
-	UID   int32  // the requested UID
-}
-
-func (e *AccountAlreadyExistsError) Error() string {
-	var uidStr string
-	if e.UID != 0 {
-		uidStr = fmt.Sprintf("(UID %v) ", e.UID)
-	}
-	return fmt.Sprintf("account %q %salready exists", e.Login, uidStr)
-}
