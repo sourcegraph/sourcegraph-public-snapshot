@@ -67,7 +67,7 @@ class DesktopHome extends React.Component {
 						<li><strong><a href="https://github.com/sourcegraph/sourcegraph-desktop/issues/new">File an issue</a></strong></li>
 					</List>
 					<p>
-						We love feedback! Shoot us an email at <strong><a href="URL TOEMAIL TEMPLATE">support@sourcegraph.com</a></strong> with ideas on how we can make Sourcegraph Desktop better.
+						We love feedback! Shoot us an email at <strong><a href="mailto:support@sourcegraph.com?subject=Sourcegraph for Desktop feedback&body=I have some feedback!">support@sourcegraph.com</a></strong> with ideas on how we can make Sourcegraph Desktop better.
 					</p>
 				</div>
 			</div>
