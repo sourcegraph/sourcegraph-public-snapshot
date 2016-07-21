@@ -66,7 +66,7 @@ export default function withDef(Component) {
 				return (
 					<div>
 						<Helmet title={"Not Found"} />
-						<Header	
+						<Header
 							title={`${httpStatusCode(this.state.defObj.Error)}`}
 							subtitle={`Definition is not available.`} />
 					</div>
