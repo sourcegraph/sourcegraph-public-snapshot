@@ -109,6 +109,7 @@ export const rootRoute: Route = {
 			callback(null, [
 				...require("sourcegraph/page").routes,
 				...require("sourcegraph/styleguide").routes,
+				...require("sourcegraph/desktop").routes,
 				...require("sourcegraph/home").routes,
 				...require("sourcegraph/channel").routes,
 				require("sourcegraph/misc/golang").route,

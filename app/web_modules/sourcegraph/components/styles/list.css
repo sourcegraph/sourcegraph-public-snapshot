@@ -3,7 +3,13 @@
 
 @value c_blue, c_cool-pale-gray from colors;
 
-.normal {}
+.normal {
+	padding-left: 16px;
+}
+
+.normal li {
+	margin-bottom: 0.5rem;
+}
 
 .node {
 	composes: pl0 from base;
