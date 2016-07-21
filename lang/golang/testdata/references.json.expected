@@ -1,0 +1,51 @@
+[
+  {
+    "result": {
+      "capabilities": {
+        "textDocumentSync": 1,
+        "hoverProvider": true,
+        "definitionProvider": true,
+        "referencesProvider": true
+      }
+    },
+    "id": "0",
+    "jsonrpc": ""
+  },
+  {
+    "result": [
+      {
+        "uri": "file:///mux.go",
+        "range": {
+          "start": {
+            "line": 65,
+            "character": 6
+          },
+          "end": {
+            "line": 65,
+            "character": 20
+          }
+        }
+      },
+      {
+        "uri": "file:///mux.go",
+        "range": {
+          "start": {
+            "line": 66,
+            "character": 20
+          },
+          "end": {
+            "line": 66,
+            "character": 34
+          }
+        }
+      }
+    ],
+    "id": "1",
+    "jsonrpc": ""
+  },
+  {
+    "result": true,
+    "id": "2",
+    "jsonrpc": ""
+  }
+]
