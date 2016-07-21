@@ -9,17 +9,17 @@ func TestJSON(t *testing.T) {
 			{
 				"test array literal",
 				`[3, "three", true, null]`,
-				[]Token{{1, 1, `3`}, {5, 1, `three`}, {13, 1, `true`}, {19, 1, `null`}},
+				[]Token{{1, 1, 0, `3`}, {5, 1, 0, `three`}, {13, 1, 0, `true`}, {19, 1, 0, `null`}},
 			},
 			{
 				"test object",
 				`{"obj": [{"a": 1}]}`,
-				[]Token{{2, 1, `obj`}, {11, 1, `a`}, {15, 1, `1`}},
+				[]Token{{2, 1, 0, `obj`}, {11, 1, 0, `a`}, {15, 1, 0, `1`}},
 			},
 
 			{"test line break",
 				`{"obj": [{"a":` + "\n" + ` 1}]}`,
-				[]Token{{2, 1, `obj`}, {11, 1, `a`}, {16, 2, `1`}}},
+				[]Token{{2, 1, 0, `obj`}, {11, 1, 0, `a`}, {16, 2, 0, `1`}}},
 		})
 }
 

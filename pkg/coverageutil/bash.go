@@ -40,7 +40,7 @@ func (s *bashIdentScanner) Next() *Token {
 		case tok == scanner.Ident:
 			text := s.is.TokenText()
 			p := s.is.Pos()
-			return &Token{uint32(p.Offset - len(text)), p.Line, text}
+			return &Token{uint32(p.Offset - len(text)), p.Line, p.Column, text}
 		}
 	}
 }

@@ -39,7 +39,7 @@ func (s *goTokenizer) Next() *Token {
 			continue
 		}
 		p := s.fset.Position(pos)
-		return &Token{uint32(p.Offset), p.Line, lit}
+		return &Token{uint32(p.Offset), p.Line, p.Column, lit}
 	}
 }
 

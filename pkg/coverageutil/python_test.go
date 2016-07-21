@@ -21,12 +21,12 @@ func TestPython(testing *testing.T) {
 			{
 				"complex numbers",
 				"2+10j 2+10q",
-				[]Token{{10, 1, "q"}},
+				[]Token{{10, 1, 12, "q"}},
 			},
 			{
 				"comments",
 				"#abc\ndefz#fgh",
-				[]Token{{5, 2, "defz"}},
+				[]Token{{5, 2, 5, "defz"}},
 			},
 		})
 }

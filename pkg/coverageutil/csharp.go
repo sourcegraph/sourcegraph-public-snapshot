@@ -276,7 +276,7 @@ func (s *csharpTokenizer) Next() *Token {
 			continue
 		}
 		p := s.scanner.Pos()
-		return &Token{uint32(p.Offset - len([]byte(text))), p.Line, text}
+		return &Token{uint32(p.Offset - len([]byte(text))), p.Line, p.Column, text}
 	}
 }
 

@@ -14,6 +14,8 @@ type Token struct {
 	Offset uint32
 	// Line number
 	Line int
+	// Column number
+	Column int
 	// Token text
 	Text string
 }
