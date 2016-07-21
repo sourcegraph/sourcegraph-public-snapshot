@@ -1,9 +1,10 @@
 import React from "react";
-import RepoLink from "sourcegraph/components/RepoLink";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Repos.css";
 import base from "sourcegraph/components/styles/_base.css";
-import {Input, Table} from "sourcegraph/components";
+import {Input, Heading, Button, ToggleSwitch} from "sourcegraph/components";
+import Dispatcher from "sourcegraph/Dispatcher";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
 import debounce from "lodash.debounce";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
@@ -61,12 +62,20 @@ class Repos extends React.Component {
 		return this.context.githubToken && this.context.githubToken.scope && this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org");
 	}
 
+	_toggleRepo(remoteRepo: Object) {
+		Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(remoteRepo.URI, remoteRepo, true));
+	}
+
 	render() {
 		let repos = (this.props.repos || []).filter(this._showRepo).sort(this._repoSort);
 
 		return (
-			<div className={base.pb4}>
-				<div>
+			<div className={base.pb6}>
+				<header styleName="header">
+					<Heading level="7" color="cool-mid-gray">Your repositories</Heading>
+					<p>See usage examples and references from your own code. Don't worry, no one else will see anything from your private repositories.</p>
+				</header>
+				<div styleName="settings">
 					<div styleName="input-bar">
 						{this._hasGithubToken() && <Input type="text"
 							placeholder="Find a repository..."
@@ -77,18 +86,23 @@ class Repos extends React.Component {
 						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} styleName="github-button">Add public repositories</GitHubAuthButton>}
 						{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github-button">Add private repositories</GitHubAuthButton>}
 					</div>
-					<Table styleName="repos">
-						<tbody>
-							{repos.length > 0 && repos.map((repo, i) =>
-								<tr styleName="row" key={i}>
-									<td styleName="cell" colSpan="2">
-										<RepoLink styleName="repo-link" repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} />
-										{repo.Description && <p styleName="description">{repo.Description}</p>}
-									</td>
-								</tr>
-							)}
-						</tbody>
-					</Table>
+					<div styleName="repos-list">
+						{repos.length > 0 && repos.map((repo, i) =>
+							<div styleName="row" key={i}>
+								<div styleName="info">
+									{(repo.URI && repo.URI.replace("github.com/", "")) || `${repo.Owner}/${repo.Name}`}
+									{repo.Description && <p styleName="description">
+										{repo.Description.length > 100 ? `${repo.Description.substring(0, 100)}...` : repo.Description}
+									</p>}
+								</div>
+								<div styleName="toggle">
+									<ToggleSwitch onChange={(checked) => {
+										this._toggleRepo(repo);
+									}}/>
+								</div>
+							</div>
+						)}
+					</div>
 					{this._hasGithubToken() && repos.length === 0 && (!this._filterInput || !this._filterInput.value) &&
 						<p styleName="indicator">Loading...</p>
 					}
@@ -97,6 +111,11 @@ class Repos extends React.Component {
 						<p styleName="indicator">No matching repositories</p>
 					}
 				</div>
+				<footer styleName="footer">
+					<a styleName="footer-link" href="/tools?onboarding=t">
+						<Button color="green" styleName="footer-btn">Continue</Button>
+					</a>
+				</footer>
 			</div>
 		);
 	}

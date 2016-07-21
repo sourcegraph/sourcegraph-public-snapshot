@@ -78,9 +78,12 @@ export class RepoResolved {
 }
 
 export class WantCreateRepo {
-	constructor(repo, remoteRepo) {
+	constructor(repo, remoteRepo, refreshVCS?: bool) {
 		this.repo = repo;
 		this.remoteRepo = remoteRepo;
+		// Settings this option to true will cause the newly create repo to be
+		// automatically cloned.
+		this.refreshVCS = refreshVCS;
 	}
 }
 

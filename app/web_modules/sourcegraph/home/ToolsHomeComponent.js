@@ -63,7 +63,9 @@ class ToolsHomeComponent extends Component {
 					</div>
 				</div>
 				<footer styleName="footer">
-					<Button color="green" styleName="footer-btn">Continue</Button>
+					<a styleName="footer-link" href="/search">
+						<Button color="green" styleName="footer-btn">Continue</Button>
+					</a>
 				</footer>
 			</div>
 		);

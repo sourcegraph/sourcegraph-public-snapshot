@@ -132,6 +132,10 @@ const RepoBackend = {
 						const eventProps = {language: action.remoteRepo.Language, private: Boolean(action.remoteRepo.Private)};
 						EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_SUCCESS, "AddRepo", eventProps);
 						EventLogger.logIntercomEvent("add-repo", eventProps);
+						if (action.refreshVCS) {
+							RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, {method: "POST"})
+								.then(checkStatus);
+						}
 					}
 				});
 				break;

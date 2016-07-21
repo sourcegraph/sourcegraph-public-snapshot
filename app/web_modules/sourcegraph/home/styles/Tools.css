@@ -52,7 +52,11 @@
 	justify-content: center;
 }
 
-.footer-btn {
+.footer-link {
 	width: 100%;
 	max-width: 420px;
+}
+
+.footer-btn {
+	width: 100%;
 }
