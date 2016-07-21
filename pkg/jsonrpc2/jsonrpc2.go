@@ -69,13 +69,14 @@ func (r *Request) UnmarshalJSON(data []byte) error {
 }
 
 // SetParams sets r.Params to the JSON representation of v. If JSON
-// marshaling fails, it panics.
-func (r *Request) SetParams(v interface{}) {
+// marshaling fails, it returns an error.
+func (r *Request) SetParams(v interface{}) error {
 	b, err := json.Marshal(v)
 	if err != nil {
-		panic("Response.SetParams: " + err.Error())
+		return err
 	}
 	r.Params = (*json.RawMessage)(&b)
+	return nil
 }
 
 // Response represents a JSON-RPC response. See
@@ -95,13 +96,14 @@ type Response struct {
 }
 
 // SetResult sets r.Result to the JSON representation of v. If JSON
-// marshaling fails, it panics.
-func (r *Response) SetResult(v interface{}) {
+// marshaling fails, it returns an error.
+func (r *Response) SetResult(v interface{}) error {
 	b, err := json.Marshal(v)
 	if err != nil {
-		panic("Response.SetResult: " + err.Error())
+		return err
 	}
 	r.Result = (*json.RawMessage)(&b)
+	return nil
 }
 
 // Error represents a JSON-RPC response error.
