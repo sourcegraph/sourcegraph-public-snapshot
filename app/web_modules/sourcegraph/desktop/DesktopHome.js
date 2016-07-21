@@ -11,7 +11,7 @@ import styles from "./styles/home.css";
 import {Link} from "react-router";
 import {Heading, List} from "sourcegraph/components";
 import {Cone} from "sourcegraph/components/symbols";
-import {inBeta, inAnyBeta, betaPending} from "sourcegraph/user";
+import {inBeta} from "sourcegraph/user";
 import * as betautil from "sourcegraph/util/betautil";
 
 const NotInBeta = () => (
@@ -32,7 +32,7 @@ class DesktopHome extends React.Component {
 
 	render() {
 		if (!this.context.user || !inBeta(this.context.user, betautil.DESKTOP)) {
-			return <NotInBeta />
+			return <NotInBeta />;
 		}
 		return (
 			<div className={`${layout.containerFixed} ${base.pv5} ${base.ph4}`} style={{maxWidth: "560px"}}>
