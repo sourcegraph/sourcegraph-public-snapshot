@@ -8,6 +8,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import type {Helper} from "sourcegraph/blob/BlobLoader";
 import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
+import Helmet from "react-helmet";
 
 // withDefAndRefLocations fetches the def and ref locations for the
 // def specified in the properties.
@@ -40,9 +41,12 @@ export default ({
 	render(state) {
 		if (state.defObj && state.defObj.Error) {
 			return (
-				<Header
-					title={`${httpStatusCode(state.defObj.Error)}`}
-					subtitle={`Definition is not available.`} />
+				<div>
+					<Helmet title={"Not Found"} />
+					<Header
+						title={`${httpStatusCode(state.defObj.Error)}`}
+						subtitle={`Definition is not available.`} />
+				</div>
 			);
 		}
 		return null;
