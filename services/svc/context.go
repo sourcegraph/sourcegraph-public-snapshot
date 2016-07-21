@@ -30,7 +30,6 @@ const (
 	_BuildsKey            contextKey = iota
 	_ChannelKey           contextKey = iota
 	_DefsKey              contextKey = iota
-	_DeltasKey            contextKey = iota
 	_DesktopKey           contextKey = iota
 	_MetaKey              contextKey = iota
 	_MirrorReposKey       contextKey = iota
@@ -54,7 +53,6 @@ type Services struct {
 	Builds            sourcegraph.BuildsServer
 	Channel           sourcegraph.ChannelServer
 	Defs              sourcegraph.DefsServer
-	Deltas            sourcegraph.DeltasServer
 	Desktop           sourcegraph.DesktopServer
 	Meta              sourcegraph.MetaServer
 	MirrorRepos       sourcegraph.MirrorReposServer
@@ -101,10 +99,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.Defs != nil {
 		sourcegraph.RegisterDefsServer(s, svcs.Defs)
-	}
-
-	if svcs.Deltas != nil {
-		sourcegraph.RegisterDeltasServer(s, svcs.Deltas)
 	}
 
 	if svcs.Desktop != nil {
@@ -186,10 +180,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.Defs != nil {
 		ctx = WithDefs(ctx, s.Defs)
-	}
-
-	if s.Deltas != nil {
-		ctx = WithDeltas(ctx, s.Deltas)
 	}
 
 	if s.Desktop != nil {
@@ -417,29 +407,6 @@ func Defs(ctx context.Context) sourcegraph.DefsServer {
 // DefsOrNil returns the context's Defs service if present, or else nil.
 func DefsOrNil(ctx context.Context) sourcegraph.DefsServer {
 	s, ok := ctx.Value(_DefsKey).(sourcegraph.DefsServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithDeltas returns a copy of parent that uses the given Deltas service.
-func WithDeltas(ctx context.Context, s sourcegraph.DeltasServer) context.Context {
-	return context.WithValue(ctx, _DeltasKey, s)
-}
-
-// Deltas gets the context's Deltas service. If the service is not present, it panics.
-func Deltas(ctx context.Context) sourcegraph.DeltasServer {
-	s, ok := ctx.Value(_DeltasKey).(sourcegraph.DeltasServer)
-	if !ok || s == nil {
-		panic("no Deltas set in context")
-	}
-	return s
-}
-
-// DeltasOrNil returns the context's Deltas service if present, or else nil.
-func DeltasOrNil(ctx context.Context) sourcegraph.DeltasServer {
-	s, ok := ctx.Value(_DeltasKey).(sourcegraph.DeltasServer)
 	if ok {
 		return s
 	}

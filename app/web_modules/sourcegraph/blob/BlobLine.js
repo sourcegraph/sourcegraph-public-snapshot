@@ -84,8 +84,6 @@ class BlobLine extends Component {
 
 		state.lineNumber = props.lineNumber || null;
 		state.showLineNumber = props.showLineNumber || false;
-		state.oldLineNumber = props.oldLineNumber || null;
-		state.newLineNumber = props.newLineNumber || null;
 		state.startByte = props.startByte;
 		state.contents = props.contents;
 		state.selected = Boolean(props.selected);
@@ -177,8 +175,6 @@ class BlobLine extends Component {
 		// when copied and pasted, instead of being omitted entirely.
 		if (!contents) contents = "\n";
 
-		let isDiff = this.state.oldLineNumber || this.state.newLineNumber;
-
 		return (
 			<tr className={`${s.line} ${s[this.state.textSize]} ${this.state.className || ""}`}
 				data-line={this.state.lineNumber}>
@@ -193,8 +189,6 @@ class BlobLine extends Component {
 						<Link className={this.state.selected ? s.selectedLineNumber : s.lineNumber}
 							to={`${urlToBlob(this.state.repo, this.state.rev, this.state.path)}#L${this.state.lineNumber}`} data-line={this.state.lineNumber} />
 					</td>}
-				{isDiff && <td className={s.lineNumberCell} data-line={this.state.oldLineNumber || ""}><span className={s.lineNumber} data-line={this.state.oldLineNumber} /></td>}
-				{isDiff && <td className={s.lineNumberCell} data-line={this.state.newLineNumber || ""}><span className={s.lineNumber} data-line={this.state.newLineNumber} /></td>}
 
 				<td className={`code ${this.state.selected ? s.selectedLineContent : s.lineContent}`}>
 					{contents}
@@ -208,9 +202,6 @@ BlobLine.propTypes = {
 	lineNumber: (props, propName, componentName) => {
 		let v = React.PropTypes.number(props, propName, componentName);
 		if (v) return v;
-		if (typeof props.lineNumber !== "undefined" && (typeof props.oldLineNumber !== "undefined" || typeof props.newLineNumber !== "undefined")) {
-			return new Error("If lineNumber is set, then oldLineNumber/newLineNumber (which are for diff hunks) may not be used");
-		}
 		return null;
 	},
 	showLineNumber: React.PropTypes.bool,
@@ -221,10 +212,6 @@ BlobLine.propTypes = {
 	rev: React.PropTypes.string,
 	commitID: React.PropTypes.string,
 	path: React.PropTypes.string,
-
-	// For diff hunks.
-	oldLineNumber: React.PropTypes.number,
-	newLineNumber: React.PropTypes.number,
 
 	activeDef: React.PropTypes.string, // the def that the page is about
 

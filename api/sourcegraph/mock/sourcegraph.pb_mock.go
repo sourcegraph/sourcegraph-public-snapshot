@@ -711,36 +711,6 @@ func (s *AsyncServer) RefreshIndexes(v0 context.Context, v1 *sourcegraph.AsyncRe
 
 var _ sourcegraph.AsyncServer = (*AsyncServer)(nil)
 
-type DeltasClient struct {
-	Get_       func(ctx context.Context, in *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error)
-	ListFiles_ func(ctx context.Context, in *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error)
-}
-
-func (s *DeltasClient) Get(ctx context.Context, in *sourcegraph.DeltaSpec, opts ...grpc.CallOption) (*sourcegraph.Delta, error) {
-	return s.Get_(ctx, in)
-}
-
-func (s *DeltasClient) ListFiles(ctx context.Context, in *sourcegraph.DeltasListFilesOp, opts ...grpc.CallOption) (*sourcegraph.DeltaFiles, error) {
-	return s.ListFiles_(ctx, in)
-}
-
-var _ sourcegraph.DeltasClient = (*DeltasClient)(nil)
-
-type DeltasServer struct {
-	Get_       func(v0 context.Context, v1 *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error)
-	ListFiles_ func(v0 context.Context, v1 *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error)
-}
-
-func (s *DeltasServer) Get(v0 context.Context, v1 *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error) {
-	return s.Get_(v0, v1)
-}
-
-func (s *DeltasServer) ListFiles(v0 context.Context, v1 *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error) {
-	return s.ListFiles_(v0, v1)
-}
-
-var _ sourcegraph.DeltasServer = (*DeltasServer)(nil)
-
 type RepoTreeClient struct {
 	Get_    func(ctx context.Context, in *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error)
 	Search_ func(ctx context.Context, in *sourcegraph.RepoTreeSearchOp) (*sourcegraph.VCSSearchResultList, error)

@@ -1,7 +1,6 @@
 import React from "react";
 import TimeAgo from "sourcegraph/util/TimeAgo";
 import {Avatar} from "sourcegraph/components";
-import {urlToRepoCommit} from "sourcegraph/repo/commit/routes";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Commit.css";
 
@@ -48,7 +47,7 @@ function Commit({repo, commit, full}) {
 	return (
 		<div styleName="container">
 			<div styleName="main">
-				<a styleName="title" href={urlToRepoCommit(repo, commit.ID)}>{title}</a>
+				<span styleName="title">{title}</span>
 				<div styleName="meta">
 					<Avatar className={styles.avatar} img={commit.AuthorPerson ? commit.AuthorPerson.AvatarURL : ""} size="small" />
 					<div styleName="signature">
@@ -56,9 +55,7 @@ function Commit({repo, commit, full}) {
 						{commit.Committer && showBothSigs(commit.Author, commit.Committer) ? <span styleName="sig">{sigName(commit.Committer)} committed <TimeAgo time={commit.Committer.Date} /></span> : null}
 					</div>
 					<div styleName="commit-id">
-						<a href={urlToRepoCommit(repo, commit.ID)}>
-							<code styleName="sha">{commit.ID.substring(0, 8)}</code>
-						</a>
+						<code styleName="sha">{commit.ID.substring(0, 8)}</code>
 					</div>
 				</div>
 			</div>

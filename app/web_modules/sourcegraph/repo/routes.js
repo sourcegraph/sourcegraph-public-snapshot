@@ -39,7 +39,6 @@ export const routes: Array<Route> = [
 		getChildRoutes: (location, callback) => {
 			require.ensure([], (require) => {
 				callback(null, [
-					...require("sourcegraph/repo/commit/routes").routes,
 					...require("sourcegraph/blob/routes").routes,
 					...require("sourcegraph/build/routes").routes,
 					...require("sourcegraph/def/routes").routes,

@@ -2,7 +2,6 @@ syntax = "proto3";
 package sourcegraph;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-import "sourcegraph.com/sourcegraph/go-diff/diff/diff.proto";
 import "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/vcs.proto";
 import "sourcegraph.com/sourcegraph/srclib/graph/def.proto";
 import "sourcegraph.com/sourcegraph/srclib/graph/ref.proto";
@@ -1615,72 +1614,6 @@ message DefFileRef {
 	float Score = 3;
 }
 
-// Delta represents the difference between two commits (possibly in 2 separate
-// repositories).
-message Delta {
-	RepoRevSpec Base = 1 [(gogoproto.nullable) = false];
-	RepoRevSpec Head = 2 [(gogoproto.nullable) = false];
-	vcs.Commit BaseCommit = 3;
-	vcs.Commit HeadCommit = 4;
-}
-
-// FileDiff holds data about a diff, and additionally stores extended
-// information about its hunks.
-message FileDiff {
-	diff.FileDiff FileDiff = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-	repeated diff.Hunk FileDiffHunks = 2;
-	// PreImage is the CommitID at which this file was before the change occurred.
-	string PreImage = 3 [(gogoproto.jsontag) = ",omitempty"];
-	// PostImage is the CommitID at which this file was after the change occurred.
-	string PostImage = 4 [(gogoproto.jsontag) = ",omitempty"];
-	// Stat contains statistics about additions and deletions to this diff.
-	diff.Stat Stats = 5 [(gogoproto.nullable) = false];
-
-	// Filtered specifies whether or not this file diff was filtered out, and as
-	// such contains no FileDiffHunks or FileDiff.Hunks.
-	bool Filtered = 6 [(gogoproto.jsontag) = ",omitempty"];
-}
-
-// DeltaFiles describes files added/changed/deleted in a delta.
-message DeltaFiles {
-	repeated FileDiff FileDiffs = 1;
-	Delta Delta = 2;
-	diff.Stat Stats = 3 [(gogoproto.nullable) = false];
-}
-
-// DeltaFilter specifies criteria by which to filter results from DeltaListXxx
-// methods.
-message DeltaFilter {
-	string Unit = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string UnitType = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
-}
-
-// DeltaListFilesOptions specifies options for ListFiles.
-message DeltaListFilesOptions {
-	// Filter filters the list of returned files to those whose name matches
-	// Filter. There is no difference in the returned data except that the
-	// returned DeltaFiles.FileDiffs will not contain any hunks and will have
-	// Filtered set to true.
-	string Filter = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
-
-	// Ignore specifies a list of '/'-separated path globs to omit from the
-	// returned results.
-	repeated string Ignore = 6  [(gogoproto.moretags) = "url:\",omitempty\""];
-
-	DeltaFilter DeltaFilter = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-// A DeltaSpec specifies a delta.
-message DeltaSpec {
-	RepoRevSpec Base = 1 [(gogoproto.nullable) = false];
-	RepoRevSpec Head = 2 [(gogoproto.nullable) = false];
-}
-
-message DeltasListFilesOp {
-	DeltaSpec Ds = 1 [(gogoproto.nullable) = false];
-	DeltaListFilesOptions Opt = 2;
-}
-
 // RepoTreeGetOptions specifies options for (RepoTreeService).Get.
 message RepoTreeGetOptions {
 	bool ContentsAsString = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
@@ -1899,16 +1832,6 @@ message DefsListAuthorsOp {
 
 message DefAuthorList {
 	repeated DefAuthor DefAuthors = 1;
-}
-
-// DeltasService interacts with the delta-related endpoints of the Sourcegraph API.
-// A delta is all of the changes between two commits.
-service Deltas {
-	// Get fetches a summary of a delta.
-	rpc Get(DeltaSpec) returns (Delta);
-
-	// ListFiles fetches the file diff for a delta.
-	rpc ListFiles(DeltasListFilesOp) returns (DeltaFiles);
 }
 
 // RepoTreeService communicates with the Sourcegraph API endpoints that fetch file

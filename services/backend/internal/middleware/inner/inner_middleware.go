@@ -49,8 +49,6 @@ func Services() svc.Services {
 
 		Defs: wrappedDefs{},
 
-		Deltas: wrappedDeltas{},
-
 		Desktop: wrappedDesktop{},
 
 		Meta: wrappedMeta{},
@@ -800,50 +798,6 @@ func (s wrappedDefs) RefreshIndex(ctx context.Context, param *sourcegraph.DefsRe
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
 			err = grpc.Errorf(code, "Defs.RefreshIndex failed with internal error.")
-		}
-	}
-	return
-}
-
-type wrappedDeltas struct{}
-
-func (s wrappedDeltas) Get(ctx context.Context, param *sourcegraph.DeltaSpec) (res *sourcegraph.Delta, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Deltas", "Get", param)
-	defer func() {
-		trace.After(ctx, "Deltas", "Get", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Deltas.Get(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Deltas.Get returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Deltas.Get failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedDeltas) ListFiles(ctx context.Context, param *sourcegraph.DeltasListFilesOp) (res *sourcegraph.DeltaFiles, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Deltas", "ListFiles", param)
-	defer func() {
-		trace.After(ctx, "Deltas", "ListFiles", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Deltas.ListFiles(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Deltas.ListFiles returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Deltas.ListFiles failed with internal error.")
 		}
 	}
 	return

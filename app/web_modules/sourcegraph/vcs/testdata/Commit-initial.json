@@ -11,11 +11,10 @@
 						"styleName": "main",
 						"children": [
 							{
-								"type": "a",
+								"type": "span",
 								"key": ".0",
 								"props": {
 									"styleName": "title",
-									"href": "/sourcegraph.com/sourcegraph@abc/-/commit",
 									"children": [
 										"msg"
 									]
@@ -91,19 +90,11 @@
 												"styleName": "commit-id",
 												"children": [
 													{
-														"type": "a",
+														"type": "code",
 														"props": {
-															"href": "/sourcegraph.com/sourcegraph@abc/-/commit",
+															"styleName": "sha",
 															"children": [
-																{
-																	"type": "code",
-																	"props": {
-																		"styleName": "sha",
-																		"children": [
-																			"abc"
-																		]
-																	}
-																}
+																"abc"
 															]
 														}
 													}

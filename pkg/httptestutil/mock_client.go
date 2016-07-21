@@ -18,7 +18,6 @@ type MockClients struct {
 	Auth         mock.AuthClient
 	Builds       mock.BuildsClient
 	Defs         mock.DefsClient
-	Deltas       mock.DeltasClient
 	Meta         mock.MetaClient
 	MirrorRepos  mock.MirrorReposClient
 	Orgs         mock.OrgsClient
@@ -38,7 +37,6 @@ func (c *MockClients) Client() *sourcegraph.Client {
 		Auth:         &c.Auth,
 		Builds:       &c.Builds,
 		Defs:         &c.Defs,
-		Deltas:       &c.Deltas,
 		Meta:         &c.Meta,
 		MirrorRepos:  &c.MirrorRepos,
 		Orgs:         &c.Orgs,

@@ -37,7 +37,6 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 		Builds:            wrappedBuilds{ctxFunc, services},
 		Channel:           wrappedChannel{ctxFunc, services},
 		Defs:              wrappedDefs{ctxFunc, services},
-		Deltas:            wrappedDeltas{ctxFunc, services},
 		Desktop:           wrappedDesktop{ctxFunc, services},
 		Meta:              wrappedMeta{ctxFunc, services},
 		MirrorRepos:       wrappedMirrorRepos{ctxFunc, services},
@@ -1106,71 +1105,6 @@ func (s wrappedDefs) RefreshIndex(ctx context.Context, v1 *sourcegraph.DefsRefre
 	}
 
 	rv, err := innerSvc.RefreshIndex(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-type wrappedDeltas struct {
-	ctxFunc  ContextFunc
-	services svc.Services
-}
-
-func (s wrappedDeltas) Get(ctx context.Context, v1 *sourcegraph.DeltaSpec) (returnedResult *sourcegraph.Delta, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Deltas.Get: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.DeltasOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Deltas")
-	}
-
-	rv, err := innerSvc.Get(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedDeltas) ListFiles(ctx context.Context, v1 *sourcegraph.DeltasListFilesOp) (returnedResult *sourcegraph.DeltaFiles, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Deltas.ListFiles: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.DeltasOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Deltas")
-	}
-
-	rv, err := innerSvc.ListFiles(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

@@ -25,7 +25,6 @@ var Services = svc.Services{
 	Builds:            Builds,
 	Channel:           Channel,
 	Defs:              Defs,
-	Deltas:            Deltas,
 	Desktop:           Desktop,
 	Meta:              Meta,
 	MirrorRepos:       MirrorRepos,
