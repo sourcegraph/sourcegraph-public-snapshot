@@ -8,6 +8,7 @@ import colors from "sourcegraph/components/styles/_colors.css";
 import typography from "sourcegraph/components/styles/_typography.css";
 import styles from "./styles/home.css";
 
+import {Link} from "react-router";
 import {Heading, List} from "sourcegraph/components";
 import {Cone} from "sourcegraph/components/symbols";
 
@@ -19,10 +20,6 @@ class DesktopHome extends React.Component {
 	};
 
 	render() {
-		// Switch these out based on detected OS
-		const macShortcut = <span><span styleName="label-blue">⌘</span> + <span styleName="label-blue">Shift</span> + <span styleName="label-blue">;</span></span>;
-		const windowsShortcut = <span><span styleName="label-blue">CTRL</span> + <span styleName="label-blue">Shift</span> + <span styleName="label-blue">;</span></span>;
-
 		return (
 			<div className={`${layout.containerFixed} ${base.pv5} ${base.ph4}`} style={{maxWidth: "560px"}}>
 				<Heading align="center" level="4" underline="blue">
@@ -41,13 +38,13 @@ class DesktopHome extends React.Component {
 				<div className={base.mv4}>
 					<Heading level="5">Semantic, global code search</Heading>
 					<p>
-						Just hit {windowsShortcut} or click the search box at the top of this page to semantically search for functions and symbols.
+						Just hit <span styleName="label-blue">⌘ or CTRL </span> + <span styleName="label-blue">SHIFT</span> + <span styleName="label-blue">;</span> or click the search box at the top of this page to semantically search for functions and symbols.
 					</p>
 				</div>
 				<div className={base.mv4}>
 					<Heading level="5">Powerful search for your private code</Heading>
 					<p>
-						To enable semantic search and usage examples for your private code, authorize Sourcegraph to access your private repositories.
+						To enable semantic search and usage examples for your private code, <Link to="/repositories">authorize Sourcegraph</Link> to access your private repositories.
 					</p>
 				</div>
 				<div className={`${base.mt5} ${typography.f7}`}>
@@ -60,15 +57,16 @@ class DesktopHome extends React.Component {
 						Sourcegraph Desktop is currently in beta
 					</Heading>
 					<p>
-						If the app is not working as expected, see our GitHub to:
+						Thanks for using Sourcegraph Desktop! If the app is not working as expected, see our GitHub to:
 					</p>
 					<List className={base.mv3}>
 						<li><strong><a href="https://github.com/sourcegraph/sourcegraph-desktop#sourcegraph-desktop">Browse troubleshooting tips</a></strong></li>
 						<li><strong><a href="https://github.com/sourcegraph/sourcegraph-desktop/issues/new">File an issue</a></strong></li>
 					</List>
 					<p>
-						We love feedback! Shoot us an email at <strong><a href="mailto:support@sourcegraph.com?subject=Feedback for the Sourcegraph Desktop team&body=Editor of choice: %0D%0A%0D%0AOperating system:%0D%0A%0D%0AProgramming language:%0D%0A%0D%0AFeedback:%0D%0A%0D%0AP.S. Did you know we use Slack for feedback and bugs? Let us know if you'd like to join our Slack channel!">support@sourcegraph.com</a></strong> with ideas on how we can make Sourcegraph Desktop better.
+						We love feedback! Shoot us an email at <strong><a href="mailto:support@sourcegraph.com?subject=Feedback for the Sourcegraph Desktop team&body=Editor of choice: %0D%0A%0D%0AOperating system:%0D%0A%0D%0AProgramming language:%0D%0A%0D%0AFeedback:">support@sourcegraph.com</a></strong> with ideas on how we can make Sourcegraph Desktop better.
 					</p>
+					<p>Did you know we use Slack for feedback and bugs? Let us know if you'd like to join our Slack channel!</p>
 				</div>
 			</div>
 		);

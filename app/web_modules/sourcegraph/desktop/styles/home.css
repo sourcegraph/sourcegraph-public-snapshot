@@ -6,6 +6,5 @@
 	composes: bg-cool-pale-gray from colors;
 	composes: f7 b from typography;
 	composes: br2 pv0 ph1 from base;
-	text-transform: uppercase;
 	display: inline-block;
 }
