@@ -10,6 +10,7 @@ import Container from "sourcegraph/Container";
 import {routeParams as defRouteParams} from "sourcegraph/def";
 import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
+import Helmet from "react-helmet";
 
 // withDef fetches the def specified in the params. It also fetches
 // the def stored in DefStore.highlightedDef.
@@ -63,9 +64,12 @@ export default function withDef(Component) {
 
 			if (this.state.defObj && this.state.defObj.Error) {
 				return (
-					<Header
-						title={`${httpStatusCode(this.state.defObj.Error)}`}
-						subtitle={`Definition is not available.`} />
+					<div>
+						<Helmet title={"Not Found"} />
+						<Header
+							title={`${httpStatusCode(this.state.defObj.Error)}`}
+							subtitle={`Definition is not available.`} />
+					</div>
 				);
 			}
 
