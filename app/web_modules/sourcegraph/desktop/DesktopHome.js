@@ -11,15 +11,29 @@ import styles from "./styles/home.css";
 import {Link} from "react-router";
 import {Heading, List} from "sourcegraph/components";
 import {Cone} from "sourcegraph/components/symbols";
+import {inBeta, inAnyBeta, betaPending} from "sourcegraph/user";
+import * as betautil from "sourcegraph/util/betautil";
 
+const NotInBeta = () => (
+	<div className={`${layout.containerFixed} ${base.pv5} ${base.ph4}`} style={{maxWidth: "600px"}}>
+	<Heading align="center" level="4" underline="blue">
+		It looks like you're not in the desktop beta right now.
+		Sign up to be eligible <a href="https://sourcegraph.com/beta">here</a>.
+	</Heading>
+	</div>
+);
 
 class DesktopHome extends React.Component {
 
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
+		user: React.PropTypes.object.isRequired,
 	};
 
 	render() {
+		if (!this.context.user || !inBeta(this.context.user, betautil.DESKTOP)) {
+			return <NotInBeta />
+		}
 		return (
 			<div className={`${layout.containerFixed} ${base.pv5} ${base.ph4}`} style={{maxWidth: "560px"}}>
 				<Heading align="center" level="4" underline="blue">
