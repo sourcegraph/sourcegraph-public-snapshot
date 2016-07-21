@@ -6,19 +6,31 @@ import base from "sourcegraph/components/styles/_base.css";
 import layout from "sourcegraph/components/styles/_layout.css";
 import colors from "sourcegraph/components/styles/_colors.css";
 import typography from "sourcegraph/components/styles/_typography.css";
+import styles from "./styles/home.css";
 
 import {Heading, List} from "sourcegraph/components";
 import {Cone} from "sourcegraph/components/symbols";
 
 
 class DesktopHome extends React.Component {
+
+	static contextTypes = {
+		siteConfig: React.PropTypes.object.isRequired,
+	};
+
 	render() {
+		// Switch these out based on detected OS
+		const macShortcut = <span><span styleName="label-blue">⌘</span> + <span styleName="label-blue">Shift</span> + <span styleName="label-blue">;</span></span>;
+		const windowsShortcut = <span><span styleName="label-blue">CTRL</span> + <span styleName="label-blue">Shift</span> + <span styleName="label-blue">;</span></span>;
+
 		return (
-			<div className={`${layout.containerFixed} ${base.pv5} ${base.ph4}`} style={{maxWidth: "700px"}}>
+			<div className={`${layout.containerFixed} ${base.pv5} ${base.ph4}`} style={{maxWidth: "560px"}}>
 				<Heading align="center" level="4" underline="blue">
 					See live examples, search code, and view inline
 					<br className={base["hidden-s"]} />&nbsp;documentation to write better code, faster
 				</Heading>
+
+				<img src={`${this.context.siteConfig.assetsRoot}/img/sg-desktop.gif`} width="356" title="Usage examples right in your editor" alt="Usage examples right in your editor" style={{maxWidth: "100%", display: "block", imageRendering: "pixelated"}} className={base.center}/>
 
 				<div className={base.mv4}>
 					<Heading level="5">Go definitions and usages as you code</Heading>
@@ -29,7 +41,7 @@ class DesktopHome extends React.Component {
 				<div className={base.mv4}>
 					<Heading level="5">Semantic, global code search</Heading>
 					<p>
-						Just hit KEY CODES on OS X or click the search box at the top of this page to semantically search for functions and symbols.
+						Just hit {windowsShortcut} or click the search box at the top of this page to semantically search for functions and symbols.
 					</p>
 				</div>
 				<div className={base.mv4}>
@@ -63,4 +75,4 @@ class DesktopHome extends React.Component {
 	}
 }
 
-export default CSSModules(DesktopHome, {allowMultiple: true});
+export default CSSModules(DesktopHome, styles, {allowMultiple: true});
