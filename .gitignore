@@ -70,6 +70,7 @@ eb-bundle.zip
 /deploy/sourcegraph.com/src
 /deploy/sourcegraph/src
 /lang/golang/cmd/langserver-go/langserver-go
+/lang/golang/cmd/langprocessor-go/langprocessor-go
 
 # Sublime
 *.sublime-project
