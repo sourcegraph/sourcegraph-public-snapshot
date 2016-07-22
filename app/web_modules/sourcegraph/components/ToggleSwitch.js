@@ -19,8 +19,13 @@ class ToggleSwitch extends React.Component {
 		this.state = {
 			checked: props.defaultChecked,
 		};
-		this._toggle = this._toggle.bind(this);
 	}
+
+	state: {
+		checked: boolean;
+	} = {
+		checked: false,
+	};
 
 	_toggle() {
 		this.setState({checked: !this.state.checked}, () => this.props.onChange(this.state.checked));
@@ -28,7 +33,7 @@ class ToggleSwitch extends React.Component {
 
 	render() {
 		return (
-			<div styleName="toggle" onClick={this._toggle}>
+			<div styleName="toggle" onClick={this._toggle.bind(this)}>
 				<input type="checkbox" name="toggle" styleName="toggle-checkbox" checked={this.state.checked}/>
 				<label styleName="toggle-label">
 						<span styleName="toggle-inner"></span>
