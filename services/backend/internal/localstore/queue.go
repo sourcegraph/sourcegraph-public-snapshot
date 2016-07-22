@@ -2,6 +2,7 @@ package localstore
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/keegancsmith/que-go"
 	"golang.org/x/net/context"
@@ -100,8 +101,9 @@ func (q *queue) Stats(ctx context.Context) (map[string]store.QueueStats, error) 
 
 func (q *queue) toQue(j *store.Job) *que.Job {
 	return &que.Job{
-		Type: j.Type,
-		Args: j.Args,
+		Type:  j.Type,
+		Args:  j.Args,
+		RunAt: time.Now().Add(j.Delay),
 	}
 }
 

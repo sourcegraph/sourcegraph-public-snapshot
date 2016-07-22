@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
@@ -74,6 +75,27 @@ func TestQueue_LockJob_BoundedAttempts(t *testing.T) {
 	}
 	if j != nil {
 		t.Fatalf("wanted no job, got %+v", j)
+	}
+}
+
+func TestQueue_Job_Delay(t *testing.T) {
+	// We don't actually test the DB implementation, we assume the
+	// underlying library works. We do this to avoid having a test that
+	// relies on time.Sleep.
+	q := &queue{}
+	now := time.Now()
+
+	j := q.toQue(&store.Job{})
+	if j.RunAt.Before(now) {
+		t.Errorf("job without delay scheduled to run in the past. want %s <= %s", now, j.RunAt)
+	}
+
+	j = q.toQue(&store.Job{Delay: 10 * time.Minute})
+	if j.RunAt.Before(now.Add(9 * time.Minute)) {
+		t.Errorf("job scheduled too early. wanted roughly %s, got %s", now.Add(10*time.Minute), j.RunAt)
+	}
+	if j.RunAt.After(now.Add(11 * time.Minute)) {
+		t.Errorf("job scheduled too late. wanted roughly %s, got %s", now.Add(10*time.Minute), j.RunAt)
 	}
 }
 

@@ -17,9 +17,7 @@ import (
 const testGHCachePrefix = "__test__gh_pub"
 
 func resetCache(t *testing.T) {
-	if err := rcache.ClearAllForTest(testGHCachePrefix); err != nil {
-		t.Fatal(err)
-	}
+	rcache.SetupForTest(testGHCachePrefix)
 	reposGithubPublicCache = rcache.New(testGHCachePrefix, 1000)
 }
 

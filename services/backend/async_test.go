@@ -3,12 +3,19 @@ package backend
 import (
 	"encoding/json"
 	"testing"
+	"time"
+
+	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sqs/pbtypes"
 )
 
 func TestAsyncService_RefreshIndexes(t *testing.T) {
+	rcache.SetupForTest("TestAsyncService_RefreshIndexes")
+
 	s := &async{}
 	w := &asyncWorker{}
 	ctx, mock := testContext()
@@ -51,6 +58,8 @@ func TestAsyncService_RefreshIndexes(t *testing.T) {
 }
 
 func TestAsyncWorker(t *testing.T) {
+	rcache.SetupForTest("TestAsyncWorker")
+
 	w := &asyncWorker{}
 	ctx, mock := testContext()
 
@@ -92,6 +101,69 @@ func TestAsyncWorker(t *testing.T) {
 	if !*calledError {
 		t.Error("job should of failed")
 	}
+}
+
+func TestAsyncWorker_mutex(t *testing.T) {
+	// TODO(keegancsmith) distributed locking should be a store, so we can
+	// mock it
+	rcache.SetupForTest("TestAsyncWorker_mutex")
+
+	w := &asyncWorker{}
+	ctx1, mock1 := testContext()
+	ctx2, mock2 := testContext()
+
+	wantRepo := int32(10811)
+	op := &sourcegraph.AsyncRefreshIndexesOp{
+		Repo:   wantRepo,
+		Source: "test",
+	}
+
+	// Do a call to RefreshIndexes, but that blocks until wait1 is
+	// closed. That way we can do another call concurrently and ensure the
+	// mutex blocks.
+	called1 := make(chan interface{})
+	wait1 := make(chan interface{})
+	done1 := make(chan interface{})
+	mock1.servers.Defs.RefreshIndex_ = func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
+		close(called1)
+		<-wait1
+		return nil, nil
+	}
+	go func() {
+		err := w.refreshIndexes(ctx1, op)
+		if err != nil {
+			t.Fatal(err)
+		}
+		close(done1)
+	}()
+	<-called1
+
+	// Now we should fail to acquire the mutex -> do not run Defs.RefreshIndex
+	called2 := mock2.servers.Defs.MockRefreshIndex(t, &sourcegraph.DefsRefreshIndexOp{
+		Repo:                wantRepo,
+		RefreshRefLocations: true,
+	})
+	calledEnqueue := mock2.stores.Queue.MockEnqueue(t, &store.Job{
+		Type: "RefreshIndexes",
+		Args: mustMarshal(t, &sourcegraph.AsyncRefreshIndexesOp{
+			Repo:   wantRepo,
+			Source: "test (mutex)",
+		}),
+		Delay: 10 * time.Minute,
+	})
+	err := w.refreshIndexes(ctx2, op)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !*calledEnqueue {
+		t.Error("second refreshIndexes did not enqueue job for later")
+	}
+	if *called2 {
+		t.Error("second refreshIndexes should not run Defs.RefreshIndex")
+	}
+
+	close(wait1)
+	<-done1
 }
 
 func mustMarshal(t *testing.T, m interface{}) []byte {
