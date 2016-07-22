@@ -69,15 +69,13 @@ func (h *Handler) HandleBatch(req []*jsonrpc2.Request) []*jsonrpc2.Response {
 type Session struct {
 	mu sync.Mutex
 
-	init         *lsp.InitializeParams // set by "initialize" req
-	overlayFiles map[string][]byte     // set by "textDocument/did{Open,Change,Close}" reqs
-	fset         *token.FileSet
+	init *lsp.InitializeParams // set by "initialize" req
+	fset *token.FileSet
 }
 
 // reset clears all internal state in h.
 func (h *Session) reset(init *lsp.InitializeParams) {
 	h.init = init
-	h.overlayFiles = nil
 	h.fset = nil
 }
 
@@ -116,50 +114,11 @@ func (h *Session) Handle(req *jsonrpc2.Request) *jsonrpc2.Response {
 		h.reset(&params)
 		result = lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
-				TextDocumentSync:   lsp.TDSKFull,
 				HoverProvider:      true,
 				DefinitionProvider: true,
 				ReferencesProvider: true,
 			},
 		}
-
-	case "textDocument/didOpen":
-		var params DidOpenTextDocumentParams
-		err = json.Unmarshal(*req.Params, &params)
-		if err != nil {
-			break
-		}
-		h.addOverlayFile(params.TextDocument.URI, []byte(params.TextDocument.Text))
-
-	case "textDocument/didChange":
-		var params DidChangeTextDocumentParams
-		err = json.Unmarshal(*req.Params, &params)
-		if err != nil {
-			break
-		}
-		contents, found := h.readOverlayFile(params.TextDocument.URI)
-		if !found {
-			log.Println("received textDocument/didChange for unknown file:", params.TextDocument.URI)
-			break
-		}
-		for _, change := range params.ContentChanges {
-			switch {
-			case change.Range == nil && change.RangeLength == 0:
-				contents = []byte(change.Text) // new full content
-
-			default:
-				log.Println("incremental updates in textDocument/didChange not supported:", params.TextDocument.URI)
-			}
-		}
-		h.addOverlayFile(params.TextDocument.URI, contents)
-
-	case "textDocument/didClose":
-		var params DidCloseTextDocumentParams
-		err = json.Unmarshal(*req.Params, &params)
-		if err != nil {
-			break
-		}
-		h.removeOverlayFile(params.TextDocument.URI)
 
 	case "shutdown":
 		// Result is undefined, per
@@ -202,25 +161,4 @@ func (h *Session) Handle(req *jsonrpc2.Request) *jsonrpc2.Response {
 	resp := &jsonrpc2.Response{ID: req.ID}
 	resp.SetResult(result)
 	return resp
-}
-
-// TODO(sqs): move these to package lsp
-
-type DidOpenTextDocumentParams struct {
-	TextDocument lsp.TextDocumentItem `json:"textDocument"`
-}
-
-type DidChangeTextDocumentParams struct {
-	TextDocument   lsp.VersionedTextDocumentIdentifier `json:"textDocument"`
-	ContentChanges []TextDocumentContentChangeEvent    `json:"contentChanges"`
-}
-
-type TextDocumentContentChangeEvent struct {
-	Range       *lsp.Range `json:"range,omitEmpty"`
-	RangeLength uint       `json:"rangeLength,omitEmpty"`
-	Text        string     `json:"text"`
-}
-
-type DidCloseTextDocumentParams struct {
-	TextDocument lsp.TextDocumentIdentifier `json:"textDocument"`
 }

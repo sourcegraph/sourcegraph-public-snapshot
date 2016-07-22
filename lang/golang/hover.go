@@ -19,7 +19,7 @@ import (
 )
 
 func (h *Session) handleHover(req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) (*lsp.Hover, error) {
-	buildCtx := buildutil.OverlayContext(&build.Default, h.overlayFiles)
+	buildCtx := &build.Default
 
 	var importPath string
 	bpkg, _ := buildutil.ContainingPackage(buildCtx, h.init.RootPath, params.TextDocument.URI)

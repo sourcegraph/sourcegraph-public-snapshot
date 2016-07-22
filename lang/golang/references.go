@@ -19,7 +19,7 @@ import (
 )
 
 func (h *Session) handleReferences(req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {
-	buildCtx := buildutil.OverlayContext(&build.Default, h.overlayFiles)
+	buildCtx := &build.Default
 
 	var importPath string
 	bpkg, _ := buildutil.ContainingPackage(buildCtx, h.init.RootPath, params.TextDocument.URI)

@@ -2,7 +2,6 @@
   {
     "result": {
       "capabilities": {
-        "textDocumentSync": 1,
         "hoverProvider": true,
         "definitionProvider": true,
         "referencesProvider": true
