@@ -1,8 +1,13 @@
 package golang
 
 import (
+	"errors"
+	"fmt"
 	"go/ast"
+	"go/parser"
 	"go/token"
+
+	"golang.org/x/tools/go/ast/astutil"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
@@ -39,4 +44,27 @@ func rangeForNode(fset *token.FileSet, node ast.Node) lsp.Range {
 		Start: lsp.Position{Line: start.Line - 1, Character: start.Column - 1},
 		End:   lsp.Position{Line: end.Line - 1, Character: end.Column - 1},
 	}
+}
+
+func rangeAtPosition(p lsp.Position, contents []byte) (lsp.Range, error) {
+	var r lsp.Range
+	ofs, valid := offsetForPosition(contents, p)
+	if !valid {
+		return r, errors.New("invalid start position for def")
+	}
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, "a.go", contents, 0)
+	if err != nil {
+		return r, err
+	}
+	pos := fset.File(f.Pos()).Pos(int(ofs))
+	nodes, _ := astutil.PathEnclosingInterval(f, pos, pos)
+	if len(nodes) == 0 {
+		return r, errors.New("no nodes found at def")
+	}
+	node, ok := nodes[0].(*ast.Ident)
+	if !ok {
+		return r, fmt.Errorf("node is %T, not ident, at %+v", nodes[0], p)
+	}
+	return rangeForNode(fset, node), nil
 }

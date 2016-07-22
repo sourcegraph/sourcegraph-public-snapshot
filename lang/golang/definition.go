@@ -1,69 +1,75 @@
 package golang
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"go/ast"
-	"go/parser"
-	"go/token"
+	"io/ioutil"
+	"os/exec"
+	"strconv"
+	"strings"
 
-	"golang.org/x/tools/go/ast/astutil"
+	"golang.org/x/tools/cmd/guru/serial"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
 func (h *Session) handleDefinition(req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) ([]lsp.Location, error) {
+	// Find start of definition using guru
 	contents, err := h.readFile(params.TextDocument.URI)
 	if err != nil {
 		return nil, err
 	}
-
-	if h.fset == nil {
-		h.fset = token.NewFileSet()
-	}
-	f, err := parser.ParseFile(h.fset, h.filePath(params.TextDocument.URI), contents, parser.ParseComments)
-	if err != nil {
-		return nil, err
-	}
-
 	ofs, valid := offsetForPosition(contents, params.Position)
 	if !valid {
 		return nil, errors.New("invalid position")
 	}
-
-	pos := h.fset.File(f.Pos()).Pos(int(ofs))
-	p := h.fset.Position(pos)
-	loc := fmt.Sprintf("%s:%d:%d", p.Filename, p.Line, p.Column)
-
-	// Fast-path to short-circuit when we're not even over an ident
-	// node, and avoid doing a full typecheck in that case.
-	nodes, _ := astutil.PathEnclosingInterval(f, pos, pos)
-	if len(nodes) == 0 {
-		return nil, errors.New("no nodes found at cursor")
+	def, err := guruDefinition(h.filePath(params.TextDocument.URI), int(ofs))
+	if err != nil {
+		return nil, err
 	}
-	node, ok := nodes[0].(*ast.Ident)
-	if !ok {
-		return nil, fmt.Errorf("node is %T, not ident, at %s", nodes[0], loc)
-	}
+	filename, line, column := guruPos(def.ObjPos)
 
-	// Did the parser resolve it to a local object?
-	obj := node.Obj
-	if obj == nil || !obj.Pos().IsValid() {
-		return nil, fmt.Errorf("Could not resolve to local object")
+	uri, err := h.fileURI(filename)
+	if err != nil {
+		return nil, err
 	}
-
-	// TODO(keegancsmith) the end value here is a hack
-	objNode := fakeNode{obj.Pos(), obj.Pos() + token.Pos(len(obj.Name))}
+	if uri != params.TextDocument.URI {
+		// different file to input
+		contents, err = ioutil.ReadFile(filename)
+		if err != nil {
+			return nil, err
+		}
+	}
+	r, err := rangeAtPosition(lsp.Position{Line: line - 1, Character: column - 1}, contents)
+	if err != nil {
+		return nil, err
+	}
 
 	var locs []lsp.Location
 	locs = append(locs, lsp.Location{
-		URI:   params.TextDocument.URI,
-		Range: rangeForNode(h.fset, objNode),
+		URI:   uri,
+		Range: r,
 	})
 	return locs, nil
 }
 
-type fakeNode struct{ p, e token.Pos }
+func guruPos(pos string) (string, int, int) {
+	j := strings.LastIndexByte(pos, ':')
+	i := strings.LastIndexByte(pos[:j], ':')
+	line, _ := strconv.Atoi(pos[i+1 : j])
+	col, _ := strconv.Atoi(pos[j+1:])
+	return pos[:i], line, col
+}
 
-func (n fakeNode) Pos() token.Pos { return n.p }
-func (n fakeNode) End() token.Pos { return n.e }
+func guruDefinition(path string, offset int) (serial.Definition, error) {
+	var d serial.Definition
+	c := exec.Command("guru", "-json", "definition", fmt.Sprintf("%s:#%d", path, offset))
+	b, err := c.Output()
+	if err != nil {
+		return d, err
+	}
+	err = json.Unmarshal(b, &d)
+	return d, err
+}

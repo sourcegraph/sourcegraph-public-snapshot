@@ -11,24 +11,11 @@
     "jsonrpc": ""
   },
   {
-    "result": {
-      "contents": [
-        {
-          "language": "go",
-          "value": "func() *Router"
-        }
-      ],
-      "range": {
-        "start": {
-          "line": 15,
-          "character": 5
-        },
-        "end": {
-          "line": 15,
-          "character": 13
-        }
+    "result": [
+      {
+        "uri": "golang://github.com/prometheus/client_golang/prometheus.CounterOpts"
       }
-    },
+    ],
     "id": "1",
     "jsonrpc": ""
   },
