@@ -69,6 +69,7 @@ eb-bundle.zip
 /provision/kubernetes/gen
 /deploy/sourcegraph.com/src
 /deploy/sourcegraph/src
+/lang/golang/cmd/langserver-go/langserver-go
 
 # Sublime
 *.sublime-project
