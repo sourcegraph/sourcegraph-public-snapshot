@@ -14,12 +14,13 @@ describe("DefStore", () => {
 		expect(DefStore.defs.list("r", "v", "q", "fpp")).to.eql(["someData"]);
 	});
 
-	it("should handle HighlightDef", () => {
-		DefStore.directDispatch(new DefActions.HighlightDef("someDef"));
-		expect(DefStore.highlightedDef).to.be("someDef");
+	it("should handle Hovering", () => {
+		let pos = {repo: "foo", commit: "aaa", file: "bar", line: 42, character: 3};
+		DefStore.directDispatch(new DefActions.Hovering(pos));
+		expect(DefStore.hoverPos).to.be(pos);
 
-		DefStore.directDispatch(new DefActions.HighlightDef(null));
-		expect(DefStore.highlightedDef).to.be(null);
+		DefStore.directDispatch(new DefActions.Hovering(null));
+		expect(DefStore.hoverPos).to.be(null);
 	});
 
 	it("should handle RefLocationsFetched", () => {

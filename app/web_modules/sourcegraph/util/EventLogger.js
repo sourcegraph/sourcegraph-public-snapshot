@@ -303,17 +303,17 @@ export class EventLogger {
 				this.logEventForCategory(AnalyticsConstants.CATEGORY_DEF, AnalyticsConstants.ACTION_FETCH, action.eventName, eventProps);
 			}
 			break;
-
-		case DefActions.HighlightDef:
+		case DefActions.Hovering:
 			{
-				if (action.url) { // we also emit HighlightDef when the def is un-highlighted
-					let eventProps = {
-						language: action.language || "unknown",
-					};
-					this.logEventForCategory(AnalyticsConstants.CATEGORY_DEF, AnalyticsConstants.ACTION_HOVER, action.eventName, eventProps);
+				if (action.pos === null) {
+					break;
 				}
-				break;
+				let eventProps = {
+					language: getLanguageExtensionForPath(action.pos.file),
+				};
+				this.logEventForCategory(AnalyticsConstants.CATEGORY_DEF, AnalyticsConstants.ACTION_HOVER, "Hovering", eventProps);
 			}
+			break;
 
 		default:
 			// All dispatched actions to stores will automatically be tracked by the eventName

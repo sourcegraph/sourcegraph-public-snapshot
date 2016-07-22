@@ -14,7 +14,6 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import {fastURLToRepoDef} from "sourcegraph/def/routes";
 import s from "sourcegraph/blob/styles/Blob.css";
 import {isExternalLink} from "sourcegraph/util/externalLink";
-import {getLanguageExtensionForPath} from "sourcegraph/util/inventory";
 import "sourcegraph/components/styles/code.css";
 
 // simpleContentsString converts [string...] (like ["a", "b", "c"]) to
@@ -59,6 +58,7 @@ class BlobLine extends Component {
 	reconcileState(state, props) {
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
+		state.commitID = props.commitID || null;
 		state.path = props.path || null;
 		state.textSize = props.textSize || "normal";
 
@@ -83,6 +83,7 @@ class BlobLine extends Component {
 		state.activeDefURL = activeDefURL && state.ownAnnURLs && state.ownAnnURLs[activeDefURL] ? activeDefURL : null;
 
 		state.lineNumber = props.lineNumber || null;
+		state.showLineNumber = props.showLineNumber || false;
 		state.oldLineNumber = props.oldLineNumber || null;
 		state.newLineNumber = props.newLineNumber || null;
 		state.startByte = props.startByte;
@@ -125,8 +126,8 @@ class BlobLine extends Component {
 						})}
 						target="_blank"
 						href={annURLs[0]}
-						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(annURLs[0], getLanguageExtensionForPath(this.state.path)))}
-						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}
+						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.Hovering({repo: this.state.repo, commit: this.state.commitID, file: this.state.path, line: this.state.lineNumber - 1, character: ann.StartByte - this.state.startByte}))}
+						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.Hovering(null))}
 						key={i}>
 						{simpleContentsString(content)}
 					</a>
@@ -148,8 +149,8 @@ class BlobLine extends Component {
 							[s.activeAnn]: annURLs.includes(this.state.activeDefURL),
 						})}
 						to={annRevURLs[0]}
-						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(annURLs[0], getLanguageExtensionForPath(this.state.path)))}
-						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}
+						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.Hovering({repo: this.state.repo, commit: this.state.commitID, file: this.state.path, line: this.state.lineNumber - 1, character: ann.StartByte - this.state.startByte}))}
+						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.Hovering(null))}
 						onClick={(ev) => {
 							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
 							// TODO: implement multiple defs menu if ann.URLs.length > 0 (more important for languages other than Go)
@@ -159,8 +160,8 @@ class BlobLine extends Component {
 							}
 
 							// Clear the def tooltip on click, or else it might be stuck
-							// to the cursor if no corresponding HighlightDef(null) is dispatched.
-							Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null));
+							// to the cursor if no corresponding Hovering(null) is dispatched.
+							Dispatcher.Stores.dispatch(new DefActions.Hovering(null));
 						}}
 						key={i}>{fromUtf8(content)}</Link>
 				);
@@ -181,7 +182,7 @@ class BlobLine extends Component {
 		return (
 			<tr className={`${s.line} ${s[this.state.textSize]} ${this.state.className || ""}`}
 				data-line={this.state.lineNumber}>
-				{this.state.lineNumber &&
+				{this.state.showLineNumber &&
 					<td className={s.lineNumberCell} onClick={(event) => {
 						if (event.shiftKey) {
 							event.preventDefault();
@@ -212,11 +213,13 @@ BlobLine.propTypes = {
 		}
 		return null;
 	},
+	showLineNumber: React.PropTypes.bool,
 
 	// Optional: for linking line numbers to the file they came from (e.g., in
 	// ref snippets).
 	repo: React.PropTypes.string,
 	rev: React.PropTypes.string,
+	commitID: React.PropTypes.string,
 	path: React.PropTypes.string,
 
 	// For diff hunks.

@@ -8,22 +8,6 @@
 				{
 					"type": "td",
 					"props": {
-						"children": [
-							{
-								"type": "",
-								"props": {
-									"to": "/r@v/-/blob/p#L42",
-									"data-line": 42,
-									"onlyActiveOnIndex": false,
-									"style": {}
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "td",
-					"props": {
 						"className": "code undefined",
 						"children": [
 							"hello\nworld"

@@ -128,6 +128,27 @@ const DefBackend = {
 				}
 				break;
 			}
+
+		case DefActions.WantHoverInfo:
+			{
+				let info = DefStore.hoverInfos.get(action.pos);
+				if (info === null) {
+					let url = `/.api/repos/${action.pos.repo}@${action.pos.commit}/-/hover-info?file=${action.pos.file}&line=${action.pos.line}&character=${action.pos.character}`;
+					trackPromise(
+						DefBackend.fetch(url)
+							.then(checkStatus)
+							.then((resp) => resp.json())
+							.catch((err) => ({Error: err}))
+							.then((data) => {
+								if (get(data, "Error.response.status") === 404) {
+									return; // TODO we may want to indicate error in the UI
+								}
+								Dispatcher.Stores.dispatch(new DefActions.HoverInfoFetched(action.pos, data));
+							})
+					);
+				}
+				break;
+			}
 		}
 	},
 };

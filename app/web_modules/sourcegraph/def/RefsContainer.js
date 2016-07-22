@@ -13,7 +13,6 @@ import * as BlobActions from "sourcegraph/blob/BlobActions";
 import "sourcegraph/blob/BlobBackend";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {routeParams as defRouteParams} from "sourcegraph/def";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import Header from "sourcegraph/components/Header";
@@ -109,6 +108,9 @@ export default class RefsContainer extends Container {
 
 		state.refs = props.refs || DefStore.refs.get(state.repo, state.rev, state.def, state.refRepo, null);
 
+		state.hoverInfos = DefStore.hoverInfos;
+		state.hoverPos = DefStore.hoverPos;
+
 		if (state.fileLocations && !state.initExpanded) {
 			// Auto-expand N snippets by default.
 			for (let i=0; i<props.initNumSnippets; i++) {
@@ -116,21 +118,6 @@ export default class RefsContainer extends Container {
 				if (loc) state.shownFiles.add(loc.Path);
 			}
 			state.initExpanded = true;
-		}
-
-		if (state.mouseover) {
-			state.highlightedDef = DefStore.highlightedDef;
-			if (state.highlightedDef) {
-				let {repo, rev, def} = defRouteParams(state.highlightedDef);
-				state.highlightedDefObj = DefStore.defs.get(repo, rev, def);
-			} else {
-				state.highlightedDefObj = null;
-			}
-		}
-		if (state.mouseout) {
-			// Clear DefTooltip so it doesn't hang around.
-			state.highlightedDef = null;
-			state.highlightedDefObj = null;
 		}
 
 		state.forceComponentUpdate = false;
@@ -177,11 +164,6 @@ export default class RefsContainer extends Container {
 		const refPropsUpdated = prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def || prevState.refRepo !== nextState.refRepo;
 		if (refPropsUpdated) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.repo, nextState.rev, nextState.def, nextState.refRepo));
-		}
-
-		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
-			const {repo, rev, def} = defRouteParams(nextState.highlightedDef);
-			Dispatcher.Backends.dispatch(new DefActions.WantDef(repo, rev, def));
 		}
 
 		if (nextState.refs && nextState.refs.length > 0 && !nextState.refs.Error && (nextState.refs !== prevState.refs || nextState.shownFiles !== prevState.shownFiles)) {
@@ -293,7 +275,7 @@ export default class RefsContainer extends Container {
 						if (!this.state.mouseover) this.setState({mouseover: true, mouseout: false});
 					}}
 					onMouseLeave={() => this.setState({mouseover: false, mouseout: true})}
-					onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}>
+					onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.Hovering(null))}>
 					{/* mouseover state is for optimization which will only re-render the moused-over blob when a def is highlighted */}
 					{/* this is important since there may be many ref containers on the page */}
 					<div>
@@ -341,6 +323,7 @@ export default class RefsContainer extends Container {
 											<Blob
 												repo={this.state.refRepo}
 												rev={this.state.refRev}
+												commitID={this.state.commitID}
 												path={loc.Path}
 												contents={file.ContentsString}
 												annotations={this.anns[loc.Path] || null}
@@ -349,8 +332,8 @@ export default class RefsContainer extends Container {
 												activeDef={this.state.def}
 												lineNumbers={false}
 												displayRanges={ranges || null}
-												highlightedDef={this.state.highlightedDef || null}
-												highlightedDefObj={this.state.highlightedDefObj || null}
+												highlightedDef={null}
+												highlightedDefObj={null}
 												textSize="large"
 												className={styles.blob} />
 										</div>
@@ -367,7 +350,10 @@ export default class RefsContainer extends Container {
 							</div>
 						}
 					</div>
-					{this.state.highlightedDefObj && !this.state.highlightedDefObj.Error && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
+					<DefTooltip
+						currentRepo={this.state.repo}
+						hoverPos={this.state.hoverPos}
+						hoverInfos={this.state.hoverInfos} />
 				</div>
 			</div>
 		);

@@ -1,7 +1,12 @@
+// @flow weak
+
 import React from "react";
 import Component from "sourcegraph/Component";
+import Dispatcher from "sourcegraph/Dispatcher";
 import s from "sourcegraph/def/styles/Def.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
+import type {BlobPos} from "sourcegraph/def/DefActions";
+import * as DefActions from "sourcegraph/def/DefActions";
 
 // These variables are needed to intialize the tooltips position to the current
 // position of the mouse without a mousemove event.
@@ -23,7 +28,6 @@ class DefTooltip extends Component {
 
 	componentDidMount() {
 		document.addEventListener("mousemove", this._updatePosition);
-		this._updatePosition({clientY: cursorY, clientX: cursorX}); // Initialize position
 	}
 
 	componentWillUnmount() {
@@ -31,8 +35,20 @@ class DefTooltip extends Component {
 		document.removeEventListener("mousemove", this._updatePosition);
 	}
 
+	props: {
+		currentRepo: string,
+		hoverPos: BlobPos,
+		hoverInfos: any,
+	};
+
 	reconcileState(state, props) {
 		Object.assign(state, props);
+	}
+
+	onStateTransition(prevState, nextState) {
+		if (prevState.hoverPos !== nextState.hoverPos && nextState.hoverPos !== null) {
+			Dispatcher.Backends.dispatch(new DefActions.WantHoverInfo(nextState.hoverPos));
+		}
 	}
 
 	_updatePosition(event) {
@@ -47,9 +63,19 @@ class DefTooltip extends Component {
 	}
 
 	render() {
-		let def = this.state.def;
+		if (this.state.hoverPos === null) {
+			return null;
+		}
+
+		let info = this.state.hoverInfos.get(this.state.hoverPos);
+		if (info === null) {
+			// TODO show loading indicator
+			return null;
+		}
+
+		let def = info.def;
 		return (
-			<div ref={(e) => this._elem = e} className={s.tooltip}>
+			<div ref={(e) => { this._elem = e; this._updatePosition({clientY: cursorY, clientX: cursorX}); }} className={s.tooltip}>
 				<div key="title" className={s.tooltipTitle}>{qualifiedNameAndType(def)}</div>
 				<div key="content" className={s.content}>
 					{def && def.DocHTML && <div className={s.doc} dangerouslySetInnerHTML={def && def.DocHTML}></div>}
@@ -59,12 +85,5 @@ class DefTooltip extends Component {
 		);
 	}
 }
-
-DefTooltip.propTypes = {
-	// currentRepo is the repo of the file that's currently being displayed, if any.
-	currentRepo: React.PropTypes.string,
-
-	def: React.PropTypes.object,
-};
 
 export default DefTooltip;

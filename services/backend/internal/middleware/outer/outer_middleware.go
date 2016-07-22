@@ -368,6 +368,36 @@ func (s wrappedAnnotations) List(ctx context.Context, v1 *sourcegraph.Annotation
 	return rv, nil
 }
 
+func (s wrappedAnnotations) GetDefAtPos(ctx context.Context, v1 *sourcegraph.AnnotationsGetDefAtPosOptions) (returnedResult *sourcegraph.DefSpec, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Annotations.GetDefAtPos: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.AnnotationsOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Annotations")
+	}
+
+	rv, err := innerSvc.GetDefAtPos(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
 type wrappedAsync struct {
 	ctxFunc  ContextFunc
 	services svc.Services

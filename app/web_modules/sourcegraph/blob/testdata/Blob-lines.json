@@ -18,6 +18,7 @@
 											"ref": "startLineComponent",
 											"props": {
 												"lineNumber": 1,
+												"showLineNumber": true,
 												"startByte": 0,
 												"contents": "hello",
 												"textSize": "normal",
@@ -30,6 +31,7 @@
 											"key": "1",
 											"props": {
 												"lineNumber": 2,
+												"showLineNumber": true,
 												"startByte": 6,
 												"contents": "world",
 												"textSize": "normal",

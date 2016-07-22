@@ -16,6 +16,8 @@
 											"type": "BlobLine",
 											"key": "0",
 											"props": {
+												"lineNumber": 1,
+												"showLineNumber": false,
 												"startByte": 0,
 												"contents": "hello",
 												"textSize": "normal",
@@ -26,6 +28,8 @@
 											"type": "BlobLine",
 											"key": "1",
 											"props": {
+												"lineNumber": 2,
+												"showLineNumber": false,
 												"startByte": 6,
 												"contents": "world",
 												"textSize": "normal",

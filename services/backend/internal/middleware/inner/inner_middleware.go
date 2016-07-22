@@ -271,6 +271,25 @@ func (s wrappedAnnotations) List(ctx context.Context, param *sourcegraph.Annotat
 	return
 }
 
+func (s wrappedAnnotations) GetDefAtPos(ctx context.Context, param *sourcegraph.AnnotationsGetDefAtPosOptions) (res *sourcegraph.DefSpec, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Annotations", "GetDefAtPos", param)
+	defer func() {
+		trace.After(ctx, "Annotations", "GetDefAtPos", param, err, time.Since(start))
+	}()
+	res, err = backend.Services.Annotations.GetDefAtPos(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Annotations.GetDefAtPos returned nil, nil")
+	}
+	if err != nil && !DebugMode(ctx) {
+		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Annotations.GetDefAtPos failed with internal error.")
+		}
+	}
+	return
+}
+
 type wrappedAsync struct{}
 
 func (s wrappedAsync) RefreshIndexes(ctx context.Context, param *sourcegraph.AsyncRefreshIndexesOp) (res *pbtypes.Void, err error) {

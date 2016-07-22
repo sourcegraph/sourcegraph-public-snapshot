@@ -832,21 +832,31 @@ func (s *NotifyServer) GenericEvent(v0 context.Context, v1 *sourcegraph.NotifyGe
 var _ sourcegraph.NotifyServer = (*NotifyServer)(nil)
 
 type AnnotationsClient struct {
-	List_ func(ctx context.Context, in *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error)
+	List_        func(ctx context.Context, in *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error)
+	GetDefAtPos_ func(ctx context.Context, in *sourcegraph.AnnotationsGetDefAtPosOptions) (*sourcegraph.DefSpec, error)
 }
 
 func (s *AnnotationsClient) List(ctx context.Context, in *sourcegraph.AnnotationsListOptions, opts ...grpc.CallOption) (*sourcegraph.AnnotationList, error) {
 	return s.List_(ctx, in)
 }
 
+func (s *AnnotationsClient) GetDefAtPos(ctx context.Context, in *sourcegraph.AnnotationsGetDefAtPosOptions, opts ...grpc.CallOption) (*sourcegraph.DefSpec, error) {
+	return s.GetDefAtPos_(ctx, in)
+}
+
 var _ sourcegraph.AnnotationsClient = (*AnnotationsClient)(nil)
 
 type AnnotationsServer struct {
-	List_ func(v0 context.Context, v1 *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error)
+	List_        func(v0 context.Context, v1 *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error)
+	GetDefAtPos_ func(v0 context.Context, v1 *sourcegraph.AnnotationsGetDefAtPosOptions) (*sourcegraph.DefSpec, error)
 }
 
 func (s *AnnotationsServer) List(v0 context.Context, v1 *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error) {
 	return s.List_(v0, v1)
+}
+
+func (s *AnnotationsServer) GetDefAtPos(v0 context.Context, v1 *sourcegraph.AnnotationsGetDefAtPosOptions) (*sourcegraph.DefSpec, error) {
+	return s.GetDefAtPos_(v0, v1)
 }
 
 var _ sourcegraph.AnnotationsServer = (*AnnotationsServer)(nil)

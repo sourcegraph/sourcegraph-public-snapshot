@@ -93,6 +93,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.RepoRefresh).Handler(handler(serveRepoRefresh))
 	m.Get(apirouter.RepoResolveRev).Handler(handler(serveRepoResolveRev))
 	m.Get(apirouter.RepoTags).Handler(handler(serveRepoTags))
+	m.Get(apirouter.RepoHoverInfo).Handler(handler(serveRepoHoverInfo))
 	m.Get(apirouter.Repos).Handler(handler(serveRepos))
 	m.Get(apirouter.ResolveCustomImportsInfo).Handler(handler(serveResolveCustomImportsInfo))
 	m.Get(apirouter.ResolveCustomImportsTree).Handler(handler(serveResolveCustomImportsTree))

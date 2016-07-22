@@ -10,8 +10,14 @@ const fmtStrings = {DefKeyword: "a", NameAndTypeSeparator: "s", Name: {ScopeQual
 
 describe("DefTooltip", () => {
 	it("should render definition data", () => {
+		let testPos = {repo: "foo", commit: "aaa", file: "bar", line: 42, character: 3};
+		let hoverInfos = {
+			get(pos) {
+				return pos === testPos ? {def: {URL: "someURL", FmtStrings: fmtStrings, DocHTML: "someDoc", Repo: "someRepo"}} : null;
+			},
+		};
 		autotest(testdataData, `${__dirname}/testdata/DefTooltip-data.json`,
-			<DefTooltip def={{URL: "someURL", FmtStrings: fmtStrings, DocHTML: "someDoc", Repo: "someRepo"}} />
+			<DefTooltip hoverPos={testPos} hoverInfos={hoverInfos} />
 		);
 	});
 });

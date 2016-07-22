@@ -11,8 +11,6 @@ import BlobToolbar from "sourcegraph/blob/BlobToolbar";
 import FileMargin from "sourcegraph/blob/FileMargin";
 import DefTooltip from "sourcegraph/def/DefTooltip";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import * as DefActions from "sourcegraph/def/DefActions";
-import {routeParams as defRouteParams} from "sourcegraph/def";
 import DefStore from "sourcegraph/def/DefStore";
 import "sourcegraph/blob/BlobBackend";
 import "sourcegraph/def/DefBackend";
@@ -24,7 +22,6 @@ import {makeRepoRev, trimRepo} from "sourcegraph/repo";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import Header from "sourcegraph/components/Header";
 import {createLineFromByteFunc} from "sourcegraph/blob/lineFromByte";
-import {isExternalLink} from "sourcegraph/util/externalLink";
 import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 
 export default class BlobMain extends Container {
@@ -93,28 +90,11 @@ export default class BlobMain extends Container {
 		state.defObj = state.def && state.commitID ? DefStore.defs.get(state.repo, state.commitID, state.def) : null;
 		state.children = props.children || null;
 
-		// Def-specific
-		state.highlightedDef = DefStore.highlightedDef;
-		if (state.highlightedDef && !isExternalLink(state.highlightedDef)) {
-			let {repo, rev, def} = defRouteParams(state.highlightedDef);
-			state.highlightedDefObj = DefStore.defs.get(repo, rev, def);
-		} else {
-			state.highlightedDefObj = null;
-		}
+		state.hoverInfos = DefStore.hoverInfos;
+		state.hoverPos = DefStore.hoverPos;
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
-			if (!isExternalLink(nextState.highlightedDef)) { // kludge to filter out external def links
-				let {repo, rev, def, err} = defRouteParams(nextState.highlightedDef);
-				if (err) {
-					console.err(err);
-				} else {
-					Dispatcher.Backends.dispatch(new DefActions.WantDef(repo, rev, def));
-				}
-			}
-		}
-
 		if (prevState.blob !== nextState.blob) {
 			nextState.lineFromByte = nextState.blob && typeof nextState.blob.ContentsString !== "undefined" ? createLineFromByteFunc(nextState.blob.ContentsString) : null;
 		}
@@ -188,6 +168,7 @@ export default class BlobMain extends Container {
 					<Blob
 						repo={this.state.repo}
 						rev={this.state.rev}
+						commitID={this.state.commitID}
 						ref={(c) => { this.setState({selectionStartLine: (c && c.refs && c.refs.startLineComponent) ? c.refs.startLineComponent : null}); }}
 						path={this.state.path}
 						contents={this.state.blob.ContentsString}
@@ -195,8 +176,8 @@ export default class BlobMain extends Container {
 						skipAnns={this.state.skipAnns}
 						lineNumbers={true}
 						highlightSelectedLines={true}
-						highlightedDef={this.state.highlightedDef}
-						highlightedDefObj={this.state.highlightedDefObj}
+						highlightedDef={null}
+						highlightedDefObj={null}
 						activeDef={this.state.def}
 						startLine={this.state.startLine}
 						startCol={this.state.startCol}
@@ -206,7 +187,10 @@ export default class BlobMain extends Container {
 						endByte={this.state.endByte}
 						scrollToStartLine={true}
 						dispatchSelections={true} />}
-					{this.state.highlightedDefObj && !this.state.highlightedDefObj.Error && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
+					<DefTooltip
+						currentRepo={this.state.repo}
+						hoverPos={this.state.hoverPos}
+						hoverInfos={this.state.hoverInfos} />
 				</div>
 				<FileMargin
 					className={Style.margin}

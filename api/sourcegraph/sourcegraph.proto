@@ -2088,6 +2088,8 @@ service Notify {
 service Annotations {
 	// List lists matching annotations.
 	rpc List(AnnotationsListOptions) returns (AnnotationList);
+
+	rpc GetDefAtPos(AnnotationsGetDefAtPosOptions) returns (DefSpec);
 }
 
 // An Annotation is metadata (such as a srclib ref) attached to a
@@ -2144,6 +2146,19 @@ message AnnotationsListOptions {
 	// should be fetched for. If it is not set, then all of the file's
 	// annotations are returned.
 	FileRange Range = 2;
+}
+
+// AnnotationsGetDefAtPosOptions specifies options for Annotations.GetDefAtPos
+message AnnotationsGetDefAtPosOptions {
+	// Entry specifies the file in a specific repository at a specific
+	// version.
+	TreeEntrySpec Entry = 1 [(gogoproto.nullable) = false];
+
+	// Line specifies the line of the ref (zero based).
+	uint32 Line = 2;
+
+	// Character specifies the character of the ref in the line (zero based).
+	uint32 Character = 3;
 }
 
 // SearchOptions configures the scope of a global search.
