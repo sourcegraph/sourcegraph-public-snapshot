@@ -14,7 +14,7 @@
   {
     "result": [
       {
-        "uri": "file:///mux.go",
+        "uri": "file:///mux/mux.go",
         "range": {
           "start": {
             "line": 37,
