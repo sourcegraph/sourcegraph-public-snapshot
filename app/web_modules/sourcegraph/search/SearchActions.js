@@ -29,6 +29,7 @@ export type ResultsFetchedPayload = {
 	includeRepos?: bool;
 	defs: Array<Def>;
 	options: Array<Object>;
+	tokens: ?Array<string>;
 }
 
 export class ResultsFetched {

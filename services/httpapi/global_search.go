@@ -98,9 +98,11 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 		Repos   []*RepoSearchResult
 		Defs    []*DefSearchResult
 		Options []*SearchOptions
+		Tokens  []string
 	}{
 		Repos:   repos,
 		Defs:    defs,
 		Options: options,
+		Tokens:  results.UserSearchTokens,
 	})
 }

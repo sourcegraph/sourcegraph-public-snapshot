@@ -2,6 +2,7 @@ package backend
 
 import (
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -47,6 +48,7 @@ func TestSearch(t *testing.T) {
 	wantResults := &sourcegraph.SearchResultsList{
 		DefResults:         wantDefResults,
 		SearchQueryOptions: []*sourcegraph.SearchOptions{{ListOptions: sourcegraph.ListOptions{}}},
+		UserSearchTokens:   []string{"this", "is", "the", "test", "query"},
 	}
 
 	query := "this is the test query"
@@ -91,6 +93,10 @@ func TestSearch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error from search.Search: %s", err)
 	}
+
+	// We sort both lists for only comparsion purposes.
+	sort.Strings(wantResults.UserSearchTokens)
+	sort.Strings(results.UserSearchTokens)
 
 	// Test that backend stores were called
 	if !reflect.DeepEqual(wantResults, results) {

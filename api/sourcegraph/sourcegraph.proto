@@ -2241,6 +2241,8 @@ message SearchResultsList {
 	repeated DefSearchResult DefResults = 2;
 	// SearchOptions is a list of options to a global search query.
 	repeated SearchOptions SearchQueryOptions = 3;
+	// UserSearchTokens is a list of the search terms (minus any special filtering terms) that the user provided.
+	repeated string UserSearchTokens = 4;
 }
 
 // Search provides global search over all code indexed by Sourcegraph.

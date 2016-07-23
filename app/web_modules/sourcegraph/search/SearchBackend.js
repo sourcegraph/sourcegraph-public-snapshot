@@ -51,8 +51,9 @@ const SearchBackend = {
 									commitID: p.commitID,
 									limit: p.limit,
 									includeRepos: p.includeRepos,
-									defs: data,
-									options: data.options,
+									defs: data.Defs,
+									options: data.Options,
+									tokens: data.Tokens,
 								}));
 							})
 					);
