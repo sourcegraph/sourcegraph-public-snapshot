@@ -14,11 +14,15 @@ class Tool {
 }
 
 const plugins = [
-	new Tool("Sublime Text", "/img/Dashboard/SourcegraphSublime.svg", "https://github.com/sourcegraph/sourcegraph-sublime"),
+	new Tool("Sublime Text", "/img/Dashboard/sublime-text.svg", "https://github.com/sourcegraph/sourcegraph-sublime"),
+	new Tool("IntelliJ", "/img/Dashboard/intellij.svg", "https://github.com/sourcegraph/sourcegraph-intellij"),
+	new Tool("VS Code", "/img/Dashboard/vscode.svg", "https://github.com/sourcegraph/sourcegraph-vscode"),
+	new Tool("Emacs", "/img/Dashboard/emacs.svg", "https://github.com/sourcegraph/sourcegraph-emacs"),
+	new Tool("Vim", "/img/Dashboard/vim.svg", "https://github.com/sourcegraph/sourcegraph-vim"),
 ];
 
 const otherTools = [
-	new Tool("Chrome", "/img/Dashboard/GoogleChromeAsset.svg", "https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack"),
+	new Tool("Chrome", "/img/Dashboard/google-chrome.svg", "https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack"),
 ];
 
 class ToolsHomeComponent extends Component {
@@ -62,11 +66,13 @@ class ToolsHomeComponent extends Component {
 						))}
 					</div>
 				</div>
-				<footer styleName="footer">
-					<a styleName="footer-link" href="/search">
-						<Button color="green" styleName="footer-btn">Continue</Button>
-					</a>
-				</footer>
+				{this.props.location.query.onboarding &&
+					<footer styleName="footer">
+						<a styleName="footer-link" href="/desktop/home">
+							<Button color="green" styleName="footer-btn">Continue</Button>
+						</a>
+					</footer>
+				}
 			</div>
 		);
 	}

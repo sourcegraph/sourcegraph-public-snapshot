@@ -3,6 +3,7 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/Repos.css";
 import base from "sourcegraph/components/styles/_base.css";
 import {Input, Heading, Button, ToggleSwitch} from "sourcegraph/components";
+import RepoLink from "sourcegraph/components/RepoLink";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import debounce from "lodash.debounce";
@@ -90,13 +91,16 @@ class Repos extends React.Component {
 						{repos.length > 0 && repos.map((repo, i) =>
 							<div styleName="row" key={i}>
 								<div styleName="info">
-									{(repo.URI && repo.URI.replace("github.com/", "")) || `${repo.Owner}/${repo.Name}`}
+									{repo.ID ?
+										<RepoLink repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} /> :
+										(repo.URI && repo.URI.replace("github.com/", "").replace("/", " / ", 1)) || `${repo.Owner} / ${repo.Name}`
+									}
 									{repo.Description && <p styleName="description">
 										{repo.Description.length > 100 ? `${repo.Description.substring(0, 100)}...` : repo.Description}
 									</p>}
 								</div>
 								<div styleName="toggle">
-									<ToggleSwitch onChange={(checked) => {
+									<ToggleSwitch defaultChecked={Boolean(repo.ID)} onChange={(checked) => {
 										this._toggleRepo(repo);
 									}}/>
 								</div>
@@ -111,11 +115,13 @@ class Repos extends React.Component {
 						<p styleName="indicator">No matching repositories</p>
 					}
 				</div>
-				<footer styleName="footer">
-					<a styleName="footer-link" href="/tools?onboarding=t">
-						<Button color="green" styleName="footer-btn">Continue</Button>
-					</a>
-				</footer>
+				{this.props.location.query.onboarding &&
+					<footer styleName="footer">
+						<a styleName="footer-link" href="/tools?onboarding=t">
+							<Button color="green" styleName="footer-btn">Continue</Button>
+						</a>
+					</footer>
+				}
 			</div>
 		);
 	}

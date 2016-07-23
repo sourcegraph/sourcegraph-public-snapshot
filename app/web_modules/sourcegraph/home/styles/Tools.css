@@ -24,10 +24,11 @@
 	composes: pb4 from base;
 	display: flex;
 	justify-content: center;
+	flex-wrap: wrap;
 }
 
 .tool {
-	composes: ph3 from base;
+	composes: ph3 mt4 from base;
 	min-width: 60px;
 }
 
