@@ -207,20 +207,6 @@ class ToolsHomeComponent extends Component {
 							</div>
 						</Panel>
 					</div>
-					<div styleName="panel-item">
-						<Panel hoverLevel="high">
-							<img styleName="img" src={`${this.context.siteConfig.assetsRoot}/img/Dashboard/AlfredLogo.png`}></img>
-							<Heading align="center" level="4" className={base.ph4}>For your launcher</Heading>
-							<p styleName="cool-mid-gray" className={base.ph4}>
-								Instant access to global code search from Alfred.
-							</p>
-							<div styleName="button-container">
-								<Button onClick={this._installAlfredClicked.bind(this)} color="purple">
-									Install
-								</Button>
-							</div>
-						</Panel>
-					</div>
 				</div>}
 			</div>
 		);

@@ -22,11 +22,8 @@ import {qualifiedNameAndType, defTitle, defTitleOK} from "sourcegraph/def/Format
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import {trimRepo} from "sourcegraph/repo";
 import {urlToRepo} from "sourcegraph/repo/routes";
-import {LanguageIcon} from "sourcegraph/components/Icons";
 import {EmptyNodeIllo} from "sourcegraph/components/symbols";
-import {Dropdown, Header, Heading, FlexContainer, GitHubAuthButton, Loader} from "sourcegraph/components";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-
+import {Header, Heading, FlexContainer, GitHubAuthButton, Loader} from "sourcegraph/components";
 
 // Number of characters of the Docstring to show before showing the "collapse" options.
 const DESCRIPTION_CHAR_CUTOFF = 80;
@@ -50,11 +47,8 @@ class DefInfo extends Container {
 	constructor(props) {
 		super(props);
 		this.state = {
-			currentLang: localStorage.getItem("defInfoCurrentLang"),
-			translations: {},
 			defDescrHidden: null,
 		};
-		this._onTranslateDefInfo = this._onTranslateDefInfo.bind(this);
 		this.splitHTMLDescr = this.splitHTMLDescr.bind(this);
 		this.splitPlainDescr = this.splitPlainDescr.bind(this);
 		this._onViewMore = this._onViewMore.bind(this);
@@ -166,43 +160,6 @@ class DefInfo extends Container {
 		}
 	}
 
-	_onTranslateDefInfo(val) {
-		let def = this.state.defObj;
-		let apiKey = "AIzaSyCKati7PcEa2fqyuoDDwd1ujXiBVOddwf4";
-		let targetLang = val;
-
-		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "TranslateButtonClicked", {translated_language: targetLang});
-
-		if (this.state.translations[targetLang]) {
-			// Toggle when target language is same as the current one,
-			// otherwise change the current language and force to show the result.
-			if (this.state.currentLang === targetLang) {
-				this.setState({showTranslatedString: !this.state.showTranslatedString});
-			} else {
-				this.setState({
-					currentLang: targetLang,
-					translatedString: this.state.translations[targetLang],
-					showTranslatedString: true,
-				});
-			}
-
-		} else {
-			// Fetch translation result when does not exist with given target language
-			fetch(`https://www.googleapis.com/language/translate/v2?key=${apiKey}&target=${targetLang}&q=${encodeURIComponent(def.DocHTML.__html)}`)
-				.then((response) => response.json())
-				.then((json) => {
-					let translation = json.data.translations[0].translatedText;
-					this.setState({
-						currentLang: targetLang,
-						translations: {...this.state.translations, [targetLang]: translation},
-						showTranslatedString: true,
-					});
-				});
-		}
-
-		localStorage.setItem("defInfoCurrentLang", targetLang);
-	}
-
 	render() {
 		const {defObj, defDescrHidden, refLocations, examples, repo, rev, defCommitID, def} = this.state;
 		let defBlobUrl = defObj ? urlToDef(defObj, rev) : "";
@@ -246,12 +203,6 @@ class DefInfo extends Container {
 							{defObj.DocHTML &&
 								<div>
 									<div className={base.mb3}>
-										{this.state.showTranslatedString &&
-											<div className={base.mt1}>
-												<LanguageIcon styleName="icon" />
-												<div dangerouslySetInnerHTML={{__html: this.state.translations[this.state.currentLang]}}></div>
-											</div>
-										}
 										<div dangerouslySetInnerHTML={defDescrHidden && {__html: this.splitHTMLDescr(defObj.DocHTML.__html, DESCRIPTION_CHAR_CUTOFF)} || defObj.DocHTML}></div>
 										{defDescrHidden &&
 											<a href="#" onClick={this._onViewMore} styleName="f7">View More...</a>
@@ -259,7 +210,6 @@ class DefInfo extends Container {
 										{!defDescrHidden && this.shouldHideDescr(defObj, DESCRIPTION_CHAR_CUTOFF) &&
 											<a href="#" onClick={this._onViewLess} styleName="f7">Collapse</a>
 										}
-										{this.state.showTranslatedString && <hr className={base.mv4} styleName="b--cool-pale-gray" />}
 									</div>
 
 								</div>
@@ -269,25 +219,6 @@ class DefInfo extends Container {
 								{defObj && defObj.Repo && <Link to={urlToRepo(defObj.Repo)} styleName="link-subtle">{defObj.Repo}</Link>}
 								&nbsp; &middot; &nbsp;
 								<Link title="View definition in code" to={defBlobUrl} styleName="link-subtle">View definition</Link>
-								&nbsp; &middot; &nbsp;
-								<Dropdown
-									className={base.mt0}
-									styleName="link-subtle"
-									title="Translate"
-									initialValue={this.state.currentLang}
-									disabled={this.state.repoObj ? this.state.repoObj.Private : false}
-									onMenuClick={(val) => this._onTranslateDefInfo(val)}
-									onItemClick={(val) => this._onTranslateDefInfo(val)}
-									items={[
-										{name: "English", value: "en"},
-										{name: "简体中文", value: "zh-CN"},
-										{name: "繁體中文", value: "zh-TW"},
-										{name: "日本語", value: "ja"},
-										{name: "Français", value: "fr"},
-										{name: "Español", value: "es"},
-										{name: "Русский", value: "ru"},
-										{name: "Italiano", value: "it"},
-									]} />
 							</div>
 
 
