@@ -9,7 +9,6 @@ export type DefFormatOptions = {
 	nameQual?: Qual;
 	nameClass?: string;
 	unqualifiedNameClass?: string;
-	highlighter?: Function;
 }
 
 export function qualifiedNameAndType(def, opts: ?DefFormatOptions) {
@@ -18,22 +17,18 @@ export function qualifiedNameAndType(def, opts: ?DefFormatOptions) {
 	const qual: Qual = opts && opts.nameQual ? opts.nameQual : "ScopeQualified";
 	const f = def.FmtStrings;
 
-	let highlighter = opts && opts.highlighter ? opts.highlighter : x => x;
 	let name = f.Name[qual];
-	if (name) {
-		if (f.Name.Unqualified) {
-			let parts = name.split(f.Name.Unqualified);
-			name = [
-				highlighter(parts.slice(0, parts.length - 1).join(f.Name.Unqualified)),
-				<span key="unqualified" className={opts && opts.unqualifiedNameClass}>{highlighter(f.Name.Unqualified, 3)}</span>,
-			];
-		} else {
-			name = highlighter(name);
-		}
+	if (f.Name.Unqualified && name) {
+		let parts = name.split(f.Name.Unqualified);
+		name = [
+			parts.slice(0, parts.length - 1).join(f.Name.Unqualified),
+			<span key="unqualified" className={opts && opts.unqualifiedNameClass}>{f.Name.Unqualified}</span>,
+		];
 	}
+
 	return [
-		highlighter(f.DefKeyword),
-		highlighter(f.DefKeyword ? " " : ""),
+		f.DefKeyword,
+		f.DefKeyword ? " " : "",
 		<span key="name" className={opts && opts.nameClass} style={opts && opts.nameClass ? {} : {fontWeight: "bold"}}>{name}</span>, // give default bold styling if not provided
 		f.NameAndTypeSeparator,
 		f.Type.ScopeQualified,

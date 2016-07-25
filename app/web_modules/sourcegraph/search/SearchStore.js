@@ -26,7 +26,7 @@ export class SearchStore extends Store {
 			let p: SearchActions.ResultsFetchedPayload = action.p;
 			this.content = deepFreeze({
 				...this.content,
-				[keyForResults(p.query, p.repos, p.notRepos, p.commitID, p.limit)]: p,
+				[keyForResults(p.query, p.repos, p.notRepos, p.commitID, p.limit)]: p.defs,
 			});
 			break;
 		}
