@@ -55,8 +55,6 @@ function SecurityPage(props, {signedIn}): React$Element {
 
                 <Heading level="4" className={styles.h}>Application security</Heading>
 
-				<p>The code that powers this site is publicly available in the <a href="https://sourcegraph.com/sourcegraph/sourcegraph" target="_blank">sourcegraph/sourcegraph repository</a>.</p>
-
                 <ul>
                     <li>All language analysis is static.</li>
                     <li>No private code is pulled onto Sourcegraph without explicit permission from an authorized user.</li>
