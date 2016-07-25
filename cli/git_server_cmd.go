@@ -8,6 +8,8 @@ import (
 	"net"
 	"os"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -45,7 +47,8 @@ func (c *gitServerCmd) Execute(args []string) error {
 	}
 
 	if c.ProfBindAddr != "" {
-		debugserver.Start(c.ProfBindAddr)
+		go debugserver.Start(c.ProfBindAddr)
+		log15.Debug("Profiler available", "on", fmt.Sprintf("%s/pprof", c.ProfBindAddr))
 	}
 
 	if c.Addr != "" {

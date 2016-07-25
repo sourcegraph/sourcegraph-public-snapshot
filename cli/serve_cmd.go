@@ -242,7 +242,8 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	if c.ProfBindAddr != "" {
-		debugserver.Start(c.ProfBindAddr)
+		go debugserver.Start(c.ProfBindAddr)
+		log15.Debug("Profiler available", "on", fmt.Sprintf("%s/pprof", c.ProfBindAddr))
 	}
 
 	app.Init()
