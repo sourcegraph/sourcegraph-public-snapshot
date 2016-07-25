@@ -22,7 +22,7 @@ function lint(input, config, webpack) {
     resourcePath = resourcePath.substr(cwd.length + 1)
   }
 
-  var res = engine.executeOnText(input, resourcePath)
+  var res = engine.executeOnText(input, resourcePath, true)
   // executeOnText ensure we will have res.results[0] only
 
   // skip ignored file warning

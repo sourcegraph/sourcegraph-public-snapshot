@@ -32,8 +32,7 @@ module.exports = {
   // ...
   module: {
     loaders: [
-      {test: /\.js$/, loader: "babel-loader", exclude: /node_modules/},
-      {test: /\.js$/, loader: "eslint-loader", exclude: /node_modules/}
+      {test: /\.js$/, loaders: [ "babel-loader", "eslint-loader" ], exclude: /node_modules/},
     ]
   }
   // ...
@@ -57,9 +56,9 @@ module.exports = {
 
 ### Options
 
-You can pass [eslint options](http://eslint.org/docs/user-guide/command-line-interface) directly by
+You can pass [eslint options](http://eslint.org/docs/developer-guide/nodejs-api#cliengine) directly by
 
-- Adding a query string to the loader for this loader usabe only
+- Adding a query string to the loader for this loader usage only
 
 ```js
 {
@@ -85,14 +84,14 @@ module.exports = {
 }
 ```
 
-**Note that you can use both method in order to benefit from global & specific options**
+**Note that you can use both methods in order to benefit from global & specific options**
 
 #### `fix` (default: false)
 
 This option will enable
 [ESLint autofix feature](http://eslint.org/docs/user-guide/command-line-interface#fix).
 
-**Be careful, this option might generate webpack to enter an infinite build loop if
+**Be careful, this option might cause webpack to enter an infinite build loop if
 some issues cannot be fixed properly.**
 
 #### `formatter` (default: eslint stylish formatter)
