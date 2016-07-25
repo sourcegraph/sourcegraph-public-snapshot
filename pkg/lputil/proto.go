@@ -3,8 +3,13 @@ package lputil
 // Error is returned in the event of any request error, in addition to the HTTP
 // status 400 Bad Request.
 type Error struct {
-	// Error, if any, specifies that there was an error serving the request.
-	Error string
+	// ErrorMsg, if any, specifies that there was an error serving the request.
+	ErrorMsg string `json:"Error"`
+}
+
+// Error implements the error interface.
+func (e *Error) Error() string {
+	return e.ErrorMsg
 }
 
 // Position represents a single specific position within a file located in a
@@ -26,6 +31,13 @@ type Position struct {
 	// Character is the character offset on a line in the file (zero based), e.g.
 	// where a user's cursor is located within the file.
 	Character int
+}
+
+// LocalRefs represents references to a specific definition.
+type LocalRefs struct {
+	// Refs is a list of references to a definition defined within the requested
+	// repository.
+	Refs []Position
 }
 
 // HoverContent represents a subset of the content for when a user “hovers”

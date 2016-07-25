@@ -32,7 +32,7 @@ func (t *Translator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
 		err2 := json.NewEncoder(w).Encode(&Error{
-			Error: err.Error(),
+			ErrorMsg: err.Error(),
 		})
 		if err2 != nil {
 			// TODO: configurable logging
@@ -130,11 +130,11 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 	final := &Hover{
 		Contents: make([]HoverContent, len(respHover.Contents)),
 	}
-	for _, marked := range respHover.Contents {
-		final.Contents = append(final.Contents, HoverContent{
+	for i, marked := range respHover.Contents {
+		final.Contents[i] = HoverContent{
 			Type:  marked.Language,
 			Value: marked.Value,
-		})
+		}
 	}
 	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(final)
