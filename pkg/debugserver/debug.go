@@ -1,8 +1,7 @@
-package cli
+package debugserver
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/pprof"
 
@@ -13,7 +12,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/expvarutil"
 )
 
-func startDebugServer(addr string) {
+// Start runs a debug server (pprof, prometheus, etc) on addr.
+func Start(addr string) {
 	// Starts a pprof server by default, but this is OK, because only
 	// whitelisted ports on the web server machines should be publicly
 	// accessible anyway.
@@ -42,7 +42,7 @@ func startDebugServer(addr string) {
 		pp.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
 		pp.Handle("/depprof", depprof.NewHandler("sourcegraph.com/sourcegraph/sourcegraph"))
 		pp.Handle("/metrics", prometheus.Handler())
-		log.Println("warning: could not start pprof HTTP server:", http.ListenAndServe(addr, pp))
+		log15.Warn("could not start debug HTTP server:", "error", http.ListenAndServe(addr, pp))
 	}()
 	log15.Debug("Profiler available", "on", fmt.Sprintf("%s/pprof", addr))
 }

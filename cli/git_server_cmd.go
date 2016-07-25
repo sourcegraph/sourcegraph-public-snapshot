@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
@@ -44,7 +45,7 @@ func (c *gitServerCmd) Execute(args []string) error {
 	}
 
 	if c.ProfBindAddr != "" {
-		startDebugServer(c.ProfBindAddr)
+		debugserver.Start(c.ProfBindAddr)
 	}
 
 	if c.Addr != "" {
