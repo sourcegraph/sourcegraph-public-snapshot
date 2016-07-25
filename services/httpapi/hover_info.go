@@ -1,19 +1,40 @@
 package httpapi
 
 import (
+	"fmt"
+	"html/template"
+	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lputil"
+	"sourcegraph.com/sourcegraph/srclib/graph"
+	"sourcegraph.com/sqs/pbtypes"
 )
+
+var lpClient *lputil.Client
+
+func init() {
+	var err error
+	lpClient, err = lputil.NewClient(os.Getenv("SG_LANGUAGE_PROCESSOR"))
+	if err != nil {
+		// TODO: In general, this should be a fatal error because bubbling up
+		// at init time makes it more obvious. For now, since we're in an
+		// "optional" LSP stage though, we just log it.
+		log.Println("$SG_LANGUAGE_PROCESSOR", err)
+	}
+}
 
 func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	_, repoRev, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+	repo, repoRev, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -30,6 +51,49 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	var resp = &struct {
+		Title string
+		Def   *sourcegraph.Def `json:"def"`
+	}{}
+
+	if feature.Features.Universe {
+		hover, err := lpClient.Hover(&lputil.Position{
+			Repo:      repo.URI,
+			Commit:    repoRev.CommitID,
+			File:      file,
+			Line:      line,
+			Character: character,
+		})
+		if err != nil {
+			return err
+		}
+		if len(hover.Contents) > 0 { // TODO: We don't handle this case in the frontend.
+			resp.Title = hover.Contents[0].Value
+			desc := ""
+			for _, content := range hover.Contents[1:] {
+				desc += fmt.Sprintf("%s<br>", template.HTMLEscapeString(content.Value))
+			}
+			// Fake the definition.
+			resp.Def = &sourcegraph.Def{
+				Def: graph.Def{
+					DefKey: graph.DefKey{Repo: repo.URI},
+				},
+				DocHTML: &pbtypes.HTML{HTML: desc},
+			}
+		}
+
+		// TODO: We don't handle the case of no contents in the frontend from
+		// an error handling perspective, so this is here.
+		if len(hover.Contents) == 0 {
+			resp.Def = &sourcegraph.Def{
+				Def: graph.Def{
+					DefKey: graph.DefKey{Repo: repo.URI},
+				},
+			}
+		}
+		return writeJSON(w, resp)
+	}
+
 	defSpec, err := cl.Annotations.GetDefAtPos(ctx, &sourcegraph.AnnotationsGetDefAtPosOptions{
 		Entry: sourcegraph.TreeEntrySpec{
 			RepoRev: repoRev,
@@ -42,7 +106,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	def, err := cl.Defs.Get(ctx, &sourcegraph.DefsGetOp{
+	resp.Def, err = cl.Defs.Get(ctx, &sourcegraph.DefsGetOp{
 		Def: *defSpec,
 		Opt: &sourcegraph.DefGetOptions{
 			Doc: true,
@@ -52,9 +116,5 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return writeJSON(w, struct {
-		Def *sourcegraph.Def `json:"def"`
-	}{
-		Def: def,
-	})
+	return writeJSON(w, resp)
 }

@@ -76,7 +76,7 @@ class DefTooltip extends Component {
 		let def = info.def;
 		return (
 			<div ref={(e) => { this._elem = e; this._updatePosition({clientY: cursorY, clientX: cursorX}); }} className={s.tooltip}>
-				<div key="title" className={s.tooltipTitle}>{qualifiedNameAndType(def)}</div>
+				<div key="title" className={s.tooltipTitle}>{info.Title || qualifiedNameAndType(def)}</div>
 				<div key="content" className={s.content}>
 					{def && def.DocHTML && <div className={s.doc} dangerouslySetInnerHTML={def && def.DocHTML}></div>}
 					{def && def.Repo !== this.state.currentRepo && <span className={s.repo}>{def.Repo}</span>}
