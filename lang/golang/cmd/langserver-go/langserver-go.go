@@ -9,13 +9,15 @@ import (
 	"os"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/lang/golang"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 )
 
 var (
-	mode    = flag.String("mode", "stdio", "communication mode (stdio|tcp)")
-	addr    = flag.String("addr", ":2088", "server listen address (tcp)")
-	logfile = flag.String("log", "/tmp/langserver-golang.log", "write log output to this file (and stderr)")
+	mode     = flag.String("mode", "stdio", "communication mode (stdio|tcp)")
+	addr     = flag.String("addr", ":2088", "server listen address (tcp)")
+	profbind = flag.String("prof-http", ":6060", "net/http/pprof http bind address")
+	logfile  = flag.String("log", "/tmp/langserver-golang.log", "write log output to this file (and stderr)")
 )
 
 func main() {
@@ -36,6 +38,10 @@ func run() error {
 		}
 		defer f.Close()
 		log.SetOutput(io.MultiWriter(os.Stderr, f))
+	}
+
+	if *profbind != "" {
+		go debugserver.Start(*profbind)
 	}
 
 	h := &jsonrpc2.LoggingHandler{&golang.Handler{}}

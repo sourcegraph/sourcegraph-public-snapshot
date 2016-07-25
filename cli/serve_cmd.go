@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"gopkg.in/inconshreveable/log15.v2"
 	"io"
 	"io/ioutil"
 	"log"
@@ -20,6 +19,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
@@ -42,6 +43,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
@@ -240,7 +242,8 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	if c.ProfBindAddr != "" {
-		startDebugServer(c.ProfBindAddr)
+		go debugserver.Start(c.ProfBindAddr)
+		log15.Debug("Profiler available", "on", fmt.Sprintf("%s/pprof", c.ProfBindAddr))
 	}
 
 	app.Init()
