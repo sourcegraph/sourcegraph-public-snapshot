@@ -24,9 +24,6 @@ type mirrorRepos struct{}
 
 var _ sourcegraph.MirrorReposServer = (*mirrorRepos)(nil)
 
-// TODO(sqs): What if multiple goroutines or processes
-// simultaneously update the same repo? Race conditions
-// probably.
 func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
 	actor := authpkg.ActorFromContext(ctx)
 	asUserUID := int32(actor.UID)

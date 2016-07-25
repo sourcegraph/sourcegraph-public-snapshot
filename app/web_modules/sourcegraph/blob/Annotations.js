@@ -35,9 +35,6 @@ export function sortAnns(anns) {
 // Assumes that anns is sorted (using this module's sortAnns function).
 //
 // Adapted from https://github.com/sourcegraph/annotate/blob/master/annotate.go.
-//
-// TODO(sqs): This is mixing bytes (in anns.StartByte/EndByte) and code points
-// (when we iterate over a string). Fix this! Need to use Int8Array or similar?
 export function annotate(text: string, startByte: number, anns: Annotation[], render) {
 
 	let utf = utf8.encode(text);

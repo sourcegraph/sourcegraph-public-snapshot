@@ -36,7 +36,6 @@ type mocks struct {
 }
 
 type mockServers struct {
-	// TODO(sqs): move this to ./api/sourcegraph
 	Accounts     mock.AccountsServer
 	Auth         mock.AuthServer
 	Builds       mock.BuildsServer

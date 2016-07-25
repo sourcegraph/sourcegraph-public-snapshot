@@ -18,9 +18,6 @@ import (
 
 // buildLogs is a local FS-backed implementation of the BuildLogs
 // store.
-//
-// TODO(sqs): use the same dir as the other services? right now this
-// uses conf.BuildLogDir, which is weird and inconsistent.
 type buildLogs struct{}
 
 var _ store.BuildLogs = (*buildLogs)(nil)

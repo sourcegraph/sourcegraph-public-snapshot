@@ -100,8 +100,6 @@ func computeFileRange(data []byte, opt sourcegraph.GetFileOptions) (*sourcegraph
 		return nil, nil, fmt.Errorf("must specify a line range OR a byte range, not both (%+v)", fr)
 	}
 
-	// TODO(sqs): fix up the sketchy int conversions
-
 	if lines {
 		// Given line range, validate it and return byte range.
 		if fr.StartLine == 0 {

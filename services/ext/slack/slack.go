@@ -79,8 +79,6 @@ func PostMessage(opt PostOpts) {
 		LinkNames: map[bool]int{true: 0, false: 1}[opt.DisableLinkNames],
 	}
 
-	// TODO(sqs): attachments
-
 	postMessage := func() error {
 		b, err := json.Marshal(o)
 		if err != nil {

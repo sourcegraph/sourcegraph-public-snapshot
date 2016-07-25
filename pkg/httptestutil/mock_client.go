@@ -12,7 +12,6 @@ type MockClients struct {
 	// handlers.
 	Ctx context.Context
 
-	// TODO(sqs): move this to ./api/sourcegraph
 	Annotations  mock.AnnotationsClient
 	Accounts     mock.AccountsClient
 	Async        mock.AsyncClient
