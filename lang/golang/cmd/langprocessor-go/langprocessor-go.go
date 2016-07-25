@@ -14,7 +14,7 @@ import (
 var (
 	httpAddr = flag.String("http", ":4141", "HTTP address to listen on")
 	lspAddr  = flag.String("lsp", ":2088", "LSP server address")
-	profbind = flag.String("prof-http", "", "net/http/pprof http bind address")
+	profbind = flag.String("prof-http", ":6060", "net/http/pprof http bind address")
 )
 
 func main() {
