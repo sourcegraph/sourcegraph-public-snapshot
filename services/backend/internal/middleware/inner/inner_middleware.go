@@ -55,12 +55,6 @@ func Services() svc.Services {
 
 		MirrorRepos: wrappedMirrorRepos{},
 
-		Notify: wrappedNotify{},
-
-		Orgs: wrappedOrgs{},
-
-		People: wrappedPeople{},
-
 		RepoStatuses: wrappedRepoStatuses{},
 
 		RepoTree: wrappedRepoTree{},
@@ -161,7 +155,7 @@ func (s wrappedAccounts) Create(ctx context.Context, param *sourcegraph.NewAccou
 	return
 }
 
-func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *sourcegraph.PersonSpec) (res *sourcegraph.PendingPasswordReset, err error) {
+func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *sourcegraph.RequestPasswordResetOp) (res *sourcegraph.PendingPasswordReset, err error) {
 	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Accounts", "RequestPasswordReset", param)
@@ -245,7 +239,7 @@ func (s wrappedAccounts) UpdateEmails(ctx context.Context, param *sourcegraph.Up
 	return
 }
 
-func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.PersonSpec) (res *pbtypes.Void, err error) {
+func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.UserSpec) (res *pbtypes.Void, err error) {
 	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Accounts", "Delete", param)
@@ -828,27 +822,6 @@ func (s wrappedDesktop) LatestExists(ctx context.Context, param *sourcegraph.Cli
 
 type wrappedMeta struct{}
 
-func (s wrappedMeta) Status(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.ServerStatus, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Meta", "Status", param)
-	defer func() {
-		trace.After(ctx, "Meta", "Status", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Meta.Status(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Meta.Status returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Meta.Status failed with internal error.")
-		}
-	}
-	return
-}
-
 func (s wrappedMeta) Config(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.ServerConfig, err error) {
 	var errActual error
 	start := time.Now()
@@ -888,117 +861,6 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, param *sourcegraph.M
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
 			err = grpc.Errorf(code, "MirrorRepos.RefreshVCS failed with internal error.")
-		}
-	}
-	return
-}
-
-type wrappedNotify struct{}
-
-func (s wrappedNotify) GenericEvent(ctx context.Context, param *sourcegraph.NotifyGenericEvent) (res *pbtypes.Void, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Notify", "GenericEvent", param)
-	defer func() {
-		trace.After(ctx, "Notify", "GenericEvent", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Notify.GenericEvent(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Notify.GenericEvent returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Notify.GenericEvent failed with internal error.")
-		}
-	}
-	return
-}
-
-type wrappedOrgs struct{}
-
-func (s wrappedOrgs) Get(ctx context.Context, param *sourcegraph.OrgSpec) (res *sourcegraph.Org, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Orgs", "Get", param)
-	defer func() {
-		trace.After(ctx, "Orgs", "Get", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Orgs.Get(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Orgs.Get returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Orgs.Get failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedOrgs) List(ctx context.Context, param *sourcegraph.OrgsListOp) (res *sourcegraph.OrgList, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Orgs", "List", param)
-	defer func() {
-		trace.After(ctx, "Orgs", "List", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Orgs.List(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Orgs.List returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Orgs.List failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedOrgs) ListMembers(ctx context.Context, param *sourcegraph.OrgsListMembersOp) (res *sourcegraph.UserList, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Orgs", "ListMembers", param)
-	defer func() {
-		trace.After(ctx, "Orgs", "ListMembers", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Orgs.ListMembers(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Orgs.ListMembers returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Orgs.ListMembers failed with internal error.")
-		}
-	}
-	return
-}
-
-type wrappedPeople struct{}
-
-func (s wrappedPeople) Get(ctx context.Context, param *sourcegraph.PersonSpec) (res *sourcegraph.Person, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "People", "Get", param)
-	defer func() {
-		trace.After(ctx, "People", "Get", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.People.Get(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "People.Get returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "People.Get failed with internal error.")
 		}
 	}
 	return

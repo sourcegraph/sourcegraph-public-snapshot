@@ -878,56 +878,8 @@ message LogEntries {
 	repeated string Entries = 2;
 }
 
-message Org {
-	User User = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-message OrgListMembersOptions {
-	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-// OrgSpec specifies an organization. At least one of Email, Login, and UID must be
-// nonempty.
-message OrgSpec {
-	string Org = 1;
-	int32 UID = 2;
-}
-
-message OrgsListMembersOp {
-	OrgSpec Org = 1 [(gogoproto.nullable) = false];
-	OrgListMembersOptions Opt = 2;
-}
-
 message UserList {
 	repeated User Users = 1;
-}
-
-// A Person represents either a registered user or a committer to a repository
-// (typically when their commit email can't be resolved to a user).
-message Person {
-	// PersonSpec is an identifier for the person. If the person was resolved to a
-	// user, then both Login and UID are set. Otherwise only Email is set, and it may
-	// be obfuscated (to protect privacy).
-	PersonSpec PersonSpec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-
-	// FullName is the (possibly empty) full name of the person.
-	string FullName = 2;
-
-	// AvatarURL is the URL to the user's avatar image.
-	string AvatarURL = 3;
-}
-
-// PersonSpec specifies a person. At least one of Email, Login, and UID must be
-// nonempty.
-message PersonSpec {
-	// Email is a person's email address. It may be obfuscated (to protect privacy).
-	string Email = 1;
-
-	// Login is a user's login.
-	string Login = 2;
-
-	// UID is a user's UID.
-	int32 UID = 3;
 }
 
 message TaskSpec {
@@ -1041,11 +993,6 @@ message UsersListOptions {
 	bool HaveBeta = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
-message OrgsListOp {
-	UserSpec Member = 1 [(gogoproto.nullable) = false];
-	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
 message EmailAddrList {
 	repeated EmailAddr EmailAddrs = 1;
 }
@@ -1057,10 +1004,6 @@ message UpdateEmailsOp {
 
 	// Add is a list of email addresses to add, if they do not already exist.
 	EmailAddrList Add = 2;
-}
-
-message OrgList {
-	repeated Org Orgs = 1;
 }
 
 // BuildsService communicates with the build-related endpoints in the Sourcegraph
@@ -1099,28 +1042,6 @@ service Builds {
 	rpc DequeueNext(BuildsDequeueNextOp) returns (BuildJob);
 }
 
-// OrgsService communicates with the organizations-related endpoints in the
-// Sourcegraph API.
-service Orgs {
-	// Get fetches an organization.
-	rpc Get(OrgSpec) returns (Org);
-
-	// List lists organizations that a user is a member of.
-	rpc List(OrgsListOp) returns (OrgList);
-
-	// ListMembers lists members of an organization.
-	rpc ListMembers(OrgsListMembersOp) returns (UserList);
-}
-
-// PeopleService communicates with the people-related endpoints in the Sourcegraph
-// API.
-service People {
-	// Get gets a person. If an email is provided and it resolves to a registered user,
-	// information about that user is returned. Otherwise a transient person is created
-	// and returned.
-	rpc Get(PersonSpec) returns (Person);
-}
-
 // Accounts communicates with the account-related endpoints in the
 // Sourcegraph API.
 //
@@ -1134,7 +1055,7 @@ service Accounts {
 
 	// RequestPasswordReset stores a password reset token in the database, to
 	// later verify the authenticity of a user using CheckResetToken
-	rpc RequestPasswordReset(PersonSpec) returns (PendingPasswordReset);
+	rpc RequestPasswordReset(RequestPasswordResetOp) returns (PendingPasswordReset);
 
 	// CheckResetToken verifies a password reset token is authentic and valid
 	rpc ResetPassword(NewPassword) returns (pbtypes.Void);
@@ -1146,7 +1067,11 @@ service Accounts {
 	rpc UpdateEmails(UpdateEmailsOp) returns (pbtypes.Void);
 
 	// Delete deletes a user account from this server.
-	rpc Delete(PersonSpec) returns (pbtypes.Void);
+	rpc Delete(UserSpec) returns (pbtypes.Void);
+}
+
+message RequestPasswordResetOp {
+	string Email = 1;
 }
 
 // CreatedAccount is a newly created account.
@@ -1846,33 +1771,10 @@ service RepoTree {
 	rpc List(RepoTreeListOp) returns (RepoTreeListResult);
 }
 
-message Checklist {
-	// number of tasks to be done (unchecked)
-	int32 Todo = 1;
-
-	// number of tasks that are done (checked)
-	int32 Done = 2;
-}
-
-message FileToken {
-	string Path = 1;
-	BasicTreeEntry Entry = 2;
-}
 // Meta provides meta-information about Sourcegraph.
 service Meta {
-	// Status returns status information from the server's point of
-	// view.
-	rpc Status(pbtypes.Void) returns (ServerStatus);
-
 	// Config returns the server's configuration.
 	rpc Config(pbtypes.Void) returns (ServerConfig);
-}
-
-// ServerStatus describes the server's status.
-message ServerStatus {
-	// Info contains arbitrary human-readable status information about
-	// the server.
-	string Info = 1;
 }
 
 // ServerConfig describes the server's configuration.
@@ -1959,52 +1861,6 @@ message EventList {
 
 	// AppURL holds the base URL of the Sourcegraph app.
 	string AppURL = 3;
-}
-
-// NotifyGenericEvent describes an action being done against an object. For
-// example, pushing a branch.
-message NotifyGenericEvent {
-	// Actor is the User who did the action
-	UserSpec Actor = 1;
-
-	// Recipients is who should be notified of the action
-	repeated UserSpec Recipients = 2;
-
-	// ActionType example: "pushed"
-	string ActionType = 3;
-
-	// ActionContent example: "37 commits"
-	string ActionContent = 4;
-
-	// ObjectID example: 71
-	int64 ObjectID = 5;
-
-	// ObjectRepo example: "gorilla/mux"
-	string ObjectRepo = 6;
-
-	// ObjectType example: "branch"
-	string ObjectType = 7;
-
-	// ObjectTitle example: "mybranch"
-	string ObjectTitle = 8;
-
-	// ObjectURL example: "https://sourcegraph.com/sourcegraph/sourcegraph/-/branches/mybranch"
-	string ObjectURL = 9;
-
-	// SlackMsg, if present, will override the Slack message for this event.
-	string SlackMsg = 10;
-
-	// EmailHTML, if present, will override the notification email body for this event.
-	string EmailHTML = 11;
-
-	// NoEmail turns off the email notification for this event.
-	bool NoEmail = 13;
-}
-
-// Notify service
-service Notify {
-	// GenericEvent will notify recipients of an event which happened
-	rpc GenericEvent(NotifyGenericEvent) returns (pbtypes.Void);
 }
 
 // Annotations manages annotations on files.

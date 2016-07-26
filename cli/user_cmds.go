@@ -306,26 +306,13 @@ func commaSplit(s string) []string {
 }
 
 type userResetPasswordCmd struct {
-	Email string `long:"email" short:"e" description:"email address associated with account"`
-	Login string `long:"login" short:"l" description:"login name of the user account"`
+	Email string `long:"email" short:"e" description:"email address associated with account" required:"yes"`
 }
 
 func (c *userResetPasswordCmd) Execute(args []string) error {
 	cl := cliClient
 
-	person := &sourcegraph.PersonSpec{}
-	var identifier string
-	if c.Email != "" {
-		person.Email = c.Email
-		identifier = c.Email
-	} else if c.Login != "" {
-		person.Login = c.Login
-		identifier = c.Login
-	} else {
-		return fmt.Errorf("need to specify either email or login of the user account")
-	}
-
-	pendingReset, err := cl.Accounts.RequestPasswordReset(cliContext, person)
+	pendingReset, err := cl.Accounts.RequestPasswordReset(cliContext, &sourcegraph.RequestPasswordResetOp{Email: c.Email})
 	if err != nil {
 		return err
 	}
@@ -336,7 +323,7 @@ func (c *userResetPasswordCmd) Execute(args []string) error {
 	} else {
 		status = "email not sent"
 	}
-	fmt.Printf("# Password reset link generated for %v (%s)\n", identifier, status)
+	fmt.Printf("# Password reset link generated for %v (%s)\n", c.Email, status)
 
 	if pendingReset.Link != "" {
 		fmt.Println("# Share the link below with the user to set a new password.")
@@ -349,7 +336,6 @@ func (c *userResetPasswordCmd) Execute(args []string) error {
 }
 
 type userDeleteCmd struct {
-	Email string `long:"email" short:"e" description:"email address associated with user account"`
 	Login string `long:"login" short:"l" description:"login name of the user account"`
 	UID   int32  `long:"uid" short:"i" description:"UID of the user account"`
 }
@@ -365,22 +351,19 @@ func (c *userDeleteCmd) Execute(args []string) error {
 		return fmt.Errorf("# Permission denied: need admin access to complete this operation.")
 	}
 
-	person := &sourcegraph.PersonSpec{}
+	user := &sourcegraph.UserSpec{}
 	var identifier string
-	if c.Email != "" {
-		person.Email = c.Email
-		identifier = c.Email
-	} else if c.Login != "" {
-		person.Login = c.Login
+	if c.Login != "" {
+		user.Login = c.Login
 		identifier = c.Login
 	} else if c.UID != 0 {
-		person.UID = c.UID
+		user.UID = c.UID
 		identifier = fmt.Sprintf("UID %d", c.UID)
 	} else {
-		return fmt.Errorf("need to specify email, login or UID of the user account")
+		return fmt.Errorf("need to specify login or UID of the user account")
 	}
 
-	_, err = cl.Accounts.Delete(cliContext, person)
+	_, err = cl.Accounts.Delete(cliContext, user)
 	if err != nil {
 		return err
 	}

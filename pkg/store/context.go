@@ -30,7 +30,6 @@ type Stores struct {
 	GlobalDeps         GlobalDeps
 	GlobalRefs         GlobalRefs
 	Graph              srcstore.MultiRepoStoreImporterIndexer
-	Orgs               Orgs
 	Password           Password
 	Queue              Queue
 	RepoConfigs        RepoConfigs
@@ -54,7 +53,6 @@ const (
 	_GlobalDepsKey
 	_GlobalRefsKey
 	_GraphKey
-	_OrgsKey
 	_PasswordKey
 	_QueueKey
 	_RepoConfigsKey
@@ -98,9 +96,6 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.Graph != nil {
 		ctx = WithGraph(ctx, s.Graph)
-	}
-	if s.Orgs != nil {
-		ctx = WithOrgs(ctx, s.Orgs)
 	}
 	if s.Password != nil {
 		ctx = WithPassword(ctx, s.Password)
@@ -276,20 +271,6 @@ func GraphFromContext(ctx context.Context) srcstore.MultiRepoStoreImporterIndexe
 	s, ok := ctx.Value(_GraphKey).(srcstore.MultiRepoStoreImporterIndexer)
 	if !ok || s == nil {
 		panic("no Graph set in context")
-	}
-	return s
-}
-
-// WithOrgs returns a copy of parent with the given Orgs store.
-func WithOrgs(parent context.Context, s Orgs) context.Context {
-	return context.WithValue(parent, _OrgsKey, s)
-}
-
-// OrgsFromContext gets the context's Orgs store. If the store is not present, it panics.
-func OrgsFromContext(ctx context.Context) Orgs {
-	s, ok := ctx.Value(_OrgsKey).(Orgs)
-	if !ok || s == nil {
-		panic("no Orgs set in context")
 	}
 	return s
 }

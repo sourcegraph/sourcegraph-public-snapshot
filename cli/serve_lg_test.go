@@ -168,7 +168,7 @@ func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 		t.Errorf("got AppURL %q, want %q", serverConfig.AppURL, want)
 	}
 
-	if err := a.Cmd(nil, []string{"meta", "status"}).Run(); err != nil {
-		t.Errorf("meta status cmd failed: %s", err)
+	if err := a.Cmd(nil, []string{"meta", "config"}).Run(); err != nil {
+		t.Errorf("meta config cmd failed: %s", err)
 	}
 }

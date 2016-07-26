@@ -20,8 +20,6 @@ type MockClients struct {
 	Defs         mock.DefsClient
 	Meta         mock.MetaClient
 	MirrorRepos  mock.MirrorReposClient
-	Orgs         mock.OrgsClient
-	People       mock.PeopleClient
 	RepoStatuses mock.RepoStatusesClient
 	RepoTree     mock.RepoTreeClient
 	Repos        mock.ReposClient
@@ -39,8 +37,6 @@ func (c *MockClients) Client() *sourcegraph.Client {
 		Defs:         &c.Defs,
 		Meta:         &c.Meta,
 		MirrorRepos:  &c.MirrorRepos,
-		Orgs:         &c.Orgs,
-		People:       &c.People,
 		RepoStatuses: &c.RepoStatuses,
 		RepoTree:     &c.RepoTree,
 		Repos:        &c.Repos,

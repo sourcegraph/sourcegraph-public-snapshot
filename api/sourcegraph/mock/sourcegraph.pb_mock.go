@@ -361,80 +361,20 @@ func (s *BuildsServer) DequeueNext(v0 context.Context, v1 *sourcegraph.BuildsDeq
 
 var _ sourcegraph.BuildsServer = (*BuildsServer)(nil)
 
-type OrgsClient struct {
-	Get_         func(ctx context.Context, in *sourcegraph.OrgSpec) (*sourcegraph.Org, error)
-	List_        func(ctx context.Context, in *sourcegraph.OrgsListOp) (*sourcegraph.OrgList, error)
-	ListMembers_ func(ctx context.Context, in *sourcegraph.OrgsListMembersOp) (*sourcegraph.UserList, error)
-}
-
-func (s *OrgsClient) Get(ctx context.Context, in *sourcegraph.OrgSpec, opts ...grpc.CallOption) (*sourcegraph.Org, error) {
-	return s.Get_(ctx, in)
-}
-
-func (s *OrgsClient) List(ctx context.Context, in *sourcegraph.OrgsListOp, opts ...grpc.CallOption) (*sourcegraph.OrgList, error) {
-	return s.List_(ctx, in)
-}
-
-func (s *OrgsClient) ListMembers(ctx context.Context, in *sourcegraph.OrgsListMembersOp, opts ...grpc.CallOption) (*sourcegraph.UserList, error) {
-	return s.ListMembers_(ctx, in)
-}
-
-var _ sourcegraph.OrgsClient = (*OrgsClient)(nil)
-
-type OrgsServer struct {
-	Get_         func(v0 context.Context, v1 *sourcegraph.OrgSpec) (*sourcegraph.Org, error)
-	List_        func(v0 context.Context, v1 *sourcegraph.OrgsListOp) (*sourcegraph.OrgList, error)
-	ListMembers_ func(v0 context.Context, v1 *sourcegraph.OrgsListMembersOp) (*sourcegraph.UserList, error)
-}
-
-func (s *OrgsServer) Get(v0 context.Context, v1 *sourcegraph.OrgSpec) (*sourcegraph.Org, error) {
-	return s.Get_(v0, v1)
-}
-
-func (s *OrgsServer) List(v0 context.Context, v1 *sourcegraph.OrgsListOp) (*sourcegraph.OrgList, error) {
-	return s.List_(v0, v1)
-}
-
-func (s *OrgsServer) ListMembers(v0 context.Context, v1 *sourcegraph.OrgsListMembersOp) (*sourcegraph.UserList, error) {
-	return s.ListMembers_(v0, v1)
-}
-
-var _ sourcegraph.OrgsServer = (*OrgsServer)(nil)
-
-type PeopleClient struct {
-	Get_ func(ctx context.Context, in *sourcegraph.PersonSpec) (*sourcegraph.Person, error)
-}
-
-func (s *PeopleClient) Get(ctx context.Context, in *sourcegraph.PersonSpec, opts ...grpc.CallOption) (*sourcegraph.Person, error) {
-	return s.Get_(ctx, in)
-}
-
-var _ sourcegraph.PeopleClient = (*PeopleClient)(nil)
-
-type PeopleServer struct {
-	Get_ func(v0 context.Context, v1 *sourcegraph.PersonSpec) (*sourcegraph.Person, error)
-}
-
-func (s *PeopleServer) Get(v0 context.Context, v1 *sourcegraph.PersonSpec) (*sourcegraph.Person, error) {
-	return s.Get_(v0, v1)
-}
-
-var _ sourcegraph.PeopleServer = (*PeopleServer)(nil)
-
 type AccountsClient struct {
 	Create_               func(ctx context.Context, in *sourcegraph.NewAccount) (*sourcegraph.CreatedAccount, error)
-	RequestPasswordReset_ func(ctx context.Context, in *sourcegraph.PersonSpec) (*sourcegraph.PendingPasswordReset, error)
+	RequestPasswordReset_ func(ctx context.Context, in *sourcegraph.RequestPasswordResetOp) (*sourcegraph.PendingPasswordReset, error)
 	ResetPassword_        func(ctx context.Context, in *sourcegraph.NewPassword) (*pbtypes.Void, error)
 	Update_               func(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error)
 	UpdateEmails_         func(ctx context.Context, in *sourcegraph.UpdateEmailsOp) (*pbtypes.Void, error)
-	Delete_               func(ctx context.Context, in *sourcegraph.PersonSpec) (*pbtypes.Void, error)
+	Delete_               func(ctx context.Context, in *sourcegraph.UserSpec) (*pbtypes.Void, error)
 }
 
 func (s *AccountsClient) Create(ctx context.Context, in *sourcegraph.NewAccount, opts ...grpc.CallOption) (*sourcegraph.CreatedAccount, error) {
 	return s.Create_(ctx, in)
 }
 
-func (s *AccountsClient) RequestPasswordReset(ctx context.Context, in *sourcegraph.PersonSpec, opts ...grpc.CallOption) (*sourcegraph.PendingPasswordReset, error) {
+func (s *AccountsClient) RequestPasswordReset(ctx context.Context, in *sourcegraph.RequestPasswordResetOp, opts ...grpc.CallOption) (*sourcegraph.PendingPasswordReset, error) {
 	return s.RequestPasswordReset_(ctx, in)
 }
 
@@ -450,7 +390,7 @@ func (s *AccountsClient) UpdateEmails(ctx context.Context, in *sourcegraph.Updat
 	return s.UpdateEmails_(ctx, in)
 }
 
-func (s *AccountsClient) Delete(ctx context.Context, in *sourcegraph.PersonSpec, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+func (s *AccountsClient) Delete(ctx context.Context, in *sourcegraph.UserSpec, opts ...grpc.CallOption) (*pbtypes.Void, error) {
 	return s.Delete_(ctx, in)
 }
 
@@ -458,18 +398,18 @@ var _ sourcegraph.AccountsClient = (*AccountsClient)(nil)
 
 type AccountsServer struct {
 	Create_               func(v0 context.Context, v1 *sourcegraph.NewAccount) (*sourcegraph.CreatedAccount, error)
-	RequestPasswordReset_ func(v0 context.Context, v1 *sourcegraph.PersonSpec) (*sourcegraph.PendingPasswordReset, error)
+	RequestPasswordReset_ func(v0 context.Context, v1 *sourcegraph.RequestPasswordResetOp) (*sourcegraph.PendingPasswordReset, error)
 	ResetPassword_        func(v0 context.Context, v1 *sourcegraph.NewPassword) (*pbtypes.Void, error)
 	Update_               func(v0 context.Context, v1 *sourcegraph.User) (*pbtypes.Void, error)
 	UpdateEmails_         func(v0 context.Context, v1 *sourcegraph.UpdateEmailsOp) (*pbtypes.Void, error)
-	Delete_               func(v0 context.Context, v1 *sourcegraph.PersonSpec) (*pbtypes.Void, error)
+	Delete_               func(v0 context.Context, v1 *sourcegraph.UserSpec) (*pbtypes.Void, error)
 }
 
 func (s *AccountsServer) Create(v0 context.Context, v1 *sourcegraph.NewAccount) (*sourcegraph.CreatedAccount, error) {
 	return s.Create_(v0, v1)
 }
 
-func (s *AccountsServer) RequestPasswordReset(v0 context.Context, v1 *sourcegraph.PersonSpec) (*sourcegraph.PendingPasswordReset, error) {
+func (s *AccountsServer) RequestPasswordReset(v0 context.Context, v1 *sourcegraph.RequestPasswordResetOp) (*sourcegraph.PendingPasswordReset, error) {
 	return s.RequestPasswordReset_(v0, v1)
 }
 
@@ -485,7 +425,7 @@ func (s *AccountsServer) UpdateEmails(v0 context.Context, v1 *sourcegraph.Update
 	return s.UpdateEmails_(v0, v1)
 }
 
-func (s *AccountsServer) Delete(v0 context.Context, v1 *sourcegraph.PersonSpec) (*pbtypes.Void, error) {
+func (s *AccountsServer) Delete(v0 context.Context, v1 *sourcegraph.UserSpec) (*pbtypes.Void, error) {
 	return s.Delete_(v0, v1)
 }
 
@@ -752,12 +692,7 @@ func (s *RepoTreeServer) List(v0 context.Context, v1 *sourcegraph.RepoTreeListOp
 var _ sourcegraph.RepoTreeServer = (*RepoTreeServer)(nil)
 
 type MetaClient struct {
-	Status_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.ServerStatus, error)
 	Config_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.ServerConfig, error)
-}
-
-func (s *MetaClient) Status(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.ServerStatus, error) {
-	return s.Status_(ctx, in)
 }
 
 func (s *MetaClient) Config(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.ServerConfig, error) {
@@ -767,12 +702,7 @@ func (s *MetaClient) Config(ctx context.Context, in *pbtypes.Void, opts ...grpc.
 var _ sourcegraph.MetaClient = (*MetaClient)(nil)
 
 type MetaServer struct {
-	Status_ func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerStatus, error)
 	Config_ func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerConfig, error)
-}
-
-func (s *MetaServer) Status(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerStatus, error) {
-	return s.Status_(v0, v1)
 }
 
 func (s *MetaServer) Config(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerConfig, error) {
@@ -780,26 +710,6 @@ func (s *MetaServer) Config(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.
 }
 
 var _ sourcegraph.MetaServer = (*MetaServer)(nil)
-
-type NotifyClient struct {
-	GenericEvent_ func(ctx context.Context, in *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error)
-}
-
-func (s *NotifyClient) GenericEvent(ctx context.Context, in *sourcegraph.NotifyGenericEvent, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.GenericEvent_(ctx, in)
-}
-
-var _ sourcegraph.NotifyClient = (*NotifyClient)(nil)
-
-type NotifyServer struct {
-	GenericEvent_ func(v0 context.Context, v1 *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error)
-}
-
-func (s *NotifyServer) GenericEvent(v0 context.Context, v1 *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error) {
-	return s.GenericEvent_(v0, v1)
-}
-
-var _ sourcegraph.NotifyServer = (*NotifyServer)(nil)
 
 type AnnotationsClient struct {
 	List_        func(ctx context.Context, in *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error)

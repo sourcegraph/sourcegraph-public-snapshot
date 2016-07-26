@@ -603,7 +603,7 @@ func (c *ServeCmd) checkReachability(ctx context.Context) {
 			}
 			return
 		}
-		if _, err := cl.Meta.Status(ctx, &pbtypes.Void{}); err != nil && grpc.Code(err) != codes.Unauthenticated {
+		if _, err := cl.Meta.Config(ctx, &pbtypes.Void{}); err != nil && grpc.Code(err) != codes.Unauthenticated {
 			msg := fmt.Sprintf("Reachability check to server at %s failed (%s). Clients (including the web app) would be unable to connect to the server.", sourcegraph.GRPCEndpoint(ctx), err)
 			if errorIsFatal {
 				log.Fatalf(msg)
