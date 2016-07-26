@@ -7,9 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"github.com/lib/pq"
 	"github.com/neelance/parallel"
 	"github.com/prometheus/client_golang/prometheus"
@@ -24,7 +21,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	sstore "sourcegraph.com/sourcegraph/srclib/store"
 )
@@ -289,14 +285,10 @@ func (g *globalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error 
 	}
 	dbh := graphDBH(ctx)
 
-	repoObj, commitID, err := resolveRevisionDefaultBranch(ctx, op.Repo)
+	commitID := op.CommitID
+	repoObj, err := store.ReposFromContext(ctx).Get(ctx, op.Repo)
 	if err != nil {
 		return err
-	}
-
-	if repoObj.Fork {
-		// We don't index forks
-		return grpc.Errorf(codes.InvalidArgument, "GlobalRefs does not index forks. repo=%s", op.Repo)
 	}
 
 	repo := repoObj.URI
@@ -480,31 +472,4 @@ var globalRefsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 func init() {
 	prometheus.MustRegister(globalRefsDuration)
 	prometheus.MustRegister(globalRefsUpdateDuration)
-}
-
-func resolveRevisionDefaultBranch(ctx context.Context, repo int32) (repoObj *sourcegraph.Repo, commitID string, err error) {
-	repoObj, err = store.ReposFromContext(ctx).Get(ctx, repo)
-	if err != nil {
-		return
-	}
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoObj.ID)
-	if err != nil {
-		return
-	}
-	c, err := vcsrepo.ResolveRevision(repoObj.DefaultBranch)
-	if err != nil {
-		// TODO(keegancsmith) Remove once we always have the
-		// DefaultBranch stored in our own DB. https://app.asana.com/0/87040567695724/147734985562458
-		if !strings.HasPrefix(strings.ToLower(repoObj.URI), "github.com/") {
-			return
-		}
-		ghrepo, err := github.ReposFromContext(ctx).Get(ctx, repoObj.URI)
-		if err != nil {
-			return nil, "", err
-		}
-		if c, err = vcsrepo.ResolveRevision(ghrepo.DefaultBranch); err != nil {
-			return nil, "", err
-		}
-	}
-	return repoObj, string(c), nil
 }
