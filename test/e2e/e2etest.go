@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"testing"
 	"time"
 
 	"golang.org/x/net/context"
@@ -56,7 +57,7 @@ type T struct {
 	// calling Fatalf).
 	WebDriver selenium.WebDriver
 
-	// testingT provides a Fatalf implementation
+	// testingT provides a Logf implementation
 	testingT TestingT
 
 	tr *testRunner
@@ -64,7 +65,6 @@ type T struct {
 
 // Minimal interface for what testing.T provides
 type TestingT interface {
-	Fatalf(fmt string, v ...interface{})
 	Logf(fmt string, v ...interface{})
 }
 
@@ -76,17 +76,20 @@ func (e *internalError) Error() string {
 	return e.err.Error()
 }
 
+type fatalError struct {
+	err string
+}
+
+func (e *fatalError) Error() string {
+	return e.err
+}
+
 // Fatalf implements the TestingT and the selenium.TestingT interface.
 func (t *T) Fatalf(fmtStr string, v ...interface{}) {
-	// We only need to append "(on page ...)" if we're being run by 'go test'
-	// because otherwise (*testRunner).runTest handles it in a more general
-	// purpose way (includes panics etc).
-	if t.testingT != nil {
-		currentURL, _ := t.WebDriver.CurrentURL()
-		fmtStr = fmtStr + " (on page %s)"
-		v = append(v, currentURL)
-	}
-	t.testingT.Fatalf(fmtStr, v...)
+	// We throw a panic here and it is always recovered by runTest and
+	// subsequently handled. This isn't idiomatic, but it lets us write out
+	// screenshots after a go test has failed.
+	panic(&fatalError{err: fmt.Sprintf(fmtStr, v...)})
 }
 
 // Logf implements TestingT
@@ -108,21 +111,44 @@ func (t *T) Endpoint(e string) string {
 	return u + e
 }
 
-// GRPCClient returns a new authenticated Sourcegraph gRPC client. It uses the
-// server's ID key, and thus has 100% unrestricted access. Use with caution!
-func (t *T) GRPCClient() (context.Context, *sourcegraph.Client) {
-	endpoint := t.Target
+// TargetGRPC returns the final gRPC target URL, e.g. https://grpc.sourcegraph.com.
+func (t *T) TargetGRPC() *url.URL {
+	cpy := *t.Target
+	endpoint := &cpy
+
+	// HACK: Because there is no gRPC service discovery system set up in
+	//       Sourcegraph, we hard-code gRPC endpoints here so that we don't
+	//       have to specify TARGET_GRPC every single time (one less thing
+	//       to think about).
+	switch endpoint.Host {
+	case "sourcegraph.com":
+		endpoint.Host = "grpc.sourcegraph.com"
+	case "staging.sourcegraph.com":
+		endpoint.Host = "grpc-staging.sourcegraph.com"
+	case "staging2.sourcegraph.com":
+		endpoint.Host = "grpc-staging2.sourcegraph.com"
+	case "staging3.sourcegraph.com":
+		endpoint.Host = "grpc-staging3.sourcegraph.com"
+	case "staging4.sourcegraph.com":
+		endpoint.Host = "grpc-staging4.sourcegraph.com"
+	}
+
 	if grpc := os.Getenv("TARGET_GRPC"); grpc != "" {
 		var err error
 		endpoint, err = url.Parse(grpc)
 		if err != nil {
-			t.Fatalf("could not parge TARGET_GRPC as url: %s", err)
+			t.Fatalf("could not parse TARGET_GRPC as url: %s", err)
 		}
 	}
+	return endpoint
+}
 
+// GRPCClient returns a new authenticated Sourcegraph gRPC client. It uses the
+// server's ID key, and thus has 100% unrestricted access. Use with caution!
+func (t *T) GRPCClient() (context.Context, *sourcegraph.Client) {
 	// Create context with gRPC endpoint and idKey credentials.
 	ctx := context.Background()
-	ctx = sourcegraph.WithGRPCEndpoint(ctx, endpoint)
+	ctx = sourcegraph.WithGRPCEndpoint(ctx, t.TargetGRPC())
 	ctx = sourcegraph.WithCredentials(ctx, sharedsecret.TokenSource(t.tr.idKey, "internal:e2etest"))
 
 	// Create client.
@@ -158,7 +184,7 @@ func (t *T) WaitForElement(by, value string, filters ...ElementFilter) selenium.
 			if err != nil {
 				return false
 			}
-			if *verboseFlag {
+			if seleniumTrace {
 				t.Logf("WaitForElement: %d matches for (%s, %q)", len(elements), by, value)
 			}
 			f := And(filters...)
@@ -168,7 +194,7 @@ func (t *T) WaitForElement(by, value string, filters ...ElementFilter) selenium.
 					return true
 				}
 			}
-			if *verboseFlag {
+			if seleniumTrace {
 				t.Logf("WaitForElement: failed to find filter match")
 			}
 			return false
@@ -423,7 +449,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 
 				// This error should not be bubbled up! That will cause the parallel.Run to short circuit,
 				// but we want all tests to run regardless.
-				err, screenshot := t.runTest(test)
+				err, screenshot := t.runTest(test, nil)
 				if _, ok := err.(*internalError); ok {
 					t.log.Printf("[warning] [%v] unable to establish a session: %v\n", test.Name, err)
 					t.slackMessage(typeWarning, fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, err), "")
@@ -560,10 +586,8 @@ func (t *testRunner) alertOpsGenie(msg string) error {
 // the test failed for any reason err != nil is returned. If it was possible to
 // capture a screenshot of the error, screenshot will be the encoded PNG bytes.
 //
-// warningChannel specifies whether or not the screenshot should be uploaded to
-// the warning Slack channel in the event of an error. Otherwise, it is
-// uploaded to the normal (failure) channel.
-func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
+// testingT is optional, and is set as T.testingT directly if specified.
+func (t *testRunner) runTest(test *Test, testingT *testing.T) (err error, screenshot []byte) {
 	wd, err := t.newWebDriver()
 	if err != nil {
 		return &internalError{err: err}, nil
@@ -597,6 +621,7 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 	}()
 
 	ctx := t.newT(test, wd)
+	ctx.testingT = testingT
 	return test.Func(ctx), nil
 }
 
@@ -696,8 +721,9 @@ var tr = &testRunner{
 var (
 	runOnce     = flag.Bool("once", true, "run the tests only once (true) or forever (false)")
 	runFlag     = flag.String("run", "", "specify an exact test name to run (e.g. 'login_flow', 'register_flow')")
-	verboseFlag = flag.Bool("v", false, "verbosely log selenium actions (useful when debugging selenium)")
-	retriesFlag = flag.Int("retries", 3, "maximum number of times to retry a test before considering it failed")
+	retriesFlag = flag.Int("retries", 1, "maximum number of times to retry a test before considering it failed")
+
+	seleniumTrace = os.Getenv("SELENIUM_TRACE") != ""
 )
 
 func parseEnv() error {
@@ -705,10 +731,14 @@ func parseEnv() error {
 	serverAddr := os.Getenv("SELENIUM_SERVER_IP")
 	serverPort := os.Getenv("SELENIUM_SERVER_PORT")
 	if serverAddr == "" {
-		return errors.New("unable to get SELENIUM_SERVER_IP from environment")
+		serverAddr = "localhost" // default to localhost
 	}
 	if serverPort == "" {
 		serverPort = "4444" // default to standard Selenium port
+	}
+
+	if !seleniumTrace {
+		selenium.Log = log.New(ioutil.Discard, "", 0)
 	}
 
 	if !strings.Contains(serverAddr, "://") {
@@ -829,12 +859,17 @@ func Main() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, `
 Environment:
-  SELENIUM_SERVER_IP (required)
-      IP address of the Selenium server (run 'docker-machine ls' on OS X and Windows; use 'localhost' on Linux)
   TARGET (required)
       target Sourcegraph server to test against (e.g. 'http://192.168.1.1:3080', use LAN IP due to Docker!)
+  SELENIUM_SERVER_IP = "localhost"
+      IP address of the Selenium server (consider consulting 'docker-machine ls' on certain Docker versions)
   SELENIUM_SERVER_PORT = "4444"
       port of the Selenium server
+  SELENIUM_TRACE (optional)
+      If specified, selenium actions will be verbosely logged. Useful when debugging selenium.
+  WRITE_SCREENSHOTS (optional)
+      If specified, screenshots of any failures will be written to the specified directory path
+      relative to the test/e2e package directory. Only used by 'go test'.
   ID_KEY_DATA (optional)
       If specified, the Base64-encoded string is used in place of '$SGPATH/id.pem' for authenticating
   SLACK_API_TOKEN (optional)
@@ -853,9 +888,6 @@ Flags:
 	flag.Parse()
 
 	// Prepare logging.
-	if !*verboseFlag {
-		selenium.Log = log.New(ioutil.Discard, "", 0)
-	}
 	tr.log = log.New(io.MultiWriter(os.Stderr, tr.slackLogBuffer), "", 0)
 
 	err := parseEnv()
@@ -867,11 +899,6 @@ Flags:
 }
 
 type defaultTestingT struct{}
-
-// FatalF causes a panic (which is caught by the test executor).
-func (t defaultTestingT) Fatalf(fmtStr string, v ...interface{}) {
-	panic(fmt.Sprintf(fmtStr, v...))
-}
 
 func (t defaultTestingT) Logf(fmtStr string, v ...interface{}) {
 	log.Printf(fmtStr, v...)

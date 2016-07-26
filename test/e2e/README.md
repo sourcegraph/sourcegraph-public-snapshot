@@ -1,75 +1,88 @@
-# Sourcegraph E2E page tests
+# Sourcegraph E2E tests
 
-This directory contains all of the Sourcegraph E2E page tests which are tested
-from an end user's perspective (i.e. from within an actual web browser) using
-[Selenium](http://www.seleniumhq.org/).
+E2E (end-to-end) tests are page tests running from an end user's perspective
+(within a real web browser) using [Selenium](http://www.seleniumhq.org/). They
+are ran automatically 24/7 against Sourcegraph.com and automatically trigger
+a version rollback in the event of a regression.
 
-- These tests should be run locally as you would any other Go tests (see `docs/dev.md`).
-- These tests are run automatically against sourcegraph.com and, in the event of
-  a regression in the deployed version, a rollback will occur automatically.
+- [Installation](#installation)
+- [Testing](#testing)
+- [Additional options](#additional-options)
+- [Creating tests](#creating-tests)
+- [Testing criteria](#testing-criteria)
 
-## Running locally
+## Installation
 
-End-to-end tests are run constantly against sourcegraph.com.
-You may additionally run them locally on your machine:
+**OS X** (testing in Google Chrome)
 
-1. Run Selenium server:
-    - `docker run -d -p 4444:4444 selenium/standalone-chrome:2.52.0` is via
-      docker, and is headless (ie you can't watch the run)
-    - `brew install Caskroom/cask/java selenium-server-standalone
-      chromedriver` via brew to run tests in a local browser. Then run
-      `selenium-server -p 4444`
-2. Run an E2E tests:
-    - `SELENIUM_SERVER_IP=<DOCKER_HOST_IP> TARGET=https://sourcegraph.com TARGET_GRPC=https://grpc.sourcegraph.com go test -run TestDefFlow`
-        - OS X: use `docker-machine ls` to find the IP of the machine if using docker.
-        - Other: Just use `localhost`.
+```bash
+brew install Caskroom/cask/java selenium-server-standalone chromedriver
+```
 
-Alternatively you can use the full e2etest stack that runs in production:
+**Any OS** (headless testing)
 
-1. Run the tests
-    - `go install sourcegraph.com/sourcegraph/infrastructure/docker-images/e2etest`
-    - `SELENIUM_SERVER_IP=<DOCKER_HOST_IP> TARGET=https://sourcegraph.com TARGET_GRPC=https://grpc.sourcegraph.com e2etest -once`
-        - OS X: use `docker-machine ls` to find the IP of the machine.
-        - Linux: Just use `localhost`.
-2. Run a specific E2E test once: `e2etest -once -run="login_flow"`
-3. Run tests against local Sourcegraph instance: specify `TARGET=http://<LOCAL_MACHINE_IP>:3080` NOT `localhost` (Selenium runs inside a Docker container, use LAN IP instead).
+```bash
+docker run -d -p 4444:4444 selenium/standalone-chrome:2.52.0
+```
 
-For authentication with the `TARGET` server, your `~/.sourcegraph/id.pem` is used by default. Set `ID_KEY_DATA=...` to specify a Base64-encoded form of this file.
+Note: Some Docker versions may need you to set the `SELENIUM_SERVER_IP`
+environment variable to the one listed by `docker-machine ls`, and use
+`TARGET=https://<DOCKER_IP>:3080` instead of localhost when testing. With
+"Docker For Mac", however, this is not needed.
 
-## Adding new tests
+# Testing
+
+First `cd test/e2e`, then:
+
+```bash
+TARGET=http://localhost:3080 go test
+```
+
+To test against sourcegraph.com you will need admin access, [see this document](https://github.com/sourcegraph/infrastructure/tree/master/docker-images/e2etest#testing-sourcegraphcom).
+
+
+## Additional options
+
+See environment variables [in the source](https://sourcegraph.com/sourcegraph/sourcegraph/-/blob/test/e2e/e2etest.go#L797-813).
+
+## Creating tests
 
 To add a new E2E page test:
 
-- **Important**: Ensure that your test matches the criteria listed below!
-- Every test must use its own user! This contraint must be enforced to avoid
-  concurrency issues. In the long run this constraint may be modified.
-- Create a `mytest.go` file based on one of the existing tests in this directory
-  (see `login_flow.go` for example).
-- See the godoc for the [sourcegraph.com/sourcegraph/go-selenium package](https://godoc.org/sourcegraph.com/sourcegraph/go-selenium)
-  which makes writing these tests very easy.
-- Don't use `t.Fatalf` as assertions, rather rely on `WaitForCondition`. It
-  leads to more reliable E2E tests.
+  1. **Important: Ensure that your test matches the testing criteria below!**
+  2. Every test must use its own user!** This contraint must be enforced to avoid
+  any concurrency issues.
+  3. Base your test on an existing one (see `login_flow.go` for example)
+  4. Add a new `TestFoo` entry to `e2etest_test.go`.
+  5. See the [test/e2e API](https://godoc.org/sourcegraph.com/sourcegraph/sourcegraph/test/e2e)
+     and the [go-selenium API](https://godoc.org/sourcegraph.com/sourcegraph/go-selenium) docs.
+
+General wisdom:
+
+  - Always prefer the helpers in the test/e2e API over methods provided by go-selenium,
+    because they are always more reliable.
+  - Always use `WaitForCondition` over `t.Fatalf` for assertions, as it is more reliable.
 
 ## Testing criteria
 
 #### Do:
 
-- Do **write E2E tests for user flows that, if broken, Sourcegraph would be
-  considered very broken to end users**. Examples:
-  - Registering an account.
-  - Logging in as an existing user.
-  - Jumping to a definition (on a prebuilt repository / one whose build can
-    never break).
-- Do write unit tests and integration tests for the same code that you are
-  testing in E2E tests. E2E tests do not replace unit or integration tests, they
-  only act as a last line of defense.
+  - Do **write E2E tests for user flows that, if broken, Sourcegraph would be
+    considered very broken to end users**. Examples:
+    - Registering an account.
+    - Logging in as an existing user.
+    - Jumping to a definition (on a prebuilt repository / one whose build can
+      never break).
+  - Do write unit tests and integration tests for the same code that you are
+    testing in E2E tests. E2E tests do not replace unit or integration tests, they
+    only act as a last line of defense.
 
 #### Don't:
 
-- Don't use E2E tests for testing non-critical code paths (only test user flows
-  that are critical to Sourcegraph users).
-- Don't use E2E tests to test code that could otherwise be tested in a Go-only
-  or Javascript-only unit test.
-- Don't write E2E tests that can ever fail or otherwise be flaky. They must be
-  _extremely reliable_ because they are constantly run against sourcegraph.com
-  and will trigger an automatic rollback in the event of test failure.
+  - Don't use E2E tests for testing non-critical code paths (only test user flows
+    that are critical to Sourcegraph users).
+  - Don't use E2E tests to test code that could otherwise be tested in a Go-only
+    or Javascript-only unit test.
+  - Don't write E2E tests that can ever fail or otherwise be flaky. They must be
+    _extremely reliable_ because they are constantly run against sourcegraph.com
+    and will trigger an automatic rollback in the event of test failure.
