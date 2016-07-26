@@ -1,19 +1,12 @@
 package listeners
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/AaronO/go-git-http"
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	appconf "sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/textutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 )
 
@@ -28,15 +21,6 @@ func (g *gitHookListener) Scopes() []string {
 }
 
 func (g *gitHookListener) Start(ctx context.Context) {
-	if !appconf.Flags.DisableGitNotify {
-		notifyCallback := func(id events.EventID, p events.GitPayload) {
-			notifyGitEvent(ctx, id, p)
-		}
-		events.Subscribe(events.GitPushEvent, notifyCallback)
-		events.Subscribe(events.GitCreateBranchEvent, notifyCallback)
-		events.Subscribe(events.GitDeleteBranchEvent, notifyCallback)
-	}
-
 	buildCallback := func(id events.EventID, p events.GitPayload) {
 		buildHook(ctx, id, p)
 	}
@@ -48,87 +32,6 @@ func (g *gitHookListener) Start(ctx context.Context) {
 	}
 	events.Subscribe(events.GitPushEvent, inventoryCallback)
 	events.Subscribe(events.GitCreateBranchEvent, inventoryCallback)
-}
-
-func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPayload) {
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		log15.Warn("postPushHook error", "error", err)
-	}
-
-	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: payload.Repo})
-	if err != nil {
-		log15.Warn("postPushHook error fetching repo", "repo", payload.Repo, "error", err)
-	}
-	// Don't emit notifications for mirror repositories.
-	if repo.Mirror {
-		return
-	}
-
-	event := payload.Event
-	branchURL := router.Rel.URLToRepoRev(repo.URI, event.Branch)
-	if err != nil {
-		log15.Warn("postPushHook: error resolving branch URL", "repo", repo.URI, "branch", event.Branch, "error", err)
-		return
-	}
-
-	absBranchURL := conf.AppURL(ctx).ResolveReference(branchURL).String()
-	notifyEvent := sourcegraph.NotifyGenericEvent{
-		Actor:      &payload.Actor,
-		ObjectURL:  absBranchURL,
-		ObjectRepo: repo.URI + "@" + event.Branch,
-		NoEmail:    true,
-	}
-
-	if id != events.GitPushEvent {
-		switch id {
-		case events.GitCreateBranchEvent:
-			notifyEvent.ActionType = "created the branch"
-		case events.GitDeleteBranchEvent:
-			notifyEvent.ActionType = "deleted the branch"
-		default:
-			log15.Warn("postPushHook: unknown event id", "id", id, "repo", repo.URI, "branch", event.Branch)
-			return
-		}
-
-		cl.Notify.GenericEvent(ctx, &notifyEvent)
-		return
-	}
-
-	// See how many commits were pushed.
-	commits, err := cl.Repos.ListCommits(ctx, &sourcegraph.ReposListCommitsOp{
-		Repo: payload.Repo,
-		Opt: &sourcegraph.RepoListCommitsOptions{
-			Head:        event.Commit,
-			Base:        event.Last,
-			ListOptions: sourcegraph.ListOptions{PerPage: 1000},
-		},
-	})
-	if err != nil {
-		log15.Warn("postPushHook: error fetching push commits", "error", err)
-		commits = &sourcegraph.CommitList{}
-	}
-
-	var commitsNoun string
-	if len(commits.Commits) == 1 {
-		commitsNoun = "commit"
-	} else {
-		commitsNoun = "commits"
-	}
-	var commitMessages []string
-	for i, c := range commits.Commits {
-		if i > 10 {
-			break
-		}
-		commitMessages = append(commitMessages, fmt.Sprintf("%s: %s",
-			c.ID[:6],
-			textutil.ShortCommitMessage(80, c.Message),
-		))
-	}
-
-	notifyEvent.ActionType = fmt.Sprintf("pushed *%d %s* to", len(commits.Commits), commitsNoun)
-	notifyEvent.ActionContent = strings.Join(commitMessages, "\n")
-	cl.Notify.GenericEvent(ctx, &notifyEvent)
 }
 
 func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload) {

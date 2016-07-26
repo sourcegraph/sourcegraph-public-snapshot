@@ -771,26 +771,6 @@ func (s *MetaServer) Config(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.
 
 var _ sourcegraph.MetaServer = (*MetaServer)(nil)
 
-type NotifyClient struct {
-	GenericEvent_ func(ctx context.Context, in *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error)
-}
-
-func (s *NotifyClient) GenericEvent(ctx context.Context, in *sourcegraph.NotifyGenericEvent, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.GenericEvent_(ctx, in)
-}
-
-var _ sourcegraph.NotifyClient = (*NotifyClient)(nil)
-
-type NotifyServer struct {
-	GenericEvent_ func(v0 context.Context, v1 *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error)
-}
-
-func (s *NotifyServer) GenericEvent(v0 context.Context, v1 *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error) {
-	return s.GenericEvent_(v0, v1)
-}
-
-var _ sourcegraph.NotifyServer = (*NotifyServer)(nil)
-
 type AnnotationsClient struct {
 	List_        func(ctx context.Context, in *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error)
 	GetDefAtPos_ func(ctx context.Context, in *sourcegraph.AnnotationsGetDefAtPosOptions) (*sourcegraph.DefSpec, error)

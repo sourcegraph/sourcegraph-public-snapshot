@@ -40,7 +40,6 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 		Desktop:           wrappedDesktop{ctxFunc, services},
 		Meta:              wrappedMeta{ctxFunc, services},
 		MirrorRepos:       wrappedMirrorRepos{ctxFunc, services},
-		Notify:            wrappedNotify{ctxFunc, services},
 		Orgs:              wrappedOrgs{ctxFunc, services},
 		People:            wrappedPeople{ctxFunc, services},
 		RepoStatuses:      wrappedRepoStatuses{ctxFunc, services},
@@ -1210,41 +1209,6 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, v1 *sourcegraph.Mirr
 	}
 
 	rv, err := innerSvc.RefreshVCS(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-type wrappedNotify struct {
-	ctxFunc  ContextFunc
-	services svc.Services
-}
-
-func (s wrappedNotify) GenericEvent(ctx context.Context, v1 *sourcegraph.NotifyGenericEvent) (returnedResult *pbtypes.Void, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Notify.GenericEvent: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.NotifyOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Notify")
-	}
-
-	rv, err := innerSvc.GenericEvent(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

@@ -55,8 +55,6 @@ func Services() svc.Services {
 
 		MirrorRepos: wrappedMirrorRepos{},
 
-		Notify: wrappedNotify{},
-
 		Orgs: wrappedOrgs{},
 
 		People: wrappedPeople{},
@@ -867,29 +865,6 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, param *sourcegraph.M
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
 			err = grpc.Errorf(code, "MirrorRepos.RefreshVCS failed with internal error.")
-		}
-	}
-	return
-}
-
-type wrappedNotify struct{}
-
-func (s wrappedNotify) GenericEvent(ctx context.Context, param *sourcegraph.NotifyGenericEvent) (res *pbtypes.Void, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Notify", "GenericEvent", param)
-	defer func() {
-		trace.After(ctx, "Notify", "GenericEvent", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Notify.GenericEvent(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Notify.GenericEvent returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Notify.GenericEvent failed with internal error.")
 		}
 	}
 	return

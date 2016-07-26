@@ -1950,52 +1950,6 @@ message EventList {
 	string AppURL = 3;
 }
 
-// NotifyGenericEvent describes an action being done against an object. For
-// example, pushing a branch.
-message NotifyGenericEvent {
-	// Actor is the User who did the action
-	UserSpec Actor = 1;
-
-	// Recipients is who should be notified of the action
-	repeated UserSpec Recipients = 2;
-
-	// ActionType example: "pushed"
-	string ActionType = 3;
-
-	// ActionContent example: "37 commits"
-	string ActionContent = 4;
-
-	// ObjectID example: 71
-	int64 ObjectID = 5;
-
-	// ObjectRepo example: "gorilla/mux"
-	string ObjectRepo = 6;
-
-	// ObjectType example: "branch"
-	string ObjectType = 7;
-
-	// ObjectTitle example: "mybranch"
-	string ObjectTitle = 8;
-
-	// ObjectURL example: "https://sourcegraph.com/sourcegraph/sourcegraph/-/branches/mybranch"
-	string ObjectURL = 9;
-
-	// SlackMsg, if present, will override the Slack message for this event.
-	string SlackMsg = 10;
-
-	// EmailHTML, if present, will override the notification email body for this event.
-	string EmailHTML = 11;
-
-	// NoEmail turns off the email notification for this event.
-	bool NoEmail = 13;
-}
-
-// Notify service
-service Notify {
-	// GenericEvent will notify recipients of an event which happened
-	rpc GenericEvent(NotifyGenericEvent) returns (pbtypes.Void);
-}
-
 // Annotations manages annotations on files.
 service Annotations {
 	// List lists matching annotations.

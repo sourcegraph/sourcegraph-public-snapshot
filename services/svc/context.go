@@ -33,7 +33,6 @@ const (
 	_DesktopKey           contextKey = iota
 	_MetaKey              contextKey = iota
 	_MirrorReposKey       contextKey = iota
-	_NotifyKey            contextKey = iota
 	_OrgsKey              contextKey = iota
 	_PeopleKey            contextKey = iota
 	_RepoStatusesKey      contextKey = iota
@@ -56,7 +55,6 @@ type Services struct {
 	Desktop           sourcegraph.DesktopServer
 	Meta              sourcegraph.MetaServer
 	MirrorRepos       sourcegraph.MirrorReposServer
-	Notify            sourcegraph.NotifyServer
 	Orgs              sourcegraph.OrgsServer
 	People            sourcegraph.PeopleServer
 	RepoStatuses      sourcegraph.RepoStatusesServer
@@ -111,10 +109,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.MirrorRepos != nil {
 		sourcegraph.RegisterMirrorReposServer(s, svcs.MirrorRepos)
-	}
-
-	if svcs.Notify != nil {
-		sourcegraph.RegisterNotifyServer(s, svcs.Notify)
 	}
 
 	if svcs.Orgs != nil {
@@ -192,10 +186,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.MirrorRepos != nil {
 		ctx = WithMirrorRepos(ctx, s.MirrorRepos)
-	}
-
-	if s.Notify != nil {
-		ctx = WithNotify(ctx, s.Notify)
 	}
 
 	if s.Orgs != nil {
@@ -476,29 +466,6 @@ func MirrorRepos(ctx context.Context) sourcegraph.MirrorReposServer {
 // MirrorReposOrNil returns the context's MirrorRepos service if present, or else nil.
 func MirrorReposOrNil(ctx context.Context) sourcegraph.MirrorReposServer {
 	s, ok := ctx.Value(_MirrorReposKey).(sourcegraph.MirrorReposServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithNotify returns a copy of parent that uses the given Notify service.
-func WithNotify(ctx context.Context, s sourcegraph.NotifyServer) context.Context {
-	return context.WithValue(ctx, _NotifyKey, s)
-}
-
-// Notify gets the context's Notify service. If the service is not present, it panics.
-func Notify(ctx context.Context) sourcegraph.NotifyServer {
-	s, ok := ctx.Value(_NotifyKey).(sourcegraph.NotifyServer)
-	if !ok || s == nil {
-		panic("no Notify set in context")
-	}
-	return s
-}
-
-// NotifyOrNil returns the context's Notify service if present, or else nil.
-func NotifyOrNil(ctx context.Context) sourcegraph.NotifyServer {
-	s, ok := ctx.Value(_NotifyKey).(sourcegraph.NotifyServer)
 	if ok {
 		return s
 	}
