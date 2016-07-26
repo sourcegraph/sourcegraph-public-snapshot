@@ -1771,18 +1771,6 @@ service RepoTree {
 	rpc List(RepoTreeListOp) returns (RepoTreeListResult);
 }
 
-message Checklist {
-	// number of tasks to be done (unchecked)
-	int32 Todo = 1;
-
-	// number of tasks that are done (checked)
-	int32 Done = 2;
-}
-
-message FileToken {
-	string Path = 1;
-	BasicTreeEntry Entry = 2;
-}
 // Meta provides meta-information about Sourcegraph.
 service Meta {
 	// Config returns the server's configuration.
