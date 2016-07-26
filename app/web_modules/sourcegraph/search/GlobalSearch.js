@@ -57,7 +57,7 @@ class GlobalSearch extends Container {
 			matchingResults: {Repos: [], Defs: [], Options: [], outstandingFetches: 0},
 			className: null,
 			resultClassName: null,
-			selectionIndex: -1,
+			selectionIndex: 0,
 			githubToken: null,
 			searchSettings: null,
 			_queries: null,
@@ -253,7 +253,7 @@ class GlobalSearch extends Container {
 			max = this._numResults();
 
 			this.setState({
-				selectionIndex: idx + 1 >= max ? -1 : idx + 1,
+				selectionIndex: idx + 1 >= max ? 0 : idx + 1,
 			}, this._scrollToVisibleSelection);
 
 			this._temporarilyIgnoreMouseSelection();
@@ -265,7 +265,7 @@ class GlobalSearch extends Container {
 			max = this._numResults();
 
 			this.setState({
-				selectionIndex: idx < 0 ? max-1 : idx-1,
+				selectionIndex: idx <= 0 ? max-1 : idx-1,
 			}, this._scrollToVisibleSelection);
 
 			this._temporarilyIgnoreMouseSelection();
@@ -285,12 +285,9 @@ class GlobalSearch extends Container {
 			break;
 
 		case 13: // Enter
-			// Ignore global search enter keypress (to submit search form).
-			if (this._normalizedSelectionIndex() !== -1) {
-				this._onSelection(false);
-				this._temporarilyIgnoreMouseSelection();
-				e.preventDefault();
-			}
+			this._onSelection(false);
+			this._temporarilyIgnoreMouseSelection();
+			e.preventDefault();
 			break;
 		default:
 			// Changes to the input value are handled by the parent component.
