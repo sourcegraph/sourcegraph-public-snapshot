@@ -50,7 +50,7 @@ class ToolsHomeComponent extends Component {
 					<p>Choose your editor to download the right plugin and get instructions on installation.</p>
 					<div styleName="tool-list">
 						{plugins.map((tool, i) => (
-							<a key={i} href={tool.url} styleName="tool">
+							<a key={i} href={tool.url} target="_blank" styleName="tool">
 								<img styleName="img" src={`${this.context.siteConfig.assetsRoot}${tool.img}`}></img>
 								<div styleName="caption">{tool.name}</div>
 							</a>
@@ -59,7 +59,7 @@ class ToolsHomeComponent extends Component {
 					<Heading level="7" color="cool-mid-gray" className={base.pb3}>Other tools</Heading>
 					<div styleName="tool-list">
 						{otherTools.map((tool, i) => (
-							<a key={i} href={tool.url} styleName="tool">
+							<a key={i} href={tool.url} target="_blank" styleName="tool">
 								<img styleName="img" src={`${this.context.siteConfig.assetsRoot}${tool.img}`}></img>
 								<div styleName="caption">{tool.name}</div>
 							</a>
