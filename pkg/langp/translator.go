@@ -1,5 +1,5 @@
-// Package lputil implements Language Processor utilities.
-package lputil
+// Package langp implements Language Processor utilities.
+package langp
 
 import (
 	"encoding/json"

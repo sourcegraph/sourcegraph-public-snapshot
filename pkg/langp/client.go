@@ -1,4 +1,4 @@
-package lputil
+package langp
 
 import (
 	"bytes"
