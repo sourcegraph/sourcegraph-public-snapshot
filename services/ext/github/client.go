@@ -33,7 +33,6 @@ func init() {
 // by this package.
 type minimalClient struct {
 	repos githubRepos
-	orgs  githubOrgs
 
 	// These are authenticated as the OAuth2 client application using
 	// HTTP Basic auth, not as the user. (Some GitHub API endpoints
@@ -46,7 +45,6 @@ type minimalClient struct {
 func newMinimalClient(isAuthedUser bool, userClient *github.Client, appClient *github.Client) *minimalClient {
 	return &minimalClient{
 		repos: userClient.Repositories,
-		orgs:  userClient.Organizations,
 
 		appAuthorizations: appClient.Authorizations,
 
@@ -58,11 +56,6 @@ type githubRepos interface {
 	Get(owner, repo string) (*github.Repository, *github.Response, error)
 	GetByID(id int) (*github.Repository, *github.Response, error)
 	List(user string, opt *github.RepositoryListOptions) ([]github.Repository, *github.Response, error)
-}
-
-type githubOrgs interface {
-	ListMembers(org string, opt *github.ListMembersOptions) ([]github.User, *github.Response, error)
-	List(member string, opt *github.ListOptions) ([]github.Organization, *github.Response, error)
 }
 
 type githubAuthorizations interface {

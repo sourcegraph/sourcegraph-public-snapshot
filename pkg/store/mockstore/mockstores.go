@@ -29,7 +29,6 @@ type Stores struct {
 	GlobalDeps         GlobalDeps
 	GlobalRefs         GlobalRefs
 	Graph              srcstore.MockMultiRepoStore
-	Orgs               Orgs
 	Password           Password
 	Queue              Queue
 	RepoConfigs        RepoConfigs
@@ -52,7 +51,6 @@ func (s *Stores) Stores() store.Stores {
 		GlobalDeps:         &s.GlobalDeps,
 		GlobalRefs:         &s.GlobalRefs,
 		Graph:              &s.Graph,
-		Orgs:               &s.Orgs,
 		Password:           &s.Password,
 		Queue:              &s.Queue,
 		RepoConfigs:        &s.RepoConfigs,

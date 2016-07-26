@@ -41,7 +41,6 @@ type mockServers struct {
 	Builds       mock.BuildsServer
 	Defs         mock.DefsServer
 	MirrorRepos  mock.MirrorReposServer
-	Orgs         mock.OrgsServer
 	RepoStatuses mock.RepoStatusesServer
 	RepoTree     mock.RepoTreeServer
 	Repos        mock.ReposServer
@@ -56,7 +55,6 @@ func (s *mockServers) servers() svc.Services {
 		Builds:       &s.Builds,
 		Defs:         &s.Defs,
 		MirrorRepos:  &s.MirrorRepos,
-		Orgs:         &s.Orgs,
 		RepoStatuses: &s.RepoStatuses,
 		RepoTree:     &s.RepoTree,
 		Repos:        &s.Repos,

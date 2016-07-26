@@ -361,46 +361,6 @@ func (s *BuildsServer) DequeueNext(v0 context.Context, v1 *sourcegraph.BuildsDeq
 
 var _ sourcegraph.BuildsServer = (*BuildsServer)(nil)
 
-type OrgsClient struct {
-	Get_         func(ctx context.Context, in *sourcegraph.OrgSpec) (*sourcegraph.Org, error)
-	List_        func(ctx context.Context, in *sourcegraph.OrgsListOp) (*sourcegraph.OrgList, error)
-	ListMembers_ func(ctx context.Context, in *sourcegraph.OrgsListMembersOp) (*sourcegraph.UserList, error)
-}
-
-func (s *OrgsClient) Get(ctx context.Context, in *sourcegraph.OrgSpec, opts ...grpc.CallOption) (*sourcegraph.Org, error) {
-	return s.Get_(ctx, in)
-}
-
-func (s *OrgsClient) List(ctx context.Context, in *sourcegraph.OrgsListOp, opts ...grpc.CallOption) (*sourcegraph.OrgList, error) {
-	return s.List_(ctx, in)
-}
-
-func (s *OrgsClient) ListMembers(ctx context.Context, in *sourcegraph.OrgsListMembersOp, opts ...grpc.CallOption) (*sourcegraph.UserList, error) {
-	return s.ListMembers_(ctx, in)
-}
-
-var _ sourcegraph.OrgsClient = (*OrgsClient)(nil)
-
-type OrgsServer struct {
-	Get_         func(v0 context.Context, v1 *sourcegraph.OrgSpec) (*sourcegraph.Org, error)
-	List_        func(v0 context.Context, v1 *sourcegraph.OrgsListOp) (*sourcegraph.OrgList, error)
-	ListMembers_ func(v0 context.Context, v1 *sourcegraph.OrgsListMembersOp) (*sourcegraph.UserList, error)
-}
-
-func (s *OrgsServer) Get(v0 context.Context, v1 *sourcegraph.OrgSpec) (*sourcegraph.Org, error) {
-	return s.Get_(v0, v1)
-}
-
-func (s *OrgsServer) List(v0 context.Context, v1 *sourcegraph.OrgsListOp) (*sourcegraph.OrgList, error) {
-	return s.List_(v0, v1)
-}
-
-func (s *OrgsServer) ListMembers(v0 context.Context, v1 *sourcegraph.OrgsListMembersOp) (*sourcegraph.UserList, error) {
-	return s.ListMembers_(v0, v1)
-}
-
-var _ sourcegraph.OrgsServer = (*OrgsServer)(nil)
-
 type AccountsClient struct {
 	Create_               func(ctx context.Context, in *sourcegraph.NewAccount) (*sourcegraph.CreatedAccount, error)
 	RequestPasswordReset_ func(ctx context.Context, in *sourcegraph.RequestPasswordResetOp) (*sourcegraph.PendingPasswordReset, error)

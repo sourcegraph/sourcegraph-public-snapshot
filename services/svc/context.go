@@ -33,7 +33,6 @@ const (
 	_DesktopKey           contextKey = iota
 	_MetaKey              contextKey = iota
 	_MirrorReposKey       contextKey = iota
-	_OrgsKey              contextKey = iota
 	_RepoStatusesKey      contextKey = iota
 	_RepoTreeKey          contextKey = iota
 	_ReposKey             contextKey = iota
@@ -54,7 +53,6 @@ type Services struct {
 	Desktop           sourcegraph.DesktopServer
 	Meta              sourcegraph.MetaServer
 	MirrorRepos       sourcegraph.MirrorReposServer
-	Orgs              sourcegraph.OrgsServer
 	RepoStatuses      sourcegraph.RepoStatusesServer
 	RepoTree          sourcegraph.RepoTreeServer
 	Repos             sourcegraph.ReposServer
@@ -107,10 +105,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.MirrorRepos != nil {
 		sourcegraph.RegisterMirrorReposServer(s, svcs.MirrorRepos)
-	}
-
-	if svcs.Orgs != nil {
-		sourcegraph.RegisterOrgsServer(s, svcs.Orgs)
 	}
 
 	if svcs.RepoStatuses != nil {
@@ -180,10 +174,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.MirrorRepos != nil {
 		ctx = WithMirrorRepos(ctx, s.MirrorRepos)
-	}
-
-	if s.Orgs != nil {
-		ctx = WithOrgs(ctx, s.Orgs)
 	}
 
 	if s.RepoStatuses != nil {
@@ -456,29 +446,6 @@ func MirrorRepos(ctx context.Context) sourcegraph.MirrorReposServer {
 // MirrorReposOrNil returns the context's MirrorRepos service if present, or else nil.
 func MirrorReposOrNil(ctx context.Context) sourcegraph.MirrorReposServer {
 	s, ok := ctx.Value(_MirrorReposKey).(sourcegraph.MirrorReposServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithOrgs returns a copy of parent that uses the given Orgs service.
-func WithOrgs(ctx context.Context, s sourcegraph.OrgsServer) context.Context {
-	return context.WithValue(ctx, _OrgsKey, s)
-}
-
-// Orgs gets the context's Orgs service. If the service is not present, it panics.
-func Orgs(ctx context.Context) sourcegraph.OrgsServer {
-	s, ok := ctx.Value(_OrgsKey).(sourcegraph.OrgsServer)
-	if !ok || s == nil {
-		panic("no Orgs set in context")
-	}
-	return s
-}
-
-// OrgsOrNil returns the context's Orgs service if present, or else nil.
-func OrgsOrNil(ctx context.Context) sourcegraph.OrgsServer {
-	s, ok := ctx.Value(_OrgsKey).(sourcegraph.OrgsServer)
 	if ok {
 		return s
 	}

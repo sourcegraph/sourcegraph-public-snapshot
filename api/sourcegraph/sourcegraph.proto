@@ -878,26 +878,6 @@ message LogEntries {
 	repeated string Entries = 2;
 }
 
-message Org {
-	User User = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-message OrgListMembersOptions {
-	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-// OrgSpec specifies an organization. At least one of Email, Login, and UID must be
-// nonempty.
-message OrgSpec {
-	string Org = 1;
-	int32 UID = 2;
-}
-
-message OrgsListMembersOp {
-	OrgSpec Org = 1 [(gogoproto.nullable) = false];
-	OrgListMembersOptions Opt = 2;
-}
-
 message UserList {
 	repeated User Users = 1;
 }
@@ -1013,11 +993,6 @@ message UsersListOptions {
 	bool HaveBeta = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
-message OrgsListOp {
-	UserSpec Member = 1 [(gogoproto.nullable) = false];
-	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
 message EmailAddrList {
 	repeated EmailAddr EmailAddrs = 1;
 }
@@ -1029,10 +1004,6 @@ message UpdateEmailsOp {
 
 	// Add is a list of email addresses to add, if they do not already exist.
 	EmailAddrList Add = 2;
-}
-
-message OrgList {
-	repeated Org Orgs = 1;
 }
 
 // BuildsService communicates with the build-related endpoints in the Sourcegraph
@@ -1069,19 +1040,6 @@ service Builds {
 	// having started (atomically). If there are no builds in the
 	// queue, a NotFound error is returned.
 	rpc DequeueNext(BuildsDequeueNextOp) returns (BuildJob);
-}
-
-// OrgsService communicates with the organizations-related endpoints in the
-// Sourcegraph API.
-service Orgs {
-	// Get fetches an organization.
-	rpc Get(OrgSpec) returns (Org);
-
-	// List lists organizations that a user is a member of.
-	rpc List(OrgsListOp) returns (OrgList);
-
-	// ListMembers lists members of an organization.
-	rpc ListMembers(OrgsListMembersOp) returns (UserList);
 }
 
 // Accounts communicates with the account-related endpoints in the
