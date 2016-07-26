@@ -1152,36 +1152,6 @@ type wrappedMeta struct {
 	services svc.Services
 }
 
-func (s wrappedMeta) Status(ctx context.Context, v1 *pbtypes.Void) (returnedResult *sourcegraph.ServerStatus, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Meta.Status: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.MetaOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Meta")
-	}
-
-	rv, err := innerSvc.Status(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
 func (s wrappedMeta) Config(ctx context.Context, v1 *pbtypes.Void) (returnedResult *sourcegraph.ServerConfig, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {

@@ -828,27 +828,6 @@ func (s wrappedDesktop) LatestExists(ctx context.Context, param *sourcegraph.Cli
 
 type wrappedMeta struct{}
 
-func (s wrappedMeta) Status(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.ServerStatus, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Meta", "Status", param)
-	defer func() {
-		trace.After(ctx, "Meta", "Status", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Meta.Status(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Meta.Status returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Meta.Status failed with internal error.")
-		}
-	}
-	return
-}
-
 func (s wrappedMeta) Config(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.ServerConfig, err error) {
 	var errActual error
 	start := time.Now()

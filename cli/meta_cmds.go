@@ -20,15 +20,6 @@ func init() {
 		log.Fatal(err)
 	}
 
-	_, err = c.AddCommand("status",
-		"server status",
-		"The `sgx meta status` command displays server status information.",
-		&metaStatusCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	_, err = c.AddCommand("config",
 		"server config",
 		"The `sgx meta config` command displays server config information.",
@@ -42,18 +33,6 @@ func init() {
 type metaCmd struct{}
 
 func (c *metaCmd) Execute(args []string) error { return nil }
-
-type metaStatusCmd struct{}
-
-func (c *metaStatusCmd) Execute(args []string) error {
-	cl := cliClient
-	status, err := cl.Meta.Status(cliContext, &pbtypes.Void{})
-	if err != nil {
-		return err
-	}
-	fmt.Println(status.Info)
-	return nil
-}
 
 type metaConfigCmd struct{}
 

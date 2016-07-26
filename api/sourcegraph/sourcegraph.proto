@@ -1860,19 +1860,8 @@ message FileToken {
 }
 // Meta provides meta-information about Sourcegraph.
 service Meta {
-	// Status returns status information from the server's point of
-	// view.
-	rpc Status(pbtypes.Void) returns (ServerStatus);
-
 	// Config returns the server's configuration.
 	rpc Config(pbtypes.Void) returns (ServerConfig);
-}
-
-// ServerStatus describes the server's status.
-message ServerStatus {
-	// Info contains arbitrary human-readable status information about
-	// the server.
-	string Info = 1;
 }
 
 // ServerConfig describes the server's configuration.
