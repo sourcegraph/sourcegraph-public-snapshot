@@ -7,7 +7,6 @@ import (
 
 	"github.com/neelance/depprof"
 	"github.com/prometheus/client_golang/prometheus"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/expvarutil"
 )
 
 // Start runs a debug server (pprof, prometheus, etc) on addr. It is blocking.
@@ -26,9 +25,9 @@ func Start(addr string) {
 	})
 	pp.Handle("/", index)
 	pp.Handle("/debug", index)
-	pp.Handle("/vars", http.HandlerFunc(expvarutil.ExpvarHandler))
-	pp.Handle("/gc", http.HandlerFunc(expvarutil.GCHandler))
-	pp.Handle("/freeosmemory", http.HandlerFunc(expvarutil.FreeOSMemoryHandler))
+	pp.Handle("/vars", http.HandlerFunc(expvarHandler))
+	pp.Handle("/gc", http.HandlerFunc(gcHandler))
+	pp.Handle("/freeosmemory", http.HandlerFunc(freeOSMemoryHandler))
 	pp.Handle("/debug/pprof/", http.HandlerFunc(pprof.Index))
 	pp.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
 	pp.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
