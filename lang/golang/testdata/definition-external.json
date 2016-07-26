@@ -4,7 +4,7 @@
     "jsonrpc": "2.0",
     "method": "initialize",
     "params": {
-      "rootPath": "testdata/promexample",
+      "rootPath": "testdata/src/promexample",
       "capabilities": {}
     }
   },
