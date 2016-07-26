@@ -57,8 +57,6 @@ func Services() svc.Services {
 
 		Orgs: wrappedOrgs{},
 
-		People: wrappedPeople{},
-
 		RepoStatuses: wrappedRepoStatuses{},
 
 		RepoTree: wrappedRepoTree{},
@@ -159,7 +157,7 @@ func (s wrappedAccounts) Create(ctx context.Context, param *sourcegraph.NewAccou
 	return
 }
 
-func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *sourcegraph.PersonSpec) (res *sourcegraph.PendingPasswordReset, err error) {
+func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *sourcegraph.RequestPasswordResetOp) (res *sourcegraph.PendingPasswordReset, err error) {
 	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Accounts", "RequestPasswordReset", param)
@@ -243,7 +241,7 @@ func (s wrappedAccounts) UpdateEmails(ctx context.Context, param *sourcegraph.Up
 	return
 }
 
-func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.PersonSpec) (res *pbtypes.Void, err error) {
+func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.UserSpec) (res *pbtypes.Void, err error) {
 	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Accounts", "Delete", param)
@@ -930,29 +928,6 @@ func (s wrappedOrgs) ListMembers(ctx context.Context, param *sourcegraph.OrgsLis
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
 			err = grpc.Errorf(code, "Orgs.ListMembers failed with internal error.")
-		}
-	}
-	return
-}
-
-type wrappedPeople struct{}
-
-func (s wrappedPeople) Get(ctx context.Context, param *sourcegraph.PersonSpec) (res *sourcegraph.Person, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "People", "Get", param)
-	defer func() {
-		trace.After(ctx, "People", "Get", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.People.Get(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "People.Get returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "People.Get failed with internal error.")
 		}
 	}
 	return

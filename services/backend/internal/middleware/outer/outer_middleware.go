@@ -41,7 +41,6 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 		Meta:              wrappedMeta{ctxFunc, services},
 		MirrorRepos:       wrappedMirrorRepos{ctxFunc, services},
 		Orgs:              wrappedOrgs{ctxFunc, services},
-		People:            wrappedPeople{ctxFunc, services},
 		RepoStatuses:      wrappedRepoStatuses{ctxFunc, services},
 		RepoTree:          wrappedRepoTree{ctxFunc, services},
 		Repos:             wrappedRepos{ctxFunc, services},
@@ -181,7 +180,7 @@ func (s wrappedAccounts) Create(ctx context.Context, v1 *sourcegraph.NewAccount)
 	return rv, nil
 }
 
-func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegraph.PersonSpec) (returnedResult *sourcegraph.PendingPasswordReset, returnedError error) {
+func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegraph.RequestPasswordResetOp) (returnedResult *sourcegraph.PendingPasswordReset, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -301,7 +300,7 @@ func (s wrappedAccounts) UpdateEmails(ctx context.Context, v1 *sourcegraph.Updat
 	return rv, nil
 }
 
-func (s wrappedAccounts) Delete(ctx context.Context, v1 *sourcegraph.PersonSpec) (returnedResult *pbtypes.Void, returnedError error) {
+func (s wrappedAccounts) Delete(ctx context.Context, v1 *sourcegraph.UserSpec) (returnedResult *pbtypes.Void, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1304,41 +1303,6 @@ func (s wrappedOrgs) ListMembers(ctx context.Context, v1 *sourcegraph.OrgsListMe
 	}
 
 	rv, err := innerSvc.ListMembers(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-type wrappedPeople struct {
-	ctxFunc  ContextFunc
-	services svc.Services
-}
-
-func (s wrappedPeople) Get(ctx context.Context, v1 *sourcegraph.PersonSpec) (returnedResult *sourcegraph.Person, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in People.Get: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.PeopleOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "People")
-	}
-
-	rv, err := innerSvc.Get(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

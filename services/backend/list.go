@@ -30,7 +30,6 @@ var Services = svc.Services{
 	MirrorRepos:       MirrorRepos,
 	MultiRepoImporter: Graph,
 	Orgs:              Orgs,
-	People:            People,
 	RepoStatuses:      RepoStatuses,
 	RepoTree:          RepoTree,
 	Repos:             Repos,

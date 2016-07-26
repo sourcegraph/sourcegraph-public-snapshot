@@ -34,7 +34,6 @@ const (
 	_MetaKey              contextKey = iota
 	_MirrorReposKey       contextKey = iota
 	_OrgsKey              contextKey = iota
-	_PeopleKey            contextKey = iota
 	_RepoStatusesKey      contextKey = iota
 	_RepoTreeKey          contextKey = iota
 	_ReposKey             contextKey = iota
@@ -56,7 +55,6 @@ type Services struct {
 	Meta              sourcegraph.MetaServer
 	MirrorRepos       sourcegraph.MirrorReposServer
 	Orgs              sourcegraph.OrgsServer
-	People            sourcegraph.PeopleServer
 	RepoStatuses      sourcegraph.RepoStatusesServer
 	RepoTree          sourcegraph.RepoTreeServer
 	Repos             sourcegraph.ReposServer
@@ -113,10 +111,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.Orgs != nil {
 		sourcegraph.RegisterOrgsServer(s, svcs.Orgs)
-	}
-
-	if svcs.People != nil {
-		sourcegraph.RegisterPeopleServer(s, svcs.People)
 	}
 
 	if svcs.RepoStatuses != nil {
@@ -190,10 +184,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.Orgs != nil {
 		ctx = WithOrgs(ctx, s.Orgs)
-	}
-
-	if s.People != nil {
-		ctx = WithPeople(ctx, s.People)
 	}
 
 	if s.RepoStatuses != nil {
@@ -489,29 +479,6 @@ func Orgs(ctx context.Context) sourcegraph.OrgsServer {
 // OrgsOrNil returns the context's Orgs service if present, or else nil.
 func OrgsOrNil(ctx context.Context) sourcegraph.OrgsServer {
 	s, ok := ctx.Value(_OrgsKey).(sourcegraph.OrgsServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithPeople returns a copy of parent that uses the given People service.
-func WithPeople(ctx context.Context, s sourcegraph.PeopleServer) context.Context {
-	return context.WithValue(ctx, _PeopleKey, s)
-}
-
-// People gets the context's People service. If the service is not present, it panics.
-func People(ctx context.Context) sourcegraph.PeopleServer {
-	s, ok := ctx.Value(_PeopleKey).(sourcegraph.PeopleServer)
-	if !ok || s == nil {
-		panic("no People set in context")
-	}
-	return s
-}
-
-// PeopleOrNil returns the context's People service if present, or else nil.
-func PeopleOrNil(ctx context.Context) sourcegraph.PeopleServer {
-	s, ok := ctx.Value(_PeopleKey).(sourcegraph.PeopleServer)
 	if ok {
 		return s
 	}

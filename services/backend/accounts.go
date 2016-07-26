@@ -176,36 +176,19 @@ var sendEmail = func(template, name, email, subject string, templateContent []go
 
 var verifyAdminUser = accesscontrol.VerifyUserHasAdminAccess
 
-func (s *accounts) RequestPasswordReset(ctx context.Context, person *sourcegraph.PersonSpec) (*sourcegraph.PendingPasswordReset, error) {
+func (s *accounts) RequestPasswordReset(ctx context.Context, op *sourcegraph.RequestPasswordResetOp) (*sourcegraph.PendingPasswordReset, error) {
 	accountsStore := store.AccountsFromContext(ctx)
 
 	usersStore := store.UsersFromContext(ctx)
 	var user *sourcegraph.User
 	var err error
-	if person.Email != "" {
-		user, err = usersStore.GetWithEmail(elevatedActor(ctx), sourcegraph.EmailAddr{Email: person.Email})
+	if op.Email != "" {
+		user, err = usersStore.GetWithEmail(elevatedActor(ctx), sourcegraph.EmailAddr{Email: op.Email})
 		if err != nil {
 			return nil, err
-		}
-	} else if person.Login != "" {
-		userSpec := sourcegraph.UserSpec{Login: person.Login}
-		user, err = usersStore.Get(elevatedActor(ctx), userSpec)
-		if err != nil {
-			return nil, err
-		}
-
-		// Find the primary email address for this user.
-		emailAddrs, err := usersStore.ListEmails(elevatedActor(ctx), userSpec)
-		if err != nil {
-			return nil, err
-		}
-		for _, emailAddr := range emailAddrs {
-			if emailAddr.Primary {
-				person.Email = emailAddr.Email
-			}
 		}
 	} else {
-		return nil, grpc.Errorf(codes.InvalidArgument, "need to specify email or login")
+		return nil, grpc.Errorf(codes.InvalidArgument, "need to specify email")
 	}
 
 	token, err := accountsStore.RequestPasswordReset(elevatedActor(ctx), user)
@@ -219,8 +202,8 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, person *sourcegraph
 	u.RawQuery = v.Encode()
 	resetLink := u.String()
 	var emailSent bool
-	if person.Email != "" {
-		_, err = sendEmail("forgot-password", user.Name, person.Email, "Password Reset Requested", nil,
+	if op.Email != "" {
+		_, err = sendEmail("forgot-password", user.Name, op.Email, "Password Reset Requested", nil,
 			[]gochimp.Var{gochimp.Var{Name: "RESET_LINK", Content: resetLink}, {Name: "LOGIN", Content: user.Login}})
 		if err == nil {
 			emailSent = true
@@ -254,27 +237,21 @@ func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPa
 	return &pbtypes.Void{}, nil
 }
 
-func (s *accounts) Delete(ctx context.Context, person *sourcegraph.PersonSpec) (*pbtypes.Void, error) {
+func (s *accounts) Delete(ctx context.Context, user *sourcegraph.UserSpec) (*pbtypes.Void, error) {
 	usersStore := store.UsersFromContext(ctx)
 	accountsStore := store.AccountsFromContext(ctx)
 
 	var uid int32
-	if person.UID != 0 {
-		uid = person.UID
-	} else if person.Login != "" {
-		user, err := usersStore.Get(ctx, sourcegraph.UserSpec{Login: person.Login})
-		if err != nil {
-			return nil, err
-		}
+	if user.UID != 0 {
 		uid = user.UID
-	} else if person.Email != "" {
-		user, err := usersStore.GetWithEmail(ctx, sourcegraph.EmailAddr{Email: person.Email})
+	} else if user.Login != "" {
+		user, err := usersStore.Get(ctx, sourcegraph.UserSpec{Login: user.Login})
 		if err != nil {
 			return nil, err
 		}
 		uid = user.UID
 	} else {
-		return nil, grpc.Errorf(codes.InvalidArgument, "need to specify UID, login or email of the user account")
+		return nil, grpc.Errorf(codes.InvalidArgument, "need to specify UID or login of the user account")
 	}
 
 	err := accountsStore.Delete(ctx, uid)
