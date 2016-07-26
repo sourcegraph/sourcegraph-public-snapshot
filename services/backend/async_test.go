@@ -124,7 +124,7 @@ func TestAsyncWorker_mutex(t *testing.T) {
 	called1 := make(chan interface{})
 	wait1 := make(chan interface{})
 	done1 := make(chan interface{})
-	mock1.servers.Defs.RefreshIndex_ = func(ctx context.Context, op store.RefreshIndexOp) (*pbtypes.Void, error) {
+	mock1.servers.Defs.RefreshIndex_ = func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
 		close(called1)
 		<-wait1
 		return nil, nil
