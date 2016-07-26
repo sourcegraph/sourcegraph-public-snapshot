@@ -51,14 +51,14 @@ var _ store.GlobalDeps = (*GlobalDeps)(nil)
 
 type Defs struct {
 	Search_                func(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error)
-	UpdateFromSrclibStore_ func(ctx context.Context, op store.DefUpdateOp) error
+	UpdateFromSrclibStore_ func(ctx context.Context, op store.RefreshIndexOp) error
 }
 
 func (s *Defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error) {
 	return s.Search_(ctx, op)
 }
 
-func (s *Defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) error {
+func (s *Defs) UpdateFromSrclibStore(ctx context.Context, op store.RefreshIndexOp) error {
 	return s.UpdateFromSrclibStore_(ctx, op)
 }
 

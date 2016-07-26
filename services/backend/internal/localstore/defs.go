@@ -401,7 +401,7 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 // srclib store as the canonical storage for defs. Until then, the canonical
 // storage is srclib store. UpdateFromSrclibStore will sync the data in defs to
 // reflect what is in srclib store for a given (repo, commit).
-func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) error {
+func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.RefreshIndexOp) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.UpdateFromSrclibStore", op.Repo); err != nil {
 		return err
 	}

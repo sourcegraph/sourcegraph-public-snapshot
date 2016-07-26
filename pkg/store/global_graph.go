@@ -37,7 +37,7 @@ type GlobalDeps interface {
 
 type Defs interface {
 	Search(ctx context.Context, op DefSearchOp) (*sourcegraph.SearchResultsList, error)
-	UpdateFromSrclibStore(ctx context.Context, op DefUpdateOp) error
+	UpdateFromSrclibStore(ctx context.Context, op RefreshIndexOp) error
 }
 
 type DefSearchOp struct {
@@ -47,7 +47,7 @@ type DefSearchOp struct {
 	Opt      *sourcegraph.SearchOptions
 }
 
-type DefUpdateOp struct {
+type RefreshIndexOp struct {
 	Repo     int32
 	CommitID string
 }
