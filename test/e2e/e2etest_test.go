@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"hash/crc32"
+	"io"
 	"io/ioutil"
 	"log"
 	"net"
@@ -59,6 +60,10 @@ var fatalMsg string
 
 func TestMain(m *testing.M) {
 	flag.Parse()
+
+	// Prepare logging.
+	tr.log = log.New(io.MultiWriter(os.Stderr, tr.slackLogBuffer), "", 0)
+
 	err := parseEnv()
 	if err != nil {
 		fatalMsg = "parseEnv: " + err.Error()
