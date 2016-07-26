@@ -25,6 +25,14 @@ func testFixtures(t *testing.T, h jsonrpc2.BatchHandler) {
 		t.Fatal(err)
 	}
 
+	// Use a pristine GOPATH to simulate workspace in prod.
+	gopath, err := filepath.Abs("testdata")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanup := overrideEnv("GOPATH", gopath)
+	defer cleanup()
+
 	for _, c := range cases {
 		var req []*jsonrpc2.Request
 		unmarshalFile(t, c, &req)
@@ -92,6 +100,18 @@ func checkExecDeps(t *testing.T) {
 		_, err := exec.Command("go", args...).Output()
 		if err != nil {
 			t.Fatal(err)
+		}
+	}
+}
+
+func overrideEnv(key, value string) func() {
+	old := os.Getenv(key)
+	os.Setenv(key, value)
+	return func() {
+		if old == "" {
+			os.Unsetenv(key)
+		} else {
+			os.Setenv(key, old)
 		}
 	}
 }
