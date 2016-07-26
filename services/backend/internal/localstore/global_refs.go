@@ -283,7 +283,7 @@ func (g *globalRefs) getRefStats(ctx context.Context, defKeyID int64) (int64, er
 	return graphDBH(ctx).SelectInt("SELECT COUNT(DISTINCT repo) AS Repos FROM global_refs_new WHERE def_key_id=$1", defKeyID)
 }
 
-func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error {
+func (g *globalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", op.Repo); err != nil {
 		return err
 	}
@@ -317,10 +317,6 @@ func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 		return err
 	}
 	if commitID == oldCommitID {
-		if !op.Force {
-			log15.Debug("GlobalRefs.Update has already indexed commit", "repo", repo, "commitID", commitID)
-			return nil
-		}
 		log15.Debug("GlobalRefs.Update re-indexing commit", "repo", repo, "commitID", commitID)
 	}
 

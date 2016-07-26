@@ -127,12 +127,12 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoObj.ID}); err != nil {
+		if err := g.Update(ctx, store.RefreshIndexOp{Repo: repoObj.ID}); err != nil {
 			t.Fatalf("could not update %s: %s", repo, err)
 		}
 	}
 	// Updates should be idempotent.
-	err := g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: abRepoID})
+	err := g.Update(ctx, store.RefreshIndexOp{Repo: abRepoID})
 	if err != nil {
 		t.Fatalf("could not idempotent update a/b: %s", err)
 	}
@@ -319,23 +319,15 @@ func TestGlobalRefsUpdate(t *testing.T) {
 
 	// We should only have results for first
 	genRefs("first")
-	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoID})
+	err = g.Update(ctx, store.RefreshIndexOp{Repo: repoID})
 	if err != nil {
 		t.Fatal(err)
 	}
 	check("first", "first")
 
-	// We haven't changed the "latest" commit, so even though the data has
-	// changed we shouldn't reindex
+	// We always reindex, even if we have indexed a commit.
 	genRefs("second")
-	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoID})
-	if err != nil {
-		t.Fatal(err)
-	}
-	check("first-again", "first")
-
-	// Force a reindex should show the new data
-	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoID, Force: true})
+	err = g.Update(ctx, store.RefreshIndexOp{Repo: repoID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -350,7 +342,7 @@ func TestGlobalRefsUpdate(t *testing.T) {
 			},
 		}, nil
 	}
-	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoID})
+	err = g.Update(ctx, store.RefreshIndexOp{Repo: repoID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -502,7 +494,7 @@ func globalRefsUpdate(b *testing.B, g store.GlobalRefs, ctx context.Context, moc
 		if err != nil {
 			b.Fatal(err)
 		}
-		if err := g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoObj.ID}); err != nil {
+		if err := g.Update(ctx, store.RefreshIndexOp{Repo: repoObj.ID}); err != nil {
 			b.Fatal(err)
 		}
 	}

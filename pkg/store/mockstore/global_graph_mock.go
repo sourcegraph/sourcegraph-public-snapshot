@@ -11,14 +11,14 @@ import (
 
 type GlobalRefs struct {
 	Get_    func(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
-	Update_ func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error
+	Update_ func(ctx context.Context, op store.RefreshIndexOp) error
 }
 
 func (s *GlobalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
 	return s.Get_(ctx, op)
 }
 
-func (s *GlobalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error {
+func (s *GlobalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error {
 	return s.Update_(ctx, op)
 }
 

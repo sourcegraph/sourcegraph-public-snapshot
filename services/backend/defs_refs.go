@@ -108,22 +108,22 @@ func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExample
 }
 
 func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
-	if op.RefreshRefLocations {
-		if err := store.GlobalRefsFromContext(ctx).Update(ctx, op); err != nil {
-			return nil, err
-		}
-	}
-
 	rev, err := svc.Repos(ctx).ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: op.Repo})
 	if err != nil {
 		return nil, err
 	}
 
-	// Update defs table
-	if err := store.DefsFromContext(ctx).UpdateFromSrclibStore(ctx, store.RefreshIndexOp{
+	indexOp := store.RefreshIndexOp{
 		Repo:     op.Repo,
 		CommitID: rev.CommitID,
-	}); err != nil {
+	}
+
+	if err := store.GlobalRefsFromContext(ctx).Update(ctx, indexOp); err != nil {
+		return nil, err
+	}
+
+	// Update defs table
+	if err := store.DefsFromContext(ctx).UpdateFromSrclibStore(ctx, indexOp); err != nil {
 		return nil, err
 	}
 
