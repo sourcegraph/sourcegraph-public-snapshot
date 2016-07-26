@@ -117,7 +117,7 @@ class Repos extends React.Component {
 				</div>
 				{this.props.location.query.onboarding &&
 					<footer styleName="footer">
-						<a styleName="footer-link" href="/tools?onboarding=t">
+						<a styleName="footer-link" href="/integrations?onboarding=t">
 							<Button color="green" styleName="footer-btn">Continue</Button>
 						</a>
 					</footer>

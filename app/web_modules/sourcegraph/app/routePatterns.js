@@ -6,7 +6,7 @@ import {matchPattern} from "react-router/lib/PatternUtils";
 export type RouteName = "styleguide" |
 	"search" |
 	"home" |
-	"tools" |
+	"integrations" |
 	"tool" |
 	"settings" |
 	"settingsRepos" |
@@ -49,8 +49,7 @@ export const rel: {[key: RouteName]: string} = {
 	privacy: "-/privacy",
 	styleguide: "styleguide",
 	home: "",
-	tools: "tools",
-	tool: "tools/*",
+	integrations: "integrations",
 	settings: "settings/",
 	settingsRepos: "repos",
 	login: "login",
@@ -80,8 +79,7 @@ export const abs: {[key: RouteName]: string} = {
 	privacy: rel.privacy,
 	styleguide: rel.styleguide,
 	home: rel.home,
-	tools: rel.tools,
-	tool: rel.tool,
+	integrations: rel.integrations,
 	settings: rel.settings,
 	settingsRepos: `${rel.settings}/${rel.settingsRepos}`,
 	login: rel.login,
