@@ -194,10 +194,6 @@ func verifyAccessAndSetAllFields(ctx context.Context, repo *sourcegraph.Repo) (*
 	// accesscontrol.VerifyUserHasReadAccess calls (*repos).Get).
 	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
 		if err := accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.ID, repo.URI); err != nil {
-			thrown := grpc.Code(err)
-			if codes.Code(thrown) == codes.Unauthenticated {
-				return nil, grpc.Errorf(codes.NotFound, "Not Found")
-			}
 			return nil, err
 		}
 
