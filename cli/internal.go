@@ -16,6 +16,4 @@ func init() {
 		log.Fatal(err)
 	}
 	cli.Internal = g
-
-	initStressTest(g)
 }
