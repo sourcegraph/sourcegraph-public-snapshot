@@ -1,33 +1,32 @@
 package cli
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/neelance/parallel"
+
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/gorilla/mux"
-	"github.com/neelance/parallel"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/coverage"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/coverageutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/slack"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/worker/plan"
 )
+
+var sgSlackCoverageWebhookURL = os.Getenv("SG_SLACK_COVERAGE_WEBHOOK_URL")
 
 func init() {
 	_, err := cli.CLI.AddCommand("coverage",
@@ -38,346 +37,344 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	cache = &coverageCache{
-		DefsCache:              make(map[sourcegraph.RepoRevSpec]*defIndex),
-		ResolvedRevCache:       make(map[routevar.RepoRev]sourcegraph.RepoRevSpec),
-		SrclibDataVersionCache: make(map[sourcegraph.RepoRevSpec]string),
-		FetchDefsMus:           make(map[sourcegraph.RepoRevSpec]*sync.Mutex),
-	}
 }
 
 type coverageCmd struct {
-	Repo        string `long:"repo" description:"repo URI"`
-	Lang        string `long:"lang" description:"coverage language"`
-	Limit       int    `long:"limit" description:"max number of repos to run coverage for"`
-	Refresh     bool   `long:"refresh" description:"refresh repo VCS data (or clone the repo if it doesn't exist); queue a new build"`
-	Dry         bool   `long:"dry" description:"do a dry run (don't save coverage data)"`
-	Progress    bool   `long:"progress" description:"show progress"`
-	ReportRefs  bool   `long:"refs" description:"report issues with references"`
-	ReportDefs  bool   `long:"defs" description:"report issues with definitions"`
-	ReportEmpty bool   `long:"empty" description:"report empty files"`
+	LangpAddr    string `long:"addr" description:"Sourcegraph Language Processor server address" default:"http://localhost:4141"`
+	LSPAddr      string `long:"lsp-addr" description:"Sourcegraph LSP server address, only used if -addr is not set"`
+	LSPRootPath  string `long:"lsp-root" description:"Root directory location at which LSP server should read files"`
+	LSPCaps      bool   `long:"lsp-caps" description:"print the capabilities of the LSP server and exit"`
+	Methods      string `long:"methods" description:"API methods to test (definition,hover)" default:"definition,hover"`
+	Repo         string `long:"repo" description:"specific repo URI to use"`
+	Lang         string `long:"lang" description:"specific coverage language"`
+	File         string `long:"file" description:"specific repository filename"`
+	Limit        int    `long:"limit" description:"max number of repos to run coverage for"`
+	RepoRate     int    `long:"repo-rate" description:"rate at which repositories are concurrently calculated" default:"1"`
+	FileRate     int    `long:"file-rate" description:"rate at which files are concurrently calculated" default:"1"`
+	TokenRate    int    `long:"rate" description:"rate at which tokens are concurrently calculated" default:"1"`
+	Debug        bool   `long:"debug" description:"trace requests which result in an error"`
+	AbortOnError int    `long:"abort-on-error" description:"abort on nth request error" default:"-1"`
+
+	backend coverage.Client
+	cl      *sourcegraph.Client
 }
 
-// fileCoverage contains coverage data for a single file or repository
-type fileCoverage struct {
-	Path   string // the file path (optional)
-	Idents int    // # of identifiers in the file
-	Refs   int    // # of refs in the file (i.e. annotations)
-	Defs   int    // # of annotations (URLs) which resolve to real defs
+// langCoverage contains the coverage data for an entire language.
+type langCoverage struct {
+	Language   string                   // The actual language name, like "Go" or "Java".
+	Start, End time.Time                // When coverage calculations began and ended.
+	Repos      map[string]*repoCoverage // Coverage data for all repos of this language.
 }
 
-// repoCoverage contains the coverage data for a single repo
+// repoCoverage contains the coverage data of a single repository.
 type repoCoverage struct {
-	Repo          string
-	Rev           string
-	Language      string
-	Files         []*fileCoverage
-	Summary       *fileCoverage
-	SrclibVersion string
-	Day           string
-	Duration      float64 // time to compute coverage (in seconds)
+	RepoURI    string                   // The actual repository URI.
+	Start, End time.Time                // When coverage calculations began and ended.
+	Files      map[string]*fileCoverage // Coverage data for all files in the repository.
+
+	// Tokens is the total number of tokens across all files.
+	Tokens int
+
+	// Number of go-to-defs and hover responses, the sum of these variables
+	// will always equal len(Tokens) when 100% coverage is achieved.
+	Defs, Hovers           int
+	DefErrors, HoverErrors int
+
+	// Distance between token ranges in the file (a measure of accuracy, where
+	// zero is perfect, one implies a potential off-by-one error, etc). The
+	// larger the number, the worse the result is.
+	DefDists []int
+
+	// API request durations.
+	DefDurations, HoverDurations []time.Duration
 }
 
-// defIndex contains all of the defs for a particular repo@commit
-// indexed by key, and a mutex for concurrent access
-type defIndex struct {
-	Mu    sync.Mutex
-	Index map[sourcegraph.DefSpec]*sourcegraph.Def
-}
-
-// get is a threadsafe accessor function for a defIndex
-func (idx *defIndex) get(key sourcegraph.DefSpec) *sourcegraph.Def {
-	idx.Mu.Lock()
-	defer idx.Mu.Unlock()
-	def, ok := idx.Index[key]
-	if !ok {
-		return nil
+func (c *repoCoverage) calcSummary(methods string) {
+	for _, f := range c.Files {
+		f.calcSummary(methods)
+		c.Tokens += len(f.Tokens)
+		c.Defs += f.Defs
+		c.Hovers += f.Hovers
+		c.DefErrors += f.DefErrors
+		c.HoverErrors += f.HoverErrors
+		c.DefDists = append(c.DefDists, f.DefDists...)
+		c.DefDurations = append(c.DefDurations, f.DefDurations...)
+		c.HoverDurations = append(c.HoverDurations, f.HoverDurations...)
 	}
-	return def
 }
 
-// put is a threadsafe setter for defIndex
-func (idx *defIndex) put(key sourcegraph.DefSpec, def *sourcegraph.Def) {
-	idx.Mu.Lock()
-	defer idx.Mu.Unlock()
-	idx.Index[key] = def
+// fileCoverage contains the coverage data of a single file.
+type fileCoverage struct {
+	Filename   string    // The actual filename.
+	Start, End time.Time // When coverage calculations began and ended.
+	Tokens     []tokCoverage
+
+	// Number of go-to-defs and hover responses, the sum of these variables
+	// will always equal len(Tokens) when 100% coverage is achieved.
+	Defs, Hovers           int
+	DefErrors, HoverErrors int
+
+	// Distance between token ranges in the file (a measure of accuracy, where
+	// zero is perfect, one implies a potential off-by-one error, etc). The
+	// larger the number, the worse the result is.
+	DefDists []int
+
+	// API request durations.
+	DefDurations, HoverDurations []time.Duration
 }
 
-// coverageCache caches data fetched while computing
-// coverage and includes mutexes for concurrent access
-type coverageCache struct {
-	DefsCacheMu            sync.Mutex
-	DefsCache              map[sourcegraph.RepoRevSpec]*defIndex // key is repo@commit
-	ResolvedRevMu          sync.Mutex
-	ResolvedRevCache       map[routevar.RepoRev]sourcegraph.RepoRevSpec // (repo path, rev) => (repo ID, commit)
-	SrclibDataVersionMu    sync.Mutex
-	SrclibDataVersionCache map[sourcegraph.RepoRevSpec]string // repo@rev => commit
-
-	// FetchDefsMus allows at most one goroutine to fetch defs per repo@commit.
-	// Map access is guarded by FetchDefsMu.
-	FetchDefsMu  sync.Mutex
-	FetchDefsMus map[sourcegraph.RepoRevSpec]*sync.Mutex
-}
-
-// cache is a global instance of coverageCache
-var cache *coverageCache
-
-// getFetchDefsMu acquires a lock to fetch defs for a repo@commit; it is threadsafe
-func (c *coverageCache) getFetchDefsMu(key sourcegraph.RepoRevSpec) *sync.Mutex {
-	c.FetchDefsMu.Lock()
-	defer c.FetchDefsMu.Unlock()
-
-	mu, ok := c.FetchDefsMus[key]
-	if !ok {
-		mu = &sync.Mutex{}
-		c.FetchDefsMus[key] = mu
-	}
-
-	return mu
-}
-
-// getDefIndex is a threadsafe accessor function for cached def data
-func (c *coverageCache) getDefIndex(key sourcegraph.RepoRevSpec) *defIndex {
-	c.DefsCacheMu.Lock()
-	defer c.DefsCacheMu.Unlock()
-	idx, ok := c.DefsCache[key]
-	if !ok {
-		return nil
-	}
-	return idx
-}
-
-// putDefIndex is a threadsafe setter for cached def data
-func (c *coverageCache) putDefIndex(key sourcegraph.RepoRevSpec, idx *defIndex) {
-	c.DefsCacheMu.Lock()
-	defer c.DefsCacheMu.Unlock()
-	c.DefsCache[key] = idx
-}
-
-// getSrclibDataVersion returns (or fetches) the srclib data version
-// for a particular repo@rev; it is threadsafe
-func (c *coverageCache) getSrclibDataVersion(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec) string {
-	c.SrclibDataVersionMu.Lock()
-	defer c.SrclibDataVersionMu.Unlock()
-
-	dataVer, ok := c.SrclibDataVersionCache[*repoRev]
-	if !ok {
-		sdv, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{RepoRev: *repoRev})
-		if err != nil {
-			log15.Debug("get srclib data version", "err", err)
-		} else if sdv.CommitID == "" {
-			log15.Debug("empty srclib data version", "err", err)
-		} else {
-			dataVer = sdv.CommitID
+func (c *fileCoverage) calcSummary(methods string) {
+	for _, tok := range c.Tokens {
+		if tok.DefError != nil {
+			c.DefErrors++
+		} else if strings.Contains(methods, "definition") {
+			c.Defs++
+			c.DefDurations = append(c.DefDurations, tok.DefEnd.Sub(tok.DefStart))
+			c.DefDists = append(c.DefDists, tok.DefDist)
 		}
-	} else {
-		return dataVer
+		if tok.HoverError != nil {
+			c.HoverErrors++
+		} else if strings.Contains(methods, "hover") {
+			c.Hovers++
+			c.HoverDurations = append(c.HoverDurations, tok.HoverEnd.Sub(tok.HoverStart))
+		}
 	}
-
-	c.SrclibDataVersionCache[*repoRev] = dataVer
-	return dataVer
 }
 
-// getResolvedRev returns (or fetches) the absolute commit ID for the default branch
-// for a particular repo; it is threadsafe
-func (c *coverageCache) getResolvedRev(cl *sourcegraph.Client, ctx context.Context, repoRev routevar.RepoRev) (sourcegraph.RepoRevSpec, error) {
-	c.ResolvedRevMu.Lock()
-	defer c.ResolvedRevMu.Unlock()
+type tokCoverage struct {
+	// When coverage calculations began and ended (inclusive of all API
+	// requests, of which there are multiple per token).
+	Start, End time.Time
+	Token      coverageutil.Token
 
-	key := repoRev
-	if v, ok := c.ResolvedRevCache[key]; ok {
-		return v, nil
-	}
+	// Error that occured fetching the token as a def or hover.
+	DefError, HoverError error
 
-	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoRev.Repo})
-	if err != nil {
-		return sourcegraph.RepoRevSpec{}, err
-	}
+	// Distance between returned ranges (a measure of accuracy where 0 is
+	// perfect accuracy).
+	DefDist int
 
-	if repoRev.Rev == "" {
-		// Assume default branch is master to prevent call to Repos.Get.
-		// This may break for some repos (in which case we may want to hardcode mappings
-		// for exception cases).
-		repoRev.Rev = "master"
-	}
-
-	resRev, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: res.Repo, Rev: repoRev.Rev})
-	if err != nil {
-		return sourcegraph.RepoRevSpec{}, err
-	}
-
-	v := sourcegraph.RepoRevSpec{Repo: res.Repo, CommitID: resRev.CommitID}
-	c.ResolvedRevCache[key] = v
-	return v, nil
-}
-
-// fetchAndIndexDefs fetches (and indexes) all of the defs for a repo@rev, then caches the result.
-// If the cache already contains data for repo@rev, it is returned immediately.
-func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, repoURI string) *defIndex {
-	// First resolve the rev to an absolute commit ID.
-	repoRev.CommitID = c.getSrclibDataVersion(cl, ctx, repoRev)
-	if repoRev.CommitID == "" {
-		return nil
-	}
-
-	fetchMu := c.getFetchDefsMu(*repoRev)
-	fetchMu.Lock()
-	defer fetchMu.Unlock()
-
-	if idx := c.getDefIndex(*repoRev); idx != nil {
-		return idx
-	}
-
-	opt := sourcegraph.DefListOptions{
-		IncludeTest: true,
-		RepoRevs:    []string{fmt.Sprintf("%s@%s", repoURI, repoRev.CommitID)},
-	}
-	opt.PerPage = 100000000 // TODO(rothfels): srclib def store doesn't properly handle pagination
-	opt.Page = 1
-
-	defs := make([]*sourcegraph.Def, 0)
-	for {
-		dl, err := cl.Defs.List(ctx, &opt)
-		if err != nil {
-			log15.Error("fetch defs", "err", err, "repoRev", *repoRev)
-			break
-		}
-		if len(dl.Defs) == 0 {
-			break
-		}
-		defs = append(defs, dl.Defs...)
-		opt.Page += 1
-	}
-
-	idx := defIndex{Index: make(map[sourcegraph.DefSpec]*sourcegraph.Def)}
-	for _, def := range defs {
-		defSpec := def.DefSpec(repoRev.Repo)
-		idx.put(defSpec, def)
-	}
-
-	c.putDefIndex(*repoRev, &idx)
-	return &idx
+	// Exact time at which API requests started and ended.
+	DefStart, HoverStart time.Time
+	DefEnd, HoverEnd     time.Time
 }
 
 func (c *coverageCmd) Execute(args []string) error {
-	cl := cliClient
 	if c.Lang == "" {
-		return fmt.Errorf("must specify language")
+		return fmt.Errorf("must specify exactly one language")
+	}
+	if c.RepoRate < 1 {
+		return fmt.Errorf("repo rate must be at least one")
+	}
+	if c.FileRate < 1 {
+		return fmt.Errorf("file rate must be at least one")
 	}
 
+	// Create the connection to LSP server.
+	c.cl = cliClient
+	var err error
+	switch {
+	case c.LangpAddr != "":
+		c.backend, err = coverage.LangpClient(c.LangpAddr)
+	case c.LSPAddr != "":
+		c.backend, err = coverage.LSPClient(c.LSPAddr, c.LSPRootPath, c.LSPCaps)
+	default:
+		return fmt.Errorf("must specify one of --addr or --lsp-addr")
+	}
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := c.backend.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	c.logf("Running coverage for %s", c.Lang)
+	langCov, err := c.calcLangCoverage(cliContext, c.Lang)
+	if err != nil {
+		return err
+	}
+	c.logf("Completed coverage for %s (duration: %s)", langCov.Language, langCov.End.Sub(langCov.Start))
+
+	for _, repo := range langCov.Repos {
+		repo.calcSummary(c.Methods)
+		c.logf("")
+		c.logf("%s finished in %s", repo.RepoURI, repo.End.Sub(repo.Start))
+		c.logf("\t%v files", len(repo.Files))
+		c.logf("\t%v tokens", repo.Tokens)
+		c.logf("")
+		c.logf("\tdefinition: %d requests | %d errors", repo.Defs+repo.DefErrors, repo.DefErrors)
+		c.logf("\t\tavg. distance: %v", coverage.AvgInt(repo.DefDists))
+		c.logf("\t\tavg. response time: %v", coverage.AvgDuration(repo.DefDurations))
+		c.logf("\t\tP25 def time:       %v", coverage.Percentile(25, repo.DefDurations))
+		c.logf("\t\tP50 def time:       %v", coverage.Percentile(50, repo.DefDurations))
+		c.logf("\t\tP75 def time:       %v", coverage.Percentile(75, repo.DefDurations))
+		c.logf("\t\tP95 def time:       %v", coverage.Percentile(95, repo.DefDurations))
+		c.logf("")
+		c.logf("\thover: %d requests | %d errors", repo.Hovers+repo.HoverErrors, repo.HoverErrors)
+		c.logf("\t\tavg. response time: %v", coverage.AvgDuration(repo.HoverDurations))
+		c.logf("\t\tP25 hover time:     %v", coverage.Percentile(25, repo.HoverDurations))
+		c.logf("\t\tP50 hover time:     %v", coverage.Percentile(50, repo.HoverDurations))
+		c.logf("\t\tP75 hover time:     %v", coverage.Percentile(75, repo.HoverDurations))
+		c.logf("\t\tP95 hover time:     %v", coverage.Percentile(95, repo.HoverDurations))
+		c.logf("")
+
+		if c.Debug {
+			for _, file := range repo.Files {
+				for _, tok := range file.Tokens {
+					if tok.DefError != nil {
+						c.logf("definition error: %v", tok.DefError)
+					}
+					if tok.HoverError != nil {
+						c.logf("hover error: %v", tok.HoverError)
+					}
+				}
+			}
+		}
+	}
+	return err
+}
+
+func (c *coverageCmd) logf(fmtStr string, args ...interface{}) {
+	log.Printf(fmtStr, args...)
+
+	if sgSlackCoverageWebhookURL != "" {
+		slack.PostMessage(slack.PostOpts{
+			Msg:        fmt.Sprintf(fmtStr, args...),
+			IconEmoji:  ":chart_with_upwards_trend:",
+			WebhookURL: sgSlackCoverageWebhookURL,
+		})
+	}
+}
+
+// calcLangCoverage calculates coverage for the specified languages.
+func (c *coverageCmd) calcLangCoverage(ctx context.Context, lang string) (*langCoverage, error) {
+	var (
+		covMu sync.Mutex
+		cov   = &langCoverage{
+			Language: lang,
+			Start:    time.Now(),
+			Repos:    make(map[string]*repoCoverage),
+		}
+	)
+
+	// Build a list of repo URIs that we will compute coverage for.
 	var repos []string
 	if specificRepo := c.Repo; specificRepo != "" {
 		repos = []string{specificRepo}
 	} else {
-		repos = langRepos_[c.Lang]
+		repos = langRepos[lang]
 	}
-
 	if c.Limit > 0 && len(repos) > c.Limit {
 		repos = repos[:c.Limit]
 	}
 
-	// If c.Refresh, then just call `src repo sync` for every repo
-	if c.Refresh {
-		slack.PostMessage(slack.PostOpts{
-			Msg:        fmt.Sprintf("Running coverage --refresh --lang=%s", c.Lang),
-			IconEmoji:  ":sourcegraph:",
-			Channel:    "global-graph",
-			WebhookURL: os.Getenv("SG_SLACK_GRAPH_WEBHOOK_URL"),
-		})
-
-		syncCmd := &repoSyncCmd{
-			Force:         true,
-			buildPriority: 0, // prioritize over background updates
-		}
-		syncCmd.Args.URIs = repos
-		err := syncCmd.Execute(nil)
-		if err != nil {
-			log15.Error("repo sync", "err", err)
-		}
-		return err
-	}
-
-	start := time.Now()
-	slack.PostMessage(slack.PostOpts{
-		Msg:        fmt.Sprintf("Running coverage --lang=%s", c.Lang),
-		IconEmoji:  ":chart_with_upwards_trend:",
-		Channel:    "global-graph",
-		WebhookURL: os.Getenv("SG_SLACK_GRAPH_WEBHOOK_URL"),
-	})
-
-	p := parallel.NewRun(30)
+	p := parallel.NewRun(c.RepoRate)
 	for _, repo := range repos {
 		repo := repo
 		p.Acquire()
 		go func() {
 			defer p.Release()
-			_, err := getCoverage(cl, cliContext, repo, c.Lang, c.Dry, c.Progress, c.ReportRefs, c.ReportDefs, c.ReportEmpty)
+
+			repoCov, err := c.calcRepoCoverage(ctx, lang, repo)
 			if err != nil {
-				p.Error(fmt.Errorf("error getting coverage for %s: %s", repo, err))
+				p.Error(err)
 				return
 			}
+
+			covMu.Lock()
+			cov.Repos[repo] = repoCov
+			covMu.Unlock()
 		}()
 	}
 	err := p.Wait()
+	cov.End = time.Now()
+	return cov, err
+}
 
-	slack.PostMessage(slack.PostOpts{
-		Msg:        fmt.Sprintf("Completed coverage --lang=%s (duration: %f mins)", c.Lang, time.Since(start).Minutes()),
-		IconEmoji:  ":checkered-flag:",
-		Channel:    "global-graph",
-		WebhookURL: os.Getenv("SG_SLACK_GRAPH_WEBHOOK_URL"),
-	})
-
-	if err != nil {
-		if errs, ok := err.(parallel.Errors); ok {
-			var errMsgs []string
-			for _, e := range errs {
-				errMsgs = append(errMsgs, e.Error())
-			}
-			err = fmt.Errorf("\n%s", strings.Join(errMsgs, "\n"))
+// calcRepoCoverage calculates coverage for the specified repo.
+func (c *coverageCmd) calcRepoCoverage(ctx context.Context, lang, repoURI string) (*repoCoverage, error) {
+	var (
+		covMu sync.Mutex
+		cov   = &repoCoverage{
+			RepoURI: repoURI,
+			Start:   time.Now(),
+			Files:   make(map[string]*fileCoverage),
 		}
-		return fmt.Errorf("coverage errors: %s", err)
+	)
+
+	// Ensure the repo exists locally.
+	err := c.ensureLocalRepoExists(cliContext, repoURI)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
-}
-
-// rel is a *mux.Router for parsing vars from an annotation URL
-var rel = router.New(nil)
-
-// parseAnnotationURL extracts repoRev and def specs from an annotationURL
-func parseAnnotationURL(annUrl string) (routevar.DefAtRev, error) {
-	var match mux.RouteMatch
-	if rel.Match(&http.Request{Method: "GET", URL: &url.URL{Path: fmt.Sprintf("/%s%s", "repos", annUrl)}}, &match) {
-		return routevar.ToDefAtRev(match.Vars), nil
+	// Get repository revision spec.
+	repoRevSpec, err := c.getRepoRevSpec(ctx, repoURI)
+	if err != nil {
+		return nil, err
 	}
-	return routevar.DefAtRev{}, fmt.Errorf("error parsing mux vars for annotation url %s", annUrl)
-}
 
-// annToken stores an annotation (ref) and its associated token (ident)
-type annToken struct {
-	Annotation *sourcegraph.Annotation
-	Token      *coverageutil.Token
-}
-
-// getFileCoverage computes the coverage data for a single file in a repository
-func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, repoPath, path, lang string, reportRefs, reportDefs, reportEmpty bool) (*fileCoverage, error) {
-	fileCvg := &fileCoverage{Path: path}
-
-	var tokenizer coverageutil.Tokenizer
-	if t := coverageutil.Lookup(lang, path); t != nil {
-		tokenizer = *t
+	// Determine which files to calculate coverage with.
+	var files []string
+	if c.File != "" {
+		files = []string{c.File}
 	} else {
-		return nil, nil
+		// Query a list of the repository files.
+		tree, err := c.cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{
+			Rev: *repoRevSpec,
+		})
+		if err != nil {
+			return nil, err
+		}
+		files = tree.Files
 	}
 
+	p := parallel.NewRun(c.FileRate)
+	for _, file := range files {
+		file := file
+		p.Acquire()
+		go func() {
+			defer p.Release()
+
+			fileCov, err := c.calcFileCoverage(ctx, lang, repoURI, repoRevSpec, file)
+			if err != nil {
+				p.Error(err)
+				return
+			}
+			if fileCov != nil {
+				covMu.Lock()
+				cov.Files[file] = fileCov
+				covMu.Unlock()
+			}
+		}()
+	}
+	err = p.Wait()
+	cov.End = time.Now()
+	return cov, err
+}
+
+// calcFileCoverage calculates coverage for the specified file. It may return
+// nil if the given file has no tokenizer (i.e. for file types Sourcegraph does
+// not support).
+func (c *coverageCmd) calcFileCoverage(ctx context.Context, lang, repoURI string, repoRev *sourcegraph.RepoRevSpec, file string) (*fileCoverage, error) {
+	var (
+		covMu sync.Mutex
+		cov   = &fileCoverage{
+			Filename: file,
+			Start:    time.Now(),
+		}
+	)
+
+	// Read the entire file contents.
 	entrySpec := sourcegraph.TreeEntrySpec{
 		RepoRev: *repoRev,
-		Path:    path,
+		Path:    file,
 	}
 	treeGetOp := sourcegraph.RepoTreeGetOptions{}
 	treeGetOp.EntireFile = true
-	entry, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
+	entry, err := c.cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
 		Entry: entrySpec,
 		Opt:   &treeGetOp,
 	})
@@ -385,251 +382,200 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 		return nil, err
 	}
 
-	anns, err := cl.Annotations.List(ctx, &sourcegraph.AnnotationsListOptions{
-		Entry: entrySpec,
-		Range: &sourcegraph.FileRange{StartByte: 0, EndByte: 0},
+	// TODO: why *interface{} why??
+	tx := coverageutil.Lookup(lang, file)
+	if tx == nil {
+		log.Printf("Warning: no tokenizer for language %q file %q\n", lang, file)
+		return nil, nil
+	}
+	t := *tx
+	t.Init(entry.Contents)
+	defer t.Done()
+
+	// TODO: concurrency rate here
+	p := parallel.NewRun(c.TokenRate)
+	for {
+		tok := t.Next()
+		if tok == nil {
+			break
+		}
+
+		p.Acquire()
+		go func() {
+			defer p.Release()
+
+			tokCov, err := c.calcTokCoverage(ctx, lang, repoURI, repoRev, file, tok)
+			if err != nil {
+				p.Error(err)
+				return
+			}
+			covMu.Lock()
+			cov.Tokens = append(cov.Tokens, *tokCov)
+			covMu.Unlock()
+		}()
+	}
+	if errs := t.Errors(); len(errs) > 0 {
+		return nil, fmt.Errorf("tokenizer: error: %s", strings.Join(errs, ", "))
+	}
+	if err := p.Wait(); err != nil {
+		return nil, err
+	}
+
+	cov.End = time.Now()
+	return cov, nil
+}
+
+func (c *coverageCmd) calcTokCoverage(ctx context.Context, lang, repoURI string, repoRev *sourcegraph.RepoRevSpec, fileURI string, tok *coverageutil.Token) (*tokCoverage, error) {
+	var cov = &tokCoverage{
+		Token: *tok,
+		Start: time.Now(),
+	}
+
+	p := &langp.Position{
+		Repo:      repoURI,
+		Commit:    repoRev.CommitID,
+		File:      fileURI,
+		Line:      tok.Line - 1,   // Subtract one because tokenizer is one-based
+		Character: tok.Column - 1, // Subtract one because tokenizer is one-based
+	}
+
+	if strings.Contains(c.Methods, "definition") {
+		cov.DefStart = time.Now()
+		def, err := c.backend.Definition(p)
+		cov.DefEnd = time.Now()
+		if err != nil {
+			cov.DefError = err
+			coverage.Abort(c.Debug, c.AbortOnError, err, coverage.ErrorCase{
+				Method:    "definition",
+				Repo:      p.Repo,
+				File:      p.File,
+				Text:      tok.Text,
+				Line:      p.Line,
+				Character: p.Character,
+			})
+		} else {
+			cov.DefDist = coverage.Dist(def.LSP(), coverage.TokRange(*tok))
+		}
+	}
+
+	if strings.Contains(c.Methods, "hover") {
+		cov.HoverStart = time.Now()
+		_, err := c.backend.Hover(p)
+		cov.HoverEnd = time.Now()
+		if err != nil {
+			cov.HoverError = err
+			coverage.Abort(c.Debug, c.AbortOnError, err, coverage.ErrorCase{
+				Method:    "hover",
+				Repo:      p.Repo,
+				File:      p.File,
+				Text:      tok.Text,
+				Line:      p.Line,
+				Character: p.Character,
+			})
+		}
+	}
+
+	// TODO: local refs
+
+	cov.End = time.Now()
+	return cov, nil
+}
+
+func (c *coverageCmd) getRepoRevSpec(ctx context.Context, repoURI string) (*sourcegraph.RepoRevSpec, error) {
+	// Resolve the repo.
+	res, err := c.cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoURI})
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the repo.
+	repo, err := c.cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: res.Repo})
+	if err != nil {
+		return nil, err
+	}
+
+	// Resolve the default branch revision.
+	resRev, err := c.cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+		Repo: res.Repo,
+		Rev:  repo.DefaultBranch,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	annsByStartByte := make(map[uint32]*sourcegraph.Annotation)
-	for _, ann := range anns.Annotations {
-		// require URL (i.e. don't count syntax highlighting annotations)
-		if ann.URL != "" || len(ann.URLs) > 0 {
-			annsByStartByte[ann.StartByte] = ann
-		}
-	}
-
-	tokenizer.Init(entry.Contents)
-	defer tokenizer.Done()
-
-	refAnnotations := make([]*annToken, 0)
-	for {
-		tok := tokenizer.Next()
-		if tok == nil {
-			break
-		}
-
-		fileCvg.Idents += 1
-		if ann, ok := annsByStartByte[tok.Offset]; ok {
-			if ann.EndByte == tok.Offset+uint32(len([]byte(tok.Text))) {
-				// ref counts exact matches only
-				fileCvg.Refs += 1
-				refAnnotations = append(refAnnotations, &annToken{Annotation: ann, Token: tok})
-			} else if reportRefs {
-				log15.Warn("spans not match", "repo", repoPath, "rev", repoRev.CommitID, "path", path, "at", tok.Offset, "line", tok.Line, "ident", tok.Text)
-			}
-		} else if reportRefs {
-			log15.Warn("no ref for", "repo", repoPath, "rev", repoRev.CommitID, "path", path, "at", tok.Offset, "line", tok.Line, "ident", tok.Text)
-		}
-	}
-	errors := tokenizer.Errors()
-	if len(errors) > 0 {
-		log15.Warn("parse errors", "repo", repoPath, "path", path, "errors", errors)
-	}
-
-	for _, annToken := range refAnnotations {
-		ann := annToken.Annotation
-		tok := annToken.Token
-
-		// Verify if the annotation (ref) resolves to a def.
-		var u string
-		if ann.URL != "" {
-			u = ann.URL
-		} else if ann.URLs[0] != "" {
-			u = ann.URLs[0] // heuristic: just use first URL
-		} else {
-			continue
-		}
-		uStruct, err := url.Parse(u)
-		if err != nil {
-			return nil, err
-		}
-		if uStruct.IsAbs() {
-			fileCvg.Defs += 1 // heuristic: consider absolute URLs to be valid defs
-			continue
-		}
-		annInfo, err := parseAnnotationURL(u)
-		if err != nil {
-			return nil, err
-		}
-		annRepoRev, err := cache.getResolvedRev(cl, ctx, annInfo.RepoRev)
-		if err != nil || annRepoRev.CommitID == "" {
-			// The ref cannot be resolved to a def (e.g. the def repo doesn't exist);
-			// this is a normal condition for the coverage script so swallow the error and continue.
-			continue
-		}
-
-		defIdx := cache.fetchAndIndexDefs(cl, ctx, &annRepoRev, annInfo.RepoRev.Repo)
-		if defIdx == nil {
-			continue
-		}
-		annDefSpec := sourcegraph.DefSpec{
-			Repo:     annRepoRev.Repo,
-			CommitID: annRepoRev.CommitID,
-			UnitType: annInfo.UnitType,
-			Unit:     annInfo.Unit,
-			Path:     annInfo.Path,
-		}
-		if def := defIdx.get(annDefSpec); def != nil {
-			fileCvg.Defs += 1
-		} else {
-			if reportDefs {
-				log15.Warn("no def", "repo", repoPath, "rev", repoRev.CommitID, "path", path, "at", ann.StartByte, "line", tok.Line, "ident", tok.Text, "key", u)
-			}
-		}
-
-	}
-
-	if fileCvg.Refs == 0 && reportEmpty {
-		log15.Warn("uncovered file", "repo", repoPath, "rev", repoRev.CommitID, "path", path)
-	}
-
-	return fileCvg, nil
+	return &sourcegraph.RepoRevSpec{
+		Repo:     res.Repo,
+		CommitID: resRev.CommitID,
+	}, nil
 }
 
-// getCoverage computes coverage data for the given repository
-func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang string, dryRun, progress, reportRefs, reportDefs, reportEmpty bool) (*repoCoverage, error) {
-	if err := ensureRepoExists(cl, ctx, repoPath); err != nil {
-		return nil, err
-	}
-
-	start := time.Now()
-
-	repoCvg := repoCoverage{Repo: repoPath, Day: start.Format("01-02"), Language: lang}
-	repoRevSpec, err := cache.getResolvedRev(cl, ctx, routevar.RepoRev{Repo: repoPath})
-	if err != nil {
-		return nil, err
-	}
-
-	dataVer := cache.getSrclibDataVersion(cl, ctx, &repoRevSpec)
-	if dataVer != "" {
-		repoRevSpec.CommitID = dataVer
-		repoCvg.Rev = dataVer
-		tree, err := cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{Rev: repoRevSpec})
-		if err != nil {
-			return nil, err
-		}
-
-		p := parallel.NewRun(10)
-		var repoCvgMu sync.Mutex
-		for _, path := range tree.Files {
-			path := path
-			p.Acquire()
-			go func() {
-				defer p.Release()
-				if progress {
-					log15.Info("processing", path, lang)
-				}
-				fileCvg, err := getFileCoverage(cl, ctx, &repoRevSpec, repoPath, path, lang, reportRefs, reportDefs, reportEmpty)
-				if err != nil {
-					p.Error(err)
-					return
-				}
-				if fileCvg != nil {
-					// fileCvg may be nil for files which are ignored / not indexed
-					repoCvgMu.Lock()
-					repoCvg.Files = append(repoCvg.Files, fileCvg)
-					repoCvgMu.Unlock()
-				}
-			}()
-		}
-
-		if err := p.Wait(); err != nil {
-			if errs, ok := err.(parallel.Errors); ok {
-				var errMsgs []string
-				for _, e := range errs {
-					errMsgs = append(errMsgs, e.Error())
-				}
-				log15.Error("error computing coverage", "repo", repoPath, "err", fmt.Sprintf("\n%s", strings.Join(errMsgs, "\n")))
-			}
-		}
-	} else {
-		log15.Warn("missing srclib data version", "repo", repoPath, "rev", repoRevSpec.CommitID)
-	}
-
-	repoCvg.Summary = &fileCoverage{}
-	for _, cv := range repoCvg.Files {
-		repoCvg.Summary.Idents += cv.Idents
-		repoCvg.Summary.Refs += cv.Refs
-		repoCvg.Summary.Defs += cv.Defs
-	}
-	log15.Info("coverage summary",
-		"lang", lang,
-		"repo", repoPath,
-		"idents", repoCvg.Summary.Idents,
-		"refs", repoCvg.Summary.Refs,
-		"defs", repoCvg.Summary.Defs,
-		"refs%", percent(repoCvg.Summary.Refs, repoCvg.Summary.Idents),
-		"defs%", percent(repoCvg.Summary.Defs, repoCvg.Summary.Refs))
-
-	if planVer, err := plan.SrclibVersion(lang); err != nil {
-		log15.Warn("missing plan srclib version", "err", err, "lang", lang)
-	} else {
-		repoCvg.SrclibVersion = planVer
-	}
-
-	repoCvg.Duration = time.Since(start).Seconds()
-	log15.Info("coverage duration", "seconds", repoCvg.Duration)
-
-	if dryRun {
-		return &repoCvg, nil
-	}
-
-	covJSON, err := json.Marshal([]repoCoverage{repoCvg})
-	if err != nil {
-		return nil, err
-	}
-
-	var statusUpdate sourcegraph.RepoStatusesCreateOp
-	repoRevSpec.CommitID = "" // overwrite so db entry is saved with branch rev
-	statusUpdate.Repo = repoRevSpec
-	statusUpdate.Status = sourcegraph.RepoStatus{
-		Context:     "coverage",
-		Description: string(covJSON),
-	}
-
-	if _, err = cl.RepoStatuses.Create(ctx, &statusUpdate); err != nil {
-		log15.Error("save coverage stats", "err", err)
-		return nil, err
-	}
-
-	return &repoCvg, nil
-}
-
-func ensureRepoExists(cl *sourcegraph.Client, ctx context.Context, repo string) error {
-	// Resolve repo path, and create local mirror for remote repo if needed.
-	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo, Remote: true})
+// ensureLocalRepoExists ensures that a repository with the specified URI
+// exists locally. If the repo does not exist locally, the remote gRPC endpoint
+// is consulted to clone the repository.
+func (c *coverageCmd) ensureLocalRepoExists(ctx context.Context, repo string) error {
+	res, err := c.cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo, Remote: true})
 	if grpc.Code(err) == codes.NotFound {
+		// Repo doesn't exist on the remote, but maybe we have it locally
+		// already.
 		return nil
 	} else if err != nil {
 		return err
 	}
 
-	if remoteRepo := res.RemoteRepo; remoteRepo != nil {
-		if actualURI := githubutil.RepoURI(remoteRepo.Owner, remoteRepo.Name); actualURI != repo {
-			// Repo path is invalid, possibly because repo has been renamed.
-			return fmt.Errorf("repo %s redirects to %s; update dashboard with correct repo path", repo, actualURI)
-		}
-
-		// Automatically create a local mirror.
-		log15.Info("Creating a local mirror of remote repo", "cloneURL", remoteRepo.HTTPCloneURL)
-		_, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
-			Op: &sourcegraph.ReposCreateOp_Origin{Origin: remoteRepo.Origin},
-		})
-		if err != nil {
-			return err
-		}
+	if res.RemoteRepo == nil {
+		// No remote repo, we can't clone it.
+		return nil
 	}
 
-	return nil
+	actualURI := githubutil.RepoURI(res.RemoteRepo.Owner, res.RemoteRepo.Name)
+	if actualURI != repo {
+		// Repo path is invalid, possibly because repo has been renamed.
+		return fmt.Errorf("repo %s redirects to %s; update to correct repo path", repo, actualURI)
+	}
+
+	// Automatically create a local mirror.
+	log15.Info("Creating a local mirror of remote repo", "cloneURL", res.RemoteRepo.HTTPCloneURL)
+	_, err = c.cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
+		Op: &sourcegraph.ReposCreateOp_Origin{Origin: res.RemoteRepo.Origin},
+	})
+	return err
 }
 
-// percent computes percentage safely
-func percent(a, b int) int {
-	if b == 0 {
-		return 0
+// tokRange returns an LSP equivilent range for the given token.
+func (c *coverageCmd) tokRange(t coverageutil.Token) lsp.Range {
+	return lsp.Range{
+		Start: lsp.Position{
+			Line:      t.Line,
+			Character: t.Column,
+		},
+		End: lsp.Position{
+			Line:      t.Line,
+			Character: t.Column + len(t.Text),
+		},
 	}
-	return a * 100.0 / b
+}
+
+// rangeDist calculates the distance between the two ranges. A distance
+// of 0 implies the two ranges are equal, a distance of 1 implies there may be
+// an off-by-one error, etc. Aside from "larger distances mean the two are less
+// equal" the definition of distance is not strictly defined (except by the
+// source).
+func (c *coverageCmd) rangeDist(x, y lsp.Range) int {
+	// dist calculates the distance between the two integers.
+	dist := func(x, y int) int {
+		v := x - y
+		if v < 0 {
+			return -v
+		}
+		return v
+	}
+
+	// We could return start character, start line, end character, and end line
+	// distances all independently for better introspection, but this is good
+	// enough until proven otherwise.
+	d := dist(x.Start.Character, y.Start.Character)
+	d += dist(x.Start.Line, y.Start.Line)
+	d += dist(x.End.Character, y.End.Character)
+	d += dist(x.End.Line, y.End.Line)
+	return d
 }
