@@ -1,6 +1,6 @@
 import React from "react";
 import CSSModules from "react-css-modules";
-import styles from "./styles/Tools.css";
+import styles from "./styles/Integrations.css";
 import base from "sourcegraph/components/styles/_base.css";
 import {Heading, Button} from "sourcegraph/components";
 import Component from "sourcegraph/Component";
@@ -25,7 +25,7 @@ const otherTools = [
 	new Tool("Chrome", "/img/Dashboard/google-chrome.svg", "https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack"),
 ];
 
-class ToolsHomeComponent extends Component {
+class Integrations extends Component {
 	static propTypes = {
 		location: React.PropTypes.object.isRequired,
 	};
@@ -78,4 +78,4 @@ class ToolsHomeComponent extends Component {
 	}
 }
 
-export default CSSModules(ToolsHomeComponent, styles, {allowMultiple: true});
+export default CSSModules(Integrations, styles, {allowMultiple: true});

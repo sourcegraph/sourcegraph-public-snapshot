@@ -7,7 +7,7 @@ export const integrations = {
 			callback(null, {
 				globalNav: null,
 				navContext: null,
-				main: require("sourcegraph/home/ToolsContainer").default,
+				main: require("sourcegraph/home/IntegrationsContainer").default,
 			});
 		});
 	},

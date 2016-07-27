@@ -74,18 +74,21 @@ class Repos extends React.Component {
 			<div className={base.pb6}>
 				<header styleName="header">
 					<Heading level="7" color="cool-mid-gray">Your repositories</Heading>
-					<p>See usage examples and references from your own code. Don't worry, no one else will see anything from your private repositories.</p>
+					<p>To get jump-to-definition, search, and code examples, enable indexing on your repositories using the toggle. Private code indexed on Sourcegraph is only available to you and those with permissions to the underlying GitHub repository.</p>
+					<div styleName="input-bar">
+						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} styleName="github-button">Add public repositories</GitHubAuthButton>}
+						{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github-button">Add private repositories</GitHubAuthButton>}
+					</div>
 				</header>
 				<div styleName="settings">
-					<div styleName="input-bar">
+					<div styleName="list-heading">
 						{this._hasGithubToken() && <Input type="text"
 							placeholder="Find a repository..."
 							domRef={(e) => this._filterInput = e}
 							spellCheck={false}
 							styleName="filter-input"
 							onChange={this._handleFilter} />}
-						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} styleName="github-button">Add public repositories</GitHubAuthButton>}
-						{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github-button">Add private repositories</GitHubAuthButton>}
+						<span>Enable Indexing</span>
 					</div>
 					<div styleName="repos-list">
 						{repos.length > 0 && repos.map((repo, i) =>

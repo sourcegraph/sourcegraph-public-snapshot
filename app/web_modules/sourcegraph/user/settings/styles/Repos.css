@@ -50,7 +50,7 @@
 .filter-input {
 	composes: mb2 from base;
 	width: 100%;
-	max-width: 420px;
+	max-width: 240px;
 }
 
 .repo-link {
@@ -74,7 +74,14 @@
 .input-bar {
 	display: flex;
 	align-items: center;
+	justify-content: center;
 	flex-wrap: wrap;
+}
+
+.list-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
 }
 
 .github-button {

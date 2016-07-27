@@ -34,7 +34,7 @@ class ToggleSwitch extends React.Component {
 	render() {
 		return (
 			<div styleName="toggle" onClick={this._toggle.bind(this)}>
-				<input type="checkbox" name="toggle" styleName="toggle-checkbox" checked={this.state.checked}/>
+				<input type="checkbox" name="toggle" styleName="toggle-checkbox" checked={this.state.checked} readOnly={true}/>
 				<label styleName="toggle-label">
 						<span styleName="toggle-inner"></span>
 						<span styleName="toggle-switch"></span>
