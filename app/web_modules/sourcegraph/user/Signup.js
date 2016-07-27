@@ -147,7 +147,7 @@ function Signup(props, {router}) {
 			<Helmet title="Sign Up" />
 			<SignupForm {...props}
 				returnTo="/"
-				onSignupSuccess={() => router.replace({...location, state: {...location.state, _onboarding: "new-user"}})} />
+				onSignupSuccess={() => router.replace({...props.location, state: {...props.location.state, _onboarding: "new-user"}})} />
 		</div>
 	);
 }
