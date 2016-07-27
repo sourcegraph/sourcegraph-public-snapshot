@@ -70,7 +70,7 @@ func (c *Client) do(endpoint string, body, results interface{}) error {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		var errResp Error
-		if err := json.NewDecoder(resp.Body).Decode(errResp); err != nil {
+		if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {
 			return fmt.Errorf("error parsing language processor error (status code %v): %v", resp.StatusCode, err)
 		}
 		return &errResp
