@@ -64,6 +64,32 @@ func (t *Translator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// prepareWorkspace prepares a new workspace for the given repository and
+// revision.
+func (t *Translator) prepareWorkspace(rootDir, repo, commit string) error {
+	// Ensure the workspace directory exists.
+	_, err := os.Stat(rootDir)
+	if !os.IsNotExist(err) {
+		// Workspace exists already.
+		return nil
+	}
+
+	if err := os.MkdirAll(rootDir, 0700); err != nil {
+		return err
+	}
+	if err := t.Prepare(rootDir, repo, commit); err != nil {
+		// Preparing the workspace has failed, and thus the workspace is
+		// incomplete. Remove the directory so that the next request causes
+		// preparation again (this is our best chance at keeping the workspace
+		// in a working state).
+		if err2 := os.RemoveAll(rootDir); err2 != nil {
+			log.Println(err2)
+		}
+		return err
+	}
+	return nil
+}
+
 func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 	if r.Method != "POST" || r.URL.Path != "/hover" || len(r.URL.Query()) > 0 {
 		w.WriteHeader(http.StatusNotFound)
@@ -101,21 +127,11 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("File field must be set")
 	}
 
-	// Determine the root path for the workspace.
+	// Determine the root path for the workspace and prepare it.
 	rootPath := filepath.Join(t.WorkDir, pos.Repo, pos.Commit)
-
-	// Ensure the workspace directory exists.
-	//
-	// TODO(slimsag): What happens when a workspace directory already exists?
-	// Should we do updates in some mannor?
-	_, err = os.Stat(rootPath)
-	if os.IsNotExist(err) {
-		if err := os.MkdirAll(rootPath, 0700); err != nil {
-			return err
-		}
-		if err := t.Prepare(rootPath, pos.Repo, pos.Commit); err != nil {
-			return err
-		}
+	err = t.prepareWorkspace(rootPath, pos.Repo, pos.Commit)
+	if err != nil {
+		return err
 	}
 
 	// Build the LSP requests.
