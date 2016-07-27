@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import type {Element} from "react";
 import Container from "sourcegraph/Container";
 import BlobStore from "sourcegraph/blob/BlobStore";

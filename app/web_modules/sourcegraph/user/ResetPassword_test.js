@@ -1,6 +1,6 @@
 // @flow weak
 
-import React from "react";
+import * as React from "react";
 import ResetPassword from "sourcegraph/user/ResetPassword";
 import {render} from "sourcegraph/util/renderTestUtils";
 

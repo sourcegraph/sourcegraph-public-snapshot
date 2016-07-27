@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/BetaInterestForm.css";
 import {Button, Input, CheckboxList} from "sourcegraph/components";

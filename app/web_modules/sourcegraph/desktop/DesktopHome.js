@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import CSSModules from "react-css-modules";
 import base from "sourcegraph/components/styles/_base.css";
 import layout from "sourcegraph/components/styles/_layout.css";

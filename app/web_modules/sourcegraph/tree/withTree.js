@@ -1,6 +1,6 @@
 // @flow weak
 
-import React from "react";
+import * as React from "react";
 
 // withTree wraps Component and passes it a "path" property specified
 // in the URL route.

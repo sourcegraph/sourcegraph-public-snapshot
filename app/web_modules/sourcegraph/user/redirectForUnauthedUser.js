@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 
 // redirectForUnauthedUser wraps a component and issues a redirect
 // if there is an unauthenticated user. It is useful for wrapping authed routes.

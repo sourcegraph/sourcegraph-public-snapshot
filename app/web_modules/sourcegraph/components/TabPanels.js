@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 
 class TabPanels extends React.Component {
 	static propTypes = {

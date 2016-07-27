@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import DefStore from "sourcegraph/def/DefStore";
 import "sourcegraph/def/DefBackend";
 import * as DefActions from "sourcegraph/def/DefActions";

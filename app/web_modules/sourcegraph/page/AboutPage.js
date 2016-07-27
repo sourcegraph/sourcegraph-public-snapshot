@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import {Link} from "react-router";
 import {Hero, Heading} from "sourcegraph/components";
 import styles from "./Page.css";

@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import type {Route} from "react-router";
 import Component from "sourcegraph/Component";
 

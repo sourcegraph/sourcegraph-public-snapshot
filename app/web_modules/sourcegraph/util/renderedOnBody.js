@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import ReactDOM from "react-dom";
 import CSSPropertyOperations from "react/lib/CSSPropertyOperations";
 import shallowCompare from "react/lib/shallowCompare";

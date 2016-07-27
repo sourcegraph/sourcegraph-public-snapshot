@@ -1,6 +1,6 @@
 // @flow weak
 
-import React from "react";
+import * as React from "react";
 import expect from "expect.js";
 import withRepoBuild from "sourcegraph/build/withRepoBuild";
 import {render} from "sourcegraph/util/renderTestUtils";

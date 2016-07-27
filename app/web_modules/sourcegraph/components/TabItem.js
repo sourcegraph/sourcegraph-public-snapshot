@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import Icon from "./Icon";
 import CSSModules from "react-css-modules";
 import styles from "sourcegraph/components/styles/tabItem.css";

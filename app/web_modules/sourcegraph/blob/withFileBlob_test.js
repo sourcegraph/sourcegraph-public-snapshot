@@ -1,6 +1,6 @@
 // @flow weak
 
-import React from "react";
+import * as React from "react";
 import expect from "expect.js";
 import withFileBlob from "sourcegraph/blob/withFileBlob";
 import {render} from "sourcegraph/util/renderTestUtils";

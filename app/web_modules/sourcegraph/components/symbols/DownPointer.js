@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 
 class DownPointer extends React.Component {
 	static propTypes = {

@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 import {GitHubIcon} from "./Icons";
 import type from "./styles/_typography.css";

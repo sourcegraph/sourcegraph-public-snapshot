@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import Container from "sourcegraph/Container";
 import "sourcegraph/repo/RepoBackend";
 import RepoStore from "sourcegraph/repo/RepoStore";

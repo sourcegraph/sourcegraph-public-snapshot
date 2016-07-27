@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import Container from "sourcegraph/Container";
 import CSSModules from "react-css-modules";
 import styles from "./styles/SearchSettings.css";

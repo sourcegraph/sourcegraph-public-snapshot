@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 
 class Component extends React.Component {
 	constructor(props) {

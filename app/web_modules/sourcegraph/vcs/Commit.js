@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import TimeAgo from "sourcegraph/util/TimeAgo";
 import {Avatar} from "sourcegraph/components";
 import CSSModules from "react-css-modules";

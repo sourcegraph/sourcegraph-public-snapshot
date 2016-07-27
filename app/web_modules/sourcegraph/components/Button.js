@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 
 import Loader from "./Loader";
 import CSSModules from "react-css-modules";

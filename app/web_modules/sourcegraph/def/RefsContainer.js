@@ -1,6 +1,6 @@
 // @flow weak
 
-import React from "react";
+import * as React from "react";
 
 import Blob from "sourcegraph/blob/Blob";
 import BlobStore from "sourcegraph/blob/BlobStore";
