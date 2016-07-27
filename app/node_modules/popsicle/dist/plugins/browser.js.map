@@ -1,0 +1,1 @@
+{"version":3,"file":"browser.js","sourceRoot":"","sources":["../../lib/plugins/browser.ts"],"names":[],"mappings":";;;;AAAA,iBAAc,UACd,CAAC,EADuB","sourcesContent":["export * from './common'\n"]}

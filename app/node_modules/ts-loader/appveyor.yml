@@ -1,0 +1,17 @@
+environment:
+  nodejs_version: "0.12"
+  matrix:
+  - TYPESCRIPT: typescript@1.6.2
+  - TYPESCRIPT: typescript@1.7.5
+  - TYPESCRIPT: typescript@1.8.0
+  - TYPESCRIPT: typescript@next
+install:
+  - ps: Install-Product node $env:nodejs_version
+  - npm install
+  - npm install %TYPESCRIPT%
+test_script:
+  - node --version
+  - npm --version
+  - npm run build
+  - npm test
+build: off

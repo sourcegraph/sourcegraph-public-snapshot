@@ -45,6 +45,11 @@
     "redbox-react": "1.2.9",
     "source-map-support": "0.4.2",
     "style-loader": "0.13.1",
+    "ts-loader": "0.8.2",
+    "tslint": "3.14.0",
+    "tslint-loader": "2.1.5",
+    "typescript": "2.0.0",
+    "typings": "1.3.2",
     "url-loader": "0.5.7",
     "webpack": "2.1.0-beta.20",
     "webpack-dev-server": "2.1.0-beta.0"
@@ -75,7 +80,7 @@
   "scripts": {
     "start": "NODE_ENV=${NODE_ENV:=development} node ./node_modules/.bin/webpack-dev-server",
     "build": "env NODE_ENV=production node ./node_modules/.bin/webpack",
-    "lint": "./node_modules/.bin/eslint --max-warnings=0 web_modules",
+    "lint": "./node_modules/.bin/eslint --max-warnings=0 web_modules && find ./web_modules -name '*.ts*' | xargs ./node_modules/.bin/tslint",
     "test": "npm run lint && npm run test-unit",
     "test-unit": "env NODE_ENV=test ./node_modules/.bin/mocha-webpack 'web_modules/**/*_test.js' && rm -r ./.tmp",
     "dep": "npm rebuild fsevents",

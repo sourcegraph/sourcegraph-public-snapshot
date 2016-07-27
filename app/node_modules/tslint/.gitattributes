@@ -1,0 +1,6 @@
+# lint files can't get an extra \r character before \n, otherwise
+# they'll make some rule tests fail on windows, due to the lint error
+# being reported to be 1 character longer
+
+*.lint text eol=lf
+/test/rules/linebreak-style/**/CRLF/*.lint text eol=crlf

@@ -1,0 +1,19 @@
+{
+  "resolution": {
+    "main": "lib/typings"
+  },
+  "devDependencies": {
+    "blue-tape": "registry:npm/blue-tape#0.2.0+20160623043621",
+    "methods": "registry:npm/methods#1.0.0+20160211003958"
+  },
+  "globalDependencies": {
+    "node": "registry:env/node#6.0.0+20160622202520"
+  },
+  "dependencies": {
+    "arrify": "registry:npm/arrify#1.0.0+20160508201941",
+    "concat-stream": "registry:npm/concat-stream#1.0.0+20160211003958",
+    "form-data": "registry:npm/form-data#1.0.0+20160211003958",
+    "tough-cookie": "registry:npm/tough-cookie#2.2.0+20160428222547",
+    "xtend": "registry:npm/xtend#4.0.0+20160211003958"
+  }
+}
