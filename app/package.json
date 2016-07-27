@@ -26,7 +26,7 @@
     "expect.js": "0.3.1",
     "exports-loader": "0.6.3",
     "file-loader": "0.8.4",
-    "flow-bin": "0.27.0",
+    "flow-bin": "0.29.0",
     "flow-status-webpack-plugin": "0.1.5",
     "flux": "2.1.1",
     "fuzzysearch": "1.0.3",
