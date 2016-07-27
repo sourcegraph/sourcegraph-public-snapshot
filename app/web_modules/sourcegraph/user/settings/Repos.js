@@ -81,15 +81,16 @@ class Repos extends React.Component {
 					</div>
 				</header>
 				<div styleName="settings">
+					{this._hasGithubToken() &&
 					<div styleName="list-heading">
-						{this._hasGithubToken() && <Input type="text"
+						<Input type="text"
 							placeholder="Find a repository..."
 							domRef={(e) => this._filterInput = e}
 							spellCheck={false}
 							styleName="filter-input"
-							onChange={this._handleFilter} />}
-						<span>Enable Indexing</span>
-					</div>
+							onChange={this._handleFilter} />
+						<span styleName="list-label">Enable Indexing</span>
+					</div>}
 					<div styleName="repos-list">
 						{repos.length > 0 && repos.map((repo, i) =>
 							<div styleName="row" key={i}>

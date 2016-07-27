@@ -14,11 +14,12 @@ class Tool {
 }
 
 const plugins = [
-	new Tool("Sublime Text", "/img/Dashboard/sublime-text.svg", "https://github.com/sourcegraph-beta/sourcegraph-sublime-beta"),
-	new Tool("IntelliJ", "/img/Dashboard/intellij.svg", "https://github.com/sourcegraph/sourcegraph-intellij"),
-	new Tool("VS Code", "/img/Dashboard/vscode.svg", "https://github.com/sourcegraph/sourcegraph-vscode"),
-	new Tool("Emacs", "/img/Dashboard/emacs.svg", "https://github.com/sourcegraph/sourcegraph-emacs"),
-	new Tool("Vim", "/img/Dashboard/vim.svg", "https://github.com/sourcegraph-beta/sourcegraph-vim-beta"),
+	new Tool("Sublime Text", "/img/Dashboard/sublime-text.svg", "https://github.com/sourcegraph-beta/sourcegraph-sublime-beta#sourcegraph-for-sublime-text-"),
+	new Tool("IntelliJ", "/img/Dashboard/intellij.svg", "https://github.com/sourcegraph/sourcegraph-intellij#sourcegraph-for-intellij-idea"),
+	new Tool("VS Code", "/img/Dashboard/vscode.svg", "https://github.com/sourcegraph-beta/sourcegraph-vscode#sourcegraph-for-visual-studio-code"),
+
+	new Tool("Emacs", "/img/Dashboard/emacs.svg", "https://github.com/sourcegraph/sourcegraph-emacs#sourcegraph-for-emacs"),
+	new Tool("Vim", "/img/Dashboard/vim.svg", "https://github.com/sourcegraph-beta/sourcegraph-vim-beta#sourcegraph-for-vim-"),
 ];
 
 const otherTools = [
