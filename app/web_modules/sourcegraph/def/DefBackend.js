@@ -6,7 +6,6 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
-import {trackPromise} from "sourcegraph/app/status";
 import {encodeDefPath} from "sourcegraph/def";
 import get from "lodash.get";
 
@@ -19,14 +18,12 @@ const DefBackend = {
 			{
 				let def = DefStore.defs.get(action.repo, action.rev, action.def);
 				if (def === null) {
-					trackPromise(
-						DefBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${encodeDefPath(action.def)}`)
-							.then(updateRepoCloning(action.repo))
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => ({Error: err}))
-							.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefFetched(action.repo, action.rev, action.def, data)))
-					);
+					DefBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${encodeDefPath(action.def)}`)
+						.then(updateRepoCloning(action.repo))
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefFetched(action.repo, action.rev, action.def, data)));
 				}
 				break;
 			}
@@ -51,15 +48,13 @@ const DefBackend = {
 			{
 				let defs = DefStore.defs.list(action.repo, action.commitID, action.query, action.filePathPrefix);
 				if (defs === null) {
-					trackPromise(
-						DefBackend.fetch(`/.api/defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.commitID)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}&FilePathPrefix=${action.filePathPrefix ? encodeURIComponent(action.filePathPrefix) : ""}`)
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => ({Error: err}))
-							.then((data) => {
-								Dispatcher.Stores.dispatch(new DefActions.DefsFetched(action.repo, action.commitID, action.query, action.filePathPrefix, data, action.overlay));
-							})
-					);
+					DefBackend.fetch(`/.api/defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.commitID)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}&FilePathPrefix=${action.filePathPrefix ? encodeURIComponent(action.filePathPrefix) : ""}`)
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => {
+							Dispatcher.Stores.dispatch(new DefActions.DefsFetched(action.repo, action.commitID, action.query, action.filePathPrefix, data, action.overlay));
+						});
 				}
 				break;
 			}
@@ -70,17 +65,15 @@ const DefBackend = {
 				let refLocations = DefStore.getRefLocations(a.resource);
 				if (refLocations === null) {
 					let url = a.url();
-					trackPromise(
-						DefBackend.fetch(url)
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => ({Error: err}))
-							.then((data) => {
-								if (!data || !data.Error) {
-									Dispatcher.Stores.dispatch(new DefActions.RefLocationsFetched(action, data));
-								}
-							})
-					);
+					DefBackend.fetch(url)
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => {
+							if (!data || !data.Error) {
+								Dispatcher.Stores.dispatch(new DefActions.RefLocationsFetched(action, data));
+							}
+						});
 				}
 				break;
 			}
@@ -91,18 +84,16 @@ const DefBackend = {
 				let examples = DefStore.getExamples(a.resource);
 				if (examples === null) {
 					let url = a.url();
-					trackPromise(
-						DefBackend.fetch(url)
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => ({Error: err}))
-							.then(convNotFound)
-							.then((data) => {
-								if (!data || !data.Error) {
-									Dispatcher.Stores.dispatch(new DefActions.ExamplesFetched(action, data));
-								}
-							})
-					);
+					DefBackend.fetch(url)
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then(convNotFound)
+						.then((data) => {
+							if (!data || !data.Error) {
+								Dispatcher.Stores.dispatch(new DefActions.ExamplesFetched(action, data));
+							}
+						});
 				}
 				break;
 			}
@@ -113,18 +104,16 @@ const DefBackend = {
 				if (refs === null) {
 					let url = `/.api/repos/${action.repo}${action.commitID ? `@${action.commitID}` : ""}/-/def/${action.def}/-/refs?Repo=${encodeURIComponent(action.refRepo)}`;
 					if (action.refFile) url += `&Files=${encodeURIComponent(action.refFile)}`;
-					trackPromise(
-						DefBackend.fetch(url)
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => ({Error: err}))
-							.then((data) => {
-								if (get(data, "Error.response.status") === 404) {
-									data = [];
-								}
-								Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.repo, action.commitID, action.def, action.refRepo, action.refFile, data));
-							})
-					);
+					DefBackend.fetch(url)
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => {
+							if (get(data, "Error.response.status") === 404) {
+								data = [];
+							}
+							Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.repo, action.commitID, action.def, action.refRepo, action.refFile, data));
+						});
 				}
 				break;
 			}
@@ -134,18 +123,16 @@ const DefBackend = {
 				let info = DefStore.hoverInfos.get(action.pos);
 				if (info === null) {
 					let url = `/.api/repos/${action.pos.repo}@${action.pos.commit}/-/hover-info?file=${action.pos.file}&line=${action.pos.line}&character=${action.pos.character}`;
-					trackPromise(
-						DefBackend.fetch(url)
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => ({Error: err}))
-							.then((data) => {
-								if (get(data, "Error.response.status") === 404) {
-									return; // TODO we may want to indicate error in the UI
-								}
-								Dispatcher.Stores.dispatch(new DefActions.HoverInfoFetched(action.pos, data));
-							})
-					);
+					DefBackend.fetch(url)
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => {
+							if (get(data, "Error.response.status") === 404) {
+								return; // TODO we may want to indicate error in the UI
+							}
+							Dispatcher.Stores.dispatch(new DefActions.HoverInfoFetched(action.pos, data));
+						});
 				}
 				break;
 			}
