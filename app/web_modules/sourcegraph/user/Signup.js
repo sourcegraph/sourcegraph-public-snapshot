@@ -151,6 +151,9 @@ function Signup(props, {router}) {
 		</div>
 	);
 }
+Signup.propTypes = {
+	location: React.PropTypes.object.isRequired,
+};
 Signup.contextTypes = {
 	router: React.PropTypes.object.isRequired,
 };
