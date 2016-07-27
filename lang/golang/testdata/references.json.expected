@@ -13,7 +13,7 @@
   {
     "result": [
       {
-        "uri": "file:///mux/mux.go",
+        "uri": "file:///gopath/src/mux/mux.go",
         "range": {
           "start": {
             "line": 65,
@@ -26,7 +26,7 @@
         }
       },
       {
-        "uri": "file:///mux/mux.go",
+        "uri": "file:///gopath/src/mux/mux.go",
         "range": {
           "start": {
             "line": 66,
