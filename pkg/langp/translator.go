@@ -82,6 +82,7 @@ func (t *Translator) prepareWorkspace(rootDir, repo, commit string) error {
 		// incomplete. Remove the directory so that the next request causes
 		// preparation again (this is our best chance at keeping the workspace
 		// in a working state).
+		log.Println("preparing workspace:", err)
 		if err2 := os.RemoveAll(rootDir); err2 != nil {
 			log.Println(err2)
 		}
