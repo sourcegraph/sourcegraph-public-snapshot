@@ -294,17 +294,23 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo
 		return
 	}
 
-	if repo.Mirror {
-		var asUser *sourcegraph.UserSpec
-		if actor := authpkg.ActorFromContext(ctx); actor.UID != 0 {
-			asUser = &sourcegraph.UserSpec{UID: int32(actor.UID), Login: actor.Login}
-		}
-		repoupdater.Enqueue(repo.ID, asUser)
-	}
-
+	repoMaybeEnqueueUpdate(ctx, repo)
 	sendCreateRepoSlackMsg(ctx, repo.URI, repo.Language, repo.Mirror, repo.Private)
 
 	return
+}
+
+// repoMaybeEnqueueUpdate enqueues an update as the current user if the repo
+// is a Mirror.
+func repoMaybeEnqueueUpdate(ctx context.Context, repo *sourcegraph.Repo) {
+	if !repo.Mirror {
+		return
+	}
+	var asUser *sourcegraph.UserSpec
+	if actor := authpkg.ActorFromContext(ctx); actor.UID != 0 {
+		asUser = &sourcegraph.UserSpec{UID: int32(actor.UID), Login: actor.Login}
+	}
+	repoupdater.Enqueue(repo.ID, asUser)
 }
 
 func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRepo) (*sourcegraph.Repo, error) {

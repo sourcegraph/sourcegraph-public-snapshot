@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -139,5 +142,20 @@ func TestBuildsService_List_pagination(t *testing.T) {
 		if !reflect.DeepEqual(builds, test.wantBuilds) {
 			t.Errorf("%s: got %+v, want %+v", label, builds, test.wantBuilds)
 		}
+	}
+}
+
+func TestBuildsService_Create_MissingRevision(t *testing.T) {
+	var s builds
+	ctx, mock := testContext()
+
+	wantRepo := int32(3)
+	wantCommitID := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	mock.servers.Repos.MockGet(t, wantRepo)
+	mock.servers.Repos.MockResolveRev_NotFound(t, wantRepo, wantCommitID)
+
+	_, err := s.Create(ctx, &sourcegraph.BuildsCreateOp{Repo: wantRepo, CommitID: wantCommitID})
+	if grpc.Code(err) != codes.NotFound {
+		t.Fatalf("wanted NotFound err, got %v", err)
 	}
 }
