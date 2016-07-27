@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
+	"strings"
 
 	"golang.org/x/tools/cmd/guru/serial"
 
@@ -28,7 +30,7 @@ func (h *Session) handleHover(req *jsonrpc2.Request, params lsp.TextDocumentPosi
 	if !valid {
 		return nil, errors.New("invalid position")
 	}
-	desc, err := guruDescribe(h.filePath(params.TextDocument.URI), int(ofs))
+	desc, err := guruDescribe(h.filePath("gopath"), h.filePath(params.TextDocument.URI), int(ofs))
 	if err != nil {
 		return nil, err
 	}
@@ -52,12 +54,18 @@ func (h *Session) handleHover(req *jsonrpc2.Request, params lsp.TextDocumentPosi
 	}, nil
 }
 
-func guruDescribe(path string, offset int) (serial.Describe, error) {
+func guruDescribe(gopath, path string, offset int) (serial.Describe, error) {
 	var d serial.Describe
 	c := exec.Command("guru", "-json", "describe", fmt.Sprintf("%s:#%d", path, offset))
-	b, err := c.Output()
+	c.Env = []string{"GOPATH=" + gopath}
+	for _, e := range os.Environ() {
+		if !strings.HasPrefix(e, "GOPATH=") {
+			c.Env = append(c.Env, e)
+		}
+	}
+	b, err := c.CombinedOutput()
 	if err != nil {
-		return d, err
+		return d, fmt.Errorf("%v: %v", err, string(b))
 	}
 	err = json.Unmarshal(b, &d)
 	return d, err
