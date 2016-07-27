@@ -21,13 +21,13 @@ import (
 var lpClient *lputil.Client
 
 func init() {
+	if !feature.Features.Universe {
+		return
+	}
 	var err error
 	lpClient, err = lputil.NewClient(os.Getenv("SG_LANGUAGE_PROCESSOR"))
 	if err != nil {
-		// TODO: In general, this should be a fatal error because bubbling up
-		// at init time makes it more obvious. For now, since we're in an
-		// "optional" LSP stage though, we just log it.
-		log.Println("$SG_LANGUAGE_PROCESSOR", err)
+		log.Fatal("$SG_LANGUAGE_PROCESSOR", err)
 	}
 }
 
