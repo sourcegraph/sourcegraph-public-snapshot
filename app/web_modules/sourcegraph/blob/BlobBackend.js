@@ -1,5 +1,3 @@
-// @flow weak
-
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import BlobStore from "sourcegraph/blob/BlobStore";
 import Dispatcher from "sourcegraph/Dispatcher";

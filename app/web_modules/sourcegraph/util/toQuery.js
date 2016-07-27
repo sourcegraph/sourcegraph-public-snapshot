@@ -1,5 +1,3 @@
-// @flow
-
 // toQuery translates an object into a URL query. It assumes the
 // object is shallow (no nested objects).
 export default function toQuery(o: Object): string {

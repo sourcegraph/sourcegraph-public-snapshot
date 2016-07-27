@@ -1,5 +1,3 @@
-// @flow
-
 // singleflightFetch is a wrapper for fetch that suppresses
 // duplicate calls. At most one call to fetch with the given arguments may
 // be in-flight at any given time. If there are subsequent calls while the

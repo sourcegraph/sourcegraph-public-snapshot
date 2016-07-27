@@ -1,5 +1,3 @@
-// @flow weak
-
 import {repoPath, repoRev} from "sourcegraph/repo";
 import expect from "expect.js";
 

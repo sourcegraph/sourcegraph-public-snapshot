@@ -1,5 +1,3 @@
-// @flow weak
-
 import * as React from "react";
 import DefStore from "sourcegraph/def/DefStore";
 import RepoStore from "sourcegraph/repo/RepoStore";

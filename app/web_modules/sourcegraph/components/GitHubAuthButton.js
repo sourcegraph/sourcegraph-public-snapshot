@@ -1,5 +1,3 @@
-// @flow
-
 import * as React from "react";
 import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 import {GitHubIcon} from "./Icons";

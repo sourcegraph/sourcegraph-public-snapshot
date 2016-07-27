@@ -1,5 +1,3 @@
-// @flow
-
 import {btoa} from "abab";
 import "whatwg-fetch";
 
@@ -8,7 +6,7 @@ import UserStore from "sourcegraph/user/UserStore";
 
 // This file provides a common entrypoint to the fetch API.
 
-function defaultOptions(): RequestOptions {
+function defaultOptions() {
 	const headers = new Headers();
 	if (context.csrfToken) headers.set("X-Csrf-Token", context.csrfToken);
 	if (UserStore.activeAccessToken) {
@@ -48,7 +46,7 @@ export function combineHeaders(a: any, b: any): any {
 // defaultFetch wraps the fetch API.
 //
 // Note: the caller might wrap this with singleflightFetch.
-export function defaultFetch(url: string | Request, init?: RequestOptions): Promise<Response> {
+export function defaultFetch(url: string | Request, init?): Promise<Response> {
 	if (typeof url !== "string") throw new Error("url must be a string (complex requests are not yet supported)");
 
 	const defaults = defaultOptions();

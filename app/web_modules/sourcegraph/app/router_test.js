@@ -1,5 +1,3 @@
-// @flow
-
 import expect from "expect.js";
 import matchRoutes from "react-router/lib/matchRoutes";
 import {routes as repoRoutes} from "sourcegraph/repo/routes";

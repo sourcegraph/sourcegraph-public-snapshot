@@ -1,5 +1,3 @@
-// @flow weak
-
 import * as React from "react";
 import withDef from "sourcegraph/def/withDef";
 import {render} from "sourcegraph/util/renderTestUtils";

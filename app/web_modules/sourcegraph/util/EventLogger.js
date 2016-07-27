@@ -1,5 +1,3 @@
-// @flow weak
-
 import * as React from "react";
 import Dispatcher from "sourcegraph/Dispatcher";
 import context from "sourcegraph/app/context";
@@ -337,7 +335,7 @@ export default new EventLogger();
 
 // withEventLoggerContext makes eventLogger accessible as this.context.eventLogger
 // in the component's context.
-export function withEventLoggerContext(eventLogger: EventLogger, Component: ReactClass<any>): ReactClass<any> {
+export function withEventLoggerContext(eventLogger: EventLogger, Component) {
 	class WithEventLogger extends React.Component {
 		static childContextTypes = {
 			eventLogger: React.PropTypes.object,
@@ -361,7 +359,7 @@ export function withEventLoggerContext(eventLogger: EventLogger, Component: Reac
 
 // withViewEventsLogged calls this.context.eventLogger.logEvent when the
 // location's pathname changes.
-export function withViewEventsLogged(Component: ReactClass<any>): ReactClass<any> {
+export function withViewEventsLogged(Component) {
 	class WithViewEventsLogged extends React.Component { // eslint-disable-line react/no-multi-comp
 		static propTypes = {
 			routes: React.PropTypes.arrayOf(React.PropTypes.object),

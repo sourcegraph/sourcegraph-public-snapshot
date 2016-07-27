@@ -1,5 +1,3 @@
-// @flow
-
 import {rel} from "sourcegraph/app/routePatterns";
 import type {Route} from "react-router";
 import type {SearchSettings} from "sourcegraph/search";

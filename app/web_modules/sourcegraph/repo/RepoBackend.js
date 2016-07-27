@@ -1,5 +1,3 @@
-// @flow weak
-
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as RepoActions_typed from "sourcegraph/repo/RepoActions_typed";
 import RepoStore from "sourcegraph/repo/RepoStore";

@@ -1,5 +1,3 @@
-// @flow
-
 import type {Route} from "react-router";
 import {rel, abs} from "sourcegraph/app/routePatterns";
 import invariant from "invariant";

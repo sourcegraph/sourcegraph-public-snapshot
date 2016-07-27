@@ -1,5 +1,3 @@
-// @flow
-
 import type {AuthInfo, User, EmailAddr, ExternalToken, Settings} from "sourcegraph/user";
 
 export class WantAuthInfo {

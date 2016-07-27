@@ -1,5 +1,3 @@
-// @flow weak
-
 import {routes as repoRoutes, urlWithRev} from "sourcegraph/repo/routes";
 import {rootRoute} from "sourcegraph/app/App";
 import expect from "expect.js";

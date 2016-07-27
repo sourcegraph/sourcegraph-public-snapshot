@@ -1,5 +1,3 @@
-// @flow
-
 export type LanguageID = "golang" | "java" | "python" | "javascript";
 export const allLangs: Array<LanguageID> = ["golang", "java", "python", "javascript"];
 

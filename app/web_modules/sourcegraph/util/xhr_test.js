@@ -1,5 +1,3 @@
-// @flow
-
 import expect from "expect.js";
 import {combineHeaders} from "sourcegraph/util/xhr";
 import "whatwg-fetch";

@@ -1,5 +1,3 @@
-// @flow weak
-
 import {abs, getRouteParams} from "sourcegraph/app/routePatterns";
 import {repoPath, repoRev, repoParam} from "sourcegraph/repo";
 

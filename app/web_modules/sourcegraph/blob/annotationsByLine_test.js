@@ -1,5 +1,3 @@
-// @flow weak
-
 import annotationsByLine from "sourcegraph/blob/annotationsByLine";
 import expect from "expect.js";
 

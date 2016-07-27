@@ -1,5 +1,3 @@
-// @flow
-
 import * as React from "react";
 import type {Element} from "react";
 import Container from "sourcegraph/Container";

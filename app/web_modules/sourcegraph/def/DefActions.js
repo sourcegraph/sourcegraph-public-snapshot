@@ -1,5 +1,3 @@
-// @flow
-
 import type {Def, Ref, RefLocationsKey, ExamplesKey} from "sourcegraph/def";
 import {RefLocsPerPage} from "sourcegraph/def";
 import toQuery from "sourcegraph/util/toQuery";

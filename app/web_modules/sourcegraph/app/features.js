@@ -1,5 +1,3 @@
-// @flow weak
-
 import * as React from "react";
 
 // FeatureName is the set of all feature flag names that can

@@ -1,5 +1,3 @@
-// @flow
-
 import type {RouterState} from "react-router";
 
 // shouldUpdateScroll makes it so that the window does NOT scroll

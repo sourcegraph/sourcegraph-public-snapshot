@@ -1,5 +1,3 @@
-// @flow
-
 import BlobStore from "sourcegraph/blob/BlobStore";
 import DefStore from "sourcegraph/def/DefStore";
 import RepoStore from "sourcegraph/repo/RepoStore";

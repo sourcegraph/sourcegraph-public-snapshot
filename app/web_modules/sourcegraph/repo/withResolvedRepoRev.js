@@ -1,5 +1,3 @@
-// @flow weak
-
 import * as React from "react";
 
 import Container from "sourcegraph/Container";
@@ -16,7 +14,7 @@ import {repoPath, repoRev, repoParam} from "sourcegraph/repo";
 // or else duplicate WantResolveRepo, etc., actions will be dispatched
 // and could lead to multiple WantCreateRepo, etc., actions being sent
 // to the server).
-export default function withResolvedRepoRev(Component: ReactClass<any>, isMainComponent?: bool): ReactClass<any> {
+export default function withResolvedRepoRev(Component, isMainComponent?: bool) {
 	isMainComponent = Boolean(isMainComponent);
 	class WithResolvedRepoRev extends Container {
 		static contextTypes = {

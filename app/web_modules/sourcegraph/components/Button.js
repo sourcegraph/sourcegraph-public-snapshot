@@ -1,5 +1,3 @@
-// @flow
-
 import * as React from "react";
 
 import Loader from "./Loader";
@@ -26,7 +24,7 @@ function Button({
 	color: "blue" | "purple" | "green" | "red" | "orange",
 	onClick?: Function,
 	imageUrl?: string,
-	children: React$Element<any> | Array<React$Element<any>>,
+	children: any,
 }) {
 	let style = `${outline ? "outline-" : "solid-"}${color}`;
 	if (disabled || loading) style = `${style} disabled`;

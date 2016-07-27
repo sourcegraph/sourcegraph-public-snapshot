@@ -1,5 +1,3 @@
-// @flow
-
 import * as React from "react";
 
 class Repository extends React.Component {

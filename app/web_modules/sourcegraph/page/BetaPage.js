@@ -1,5 +1,3 @@
-// @flow
-
 import * as React from "react";
 import {Hero, Heading} from "sourcegraph/components";
 import styles from "./Page.css";
@@ -8,7 +6,7 @@ import CSSModules from "react-css-modules";
 import Helmet from "react-helmet";
 import BetaInterestForm from "sourcegraph/home/BetaInterestForm";
 
-function BetaPage(props): React$Element<any> {
+function BetaPage(props) {
 	return (
 		<div>
 			<Helmet title="Beta" />

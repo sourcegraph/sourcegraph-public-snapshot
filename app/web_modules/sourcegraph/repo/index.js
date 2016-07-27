@@ -1,5 +1,3 @@
-// @flow
-
 export type RepoRev = {
 	Repo: string;
 	Rev: ?string;

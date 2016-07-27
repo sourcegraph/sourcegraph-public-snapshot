@@ -1,5 +1,3 @@
-// @flow
-
 import expect from "expect.js";
 
 import Dispatcher from "sourcegraph/Dispatcher";

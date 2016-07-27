@@ -1,5 +1,3 @@
-// @flow
-
 import {parseLineRange} from "sourcegraph/blob/lineCol";
 import type {Helper} from "sourcegraph/blob/BlobLoader";
 

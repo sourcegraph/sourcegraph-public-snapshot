@@ -1,5 +1,3 @@
-// @flow
-
 import * as React from "react";
 
 import RepoLink from "sourcegraph/components/RepoLink";

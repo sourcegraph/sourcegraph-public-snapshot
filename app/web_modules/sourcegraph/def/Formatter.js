@@ -1,5 +1,3 @@
-// @flow weak
-
 import * as React from "react";
 import type {Def} from "sourcegraph/def/index";
 

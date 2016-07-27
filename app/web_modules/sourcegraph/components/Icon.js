@@ -1,5 +1,3 @@
-// @flow
-
 import * as React from "react";
 
 class Icon extends React.Component {

@@ -1,4 +1,0 @@
-// @flow
-
-// CSS modules have a className export, which is a string.
-declare var exports: {[key: string]: string};

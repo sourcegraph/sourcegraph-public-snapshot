@@ -1,5 +1,3 @@
-// @flow weak
-
 import * as React from "react";
 import expect from "expect.js";
 import BlobMain from "sourcegraph/blob/BlobMain";

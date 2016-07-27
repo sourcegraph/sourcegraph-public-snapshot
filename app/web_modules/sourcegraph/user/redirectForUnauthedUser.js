@@ -2,7 +2,7 @@ import * as React from "react";
 
 // redirectForUnauthedUser wraps a component and issues a redirect
 // if there is an unauthenticated user. It is useful for wrapping authed routes.
-export default function redirectForUnauthedUser(url: Location | string, Component: ReactClass<any>): ReactClass<any> {
+export default function redirectForUnauthedUser(url: Location | string, Component) {
 	class RedirectForUnauthedUser extends React.Component {
 		static contextTypes = {
 			signedIn: React.PropTypes.bool.isRequired,

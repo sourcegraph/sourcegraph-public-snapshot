@@ -1,5 +1,3 @@
-// @flow
-
 import * as React from "react";
 import ReactDOM from "react-dom";
 import {Link} from "react-router";
@@ -152,7 +150,6 @@ class TreeSearch extends Container {
 	stores(): Array<Object> { return [TreeStore]; }
 
 	reconcileState(state: TreeSearchState, props: TreeSearchProps): void {
-		// $FlowHack
 		Object.assign(state, props);
 
 		state.query = props.query || "";
@@ -180,7 +177,6 @@ class TreeSearch extends Container {
 				if (nextState.fileTree) {
 					let dirLevel = nextState.fileTree;
 					let err;
-					// $FlowHack: nextState.path is non-null
 					for (const part of pathSplit(nextState.path)) {
 						let dirKey = `!${part}`; // dirKey is prefixed to avoid clash with predefined fields like "constructor"
 						if (dirLevel.Dirs[dirKey]) {
@@ -193,7 +189,6 @@ class TreeSearch extends Container {
 						}
 					}
 
-					// $FlowHack: nextState.path is non-null
 					const pathPrefix = nextState.path.replace(/^\/$/, "");
 					const dirs = !err ? Object.keys(dirLevel.Dirs).map(dirKey => ({
 						name: dirKey.substr(1), // dirKey is prefixed to avoid clash with predefined fields like "constructor"

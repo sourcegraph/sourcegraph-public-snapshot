@@ -1,5 +1,3 @@
-// @flow
-
 export class WantFile {
 	repo: string;
 	commitID: ?string;

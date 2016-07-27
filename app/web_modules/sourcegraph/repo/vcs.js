@@ -1,5 +1,3 @@
-// @flow
-
 type Signature = {
 	Name: string;
 	Email: string;

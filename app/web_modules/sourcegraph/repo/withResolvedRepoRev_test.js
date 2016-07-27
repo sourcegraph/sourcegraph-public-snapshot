@@ -1,5 +1,3 @@
-// @flow weak
-
 import * as React from "react";
 import expect from "expect.js";
 import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";

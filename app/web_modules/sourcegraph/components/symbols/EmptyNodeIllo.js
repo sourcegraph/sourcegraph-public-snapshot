@@ -1,5 +1,3 @@
-// @flow
-
 import * as React from "react";
 
 class EmptyNodeIllo extends React.Component {

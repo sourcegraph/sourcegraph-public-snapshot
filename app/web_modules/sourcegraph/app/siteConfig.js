@@ -1,5 +1,3 @@
-// @flow weak
-
 import * as React from "react";
 import EventLogger from "sourcegraph/util/EventLogger";
 

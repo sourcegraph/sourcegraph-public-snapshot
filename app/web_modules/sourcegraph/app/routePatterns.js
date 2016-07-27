@@ -1,5 +1,3 @@
-// @flow
-
 import type {Route} from "react-router";
 import {matchPattern} from "react-router/lib/PatternUtils";
 
@@ -100,7 +98,6 @@ export const abs: {[key: RouteName]: string} = {
 };
 
 const routeNamesByPattern: {[key: string]: RouteName} = {};
-// $FlowHack
 for (let name: RouteName of Object.keys(abs)) {
 	routeNamesByPattern[abs[name]] = name;
 }

@@ -1,5 +1,3 @@
-// @flow weak
-
 import * as React from "react";
 import DefPopup from "sourcegraph/def/DefPopup";
 import type {Helper} from "sourcegraph/blob/BlobLoader";

@@ -1,5 +1,3 @@
-// @flow
-
 import * as React from "react";
 import {Hero, Heading, Panel, Button} from "sourcegraph/components";
 import styles from "./Page.css";
@@ -10,7 +8,7 @@ import {CheckIcon} from "sourcegraph/components/Icons";
 import Helmet from "react-helmet";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-function PricingPage(props, {signedIn, eventLogger}): React$Element<any> {
+function PricingPage(props, {signedIn, eventLogger}) {
 	return (
 		<div>
 			<Helmet title="Pricing" />

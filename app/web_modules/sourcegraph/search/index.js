@@ -1,5 +1,3 @@
-// @flow
-
 import type {LanguageID} from "sourcegraph/Language";
 
 export type SearchScope = {

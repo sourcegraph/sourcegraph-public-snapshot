@@ -1,5 +1,3 @@
-// @flow weak
-
 import type {Annotation} from "sourcegraph/blob/Annotations";
 import {sortAnns} from "sourcegraph/blob/Annotations";
 

@@ -1,5 +1,3 @@
-// @flow
-
 import UserStore from "sourcegraph/user/UserStore";
 import {forEach as forEachStore, reset as resetStores} from "sourcegraph/init/stores";
 

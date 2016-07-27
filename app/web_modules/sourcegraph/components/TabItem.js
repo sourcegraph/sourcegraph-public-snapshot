@@ -1,5 +1,3 @@
-// @flow
-
 import * as React from "react";
 import Icon from "./Icon";
 import CSSModules from "react-css-modules";

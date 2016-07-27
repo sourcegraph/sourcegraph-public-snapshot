@@ -1,5 +1,3 @@
-// @flow
-
 import * as React from "react";
 import {Link} from "react-router";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
@@ -141,7 +139,7 @@ const TitledSection = CSSModules(({
 	className,
 }: {
 	title: string,
-	children?: React$Element<any> | Array<React$Element<any>>,
+	children?: any,
 	className: string,
 }) => (
 	<div styleName="titled-section" className={className}>

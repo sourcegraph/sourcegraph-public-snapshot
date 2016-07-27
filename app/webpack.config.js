@@ -2,20 +2,10 @@ const webpack = require("webpack");
 const autoprefixer = require("autoprefixer");
 const url = require("url");
 const log = require("logalot");
-const FlowStatusWebpackPlugin = require("flow-status-webpack-plugin");
 const ProgressBarPlugin = require("progress-bar-webpack-plugin");
 
 // Check dev dependencies.
 if (process.env.NODE_ENV === "development") {
-	const flow = require("flow-bin/lib");
-	flow.run(["--version"], (err) => {
-		if (err) {
-			log.error(err.message);
-			log.error("ERROR: flow is not properly installed. Run 'rm app/node_modules/flow-bin/vendor/flow; make dep' to fix.");
-			return;
-		}
-	});
-
 	if (process.platform === "darwin") {
 		try {
 			require("fsevents");
@@ -42,10 +32,6 @@ const plugins = [
 	new webpack.optimize.LimitChunkCountPlugin({maxChunks: 1}),
 	new ProgressBarPlugin(),
 ];
-
-if (process.env.NODE_ENV !== "production") {
-	plugins.push(new FlowStatusWebpackPlugin({quietSuccess: true}));
-}
 
 if (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) {
 	plugins.push(

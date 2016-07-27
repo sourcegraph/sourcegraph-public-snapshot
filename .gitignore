@@ -43,7 +43,6 @@ npm-debug.log
 /app/artifacts
 /app/node_modules/fsevents/build
 /app/node_modules/fsevents/lib
-/app/node_modules/flow-bin/vendor
 /app/node_modules/node-sass
 /app/assets/_goTemplates.js
 /app/assets/analytics.js

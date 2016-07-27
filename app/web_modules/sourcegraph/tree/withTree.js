@@ -1,5 +1,3 @@
-// @flow weak
-
 import * as React from "react";
 
 // withTree wraps Component and passes it a "path" property specified

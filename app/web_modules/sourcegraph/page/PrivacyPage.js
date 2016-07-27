@@ -1,5 +1,3 @@
-// @flow
-
 import * as React from "react";
 import {Hero, Heading} from "sourcegraph/components";
 import styles from "./Page.css";
@@ -7,7 +5,7 @@ import base from "sourcegraph/components/styles/_base.css";
 import CSSModules from "react-css-modules";
 import Helmet from "react-helmet";
 
-function PrivacyPage(props, {signedIn}): React$Element<any> {
+function PrivacyPage(props, {signedIn}) {
 	return (
 		<div>
 			<Helmet title="Privacy" />

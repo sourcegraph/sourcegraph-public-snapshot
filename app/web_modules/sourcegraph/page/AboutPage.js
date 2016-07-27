@@ -1,5 +1,3 @@
-// @flow
-
 import * as React from "react";
 import {Link} from "react-router";
 import {Hero, Heading} from "sourcegraph/components";
@@ -9,7 +7,7 @@ import CSSModules from "react-css-modules";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import Helmet from "react-helmet";
 
-function AboutPage(props, {signedIn}): React$Element<any> {
+function AboutPage(props, {signedIn}) {
 	return (
 		<div>
 			<Helmet title="About" />
