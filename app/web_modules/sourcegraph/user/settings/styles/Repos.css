@@ -7,13 +7,32 @@
 
 @value media-sm from vars;
 
+.header {
+	composes: bb ph4 pb2 pt4 from base;
+	composes: b--light-gray from colors;
+	text-align: center;
+}
+
+.settings {
+	composes: ph4 pt4 from base;
+}
+
 .repos {
 	width: 100%;
 }
 
-.row {}
-.cell {
-	composes: pv4 from base;
+.repos-list {
+}
+.row {
+	composes: pv2 from base;
+	width: 100%;
+	display: flex;
+	align-items: center;
+}
+.info {}
+.toggle {
+	padding-left: 10px;
+	margin-left: auto;
 }
 
 .button {
@@ -29,19 +48,24 @@
 }
 
 .filter-input {
-	composes: mr3 mb2 from base;
+	composes: mb2 from base;
+	width: 100%;
+	max-width: 240px;
 }
 
 .repo-link {
-	composes: f4 from typography;
+	font-size: 0.9rem;
 }
 .repo-link a {
 	font-weight: bold;
 }
 .description {
-	composes: mt0 from base;
+	composes: mt0 mb0 from base;
 	composes: cool-mid-gray from colors;
-	composes: mb0 from base;
+	min-width: 0;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	font-size: 0.9rem;
 }
 .indicator {
 	composes: mv4 from base;
@@ -50,9 +74,35 @@
 .input-bar {
 	display: flex;
 	align-items: center;
+	justify-content: center;
 	flex-wrap: wrap;
+}
+
+.list-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
 }
 
 .github-button {
 	composes: mr3 mb2 from base;
+}
+
+.footer {
+	composes: bt center pv3 ph3 from base;
+	composes: bg-white b--light-gray from colors;
+	width: 100%;
+	position: fixed;
+	bottom: 0;
+	display: flex;
+	justify-content: center;
+}
+
+.footer-link {
+	width: 100%;
+	max-width: 420px;
+}
+
+.footer-btn {
+	width: 100%;
 }

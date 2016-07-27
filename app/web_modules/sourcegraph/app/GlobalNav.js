@@ -73,9 +73,6 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 					<Link to="/settings/repos">
 						<TabItem hideMobile={true} active={location.pathname === "/settings/repos"}>Repositories</TabItem>
 					</Link>
-					<Link to="/tools">
-						<TabItem hideMobile={true} active={location.pathname === "/tools"}>Tools</TabItem>
-					</Link>
 				</div>}
 
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal styleName="icon-ellipsis" title="Your editor could not identify the symbol"/>}

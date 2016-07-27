@@ -1,10 +1,10 @@
 import React from "react";
 import CSSModules from "react-css-modules";
-import styles from "./styles/Tools.css";
-import ToolsHomeComponent from "./ToolsHomeComponent";
+import styles from "./styles/Integrations.css";
+import Integrations from "./Integrations";
 import "sourcegraph/user/UserBackend"; // for side effects
 
-class ToolsContainer extends React.Component {
+class IntegrationsContainer extends React.Component {
 	static propTypes = {
 		location: React.PropTypes.object,
 	};
@@ -15,9 +15,9 @@ class ToolsContainer extends React.Component {
 
 	render() {
 		return (<div>
-			<ToolsHomeComponent location={this.props.location}/>
+			<Integrations location={this.props.location}/>
 		</div>);
 	}
 }
 
-export default CSSModules(ToolsContainer, styles);
+export default CSSModules(IntegrationsContainer, styles);
