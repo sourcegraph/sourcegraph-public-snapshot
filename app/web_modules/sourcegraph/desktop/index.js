@@ -1,32 +1,64 @@
+import React from "react";
+import DesktopHome, {NotInBeta} from "sourcegraph/desktop/DesktopHome";
+
 import {rel} from "sourcegraph/app/routePatterns";
-import type {Route} from "react-router";
 import {inBeta} from "sourcegraph/user";
 import * as betautil from "sourcegraph/util/betautil";
-
+import {getRouteName} from "sourcegraph/app/routePatterns";
 
 export const desktopHome = {
-	getComponent: (location, callback) => {
-		require.ensure([], (require) => {
-			callback(null, {
-				main: require("sourcegraph/desktop/DesktopHome").default,
-			});
-		});
-	},
+    getComponent: (location, callback) => {
+        require.ensure([], (require) => {
+            callback(null, {
+                main: require("sourcegraph/desktop/DesktopHome").default,
+            });
+        });
+    },
 };
 
 export const routes: Array<Route> = [
-	{
-		...desktopHome,
-		path: rel.desktopHome,
-	},
+    {
+        ...desktopHome,
+        path: rel.desktopHome,
+    },
 ];
 
-export function inDesktopBeta(user) {
-	return user && user.Betas && inBeta(user, betautil.DESKTOP);
-}
+export default function desktopRouter(Component: ReactClass<any>): ReactClass<any> {
+    class DesktopRouter extends React.Component {
+        static contextTypes = {
+            router: React.PropTypes.object.isRequired,
+            user: React.PropTypes.object,
+            signedIn: React.PropTypes.bool.isRequired,
+        };
 
-export function redirectDesktopClient(router) {
-	if (navigator.userAgent.includes("Electron")) {
-		router.replace("/desktop/home");
-	}
+        static propTypes = {
+            routes: React.PropTypes.array,
+        };
+
+        constructor(props) {
+            super(props);
+            this.DesktopClient = navigator.userAgent.includes("Electron");
+        }
+
+        componentDidMount() {
+            if (this.DesktopClient && !this.context.signedIn) {
+                this.context.router.replace(rel.login);
+            }
+        }
+
+        render() {
+            if (!this.DesktopClient) {
+                return <Component {...this.props} />;
+            };
+            if (inBeta(this.context.user, betautil.Desktop)) {
+                return <NotInBeta />;
+            }
+            if (getRouteName(this.props.routes) === "home") {
+                this.context.router.replace(rel.desktopHome);
+            }
+            return <Component {...this.props} />;
+        }
+    };
+
+    return DesktopRouter;
 }

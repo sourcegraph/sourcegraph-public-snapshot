@@ -13,7 +13,7 @@ import {Heading, List} from "sourcegraph/components";
 import {Cone} from "sourcegraph/components/symbols";
 import {inDesktopBeta} from "sourcegraph/desktop";
 
-const NotInBeta = () => (
+export const NotInBeta = () => (
 	<div className={`${layout.containerFixed} ${base.pv5} ${base.ph4}`} style={{maxWidth: "600px"}}>
 	<Heading align="center" level="4" underline="blue">
 		It looks like you're not in the desktop beta right now.
@@ -27,18 +27,9 @@ class DesktopHome extends React.Component {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 		user: React.PropTypes.object,
-		router: React.PropTypes.object.isRequired,
-		signedIn: React.PropTypes.bool.isRequired,
 	};
 
 	render() {
-		if (!this.context.signedIn) {
-			this.context.router.replace("/login");
-		}
-
-		if (!inDesktopBeta(this.context.user)) {
-			return <NotInBeta />;
-		}
 		return (
 			<div className={`${layout.containerFixed} ${base.pv5} ${base.ph4}`} style={{maxWidth: "560px"}}>
 				<Heading align="center" level="4" underline="blue">

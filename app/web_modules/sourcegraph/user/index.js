@@ -13,7 +13,7 @@ export type User = {
 
 // inBeta tells if the given user is a part of the given beta program.
 export function inBeta(u: ?User, b: string): boolean {
-	if (!u) return false;
+    if (!u || !u.Betas) return false;
 	return u.Betas.indexOf(b) !== -1;
 }
 

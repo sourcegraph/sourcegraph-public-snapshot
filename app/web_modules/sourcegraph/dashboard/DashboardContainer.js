@@ -93,7 +93,6 @@ class DashboardContainer extends Container {
 
 	render() {
 		const langSelected = this.state.langs && this.state.langs.length > 0;
-		redirectDesktopClient(this.context.router);
 		return (
 			<div>
 				<Helmet title="Home" />
