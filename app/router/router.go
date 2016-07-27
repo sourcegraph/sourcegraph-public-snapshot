@@ -21,9 +21,9 @@ const (
 	GitHubOAuth2Initiate = "github-oauth2.initiate"
 	GitHubOAuth2Receive  = "github-oauth2.receive"
 
-	OldDefRedirect = "old-def-redirect"
-
-	OldTreeRedirect = "old-tree-redirect"
+	OldDefRedirect   = "old-def-redirect"
+	OldToolsRedirect = "old-tools-redirect"
+	OldTreeRedirect  = "old-tree-redirect"
 
 	GDDORefs = "gddo.refs"
 
@@ -58,6 +58,7 @@ func New(base *mux.Router) *Router {
 
 	addOldDefRedirectRoute(&Router{*base}, base)
 	addOldTreeRedirectRoute(&Router{*base}, base)
+	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)
 
 	// attach git transport endpoints
 	gitrouter.New(base)
