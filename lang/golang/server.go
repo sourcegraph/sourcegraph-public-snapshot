@@ -84,6 +84,7 @@ func errResp(req *jsonrpc2.Request, err error) *jsonrpc2.Response {
 		log.Println("notification handling failed:", err)
 		return nil
 	}
+	log.Println("error response:", err)
 	return &jsonrpc2.Response{
 		ID:    req.ID,
 		Error: &jsonrpc2.Error{Message: err.Error()},
