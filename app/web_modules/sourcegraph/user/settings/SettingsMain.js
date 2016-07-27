@@ -6,7 +6,7 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/Settings.css";
 import {Panel, TabItem} from "sourcegraph/components";
 
-function SettingsMain({main, location}: {main: React$Element, location: Location}) {
+function SettingsMain({main, location}: {main: React$Element<any>, location: Location}) {
 	return (
 		<div styleName="container">
 			<div styleName="main">

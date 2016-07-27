@@ -1,3 +1,3 @@
 declare module "react-helmet" {
-	declare var exports: ReactClass;
+	declare var exports: ReactClass<any>;
 }

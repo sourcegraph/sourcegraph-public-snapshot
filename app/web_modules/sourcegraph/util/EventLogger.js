@@ -337,7 +337,7 @@ export default new EventLogger();
 
 // withEventLoggerContext makes eventLogger accessible as this.context.eventLogger
 // in the component's context.
-export function withEventLoggerContext(eventLogger: EventLogger, Component: ReactClass): ReactClass {
+export function withEventLoggerContext(eventLogger: EventLogger, Component: ReactClass<any>): ReactClass<any> {
 	class WithEventLogger extends React.Component {
 		static childContextTypes = {
 			eventLogger: React.PropTypes.object,
@@ -361,7 +361,7 @@ export function withEventLoggerContext(eventLogger: EventLogger, Component: Reac
 
 // withViewEventsLogged calls this.context.eventLogger.logEvent when the
 // location's pathname changes.
-export function withViewEventsLogged(Component: ReactClass): ReactClass {
+export function withViewEventsLogged(Component: ReactClass<any>): ReactClass<any> {
 	class WithViewEventsLogged extends React.Component { // eslint-disable-line react/no-multi-comp
 		static propTypes = {
 			routes: React.PropTypes.arrayOf(React.PropTypes.object),
@@ -387,7 +387,6 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 			// values are updated.
 			if (this.props.location.pathname !== nextProps.location.pathname) {
 				this._logView(nextProps.routes, nextProps.location);
-				// $FlowHack
 				document.dispatchEvent(new CustomEvent("sourcegraph:identify", this.context.eventLogger.getAmplitudeIdentificationProps()));
 			}
 

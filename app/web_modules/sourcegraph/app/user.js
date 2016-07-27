@@ -28,7 +28,7 @@ export const getChildContext = (state: any): childContext => ({
 
 // withUserContext passes user-related context items
 // to Component's children.
-export function withUserContext(Component: ReactClass): ReactClass {
+export function withUserContext(Component: ReactClass<any>): ReactClass<any> {
 	class WithUser extends Container {
 		static childContextTypes = {
 			user: React.PropTypes.object,

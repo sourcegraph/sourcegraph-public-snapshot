@@ -16,7 +16,7 @@ import {repoPath, repoRev, repoParam} from "sourcegraph/repo";
 // or else duplicate WantResolveRepo, etc., actions will be dispatched
 // and could lead to multiple WantCreateRepo, etc., actions being sent
 // to the server).
-export default function withResolvedRepoRev(Component: ReactClass, isMainComponent?: bool): ReactClass {
+export default function withResolvedRepoRev(Component: ReactClass<any>, isMainComponent?: bool): ReactClass<any> {
 	isMainComponent = Boolean(isMainComponent);
 	class WithResolvedRepoRev extends Container {
 		static contextTypes = {

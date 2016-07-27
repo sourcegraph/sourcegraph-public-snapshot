@@ -9,7 +9,7 @@ import CSSModules from "react-css-modules";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import Helmet from "react-helmet";
 
-function AboutPage(props, {signedIn}): React$Element {
+function AboutPage(props, {signedIn}): React$Element<any> {
 	return (
 		<div>
 			<Helmet title="About" />

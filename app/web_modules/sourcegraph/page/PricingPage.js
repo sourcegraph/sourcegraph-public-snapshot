@@ -10,7 +10,7 @@ import {CheckIcon} from "sourcegraph/components/Icons";
 import Helmet from "react-helmet";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-function PricingPage(props, {signedIn, eventLogger}): React$Element {
+function PricingPage(props, {signedIn, eventLogger}): React$Element<any> {
 	return (
 		<div>
 			<Helmet title="Pricing" />

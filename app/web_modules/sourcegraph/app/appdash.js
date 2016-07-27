@@ -93,7 +93,7 @@ export function withAppdashRouteStateRecording(ChildComponent: Object): Object {
 			const endTime = window.performance.timing.domComplete > 0 ? window.performance.timing.domComplete : new Date().getTime();
 			const routeName = getRouteName(this.state.routes);
 			recordSpan({
-				name: `load page ${routeName}`,
+				name: `load page ${routeName || "(unknown route)"}`,
 				start: startTime,
 				end: endTime,
 				metadata: {

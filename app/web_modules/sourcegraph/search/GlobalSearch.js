@@ -394,7 +394,7 @@ class GlobalSearch extends Container {
 		this._ignoreMouseSelection = true;
 	}
 
-	_results(): React$Element | Array<React$Element> {
+	_results(): React$Element<any> | Array<React$Element<any>> {
 		const langs = this.state.searchSettings ? this.state.searchSettings.languages : null;
 
 		if (!langs || langs.length === 0) {

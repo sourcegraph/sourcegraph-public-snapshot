@@ -8,7 +8,7 @@ import CSSModules from "react-css-modules";
 import Helmet from "react-helmet";
 import BetaInterestForm from "sourcegraph/home/BetaInterestForm";
 
-function BetaPage(props): React$Element {
+function BetaPage(props): React$Element<any> {
 	return (
 		<div>
 			<Helmet title="Beta" />

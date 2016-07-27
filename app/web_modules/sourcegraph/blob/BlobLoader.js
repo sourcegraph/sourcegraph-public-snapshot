@@ -19,7 +19,7 @@ export type Helper = {
 	reconcileState: (state: Object, props: Object) => void;
 	onStateTransition?: (prevState: Object, nextState: Object) => void;
 	renderProps?: (state: Object) => Object;
-	render?: (state: Object) => ?Element;
+	render?: (state: Object) => ?Element<any>;
 };
 
 // blobLoader performs the portion of the work of loading a blob that differs based

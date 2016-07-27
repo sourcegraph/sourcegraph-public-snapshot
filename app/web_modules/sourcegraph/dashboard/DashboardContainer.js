@@ -143,7 +143,7 @@ const TitledSection = CSSModules(({
 	className,
 }: {
 	title: string,
-	children?: React$Element | Array<React$Element>,
+	children?: React$Element<any> | Array<React$Element<any>>,
 	className: string,
 }) => (
 	<div styleName="titled-section" className={className}>
