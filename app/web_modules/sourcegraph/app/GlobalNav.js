@@ -13,6 +13,8 @@ import colors from "sourcegraph/components/styles/_colors.css";
 import typography from "sourcegraph/components/styles/_typography.css";
 
 import {LoginForm} from "sourcegraph/user/Login";
+import BetaInterestForm from "sourcegraph/home/BetaInterestForm";
+import Integrations from "sourcegraph/home/Integrations";
 import {EllipsisHorizontal, CheckIcon} from "sourcegraph/components/Icons";
 import {DownPointer} from "sourcegraph/components/symbols";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -41,7 +43,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 			style={isHomepage ? {visibility: "hidden"} : {}}>
 
 			{location.state && location.state.modal === "login" &&
-			// TODO: Decouple existence of modals and GlobalNav
+			// TODO(chexee): Decouple existence of modals and GlobalNav
 				<LocationStateModal modalName="login" location={location}
 					onDismiss={(v) => eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 					<div styleName="modal">
@@ -49,6 +51,27 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 							onLoginSuccess={dismissModal("login", location, router)}
 							returnTo={location}
 							location={location} />
+					</div>
+				</LocationStateModal>
+			}
+
+			{location.state && location.state.modal === "menuIntegrations" &&
+				<div>
+					<LocationStateModal modalName="menuIntegrations" location={location}>
+						<div styleName="modal">
+							<Integrations location={location}/>
+						</div>
+					</LocationStateModal>
+				</div>
+			}
+
+			{location.state && location.state.modal === "menuBeta" &&
+				<LocationStateModal modalName="menuBeta" location={location}>
+					<div styleName="modal">
+						<Heading level="4" className={base.mb3} align="center">Join our beta program</Heading>
+						<BetaInterestForm
+							loginReturnTo="/beta"
+							onSubmit={dismissModal("menuBeta", location, router)} />
 					</div>
 				</LocationStateModal>
 			}
@@ -90,8 +113,13 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 								<Heading level="7" color="cool-mid-gray">Signed in as</Heading>
 								{user.Login}
 							</div>
-							<Link to="/beta" role="menu-item">Join our beta program</Link>
 							<Link to="/settings/repos" role="menu-item">Your repositories</Link>
+							<LocationStateToggleLink href="/integrations" modalName="menuIntegrations" role="menu-item" location={location}	onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickToolsandIntegrations", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
+								Tools and integrations
+							</LocationStateToggleLink>
+							<LocationStateToggleLink href="/beta" modalName="menuBeta" role="menu-item" location={location}	onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickJoinBeta", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
+								Join our beta program
+							</LocationStateToggleLink>
 							<LogoutLink role="menu-item" />
 							<hr role="divider" className={base.mt3} />
 							<div styleName="cool-mid-gray" className={`${base.pv1} ${base.mb1} ${typography.tc}`}>

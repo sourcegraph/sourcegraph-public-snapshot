@@ -57,7 +57,7 @@
 .modal {
 	composes: modal from "sourcegraph/components/styles/modal.css";
 	composes: col-10 from grid;
-	max-width: 340px;
+	max-width: 400px;
 	min-width: 320px;
 }
 

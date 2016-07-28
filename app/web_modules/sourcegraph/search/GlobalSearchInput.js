@@ -58,7 +58,7 @@ function GlobalSearchInput(props) {
 				autoComplete="off"
 				defaultValue={props.query}
 				className={props.className || ""}
-				style={{textIndent: props.icon ? "18px" : "0", backgroundColor: "transparent"}} />
+				style={{textIndent: props.icon ? "18px" : "0px", backgroundColor: "transparent"}} />
 		</div>
 	);
 }

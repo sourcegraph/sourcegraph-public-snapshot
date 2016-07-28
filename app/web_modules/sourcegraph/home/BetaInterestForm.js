@@ -170,7 +170,7 @@ class BetaInterestForm extends Container {
 					<p>You've already registered. We'll contact you once a beta matching your interests has begun.</p>
 					<p>Feel free to update your favorite editors / languages using the form below.</p>
 				</span>}
-				<form styleName="form" className={className} onSubmit={this._sendForm.bind(this)} onChange={this._onChange}>
+				<form className={className} onSubmit={this._sendForm.bind(this)} onChange={this._onChange}>
 						<div styleName="row">
 							<Input domRef={(c) => this._fullName = c} block={true} type="text" name="fullName" placeholder="Name" required={true} defaultValue={defaultFullName} />
 						</div>
