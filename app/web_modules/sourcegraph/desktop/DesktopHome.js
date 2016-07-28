@@ -51,7 +51,7 @@ class DesktopHome extends React.Component {
 				<div className={base.mv4}>
 					<Heading level="5">Go definitions and usages as you code</Heading>
 					<p>
-						Install one of our editor integrations, and as you write Go code, this pane will update with contextually relevant information.
+						Install one of our <a href="/integrations">editor integrations,</a> and as you write Go code, this pane will update with contextually relevant information.
 					</p>
 				</div>
 				<div className={base.mv4}>
@@ -79,8 +79,8 @@ class DesktopHome extends React.Component {
 						Thanks for using Sourcegraph Desktop! If the app is not working as expected, see our GitHub to:
 					</p>
 					<List className={base.mv3}>
-						<li><strong><a href="https://github.com/sourcegraph/sourcegraph-desktop#sourcegraph-desktop">Browse troubleshooting tips</a></strong></li>
-						<li><strong><a href="https://github.com/sourcegraph/sourcegraph-desktop/issues/new">File an issue</a></strong></li>
+						<li><strong><a target="_blank" href="https://github.com/sourcegraph-beta/sourcegraph-desktop#sourcegraph-desktop">Browse troubleshooting tips</a></strong></li>
+						<li><strong><a target="_blank" href="https://github.com/sourcegraph-beta/sourcegraph-desktop/issues/new">File an issue</a></strong></li>
 					</List>
 					<p>
 						We love feedback! Shoot us an email at <strong><a href="mailto:support@sourcegraph.com?subject=Feedback for the Sourcegraph Desktop team&body=Editor of choice: %0D%0A%0D%0AOperating system:%0D%0A%0D%0AProgramming language:%0D%0A%0D%0AFeedback:">support@sourcegraph.com</a></strong> with ideas on how we can make Sourcegraph Desktop better.
