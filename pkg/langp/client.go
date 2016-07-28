@@ -80,6 +80,7 @@ func (c *Client) do(endpoint string, body, results interface{}) error {
 		return err
 	}
 	req, err := http.NewRequest("POST", c.endpoint(endpoint), bytes.NewReader(data))
+	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
 		return err
 	}
