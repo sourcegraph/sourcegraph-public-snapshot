@@ -38,7 +38,7 @@
     "lintspaces-loader": "1.0.0",
     "logalot": "2.1.0",
     "madge": "0.5.2",
-    "mocha": "2.3.4",
+    "mocha": "2.5.3",
     "node-noop": "1.0.0",
     "postcss-loader": "0.9.1",
     "postcss-modules-values": "1.1.3",
