@@ -36,9 +36,17 @@ func cmd(name string, args ...string) *exec.Cmd {
 func prepare(workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
 
+	// TODO(slimsag): find a way to pass this information from the app instead
+	// of hard-coding it here.
+	cloneURI := "https://" + repo
+	if repo == "sourcegraph/sourcegraph" {
+		cloneURI = "git@github.com:sourcegraph/sourcegraph"
+		repo = "sourcegraph.com/sourcegraph/sourcegraph"
+	}
+
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
-	c := cmd("git", "clone", "https://"+repo, repoDir)
+	c := cmd("git", "clone", cloneURI, repoDir)
 	if err := c.Run(); err != nil {
 		return err
 	}
@@ -60,6 +68,11 @@ func prepare(workspace, repo, commit string) error {
 }
 
 func fileURI(repo, commit, file string) string {
+	// TODO(slimsag): find a way to pass this information from the app instead
+	// of hard-coding it here.
+	if repo == "sourcegraph/sourcegraph" {
+		repo = "sourcegraph.com/sourcegraph/sourcegraph"
+	}
 	return filepath.Join("gopath", "src", repo, file)
 }
 
