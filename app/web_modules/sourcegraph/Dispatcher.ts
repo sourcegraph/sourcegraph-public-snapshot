@@ -1,10 +1,13 @@
-import flux from "flux";
+import * as flux from "flux";
 
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import testOnly from "sourcegraph/util/testOnly";
 
-class Dispatcher extends flux.Dispatcher {
-	dispatch(payload) {
+export class Dispatcher extends flux.Dispatcher<any> {
+	_catch: boolean;
+	_dispatched: any[];
+
+	dispatch(payload: any): void {
 		deepFreeze(payload);
 		if (this._catch) {
 			this._dispatched.push(payload);
@@ -15,7 +18,7 @@ class Dispatcher extends flux.Dispatcher {
 
 	// catchDispatched returns the actions dispatched during the execution of f.
 	// Actions are not passed to the listeners. Use only in tests.
-	catchDispatched(f) {
+	catchDispatched(f: () => void): any[] {
 		testOnly();
 
 		this._dispatched = [];

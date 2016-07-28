@@ -1,20 +1,20 @@
 import * as React from "react";
 
-class Component extends React.Component {
-	constructor(props) {
+class Component<P, S> extends React.Component<P, S> {
+	constructor(props: P) {
 		super(props);
-		this.state = {};
+		this.state = {} as S;
 	}
 
-	componentWillMount() {
+	componentWillMount(): void {
 		this._updateState(Object.assign({}, this.state), this.props, this.context);
 	}
 
-	componentWillReceiveProps(nextProps, nextContext) {
+	componentWillReceiveProps(nextProps: P, nextContext: any): void {
 		this._updateState(Object.assign({}, this.state), nextProps, nextContext);
 	}
 
-	shouldComponentUpdate(nextProps, nextState, nextContext) {
+	shouldComponentUpdate(nextProps: P, nextState: S, nextContext: any): boolean {
 		let keys = Object.keys(nextState);
 		if (Object.keys(this.state).length !== keys.length) {
 			return true;
@@ -28,22 +28,24 @@ class Component extends React.Component {
 		return false;
 	}
 
-	setState(patch, callback) {
-		this._updateState(Object.assign({}, this.state, patch), this.props, this.context, callback);
+	setState(patch: S | ((prevState: S, props: P) => S), callback?: () => any): void {
+		if (patch instanceof Function) {
+			throw new Error("setState with function parameter not supported");
+		} else {
+			this._updateState(Object.assign({} as S, this.state, patch), this.props, this.context, callback);
+		}
 	}
 
-	_updateState(newState, props, context, callback) {
+	_updateState(newState: S, props: P, context: any, callback?: () => any): void {
 		this._checkForUndefined(props, "Property");
-		if (context) this._checkForUndefined(context, "Context");
+		if (context) { this._checkForUndefined(context, "Context"); }
 		this.reconcileState(newState, props, context);
 		this._checkForUndefined(newState, "State");
-		if (this.onStateTransition) {
-			this.onStateTransition(this.state, newState);
-		}
+		this.onStateTransition(this.state, newState);
 		super.setState(newState, callback);
 	}
 
-	_checkForUndefined(obj, type) {
+	_checkForUndefined(obj: Object, type: string): void {
 		if (process.env.NODE_ENV === "production") { return; }
 		let keys = Object.keys(obj);
 		for (let i = 0; i < keys.length; i++) {
@@ -53,7 +55,11 @@ class Component extends React.Component {
 		}
 	}
 
-	reconcileState(state, props, context) {
+	reconcileState(state: S, props: P, context: any): void {
+		// override
+	}
+
+	onStateTransition(prevState: S, nextState: S): void {
 		// override
 	}
 }

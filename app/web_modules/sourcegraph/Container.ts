@@ -2,8 +2,11 @@ import FluxStoreGroup from "flux/lib/FluxStoreGroup";
 
 import Component from "sourcegraph/Component";
 
-class Container extends Component {
-	componentDidMount() {
+class Container<P, S> extends Component<P, S> {
+	_containerSubscriptions: any[];
+	_containerStoreGroup: FluxStoreGroup;
+
+	componentDidMount(): void {
 		let stores = this.stores();
 
 		let changed = false;
@@ -12,17 +15,21 @@ class Container extends Component {
 
 		this._containerStoreGroup = new FluxStoreGroup(stores, () => {
 			if (changed) {
-				this.setState({});
+				this.setState({} as S);
 			}
 			changed = false;
 		});
 	}
 
-	componentWillUnmount() {
-		if (this._containerStoreGroup) this._containerStoreGroup.release();
+	componentWillUnmount(): void {
+		if (this._containerStoreGroup) { this._containerStoreGroup.release(); }
 		if (this._containerSubscriptions) {
 			this._containerSubscriptions.forEach((subscription) => { subscription.remove(); });
 		}
+	}
+
+	stores(): FluxUtils.Store<any>[] {
+		return [];
 	}
 }
 

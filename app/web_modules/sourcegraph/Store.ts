@@ -1,9 +1,17 @@
-import FluxUtils from "flux/utils";
+import * as FluxUtils from "flux/utils";
+import {Dispatcher} from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import testOnly from "sourcegraph/util/testOnly";
 
-class Store extends FluxUtils.Store {
-	constructor(dispatcher) {
+class Store<TPayload> extends FluxUtils.Store<TPayload> {
+	// hack: access internal fields of store and dispatcher
+	// tslint:disable-next-line: variable-name
+	__dispatcher: {
+		_startDispatching: (payload: any) => void,
+		_stopDispatching: () => void,
+	};
+
+	constructor(dispatcher: Dispatcher) {
 		super(dispatcher);
 		this.reset();
 
@@ -15,7 +23,7 @@ class Store extends FluxUtils.Store {
 
 	// directDispatch dispatches an action to a single store. Not affected by
 	// catchDispatched. Use only in tests.
-	directDispatch(payload) {
+	directDispatch(payload: any): void {
 		testOnly();
 
 		deepFreeze(payload);
@@ -26,6 +34,10 @@ class Store extends FluxUtils.Store {
 		} finally {
 			this.__dispatcher._stopDispatching();
 		}
+	}
+
+	reset(): void {
+		// overrride
 	}
 }
 

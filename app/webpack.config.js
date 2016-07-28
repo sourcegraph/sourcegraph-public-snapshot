@@ -65,7 +65,6 @@ if (process.env.PUBLIC_WEBPACK_DEV_SERVER_URL) {
 	publicWebpackDevServer = uStruct.host;
 }
 
-
 module.exports = {
 	name: "browser",
 	target: "web",
@@ -75,6 +74,7 @@ module.exports = {
 	],
 	resolve: {
 		modules: [`${__dirname}/web_modules`, "node_modules"],
+		extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
 	},
 	devtool: (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) ? "source-map" : "eval",
 	output: {
@@ -86,9 +86,11 @@ module.exports = {
 	module: {
 		preLoaders: [
 			{test:	/\.js$/, exclude: /node_modules/, loader: "eslint-loader"},
+			{test:	/\.tsx?$/, exclude: /node_modules/, loader: "tslint-loader"},
 		],
 		loaders: [
 			{test: /\.js$/, exclude: /node_modules/, loader: "babel-loader?cacheDirectory"},
+			{test: /\.tsx?$/, loader: 'babel-loader?cacheDirectory!ts-loader'},
 			{test: /\.json$/, exclude: /node_modules/, loader: "json-loader"},
 			{test: /\.(eot|ttf|woff)$/, loader: "file-loader?name=fonts/[name].[ext]"},
 			{test: /\.svg$/, loader: "url"},
@@ -99,6 +101,11 @@ module.exports = {
 		],
 		noParse: /\.min\.js$/,
 	},
+	ts: {
+		compilerOptions: {
+			noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
+		},
+  },
 	postcss: [require("postcss-modules-values"), autoprefixer({remove: false})],
 	devServer: {
 		host: webpackDevServerAddr,
