@@ -61,4 +61,12 @@ var hooks = exports.hooks = [function (self, parent) {
     }
     return true;
   }
+}, function (self, parent) {
+  if (parent.isIfStatement() && (self.key === 'consequent' || self.key === 'alternate') || parent.isLoop() && self.key === 'body') {
+    self.replaceWith({
+      type: 'BlockStatement',
+      body: []
+    });
+    return true;
+  }
 }];

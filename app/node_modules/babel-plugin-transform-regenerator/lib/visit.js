@@ -1,25 +1,21 @@
-/*istanbul ignore next*/"use strict";
+"use strict";
 
-var /*istanbul ignore next*/_assert = require("assert");
+var _assert = require("assert");
 
-/*istanbul ignore next*/
 var _assert2 = _interopRequireDefault(_assert);
 
-var /*istanbul ignore next*/_babelTypes = require("babel-types");
+var _babelTypes = require("babel-types");
 
-/*istanbul ignore next*/
 var t = _interopRequireWildcard(_babelTypes);
 
-var /*istanbul ignore next*/_hoist = require("./hoist");
+var _hoist = require("./hoist");
 
-var /*istanbul ignore next*/_emit = require("./emit");
+var _emit = require("./emit");
 
-var /*istanbul ignore next*/_util = require("./util");
+var _util = require("./util");
 
-/*istanbul ignore next*/
 var util = _interopRequireWildcard(_util);
 
-/*istanbul ignore next*/
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -36,7 +32,7 @@ var getMarkInfo = require("private").makeAccessor(); /**
 
 exports.visitor = {
   Function: {
-    exit: function /*istanbul ignore next*/exit(path, state) {
+    exit: function exit(path, state) {
       var node = path.node;
 
       if (node.generator) {
@@ -96,7 +92,7 @@ exports.visitor = {
 
       // Turn all declarations into vars, and replace the original
       // declarations with equivalent assignment expressions.
-      var vars = /*istanbul ignore next*/(0, _hoist.hoist)(path);
+      var vars = (0, _hoist.hoist)(path);
 
       var didRenameArguments = renameArguments(path, argsId);
       if (didRenameArguments) {
@@ -104,7 +100,7 @@ exports.visitor = {
         vars.declarations.push(t.variableDeclarator(argsId, t.identifier("arguments")));
       }
 
-      var emitter = new /*istanbul ignore next*/_emit.Emitter(contextId);
+      var emitter = new _emit.Emitter(contextId);
       emitter.explode(path.get("body"));
 
       if (vars && vars.declarations.length > 0) {
@@ -188,7 +184,7 @@ function getOuterFnExpr(funPath) {
 
 function getRuntimeMarkDecl(blockPath) {
   var block = blockPath.node;
-  /*istanbul ignore next*/_assert2.default.ok(Array.isArray(block.body));
+  _assert2.default.ok(Array.isArray(block.body));
 
   var info = getMarkInfo(block);
   if (info.decl) {
@@ -218,11 +214,11 @@ function renameArguments(funcPath, argsId) {
 }
 
 var argumentsVisitor = {
-  "FunctionExpression|FunctionDeclaration": function /*istanbul ignore next*/FunctionExpressionFunctionDeclaration(path) {
+  "FunctionExpression|FunctionDeclaration": function FunctionExpressionFunctionDeclaration(path) {
     path.skip();
   },
 
-  Identifier: function /*istanbul ignore next*/Identifier(path, state) {
+  Identifier: function Identifier(path, state) {
     if (path.node.name === "arguments" && util.isReference(path)) {
       path.replaceWith(state.argsId);
       state.didRenameArguments = true;
@@ -230,9 +226,9 @@ var argumentsVisitor = {
   }
 };
 
-var functionSentVisitor = { /*istanbul ignore next*/
+var functionSentVisitor = {
   MetaProperty: function MetaProperty(path) {
-    /*istanbul ignore next*/var node = path.node;
+    var node = path.node;
 
 
     if (node.meta.name === "function" && node.property.name === "sent") {
@@ -242,11 +238,11 @@ var functionSentVisitor = { /*istanbul ignore next*/
 };
 
 var awaitVisitor = {
-  Function: function /*istanbul ignore next*/Function(path) {
+  Function: function Function(path) {
     path.skip(); // Don't descend into nested function scopes.
   },
 
-  AwaitExpression: function /*istanbul ignore next*/AwaitExpression(path) {
+  AwaitExpression: function AwaitExpression(path) {
     // Convert await expressions to yield expressions.
     var argument = path.node.argument;
 

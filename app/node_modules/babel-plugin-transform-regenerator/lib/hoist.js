@@ -1,15 +1,13 @@
-/*istanbul ignore next*/"use strict";
+"use strict";
 
 var _keys = require("babel-runtime/core-js/object/keys");
 
 var _keys2 = _interopRequireDefault(_keys);
 
-var /*istanbul ignore next*/_babelTypes = require("babel-types");
+var _babelTypes = require("babel-types");
 
-/*istanbul ignore next*/
 var t = _interopRequireWildcard(_babelTypes);
 
-/*istanbul ignore next*/
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -41,7 +39,9 @@ exports.hoist = function (funPath) {
     var exprs = [];
 
     vdec.declarations.forEach(function (dec) {
-      vars[dec.id.name] = dec.id;
+      // Note: We duplicate 'dec.id' here to ensure that the variable declaration IDs don't
+      // have the same 'loc' value, since that can make sourcemaps and retainLines behave poorly.
+      vars[dec.id.name] = t.identifier(dec.id.name);
 
       if (dec.init) {
         exprs.push(t.assignmentExpression("=", dec.id, dec.init));
@@ -59,7 +59,7 @@ exports.hoist = function (funPath) {
 
   funPath.get("body").traverse({
     VariableDeclaration: {
-      exit: function /*istanbul ignore next*/exit(path) {
+      exit: function exit(path) {
         var expr = varDeclToExpr(path.node, false);
         if (expr === null) {
           path.remove();
@@ -75,21 +75,21 @@ exports.hoist = function (funPath) {
       }
     },
 
-    ForStatement: function /*istanbul ignore next*/ForStatement(path) {
+    ForStatement: function ForStatement(path) {
       var init = path.node.init;
       if (t.isVariableDeclaration(init)) {
         path.get("init").replaceWith(varDeclToExpr(init, false));
       }
     },
 
-    ForXStatement: function /*istanbul ignore next*/ForXStatement(path) {
+    ForXStatement: function ForXStatement(path) {
       var left = path.get("left");
       if (left.isVariableDeclaration()) {
         left.replaceWith(varDeclToExpr(left.node, true));
       }
     },
 
-    FunctionDeclaration: function /*istanbul ignore next*/FunctionDeclaration(path) {
+    FunctionDeclaration: function FunctionDeclaration(path) {
       var node = path.node;
       vars[node.id.name] = node.id;
 
@@ -114,7 +114,7 @@ exports.hoist = function (funPath) {
       path.skip();
     },
 
-    FunctionExpression: function /*istanbul ignore next*/FunctionExpression(path) {
+    FunctionExpression: function FunctionExpression(path) {
       // Don't descend into nested function expressions.
       path.skip();
     }
@@ -133,7 +133,7 @@ exports.hoist = function (funPath) {
 
   var declarations = [];
 
-  /*istanbul ignore next*/(0, _keys2.default)(vars).forEach(function (name) {
+  (0, _keys2.default)(vars).forEach(function (name) {
     if (!hasOwn.call(paramNames, name)) {
       declarations.push(t.variableDeclarator(vars[name], null));
     }

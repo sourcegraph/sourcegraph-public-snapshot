@@ -1,35 +1,33 @@
-/*istanbul ignore next*/"use strict";
+"use strict";
+
+var _typeof2 = require("babel-runtime/helpers/typeof");
+
+var _typeof3 = _interopRequireDefault(_typeof2);
 
 var _stringify = require("babel-runtime/core-js/json/stringify");
 
 var _stringify2 = _interopRequireDefault(_stringify);
 
-var /*istanbul ignore next*/_assert = require("assert");
+var _assert = require("assert");
 
-/*istanbul ignore next*/
 var _assert2 = _interopRequireDefault(_assert);
 
-var /*istanbul ignore next*/_babelTypes = require("babel-types");
+var _babelTypes = require("babel-types");
 
-/*istanbul ignore next*/
 var t = _interopRequireWildcard(_babelTypes);
 
-var /*istanbul ignore next*/_leap = require("./leap");
+var _leap = require("./leap");
 
-/*istanbul ignore next*/
 var leap = _interopRequireWildcard(_leap);
 
-var /*istanbul ignore next*/_meta = require("./meta");
+var _meta = require("./meta");
 
-/*istanbul ignore next*/
 var meta = _interopRequireWildcard(_meta);
 
-var /*istanbul ignore next*/_util = require("./util");
+var _util = require("./util");
 
-/*istanbul ignore next*/
 var util = _interopRequireWildcard(_util);
 
-/*istanbul ignore next*/
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -45,7 +43,7 @@ var hasOwn = Object.prototype.hasOwnProperty; /**
                                                */
 
 function Emitter(contextId) {
-  /*istanbul ignore next*/_assert2.default.ok(this instanceof Emitter);
+  _assert2.default.ok(this instanceof Emitter);
   t.assertIdentifier(contextId);
 
   // Used to generate unique temporary names.
@@ -100,7 +98,7 @@ Ep.mark = function (loc) {
   } else {
     // Locations can be marked redundantly, but their values cannot change
     // once set the first time.
-    /*istanbul ignore next*/_assert2.default.strictEqual(loc.value, index);
+    _assert2.default.strictEqual(loc.value, index);
   }
   this.marked[index] = true;
   return loc;
@@ -180,7 +178,7 @@ Ep.jumpIfNot = function (test, toLoc) {
   t.assertExpression(test);
   t.assertLiteral(toLoc);
 
-  var negatedTest = /*istanbul ignore next*/void 0;
+  var negatedTest = void 0;
   if (t.isUnaryExpression(test) && test.operator === "!") {
     // Avoid double negation.
     negatedTest = test.argument;
@@ -221,7 +219,7 @@ Ep.getContextFunction = function (id) {
 Ep.getDispatchLoop = function () {
   var self = this;
   var cases = [];
-  var current = /*istanbul ignore next*/void 0;
+  var current = void 0;
 
   // If we encounter a break, continue, or return statement in a switch
   // case, we can skip the rest of the statements until the next case.
@@ -267,7 +265,7 @@ Ep.getTryLocsList = function () {
 
   return t.arrayExpression(this.tryEntries.map(function (tryEntry) {
     var thisLocValue = tryEntry.firstLoc.value;
-    /*istanbul ignore next*/_assert2.default.ok(thisLocValue >= lastLocValue, "try entries out of order");
+    _assert2.default.ok(thisLocValue >= lastLocValue, "try entries out of order");
     lastLocValue = thisLocValue;
 
     var ce = tryEntry.catchEntry;
@@ -320,20 +318,20 @@ Ep.explode = function (path, ignoreResult) {
       throw new Error(node.type + " nodes should be handled by their parents");
 
     default:
-      throw new Error("unknown Node of type " + /*istanbul ignore next*/(0, _stringify2.default)(node.type));
+      throw new Error("unknown Node of type " + (0, _stringify2.default)(node.type));
   }
 };
 
 function getDeclError(node) {
-  return new Error("all declarations should have been transformed into " + "assignments before the Exploder began its work: " + /*istanbul ignore next*/(0, _stringify2.default)(node));
+  return new Error("all declarations should have been transformed into " + "assignments before the Exploder began its work: " + (0, _stringify2.default)(node));
 }
 
 Ep.explodeStatement = function (path, labelId) {
   var stmt = path.node;
   var self = this;
-  var before = /*istanbul ignore next*/void 0,
-      after = /*istanbul ignore next*/void 0,
-      head = /*istanbul ignore next*/void 0;
+  var before = void 0,
+      after = void 0,
+      head = void 0;
 
   t.assertStatement(stmt);
 
@@ -362,310 +360,315 @@ Ep.explodeStatement = function (path, labelId) {
     return;
   }
 
-  switch (stmt.type) {
-    case "ExpressionStatement":
-      self.explodeExpression(path.get("expression"), true);
-      break;
+  var _ret = function () {
+    switch (stmt.type) {
+      case "ExpressionStatement":
+        self.explodeExpression(path.get("expression"), true);
+        break;
 
-    case "LabeledStatement":
-      after = loc();
+      case "LabeledStatement":
+        after = loc();
 
-      // Did you know you can break from any labeled block statement or
-      // control structure? Well, you can! Note: when a labeled loop is
-      // encountered, the leap.LabeledEntry created here will immediately
-      // enclose a leap.LoopEntry on the leap manager's stack, and both
-      // entries will have the same label. Though this works just fine, it
-      // may seem a bit redundant. In theory, we could check here to
-      // determine if stmt knows how to handle its own label; for example,
-      // stmt happens to be a WhileStatement and so we know it's going to
-      // establish its own LoopEntry when we explode it (below). Then this
-      // LabeledEntry would be unnecessary. Alternatively, we might be
-      // tempted not to pass stmt.label down into self.explodeStatement,
-      // because we've handled the label here, but that's a mistake because
-      // labeled loops may contain labeled continue statements, which is not
-      // something we can handle in this generic case. All in all, I think a
-      // little redundancy greatly simplifies the logic of this case, since
-      // it's clear that we handle all possible LabeledStatements correctly
-      // here, regardless of whether they interact with the leap manager
-      // themselves. Also remember that labels and break/continue-to-label
-      // statements are rare, and all of this logic happens at transform
-      // time, so it has no additional runtime cost.
-      self.leapManager.withEntry(new leap.LabeledEntry(after, stmt.label), function () {
-        self.explodeStatement(path.get("body"), stmt.label);
-      });
+        // Did you know you can break from any labeled block statement or
+        // control structure? Well, you can! Note: when a labeled loop is
+        // encountered, the leap.LabeledEntry created here will immediately
+        // enclose a leap.LoopEntry on the leap manager's stack, and both
+        // entries will have the same label. Though this works just fine, it
+        // may seem a bit redundant. In theory, we could check here to
+        // determine if stmt knows how to handle its own label; for example,
+        // stmt happens to be a WhileStatement and so we know it's going to
+        // establish its own LoopEntry when we explode it (below). Then this
+        // LabeledEntry would be unnecessary. Alternatively, we might be
+        // tempted not to pass stmt.label down into self.explodeStatement,
+        // because we've handled the label here, but that's a mistake because
+        // labeled loops may contain labeled continue statements, which is not
+        // something we can handle in this generic case. All in all, I think a
+        // little redundancy greatly simplifies the logic of this case, since
+        // it's clear that we handle all possible LabeledStatements correctly
+        // here, regardless of whether they interact with the leap manager
+        // themselves. Also remember that labels and break/continue-to-label
+        // statements are rare, and all of this logic happens at transform
+        // time, so it has no additional runtime cost.
+        self.leapManager.withEntry(new leap.LabeledEntry(after, stmt.label), function () {
+          self.explodeStatement(path.get("body"), stmt.label);
+        });
 
-      self.mark(after);
+        self.mark(after);
 
-      break;
+        break;
 
-    case "WhileStatement":
-      before = loc();
-      after = loc();
+      case "WhileStatement":
+        before = loc();
+        after = loc();
 
-      self.mark(before);
-      self.jumpIfNot(self.explodeExpression(path.get("test")), after);
-      self.leapManager.withEntry(new leap.LoopEntry(after, before, labelId), function () {
-        self.explodeStatement(path.get("body"));
-      });
-      self.jump(before);
-      self.mark(after);
-
-      break;
-
-    case "DoWhileStatement":
-      var first = loc();
-      var test = loc();
-      after = loc();
-
-      self.mark(first);
-      self.leapManager.withEntry(new leap.LoopEntry(after, test, labelId), function () {
-        self.explode(path.get("body"));
-      });
-      self.mark(test);
-      self.jumpIf(self.explodeExpression(path.get("test")), first);
-      self.mark(after);
-
-      break;
-
-    case "ForStatement":
-      head = loc();
-      var update = loc();
-      after = loc();
-
-      if (stmt.init) {
-        // We pass true here to indicate that if stmt.init is an expression
-        // then we do not care about its result.
-        self.explode(path.get("init"), true);
-      }
-
-      self.mark(head);
-
-      if (stmt.test) {
+        self.mark(before);
         self.jumpIfNot(self.explodeExpression(path.get("test")), after);
-      } else {
-        // No test means continue unconditionally.
-      }
+        self.leapManager.withEntry(new leap.LoopEntry(after, before, labelId), function () {
+          self.explodeStatement(path.get("body"));
+        });
+        self.jump(before);
+        self.mark(after);
 
-      self.leapManager.withEntry(new leap.LoopEntry(after, update, labelId), function () {
-        self.explodeStatement(path.get("body"));
-      });
+        break;
 
-      self.mark(update);
+      case "DoWhileStatement":
+        var first = loc();
+        var test = loc();
+        after = loc();
 
-      if (stmt.update) {
-        // We pass true here to indicate that if stmt.update is an
-        // expression then we do not care about its result.
-        self.explode(path.get("update"), true);
-      }
+        self.mark(first);
+        self.leapManager.withEntry(new leap.LoopEntry(after, test, labelId), function () {
+          self.explode(path.get("body"));
+        });
+        self.mark(test);
+        self.jumpIf(self.explodeExpression(path.get("test")), first);
+        self.mark(after);
 
-      self.jump(head);
+        break;
 
-      self.mark(after);
+      case "ForStatement":
+        head = loc();
+        var update = loc();
+        after = loc();
 
-      break;
-
-    case "TypeCastExpression":
-      return self.explodeExpression(path.get("expression"));
-
-    case "ForInStatement":
-      head = loc();
-      after = loc();
-
-      var keyIterNextFn = self.makeTempVar();
-      self.emitAssign(keyIterNextFn, t.callExpression(util.runtimeProperty("keys"), [self.explodeExpression(path.get("right"))]));
-
-      self.mark(head);
-
-      var keyInfoTmpVar = self.makeTempVar();
-      self.jumpIf(t.memberExpression(t.assignmentExpression("=", keyInfoTmpVar, t.callExpression(keyIterNextFn, [])), t.identifier("done"), false), after);
-
-      self.emitAssign(stmt.left, t.memberExpression(keyInfoTmpVar, t.identifier("value"), false));
-
-      self.leapManager.withEntry(new leap.LoopEntry(after, head, labelId), function () {
-        self.explodeStatement(path.get("body"));
-      });
-
-      self.jump(head);
-
-      self.mark(after);
-
-      break;
-
-    case "BreakStatement":
-      self.emitAbruptCompletion({
-        type: "break",
-        target: self.leapManager.getBreakLoc(stmt.label)
-      });
-
-      break;
-
-    case "ContinueStatement":
-      self.emitAbruptCompletion({
-        type: "continue",
-        target: self.leapManager.getContinueLoc(stmt.label)
-      });
-
-      break;
-
-    case "SwitchStatement":
-      // Always save the discriminant into a temporary variable in case the
-      // test expressions overwrite values like context.sent.
-      var disc = self.emitAssign(self.makeTempVar(), self.explodeExpression(path.get("discriminant")));
-
-      after = loc();
-      var defaultLoc = loc();
-      var condition = defaultLoc;
-      var caseLocs = [];
-
-      // If there are no cases, .cases might be undefined.
-      var cases = stmt.cases || [];
-
-      for (var i = cases.length - 1; i >= 0; --i) {
-        var c = cases[i];
-        t.assertSwitchCase(c);
-
-        if (c.test) {
-          condition = t.conditionalExpression(t.binaryExpression("===", disc, c.test), caseLocs[i] = loc(), condition);
-        } else {
-          caseLocs[i] = defaultLoc;
+        if (stmt.init) {
+          // We pass true here to indicate that if stmt.init is an expression
+          // then we do not care about its result.
+          self.explode(path.get("init"), true);
         }
-      }
 
-      var discriminant = path.get("discriminant");
-      discriminant.replaceWith(condition);
-      self.jump(self.explodeExpression(discriminant));
+        self.mark(head);
 
-      self.leapManager.withEntry(new leap.SwitchEntry(after), function () {
-        path.get("cases").forEach(function (casePath) {
-          var i = casePath.key;
-          self.mark(caseLocs[i]);
+        if (stmt.test) {
+          self.jumpIfNot(self.explodeExpression(path.get("test")), after);
+        } else {
+          // No test means continue unconditionally.
+        }
 
-          casePath.get("consequent").forEach(function (path) {
-            self.explodeStatement(path);
+        self.leapManager.withEntry(new leap.LoopEntry(after, update, labelId), function () {
+          self.explodeStatement(path.get("body"));
+        });
+
+        self.mark(update);
+
+        if (stmt.update) {
+          // We pass true here to indicate that if stmt.update is an
+          // expression then we do not care about its result.
+          self.explode(path.get("update"), true);
+        }
+
+        self.jump(head);
+
+        self.mark(after);
+
+        break;
+
+      case "TypeCastExpression":
+        return {
+          v: self.explodeExpression(path.get("expression"))
+        };
+
+      case "ForInStatement":
+        head = loc();
+        after = loc();
+
+        var keyIterNextFn = self.makeTempVar();
+        self.emitAssign(keyIterNextFn, t.callExpression(util.runtimeProperty("keys"), [self.explodeExpression(path.get("right"))]));
+
+        self.mark(head);
+
+        var keyInfoTmpVar = self.makeTempVar();
+        self.jumpIf(t.memberExpression(t.assignmentExpression("=", keyInfoTmpVar, t.callExpression(keyIterNextFn, [])), t.identifier("done"), false), after);
+
+        self.emitAssign(stmt.left, t.memberExpression(keyInfoTmpVar, t.identifier("value"), false));
+
+        self.leapManager.withEntry(new leap.LoopEntry(after, head, labelId), function () {
+          self.explodeStatement(path.get("body"));
+        });
+
+        self.jump(head);
+
+        self.mark(after);
+
+        break;
+
+      case "BreakStatement":
+        self.emitAbruptCompletion({
+          type: "break",
+          target: self.leapManager.getBreakLoc(stmt.label)
+        });
+
+        break;
+
+      case "ContinueStatement":
+        self.emitAbruptCompletion({
+          type: "continue",
+          target: self.leapManager.getContinueLoc(stmt.label)
+        });
+
+        break;
+
+      case "SwitchStatement":
+        // Always save the discriminant into a temporary variable in case the
+        // test expressions overwrite values like context.sent.
+        var disc = self.emitAssign(self.makeTempVar(), self.explodeExpression(path.get("discriminant")));
+
+        after = loc();
+        var defaultLoc = loc();
+        var condition = defaultLoc;
+        var caseLocs = [];
+
+        // If there are no cases, .cases might be undefined.
+        var cases = stmt.cases || [];
+
+        for (var i = cases.length - 1; i >= 0; --i) {
+          var c = cases[i];
+          t.assertSwitchCase(c);
+
+          if (c.test) {
+            condition = t.conditionalExpression(t.binaryExpression("===", disc, c.test), caseLocs[i] = loc(), condition);
+          } else {
+            caseLocs[i] = defaultLoc;
+          }
+        }
+
+        var discriminant = path.get("discriminant");
+        discriminant.replaceWith(condition);
+        self.jump(self.explodeExpression(discriminant));
+
+        self.leapManager.withEntry(new leap.SwitchEntry(after), function () {
+          path.get("cases").forEach(function (casePath) {
+            var i = casePath.key;
+            self.mark(caseLocs[i]);
+
+            casePath.get("consequent").forEach(function (path) {
+              self.explodeStatement(path);
+            });
           });
         });
-      });
 
-      self.mark(after);
-      if (defaultLoc.value === -1) {
-        self.mark(defaultLoc);
-        /*istanbul ignore next*/_assert2.default.strictEqual(after.value, defaultLoc.value);
-      }
-
-      break;
-
-    case "IfStatement":
-      var elseLoc = stmt.alternate && loc();
-      after = loc();
-
-      self.jumpIfNot(self.explodeExpression(path.get("test")), elseLoc || after);
-
-      self.explodeStatement(path.get("consequent"));
-
-      if (elseLoc) {
-        self.jump(after);
-        self.mark(elseLoc);
-        self.explodeStatement(path.get("alternate"));
-      }
-
-      self.mark(after);
-
-      break;
-
-    case "ReturnStatement":
-      self.emitAbruptCompletion({
-        type: "return",
-        value: self.explodeExpression(path.get("argument"))
-      });
-
-      break;
-
-    case "WithStatement":
-      throw new Error("WithStatement not supported in generator functions.");
-
-    case "TryStatement":
-      after = loc();
-
-      var handler = stmt.handler;
-
-      var catchLoc = handler && loc();
-      var catchEntry = catchLoc && new leap.CatchEntry(catchLoc, handler.param);
-
-      var finallyLoc = stmt.finalizer && loc();
-      var finallyEntry = finallyLoc && new leap.FinallyEntry(finallyLoc, after);
-
-      var tryEntry = new leap.TryEntry(self.getUnmarkedCurrentLoc(), catchEntry, finallyEntry);
-
-      self.tryEntries.push(tryEntry);
-      self.updateContextPrevLoc(tryEntry.firstLoc);
-
-      self.leapManager.withEntry(tryEntry, function () {
-        self.explodeStatement(path.get("block"));
-
-        if (catchLoc) {
-          /*istanbul ignore next*/
-          (function () {
-            if (finallyLoc) {
-              // If we have both a catch block and a finally block, then
-              // because we emit the catch block first, we need to jump over
-              // it to the finally block.
-              self.jump(finallyLoc);
-            } else {
-              // If there is no finally block, then we need to jump over the
-              // catch block to the fall-through location.
-              self.jump(after);
-            }
-
-            self.updateContextPrevLoc(self.mark(catchLoc));
-
-            var bodyPath = path.get("handler.body");
-            var safeParam = self.makeTempVar();
-            self.clearPendingException(tryEntry.firstLoc, safeParam);
-
-            bodyPath.traverse(catchParamVisitor, {
-              safeParam: safeParam,
-              catchParamName: handler.param.name
-            });
-
-            self.leapManager.withEntry(catchEntry, function () {
-              self.explodeStatement(bodyPath);
-            });
-          })();
+        self.mark(after);
+        if (defaultLoc.value === -1) {
+          self.mark(defaultLoc);
+          _assert2.default.strictEqual(after.value, defaultLoc.value);
         }
 
-        if (finallyLoc) {
-          self.updateContextPrevLoc(self.mark(finallyLoc));
+        break;
 
-          self.leapManager.withEntry(finallyEntry, function () {
-            self.explodeStatement(path.get("finalizer"));
-          });
+      case "IfStatement":
+        var elseLoc = stmt.alternate && loc();
+        after = loc();
 
-          self.emit(t.returnStatement(t.callExpression(self.contextProperty("finish"), [finallyEntry.firstLoc])));
+        self.jumpIfNot(self.explodeExpression(path.get("test")), elseLoc || after);
+
+        self.explodeStatement(path.get("consequent"));
+
+        if (elseLoc) {
+          self.jump(after);
+          self.mark(elseLoc);
+          self.explodeStatement(path.get("alternate"));
         }
-      });
 
-      self.mark(after);
+        self.mark(after);
 
-      break;
+        break;
 
-    case "ThrowStatement":
-      self.emit(t.throwStatement(self.explodeExpression(path.get("argument"))));
+      case "ReturnStatement":
+        self.emitAbruptCompletion({
+          type: "return",
+          value: self.explodeExpression(path.get("argument"))
+        });
 
-      break;
+        break;
 
-    default:
-      throw new Error("unknown Statement of type " + /*istanbul ignore next*/(0, _stringify2.default)(stmt.type));
-  }
+      case "WithStatement":
+        throw new Error("WithStatement not supported in generator functions.");
+
+      case "TryStatement":
+        after = loc();
+
+        var handler = stmt.handler;
+
+        var catchLoc = handler && loc();
+        var catchEntry = catchLoc && new leap.CatchEntry(catchLoc, handler.param);
+
+        var finallyLoc = stmt.finalizer && loc();
+        var finallyEntry = finallyLoc && new leap.FinallyEntry(finallyLoc, after);
+
+        var tryEntry = new leap.TryEntry(self.getUnmarkedCurrentLoc(), catchEntry, finallyEntry);
+
+        self.tryEntries.push(tryEntry);
+        self.updateContextPrevLoc(tryEntry.firstLoc);
+
+        self.leapManager.withEntry(tryEntry, function () {
+          self.explodeStatement(path.get("block"));
+
+          if (catchLoc) {
+            (function () {
+              if (finallyLoc) {
+                // If we have both a catch block and a finally block, then
+                // because we emit the catch block first, we need to jump over
+                // it to the finally block.
+                self.jump(finallyLoc);
+              } else {
+                // If there is no finally block, then we need to jump over the
+                // catch block to the fall-through location.
+                self.jump(after);
+              }
+
+              self.updateContextPrevLoc(self.mark(catchLoc));
+
+              var bodyPath = path.get("handler.body");
+              var safeParam = self.makeTempVar();
+              self.clearPendingException(tryEntry.firstLoc, safeParam);
+
+              bodyPath.traverse(catchParamVisitor, {
+                safeParam: safeParam,
+                catchParamName: handler.param.name
+              });
+
+              self.leapManager.withEntry(catchEntry, function () {
+                self.explodeStatement(bodyPath);
+              });
+            })();
+          }
+
+          if (finallyLoc) {
+            self.updateContextPrevLoc(self.mark(finallyLoc));
+
+            self.leapManager.withEntry(finallyEntry, function () {
+              self.explodeStatement(path.get("finalizer"));
+            });
+
+            self.emit(t.returnStatement(t.callExpression(self.contextProperty("finish"), [finallyEntry.firstLoc])));
+          }
+        });
+
+        self.mark(after);
+
+        break;
+
+      case "ThrowStatement":
+        self.emit(t.throwStatement(self.explodeExpression(path.get("argument"))));
+
+        break;
+
+      default:
+        throw new Error("unknown Statement of type " + (0, _stringify2.default)(stmt.type));
+    }
+  }();
+
+  if ((typeof _ret === "undefined" ? "undefined" : (0, _typeof3.default)(_ret)) === "object") return _ret.v;
 };
 
 var catchParamVisitor = {
-  Identifier: function /*istanbul ignore next*/Identifier(path, state) {
+  Identifier: function Identifier(path, state) {
     if (path.node.name === state.catchParamName && util.isReference(path)) {
       path.replaceWith(state.safeParam);
     }
   },
 
-  Scope: function /*istanbul ignore next*/Scope(path, state) {
+  Scope: function Scope(path, state) {
     if (path.scope.hasOwnBinding(state.catchParamName)) {
       // Don't descend into nested scopes that shadow the catch
       // parameter with their own declarations.
@@ -676,10 +679,10 @@ var catchParamVisitor = {
 
 Ep.emitAbruptCompletion = function (record) {
   if (!isValidCompletion(record)) {
-    /*istanbul ignore next*/_assert2.default.ok(false, "invalid completion record: " + /*istanbul ignore next*/(0, _stringify2.default)(record));
+    _assert2.default.ok(false, "invalid completion record: " + (0, _stringify2.default)(record));
   }
 
-  /*istanbul ignore next*/_assert2.default.notStrictEqual(record.type, "normal", "normal completions are not abrupt");
+  _assert2.default.notStrictEqual(record.type, "normal", "normal completions are not abrupt");
 
   var abruptArgs = [t.stringLiteral(record.type)];
 
@@ -747,7 +750,7 @@ Ep.updateContextPrevLoc = function (loc) {
       loc.value = this.listing.length;
     } else {
       // Otherwise assert that the location matches the current offset.
-      /*istanbul ignore next*/_assert2.default.strictEqual(loc.value, this.listing.length);
+      _assert2.default.strictEqual(loc.value, this.listing.length);
     }
   } else {
     loc = this.getUnmarkedCurrentLoc();
@@ -768,8 +771,8 @@ Ep.explodeExpression = function (path, ignoreResult) {
   }
 
   var self = this;
-  var result = /*istanbul ignore next*/void 0; // Used optionally by several cases below.
-  var after = /*istanbul ignore next*/void 0;
+  var result = void 0; // Used optionally by several cases below.
+  var after = void 0;
 
   function finish(expr) {
     t.assertExpression(expr);
@@ -802,7 +805,7 @@ Ep.explodeExpression = function (path, ignoreResult) {
   // control the precise order in which the generated code realizes the
   // side effects of those subexpressions.
   function explodeViaTempVar(tempVar, childPath, ignoreChildResult) {
-    /*istanbul ignore next*/_assert2.default.ok(!ignoreChildResult || !tempVar, "Ignoring the result of a child expression but forcing it to " + "be assigned to a temporary variable?");
+    _assert2.default.ok(!ignoreChildResult || !tempVar, "Ignoring the result of a child expression but forcing it to " + "be assigned to a temporary variable?");
 
     var result = self.explodeExpression(childPath, ignoreChildResult);
 
@@ -810,19 +813,19 @@ Ep.explodeExpression = function (path, ignoreResult) {
       // Side effects already emitted above.
 
     } else if (tempVar || hasLeapingChildren && !t.isLiteral(result)) {
-        // If tempVar was provided, then the result will always be assigned
-        // to it, even if the result does not otherwise need to be assigned
-        // to a temporary variable.  When no tempVar is provided, we have
-        // the flexibility to decide whether a temporary variable is really
-        // necessary.  Unfortunately, in general, a temporary variable is
-        // required whenever any child contains a yield expression, since it
-        // is difficult to prove (at all, let alone efficiently) whether
-        // this result would evaluate to the same value before and after the
-        // yield (see #206).  One narrow case where we can prove it doesn't
-        // matter (and thus we do not need a temporary variable) is when the
-        // result in question is a Literal value.
-        result = self.emitAssign(tempVar || self.makeTempVar(), result);
-      }
+      // If tempVar was provided, then the result will always be assigned
+      // to it, even if the result does not otherwise need to be assigned
+      // to a temporary variable.  When no tempVar is provided, we have
+      // the flexibility to decide whether a temporary variable is really
+      // necessary.  Unfortunately, in general, a temporary variable is
+      // required whenever any child contains a yield expression, since it
+      // is difficult to prove (at all, let alone efficiently) whether
+      // this result would evaluate to the same value before and after the
+      // yield (see #206).  One narrow case where we can prove it doesn't
+      // matter (and thus we do not need a temporary variable) is when the
+      // result in question is a Literal value.
+      result = self.emitAssign(tempVar || self.makeTempVar(), result);
+    }
     return result;
   }
 
@@ -830,176 +833,208 @@ Ep.explodeExpression = function (path, ignoreResult) {
   // emitting the expression with all its side effects, and we should not
   // return a result.
 
-  switch (expr.type) {
-    case "MemberExpression":
-      return finish(t.memberExpression(self.explodeExpression(path.get("object")), expr.computed ? explodeViaTempVar(null, path.get("property")) : expr.property, expr.computed));
+  var _ret3 = function () {
+    switch (expr.type) {
+      case "MemberExpression":
+        return {
+          v: finish(t.memberExpression(self.explodeExpression(path.get("object")), expr.computed ? explodeViaTempVar(null, path.get("property")) : expr.property, expr.computed))
+        };
 
-    case "CallExpression":
-      var calleePath = path.get("callee");
-      var argsPath = path.get("arguments");
+      case "CallExpression":
+        var calleePath = path.get("callee");
+        var argsPath = path.get("arguments");
 
-      var newCallee = /*istanbul ignore next*/void 0;
-      var newArgs = [];
+        var newCallee = void 0;
+        var newArgs = [];
 
-      var hasLeapingArgs = false;
-      argsPath.forEach(function (argPath) {
-        hasLeapingArgs = hasLeapingArgs || meta.containsLeap(argPath.node);
-      });
+        var hasLeapingArgs = false;
+        argsPath.forEach(function (argPath) {
+          hasLeapingArgs = hasLeapingArgs || meta.containsLeap(argPath.node);
+        });
 
-      if (t.isMemberExpression(calleePath.node)) {
-        if (hasLeapingArgs) {
-          // If the arguments of the CallExpression contained any yield
-          // expressions, then we need to be sure to evaluate the callee
-          // before evaluating the arguments, but if the callee was a member
-          // expression, then we must be careful that the object of the
-          // member expression still gets bound to `this` for the call.
+        if (t.isMemberExpression(calleePath.node)) {
+          if (hasLeapingArgs) {
+            // If the arguments of the CallExpression contained any yield
+            // expressions, then we need to be sure to evaluate the callee
+            // before evaluating the arguments, but if the callee was a member
+            // expression, then we must be careful that the object of the
+            // member expression still gets bound to `this` for the call.
 
-          var newObject = explodeViaTempVar(
-          // Assign the exploded callee.object expression to a temporary
-          // variable so that we can use it twice without reevaluating it.
-          self.makeTempVar(), calleePath.get("object"));
+            var newObject = explodeViaTempVar(
+            // Assign the exploded callee.object expression to a temporary
+            // variable so that we can use it twice without reevaluating it.
+            self.makeTempVar(), calleePath.get("object"));
 
-          var newProperty = calleePath.node.computed ? explodeViaTempVar(null, calleePath.get("property")) : calleePath.node.property;
+            var newProperty = calleePath.node.computed ? explodeViaTempVar(null, calleePath.get("property")) : calleePath.node.property;
 
-          newArgs.unshift(newObject);
+            newArgs.unshift(newObject);
 
-          newCallee = t.memberExpression(t.memberExpression(newObject, newProperty, calleePath.node.computed), t.identifier("call"), false);
+            newCallee = t.memberExpression(t.memberExpression(newObject, newProperty, calleePath.node.computed), t.identifier("call"), false);
+          } else {
+            newCallee = self.explodeExpression(calleePath);
+          }
         } else {
           newCallee = self.explodeExpression(calleePath);
+
+          if (t.isMemberExpression(newCallee)) {
+            // If the callee was not previously a MemberExpression, then the
+            // CallExpression was "unqualified," meaning its `this` object
+            // should be the global object. If the exploded expression has
+            // become a MemberExpression (e.g. a context property, probably a
+            // temporary variable), then we need to force it to be unqualified
+            // by using the (0, object.property)(...) trick; otherwise, it
+            // will receive the object of the MemberExpression as its `this`
+            // object.
+            newCallee = t.sequenceExpression([t.numericLiteral(0), newCallee]);
+          }
         }
-      } else {
-        newCallee = self.explodeExpression(calleePath);
 
-        if (t.isMemberExpression(newCallee)) {
-          // If the callee was not previously a MemberExpression, then the
-          // CallExpression was "unqualified," meaning its `this` object
-          // should be the global object. If the exploded expression has
-          // become a MemberExpression (e.g. a context property, probably a
-          // temporary variable), then we need to force it to be unqualified
-          // by using the (0, object.property)(...) trick; otherwise, it
-          // will receive the object of the MemberExpression as its `this`
-          // object.
-          newCallee = t.sequenceExpression([t.numericLiteral(0), newCallee]);
+        argsPath.forEach(function (argPath) {
+          newArgs.push(explodeViaTempVar(null, argPath));
+        });
+
+        return {
+          v: finish(t.callExpression(newCallee, newArgs))
+        };
+
+      case "NewExpression":
+        return {
+          v: finish(t.newExpression(explodeViaTempVar(null, path.get("callee")), path.get("arguments").map(function (argPath) {
+            return explodeViaTempVar(null, argPath);
+          })))
+        };
+
+      case "ObjectExpression":
+        return {
+          v: finish(t.objectExpression(path.get("properties").map(function (propPath) {
+            if (propPath.isObjectProperty()) {
+              return t.objectProperty(propPath.node.key, explodeViaTempVar(null, propPath.get("value")), propPath.node.computed);
+            } else {
+              return propPath.node;
+            }
+          })))
+        };
+
+      case "ArrayExpression":
+        return {
+          v: finish(t.arrayExpression(path.get("elements").map(function (elemPath) {
+            return explodeViaTempVar(null, elemPath);
+          })))
+        };
+
+      case "SequenceExpression":
+        var lastIndex = expr.expressions.length - 1;
+
+        path.get("expressions").forEach(function (exprPath) {
+          if (exprPath.key === lastIndex) {
+            result = self.explodeExpression(exprPath, ignoreResult);
+          } else {
+            self.explodeExpression(exprPath, true);
+          }
+        });
+
+        return {
+          v: result
+        };
+
+      case "LogicalExpression":
+        after = loc();
+
+        if (!ignoreResult) {
+          result = self.makeTempVar();
         }
-      }
 
-      argsPath.forEach(function (argPath) {
-        newArgs.push(explodeViaTempVar(null, argPath));
-      });
+        var left = explodeViaTempVar(result, path.get("left"));
 
-      return finish(t.callExpression(newCallee, newArgs));
-
-    case "NewExpression":
-      return finish(t.newExpression(explodeViaTempVar(null, path.get("callee")), path.get("arguments").map(function (argPath) {
-        return explodeViaTempVar(null, argPath);
-      })));
-
-    case "ObjectExpression":
-      return finish(t.objectExpression(path.get("properties").map(function (propPath) {
-        if (propPath.isObjectProperty()) {
-          return t.objectProperty(propPath.node.key, explodeViaTempVar(null, propPath.get("value")), propPath.node.computed);
+        if (expr.operator === "&&") {
+          self.jumpIfNot(left, after);
         } else {
-          return propPath.node;
+          _assert2.default.strictEqual(expr.operator, "||");
+          self.jumpIf(left, after);
         }
-      })));
 
-    case "ArrayExpression":
-      return finish(t.arrayExpression(path.get("elements").map(function (elemPath) {
-        return explodeViaTempVar(null, elemPath);
-      })));
-
-    case "SequenceExpression":
-      var lastIndex = expr.expressions.length - 1;
-
-      path.get("expressions").forEach(function (exprPath) {
-        if (exprPath.key === lastIndex) {
-          result = self.explodeExpression(exprPath, ignoreResult);
-        } else {
-          self.explodeExpression(exprPath, true);
-        }
-      });
-
-      return result;
-
-    case "LogicalExpression":
-      after = loc();
-
-      if (!ignoreResult) {
-        result = self.makeTempVar();
-      }
-
-      var left = explodeViaTempVar(result, path.get("left"));
-
-      if (expr.operator === "&&") {
-        self.jumpIfNot(left, after);
-      } else {
-        /*istanbul ignore next*/_assert2.default.strictEqual(expr.operator, "||");
-        self.jumpIf(left, after);
-      }
-
-      explodeViaTempVar(result, path.get("right"), ignoreResult);
-
-      self.mark(after);
-
-      return result;
-
-    case "ConditionalExpression":
-      var elseLoc = loc();
-      after = loc();
-      var test = self.explodeExpression(path.get("test"));
-
-      self.jumpIfNot(test, elseLoc);
-
-      if (!ignoreResult) {
-        result = self.makeTempVar();
-      }
-
-      explodeViaTempVar(result, path.get("consequent"), ignoreResult);
-      self.jump(after);
-
-      self.mark(elseLoc);
-      explodeViaTempVar(result, path.get("alternate"), ignoreResult);
-
-      self.mark(after);
-
-      return result;
-
-    case "UnaryExpression":
-      return finish(t.unaryExpression(expr.operator,
-      // Can't (and don't need to) break up the syntax of the argument.
-      // Think about delete a[b].
-      self.explodeExpression(path.get("argument")), !!expr.prefix));
-
-    case "BinaryExpression":
-      return finish(t.binaryExpression(expr.operator, explodeViaTempVar(null, path.get("left")), explodeViaTempVar(null, path.get("right"))));
-
-    case "AssignmentExpression":
-      return finish(t.assignmentExpression(expr.operator, self.explodeExpression(path.get("left")), self.explodeExpression(path.get("right"))));
-
-    case "UpdateExpression":
-      return finish(t.updateExpression(expr.operator, self.explodeExpression(path.get("argument")), expr.prefix));
-
-    case "YieldExpression":
-      after = loc();
-      var arg = expr.argument && self.explodeExpression(path.get("argument"));
-
-      if (arg && expr.delegate) {
-        var _result = self.makeTempVar();
-
-        self.emit(t.returnStatement(t.callExpression(self.contextProperty("delegateYield"), [arg, t.stringLiteral(_result.property.name), after])));
+        explodeViaTempVar(result, path.get("right"), ignoreResult);
 
         self.mark(after);
 
-        return _result;
-      }
+        return {
+          v: result
+        };
 
-      self.emitAssign(self.contextProperty("next"), after);
-      self.emit(t.returnStatement(arg || null));
-      self.mark(after);
+      case "ConditionalExpression":
+        var elseLoc = loc();
+        after = loc();
+        var test = self.explodeExpression(path.get("test"));
 
-      return self.contextProperty("sent");
+        self.jumpIfNot(test, elseLoc);
 
-    default:
-      throw new Error("unknown Expression of type " + /*istanbul ignore next*/(0, _stringify2.default)(expr.type));
-  }
+        if (!ignoreResult) {
+          result = self.makeTempVar();
+        }
+
+        explodeViaTempVar(result, path.get("consequent"), ignoreResult);
+        self.jump(after);
+
+        self.mark(elseLoc);
+        explodeViaTempVar(result, path.get("alternate"), ignoreResult);
+
+        self.mark(after);
+
+        return {
+          v: result
+        };
+
+      case "UnaryExpression":
+        return {
+          v: finish(t.unaryExpression(expr.operator,
+          // Can't (and don't need to) break up the syntax of the argument.
+          // Think about delete a[b].
+          self.explodeExpression(path.get("argument")), !!expr.prefix))
+        };
+
+      case "BinaryExpression":
+        return {
+          v: finish(t.binaryExpression(expr.operator, explodeViaTempVar(null, path.get("left")), explodeViaTempVar(null, path.get("right"))))
+        };
+
+      case "AssignmentExpression":
+        return {
+          v: finish(t.assignmentExpression(expr.operator, self.explodeExpression(path.get("left")), self.explodeExpression(path.get("right"))))
+        };
+
+      case "UpdateExpression":
+        return {
+          v: finish(t.updateExpression(expr.operator, self.explodeExpression(path.get("argument")), expr.prefix))
+        };
+
+      case "YieldExpression":
+        after = loc();
+        var arg = expr.argument && self.explodeExpression(path.get("argument"));
+
+        if (arg && expr.delegate) {
+          var _result = self.makeTempVar();
+
+          self.emit(t.returnStatement(t.callExpression(self.contextProperty("delegateYield"), [arg, t.stringLiteral(_result.property.name), after])));
+
+          self.mark(after);
+
+          return {
+            v: _result
+          };
+        }
+
+        self.emitAssign(self.contextProperty("next"), after);
+        self.emit(t.returnStatement(arg || null));
+        self.mark(after);
+
+        return {
+          v: self.contextProperty("sent")
+        };
+
+      default:
+        throw new Error("unknown Expression of type " + (0, _stringify2.default)(expr.type));
+    }
+  }();
+
+  if ((typeof _ret3 === "undefined" ? "undefined" : (0, _typeof3.default)(_ret3)) === "object") return _ret3.v;
 };

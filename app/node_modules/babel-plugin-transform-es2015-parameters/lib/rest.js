@@ -1,4 +1,4 @@
-/*istanbul ignore next*/"use strict";
+"use strict";
 
 exports.__esModule = true;
 exports.visitor = undefined;
@@ -7,41 +7,40 @@ var _getIterator2 = require("babel-runtime/core-js/get-iterator");
 
 var _getIterator3 = _interopRequireDefault(_getIterator2);
 
-var /*istanbul ignore next*/_babelTemplate = require("babel-template");
+var _babelTemplate = require("babel-template");
 
-/*istanbul ignore next*/
 var _babelTemplate2 = _interopRequireDefault(_babelTemplate);
 
-var /*istanbul ignore next*/_babelTypes = require("babel-types");
+var _babelTypes = require("babel-types");
 
-/*istanbul ignore next*/
 var t = _interopRequireWildcard(_babelTypes);
 
-/*istanbul ignore next*/
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /* eslint indent: 0 */
 
-var buildRest = /*istanbul ignore next*/(0, _babelTemplate2.default)( /*istanbul ignore next*/"\n  for (var LEN = ARGUMENTS.length,\n           ARRAY = Array(ARRAY_LEN),\n           KEY = START;\n       KEY < LEN;\n       KEY++) {\n    ARRAY[ARRAY_KEY] = ARGUMENTS[KEY];\n  }\n");
+var buildRest = (0, _babelTemplate2.default)("\n  for (var LEN = ARGUMENTS.length,\n           ARRAY = Array(ARRAY_LEN),\n           KEY = START;\n       KEY < LEN;\n       KEY++) {\n    ARRAY[ARRAY_KEY] = ARGUMENTS[KEY];\n  }\n");
 
-var loadRest = /*istanbul ignore next*/(0, _babelTemplate2.default)( /*istanbul ignore next*/"\n  ARGUMENTS.length <= INDEX ? undefined : ARGUMENTS[INDEX]\n");
+var restIndex = (0, _babelTemplate2.default)("\n  ARGUMENTS.length <= INDEX ? undefined : ARGUMENTS[INDEX]\n");
 
-var memberExpressionOptimisationVisitor = { /*istanbul ignore next*/
+var restLength = (0, _babelTemplate2.default)("\n  ARGUMENTS.length <= OFFSET ? 0 : ARGUMENTS.length - OFFSET\n");
+
+var memberExpressionOptimisationVisitor = {
   Scope: function Scope(path, state) {
     // check if this scope has a local binding that will shadow the rest parameter
     if (!path.scope.bindingIdentifierEquals(state.name, state.outerBinding)) {
       path.skip();
     }
   },
-  /*istanbul ignore next*/Flow: function Flow(path) {
+  Flow: function Flow(path) {
     // don't touch reference in type annotations
     path.skip();
   },
 
 
-  "Function|ClassProperty": function /*istanbul ignore next*/FunctionClassProperty(path, state) {
+  "Function|ClassProperty": function FunctionClassProperty(path, state) {
     // Detect whether any reference to rest is contained in nested functions to
     // determine if deopt is necessary.
     var oldNoOptimise = state.noOptimise;
@@ -54,8 +53,8 @@ var memberExpressionOptimisationVisitor = { /*istanbul ignore next*/
     path.skip();
   },
 
-  /*istanbul ignore next*/ReferencedIdentifier: function ReferencedIdentifier(path, state) {
-    /*istanbul ignore next*/var node = path.node;
+  ReferencedIdentifier: function ReferencedIdentifier(path, state) {
+    var node = path.node;
 
     // we can't guarantee the purity of arguments
 
@@ -69,7 +68,7 @@ var memberExpressionOptimisationVisitor = { /*istanbul ignore next*/
     if (state.noOptimise) {
       state.deopted = true;
     } else {
-      /*istanbul ignore next*/var parentPath = path.parentPath;
+      var parentPath = path.parentPath;
 
       // ex: `args[0]`
       // ex: `args.whatever`
@@ -132,7 +131,7 @@ var memberExpressionOptimisationVisitor = { /*istanbul ignore next*/
       state.references.push(path);
     }
   },
-  /*istanbul ignore next*/
+
 
   /**
    * Deopt on use of a binding identifier with the same name as our rest param.
@@ -141,7 +140,7 @@ var memberExpressionOptimisationVisitor = { /*istanbul ignore next*/
    */
 
   BindingIdentifier: function BindingIdentifier(_ref, state) {
-    /*istanbul ignore next*/var node = _ref.node;
+    var node = _ref.node;
 
     if (node.name === state.name) {
       state.deopted = true;
@@ -153,7 +152,7 @@ function hasRest(node) {
 }
 
 function optimiseIndexGetter(path, argsId, offset) {
-  var index = /*istanbul ignore next*/void 0;
+  var index = void 0;
 
   if (t.isNumericLiteral(path.parent.property)) {
     index = t.numericLiteral(path.parent.property.value + offset);
@@ -161,31 +160,33 @@ function optimiseIndexGetter(path, argsId, offset) {
     index = t.binaryExpression("+", path.parent.property, t.numericLiteral(offset));
   }
 
-  path.parentPath.replaceWith(loadRest({
+  path.parentPath.replaceWith(restIndex({
     ARGUMENTS: argsId,
     INDEX: index
   }));
 }
 
-function optimiseLengthGetter(path, argsLengthExpression, argsId, offset) {
+function optimiseLengthGetter(path, argsId, offset) {
   if (offset) {
-    path.parentPath.replaceWith(t.binaryExpression("-", argsLengthExpression, t.numericLiteral(offset)));
+    path.parentPath.replaceWith(restLength({
+      ARGUMENTS: argsId,
+      OFFSET: t.numericLiteral(offset)
+    }));
   } else {
     path.replaceWith(argsId);
   }
 }
 
-var visitor = /*istanbul ignore next*/exports.visitor = { /*istanbul ignore next*/
+var visitor = exports.visitor = {
   Function: function Function(path) {
-    /*istanbul ignore next*/var node = path.node;
-    /*istanbul ignore next*/var scope = path.scope;
+    var node = path.node;
+    var scope = path.scope;
 
     if (!hasRest(node)) return;
 
     var rest = node.params.pop().argument;
 
     var argsId = t.identifier("arguments");
-    var argsLengthExpression = t.memberExpression(argsId, t.identifier("length"));
 
     // otherwise `arguments` will be remapped in arrow functions
     argsId._shadowedFunctionLiteral = path;
@@ -222,8 +223,7 @@ var visitor = /*istanbul ignore next*/exports.visitor = { /*istanbul ignore next
 
     // There are only "shorthand" references
     if (!state.deopted && !state.references.length) {
-      for ( /*istanbul ignore next*/var _iterator = state.candidates, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : (0, _getIterator3.default)(_iterator);;) {
-        /*istanbul ignore next*/
+      for (var _iterator = state.candidates, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : (0, _getIterator3.default)(_iterator);;) {
         var _ref2;
 
         if (_isArray) {
@@ -237,14 +237,14 @@ var visitor = /*istanbul ignore next*/exports.visitor = { /*istanbul ignore next
 
         var _ref3 = _ref2;
         var _path = _ref3.path;
-        /*istanbul ignore next*/var cause = _ref3.cause;
+        var cause = _ref3.cause;
 
         switch (cause) {
           case "indexGetter":
             optimiseIndexGetter(_path, argsId, state.offset);
             break;
           case "lengthGetter":
-            optimiseLengthGetter(_path, argsLengthExpression, argsId, state.offset);
+            optimiseLengthGetter(_path, argsId, state.offset);
             break;
           default:
             _path.replaceWith(argsId);
@@ -253,7 +253,7 @@ var visitor = /*istanbul ignore next*/exports.visitor = { /*istanbul ignore next
       return;
     }
 
-    state.references = state.references.concat(state.candidates.map(function ( /*istanbul ignore next*/_ref4) /*istanbul ignore next*/{
+    state.references = state.references.concat(state.candidates.map(function (_ref4) {
       var path = _ref4.path;
       return path;
     }));

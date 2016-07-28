@@ -1,24 +1,21 @@
-/*istanbul ignore next*/"use strict";
+"use strict";
 
-var /*istanbul ignore next*/_assert = require("assert");
+var _assert = require("assert");
 
-/*istanbul ignore next*/
 var _assert2 = _interopRequireDefault(_assert);
 
-var /*istanbul ignore next*/_babelTypes = require("babel-types");
+var _babelTypes = require("babel-types");
 
-/*istanbul ignore next*/
 var t = _interopRequireWildcard(_babelTypes);
 
-var /*istanbul ignore next*/_util = require("util");
+var _util = require("util");
 
-/*istanbul ignore next*/
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function Entry() {
-  /*istanbul ignore next*/_assert2.default.ok(this instanceof Entry);
+  _assert2.default.ok(this instanceof Entry);
 } /**
    * Copyright (c) 2014, Facebook, Inc.
    * All rights reserved.
@@ -35,7 +32,7 @@ function FunctionEntry(returnLoc) {
   this.returnLoc = returnLoc;
 }
 
-/*istanbul ignore next*/(0, _util.inherits)(FunctionEntry, Entry);
+(0, _util.inherits)(FunctionEntry, Entry);
 exports.FunctionEntry = FunctionEntry;
 
 function LoopEntry(breakLoc, continueLoc, label) {
@@ -55,7 +52,7 @@ function LoopEntry(breakLoc, continueLoc, label) {
   this.label = label;
 }
 
-/*istanbul ignore next*/(0, _util.inherits)(LoopEntry, Entry);
+(0, _util.inherits)(LoopEntry, Entry);
 exports.LoopEntry = LoopEntry;
 
 function SwitchEntry(breakLoc) {
@@ -64,7 +61,7 @@ function SwitchEntry(breakLoc) {
   this.breakLoc = breakLoc;
 }
 
-/*istanbul ignore next*/(0, _util.inherits)(SwitchEntry, Entry);
+(0, _util.inherits)(SwitchEntry, Entry);
 exports.SwitchEntry = SwitchEntry;
 
 function TryEntry(firstLoc, catchEntry, finallyEntry) {
@@ -73,26 +70,26 @@ function TryEntry(firstLoc, catchEntry, finallyEntry) {
   t.assertLiteral(firstLoc);
 
   if (catchEntry) {
-    /*istanbul ignore next*/_assert2.default.ok(catchEntry instanceof CatchEntry);
+    _assert2.default.ok(catchEntry instanceof CatchEntry);
   } else {
     catchEntry = null;
   }
 
   if (finallyEntry) {
-    /*istanbul ignore next*/_assert2.default.ok(finallyEntry instanceof FinallyEntry);
+    _assert2.default.ok(finallyEntry instanceof FinallyEntry);
   } else {
     finallyEntry = null;
   }
 
   // Have to have one or the other (or both).
-  /*istanbul ignore next*/_assert2.default.ok(catchEntry || finallyEntry);
+  _assert2.default.ok(catchEntry || finallyEntry);
 
   this.firstLoc = firstLoc;
   this.catchEntry = catchEntry;
   this.finallyEntry = finallyEntry;
 }
 
-/*istanbul ignore next*/(0, _util.inherits)(TryEntry, Entry);
+(0, _util.inherits)(TryEntry, Entry);
 exports.TryEntry = TryEntry;
 
 function CatchEntry(firstLoc, paramId) {
@@ -105,7 +102,7 @@ function CatchEntry(firstLoc, paramId) {
   this.paramId = paramId;
 }
 
-/*istanbul ignore next*/(0, _util.inherits)(CatchEntry, Entry);
+(0, _util.inherits)(CatchEntry, Entry);
 exports.CatchEntry = CatchEntry;
 
 function FinallyEntry(firstLoc, afterLoc) {
@@ -116,7 +113,7 @@ function FinallyEntry(firstLoc, afterLoc) {
   this.afterLoc = afterLoc;
 }
 
-/*istanbul ignore next*/(0, _util.inherits)(FinallyEntry, Entry);
+(0, _util.inherits)(FinallyEntry, Entry);
 exports.FinallyEntry = FinallyEntry;
 
 function LabeledEntry(breakLoc, label) {
@@ -129,14 +126,14 @@ function LabeledEntry(breakLoc, label) {
   this.label = label;
 }
 
-/*istanbul ignore next*/(0, _util.inherits)(LabeledEntry, Entry);
+(0, _util.inherits)(LabeledEntry, Entry);
 exports.LabeledEntry = LabeledEntry;
 
 function LeapManager(emitter) {
-  /*istanbul ignore next*/_assert2.default.ok(this instanceof LeapManager);
+  _assert2.default.ok(this instanceof LeapManager);
 
   var Emitter = require("./emit").Emitter;
-  /*istanbul ignore next*/_assert2.default.ok(emitter instanceof Emitter);
+  _assert2.default.ok(emitter instanceof Emitter);
 
   this.emitter = emitter;
   this.entryStack = [new FunctionEntry(emitter.finalLoc)];
@@ -146,13 +143,13 @@ var LMp = LeapManager.prototype;
 exports.LeapManager = LeapManager;
 
 LMp.withEntry = function (entry, callback) {
-  /*istanbul ignore next*/_assert2.default.ok(entry instanceof Entry);
+  _assert2.default.ok(entry instanceof Entry);
   this.entryStack.push(entry);
   try {
     callback.call(this.emitter);
   } finally {
     var popped = this.entryStack.pop();
-    /*istanbul ignore next*/_assert2.default.strictEqual(popped, entry);
+    _assert2.default.strictEqual(popped, entry);
   }
 };
 
@@ -169,8 +166,8 @@ LMp._findLeapLocation = function (property, label) {
         // Ignore LabeledEntry entries unless we are actually breaking to
         // a label.
       } else {
-          return loc;
-        }
+        return loc;
+      }
     }
   }
 

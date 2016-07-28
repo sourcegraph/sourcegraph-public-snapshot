@@ -48,6 +48,8 @@ function ClassBody(node) {
     this.printSequence(node.body, node);
     this.dedent();
 
+    if (!this.endsWith("\n")) this.newline();
+
     this.rightBrace();
   }
 }

@@ -10,7 +10,6 @@ var _keys = require("babel-runtime/core-js/object/keys");
 
 var _keys2 = _interopRequireDefault(_keys);
 
-exports.isUserWhitespacable = isUserWhitespacable;
 exports.needsWhitespace = needsWhitespace;
 exports.needsWhitespaceBefore = needsWhitespaceBefore;
 exports.needsWhitespaceAfter = needsWhitespaceAfter;
@@ -106,10 +105,6 @@ function isOrHasCallExpression(node) {
   } else {
     return false;
   }
-}
-
-function isUserWhitespacable(node) {
-  return t.isUserWhitespacable(node);
 }
 
 function needsWhitespace(node, parent, type) {

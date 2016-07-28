@@ -40,18 +40,6 @@ var _resolve = require("../../../helpers/resolve");
 
 var _resolve2 = _interopRequireDefault(_resolve);
 
-var _json = require("json5");
-
-var _json2 = _interopRequireDefault(_json);
-
-var _pathIsAbsolute = require("path-is-absolute");
-
-var _pathIsAbsolute2 = _interopRequireDefault(_pathIsAbsolute);
-
-var _pathExists = require("path-exists");
-
-var _pathExists2 = _interopRequireDefault(_pathExists);
-
 var _cloneDeepWith = require("lodash/cloneDeepWith");
 
 var _cloneDeepWith2 = _interopRequireDefault(_cloneDeepWith);
@@ -64,42 +52,27 @@ var _merge = require("../../../helpers/merge");
 
 var _merge2 = _interopRequireDefault(_merge);
 
-var _config = require("./config");
+var _config2 = require("./config");
 
-var _config2 = _interopRequireDefault(_config);
+var _config3 = _interopRequireDefault(_config2);
 
 var _removed = require("./removed");
 
 var _removed2 = _interopRequireDefault(_removed);
 
+var _buildConfigChain = require("./build-config-chain");
+
+var _buildConfigChain2 = _interopRequireDefault(_buildConfigChain);
+
 var _path = require("path");
 
 var _path2 = _interopRequireDefault(_path);
-
-var _fs = require("fs");
-
-var _fs2 = _interopRequireDefault(_fs);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var existsCache = {}; /* eslint max-len: 0 */
-
-var jsonCache = {};
-
-var BABELIGNORE_FILENAME = ".babelignore";
-var BABELRC_FILENAME = ".babelrc";
-var PACKAGE_FILENAME = "package.json";
-
-function exists(filename) {
-  var cached = existsCache[filename];
-  if (cached == null) {
-    return existsCache[filename] = _pathExists2.default.sync(filename);
-  } else {
-    return cached;
-  }
-}
+/* eslint max-len: 0 */
 
 var OptionManager = function () {
   function OptionManager(log) {
@@ -151,8 +124,8 @@ var OptionManager = function () {
   OptionManager.createBareOptions = function createBareOptions() {
     var opts = {};
 
-    for (var _key in _config2.default) {
-      var opt = _config2.default[_key];
+    for (var _key in _config3.default) {
+      var opt = _config3.default[_key];
       opts[_key] = (0, _clone2.default)(opt.default);
     }
 
@@ -211,34 +184,6 @@ var OptionManager = function () {
     });
   };
 
-  OptionManager.prototype.addConfig = function addConfig(loc, key) {
-    var json = arguments.length <= 2 || arguments[2] === undefined ? _json2.default : arguments[2];
-
-    if (this.resolvedConfigs.indexOf(loc) >= 0) {
-      return false;
-    }
-
-    var content = _fs2.default.readFileSync(loc, "utf8");
-    var opts = void 0;
-
-    try {
-      opts = jsonCache[content] = jsonCache[content] || json.parse(content);
-      if (key) opts = opts[key];
-    } catch (err) {
-      err.message = loc + ": Error while parsing JSON - " + err.message;
-      throw err;
-    }
-
-    this.mergeOptions({
-      options: opts,
-      alias: loc,
-      dirname: _path2.default.dirname(loc)
-    });
-    this.resolvedConfigs.push(loc);
-
-    return !!opts;
-  };
-
   /**
    * This is called when we want to merge the input `opts` into the
    * base options (passed as the `extendingOpts`: at top-level it's the
@@ -278,7 +223,7 @@ var OptionManager = function () {
     loc = loc || alias;
 
     for (var _key2 in opts) {
-      var option = _config2.default[_key2];
+      var option = _config3.default[_key2];
 
       // check for an unknown option
       if (!option && this.log) {
@@ -298,17 +243,6 @@ var OptionManager = function () {
     // resolve plugins
     if (opts.plugins) {
       opts.plugins = OptionManager.normalisePlugins(loc, dirname, opts.plugins);
-    }
-
-    // add extends clause
-    if (opts.extends) {
-      var extendsLoc = (0, _resolve2.default)(opts.extends, dirname);
-      if (extendsLoc) {
-        this.addConfig(extendsLoc);
-      } else {
-        if (this.log) this.log.error("Couldn't resolve extends clause of " + opts.extends + " in " + alias);
-      }
-      delete opts.extends;
     }
 
     // resolve presets
@@ -332,14 +266,6 @@ var OptionManager = function () {
       }
     }
 
-    // env
-    var envOpts = void 0;
-    var envKey = process.env.BABEL_ENV || process.env.NODE_ENV || "development";
-    if (opts.env) {
-      envOpts = opts.env[envKey];
-      delete opts.env;
-    }
-
     // Merge them into current extending options in case of top-level
     // options. In case of presets, just re-assign options which are got
     // normalized during the `mergeOptions`.
@@ -348,14 +274,6 @@ var OptionManager = function () {
     } else {
       (0, _merge2.default)(extendingOpts || this.options, opts);
     }
-
-    // merge in env options
-    this.mergeOptions({
-      options: envOpts,
-      extending: extendingOpts,
-      alias: alias + ".env." + envKey,
-      dirname: dirname
-    });
   };
 
   /**
@@ -403,63 +321,11 @@ var OptionManager = function () {
     });
   };
 
-  OptionManager.prototype.addIgnoreConfig = function addIgnoreConfig(loc) {
-    var file = _fs2.default.readFileSync(loc, "utf8");
-    var lines = file.split("\n");
-
-    lines = lines.map(function (line) {
-      return line.replace(/#(.*?)$/, "").trim();
-    }).filter(function (line) {
-      return !!line;
-    });
-
-    this.mergeOptions({
-      options: { ignore: lines },
-      loc: loc
-    });
-  };
-
-  OptionManager.prototype.findConfigs = function findConfigs(loc) {
-    if (!loc) return;
-
-    if (!(0, _pathIsAbsolute2.default)(loc)) {
-      loc = _path2.default.join(process.cwd(), loc);
-    }
-
-    var foundConfig = false;
-    var foundIgnore = false;
-
-    while (loc !== (loc = _path2.default.dirname(loc))) {
-      if (!foundConfig) {
-        var configLoc = _path2.default.join(loc, BABELRC_FILENAME);
-        if (exists(configLoc)) {
-          this.addConfig(configLoc);
-          foundConfig = true;
-        }
-
-        var pkgLoc = _path2.default.join(loc, PACKAGE_FILENAME);
-        if (!foundConfig && exists(pkgLoc)) {
-          foundConfig = this.addConfig(pkgLoc, "babel", JSON);
-        }
-      }
-
-      if (!foundIgnore) {
-        var ignoreLoc = _path2.default.join(loc, BABELIGNORE_FILENAME);
-        if (exists(ignoreLoc)) {
-          this.addIgnoreConfig(ignoreLoc);
-          foundIgnore = true;
-        }
-      }
-
-      if (foundIgnore && foundConfig) return;
-    }
-  };
-
   OptionManager.prototype.normaliseOptions = function normaliseOptions() {
     var opts = this.options;
 
-    for (var _key3 in _config2.default) {
-      var option = _config2.default[_key3];
+    for (var _key3 in _config3.default) {
+      var option = _config3.default[_key3];
       var val = opts[_key3];
 
       // optional
@@ -477,19 +343,22 @@ var OptionManager = function () {
   OptionManager.prototype.init = function init() {
     var opts = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
-    var filename = opts.filename;
+    for (var _iterator2 = (0, _buildConfigChain2.default)(opts, this.log), _isArray2 = Array.isArray(_iterator2), _i2 = 0, _iterator2 = _isArray2 ? _iterator2 : (0, _getIterator3.default)(_iterator2);;) {
+      var _ref3;
 
-    // resolve all .babelrc files
-    if (opts.babelrc !== false) {
-      this.findConfigs(filename);
+      if (_isArray2) {
+        if (_i2 >= _iterator2.length) break;
+        _ref3 = _iterator2[_i2++];
+      } else {
+        _i2 = _iterator2.next();
+        if (_i2.done) break;
+        _ref3 = _i2.value;
+      }
+
+      var _config = _ref3;
+
+      this.mergeOptions(_config);
     }
-
-    // merge in base options
-    this.mergeOptions({
-      options: opts,
-      alias: "base",
-      dirname: filename && _path2.default.dirname(filename)
-    });
 
     // normalise
     this.normaliseOptions(opts);
