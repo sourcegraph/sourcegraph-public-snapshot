@@ -92,6 +92,7 @@ class BlobLine extends Component {
 		state.selected = Boolean(props.selected);
 		state.className = props.className || "";
 		state.onMount = props.onMount || null;
+		state.lineContentClassName = props.lineContentClassName || null;
 	}
 
 	_hasLink(content) {
@@ -179,6 +180,9 @@ class BlobLine extends Component {
 		// when copied and pasted, instead of being omitted entirely.
 		if (!contents) contents = "\n";
 
+		let lineContentClass = this.state.lineContentClassName ||
+			(this.state.selected ? s.selectedLineContent : s.lineContent);
+
 		return (
 			<tr className={`${s.line} ${s[this.state.textSize]} ${this.state.className || ""}`}
 				data-line={this.state.lineNumber}>
@@ -194,7 +198,7 @@ class BlobLine extends Component {
 							to={`${urlToBlob(this.state.repo, this.state.rev, this.state.path)}#L${this.state.lineNumber}`} data-line={this.state.lineNumber} />
 					</td>}
 
-				<td className={`code ${this.state.selected ? s.selectedLineContent : s.lineContent}`}>
+				<td className={`code ${lineContentClass}`}>
 					{contents}
 				</td>
 			</tr>
@@ -232,6 +236,7 @@ BlobLine.propTypes = {
 	highlightedDef: React.PropTypes.string,
 	className: React.PropTypes.string,
 	onMount: React.PropTypes.func,
+	lineContentClassName: React.PropTypes.string,
 };
 
 export default BlobLine;

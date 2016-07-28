@@ -9,12 +9,19 @@ import styles from "./styles/DefInfo.css";
 import base from "sourcegraph/components/styles/_base.css";
 import typography from "sourcegraph/components/styles/_typography.css";
 
+import annotationsByLine from "sourcegraph/blob/annotationsByLine";
+import BlobLine from "sourcegraph/blob/BlobLine";
+import * as BlobActions from "sourcegraph/blob/BlobActions";
+import BlobStore from "sourcegraph/blob/BlobStore";
+import blobStyles from "sourcegraph/blob/styles/Blob.css";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import DefStore from "sourcegraph/def/DefStore";
 import RepoRefsContainer from "sourcegraph/def/RepoRefsContainer";
 import ExamplesContainer from "sourcegraph/def/ExamplesContainer";
 import * as DefActions from "sourcegraph/def/DefActions";
+import fileLines from "sourcegraph/util/fileLines";
+import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {urlToDef} from "sourcegraph/def/routes";
 import {qualifiedNameAndType, defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
@@ -55,7 +62,7 @@ class DefInfo extends Container {
 	}
 
 	stores() {
-		return [DefStore];
+		return [DefStore, BlobStore];
 	}
 
 	componentDidMount() {
@@ -159,6 +166,57 @@ class DefInfo extends Container {
 				repo: nextState.repo, commitID: nextState.defCommitID, def: nextState.def,
 			}));
 		}
+		if (nextState.defObj !== null && nextState.defObj !== prevState.defObj) {
+			Dispatcher.Backends.dispatch(new BlobActions.WantFile(
+				nextState.defObj.Repo,
+				nextState.defObj.CommitID,
+				nextState.defObj.File,
+			));
+			Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(
+				nextState.defObj.Repo,
+				nextState.defObj.CommitID,
+				nextState.defObj.File,
+			));
+		}
+	}
+
+	_getDefLine(defObj) {
+		if (!defObj) {
+			return null;
+		}
+		let file = BlobStore.files.get(defObj.Repo, defObj.CommitID, defObj.File);
+		let anns = BlobStore.annotations.get(defObj.Repo, defObj.CommitID, defObj.File);
+		if (!file || !anns) {
+			return null;
+		}
+		let lines = fileLines(file.ContentsString);
+		let startLine = lineFromByte(lines, defObj.DefStart) - 1;
+		let lineEndByte = anns.LineStartBytes[startLine + 1];
+		let contents = lines[startLine];
+		let lineAnns = annotationsByLine(anns.LineStartBytes, anns.Annotations, lines)[startLine];
+		let isFuncDef = lineAnns[0].Class === "kwd" && contents.startsWith("func");
+		if (!isFuncDef) {
+			return null;
+		}
+		let isSingleLine = lineAnns.every((ann) => ann.EndByte <= lineEndByte);
+		if (!isSingleLine) {
+			return null;
+		}
+		// remove dangling open curly brace at the end of the line
+		const whiteSpace = /\s/;
+		for (let i = contents.length - 1; i >= 0; i--) {
+			if (!whiteSpace.test(contents[i])) {
+				if (contents[i] === "{") {
+					contents = `${contents.substr(0, i)} ${contents.substr(i + 1)}`;
+				}
+				break;
+			}
+		}
+		return {
+			contents: contents,
+			anns: lineAnns,
+			startByte: anns.LineStartBytes[startLine],
+		};
 	}
 
 	_viewDefinitionClicked() {
@@ -180,6 +238,9 @@ class DefInfo extends Container {
 					subtitle={`References are not available.`} />
 			);
 		}
+
+		let defLine = this._getDefLine(defObj);
+
 		return (
 			<FlexContainer styleName="bg-cool-pale-gray-2 flex-grow">
 				<div styleName="container-fixed" className={base.mv3}>
@@ -188,7 +249,37 @@ class DefInfo extends Container {
 					{defObj &&
 						<div className={`${base.mv4} ${base.ph4}`}>
 							<Heading level="5" styleName="break-word" className={base.mv2}>
-								<code styleName="normal">{qualifiedNameAndType(defObj, {unqualifiedNameClass: styles.def})}</code>
+								<table>
+									<tbody>
+										{defLine &&
+											<BlobLine
+												ref={null}
+												repo={repo}
+												rev={rev}
+												commitID={defCommitID}
+												path={defObj.Path}
+												lineNumber={null}
+												showLineNumber={false}
+												startByte={defLine.startByte}
+												contents={defLine.contents}
+												textSize="deftitle"
+												lineContentClassName={blobStyles.defTitleLineContent}
+												annotations={defLine.anns}
+												selected={null}
+												highlightedDef={null}
+												highlightedDefObj={null}
+												activeDef={null}
+												activeDefRepo={defObj.Repo} />
+										}
+										{!defLine &&
+											<tr className={`${blobStyles.line} ${blobStyles.deftitle}`}>
+												<td className={`code ${blobStyles.defTitleLineContent}`}>
+													{qualifiedNameAndType(defObj, {unqualifiedNameClass: styles.def})}
+												</td>
+											</tr>
+										}
+									</tbody>
+								</table>
 							</Heading>
 
 							{/* TODO DocHTML will not be set if the this def was loaded via the
