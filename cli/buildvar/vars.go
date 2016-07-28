@@ -64,6 +64,10 @@ type Vars struct {
 // empty for development builds.
 var All = parse()
 
+// Public holds the parsed values of the useful build variables which security
+// researches won't mistake for something important.
+var Public = sanitize(All)
+
 func parse() Vars {
 	date, _ := time.Parse(time.UnixDate, dateStr)
 	return Vars{
@@ -74,5 +78,14 @@ func parse() Vars {
 		Dirty:    dirtyStr != "",
 		Host:     host,
 		User:     user,
+	}
+}
+
+func sanitize(v Vars) Vars {
+	return Vars{
+		Version:  v.Version,
+		Date:     v.Date,
+		CommitID: v.CommitID,
+		Branch:   v.Branch,
 	}
 }
