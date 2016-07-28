@@ -17,7 +17,7 @@ import {withSiteConfigContext} from "sourcegraph/app/siteConfig";
 import {withUserContext} from "sourcegraph/app/user";
 import {withAppdashRouteStateRecording} from "sourcegraph/app/appdash";
 import withChannelListener from "sourcegraph/channel/withChannelListener";
-import {inDesktopBeta} from "sourcegraph/desktop";
+import desktopRouter from "sourcegraph/desktop";
 
 const reactElement = React.PropTypes.oneOfType([
 	React.PropTypes.arrayOf(React.PropTypes.element),
@@ -37,7 +37,6 @@ export default class App extends React.Component {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		signedIn: React.PropTypes.bool.isRequired,
-		user: React.PropTypes.object,
 	};
 
 	constructor(props, context) {
@@ -67,10 +66,6 @@ export default class App extends React.Component {
 
 	_handleSourcegraphDesktop: any;
 	_handleSourcegraphDesktop(event) {
-		if (!inDesktopBeta(this.context.user)) {
-			this.context.router.replace("/login");
-			return;
-		}
 		this.context.router.replace(event.detail);
 	}
 
@@ -95,16 +90,18 @@ export default class App extends React.Component {
 export const rootRoute: Route = {
 	path: "/",
 	component: withEventLoggerContext(EventLogger,
-		withViewEventsLogged(
-			withAppdashRouteStateRecording(
-				withChannelListener(
-					withSiteConfigContext(
-						withUserContext(
-							withFeaturesContext(
-								CSSModules(App, styles)
-							)
-						)
-					)
+        withViewEventsLogged(
+            withAppdashRouteStateRecording(
+                withChannelListener(
+                    withSiteConfigContext(
+                        withUserContext(
+                            desktopRouter(
+                                withFeaturesContext(
+                                    CSSModules(App, styles)
+                                )
+                            )
+                        )
+                    )
 				)
 			)
 		)
