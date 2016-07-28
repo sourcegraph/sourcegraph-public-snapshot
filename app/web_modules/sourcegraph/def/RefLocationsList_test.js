@@ -15,7 +15,7 @@ const ctx = {
 
 describe("RefLocationsList", () => {
 	it("should render definition data", () => {
-		autotest(testdataData, `${__dirname}/testdata/RefLocationsList-data.json`,
+		autotest(testdataData, "sourcegraph/def/testdata/RefLocationsList-data.json",
 			<RefLocationsList
 				repo="r" rev="v" path="p"
 				def={{Repo: "r", CommitID: "c"}}
@@ -26,7 +26,7 @@ describe("RefLocationsList", () => {
 	});
 
 	it("should render empty", () => {
-		autotest(testdataEmpty, `${__dirname}/testdata/RefLocationsList-empty.json`,
+		autotest(testdataEmpty, "sourcegraph/def/testdata/RefLocationsList-empty.json",
 			<RefLocationsList
 				repo="r" rev="v" path="p"
 				def={{Repo: "r", CommitID: "c"}}

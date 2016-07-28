@@ -13,7 +13,7 @@ const sampleBuild = {
 
 describe("BuildHeader", () => {
 	it("should render", () => {
-		autotest(testdataInitial, `${__dirname}/testdata/BuildHeader-initial.json`,
+		autotest(testdataInitial, "sourcegraph/build/testdata/BuildHeader-initial.json",
 			<BuildHeader build={sampleBuild} />
 		);
 	});

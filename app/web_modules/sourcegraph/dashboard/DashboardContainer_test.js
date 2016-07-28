@@ -7,7 +7,7 @@ import testdataData from "sourcegraph/dashboard/testdata/DashboardContainer-data
 
 describe("DashboardContainer", () => {
 	it("should render a dashboard", () => {
-		autotest(testdataData, `${__dirname}/testdata/DashboardContainer-data.json`,
+		autotest(testdataData, "sourcegraph/dashboard/testdata/DashboardContainer-data.json",
 			React.createElement(withUserContext(<DashboardContainer />)),
 			{
 				siteConfig: {},

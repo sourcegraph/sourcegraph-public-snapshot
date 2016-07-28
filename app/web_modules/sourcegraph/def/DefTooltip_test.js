@@ -16,7 +16,7 @@ describe("DefTooltip", () => {
 				return pos === testPos ? {def: {URL: "someURL", FmtStrings: fmtStrings, DocHTML: "someDoc", Repo: "someRepo"}} : null;
 			},
 		};
-		autotest(testdataData, `${__dirname}/testdata/DefTooltip-data.json`,
+		autotest(testdataData, "sourcegraph/def/testdata/DefTooltip-data.json",
 			<DefTooltip hoverPos={testPos} hoverInfos={hoverInfos} />
 		);
 	});

@@ -14,7 +14,7 @@ describe("Repos", () => {
 			UpdatedAt: "2016-02-24T10:18:55-08:00",
 			Language: "Go",
 		}];
-		autotest(testdataData, `${__dirname}/testdata/Repos-data.json`,
+		autotest(testdataData, "sourcegraph/user/settings/testdata/Repos-data.json",
 			React.createElement(withUserContext(<Repos
 				repos={repos}
 				linkGitHubURL={""} />)),

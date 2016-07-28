@@ -9,6 +9,7 @@ import child_process from "child_process";
 let noJSON = undefined; // eslint-disable-line no-undefined
 
 export default function(expected, filename, component, context) {
+	filename = `web_modules/${filename}`;
 	// If fs is available, verify that expected matches the contents of filename.
 	// If they don't match, it could be because the expected or filename arguemnts
 	// are incorrectly specified. They should point to the same thing.
