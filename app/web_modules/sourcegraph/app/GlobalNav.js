@@ -90,6 +90,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 								<Heading level="7" color="cool-mid-gray">Signed in as</Heading>
 								{user.Login}
 							</div>
+							<Link to="/beta" role="menu-item">Join our beta program</Link>
 							<Link to="/settings/repos" role="menu-item">Your repositories</Link>
 							<LogoutLink role="menu-item" />
 							<hr role="divider" className={base.mt3} />
