@@ -11,7 +11,6 @@ import styles from "./styles/home.css";
 import {Link} from "react-router";
 import {Heading, List} from "sourcegraph/components";
 import {Cone} from "sourcegraph/components/symbols";
-import {inDesktopBeta} from "sourcegraph/desktop";
 
 export const NotInBeta = () => (
 	<div className={`${layout.containerFixed} ${base.pv5} ${base.ph4}`} style={{maxWidth: "600px"}}>

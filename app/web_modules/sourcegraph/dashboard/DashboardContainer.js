@@ -15,7 +15,6 @@ import SearchSettings from "sourcegraph/search/SearchSettings";
 import type {LanguageID} from "sourcegraph/Language";
 import invariant from "invariant";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {redirectDesktopClient} from "sourcegraph/desktop";
 
 type OnSelectQueryListener = (ev: Event, query: string) => mixed;
 
