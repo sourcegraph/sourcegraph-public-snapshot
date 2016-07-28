@@ -6,13 +6,11 @@
 			"children": [
 				{
 					"type": "div",
-					"key": ".0",
 					"props": {
 						"styleName": "main",
 						"children": [
 							{
 								"type": "span",
-								"key": ".0",
 								"props": {
 									"styleName": "title",
 									"children": [
@@ -22,13 +20,11 @@
 							},
 							{
 								"type": "div",
-								"key": ".1",
 								"props": {
 									"styleName": "meta",
 									"children": [
 										{
-											"type": "WrappedComponent",
-											"key": ".0",
+											"type": "Avatar",
 											"props": {
 												"img": "",
 												"size": "small"
@@ -36,19 +32,16 @@
 										},
 										{
 											"type": "div",
-											"key": ".1",
 											"props": {
 												"styleName": "signature",
 												"children": [
 													{
 														"type": "span",
-														"key": ".0",
 														"props": {
 															"styleName": "sig",
 															"children": [
 																{
 																	"type": "span",
-																	"key": ".0",
 																	"props": {
 																		"styleName": "sig-name",
 																		"children": [
@@ -67,7 +60,6 @@
 																" authored ",
 																{
 																	"type": "TimeAgo",
-																	"key": ".2",
 																	"props": {
 																		"time": ""
 																	}
@@ -77,7 +69,6 @@
 													},
 													{
 														"type": "wbr",
-														"key": ".1",
 														"props": {}
 													}
 												]
@@ -85,7 +76,6 @@
 										},
 										{
 											"type": "div",
-											"key": ".2",
 											"props": {
 												"styleName": "commit-id",
 												"children": [

@@ -55,6 +55,7 @@ npm-debug.log
 /app/assets/test.css
 /app/assets/*.html
 /app/assets/*.map
+/app/.tmp
 *.json.actual
 
 eb-bundle.zip

@@ -6,13 +6,11 @@
 			"children": [
 				{
 					"type": "div",
-					"key": ".0",
 					"props": {
 						"styleName": "step-title info",
 						"children": [
 							{
 								"type": "span",
-								"key": ".1",
 								"props": {
 									"style": {
 										"float": "right"
@@ -24,7 +22,6 @@
 				},
 				{
 					"type": "div",
-					"key": ".1",
 					"props": {
 						"styleName": "step-body",
 						"children": [

@@ -123,9 +123,11 @@ export default function withResolvedRepoRev(Component: ReactClass<any>, isMainCo
 						this._cloningInterval = null;
 					}
 					this._cloningTimeout = false;
-					this._cloningInterval = setInterval(() => {
-						Dispatcher.Backends.dispatch(new RepoActions.WantResolveRev(nextState.repo, nextState.rev, true));
-					}, pollInterval);
+					if (!global.it) { // skip when testing
+						this._cloningInterval = setInterval(() => {
+							Dispatcher.Backends.dispatch(new RepoActions.WantResolveRev(nextState.repo, nextState.rev, true));
+						}, pollInterval);
+					}
 				}, displayForAtLeast);
 			} else if (!nextState.isCloning && this._cloningInterval) {
 				clearInterval(this._cloningInterval);

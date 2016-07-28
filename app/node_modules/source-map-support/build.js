@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 
 var fs = require('fs');
+var path = require('path');
 var querystring = require('querystring');
 var child_process = require('child_process');
+
+var browserify = path.join('node_modules', '.bin', 'browserify');
+var coffee = path.join('node_modules', '.bin', 'coffee');
 
 function run(command, callback) {
   console.log(command);
@@ -11,7 +15,7 @@ function run(command, callback) {
 
 // Use browserify to package up source-map-support.js
 fs.writeFileSync('.temp.js', 'sourceMapSupport = require("./source-map-support");');
-run('node_modules/browserify/bin/cmd.js .temp.js', function(error, stdout) {
+run(browserify + ' .temp.js', function(error, stdout) {
   if (error) throw error;
 
   // Wrap the code so it works both as a normal <script> module and as an AMD module
@@ -44,25 +48,25 @@ run('node_modules/browserify/bin/cmd.js .temp.js', function(error, stdout) {
 });
 
 // Build the AMD test
-run('node_modules/coffee-script/bin/coffee --map --compile amd-test/script.coffee', function(error) {
+run(coffee + ' --map --compile amd-test/script.coffee', function(error) {
   if (error) throw error;
 });
 
 // Build the browserify test
-run('node_modules/coffee-script/bin/coffee --map --compile browserify-test/script.coffee', function(error) {
+run(coffee + ' --map --compile browserify-test/script.coffee', function(error) {
   if (error) throw error;
-  run('node_modules/browserify/bin/cmd.js --debug browserify-test/script.js > browserify-test/compiled.js', function(error) {
+  run(browserify + ' --debug browserify-test/script.js > browserify-test/compiled.js', function(error) {
     if (error) throw error;
   })
 });
 
 // Build the browser test
-run('node_modules/coffee-script/bin/coffee --map --compile browser-test/script.coffee', function(error) {
+run(coffee + ' --map --compile browser-test/script.coffee', function(error) {
   if (error) throw error;
 });
 
 // Build the header test
-run('node_modules/coffee-script/bin/coffee --map --compile header-test/script.coffee', function(error) {
+run(coffee + ' --map --compile header-test/script.coffee', function(error) {
   if (error) throw error;
   var contents = fs.readFileSync('header-test/script.js', 'utf8');
   fs.writeFileSync('header-test/script.js', contents.replace(/\/\/# sourceMappingURL=.*/g, ''))

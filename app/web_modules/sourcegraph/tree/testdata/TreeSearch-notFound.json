@@ -1,6 +1,6 @@
 {
 	"renderOutput": {
-		"type": "WrappedComponent",
+		"type": "Header",
 		"props": {
 			"title": "404",
 			"subtitle": "Directory not found."

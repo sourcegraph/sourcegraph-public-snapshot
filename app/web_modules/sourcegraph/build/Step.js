@@ -28,13 +28,13 @@ class Step extends Component {
 	}
 
 	_startUpdateLog() {
-		if (this._updateLogIntervalID === null) {
+		if (this._updateLogIntervalID === null && !global.it) { // skip when testing
 			this._updateLogIntervalID = setInterval(this._updateLog.bind(this), updateLogIntervalMsec);
 		}
 	}
 
 	_stopUpdateLog() {
-		if (this._updateLogIntervalID !== null) {
+		if (this._updateLogIntervalID !== null && !global.it) { // skip when testing
 			clearInterval(this._updateLogIntervalID);
 			this._updateLogIntervalID = null;
 		}

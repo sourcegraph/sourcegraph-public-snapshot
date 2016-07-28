@@ -5,7 +5,7 @@
 			"children": [
 				{
 					"type": "div",
-					"key": ".1:$0",
+					"key": "0",
 					"props": {
 						"styleName": "all-refs",
 						"children": [
@@ -16,7 +16,6 @@
 									"children": [
 										{
 											"type": "span",
-											"key": ".0",
 											"props": {
 												"styleName": "refs-count"
 											}
@@ -24,7 +23,6 @@
 										" ",
 										{
 											"type": "span",
-											"key": ".2",
 											"props": {
 												"children": [
 													"r"
