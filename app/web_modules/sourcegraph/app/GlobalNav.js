@@ -90,11 +90,8 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 								<Heading level="7" color="cool-mid-gray">Signed in as</Heading>
 								{user.Login}
 							</div>
-							<LogoutLink role="menu-item" />
-
-							<hr role="divider" className={base.mv3} />
 							<Link to="/settings/repos" role="menu-item">Your repositories</Link>
-							<Link to="/tools" role="menu-item">Tools and integrations</Link>
+							<LogoutLink role="menu-item" />
 							<hr role="divider" className={base.mt3} />
 							<div styleName="cool-mid-gray" className={`${base.pv1} ${base.mb1} ${typography.tc}`}>
 								<Link to="/security" className={`${typography.f7} ${typography["link-subtle"]} ${base.pr3}`} styleName="cool-mid-gray">Security</Link>
