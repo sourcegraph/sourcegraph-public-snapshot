@@ -3,7 +3,6 @@ package golang
 import (
 	"encoding/json"
 	"errors"
-	"go/token"
 	"log"
 	"net"
 	"sync"
@@ -70,13 +69,11 @@ type Session struct {
 	mu sync.Mutex
 
 	init *lsp.InitializeParams // set by "initialize" req
-	fset *token.FileSet
 }
 
 // reset clears all internal state in h.
 func (h *Session) reset(init *lsp.InitializeParams) {
 	h.init = init
-	h.fset = nil
 }
 
 func errResp(req *jsonrpc2.Request, err error) *jsonrpc2.Response {
