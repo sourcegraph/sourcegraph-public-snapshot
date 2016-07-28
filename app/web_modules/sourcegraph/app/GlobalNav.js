@@ -291,9 +291,9 @@ class SearchForm extends React.Component {
 	}
 
 	render() {
-		if (this.state.open) {
+		if (this.state.open && this.props.showResultsPanel) {
 			document.body.style.overflow = "hidden";
-		} else if (!this.state.open) {
+		} else {
 			document.body.style.overflow = "auto";
 		}
 
