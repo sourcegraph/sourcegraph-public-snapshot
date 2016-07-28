@@ -50,7 +50,7 @@ func prepare(workspace, repo, commit string) error {
 		return err
 	}
 
-	c = cmd("go", "get", "./...")
+	c = cmd("go", "get", "-d", "./...")
 	c.Dir = repoDir
 	c.Env = []string{"PATH=" + os.Getenv("PATH"), "GOPATH=" + gopath}
 	if err := c.Run(); err != nil {
