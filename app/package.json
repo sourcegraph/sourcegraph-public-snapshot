@@ -49,7 +49,7 @@
     "redbox-react": "1.2.9",
     "style-loader": "0.13.1",
     "url-loader": "0.5.7",
-    "webpack": "2.1.0-beta.14",
+    "webpack": "2.1.0-beta.20",
     "webpack-dev-server": "2.1.0-beta.0"
   },
   "dependencies": {
