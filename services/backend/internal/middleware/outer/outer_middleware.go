@@ -37,13 +37,9 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 		Builds:            wrappedBuilds{ctxFunc, services},
 		Channel:           wrappedChannel{ctxFunc, services},
 		Defs:              wrappedDefs{ctxFunc, services},
-		Deltas:            wrappedDeltas{ctxFunc, services},
 		Desktop:           wrappedDesktop{ctxFunc, services},
 		Meta:              wrappedMeta{ctxFunc, services},
 		MirrorRepos:       wrappedMirrorRepos{ctxFunc, services},
-		Notify:            wrappedNotify{ctxFunc, services},
-		Orgs:              wrappedOrgs{ctxFunc, services},
-		People:            wrappedPeople{ctxFunc, services},
 		RepoStatuses:      wrappedRepoStatuses{ctxFunc, services},
 		RepoTree:          wrappedRepoTree{ctxFunc, services},
 		Repos:             wrappedRepos{ctxFunc, services},
@@ -183,7 +179,7 @@ func (s wrappedAccounts) Create(ctx context.Context, v1 *sourcegraph.NewAccount)
 	return rv, nil
 }
 
-func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegraph.PersonSpec) (returnedResult *sourcegraph.PendingPasswordReset, returnedError error) {
+func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegraph.RequestPasswordResetOp) (returnedResult *sourcegraph.PendingPasswordReset, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -303,7 +299,7 @@ func (s wrappedAccounts) UpdateEmails(ctx context.Context, v1 *sourcegraph.Updat
 	return rv, nil
 }
 
-func (s wrappedAccounts) Delete(ctx context.Context, v1 *sourcegraph.PersonSpec) (returnedResult *pbtypes.Void, returnedError error) {
+func (s wrappedAccounts) Delete(ctx context.Context, v1 *sourcegraph.UserSpec) (returnedResult *pbtypes.Void, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -361,6 +357,36 @@ func (s wrappedAnnotations) List(ctx context.Context, v1 *sourcegraph.Annotation
 	}
 
 	rv, err := innerSvc.List(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
+func (s wrappedAnnotations) GetDefAtPos(ctx context.Context, v1 *sourcegraph.AnnotationsGetDefAtPosOptions) (returnedResult *sourcegraph.DefSpec, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Annotations.GetDefAtPos: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.AnnotationsOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Annotations")
+	}
+
+	rv, err := innerSvc.GetDefAtPos(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1083,71 +1109,6 @@ func (s wrappedDefs) RefreshIndex(ctx context.Context, v1 *sourcegraph.DefsRefre
 	return rv, nil
 }
 
-type wrappedDeltas struct {
-	ctxFunc  ContextFunc
-	services svc.Services
-}
-
-func (s wrappedDeltas) Get(ctx context.Context, v1 *sourcegraph.DeltaSpec) (returnedResult *sourcegraph.Delta, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Deltas.Get: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.DeltasOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Deltas")
-	}
-
-	rv, err := innerSvc.Get(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedDeltas) ListFiles(ctx context.Context, v1 *sourcegraph.DeltasListFilesOp) (returnedResult *sourcegraph.DeltaFiles, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Deltas.ListFiles: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.DeltasOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Deltas")
-	}
-
-	rv, err := innerSvc.ListFiles(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
 type wrappedDesktop struct {
 	ctxFunc  ContextFunc
 	services svc.Services
@@ -1186,36 +1147,6 @@ func (s wrappedDesktop) LatestExists(ctx context.Context, v1 *sourcegraph.Client
 type wrappedMeta struct {
 	ctxFunc  ContextFunc
 	services svc.Services
-}
-
-func (s wrappedMeta) Status(ctx context.Context, v1 *pbtypes.Void) (returnedResult *sourcegraph.ServerStatus, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Meta.Status: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.MetaOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Meta")
-	}
-
-	rv, err := innerSvc.Status(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
 }
 
 func (s wrappedMeta) Config(ctx context.Context, v1 *pbtypes.Void) (returnedResult *sourcegraph.ServerConfig, returnedError error) {
@@ -1276,171 +1207,6 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, v1 *sourcegraph.Mirr
 	}
 
 	rv, err := innerSvc.RefreshVCS(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-type wrappedNotify struct {
-	ctxFunc  ContextFunc
-	services svc.Services
-}
-
-func (s wrappedNotify) GenericEvent(ctx context.Context, v1 *sourcegraph.NotifyGenericEvent) (returnedResult *pbtypes.Void, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Notify.GenericEvent: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.NotifyOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Notify")
-	}
-
-	rv, err := innerSvc.GenericEvent(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-type wrappedOrgs struct {
-	ctxFunc  ContextFunc
-	services svc.Services
-}
-
-func (s wrappedOrgs) Get(ctx context.Context, v1 *sourcegraph.OrgSpec) (returnedResult *sourcegraph.Org, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Orgs.Get: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.OrgsOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Orgs")
-	}
-
-	rv, err := innerSvc.Get(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedOrgs) List(ctx context.Context, v1 *sourcegraph.OrgsListOp) (returnedResult *sourcegraph.OrgList, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Orgs.List: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.OrgsOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Orgs")
-	}
-
-	rv, err := innerSvc.List(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedOrgs) ListMembers(ctx context.Context, v1 *sourcegraph.OrgsListMembersOp) (returnedResult *sourcegraph.UserList, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Orgs.ListMembers: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.OrgsOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Orgs")
-	}
-
-	rv, err := innerSvc.ListMembers(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-type wrappedPeople struct {
-	ctxFunc  ContextFunc
-	services svc.Services
-}
-
-func (s wrappedPeople) Get(ctx context.Context, v1 *sourcegraph.PersonSpec) (returnedResult *sourcegraph.Person, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in People.Get: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.PeopleOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "People")
-	}
-
-	rv, err := innerSvc.Get(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

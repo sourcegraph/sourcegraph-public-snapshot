@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import Container from "sourcegraph/Container";
 import RefsContainer from "sourcegraph/def/RefsContainer";
 import DefStore from "sourcegraph/def/DefStore";

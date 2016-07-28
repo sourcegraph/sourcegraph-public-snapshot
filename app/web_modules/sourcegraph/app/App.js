@@ -1,6 +1,6 @@
 // @flow weak
 
-import React from "react";
+import * as React from "react";
 import Helmet from "react-helmet";
 import type {Route} from "react-router";
 
@@ -17,6 +17,7 @@ import {withSiteConfigContext} from "sourcegraph/app/siteConfig";
 import {withUserContext} from "sourcegraph/app/user";
 import {withAppdashRouteStateRecording} from "sourcegraph/app/appdash";
 import withChannelListener from "sourcegraph/channel/withChannelListener";
+import desktopRouter from "sourcegraph/desktop";
 
 const reactElement = React.PropTypes.oneOfType([
 	React.PropTypes.arrayOf(React.PropTypes.element),
@@ -27,6 +28,7 @@ export default class App extends React.Component {
 	static propTypes = {
 		main: reactElement,
 		navContext: reactElement,
+		globalNav: reactElement,
 		location: React.PropTypes.object.isRequired,
 		params: React.PropTypes.object,
 		channelStatusCode: React.PropTypes.number,
@@ -71,7 +73,10 @@ export default class App extends React.Component {
 		return (
 			<div styleName={this.state.styleName}>
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
-				<GlobalNav params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
+				{this.props.globalNav || this.props.globalNav === null ?
+					this.props.globalNav :
+					<GlobalNav params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
+				}
 				<div styleName="main-content">
 					{this.props.navContext && <div styleName="breadcrumb">{this.props.navContext}</div>}
 					{this.props.main}
@@ -85,16 +90,18 @@ export default class App extends React.Component {
 export const rootRoute: Route = {
 	path: "/",
 	component: withEventLoggerContext(EventLogger,
-		withViewEventsLogged(
-			withAppdashRouteStateRecording(
-				withChannelListener(
-					withSiteConfigContext(
-						withUserContext(
-							withFeaturesContext(
-								CSSModules(App, styles)
-							)
-						)
-					)
+        withViewEventsLogged(
+            withAppdashRouteStateRecording(
+                withChannelListener(
+                    withSiteConfigContext(
+                        withUserContext(
+                            desktopRouter(
+                                withFeaturesContext(
+                                    CSSModules(App, styles)
+                                )
+                            )
+                        )
+                    )
 				)
 			)
 		)
@@ -109,6 +116,7 @@ export const rootRoute: Route = {
 			callback(null, [
 				...require("sourcegraph/page").routes,
 				...require("sourcegraph/styleguide").routes,
+				...require("sourcegraph/desktop").routes,
 				...require("sourcegraph/home").routes,
 				...require("sourcegraph/channel").routes,
 				require("sourcegraph/misc/golang").route,

@@ -16,7 +16,6 @@
 
 .main {
 	composes: containerFixed from layout;
-	composes: ma4 from base;
 	display: flex;
 }
 
@@ -26,7 +25,6 @@
 }
 
 .panel {
-	composes: ph5 from base;
 	flex: 1 1;
 }
 

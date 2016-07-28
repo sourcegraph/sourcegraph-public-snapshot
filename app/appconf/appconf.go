@@ -33,8 +33,6 @@ var Flags struct {
 	MirrorRepoUpdateRate              time.Duration `long:"app.mirror-repo-update-rate" description:"rate at which to update mirrored repositories" default:"3s" env:"SRC_APP_MIRROR_REPO_UPDATE_RATE"`
 	DisableMirrorRepoBackgroundUpdate bool          `long:"app.disable-mirror-repo-bg-update" description:"disable updating mirrored repos in the background" env:"SRC_APP_DISABLE_MIRROR_REPO_BG_UPDATE"`
 
-	DisableGitNotify bool `long:"app.disable-git-notify" description:"disable git notifications" env:"SRC_APP_DISABLE_GIT_NOTIFY"`
-
 	WebpackDevServerURL string `long:"app.webpack-dev-server" description:"serve frontend assets (JS, CSS, etc.) from this Webpack dev server" value-name:"URL" env:"SRC_APP_WEBPACK_DEV_SERVER"`
 }
 

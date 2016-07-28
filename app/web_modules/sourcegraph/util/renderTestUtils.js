@@ -9,7 +9,7 @@ testOnly();
 
 export type RenderResult = {
 	actions: Array<Object>;
-	element: ?Element;
+	element: ?Element<any>;
 };
 
 export function render(component: any, context: ?Object): RenderResult {

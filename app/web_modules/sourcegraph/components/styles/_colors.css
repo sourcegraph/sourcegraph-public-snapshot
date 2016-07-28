@@ -45,11 +45,11 @@
 @value c_red-5 rgba(246, 106, 106, .5);
 @value c_red-2 rgba(246, 106, 106, .2);
 
-@value c_cool-gray rgba(52, 73, 102, 1);
-@value c_cool-gray-8 rgba(52, 74, 102, .8);
-@value c_cool-gray-5 rgba(52, 74, 102, .5);
-@value c_cool-gray-2 rgba(52, 74, 102, .2);
-@value c_cool-gray-1 rgba(52, 74, 102, .1);
+@value c_cool-gray rgba(62, 90, 126, 1);
+@value c_cool-gray-8 rgba(62, 90, 126, .8);
+@value c_cool-gray-5 rgba(62, 90, 126, .5);
+@value c_cool-gray-2 rgba(62, 90, 126, .2);
+@value c_cool-gray-1 rgba(62, 90, 126, .1);
 
 @value c_cool-mid-gray rgba(119, 147, 174, 1);
 @value c_cool-mid-gray-8 rgba(119, 147, 174, 0.8);
@@ -381,3 +381,82 @@
 .b--transparent { border-color: transparent; }
 
 .shadow-gray { box-shadow: 0px 1px 6px 0px c_cool-mid-gray-1; }
+
+/* SVG Fills */
+
+.fill-blue { fill: c_blue-text; }
+.fill-blue-8 { fill: c_blue-8; }
+.fill-blue-5 { fill: c_blue-5; }
+.fill-blue-2 { fill: c_blue-2; }
+.fill-blue-1 { fill: c_blue-1; }
+.fill-faded-blue { fill: c_faded-blue; }
+.fill-pale-blue { fill: c_pale-blue; }
+.fill-dark-blue { fill: c_dark-blue; }
+.fill-dark-blue-5 { fill: c_dark-blue-5; }
+.fill-green { fill: c_green-text; }
+.fill-green-8 { fill: c_green-8; }
+.fill-green-5 { fill: c_green-5; }
+.fill-green-2 { fill: c_green-2; }
+.fill-dark-green { fill: c_dark-green; }
+.fill-yellow { fill: c_yellow; }
+.fill-yellow-8 { fill: c_yellow; }
+.fill-yellow-5 { fill: c_yellow; }
+.fill-yellow-2 { fill: c_yellow; }
+.fill-orange { fill: c_orange; }
+.fill-orange-8 { fill: c_orange-8; }
+.fill-orange-5 { fill: c_orange-5; }
+.fill-orange-2 { fill: c_orange-2; }
+.fill-orange-1 { fill: c_orange-1; }
+.fill-red { fill: c_red-text; }
+.fill-red-8 { fill: c_red-8; }
+.fill-red-5 { fill: c_red-5; }
+.fill-red-2 { fill: c_red-2; }
+.fill-purple { fill: c_purple; }
+.fill-purple-8 { fill: c_purple-8; }
+.fill-purple-5 { fill: c_purple-5; }
+.fill-purple-2 { fill: c_purple-2; }
+.fill-purple-1 { fill: c_purple-1; }
+.fill-light-purple { fill: c_light-purple; }
+.fill-cool-gray { fill: c_cool-gray; }
+.fill-cool-gray-8 { fill: c_cool-gray-8; }
+.fill-cool-gray-5 { fill: c_cool-gray-5; }
+.fill-cool-gray-2 { fill: c_cool-gray-2; }
+.fill-cool-gray-1 { fill: c_cool-gray-1; }
+.fill-cool-mid-gray { fill: c_cool-mid-gray; }
+.fill-cool-pale-gray { fill: c_cool-pale-gray; }
+
+.fill-black { fill: black; }
+.fill-dark-gray { fill: c_dark-gray; }
+.fill-mid-gray { fill: c_mid-gray; }
+.fill-gray { fill: c_gray; }
+.fill-silver { fill: c_silver; }
+.fill-light-silver { fill: c_light-silver; }
+.fill-light-gray { fill: c_light-gray; }
+.fill-near-white { fill: c_near-white; }
+.fill-moon-gray { fill: c_moon-gray; }
+.fill-white { fill: white; }
+.fill-white-90 { fill: c_white-90; }
+.fill-white-80 { fill: c_white-80; }
+.fill-white-70 { fill: c_white-70; }
+.fill-white-60 { fill: c_white-60; }
+.fill-white-50 { fill: c_white-50; }
+.fill-white-40 { fill: c_white-40; }
+.fill-white-30 { fill: c_white-30; }
+.fill-white-20 { fill: c_white-20; }
+.fill-white-10 { fill: c_white-10; }
+.fill-white-05 { fill: c_white-05; }
+.fill-white-025 { fill: c_white-025; }
+.fill-white-0125 { fill: c_white-0125; }
+.fill-black-90 { fill: c_black-90; }
+.fill-black-80 { fill: c_black-80; }
+.fill-black-70 { fill: c_black-70; }
+.fill-black-60 { fill: c_black-60; }
+.fill-black-50 { fill: c_black-50; }
+.fill-black-40 { fill: c_black-40; }
+.fill-black-30 { fill: c_black-30; }
+.fill-black-20 { fill: c_black-20; }
+.fill-black-10 { fill: c_black-10; }
+.fill-black-05 { fill: c_black-05; }
+.fill-black-025 { fill: c_black-025; }
+.fill-black-0125 { fill: c_black-0125; }
+.fill-transparent { fill: transparent; }

@@ -1,6 +1,6 @@
 // @flow weak
 
-import React from "react";
+import * as React from "react";
 
 // FeatureName is the set of all feature flag names that can
 // be queried by the frontend app. This list is usually a subset

@@ -1,0 +1,40 @@
+[
+  {
+    "result": {
+      "capabilities": {
+        "hoverProvider": true,
+        "definitionProvider": true,
+        "referencesProvider": true
+      }
+    },
+    "id": "0",
+    "jsonrpc": ""
+  },
+  {
+    "result": {
+      "contents": [
+        {
+          "language": "go",
+          "value": "func() *Router"
+        }
+      ],
+      "range": {
+        "start": {
+          "line": 15,
+          "character": 5
+        },
+        "end": {
+          "line": 15,
+          "character": 13
+        }
+      }
+    },
+    "id": "1",
+    "jsonrpc": ""
+  },
+  {
+    "result": true,
+    "id": "2",
+    "jsonrpc": ""
+  }
+]

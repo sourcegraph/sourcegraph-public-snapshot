@@ -37,7 +37,7 @@ var (
 )
 
 // Get gets a template by name, if it exists (and has previously been
-// parsed, either by Load or by Add).
+// parsed, either by Load or by add).
 // Templates generally bare the name of the first file in their set.
 func Get(name string) *htmpl.Template {
 	templatesMu.Lock()
@@ -46,20 +46,11 @@ func Get(name string) *htmpl.Template {
 	return t
 }
 
-// Add adds a parsed template. It will be available to callers of Exec
+// add adds a parsed template. It will be available to callers of Exec
 // and Get.
-//
-// TODO(sqs): is this necessary?
-func Add(name string, tmpl *htmpl.Template) {
+func add(name string, tmpl *htmpl.Template) {
 	templatesMu.Lock()
 	templates[name] = tmpl
-	templatesMu.Unlock()
-}
-
-// Delete removes the named template.
-func Delete(name string) {
-	templatesMu.Lock()
-	delete(templates, name)
 	templatesMu.Unlock()
 }
 
@@ -283,7 +274,7 @@ func parseHTMLTemplates(sets [][]string, layout []string) error {
 			if t == nil {
 				log.Fatalf("ROOT template not found in %v", set)
 			}
-			Add(set[0], t)
+			add(set[0], t)
 		}()
 	}
 	wg.Wait()

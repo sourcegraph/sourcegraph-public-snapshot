@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import {taskClass, elapsed} from "sourcegraph/build/Build";

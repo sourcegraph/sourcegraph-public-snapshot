@@ -1,6 +1,6 @@
 import autotest from "sourcegraph/util/autotest";
 
-import React from "react";
+import * as React from "react";
 import expect from "expect.js";
 import RefLocationsList from "sourcegraph/def/RefLocationsList";
 import {renderToString} from "sourcegraph/util/componentTestUtils";

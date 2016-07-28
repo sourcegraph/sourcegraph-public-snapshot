@@ -61,15 +61,17 @@ func Services() svc.Services {
   <<<$service := .>>>
 	<<<range .Methods>>>
 		func (s wrapped<<<$service.Name>>>) <<<.Name>>>(ctx context.Context, param *<<<.ParamType>>>) (res *<<<.ResultType>>>, err error) {
+			var errActual error
 			start := time.Now()
 			ctx = trace.Before(ctx, "<<<$service.Name>>>", "<<<.Name>>>", param)
 			defer func(){
-		  	trace.After(ctx, "<<<$service.Name>>>", "<<<.Name>>>", param, err, time.Since(start))
+				trace.After(ctx, "<<<$service.Name>>>", "<<<.Name>>>", param, errActual, time.Since(start))
 			}()
-			res, err = backend.Services.<<<$service.Name>>>.<<<.Name>>>(ctx, param)
-			if res == nil && err == nil {
-				err = grpc.Errorf(codes.Internal, "<<<$service.Name>>>.<<<.Name>>> returned nil, nil")
+			res, errActual = backend.Services.<<<$service.Name>>>.<<<.Name>>>(ctx, param)
+			if res == nil && errActual == nil {
+				errActual = grpc.Errorf(codes.Internal, "<<<$service.Name>>>.<<<.Name>>> returned nil, nil")
 			}
+			err = errActual
 			if err != nil && !DebugMode(ctx) {
 				if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 					// Sanitize, because these errors should not be user visible.

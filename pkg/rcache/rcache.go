@@ -76,9 +76,12 @@ func (r *Cache) rkey(key string) string {
 	return fmt.Sprintf("%s:%s:%s", globalPrefix, r.keyPrefix, key)
 }
 
-// ClearAllForTest clears all of the entries with a given prefix. This
-// is an O(n) operation and should only be used in tests.
-func ClearAllForTest(prefix string) error {
+// SetupForTest adjusts the globalPrefix and clears it out. You will have
+// conflicts if you do `t.Parallel()`
+func SetupForTest(name string) {
+	globalPrefix = "__test__" + name
+	// Make mutex fails faster
+	mutexTries = 1
 	c := pool.Get()
 	defer c.Close()
 	_, err := c.Do("EVAL", `local keys = redis.call('keys', ARGV[1])
@@ -86,8 +89,10 @@ if #keys > 0 then
 	return redis.call('del', unpack(keys))
 else
 	return ''
-end`, 0, fmt.Sprintf("%s:*", fmt.Sprintf("%s:%s", globalPrefix, prefix)))
-	return err
+end`, 0, globalPrefix+":*")
+	if err != nil {
+		log15.Error("Could not clear test prefix", "name", name, "globalPrefix", globalPrefix, "error", err)
+	}
 }
 
 var (

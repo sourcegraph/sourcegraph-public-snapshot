@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 
 class Affix extends React.Component {
 

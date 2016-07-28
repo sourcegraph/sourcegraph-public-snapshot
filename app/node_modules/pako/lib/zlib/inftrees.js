@@ -57,8 +57,8 @@ module.exports = function inflate_table(type, lens, lens_index, codes, table, ta
   var base_index = 0;
 //  var shoextra;    /* extra bits table to use */
   var end;                    /* use base and extra for symbol > end */
-  var count = new utils.Buf16(MAXBITS+1); //[MAXBITS+1];    /* number of codes of each length */
-  var offs = new utils.Buf16(MAXBITS+1); //[MAXBITS+1];     /* offsets in table for each length */
+  var count = new utils.Buf16(MAXBITS + 1); //[MAXBITS+1];    /* number of codes of each length */
+  var offs = new utils.Buf16(MAXBITS + 1); //[MAXBITS+1];     /* offsets in table for each length */
   var extra = null;
   var extra_index = 0;
 
@@ -227,7 +227,7 @@ module.exports = function inflate_table(type, lens, lens_index, codes, table, ta
     return 1;
   }
 
-  var i=0;
+  var i = 0;
   /* process all codes and make table entries */
   for (;;) {
     i++;

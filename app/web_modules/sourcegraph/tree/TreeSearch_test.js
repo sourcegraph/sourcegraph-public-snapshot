@@ -2,7 +2,7 @@
 
 import autotest from "sourcegraph/util/autotest";
 
-import React from "react";
+import * as React from "react";
 
 import TreeSearch from "sourcegraph/tree/TreeSearch";
 import TreeStore from "sourcegraph/tree/TreeStore";

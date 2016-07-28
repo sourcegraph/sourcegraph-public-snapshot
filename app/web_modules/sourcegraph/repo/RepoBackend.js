@@ -5,7 +5,6 @@ import * as RepoActions_typed from "sourcegraph/repo/RepoActions_typed";
 import RepoStore from "sourcegraph/repo/RepoStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
-import {trackPromise} from "sourcegraph/app/status";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {sortBranches, sortTags} from "sourcegraph/repo/vcs";
@@ -48,15 +47,13 @@ const RepoBackend = {
 			{
 				let repo = RepoStore.repos.get(action.repo);
 				if (repo === null) {
-					trackPromise(
-						RepoBackend.fetch(`/.api/repos/${action.repo}`)
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => ({Error: err}))
-							.then((data) => {
-								Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data));
-							})
-					);
+					RepoBackend.fetch(`/.api/repos/${action.repo}`)
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => {
+							Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data));
+						});
 				}
 				break;
 			}
@@ -65,19 +62,17 @@ const RepoBackend = {
 			{
 				let resolution = RepoStore.resolutions.get(action.repo);
 				if (resolution === null) {
-					trackPromise(
-						RepoBackend.fetch(`/.api/repos/${action.repo}/-/resolve?Remote=true`)
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => ({Error: err}))
-							.then((data) => {
-								if (data.IncludedRepo) {
-									// Optimistically included by httpapi.serveRepoResolve.
-									Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data.IncludedRepo));
-								}
-								Dispatcher.Stores.dispatch(new RepoActions.RepoResolved(action.repo, data.Error ? data : data.Data));
-							})
-					);
+					RepoBackend.fetch(`/.api/repos/${action.repo}/-/resolve?Remote=true`)
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => {
+							if (data.IncludedRepo) {
+								// Optimistically included by httpapi.serveRepoResolve.
+								Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data.IncludedRepo));
+							}
+							Dispatcher.Stores.dispatch(new RepoActions.RepoResolved(action.repo, data.Error ? data : data.Data));
+						});
 				}
 				break;
 			}
@@ -87,16 +82,14 @@ const RepoBackend = {
 				let commitID = RepoStore.resolvedRevs.get(action.repo, action.rev);
 				if (commitID === null || action.force) {
 					const revPart = action.rev ? `@${action.rev}` : "";
-					trackPromise(
-						RepoBackend.fetch(`/.api/repos/${action.repo}${revPart}/-/rev`)
-							.then(updateRepoCloning(action.repo))
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => ({Error: err}))
-							.then((data) => {
-								Dispatcher.Stores.dispatch(new RepoActions.ResolvedRev(action.repo, action.rev, data));
-							})
-					);
+					RepoBackend.fetch(`/.api/repos/${action.repo}${revPart}/-/rev`)
+						.then(updateRepoCloning(action.repo))
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => {
+							Dispatcher.Stores.dispatch(new RepoActions.ResolvedRev(action.repo, action.rev, data));
+						});
 				}
 				break;
 			}
@@ -126,23 +119,25 @@ const RepoBackend = {
 					};
 				}
 
-				trackPromise(
-					RepoBackend.fetch(`/.api/repos`, {
-						method: "POST",
-						body: JSON.stringify(body),
-					})
-					.then(checkStatus)
-					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
-					.then((data) => {
-						Dispatcher.Stores.dispatch(new RepoActions.RepoCreated(action.repo, data));
-						if (!data.Error) {
-							const eventProps = {language: action.remoteRepo.Language, private: Boolean(action.remoteRepo.Private)};
-							EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_SUCCESS, "AddRepo", eventProps);
-							EventLogger.logIntercomEvent("add-repo", eventProps);
+				RepoBackend.fetch(`/.api/repos`, {
+					method: "POST",
+					body: JSON.stringify(body),
+				})
+				.then(checkStatus)
+				.then((resp) => resp.json())
+				.catch((err) => ({Error: err}))
+				.then((data) => {
+					Dispatcher.Stores.dispatch(new RepoActions.RepoCreated(action.repo, data));
+					if (!data.Error) {
+						const eventProps = {language: action.remoteRepo.Language, private: Boolean(action.remoteRepo.Private)};
+						EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_SUCCESS, "AddRepo", eventProps);
+						EventLogger.logIntercomEvent("add-repo", eventProps);
+						if (action.refreshVCS) {
+							RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, {method: "POST"})
+								.then(checkStatus);
 						}
-					})
-				);
+					}
+				});
 				break;
 			}
 
@@ -150,15 +145,13 @@ const RepoBackend = {
 			{
 				let branches = RepoStore.branches.list(action.repo);
 				if (branches === null) {
-					trackPromise(
-						RepoBackend.fetch(`/.api/repos/${action.repo}/-/branches?IncludeCommit=true&PerPage=1000`)
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => {
-								Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, [], true));
-							})
-							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, sortBranches(data.Branches) || [])))
-					);
+					RepoBackend.fetch(`/.api/repos/${action.repo}/-/branches?IncludeCommit=true&PerPage=1000`)
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => {
+							Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, [], true));
+						})
+						.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, sortBranches(data.Branches) || [])));
 				}
 				break;
 			}
@@ -167,15 +160,13 @@ const RepoBackend = {
 			{
 				let tags = RepoStore.tags.list(action.repo);
 				if (tags === null) {
-					trackPromise(
-						RepoBackend.fetch(`/.api/repos/${action.repo}/-/tags?PerPage=1000`)
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => {
-								Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, [], true));
-							})
-							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, sortTags(data.Tags) || [])))
-					);
+					RepoBackend.fetch(`/.api/repos/${action.repo}/-/tags?PerPage=1000`)
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => {
+							Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, [], true));
+						})
+						.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, sortTags(data.Tags) || [])));
 				}
 				break;
 			}
@@ -184,23 +175,19 @@ const RepoBackend = {
 			{
 				let inventory = RepoStore.inventory.get(action.repo, action.commitID);
 				if (inventory === null) {
-					trackPromise(
-						RepoBackend.fetch(`/.api/repos/${action.repo}@${action.commitID}/-/inventory`)
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => ({Error: err}))
-							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedInventory(action.repo, action.commitID, data)))
-					);
+					RepoBackend.fetch(`/.api/repos/${action.repo}@${action.commitID}/-/inventory`)
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedInventory(action.repo, action.commitID, data)));
 				}
 				break;
 			}
 
 		case RepoActions.RefreshVCS:
 			{
-				trackPromise(
-					RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, {method: "POST"})
-						.then(checkStatus)
-				);
+				RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, {method: "POST"})
+					.then(checkStatus);
 				break;
 			}
 		}

@@ -5,7 +5,6 @@ import SearchStore from "sourcegraph/search/SearchStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {RESULTS_LIMIT} from "sourcegraph/search/GlobalSearch";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
-import {trackPromise} from "sourcegraph/app/status";
 
 const SearchBackend = {
 	fetch: defaultFetch,
@@ -38,24 +37,22 @@ const SearchBackend = {
 						q.push(`Fast=1`);
 					}
 
-					trackPromise(
-						SearchBackend.fetch(`/.api/global-search?${q.join("&")}`)
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => ({Error: err}))
-							.then((data) => {
-								Dispatcher.Stores.dispatch(new SearchActions.ResultsFetched({
-									query: p.query,
-									repos: p.repos,
-									notRepos: p.notRepos,
-									commitID: p.commitID,
-									limit: p.limit,
-									includeRepos: p.includeRepos,
-									defs: data,
-									options: data.options,
-								}));
-							})
-					);
+					SearchBackend.fetch(`/.api/global-search?${q.join("&")}`)
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => {
+							Dispatcher.Stores.dispatch(new SearchActions.ResultsFetched({
+								query: p.query,
+								repos: p.repos,
+								notRepos: p.notRepos,
+								commitID: p.commitID,
+								limit: p.limit,
+								includeRepos: p.includeRepos,
+								defs: data,
+								options: data.options,
+							}));
+						});
 				}
 				break;
 			}

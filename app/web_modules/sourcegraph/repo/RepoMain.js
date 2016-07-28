@@ -1,6 +1,6 @@
 // @flow weak
 
-import React from "react";
+import * as React from "react";
 import Helmet from "react-helmet";
 import TreeSearch from "sourcegraph/tree/TreeSearch";
 import Modal, {setLocationModalState} from "sourcegraph/components/Modal";

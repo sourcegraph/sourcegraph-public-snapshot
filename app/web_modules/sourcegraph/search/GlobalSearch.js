@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import ReactDOM from "react-dom";
 import {Link} from "react-router";
 import {rel} from "sourcegraph/app/routePatterns";
@@ -31,17 +31,6 @@ export const RESULTS_LIMIT = 20;
 
 const resultIconSize = "24px";
 
-function chunk(arr: Array<any>): Array<Array<any>> {
-	const len = 10;
-	const chunks = [];
-	let i = 0;
-	const n = arr.length;
-	while (i < n) {
-		chunks.push(arr.slice(i, i += len));
-	}
-	return chunks;
-}
-
 // GlobalSearch is the global search bar + results component.
 // Tech debt: this duplicates a lot of code with TreeSearch and we
 // should consider merging them at some point.
@@ -68,7 +57,7 @@ class GlobalSearch extends Container {
 			matchingResults: {Repos: [], Defs: [], Options: [], outstandingFetches: 0},
 			className: null,
 			resultClassName: null,
-			selectionIndex: -1,
+			selectionIndex: 0,
 			githubToken: null,
 			searchSettings: null,
 			_queries: null,
@@ -131,12 +120,6 @@ class GlobalSearch extends Container {
 		return this.props.location.pathname.slice(1) === rel.search ? `/${rel.search}` : "(global nav)";
 	}
 
-	_canSearch(state): bool {
-		const scope = state.searchSettings ? state.searchSettings.scope : null;
-		if (!scope) return false;
-		return scope.public || scope.private || scope.repo || scope.popular;
-	}
-
 	_parseRemoteRepoURIsAndDeps(repos, deps) {
 		let uris = [];
 		for (let repo of repos) {
@@ -181,7 +164,7 @@ class GlobalSearch extends Container {
 				for (const lang of languages) {
 					const repos = [];
 					if (state.repo && scope.repo) repos.push(state.repo);
-					if ((scope.popular || !state.githubToken) && lang) repos.push(...popularRepos[lang]);
+					if (scope.popular && lang) repos.push(...popularRepos[lang]);
 					if (scope.public) repos.push(...state._publicRepos);
 					if (scope.private) repos.push(...state._privateRepos);
 					state._reposByLang[lang] = uniq(repos);
@@ -196,18 +179,13 @@ class GlobalSearch extends Container {
 				state._queries = [];
 				for (const lang of languages) {
 					const repos = state._reposByLang[lang];
-					if (repos && repos.length > 0) {
-						const batches = chunk(repos);
-						for (const batch of batches) {
-							state._queries.push({
-								query: `${lang} ${state.query}`,
-								repos: batch,
-								limit: RESULTS_LIMIT,
-								includeRepos: props.location.query.includeRepos,
-								fast: true,
-							});
-						}
-					}
+					state._queries.push({
+						query: `${lang} ${state.query}`,
+						repos: repos,
+						limit: RESULTS_LIMIT,
+						includeRepos: props.location.query.includeRepos,
+						fast: true,
+					});
 				}
 			} else {
 				state._queries = null;
@@ -242,7 +220,7 @@ class GlobalSearch extends Container {
 
 		if (prevState.githubToken !== nextState.githubToken ||
 			prevState._queries !== nextState._queries) {
-			if (nextState._queries && this._canSearch(nextState)) {
+			if (nextState._queries) {
 				this._debounceForSearch(() => {
 					for (const q of nextState._queries) {
 						Dispatcher.Backends.dispatch(new SearchActions.WantResults(q));
@@ -275,7 +253,7 @@ class GlobalSearch extends Container {
 			max = this._numResults();
 
 			this.setState({
-				selectionIndex: idx + 1 >= max ? -1 : idx + 1,
+				selectionIndex: idx + 1 >= max ? 0 : idx + 1,
 			}, this._scrollToVisibleSelection);
 
 			this._temporarilyIgnoreMouseSelection();
@@ -287,7 +265,7 @@ class GlobalSearch extends Container {
 			max = this._numResults();
 
 			this.setState({
-				selectionIndex: idx < 0 ? max-1 : idx-1,
+				selectionIndex: idx <= 0 ? max-1 : idx-1,
 			}, this._scrollToVisibleSelection);
 
 			this._temporarilyIgnoreMouseSelection();
@@ -307,12 +285,9 @@ class GlobalSearch extends Container {
 			break;
 
 		case 13: // Enter
-			// Ignore global search enter keypress (to submit search form).
-			if (this._normalizedSelectionIndex() !== -1) {
-				this._onSelection(false);
-				this._temporarilyIgnoreMouseSelection();
-				e.preventDefault();
-			}
+			this._onSelection(false);
+			this._temporarilyIgnoreMouseSelection();
+			e.preventDefault();
 			break;
 		default:
 			// Changes to the input value are handled by the parent component.
@@ -419,16 +394,11 @@ class GlobalSearch extends Container {
 		this._ignoreMouseSelection = true;
 	}
 
-	_results(): React$Element | Array<React$Element> {
+	_results(): React$Element<any> | Array<React$Element<any>> {
 		const langs = this.state.searchSettings ? this.state.searchSettings.languages : null;
-		const scope = this.state.searchSettings ? this.state.searchSettings.scope : null;
 
 		if (!langs || langs.length === 0) {
 			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`} styleName="result result-error">Select a language to search.</div>];
-		}
-
-		if (!scope || !(scope.popular || (this.state.repo && scope.repo) || scope.private || scope.public)) {
-			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`} styleName="result result-error">Select repositories to include.</div>];
 		}
 
 		if (this.state.query && !this.state.matchingResults ||

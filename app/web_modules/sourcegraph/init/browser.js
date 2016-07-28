@@ -1,5 +1,5 @@
 import "babel-polyfill";
-import React from "react";
+import * as React from "react";
 import ReactDOM from "react-dom";
 import "sourcegraph/util/actionLogger";
 import "sourcegraph/app/appdash";

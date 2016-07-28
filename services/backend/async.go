@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
@@ -112,6 +113,23 @@ func (s *asyncWorker) do(ctx context.Context, job *store.Job) error {
 }
 
 func (s *asyncWorker) refreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefreshIndexesOp) error {
+	ctx, release, ok := rcache.TryAcquireMutex(ctx, fmt.Sprintf("async/refreshindex/%d", op.Repo))
+	if !ok {
+		// We already have a running job for this repo, but it may be
+		// indexing an older commit. So lets just try again later.
+		op.Source = op.Source + " (mutex)"
+		args, err := json.Marshal(op)
+		if err != nil {
+			return err
+		}
+		return store.QueueFromContext(ctx).Enqueue(ctx, &store.Job{
+			Type:  "RefreshIndexes",
+			Args:  args,
+			Delay: 10 * time.Minute,
+		})
+	}
+	defer release()
+
 	_, err := svc.Defs(ctx).RefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
 		Repo:                op.Repo,
 		RefreshRefLocations: true,

@@ -1,6 +1,6 @@
 // @flow weak
 
-import React from "react";
+import * as React from "react";
 import Dispatcher from "sourcegraph/Dispatcher";
 import context from "sourcegraph/app/context";
 import type {SiteConfig} from "sourcegraph/app/siteConfig";
@@ -46,6 +46,13 @@ export class EventLogger {
 
 		if (typeof document !== "undefined") {
 			document.addEventListener("sourcegraph:platform:initalization", this._initializeForSourcegraphPlatform.bind(this));
+			document.addEventListener("sourcegraph:metrics:logEventForCategory", this._logDesktopEventForCategory.bind(this));
+		}
+	}
+
+	_logDesktopEventForCategory(event) {
+		if (event && event.detail && event.detail.eventCategory && event.detail.eventAction && event.detail.eventLabel) {
+			this.logEventForCategory(event.detail.eventCategory, event.detail.eventAction, event.detail.eventLabel, event.detail.eventProperties);
 		}
 	}
 
@@ -303,17 +310,17 @@ export class EventLogger {
 				this.logEventForCategory(AnalyticsConstants.CATEGORY_DEF, AnalyticsConstants.ACTION_FETCH, action.eventName, eventProps);
 			}
 			break;
-
-		case DefActions.HighlightDef:
+		case DefActions.Hovering:
 			{
-				if (action.url) { // we also emit HighlightDef when the def is un-highlighted
-					let eventProps = {
-						language: action.language || "unknown",
-					};
-					this.logEventForCategory(AnalyticsConstants.CATEGORY_DEF, AnalyticsConstants.ACTION_HOVER, action.eventName, eventProps);
+				if (action.pos === null) {
+					break;
 				}
-				break;
+				let eventProps = {
+					language: getLanguageExtensionForPath(action.pos.file),
+				};
+				this.logEventForCategory(AnalyticsConstants.CATEGORY_DEF, AnalyticsConstants.ACTION_HOVER, "Hovering", eventProps);
 			}
+			break;
 
 		default:
 			// All dispatched actions to stores will automatically be tracked by the eventName
@@ -330,7 +337,7 @@ export default new EventLogger();
 
 // withEventLoggerContext makes eventLogger accessible as this.context.eventLogger
 // in the component's context.
-export function withEventLoggerContext(eventLogger: EventLogger, Component: ReactClass): ReactClass {
+export function withEventLoggerContext(eventLogger: EventLogger, Component: ReactClass<any>): ReactClass<any> {
 	class WithEventLogger extends React.Component {
 		static childContextTypes = {
 			eventLogger: React.PropTypes.object,
@@ -354,7 +361,7 @@ export function withEventLoggerContext(eventLogger: EventLogger, Component: Reac
 
 // withViewEventsLogged calls this.context.eventLogger.logEvent when the
 // location's pathname changes.
-export function withViewEventsLogged(Component: ReactClass): ReactClass {
+export function withViewEventsLogged(Component: ReactClass<any>): ReactClass<any> {
 	class WithViewEventsLogged extends React.Component { // eslint-disable-line react/no-multi-comp
 		static propTypes = {
 			routes: React.PropTypes.arrayOf(React.PropTypes.object),
@@ -380,7 +387,6 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 			// values are updated.
 			if (this.props.location.pathname !== nextProps.location.pathname) {
 				this._logView(nextProps.routes, nextProps.location);
-				// $FlowHack
 				document.dispatchEvent(new CustomEvent("sourcegraph:identify", this.context.eventLogger.getAmplitudeIdentificationProps()));
 			}
 

@@ -6,13 +6,14 @@ import {matchPattern} from "react-router/lib/PatternUtils";
 export type RouteName = "styleguide" |
 	"search" |
 	"home" |
-	"tools" |
+	"integrations" |
 	"tool" |
 	"settings" |
 	"settingsRepos" |
 	"commit" |
 	"def" |
 	"defInfo" |
+	"desktopHome" |
 	"repo" |
 	"tree" |
 	"blob" |
@@ -41,14 +42,14 @@ export const rel: {[key: RouteName]: string} = {
 	about: "about",
 	beta: "beta",
 	contact: "contact",
+	desktopHome: "desktop/home",
 	security: "security",
 	pricing: "pricing",
 	terms: "-/terms",
 	privacy: "-/privacy",
 	styleguide: "styleguide",
 	home: "",
-	tools: "tools",
-	tool: "tools/*",
+	integrations: "integrations",
 	settings: "settings/",
 	settingsRepos: "repos",
 	login: "login",
@@ -71,14 +72,14 @@ export const abs: {[key: RouteName]: string} = {
 	search: rel.search,
 	about: rel.about,
 	contact: rel.contact,
+	desktopHome: rel.desktopHome,
 	security: rel.security,
 	pricing: rel.pricing,
 	terms: rel.terms,
 	privacy: rel.privacy,
 	styleguide: rel.styleguide,
 	home: rel.home,
-	tools: rel.tools,
-	tool: rel.tool,
+	integrations: rel.integrations,
 	settings: rel.settings,
 	settingsRepos: `${rel.settings}/${rel.settingsRepos}`,
 	login: rel.login,

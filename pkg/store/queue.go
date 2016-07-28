@@ -1,6 +1,10 @@
 package store
 
-import "golang.org/x/net/context"
+import (
+	"time"
+
+	"golang.org/x/net/context"
+)
 
 // Queue pushes and dequeues jobs. Note: we don't dequeue a job directly,
 // instead we need to mark a job as finished. This allows us to pick up work
@@ -25,6 +29,10 @@ type Job struct {
 
 	// Args is passed to the worker
 	Args []byte
+
+	// Delay will ensure at least Delay time passes before popping the Job
+	// off the queue.
+	Delay time.Duration
 }
 
 // LockedJob is a job returned from the queue. You must call MarkSuccess or

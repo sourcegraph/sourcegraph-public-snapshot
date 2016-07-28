@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 
 import RepoLink from "sourcegraph/components/RepoLink";
 import {Label} from "sourcegraph/components";

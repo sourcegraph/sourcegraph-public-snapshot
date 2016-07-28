@@ -1,0 +1,63 @@
+@value base "sourcegraph/components/styles/_base.css";
+@value grid "sourcegraph/components/styles/_grid.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+@value layout "sourcegraph/components/styles/_layout.css";
+
+.cool-mid-gray { composes: cool-mid-gray from colors; }
+
+.container {
+	composes: center pv4 ph4 from base;
+	composes: bg-white from colors;
+	min-height: 100vh;
+	width: 100%;
+}
+
+.menu {
+	composes: col-12 from grid;
+	composes: center from base;
+	max-width: 640px;
+	text-align: center;
+}
+
+.tool-list {
+	composes: pb4 from base;
+	display: flex;
+	justify-content: center;
+	flex-wrap: wrap;
+}
+
+.tool {
+	composes: ph3 mt4 from base;
+	min-width: 60px;
+}
+
+.img {
+	min-width: 60px;
+	height: 60px;
+	align-self: center;
+}
+
+.caption {
+	composes: cool-gray from colors;
+	display: block;
+}
+
+.footer {
+	composes: bt center pv3 ph3 from base;
+	composes: bg-white b--light-gray from colors;
+	width: 100%;
+	position: absolute;
+	bottom: 0;
+	display: flex;
+	justify-content: center;
+}
+
+.footer-link {
+	width: 100%;
+	max-width: 420px;
+}
+
+.footer-btn {
+	width: 100%;
+}

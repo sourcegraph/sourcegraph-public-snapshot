@@ -1,11 +1,11 @@
 'use strict';
 
 
-var zlib_deflate = require('./zlib/deflate.js');
-var utils = require('./utils/common');
-var strings = require('./utils/strings');
-var msg = require('./zlib/messages');
-var zstream = require('./zlib/zstream');
+var zlib_deflate = require('./zlib/deflate');
+var utils        = require('./utils/common');
+var strings      = require('./utils/strings');
+var msg          = require('./zlib/messages');
+var ZStream      = require('./zlib/zstream');
 
 var toString = Object.prototype.toString;
 
@@ -79,6 +79,7 @@ var Z_DEFLATED  = 8;
  * - `windowBits`
  * - `memLevel`
  * - `strategy`
+ * - `dictionary`
  *
  * [http://zlib.net/manual.html#Advanced](http://zlib.net/manual.html#Advanced)
  * for more information on these.
@@ -116,7 +117,8 @@ var Z_DEFLATED  = 8;
  * console.log(deflate.result);
  * ```
  **/
-var Deflate = function(options) {
+function Deflate(options) {
+  if (!(this instanceof Deflate)) return new Deflate(options);
 
   this.options = utils.assign({
     level: Z_DEFAULT_COMPRESSION,
@@ -143,7 +145,7 @@ var Deflate = function(options) {
   this.ended  = false;  // used to avoid multiple onEnd() calls
   this.chunks = [];     // chunks of compressed data
 
-  this.strm = new zstream();
+  this.strm = new ZStream();
   this.strm.avail_out = 0;
 
   var status = zlib_deflate.deflateInit2(
@@ -162,7 +164,28 @@ var Deflate = function(options) {
   if (opt.header) {
     zlib_deflate.deflateSetHeader(this.strm, opt.header);
   }
-};
+
+  if (opt.dictionary) {
+    var dict;
+    // Convert data if needed
+    if (typeof opt.dictionary === 'string') {
+      // If we need to compress text, change encoding to utf8.
+      dict = strings.string2buf(opt.dictionary);
+    } else if (toString.call(opt.dictionary) === '[object ArrayBuffer]') {
+      dict = new Uint8Array(opt.dictionary);
+    } else {
+      dict = opt.dictionary;
+    }
+
+    status = zlib_deflate.deflateSetDictionary(this.strm, dict);
+
+    if (status !== Z_OK) {
+      throw new Error(msg[status]);
+    }
+
+    this._dict_set = true;
+  }
+}
 
 /**
  * Deflate#push(data[, mode]) -> Boolean
@@ -193,7 +216,7 @@ var Deflate = function(options) {
  * push(chunk, true);  // push last chunk
  * ```
  **/
-Deflate.prototype.push = function(data, mode) {
+Deflate.prototype.push = function (data, mode) {
   var strm = this.strm;
   var chunkSize = this.options.chunkSize;
   var status, _mode;
@@ -265,7 +288,7 @@ Deflate.prototype.push = function(data, mode) {
  * By default, stores data blocks in `chunks[]` property and glue
  * those in `onEnd`. Override this handler, if you need another behaviour.
  **/
-Deflate.prototype.onData = function(chunk) {
+Deflate.prototype.onData = function (chunk) {
   this.chunks.push(chunk);
 };
 
@@ -280,7 +303,7 @@ Deflate.prototype.onData = function(chunk) {
  * or if an error happened. By default - join collected chunks,
  * free memory and fill `results` / `err` properties.
  **/
-Deflate.prototype.onEnd = function(status) {
+Deflate.prototype.onEnd = function (status) {
   // On success - join
   if (status === Z_OK) {
     if (this.options.to === 'string') {
@@ -300,7 +323,7 @@ Deflate.prototype.onEnd = function(status) {
  * - data (Uint8Array|Array|String): input data to compress.
  * - options (Object): zlib deflate options.
  *
- * Compress `data` with deflate alrorythm and `options`.
+ * Compress `data` with deflate algorithm and `options`.
  *
  * Supported options are:
  *
@@ -308,6 +331,7 @@ Deflate.prototype.onEnd = function(status) {
  * - windowBits
  * - memLevel
  * - strategy
+ * - dictionary
  *
  * [http://zlib.net/manual.html#Advanced](http://zlib.net/manual.html#Advanced)
  * for more information on these.

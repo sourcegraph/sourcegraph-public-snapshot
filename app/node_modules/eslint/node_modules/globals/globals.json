@@ -926,6 +926,7 @@
 		"jest": false,
 		"pit": false,
 		"require": false,
+		"test": false,
 		"xdescribe": false,
 		"xit": false
 	},

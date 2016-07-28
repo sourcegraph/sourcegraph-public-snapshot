@@ -1,10 +1,14 @@
 package backend
 
 import (
+	"bytes"
 	"fmt"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"github.com/neelance/parallel"
 
@@ -203,4 +207,84 @@ func computeLineStartBytes(data []byte) []uint32 {
 		}
 	}
 	return pos
+}
+
+func (s *annotations) GetDefAtPos(ctx context.Context, opt *sourcegraph.AnnotationsGetDefAtPosOptions) (*sourcegraph.DefSpec, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Annotations.GetDefAtPos", opt.Entry.RepoRev.Repo); err != nil {
+		return nil, err
+	}
+
+	if opt.Entry.Path == "" {
+		return nil, fmt.Errorf("GetDefAtPos: no file path specified for file in %v", opt.Entry.RepoRev)
+	}
+
+	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: opt.Entry.RepoRev.Repo})
+	if err != nil {
+		return nil, err
+	}
+
+	entry, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{
+		Entry: opt.Entry,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	offset := uint32(0)
+	contents := entry.Contents
+	for line := opt.Line; line > 0; line-- {
+		eol := bytes.IndexByte(contents, '\n')
+		if eol == -1 {
+			break
+		}
+		offset += uint32(eol + 1)
+		contents = contents[eol+1:]
+	}
+	offset += opt.Character
+
+	filters := []srcstore.RefFilter{
+		srcstore.ByRepos(repo.URI),
+		srcstore.ByCommitIDs(opt.Entry.RepoRev.CommitID),
+		srcstore.ByFiles(true, opt.Entry.Path),
+		srcstore.RefFilterFunc(func(ref *graph.Ref) bool {
+			return ref.Start <= offset && ref.End > offset
+		}),
+	}
+
+	refs, err := store.GraphFromContext(ctx).Refs(filters...)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(refs) == 0 {
+		return nil, grpc.Errorf(codes.NotFound, "no ref found")
+	}
+
+	r := refs[0]
+	defRepo, err := store.ReposFromContext(ctx).GetByURI(ctx, r.DefRepo)
+	if err != nil {
+		return nil, err
+	}
+
+	var defCommitID string
+	switch defRepo.ID {
+	case opt.Entry.RepoRev.Repo:
+		defCommitID = opt.Entry.RepoRev.CommitID
+	default:
+		defaultRev, err := svc.Repos(ctx).ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+			Repo: defRepo.ID,
+		})
+		if err != nil {
+			return nil, err
+		}
+		defCommitID = defaultRev.CommitID
+	}
+
+	return &sourcegraph.DefSpec{
+		Repo:     defRepo.ID,
+		CommitID: defCommitID,
+		UnitType: r.DefUnitType,
+		Unit:     r.DefUnit,
+		Path:     r.DefPath,
+	}, nil
 }

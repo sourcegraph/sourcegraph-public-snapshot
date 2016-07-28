@@ -36,15 +36,11 @@ type mocks struct {
 }
 
 type mockServers struct {
-	// TODO(sqs): move this to ./api/sourcegraph
 	Accounts     mock.AccountsServer
 	Auth         mock.AuthServer
 	Builds       mock.BuildsServer
 	Defs         mock.DefsServer
-	Deltas       mock.DeltasServer
 	MirrorRepos  mock.MirrorReposServer
-	Orgs         mock.OrgsServer
-	People       mock.PeopleServer
 	RepoStatuses mock.RepoStatusesServer
 	RepoTree     mock.RepoTreeServer
 	Repos        mock.ReposServer
@@ -58,10 +54,7 @@ func (s *mockServers) servers() svc.Services {
 		Auth:         &s.Auth,
 		Builds:       &s.Builds,
 		Defs:         &s.Defs,
-		Deltas:       &s.Deltas,
 		MirrorRepos:  &s.MirrorRepos,
-		Orgs:         &s.Orgs,
-		People:       &s.People,
 		RepoStatuses: &s.RepoStatuses,
 		RepoTree:     &s.RepoTree,
 		Repos:        &s.Repos,

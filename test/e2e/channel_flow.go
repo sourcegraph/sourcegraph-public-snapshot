@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"os"
 
 	"sourcegraph.com/sourcegraph/go-selenium"
 )
@@ -27,7 +26,7 @@ func testChannelFlow(t *T) error {
 		return err
 	}
 
-	grpcEnv := os.Getenv("TARGET_GRPC")
+	grpcEnv := t.TargetGRPC().String()
 	if grpcEnv == "" {
 		return errors.New("TARGET_GRPC environment variable not set")
 	}

@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 
 // Copied from react-router Link.js.
 function isLeftClickEvent(ev) { return ev.button === 0; }

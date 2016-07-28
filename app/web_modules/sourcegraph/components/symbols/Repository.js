@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 
 class Repository extends React.Component {
 	static propTypes = {

@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * from "react";
 import {Link} from "react-router";
 import {Hero, Heading, FlexContainer, Tabs, TabItem, Affix} from "sourcegraph/components";
 import CSSModules from "react-css-modules";

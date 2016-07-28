@@ -10,9 +10,6 @@ import "golang.org/x/net/context"
 // calls. These funcs may not rely on any other values to be set in
 // the ctx; if the func depends on other values (e.g., the actor) to
 // be in the ctx, then add it to LastFuncs.
-//
-// TODO(sqs): separate into funcs that run before EACH method call and
-// funcs that run once at startup.
 var Funcs []func(context.Context) (context.Context, error)
 
 // LastFuncs are called to alter the ctx before responding to gRPC

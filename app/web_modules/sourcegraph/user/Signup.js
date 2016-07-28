@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import Helmet from "react-helmet";
 import {Link} from "react-router";
 
@@ -147,10 +147,13 @@ function Signup(props, {router}) {
 			<Helmet title="Sign Up" />
 			<SignupForm {...props}
 				returnTo="/"
-				onSignupSuccess={() => router.replace({...location, state: {...location.state, _onboarding: "new-user"}})} />
+				onSignupSuccess={() => router.replace({...props.location, state: {...props.location.state, _onboarding: "new-user"}})} />
 		</div>
 	);
 }
+Signup.propTypes = {
+	location: React.PropTypes.object.isRequired,
+};
 Signup.contextTypes = {
 	router: React.PropTypes.object.isRequired,
 };

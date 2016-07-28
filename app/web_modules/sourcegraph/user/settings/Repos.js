@@ -1,9 +1,11 @@
-import React from "react";
-import RepoLink from "sourcegraph/components/RepoLink";
+import * as React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Repos.css";
 import base from "sourcegraph/components/styles/_base.css";
-import {Input, Table} from "sourcegraph/components";
+import {Input, Heading, Button, ToggleSwitch} from "sourcegraph/components";
+import RepoLink from "sourcegraph/components/RepoLink";
+import Dispatcher from "sourcegraph/Dispatcher";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
 import debounce from "lodash.debounce";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
@@ -61,34 +63,54 @@ class Repos extends React.Component {
 		return this.context.githubToken && this.context.githubToken.scope && this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org");
 	}
 
+	_toggleRepo(remoteRepo: Object) {
+		Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(remoteRepo.URI, remoteRepo, true));
+	}
+
 	render() {
 		let repos = (this.props.repos || []).filter(this._showRepo).sort(this._repoSort);
 
 		return (
-			<div className={base.pb4}>
-				<div>
+			<div className={base.pb6}>
+				<header styleName="header">
+					<Heading level="7" color="cool-mid-gray">Your repositories</Heading>
+					<p>To get jump-to-definition, search, and code examples, enable indexing on your repositories using the toggle. Private code indexed on Sourcegraph is only available to you and those with permissions to the underlying GitHub repository.</p>
 					<div styleName="input-bar">
-						{this._hasGithubToken() && <Input type="text"
+						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} styleName="github-button">Add public repositories</GitHubAuthButton>}
+						{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github-button">Add private repositories</GitHubAuthButton>}
+					</div>
+				</header>
+				<div styleName="settings">
+					{this._hasGithubToken() &&
+					<div styleName="list-heading">
+						<Input type="text"
 							placeholder="Find a repository..."
 							domRef={(e) => this._filterInput = e}
 							spellCheck={false}
 							styleName="filter-input"
-							onChange={this._handleFilter} />}
-						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} styleName="github-button">Add public repositories</GitHubAuthButton>}
-						{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github-button">Add private repositories</GitHubAuthButton>}
+							onChange={this._handleFilter} />
+						<span styleName="list-label">Enable Indexing</span>
+					</div>}
+					<div styleName="repos-list">
+						{repos.length > 0 && repos.map((repo, i) =>
+							<div styleName="row" key={i}>
+								<div styleName="info">
+									{repo.ID ?
+										<RepoLink repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} /> :
+										(repo.URI && repo.URI.replace("github.com/", "").replace("/", " / ", 1)) || `${repo.Owner} / ${repo.Name}`
+									}
+									{repo.Description && <p styleName="description">
+										{repo.Description.length > 100 ? `${repo.Description.substring(0, 100)}...` : repo.Description}
+									</p>}
+								</div>
+								<div styleName="toggle">
+									<ToggleSwitch defaultChecked={Boolean(repo.ID)} onChange={(checked) => {
+										this._toggleRepo(repo);
+									}}/>
+								</div>
+							</div>
+						)}
 					</div>
-					<Table styleName="repos">
-						<tbody>
-							{repos.length > 0 && repos.map((repo, i) =>
-								<tr styleName="row" key={i}>
-									<td styleName="cell" colSpan="2">
-										<RepoLink styleName="repo-link" repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} />
-										{repo.Description && <p styleName="description">{repo.Description}</p>}
-									</td>
-								</tr>
-							)}
-						</tbody>
-					</Table>
 					{this._hasGithubToken() && repos.length === 0 && (!this._filterInput || !this._filterInput.value) &&
 						<p styleName="indicator">Loading...</p>
 					}
@@ -97,6 +119,13 @@ class Repos extends React.Component {
 						<p styleName="indicator">No matching repositories</p>
 					}
 				</div>
+				{this.props.location.query.onboarding &&
+					<footer styleName="footer">
+						<a styleName="footer-link" href="/integrations?onboarding=t">
+							<Button color="green" styleName="footer-btn">Continue</Button>
+						</a>
+					</footer>
+				}
 			</div>
 		);
 	}

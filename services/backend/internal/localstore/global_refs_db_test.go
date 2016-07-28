@@ -43,35 +43,6 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 	createdRepos := (&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "x/y"}, &sourcegraph.Repo{URI: "a/b"})
 	xyRepoID := createdRepos[0].ID
 	abRepoID := createdRepos[1].ID
-	// TODO(keegancsmith) remove once we don't need to speak to the repo
-	// service https://app.asana.com/0/138665145800110/137848642885286
-	mockReposS := &mock.ReposServer{
-		Get_: func(_ context.Context, r *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
-			var uri string
-			switch r.ID {
-			case xyRepoID:
-				uri = "x/y"
-			case abRepoID:
-				uri = "a/b"
-			default:
-				panic("unrecognized ID")
-			}
-			return &sourcegraph.Repo{ID: r.ID, URI: uri}, nil
-		},
-		Resolve_: func(_ context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
-			var id int32
-			switch op.Path {
-			case "x/y":
-				id = xyRepoID
-			case "a/b":
-				id = abRepoID
-			default:
-				panic("unrecognized path: " + op.Path)
-			}
-			return &sourcegraph.RepoResolution{Repo: id}, nil
-		},
-	}
-	ctx = svc.WithServices(ctx, svc.Services{Repos: mockReposS})
 	ctx = store.WithRepos(ctx, &repos{})
 
 	testRefs1 := []*graph.Ref{
@@ -127,12 +98,12 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoObj.ID}); err != nil {
+		if err := g.Update(ctx, store.RefreshIndexOp{Repo: repoObj.ID, CommitID: "aaaaa"}); err != nil {
 			t.Fatalf("could not update %s: %s", repo, err)
 		}
 	}
 	// Updates should be idempotent.
-	err := g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: abRepoID})
+	err := g.Update(ctx, store.RefreshIndexOp{Repo: abRepoID, CommitID: "aaaaa"})
 	if err != nil {
 		t.Fatalf("could not idempotent update a/b: %s", err)
 	}
@@ -319,23 +290,15 @@ func TestGlobalRefsUpdate(t *testing.T) {
 
 	// We should only have results for first
 	genRefs("first")
-	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoID})
+	err = g.Update(ctx, store.RefreshIndexOp{Repo: repoID, CommitID: "aaaaa"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	check("first", "first")
 
-	// We haven't changed the "latest" commit, so even though the data has
-	// changed we shouldn't reindex
+	// We always reindex, even if we have indexed a commit.
 	genRefs("second")
-	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoID})
-	if err != nil {
-		t.Fatal(err)
-	}
-	check("first-again", "first")
-
-	// Force a reindex should show the new data
-	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoID, Force: true})
+	err = g.Update(ctx, store.RefreshIndexOp{Repo: repoID, CommitID: "aaaaa"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -343,14 +306,7 @@ func TestGlobalRefsUpdate(t *testing.T) {
 
 	// Update what the latest commit is, that should cause us to index third
 	genRefs("third")
-	mocks.RepoVCS.Open_ = func(ctx context.Context, repo int32) (vcs.Repository, error) {
-		return sgtest.MockRepository{
-			ResolveRevision_: func(spec string) (vcs.CommitID, error) {
-				return "bbbbb", nil
-			},
-		}, nil
-	}
-	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoID})
+	err = g.Update(ctx, store.RefreshIndexOp{Repo: repoID, CommitID: "bbbbb"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -502,7 +458,7 @@ func globalRefsUpdate(b *testing.B, g store.GlobalRefs, ctx context.Context, moc
 		if err != nil {
 			b.Fatal(err)
 		}
-		if err := g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoObj.ID}); err != nil {
+		if err := g.Update(ctx, store.RefreshIndexOp{Repo: repoObj.ID, CommitID: "aaaaa"}); err != nil {
 			b.Fatal(err)
 		}
 	}

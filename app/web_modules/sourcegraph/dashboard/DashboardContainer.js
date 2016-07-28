@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import {Link} from "react-router";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import Helmet from "react-helmet";
@@ -105,7 +105,6 @@ class DashboardContainer extends Container {
 					<div styleName="user-actions">
 						{!this.context.signedIn && <LocationStateToggleLink href="/login" modalName="login" location={this.props.location}><Button styleName="action-link" type="button" color="blue" outline={true}>Sign in</Button></LocationStateToggleLink>}
 						<Link to="/tools/browser"><Button styleName="action-link" type="button" color="blue" outline={true}>Install Chrome extension</Button></Link>
-						<Link to="/tools/editor"><Button styleName="action-link" type="button" color="blue" outline={true}>Install editor plugin</Button></Link>
 					</div>
 
 					<GlobalSearchInput
@@ -142,7 +141,7 @@ const TitledSection = CSSModules(({
 	className,
 }: {
 	title: string,
-	children?: React$Element | Array<React$Element>,
+	children?: React$Element<any> | Array<React$Element<any>>,
 	className: string,
 }) => (
 	<div styleName="titled-section" className={className}>

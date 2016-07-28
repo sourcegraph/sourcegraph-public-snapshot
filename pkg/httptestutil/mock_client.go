@@ -12,18 +12,14 @@ type MockClients struct {
 	// handlers.
 	Ctx context.Context
 
-	// TODO(sqs): move this to ./api/sourcegraph
 	Annotations  mock.AnnotationsClient
 	Accounts     mock.AccountsClient
 	Async        mock.AsyncClient
 	Auth         mock.AuthClient
 	Builds       mock.BuildsClient
 	Defs         mock.DefsClient
-	Deltas       mock.DeltasClient
 	Meta         mock.MetaClient
 	MirrorRepos  mock.MirrorReposClient
-	Orgs         mock.OrgsClient
-	People       mock.PeopleClient
 	RepoStatuses mock.RepoStatusesClient
 	RepoTree     mock.RepoTreeClient
 	Repos        mock.ReposClient
@@ -39,11 +35,8 @@ func (c *MockClients) Client() *sourcegraph.Client {
 		Auth:         &c.Auth,
 		Builds:       &c.Builds,
 		Defs:         &c.Defs,
-		Deltas:       &c.Deltas,
 		Meta:         &c.Meta,
 		MirrorRepos:  &c.MirrorRepos,
-		Orgs:         &c.Orgs,
-		People:       &c.People,
 		RepoStatuses: &c.RepoStatuses,
 		RepoTree:     &c.RepoTree,
 		Repos:        &c.Repos,

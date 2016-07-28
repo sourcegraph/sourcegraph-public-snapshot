@@ -1,0 +1,31 @@
+[
+  {
+    "id": "0",
+    "jsonrpc": "2.0",
+    "method": "initialize",
+    "params": {
+      "rootPath": "testdata/src/promexample",
+      "capabilities": {}
+    }
+  },
+  {
+    "id": "1",
+    "jsonrpc": "2.0",
+    "method": "textDocument/definition",
+    "params": {
+      "textDocument": {
+        "uri": "file:///main.go"
+      },
+      "position": {
+        "line": 9,
+        "character": 55
+      }
+    }
+  },
+  {
+    "id": "2",
+    "jsonrpc": "2.0",
+    "method": "shutdown",
+    "params": null
+  }
+]

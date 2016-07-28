@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import {Link} from "react-router";
 import {Hero, Heading} from "sourcegraph/components";
 import styles from "./Page.css";
@@ -9,7 +9,7 @@ import CSSModules from "react-css-modules";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import Helmet from "react-helmet";
 
-function AboutPage(props, {signedIn}): React$Element {
+function AboutPage(props, {signedIn}): React$Element<any> {
 	return (
 		<div>
 			<Helmet title="About" />
@@ -42,7 +42,7 @@ function AboutPage(props, {signedIn}): React$Element {
 					<li><Link to="/github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest">Navigate and jump around code like an IDE</Link></li>
 				</ul>
 				<p styleName="p">No installation or signup required. <em>It just works</em>, for both open-source code and your private projects (unless you do crazy stuff with your build tooling).</p>
-<p styleName="p">Sourcegraph is free for public and private projects. <Link to="/pricing">Paid plans</Link> are available. The <a href="https://github.com/sourcegraph/sourcegraph">code that powers Sourcegraph</a> is public and <a href="https://fair.io/">Fair Source</a> licensed.</p>
+<p styleName="p">Sourcegraph is free for public and private projects. <Link to="/pricing">Paid plans</Link> are available.</p>
 
 				<Heading level="5">Supported languages</Heading>
 <ul>

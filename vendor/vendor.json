@@ -300,6 +300,12 @@
 			"revisionTime": "2016-05-26T21:07:24Z"
 		},
 		{
+			"checksumSHA1": "PLhZQY4sT1QkHySO7pDaLSGmCGM=",
+			"path": "github.com/hjr265/redsync.go/redsync",
+			"revision": "688f6d364b799fa311a6de70b2bb9a4a669221da",
+			"revisionTime": "2016-07-19T15:08:18Z"
+		},
+		{
 			"path": "github.com/howeyc/gopass",
 			"revision": "66487b23f2880ba32e185121d2cd51a338ea069a",
 			"revisionTime": "2016-03-03T14:01:16-06:00"

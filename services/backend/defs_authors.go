@@ -10,6 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/emailaddrs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gravatar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
@@ -96,7 +97,7 @@ func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsO
 
 	for _, da := range authors {
 		if da.Email != "" {
-			da.AvatarURL = gravatarURL(da.Email, 48)
+			da.AvatarURL = gravatar.URL(da.Email, 48)
 
 			// Remove domain to prevent spammers from being able
 			// to easily scrape emails from us.

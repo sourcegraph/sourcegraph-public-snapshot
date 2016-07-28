@@ -1,6 +1,6 @@
 import autotest from "sourcegraph/util/autotest";
 
-import React from "react";
+import * as React from "react";
 
 import BuildHeader from "sourcegraph/build/BuildHeader";
 

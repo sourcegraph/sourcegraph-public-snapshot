@@ -81,24 +81,7 @@ func TestRequestPasswordReset(t *testing.T) {
 	}
 
 	s := accounts{}
-	p, err := s.RequestPasswordReset(ctx, &sourcegraph.PersonSpec{Email: "user@example.com"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !sendEmailCalled {
-		t.Errorf("sendEmail wasn't called")
-	}
-	if !verifyAdminCalled {
-		t.Errorf("verifyAdminCalled wasn't called")
-	}
-	if p.Link != "" || p.Token.Token != "" || p.Login != "" {
-		t.Errorf("expected no sensitive information in response, got %v", p)
-	}
-
-	// Request using login
-	sendEmailCalled = false
-	verifyAdminCalled = false
-	p, err = s.RequestPasswordReset(ctx, &sourcegraph.PersonSpec{Login: "user1"})
+	p, err := s.RequestPasswordReset(ctx, &sourcegraph.RequestPasswordResetOp{Email: "user@example.com"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +99,7 @@ func TestRequestPasswordReset(t *testing.T) {
 	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 2, Admin: true})
 	sendEmailCalled = false
 	verifyAdminCalled = false
-	p, err = s.RequestPasswordReset(ctx, &sourcegraph.PersonSpec{Email: "user@example.com"})
+	p, err = s.RequestPasswordReset(ctx, &sourcegraph.RequestPasswordResetOp{Email: "user@example.com"})
 	if err != nil {
 		t.Fatal(err)
 	}

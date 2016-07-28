@@ -49,5 +49,17 @@
 				}
 			]
 		}
-	}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantHoverInfo",
+			"pos": {
+				"repo": "foo",
+				"commit": "aaa",
+				"file": "bar",
+				"line": 42,
+				"character": 3
+			}
+		}
+	]
 }

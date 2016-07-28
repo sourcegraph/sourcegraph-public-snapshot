@@ -11,6 +11,7 @@ import "sourcegraph/def/DefBackend";
 import {fastParseDefPath} from "sourcegraph/def";
 import toQuery from "sourcegraph/util/toQuery";
 import update from "react/lib/update";
+import type {BlobPos} from "sourcegraph/def/DefActions";
 
 function defKey(repo: string, rev: ?string, def: string): string {
 	return `${repo}#${rev || ""}#${def}`;
@@ -37,6 +38,10 @@ function refLocationsKeyFor(r: RefLocationsKey): string {
 
 function examplesKeyFor(r: ExamplesKey): string {
 	return (new DefActions.WantExamples(r)).url();
+}
+
+function posKeyFor(pos: BlobPos) {
+	return `${pos.repo}#${pos.commit}#${pos.file}#${pos.line}#${pos.character}`;
 }
 
 type DefPos = {
@@ -88,7 +93,13 @@ export class DefStore extends Store {
 				return this.content[defKey(repo, commitID, def)] || null;
 			},
 		});
-		this.highlightedDef = null;
+		this.hoverPos = null;
+		this.hoverInfos = deepFreeze({
+			content: data && data.hoverInfos ? data.hoverInfos.content : {},
+			get(pos: BlobPos): string {
+				return this.content[posKeyFor(pos)] || null;
+			},
+		});
 		this.refs = deepFreeze({
 			content: data && data.refs ? data.refs.content : {},
 			get(repo: string, commitID: string, def: string, refRepo: string, refFile: ?string) {
@@ -183,8 +194,16 @@ export class DefStore extends Store {
 				break;
 			}
 
-		case DefActions.HighlightDef:
-			this.highlightedDef = action.url;
+		case DefActions.Hovering:
+			this.hoverPos = action.pos;
+			break;
+
+		case DefActions.HoverInfoFetched:
+			this.hoverInfos = deepFreeze(Object.assign({}, this.hoverInfos, {
+				content: Object.assign({}, this.hoverInfos.content, {
+					[posKeyFor(action.pos)]: action.info,
+				}),
+			}));
 			break;
 
 		case DefActions.ExamplesFetched:

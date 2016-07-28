@@ -49,19 +49,11 @@ func Services() svc.Services {
 
 		Defs: wrappedDefs{},
 
-		Deltas: wrappedDeltas{},
-
 		Desktop: wrappedDesktop{},
 
 		Meta: wrappedMeta{},
 
 		MirrorRepos: wrappedMirrorRepos{},
-
-		Notify: wrappedNotify{},
-
-		Orgs: wrappedOrgs{},
-
-		People: wrappedPeople{},
 
 		RepoStatuses: wrappedRepoStatuses{},
 
@@ -78,15 +70,17 @@ func Services() svc.Services {
 type wrappedMultiRepoImporter struct{}
 
 func (s wrappedMultiRepoImporter) Import(ctx context.Context, param *pb.ImportOp) (res *pbtypes.Void, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "MultiRepoImporter", "Import", param)
 	defer func() {
-		trace.After(ctx, "MultiRepoImporter", "Import", param, err, time.Since(start))
+		trace.After(ctx, "MultiRepoImporter", "Import", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.MultiRepoImporter.Import(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "MultiRepoImporter.Import returned nil, nil")
+	res, errActual = backend.Services.MultiRepoImporter.Import(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "MultiRepoImporter.Import returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -97,15 +91,17 @@ func (s wrappedMultiRepoImporter) Import(ctx context.Context, param *pb.ImportOp
 }
 
 func (s wrappedMultiRepoImporter) CreateVersion(ctx context.Context, param *pb.CreateVersionOp) (res *pbtypes.Void, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "MultiRepoImporter", "CreateVersion", param)
 	defer func() {
-		trace.After(ctx, "MultiRepoImporter", "CreateVersion", param, err, time.Since(start))
+		trace.After(ctx, "MultiRepoImporter", "CreateVersion", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.MultiRepoImporter.CreateVersion(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "MultiRepoImporter.CreateVersion returned nil, nil")
+	res, errActual = backend.Services.MultiRepoImporter.CreateVersion(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "MultiRepoImporter.CreateVersion returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -116,15 +112,17 @@ func (s wrappedMultiRepoImporter) CreateVersion(ctx context.Context, param *pb.C
 }
 
 func (s wrappedMultiRepoImporter) Index(ctx context.Context, param *pb.IndexOp) (res *pbtypes.Void, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "MultiRepoImporter", "Index", param)
 	defer func() {
-		trace.After(ctx, "MultiRepoImporter", "Index", param, err, time.Since(start))
+		trace.After(ctx, "MultiRepoImporter", "Index", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.MultiRepoImporter.Index(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "MultiRepoImporter.Index returned nil, nil")
+	res, errActual = backend.Services.MultiRepoImporter.Index(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "MultiRepoImporter.Index returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -137,15 +135,17 @@ func (s wrappedMultiRepoImporter) Index(ctx context.Context, param *pb.IndexOp) 
 type wrappedAccounts struct{}
 
 func (s wrappedAccounts) Create(ctx context.Context, param *sourcegraph.NewAccount) (res *sourcegraph.CreatedAccount, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Accounts", "Create", param)
 	defer func() {
-		trace.After(ctx, "Accounts", "Create", param, err, time.Since(start))
+		trace.After(ctx, "Accounts", "Create", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Accounts.Create(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Accounts.Create returned nil, nil")
+	res, errActual = backend.Services.Accounts.Create(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Accounts.Create returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -155,16 +155,18 @@ func (s wrappedAccounts) Create(ctx context.Context, param *sourcegraph.NewAccou
 	return
 }
 
-func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *sourcegraph.PersonSpec) (res *sourcegraph.PendingPasswordReset, err error) {
+func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *sourcegraph.RequestPasswordResetOp) (res *sourcegraph.PendingPasswordReset, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Accounts", "RequestPasswordReset", param)
 	defer func() {
-		trace.After(ctx, "Accounts", "RequestPasswordReset", param, err, time.Since(start))
+		trace.After(ctx, "Accounts", "RequestPasswordReset", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Accounts.RequestPasswordReset(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Accounts.RequestPasswordReset returned nil, nil")
+	res, errActual = backend.Services.Accounts.RequestPasswordReset(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Accounts.RequestPasswordReset returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -175,15 +177,17 @@ func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *source
 }
 
 func (s wrappedAccounts) ResetPassword(ctx context.Context, param *sourcegraph.NewPassword) (res *pbtypes.Void, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Accounts", "ResetPassword", param)
 	defer func() {
-		trace.After(ctx, "Accounts", "ResetPassword", param, err, time.Since(start))
+		trace.After(ctx, "Accounts", "ResetPassword", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Accounts.ResetPassword(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Accounts.ResetPassword returned nil, nil")
+	res, errActual = backend.Services.Accounts.ResetPassword(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Accounts.ResetPassword returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -194,15 +198,17 @@ func (s wrappedAccounts) ResetPassword(ctx context.Context, param *sourcegraph.N
 }
 
 func (s wrappedAccounts) Update(ctx context.Context, param *sourcegraph.User) (res *pbtypes.Void, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Accounts", "Update", param)
 	defer func() {
-		trace.After(ctx, "Accounts", "Update", param, err, time.Since(start))
+		trace.After(ctx, "Accounts", "Update", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Accounts.Update(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Accounts.Update returned nil, nil")
+	res, errActual = backend.Services.Accounts.Update(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Accounts.Update returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -213,15 +219,17 @@ func (s wrappedAccounts) Update(ctx context.Context, param *sourcegraph.User) (r
 }
 
 func (s wrappedAccounts) UpdateEmails(ctx context.Context, param *sourcegraph.UpdateEmailsOp) (res *pbtypes.Void, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Accounts", "UpdateEmails", param)
 	defer func() {
-		trace.After(ctx, "Accounts", "UpdateEmails", param, err, time.Since(start))
+		trace.After(ctx, "Accounts", "UpdateEmails", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Accounts.UpdateEmails(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Accounts.UpdateEmails returned nil, nil")
+	res, errActual = backend.Services.Accounts.UpdateEmails(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Accounts.UpdateEmails returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -231,16 +239,18 @@ func (s wrappedAccounts) UpdateEmails(ctx context.Context, param *sourcegraph.Up
 	return
 }
 
-func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.PersonSpec) (res *pbtypes.Void, err error) {
+func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.UserSpec) (res *pbtypes.Void, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Accounts", "Delete", param)
 	defer func() {
-		trace.After(ctx, "Accounts", "Delete", param, err, time.Since(start))
+		trace.After(ctx, "Accounts", "Delete", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Accounts.Delete(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Accounts.Delete returned nil, nil")
+	res, errActual = backend.Services.Accounts.Delete(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Accounts.Delete returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -253,15 +263,17 @@ func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.PersonSp
 type wrappedAnnotations struct{}
 
 func (s wrappedAnnotations) List(ctx context.Context, param *sourcegraph.AnnotationsListOptions) (res *sourcegraph.AnnotationList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Annotations", "List", param)
 	defer func() {
-		trace.After(ctx, "Annotations", "List", param, err, time.Since(start))
+		trace.After(ctx, "Annotations", "List", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Annotations.List(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Annotations.List returned nil, nil")
+	res, errActual = backend.Services.Annotations.List(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Annotations.List returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -271,18 +283,41 @@ func (s wrappedAnnotations) List(ctx context.Context, param *sourcegraph.Annotat
 	return
 }
 
+func (s wrappedAnnotations) GetDefAtPos(ctx context.Context, param *sourcegraph.AnnotationsGetDefAtPosOptions) (res *sourcegraph.DefSpec, err error) {
+	var errActual error
+	start := time.Now()
+	ctx = trace.Before(ctx, "Annotations", "GetDefAtPos", param)
+	defer func() {
+		trace.After(ctx, "Annotations", "GetDefAtPos", param, errActual, time.Since(start))
+	}()
+	res, errActual = backend.Services.Annotations.GetDefAtPos(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Annotations.GetDefAtPos returned nil, nil")
+	}
+	err = errActual
+	if err != nil && !DebugMode(ctx) {
+		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Annotations.GetDefAtPos failed with internal error.")
+		}
+	}
+	return
+}
+
 type wrappedAsync struct{}
 
 func (s wrappedAsync) RefreshIndexes(ctx context.Context, param *sourcegraph.AsyncRefreshIndexesOp) (res *pbtypes.Void, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Async", "RefreshIndexes", param)
 	defer func() {
-		trace.After(ctx, "Async", "RefreshIndexes", param, err, time.Since(start))
+		trace.After(ctx, "Async", "RefreshIndexes", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Async.RefreshIndexes(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Async.RefreshIndexes returned nil, nil")
+	res, errActual = backend.Services.Async.RefreshIndexes(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Async.RefreshIndexes returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -295,15 +330,17 @@ func (s wrappedAsync) RefreshIndexes(ctx context.Context, param *sourcegraph.Asy
 type wrappedAuth struct{}
 
 func (s wrappedAuth) GetAccessToken(ctx context.Context, param *sourcegraph.AccessTokenRequest) (res *sourcegraph.AccessTokenResponse, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Auth", "GetAccessToken", param)
 	defer func() {
-		trace.After(ctx, "Auth", "GetAccessToken", param, err, time.Since(start))
+		trace.After(ctx, "Auth", "GetAccessToken", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Auth.GetAccessToken(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Auth.GetAccessToken returned nil, nil")
+	res, errActual = backend.Services.Auth.GetAccessToken(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Auth.GetAccessToken returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -314,15 +351,17 @@ func (s wrappedAuth) GetAccessToken(ctx context.Context, param *sourcegraph.Acce
 }
 
 func (s wrappedAuth) Identify(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.AuthInfo, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Auth", "Identify", param)
 	defer func() {
-		trace.After(ctx, "Auth", "Identify", param, err, time.Since(start))
+		trace.After(ctx, "Auth", "Identify", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Auth.Identify(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Auth.Identify returned nil, nil")
+	res, errActual = backend.Services.Auth.Identify(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Auth.Identify returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -333,15 +372,17 @@ func (s wrappedAuth) Identify(ctx context.Context, param *pbtypes.Void) (res *so
 }
 
 func (s wrappedAuth) GetExternalToken(ctx context.Context, param *sourcegraph.ExternalTokenSpec) (res *sourcegraph.ExternalToken, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Auth", "GetExternalToken", param)
 	defer func() {
-		trace.After(ctx, "Auth", "GetExternalToken", param, err, time.Since(start))
+		trace.After(ctx, "Auth", "GetExternalToken", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Auth.GetExternalToken(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Auth.GetExternalToken returned nil, nil")
+	res, errActual = backend.Services.Auth.GetExternalToken(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Auth.GetExternalToken returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -352,15 +393,17 @@ func (s wrappedAuth) GetExternalToken(ctx context.Context, param *sourcegraph.Ex
 }
 
 func (s wrappedAuth) SetExternalToken(ctx context.Context, param *sourcegraph.ExternalToken) (res *pbtypes.Void, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Auth", "SetExternalToken", param)
 	defer func() {
-		trace.After(ctx, "Auth", "SetExternalToken", param, err, time.Since(start))
+		trace.After(ctx, "Auth", "SetExternalToken", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Auth.SetExternalToken(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Auth.SetExternalToken returned nil, nil")
+	res, errActual = backend.Services.Auth.SetExternalToken(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Auth.SetExternalToken returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -371,15 +414,17 @@ func (s wrappedAuth) SetExternalToken(ctx context.Context, param *sourcegraph.Ex
 }
 
 func (s wrappedAuth) DeleteAndRevokeExternalToken(ctx context.Context, param *sourcegraph.ExternalTokenSpec) (res *pbtypes.Void, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Auth", "DeleteAndRevokeExternalToken", param)
 	defer func() {
-		trace.After(ctx, "Auth", "DeleteAndRevokeExternalToken", param, err, time.Since(start))
+		trace.After(ctx, "Auth", "DeleteAndRevokeExternalToken", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Auth.DeleteAndRevokeExternalToken(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Auth.DeleteAndRevokeExternalToken returned nil, nil")
+	res, errActual = backend.Services.Auth.DeleteAndRevokeExternalToken(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Auth.DeleteAndRevokeExternalToken returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -392,15 +437,17 @@ func (s wrappedAuth) DeleteAndRevokeExternalToken(ctx context.Context, param *so
 type wrappedBuilds struct{}
 
 func (s wrappedBuilds) Get(ctx context.Context, param *sourcegraph.BuildSpec) (res *sourcegraph.Build, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Builds", "Get", param)
 	defer func() {
-		trace.After(ctx, "Builds", "Get", param, err, time.Since(start))
+		trace.After(ctx, "Builds", "Get", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Builds.Get(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Builds.Get returned nil, nil")
+	res, errActual = backend.Services.Builds.Get(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Builds.Get returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -411,15 +458,17 @@ func (s wrappedBuilds) Get(ctx context.Context, param *sourcegraph.BuildSpec) (r
 }
 
 func (s wrappedBuilds) List(ctx context.Context, param *sourcegraph.BuildListOptions) (res *sourcegraph.BuildList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Builds", "List", param)
 	defer func() {
-		trace.After(ctx, "Builds", "List", param, err, time.Since(start))
+		trace.After(ctx, "Builds", "List", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Builds.List(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Builds.List returned nil, nil")
+	res, errActual = backend.Services.Builds.List(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Builds.List returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -430,15 +479,17 @@ func (s wrappedBuilds) List(ctx context.Context, param *sourcegraph.BuildListOpt
 }
 
 func (s wrappedBuilds) Create(ctx context.Context, param *sourcegraph.BuildsCreateOp) (res *sourcegraph.Build, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Builds", "Create", param)
 	defer func() {
-		trace.After(ctx, "Builds", "Create", param, err, time.Since(start))
+		trace.After(ctx, "Builds", "Create", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Builds.Create(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Builds.Create returned nil, nil")
+	res, errActual = backend.Services.Builds.Create(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Builds.Create returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -449,15 +500,17 @@ func (s wrappedBuilds) Create(ctx context.Context, param *sourcegraph.BuildsCrea
 }
 
 func (s wrappedBuilds) Update(ctx context.Context, param *sourcegraph.BuildsUpdateOp) (res *sourcegraph.Build, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Builds", "Update", param)
 	defer func() {
-		trace.After(ctx, "Builds", "Update", param, err, time.Since(start))
+		trace.After(ctx, "Builds", "Update", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Builds.Update(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Builds.Update returned nil, nil")
+	res, errActual = backend.Services.Builds.Update(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Builds.Update returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -468,15 +521,17 @@ func (s wrappedBuilds) Update(ctx context.Context, param *sourcegraph.BuildsUpda
 }
 
 func (s wrappedBuilds) ListBuildTasks(ctx context.Context, param *sourcegraph.BuildsListBuildTasksOp) (res *sourcegraph.BuildTaskList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Builds", "ListBuildTasks", param)
 	defer func() {
-		trace.After(ctx, "Builds", "ListBuildTasks", param, err, time.Since(start))
+		trace.After(ctx, "Builds", "ListBuildTasks", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Builds.ListBuildTasks(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Builds.ListBuildTasks returned nil, nil")
+	res, errActual = backend.Services.Builds.ListBuildTasks(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Builds.ListBuildTasks returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -487,15 +542,17 @@ func (s wrappedBuilds) ListBuildTasks(ctx context.Context, param *sourcegraph.Bu
 }
 
 func (s wrappedBuilds) CreateTasks(ctx context.Context, param *sourcegraph.BuildsCreateTasksOp) (res *sourcegraph.BuildTaskList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Builds", "CreateTasks", param)
 	defer func() {
-		trace.After(ctx, "Builds", "CreateTasks", param, err, time.Since(start))
+		trace.After(ctx, "Builds", "CreateTasks", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Builds.CreateTasks(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Builds.CreateTasks returned nil, nil")
+	res, errActual = backend.Services.Builds.CreateTasks(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Builds.CreateTasks returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -506,15 +563,17 @@ func (s wrappedBuilds) CreateTasks(ctx context.Context, param *sourcegraph.Build
 }
 
 func (s wrappedBuilds) UpdateTask(ctx context.Context, param *sourcegraph.BuildsUpdateTaskOp) (res *sourcegraph.BuildTask, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Builds", "UpdateTask", param)
 	defer func() {
-		trace.After(ctx, "Builds", "UpdateTask", param, err, time.Since(start))
+		trace.After(ctx, "Builds", "UpdateTask", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Builds.UpdateTask(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Builds.UpdateTask returned nil, nil")
+	res, errActual = backend.Services.Builds.UpdateTask(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Builds.UpdateTask returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -525,15 +584,17 @@ func (s wrappedBuilds) UpdateTask(ctx context.Context, param *sourcegraph.Builds
 }
 
 func (s wrappedBuilds) GetTaskLog(ctx context.Context, param *sourcegraph.BuildsGetTaskLogOp) (res *sourcegraph.LogEntries, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Builds", "GetTaskLog", param)
 	defer func() {
-		trace.After(ctx, "Builds", "GetTaskLog", param, err, time.Since(start))
+		trace.After(ctx, "Builds", "GetTaskLog", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Builds.GetTaskLog(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Builds.GetTaskLog returned nil, nil")
+	res, errActual = backend.Services.Builds.GetTaskLog(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Builds.GetTaskLog returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -544,15 +605,17 @@ func (s wrappedBuilds) GetTaskLog(ctx context.Context, param *sourcegraph.Builds
 }
 
 func (s wrappedBuilds) DequeueNext(ctx context.Context, param *sourcegraph.BuildsDequeueNextOp) (res *sourcegraph.BuildJob, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Builds", "DequeueNext", param)
 	defer func() {
-		trace.After(ctx, "Builds", "DequeueNext", param, err, time.Since(start))
+		trace.After(ctx, "Builds", "DequeueNext", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Builds.DequeueNext(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Builds.DequeueNext returned nil, nil")
+	res, errActual = backend.Services.Builds.DequeueNext(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Builds.DequeueNext returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -565,15 +628,17 @@ func (s wrappedBuilds) DequeueNext(ctx context.Context, param *sourcegraph.Build
 type wrappedChannel struct{}
 
 func (s wrappedChannel) Send(ctx context.Context, param *sourcegraph.ChannelSendOp) (res *sourcegraph.ChannelSendResult, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Channel", "Send", param)
 	defer func() {
-		trace.After(ctx, "Channel", "Send", param, err, time.Since(start))
+		trace.After(ctx, "Channel", "Send", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Channel.Send(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Channel.Send returned nil, nil")
+	res, errActual = backend.Services.Channel.Send(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Channel.Send returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -586,15 +651,17 @@ func (s wrappedChannel) Send(ctx context.Context, param *sourcegraph.ChannelSend
 type wrappedDefs struct{}
 
 func (s wrappedDefs) Get(ctx context.Context, param *sourcegraph.DefsGetOp) (res *sourcegraph.Def, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Defs", "Get", param)
 	defer func() {
-		trace.After(ctx, "Defs", "Get", param, err, time.Since(start))
+		trace.After(ctx, "Defs", "Get", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Defs.Get(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Defs.Get returned nil, nil")
+	res, errActual = backend.Services.Defs.Get(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Defs.Get returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -605,15 +672,17 @@ func (s wrappedDefs) Get(ctx context.Context, param *sourcegraph.DefsGetOp) (res
 }
 
 func (s wrappedDefs) List(ctx context.Context, param *sourcegraph.DefListOptions) (res *sourcegraph.DefList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Defs", "List", param)
 	defer func() {
-		trace.After(ctx, "Defs", "List", param, err, time.Since(start))
+		trace.After(ctx, "Defs", "List", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Defs.List(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Defs.List returned nil, nil")
+	res, errActual = backend.Services.Defs.List(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Defs.List returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -624,15 +693,17 @@ func (s wrappedDefs) List(ctx context.Context, param *sourcegraph.DefListOptions
 }
 
 func (s wrappedDefs) ListRefs(ctx context.Context, param *sourcegraph.DefsListRefsOp) (res *sourcegraph.RefList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Defs", "ListRefs", param)
 	defer func() {
-		trace.After(ctx, "Defs", "ListRefs", param, err, time.Since(start))
+		trace.After(ctx, "Defs", "ListRefs", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Defs.ListRefs(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Defs.ListRefs returned nil, nil")
+	res, errActual = backend.Services.Defs.ListRefs(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Defs.ListRefs returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -643,15 +714,17 @@ func (s wrappedDefs) ListRefs(ctx context.Context, param *sourcegraph.DefsListRe
 }
 
 func (s wrappedDefs) ListRefLocations(ctx context.Context, param *sourcegraph.DefsListRefLocationsOp) (res *sourcegraph.RefLocationsList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Defs", "ListRefLocations", param)
 	defer func() {
-		trace.After(ctx, "Defs", "ListRefLocations", param, err, time.Since(start))
+		trace.After(ctx, "Defs", "ListRefLocations", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Defs.ListRefLocations(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Defs.ListRefLocations returned nil, nil")
+	res, errActual = backend.Services.Defs.ListRefLocations(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Defs.ListRefLocations returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -662,15 +735,17 @@ func (s wrappedDefs) ListRefLocations(ctx context.Context, param *sourcegraph.De
 }
 
 func (s wrappedDefs) ListExamples(ctx context.Context, param *sourcegraph.DefsListExamplesOp) (res *sourcegraph.RefLocationsList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Defs", "ListExamples", param)
 	defer func() {
-		trace.After(ctx, "Defs", "ListExamples", param, err, time.Since(start))
+		trace.After(ctx, "Defs", "ListExamples", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Defs.ListExamples(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Defs.ListExamples returned nil, nil")
+	res, errActual = backend.Services.Defs.ListExamples(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Defs.ListExamples returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -681,15 +756,17 @@ func (s wrappedDefs) ListExamples(ctx context.Context, param *sourcegraph.DefsLi
 }
 
 func (s wrappedDefs) ListAuthors(ctx context.Context, param *sourcegraph.DefsListAuthorsOp) (res *sourcegraph.DefAuthorList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Defs", "ListAuthors", param)
 	defer func() {
-		trace.After(ctx, "Defs", "ListAuthors", param, err, time.Since(start))
+		trace.After(ctx, "Defs", "ListAuthors", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Defs.ListAuthors(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Defs.ListAuthors returned nil, nil")
+	res, errActual = backend.Services.Defs.ListAuthors(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Defs.ListAuthors returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -700,15 +777,17 @@ func (s wrappedDefs) ListAuthors(ctx context.Context, param *sourcegraph.DefsLis
 }
 
 func (s wrappedDefs) RefreshIndex(ctx context.Context, param *sourcegraph.DefsRefreshIndexOp) (res *pbtypes.Void, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Defs", "RefreshIndex", param)
 	defer func() {
-		trace.After(ctx, "Defs", "RefreshIndex", param, err, time.Since(start))
+		trace.After(ctx, "Defs", "RefreshIndex", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Defs.RefreshIndex(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Defs.RefreshIndex returned nil, nil")
+	res, errActual = backend.Services.Defs.RefreshIndex(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Defs.RefreshIndex returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -718,58 +797,20 @@ func (s wrappedDefs) RefreshIndex(ctx context.Context, param *sourcegraph.DefsRe
 	return
 }
 
-type wrappedDeltas struct{}
-
-func (s wrappedDeltas) Get(ctx context.Context, param *sourcegraph.DeltaSpec) (res *sourcegraph.Delta, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Deltas", "Get", param)
-	defer func() {
-		trace.After(ctx, "Deltas", "Get", param, err, time.Since(start))
-	}()
-	res, err = backend.Services.Deltas.Get(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Deltas.Get returned nil, nil")
-	}
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Deltas.Get failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedDeltas) ListFiles(ctx context.Context, param *sourcegraph.DeltasListFilesOp) (res *sourcegraph.DeltaFiles, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Deltas", "ListFiles", param)
-	defer func() {
-		trace.After(ctx, "Deltas", "ListFiles", param, err, time.Since(start))
-	}()
-	res, err = backend.Services.Deltas.ListFiles(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Deltas.ListFiles returned nil, nil")
-	}
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Deltas.ListFiles failed with internal error.")
-		}
-	}
-	return
-}
-
 type wrappedDesktop struct{}
 
 func (s wrappedDesktop) LatestExists(ctx context.Context, param *sourcegraph.ClientDesktopVersion) (res *sourcegraph.LatestDesktopVersion, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Desktop", "LatestExists", param)
 	defer func() {
-		trace.After(ctx, "Desktop", "LatestExists", param, err, time.Since(start))
+		trace.After(ctx, "Desktop", "LatestExists", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Desktop.LatestExists(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Desktop.LatestExists returned nil, nil")
+	res, errActual = backend.Services.Desktop.LatestExists(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Desktop.LatestExists returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -781,35 +822,18 @@ func (s wrappedDesktop) LatestExists(ctx context.Context, param *sourcegraph.Cli
 
 type wrappedMeta struct{}
 
-func (s wrappedMeta) Status(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.ServerStatus, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Meta", "Status", param)
-	defer func() {
-		trace.After(ctx, "Meta", "Status", param, err, time.Since(start))
-	}()
-	res, err = backend.Services.Meta.Status(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Meta.Status returned nil, nil")
-	}
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Meta.Status failed with internal error.")
-		}
-	}
-	return
-}
-
 func (s wrappedMeta) Config(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.ServerConfig, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Meta", "Config", param)
 	defer func() {
-		trace.After(ctx, "Meta", "Config", param, err, time.Since(start))
+		trace.After(ctx, "Meta", "Config", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Meta.Config(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Meta.Config returned nil, nil")
+	res, errActual = backend.Services.Meta.Config(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Meta.Config returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -822,15 +846,17 @@ func (s wrappedMeta) Config(ctx context.Context, param *pbtypes.Void) (res *sour
 type wrappedMirrorRepos struct{}
 
 func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, param *sourcegraph.MirrorReposRefreshVCSOp) (res *pbtypes.Void, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "MirrorRepos", "RefreshVCS", param)
 	defer func() {
-		trace.After(ctx, "MirrorRepos", "RefreshVCS", param, err, time.Since(start))
+		trace.After(ctx, "MirrorRepos", "RefreshVCS", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.MirrorRepos.RefreshVCS(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "MirrorRepos.RefreshVCS returned nil, nil")
+	res, errActual = backend.Services.MirrorRepos.RefreshVCS(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "MirrorRepos.RefreshVCS returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -840,119 +866,20 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, param *sourcegraph.M
 	return
 }
 
-type wrappedNotify struct{}
-
-func (s wrappedNotify) GenericEvent(ctx context.Context, param *sourcegraph.NotifyGenericEvent) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Notify", "GenericEvent", param)
-	defer func() {
-		trace.After(ctx, "Notify", "GenericEvent", param, err, time.Since(start))
-	}()
-	res, err = backend.Services.Notify.GenericEvent(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Notify.GenericEvent returned nil, nil")
-	}
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Notify.GenericEvent failed with internal error.")
-		}
-	}
-	return
-}
-
-type wrappedOrgs struct{}
-
-func (s wrappedOrgs) Get(ctx context.Context, param *sourcegraph.OrgSpec) (res *sourcegraph.Org, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Orgs", "Get", param)
-	defer func() {
-		trace.After(ctx, "Orgs", "Get", param, err, time.Since(start))
-	}()
-	res, err = backend.Services.Orgs.Get(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Orgs.Get returned nil, nil")
-	}
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Orgs.Get failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedOrgs) List(ctx context.Context, param *sourcegraph.OrgsListOp) (res *sourcegraph.OrgList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Orgs", "List", param)
-	defer func() {
-		trace.After(ctx, "Orgs", "List", param, err, time.Since(start))
-	}()
-	res, err = backend.Services.Orgs.List(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Orgs.List returned nil, nil")
-	}
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Orgs.List failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedOrgs) ListMembers(ctx context.Context, param *sourcegraph.OrgsListMembersOp) (res *sourcegraph.UserList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Orgs", "ListMembers", param)
-	defer func() {
-		trace.After(ctx, "Orgs", "ListMembers", param, err, time.Since(start))
-	}()
-	res, err = backend.Services.Orgs.ListMembers(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Orgs.ListMembers returned nil, nil")
-	}
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Orgs.ListMembers failed with internal error.")
-		}
-	}
-	return
-}
-
-type wrappedPeople struct{}
-
-func (s wrappedPeople) Get(ctx context.Context, param *sourcegraph.PersonSpec) (res *sourcegraph.Person, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "People", "Get", param)
-	defer func() {
-		trace.After(ctx, "People", "Get", param, err, time.Since(start))
-	}()
-	res, err = backend.Services.People.Get(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "People.Get returned nil, nil")
-	}
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "People.Get failed with internal error.")
-		}
-	}
-	return
-}
-
 type wrappedRepoStatuses struct{}
 
 func (s wrappedRepoStatuses) GetCombined(ctx context.Context, param *sourcegraph.RepoRevSpec) (res *sourcegraph.CombinedStatus, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "RepoStatuses", "GetCombined", param)
 	defer func() {
-		trace.After(ctx, "RepoStatuses", "GetCombined", param, err, time.Since(start))
+		trace.After(ctx, "RepoStatuses", "GetCombined", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.RepoStatuses.GetCombined(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "RepoStatuses.GetCombined returned nil, nil")
+	res, errActual = backend.Services.RepoStatuses.GetCombined(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "RepoStatuses.GetCombined returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -963,15 +890,17 @@ func (s wrappedRepoStatuses) GetCombined(ctx context.Context, param *sourcegraph
 }
 
 func (s wrappedRepoStatuses) GetCoverage(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.RepoStatusList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "RepoStatuses", "GetCoverage", param)
 	defer func() {
-		trace.After(ctx, "RepoStatuses", "GetCoverage", param, err, time.Since(start))
+		trace.After(ctx, "RepoStatuses", "GetCoverage", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.RepoStatuses.GetCoverage(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "RepoStatuses.GetCoverage returned nil, nil")
+	res, errActual = backend.Services.RepoStatuses.GetCoverage(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "RepoStatuses.GetCoverage returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -982,15 +911,17 @@ func (s wrappedRepoStatuses) GetCoverage(ctx context.Context, param *pbtypes.Voi
 }
 
 func (s wrappedRepoStatuses) Create(ctx context.Context, param *sourcegraph.RepoStatusesCreateOp) (res *sourcegraph.RepoStatus, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "RepoStatuses", "Create", param)
 	defer func() {
-		trace.After(ctx, "RepoStatuses", "Create", param, err, time.Since(start))
+		trace.After(ctx, "RepoStatuses", "Create", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.RepoStatuses.Create(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "RepoStatuses.Create returned nil, nil")
+	res, errActual = backend.Services.RepoStatuses.Create(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "RepoStatuses.Create returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1003,15 +934,17 @@ func (s wrappedRepoStatuses) Create(ctx context.Context, param *sourcegraph.Repo
 type wrappedRepoTree struct{}
 
 func (s wrappedRepoTree) Get(ctx context.Context, param *sourcegraph.RepoTreeGetOp) (res *sourcegraph.TreeEntry, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "RepoTree", "Get", param)
 	defer func() {
-		trace.After(ctx, "RepoTree", "Get", param, err, time.Since(start))
+		trace.After(ctx, "RepoTree", "Get", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.RepoTree.Get(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "RepoTree.Get returned nil, nil")
+	res, errActual = backend.Services.RepoTree.Get(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "RepoTree.Get returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1022,15 +955,17 @@ func (s wrappedRepoTree) Get(ctx context.Context, param *sourcegraph.RepoTreeGet
 }
 
 func (s wrappedRepoTree) Search(ctx context.Context, param *sourcegraph.RepoTreeSearchOp) (res *sourcegraph.VCSSearchResultList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "RepoTree", "Search", param)
 	defer func() {
-		trace.After(ctx, "RepoTree", "Search", param, err, time.Since(start))
+		trace.After(ctx, "RepoTree", "Search", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.RepoTree.Search(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "RepoTree.Search returned nil, nil")
+	res, errActual = backend.Services.RepoTree.Search(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "RepoTree.Search returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1041,15 +976,17 @@ func (s wrappedRepoTree) Search(ctx context.Context, param *sourcegraph.RepoTree
 }
 
 func (s wrappedRepoTree) List(ctx context.Context, param *sourcegraph.RepoTreeListOp) (res *sourcegraph.RepoTreeListResult, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "RepoTree", "List", param)
 	defer func() {
-		trace.After(ctx, "RepoTree", "List", param, err, time.Since(start))
+		trace.After(ctx, "RepoTree", "List", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.RepoTree.List(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "RepoTree.List returned nil, nil")
+	res, errActual = backend.Services.RepoTree.List(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "RepoTree.List returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1062,15 +999,17 @@ func (s wrappedRepoTree) List(ctx context.Context, param *sourcegraph.RepoTreeLi
 type wrappedRepos struct{}
 
 func (s wrappedRepos) Get(ctx context.Context, param *sourcegraph.RepoSpec) (res *sourcegraph.Repo, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "Get", param)
 	defer func() {
-		trace.After(ctx, "Repos", "Get", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "Get", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.Get(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.Get returned nil, nil")
+	res, errActual = backend.Services.Repos.Get(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.Get returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1081,15 +1020,17 @@ func (s wrappedRepos) Get(ctx context.Context, param *sourcegraph.RepoSpec) (res
 }
 
 func (s wrappedRepos) Resolve(ctx context.Context, param *sourcegraph.RepoResolveOp) (res *sourcegraph.RepoResolution, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "Resolve", param)
 	defer func() {
-		trace.After(ctx, "Repos", "Resolve", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "Resolve", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.Resolve(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.Resolve returned nil, nil")
+	res, errActual = backend.Services.Repos.Resolve(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.Resolve returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1100,15 +1041,17 @@ func (s wrappedRepos) Resolve(ctx context.Context, param *sourcegraph.RepoResolv
 }
 
 func (s wrappedRepos) List(ctx context.Context, param *sourcegraph.RepoListOptions) (res *sourcegraph.RepoList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "List", param)
 	defer func() {
-		trace.After(ctx, "Repos", "List", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "List", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.List(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.List returned nil, nil")
+	res, errActual = backend.Services.Repos.List(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.List returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1119,15 +1062,17 @@ func (s wrappedRepos) List(ctx context.Context, param *sourcegraph.RepoListOptio
 }
 
 func (s wrappedRepos) Create(ctx context.Context, param *sourcegraph.ReposCreateOp) (res *sourcegraph.Repo, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "Create", param)
 	defer func() {
-		trace.After(ctx, "Repos", "Create", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "Create", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.Create(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.Create returned nil, nil")
+	res, errActual = backend.Services.Repos.Create(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.Create returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1138,15 +1083,17 @@ func (s wrappedRepos) Create(ctx context.Context, param *sourcegraph.ReposCreate
 }
 
 func (s wrappedRepos) Update(ctx context.Context, param *sourcegraph.ReposUpdateOp) (res *sourcegraph.Repo, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "Update", param)
 	defer func() {
-		trace.After(ctx, "Repos", "Update", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "Update", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.Update(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.Update returned nil, nil")
+	res, errActual = backend.Services.Repos.Update(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.Update returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1157,15 +1104,17 @@ func (s wrappedRepos) Update(ctx context.Context, param *sourcegraph.ReposUpdate
 }
 
 func (s wrappedRepos) Delete(ctx context.Context, param *sourcegraph.RepoSpec) (res *pbtypes.Void, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "Delete", param)
 	defer func() {
-		trace.After(ctx, "Repos", "Delete", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "Delete", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.Delete(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.Delete returned nil, nil")
+	res, errActual = backend.Services.Repos.Delete(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.Delete returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1176,15 +1125,17 @@ func (s wrappedRepos) Delete(ctx context.Context, param *sourcegraph.RepoSpec) (
 }
 
 func (s wrappedRepos) GetConfig(ctx context.Context, param *sourcegraph.RepoSpec) (res *sourcegraph.RepoConfig, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "GetConfig", param)
 	defer func() {
-		trace.After(ctx, "Repos", "GetConfig", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "GetConfig", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.GetConfig(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.GetConfig returned nil, nil")
+	res, errActual = backend.Services.Repos.GetConfig(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.GetConfig returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1195,15 +1146,17 @@ func (s wrappedRepos) GetConfig(ctx context.Context, param *sourcegraph.RepoSpec
 }
 
 func (s wrappedRepos) GetCommit(ctx context.Context, param *sourcegraph.RepoRevSpec) (res *vcs.Commit, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "GetCommit", param)
 	defer func() {
-		trace.After(ctx, "Repos", "GetCommit", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "GetCommit", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.GetCommit(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.GetCommit returned nil, nil")
+	res, errActual = backend.Services.Repos.GetCommit(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.GetCommit returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1214,15 +1167,17 @@ func (s wrappedRepos) GetCommit(ctx context.Context, param *sourcegraph.RepoRevS
 }
 
 func (s wrappedRepos) ResolveRev(ctx context.Context, param *sourcegraph.ReposResolveRevOp) (res *sourcegraph.ResolvedRev, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "ResolveRev", param)
 	defer func() {
-		trace.After(ctx, "Repos", "ResolveRev", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "ResolveRev", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.ResolveRev(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.ResolveRev returned nil, nil")
+	res, errActual = backend.Services.Repos.ResolveRev(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.ResolveRev returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1233,15 +1188,17 @@ func (s wrappedRepos) ResolveRev(ctx context.Context, param *sourcegraph.ReposRe
 }
 
 func (s wrappedRepos) ListCommits(ctx context.Context, param *sourcegraph.ReposListCommitsOp) (res *sourcegraph.CommitList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "ListCommits", param)
 	defer func() {
-		trace.After(ctx, "Repos", "ListCommits", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "ListCommits", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.ListCommits(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.ListCommits returned nil, nil")
+	res, errActual = backend.Services.Repos.ListCommits(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.ListCommits returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1252,15 +1209,17 @@ func (s wrappedRepos) ListCommits(ctx context.Context, param *sourcegraph.ReposL
 }
 
 func (s wrappedRepos) ListBranches(ctx context.Context, param *sourcegraph.ReposListBranchesOp) (res *sourcegraph.BranchList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "ListBranches", param)
 	defer func() {
-		trace.After(ctx, "Repos", "ListBranches", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "ListBranches", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.ListBranches(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.ListBranches returned nil, nil")
+	res, errActual = backend.Services.Repos.ListBranches(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.ListBranches returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1271,15 +1230,17 @@ func (s wrappedRepos) ListBranches(ctx context.Context, param *sourcegraph.Repos
 }
 
 func (s wrappedRepos) ListTags(ctx context.Context, param *sourcegraph.ReposListTagsOp) (res *sourcegraph.TagList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "ListTags", param)
 	defer func() {
-		trace.After(ctx, "Repos", "ListTags", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "ListTags", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.ListTags(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.ListTags returned nil, nil")
+	res, errActual = backend.Services.Repos.ListTags(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.ListTags returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1290,15 +1251,17 @@ func (s wrappedRepos) ListTags(ctx context.Context, param *sourcegraph.ReposList
 }
 
 func (s wrappedRepos) ListDeps(ctx context.Context, param *sourcegraph.URIList) (res *sourcegraph.URIList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "ListDeps", param)
 	defer func() {
-		trace.After(ctx, "Repos", "ListDeps", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "ListDeps", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.ListDeps(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.ListDeps returned nil, nil")
+	res, errActual = backend.Services.Repos.ListDeps(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.ListDeps returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1309,15 +1272,17 @@ func (s wrappedRepos) ListDeps(ctx context.Context, param *sourcegraph.URIList) 
 }
 
 func (s wrappedRepos) ListCommitters(ctx context.Context, param *sourcegraph.ReposListCommittersOp) (res *sourcegraph.CommitterList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "ListCommitters", param)
 	defer func() {
-		trace.After(ctx, "Repos", "ListCommitters", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "ListCommitters", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.ListCommitters(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.ListCommitters returned nil, nil")
+	res, errActual = backend.Services.Repos.ListCommitters(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.ListCommitters returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1328,15 +1293,17 @@ func (s wrappedRepos) ListCommitters(ctx context.Context, param *sourcegraph.Rep
 }
 
 func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, param *sourcegraph.TreeEntrySpec) (res *sourcegraph.SrclibDataVersion, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "GetSrclibDataVersionForPath", param)
 	defer func() {
-		trace.After(ctx, "Repos", "GetSrclibDataVersionForPath", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "GetSrclibDataVersionForPath", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.GetSrclibDataVersionForPath(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.GetSrclibDataVersionForPath returned nil, nil")
+	res, errActual = backend.Services.Repos.GetSrclibDataVersionForPath(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.GetSrclibDataVersionForPath returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1347,15 +1314,17 @@ func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, param *so
 }
 
 func (s wrappedRepos) GetInventory(ctx context.Context, param *sourcegraph.RepoRevSpec) (res *inventory.Inventory, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "GetInventory", param)
 	defer func() {
-		trace.After(ctx, "Repos", "GetInventory", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "GetInventory", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.GetInventory(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.GetInventory returned nil, nil")
+	res, errActual = backend.Services.Repos.GetInventory(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.GetInventory returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1366,15 +1335,17 @@ func (s wrappedRepos) GetInventory(ctx context.Context, param *sourcegraph.RepoR
 }
 
 func (s wrappedRepos) ReceivePack(ctx context.Context, param *sourcegraph.ReceivePackOp) (res *sourcegraph.Packet, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "ReceivePack", param)
 	defer func() {
-		trace.After(ctx, "Repos", "ReceivePack", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "ReceivePack", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.ReceivePack(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.ReceivePack returned nil, nil")
+	res, errActual = backend.Services.Repos.ReceivePack(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.ReceivePack returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1385,15 +1356,17 @@ func (s wrappedRepos) ReceivePack(ctx context.Context, param *sourcegraph.Receiv
 }
 
 func (s wrappedRepos) UploadPack(ctx context.Context, param *sourcegraph.UploadPackOp) (res *sourcegraph.Packet, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "UploadPack", param)
 	defer func() {
-		trace.After(ctx, "Repos", "UploadPack", param, err, time.Since(start))
+		trace.After(ctx, "Repos", "UploadPack", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Repos.UploadPack(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.UploadPack returned nil, nil")
+	res, errActual = backend.Services.Repos.UploadPack(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.UploadPack returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1406,15 +1379,17 @@ func (s wrappedRepos) UploadPack(ctx context.Context, param *sourcegraph.UploadP
 type wrappedSearch struct{}
 
 func (s wrappedSearch) Search(ctx context.Context, param *sourcegraph.SearchOp) (res *sourcegraph.SearchResultsList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Search", "Search", param)
 	defer func() {
-		trace.After(ctx, "Search", "Search", param, err, time.Since(start))
+		trace.After(ctx, "Search", "Search", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Search.Search(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Search.Search returned nil, nil")
+	res, errActual = backend.Services.Search.Search(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Search.Search returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1427,15 +1402,17 @@ func (s wrappedSearch) Search(ctx context.Context, param *sourcegraph.SearchOp) 
 type wrappedUsers struct{}
 
 func (s wrappedUsers) Get(ctx context.Context, param *sourcegraph.UserSpec) (res *sourcegraph.User, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Users", "Get", param)
 	defer func() {
-		trace.After(ctx, "Users", "Get", param, err, time.Since(start))
+		trace.After(ctx, "Users", "Get", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Users.Get(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Users.Get returned nil, nil")
+	res, errActual = backend.Services.Users.Get(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Users.Get returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1446,15 +1423,17 @@ func (s wrappedUsers) Get(ctx context.Context, param *sourcegraph.UserSpec) (res
 }
 
 func (s wrappedUsers) GetWithEmail(ctx context.Context, param *sourcegraph.EmailAddr) (res *sourcegraph.User, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Users", "GetWithEmail", param)
 	defer func() {
-		trace.After(ctx, "Users", "GetWithEmail", param, err, time.Since(start))
+		trace.After(ctx, "Users", "GetWithEmail", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Users.GetWithEmail(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Users.GetWithEmail returned nil, nil")
+	res, errActual = backend.Services.Users.GetWithEmail(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Users.GetWithEmail returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1465,15 +1444,17 @@ func (s wrappedUsers) GetWithEmail(ctx context.Context, param *sourcegraph.Email
 }
 
 func (s wrappedUsers) ListEmails(ctx context.Context, param *sourcegraph.UserSpec) (res *sourcegraph.EmailAddrList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Users", "ListEmails", param)
 	defer func() {
-		trace.After(ctx, "Users", "ListEmails", param, err, time.Since(start))
+		trace.After(ctx, "Users", "ListEmails", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Users.ListEmails(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Users.ListEmails returned nil, nil")
+	res, errActual = backend.Services.Users.ListEmails(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Users.ListEmails returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1484,15 +1465,17 @@ func (s wrappedUsers) ListEmails(ctx context.Context, param *sourcegraph.UserSpe
 }
 
 func (s wrappedUsers) List(ctx context.Context, param *sourcegraph.UsersListOptions) (res *sourcegraph.UserList, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Users", "List", param)
 	defer func() {
-		trace.After(ctx, "Users", "List", param, err, time.Since(start))
+		trace.After(ctx, "Users", "List", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Users.List(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Users.List returned nil, nil")
+	res, errActual = backend.Services.Users.List(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Users.List returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
@@ -1503,15 +1486,17 @@ func (s wrappedUsers) List(ctx context.Context, param *sourcegraph.UsersListOpti
 }
 
 func (s wrappedUsers) RegisterBeta(ctx context.Context, param *sourcegraph.BetaRegistration) (res *sourcegraph.BetaResponse, err error) {
+	var errActual error
 	start := time.Now()
 	ctx = trace.Before(ctx, "Users", "RegisterBeta", param)
 	defer func() {
-		trace.After(ctx, "Users", "RegisterBeta", param, err, time.Since(start))
+		trace.After(ctx, "Users", "RegisterBeta", param, errActual, time.Since(start))
 	}()
-	res, err = backend.Services.Users.RegisterBeta(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Users.RegisterBeta returned nil, nil")
+	res, errActual = backend.Services.Users.RegisterBeta(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Users.RegisterBeta returned nil, nil")
 	}
+	err = errActual
 	if err != nil && !DebugMode(ctx) {
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.

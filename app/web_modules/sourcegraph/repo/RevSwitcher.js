@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import fuzzysearch from "fuzzysearch";
 import Dispatcher from "sourcegraph/Dispatcher";
 import debounce from "lodash.debounce";

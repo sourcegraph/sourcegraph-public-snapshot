@@ -1,4 +1,4 @@
-/* pako 0.2.8 nodeca/pako */(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.pako = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/* pako 0.2.9 nodeca/pako */(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.pako = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 'use strict';
 
 
@@ -40,28 +40,28 @@ exports.shrinkBuf = function (buf, size) {
 var fnTyped = {
   arraySet: function (dest, src, src_offs, len, dest_offs) {
     if (src.subarray && dest.subarray) {
-      dest.set(src.subarray(src_offs, src_offs+len), dest_offs);
+      dest.set(src.subarray(src_offs, src_offs + len), dest_offs);
       return;
     }
     // Fallback to ordinary array
-    for (var i=0; i<len; i++) {
+    for (var i = 0; i < len; i++) {
       dest[dest_offs + i] = src[src_offs + i];
     }
   },
   // Join array of chunks to single array.
-  flattenChunks: function(chunks) {
+  flattenChunks: function (chunks) {
     var i, l, len, pos, chunk, result;
 
     // calculate data length
     len = 0;
-    for (i=0, l=chunks.length; i<l; i++) {
+    for (i = 0, l = chunks.length; i < l; i++) {
       len += chunks[i].length;
     }
 
     // join chunks
     result = new Uint8Array(len);
     pos = 0;
-    for (i=0, l=chunks.length; i<l; i++) {
+    for (i = 0, l = chunks.length; i < l; i++) {
       chunk = chunks[i];
       result.set(chunk, pos);
       pos += chunk.length;
@@ -73,12 +73,12 @@ var fnTyped = {
 
 var fnUntyped = {
   arraySet: function (dest, src, src_offs, len, dest_offs) {
-    for (var i=0; i<len; i++) {
+    for (var i = 0; i < len; i++) {
       dest[dest_offs + i] = src[src_offs + i];
     }
   },
   // Join array of chunks to single array.
-  flattenChunks: function(chunks) {
+  flattenChunks: function (chunks) {
     return [].concat.apply([], chunks);
   }
 };
@@ -118,18 +118,18 @@ var utils = require('./common');
 var STR_APPLY_OK = true;
 var STR_APPLY_UIA_OK = true;
 
-try { String.fromCharCode.apply(null, [0]); } catch(__) { STR_APPLY_OK = false; }
-try { String.fromCharCode.apply(null, new Uint8Array(1)); } catch(__) { STR_APPLY_UIA_OK = false; }
+try { String.fromCharCode.apply(null, [ 0 ]); } catch (__) { STR_APPLY_OK = false; }
+try { String.fromCharCode.apply(null, new Uint8Array(1)); } catch (__) { STR_APPLY_UIA_OK = false; }
 
 
 // Table with utf8 lengths (calculated by first byte of sequence)
 // Note, that 5 & 6-byte values and some 4-byte values can not be represented in JS,
 // because max possible codepoint is 0x10ffff
 var _utf8len = new utils.Buf8(256);
-for (var q=0; q<256; q++) {
+for (var q = 0; q < 256; q++) {
   _utf8len[q] = (q >= 252 ? 6 : q >= 248 ? 5 : q >= 240 ? 4 : q >= 224 ? 3 : q >= 192 ? 2 : 1);
 }
-_utf8len[254]=_utf8len[254]=1; // Invalid sequence start
+_utf8len[254] = _utf8len[254] = 1; // Invalid sequence start
 
 
 // convert string to array (typed, when possible)
@@ -139,8 +139,8 @@ exports.string2buf = function (str) {
   // count binary size
   for (m_pos = 0; m_pos < str_len; m_pos++) {
     c = str.charCodeAt(m_pos);
-    if ((c & 0xfc00) === 0xd800 && (m_pos+1 < str_len)) {
-      c2 = str.charCodeAt(m_pos+1);
+    if ((c & 0xfc00) === 0xd800 && (m_pos + 1 < str_len)) {
+      c2 = str.charCodeAt(m_pos + 1);
       if ((c2 & 0xfc00) === 0xdc00) {
         c = 0x10000 + ((c - 0xd800) << 10) + (c2 - 0xdc00);
         m_pos++;
@@ -153,10 +153,10 @@ exports.string2buf = function (str) {
   buf = new utils.Buf8(buf_len);
 
   // convert
-  for (i=0, m_pos = 0; i < buf_len; m_pos++) {
+  for (i = 0, m_pos = 0; i < buf_len; m_pos++) {
     c = str.charCodeAt(m_pos);
-    if ((c & 0xfc00) === 0xd800 && (m_pos+1 < str_len)) {
-      c2 = str.charCodeAt(m_pos+1);
+    if ((c & 0xfc00) === 0xd800 && (m_pos + 1 < str_len)) {
+      c2 = str.charCodeAt(m_pos + 1);
       if ((c2 & 0xfc00) === 0xdc00) {
         c = 0x10000 + ((c - 0xd800) << 10) + (c2 - 0xdc00);
         m_pos++;
@@ -196,7 +196,7 @@ function buf2binstring(buf, len) {
   }
 
   var result = '';
-  for (var i=0; i < len; i++) {
+  for (var i = 0; i < len; i++) {
     result += String.fromCharCode(buf[i]);
   }
   return result;
@@ -204,15 +204,15 @@ function buf2binstring(buf, len) {
 
 
 // Convert byte array to binary string
-exports.buf2binstring = function(buf) {
+exports.buf2binstring = function (buf) {
   return buf2binstring(buf, buf.length);
 };
 
 
 // Convert binary string (typed, when possible)
-exports.binstring2buf = function(str) {
+exports.binstring2buf = function (str) {
   var buf = new utils.Buf8(str.length);
-  for (var i=0, len=buf.length; i < len; i++) {
+  for (var i = 0, len = buf.length; i < len; i++) {
     buf[i] = str.charCodeAt(i);
   }
   return buf;
@@ -227,16 +227,16 @@ exports.buf2string = function (buf, max) {
   // Reserve max possible length (2 words per char)
   // NB: by unknown reasons, Array is significantly faster for
   //     String.fromCharCode.apply than Uint16Array.
-  var utf16buf = new Array(len*2);
+  var utf16buf = new Array(len * 2);
 
-  for (out=0, i=0; i<len;) {
+  for (out = 0, i = 0; i < len;) {
     c = buf[i++];
     // quick process ascii
     if (c < 0x80) { utf16buf[out++] = c; continue; }
 
     c_len = _utf8len[c];
     // skip 5 & 6 byte codes
-    if (c_len > 4) { utf16buf[out++] = 0xfffd; i += c_len-1; continue; }
+    if (c_len > 4) { utf16buf[out++] = 0xfffd; i += c_len - 1; continue; }
 
     // apply mask on first byte
     c &= c_len === 2 ? 0x1f : c_len === 3 ? 0x0f : 0x07;
@@ -268,14 +268,14 @@ exports.buf2string = function (buf, max) {
 //
 // buf[] - utf8 bytes array
 // max   - length limit (mandatory);
-exports.utf8border = function(buf, max) {
+exports.utf8border = function (buf, max) {
   var pos;
 
   max = max || buf.length;
   if (max > buf.length) { max = buf.length; }
 
   // go back from last position, until start of sequence found
-  pos = max-1;
+  pos = max - 1;
   while (pos >= 0 && (buf[pos] & 0xC0) === 0x80) { pos--; }
 
   // Fuckup - very small and broken sequence,
@@ -324,6 +324,9 @@ function adler32(adler, buf, len, pos) {
 module.exports = adler32;
 
 },{}],4:[function(require,module,exports){
+'use strict';
+
+
 module.exports = {
 
   /* Allowed flush values; see deflate() and inflate() below for details */
@@ -384,10 +387,10 @@ module.exports = {
 function makeTable() {
   var c, table = [];
 
-  for (var n =0; n < 256; n++) {
+  for (var n = 0; n < 256; n++) {
     c = n;
-    for (var k =0; k < 8; k++) {
-      c = ((c&1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+    for (var k = 0; k < 8; k++) {
+      c = ((c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
     }
     table[n] = c;
   }
@@ -403,7 +406,7 @@ function crc32(crc, buf, len, pos) {
   var t = crcTable,
       end = pos + len;
 
-  crc = crc ^ (-1);
+  crc ^= -1;
 
   for (var i = pos; i < end; i++) {
     crc = (crc >>> 8) ^ t[(crc ^ buf[i]) & 0xFF];
@@ -789,10 +792,10 @@ module.exports = function inflate_fast(strm, start) {
 'use strict';
 
 
-var utils = require('../utils/common');
-var adler32 = require('./adler32');
-var crc32   = require('./crc32');
-var inflate_fast = require('./inffast');
+var utils         = require('../utils/common');
+var adler32       = require('./adler32');
+var crc32         = require('./crc32');
+var inflate_fast  = require('./inffast');
 var inflate_table = require('./inftrees');
 
 var CODES = 0;
@@ -880,7 +883,7 @@ var MAX_WBITS = 15;
 var DEF_WBITS = MAX_WBITS;
 
 
-function ZSWAP32(q) {
+function zswap32(q) {
   return  (((q >>> 24) & 0xff) +
           ((q >>> 8) & 0xff00) +
           ((q & 0xff00) << 8) +
@@ -1073,13 +1076,13 @@ function fixedtables(state) {
     while (sym < 280) { state.lens[sym++] = 7; }
     while (sym < 288) { state.lens[sym++] = 8; }
 
-    inflate_table(LENS,  state.lens, 0, 288, lenfix,   0, state.work, {bits: 9});
+    inflate_table(LENS,  state.lens, 0, 288, lenfix,   0, state.work, { bits: 9 });
 
     /* distance table */
     sym = 0;
     while (sym < 32) { state.lens[sym++] = 5; }
 
-    inflate_table(DISTS, state.lens, 0, 32,   distfix, 0, state.work, {bits: 5});
+    inflate_table(DISTS, state.lens, 0, 32,   distfix, 0, state.work, { bits: 5 });
 
     /* do this just once */
     virgin = false;
@@ -1121,7 +1124,7 @@ function updatewindow(strm, src, end, copy) {
 
   /* copy state->wsize or less output bytes into the circular window */
   if (copy >= state.wsize) {
-    utils.arraySet(state.window,src, end - state.wsize, state.wsize, 0);
+    utils.arraySet(state.window, src, end - state.wsize, state.wsize, 0);
     state.wnext = 0;
     state.whave = state.wsize;
   }
@@ -1131,11 +1134,11 @@ function updatewindow(strm, src, end, copy) {
       dist = copy;
     }
     //zmemcpy(state->window + state->wnext, end - copy, dist);
-    utils.arraySet(state.window,src, end - copy, dist, state.wnext);
+    utils.arraySet(state.window, src, end - copy, dist, state.wnext);
     copy -= dist;
     if (copy) {
       //zmemcpy(state->window, end - copy, copy);
-      utils.arraySet(state.window,src, end - copy, copy, 0);
+      utils.arraySet(state.window, src, end - copy, copy, 0);
       state.wnext = copy;
       state.whave = state.wsize;
     }
@@ -1172,7 +1175,7 @@ function inflate(strm, flush) {
   var n; // temporary var for NEED_BITS
 
   var order = /* permutation of code lengths */
-    [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
+    [ 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15 ];
 
 
   if (!strm || !strm.state || !strm.output ||
@@ -1499,7 +1502,7 @@ function inflate(strm, flush) {
         state.head.hcrc = ((state.flags >> 9) & 1);
         state.head.done = true;
       }
-      strm.adler = state.check = 0 /*crc32(0L, Z_NULL, 0)*/;
+      strm.adler = state.check = 0;
       state.mode = TYPE;
       break;
     case DICTID:
@@ -1511,7 +1514,7 @@ function inflate(strm, flush) {
         bits += 8;
       }
       //===//
-      strm.adler = state.check = ZSWAP32(hold);
+      strm.adler = state.check = zswap32(hold);
       //=== INITBITS();
       hold = 0;
       bits = 0;
@@ -1703,7 +1706,7 @@ function inflate(strm, flush) {
       state.lencode = state.lendyn;
       state.lenbits = 7;
 
-      opts = {bits: state.lenbits};
+      opts = { bits: state.lenbits };
       ret = inflate_table(CODES, state.lens, 0, 19, state.lencode, 0, state.work, opts);
       state.lenbits = opts.bits;
 
@@ -1834,7 +1837,7 @@ function inflate(strm, flush) {
          concerning the ENOUGH constants, which depend on those values */
       state.lenbits = 9;
 
-      opts = {bits: state.lenbits};
+      opts = { bits: state.lenbits };
       ret = inflate_table(LENS, state.lens, 0, state.nlen, state.lencode, 0, state.work, opts);
       // We have separate tables & no pointers. 2 commented lines below not needed.
       // state.next_index = opts.table_index;
@@ -1851,7 +1854,7 @@ function inflate(strm, flush) {
       //state.distcode.copy(state.codes);
       // Switch to use dynamic table
       state.distcode = state.distdyn;
-      opts = {bits: state.distbits};
+      opts = { bits: state.distbits };
       ret = inflate_table(DISTS, state.lens, state.nlen, state.ndist, state.distcode, 0, state.work, opts);
       // We have separate tables & no pointers. 2 commented lines below not needed.
       // state.next_index = opts.table_index;
@@ -1899,7 +1902,7 @@ function inflate(strm, flush) {
       }
       state.back = 0;
       for (;;) {
-        here = state.lencode[hold & ((1 << state.lenbits) -1)];  /*BITS(state.lenbits)*/
+        here = state.lencode[hold & ((1 << state.lenbits) - 1)];  /*BITS(state.lenbits)*/
         here_bits = here >>> 24;
         here_op = (here >>> 16) & 0xff;
         here_val = here & 0xffff;
@@ -1918,7 +1921,7 @@ function inflate(strm, flush) {
         last_val = here_val;
         for (;;) {
           here = state.lencode[last_val +
-                  ((hold & ((1 << (last_bits + last_op)) -1))/*BITS(last.bits + last.op)*/ >> last_bits)];
+                  ((hold & ((1 << (last_bits + last_op)) - 1))/*BITS(last.bits + last.op)*/ >> last_bits)];
           here_bits = here >>> 24;
           here_op = (here >>> 16) & 0xff;
           here_val = here & 0xffff;
@@ -1975,7 +1978,7 @@ function inflate(strm, flush) {
           bits += 8;
         }
         //===//
-        state.length += hold & ((1 << state.extra) -1)/*BITS(state.extra)*/;
+        state.length += hold & ((1 << state.extra) - 1)/*BITS(state.extra)*/;
         //--- DROPBITS(state.extra) ---//
         hold >>>= state.extra;
         bits -= state.extra;
@@ -1988,7 +1991,7 @@ function inflate(strm, flush) {
       /* falls through */
     case DIST:
       for (;;) {
-        here = state.distcode[hold & ((1 << state.distbits) -1)];/*BITS(state.distbits)*/
+        here = state.distcode[hold & ((1 << state.distbits) - 1)];/*BITS(state.distbits)*/
         here_bits = here >>> 24;
         here_op = (here >>> 16) & 0xff;
         here_val = here & 0xffff;
@@ -2007,7 +2010,7 @@ function inflate(strm, flush) {
         last_val = here_val;
         for (;;) {
           here = state.distcode[last_val +
-                  ((hold & ((1 << (last_bits + last_op)) -1))/*BITS(last.bits + last.op)*/ >> last_bits)];
+                  ((hold & ((1 << (last_bits + last_op)) - 1))/*BITS(last.bits + last.op)*/ >> last_bits)];
           here_bits = here >>> 24;
           here_op = (here >>> 16) & 0xff;
           here_val = here & 0xffff;
@@ -2051,7 +2054,7 @@ function inflate(strm, flush) {
           bits += 8;
         }
         //===//
-        state.offset += hold & ((1 << state.extra) -1)/*BITS(state.extra)*/;
+        state.offset += hold & ((1 << state.extra) - 1)/*BITS(state.extra)*/;
         //--- DROPBITS(state.extra) ---//
         hold >>>= state.extra;
         bits -= state.extra;
@@ -2145,8 +2148,8 @@ function inflate(strm, flush) {
 
         }
         _out = left;
-        // NB: crc32 stored as signed 32-bit int, ZSWAP32 returns signed too
-        if ((state.flags ? hold : ZSWAP32(hold)) !== state.check) {
+        // NB: crc32 stored as signed 32-bit int, zswap32 returns signed too
+        if ((state.flags ? hold : zswap32(hold)) !== state.check) {
           strm.msg = 'incorrect data check';
           state.mode = BAD;
           break;
@@ -2268,6 +2271,41 @@ function inflateGetHeader(strm, head) {
   return Z_OK;
 }
 
+function inflateSetDictionary(strm, dictionary) {
+  var dictLength = dictionary.length;
+
+  var state;
+  var dictid;
+  var ret;
+
+  /* check state */
+  if (!strm /* == Z_NULL */ || !strm.state /* == Z_NULL */) { return Z_STREAM_ERROR; }
+  state = strm.state;
+
+  if (state.wrap !== 0 && state.mode !== DICT) {
+    return Z_STREAM_ERROR;
+  }
+
+  /* check for correct dictionary identifier */
+  if (state.mode === DICT) {
+    dictid = 1; /* adler32(0, null, 0)*/
+    /* dictid = adler32(dictid, dictionary, dictLength); */
+    dictid = adler32(dictid, dictionary, dictLength, 0);
+    if (dictid !== state.check) {
+      return Z_DATA_ERROR;
+    }
+  }
+  /* copy dictionary to window using updatewindow(), which will amend the
+   existing dictionary if appropriate */
+  ret = updatewindow(strm, dictionary, dictLength, dictLength);
+  if (ret) {
+    state.mode = MEM;
+    return Z_MEM_ERROR;
+  }
+  state.havedict = 1;
+  // Tracev((stderr, "inflate:   dictionary set\n"));
+  return Z_OK;
+}
 
 exports.inflateReset = inflateReset;
 exports.inflateReset2 = inflateReset2;
@@ -2277,6 +2315,7 @@ exports.inflateInit2 = inflateInit2;
 exports.inflate = inflate;
 exports.inflateEnd = inflateEnd;
 exports.inflateGetHeader = inflateGetHeader;
+exports.inflateSetDictionary = inflateSetDictionary;
 exports.inflateInfo = 'pako inflate (from Nodeca project)';
 
 /* Not implemented
@@ -2284,7 +2323,6 @@ exports.inflateCopy = inflateCopy;
 exports.inflateGetDictionary = inflateGetDictionary;
 exports.inflateMark = inflateMark;
 exports.inflatePrime = inflatePrime;
-exports.inflateSetDictionary = inflateSetDictionary;
 exports.inflateSync = inflateSync;
 exports.inflateSyncPoint = inflateSyncPoint;
 exports.inflateUndermine = inflateUndermine;
@@ -2350,8 +2388,8 @@ module.exports = function inflate_table(type, lens, lens_index, codes, table, ta
   var base_index = 0;
 //  var shoextra;    /* extra bits table to use */
   var end;                    /* use base and extra for symbol > end */
-  var count = new utils.Buf16(MAXBITS+1); //[MAXBITS+1];    /* number of codes of each length */
-  var offs = new utils.Buf16(MAXBITS+1); //[MAXBITS+1];     /* offsets in table for each length */
+  var count = new utils.Buf16(MAXBITS + 1); //[MAXBITS+1];    /* number of codes of each length */
+  var offs = new utils.Buf16(MAXBITS + 1); //[MAXBITS+1];     /* offsets in table for each length */
   var extra = null;
   var extra_index = 0;
 
@@ -2520,7 +2558,7 @@ module.exports = function inflate_table(type, lens, lens_index, codes, table, ta
     return 1;
   }
 
-  var i=0;
+  var i = 0;
   /* process all codes and make table entries */
   for (;;) {
     i++;
@@ -2623,9 +2661,9 @@ module.exports = function inflate_table(type, lens, lens_index, codes, table, ta
 'use strict';
 
 module.exports = {
-  '2':    'need dictionary',     /* Z_NEED_DICT       2  */
-  '1':    'stream end',          /* Z_STREAM_END      1  */
-  '0':    '',                    /* Z_OK              0  */
+  2:      'need dictionary',     /* Z_NEED_DICT       2  */
+  1:      'stream end',          /* Z_STREAM_END      1  */
+  0:      '',                    /* Z_OK              0  */
   '-1':   'file error',          /* Z_ERRNO         (-1) */
   '-2':   'stream error',        /* Z_STREAM_ERROR  (-2) */
   '-3':   'data error',          /* Z_DATA_ERROR    (-3) */
@@ -2669,13 +2707,13 @@ module.exports = ZStream;
 'use strict';
 
 
-var zlib_inflate = require('./zlib/inflate.js');
-var utils = require('./utils/common');
-var strings = require('./utils/strings');
-var c = require('./zlib/constants');
-var msg = require('./zlib/messages');
-var zstream = require('./zlib/zstream');
-var gzheader = require('./zlib/gzheader');
+var zlib_inflate = require('./zlib/inflate');
+var utils        = require('./utils/common');
+var strings      = require('./utils/strings');
+var c            = require('./zlib/constants');
+var msg          = require('./zlib/messages');
+var ZStream      = require('./zlib/zstream');
+var GZheader     = require('./zlib/gzheader');
 
 var toString = Object.prototype.toString;
 
@@ -2725,6 +2763,7 @@ var toString = Object.prototype.toString;
  * on bad params. Supported options:
  *
  * - `windowBits`
+ * - `dictionary`
  *
  * [http://zlib.net/manual.html#Advanced](http://zlib.net/manual.html#Advanced)
  * for more information on these.
@@ -2757,7 +2796,8 @@ var toString = Object.prototype.toString;
  * console.log(inflate.result);
  * ```
  **/
-var Inflate = function(options) {
+function Inflate(options) {
+  if (!(this instanceof Inflate)) return new Inflate(options);
 
   this.options = utils.assign({
     chunkSize: 16384,
@@ -2795,7 +2835,7 @@ var Inflate = function(options) {
   this.ended  = false;  // used to avoid multiple onEnd() calls
   this.chunks = [];     // chunks of compressed data
 
-  this.strm   = new zstream();
+  this.strm   = new ZStream();
   this.strm.avail_out = 0;
 
   var status  = zlib_inflate.inflateInit2(
@@ -2807,10 +2847,10 @@ var Inflate = function(options) {
     throw new Error(msg[status]);
   }
 
-  this.header = new gzheader();
+  this.header = new GZheader();
 
   zlib_inflate.inflateGetHeader(this.strm, this.header);
-};
+}
 
 /**
  * Inflate#push(data[, mode]) -> Boolean
@@ -2840,11 +2880,13 @@ var Inflate = function(options) {
  * push(chunk, true);  // push last chunk
  * ```
  **/
-Inflate.prototype.push = function(data, mode) {
+Inflate.prototype.push = function (data, mode) {
   var strm = this.strm;
   var chunkSize = this.options.chunkSize;
+  var dictionary = this.options.dictionary;
   var status, _mode;
   var next_out_utf8, tail, utf8str;
+  var dict;
 
   // Flag to properly process Z_BUF_ERROR on testing inflate call
   // when we check that all output data was flushed.
@@ -2874,6 +2916,20 @@ Inflate.prototype.push = function(data, mode) {
     }
 
     status = zlib_inflate.inflate(strm, c.Z_NO_FLUSH);    /* no bad return value */
+
+    if (status === c.Z_NEED_DICT && dictionary) {
+      // Convert data if needed
+      if (typeof dictionary === 'string') {
+        dict = strings.string2buf(dictionary);
+      } else if (toString.call(dictionary) === '[object ArrayBuffer]') {
+        dict = new Uint8Array(dictionary);
+      } else {
+        dict = dictionary;
+      }
+
+      status = zlib_inflate.inflateSetDictionary(this.strm, dict);
+
+    }
 
     if (status === c.Z_BUF_ERROR && allowBufError === true) {
       status = c.Z_OK;
@@ -2954,7 +3010,7 @@ Inflate.prototype.push = function(data, mode) {
  * By default, stores data blocks in `chunks[]` property and glue
  * those in `onEnd`. Override this handler, if you need another behaviour.
  **/
-Inflate.prototype.onData = function(chunk) {
+Inflate.prototype.onData = function (chunk) {
   this.chunks.push(chunk);
 };
 
@@ -2969,7 +3025,7 @@ Inflate.prototype.onData = function(chunk) {
  * or if an error happened. By default - join collected chunks,
  * free memory and fill `results` / `err` properties.
  **/
-Inflate.prototype.onEnd = function(status) {
+Inflate.prototype.onEnd = function (status) {
   // On success - join
   if (status === c.Z_OK) {
     if (this.options.to === 'string') {
@@ -3067,5 +3123,5 @@ exports.inflate = inflate;
 exports.inflateRaw = inflateRaw;
 exports.ungzip  = inflate;
 
-},{"./utils/common":1,"./utils/strings":2,"./zlib/constants":4,"./zlib/gzheader":6,"./zlib/inflate.js":8,"./zlib/messages":10,"./zlib/zstream":11}]},{},[])("/lib/inflate.js")
+},{"./utils/common":1,"./utils/strings":2,"./zlib/constants":4,"./zlib/gzheader":6,"./zlib/inflate":8,"./zlib/messages":10,"./zlib/zstream":11}]},{},[])("/lib/inflate.js")
 });

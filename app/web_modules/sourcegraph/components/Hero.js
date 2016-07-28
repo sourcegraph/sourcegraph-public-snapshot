@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import styles from "sourcegraph/components/styles/hero.css";
 import CSSModules from "react-css-modules";
 

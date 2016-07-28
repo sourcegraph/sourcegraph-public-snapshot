@@ -15,7 +15,7 @@ type GlobalRefs interface {
 	// Update takes the graph output of a repo at the latest commit and
 	// updates the set of refs in the global ref store that originate from
 	// it.
-	Update(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error
+	Update(ctx context.Context, op RefreshIndexOp) error
 }
 
 // DefExamples defines the interface for getting and listing def usage examples.
@@ -37,7 +37,7 @@ type GlobalDeps interface {
 
 type Defs interface {
 	Search(ctx context.Context, op DefSearchOp) (*sourcegraph.SearchResultsList, error)
-	UpdateFromSrclibStore(ctx context.Context, op DefUpdateOp) error
+	UpdateFromSrclibStore(ctx context.Context, op RefreshIndexOp) error
 }
 
 type DefSearchOp struct {
@@ -47,7 +47,7 @@ type DefSearchOp struct {
 	Opt      *sourcegraph.SearchOptions
 }
 
-type DefUpdateOp struct {
+type RefreshIndexOp struct {
 	Repo     int32
 	CommitID string
 }

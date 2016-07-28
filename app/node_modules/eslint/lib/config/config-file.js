@@ -20,9 +20,9 @@ var debug = require("debug"),
     pathUtil = require("../util/path-util"),
     ModuleResolver = require("../util/module-resolver"),
     pathIsInside = require("path-is-inside"),
+    stripBom = require("strip-bom"),
     stripComments = require("strip-json-comments"),
     stringify = require("json-stable-stringify"),
-    isAbsolutePath = require("path-is-absolute"),
     defaultOptions = require("../../conf/eslint.json"),
     requireUncached = require("require-uncached");
 
@@ -68,7 +68,7 @@ debug = debug("eslint:config-file");
  * @private
  */
 function readFile(filePath) {
-    return fs.readFileSync(filePath, "utf8");
+    return stripBom(fs.readFileSync(filePath, "utf8"));
 }
 
 /**
@@ -80,7 +80,7 @@ function readFile(filePath) {
  * @private
  */
 function isFilePath(filePath) {
-    return isAbsolutePath(filePath) || !/\w|@/.test(filePath.charAt(0));
+    return path.isAbsolute(filePath) || !/\w|@/.test(filePath.charAt(0));
 }
 
 /**
@@ -381,7 +381,7 @@ function applyExtends(config, filePath, relativeTo) {
              * If the `extends` path is relative, use the directory of the current configuration
              * file as the reference point. Otherwise, use as-is.
              */
-            parentPath = (!isAbsolutePath(parentPath) ?
+            parentPath = (!path.isAbsolute(parentPath) ?
                 path.join(relativeTo || path.dirname(filePath), parentPath) :
                 parentPath
             );

@@ -3,7 +3,6 @@ import TreeStore from "sourcegraph/tree/TreeStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
-import {trackPromise} from "sourcegraph/app/status";
 
 const TreeBackend = {
 	fetch: defaultFetch,
@@ -14,13 +13,11 @@ const TreeBackend = {
 			{
 				let commit = TreeStore.commits.get(action.repo, action.rev, action.path);
 				if (commit === null) {
-					trackPromise(
-						TreeBackend.fetch(`/.api/repos/${action.repo}/-/commits?Head=${encodeURIComponent(action.rev)}&Path=${encodeURIComponent(action.path)}&PerPage=1`)
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => ({Error: err}))
-							.then((data) => Dispatcher.Stores.dispatch(new TreeActions.CommitFetched(action.repo, action.rev, action.path, data.Commits[0])))
-					);
+					TreeBackend.fetch(`/.api/repos/${action.repo}/-/commits?Head=${encodeURIComponent(action.rev)}&Path=${encodeURIComponent(action.path)}&PerPage=1`)
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => Dispatcher.Stores.dispatch(new TreeActions.CommitFetched(action.repo, action.rev, action.path, data.Commits[0])));
 				}
 				break;
 			}
@@ -29,14 +26,12 @@ const TreeBackend = {
 			{
 				let fileList = TreeStore.fileLists.get(action.repo, action.commitID);
 				if (fileList === null) {
-					trackPromise(
-						TreeBackend.fetch(`/.api/repos/${action.repo}@${action.commitID}/-/tree-list`)
-							.then(updateRepoCloning(action.repo))
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => ({Error: err}))
-							.then((data) => Dispatcher.Stores.dispatch(new TreeActions.FileListFetched(action.repo, action.commitID, data)))
-					);
+					TreeBackend.fetch(`/.api/repos/${action.repo}@${action.commitID}/-/tree-list`)
+						.then(updateRepoCloning(action.repo))
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => Dispatcher.Stores.dispatch(new TreeActions.FileListFetched(action.repo, action.commitID, data)));
 				}
 				break;
 			}
@@ -45,20 +40,18 @@ const TreeBackend = {
 			{
 				let version = TreeStore.srclibDataVersions.get(action.repo, action.commitID, action.path);
 				if (version === null || action.force) {
-					trackPromise(
-						TreeBackend.fetch(`/.api/repos/${action.repo}@${action.commitID}/-/srclib-data-version?Path=${action.path ? encodeURIComponent(action.path) : ""}`)
-							.then((resp) => {
-								if (resp.status === 404) {
-									return Object.assign({}, resp, {json: () => ({})});
-								} else if (resp.status === 200) {
-									return resp;
-								}
-								return checkStatus(resp);
-							})
-							.then((resp) => resp.json())
-							.catch((err) => ({Error: err}))
-							.then((data) => Dispatcher.Stores.dispatch(new TreeActions.FetchedSrclibDataVersion(action.repo, action.commitID, action.path, data)))
-					);
+					TreeBackend.fetch(`/.api/repos/${action.repo}@${action.commitID}/-/srclib-data-version?Path=${action.path ? encodeURIComponent(action.path) : ""}`)
+						.then((resp) => {
+							if (resp.status === 404) {
+								return Object.assign({}, resp, {json: () => ({})});
+							} else if (resp.status === 200) {
+								return resp;
+							}
+							return checkStatus(resp);
+						})
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => Dispatcher.Stores.dispatch(new TreeActions.FetchedSrclibDataVersion(action.repo, action.commitID, action.path, data)));
 				}
 				break;
 			}

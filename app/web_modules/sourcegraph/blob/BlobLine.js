@@ -1,6 +1,6 @@
 // @flow weak
 
-import React from "react";
+import * as React from "react";
 import {Link} from "react-router";
 import utf8 from "utf8";
 
@@ -14,7 +14,6 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import {fastURLToRepoDef} from "sourcegraph/def/routes";
 import s from "sourcegraph/blob/styles/Blob.css";
 import {isExternalLink} from "sourcegraph/util/externalLink";
-import {getLanguageExtensionForPath} from "sourcegraph/util/inventory";
 import "sourcegraph/components/styles/code.css";
 
 // simpleContentsString converts [string...] (like ["a", "b", "c"]) to
@@ -59,6 +58,7 @@ class BlobLine extends Component {
 	reconcileState(state, props) {
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
+		state.commitID = props.commitID || null;
 		state.path = props.path || null;
 		state.textSize = props.textSize || "normal";
 
@@ -83,8 +83,7 @@ class BlobLine extends Component {
 		state.activeDefURL = activeDefURL && state.ownAnnURLs && state.ownAnnURLs[activeDefURL] ? activeDefURL : null;
 
 		state.lineNumber = props.lineNumber || null;
-		state.oldLineNumber = props.oldLineNumber || null;
-		state.newLineNumber = props.newLineNumber || null;
+		state.showLineNumber = props.showLineNumber || false;
 		state.startByte = props.startByte;
 		state.contents = props.contents;
 		state.selected = Boolean(props.selected);
@@ -125,8 +124,8 @@ class BlobLine extends Component {
 						})}
 						target="_blank"
 						href={annURLs[0]}
-						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(annURLs[0], getLanguageExtensionForPath(this.state.path)))}
-						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}
+						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.Hovering({repo: this.state.repo, commit: this.state.commitID, file: this.state.path, line: this.state.lineNumber - 1, character: ann.StartByte - this.state.startByte}))}
+						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.Hovering(null))}
 						key={i}>
 						{simpleContentsString(content)}
 					</a>
@@ -148,8 +147,8 @@ class BlobLine extends Component {
 							[s.activeAnn]: annURLs.includes(this.state.activeDefURL),
 						})}
 						to={annRevURLs[0]}
-						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(annURLs[0], getLanguageExtensionForPath(this.state.path)))}
-						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}
+						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.Hovering({repo: this.state.repo, commit: this.state.commitID, file: this.state.path, line: this.state.lineNumber - 1, character: ann.StartByte - this.state.startByte}))}
+						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.Hovering(null))}
 						onClick={(ev) => {
 							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
 							// TODO: implement multiple defs menu if ann.URLs.length > 0 (more important for languages other than Go)
@@ -159,8 +158,8 @@ class BlobLine extends Component {
 							}
 
 							// Clear the def tooltip on click, or else it might be stuck
-							// to the cursor if no corresponding HighlightDef(null) is dispatched.
-							Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null));
+							// to the cursor if no corresponding Hovering(null) is dispatched.
+							Dispatcher.Stores.dispatch(new DefActions.Hovering(null));
 						}}
 						key={i}>{fromUtf8(content)}</Link>
 				);
@@ -176,12 +175,10 @@ class BlobLine extends Component {
 		// when copied and pasted, instead of being omitted entirely.
 		if (!contents) contents = "\n";
 
-		let isDiff = this.state.oldLineNumber || this.state.newLineNumber;
-
 		return (
 			<tr className={`${s.line} ${s[this.state.textSize]} ${this.state.className || ""}`}
 				data-line={this.state.lineNumber}>
-				{this.state.lineNumber &&
+				{this.state.showLineNumber &&
 					<td className={s.lineNumberCell} onClick={(event) => {
 						if (event.shiftKey) {
 							event.preventDefault();
@@ -192,8 +189,6 @@ class BlobLine extends Component {
 						<Link className={this.state.selected ? s.selectedLineNumber : s.lineNumber}
 							to={`${urlToBlob(this.state.repo, this.state.rev, this.state.path)}#L${this.state.lineNumber}`} data-line={this.state.lineNumber} />
 					</td>}
-				{isDiff && <td className={s.lineNumberCell} data-line={this.state.oldLineNumber || ""}><span className={s.lineNumber} data-line={this.state.oldLineNumber} /></td>}
-				{isDiff && <td className={s.lineNumberCell} data-line={this.state.newLineNumber || ""}><span className={s.lineNumber} data-line={this.state.newLineNumber} /></td>}
 
 				<td className={`code ${this.state.selected ? s.selectedLineContent : s.lineContent}`}>
 					{contents}
@@ -207,21 +202,16 @@ BlobLine.propTypes = {
 	lineNumber: (props, propName, componentName) => {
 		let v = React.PropTypes.number(props, propName, componentName);
 		if (v) return v;
-		if (typeof props.lineNumber !== "undefined" && (typeof props.oldLineNumber !== "undefined" || typeof props.newLineNumber !== "undefined")) {
-			return new Error("If lineNumber is set, then oldLineNumber/newLineNumber (which are for diff hunks) may not be used");
-		}
 		return null;
 	},
+	showLineNumber: React.PropTypes.bool,
 
 	// Optional: for linking line numbers to the file they came from (e.g., in
 	// ref snippets).
 	repo: React.PropTypes.string,
 	rev: React.PropTypes.string,
+	commitID: React.PropTypes.string,
 	path: React.PropTypes.string,
-
-	// For diff hunks.
-	oldLineNumber: React.PropTypes.number,
-	newLineNumber: React.PropTypes.number,
 
 	activeDef: React.PropTypes.string, // the def that the page is about
 

@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 
 class Icon extends React.Component {
 	static propTypes = {

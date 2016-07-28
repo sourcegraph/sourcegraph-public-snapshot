@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import ReactDOMServer from "react-dom/server";
 import expect from "expect.js";
 import {setGlobalFeatures, withFeaturesContext} from "sourcegraph/app/features";

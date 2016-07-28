@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/heading.css";
 
@@ -12,6 +12,7 @@ class Heading extends React.Component {
 		underline: React.PropTypes.string, // blue, purple, white, orange, green
 		color: React.PropTypes.string, // purple, blue, green, orange, cool-mid-gray
 		align: React.PropTypes.string, // left, right, center
+		style: React.PropTypes.object,
 	};
 
 	static defaultProps = {
@@ -22,10 +23,10 @@ class Heading extends React.Component {
 	};
 
 	render() {
-		const {className, children, level, color, underline, align} = this.props;
+		const {className, children, level, color, underline, align, style} = this.props;
 
 		return (
-			<div className={className} styleName={`h${level} ${color ? color : ""} ${align ? align : ""}`}>
+			<div className={className} styleName={`h${level} ${color ? color : ""} ${align ? align : ""}`} style={style}>
 				{children}<br />
 				{underline && <hr styleName={`line l-${underline}`} />}
 			</div>

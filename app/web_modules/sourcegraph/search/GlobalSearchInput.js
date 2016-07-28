@@ -1,6 +1,6 @@
 // @flow weak
 
-import React from "react";
+import * as React from "react";
 import {Input} from "sourcegraph/components";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalSearchInput.css";

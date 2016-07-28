@@ -148,10 +148,11 @@ Notes
 Pako does not contain some specific zlib functions:
 
 - __deflate__ -  methods `deflateCopy`, `deflateBound`, `deflateParams`,
-  `deflatePending`, `deflatePrime`, `deflateSetDictionary`, `deflateTune`.
-- __inflate__ - `inflateGetDictionary`, `inflateCopy`, `inflateMark`,
-  `inflatePrime`, `inflateSetDictionary`, `inflateSync`, `inflateSyncPoint`,
-  `inflateUndermine`.
+  `deflatePending`, `deflatePrime`, `deflateTune`.
+- __inflate__ - methods `inflateCopy`, `inflateMark`,
+  `inflatePrime`, `inflateGetDictionary`, `inflateSync`, `inflateSyncPoint`, `inflateUndermine`.
+- High level inflate/deflate wrappers (classes) may not support some flush
+  modes. Those should work: Z_NO_FLUSH, Z_FINISH, Z_SYNC_FLUSH.
 
 
 Authors
@@ -163,7 +164,7 @@ Authors
 Personal thanks to:
 
 - Vyacheslav Egorov ([@mraleph](https://github.com/mraleph)) for his awesome
-  tutoruals about optimising JS code for v8, [IRHydra](http://mrale.ph/irhydra/)
+  tutorials about optimising JS code for v8, [IRHydra](http://mrale.ph/irhydra/)
   tool and his advices.
 - David Duponchel ([@dduponchel](https://github.com/dduponchel)) for help with
   testing.

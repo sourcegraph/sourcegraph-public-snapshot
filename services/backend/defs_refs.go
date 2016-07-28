@@ -3,6 +3,8 @@ package backend
 import (
 	"path"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -108,22 +110,32 @@ func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExample
 }
 
 func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
-	if op.RefreshRefLocations {
-		if err := store.GlobalRefsFromContext(ctx).Update(ctx, op); err != nil {
-			return nil, err
-		}
-	}
-
 	rev, err := svc.Repos(ctx).ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: op.Repo})
 	if err != nil {
 		return nil, err
 	}
 
-	// Update defs table
-	if err := store.DefsFromContext(ctx).UpdateFromSrclibStore(ctx, store.DefUpdateOp{
+	// There may be new commits that were pushed from the time we had
+	// srclib run and we analyse the commit. So we can't just pass in
+	// DefaultBranch, but must use the latest imported commit.
+	version, err := svc.Repos(ctx).GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{RepoRev: sourcegraph.RepoRevSpec{Repo: op.Repo, CommitID: rev.CommitID}})
+	if err != nil {
+		return nil, err
+	}
+
+	log15.Debug("Refreshing global indexes", "repo", op.Repo, "commitID", version.CommitID, "commitsBehind", version.CommitsBehind)
+
+	indexOp := store.RefreshIndexOp{
 		Repo:     op.Repo,
-		CommitID: rev.CommitID,
-	}); err != nil {
+		CommitID: version.CommitID,
+	}
+
+	if err := store.GlobalRefsFromContext(ctx).Update(ctx, indexOp); err != nil {
+		return nil, err
+	}
+
+	// Update defs table
+	if err := store.DefsFromContext(ctx).UpdateFromSrclibStore(ctx, indexOp); err != nil {
 		return nil, err
 	}
 

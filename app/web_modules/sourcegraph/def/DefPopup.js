@@ -1,6 +1,6 @@
 // @flow weak
 
-import React from "react";
+import * as React from "react";
 import {Link} from "react-router";
 import CSSModules from "react-css-modules";
 import Container from "sourcegraph/Container";

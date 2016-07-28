@@ -2,16 +2,8 @@ package rcache
 
 import "testing"
 
-func clearAll(t *testing.T, prefix string) {
-	if err := ClearAllForTest(prefix); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestCache_namespace(t *testing.T) {
-	globalPrefix = "__test__TestCache_namespace"
-	clearAll(t, globalPrefix)
-	defer clearAll(t, globalPrefix)
+	SetupForTest("TestCache_namespace")
 
 	type kvTTL struct {
 		k   string
@@ -71,9 +63,7 @@ func TestCache_namespace(t *testing.T) {
 }
 
 func TestCache_simple(t *testing.T) {
-	globalPrefix = "__test__TestCache_simple"
-	clearAll(t, globalPrefix)
-	defer clearAll(t, globalPrefix)
+	SetupForTest("TestCache_simple")
 
 	c := New("some_prefix", 123)
 	_, ok := c.Get("a")

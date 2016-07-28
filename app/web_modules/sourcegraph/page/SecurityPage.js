@@ -1,13 +1,13 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import {Hero, Heading} from "sourcegraph/components";
 import styles from "./Page.css";
 import base from "sourcegraph/components/styles/_base.css";
 import CSSModules from "react-css-modules";
 import Helmet from "react-helmet";
 
-function SecurityPage(props, {signedIn}): React$Element {
+function SecurityPage(props, {signedIn}): React$Element<any> {
 	return (
 		<div>
 			<Helmet title="Security" />
@@ -54,8 +54,6 @@ function SecurityPage(props, {signedIn}): React$Element {
                 </ul>
 
                 <Heading level="4" className={styles.h}>Application security</Heading>
-
-				<p>The code that powers this site is publicly available in the <a href="https://sourcegraph.com/sourcegraph/sourcegraph" target="_blank">sourcegraph/sourcegraph repository</a>.</p>
 
                 <ul>
                     <li>All language analysis is static.</li>

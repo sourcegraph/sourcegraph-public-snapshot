@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import ReactDOM from "react-dom";
 
 import Component from "sourcegraph/Component";
@@ -47,6 +47,7 @@ class Blob extends Component {
 		// ref snippets).
 		repo: React.PropTypes.string.isRequired,
 		rev: React.PropTypes.string,
+		commitID: React.PropTypes.string,
 		path: React.PropTypes.string.isRequired,
 
 		// contentsOffsetLine indicates that the contents string does not
@@ -80,6 +81,7 @@ class Blob extends Component {
 	state: {
 		repo: string;
 		rev: string;
+		commitID: string;
 		path: string;
 		lines: string[];
 		highlightSelectedLines: boolean;
@@ -105,6 +107,7 @@ class Blob extends Component {
 	} = {
 		repo: "",
 		rev: "",
+		commitID: "",
 		path: "",
 		activeDef: null,
 		activeDefRepo: null,
@@ -152,6 +155,7 @@ class Blob extends Component {
 	reconcileState(state: Blob.state, props: Blob.props) {
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
+		state.commitID = props.commitID || null;
 		state.path = props.path || null;
 
 		let oldStartLine = state.startLine;
@@ -392,8 +396,10 @@ class Blob extends Component {
 					ref={this.state.startLine === lineNumber ? "startLineComponent" : null}
 					repo={this.state.repo}
 					rev={this.state.rev}
+					commitID={this.state.commitID}
 					path={this.state.path}
-					lineNumber={this.state.lineNumbers ? lineNumber : null}
+					lineNumber={lineNumber}
+					showLineNumber={this.state.lineNumbers}
 					startByte={this.state.lineStartBytes[i]}
 					contents={line}
 					textSize={this.state.textSize}

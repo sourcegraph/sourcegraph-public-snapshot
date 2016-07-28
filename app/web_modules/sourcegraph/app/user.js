@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import UserStore from "sourcegraph/user/UserStore";
@@ -28,7 +28,7 @@ export const getChildContext = (state: any): childContext => ({
 
 // withUserContext passes user-related context items
 // to Component's children.
-export function withUserContext(Component: ReactClass): ReactClass {
+export function withUserContext(Component: ReactClass<any>): ReactClass<any> {
 	class WithUser extends Container {
 		static childContextTypes = {
 			user: React.PropTypes.object,

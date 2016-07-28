@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 
 // This component renders the Sourcegraph logo, logomark, or logomark with tagline at custom sizes.
 

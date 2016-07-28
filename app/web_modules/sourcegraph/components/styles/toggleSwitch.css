@@ -1,0 +1,74 @@
+@value colors "./_colors.css";
+
+@value c_green-8, c_green-2 from colors;
+@value c_light-gray, c_light-silver from colors;
+
+.toggle {
+	position: relative;
+	width: 60px;
+	-webkit-user-select:none;
+	-moz-user-select:none;
+	-ms-user-select: none;
+}
+
+.toggle-checkbox {
+	display: none;
+}
+
+.toggle-label {
+	display: block;
+	overflow: hidden;
+	cursor: pointer;
+	border-radius: 20px;
+}
+
+.toggle-inner {
+	display: block;
+	width: 200%;
+	margin-left: -100%;
+	transition: margin 0.3s ease-in 0s;
+}
+
+.toggle-inner:before, .toggle-inner:after {
+	display: block;
+	float: left;
+	width: 50%;
+	height: 30px;
+	padding: 0;
+	line-height: 30px;
+	font-size: 10px;
+	box-sizing: border-box;
+}
+
+.toggle-inner:before {
+	background-color: c_green-2;
+	content: " ";
+}
+
+.toggle-inner:after {
+	content: " ";
+	background-color: c_light-gray;
+	text-align: right;
+}
+
+.toggle-switch {
+	display: block;
+	width: 22px;
+	margin: 4px;
+	background: c_light-silver;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	right: 30px;
+	border-radius: 20px;
+	transition: all 200ms ease-in 0s;
+}
+
+.toggle-checkbox:checked + .toggle-label .toggle-inner {
+	margin-left: 0;
+}
+
+.toggle-checkbox:checked + .toggle-label .toggle-switch {
+	right: 0px;
+	background-color: c_green-8;
+}

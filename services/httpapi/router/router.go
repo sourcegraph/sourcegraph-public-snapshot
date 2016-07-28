@@ -52,6 +52,7 @@ const (
 	RepoTags                 = "repo.tags"
 	RepoTreeList             = "repo.tree-list"
 	RepoTreeSearch           = "repo-tree.search"
+	RepoHoverInfo            = "repo.hover-info"
 	Repos                    = "repos"
 	SourcegraphDesktop       = "sourcegraph-desktop"
 	SrclibImport             = "srclib.import"
@@ -120,6 +121,7 @@ func New(base *mux.Router) *mux.Router {
 	repoRev.Path("/inventory").Methods("GET").Name(RepoInventory)
 	repoRev.Path("/tree-search").Methods("GET").Name(RepoTreeSearch)
 	repoRev.Path("/tree{Path:.*}").Name(RepoTree)
+	repoRev.Path("/hover-info").Methods("GET").Name(RepoHoverInfo)
 	repo.Path("/tags").Methods("GET").Name(RepoTags)
 
 	repo.Path("/builds").Methods("GET").Name(RepoBuilds)

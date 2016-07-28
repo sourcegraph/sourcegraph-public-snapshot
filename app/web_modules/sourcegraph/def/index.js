@@ -85,7 +85,7 @@ export function encodeDefPath(path: string): string {
 
 export type RefLocationsKey = {
 	repo: string;
-	commitID: ?string[];
+	commitID: ?string;
 	def: string;
 	page?: number;
 	perPage?: number;
@@ -95,5 +95,5 @@ export type RefLocationsKey = {
 export type ExamplesKey = {
 	repo: string;
 	commitID: ?string;
-	def: ?string;
+	def: string;
 }

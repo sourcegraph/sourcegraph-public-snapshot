@@ -26,7 +26,7 @@ func testRegisterFlow(t *T) error {
 	ctx, c := t.GRPCClient()
 
 	// Delete the test user account.
-	_, err := c.Accounts.Delete(ctx, &sourcegraph.PersonSpec{
+	_, err := c.Accounts.Delete(ctx, &sourcegraph.UserSpec{
 		Login: t.TestLogin,
 	})
 	if err != nil && grpc.Code(err) != codes.NotFound {

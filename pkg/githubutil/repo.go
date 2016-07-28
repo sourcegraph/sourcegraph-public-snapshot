@@ -10,7 +10,7 @@ import (
 // SplitRepoURI splits a string like "github.com/alice/myrepo" to "alice" and
 // "myrepo".
 func SplitRepoURI(uri string) (owner, repo string, err error) {
-	// TODO(sqs): hack: treat sourcegraph.com/... as github.com/...
+	// HACK: treat sourcegraph.com/... as github.com/...
 	if strings.HasPrefix(uri, "sourcegraph.com/") {
 		uri = strings.Replace(uri, "sourcegraph.com/", "github.com/", 1)
 	}

@@ -401,7 +401,7 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 // srclib store as the canonical storage for defs. Until then, the canonical
 // storage is srclib store. UpdateFromSrclibStore will sync the data in defs to
 // reflect what is in srclib store for a given (repo, commit).
-func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) error {
+func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.RefreshIndexOp) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.UpdateFromSrclibStore", op.Repo); err != nil {
 		return err
 	}
@@ -559,10 +559,17 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 			for i, rid := range oldLatestRIDs {
 				params[i] = arg(rid)
 			}
-			s := `UPDATE defs2 SET state=2 WHERE rid IN (` + strings.Join(params, ",") + `)`
-			if _, err := tx.Exec(s, args...); err != nil {
+			s0 := selectForUpdateSQL(`rid IN (` + strings.Join(params, ",") + `)`)
+			s1 := `UPDATE defs2 SET state=2 WHERE rid IN (` + strings.Join(params, ",") + `)`
+			if _, err := tx.Exec(s0, args...); err != nil {
 				return err
 			}
+			if _, err := tx.Exec(s1, args...); err != nil {
+				return err
+			}
+		}
+		if _, err := tx.Exec(selectForUpdateSQL(`rid=$1`), repoRevID); err != nil {
+			return err
 		}
 		if _, err := tx.Exec(`UPDATE defs2 SET state=1 WHERE rid=$1`, repoRevID); err != nil {
 			return err
@@ -691,13 +698,23 @@ func appendRepeated(s []string, w string, count int) []string {
 	return s
 }
 
-var updateRefCountSQL = `UPDATE defs2 SET ref_ct = ref_counts.ref_ct
+func selectForUpdateSQL(whereClause string) string {
+	return fmt.Sprintf(`
+SELECT 1
+FROM defs2
+WHERE (%s)
+ORDER BY rid, defid
+FOR UPDATE;
+`, whereClause)
+}
+
+const updateRefCountSQL = `
+UPDATE defs2 SET ref_ct = ref_counts.ref_ct
 FROM (
 	SELECT d.defid defid, coalesce(sum(gr.count), 0) ref_ct
 	FROM defs2 d LEFT JOIN global_refs_new gr ON d.defid=gr.def_key_id
 	WHERE d.rid=$1 AND gr.repo != $2
 	GROUP BY defid
-	ORDER BY defid
 ) ref_counts WHERE defs2.defid=ref_counts.defid;
 `
 
@@ -705,27 +722,24 @@ FROM (
 // referencing defs in the latest built revision of the specified repository
 // (repo).
 func (s *defs) UpdateRefCounts(ctx context.Context, repo string) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.UpdateRefCounts", repo); err != nil {
+		return err
+	}
 
-	// TODO(sjl) per Beyang, hotfix disabling this update until we can identify a fix for deadlocks
-	// I attempted to create a ts_vector index on global_refs_new.repo, but it didn't improve performance
-	// https://app.asana.com/0/87040567695724/150990295471745
-	return nil
+	rr, err := getRepoRevLatest(graphDBH(ctx), repo)
+	if err != nil {
+		return err
+	}
 
-	/*
-		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.UpdateRefCounts", repo); err != nil {
+	return dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
+		if _, err := tx.Exec(selectForUpdateSQL("rid=$1"), rr.ID); err != nil {
 			return err
 		}
-
-		rr, err := getRepoRevLatest(graphDBH(ctx), repo)
-		if err != nil {
-			return err
-		}
-
-		if _, err := graphDBH(ctx).Exec(updateRefCountSQL, rr.ID, rr.Repo); err != nil {
+		if _, err := tx.Exec(updateRefCountSQL, rr.ID, rr.Repo); err != nil {
 			return err
 		}
 		return nil
-	*/
+	})
 }
 
 func getDefKey(ctx context.Context, dbh gorp.SqlExecutor, id int64) (*dbDefKey, error) {

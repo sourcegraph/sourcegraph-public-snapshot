@@ -154,7 +154,7 @@ func serveForgotPassword(w http.ResponseWriter, r *http.Request) error {
 	}
 	defer r.Body.Close()
 
-	_, err := cl.Accounts.RequestPasswordReset(ctx, &sourcegraph.PersonSpec{Email: form.Email})
+	_, err := cl.Accounts.RequestPasswordReset(ctx, &sourcegraph.RequestPasswordResetOp{Email: form.Email})
 	if err != nil {
 		return err
 	}

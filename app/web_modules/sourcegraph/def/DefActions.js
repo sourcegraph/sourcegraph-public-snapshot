@@ -104,15 +104,31 @@ export class SelectDef {
 	}
 }
 
-export class HighlightDef {
-	url: ?string;
-	language: ?string;
-	eventName: string;
+export type BlobPos = {repo: string, commit: string, file: string, line: number, character: number};
 
-	constructor(url: ?string, language: ?string) {
-		this.url = url;
-		this.language = language;
-		this.eventName = "HighlightDef";
+export class Hovering {
+	pos: ?BlobPos;
+
+	constructor(pos: ?BlobPos) {
+		this.pos = pos;
+	}
+}
+
+export class WantHoverInfo {
+	pos: ?BlobPos;
+
+	constructor(pos: ?BlobPos) {
+		this.pos = pos;
+	}
+}
+
+export class HoverInfoFetched {
+	pos: ?BlobPos;
+	info: any;
+
+	constructor(pos: ?BlobPos, info: any) {
+		this.pos = pos;
+		this.info = info;
 	}
 }
 

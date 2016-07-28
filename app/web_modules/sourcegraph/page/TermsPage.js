@@ -1,13 +1,13 @@
 // @flow
 
-import React from "react";
+import * as React from "react";
 import {Hero, Heading} from "sourcegraph/components";
 import styles from "./Page.css";
 import base from "sourcegraph/components/styles/_base.css";
 import CSSModules from "react-css-modules";
 import Helmet from "react-helmet";
 
-function TermsPage(props, {signedIn}): React$Element {
+function TermsPage(props, {signedIn}): React$Element<any> {
 	return (
 		<div>
 			<Helmet title="Terms" />

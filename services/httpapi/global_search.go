@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
@@ -48,14 +46,7 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if len(paramsRepos) == 0 {
-		log15.Warn("global search must be scoped to at least one (resolved) repo")
-		return json.NewEncoder(w).Encode(struct {
-			Repos   []*RepoSearchResult
-			Defs    []*DefSearchResult
-			Options []*SearchOptions
-		}{})
-	}
+
 	paramsNotRepos, err := resolveLocalRepos(ctx, params.NotRepos, true)
 	if err != nil {
 		return err
