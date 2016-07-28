@@ -3,6 +3,15 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value navbarHeight: 60px;
 
+.search-panel {
+	composes: bt bb from base;
+	composes: b--cool-pale-gray from colors;
+	position: absolute;
+	left: 0;
+	top: navbarHeight;
+	width: 100%;
+}
+
 .search-settings {
 	composes: groups-bb from SearchSettings;
 }

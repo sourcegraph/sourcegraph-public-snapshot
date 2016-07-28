@@ -105,15 +105,6 @@
 	composes: white bg-blue-8 b--blue from colors;
 }
 
-.search-panel {
-	composes: bt bb from base;
-	composes: b--cool-pale-gray from colors;
-	position: absolute;
-	left: 0;
-	top: navbarHeight;
-	width: 100%;
-}
-
 @media screen and media-sm {
 	.not-small-only {
 		display: none;
