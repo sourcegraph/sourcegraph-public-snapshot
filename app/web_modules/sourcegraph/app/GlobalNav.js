@@ -113,6 +113,8 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 								<Heading level="7" color="cool-mid-gray">Signed in as</Heading>
 								{user.Login}
 							</div>
+							<LogoutLink role="menu-item" />
+							<hr role="divider" className={base.mv3} />
 							<Link to="/settings/repos" role="menu-item">Your repositories</Link>
 							<LocationStateToggleLink href="/integrations" modalName="menuIntegrations" role="menu-item" location={location}	onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickToolsandIntegrations", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 								Tools and integrations
@@ -120,7 +122,6 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 							<LocationStateToggleLink href="/beta" modalName="menuBeta" role="menu-item" location={location}	onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickJoinBeta", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 								Join our beta program
 							</LocationStateToggleLink>
-							<LogoutLink role="menu-item" />
 							<hr role="divider" className={base.mt3} />
 							<div styleName="cool-mid-gray" className={`${base.pv1} ${base.mb1} ${typography.tc}`}>
 								<Link to="/security" className={`${typography.f7} ${typography["link-subtle"]} ${base.pr3}`} styleName="cool-mid-gray">Security</Link>
