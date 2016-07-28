@@ -364,7 +364,6 @@ class Blob extends Component {
 
 	render() {
 		if (!this.state.lines) return null;
-
 		let lastDisplayedLine = 0;
 		let lastRangeEnd = 0;
 		let lines = [];
@@ -386,9 +385,11 @@ class Blob extends Component {
 				lastRangeEnd = lineNumber;
 			}
 			lastDisplayedLine = lineNumber;
+
 			lines.push(
 				<BlobLine
 					onMount={this.state.scrollTarget && this.state.scrollTarget === i && this.state.scrollCallback ? this.state.scrollCallback : null}
+					ref={this.state.startLine === lineNumber ? "startLineComponent" : null}
 					repo={this.state.repo}
 					rev={this.state.rev}
 					path={this.state.path}
@@ -414,7 +415,6 @@ class Blob extends Component {
 					direction={"down"}/>
 			);
 		}
-
 		return (
 			<div className={s.scroller}>
 				<table className={s.lines} ref="table">

@@ -1,0 +1,31 @@
+{
+	"name": "language-client-example",
+	"description": "VSCode part of a language server",
+	"author": "Microsoft Corporation",
+	"license": "MIT",
+	"version": "0.0.1",
+	"publisher": "vscode",
+	"engines": {
+		"vscode": "^0.10.10"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onLanguage:plaintext"
+	],
+	"main": "./out/src/extension",
+	"scripts": {
+		"vscode:prepublish": "node ./node_modules/vscode/bin/compile",
+		"compile": "node ./node_modules/vscode/bin/compile -watch -p ./",
+		"postinstall": "node ./node_modules/vscode/bin/install"
+
+	},
+	"devDependencies": {
+		"typescript": "^1.8.9",
+		"vscode": "^0.11.0"
+	},
+	"dependencies": {
+		"vscode-languageclient": "^2.2.1"
+	}
+}

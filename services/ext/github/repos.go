@@ -1,14 +1,13 @@
 package github
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-
-	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
@@ -21,8 +20,7 @@ import (
 )
 
 var (
-	reposGithubPublicCacheTTL     = conf.GetenvIntOrDefault("SG_REPOS_GITHUB_PUBLIC_CACHE_TTL_SECONDS", 600)
-	reposGithubPublicCache        = rcache.New("gh_pub")
+	reposGithubPublicCache        = rcache.New("gh_pub", conf.GetenvIntOrDefault("SG_REPOS_GITHUB_PUBLIC_CACHE_TTL_SECONDS", 600))
 	reposGithubPublicCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repos",
@@ -68,7 +66,7 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 		return nil, grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
 	}
 
-	if cached, err := getFromCache(ctx, repo); err == nil {
+	if cached := getFromCache(ctx, repo); cached != nil {
 		reposGithubPublicCacheCounter.WithLabelValues("hit").Inc()
 		if cached.PublicNotFound {
 			return nil, grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
@@ -80,7 +78,7 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 	if grpc.Code(err) == codes.NotFound {
 		// Before we do anything, ensure we cache NotFound responses.
 		// Do this if client is unauthed or authed, it's okay since we're only caching not found responses here.
-		_ = reposGithubPublicCache.Add(repo, cachedRepo{PublicNotFound: true}, reposGithubPublicCacheTTL)
+		addToCache(repo, &cachedRepo{PublicNotFound: true})
 		reposGithubPublicCacheCounter.WithLabelValues("public-notfound").Inc()
 	}
 	if err != nil {
@@ -90,7 +88,7 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 
 	// We are allowed to cache public repos
 	if !remoteRepo.Private {
-		_ = reposGithubPublicCache.Add(repo, remoteRepo, reposGithubPublicCacheTTL)
+		addToCache(repo, &cachedRepo{Repo: *remoteRepo})
 		reposGithubPublicCacheCounter.WithLabelValues("miss").Inc()
 	} else {
 		reposGithubPublicCacheCounter.WithLabelValues("private").Inc()
@@ -110,23 +108,33 @@ var errInapplicableCache = errors.New("cached value cannot be used in this scena
 
 // getFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
-func getFromCache(ctx context.Context, repo string) (*cachedRepo, error) {
+func getFromCache(ctx context.Context, repo string) *cachedRepo {
+	b, ok := reposGithubPublicCache.Get(repo)
+	if !ok {
+		return nil
+	}
+
 	var cached cachedRepo
-	err := reposGithubPublicCache.Get(repo, &cached)
-	if err != nil {
-		if err != rcache.ErrNotFound {
-			log15.Error("github cache-get error", "repo", repo, "err", err)
-		}
-		return nil, err
+	if err := json.Unmarshal(b, &cached); err != nil {
+		return nil
 	}
 
 	// Do not use a cached NotFound if we are an authed user, since it may
 	// exist as a private repo for the user.
 	if client(ctx).isAuthedUser && cached.PublicNotFound {
-		return nil, errInapplicableCache
+		return nil
 	}
 
-	return &cached, nil
+	return &cached
+}
+
+// addToCache will cache the value for repo.
+func addToCache(repo string, c *cachedRepo) {
+	b, err := json.Marshal(c)
+	if err != nil {
+		return
+	}
+	reposGithubPublicCache.Set(repo, b)
 }
 
 // getFromAPI attempts to get a response from the GitHub API without use of

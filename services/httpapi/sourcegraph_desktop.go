@@ -2,32 +2,32 @@ package httpapi
 
 import (
 	"net/http"
-	"strings"
-
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
-const downloadLink = "https://github.com/sourcegraph/sourcegraph-desktop/releases/download/"
+const downloadLink = "https://storage.googleapis.com/sgreleasedesktop/releases/latest/Sourcegraph.zip"
 const zips = "/Sourcegraph.zip"
 
 func serveSourcegraphDesktopUpdateURL(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	clientVersion := r.Header.Get("Sourcegraph-Version")
+	clientVersion := &sourcegraph.ClientDesktopVersion{
+		ClientVersion: r.Header.Get("Sourcegraph-Version"),
+	}
 
-	latestVersion, err := cl.Desktop.GetLatest(ctx, &pbtypes.Void{})
+	res, err := cl.Desktop.LatestExists(ctx, clientVersion)
 	if err != nil {
 		return err
 	}
 
-	if latestVersion.Version == clientVersion {
+	if res.NewVersion == false {
 		w.WriteHeader(http.StatusNoContent)
 		return nil
 	}
 
 	url := map[string]string{
-		"url": strings.Join([]string{downloadLink, latestVersion.Version, zips}, ""),
+		"url": downloadLink,
 	}
 	return writeJSON(w, url)
 }

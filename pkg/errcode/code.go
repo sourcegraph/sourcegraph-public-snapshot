@@ -59,8 +59,6 @@ func HTTP(err error) int {
 		return http.StatusBadRequest
 	case *store.UserNotFoundError:
 		return http.StatusNotFound
-	case *store.AccountAlreadyExistsError:
-		return http.StatusConflict
 	}
 
 	if os.IsNotExist(err) {

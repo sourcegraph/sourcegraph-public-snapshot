@@ -19,15 +19,9 @@ func testDefFlow(t *T) error {
 	}
 
 	// Check that the def link appears
-	defLink := t.WaitForElement(selenium.ByLinkText, "View definition", MatchAttribute("href", `/github\.com/golang/go/-/def/GoPackage/net/http/-/Header/Get`))
-	if err = defLink.Click(); err != nil {
-		return err
-	}
+	t.Click(selenium.ByLinkText, "View definition", MatchAttribute("href", `/github\.com/golang/go/-/def/GoPackage/net/http/-/Header/Get`))
 
-	defLink = t.WaitForElement(selenium.ByLinkText, "View all references", MatchAttribute("href", `/github\.com/golang/go/-/info/GoPackage/net/http/-/Header/Get`))
-	if err = defLink.Click(); err != nil {
-		return err
-	}
+	t.Click(selenium.ByLinkText, "View all references", MatchAttribute("href", `/github\.com/golang/go/-/info/GoPackage/net/http/-/Header/Get`))
 
 	return nil
 }

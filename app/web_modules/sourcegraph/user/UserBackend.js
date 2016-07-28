@@ -63,7 +63,7 @@ const UserBackend = {
 						.then(checkStatus)
 						.then((resp) => resp.json())
 						.catch((err) => ({Error: err}))
-						.then((data) => Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(action.uid, data && data.EmailAddrs ? data.EmailAddrs : data)))
+						.then((data) => Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(action.uid, data && data.EmailAddrs ? data.EmailAddrs : [])))
 				);
 			}
 		}
@@ -102,7 +102,13 @@ const UserBackend = {
 					.then(checkStatus)
 					.then((resp) => resp.json())
 					.catch((err) => ({Error: err}))
-					.then((data) => Dispatcher.Stores.dispatch(new UserActions.LoginCompleted(data)))
+					.then((data) => {
+						Dispatcher.Stores.dispatch(new UserActions.LoginCompleted(data));
+						// Redirect on login.
+						if (data.Success) {
+							window.location.href = "/";
+						}
+					})
 			);
 			break;
 		case UserActions.SubmitLogout:
@@ -118,7 +124,7 @@ const UserBackend = {
 						Dispatcher.Stores.dispatch(new UserActions.LogoutCompleted(data));
 						// Redirect on logout.
 						if (data.Success) {
-							window.location.href = "/";
+							window.location.href = "/#loggedout";
 						}
 					})
 			);

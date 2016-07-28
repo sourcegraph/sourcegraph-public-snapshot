@@ -55,6 +55,14 @@ export default class BlobMain extends Container {
 		router: React.PropTypes.object.isRequired,
 	};
 
+	constructor(props) {
+		super(props);
+		this.state = {
+			selectionStartLine: null,
+		};
+
+	}
+
 	componentDidMount() {
 		if (super.componentDidMount) super.componentDidMount();
 		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
@@ -180,6 +188,7 @@ export default class BlobMain extends Container {
 					<Blob
 						repo={this.state.repo}
 						rev={this.state.rev}
+						ref={(c) => { this.setState({selectionStartLine: (c && c.refs && c.refs.startLineComponent) ? c.refs.startLineComponent : null}); }}
 						path={this.state.path}
 						contents={this.state.blob.ContentsString}
 						annotations={this.state.anns}
@@ -202,7 +211,9 @@ export default class BlobMain extends Container {
 				<FileMargin
 					className={Style.margin}
 					style={(!this.state.blob || !this.state.anns) ? {visibility: "hidden"} : null}
-					lineFromByte={this.state.lineFromByte}>
+					lineFromByte={this.state.lineFromByte}
+					selectionStartLine={this.state.selectionStartLine ? this.state.selectionStartLine : null}
+					startByte={this.state.startByte}>
 					{this.state.children}
 				</FileMargin>
 			</div>

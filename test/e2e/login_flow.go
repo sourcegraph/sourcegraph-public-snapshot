@@ -81,8 +81,7 @@ func testLoginFlow(t *T) error {
 	password.SendKeys(testPassword)
 
 	// Click the submit button.
-	submit := t.FindElement(selenium.ById, "e2etest-login-button")
-	submit.Click()
+	t.Click(selenium.ById, "e2etest-login-button")
 
 	t.WaitForRedirect(t.Endpoint("/"), "wait for redirect to home after sign-in")
 	return nil

@@ -17,17 +17,18 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/justinas/nosurf"
 	"sourcegraph.com/sourcegraph/appdash"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/jscontext"
 	tmpldata "sourcegraph.com/sourcegraph/sourcegraph/app/templates"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sqs/pbtypes"
 )
 
 var (
@@ -88,12 +89,12 @@ func Load() {
 // Common holds fields that are available at the top level in every
 // template executed by Exec.
 type Common struct {
+	AuthInfo *sourcegraph.AuthInfo
+
 	RequestHost string // the request's Host header
 
 	Session   *appauth.Session // the session cookie
 	CSRFToken string
-
-	Actor auth.Actor
 
 	CurrentRoute  string
 	CurrentURI    *url.URL
@@ -148,7 +149,7 @@ func executeTemplateBase(w http.ResponseWriter, templateName string, data interf
 
 // Exec executes the template (named by `name`) using the template data.
 func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, header http.Header, data interface{}) error {
-	ctx := httpctx.FromRequest(req)
+	ctx, cl := handlerutil.Client(req)
 
 	if data != nil {
 		sess, err := appauth.ReadSessionCookie(req)
@@ -174,8 +175,13 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			return err
 		}
 
+		authInfo, err := cl.Auth.Identify(ctx, &pbtypes.Void{})
+		if err != nil {
+			return err
+		}
+
 		field.Set(reflect.ValueOf(Common{
-			Actor: auth.ActorFromContext(ctx),
+			AuthInfo: authInfo,
 
 			RequestHost: req.Host,
 
@@ -195,7 +201,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 
 			CurrentSpanID:    traceutil.SpanID(req),
 			CurrentRouteVars: mux.Vars(req),
-			Debug:            handlerutil.DebugMode(req),
+			Debug:            handlerutil.DebugMode,
 
 			DisableExternalLinks: appconf.Flags.DisableExternalLinks,
 			Features:             feature.Features,

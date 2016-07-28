@@ -58,7 +58,7 @@ class Repos extends React.Component {
 	}
 
 	_hasPrivateGitHubToken() {
-		return this.context.githubToken && this.context.githubToken.scope && this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org") && this.context.githubToken.scope.includes("user:email");
+		return this.context.githubToken && this.context.githubToken.scope && this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org");
 	}
 
 	render() {

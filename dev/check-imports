@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Check that the app and httpapi packages do not depend on the auth package. The
+# app and httpapi layers should be agnostic to the identity of the actor.
+found_violation=
+declare -a no_auth_pkgs=("sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/..." "sourcegraph.com/sourcegraph/sourcegraph/app/...")
+for pkg in "${no_auth_pkgs[@]}"; do
+		illegal_deps=$(go list -f '{{join .Deps "\n"}}' "$pkg" | grep -x 'sourcegraph.com/sourcegraph/sourcegraph/pkg/auth')
+		if [[ ! -z "$illegal_deps" ]]; then
+				echo "-- Found $pkg illegally depends on";
+				echo "$illegal_deps";
+				found_violation="true";
+		fi
+done;
+
+if [[ ! -z "$found_violation" ]]; then
+		exit 1;
+fi

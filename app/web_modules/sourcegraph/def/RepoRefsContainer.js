@@ -1,7 +1,7 @@
 import React from "react";
 import Container from "sourcegraph/Container";
-import DefStore from "sourcegraph/def/DefStore";
 import Dispatcher from "sourcegraph/Dispatcher";
+import DefStore from "sourcegraph/def/DefStore";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {Heading, List, Loader} from "sourcegraph/components";
 import "sourcegraph/blob/BlobBackend";
@@ -47,18 +47,16 @@ class RepoRefsContainer extends Container {
 		state.def = props.def || null;
 		state.defObj = props.defObj || null;
 		state.defRepos = props.defRepos || [];
-		state.refLocations = state.def ? DefStore.getRefLocations({
-			repo: state.repo, commitID: state.commitID, def: state.def, repos: state.defRepos,
-		}) : null;
+		state.refLocations = props.refLocations || null;
 		if (state.refLocations && state.refLocations.PagesFetched >= state.currPage) {
 			state.nextPageLoading = false;
 		}
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (nextState.currPage !== prevState.currPage || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
+		if (nextState.currPage !== prevState.currPage || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def || nextState.defObj !== prevState.defObj) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
-				repo: nextState.repo, commitID: nextState.commitID, def: nextState.def, repos: nextState.defRepos, page: nextState.currPage,
+				repo: nextState.repo, commitID: nextState.defCommitID, def: nextState.def, repos: nextState.defRepos, page: nextState.currPage,
 			}));
 		}
 	}

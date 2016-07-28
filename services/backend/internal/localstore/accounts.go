@@ -45,7 +45,7 @@ func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User, email 
 	err := dbutil.Transact(appDBH(ctx), func(tx gorp.SqlExecutor) error {
 		if err := tx.Insert(&u); err != nil {
 			if strings.Contains(err.Error(), `duplicate key value violates unique constraint "users_login"`) {
-				return &store.AccountAlreadyExistsError{Login: newUser.Login, UID: newUser.UID}
+				return grpc.Errorf(codes.AlreadyExists, "account %q already exists", newUser.Login)
 			}
 			return err
 		}
@@ -79,6 +79,12 @@ func (s *accounts) Update(ctx context.Context, modUser *sourcegraph.User) error 
 	// Only admin users can modify access levels of a user.
 	if !a.HasAdminAccess() && (modUser.Admin || (a.HasWriteAccess() != modUser.Write)) {
 		return grpc.Errorf(codes.PermissionDenied, "need admin privileges to modify user permissions")
+	}
+
+	// Only admin users can set which betas a user is participating in
+	// (non-admin users set BetaRegistered to request access).
+	if !a.HasAdminAccess() && len(modUser.Betas) > 0 {
+		return grpc.Errorf(codes.PermissionDenied, "need admin privileges to grant access to betas")
 	}
 
 	var u dbUser

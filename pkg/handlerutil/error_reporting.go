@@ -11,11 +11,11 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/appdash/httptrace"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/envutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil/appdashctx"
+	"sourcegraph.com/sqs/pbtypes"
 
 	"github.com/getsentry/raven-go"
 	"github.com/gorilla/mux"
@@ -98,18 +98,13 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 	}
 
 	// Add request context tags.
-	ctx := httpctx.FromRequest(r)
-	actor := auth.ActorFromContext(ctx)
-	if actor.IsAuthenticated() {
+	ctx, cl := Client(r)
+	if authInfo, err := cl.Auth.Identify(ctx, &pbtypes.Void{}); err == nil && authInfo.UID != 0 {
 		addTag("Authed", "yes")
-		addTag("Authed UID", strconv.Itoa(actor.UID))
-		addTag("Authed user", actor.Login)
+		addTag("Authed UID", strconv.Itoa(int(authInfo.UID)))
+		addTag("Authed user", authInfo.Login)
 	} else {
 		addTag("Authed", "no")
-	}
-	if len(actor.Scope) > 0 {
-		addTag("Actor scope", "yes")
-		pkt.Extra["Actor scope"] = actor.Scope
 	}
 	if routeName := httpctx.RouteName(r); routeName != "" {
 		addTag("Route", routeName)

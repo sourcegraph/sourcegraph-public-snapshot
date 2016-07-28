@@ -198,6 +198,18 @@
 			"revisionTime": "2015-05-15T14:53:56Z"
 		},
 		{
+			"checksumSHA1": "2UmMbNHc8FBr98mJFN1k8ISOIHk=",
+			"path": "github.com/garyburd/redigo/internal",
+			"revision": "b8dc90050f24c1a73a52f107f3f575be67b21b7c",
+			"revisionTime": "2016-05-25T16:57:06Z"
+		},
+		{
+			"checksumSHA1": "507OiSqTxfGCje7xDT5eq9CCaNQ=",
+			"path": "github.com/garyburd/redigo/redis",
+			"revision": "b8dc90050f24c1a73a52f107f3f575be67b21b7c",
+			"revisionTime": "2016-05-25T16:57:06Z"
+		},
+		{
 			"checksumSHA1": "mA1jCzbc+bGPzRPXXGdeTsRYs8U=",
 			"path": "github.com/getsentry/raven-go",
 			"revision": "dffeb57df75d6a911f00232155194e43d79d38d7",
@@ -611,18 +623,6 @@
 			"path": "github.com/matttproud/golang_protobuf_extensions/pbutil",
 			"revision": "d0c3fe89de86839aecf2e0579c40ba3bb336a453",
 			"revisionTime": "2015-10-11T12:25:29+02:00"
-		},
-		{
-			"checksumSHA1": "8ZSsHmBOqTGuBju5jVDV77qGYGo=",
-			"path": "github.com/mediocregopher/radix.v2/pool",
-			"revision": "74e50e64194d2d2f4836212451c28b127f9d7fa1",
-			"revisionTime": "2016-04-15T23:49:38Z"
-		},
-		{
-			"checksumSHA1": "16UHP9YVwZhtTmWawN1dVPdohvE=",
-			"path": "github.com/mediocregopher/radix.v2/redis",
-			"revision": "74e50e64194d2d2f4836212451c28b127f9d7fa1",
-			"revisionTime": "2016-04-15T23:49:38Z"
 		},
 		{
 			"path": "github.com/microcosm-cc/bluemonday",

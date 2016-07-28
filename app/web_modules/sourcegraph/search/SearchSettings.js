@@ -11,8 +11,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import UserStore from "sourcegraph/user/UserStore";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as RepoActions_typed from "sourcegraph/repo/RepoActions_typed";
-import type {Settings} from "sourcegraph/user";
-import {allLangs, langName} from "sourcegraph/Language";
+import {allLangs, langName, langIsSupported} from "sourcegraph/Language";
 import type {LanguageID} from "sourcegraph/Language";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import {withUserContext} from "sourcegraph/app/user";
@@ -20,6 +19,7 @@ import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleL
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import BetaInterestForm from "sourcegraph/home/BetaInterestForm";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {searchScopes} from "sourcegraph/search";
 
 class SearchSettings extends Container {
 	static propTypes = {
@@ -35,10 +35,33 @@ class SearchSettings extends Container {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
-	state: {
-		settings: Settings;
-		betaLanguage: ?LanguageID;
-	};
+	constructor(props) {
+		super(props);
+		this.state = {settings: UserStore.settings.get()};
+
+	}
+
+	componentDidMount() {
+		super.componentDidMount();
+		const langFromQuery = this.props.location.query.lang ? this.props.location.query.lang : [];
+		const query = this.props.location.query;
+		if (this.props.location.pathname === "/search" && (query.lang || query.public || query.private || query.repo || query.popular)) {
+			const langs = typeof langFromQuery === "string" ? [langFromQuery] : langFromQuery;
+			const validLangParams = langs.filter(langIsSupported);
+			let scopeParams = {};
+			searchScopes.forEach((scopeName) => scopeParams[scopeName] = this.props.location.query[scopeName] === "true");
+
+			const newSettings = {
+				...this.state.settings,
+				search: {
+					...this.state.settings.search,
+					languages: validLangParams,
+					scope: scopeParams,
+				},
+			};
+			setTimeout(() => Dispatcher.Stores.dispatch(new UserActions.UpdateSettings(newSettings)));
+		}
+	}
 
 	stores() { return [UserStore]; }
 
@@ -57,10 +80,10 @@ class SearchSettings extends Container {
 		if (prevState.settings !== nextState.settings && nextState.settings && nextState.settings.search && nextState.settings.search.scope) {
 			const scope = nextState.settings.search.scope;
 			if (scope.public) {
-				Dispatcher.Backends.dispatch(new RepoActions_typed.WantRepos("Private=false"));
+				Dispatcher.Backends.dispatch(new RepoActions_typed.WantRepos("RemoteOnly=true&Private=false"));
 			}
 			if (scope.private) {
-				Dispatcher.Backends.dispatch(new RepoActions_typed.WantRepos("Private=true"));
+				Dispatcher.Backends.dispatch(new RepoActions_typed.WantRepos("RemoteOnly=true&Private=true"));
 			}
 		}
 	}
@@ -81,8 +104,9 @@ class SearchSettings extends Container {
 		const langs = this._langs();
 		const enabled = langs.includes(lang);
 
-		if (enabled) langs.splice(langs.indexOf(lang), 1);
-		else {
+		if (enabled) {
+			langs.splice(langs.indexOf(lang), 1);
+		} else {
 			langs.push(lang);
 			langs.sort();
 		}
@@ -126,6 +150,7 @@ class SearchSettings extends Container {
 
 	_renderLanguages() {
 		const langs = this._langs();
+
 		return (
 			<div styleName="group">
 				<span styleName="label" className={base.pr3}>Languages:</span>
@@ -230,6 +255,7 @@ class SearchSettings extends Container {
 							<h2 styleName="modalTitle">Join the {`${this.state.betaLanguage === "more" ? "Sourcegraph" : `${langName(this.state.betaLanguage)}`}`} beta</h2>
 							<BetaInterestForm
 								className={styles.modalForm}
+								loginReturnTo="/beta"
 								language={this.state.betaLanguage === "more" ? null : this.state.betaLanguage}
 								onSubmit={dismissModal("beta", this.props.location, this.context.router)} />
 						</div>

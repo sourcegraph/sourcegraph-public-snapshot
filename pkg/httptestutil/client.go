@@ -154,7 +154,7 @@ func (c *Client) DoJSON(method, url string, in, out interface{}) error {
 	}
 	req.Header.Set("content-type", "application/json; charset=utf-8")
 
-	resp, err := c.Do(req)
+	resp, err := c.DoOK(req)
 	if err != nil {
 		return err
 	}

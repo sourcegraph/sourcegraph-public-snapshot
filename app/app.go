@@ -60,7 +60,7 @@ func NewHandler(r *router.Router) http.Handler {
 	}
 
 	var mw []handlerutil.Middleware
-	mw = append(mw, httpapiauth.OAuth2AccessTokenMiddleware, appauth.CookieMiddleware, handlerutil.ActorMiddleware)
+	mw = append(mw, httpapiauth.OAuth2AccessTokenMiddleware, appauth.CookieMiddleware)
 	mw = append(mw, eventsutil.AgentMiddleware)
 	mw = append(mw, internal.Middleware...)
 

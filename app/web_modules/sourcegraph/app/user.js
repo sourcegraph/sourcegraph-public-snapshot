@@ -15,6 +15,7 @@ type childContext = {user: ?User, signedIn: bool, githubToken: ?Object};
 // test helpers.
 export const getChildContext = (state: any): childContext => ({
 	user: state.user && !state.user.Error ? state.user : null,
+	authInfo: state.authInfo,
 
 	// signedIn is true initially if there's an access token. But if the authInfo or user
 	// is empty, then it means that the token is expired or invalid, or the user is deleted. At that
@@ -31,6 +32,7 @@ export function withUserContext(Component: ReactClass): ReactClass {
 	class WithUser extends Container {
 		static childContextTypes = {
 			user: React.PropTypes.object,
+			authInfo: React.PropTypes.object,
 
 			// signedIn is knowable without hitting the network, so components
 			// that only care "is there a logged-in user?" should use signedIn,

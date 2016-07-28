@@ -1,22 +1,15 @@
 package handlerutil
 
 import (
-	"net/http"
 	"os"
 	"strconv"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 )
 
-// DebugMode returns whether debugging information should be emitted
-// with the request. It assumes that ActorMiddleware has already run.
-func DebugMode(r *http.Request) bool {
-	if v, _ := strconv.ParseBool(os.Getenv("DEBUG")); v {
-		return true
-	}
-	if auth.ActorFromContext(httpctx.FromRequest(r)).Admin {
-		return true
-	}
-	return false
+// DebugMode is true if and only if the application is running in debug mode. In
+// this mode, the application should display more verbose and informative errors
+// in the UI. Debug should NEVER be true in production.
+var DebugMode bool
+
+func init() {
+	DebugMode, _ = strconv.ParseBool(os.Getenv("DEBUG"))
 }

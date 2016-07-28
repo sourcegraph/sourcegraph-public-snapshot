@@ -7,11 +7,35 @@
 @value c_dark-blue from colors;
 @value media-sm from vars;
 
+
+.single-ref-container {
+	position: relative;
+}
+.vote {
+	display: inline-block;
+	position: absolute;
+	left: -23px;
+	width: 20px;
+}
+
+.voteDone {
+	display: span;
+	float: left;
+	position: relative;
+	left: -23px;
+	width: 0;
+	visibility: hidden;
+	opacity: 0;
+	transition: visibility 0s 0.25s, opacity 0.25s linear;
+}
+
+.upvote, .downvote {
+	display: block;
+}
+
 .f7 { composes: f7 from typography; }
 
 .container {
-	composes: br2 ba bw1 from base;
-	composes: b--cool-pale-gray from colors;
 	display: flex;
 	flex-direction: column;
 }
@@ -42,6 +66,7 @@
 
 .refs {
 	composes: b--cool-pale-gray from colors;
+	composes: br2 ba bw1 from base;
 	flex: 1 1 auto;
 }
 
@@ -119,5 +144,9 @@
 @media screen and (max-width: 48em) {
 	.full-width-sm {
 		padding: 0;
+	}
+
+	.left-align-sm {
+		left: 0;
 	}
 }

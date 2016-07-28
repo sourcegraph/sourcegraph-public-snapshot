@@ -25,6 +25,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 import popularRepos from "./popularRepos";
 import type {SearchSettings} from "sourcegraph/search";
 import type {WantResultsPayload} from "sourcegraph/search/SearchActions";
+import {locationForSearch} from "sourcegraph/search/routes";
 
 export const RESULTS_LIMIT = 20;
 
@@ -150,12 +151,14 @@ class GlobalSearch extends Container {
 	reconcileState(state: GlobalSearch.state, props) {
 		Object.assign(state, props);
 		state.githubToken = UserStore.activeGitHubToken;
+		state.language = state.searchSettings && state.searchSettings.languages ? state.searchSettings.languages : null;
 		state.className = props.className || "";
 		state.resultClassName = props.resultClassName || "";
 
 		const settings = UserStore.settings.get();
 		state.searchSettings = settings && settings.search ? settings.search : null;
 		const scope = state.searchSettings && state.searchSettings.scope ? state.searchSettings.scope : null;
+		const languages = state.searchSettings && state.searchSettings.languages ? state.searchSettings.languages : null;
 		if (this.state.searchSettings !== state.searchSettings) {
 			if (scope && scope.public) {
 				const repos = RepoStore.repos.list("Private=false");
@@ -169,9 +172,9 @@ class GlobalSearch extends Container {
 			} else {
 				state._privateRepos = null;
 			}
+
 		}
 
-		const languages = state.searchSettings && state.searchSettings.languages ? state.searchSettings.languages : null;
 		if (this.state.repo !== state.repo || this.state.searchSettings !== state.searchSettings || this.state._publicRepos !== state._publicRepos || this.state._privateRepos !== state._privateRepos) {
 			if (languages && scope) {
 				state._reposByLang = {};
@@ -233,6 +236,10 @@ class GlobalSearch extends Container {
 	_debounceForSearch = debounce((f: Function) => f(), 200, {leading: false, trailing: true});
 
 	onStateTransition(prevState, nextState) {
+		if (prevState.searchSettings && prevState.searchSettings !== nextState.searchSettings && nextState.location.pathname === "/search") {
+			this.context.router.replace(locationForSearch(nextState.location, nextState.query, nextState.searchSettings.languages, nextState.searchSettings.scope, false, true));
+		}
+
 		if (prevState.githubToken !== nextState.githubToken ||
 			prevState._queries !== nextState._queries) {
 			if (nextState._queries && this._canSearch(nextState)) {
@@ -424,14 +431,12 @@ class GlobalSearch extends Container {
 			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`} styleName="result result-error">Select repositories to include.</div>];
 		}
 
-		if (!this.state.query) return <div className={`${base.pv4} ${base.ph4}`} styleName="result">Type a query&hellip;</div>;
-
-		if (!this.state.matchingResults ||
-			((!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) && this.state.matchingResults.outstandingFetches !== 0)) {
-			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`}styleName="result">Loading results...</div>];
+		if (this.state.query && !this.state.matchingResults ||
+			((!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) && this.state.matchingResults.outstandingFetches !== 0) && this.state.query) {
+			return [<div key="_nosymbol" className={`${base.ph4} ${base.pv4}`} styleName="result">Loading results...</div>];
 		}
 
-		if (this.state.matchingResults &&
+		if (this.state.query && this.state.matchingResults &&
 			(!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) &&
 			(!this.state.matchingResults.Repos || this.state.matchingResults.Repos.length === 0)) {
 			return [<div className={`${base.ph4} ${base.pv4}`} styleName="result" key="_nosymbol">No results found.</div>];

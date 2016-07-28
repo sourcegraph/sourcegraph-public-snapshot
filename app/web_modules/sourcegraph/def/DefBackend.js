@@ -118,8 +118,10 @@ const DefBackend = {
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
-							.then(convNotFound)
 							.then((data) => {
+								if (get(data, "Error.response.status") === 404) {
+									data = [];
+								}
 								Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.repo, action.commitID, action.def, action.refRepo, action.refFile, data));
 							})
 					);

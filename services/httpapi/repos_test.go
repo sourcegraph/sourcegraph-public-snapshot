@@ -9,8 +9,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -199,9 +197,8 @@ func TestRepo_caching_modifiedSince(t *testing.T) {
 	}
 }
 
-func TestRepos_admin(t *testing.T) {
+func TestRepos(t *testing.T) {
 	c, mock := newTest()
-	mock.Ctx = authpkg.WithActor(mock.Ctx, authpkg.Actor{UID: 1, Login: "test", Admin: true})
 
 	wantRepos := &sourcegraph.RepoList{
 		Repos: []*sourcegraph.Repo{{URI: "r/r"}},

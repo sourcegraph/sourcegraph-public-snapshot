@@ -9,6 +9,7 @@ import "whatwg-fetch";
 import CSSModules from "react-css-modules";
 import styles from "./styles/DefInfo.css";
 import base from "sourcegraph/components/styles/_base.css";
+import typography from "sourcegraph/components/styles/_typography.css";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -22,7 +23,9 @@ import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import {trimRepo} from "sourcegraph/repo";
 import {urlToRepo} from "sourcegraph/repo/routes";
 import {LanguageIcon} from "sourcegraph/components/Icons";
-import {Dropdown, Header, Heading, FlexContainer} from "sourcegraph/components";
+import {EmptyNodeIllo} from "sourcegraph/components/symbols";
+import {Dropdown, Header, Heading, FlexContainer, GitHubAuthButton, Loader} from "sourcegraph/components";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 
 // Number of characters of the Docstring to show before showing the "collapse" options.
@@ -32,6 +35,7 @@ class DefInfo extends Container {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
+		signedIn: React.PropTypes.bool.isRequired,
 	};
 
 	static propTypes = {
@@ -40,6 +44,7 @@ class DefInfo extends Container {
 		def: React.PropTypes.string.isRequired,
 		commitID: React.PropTypes.string,
 		rev: React.PropTypes.string,
+		defObj: React.PropTypes.object,
 	};
 
 	constructor(props) {
@@ -133,6 +138,12 @@ class DefInfo extends Container {
 		state.defObj = props.defObj || null;
 		state.defCommitID = props.defObj ? props.defObj.CommitID : null;
 		state.authors = state.defObj ? DefStore.authors.get(state.repo, state.defObj.CommitID, state.def) : null;
+		state.refLocations = state.def && state.defObj ? DefStore.getRefLocations({
+			repo: state.repo, commitID: state.defCommitID, def: state.def, repos: [],
+		}) : null;
+		state.examples = state.def && state.defObj ? DefStore.getExamples({
+			repo: state.repo, commitID: state.defCommitID, def: state.def,
+		}) : null;
 
 		if (state.defObj && state.defDescrHidden === null) {
 			state.defDescrHidden = this.shouldHideDescr(state.defObj, DESCRIPTION_CHAR_CUTOFF);
@@ -143,12 +154,24 @@ class DefInfo extends Container {
 		if (prevState.defCommitID !== nextState.defCommitID && nextState.defCommitID) {
 			Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.defCommitID, nextState.def));
 		}
+		if (nextState.currPage !== prevState.currPage || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def || nextState.defObj !== prevState.defObj) {
+			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
+				repo: nextState.repo, commitID: nextState.defCommitID, def: nextState.def, repos: nextState.defRepos, page: nextState.currPage,
+			}));
+		}
+		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def || nextState.defObj !== prevState.defObj) {
+			Dispatcher.Backends.dispatch(new DefActions.WantExamples({
+				repo: nextState.repo, commitID: nextState.defCommitID, def: nextState.def,
+			}));
+		}
 	}
 
 	_onTranslateDefInfo(val) {
 		let def = this.state.defObj;
 		let apiKey = "AIzaSyCKati7PcEa2fqyuoDDwd1ujXiBVOddwf4";
 		let targetLang = val;
+
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "TranslateButtonClicked", {translated_language: targetLang});
 
 		if (this.state.translations[targetLang]) {
 			// Toggle when target language is same as the current one,
@@ -181,15 +204,13 @@ class DefInfo extends Container {
 	}
 
 	render() {
-		let def = this.state.defObj;
-		let hiddenDescr = this.state.defDescrHidden;
-		let refLocs = this.state.refLocations;
-		let defBlobUrl = def ? urlToDef(def, this.state.rev) : "";
+		const {defObj, defDescrHidden, refLocations, examples, repo, rev, defCommitID, def} = this.state;
+		let defBlobUrl = defObj ? urlToDef(defObj, rev) : "";
 
-		if (refLocs && refLocs.Error) {
+		if (refLocations && refLocations.Error) {
 			return (
 				<Header
-					title={`${httpStatusCode(refLocs.Error)}`}
+					title={`${httpStatusCode(refLocations.Error)}`}
 					subtitle={`References are not available.`} />
 			);
 		}
@@ -197,11 +218,11 @@ class DefInfo extends Container {
 			<FlexContainer styleName="bg-cool-pale-gray-2 flex-grow">
 				<div styleName="container-fixed" className={base.mv3}>
 					{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
-					<Helmet title={defTitleOK(def) ? `${defTitle(def)} · ${trimRepo(this.state.repo)}` : trimRepo(this.state.repo)} />
-					{def &&
+					<Helmet title={defTitleOK(defObj) ? `${defTitle(defObj)} · ${trimRepo(repo)}` : trimRepo(repo)} />
+					{defObj &&
 						<div className={`${base.mv4} ${base.ph4}`}>
 							<Heading level="5" styleName="break-word" className={base.mv2}>
-								<code styleName="normal">{qualifiedNameAndType(def, {unqualifiedNameClass: styles.def})}</code>
+								<code styleName="normal">{qualifiedNameAndType(defObj, {unqualifiedNameClass: styles.def})}</code>
 							</Heading>
 
 							{/* TODO DocHTML will not be set if the this def was loaded via the
@@ -210,19 +231,19 @@ class DefInfo extends Container {
 								sanitize/render DocHTML on the front-end to make this consistent.
 							*/}
 
-							{!def.DocHTML && def.Docs && def.Docs.length &&
+							{!defObj.DocHTML && defObj.Docs && defObj.Docs.length &&
 								<div className={base.mb3}>
-									<div>{hiddenDescr && this.splitPlainDescr(def.Docs[0].Data, DESCRIPTION_CHAR_CUTOFF) || def.Docs[0].Data}</div>
-									{hiddenDescr &&
+									<div>{defDescrHidden && this.splitPlainDescr(defObj.Docs[0].Data, DESCRIPTION_CHAR_CUTOFF) || defObj.Docs[0].Data}</div>
+									{defDescrHidden &&
 										<a href="#" onClick={this._onViewMore} styleName="f7">View More...</a>
 									}
-									{!hiddenDescr && this.shouldHideDescr(def, DESCRIPTION_CHAR_CUTOFF) &&
+									{!defDescrHidden && this.shouldHideDescr(defObj, DESCRIPTION_CHAR_CUTOFF) &&
 										<a href="#" onClick={this._onViewLess} styleName="f7">Collapse</a>
 									}
 								</div>
 							}
 
-							{def.DocHTML &&
+							{defObj.DocHTML &&
 								<div>
 									<div className={base.mb3}>
 										{this.state.showTranslatedString &&
@@ -231,11 +252,11 @@ class DefInfo extends Container {
 												<div dangerouslySetInnerHTML={{__html: this.state.translations[this.state.currentLang]}}></div>
 											</div>
 										}
-										<div dangerouslySetInnerHTML={hiddenDescr && {__html: this.splitHTMLDescr(def.DocHTML.__html, DESCRIPTION_CHAR_CUTOFF)} || def.DocHTML}></div>
-										{hiddenDescr &&
+										<div dangerouslySetInnerHTML={defDescrHidden && {__html: this.splitHTMLDescr(defObj.DocHTML.__html, DESCRIPTION_CHAR_CUTOFF)} || defObj.DocHTML}></div>
+										{defDescrHidden &&
 											<a href="#" onClick={this._onViewMore} styleName="f7">View More...</a>
 										}
-										{!hiddenDescr && this.shouldHideDescr(def, DESCRIPTION_CHAR_CUTOFF) &&
+										{!defDescrHidden && this.shouldHideDescr(defObj, DESCRIPTION_CHAR_CUTOFF) &&
 											<a href="#" onClick={this._onViewLess} styleName="f7">Collapse</a>
 										}
 										{this.state.showTranslatedString && <hr className={base.mv4} styleName="b--cool-pale-gray" />}
@@ -245,7 +266,7 @@ class DefInfo extends Container {
 							}
 
 							<div styleName="f7 cool-mid-gray">
-								{def && def.Repo && <Link to={urlToRepo(def.Repo)} styleName="link-subtle">{def.Repo}</Link>}
+								{defObj && defObj.Repo && <Link to={urlToRepo(defObj.Repo)} styleName="link-subtle">{defObj.Repo}</Link>}
 								&nbsp; &middot; &nbsp;
 								<Link title="View definition in code" to={defBlobUrl} styleName="link-subtle">View definition</Link>
 								&nbsp; &middot; &nbsp;
@@ -269,27 +290,59 @@ class DefInfo extends Container {
 									]} />
 							</div>
 
-							<hr className={base.mv4} styleName="b--cool-pale-gray" />
 
-							<div className={base.mb5}>
-								<ExamplesContainer
-									repo={this.props.repo}
-									rev={this.props.rev}
-									commitID={this.props.commitID}
-									def={this.props.def}
-									defObj={this.props.defObj} />
-							</div>
-							<div>
-								<RepoRefsContainer
-									repo={this.props.repo}
-									rev={this.props.rev}
-									commitID={this.props.commitID}
-									def={this.props.def}
-									defObj={this.props.defObj} />
-							</div>
+							{!refLocations && <div className={typography.tc}><Loader /></div>}
+
+							{refLocations &&
+								<div>
+									{refLocations.RepoRefs &&
+										<div>
+											{examples &&
+												<div className={base.mt5}>
+													<ExamplesContainer
+														repo={repo}
+														rev={rev}
+														commitID={defCommitID}
+														def={def}
+														defObj={defObj}
+														examples={examples} />
+												</div>
+											}
+											<div className={base.mt5}>
+												<RepoRefsContainer
+													repo={repo}
+													rev={rev}
+													commitID={defCommitID}
+													def={def}
+													defObj={defObj}
+													refLocations={refLocations} />
+											</div>
+										</div>
+									}
+
+									{!refLocations.RepoRefs &&
+										<div className={`${typography.tc} ${base.center} ${base.mv5}`} style={{maxWidth: "500px"}}>
+											<EmptyNodeIllo className={base.mv3} />
+											<Heading level="5">
+												We can't find any usage examples or <br className={base["hidden-s"]} />
+												references for this definition
+											</Heading>
+											<p styleName="cool-mid-gray">
+												It looks like this node in the graph is missing.
+												{!this.context.signedIn &&
+													<span> Help us get more nodes in the graph by joining with GitHub.</span>
+												}
+											</p>
+											{!this.context.signedIn &&
+												<p className={base.mt4}><GitHubAuthButton size="small">Join with GitHub</GitHubAuthButton></p>
+											}
+										</div>
+									}
+
+								</div>
+							}
 						</div>
 					}
-
 				</div>
 			</FlexContainer>
 		);

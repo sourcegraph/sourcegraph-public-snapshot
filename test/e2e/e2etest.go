@@ -78,9 +78,14 @@ func (e *internalError) Error() string {
 
 // Fatalf implements the TestingT and the selenium.TestingT interface.
 func (t *T) Fatalf(fmtStr string, v ...interface{}) {
-	currentURL, _ := t.WebDriver.CurrentURL()
-	fmtStr = fmtStr + " (on page %s)"
-	v = append(v, currentURL)
+	// We only need to append "(on page ...)" if we're being run by 'go test'
+	// because otherwise (*testRunner).runTest handles it in a more general
+	// purpose way (includes panics etc).
+	if t.testingT != nil {
+		currentURL, _ := t.WebDriver.CurrentURL()
+		fmtStr = fmtStr + " (on page %s)"
+		v = append(v, currentURL)
+	}
 	t.testingT.Fatalf(fmtStr, v...)
 }
 
@@ -153,7 +158,9 @@ func (t *T) WaitForElement(by, value string, filters ...ElementFilter) selenium.
 			if err != nil {
 				return false
 			}
-			t.Logf("WaitForElement: %d matches for (%s, %q)", len(elements), by, value)
+			if *verboseFlag {
+				t.Logf("WaitForElement: %d matches for (%s, %q)", len(elements), by, value)
+			}
 			f := And(filters...)
 			for _, e := range elements {
 				if f(e) {
@@ -161,12 +168,34 @@ func (t *T) WaitForElement(by, value string, filters ...ElementFilter) selenium.
 					return true
 				}
 			}
-			t.Logf("WaitForElement: failed to find filter match")
+			if *verboseFlag {
+				t.Logf("WaitForElement: failed to find filter match")
+			}
 			return false
 		},
 		fmt.Sprintf("Wait for element to appear: %s %q", by, value),
 	)
 	return element
+}
+
+// Click waits up to 20s for an element that matches the given selector and
+// filters to appear, and then clicks it.
+//
+// ChromeDriver has a race condition where if an element moves while an
+// attempt to click on it happens, it throws an internal exception. This
+// function will retry on errors from Click to workaround the issue. This may
+// add an extra 20s on the wait time.
+func (t *T) Click(by, value string, filters ...ElementFilter) {
+	var err error
+	deadline := time.Now().Add(20 * time.Second)
+	for time.Now().Before(deadline) {
+		e := t.WaitForElement(by, value, filters...)
+		err = e.Click()
+		if err == nil {
+			return
+		}
+	}
+	t.Fatalf("Failed to click (%s, %s): %s", by, value, err)
 }
 
 type ElementFilter func(selenium.WebElement) bool
@@ -427,11 +456,17 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 						failuresMu.Unlock()
 					}
 
-					t.log.Printf("[failure] [%v] [%v]: %v\n", test.Name, unitTime, err)
 					testCounter.WithLabelValues(test.Name, "failure").Inc()
 
 					if err := t.slackFileUpload(failureType, screenshot, test.Name+".png"); err != nil {
 						t.log.Println("could not upload screenshot to Slack", test.Name, err)
+					}
+
+					if t.slack != nil {
+						t.log.Printf("[failure] [%v] [%v]: %v\n", test.Name, unitTime, err)
+					} else {
+						// Include the screenshot location when running without slack.
+						t.log.Printf("[failure] [%v] [%v]: %v (see ./%s.png)\n", test.Name, unitTime, err, test.Name)
 					}
 					return
 				}
@@ -468,37 +503,55 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 			t.slackLogBuffer.String(),
 		)
 
-		// emit the alert to monitoring-bot
-		err := t.sendAlert()
+		// Create an OpsGenie alert.
+		err := t.alertOpsGenie(fmt.Sprintf("[e2etest]: %v/%v tests failed against %v", failures, total, t.target.String()))
 		if err != nil {
-			t.log.Printf("[WARNING] error while sending alert to monitoring-bot %s", err)
+			t.log.Printf("[WARNING] error while sending alert to opsgenie %s\n", err)
 		}
 	}
 	t.slackLogBuffer.Reset()
 	return failures == 0
 }
 
-func (t *testRunner) sendAlert() error {
-	username := os.Getenv("MONITORING_BOT_USERNAME")
-	if username == "" {
+var opsGenieClient = &http.Client{
+	Timeout: 5 * time.Second,
+}
+
+func (t *testRunner) alertOpsGenie(msg string) error {
+	key := os.Getenv("OPSGENIE_KEY")
+	if key == "" {
 		return nil
 	}
 
-	u, err := url.Parse("https://monitoring-bot.sourcegraph.com/alert?source=e2etest")
+	// We could use the OpsGenie Go SDK for this, but it's quite large and our
+	// usage of their API here is very small, so we don't right now.
+	payload := map[string]string{
+		"apiKey":  key,
+		"alias":   "e2etest", // using the same
+		"message": msg,
+	}
+	data, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
+	req, err := http.NewRequest("POST", "https://api.opsgenie.com/v1/json/alert", bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	u.User = url.UserPassword(username, os.Getenv("MONITORING_BOT_PASSWORD"))
-
-	resp, err := http.Get(u.String())
+	resp, err := opsGenieClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("monitoring bot returned non-200 status code: %d", resp.StatusCode)
+		data, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("opsgenie alert creation returned status=%d body=%q", resp.StatusCode, string(data))
 	}
 	return nil
 }
@@ -643,6 +696,7 @@ var tr = &testRunner{
 var (
 	runOnce     = flag.Bool("once", true, "run the tests only once (true) or forever (false)")
 	runFlag     = flag.String("run", "", "specify an exact test name to run (e.g. 'login_flow', 'register_flow')")
+	verboseFlag = flag.Bool("v", false, "verbosely log selenium actions (useful when debugging selenium)")
 	retriesFlag = flag.Int("retries", 3, "maximum number of times to retry a test before considering it failed")
 )
 
@@ -799,6 +853,9 @@ Flags:
 	flag.Parse()
 
 	// Prepare logging.
+	if !*verboseFlag {
+		selenium.Log = log.New(ioutil.Discard, "", 0)
+	}
 	tr.log = log.New(io.MultiWriter(os.Stderr, tr.slackLogBuffer), "", 0)
 
 	err := parseEnv()
