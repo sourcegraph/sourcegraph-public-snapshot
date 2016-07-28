@@ -10,18 +10,10 @@ import styles from "./styles/SearchResultsPanel.css";
 
 class SearchResultsPanel extends React.Component {
 	static propTypes = {
-		repo: React.PropTypes.string.isRequired,
+		repo: React.PropTypes.string,
 		location: React.PropTypes.object.isRequired,
 		query: React.PropTypes.string.isRequired,
 	};
-
-	componentDidMount() {
-		document.body.style.overflow = "hidden";
-	}
-
-	componentWillUnmount() {
-		document.body.style.overflow = "auto";
-	}
 
 	render() {
 		const {repo, location, query} = this.props;

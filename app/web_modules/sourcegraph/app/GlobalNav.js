@@ -291,6 +291,12 @@ class SearchForm extends React.Component {
 	}
 
 	render() {
+		if (this.state.open) {
+			document.body.style.overflow = "hidden";
+		} else if (!this.state.open) {
+			document.body.style.overflow = "auto";
+		}
+
 		return (
 			<div
 				ref={e => this._container = e}>
