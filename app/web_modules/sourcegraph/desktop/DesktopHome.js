@@ -17,7 +17,6 @@ export const NotInBeta = () => (
 	<div className={`${layout.containerFixed} ${base.pv5} ${base.ph4}`} style={{maxWidth: "600px"}}>
 	<Heading align="center" level="4" underline="blue">
 		It looks like you're not in the desktop beta right now.
-		Sign up to be eligible <a href="/beta">here</a>.
 	</Heading>
 	</div>
 );

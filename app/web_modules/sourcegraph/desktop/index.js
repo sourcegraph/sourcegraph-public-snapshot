@@ -40,22 +40,26 @@ export default function desktopRouter(Component: ReactClass<any>): ReactClass<an
             this.DesktopClient = navigator.userAgent.includes("Electron");
         }
 
-        componentDidMount() {
-            if (this.DesktopClient && !this.context.signedIn) {
-                this.context.router.replace(rel.login);
-            }
-        }
-
         render() {
             if (!this.DesktopClient) {
                 return <Component {...this.props} />;
             };
-            if (inBeta(this.context.user, betautil.Desktop)) {
+
+            const inbeta = inBeta(this.context.user, betautil.DESKTOP);
+            // Include this.context.user to prevent flicker when user loads
+            if (this.context.signedIn && this.context.user && !inbeta) {
                 return <NotInBeta />;
             }
+
             if (getRouteName(this.props.routes) === "home") {
-                this.context.router.replace(rel.desktopHome);
+                if (!this.context.signedIn) {
+                    // Prevent unauthed users from escaping
+                    this.context.router.replace(rel.login);
+                } else {
+                    this.context.router.replace(rel.desktopHome);
+                }
             }
+
             return <Component {...this.props} />;
         }
     };
