@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import {Link} from "react-router";
-import type {RouterLocation} from "react-router";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import {Avatar, Popover, Menu, Logo, Heading} from "sourcegraph/components";

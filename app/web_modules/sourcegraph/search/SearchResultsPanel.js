@@ -15,6 +15,14 @@ class SearchResultsPanel extends React.Component {
 		query: React.PropTypes.string.isRequired,
 	};
 
+	componentDidMount() {
+		document.body.style.overflow = "hidden";
+	}
+
+	componentWillUnmount() {
+		document.body.style.overflow = "auto";
+	}
+
 	render() {
 		const {repo, location, query} = this.props;
 		return (
