@@ -1,5 +1,5 @@
-// Package lputil implements Language Processor utilities.
-package lputil
+// Package langp implements Language Processor utilities.
+package langp
 
 import (
 	"encoding/json"
@@ -7,6 +7,10 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"os/user"
+	"path/filepath"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
@@ -19,9 +23,28 @@ type Translator struct {
 	// against.
 	Addr string
 
-	// RootPath is invoked to determine the workspace directly at which all
-	// file requests are relative to.
-	RootPath func(repo, commit string) string
+	// WorkDir is where workspaces are created by cloning repositories and
+	// dependencies.
+	WorkDir string
+
+	// Prepare is called when the language processor should prepare the given
+	// workspace directory with the given repository at the given commit.
+	//
+	// This is where language processors should perform language-specific tasks
+	// like downloading dependencies via 'go get', etc. into the workspace
+	// directory.
+	//
+	// If an error is returned, it is returned directly to the person who made
+	// the API request which triggered the preperation of the workspace.
+	Prepare func(workspace, repo, commit string) error
+
+	// FileURI, if non-nil, is called to form the file URI which is sent to a
+	// language server. Provided is the repo and commit, and a file URI which
+	// is relative to the repository root.
+	//
+	// FileURI should return a file URI which is relative to the previously
+	// prepared workspace directory.
+	FileURI func(repo, commit, file string) string
 }
 
 // ServeHTTP implements the http.Handler interface.
@@ -39,6 +62,33 @@ func (t *Translator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log.Println(err2)
 		}
 	}
+}
+
+// prepareWorkspace prepares a new workspace for the given repository and
+// revision.
+func (t *Translator) prepareWorkspace(rootDir, repo, commit string) error {
+	// Ensure the workspace directory exists.
+	_, err := os.Stat(rootDir)
+	if !os.IsNotExist(err) {
+		// Workspace exists already.
+		return nil
+	}
+
+	if err := os.MkdirAll(rootDir, 0700); err != nil {
+		return err
+	}
+	if err := t.Prepare(rootDir, repo, commit); err != nil {
+		// Preparing the workspace has failed, and thus the workspace is
+		// incomplete. Remove the directory so that the next request causes
+		// preparation again (this is our best chance at keeping the workspace
+		// in a working state).
+		log.Println("preparing workspace:", err)
+		if err2 := os.RemoveAll(rootDir); err2 != nil {
+			log.Println(err2)
+		}
+		return err
+	}
+	return nil
 }
 
 func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
@@ -78,12 +128,18 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("File field must be set")
 	}
 
+	// Determine the root path for the workspace and prepare it.
+	rootPath := filepath.Join(t.WorkDir, pos.Repo, pos.Commit)
+	err = t.prepareWorkspace(rootPath, pos.Repo, pos.Commit)
+	if err != nil {
+		return err
+	}
+
 	// Build the LSP requests.
 	reqInit := jsonrpc2.Request{
 		ID:     "0",
 		Method: "initialize",
 	}
-	rootPath := t.RootPath(pos.Repo, pos.Commit)
 	log.Println("hover", rootPath)
 	reqInit.SetParams(&lsp.InitializeParams{
 		RootPath: rootPath,
@@ -95,8 +151,12 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 		ID:     reqHoverID,
 		Method: "textDocument/hover",
 	}
+	fileURI := pos.File
+	if t.FileURI != nil {
+		fileURI = t.FileURI(pos.Repo, pos.Commit, pos.File)
+	}
 	reqHover.SetParams(&lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: pos.File},
+		TextDocument: lsp.TextDocumentIdentifier{URI: fileURI},
 		Position: lsp.Position{
 			Line:      pos.Line,
 			Character: pos.Character,
@@ -119,11 +179,12 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 	if !ok {
 		return fmt.Errorf("response to hover request from LSP server not found")
 	}
+	if hoverResp.Error != nil {
+		return hoverResp.Error
+	}
 	var respHover lsp.Hover
-	if hoverResp.Result != nil {
-		if err := json.Unmarshal(*hoverResp.Result, &respHover); err != nil {
-			return err
-		}
+	if err := json.Unmarshal(*hoverResp.Result, &respHover); err != nil {
+		return err
 	}
 
 	// Encode our response.
@@ -138,4 +199,18 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(final)
+}
+
+// ExpandSGPath expands the $SGPATH variable in the given string, except it
+// uses ~/.sourcegraph as the default if $SGPATH is not set.
+func ExpandSGPath(s string) (string, error) {
+	sgpath := os.Getenv("SGPATH")
+	if sgpath == "" {
+		u, err := user.Current()
+		if err != nil {
+			return "", err
+		}
+		sgpath = filepath.Join(u.HomeDir, ".sourcegraph")
+	}
+	return strings.Replace(s, "$SGPATH", sgpath, -1), nil
 }

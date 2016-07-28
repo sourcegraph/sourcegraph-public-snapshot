@@ -1,11 +1,10 @@
 FROM alpine:3.4
 
+RUN apk add --no-cache go
+
 ADD guru /guru
 ADD langserver-go /langserver-go
-
-# HACK: clone the Sourcegraph repository for testing purposes until we figure
-# out correct FS architecture.
-RUN apk add --update git
-RUN git clone https://github.com/sourcegraph/sourcegraph /gopath/src/github.com/sourcegraph/sourcegraph
+ENV GOROOT /usr/lib/go
+ENV PATH /:$PATH
 
 ENTRYPOINT ["/langserver-go"]

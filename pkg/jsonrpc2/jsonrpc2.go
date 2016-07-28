@@ -119,6 +119,11 @@ func (e *Error) SetError(v interface{}) {
 	e.Data = (*json.RawMessage)(&b)
 }
 
+// Error implements the Go error interface.
+func (e *Error) Error() string {
+	return fmt.Sprintf("jsonrpc2: code %v message: %s", e.Code, e.Message)
+}
+
 const (
 	// Errors defined in the JSON-RPC spec. See http://www.jsonrpc.org/specification#error_object.
 	CodeParseError       = -32700

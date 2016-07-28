@@ -4,7 +4,7 @@
     "jsonrpc": "2.0",
     "method": "initialize",
     "params": {
-      "rootPath": "testdata/src",
+      "rootPath": "testdata",
       "capabilities": {}
     }
   },
@@ -14,7 +14,7 @@
     "method": "textDocument/hover",
     "params": {
       "textDocument": {
-        "uri": "file:///mux/mux.go"
+        "uri": "gopath/src/mux/mux.go"
       },
       "position": {
         "line": 15,

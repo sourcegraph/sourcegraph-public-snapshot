@@ -13,19 +13,19 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lputil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-var lpClient *lputil.Client
+var lpClient *langp.Client
 
 func init() {
 	if !feature.Features.Universe {
 		return
 	}
 	var err error
-	lpClient, err = lputil.NewClient(os.Getenv("SG_LANGUAGE_PROCESSOR"))
+	lpClient, err = langp.NewClient(os.Getenv("SG_LANGUAGE_PROCESSOR"))
 	if err != nil {
 		log.Fatal("$SG_LANGUAGE_PROCESSOR", err)
 	}
@@ -57,7 +57,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 	}{}
 
 	if feature.Features.Universe {
-		hover, err := lpClient.Hover(&lputil.Position{
+		hover, err := lpClient.Hover(&langp.Position{
 			Repo:      repo.URI,
 			Commit:    repoRev.CommitID,
 			File:      file,

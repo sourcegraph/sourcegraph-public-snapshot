@@ -1,4 +1,4 @@
-package lputil
+package langp
 
 // Error is returned in the event of any request error, in addition to the HTTP
 // status 400 Bad Request.
