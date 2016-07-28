@@ -113,36 +113,7 @@
 	top: navbarHeight;
 	width: 100%;
 }
-@value SearchSettings "sourcegraph/search/styles/SearchSettings.css";
-.search-settings {
-	composes: groups-bb from SearchSettings;
-}
-.search-settings-inner {
-	composes: ph3 from base;
-}
-.search-results {
-	max-height: 85vh;
-	min-height: 60px;
-	overflow: auto;
-}
-.search-result {
-	composes: ph3 pv3 from base;
-	composes: bb from base;
-	composes: b--cool-pale-gray from colors;
-}
-@media screen and media-xs {
 
-	.search-panel {
-		overflow: auto;
-		left: 0;
-		top: navbarHeight;
-	}
-	.search-results {
-		max-height: none;
-		min-height: none;
-		overflow: hidden;
-	}
-}
 @media screen and media-sm {
 	.not-small-only {
 		display: none;

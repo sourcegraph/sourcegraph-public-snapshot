@@ -5,7 +5,7 @@ import {Link} from "react-router";
 import type {RouterLocation} from "react-router";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
-import {Avatar, Panel, Popover, Menu, Logo, Heading} from "sourcegraph/components";
+import {Avatar, Popover, Menu, Logo, Heading} from "sourcegraph/components";
 import LogoutLink from "sourcegraph/user/LogoutLink";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalNav.css";
@@ -19,8 +19,7 @@ import {DownPointer} from "sourcegraph/components/symbols";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import GlobalSearchInput from "sourcegraph/search/GlobalSearchInput";
 import {locationForSearch, queryFromStateOrURL, langsFromStateOrURL, scopeFromStateOrURL} from "sourcegraph/search/routes";
-import GlobalSearch from "sourcegraph/search/GlobalSearch";
-import SearchSettings from "sourcegraph/search/SearchSettings";
+import SearchResultsPanel from "sourcegraph/search/SearchResultsPanel";
 import invariant from "invariant";
 import {rel} from "sourcegraph/app/routePatterns";
 import {repoPath, repoParam} from "sourcegraph/repo";
@@ -137,6 +136,8 @@ GlobalNav.contextTypes = {
 };
 
 export default CSSModules(GlobalNav, styles, {allowMultiple: true});
+
+// TODO(chexee): Move all these components to their own directory.
 
 class SearchForm extends React.Component {
 	static propTypes = {
@@ -318,11 +319,3 @@ class SearchForm extends React.Component {
 	}
 }
 SearchForm = CSSModules(SearchForm, styles);
-
-let SearchResultsPanel = ({repo, location, query}: {repo: ?string, location: RouterLocation, query: string}) =>
-	<Panel hoverLevel="low" styleName="search-panel">
-		<SearchSettings styleName="search-settings" innerClassName={styles["search-settings-inner"]} location={location} repo={repo} />
-		{query && <GlobalSearch styleName="search-results" query={query} repo={repo} location={location} resultClassName={styles["search-result"]} />}
-	</Panel>;
-
-SearchResultsPanel = CSSModules(SearchResultsPanel, styles);
