@@ -62,10 +62,10 @@ export class DefStore extends Store {
 		return this._examples[examplesKeyFor(r)] || null;
 	}
 
-	reset(data?: {defs: any, refs: any}) {
+	reset() {
 		this.defs = deepFreeze({
-			content: data && data.defs ? data.defs.content : {},
-			pos: data && data.defs ? data.defs.pos : {},
+			content: {},
+			pos: {},
 			get(repo: string, rev: ?string, def: string): ?Def {
 				return this.content[defKey(repo, rev, def)] || null;
 			},
@@ -86,26 +86,26 @@ export class DefStore extends Store {
 			},
 		});
 		this.authors = deepFreeze({
-			content: data && data.authors ? data.authors.content : {},
+			content: {},
 			get(repo: string, commitID: string, def: string): ?Object {
 				return this.content[defKey(repo, commitID, def)] || null;
 			},
 		});
 		this.hoverPos = null;
 		this.hoverInfos = deepFreeze({
-			content: data && data.hoverInfos ? data.hoverInfos.content : {},
+			content: {},
 			get(pos: BlobPos): string {
 				return this.content[posKeyFor(pos)] || null;
 			},
 		});
 		this.refs = deepFreeze({
-			content: data && data.refs ? data.refs.content : {},
+			content: {},
 			get(repo: string, commitID: string, def: string, refRepo: string, refFile: ?string) {
 				return this.content[refsKeyFor(repo, commitID, def, refRepo, refFile)] || null;
 			},
 		});
-		this._refLocations = deepFreeze(data && data.refLocations ? data.refLocations.content : {});
-		this._examples = deepFreeze(data && data.examples ? data.examples.content : {});
+		this._refLocations = deepFreeze({});
+		this._examples = deepFreeze({});
 	}
 
 	toJSON() {

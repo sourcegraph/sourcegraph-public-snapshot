@@ -10,41 +10,41 @@ function keyFor(repo, rev) {
 }
 
 export class RepoStore extends Store {
-	reset(data?: {repos: any, resolvedRevs: any, resolutions: any, branches: any, tags: any}) {
+	reset() {
 		this.repos = deepFreeze({
-			content: data && data.repos ? data.repos.content : {},
+			content: {},
 			get(repo) {
 				return this.content[keyFor(repo)] || null;
 			},
-			listContent: data && data.repos ? data.repos.listContent : {},
+			listContent: {},
 			list(querystring: string) {
 				return this.listContent[querystring] || null;
 			},
-			cloning: data && data.repos ? data.repos.cloning : {},
+			cloning: {},
 			isCloning(repo) {
 				return this.cloning[keyFor(repo)] || false;
 			},
 		});
 		this.resolvedRevs = deepFreeze({
-			content: data && data.resolvedRevs ? data.resolvedRevs.content : {},
+			content: {},
 			get(repo, rev) {
 				return this.content[keyFor(repo, rev)] || null;
 			},
 		});
 		this.resolutions = deepFreeze({
-			content: data && data.resolutions ? data.resolutions.content : {},
+			content: {},
 			get(repo) {
 				return this.content[keyFor(repo)] || null;
 			},
 		});
 		this.commits = deepFreeze({
-			content: data && data.commits ? data.commits.content : {},
+			content: {},
 			get(repo: string, rev: string) {
 				return this.content[keyFor(repo, rev)] || null;
 			},
 		});
 		this.inventory = deepFreeze({
-			content: data && data.inventory ? data.inventory.content : {},
+			content: {},
 			get(repo, commitID) {
 				return this.content[keyFor(repo, commitID)] || null;
 			},

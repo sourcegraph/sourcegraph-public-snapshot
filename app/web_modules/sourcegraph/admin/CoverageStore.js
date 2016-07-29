@@ -15,7 +15,7 @@ export class CoverageStore extends Store {
 		};
 	}
 
-	reset(data) {
+	reset() {
 		this.coverage = null;
 	}
 

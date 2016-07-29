@@ -10,8 +10,8 @@ function keyForResults(query: string, repos: ?Array<string>, notRepos: ?Array<st
 export class SearchStore extends Store {
 	content: any;
 
-	reset(data?: {results: any}) {
-		this.content = deepFreeze(data && data.results ? data.results : {});
+	reset() {
+		this.content = deepFreeze({});
 	}
 
 	get(query: string, repos: ?Array<string>, notRepos: ?Array<string>, commitID: ?string, limit: number): ?any {

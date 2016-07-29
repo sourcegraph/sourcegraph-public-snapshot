@@ -31,10 +31,10 @@ export class BuildStore extends Store {
 		};
 	}
 
-	reset(data) {
+	reset() {
 		this.builds = deepFreeze({
-			content: data && data.builds ? data.builds.content : {},
-			_fetchedForCommit: data && data.builds ? data.builds._fetchedForCommit : {}, // necessary to track whether falsey means "not fetched" or "empty"
+			content: {},
+			_fetchedForCommit: {},
 			get(repo, build) {
 				return this.content[keyFor(repo, build)] || null;
 			},
@@ -61,19 +61,19 @@ export class BuildStore extends Store {
 			},
 		});
 		this.buildLists = deepFreeze({
-			content: data && data.buildLists ? data.buildLists.content : {},
+			content: {},
 			get(repo, search) {
 				return this.content[keyForList(repo, search)] || null;
 			},
 		});
 		this.logs = deepFreeze({
-			content: data && data.logs ? data.logs.content : {},
+			content: {},
 			get(repo, build, task) {
 				return this.content[keyFor(repo, build, task)] || null;
 			},
 		});
 		this.tasks = deepFreeze({
-			content: data && data.tasks ? data.tasks.content : {},
+			content: {},
 			get(repo, build) {
 				return this.content[keyFor(repo, build)] || null;
 			},

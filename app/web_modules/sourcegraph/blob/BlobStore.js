@@ -16,9 +16,9 @@ function keyForAnns(repo: string, commitID: string, path: string, startByte: ?nu
 }
 
 export class BlobStore extends Store {
-	reset(data?: {files: any, annotations: any}) {
+	reset() {
 		this.files = deepFreeze({
-			content: data && data.files ? data.files.content : {},
+			content: {},
 			get(repo, commitID, path) {
 				return this.content[keyFor(repo, commitID, path)] || null;
 			},
@@ -26,7 +26,7 @@ export class BlobStore extends Store {
 
 		// annotations are assumed to be sorted & prepared (with Annotations.prepareAnnotations).
 		this.annotations = deepFreeze({
-			content: data && data.annotations ? data.annotations.content : {},
+			content: {},
 			get(repo, commitID, path, startByte, endByte) {
 				return this.content[keyForAnns(repo, commitID, path, startByte, endByte)] || null;
 			},

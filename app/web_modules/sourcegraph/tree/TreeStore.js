@@ -11,27 +11,27 @@ function keyFor(repo, rev, path) {
 }
 
 export class TreeStore extends Store {
-	reset(data?: {commits: any, fileLists: any, fileTree: any, srclibDataVersions: any}) {
+	reset() {
 		this.commits = deepFreeze({
-			content: data && data.commits ? data.commits.content : {},
+			content: {},
 			get(repo, rev, path) {
 				return this.content[keyFor(repo, rev, path)] || null;
 			},
 		});
 		this.fileLists = deepFreeze({
-			content: data && data.fileLists ? data.fileLists.content : {},
+			content: {},
 			get(repo, commitID) {
 				return this.content[keyFor(repo, commitID)] || null;
 			},
 		});
 		this.fileTree = deepFreeze({
-			content: data && data.fileTree ? data.fileTree.content : {},
+			content: {},
 			get(repo, commitID) {
 				return this.content[keyFor(repo, commitID)] || null;
 			},
 		});
 		this.srclibDataVersions = deepFreeze({
-			content: data && data.srclibDataVersions ? data.srclibDataVersions.content : {},
+			content: {},
 			get(repo, commitID, path) {
 				return this.content[keyFor(repo, commitID, path)] || null;
 			},

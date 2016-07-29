@@ -28,10 +28,9 @@ export function forEach(f: (store: Object, name: string) => void): void {
 	});
 }
 
-// reset resets all stores with the provided data. If null is provided,
-// then the stories are cleared.
-export function reset(data: ?Object): void {
+// reset resets all stores.
+export function reset(): void {
 	forEach((store, name) => {
-		store.reset(data ? data[name] : null);
+		store.reset();
 	});
 }

@@ -4,35 +4,35 @@ import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as UserActions from "sourcegraph/user/UserActions";
 
 export class UserStore extends Store {
-	reset(data?: any) {
-		this.activeAccessToken = data && data.activeAccessToken ? data.activeAccessToken : null;
-		this.activeGitHubToken = data && data.activeGitHubToken ? data.activeGitHubToken : null;
+	reset() {
+		this.activeAccessToken = null;
+		this.activeGitHubToken = null;
 		this.authInfo = deepFreeze({
-			byAccessToken: data && data.authInfo ? data.authInfo.byAccessToken : {},
+			byAccessToken: {},
 			get(accessToken) {
 				return this.byAccessToken[accessToken] || null;
 			},
 		});
 		this.users = deepFreeze({
-			byUID: data && data.users ? data.users.byUID : {},
+			byUID: {},
 			get(uid) {
 				return this.byUID[uid] || null;
 			},
 		});
 		this.emails = deepFreeze({
-			byUID: data && data.emails ? data.emails.byUID : {},
+			byUID: {},
 			get(uid) {
 				return this.byUID[uid] || null;
 			},
 		});
 		this.pendingAuthActions = deepFreeze({
-			content: data && data.pendingAuthActions ? data.pendingAuthActions.content : {},
+			content: {},
 			get(state) {
 				return this.content[state] || null;
 			},
 		});
 		this.authResponses = deepFreeze({
-			content: data && data.authResponses ? data.authResponses.content : {},
+			content: {},
 			get(state) {
 				return this.content[state] || null;
 			},
