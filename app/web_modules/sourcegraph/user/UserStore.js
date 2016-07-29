@@ -10,12 +10,7 @@ export class UserStore extends Store {
 		this.authInfos = deepFreeze({});
 		this.users = deepFreeze({});
 		this.emails = deepFreeze({});
-		this.pendingAuthActions = deepFreeze({
-			content: {},
-			get(state) {
-				return this.content[state] || null;
-			},
-		});
+		this.pendingAuthActions = deepFreeze({});
 		this.authResponses = deepFreeze({
 			content: {},
 			get(state) {
@@ -93,61 +88,25 @@ export class UserStore extends Store {
 			this.settings = deepFreeze({...this.settings, content: action.settings});
 
 		} else if (action instanceof UserActions.SubmitSignup) {
-			this.pendingAuthActions = deepFreeze({
-				...this.pendingAuthActions,
-				content: {
-					...this.pendingAuthActions.content,
-					signup: true,
-				},
-			});
+			this.pendingAuthActions = deepFreeze(Object.assign({}, this.pendingAuthActions, {signup: true}));
 
 		} else if (action instanceof UserActions.SubmitLogin) {
-			this.pendingAuthActions = deepFreeze({
-				...this.pendingAuthActions,
-				content: {
-					...this.pendingAuthActions.content,
-					login: true,
-				},
-			});
+			this.pendingAuthActions = deepFreeze(Object.assign({}, this.pendingAuthActions, {login: true}));
 
 		} else if (action instanceof UserActions.SubmitLogout) {
 			this._resetAuth();
-			this.pendingAuthActions = deepFreeze({
-				...this.pendingAuthActions,
-				content: {
-					...this.pendingAuthActions.content,
-					logout: true,
-				},
-			});
+			this.pendingAuthActions = deepFreeze(Object.assign({}, this.pendingAuthActions, {logout: true}));
 
 		} else if (action instanceof UserActions.SubmitForgotPassword) {
-			this.pendingAuthActions = deepFreeze({
-				...this.pendingAuthActions,
-				content: {
-					...this.pendingAuthActions.content,
-					forgot: true,
-				},
-			});
+			this.pendingAuthActions = deepFreeze(Object.assign({}, this.pendingAuthActions, {forgot: true}));
 
 		} else if (action instanceof UserActions.SubmitResetPassword) {
-			this.pendingAuthActions = deepFreeze({
-				...this.pendingAuthActions,
-				content: {
-					...this.pendingAuthActions.content,
-					reset: true,
-				},
-			});
+			this.pendingAuthActions = deepFreeze(Object.assign({}, this.pendingAuthActions, {reset: true}));
 
 		} else if (action instanceof UserActions.SignupCompleted) {
 			this._resetAuth();
 			if (action.resp && action.resp.Success) this.activeAccessToken = action.resp.AccessToken;
-			this.pendingAuthActions = deepFreeze({
-				...this.pendingAuthActions,
-				content: {
-					...this.pendingAuthActions.content,
-					signup: false,
-				},
-			});
+			this.pendingAuthActions = deepFreeze(Object.assign({}, this.pendingAuthActions, {signup: false}));
 			this.authResponses = deepFreeze({
 				...this.authResponses,
 				content: {
@@ -159,13 +118,7 @@ export class UserStore extends Store {
 		} else if (action instanceof UserActions.LoginCompleted) {
 			this._resetAuth();
 			if (action.resp && action.resp.Success) this.activeAccessToken = action.resp.AccessToken;
-			this.pendingAuthActions = deepFreeze({
-				...this.pendingAuthActions,
-				content: {
-					...this.pendingAuthActions.content,
-					login: false,
-				},
-			});
+			this.pendingAuthActions = deepFreeze(Object.assign({}, this.pendingAuthActions, {login: false}));
 			this.authResponses = deepFreeze({
 				...this.authResponses,
 				content: {
@@ -176,13 +129,7 @@ export class UserStore extends Store {
 
 		} else if (action instanceof UserActions.LogoutCompleted) {
 			this._resetAuth();
-			this.pendingAuthActions = deepFreeze({
-				...this.pendingAuthActions,
-				content: {
-					...this.pendingAuthActions.content,
-					logout: false,
-				},
-			});
+			this.pendingAuthActions = deepFreeze(Object.assign({}, this.pendingAuthActions, {logout: false}));
 			this.authResponses = deepFreeze({
 				...this.authResponses,
 				content: {
@@ -192,13 +139,7 @@ export class UserStore extends Store {
 			});
 
 		} else if (action instanceof UserActions.ForgotPasswordCompleted) {
-			this.pendingAuthActions = deepFreeze({
-				...this.pendingAuthActions,
-				content: {
-					...this.pendingAuthActions.content,
-					forgot: false,
-				},
-			});
+			this.pendingAuthActions = deepFreeze(Object.assign({}, this.pendingAuthActions, {forgot: false}));
 			this.authResponses = deepFreeze({
 				...this.authResponses,
 				content: {
@@ -208,13 +149,7 @@ export class UserStore extends Store {
 			});
 
 		} else if (action instanceof UserActions.ResetPasswordCompleted) {
-			this.pendingAuthActions = deepFreeze({
-				...this.pendingAuthActions,
-				content: {
-					...this.pendingAuthActions.content,
-					reset: false,
-				},
-			});
+			this.pendingAuthActions = deepFreeze(Object.assign({}, this.pendingAuthActions, {reset: false}));
 			this.authResponses = deepFreeze({
 				...this.authResponses,
 				content: {

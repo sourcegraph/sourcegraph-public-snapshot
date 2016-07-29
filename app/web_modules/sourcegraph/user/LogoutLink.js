@@ -21,7 +21,7 @@ export default class LogoutLink extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.pendingAuthAction = UserStore.pendingAuthActions.get("logout");
+		state.pendingAuthAction = UserStore.pendingAuthActions["logout"] || false;
 		state.authResponse = UserStore.authResponses.get("logout");
 	}
 
