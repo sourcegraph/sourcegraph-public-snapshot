@@ -1,8 +1,9 @@
+/* tslint:disable: no-console */
 import Dispatcher from "sourcegraph/Dispatcher";
 
 if (typeof window !== "undefined") {
-	let logger = function(dispatcherName) {
-		return function(action) {
+	let logger = function(dispatcherName: string): (action: any) => void {
+		return function(action: any): void {
 			if (window.localStorage["log-actions"] === "true") {
 				console.log(`${dispatcherName}:`, action);
 			}
@@ -12,12 +13,12 @@ if (typeof window !== "undefined") {
 	Dispatcher.Stores.register(logger("Stores"));
 	Dispatcher.Backends.register(logger("Backends"));
 
-	window.enableActionLog = function() {
+	(window as any).enableActionLog = function(): void {
 		window.localStorage["log-actions"] = "true";
 		console.log("Action log enabled.");
 	};
 
-	window.disableActionLog = function() {
+	(window as any).disableActionLog = function(): void {
 		Reflect.deleteProperty(window.localStorage, "log-actions");
 		console.log("Action log disabled.");
 	};

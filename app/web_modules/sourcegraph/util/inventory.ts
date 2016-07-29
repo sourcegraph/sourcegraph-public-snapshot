@@ -1,5 +1,5 @@
-export function getLanguageExtensionForPath(path) {
-	let language = null;
+export function getLanguageExtensionForPath(path: string): string | null {
+	let language: string | null = null;
 	if (path) {
 		const parts = path.split("/");
 		const lastPart = parts[parts.length - 1];
@@ -13,12 +13,12 @@ export function getLanguageExtensionForPath(path) {
 	return language;
 }
 
-export function defPathToLanguage(defPath) {
-	if (!defPath) return null;
+export function defPathToLanguage(defPath: string): string | null {
+	if (!defPath) { return null; }
 
-	if (defPath.startsWith("GoPackage")) return "go";
-	if (defPath.startsWith("JavaArtifact")) return "java";
-	if (defPath.startsWith("ManPages")) return "sh";
+	if (defPath.startsWith("GoPackage")) { return "go"; }
+	if (defPath.startsWith("JavaArtifact")) { return "java"; }
+	if (defPath.startsWith("ManPages")) { return "sh"; }
 
 	return null;
 }

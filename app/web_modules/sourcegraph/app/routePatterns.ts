@@ -1,4 +1,3 @@
-import type {Route} from "react-router";
 import {matchPattern} from "react-router/lib/PatternUtils";
 
 export type RouteName = "styleguide" |
@@ -35,7 +34,7 @@ export type RouteName = "styleguide" |
 
 // NOTE: If you add a top-level route (e.g., "/about"), add it to the
 // topLevel list in app/internal/ui/router.go.
-export const rel: {[key: RouteName]: string} = {
+export const rel = {
 	search: "search",
 	about: "about",
 	beta: "beta",
@@ -66,7 +65,7 @@ export const rel: {[key: RouteName]: string} = {
 	coverage: "coverage",
 };
 
-export const abs: {[key: RouteName]: string} = {
+export const abs = {
 	search: rel.search,
 	about: rel.about,
 	contact: rel.contact,
@@ -98,19 +97,19 @@ export const abs: {[key: RouteName]: string} = {
 };
 
 const routeNamesByPattern: {[key: string]: RouteName} = {};
-for (let name: RouteName of Object.keys(abs)) {
-	routeNamesByPattern[abs[name]] = name;
+for (let name of Object.keys(abs)) {
+	routeNamesByPattern[abs[name]] = name as RouteName;
 }
 
-export function getRoutePattern(routes: Array<Route>): string {
+export function getRoutePattern(routes: Array<ReactRouter.PlainRoute>): string {
 	return routes.map((route) => route.path).join("").slice(1); // remove leading '/''
 }
 
-export function getRouteName(routes: Array<Route>): ?string {
-	return routeNamesByPattern[getRoutePattern(routes)];
+export function getRouteName(routes: Array<ReactRouter.PlainRoute>): string | null {
+	return routeNamesByPattern[getRoutePattern(routes)] || null;
 }
 
-export function getViewName(routes: Array<Route>): ?string {
+export function getViewName(routes: Array<ReactRouter.PlainRoute>): string | null {
 	let name = getRouteName(routes);
 	if (name) {
 		return `View${name.charAt(0).toUpperCase()}${name.slice(1)}`;
@@ -118,8 +117,8 @@ export function getViewName(routes: Array<Route>): ?string {
 	return null;
 }
 
-export function getRouteParams(pattern: string, pathname: string): ?{[key: string]: string | string[]} {
-	if (pathname.charAt(0) !== "/") pathname = `/${pathname}`;
+export function getRouteParams(pattern: string, pathname: string): any {
+	if (pathname.charAt(0) !== "/") { pathname = `/${pathname}`; }
 	const {paramNames, paramValues} = matchPattern(pattern, pathname);
 
 	if (paramValues !== null) {

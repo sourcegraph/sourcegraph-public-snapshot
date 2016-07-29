@@ -1,46 +1,46 @@
-type Signature = {
+export interface Signature {
 	Name: string;
 	Email: string;
 	Date: string;
 };
 
-type Commit = {
+export interface Commit {
 	Author: Signature;
 	Committer: Signature;
 	Message: string;
 	Parents?: string[];
 };
 
-type Branch = {
+export interface Branch {
 	Name: string;
 	Head: string;
 	Commit?: Commit;
 };
 
-type Tag = {
+export interface Tag {
 	Name: string;
 	CommitID: string;
 };
 
 export function sortBranches(branches: Array<Branch>): Array<Branch> {
-	if (!branches) return branches;
+	if (!branches) { return branches; }
 	return branches.sort((a, b) => {
 		const ac = a.Commit;
 		const bc = b.Commit;
-		if (!ac || !bc) return 0;
+		if (!ac || !bc) { return 0; }
 		const as = ac.Committer || ac.Author;
 		const bs = bc.Committer || bc.Author;
-		if (as.Date < bs.Date) return 1;
-		if (as.Date > bs.Date) return -1;
+		if (as.Date < bs.Date) { return 1; }
+		if (as.Date > bs.Date) { return -1; }
 		return 0;
 	});
 }
 
 export function sortTags(tags: Array<Tag>): Array<Tag> {
-	if (!tags) return tags;
+	if (!tags) { return tags; }
 	return tags.sort((a, b) => {
-		if (a.Name > b.Name) return -1;
-		if (a.Name < b.Name) return 1;
+		if (a.Name > b.Name) { return -1; }
+		if (a.Name < b.Name) { return 1; }
 		return 0;
 	});
 }

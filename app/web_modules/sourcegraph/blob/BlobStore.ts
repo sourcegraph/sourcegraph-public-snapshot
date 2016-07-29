@@ -21,11 +21,9 @@ export class BlobStore extends Store<any> {
 
 	reset(): void {
 		this.files = deepFreeze({});
-				// return this.content[keyForFile(repo, commitID, path)] || null;
 
 		// annotations are assumed to be sorted & prepared (with Annotations.prepareAnnotations).
 		this.annotations = deepFreeze({});
-				// return this.content[keyForAnns(repo, commitID, path, startByte, endByte)] || null;
 	}
 
 	toJSON(): any {

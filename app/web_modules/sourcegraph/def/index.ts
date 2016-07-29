@@ -1,10 +1,17 @@
 import {abs, getRouteParams} from "sourcegraph/app/routePatterns";
-import {repoPath, repoRev, repoParam} from "sourcegraph/repo";
+import {repoParam, repoPath, repoRev} from "sourcegraph/repo/index";
 
-export type Options = Object;
-export type Repo = Object;
-export type Def = Object;
-export type DefKey = {
+export interface Options {};
+
+export interface Repo {};
+
+export interface Def {
+	UnitType: string;
+	Unit: string;
+	Path: string;
+};
+
+export interface DefKey {
 	Repo: string;
 	CommitID: string;
 	UnitType: string;
@@ -12,26 +19,26 @@ export type DefKey = {
 	Path: string; // def path, not file path
 };
 
-export type AuthorshipInfo = {
+export interface AuthorshipInfo {
 	LastCommitDate: string;
 	LastCommitID: string;
 };
-export type DefAuthorship = AuthorshipInfo & {
+export interface DefAuthorship extends AuthorshipInfo {
 	Bytes: number;
 	BytesProportion: number;
 };
-export type DefAuthor = DefAuthorship & {
+export interface DefAuthor extends DefAuthorship {
 	Email: string;
 	AvatarURL: string;
 };
 
-export type Ref = Object;
+export interface Ref {};
 
 // Refs streaming pagnination assumes that the per page amount will be
 // consistent for each fetch.
-export const RefLocsPerPage = 30;
+export const refLocsPerPage = 30;
 
-export function routeParams(url: string): {repo: string, rev: ?string, def: string, err: ?string} {
+export function routeParams(url: string): {repo: string, rev: string | null, def: string, err: string | null} {
 	let v = getRouteParams(abs.def, url);
 	if (!v) {
 		return {
@@ -54,9 +61,9 @@ export function routeParams(url: string): {repo: string, rev: ?string, def: stri
 // faster than routeParams but should only be called on URLs that are
 // known to be def URLs.
 const _defPathIndicator = "/-/def/";
-export function fastParseDefPath(url: string): ?string {
+export function fastParseDefPath(url: string): string | null {
 	const i = url.indexOf(_defPathIndicator);
-	if (i === -1) return null;
+	if (i === -1) { return null; }
 	return url.slice(i + _defPathIndicator.length);
 }
 
@@ -81,17 +88,17 @@ export function encodeDefPath(path: string): string {
 	return path;
 }
 
-export type RefLocationsKey = {
+export interface RefLocationsKey {
 	repo: string;
-	commitID: ?string;
+	commitID: string | null;
 	def: string;
 	page?: number;
 	perPage?: number;
 	repos: Array<string>;
 }
 
-export type ExamplesKey = {
+export interface ExamplesKey {
 	repo: string;
-	commitID: ?string;
+	commitID: string | null;
 	def: string;
 }

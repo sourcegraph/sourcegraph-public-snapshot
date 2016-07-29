@@ -11,7 +11,7 @@ import base from "sourcegraph/components/styles/_base.css";
 import typography from "sourcegraph/components/styles/_typography.css";
 
 import {Link} from "react-router";
-import {RefLocsPerPage} from "sourcegraph/def";
+import {refLocsPerPage} from "sourcegraph/def";
 import "whatwg-fetch";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {Repository, DownPointer} from "sourcegraph/components/symbols";
@@ -99,7 +99,7 @@ class RepoRefsContainer extends Container {
 				</div>)}
 				{/* Display the paginator if we have more files repos or repos to show. */}
 				{refLocs && refLocs.RepoRefs &&
-					(fileCount >= RefLocsPerPage || refLocs.TotalRepos > refLocs.RepoRefs.length || !refLocs.TotalRepos) &&
+					(fileCount >= refLocsPerPage || refLocs.TotalRepos > refLocs.RepoRefs.length || !refLocs.TotalRepos) &&
 					!refLocs.StreamTerminated &&
 					<a onClick={this._onNextPage} styleName="f7 link-icon">
 						{this.state.nextPageLoading ?

@@ -1,4 +1,4 @@
-import type {AuthInfo, User, EmailAddr, ExternalToken, Settings} from "sourcegraph/user";
+import {AuthInfo, EmailAddr, ExternalToken, Settings, User} from "sourcegraph/user/index";
 
 export class WantAuthInfo {
 	accessToken: string;
@@ -10,9 +10,9 @@ export class WantAuthInfo {
 
 export class FetchedAuthInfo {
 	accessToken: string;
-	authInfo: ?(AuthInfo | {Error: any}); // null if unauthenticated
+	authInfo: AuthInfo | {Error: any} | null; // null if unauthenticated
 
-	constructor(accessToken: string, authInfo: ?(AuthInfo | {Error: any})) {
+	constructor(accessToken: string, authInfo: AuthInfo | {Error: any} | null) {
 		this.accessToken = accessToken;
 		this.authInfo = authInfo;
 	}
@@ -46,9 +46,9 @@ export class WantEmails {
 
 export class FetchedEmails {
 	uid: number;
-	emails: Array<EmailAddr> | {Error: any};
+	emails: EmailAddr[] | {Error: any};
 
-	constructor(uid: number, emails: Array<EmailAddr> | {Error: any}) {
+	constructor(uid: number, emails: EmailAddr[] | {Error: any}) {
 		this.uid = uid;
 		this.emails = emails;
 	}
@@ -112,9 +112,7 @@ export class LoginCompleted {
 	}
 }
 
-export class SubmitLogout {
-	constructor() {}
-}
+export class SubmitLogout {}
 
 export class LogoutCompleted {
 	resp: any;

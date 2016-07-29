@@ -1,13 +1,12 @@
-import type {Def, Ref, RefLocationsKey, ExamplesKey} from "sourcegraph/def";
-import {RefLocsPerPage} from "sourcegraph/def";
+import {Def, ExamplesKey, Ref, RefLocationsKey, refLocsPerPage} from "sourcegraph/def/index";
 import toQuery from "sourcegraph/util/toQuery";
 
 export class WantDef {
 	repo: string;
-	rev: ?string;
+	rev: string | null;
 	def: string;
 
-	constructor(repo: string, rev: ?string, def: string) {
+	constructor(repo: string, rev: string | null, def: string) {
 		this.repo = repo;
 		this.rev = rev;
 		this.def = def;
@@ -16,11 +15,11 @@ export class WantDef {
 
 export class DefFetched {
 	repo: string;
-	rev: ?string;
+	rev: string | null;
 	def: string;
 	defObj: Def;
 
-	constructor(repo: string, rev: ?string, def: string, defObj: Def) {
+	constructor(repo: string, rev: string | null, def: string, defObj: Def) {
 		this.repo = repo;
 		this.rev = rev;
 		this.def = def;
@@ -58,10 +57,10 @@ export class WantDefs {
 	repo: string;
 	commitID: string;
 	query: string;
-	filePathPrefix: ?string;
+	filePathPrefix: string | null;
 	overlay: boolean;
 
-	constructor(repo: string, commitID: string, query: string, filePathPrefix: ?string, overlay: boolean) {
+	constructor(repo: string, commitID: string, query: string, filePathPrefix: string | null, overlay: boolean) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.query = query;
@@ -75,10 +74,10 @@ export class DefsFetched {
 	commitID: string;
 	query: string;
 	defs: Array<Def>;
-	filePathPrefix: ?string;
+	filePathPrefix: string | null;
 	overlay: boolean;
 
-	constructor(repo: string, commitID: string, query: string, filePathPrefix: ?string, defs: Array<Def>, overlay: boolean) {
+	constructor(repo: string, commitID: string, query: string, filePathPrefix: string | null, defs: Array<Def>, overlay: boolean) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.query = query;
@@ -105,26 +104,26 @@ export class SelectDef {
 export type BlobPos = {repo: string, commit: string, file: string, line: number, character: number};
 
 export class Hovering {
-	pos: ?BlobPos;
+	pos: BlobPos | null;
 
-	constructor(pos: ?BlobPos) {
+	constructor(pos: BlobPos | null) {
 		this.pos = pos;
 	}
 }
 
 export class WantHoverInfo {
-	pos: ?BlobPos;
+	pos: BlobPos | null;
 
-	constructor(pos: ?BlobPos) {
+	constructor(pos: BlobPos | null) {
 		this.pos = pos;
 	}
 }
 
 export class HoverInfoFetched {
-	pos: ?BlobPos;
+	pos: BlobPos | null;
 	info: any;
 
-	constructor(pos: ?BlobPos, info: any) {
+	constructor(pos: BlobPos | null, info: any) {
 		this.pos = pos;
 		this.info = info;
 	}
@@ -141,7 +140,7 @@ export class WantRefLocations {
 		let q = toQuery({
 			Repos: this.resource.repos,
 			Page: this.resource.page,
-			PerPage: RefLocsPerPage,
+			PerPage: refLocsPerPage,
 		});
 		if (q) {
 			q = `?${q}`;
@@ -187,9 +186,9 @@ export class WantRefs {
 	commitID: string;
 	def: string;
 	refRepo: string; // return refs from files in this repo
-	refFile: ?string; // only return refs in this file
+	refFile: string | null; // only return refs in this file
 
-	constructor(repo: string, commitID: string, def: string, refRepo: string, refFile: ?string) {
+	constructor(repo: string, commitID: string, def: string, refRepo: string, refFile: string | null) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.def = def;
@@ -203,10 +202,10 @@ export class RefsFetched {
 	commitID: string;
 	def: string;
 	refRepo: string;
-	refFile: ?string;
+	refFile: string | null;
 	refs: Array<Ref>;
 
-	constructor(repo: string, commitID: string, def: string, refRepo: string, refFile: ?string, refs: Array<Ref>) {
+	constructor(repo: string, commitID: string, def: string, refRepo: string, refFile: string | null, refs: Array<Ref>) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.def = def;

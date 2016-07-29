@@ -4,6 +4,8 @@
     "flux": "registry:dt/flux#0.0.0+20160618175531",
     "immutable": "registry:dt/immutable#3.8.1+20160608070634",
     "react": "registry:dt/react#0.14.0+20160720060442",
-    "react-dom": "registry:dt/react-dom#0.14.0+20160412154040"
+    "react-dom": "registry:dt/react-dom#0.14.0+20160412154040",
+    "react-router": "registry:dt/react-router#2.0.0+20160621215300",
+    "react-router/history": "registry:dt/react-router/history#2.0.0+20160608102730"
   }
 }

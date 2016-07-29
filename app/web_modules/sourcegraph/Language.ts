@@ -4,7 +4,7 @@ export const allLangs: Array<LanguageID> = ["golang", "java", "python", "javascr
 export const supportedLangs: Array<LanguageID> = ["golang", "java"];
 export const langIsSupported = (lang: LanguageID) => supportedLangs.includes(lang);
 
-const names: {[key: LanguageID]: string} = {
+const names: {[key: string]: string} = {
 	golang: "Go",
 	java: "Java",
 	python: "Python",

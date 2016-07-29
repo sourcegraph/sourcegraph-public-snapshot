@@ -1,4 +1,4 @@
-import type {LanguageID} from "sourcegraph/Language";
+import {LanguageID} from "sourcegraph/Language";
 
 export type SearchScope = {
 	popular: boolean;
@@ -9,7 +9,7 @@ export type SearchScope = {
 
 export const searchScopes = ["popular", "public", "private", "repo"];
 
-export type SearchSettings = {
+export interface SearchSettings {
 	languages: Array<LanguageID>;
-	scope: SearchScope,
+	scope: SearchScope;
 };
