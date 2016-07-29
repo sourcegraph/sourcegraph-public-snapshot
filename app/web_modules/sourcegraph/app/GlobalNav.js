@@ -120,7 +120,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 								Tools and integrations
 							</LocationStateToggleLink>
 							<LocationStateToggleLink href="/beta" modalName="menuBeta" role="menu-item" location={location}	onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickJoinBeta", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
-								Join our beta program
+								Beta program
 							</LocationStateToggleLink>
 							<hr role="divider" className={base.mt3} />
 							<div styleName="cool-mid-gray" className={`${base.pv1} ${base.mb1} ${typography.tc}`}>
