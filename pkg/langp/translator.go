@@ -151,17 +151,11 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 		ID:     reqHoverID,
 		Method: "textDocument/hover",
 	}
-	fileURI := pos.File
+	p := pos.LSP()
 	if t.FileURI != nil {
-		fileURI = t.FileURI(pos.Repo, pos.Commit, pos.File)
+		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
 	}
-	reqHover.SetParams(&lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: fileURI},
-		Position: lsp.Position{
-			Line:      pos.Line,
-			Character: pos.Character,
-		},
-	})
+	reqHover.SetParams(p)
 	reqShutdown := &jsonrpc2.Request{ID: "2", Method: "shutdown"}
 
 	// Make the batched LSP request.

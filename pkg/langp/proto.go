@@ -1,5 +1,7 @@
 package langp
 
+import "sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+
 // Error is returned in the event of any request error, in addition to the HTTP
 // status 400 Bad Request.
 type Error struct {
@@ -31,6 +33,17 @@ type Position struct {
 	// Character is the character offset on a line in the file (zero based), e.g.
 	// where a user's cursor is located within the file.
 	Character int
+}
+
+// LSP converts this langp position into its closest LSP equivilent.
+func (p Position) LSP() *lsp.TextDocumentPositionParams {
+	return &lsp.TextDocumentPositionParams{
+		TextDocument: lsp.TextDocumentIdentifier{URI: p.File},
+		Position: lsp.Position{
+			Line:      p.Line,
+			Character: p.Character,
+		},
+	}
 }
 
 // LocalRefs represents references to a specific definition.
