@@ -24,13 +24,13 @@ class StepperComponent extends React.Component {
 
 				<Panel hoverLevel="low">
 					<div className={base.pa4}>
-						<Heading level="5" className={base.mb3} color="cool-mid-gray">Colors</Heading>
+						<Heading level="7" className={base.mb3} color="cool-mid-gray">Colors</Heading>
 						<Stepper steps={[null, null, null, null]} stepsComplete={0} color="blue" />
 						<Stepper steps={[null, null, null, null]} stepsComplete={1} color="purple" />
 						<Stepper steps={[null, null, null, null]} stepsComplete={2} color="green" />
 						<Stepper steps={[null, null, null, null]} stepsComplete={3} color="orange" />
 
-						<Heading level="5" className={base.mv3} color="cool-mid-gray">With Labels</Heading>
+						<Heading level="7" className={base.mv3} color="cool-mid-gray">With Labels</Heading>
 						<Stepper steps={["Step 1", "Step 2", "Step 3", "Step 4"]} stepsComplete={4} color="green" />
 
 					</div>

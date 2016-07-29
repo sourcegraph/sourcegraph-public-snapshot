@@ -47,7 +47,7 @@ class TableComponent extends React.Component {
 					<TabPanels active={this.state.activeExample}>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="5" className={base.mb3} color="cool-mid-gray">Default table style</Heading>
+								<Heading level="7" className={base.mb3} color="cool-mid-gray">Default table style</Heading>
 								<Table style={{width: "100%"}}>
 									<thead>
 										<tr>
@@ -123,7 +123,7 @@ class TableComponent extends React.Component {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="5" className={base.mb3} color="cool-mid-gray">Default table style</Heading>
+								<Heading level="7" className={base.mb3} color="cool-mid-gray">Default table style</Heading>
 								<Table style={{width: "100%"}} tableStyle="bordered">
 									<thead>
 										<tr>

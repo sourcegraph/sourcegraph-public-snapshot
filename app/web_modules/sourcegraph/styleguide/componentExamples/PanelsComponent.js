@@ -47,7 +47,7 @@ class PanelsComponent extends React.Component {
 					<TabPanels active={this.state.activeExample}>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="5" className={base.mb3} color="cool-mid-gray">Outlined panels</Heading>
+								<Heading level="7" className={base.mb3} color="cool-mid-gray">Outlined panels</Heading>
 								<Panel className={`${base.mb3} ${base.pa3}`} color="blue">
 									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
 								</Panel>
@@ -60,7 +60,7 @@ class PanelsComponent extends React.Component {
 								<Panel className={`${base.mb3} ${base.pa3}`} color="orange">
 									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
 								</Panel>
-								<Heading level="5" className={base.mv3} color="cool-mid-gray">Solid panels</Heading>
+								<Heading level="7" className={base.mv3} color="cool-mid-gray">Solid panels</Heading>
 								<Panel className={`${base.mb3} ${base.pa3}`} inverse={true} color="blue">
 									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
 								</Panel>
@@ -73,7 +73,7 @@ class PanelsComponent extends React.Component {
 								<Panel className={`${base.mb3} ${base.pa3}`} inverse={true} color="orange">
 									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
 								</Panel>
-								<Heading level="5" className={base.mv3} color="cool-mid-gray">Shadowed Panels</Heading>
+								<Heading level="7" className={base.mv3} color="cool-mid-gray">Shadowed Panels</Heading>
 								<Panel className={`${base.mb3} ${base.pa3}`} hoverLevel="low">
 									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
 								</Panel>

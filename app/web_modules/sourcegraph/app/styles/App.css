@@ -28,14 +28,6 @@ the entire viewport height.
 	composes: b--cool-pale-gray-8 bg-white from colors;
 }
 
-/*
-Prevent scrolling the main content when a modal is being displayed.
-*/
-.main-container-with-modal {
-	composes: main-container;
-	filter: saturate(0%) opacity(80%);
-}
-
 .main-container-homepage {
 	composes: main-container;
 }

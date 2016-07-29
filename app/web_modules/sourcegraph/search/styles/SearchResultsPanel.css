@@ -1,0 +1,42 @@
+@value SearchSettings "sourcegraph/search/styles/SearchSettings.css";
+@value base "sourcegraph/components/styles/_base.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value navbarHeight: 60px;
+
+.search-panel {
+	composes: bt bb from base;
+	composes: b--cool-pale-gray from colors;
+	position: absolute;
+	left: 0;
+	top: navbarHeight;
+	width: 100%;
+}
+
+.search-settings {
+	composes: groups-bb from SearchSettings;
+}
+.search-settings-inner {
+	composes: ph3 from base;
+}
+.search-results {
+	max-height: 85vh;
+	min-height: 60px;
+	overflow: auto;
+}
+.search-result {
+	composes: ph3 pv3 from base;
+	composes: bb from base;
+	composes: b--cool-pale-gray from colors;
+}
+@media screen and media-xs {
+	.search-panel {
+		overflow: auto;
+		left: 0;
+		top: navbarHeight;
+	}
+	.search-results {
+		max-height: none;
+		min-height: none;
+		overflow: hidden;
+	}
+}

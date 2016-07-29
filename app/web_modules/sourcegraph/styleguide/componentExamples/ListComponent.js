@@ -10,12 +10,12 @@ class ListComponent extends React.Component {
 	render() {
 		return (
 			<div className={base.mv4}>
-				<Heading level="3" className={base.mb2}>Stepper</Heading>
+				<Heading level="3" className={base.mb2}>Lists</Heading>
 
 				<Panel hoverLevel="low">
 					<div className={base.pa4}>
 
-						<Heading level="5" className={base.mb3} color="cool-mid-gray">Normal</Heading>
+						<Heading level="7" className={base.mb3} color="cool-mid-gray">Normal</Heading>
 
 						<List>
 							<li>Item 1</li>
@@ -23,7 +23,7 @@ class ListComponent extends React.Component {
 							<li>Item 3</li>
 						</List>
 
-						<Heading level="5" className={base.mb3} color="cool-mid-gray">Node style</Heading>
+						<Heading level="7" className={base.mb3} color="cool-mid-gray">Node style</Heading>
 
 						<List listStyle="node">
 							<li>Item 1</li>

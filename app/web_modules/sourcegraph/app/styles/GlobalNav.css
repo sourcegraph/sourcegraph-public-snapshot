@@ -6,16 +6,15 @@
 @value layout "sourcegraph/components/styles/_layout.css";
 
 @value media-xs, media-sm, media-ns from vars;
-@value navbarHeight: 48px;
+@value navbarHeight: 60px;
 @value icon-font-size: 0.8rem;
 
-@value c_cool-pale-gray-8 from colors;
-@value nav-border-color c_cool-pale-gray-8;
+@value c_cool-pale-gray-8, c_cool-mid-gray from colors;
 
 .tl { composes: tl from typography; }
 .tr {	composes: tr from typography; }
 .flex { display: flex; }
-.flex-fill { flex: 1 1 100%; }
+.flex-fill { flex: 1 0; }
 .flex-item-auto { flex: 1 1 auto; }
 .flex-fixed { flex: 0 0 auto; }
 .flex-center { align-items: center; }
@@ -24,23 +23,16 @@
 .block { display: block; }
 .hidden-s { composes: hidden-s from base; }
 .cool-mid-gray { composes: cool-mid-gray from colors; }
+.fill-cool-mid-gray { fill: c_cool-mid-gray; }
+
 
 .navbar {
 	composes: bb cf from base;
-	composes: bg-white from colors;
+	composes: bg-white b--cool-mid-gray-3 from colors;
 	z-index: 100;
 	position: fixed;
 	top: 0;
 	width: 100%;
-	height: navbarHeight;
-}
-.navbar-non-homepage {
-	composes: navbar;
-	border-color: nav-border-color;
-}
-.navbar-homepage {
-	composes: navbar;
-	border-color: transparent;
 }
 
 .navbar + * {
@@ -48,18 +40,9 @@
 	padding-top: navbarHeight;
 }
 
-.navbar-inner {
-	display: flex;
-	align-items: center;
-	flex-wrap: nowrap;
-	height: navbarHeight;
-}
-
 @value logo-height 21.508px;
 .logo-link {
 	padding: calc((navbarHeight - logo-height)/2);
-	composes: br from base;
-	border-color: nav-border-color;
 }
 .logo {
 	display: block;
@@ -69,19 +52,12 @@
 }
 @keyframes spin { 50% { transform: rotate(180deg) scale(1.2) } 100% { transform: rotate(180deg) scale(1)} }
 
-.action {
-	composes: mh2 from base;
-	display: inline-block;
-	white-space: nowrap;
-	cursor: pointer;
-	font-weight: bold;
-}
 
 /* TODO: Abstract this – styles should be contained in their components */
 .modal {
 	composes: modal from "sourcegraph/components/styles/modal.css";
 	composes: col-10 from grid;
-	max-width: 340px;
+	max-width: 400px;
 	min-width: 320px;
 }
 
@@ -129,67 +105,6 @@
 	composes: white bg-blue-8 b--blue from colors;
 }
 
-@value search-form-max-width 1000px;
-.search {
-	flex: 1 0;
-	composes: mr1 from base;
-	composes: br from base;
-	border-color: nav-border-color;
-}
-.search-form-container {
-	max-width: search-form-max-width;
-	position: relative; /* so that search-panel is same width as its parent (this class) */
-}
-.search-form {
-	display: flex;
-}
-.search-form > div { /* make search input share width */
-	flex: 1 0;
-}
-.search-input {
-	height: navbarHeight;
-	composes: f4 from typography;
-}
-
-.search-icon {
-	font-size: 1.3rem;
-}
-.search-panel {
-	border: solid #eee 1px;
-	position: absolute;
-	width: 100%;
-	max-width: search-form-max-width;
-}
-@value SearchSettings "sourcegraph/search/styles/SearchSettings.css";
-.search-settings {
-	composes: groups-bb from SearchSettings;
-}
-.search-settings-inner {
-	composes: ph3 from base;
-}
-.search-results {
-	max-height: 85vh;
-	min-height: 60px;
-	overflow: auto;
-}
-.search-result {
-	composes: ph3 pt3 from base;
-}
-@media screen and media-xs {
-	.search-form-container {
-		position: static;
-	}
-	.search-panel {
-		overflow: auto;
-		left: 0;
-		top: navbarHeight;
-	}
-	.search-results {
-		max-height: none;
-		min-height: none;
-		overflow: hidden;
-	}
-}
 @media screen and media-sm {
 	.not-small-only {
 		display: none;

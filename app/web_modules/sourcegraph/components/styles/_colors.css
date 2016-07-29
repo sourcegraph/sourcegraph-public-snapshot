@@ -52,6 +52,12 @@
 @value c_cool-gray-1 rgba(62, 90, 126, .1);
 
 @value c_cool-mid-gray rgba(119, 147, 174, 1);
+@value c_cool-mid-gray-8 rgba(119, 147, 174, 0.8);
+@value c_cool-mid-gray-5 rgba(119, 147, 174, 0.5);
+@value c_cool-mid-gray-3 rgba(119, 147, 174, 0.3);
+@value c_cool-mid-gray-2 rgba(119, 147, 174, 0.2);
+@value c_cool-mid-gray-1 rgba(119, 147, 174, 0.1);
+
 @value c_cool-pale-gray rgba(213, 229, 242, 1);
 @value c_cool-pale-gray-8 rgba(213, 229, 242, 0.8);
 @value c_cool-pale-gray-5 rgba(213, 229, 242, 0.5);
@@ -134,6 +140,12 @@
 .cool-gray-2 { color: c_cool-gray-2; }
 .cool-gray-1 { color: c_cool-gray-1; }
 .cool-mid-gray { color: c_cool-mid-gray; }
+.cool-mid-gray-1 { color: c_cool-mid-gray-1; }
+.cool-mid-gray-2 { color: c_cool-mid-gray-2; }
+.cool-mid-gray-3 { color: c_cool-mid-gray-3; }
+.cool-mid-gray-5 { color: c_cool-mid-gray-5; }
+.cool-mid-gray-8 { color: c_cool-mid-gray-8; }
+
 .cool-pale-gray { color: c_cool-pale-gray; }
 
 .black { color: black; }
@@ -224,6 +236,12 @@
 }
 
 .bg-cool-mid-gray { background-color: c_cool-mid-gray; }
+.bg-cool-mid-gray-8 { background-color: c_cool-mid-gray-8; }
+.bg-cool-mid-gray-5 { background-color: c_cool-mid-gray-5; }
+.bg-cool-mid-gray-3 { background-color: c_cool-mid-gray-3; }
+.bg-cool-mid-gray-2 { background-color: c_cool-mid-gray-2; }
+.bg-cool-mid-gray-1 { background-color: c_cool-mid-gray-1; }
+
 .bg-cool-gray { background-color: c_cool-gray; }
 .bg-cool-gray-8 { background-color: c_cool-gray-8; }
 .bg-cool-gray-2 { background-color: c_cool-gray-2; }
@@ -314,9 +332,15 @@
 .b--cool-gray { border-color: c_cool-gray; }
 .b--cool-gray-1 { border-color: c_cool-gray-1; }
 .b--cool-gray-2 { border-color: c_cool-gray-2; }
+.b--cool-gray-3 { border-color: c_cool-gray-3; }
 .b--cool-gray-5 { border-color: c_cool-gray-5; }
 .b--cool-gray-8 { border-color: c_cool-gray-8; }
 .b--cool-mid-gray { border-color: c_cool-mid-gray; }
+.b--cool-mid-gray-1 { border-color: c_cool-mid-gray-1; }
+.b--cool-mid-gray-2 { border-color: c_cool-mid-gray-2; }
+.b--cool-mid-gray-3 { border-color: c_cool-mid-gray-3; }
+.b--cool-mid-gray-5 { border-color: c_cool-mid-gray-5; }
+.b--cool-mid-gray-8 { border-color: c_cool-mid-gray-8; }
 .b--cool-pale-gray { border-color: c_cool-pale-gray; }
 .b--cool-pale-gray-8 { border-color: c_cool-pale-gray-8; }
 .b--black { border-color: black; }
@@ -356,7 +380,7 @@
 .b--black-0125 { border-color: c_black-0125; }
 .b--transparent { border-color: transparent; }
 
-.shadow-gray { box-shadow: 0px 1px 6px 0px c_cool-gray-1; }
+.shadow-gray { box-shadow: 0px 1px 6px 0px c_cool-mid-gray-1; }
 
 /* SVG Fills */
 

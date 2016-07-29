@@ -56,13 +56,13 @@ class TabsComponent extends React.Component {
 					<TabPanels active={this.state.activeExample}>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="5" className={base.mb3} color="cool-mid-gray">Default (Blue)</Heading>
+								<Heading level="7" className={base.mb3} color="cool-mid-gray">Default (Blue)</Heading>
 								<Tabs>
 									<TabItem active={true}>Tab 1</TabItem>
 									<TabItem>Tab 2</TabItem>
 									<TabItem>Tab 3</TabItem>
 								</Tabs>
-								<Heading level="5" className={base.mv3} color="cool-mid-gray">Purple</Heading>
+								<Heading level="7" className={base.mv3} color="cool-mid-gray">Purple</Heading>
 								<Tabs color="purple">
 									<TabItem active={true}>Tab 1</TabItem>
 									<TabItem>Tab 2</TabItem>
@@ -91,19 +91,19 @@ class TabsComponent extends React.Component {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="5" className={base.mb3} color="cool-mid-gray">Small</Heading>
+								<Heading level="7" className={base.mb3} color="cool-mid-gray">Small</Heading>
 								<Tabs size="small">
 									<TabItem active={true}>Tab 1</TabItem>
 									<TabItem>Tab 2</TabItem>
 									<TabItem>Tab 3</TabItem>
 								</Tabs>
-								<Heading level="5" className={base.mv3} color="cool-mid-gray">Default</Heading>
+								<Heading level="7" className={base.mv3} color="cool-mid-gray">Default</Heading>
 								<Tabs>
 									<TabItem active={true}>Tab 1</TabItem>
 									<TabItem>Tab 2</TabItem>
 									<TabItem>Tab 3</TabItem>
 								</Tabs>
-								<Heading level="5" className={base.mv3} color="cool-mid-gray">Large</Heading>
+								<Heading level="7" className={base.mv3} color="cool-mid-gray">Large</Heading>
 								<Tabs size="large">
 									<TabItem active={true}>Tab 1</TabItem>
 									<TabItem>Tab 2</TabItem>
@@ -138,13 +138,13 @@ class TabsComponent extends React.Component {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="5" className={base.mb3} color="cool-mid-gray">Horizontal (default)</Heading>
+								<Heading level="7" className={base.mb3} color="cool-mid-gray">Horizontal (default)</Heading>
 								<Tabs direction="horizontal">
 									<TabItem active={true}>Tab 1</TabItem>
 									<TabItem>Tab 2</TabItem>
 									<TabItem>Tab 3</TabItem>
 								</Tabs>
-								<Heading level="5" className={base.mv3} color="cool-mid-gray">Vertical</Heading>
+								<Heading level="7" className={base.mv3} color="cool-mid-gray">Vertical</Heading>
 								<Tabs direction="vertical">
 									<TabItem active={true}>Tab 1</TabItem>
 									<TabItem>Tab 2</TabItem>

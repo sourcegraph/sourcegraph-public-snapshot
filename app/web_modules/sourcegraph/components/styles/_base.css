@@ -70,6 +70,8 @@
 .bw2 { border-width: 2px; }
 .bw3 { border-width: 3px; }
 
+.brw2 { border-right-width: 2px; }
+
 /*
 	 BORDER RADIUS
 */

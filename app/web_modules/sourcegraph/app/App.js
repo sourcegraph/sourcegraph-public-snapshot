@@ -42,7 +42,6 @@ export default class App extends React.Component {
 	constructor(props, context) {
 		super(props);
 		let styleName = "main-container";
-		if (props.location.state && props.location.state.modal) styleName = "main-container-with-modal";
 		if (!context.signedIn && location.pathname === "/") styleName = "main-container-homepage";
 		this._handleSourcegraphDesktop = this._handleSourcegraphDesktop.bind(this);
 		this.state = {
