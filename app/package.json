@@ -80,7 +80,7 @@
   "scripts": {
     "start": "NODE_ENV=${NODE_ENV:=development} node ./node_modules/.bin/webpack-dev-server",
     "build": "env NODE_ENV=production node ./node_modules/.bin/webpack",
-    "lint": "./node_modules/.bin/eslint --max-warnings=0 web_modules && find ./web_modules -name '*.ts*' | xargs ./node_modules/.bin/tslint",
+    "lint": "./node_modules/.bin/eslint --max-warnings=0 web_modules && find ./web_modules -name '*.ts' -or -name '*.tsx' | xargs ./node_modules/.bin/tslint",
     "test": "npm run lint && npm run test-unit",
     "test-unit": "env NODE_ENV=test ./node_modules/.bin/mocha-webpack 'web_modules/**/*_test.js' && rm -r ./.tmp",
     "dep": "npm rebuild fsevents",
