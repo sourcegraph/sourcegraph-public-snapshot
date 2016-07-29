@@ -8,7 +8,7 @@ const UserBackend = {
 
 	__onDispatch(action) {
 		if (action instanceof UserActions.WantAuthInfo) {
-			if (UserStore.authInfo.get(action.accessToken) === null) {
+			if (!UserStore.authInfos[action.accessToken]) {
 				UserBackend.fetch("/.api/auth-info")
 					.then(checkStatus)
 					.then((resp) => resp.json())

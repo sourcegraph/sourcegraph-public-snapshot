@@ -7,12 +7,7 @@ export class UserStore extends Store {
 	reset() {
 		this.activeAccessToken = null;
 		this.activeGitHubToken = null;
-		this.authInfo = deepFreeze({
-			byAccessToken: {},
-			get(accessToken) {
-				return this.byAccessToken[accessToken] || null;
-			},
-		});
+		this.authInfos = deepFreeze({});
 		this.users = deepFreeze({
 			byUID: {},
 			get(uid) {
@@ -69,7 +64,7 @@ export class UserStore extends Store {
 	// is one. Otherwise it returns null.
 	activeAuthInfo() {
 		if (!this.activeAccessToken) return null;
-		return this.authInfo.get(this.activeAccessToken);
+		return this.authInfos[this.activeAccessToken] || null;
 	}
 
 	// activeUser returns the User object for the active user, if there is one
@@ -92,13 +87,7 @@ export class UserStore extends Store {
 
 	__onDispatch(action) {
 		if (action instanceof UserActions.FetchedAuthInfo) {
-			this.authInfo = deepFreeze({
-				...this.authInfo,
-				byAccessToken: {
-					...this.authInfo.byAccessToken,
-					[action.accessToken]: action.authInfo,
-				},
-			});
+			this.authInfos = deepFreeze(Object.assign({}, this.authInfos, {[action.accessToken]: action.authInfo}));
 
 		} else if (action instanceof UserActions.FetchedUser) {
 			this.users = deepFreeze({
