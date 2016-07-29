@@ -1,6 +1,6 @@
-// NOTE: Actions with Flow types should go in this file. When all RepoActions have
+// NOTE: Actions with types should go in this file. When all RepoActions have
 // types, remove this file and move it back to RepoActions.js. This is so that we
-// can progressively add Flow types without having to do it for all RepoActions
+// can progressively add types without having to do it for all RepoActions
 // at once.
 
 export class WantRepos {

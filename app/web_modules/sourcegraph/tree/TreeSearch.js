@@ -218,8 +218,6 @@ class TreeSearch extends Container {
 				}
 
 			} else {
-				// NOTE(mate): moving this constant declaration inside the if-block seems to trigger
-				// a bug in Flow so that it can't infer the definedness of `nextState.fileList.Files`
 				const query = nextState.query.toLowerCase();
 				if (nextState.fileList && nextState.fileList.Files) {
 					nextState.fileResults = nextState.fileList.Files

@@ -1,5 +1,3 @@
-// @flow
-
 import React from "react";
 
 class Alert extends React.Component {

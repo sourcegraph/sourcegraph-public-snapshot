@@ -230,8 +230,6 @@ class SearchForm extends React.Component {
 	_container: HTMLElement;
 	_input: HTMLInputElement;
 
-	// NOTE: Flow doesn't automatically treat methods as props, so this manual list
-	// is necessary. See https://github.com/facebook/flow/issues/1517.
 	_handleGlobalHotkey: any;
 	_handleGlobalClick: any;
 	_handleSubmit: any;

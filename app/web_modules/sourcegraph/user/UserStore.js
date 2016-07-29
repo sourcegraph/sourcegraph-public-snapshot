@@ -104,10 +104,6 @@ export class UserStore extends Store {
 	}
 
 	__onDispatch(action) {
-		// Using instanceof checks instead of switching on action.constructor
-		// lets Flow understand the type constraints, so we should move the
-		// rest of the switch-case bodies to this scheme.
-
 		if (action instanceof UserActions.FetchedAuthInfo) {
 			this.authInfo = deepFreeze({
 				...this.authInfo,

@@ -22,9 +22,6 @@ function defaultOptions() {
 }
 
 export function combineHeaders(a: any, b: any): any {
-	// NOTE(sqs): Flow gave a lot of weird "inconsistent use of library definitions" errors
-	// when I tried to use the Headers and HeadersInit types here. This has a unit test,
-	// so leave these as "any" types for now.
 	if (!b) return a;
 	if (!a) return b;
 

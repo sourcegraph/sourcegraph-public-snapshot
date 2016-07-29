@@ -7,10 +7,6 @@ const UserBackend = {
 	fetch: defaultFetch,
 
 	__onDispatch(action) {
-		// Using instanceof checks instead of switching on action.constructor
-		// lets Flow understand the type constraints, so we should move the
-		// rest of the switch-case bodies to this scheme.
-
 		if (action instanceof UserActions.WantAuthInfo) {
 			if (UserStore.authInfo.get(action.accessToken) === null) {
 				UserBackend.fetch("/.api/auth-info")

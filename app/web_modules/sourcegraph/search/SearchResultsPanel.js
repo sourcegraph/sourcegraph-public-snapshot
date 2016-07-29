@@ -1,5 +1,3 @@
-// @flow
-
 import * as React from "react";
 import {Panel} from "sourcegraph/components";
 import SearchSettings from "sourcegraph/search/SearchSettings";
