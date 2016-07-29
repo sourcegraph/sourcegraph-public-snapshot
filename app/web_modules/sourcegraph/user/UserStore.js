@@ -112,8 +112,7 @@ export class UserStore extends Store {
 					[action.accessToken]: action.authInfo,
 				},
 			});
-			this.__emitChange();
-			return;
+
 		} else if (action instanceof UserActions.FetchedUser) {
 			this.users = deepFreeze({
 				...this.users,
@@ -122,8 +121,7 @@ export class UserStore extends Store {
 					[action.uid]: action.user,
 				},
 			});
-			this.__emitChange();
-			return;
+
 		} else if (action instanceof UserActions.FetchedEmails) {
 			this.emails = deepFreeze({
 				...this.emails,
@@ -132,22 +130,15 @@ export class UserStore extends Store {
 					[action.uid]: action.emails,
 				},
 			});
-			this.__emitChange();
-			return;
+
 		} else if (action instanceof UserActions.FetchedGitHubToken) {
 			this.activeGitHubToken = action.token;
-			this.__emitChange();
-			return;
+
 		} else if (action instanceof UserActions.UpdateSettings) {
 			if (global.window) window.localStorage.setItem("userSettings", JSON.stringify(action.settings));
 			this.settings = deepFreeze({...this.settings, content: action.settings});
-			this.__emitChange();
-			return;
-		}
 
-
-		switch (action.constructor) {
-		case UserActions.SubmitSignup: {
+		} else if (action instanceof UserActions.SubmitSignup) {
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
 				content: {
@@ -155,9 +146,8 @@ export class UserStore extends Store {
 					signup: true,
 				},
 			});
-			break;
-		}
-		case UserActions.SubmitLogin: {
+
+		} else if (action instanceof UserActions.SubmitLogin) {
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
 				content: {
@@ -165,9 +155,8 @@ export class UserStore extends Store {
 					login: true,
 				},
 			});
-			break;
-		}
-		case UserActions.SubmitLogout: {
+
+		} else if (action instanceof UserActions.SubmitLogout) {
 			this._resetAuth();
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
@@ -176,9 +165,8 @@ export class UserStore extends Store {
 					logout: true,
 				},
 			});
-			break;
-		}
-		case UserActions.SubmitForgotPassword: {
+
+		} else if (action instanceof UserActions.SubmitForgotPassword) {
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
 				content: {
@@ -186,9 +174,8 @@ export class UserStore extends Store {
 					forgot: true,
 				},
 			});
-			break;
-		}
-		case UserActions.SubmitResetPassword: {
+
+		} else if (action instanceof UserActions.SubmitResetPassword) {
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
 				content: {
@@ -196,9 +183,8 @@ export class UserStore extends Store {
 					reset: true,
 				},
 			});
-			break;
-		}
-		case UserActions.SignupCompleted: {
+
+		} else if (action instanceof UserActions.SignupCompleted) {
 			this._resetAuth();
 			if (action.resp && action.resp.Success) this.activeAccessToken = action.resp.AccessToken;
 			this.pendingAuthActions = deepFreeze({
@@ -215,9 +201,8 @@ export class UserStore extends Store {
 					signup: action.resp,
 				},
 			});
-			break;
-		}
-		case UserActions.LoginCompleted: {
+
+		} else if (action instanceof UserActions.LoginCompleted) {
 			this._resetAuth();
 			if (action.resp && action.resp.Success) this.activeAccessToken = action.resp.AccessToken;
 			this.pendingAuthActions = deepFreeze({
@@ -234,9 +219,8 @@ export class UserStore extends Store {
 					login: action.resp,
 				},
 			});
-			break;
-		}
-		case UserActions.LogoutCompleted: {
+
+		} else if (action instanceof UserActions.LogoutCompleted) {
 			this._resetAuth();
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
@@ -252,9 +236,8 @@ export class UserStore extends Store {
 					logout: action.resp,
 				},
 			});
-			break;
-		}
-		case UserActions.ForgotPasswordCompleted: {
+
+		} else if (action instanceof UserActions.ForgotPasswordCompleted) {
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
 				content: {
@@ -269,9 +252,8 @@ export class UserStore extends Store {
 					forgot: action.resp,
 				},
 			});
-			break;
-		}
-		case UserActions.ResetPasswordCompleted: {
+
+		} else if (action instanceof UserActions.ResetPasswordCompleted) {
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
 				content: {
@@ -286,9 +268,8 @@ export class UserStore extends Store {
 					reset: action.resp,
 				},
 			});
-			break;
-		}
-		default:
+
+		} else {
 			return; // don't emit change
 		}
 
