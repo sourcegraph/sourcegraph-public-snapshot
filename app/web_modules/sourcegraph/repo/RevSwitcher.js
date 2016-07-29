@@ -94,15 +94,15 @@ class RevSwitcher extends Component {
 	}
 
 	_loadingItem(what) {
-		return <li role="presentation" styleName="disabled">Loading {what}&hellip;</li>;
+		return <li styleName="disabled">Loading {what}&hellip;</li>;
 	}
 
 	_errorItem(what) {
-		return <li role="presentation" styleName="disabled">Error</li>;
+		return <li styleName="disabled">Error</li>;
 	}
 
 	_emptyItem(what) {
-		return <li role="presentation" styleName="disabled">None found</li>;
+		return <li styleName="disabled">None found</li>;
 	}
 
 	_item(name, commitID) {
