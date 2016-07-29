@@ -8,12 +8,7 @@ export class UserStore extends Store {
 		this.activeAccessToken = null;
 		this.activeGitHubToken = null;
 		this.authInfos = deepFreeze({});
-		this.users = deepFreeze({
-			byUID: {},
-			get(uid) {
-				return this.byUID[uid] || null;
-			},
-		});
+		this.users = deepFreeze({});
 		this.emails = deepFreeze({
 			byUID: {},
 			get(uid) {
@@ -73,7 +68,7 @@ export class UserStore extends Store {
 	activeUser() {
 		const authInfo = this.activeAuthInfo();
 		if (!authInfo || !authInfo.UID) return null;
-		const user = this.users.get(authInfo.UID);
+		const user = this.users[authInfo.UID];
 		return user && !user.Error ? user : null;
 	}
 
@@ -90,13 +85,7 @@ export class UserStore extends Store {
 			this.authInfos = deepFreeze(Object.assign({}, this.authInfos, {[action.accessToken]: action.authInfo}));
 
 		} else if (action instanceof UserActions.FetchedUser) {
-			this.users = deepFreeze({
-				...this.users,
-				byUID: {
-					...this.users.byUID,
-					[action.uid]: action.user,
-				},
-			});
+			this.users = deepFreeze(Object.assign({}, this.users, {[action.uid]: action.user}));
 
 		} else if (action instanceof UserActions.FetchedEmails) {
 			this.emails = deepFreeze({

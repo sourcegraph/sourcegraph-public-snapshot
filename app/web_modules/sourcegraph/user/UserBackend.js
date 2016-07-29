@@ -40,7 +40,7 @@ const UserBackend = {
 					});
 			}
 		} else if (action instanceof UserActions.WantUser) {
-			if (UserStore.users.get(action.uid) === null) {
+			if (!UserStore.users[action.uid]) {
 				UserBackend.fetch(`/.api/users/${action.uid}$`) // trailing "$" indicates UID lookup (not login/username)
 					.then(checkStatus)
 					.then((resp) => resp.json())
