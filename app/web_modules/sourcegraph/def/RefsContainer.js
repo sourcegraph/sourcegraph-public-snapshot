@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import Blob from "sourcegraph/blob/Blob";
-import BlobStore from "sourcegraph/blob/BlobStore";
+import BlobStore, {keyForFile, keyForAnns} from "sourcegraph/blob/BlobStore";
 import BlobContentPlaceholder from "sourcegraph/blob/BlobContentPlaceholder";
 import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
@@ -124,7 +124,7 @@ export default class RefsContainer extends Container {
 				if (!ref) continue;
 				let refRev = ref.Repo === state.repo ? state.commitID : ref.CommitID;
 				if (!this.filesByName[ref.File]) {
-					let file = BlobStore.files.get(ref.Repo, refRev, ref.File);
+					let file = BlobStore.files[keyForFile(ref.Repo, refRev, ref.File)] || null;
 					if (file) {
 						// Pass through Error to this.filesByName (i.e., proceed even if file.Error is truthy).
 						state.forceComponentUpdate = true;
@@ -147,7 +147,7 @@ export default class RefsContainer extends Container {
 					}
 				}
 				if (!this.anns[ref.File]) {
-					let anns = BlobStore.annotations.get(ref.Repo, ref.CommitID, ref.File);
+					let anns = BlobStore.annotations[keyForAnns(ref.Repo, ref.CommitID, ref.File)] || null;
 					if (anns) {
 						// Pass through Error to this.anns (i.e., proceed even if anns.Error is truthy).
 						state.forceComponentUpdate = true;

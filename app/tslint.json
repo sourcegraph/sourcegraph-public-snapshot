@@ -6,7 +6,8 @@
 		"member-access": false,
 		"variable-name": [true, "check-format", "allow-leading-underscore", "ban-keywords"],
 		"object-literal-sort-keys": false,
-		"typedef": [true, "call-signature", "parameter", "property-declaration", "member-variable-declaration"]
+		"typedef": [true, "call-signature", "parameter", "property-declaration", "member-variable-declaration"],
+		"interface-name": [false]
   },
   "rulesDirectory": []
 }

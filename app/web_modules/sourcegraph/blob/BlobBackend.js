@@ -1,5 +1,5 @@
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import BlobStore from "sourcegraph/blob/BlobStore";
+import BlobStore, {keyForFile, keyForAnns} from "sourcegraph/blob/BlobStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import prepareAnnotations from "sourcegraph/blob/prepareAnnotations";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
@@ -13,7 +13,7 @@ const BlobBackend = {
 		switch (action.constructor) {
 		case BlobActions.WantFile:
 			{
-				let file = BlobStore.files.get(action.repo, action.commitID, action.path);
+				let file = BlobStore.files[keyForFile(action.repo, action.commitID, action.path)] || null;
 				if (file === null) {
 					let url = `/.api/repos/${action.repo}@${action.commitID}/-/tree/${action.path}?ContentsAsString=true`;
 					BlobBackend.fetch(url)
@@ -38,7 +38,7 @@ const BlobBackend = {
 
 		case BlobActions.WantAnnotations:
 			{
-				let anns = BlobStore.annotations.get(action.repo, action.commitID, action.path, action.startByte, action.endByte);
+				let anns = BlobStore.annotations[keyForAnns(action.repo, action.commitID, action.path, action.startByte, action.endByte)] || null;
 				if (anns === null) {
 					let url = `/.api/annotations?Entry.RepoRev.Repo=${action.repo}&Entry.RepoRev.CommitID=${action.commitID}&Entry.Path=${action.path}&Range.StartByte=${action.startByte || 0}&Range.EndByte=${action.endByte || 0}`;
 					BlobBackend.fetch(url)
