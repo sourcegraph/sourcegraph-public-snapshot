@@ -27,6 +27,11 @@ func testFixtures(t *testing.T, h jsonrpc2.BatchHandler) {
 	}
 
 	for _, c := range cases {
+		if reason, shouldSkip := skipFixtures[c]; shouldSkip {
+			t.Logf("SKIP %s: %s", c, reason)
+			continue
+		}
+
 		var req []*jsonrpc2.Request
 		unmarshalFile(t, c, &req)
 
@@ -51,10 +56,6 @@ func testFixtures(t *testing.T, h jsonrpc2.BatchHandler) {
 
 		out, err := exec.Command("diff", c+".expected", c+".actual").Output()
 		if err != nil {
-			if reason, shouldSkip := skipFixtures[c]; shouldSkip {
-				t.Logf("SKIP %s: %s", c, reason)
-				continue
-			}
 			t.Errorf("unexpected response, output of diff %s %s:\n%s", c+".expected", c+".actual", string(out))
 		}
 	}
@@ -89,7 +90,8 @@ func TestFixtures(t *testing.T) {
 
 func checkExecDeps(t *testing.T) {
 	deps := map[string]string{
-		"guru": "golang.org/x/tools/cmd/guru",
+		"godef": "github.com/rogpeppe/godef",
+		"guru":  "golang.org/x/tools/cmd/guru",
 	}
 	missing := []string{}
 	for cmd, pkg := range deps {

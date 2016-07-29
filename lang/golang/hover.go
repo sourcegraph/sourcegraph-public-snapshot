@@ -1,15 +1,14 @@
 package golang
 
 import (
-	"encoding/json"
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
-
-	"golang.org/x/tools/cmd/guru/serial"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
@@ -26,39 +25,31 @@ func (h *Session) handleHover(req *jsonrpc2.Request, params lsp.TextDocumentPosi
 		return nil, err
 	}
 
-	// guru describe for symbol info
+	// godef for symbol info
 	ofs, valid := offsetForPosition(contents, params.Position)
 	if !valid {
 		return nil, errors.New("invalid position")
 	}
-	desc, err := guruDescribe(h.filePath("gopath"), h.filePath(params.TextDocument.URI), int(ofs))
+	def, err := godef(h.filePath("gopath"), h.filePath(params.TextDocument.URI), int(ofs))
 	if err != nil {
 		return nil, err
 	}
-	var s string
-	switch desc.Detail {
-	case "package":
-		s = "package " + desc.Package.Path
-	case "type":
-		s = "type " + desc.Type.Type
-	case "value":
-		s = desc.Value.Type
-	case "":
-		s = desc.Desc
-	default:
-		return nil, fmt.Errorf("unexpected guru describe detail %s", desc.Detail)
-	}
 
 	return &lsp.Hover{
-		Contents: []lsp.MarkedString{{Language: "go", Value: s}},
+		Contents: []lsp.MarkedString{{Language: "go", Value: def.Info}},
 		Range:    r,
 	}, nil
 }
 
-func guruDescribe(gopath, path string, offset int) (serial.Describe, error) {
-	var d serial.Describe
+type godefResult struct {
+	Path         string
+	Line, Column int
+	Info         string
+}
+
+func godef(gopath, path string, offset int) (*godefResult, error) {
 	start := time.Now()
-	c := exec.Command("guru", "-json", "describe", fmt.Sprintf("%s:#%d", path, offset))
+	c := exec.Command("godef", "-a", "-f", path, "-o", strconv.Itoa(offset))
 	c.Env = []string{"GOPATH=" + gopath}
 	for _, e := range os.Environ() {
 		if !strings.HasPrefix(e, "GOPATH=") {
@@ -67,10 +58,36 @@ func guruDescribe(gopath, path string, offset int) (serial.Describe, error) {
 	}
 	b, err := c.CombinedOutput()
 	if err != nil {
-		return d, fmt.Errorf("%v: %v", err, string(b))
+		return nil, fmt.Errorf("%v: %v", err, string(b))
 	}
-	fmt.Printf("TIME: %v guru -json describe %s:#%d\n", time.Since(start), path, offset)
+	fmt.Printf("TIME: %v %s\n", time.Since(start), strings.Join(c.Args, " "))
 
-	err = json.Unmarshal(b, &d)
-	return d, err
+	lines := bytes.Split(b, []byte{'\n'})
+	if len(lines) < 2 {
+		return nil, fmt.Errorf("not enough lines in output: %v", string(b))
+	}
+
+	defpath, line, col, err := parseGodefPos(string(lines[0]))
+	if err != nil {
+		return nil, fmt.Errorf("invalid position line: %s", string(lines[0]))
+	}
+
+	return &godefResult{
+		Path:   defpath,
+		Line:   line,
+		Column: col,
+		Info:   strings.TrimSpace(string(lines[1])),
+	}, nil
+}
+
+func parseGodefPos(pos string) (path string, line int, col int, err error) {
+	j := strings.LastIndexByte(pos, ':')
+	i := strings.LastIndexByte(pos[:j], ':')
+	path = pos[:i]
+	line, err = strconv.Atoi(pos[i+1 : j])
+	if err != nil {
+		return
+	}
+	col, err = strconv.Atoi(pos[j+1:])
+	return
 }

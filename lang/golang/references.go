@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"os/exec"
 	"sort"
+	"strconv"
+	"strings"
 
 	"golang.org/x/tools/cmd/guru/serial"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
@@ -117,4 +119,12 @@ func guruReferrers(path string, offset int) (*serial.ReferrersInitial, []*serial
 		pkgs = append(pkgs, &pkg)
 	}
 	return &def, pkgs, nil
+}
+
+func guruPos(pos string) (string, int, int) {
+	j := strings.LastIndexByte(pos, ':')
+	i := strings.LastIndexByte(pos[:j], ':')
+	line, _ := strconv.Atoi(pos[i+1 : j])
+	col, _ := strconv.Atoi(pos[j+1:])
+	return pos[:i], line, col
 }
