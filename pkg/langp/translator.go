@@ -136,7 +136,7 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Build the LSP requests.
-	reqInit := jsonrpc2.Request{
+	reqInit := &jsonrpc2.Request{
 		ID:     "0",
 		Method: "initialize",
 	}
@@ -147,7 +147,7 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 	// TODO: should probably check server capabilities before invoking hover,
 	// but good enough for now.
 	reqHoverID := "1"
-	reqHover := jsonrpc2.Request{
+	reqHover := &jsonrpc2.Request{
 		ID:     reqHoverID,
 		Method: "textDocument/hover",
 	}
@@ -162,7 +162,7 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 			Character: pos.Character,
 		},
 	})
-	reqShutdown := jsonrpc2.Request{ID: "2", Method: "shutdown"}
+	reqShutdown := &jsonrpc2.Request{ID: "2", Method: "shutdown"}
 
 	// Make the batched LSP request.
 	resps, err := cl.RequestBatchAndWaitForAllResponses(
