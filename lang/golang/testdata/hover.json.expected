@@ -15,7 +15,7 @@
       "contents": [
         {
           "language": "go",
-          "value": "func() *Router"
+          "value": "NewRouter func() *Router"
         }
       ],
       "range": {
