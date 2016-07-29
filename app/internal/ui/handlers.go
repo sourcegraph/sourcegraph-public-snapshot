@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -244,8 +243,7 @@ func serveAny(w http.ResponseWriter, r *http.Request) error {
 func tmplExec(w http.ResponseWriter, r *http.Request, statusCode int, m meta) error {
 	return tmpl.Exec(r, w, "ui.html", statusCode, nil, &struct {
 		tmpl.Common
-		Meta   meta
-		Stores *json.RawMessage
+		Meta meta
 	}{
 		Meta: m,
 	})

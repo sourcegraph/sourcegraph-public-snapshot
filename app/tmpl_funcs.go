@@ -1,7 +1,6 @@
 package app
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	htmpl "html/template"
@@ -39,7 +38,6 @@ var tmplFuncs = htmpl.FuncMap{
 		}
 		return string(b), nil
 	},
-	"rawJSON": rawJSON,
 
 	"customFeedbackForm": func() htmpl.HTML { return appconf.Flags.CustomFeedbackForm },
 
@@ -67,19 +65,4 @@ var tmplFuncs = htmpl.FuncMap{
 	},
 
 	"buildvar": func() buildvar.Vars { return buildvar.All },
-}
-
-func rawJSON(v *json.RawMessage) htmpl.JS {
-	if v == nil || len(*v) == 0 {
-		return "null"
-	}
-
-	// SECURITY: Run through Go's JSON encoder to ensure this is
-	// properly escaped JSON. Specifically, if it contains "<" or
-	// ">" chars, we must escape those, or else they could be
-	// interpreted as ending a <script> tag in an HTML page.
-	var buf bytes.Buffer
-	json.HTMLEscape(&buf, *v)
-
-	return htmpl.JS(buf.String())
 }
