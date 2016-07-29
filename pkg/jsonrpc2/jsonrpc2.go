@@ -142,7 +142,7 @@ type Client struct {
 	conn io.ReadWriteCloser
 
 	mu    sync.Mutex
-	resps chan Response // only set if someone is in a RequestAndWaitForResponse call
+	resps chan *Response // only set if someone is in a RequestAndWaitForResponse call
 }
 
 // NewClient creates a new JSON-RPC client using the given ReadWriteCloser
@@ -184,7 +184,7 @@ func (c *Client) readResponses() {
 		c.mu.Lock()
 		if c.resps != nil {
 			if resp.single != nil {
-				c.resps <- *resp.single
+				c.resps <- resp.single
 			} else {
 				for _, resp := range resp.batch {
 					c.resps <- resp
@@ -208,7 +208,7 @@ func (c *Client) send(body interface{}) error {
 // send the corresponding JSON-RPC response object. An error is
 // returned if the request is unable to be sent. To wait for the
 // corresponding response, use RequestAndWaitForResponse.
-func (c *Client) Request(req Request) error {
+func (c *Client) Request(req *Request) error {
 	req.JSONRPC = jsonrpcVersion
 	return c.send(req)
 }
@@ -220,7 +220,7 @@ func (c *Client) Request(req Request) error {
 //
 // It is NOT safe to call this method from more than one goroutine
 // concurrently.
-func (c *Client) RequestAndWaitForResponse(req Request) (*Response, error) {
+func (c *Client) RequestAndWaitForResponse(req *Request) (*Response, error) {
 	if req.Notification {
 		panic("jsonrpc2: Request ID must be set (if req is a notification, call Request to avoid a futile wait for a response)")
 	}
@@ -229,7 +229,7 @@ func (c *Client) RequestAndWaitForResponse(req Request) (*Response, error) {
 	// for. readResponses will send us the responses on the channel if
 	// it's non-nil.
 	c.mu.Lock()
-	c.resps = make(chan Response)
+	c.resps = make(chan *Response)
 	c.mu.Unlock()
 	defer func() {
 		c.mu.Lock()
@@ -244,14 +244,14 @@ func (c *Client) RequestAndWaitForResponse(req Request) (*Response, error) {
 
 	for resp := range c.resps {
 		if resp.ID == req.ID {
-			return &resp, nil
+			return resp, nil
 		}
 	}
 	panic("unreachable") // above loop is infinite until condition is met
 }
 
 // RequestBatch is the batched version of Request.
-func (c *Client) RequestBatch(reqs ...Request) error {
+func (c *Client) RequestBatch(reqs ...*Request) error {
 	for _, req := range reqs {
 		req.JSONRPC = jsonrpcVersion
 	}
@@ -260,7 +260,7 @@ func (c *Client) RequestBatch(reqs ...Request) error {
 
 // RequestBatchAndWaitForAllResponses is the batched version of
 // RequestAndWaitForResponse.
-func (c *Client) RequestBatchAndWaitForAllResponses(reqs ...Request) (map[string]*Response, error) {
+func (c *Client) RequestBatchAndWaitForAllResponses(reqs ...*Request) (map[string]*Response, error) {
 	wantResps := make(map[string]*Response, len(reqs)) // overallocation if reqs has notifs, but that's fine
 	for _, req := range reqs {
 		if !req.Notification {
@@ -272,7 +272,7 @@ func (c *Client) RequestBatchAndWaitForAllResponses(reqs ...Request) (map[string
 	// for. readResponses will send us the responses on the channel if
 	// it's non-nil.
 	c.mu.Lock()
-	c.resps = make(chan Response)
+	c.resps = make(chan *Response)
 	c.mu.Unlock()
 	defer func() {
 		c.mu.Lock()
@@ -292,7 +292,7 @@ func (c *Client) RequestBatchAndWaitForAllResponses(reqs ...Request) (map[string
 				return nil, fmt.Errorf("jsonrpc2: duplicate response received with ID %s", resp.ID)
 			}
 			tmp := resp
-			wantResps[resp.ID] = &tmp
+			wantResps[resp.ID] = tmp
 			remaining--
 		}
 		if remaining == 0 {
@@ -575,7 +575,7 @@ func (v *requestOrRequestBatch) UnmarshalJSON(data []byte) error {
 }
 
 type responseOrResponseBatch struct {
-	batch  []Response
+	batch  []*Response
 	single *Response
 }
 

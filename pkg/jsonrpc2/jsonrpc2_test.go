@@ -92,7 +92,7 @@ func TestClientServer(t *testing.T) {
 
 	// Simple
 	for i := 1; i <= 100; i++ {
-		resp, err := cl.RequestAndWaitForResponse(Request{ID: strconv.Itoa(i), Notification: false, Params: toRaw([]int32{1, 2, 3})})
+		resp, err := cl.RequestAndWaitForResponse(&Request{ID: strconv.Itoa(i), Notification: false, Params: toRaw([]int32{1, 2, 3})})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -107,10 +107,10 @@ func TestClientServer(t *testing.T) {
 
 	// Batch
 	resps, err := cl.RequestBatchAndWaitForAllResponses(
-		Request{ID: "1", Notification: false, Params: toRaw([]int32{1})},
-		Request{ID: "0", Notification: true, Params: toRaw([]string{"x"})}, // notification
-		Request{ID: "2", Notification: false, Params: toRaw([]int32{2})},
-		Request{ID: "foo", Notification: false, Params: toRaw([]int32{3})},
+		&Request{ID: "1", Notification: false, Params: toRaw([]int32{1})},
+		&Request{ID: "0", Notification: true, Params: toRaw([]string{"x"})}, // notification
+		&Request{ID: "2", Notification: false, Params: toRaw([]int32{2})},
+		&Request{ID: "foo", Notification: false, Params: toRaw([]int32{3})},
 	)
 	if err != nil {
 		t.Fatal(err)
