@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -35,9 +36,17 @@ func cmd(name string, args ...string) *exec.Cmd {
 func prepare(workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
 
+	// TODO(slimsag): find a way to pass this information from the app instead
+	// of hard-coding it here.
+	cloneURI := "https://" + repo
+	if repo == "sourcegraph/sourcegraph" {
+		cloneURI = "git@github.com:sourcegraph/sourcegraph"
+		repo = "sourcegraph.com/sourcegraph/sourcegraph"
+	}
+
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
-	c := cmd("git", "clone", "https://"+repo, repoDir)
+	c := cmd("git", "clone", cloneURI, repoDir)
 	if err := c.Run(); err != nil {
 		return err
 	}
@@ -49,7 +58,7 @@ func prepare(workspace, repo, commit string) error {
 		return err
 	}
 
-	c = cmd("go", "get", "./...")
+	c = cmd("go", "get", "-d", "./...")
 	c.Dir = repoDir
 	c.Env = []string{"PATH=" + os.Getenv("PATH"), "GOPATH=" + gopath}
 	if err := c.Run(); err != nil {
@@ -59,6 +68,11 @@ func prepare(workspace, repo, commit string) error {
 }
 
 func fileURI(repo, commit, file string) string {
+	// TODO(slimsag): find a way to pass this information from the app instead
+	// of hard-coding it here.
+	if repo == "sourcegraph/sourcegraph" {
+		repo = "sourcegraph.com/sourcegraph/sourcegraph"
+	}
 	return filepath.Join("gopath", "src", repo, file)
 }
 
@@ -67,6 +81,45 @@ func main() {
 
 	if *profbind != "" {
 		go debugserver.Start(*profbind)
+	}
+
+	// HACK: copy files from /config to /root/.ssh because that is where our
+	// configs are located. "_" (underscore) is not a valid key name in a
+	// Kubernetes configmap, so we must do this or not use config maps. See:
+	//
+	// https://github.com/kubernetes/kubernetes/issues/13357#issuecomment-136554256
+	// https://github.com/kubernetes/kubernetes/issues/16786#issue-115047222
+	// https://github.com/kubernetes/kubernetes/issues/4789
+	//
+	move := map[string]string{
+		"/config/idrsa":      "/root/.ssh/id_rsa",
+		"/config/idrsa.pub":  "/root/.ssh/id_rsa.pub",
+		"/config/knownhosts": "/root/.ssh/known_hosts",
+	}
+	for src, dst := range move {
+		if err := os.MkdirAll(filepath.Dir(dst), 0700); err != nil {
+			log.Println(err)
+			continue
+		}
+		// We must copy the files because they live on separate devices and
+		// renaming just gets us an "invalid cross-device link" error.
+		srcFile, err := os.Open(src)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		dstFile, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0700)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		_, err = io.Copy(dstFile, srcFile)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		srcFile.Close()
+		dstFile.Close()
 	}
 
 	workDir, err := langp.ExpandSGPath(*workDir)
