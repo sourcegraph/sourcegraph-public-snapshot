@@ -4,8 +4,7 @@ machine:
     - postgresql
     - redis
   environment:
-    GOPATH: $HOME
-    REPO: ../src/sourcegraph.com/sourcegraph/sourcegraph
+    REPO: ../.go_workspace/src/sourcegraph.com/sourcegraph/sourcegraph
     PGUSER: ubuntu
     PGDATABASE: circle_test
     PGSSLMODE: disable
@@ -31,11 +30,11 @@ dependencies:
     - ~/cache
 
   override:
-    - mkdir -p src/sourcegraph.com/sourcegraph && mv sourcegraph src/sourcegraph.com/sourcegraph/sourcegraph && mkdir sourcegraph:
-        pwd: .. 
+    - rm -rf $HOME/.go_workspace/src
+    - mkdir -p $HOME/.go_workspace/src/sourcegraph.com/sourcegraph
+    - cp -r $PWD $REPO
 
-    - ./dev/ci/versions.sh:
-        pwd: $REPO
+    - ./dev/ci/versions.sh
 
     - git config --global user.email "ci@example.com"
     - git config --global user.name "CI User"
