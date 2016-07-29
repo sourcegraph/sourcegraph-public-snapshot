@@ -9,12 +9,7 @@ export class UserStore extends Store {
 		this.activeGitHubToken = null;
 		this.authInfos = deepFreeze({});
 		this.users = deepFreeze({});
-		this.emails = deepFreeze({
-			byUID: {},
-			get(uid) {
-				return this.byUID[uid] || null;
-			},
-		});
+		this.emails = deepFreeze({});
 		this.pendingAuthActions = deepFreeze({
 			content: {},
 			get(state) {
@@ -88,13 +83,7 @@ export class UserStore extends Store {
 			this.users = deepFreeze(Object.assign({}, this.users, {[action.uid]: action.user}));
 
 		} else if (action instanceof UserActions.FetchedEmails) {
-			this.emails = deepFreeze({
-				...this.emails,
-				byUID: {
-					...this.emails.byUID,
-					[action.uid]: action.emails,
-				},
-			});
+			this.emails = deepFreeze(Object.assign({}, this.emails, {[action.uid]: action.emails}));
 
 		} else if (action instanceof UserActions.FetchedGitHubToken) {
 			this.activeGitHubToken = action.token;

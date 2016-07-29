@@ -143,7 +143,7 @@ export class EventLogger {
 	_updateUser() {
 		const user = UserStore.activeUser();
 		const authInfo = UserStore.activeAuthInfo();
-		const emails = user && user.UID ? UserStore.emails.get(user.UID) : null;
+		const emails = user && user.UID ? (UserStore.emails[user.UID] || null) : null;
 		const primaryEmail = emails && !emails.Error ? emails.filter(e => e.Primary).map(e => e.Email)[0] : null;
 
 		this._updateUserForAmplitudeCookies();

@@ -48,7 +48,7 @@ const UserBackend = {
 					.then((data) => Dispatcher.Stores.dispatch(new UserActions.FetchedUser(action.uid, data)));
 			}
 		} else if (action instanceof UserActions.WantEmails) {
-			if (UserStore.emails.get(action.uid) === null) {
+			if (!UserStore.emails[action.uid]) {
 				UserBackend.fetch(`/.api/users/${action.uid}$/emails`)
 					.then(checkStatus)
 					.then((resp) => resp.json())
