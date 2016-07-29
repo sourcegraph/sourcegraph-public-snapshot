@@ -9,12 +9,6 @@ export class CoverageStore extends Store {
 		super(dispatcher);
 	}
 
-	toJSON() {
-		return {
-			coverage: this.coverage,
-		};
-	}
-
 	reset() {
 		this.coverage = null;
 	}

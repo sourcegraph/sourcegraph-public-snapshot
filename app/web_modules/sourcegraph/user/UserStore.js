@@ -65,19 +65,6 @@ export class UserStore extends Store {
 		}
 	}
 
-	toJSON() {
-		return {
-			activeAccessToken: this.activeAccessToken,
-			activeGitHubToken: this.activeGitHubToken,
-			authInfo: this.authInfo,
-			users: this.users,
-			emails: this.emails,
-			pendingAuthActions: this.pendingAuthActions,
-			authResponses: this.authResponses,
-			settings: this.settings,
-		};
-	}
-
 	// activeAuthInfo returns the AuthInfo object for the active user, if there
 	// is one. Otherwise it returns null.
 	activeAuthInfo() {
