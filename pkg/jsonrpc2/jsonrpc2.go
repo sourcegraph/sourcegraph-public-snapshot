@@ -34,8 +34,10 @@ func (r *Request) MarshalJSON() ([]byte, error) {
 	// Override to omit ID if Notification.
 	m := map[string]interface{}{
 		"method":  r.Method,
-		"params":  r.Params,
 		"jsonrpc": r.JSONRPC,
+	}
+	if r.Params != nil {
+		m["params"] = r.Params
 	}
 	if !r.Notification {
 		m["id"] = r.ID
