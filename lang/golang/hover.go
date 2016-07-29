@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"golang.org/x/tools/cmd/guru/serial"
 
@@ -56,6 +57,7 @@ func (h *Session) handleHover(req *jsonrpc2.Request, params lsp.TextDocumentPosi
 
 func guruDescribe(gopath, path string, offset int) (serial.Describe, error) {
 	var d serial.Describe
+	start := time.Now()
 	c := exec.Command("guru", "-json", "describe", fmt.Sprintf("%s:#%d", path, offset))
 	c.Env = []string{"GOPATH=" + gopath}
 	for _, e := range os.Environ() {
@@ -67,6 +69,8 @@ func guruDescribe(gopath, path string, offset int) (serial.Describe, error) {
 	if err != nil {
 		return d, fmt.Errorf("%v: %v", err, string(b))
 	}
+	fmt.Printf("TIME: %v guru -json describe %s:#%d\n", time.Since(start), path, offset)
+
 	err = json.Unmarshal(b, &d)
 	return d, err
 }
