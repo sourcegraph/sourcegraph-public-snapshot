@@ -38,7 +38,7 @@ export class SignupForm extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.pendingAuthAction = UserStore.pendingAuthActions["signup"] || false;
-		state.authResponse = UserStore.authResponses.get("signup");
+		state.authResponse = UserStore.authResponses["signup"] || null;
 
 		// These are set by the GitHub OAuth2 receive endpoint if there is an
 		// error.

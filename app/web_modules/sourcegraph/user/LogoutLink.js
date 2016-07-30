@@ -22,7 +22,7 @@ export default class LogoutLink extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.pendingAuthAction = UserStore.pendingAuthActions["logout"] || false;
-		state.authResponse = UserStore.authResponses.get("logout");
+		state.authResponse = UserStore.authResponses["logout"] || null;
 	}
 
 	onStateTransition(prevState, nextState) {

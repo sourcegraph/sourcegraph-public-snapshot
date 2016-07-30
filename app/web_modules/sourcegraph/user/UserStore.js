@@ -11,12 +11,7 @@ export class UserStore extends Store {
 		this.users = deepFreeze({});
 		this.emails = deepFreeze({});
 		this.pendingAuthActions = deepFreeze({});
-		this.authResponses = deepFreeze({
-			content: {},
-			get(state) {
-				return this.content[state] || null;
-			},
-		});
+		this.authResponses = deepFreeze({});
 
 		if (global.window) {
 			let storedUserSettings = window.localStorage.getItem("userSettings");
@@ -107,56 +102,26 @@ export class UserStore extends Store {
 			this._resetAuth();
 			if (action.resp && action.resp.Success) this.activeAccessToken = action.resp.AccessToken;
 			this.pendingAuthActions = deepFreeze(Object.assign({}, this.pendingAuthActions, {signup: false}));
-			this.authResponses = deepFreeze({
-				...this.authResponses,
-				content: {
-					...this.authResponses.content,
-					signup: action.resp,
-				},
-			});
+			this.authResponses = deepFreeze(Object.assign({}, this.authResponses, {signup: action.resp}));
 
 		} else if (action instanceof UserActions.LoginCompleted) {
 			this._resetAuth();
 			if (action.resp && action.resp.Success) this.activeAccessToken = action.resp.AccessToken;
 			this.pendingAuthActions = deepFreeze(Object.assign({}, this.pendingAuthActions, {login: false}));
-			this.authResponses = deepFreeze({
-				...this.authResponses,
-				content: {
-					...this.authResponses.content,
-					login: action.resp,
-				},
-			});
+			this.authResponses = deepFreeze(Object.assign({}, this.authResponses, {login: action.resp}));
 
 		} else if (action instanceof UserActions.LogoutCompleted) {
 			this._resetAuth();
 			this.pendingAuthActions = deepFreeze(Object.assign({}, this.pendingAuthActions, {logout: false}));
-			this.authResponses = deepFreeze({
-				...this.authResponses,
-				content: {
-					...this.authResponses.content,
-					logout: action.resp,
-				},
-			});
+			this.authResponses = deepFreeze(Object.assign({}, this.authResponses, {logout: action.resp}));
 
 		} else if (action instanceof UserActions.ForgotPasswordCompleted) {
 			this.pendingAuthActions = deepFreeze(Object.assign({}, this.pendingAuthActions, {forgot: false}));
-			this.authResponses = deepFreeze({
-				...this.authResponses,
-				content: {
-					...this.authResponses.content,
-					forgot: action.resp,
-				},
-			});
+			this.authResponses = deepFreeze(Object.assign({}, this.authResponses, {forgot: action.resp}));
 
 		} else if (action instanceof UserActions.ResetPasswordCompleted) {
 			this.pendingAuthActions = deepFreeze(Object.assign({}, this.pendingAuthActions, {reset: false}));
-			this.authResponses = deepFreeze({
-				...this.authResponses,
-				content: {
-					...this.authResponses.content,
-					reset: action.resp,
-				},
-			});
+			this.authResponses = deepFreeze(Object.assign({}, this.authResponses, {reset: action.resp}));
 
 		} else {
 			return; // don't emit change

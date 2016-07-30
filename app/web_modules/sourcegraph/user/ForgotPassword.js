@@ -24,7 +24,7 @@ class ForgotPassword extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.pendingAuthAction = UserStore.pendingAuthActions["forgot"] || false;
-		state.authResponse = UserStore.authResponses.get("forgot");
+		state.authResponse = UserStore.authResponses["forgot"] || null;
 	}
 
 	stores() { return [UserStore]; }

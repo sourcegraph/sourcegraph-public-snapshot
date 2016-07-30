@@ -37,7 +37,7 @@ export class LoginForm extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.pendingAuthAction = UserStore.pendingAuthActions["login"] || false;
-		state.authResponse = UserStore.authResponses.get("login");
+		state.authResponse = UserStore.authResponses["login"] || null;
 
 		// These are set by the GitHub OAuth2 receive endpoint if there is an
 		// error.
