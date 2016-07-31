@@ -57,7 +57,7 @@ class BetaInterestForm extends Container {
 		Object.assign(state, props);
 
 		if (this.context.authInfo) {
-			state.emails = UserStore.emails.get(this.context.authInfo.UID);
+			state.emails = UserStore.emails[this.context.authInfo.UID] || null;
 		}
 	}
 

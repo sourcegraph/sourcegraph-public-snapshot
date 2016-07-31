@@ -32,8 +32,8 @@ class ResetPassword extends Container {
 	reconcileState(state, props, context) {
 		Object.assign(state, props);
 		state.token = state.location.query && state.location.query.token; // TODO: error handling (missing token)
-		state.pendingAuthAction = UserStore.pendingAuthActions.get("reset");
-		state.authResponse = UserStore.authResponses.get("reset");
+		state.pendingAuthAction = UserStore.pendingAuthActions["reset"] || false;
+		state.authResponse = UserStore.authResponses["reset"] || null;
 	}
 
 	stores() { return [UserStore]; }

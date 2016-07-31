@@ -22,15 +22,6 @@ export class BuildStore extends Store {
 		super(dispatcher);
 	}
 
-	toJSON() {
-		return {
-			builds: this.builds,
-			buildLists: this.buildLists,
-			logs: this.logs,
-			tasks: this.tasks,
-		};
-	}
-
 	reset() {
 		this.builds = deepFreeze({
 			content: {},

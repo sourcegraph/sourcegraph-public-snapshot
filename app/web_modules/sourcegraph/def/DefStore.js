@@ -108,15 +108,6 @@ export class DefStore extends Store {
 		this._examples = deepFreeze({});
 	}
 
-	toJSON() {
-		return {
-			defs: this.defs,
-			authors: this.authors,
-			refs: this.refs,
-			refLocations: this.refLocations,
-		};
-	}
-
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case DefActions.DefFetched:

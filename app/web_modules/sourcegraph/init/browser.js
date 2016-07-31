@@ -6,7 +6,6 @@ import "sourcegraph/app/appdash";
 import {Router, browserHistory as history, match, applyRouterMiddleware} from "react-router";
 import useScroll from "react-router-scroll";
 import {rootRoute} from "sourcegraph/app/App";
-import {reset as resetStores} from "sourcegraph/init/stores";
 import * as context from "sourcegraph/app/context";
 import resetOnAuthChange from "sourcegraph/app/resetOnAuthChange";
 import {shouldUpdateScroll, hashLinkScroll} from "sourcegraph/app/routerScrollBehavior";
@@ -19,10 +18,6 @@ import "sourcegraph/init/Sentry";
 // REQUIRED. Enables HTML history API (pushState) tracking in Google Analytics.
 // See https://github.com/googleanalytics/autotrack#shouldtrackurlchange.
 import "autotrack/lib/plugins/url-change-tracker";
-
-if (typeof window !== "undefined" && window.__StoreData) {
-	resetStores(window.__StoreData);
-}
 
 context.reset(window.__sourcegraphJSContext);
 resetOnAuthChange();
