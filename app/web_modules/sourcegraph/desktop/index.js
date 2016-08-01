@@ -1,5 +1,6 @@
 import React from "react";
 import {NotInBeta} from "sourcegraph/desktop/DesktopHome";
+import desktopContainer from "sourcegraph/desktop/DesktopContainer";
 
 import {rel} from "sourcegraph/app/routePatterns";
 import {inBeta} from "sourcegraph/user";
@@ -35,16 +36,7 @@ export default function desktopRouter(Component: ReactClass<any>): ReactClass<an
 			routes: React.PropTypes.array,
 		};
 
-		constructor(props) {
-			super(props);
-			this.DesktopClient = navigator.userAgent.includes("Electron");
-		}
-
 		render() {
-			if (!this.DesktopClient) {
-				return <Component {...this.props} />;
-			}
-
 			const inbeta = inBeta(this.context.user, betautil.DESKTOP);
 			// Include this.context.user to prevent flicker when user loads
 			if (this.context.signedIn && this.context.user && !inbeta) {
@@ -64,5 +56,9 @@ export default function desktopRouter(Component: ReactClass<any>): ReactClass<an
 		}
 	}
 
-	return DesktopRouter;
+	const DesktopClient = navigator.userAgent.includes("Electron");
+	if (DesktopClient) {
+		return desktopContainer(DesktopRouter);
+	}
+	return Component;
 }
