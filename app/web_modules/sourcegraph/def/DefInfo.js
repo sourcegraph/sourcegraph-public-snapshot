@@ -25,7 +25,7 @@ import {Header, Heading, FlexContainer, GitHubAuthButton, Loader} from "sourcegr
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 // Number of characters of the Docstring to show before showing the "collapse" options.
-const DESCRIPTION_CHAR_CUTOFF = 80;
+const DESCRIPTION_CHAR_CUTOFF = 500;
 //
 class DefInfo extends Container {
 	static contextTypes = {
