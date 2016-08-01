@@ -236,6 +236,10 @@ export default class RefsContainer extends Container {
 		this.setState({voteDone: true});
 	}
 
+	_clickedFromRepo() {
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "FromRepoClicked", {repo: this.state.repo, def: this.state.def, ref_repo: this.state.refRepo});
+	}
+
 	render() {
 		if (this.state.fileLocations && this.state.fileLocations.length === 0) return null;
 
@@ -335,7 +339,7 @@ export default class RefsContainer extends Container {
 												textSize="large"
 												className={styles.blob} />
 										</div>
-										{this.state.refRepo && <div className={`${base.mt3} ${styles.f7} ${base["hidden-s"]}`}>From <Link to={`${urlToBlob(this.state.refRepo, this.state.refRev, loc.Path)}${ranges ? `#L${ranges[0][2]}` : ""}`}>{this.state.refRepo}</Link></div>}
+										{this.state.refRepo && <div className={`${base.mt3} ${styles.f7} ${base["hidden-s"]}`}>From <Link to={`${urlToBlob(this.state.refRepo, this.state.refRev, loc.Path)}${ranges ? `#L${ranges[0][2]}` : ""}`} onClick={this._clickedFromRepo.bind(this)}>{this.state.refRepo}</Link></div>}
 									</div>
 								);
 							})}

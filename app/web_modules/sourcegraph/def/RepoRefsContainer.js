@@ -28,6 +28,10 @@ class RepoRefsContainer extends Container {
 		defRepos: React.PropTypes.array,
 	};
 
+	static contextTypes = {
+		eventLogger: React.PropTypes.object.isRequired,
+	};
+
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -67,6 +71,14 @@ class RepoRefsContainer extends Container {
 		if (this.context.eventLogger) this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "RefsPaginatorClicked", {next_page: nextPage, repo: this.props.repo, def: this.props.def});
 	}
 
+	_clickedReferencedRepo() {
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ReferencedInRepoClicked", {repo: this.state.repo, def: this.state.def});
+	}
+
+	_clickedReferencedBlob() {
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ReferencedInBlobClicked", {repo: this.state.repo, def: this.state.def});
+	}
+
 	render() {
 		let refLocs = this.state.refLocations;
 		let fileCount = refLocs && refLocs.RepoRefs ?
@@ -86,13 +98,13 @@ class RepoRefsContainer extends Container {
 				{!refLocs && <div className={typography.tc}> <Loader className={base.mv4} /></div>}
 				{refLocs && !refLocs.RepoRefs && <i>No references found</i>}
 				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <div key={i} className={base.mt4}>
-					<Link to={urlToRepo(repoRefs.Repo)} className={base.mb3}>
+					<Link to={urlToRepo(repoRefs.Repo)} onClick={this._clickedReferencedRepo.bind(this)} className={base.mb3}>
 						<Repository width={24} className={base.mr3} /> <strong>{repoRefs.Repo}</strong>
 					</Link>
 					<List listStyle="node" className={base.mt2} style={{marginLeft: "6px"}}>
 					{repoRefs.Files && repoRefs.Files.length > 0 && repoRefs.Files.map((file, j) =>
 							<li key={j} className={`${base.mv3} ${base.pt1}`} styleName="cool-mid-gray f7 node-list-item">
-								{file.Count} references in <Link to={urlToBlob(repoRefs.Repo, null, file.Path)}>{file.Path}</Link>
+								{file.Count} references in <Link to={urlToBlob(repoRefs.Repo, null, file.Path)} onClick={this._clickedReferencedBlob.bind(this)}>{file.Path}</Link>
 							</li>)
 					}
 					</List>
