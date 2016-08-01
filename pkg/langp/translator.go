@@ -182,15 +182,7 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Encode our response.
-	final := &Hover{
-		Contents: make([]HoverContent, len(respHover.Contents)),
-	}
-	for i, marked := range respHover.Contents {
-		final.Contents[i] = HoverContent{
-			Type:  marked.Language,
-			Value: marked.Value,
-		}
-	}
+	final := HoverFromLSP(respHover)
 	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(final)
 }

@@ -74,3 +74,16 @@ type HoverContent struct {
 type Hover struct {
 	Contents []HoverContent
 }
+
+func HoverFromLSP(l lsp.Hover) *Hover {
+	h := &Hover{
+		Contents: make([]HoverContent, len(l.Contents)),
+	}
+	for i, marked := range l.Contents {
+		h.Contents[i] = HoverContent{
+			Type:  marked.Language,
+			Value: marked.Value,
+		}
+	}
+	return h
+}
