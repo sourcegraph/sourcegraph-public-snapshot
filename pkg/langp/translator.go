@@ -141,9 +141,11 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 		Method: "initialize",
 	}
 	log.Println("hover", rootPath)
-	reqInit.SetParams(&lsp.InitializeParams{
+	if err := reqInit.SetParams(&lsp.InitializeParams{
 		RootPath: rootPath,
-	})
+	}); err != nil {
+		return err
+	}
 	// TODO: should probably check server capabilities before invoking hover,
 	// but good enough for now.
 	reqHoverID := "1"
@@ -155,7 +157,9 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 	if t.FileURI != nil {
 		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
 	}
-	reqHover.SetParams(p)
+	if err := reqHover.SetParams(p); err != nil {
+		return err
+	}
 	reqShutdown := &jsonrpc2.Request{ID: "2", Method: "shutdown"}
 
 	// Make the batched LSP request.

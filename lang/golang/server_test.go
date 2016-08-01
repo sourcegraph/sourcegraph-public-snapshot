@@ -46,7 +46,9 @@ func testFixtures(t *testing.T, h jsonrpc2.BatchHandler) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		req[0].SetParams(init)
+		if err := req[0].SetParams(init); err != nil {
+			t.Fatal(err)
+		}
 
 		resp := h.HandleBatch(req)
 		marshalFile(t, c+".actual", resp)
