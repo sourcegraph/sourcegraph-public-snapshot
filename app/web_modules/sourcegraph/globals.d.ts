@@ -30,3 +30,8 @@ declare module "flux/lib/FluxStoreGroup" {
 declare module "react-router/lib/PatternUtils" {
 	export function matchPattern(pattern: string, pathname: string): {paramNames: string[], paramValues: string[]};
 }
+
+declare module "abab" {
+	export function atob(b64: string): string;
+	export function btoa(str: string): string;
+}
