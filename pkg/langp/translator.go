@@ -2,8 +2,11 @@
 package langp
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -47,26 +50,81 @@ type Translator struct {
 	FileURI func(repo, commit, file string) string
 }
 
-// ServeHTTP implements the http.Handler interface.
-func (t *Translator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// TODO: use a mux in the future.
-	err := t.serveHover(w, r)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json")
-		err2 := json.NewEncoder(w).Encode(&Error{
-			ErrorMsg: err.Error(),
-		})
-		if err2 != nil {
-			// TODO: configurable logging
-			log.Println(err2)
-		}
+// New creates a new HTTP handler which translates from the Language Processor
+// REST API (defined in proto.go) directly to Sourcegraph LSP batch requests
+// using the specified options.
+func New(opts *Translator) http.Handler {
+	t := &translator{
+		Translator: opts,
 	}
+	mux := http.NewServeMux()
+	mux.Handle("/hover", t.handler("/hover", t.serveHover))
+	return mux
+}
+
+type translator struct {
+	*Translator
+	mux *http.ServeMux
+}
+
+type handlerFunc func(body []byte) (interface{}, error)
+
+// handler returns an HTTP handler which serves the given method at the
+// specified path.
+func (t *translator) handler(path string, m handlerFunc) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Confirm the path because http.ServeMux is fuzzy.
+		if r.URL.Path != path {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		// All Language Processor methods are POST and have no query
+		// parameters.
+		if r.Method != "POST" || len(r.URL.Query()) > 0 {
+			resp := &Error{ErrorMsg: "expected POST with no query parameters"}
+			t.writeResponse(w, http.StatusBadRequest, resp, path, nil)
+			return
+		}
+
+		// Handle the request.
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			resp := &Error{ErrorMsg: err.Error()}
+			t.writeResponse(w, http.StatusBadRequest, resp, path, body)
+			return
+		}
+		resp, err := m(body)
+		if err != nil {
+			resp := &Error{ErrorMsg: err.Error()}
+			t.writeResponse(w, http.StatusBadRequest, resp, path, body)
+			return
+		}
+		t.writeResponse(w, http.StatusOK, resp, path, body)
+	})
+}
+
+func (t *translator) writeResponse(w http.ResponseWriter, status int, v interface{}, path string, body []byte) {
+	w.WriteHeader(status)
+	w.Header().Set("Content-Type", "application/json")
+	respBody, err := json.Marshal(v)
+	if err != nil {
+		// TODO: configurable logging
+		log.Println(err)
+	}
+	_, err = io.Copy(w, bytes.NewReader(respBody))
+	if err != nil {
+		// TODO: configurable logging
+		log.Println(err)
+	}
+
+	// TODO: configurable logging
+	log.Printf("POST %s -> %d %s\n\tBody:     %s\n\tResponse: %s\n", path, status, http.StatusText(status), string(body), string(respBody))
 }
 
 // prepareWorkspace prepares a new workspace for the given repository and
 // revision.
-func (t *Translator) prepareWorkspace(rootDir, repo, commit string) error {
+func (t *translator) prepareWorkspace(rootDir, repo, commit string) error {
 	// Ensure the workspace directory exists.
 	_, err := os.Stat(rootDir)
 	if !os.IsNotExist(err) {
@@ -91,19 +149,14 @@ func (t *Translator) prepareWorkspace(rootDir, repo, commit string) error {
 	return nil
 }
 
-func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
-	if r.Method != "POST" || r.URL.Path != "/hover" || len(r.URL.Query()) > 0 {
-		w.WriteHeader(http.StatusNotFound)
-		return nil
-	}
-
+func (t *translator) serveHover(body []byte) (interface{}, error) {
 	// TODO(slimsag): We don't need to create a new JSON RPC 2 connection every
 	// time, but we will need reconnection logic and a non-dumb jsonrpc2.Client
 	// which can handle concurrency (according to Sourcegraph LSP spec we can
 	// and should use one connection for all requests).
 	conn, err := net.Dial("tcp", t.Addr)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	cl := jsonrpc2.NewClient(conn)
 	defer func() {
@@ -115,24 +168,24 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 
 	// Decode the user request.
 	var pos Position
-	if err := json.NewDecoder(r.Body).Decode(&pos); err != nil {
-		return err
+	if err := json.Unmarshal(body, &pos); err != nil {
+		return nil, err
 	}
 	if pos.Repo == "" {
-		return fmt.Errorf("Repo field must be set")
+		return nil, fmt.Errorf("Repo field must be set")
 	}
 	if pos.Commit == "" {
-		return fmt.Errorf("Commit field must be set")
+		return nil, fmt.Errorf("Commit field must be set")
 	}
 	if pos.File == "" {
-		return fmt.Errorf("File field must be set")
+		return nil, fmt.Errorf("File field must be set")
 	}
 
 	// Determine the root path for the workspace and prepare it.
 	rootPath := filepath.Join(t.WorkDir, pos.Repo, pos.Commit)
 	err = t.prepareWorkspace(rootPath, pos.Repo, pos.Commit)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Build the LSP requests.
@@ -140,11 +193,10 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 		ID:     "0",
 		Method: "initialize",
 	}
-	log.Println("hover", rootPath)
 	if err := reqInit.SetParams(&lsp.InitializeParams{
 		RootPath: rootPath,
 	}); err != nil {
-		return err
+		return nil, err
 	}
 	// TODO: should probably check server capabilities before invoking hover,
 	// but good enough for now.
@@ -158,7 +210,7 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
 	}
 	if err := reqHover.SetParams(p); err != nil {
-		return err
+		return nil, err
 	}
 	reqShutdown := &jsonrpc2.Request{ID: "2", Method: "shutdown"}
 
@@ -169,26 +221,22 @@ func (t *Translator) serveHover(w http.ResponseWriter, r *http.Request) error {
 		reqShutdown,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Unmarshal the LSP responses.
 	hoverResp, ok := resps[reqHoverID]
 	if !ok {
-		return fmt.Errorf("response to hover request from LSP server not found")
+		return nil, fmt.Errorf("response to hover request from LSP server not found")
 	}
 	if hoverResp.Error != nil {
-		return hoverResp.Error
+		return nil, hoverResp.Error
 	}
 	var respHover lsp.Hover
 	if err := json.Unmarshal(*hoverResp.Result, &respHover); err != nil {
-		return err
+		return nil, err
 	}
-
-	// Encode our response.
-	final := HoverFromLSP(respHover)
-	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(final)
+	return HoverFromLSP(respHover), nil
 }
 
 // ExpandSGPath expands the $SGPATH variable in the given string, except it
