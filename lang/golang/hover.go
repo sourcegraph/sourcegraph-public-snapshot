@@ -81,6 +81,10 @@ func godef(gopath, path string, offset int) (*godefResult, error) {
 }
 
 func parseGodefPos(pos string) (path string, line int, col int, err error) {
+	if !strings.Contains(pos, ":") {
+		err = fmt.Errorf("expected pos %q to contain a colon", pos)
+		return
+	}
 	j := strings.LastIndexByte(pos, ':')
 	i := strings.LastIndexByte(pos[:j], ':')
 	path = pos[:i]
