@@ -1,5 +1,7 @@
 package langp
 
+import "sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+
 // Error is returned in the event of any request error, in addition to the HTTP
 // status 400 Bad Request.
 type Error struct {
@@ -33,6 +35,17 @@ type Position struct {
 	Character int
 }
 
+// LSP converts this langp position into its closest LSP equivilent.
+func (p Position) LSP() *lsp.TextDocumentPositionParams {
+	return &lsp.TextDocumentPositionParams{
+		TextDocument: lsp.TextDocumentIdentifier{URI: p.File},
+		Position: lsp.Position{
+			Line:      p.Line,
+			Character: p.Character,
+		},
+	}
+}
+
 // LocalRefs represents references to a specific definition.
 type LocalRefs struct {
 	// Refs is a list of references to a definition defined within the requested
@@ -60,4 +73,17 @@ type HoverContent struct {
 // a human-readable description of a definition.
 type Hover struct {
 	Contents []HoverContent
+}
+
+func HoverFromLSP(l lsp.Hover) *Hover {
+	h := &Hover{
+		Contents: make([]HoverContent, len(l.Contents)),
+	}
+	for i, marked := range l.Contents {
+		h.Contents[i] = HoverContent{
+			Type:  marked.Language,
+			Value: marked.Value,
+		}
+	}
+	return h
 }
