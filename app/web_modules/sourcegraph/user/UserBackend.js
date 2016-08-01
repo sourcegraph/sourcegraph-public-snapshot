@@ -70,12 +70,13 @@ const UserBackend = {
 			})
 				.then(checkStatus)
 				.then((resp) => resp.json())
+				.catch((err) => ({Error: err}))
 				.then(function(data) {
 					Dispatcher.Stores.dispatch(new UserActions.SignupCompleted(action.email, data));
 					if (data.Success) {
 						window.location.href = "/";
 					}
-				}, function(err) { console.error(err); });
+				});
 			break;
 		case UserActions.SubmitLogin:
 			UserBackend.fetch(`/.api/login`, {
@@ -87,13 +88,14 @@ const UserBackend = {
 			})
 				.then(checkStatus)
 				.then((resp) => resp.json())
+				.catch((err) => ({Error: err}))
 				.then(function(data) {
 					Dispatcher.Stores.dispatch(new UserActions.LoginCompleted(data));
 					// Redirect on login.
 					if (data.Success) {
 						window.location.href = "/";
 					}
-				}, function(err) { console.error(err); });
+				});
 			break;
 		case UserActions.SubmitLogout:
 			UserBackend.fetch(`/.api/logout`, {
@@ -102,13 +104,14 @@ const UserBackend = {
 			})
 				.then(checkStatus)
 				.then((resp) => resp.json())
+				.catch((err) => ({Error: err}))
 				.then(function(data) {
 					Dispatcher.Stores.dispatch(new UserActions.LogoutCompleted(data));
 					// Redirect on logout.
 					if (data.Success) {
 						window.location.href = "/#loggedout";
 					}
-				}, function(err) { console.error(err); });
+				});
 			break;
 		case UserActions.SubmitForgotPassword:
 			UserBackend.fetch(`/.api/forgot`, {
@@ -119,9 +122,10 @@ const UserBackend = {
 			})
 				.then(checkStatus)
 				.then((resp) => resp.json())
+				.catch((err) => ({Error: err}))
 				.then(function(data) {
 					Dispatcher.Stores.dispatch(new UserActions.ForgotPasswordCompleted(data));
-				}, function(err) { console.error(err); });
+				});
 			break;
 		case UserActions.SubmitResetPassword:
 			UserBackend.fetch(`/.api/reset`, {
@@ -134,9 +138,10 @@ const UserBackend = {
 			})
 				.then(checkStatus)
 				.then((resp) => resp.json())
+				.catch((err) => ({Error: err}))
 				.then(function(data) {
 					Dispatcher.Stores.dispatch(new UserActions.ResetPasswordCompleted(data));
-				}, function(err) { console.error(err); });
+				});
 			break;
 		case UserActions.SubmitBetaSubscription:
 			UserBackend.fetch(`/.api/beta-subscription`, {
@@ -152,9 +157,10 @@ const UserBackend = {
 			})
 				.then(checkStatus)
 				.then((resp) => resp.json())
+				.catch((err) => ({Error: err}))
 				.then(function(data) {
 					Dispatcher.Stores.dispatch(new UserActions.BetaSubscriptionCompleted(data));
-				}, function(err) { console.error(err); });
+				});
 			break;
 		}
 	},
