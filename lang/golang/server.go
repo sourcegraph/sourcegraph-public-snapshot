@@ -166,6 +166,9 @@ func (h *Session) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
 	}
 
 	resp = &jsonrpc2.Response{ID: req.ID}
-	resp.SetResult(result)
+	err = resp.SetResult(result)
+	if err != nil {
+		return errResp(req, err)
+	}
 	return resp
 }
