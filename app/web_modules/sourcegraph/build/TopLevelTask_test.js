@@ -1,6 +1,6 @@
 import autotest from "sourcegraph/util/autotest";
 
-import React from "react";
+import * as React from "react";
 
 import TopLevelTask from "sourcegraph/build/TopLevelTask";
 
@@ -14,7 +14,7 @@ const sampleTask = {
 
 describe("TopLevelTask", () => {
 	it("should render empty", () => {
-		autotest(testdataEmpty, `${__dirname}/testdata/TopLevelTask-empty.json`,
+		autotest(testdataEmpty, "sourcegraph/build/testdata/TopLevelTask-empty.json",
 			<TopLevelTask
 				task={sampleTask}
 				subtasks={[]}
@@ -23,7 +23,7 @@ describe("TopLevelTask", () => {
 	});
 
 	it("should render steps", () => {
-		autotest(testdataSteps, `${__dirname}/testdata/TopLevelTask-steps.json`,
+		autotest(testdataSteps, "sourcegraph/build/testdata/TopLevelTask-steps.json",
 			<TopLevelTask
 				task={sampleTask}
 				subtasks={[sampleTask, sampleTask]}

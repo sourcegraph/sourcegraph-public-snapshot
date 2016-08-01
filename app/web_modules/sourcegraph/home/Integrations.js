@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Integrations.css";
 import base from "sourcegraph/components/styles/_base.css";
@@ -14,11 +14,12 @@ class Tool {
 }
 
 const plugins = [
-	new Tool("Sublime Text", "/img/Dashboard/sublime-text.svg", "https://github.com/sourcegraph-beta/sourcegraph-sublime-beta"),
-	new Tool("IntelliJ", "/img/Dashboard/intellij.svg", "https://github.com/sourcegraph/sourcegraph-intellij"),
-	new Tool("VS Code", "/img/Dashboard/vscode.svg", "https://github.com/sourcegraph/sourcegraph-vscode"),
-	new Tool("Emacs", "/img/Dashboard/emacs.svg", "https://github.com/sourcegraph/sourcegraph-emacs"),
-	new Tool("Vim", "/img/Dashboard/vim.svg", "https://github.com/sourcegraph-beta/sourcegraph-vim-beta"),
+	new Tool("Sublime Text", "/img/Dashboard/sublime-text.svg", "https://github.com/sourcegraph-beta/sourcegraph-sublime-beta#sourcegraph-for-sublime-text-"),
+	new Tool("IntelliJ", "/img/Dashboard/intellij.svg", "https://github.com/sourcegraph/sourcegraph-intellij#sourcegraph-for-intellij-idea"),
+	new Tool("VS Code", "/img/Dashboard/vscode.svg", "https://github.com/sourcegraph-beta/sourcegraph-vscode#sourcegraph-for-visual-studio-code"),
+
+	new Tool("Emacs", "/img/Dashboard/emacs.svg", "https://github.com/sourcegraph/sourcegraph-emacs#sourcegraph-for-emacs"),
+	new Tool("Vim", "/img/Dashboard/vim.svg", "https://github.com/sourcegraph-beta/sourcegraph-vim-beta#sourcegraph-for-vim-"),
 ];
 
 const otherTools = [
@@ -44,7 +45,7 @@ class Integrations extends Component {
 
 	render() {
 		return (
-			<div styleName="container">
+			<div styleName={this.props.location.state && this.props.location.state.modal === "integrations" ? "" : "container"}>
 				<div styleName="menu">
 					<Heading level="7" color="cool-mid-gray">Install an editor plugin</Heading>
 					<p>Choose your editor to download the right plugin and get instructions on installation.</p>

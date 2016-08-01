@@ -1,6 +1,4 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 
 import Container from "sourcegraph/Container";
 import RepoStore from "sourcegraph/repo/RepoStore";
@@ -16,7 +14,7 @@ import {repoPath, repoRev, repoParam} from "sourcegraph/repo";
 // or else duplicate WantResolveRepo, etc., actions will be dispatched
 // and could lead to multiple WantCreateRepo, etc., actions being sent
 // to the server).
-export default function withResolvedRepoRev(Component: ReactClass<any>, isMainComponent?: bool): ReactClass<any> {
+export default function withResolvedRepoRev(Component, isMainComponent?: bool) {
 	isMainComponent = Boolean(isMainComponent);
 	class WithResolvedRepoRev extends Container {
 		static contextTypes = {
@@ -123,9 +121,11 @@ export default function withResolvedRepoRev(Component: ReactClass<any>, isMainCo
 						this._cloningInterval = null;
 					}
 					this._cloningTimeout = false;
-					this._cloningInterval = setInterval(() => {
-						Dispatcher.Backends.dispatch(new RepoActions.WantResolveRev(nextState.repo, nextState.rev, true));
-					}, pollInterval);
+					if (!global.it) { // skip when testing
+						this._cloningInterval = setInterval(() => {
+							Dispatcher.Backends.dispatch(new RepoActions.WantResolveRev(nextState.repo, nextState.rev, true));
+						}, pollInterval);
+					}
 				}, displayForAtLeast);
 			} else if (!nextState.isCloning && this._cloningInterval) {
 				clearInterval(this._cloningInterval);

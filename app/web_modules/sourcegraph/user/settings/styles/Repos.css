@@ -49,6 +49,7 @@
 
 .filter-input {
 	composes: mb2 from base;
+	composes: bg-white from colors;
 	width: 100%;
 	max-width: 240px;
 }
@@ -82,6 +83,10 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+}
+.list-label {
+	margin-right: -18px;
+	font-size: 0.9rem;
 }
 
 .github-button {

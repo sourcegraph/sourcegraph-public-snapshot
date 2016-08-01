@@ -1,5 +1,3 @@
-// @flow
-
 import {setGlobalFeatures} from "sourcegraph/app/features";
 import type {Features} from "sourcegraph/app/features";
 import {setGlobalSiteConfig} from "sourcegraph/app/siteConfig";
@@ -14,15 +12,12 @@ let context: {
 	// Some fields were migrated to React context from this global context object. These
 	// getters prevent you from accidentally accessing these fields in their old home,
 	// on this object.
-	// $FlowHack
 	get currentUser() {
 		throw new Error("currentUser is now accessible via this.context.user in components that specify 'user' in contextTypes");
 	},
-	// $FlowHack
 	get userEmail() {
 		throw new Error("userEmail is no longer available globally; use the UserBackend/UserStore to retrieve it");
 	},
-	// $FlowHack
 	get hasLinkedGitHub() {
 		throw new Error("hasLinkedGitHub is no longer available globally; use the UserBackend/UserStore directly");
 	},
@@ -63,7 +58,6 @@ export function reset(ctx: ContextInput) {
 	}
 	delete ctx.accessToken;
 
-	// $FlowHack
 	Object.assign(context, ctx);
 }
 

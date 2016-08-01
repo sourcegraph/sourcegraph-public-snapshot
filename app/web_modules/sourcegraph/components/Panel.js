@@ -1,6 +1,4 @@
-// @flow
-
-import React from "react";
+import * as React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/panel.css";
 

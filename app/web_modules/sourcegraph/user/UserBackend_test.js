@@ -1,5 +1,3 @@
-// @flow
-
 import expect from "expect.js";
 
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -50,7 +48,7 @@ describe("UserBackend", () => {
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
 				UserBackend.__onDispatch(new UserActions.WantAuthInfo("t"));
-			})).to.eql([new UserActions.FetchedAuthInfo("t", {Error: "error"})]);
+			})).to.eql([]);
 		});
 	});
 	describe("should handle WantUser", () => {
@@ -70,7 +68,7 @@ describe("UserBackend", () => {
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
 				UserBackend.__onDispatch(new UserActions.WantUser(1));
-			})).to.eql([new UserActions.FetchedUser(1, {Error: "error"})]);
+			})).to.eql([]);
 		});
 	});
 	describe("should handle WantEmails", () => {
@@ -90,7 +88,7 @@ describe("UserBackend", () => {
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
 				UserBackend.__onDispatch(new UserActions.WantEmails(1));
-			})).to.eql([new UserActions.FetchedEmails(1, [])]);
+			})).to.eql([]);
 		});
 	});
 });

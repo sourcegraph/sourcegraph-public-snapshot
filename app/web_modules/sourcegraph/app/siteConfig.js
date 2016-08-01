@@ -1,6 +1,4 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 import EventLogger from "sourcegraph/util/EventLogger";
 
 // SiteConfig is site-wide configuration for a Sourcegraph server.

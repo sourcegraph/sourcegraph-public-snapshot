@@ -5,20 +5,17 @@
 			"children": [
 				{
 					"type": "div",
-					"key": ".0",
 					"props": {
 						"styleName": "top-level-task-header",
 						"children": [
 							{
 								"type": "span",
-								"key": ".0",
 								"props": {
 									"styleName": "header-label"
 								}
 							},
 							{
 								"type": "span",
-								"key": ".1",
 								"props": {
 									"styleName": "elapsed-label"
 								}

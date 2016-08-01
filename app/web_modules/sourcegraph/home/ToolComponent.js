@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Tools.css";
 import base from "sourcegraph/components/styles/_base.css";

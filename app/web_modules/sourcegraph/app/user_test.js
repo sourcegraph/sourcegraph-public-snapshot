@@ -1,6 +1,4 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 import expect from "expect.js";
 import {withUserContext, getChildContext} from "sourcegraph/app/user";
 import {render} from "sourcegraph/util/renderTestUtils";

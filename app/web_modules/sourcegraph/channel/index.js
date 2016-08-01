@@ -1,5 +1,5 @@
 
-import React from "react";
+import * as React from "react";
 import Header from "sourcegraph/components/Header";
 import type {Route} from "react-router";
 import styles from "./styles/index.css";

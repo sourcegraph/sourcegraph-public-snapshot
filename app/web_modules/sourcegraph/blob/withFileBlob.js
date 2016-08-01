@@ -1,11 +1,9 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import BlobStore from "sourcegraph/blob/BlobStore";
+import BlobStore, {keyForFile} from "sourcegraph/blob/BlobStore";
 import "sourcegraph/blob/BlobBackend";
 import {urlToTree} from "sourcegraph/tree/routes";
 
@@ -34,7 +32,7 @@ export default function withFileBlob(Component) {
 
 		reconcileState(state, props) {
 			Object.assign(state, props);
-			state.blob = state.path && state.commitID ? BlobStore.files.get(state.repo, state.commitID, state.path) : null;
+			state.blob = state.path && state.commitID ? (BlobStore.files[keyForFile(state.repo, state.commitID, state.path)] || null) : null;
 		}
 
 		onStateTransition(prevState, nextState) {

@@ -60,7 +60,7 @@ function ObjectExpression(node) {
 
   if (props.length) {
     this.space();
-    this.printList(props, node, { indent: true });
+    this.printList(props, node, { indent: true, statement: true });
     this.space();
   }
 
@@ -141,12 +141,8 @@ function NullLiteral() {
 
 function NumericLiteral(node) {
   var raw = this.getPossibleRaw(node);
-  if (raw != null) {
-    this.word(raw);
-    return;
-  }
 
-  this.word(node.value + "");
+  this.number(raw == null ? node.value + "" : raw);
 }
 
 function StringLiteral(node, parent) {

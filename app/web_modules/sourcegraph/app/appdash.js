@@ -1,6 +1,4 @@
-// @flow
-
-import React from "react";
+import * as React from "react";
 import type {Route} from "react-router";
 import Component from "sourcegraph/Component";
 
@@ -112,7 +110,6 @@ export function withAppdashRouteStateRecording(ChildComponent: Object): Object {
 			let debug = document.querySelector("body>#debug>a");
 			const loadTimeSeconds = (endTime-startTime) / 1000;
 
-			// $FlowHack
 			if (debug) debug.text = `${loadTimeSeconds}s`;
 		}
 

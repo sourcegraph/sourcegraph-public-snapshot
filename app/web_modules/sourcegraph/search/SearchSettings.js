@@ -1,6 +1,4 @@
-// @flow
-
-import React from "react";
+import * as React from "react";
 import Container from "sourcegraph/Container";
 import CSSModules from "react-css-modules";
 import styles from "./styles/SearchSettings.css";
@@ -10,7 +8,7 @@ import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import Dispatcher from "sourcegraph/Dispatcher";
 import UserStore from "sourcegraph/user/UserStore";
 import * as UserActions from "sourcegraph/user/UserActions";
-import * as RepoActions_typed from "sourcegraph/repo/RepoActions_typed";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {allLangs, langName, langIsSupported} from "sourcegraph/Language";
 import type {LanguageID} from "sourcegraph/Language";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
@@ -80,10 +78,10 @@ class SearchSettings extends Container {
 		if (prevState.settings !== nextState.settings && nextState.settings && nextState.settings.search && nextState.settings.search.scope) {
 			const scope = nextState.settings.search.scope;
 			if (scope.public) {
-				Dispatcher.Backends.dispatch(new RepoActions_typed.WantRepos("RemoteOnly=true&Private=false"));
+				Dispatcher.Backends.dispatch(new RepoActions.WantRepos("RemoteOnly=true&Private=false"));
 			}
 			if (scope.private) {
-				Dispatcher.Backends.dispatch(new RepoActions_typed.WantRepos("RemoteOnly=true&Private=true"));
+				Dispatcher.Backends.dispatch(new RepoActions.WantRepos("RemoteOnly=true&Private=true"));
 			}
 		}
 	}

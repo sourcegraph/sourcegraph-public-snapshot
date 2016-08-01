@@ -1,5 +1,3 @@
-// @flow
-
 import type {Def} from "sourcegraph/def";
 
 export type WantResultsPayload = {

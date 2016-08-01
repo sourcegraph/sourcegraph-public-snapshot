@@ -1,7 +1,7 @@
 {
 	"renderOutput": {
 		"type": {
-			"type": "WrappedComponent",
+			"type": "DashboardContainer",
 			"props": {}
 		},
 		"props": {}

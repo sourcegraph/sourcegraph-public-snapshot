@@ -1,7 +1,4 @@
-// @flow
-
-import React from "react";
-import {Link} from "react-router";
+import * as React from "react";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import Helmet from "react-helmet";
 import CSSModules from "react-css-modules";
@@ -104,7 +101,7 @@ class DashboardContainer extends Container {
 
 					<div styleName="user-actions">
 						{!this.context.signedIn && <LocationStateToggleLink href="/login" modalName="login" location={this.props.location}><Button styleName="action-link" type="button" color="blue" outline={true}>Sign in</Button></LocationStateToggleLink>}
-						<Link to="/tools/browser"><Button styleName="action-link" type="button" color="blue" outline={true}>Install Chrome extension</Button></Link>
+						<a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en"><Button styleName="action-link" type="button" color="blue" outline={true}>Install Chrome extension</Button></a>
 					</div>
 
 					<GlobalSearchInput
@@ -141,7 +138,7 @@ const TitledSection = CSSModules(({
 	className,
 }: {
 	title: string,
-	children?: React$Element<any> | Array<React$Element<any>>,
+	children?: any,
 	className: string,
 }) => (
 	<div styleName="titled-section" className={className}>

@@ -81,7 +81,11 @@ func (handler) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
 	case "shutdown":
 		// Result is undefined, per
 		// https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#shutdown-request.
-		resp.SetResult(true)
+		err := resp.SetResult(true)
+		if err != nil {
+			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
+			return
+		}
 
 	case "textDocument/hover":
 		var params lsp.TextDocumentPositionParams
@@ -91,33 +95,41 @@ func (handler) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
 		}
 
 		pos := params.Position
-		resp.SetResult(lsp.Hover{
+		err := resp.SetResult(lsp.Hover{
 			Contents: []lsp.MarkedString{{Language: "markdown", Value: "Hello over LSP!"}},
 			Range: lsp.Range{
 				Start: lsp.Position{Line: pos.Line, Character: pos.Character - 3},
 				End:   lsp.Position{Line: pos.Line, Character: pos.Character + 3},
 			},
 		})
+		if err != nil {
+			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
+			return
+		}
 	case "textDocument/definition":
 		var params lsp.TextDocumentPositionParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
 			return
 		}
-		resp.SetResult(lsp.Location{
+		err := resp.SetResult(lsp.Location{
 			URI: params.TextDocument.URI,
 			Range: lsp.Range{
 				Start: lsp.Position{Line: 0, Character: 0},
 				End:   lsp.Position{Line: 0, Character: 0},
 			},
 		})
+		if err != nil {
+			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
+			return
+		}
 	case "textDocument/references":
 		var params lsp.ReferenceParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
 			return
 		}
-		resp.SetResult([]lsp.Location{lsp.Location{
+		err := resp.SetResult([]lsp.Location{lsp.Location{
 			URI: params.TextDocument.URI,
 			Range: lsp.Range{
 				Start: lsp.Position{Line: 0, Character: 0},
@@ -130,6 +142,10 @@ func (handler) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
 				End:   lsp.Position{Line: 0, Character: 6},
 			},
 		}})
+		if err != nil {
+			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
+			return
+		}
 	}
 
 	return

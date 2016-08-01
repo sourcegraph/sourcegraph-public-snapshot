@@ -1,6 +1,4 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 import Helmet from "react-helmet";
 import {Link} from "react-router";
 import "sourcegraph/blob/BlobBackend";
@@ -24,9 +22,10 @@ import {trimRepo} from "sourcegraph/repo";
 import {urlToRepo} from "sourcegraph/repo/routes";
 import {EmptyNodeIllo} from "sourcegraph/components/symbols";
 import {Header, Heading, FlexContainer, GitHubAuthButton, Loader} from "sourcegraph/components";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 // Number of characters of the Docstring to show before showing the "collapse" options.
-const DESCRIPTION_CHAR_CUTOFF = 80;
+const DESCRIPTION_CHAR_CUTOFF = 500;
 //
 class DefInfo extends Container {
 	static contextTypes = {
@@ -118,10 +117,12 @@ class DefInfo extends Container {
 	}
 
 	_onViewMore() {
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedViewMoreDescription", {repo: this.state.repo, def: this.state.def, num_examples: this.state.examples["RepoRefs"].length});
 		this.setState({defDescrHidden: false});
 	}
 
 	_onViewLess() {
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedViewLessDescription", {repo: this.state.repo, def: this.state.def});
 		this.setState({defDescrHidden: true});
 	}
 
@@ -158,6 +159,14 @@ class DefInfo extends Container {
 				repo: nextState.repo, commitID: nextState.defCommitID, def: nextState.def,
 			}));
 		}
+	}
+
+	_viewDefinitionClicked() {
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedViewDefinition", {repo: this.state.repo, def: this.state.def, num_examples: this.state.examples["RepoRefs"].length});
+	}
+
+	_viewRepoClicked() {
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedRepoAboveExamples", {repo: this.state.repo, def: this.state.def, num_examples: this.state.examples["RepoRefs"].length});
 	}
 
 	render() {
@@ -216,9 +225,9 @@ class DefInfo extends Container {
 							}
 
 							<div styleName="f7 cool-mid-gray">
-								{defObj && defObj.Repo && <Link to={urlToRepo(defObj.Repo)} styleName="link-subtle">{defObj.Repo}</Link>}
+								{defObj && defObj.Repo && <Link to={urlToRepo(defObj.Repo)} styleName="link-subtle" onClick={this._viewRepoClicked.bind(this)}>{defObj.Repo}</Link>}
 								&nbsp; &middot; &nbsp;
-								<Link title="View definition in code" to={defBlobUrl} styleName="link-subtle">View definition</Link>
+								<Link title="View definition in code" to={defBlobUrl} onClick={this._viewDefinitionClicked.bind(this)} styleName="link-subtle">View definition</Link>
 							</div>
 
 

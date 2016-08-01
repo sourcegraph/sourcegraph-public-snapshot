@@ -1,11 +1,9 @@
-// @flow
-
-import React from "react";
+import * as React from "react";
 
 // redirectIfLoggedIn wraps a component and issues a redirect
 // if there is an authenticated user. It is useful for wrapping
 // login, signup, etc., route components.
-export default function redirectIfLoggedIn(url: Location | string, Component: ReactClass<any>): ReactClass<any> {
+export default function redirectIfLoggedIn(url: Location | string, Component) {
 	class RedirectIfLoggedIn extends React.Component {
 		static contextTypes = {
 			signedIn: React.PropTypes.bool.isRequired,

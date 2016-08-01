@@ -55,7 +55,7 @@ func NewJSContextFromRequest(ctx context.Context, req *http.Request) (JSContext,
 		CurrentSpanID:  traceutil.SpanIDFromContext(ctx).String(),
 		UserAgentIsBot: isBot(eventsutil.UserAgentFromContext(ctx)),
 		AssetsRoot:     assets.URL("/").String(),
-		BuildVars:      buildvar.All,
+		BuildVars:      buildvar.Public,
 		Features:       feature.Features,
 	}
 	if sess != nil {

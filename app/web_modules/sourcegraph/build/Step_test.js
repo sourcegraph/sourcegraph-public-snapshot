@@ -1,6 +1,6 @@
 import autotest from "sourcegraph/util/autotest";
 
-import React from "react";
+import * as React from "react";
 
 import Step from "sourcegraph/build/Step";
 
@@ -61,7 +61,7 @@ const taskFailure = {
 
 describe("Step", () => {
 	it("should initially render empty and want log", () => {
-		autotest(testdataInitial, `${__dirname}/testdata/Step-initial.json`,
+		autotest(testdataInitial, "sourcegraph/build/testdata/Step-initial.json",
 			<Step
 				task={sampleTask}
 				logs={{get() { return null; }}} />
@@ -69,7 +69,7 @@ describe("Step", () => {
 	});
 
 	it("should render log", () => {
-		autotest(testdataFetchedLog, `${__dirname}/testdata/Step-fetchedLog.json`,
+		autotest(testdataFetchedLog, "sourcegraph/build/testdata/Step-fetchedLog.json",
 			<Step
 				task={sampleTask}
 				logs={{get() { return {log: "a"}; }}} />
@@ -77,7 +77,7 @@ describe("Step", () => {
 	});
 
 	it("should render success", () => {
-		autotest(testdataSuccess, `${__dirname}/testdata/Step-success.json`,
+		autotest(testdataSuccess, "sourcegraph/build/testdata/Step-success.json",
 			<Step
 				task={taskSuccess}
 				logs={{get() { return null; }}} />
@@ -85,7 +85,7 @@ describe("Step", () => {
 	});
 
 	it("should render warnings", () => {
-		autotest(testdataWarnings, `${__dirname}/testdata/Step-warnings.json`,
+		autotest(testdataWarnings, "sourcegraph/build/testdata/Step-warnings.json",
 			<Step
 				task={taskWarnings}
 				logs={{get() { return null; }}} />
@@ -93,7 +93,7 @@ describe("Step", () => {
 	});
 
 	it("should render failure", () => {
-		autotest(testdataFailure, `${__dirname}/testdata/Step-failure.json`,
+		autotest(testdataFailure, "sourcegraph/build/testdata/Step-failure.json",
 			<Step
 				task={taskFailure}
 				logs={{get() { return null; }}} />

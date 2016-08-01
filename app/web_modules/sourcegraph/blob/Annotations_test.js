@@ -1,5 +1,3 @@
-// @flow weak
-
 import expect from "expect.js";
 import utf8 from "utf8";
 

@@ -1,6 +1,4 @@
-// @flow
-
-import React from "react";
+import * as React from "react";
 
 class Affix extends React.Component {
 
@@ -31,6 +29,7 @@ class Affix extends React.Component {
 	}
 
 	_affixEl(initialOffset: number): any {
+		if (!this._affix) return;
 		if (initialOffset <= window.scrollY) {
 			this._affix.style.position = "fixed";
 			this._affix.style.top = `${this.props.offset}px`;

@@ -1,8 +1,6 @@
-// @flow weak
-
 import autotest from "sourcegraph/util/autotest";
 
-import React from "react";
+import * as React from "react";
 
 import BlobLine from "sourcegraph/blob/BlobLine";
 
@@ -11,28 +9,36 @@ import testdataEmpty from "sourcegraph/blob/testdata/BlobLine-empty.json";
 import testdataLineNumber from "sourcegraph/blob/testdata/BlobLine-lineNumber.json";
 import testdataLineSelection from "sourcegraph/blob/testdata/BlobLine-selection.json";
 
+const context = {
+	eventLogger: {logEvent: () => null},
+};
+
 describe("BlobLine", () => {
 	it("should render", () => {
-		autotest(testdataContents, `${__dirname}/testdata/BlobLine-contents.json`,
-			<BlobLine contents={"hello\nworld"} startByte={0} highlightedDef="secondURL" />
+		autotest(testdataContents, "sourcegraph/blob/testdata/BlobLine-contents.json",
+			<BlobLine contents={"hello\nworld"} startByte={0} highlightedDef="secondURL" />,
+			context
 		);
 	});
 
 	it("should render empty", () => {
-		autotest(testdataEmpty, `${__dirname}/testdata/BlobLine-empty.json`,
-			<BlobLine contents={"hello\nworld"} startByte={0} />
+		autotest(testdataEmpty, "sourcegraph/blob/testdata/BlobLine-empty.json",
+			<BlobLine contents={"hello\nworld"} startByte={0} />,
+			context
 		);
 	});
 
 	it("should render line number", () => {
-		autotest(testdataLineNumber, `${__dirname}/testdata/BlobLine-lineNumber.json`,
-			<BlobLine lineNumber={42} repo="r" rev="v" path="p" contents={"hello\nworld"} startByte={0} />
+		autotest(testdataLineNumber, "sourcegraph/blob/testdata/BlobLine-lineNumber.json",
+			<BlobLine lineNumber={42} repo="r" rev="v" path="p" contents={"hello\nworld"} startByte={0} />,
+			context
 		);
 	});
 
 	it("should render selection", () => {
-		autotest(testdataLineSelection, `${__dirname}/testdata/BlobLine-selection.json`,
-			<BlobLine contents={"hello\nworld"} startByte={0} selected={true} />
+		autotest(testdataLineSelection, "sourcegraph/blob/testdata/BlobLine-selection.json",
+			<BlobLine contents={"hello\nworld"} startByte={0} selected={true} />,
+			context
 		);
 	});
 });

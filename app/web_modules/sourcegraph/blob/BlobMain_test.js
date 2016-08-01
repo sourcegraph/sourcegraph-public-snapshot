@@ -1,6 +1,4 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 import expect from "expect.js";
 import BlobMain from "sourcegraph/blob/BlobMain";
 import {renderToString} from "sourcegraph/util/componentTestUtils";

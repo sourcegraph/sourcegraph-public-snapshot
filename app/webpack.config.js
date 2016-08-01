@@ -2,20 +2,10 @@ const webpack = require("webpack");
 const autoprefixer = require("autoprefixer");
 const url = require("url");
 const log = require("logalot");
-const FlowStatusWebpackPlugin = require("flow-status-webpack-plugin");
 const ProgressBarPlugin = require("progress-bar-webpack-plugin");
 
 // Check dev dependencies.
 if (process.env.NODE_ENV === "development") {
-	const flow = require("flow-bin/lib");
-	flow.run(["--version"], (err) => {
-		if (err) {
-			log.error(err.message);
-			log.error("ERROR: flow is not properly installed. Run 'rm app/node_modules/flow-bin/vendor/flow; make dep' to fix.");
-			return;
-		}
-	});
-
 	if (process.platform === "darwin") {
 		try {
 			require("fsevents");
@@ -42,10 +32,6 @@ const plugins = [
 	new webpack.optimize.LimitChunkCountPlugin({maxChunks: 1}),
 	new ProgressBarPlugin(),
 ];
-
-if (process.env.NODE_ENV !== "production") {
-	plugins.push(new FlowStatusWebpackPlugin({quietSuccess: true}));
-}
 
 if (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) {
 	plugins.push(
@@ -79,7 +65,6 @@ if (process.env.PUBLIC_WEBPACK_DEV_SERVER_URL) {
 	publicWebpackDevServer = uStruct.host;
 }
 
-
 module.exports = {
 	name: "browser",
 	target: "web",
@@ -89,6 +74,7 @@ module.exports = {
 	],
 	resolve: {
 		modules: [`${__dirname}/web_modules`, "node_modules"],
+		extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
 	},
 	devtool: (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) ? "source-map" : "eval",
 	output: {
@@ -100,9 +86,11 @@ module.exports = {
 	module: {
 		preLoaders: [
 			{test:	/\.js$/, exclude: /node_modules/, loader: "eslint-loader"},
+			{test:	/\.tsx?$/, exclude: /node_modules/, loader: "tslint-loader"},
 		],
 		loaders: [
 			{test: /\.js$/, exclude: /node_modules/, loader: "babel-loader?cacheDirectory"},
+			{test: /\.tsx?$/, loader: 'babel-loader?cacheDirectory!ts-loader'},
 			{test: /\.json$/, exclude: /node_modules/, loader: "json-loader"},
 			{test: /\.(eot|ttf|woff)$/, loader: "file-loader?name=fonts/[name].[ext]"},
 			{test: /\.svg$/, loader: "url"},
@@ -113,6 +101,11 @@ module.exports = {
 		],
 		noParse: /\.min\.js$/,
 	},
+	ts: {
+		compilerOptions: {
+			noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
+		},
+  },
 	postcss: [require("postcss-modules-values"), autoprefixer({remove: false})],
 	devServer: {
 		host: webpackDevServerAddr,

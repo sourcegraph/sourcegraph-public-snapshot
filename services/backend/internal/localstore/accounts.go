@@ -21,6 +21,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
 // accounts is a DB-backed implementation of the Accounts store.
@@ -69,6 +70,18 @@ func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User, email 
 	return u.toUser(), nil
 }
 
+func stringSliceEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func (s *accounts) Update(ctx context.Context, modUser *sourcegraph.User) error {
 	// A user can only update their own record, but an admin can update all records.
 	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Accounts.Update", modUser.UID); err != nil {
@@ -82,8 +95,15 @@ func (s *accounts) Update(ctx context.Context, modUser *sourcegraph.User) error 
 	}
 
 	// Only admin users can set which betas a user is participating in
-	// (non-admin users set BetaRegistered to request access).
-	if !a.HasAdminAccess() && len(modUser.Betas) > 0 {
+	// (non-admin users set BetaRegistered to request access). So we must first
+	// fetch the user object to determine if there is any change.
+	modUserSpec := modUser.Spec()
+	existingUser, err := svc.Users(ctx).Get(ctx, &modUserSpec)
+	if err != nil {
+		return err
+	}
+	betasEqual := stringSliceEqual(existingUser.Betas, modUser.Betas)
+	if !a.HasAdminAccess() && !betasEqual {
 		return grpc.Errorf(codes.PermissionDenied, "need admin privileges to grant access to betas")
 	}
 

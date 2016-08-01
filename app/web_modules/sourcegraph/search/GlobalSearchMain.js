@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalSearchMain.css";
 import {queryFromStateOrURL} from "sourcegraph/search/routes";

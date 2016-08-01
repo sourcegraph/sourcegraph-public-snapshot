@@ -1,6 +1,4 @@
-// @flow
-
-import React from "react";
+import * as React from "react";
 import ReactDOM from "react-dom";
 import {Link} from "react-router";
 import {rel} from "sourcegraph/app/routePatterns";
@@ -394,7 +392,7 @@ class GlobalSearch extends Container {
 		this._ignoreMouseSelection = true;
 	}
 
-	_results(): React$Element<any> | Array<React$Element<any>> {
+	_results() {
 		const langs = this.state.searchSettings ? this.state.searchSettings.languages : null;
 
 		if (!langs || langs.length === 0) {

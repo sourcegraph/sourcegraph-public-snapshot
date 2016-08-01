@@ -1,6 +1,4 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 import DefStore from "sourcegraph/def/DefStore";
 import RepoStore from "sourcegraph/repo/RepoStore";
 import "sourcegraph/def/DefBackend";

@@ -1,6 +1,4 @@
-// @flow
-
-import React from "react";
+import * as React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/BetaInterestForm.css";
 import {Button, Input, CheckboxList} from "sourcegraph/components";
@@ -59,7 +57,7 @@ class BetaInterestForm extends Container {
 		Object.assign(state, props);
 
 		if (this.context.authInfo) {
-			state.emails = UserStore.emails.get(this.context.authInfo.UID);
+			state.emails = UserStore.emails[this.context.authInfo.UID] || null;
 		}
 	}
 
@@ -170,7 +168,7 @@ class BetaInterestForm extends Container {
 					<p>You've already registered. We'll contact you once a beta matching your interests has begun.</p>
 					<p>Feel free to update your favorite editors / languages using the form below.</p>
 				</span>}
-				<form styleName="form" className={className} onSubmit={this._sendForm.bind(this)} onChange={this._onChange}>
+				<form className={className} onSubmit={this._sendForm.bind(this)} onChange={this._onChange}>
 						<div styleName="row">
 							<Input domRef={(c) => this._fullName = c} block={true} type="text" name="fullName" placeholder="Name" required={true} defaultValue={defaultFullName} />
 						</div>

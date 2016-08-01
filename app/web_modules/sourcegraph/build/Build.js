@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import {formatDuration} from "sourcegraph/util/TimeAgo";
 
 export function updatedAt(b) {

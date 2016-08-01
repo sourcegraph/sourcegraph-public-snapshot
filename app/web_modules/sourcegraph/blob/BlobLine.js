@@ -1,6 +1,4 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 import {Link} from "react-router";
 import utf8 from "utf8";
 
@@ -15,6 +13,7 @@ import {fastURLToRepoDef} from "sourcegraph/def/routes";
 import s from "sourcegraph/blob/styles/Blob.css";
 import {isExternalLink} from "sourcegraph/util/externalLink";
 import "sourcegraph/components/styles/code.css";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 // simpleContentsString converts [string...] (like ["a", "b", "c"]) to
 // a string by joining the elements (to produce "abc", for example).
@@ -51,6 +50,10 @@ function fastInsertRevIntoDefURL(urlNoRev: string, repo: string, rev: string): s
 }
 
 class BlobLine extends Component {
+	static contextTypes = {
+		eventLogger: React.PropTypes.object.isRequired,
+	};
+
 	componentDidMount(nextProps, nextState) {
 		if (this.state.onMount) this.state.onMount();
 	}
@@ -150,6 +153,7 @@ class BlobLine extends Component {
 						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.Hovering({repo: this.state.repo, commit: this.state.commitID, file: this.state.path, line: this.state.lineNumber - 1, character: ann.StartByte - this.state.startByte}))}
 						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.Hovering(null))}
 						onClick={(ev) => {
+							this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "BlobTokenClicked", {repo: this.state.repo, path: this.state.path, active_def_url: this.state.activeDefURL});
 							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
 							// TODO: implement multiple defs menu if ann.URLs.length > 0 (more important for languages other than Go)
 							if (this.state.highlightedDefObj && this.state.highlightedDefObj.Error) {

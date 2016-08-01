@@ -1,6 +1,4 @@
-// @flow
-
-import React from "react";
+import * as React from "react";
 import ReactDOM from "react-dom";
 
 import Component from "sourcegraph/Component";
@@ -16,6 +14,7 @@ import {computeLineStartBytes} from "sourcegraph/blob/lineFromByte";
 import annotationsByLine from "sourcegraph/blob/annotationsByLine";
 import s from "sourcegraph/blob/styles/Blob.css";
 import type {Def} from "sourcegraph/def";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class Blob extends Component {
 	static propTypes = {
@@ -66,6 +65,10 @@ class Blob extends Component {
 		// display line expanders is whether or not to show only the top line expander,
 		// the bottom line expander, or both
 		displayLineExpanders: React.PropTypes.string,
+	};
+
+	static contextTypes = {
+		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props: Blob.props) {
@@ -258,6 +261,7 @@ class Blob extends Component {
 	}
 
 	_expandRange(range: Range): void {
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "BlobLineExpanderClicked", {repo: this.state.repo, active_def: this.state.activeDef, path: this.state.path});
 		this.setState({
 			expandedRanges: this.state.expandedRanges.concat([range]),
 		});

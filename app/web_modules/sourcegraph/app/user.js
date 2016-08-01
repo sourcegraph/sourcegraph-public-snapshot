@@ -1,6 +1,4 @@
-// @flow
-
-import React from "react";
+import * as React from "react";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import UserStore from "sourcegraph/user/UserStore";
@@ -28,7 +26,7 @@ export const getChildContext = (state: any): childContext => ({
 
 // withUserContext passes user-related context items
 // to Component's children.
-export function withUserContext(Component: ReactClass<any>): ReactClass<any> {
+export function withUserContext(Component) {
 	class WithUser extends Container {
 		static childContextTypes = {
 			user: React.PropTypes.object,
@@ -53,9 +51,9 @@ export function withUserContext(Component: ReactClass<any>): ReactClass<any> {
 			Object.assign(state, props);
 
 			state.accessToken = UserStore.activeAccessToken || null;
-			state.authInfo = state.accessToken ? UserStore.authInfo.get(state.accessToken) : null;
+			state.authInfo = state.accessToken ? (UserStore.authInfos[state.accessToken] || null) : null;
 			state.githubToken = UserStore.activeGitHubToken || null;
-			state.user = state.authInfo && !state.authInfo.Error ? UserStore.users.get(state.authInfo.UID) : null;
+			state.user = state.authInfo && !state.authInfo.Error ? (UserStore.users[state.authInfo.UID] || null) : null;
 		}
 
 		onStateTransition(prevState, nextState) {

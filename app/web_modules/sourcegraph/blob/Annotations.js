@@ -1,5 +1,3 @@
-// @flow weak
-
 import utf8 from "utf8";
 
 export type Annotation = {

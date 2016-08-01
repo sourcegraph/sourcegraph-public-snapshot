@@ -1,6 +1,4 @@
-// @flow
-
-import React from "react";
+import * as React from "react";
 import CSSModules from "react-css-modules";
 import base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Table, Code, FlexContainer} from "sourcegraph/components";
@@ -14,7 +12,7 @@ class FlexContainerComponent extends React.Component {
 
 				<Panel hoverLevel="low">
 					<div className={base.pa4}>
-						<Heading level="5" className={base.mb3} color="cool-mid-gray">Default</Heading>
+						<Heading level="7" className={base.mb3} color="cool-mid-gray">Default</Heading>
 						<FlexContainer>
 							<div className={`${base.ba} ${base.pa2}`}>
 								42.
@@ -24,7 +22,7 @@ class FlexContainerComponent extends React.Component {
 							</div>
 						</FlexContainer>
 
-						<Heading level="5" className={base.mv3} color="cool-mid-gray">Wrap</Heading>
+						<Heading level="7" className={base.mv3} color="cool-mid-gray">Wrap</Heading>
 						<FlexContainer wrap={true}>
 							<div className={`${base.ba} ${base.pa2}`}>
 								Man had always assumed that he was more intelligent than dolphins.
@@ -40,7 +38,7 @@ class FlexContainerComponent extends React.Component {
 							</div>
 						</FlexContainer>
 
-						<Heading level="5" className={base.mv3} color="cool-mid-gray">Space Between</Heading>
+						<Heading level="7" className={base.mv3} color="cool-mid-gray">Space Between</Heading>
 						<FlexContainer justify="between">
 							<div className={`${base.ba} ${base.pa2}`}>
 								42.
@@ -56,7 +54,7 @@ class FlexContainerComponent extends React.Component {
 							</div>
 						</FlexContainer>
 
-						<Heading level="5" className={base.mv3} color="cool-mid-gray">Space Around</Heading>
+						<Heading level="7" className={base.mv3} color="cool-mid-gray">Space Around</Heading>
 						<FlexContainer justify="around">
 							<div className={`${base.ba} ${base.pa2}`}>
 								42.

@@ -7,17 +7,12 @@ const UserBackend = {
 	fetch: defaultFetch,
 
 	__onDispatch(action) {
-		// Using instanceof checks instead of switching on action.constructor
-		// lets Flow understand the type constraints, so we should move the
-		// rest of the switch-case bodies to this scheme.
-
 		if (action instanceof UserActions.WantAuthInfo) {
-			if (UserStore.authInfo.get(action.accessToken) === null) {
+			if (!UserStore.authInfos[action.accessToken]) {
 				UserBackend.fetch("/.api/auth-info")
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
-					.then((data) => {
+					.then(function(data) {
 						// The user and emails might've been optimistically included in the API response.
 						let user = data.IncludedUser;
 						if (user) delete data.IncludedUser;
@@ -41,23 +36,25 @@ const UserBackend = {
 						if (token && data.UID) {
 							Dispatcher.Stores.dispatch(new UserActions.FetchedGitHubToken(data.UID, token));
 						}
-					});
+					}, function(err) { console.error(err); });
 			}
 		} else if (action instanceof UserActions.WantUser) {
-			if (UserStore.users.get(action.uid) === null) {
+			if (!UserStore.users[action.uid]) {
 				UserBackend.fetch(`/.api/users/${action.uid}$`) // trailing "$" indicates UID lookup (not login/username)
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
-					.then((data) => Dispatcher.Stores.dispatch(new UserActions.FetchedUser(action.uid, data)));
+					.then(function(data) {
+						Dispatcher.Stores.dispatch(new UserActions.FetchedUser(action.uid, data));
+					}, function(err) { console.error(err); });
 			}
 		} else if (action instanceof UserActions.WantEmails) {
-			if (UserStore.emails.get(action.uid) === null) {
+			if (!UserStore.emails[action.uid]) {
 				UserBackend.fetch(`/.api/users/${action.uid}$/emails`)
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
-					.then((data) => Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(action.uid, data && data.EmailAddrs ? data.EmailAddrs : [])));
+					.then(function(data) {
+						Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(action.uid, data && data.EmailAddrs ? data.EmailAddrs : []));
+					}, function(err) { console.error(err); });
 			}
 		}
 
@@ -74,7 +71,7 @@ const UserBackend = {
 				.then(checkStatus)
 				.then((resp) => resp.json())
 				.catch((err) => ({Error: err}))
-				.then((data) => {
+				.then(function(data) {
 					Dispatcher.Stores.dispatch(new UserActions.SignupCompleted(action.email, data));
 					if (data.Success) {
 						window.location.href = "/";
@@ -92,7 +89,7 @@ const UserBackend = {
 				.then(checkStatus)
 				.then((resp) => resp.json())
 				.catch((err) => ({Error: err}))
-				.then((data) => {
+				.then(function(data) {
 					Dispatcher.Stores.dispatch(new UserActions.LoginCompleted(data));
 					// Redirect on login.
 					if (data.Success) {
@@ -108,7 +105,7 @@ const UserBackend = {
 				.then(checkStatus)
 				.then((resp) => resp.json())
 				.catch((err) => ({Error: err}))
-				.then((data) => {
+				.then(function(data) {
 					Dispatcher.Stores.dispatch(new UserActions.LogoutCompleted(data));
 					// Redirect on logout.
 					if (data.Success) {
@@ -126,7 +123,7 @@ const UserBackend = {
 				.then(checkStatus)
 				.then((resp) => resp.json())
 				.catch((err) => ({Error: err}))
-				.then((data) => {
+				.then(function(data) {
 					Dispatcher.Stores.dispatch(new UserActions.ForgotPasswordCompleted(data));
 				});
 			break;
@@ -142,7 +139,7 @@ const UserBackend = {
 				.then(checkStatus)
 				.then((resp) => resp.json())
 				.catch((err) => ({Error: err}))
-				.then((data) => {
+				.then(function(data) {
 					Dispatcher.Stores.dispatch(new UserActions.ResetPasswordCompleted(data));
 				});
 			break;
@@ -161,7 +158,7 @@ const UserBackend = {
 				.then(checkStatus)
 				.then((resp) => resp.json())
 				.catch((err) => ({Error: err}))
-				.then((data) => {
+				.then(function(data) {
 					Dispatcher.Stores.dispatch(new UserActions.BetaSubscriptionCompleted(data));
 				});
 			break;

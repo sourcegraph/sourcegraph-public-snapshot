@@ -6,14 +6,12 @@
 			"children": [
 				{
 					"type": "div",
-					"key": ".0",
 					"props": {
 						"styleName": "step-title danger",
 						"children": [
 							"Bash (indexing)",
 							{
 								"type": "span",
-								"key": ".1",
 								"props": {
 									"style": {
 										"float": "right"
@@ -28,7 +26,6 @@
 				},
 				{
 					"type": "div",
-					"key": ".1",
 					"props": {
 						"styleName": "step-body"
 					}

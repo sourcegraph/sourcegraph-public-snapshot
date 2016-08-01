@@ -1,16 +1,13 @@
-/*istanbul ignore next*/"use strict";
+"use strict";
 
-var /*istanbul ignore next*/_assert = require("assert");
+var _assert = require("assert");
 
-/*istanbul ignore next*/
 var _assert2 = _interopRequireDefault(_assert);
 
-var /*istanbul ignore next*/_babelTypes = require("babel-types");
+var _babelTypes = require("babel-types");
 
-/*istanbul ignore next*/
 var t = _interopRequireWildcard(_babelTypes);
 
-/*istanbul ignore next*/
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -38,11 +35,11 @@ function makePredicate(propertyName, knownTypes) {
       if (result) {
         // Do nothing.
       } else if (Array.isArray(child)) {
-          child.some(check);
-        } else if (t.isNode(child)) {
-          /*istanbul ignore next*/_assert2.default.strictEqual(result, false);
-          result = predicate(child);
-        }
+        child.some(check);
+      } else if (t.isNode(child)) {
+        _assert2.default.strictEqual(result, false);
+        result = predicate(child);
+      }
       return result;
     }
 

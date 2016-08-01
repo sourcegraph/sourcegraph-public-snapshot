@@ -1,12 +1,10 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import "sourcegraph/repo/RepoBackend"; // for side effects
 import RepoStore from "sourcegraph/repo/RepoStore";
 import Repos from "sourcegraph/user/settings/Repos";
-import * as RepoActions_typed from "sourcegraph/repo/RepoActions_typed";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
 
 const reposQuerystring = "RemoteOnly=true";
 
@@ -33,7 +31,7 @@ export default class UserSettingsReposMain extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.repos !== prevState.repos) {
-			Dispatcher.Backends.dispatch(new RepoActions_typed.WantRepos(reposQuerystring));
+			Dispatcher.Backends.dispatch(new RepoActions.WantRepos(reposQuerystring));
 		}
 	}
 

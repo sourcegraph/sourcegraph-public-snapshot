@@ -5,20 +5,17 @@
 			"children": [
 				{
 					"type": "div",
-					"key": ".0",
 					"props": {
 						"styleName": "top-level-task-header",
 						"children": [
 							{
 								"type": "span",
-								"key": ".0",
 								"props": {
 									"styleName": "header-label"
 								}
 							},
 							{
 								"type": "span",
-								"key": ".1",
 								"props": {
 									"styleName": "elapsed-label"
 								}
@@ -27,8 +24,8 @@
 					}
 				},
 				{
-					"type": "WrappedComponent",
-					"key": ".1:$456",
+					"type": "Step",
+					"key": "456",
 					"props": {
 						"task": {
 							"ID": 456,
@@ -43,8 +40,8 @@
 					}
 				},
 				{
-					"type": "WrappedComponent",
-					"key": ".1:$456",
+					"type": "Step",
+					"key": "456",
 					"props": {
 						"task": {
 							"ID": 456,

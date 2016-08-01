@@ -21,10 +21,6 @@ exports.BindExpression = BindExpression;
 exports.MemberExpression = MemberExpression;
 exports.MetaProperty = MetaProperty;
 
-var _isInteger = require("lodash/isInteger");
-
-var _isInteger2 = _interopRequireDefault(_isInteger);
-
 var _isNumber = require("lodash/isNumber");
 
 var _isNumber2 = _interopRequireDefault(_isNumber);
@@ -41,12 +37,6 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/* eslint max-len: 0 */
-
-var SCIENTIFIC_NOTATION = /e/i;
-var ZERO_DECIMAL_INTEGER = /\.0+$/;
-var NON_DECIMAL_LITERAL = /^0[box]/;
-
 function UnaryExpression(node) {
   if (node.operator === "void" || node.operator === "delete" || node.operator === "typeof") {
     this.word(node.operator);
@@ -56,7 +46,7 @@ function UnaryExpression(node) {
   }
 
   this.print(node.argument, node);
-}
+} /* eslint max-len: 0 */
 
 function DoExpression(node) {
   this.word("do");
@@ -123,16 +113,17 @@ function Decorator(node) {
 
 function commaSeparatorNewline() {
   this.token(",");
-  this.push("\n");
+  this.newline();
+
+  if (!this.endsWith("\n")) this.space();
 }
 
 function CallExpression(node) {
   this.print(node.callee, node);
-  if (node.loc) this.printAuxAfterComment();
 
   this.token("(");
 
-  var isPrettyCall = node._prettyCall && !this.format.retainLines && !this.format.compact;
+  var isPrettyCall = node._prettyCall;
 
   var separator = void 0;
   if (isPrettyCall) {
@@ -172,8 +163,7 @@ var YieldExpression = exports.YieldExpression = buildYieldAwait("yield");
 var AwaitExpression = exports.AwaitExpression = buildYieldAwait("await");
 
 function EmptyStatement() {
-  this._lastPrintedIsEmptyStatement = true;
-  this.semicolon();
+  this.semicolon(true /* force */);
 }
 
 function ExpressionStatement(node) {
@@ -192,7 +182,7 @@ function AssignmentPattern(node) {
 function AssignmentExpression(node, parent) {
   // Somewhere inside a for statement `init` node but doesn't usually
   // needs a paren except for `in` expressions: `for (a in b ? a : b;;)`
-  var parens = this._inForStatementInitCounter && node.operator === "in" && !n.needsParens(node, parent);
+  var parens = this.inForStatementInitCounter && node.operator === "in" && !n.needsParens(node, parent);
 
   if (parens) {
     this.token("(");
@@ -240,13 +230,6 @@ function MemberExpression(node) {
     this.print(node.property, node);
     this.token("]");
   } else {
-    if (t.isNumericLiteral(node.object)) {
-      var val = this.getPossibleRaw(node.object) || node.object.value;
-      if ((0, _isInteger2.default)(+val) && !NON_DECIMAL_LITERAL.test(val) && !SCIENTIFIC_NOTATION.test(val) && !ZERO_DECIMAL_INTEGER.test(val) && !this.endsWith(".")) {
-        this.token(".");
-      }
-    }
-
     this.token(".");
     this.print(node.property, node);
   }

@@ -1,6 +1,6 @@
 
 
-import React from "react";
+import * as React from "react";
 import type {Route, RouterState} from "react-router";
 import Header from "sourcegraph/components/Header";
 import {defaultFetch} from "sourcegraph/util/xhr";

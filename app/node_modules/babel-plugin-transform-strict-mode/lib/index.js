@@ -1,4 +1,4 @@
-/*istanbul ignore next*/"use strict";
+"use strict";
 
 exports.__esModule = true;
 
@@ -8,15 +8,14 @@ var _getIterator3 = _interopRequireDefault(_getIterator2);
 
 exports.default = function () {
   return {
-    visitor: { /*istanbul ignore next*/
+    visitor: {
       Program: function Program(path, state) {
-        if (state.opts.strict === false) return;
+        if (state.opts.strict === false || state.opts.strictMode === false) return;
 
-        /*istanbul ignore next*/var node = path.node;
+        var node = path.node;
 
 
-        for ( /*istanbul ignore next*/var _iterator = node.directives, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : (0, _getIterator3.default)(_iterator);;) {
-          /*istanbul ignore next*/
+        for (var _iterator = node.directives, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : (0, _getIterator3.default)(_iterator);;) {
           var _ref;
 
           if (_isArray) {
@@ -39,12 +38,10 @@ exports.default = function () {
   };
 };
 
-var /*istanbul ignore next*/_babelTypes = require("babel-types");
+var _babelTypes = require("babel-types");
 
-/*istanbul ignore next*/
 var t = _interopRequireWildcard(_babelTypes);
 
-/*istanbul ignore next*/
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }

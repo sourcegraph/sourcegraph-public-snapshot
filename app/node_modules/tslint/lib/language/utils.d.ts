@@ -1,0 +1,12 @@
+import * as ts from "typescript";
+import { IDisabledInterval, RuleFailure } from "./rule/rule";
+export declare function getSourceFile(fileName: string, source: string): ts.SourceFile;
+export declare function createCompilerOptions(): ts.CompilerOptions;
+export declare function doesIntersect(failure: RuleFailure, disabledIntervals: IDisabledInterval[]): boolean;
+export declare function scanAllTokens(scanner: ts.Scanner, callback: (s: ts.Scanner) => void): void;
+export declare function hasModifier(modifiers: ts.ModifiersArray, ...modifierKinds: ts.SyntaxKind[]): boolean;
+export declare function isBlockScopedVariable(node: ts.VariableDeclaration | ts.VariableStatement): boolean;
+export declare function isBlockScopedBindingElement(node: ts.BindingElement): boolean;
+export declare function getBindingElementVariableDeclaration(node: ts.BindingElement): ts.VariableDeclaration;
+export declare function isNodeFlagSet(node: ts.Node, flagToCheck: ts.NodeFlags): boolean;
+export declare function isNestedModuleDeclaration(decl: ts.ModuleDeclaration): boolean;

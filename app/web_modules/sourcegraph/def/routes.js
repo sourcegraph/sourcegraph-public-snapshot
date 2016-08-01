@@ -1,5 +1,3 @@
-// @flow
-
 import urlTo from "sourcegraph/util/urlTo";
 import {urlToTree} from "sourcegraph/tree/routes";
 import {rel} from "sourcegraph/app/routePatterns";

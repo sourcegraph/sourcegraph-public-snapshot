@@ -30,7 +30,8 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function WithStatement(node) {
-  this.keyword("with");
+  this.word("with");
+  this.space();
   this.token("(");
   this.print(node.object, node);
   this.token(")");
@@ -38,7 +39,8 @@ function WithStatement(node) {
 }
 
 function IfStatement(node) {
-  this.keyword("if");
+  this.word("if");
+  this.space();
   this.token("(");
   this.print(node.test, node);
   this.token(")");
@@ -74,12 +76,13 @@ function getLastStatement(statement) {
 }
 
 function ForStatement(node) {
-  this.keyword("for");
+  this.word("for");
+  this.space();
   this.token("(");
 
-  this._inForStatementInitCounter++;
+  this.inForStatementInitCounter++;
   this.print(node.init, node);
-  this._inForStatementInitCounter--;
+  this.inForStatementInitCounter--;
   this.token(";");
 
   if (node.test) {
@@ -98,7 +101,8 @@ function ForStatement(node) {
 }
 
 function WhileStatement(node) {
-  this.keyword("while");
+  this.word("while");
+  this.space();
   this.token("(");
   this.print(node.test, node);
   this.token(")");
@@ -107,7 +111,8 @@ function WhileStatement(node) {
 
 var buildForXStatement = function buildForXStatement(op) {
   return function (node) {
-    this.keyword("for");
+    this.word("for");
+    this.space();
     this.token("(");
     this.print(node.left, node);
     this.space();
@@ -127,7 +132,8 @@ function DoWhileStatement(node) {
   this.space();
   this.print(node.body, node);
   this.space();
-  this.keyword("while");
+  this.word("while");
+  this.space();
   this.token("(");
   this.print(node.test, node);
   this.token(")");
@@ -166,7 +172,8 @@ function LabeledStatement(node) {
 }
 
 function TryStatement(node) {
-  this.keyword("try");
+  this.word("try");
+  this.space();
   this.print(node.block, node);
   this.space();
 
@@ -188,7 +195,8 @@ function TryStatement(node) {
 }
 
 function CatchClause(node) {
-  this.keyword("catch");
+  this.word("catch");
+  this.space();
   this.token("(");
   this.print(node.param, node);
   this.token(")");
@@ -197,7 +205,8 @@ function CatchClause(node) {
 }
 
 function SwitchStatement(node) {
-  this.keyword("switch");
+  this.word("switch");
+  this.space();
   this.token("(");
   this.print(node.discriminant, node);
   this.token(")");
@@ -239,18 +248,18 @@ function DebuggerStatement() {
 function variableDeclarationIdent() {
   // "let " or "var " indentation.
   this.token(",");
-  this.push("\n");
-  for (var i = 0; i < 4; i++) {
-    this.push(" ");
+  this.newline();
+  if (this.endsWith("\n")) for (var i = 0; i < 4; i++) {
+    this.space(true);
   }
 }
 
 function constDeclarationIdent() {
   // "const " indentation.
   this.token(",");
-  this.push("\n");
-  for (var i = 0; i < 6; i++) {
-    this.push(" ");
+  this.newline();
+  if (this.endsWith("\n")) for (var i = 0; i < 6; i++) {
+    this.space(true);
   }
 }
 
@@ -295,7 +304,7 @@ function VariableDeclaration(node, parent) {
   //
 
   var separator = void 0;
-  if (!this.format.compact && !this.format.concise && hasInits && !this.format.retainLines) {
+  if (hasInits) {
     separator = node.kind === "const" ? constDeclarationIdent : variableDeclarationIdent;
   }
 

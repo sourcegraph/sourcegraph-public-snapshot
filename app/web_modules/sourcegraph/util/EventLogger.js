@@ -1,13 +1,11 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 import Dispatcher from "sourcegraph/Dispatcher";
 import context from "sourcegraph/app/context";
 import type {SiteConfig} from "sourcegraph/app/siteConfig";
 import type {AuthInfo, User} from "sourcegraph/user";
 import {getViewName, getRoutePattern, getRouteParams} from "sourcegraph/app/routePatterns";
 import type {Route} from "react-router";
-import * as RepoActions_typed from "sourcegraph/repo/RepoActions_typed";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import UserStore from "sourcegraph/user/UserStore";
@@ -103,6 +101,14 @@ export class EventLogger {
 				platform: this._currentPlatform,
 				encodeBase64: false,
 				env: env,
+				configUseCookies: true,
+				useCookies: true,
+				metadata: {
+					gaCookies: true,
+					performanceTiming: true,
+					augurIdentityLite: true,
+					webPage: true,
+				},
 			});
 
 			this._amplitude.init(apiKey, null, {
@@ -137,8 +143,10 @@ export class EventLogger {
 	_updateUser() {
 		const user = UserStore.activeUser();
 		const authInfo = UserStore.activeAuthInfo();
-		const emails = user && user.UID ? UserStore.emails.get(user.UID) : null;
+		const emails = user && user.UID ? (UserStore.emails[user.UID] || null) : null;
 		const primaryEmail = emails && !emails.Error ? emails.filter(e => e.Primary).map(e => e.Email)[0] : null;
+
+		this._updateUserForAmplitudeCookies();
 
 		if (this._authInfo !== authInfo) {
 			if (this._authInfo && this._authInfo.UID && (!authInfo || this._authInfo.UID !== authInfo.UID)) {
@@ -156,30 +164,37 @@ export class EventLogger {
 			}
 
 			if (authInfo) {
-				if (this._amplitude && authInfo.Login) this._amplitude.setUserId(authInfo.Login || null);
-				if (window.ga && authInfo.Login) window.ga("set", "userId", authInfo.Login);
-
-				if (this._telligent && authInfo.Login) this._telligent("setUserId", authInfo.Login);
-
-				if (authInfo.UID) this.setIntercomProperty("user_id", authInfo.UID.toString());
-				if (authInfo.IntercomHash) this.setIntercomProperty("user_hash", authInfo.IntercomHash);
-				if (this._fullStory && authInfo.Login) {
-					this._fullStory.identify(authInfo.Login);
-				}
+				this._setTrackerAuthInfo(authInfo);
 			}
+
 			if (this._intercom) this._intercom("boot", this._intercomSettings);
 		}
-		if (this._user !== user && user) {
-			if (user.Name) this.setIntercomProperty("name", user.Name);
-			if (this._fullStory) this._fullStory.setUserVars({displayName: user.Name});
+
+		if (user) {
+			if (user.Name) {
+				this.setIntercomProperty("name", user.Name);
+				this.setUserProperty("display_name", user.Name);
+			}
+
 			if (user.RegisteredAt) {
+				this.setUserProperty("registered_at_timestamp", user.RegisteredAt);
 				this.setUserProperty("registered_at", new Date(user.RegisteredAt).toDateString());
 				this.setIntercomProperty("created_at", new Date(user.RegisteredAt).getTime() / 1000);
 			}
+
+			if (user.Company) {
+				this.setUserProperty("company", user.Company);
+			}
+
+			if (user.Location) {
+				this.setUserProperty("location", user.Location);
+			}
+
 		}
 		if (this._primaryEmail !== primaryEmail) {
 			if (primaryEmail) {
 				this.setUserProperty("email", primaryEmail);
+				this.setUserProperty("emails", emails);
 				this.setIntercomProperty("email", primaryEmail);
 				if (this._fullStory) this._fullStory.setUserVars({email: primaryEmail});
 			}
@@ -190,6 +205,48 @@ export class EventLogger {
 		this._primaryEmail = primaryEmail;
 	}
 
+	_updateUserForAmplitudeCookies() {
+		if (this._amplitude && this._amplitude.options && this._amplitude.options.deviceId) {
+			this.setAmplitudeDeviceIdForTrackers(this._amplitude.options.deviceId);
+		}
+	}
+
+	// Responsible for setting the login information for all event trackers
+	_setTrackerLoginInfo(loginInfo) {
+		if (this._amplitude) {
+			this._amplitude.setUserId(loginInfo);
+		}
+
+		if (window.ga) {
+			window.ga("set", "userId", loginInfo);
+		}
+
+		if (this._telligent) {
+			this._telligent("setUserId", loginInfo);
+		}
+
+		this.setIntercomProperty("business_user_id", loginInfo);
+	}
+
+	_setTrackerAuthInfo(authInfo) {
+		if (authInfo.Login) {
+			this._setTrackerLoginInfo(authInfo.Login);
+		}
+
+		if (authInfo.UID) {
+			this.setIntercomProperty("user_id", authInfo.UID.toString());
+			this.setUserProperty("internal_user_id", authInfo.UID.toString());
+		}
+
+		if (authInfo.IntercomHash) {
+			this.setIntercomProperty("user_hash", authInfo.IntercomHash);
+			this.setUserProperty("user_hash", authInfo.IntercomHash);
+		}
+
+		if (this._fullStory && authInfo.Login) {
+			this._fullStory.identify(authInfo.Login);
+		}
+	}
 
 	getAmplitudeIdentificationProps() {
 		if (!this._amplitude || !this._amplitude.options) {
@@ -198,10 +255,22 @@ export class EventLogger {
 
 		return {detail: {deviceId: this._amplitude.options.deviceId, userId: UserStore.activeAuthInfo() ? UserStore.activeAuthInfo().Login : null}};
 	}
+
+	setAmplitudeDeviceIdForTrackers(value) {
+		if (this._telligent) {
+			this._telligent("addStaticMetadataObject", {deviceInfo: {AmplitudeDeviceId: value}});
+		}
+	}
+
 	// sets current user's properties
 	setUserProperty(property, value) {
-		this._telligent("addStaticMetadata", property, value, "userInfo");
-		this._amplitude.identify(new this._amplitude.Identify().set(property, value));
+		if (this._telligent) {
+			this._telligent("addStaticMetadata", property, value, "userInfo");
+		}
+
+		if (this._amplitude) {
+			this._amplitude.identify(new this._amplitude.Identify().set(property, value));
+		}
 	}
 
 	// Use logViewEvent as the default way to log view events for Amplitude and GA
@@ -257,7 +326,7 @@ export class EventLogger {
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case RepoActions_typed.ReposFetched:
+		case RepoActions.ReposFetched:
 			if (action.data.Repos) {
 				let orgs = {};
 				for (let repo of action.data.Repos) {
@@ -266,6 +335,7 @@ export class EventLogger {
 				this.setUserProperty("orgs", Object.keys(orgs));
 				this.setUserProperty("num_github_repos", action.data.Repos.length);
 				this.setIntercomProperty("companies", Object.keys(orgs).map(org => ({id: `github_${org}`, name: org})));
+				this.setUserProperty("companies", Object.keys(orgs).map(org => ({id: `github_${org}`, name: org})));
 				if (orgs["sourcegraph"]) {
 					this.setUserProperty("is_sg_employee", "true");
 				}
@@ -337,7 +407,7 @@ export default new EventLogger();
 
 // withEventLoggerContext makes eventLogger accessible as this.context.eventLogger
 // in the component's context.
-export function withEventLoggerContext(eventLogger: EventLogger, Component: ReactClass<any>): ReactClass<any> {
+export function withEventLoggerContext(eventLogger: EventLogger, Component) {
 	class WithEventLogger extends React.Component {
 		static childContextTypes = {
 			eventLogger: React.PropTypes.object,
@@ -361,7 +431,7 @@ export function withEventLoggerContext(eventLogger: EventLogger, Component: Reac
 
 // withViewEventsLogged calls this.context.eventLogger.logEvent when the
 // location's pathname changes.
-export function withViewEventsLogged(Component: ReactClass<any>): ReactClass<any> {
+export function withViewEventsLogged(Component) {
 	class WithViewEventsLogged extends React.Component { // eslint-disable-line react/no-multi-comp
 		static propTypes = {
 			routes: React.PropTypes.arrayOf(React.PropTypes.object),

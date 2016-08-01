@@ -1,11 +1,9 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import BlobStore from "sourcegraph/blob/BlobStore";
+import BlobStore, {keyForAnns} from "sourcegraph/blob/BlobStore";
 import "sourcegraph/blob/BlobBackend";
 
 // withAnnotations wraps Component and triggers a load of the annotations
@@ -26,7 +24,7 @@ export default function withAnnotations(Component) {
 		reconcileState(state, props) {
 			Object.assign(state, props);
 
-			state.anns = state.path && state.commitID ? BlobStore.annotations.get(state.repo, state.commitID, state.path, 0, 0) : null;
+			state.anns = state.path && state.commitID ? (BlobStore.annotations[keyForAnns(state.repo, state.commitID, state.path, 0, 0)] || null) : null;
 			let contentLength = 0;
 			if (state.blob && !state.blob.Error && state.blob.ContentsString) contentLength = state.blob.ContentsString.length;
 			state.skipAnns = contentLength >= 60*10000; // ~ 10000 lines, avg. 60 chars per line

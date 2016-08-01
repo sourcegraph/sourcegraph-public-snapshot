@@ -3,7 +3,7 @@ package golang
 import (
 	"encoding/json"
 	"errors"
-	"go/token"
+	"fmt"
 	"log"
 	"net"
 	"sync"
@@ -70,13 +70,11 @@ type Session struct {
 	mu sync.Mutex
 
 	init *lsp.InitializeParams // set by "initialize" req
-	fset *token.FileSet
 }
 
 // reset clears all internal state in h.
 func (h *Session) reset(init *lsp.InitializeParams) {
 	h.init = init
-	h.fset = nil
 }
 
 func errResp(req *jsonrpc2.Request, err error) *jsonrpc2.Response {
@@ -84,16 +82,25 @@ func errResp(req *jsonrpc2.Request, err error) *jsonrpc2.Response {
 		log.Println("notification handling failed:", err)
 		return nil
 	}
+	log.Println("error response:", err)
 	return &jsonrpc2.Response{
 		ID:    req.ID,
 		Error: &jsonrpc2.Error{Message: err.Error()},
 	}
 }
 
-func (h *Session) Handle(req *jsonrpc2.Request) *jsonrpc2.Response {
+func (h *Session) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
 	// Coarse lock (for now) to protect h's internal state.
 	h.mu.Lock()
 	defer h.mu.Unlock()
+
+	// Prevent any uncaught panics from taking the entire server down.
+	defer func() {
+		if r := recover(); r != nil {
+			resp = errResp(req, fmt.Errorf("unexpected panic: %v", r))
+			return
+		}
+	}()
 
 	if req.Method != "initialize" && h.init == nil {
 		return errResp(req, errors.New("server must be initialized"))
@@ -158,7 +165,10 @@ func (h *Session) Handle(req *jsonrpc2.Request) *jsonrpc2.Response {
 		return nil
 	}
 
-	resp := &jsonrpc2.Response{ID: req.ID}
-	resp.SetResult(result)
+	resp = &jsonrpc2.Response{ID: req.ID}
+	err = resp.SetResult(result)
+	if err != nil {
+		return errResp(req, err)
+	}
 	return resp
 }

@@ -13,21 +13,21 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lputil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-var lpClient *lputil.Client
+var lpClient *langp.Client
 
 func init() {
+	if !feature.Features.Universe {
+		return
+	}
 	var err error
-	lpClient, err = lputil.NewClient(os.Getenv("SG_LANGUAGE_PROCESSOR"))
+	lpClient, err = langp.NewClient(os.Getenv("SG_LANGUAGE_PROCESSOR"))
 	if err != nil {
-		// TODO: In general, this should be a fatal error because bubbling up
-		// at init time makes it more obvious. For now, since we're in an
-		// "optional" LSP stage though, we just log it.
-		log.Println("$SG_LANGUAGE_PROCESSOR", err)
+		log.Fatal("$SG_LANGUAGE_PROCESSOR", err)
 	}
 }
 
@@ -56,8 +56,17 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		Def   *sourcegraph.Def `json:"def"`
 	}{}
 
-	if feature.Features.Universe {
-		hover, err := lpClient.Hover(&lputil.Position{
+	// This lets us specify an environment variable in order to restrict this
+	// feature to a single repository.
+	sgUniverseRepo := os.Getenv("SG_UNIVERSE_REPO")
+	if sgUniverseRepo == "" {
+		// Default to the sourcegraph repository.
+		sgUniverseRepo = "sourcegraph/sourcegraph"
+	}
+	isUniverseRepo := sgUniverseRepo == "all" || sgUniverseRepo == repo.URI
+
+	if feature.Features.Universe && isUniverseRepo {
+		hover, err := lpClient.Hover(&langp.Position{
 			Repo:      repo.URI,
 			Commit:    repoRev.CommitID,
 			File:      file,

@@ -3,10 +3,6 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value typography "sourcegraph/components/styles/_typography.css";
 
-.form {
-	composes: col-8-ns col-12 from grid;
-}
-
 .row {
 	padding-top: 10px;
 }

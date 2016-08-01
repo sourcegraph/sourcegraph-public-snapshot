@@ -1,6 +1,4 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 import expect from "expect.js";
 import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
 import {render} from "sourcegraph/util/renderTestUtils";

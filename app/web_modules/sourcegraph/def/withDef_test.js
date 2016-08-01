@@ -1,6 +1,4 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 import withDef from "sourcegraph/def/withDef";
 import {render} from "sourcegraph/util/renderTestUtils";
 import DefStore from "sourcegraph/def/DefStore";

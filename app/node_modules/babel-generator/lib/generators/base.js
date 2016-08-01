@@ -38,9 +38,12 @@ function BlockStatement(node) {
     if (node.directives && node.directives.length) this.newline();
 
     this.printSequence(node.body, node, { indent: true });
-    if (!this.format.retainLines && !this.format.concise) this.removeLast("\n");
+    this.removeTrailingNewline();
 
     this.source("end", node.loc);
+
+    if (!this.endsWith("\n")) this.newline();
+
     this.rightBrace();
   } else {
     this.source("end", node.loc);

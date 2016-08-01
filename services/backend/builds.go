@@ -68,6 +68,13 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 		return nil, grpc.Errorf(codes.FailedPrecondition, "repo %s is blocked", repo.URI)
 	}
 
+	// If we don't have the commit synced yet, fail the Create but enqueue
+	// a repo update so next attempt will work.
+	if _, err := svc.Repos(ctx).ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: op.Repo, Rev: op.CommitID}); err != nil {
+		repoMaybeEnqueueUpdate(ctx, repo)
+		return nil, err
+	}
+
 	// Only an admin can re-enqueue a successful build
 	if err = accesscontrol.VerifyUserHasAdminAccess(ctx, "Builds.Create"); err != nil {
 		successful, err := s.List(ctx, &sourcegraph.BuildListOptions{

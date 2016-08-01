@@ -80,8 +80,12 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.Favicon).HandlerFunc(favicon)
 
 	r.Get(router.SitemapIndex).Handler(internal.Handler(serveSitemapIndex))
-
 	r.Get(router.RepoSitemap).Handler(internal.Handler(serveRepoSitemap))
+
+	// Redirects
+	r.Get(router.OldToolsRedirect).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/beta", 301)
+	})
 
 	for route, handlerFunc := range internal.Handlers {
 		r.Get(route).Handler(handlerFunc)

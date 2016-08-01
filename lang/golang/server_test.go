@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
 var updateFixtures = flag.Bool("fixtures.update", false, "update the expected files with actual")
@@ -25,17 +26,29 @@ func testFixtures(t *testing.T, h jsonrpc2.BatchHandler) {
 		t.Fatal(err)
 	}
 
-	// Use a pristine GOPATH to simulate workspace in prod.
-	gopath, err := filepath.Abs("testdata")
-	if err != nil {
-		t.Fatal(err)
-	}
-	cleanup := overrideEnv("GOPATH", gopath)
-	defer cleanup()
-
 	for _, c := range cases {
+		if reason, shouldSkip := skipFixtures[c]; shouldSkip {
+			t.Logf("SKIP %s: %s", c, reason)
+			continue
+		}
+
 		var req []*jsonrpc2.Request
 		unmarshalFile(t, c, &req)
+
+		// Test data specifies relative paths, but the language server expects
+		// an absolute path. Make the path absolute now.
+		var init lsp.InitializeParams
+		err := json.Unmarshal(*req[0].Params, &init)
+		if err != nil {
+			t.Fatal(err)
+		}
+		init.RootPath, err = filepath.Abs(init.RootPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := req[0].SetParams(init); err != nil {
+			t.Fatal(err)
+		}
 
 		resp := h.HandleBatch(req)
 		marshalFile(t, c+".actual", resp)
@@ -45,10 +58,6 @@ func testFixtures(t *testing.T, h jsonrpc2.BatchHandler) {
 
 		out, err := exec.Command("diff", c+".expected", c+".actual").Output()
 		if err != nil {
-			if reason, shouldSkip := skipFixtures[c]; shouldSkip {
-				t.Logf("SKIP %s: %s", c, reason)
-				continue
-			}
 			t.Errorf("unexpected response, output of diff %s %s:\n%s", c+".expected", c+".actual", string(out))
 		}
 	}
@@ -83,7 +92,8 @@ func TestFixtures(t *testing.T) {
 
 func checkExecDeps(t *testing.T) {
 	deps := map[string]string{
-		"guru": "golang.org/x/tools/cmd/guru",
+		"godef": "github.com/rogpeppe/godef",
+		"guru":  "golang.org/x/tools/cmd/guru",
 	}
 	missing := []string{}
 	for cmd, pkg := range deps {
@@ -100,18 +110,6 @@ func checkExecDeps(t *testing.T) {
 		_, err := exec.Command("go", args...).Output()
 		if err != nil {
 			t.Fatal(err)
-		}
-	}
-}
-
-func overrideEnv(key, value string) func() {
-	old := os.Getenv(key)
-	os.Setenv(key, value)
-	return func() {
-		if old == "" {
-			os.Unsetenv(key)
-		} else {
-			os.Setenv(key, old)
 		}
 	}
 }

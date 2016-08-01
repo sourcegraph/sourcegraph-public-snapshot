@@ -1,6 +1,4 @@
-// @flow
-
-import React from "react";
+import * as React from "react";
 import CSSModules from "react-css-modules";
 import base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Table, Code, List} from "sourcegraph/components";
@@ -10,12 +8,12 @@ class ListComponent extends React.Component {
 	render() {
 		return (
 			<div className={base.mv4}>
-				<Heading level="3" className={base.mb2}>Stepper</Heading>
+				<Heading level="3" className={base.mb2}>Lists</Heading>
 
 				<Panel hoverLevel="low">
 					<div className={base.pa4}>
 
-						<Heading level="5" className={base.mb3} color="cool-mid-gray">Normal</Heading>
+						<Heading level="7" className={base.mb3} color="cool-mid-gray">Normal</Heading>
 
 						<List>
 							<li>Item 1</li>
@@ -23,7 +21,7 @@ class ListComponent extends React.Component {
 							<li>Item 3</li>
 						</List>
 
-						<Heading level="5" className={base.mb3} color="cool-mid-gray">Node style</Heading>
+						<Heading level="7" className={base.mb3} color="cool-mid-gray">Node style</Heading>
 
 						<List listStyle="node">
 							<li>Item 1</li>

@@ -357,15 +357,15 @@ exports.default = function () {
                   if (_specifier3.isExportNamespaceSpecifier()) {
                     // todo
                   } else if (_specifier3.isExportDefaultSpecifier()) {
-                      // todo
-                    } else if (_specifier3.isExportSpecifier()) {
-                        if (_specifier3.node.local.name === "default") {
-                          topNodes.push(buildExportsFrom(t.stringLiteral(_specifier3.node.exported.name), t.memberExpression(t.callExpression(this.addHelper("interopRequireDefault"), [ref]), _specifier3.node.local)));
-                        } else {
-                          topNodes.push(buildExportsFrom(t.stringLiteral(_specifier3.node.exported.name), t.memberExpression(ref, _specifier3.node.local)));
-                        }
-                        nonHoistedExportNames[_specifier3.node.exported.name] = true;
-                      }
+                    // todo
+                  } else if (_specifier3.isExportSpecifier()) {
+                    if (_specifier3.node.local.name === "default") {
+                      topNodes.push(buildExportsFrom(t.stringLiteral(_specifier3.node.exported.name), t.memberExpression(t.callExpression(this.addHelper("interopRequireDefault"), [ref]), _specifier3.node.local)));
+                    } else {
+                      topNodes.push(buildExportsFrom(t.stringLiteral(_specifier3.node.exported.name), t.memberExpression(ref, _specifier3.node.local)));
+                    }
+                    nonHoistedExportNames[_specifier3.node.exported.name] = true;
+                  }
                 }
               } else {
                 for (var _iterator8 = _specifiers, _isArray8 = Array.isArray(_iterator8), _i8 = 0, _iterator8 = _isArray8 ? _iterator8 : (0, _getIterator3.default)(_iterator8);;) {
@@ -534,7 +534,7 @@ var buildLooseExportsModuleDeclaration = (0, _babelTemplate2.default)("\n  expor
 
 var buildExportsAssignment = (0, _babelTemplate2.default)("\n  exports.$0 = $1;\n");
 
-var buildExportAll = (0, _babelTemplate2.default)("\n  Object.keys(OBJECT).forEach(function (key) {\n    if (key === \"default\") return;\n    Object.defineProperty(exports, key, {\n      enumerable: true,\n      get: function () {\n        return OBJECT[key];\n      }\n    });\n  });\n");
+var buildExportAll = (0, _babelTemplate2.default)("\n  Object.keys(OBJECT).forEach(function (key) {\n    if (key === \"default\" || key === \"__esModule\") return;\n    Object.defineProperty(exports, key, {\n      enumerable: true,\n      get: function () {\n        return OBJECT[key];\n      }\n    });\n  });\n");
 
 var THIS_BREAK_KEYS = ["FunctionExpression", "FunctionDeclaration", "ClassProperty", "ClassMethod", "ObjectMethod"];
 

@@ -1,6 +1,4 @@
-// @flow
-
-import React from "react";
+import * as React from "react";
 import TreeSearch from "sourcegraph/tree/TreeSearch";
 import {urlToTree} from "sourcegraph/tree/routes";
 import {treeParam} from "sourcegraph/tree";

@@ -6,14 +6,12 @@
 			"children": [
 				{
 					"type": "div",
-					"key": ".0",
 					"props": {
 						"styleName": "step-title warning",
 						"children": [
 							"Warning: Can't automatically generate CI build config for C, Shell, C++, D, GAS, Logos, Perl, Nemerle; please create a .sg-drone.yml file",
 							{
 								"type": "span",
-								"key": ".1",
 								"props": {
 									"style": {
 										"float": "right"
@@ -31,7 +29,6 @@
 				},
 				{
 					"type": "div",
-					"key": ".1",
 					"props": {
 						"styleName": "step-body"
 					}

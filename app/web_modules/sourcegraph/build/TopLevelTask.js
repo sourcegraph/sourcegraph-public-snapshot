@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 
 import {elapsed} from "sourcegraph/build/Build";
 import Component from "sourcegraph/Component";

@@ -1,6 +1,6 @@
 import autotest from "sourcegraph/util/autotest";
 
-import React from "react";
+import * as React from "react";
 
 import DefPopup from "sourcegraph/def/DefPopup";
 
@@ -11,7 +11,7 @@ const fmtStrings = {DefKeyword: "a", NameAndTypeSeparator: "s", Name: {ScopeQual
 
 describe("DefPopup", () => {
 	it("should render definition data", () => {
-		autotest(testdataData, `${__dirname}/testdata/DefPopup-data.json`,
+		autotest(testdataData, "sourcegraph/def/testdata/DefPopup-data.json",
 			<DefPopup
 				def={{Repo: "r", CommitID: "c", FmtStrings: fmtStrings, DocHTML: "someDoc"}}
 				examples={{test: "examples"}}
@@ -21,7 +21,7 @@ describe("DefPopup", () => {
 	});
 
 	it("should render 'not available'", () => {
-		autotest(testdataNotAvailable, `${__dirname}/testdata/DefPopup-notAvailable.json`,
+		autotest(testdataNotAvailable, "sourcegraph/def/testdata/DefPopup-notAvailable.json",
 			<DefPopup
 				def={{Repo: "r", CommitID: "c", FmtStrings: fmtStrings}}
 				examples={{test: "examples"}}

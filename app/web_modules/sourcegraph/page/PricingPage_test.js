@@ -1,6 +1,4 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 import expect from "expect.js";
 import PricingPage from "sourcegraph/page/PricingPage";
 import {renderToString} from "sourcegraph/util/componentTestUtils";

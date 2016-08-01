@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-var validLoginRE = regexp.MustCompile(`^[a-zA-Z0-9_]{3,50}$`)
+var validLoginRE = regexp.MustCompile(`^[a-zA-Z0-9_\-]{3,50}$`)
 
 // isValidUsername returns whether name is a valid login that can
 // be used for an account on Sourcegraph.

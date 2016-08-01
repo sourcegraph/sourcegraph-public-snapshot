@@ -6,12 +6,11 @@
 			"children": [
 				{
 					"type": "div",
-					"key": ".0",
 					"props": {
 						"styleName": "input-container",
 						"children": [
 							{
-								"type": "WrappedComponent",
+								"type": "Input",
 								"props": {
 									"type": "text",
 									"id": "search-input",
@@ -27,7 +26,6 @@
 				},
 				{
 					"type": "div",
-					"key": ".1",
 					"props": {
 						"styleName": "list-header",
 						"children": [
@@ -37,13 +35,12 @@
 				},
 				{
 					"type": "div",
-					"key": ".2",
 					"props": {
 						"styleName": "list-item-group",
 						"children": [
 							{
 								"type": "",
-								"key": ".$f=2/repo@rev/-/tree/p1",
+								"key": "f:/repo@rev/-/tree/p1",
 								"props": {
 									"styleName": "list-item-selected parent-dir",
 									"to": "/repo@rev/-/tree/p1",
@@ -56,14 +53,13 @@
 							},
 							{
 								"type": "",
-								"key": ".$f=2/repo@rev/-/blob/p1/p2/f3",
+								"key": "f:/repo@rev/-/blob/p1/p2/f3",
 								"props": {
 									"styleName": "list-item ",
 									"to": "/repo@rev/-/blob/p1/p2/f3",
 									"children": [
 										{
-											"type": "WrappedComponent",
-											"key": ".0",
+											"type": "C",
 											"props": {
 												"styleName": "icon"
 											}

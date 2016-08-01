@@ -443,76 +443,76 @@ function _resolve(dangerous, resolved) {
       // otherwise it's a request for a pattern and that's a bit more tricky
     }
   } else if (this.isReferencedIdentifier()) {
-      var binding = this.scope.getBinding(this.node.name);
-      if (!binding) return;
+    var binding = this.scope.getBinding(this.node.name);
+    if (!binding) return;
 
-      // reassigned so we can't really resolve it
-      if (!binding.constant) return;
+    // reassigned so we can't really resolve it
+    if (!binding.constant) return;
 
-      // todo - lookup module in dependency graph
-      if (binding.kind === "module") return;
+    // todo - lookup module in dependency graph
+    if (binding.kind === "module") return;
 
-      if (binding.path !== this) {
-        var _ret = function () {
-          var ret = binding.path.resolve(dangerous, resolved);
-          // If the identifier resolves to parent node then we can't really resolve it.
-          if (_this.find(function (parent) {
-            return parent.node === ret.node;
-          })) return {
-              v: void 0
-            };
-          return {
-            v: ret
+    if (binding.path !== this) {
+      var _ret = function () {
+        var ret = binding.path.resolve(dangerous, resolved);
+        // If the identifier resolves to parent node then we can't really resolve it.
+        if (_this.find(function (parent) {
+          return parent.node === ret.node;
+        })) return {
+            v: void 0
           };
-        }();
+        return {
+          v: ret
+        };
+      }();
 
-        if ((typeof _ret === "undefined" ? "undefined" : (0, _typeof3.default)(_ret)) === "object") return _ret.v;
-      }
-    } else if (this.isTypeCastExpression()) {
-      return this.get("expression").resolve(dangerous, resolved);
-    } else if (dangerous && this.isMemberExpression()) {
-      // this is dangerous, as non-direct target assignments will mutate it's state
-      // making this resolution inaccurate
-
-      var targetKey = this.toComputedKey();
-      if (!t.isLiteral(targetKey)) return;
-
-      var targetName = targetKey.value;
-
-      var target = this.get("object").resolve(dangerous, resolved);
-
-      if (target.isObjectExpression()) {
-        var props = target.get("properties");
-        for (var _iterator3 = props, _isArray3 = Array.isArray(_iterator3), _i3 = 0, _iterator3 = _isArray3 ? _iterator3 : (0, _getIterator3.default)(_iterator3);;) {
-          var _ref3;
-
-          if (_isArray3) {
-            if (_i3 >= _iterator3.length) break;
-            _ref3 = _iterator3[_i3++];
-          } else {
-            _i3 = _iterator3.next();
-            if (_i3.done) break;
-            _ref3 = _i3.value;
-          }
-
-          var prop = _ref3;
-
-          if (!prop.isProperty()) continue;
-
-          var key = prop.get("key");
-
-          // { foo: obj }
-          var match = prop.isnt("computed") && key.isIdentifier({ name: targetName });
-
-          // { "foo": "obj" } or { ["foo"]: "obj" }
-          match = match || key.isLiteral({ value: targetName });
-
-          if (match) return prop.get("value").resolve(dangerous, resolved);
-        }
-      } else if (target.isArrayExpression() && !isNaN(+targetName)) {
-        var elems = target.get("elements");
-        var elem = elems[targetName];
-        if (elem) return elem.resolve(dangerous, resolved);
-      }
+      if ((typeof _ret === "undefined" ? "undefined" : (0, _typeof3.default)(_ret)) === "object") return _ret.v;
     }
+  } else if (this.isTypeCastExpression()) {
+    return this.get("expression").resolve(dangerous, resolved);
+  } else if (dangerous && this.isMemberExpression()) {
+    // this is dangerous, as non-direct target assignments will mutate it's state
+    // making this resolution inaccurate
+
+    var targetKey = this.toComputedKey();
+    if (!t.isLiteral(targetKey)) return;
+
+    var targetName = targetKey.value;
+
+    var target = this.get("object").resolve(dangerous, resolved);
+
+    if (target.isObjectExpression()) {
+      var props = target.get("properties");
+      for (var _iterator3 = props, _isArray3 = Array.isArray(_iterator3), _i3 = 0, _iterator3 = _isArray3 ? _iterator3 : (0, _getIterator3.default)(_iterator3);;) {
+        var _ref3;
+
+        if (_isArray3) {
+          if (_i3 >= _iterator3.length) break;
+          _ref3 = _iterator3[_i3++];
+        } else {
+          _i3 = _iterator3.next();
+          if (_i3.done) break;
+          _ref3 = _i3.value;
+        }
+
+        var prop = _ref3;
+
+        if (!prop.isProperty()) continue;
+
+        var key = prop.get("key");
+
+        // { foo: obj }
+        var match = prop.isnt("computed") && key.isIdentifier({ name: targetName });
+
+        // { "foo": "obj" } or { ["foo"]: "obj" }
+        match = match || key.isLiteral({ value: targetName });
+
+        if (match) return prop.get("value").resolve(dangerous, resolved);
+      }
+    } else if (target.isArrayExpression() && !isNaN(+targetName)) {
+      var elems = target.get("elements");
+      var elem = elems[targetName];
+      if (elem) return elem.resolve(dangerous, resolved);
+    }
+  }
 }

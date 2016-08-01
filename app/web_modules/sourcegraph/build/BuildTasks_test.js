@@ -1,6 +1,6 @@
 import autotest from "sourcegraph/util/autotest";
 
-import React from "react";
+import * as React from "react";
 
 import BuildTasks from "sourcegraph/build/BuildTasks";
 
@@ -20,7 +20,7 @@ const sampleTasks = [
 
 describe("BuildTasks", () => {
 	it("should initially render empty", () => {
-		autotest(testdataInitial, `${__dirname}/testdata/BuildTasks-initial.json`,
+		autotest(testdataInitial, "sourcegraph/build/testdata/BuildTasks-initial.json",
 			<BuildTasks
 				location=""
 				tasks={sampleTasks}
@@ -29,7 +29,7 @@ describe("BuildTasks", () => {
 	});
 
 	it("should render task based on URL", () => {
-		autotest(testdataActive, `${__dirname}/testdata/BuildTasks-active.json`,
+		autotest(testdataActive, "sourcegraph/build/testdata/BuildTasks-active.json",
 			<BuildTasks
 				location="#T567"
 				tasks={sampleTasks}

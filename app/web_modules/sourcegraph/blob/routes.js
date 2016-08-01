@@ -1,12 +1,10 @@
-// @flow
-
 import {rel} from "sourcegraph/app/routePatterns";
 import urlTo from "sourcegraph/util/urlTo";
 import {makeRepoRev} from "sourcegraph/repo";
 import lineColBoundToHash from "sourcegraph/blob/lineColBoundToHash";
 import withLastSrclibDataVersion from "sourcegraph/blob/withLastSrclibDataVersion";
 
-export const routes: Array<Route> = [
+export const routes = [
 	{
 		path: rel.blob,
 		keepScrollPositionOnRouteChangeKey: "file",

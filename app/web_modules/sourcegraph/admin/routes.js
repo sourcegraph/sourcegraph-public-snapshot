@@ -1,5 +1,3 @@
-// @flow weak
-
 import type {Route} from "react-router";
 import {rel} from "sourcegraph/app/routePatterns";
 

@@ -6,7 +6,6 @@
 			"children": [
 				{
 					"type": "div",
-					"key": ".0",
 					"props": {
 						"styleName": "number",
 						"children": [
@@ -16,7 +15,6 @@
 				},
 				{
 					"type": "div",
-					"key": ".1",
 					"props": {
 						"styleName": "status",
 						"children": [
@@ -26,7 +24,6 @@
 				},
 				{
 					"type": "div",
-					"key": ".2",
 					"props": {
 						"styleName": "date",
 						"children": [
@@ -41,7 +38,6 @@
 				},
 				{
 					"type": "div",
-					"key": ".3",
 					"props": {
 						"styleName": "elapsed"
 					}

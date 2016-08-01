@@ -1,5 +1,3 @@
-// @flow
-
 const domains = ["sourcegraph.com/", "github.com/"];
 
 export default function stripDomain(path: string): string {

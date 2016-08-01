@@ -39,7 +39,7 @@ var Whitespace = function () {
       endToken = tokens[index];
     }
 
-    return this.getNewlinesBetween(startToken, endToken);
+    return this._getNewlinesBetween(startToken, endToken);
   };
 
   /**
@@ -65,13 +65,7 @@ var Whitespace = function () {
     if (endToken && endToken.type.label === "eof") {
       return 1;
     } else {
-      var lines = this.getNewlinesBetween(startToken, endToken);
-      if (node.type === "CommentLine" && !lines) {
-        // line comment
-        return 1;
-      } else {
-        return lines;
-      }
+      return this._getNewlinesBetween(startToken, endToken);
     }
   };
 
@@ -79,7 +73,7 @@ var Whitespace = function () {
    * Count all the newlines between two tokens.
    */
 
-  Whitespace.prototype.getNewlinesBetween = function getNewlinesBetween(startToken, endToken) {
+  Whitespace.prototype._getNewlinesBetween = function _getNewlinesBetween(startToken, endToken) {
     if (!endToken || !endToken.loc) return 0;
 
     var start = startToken ? startToken.loc.end.line : 1;

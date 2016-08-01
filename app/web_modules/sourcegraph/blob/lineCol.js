@@ -1,5 +1,3 @@
-// @flow
-
 export function lineCol(line: number | string, col?: number): string {
 	if (typeof col === "undefined") {
 		return line.toString();

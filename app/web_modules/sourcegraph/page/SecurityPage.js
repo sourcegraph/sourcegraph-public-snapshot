@@ -1,13 +1,11 @@
-// @flow
-
-import React from "react";
+import * as React from "react";
 import {Hero, Heading} from "sourcegraph/components";
 import styles from "./Page.css";
 import base from "sourcegraph/components/styles/_base.css";
 import CSSModules from "react-css-modules";
 import Helmet from "react-helmet";
 
-function SecurityPage(props, {signedIn}): React$Element<any> {
+function SecurityPage(props, {signedIn}) {
 	return (
 		<div>
 			<Helmet title="Security" />

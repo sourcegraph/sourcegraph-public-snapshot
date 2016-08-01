@@ -1,14 +1,13 @@
 FROM alpine:3.4
 MAINTAINER Sourcegraph Team <support@sourcegraph.com>
 
-RUN apk add --update --update-cache \
+RUN apk add --no-cache \
   openssh \
   git \
   # for /etc/mime.types, needed by HTTP server
   mailcap \
   # for depprof
-  graphviz \
-  && rm -rf /var/cache/apk/*
+  graphviz
 
 RUN { \
     echo 'Host *'; \

@@ -1,5 +1,3 @@
-// @flow weak
-
 import TestUtils from "react-addons-test-utils";
 import Dispatcher from "sourcegraph/Dispatcher";
 import testOnly from "sourcegraph/util/testOnly";

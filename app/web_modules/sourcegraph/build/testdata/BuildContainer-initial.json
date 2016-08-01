@@ -1,8 +1,4 @@
 {
-	"renderOutput": {
-		"type": "noscript",
-		"props": {}
-	},
 	"dispatched": [
 		{
 			"$constructor": "WantBuild",

@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import Helmet from "react-helmet";
 import {Link} from "react-router";
 
@@ -36,8 +36,8 @@ export class LoginForm extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.pendingAuthAction = UserStore.pendingAuthActions.get("login");
-		state.authResponse = UserStore.authResponses.get("login");
+		state.pendingAuthAction = UserStore.pendingAuthActions["login"] || false;
+		state.authResponse = UserStore.authResponses["login"] || null;
 
 		// These are set by the GitHub OAuth2 receive endpoint if there is an
 		// error.

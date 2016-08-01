@@ -1,15 +1,8 @@
 package golang
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
-	"os/exec"
-	"strconv"
-	"strings"
-
-	"golang.org/x/tools/cmd/guru/serial"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
@@ -25,24 +18,20 @@ func (h *Session) handleDefinition(req *jsonrpc2.Request, params lsp.TextDocumen
 	if !valid {
 		return nil, errors.New("invalid position")
 	}
-	def, err := guruDefinition(h.filePath(params.TextDocument.URI), int(ofs))
-	if err != nil {
-		return nil, err
-	}
-	filename, line, column := guruPos(def.ObjPos)
+	def, err := godef(h.filePath("gopath"), h.filePath(params.TextDocument.URI), int(ofs))
 
-	uri, err := h.fileURI(filename)
+	uri, err := h.fileURI(def.Path)
 	if err != nil {
 		return nil, err
 	}
 	if uri != params.TextDocument.URI {
 		// different file to input
-		contents, err = ioutil.ReadFile(filename)
+		contents, err = ioutil.ReadFile(def.Path)
 		if err != nil {
 			return nil, err
 		}
 	}
-	r, err := rangeAtPosition(lsp.Position{Line: line - 1, Character: column - 1}, contents)
+	r, err := rangeAtPosition(lsp.Position{Line: def.Line - 1, Character: def.Column - 1}, contents)
 	if err != nil {
 		return nil, err
 	}
@@ -53,23 +42,4 @@ func (h *Session) handleDefinition(req *jsonrpc2.Request, params lsp.TextDocumen
 		Range: r,
 	})
 	return locs, nil
-}
-
-func guruPos(pos string) (string, int, int) {
-	j := strings.LastIndexByte(pos, ':')
-	i := strings.LastIndexByte(pos[:j], ':')
-	line, _ := strconv.Atoi(pos[i+1 : j])
-	col, _ := strconv.Atoi(pos[j+1:])
-	return pos[:i], line, col
-}
-
-func guruDefinition(path string, offset int) (serial.Definition, error) {
-	var d serial.Definition
-	c := exec.Command("guru", "-json", "definition", fmt.Sprintf("%s:#%d", path, offset))
-	b, err := c.Output()
-	if err != nil {
-		return d, err
-	}
-	err = json.Unmarshal(b, &d)
-	return d, err
 }

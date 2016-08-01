@@ -1,6 +1,4 @@
-// @flow
-
-import React from "react";
+import * as React from "react";
 import CSSModules from "react-css-modules";
 import base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code} from "sourcegraph/components";
@@ -92,7 +90,7 @@ class HeadingsComponent extends React.Component {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="5" className={base.mb3} color="cool-mid-gray">Headings with color</Heading>
+								<Heading level="7" className={base.mb3} color="cool-mid-gray">Headings with color</Heading>
 								<Heading level="4" className={base.mb3} color="blue">Blue fourth level heading</Heading>
 								<Heading level="4" className={base.mb3} color="purple">Purple fourth level heading</Heading>
 								<Heading level="4" className={base.mb3} color="green">Green fourth level heading</Heading>
@@ -116,7 +114,7 @@ class HeadingsComponent extends React.Component {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="5" className={base.mb3} color="cool-mid-gray">Headings with underline</Heading>
+								<Heading level="7" className={base.mb3} color="cool-mid-gray">Headings with underline</Heading>
 								<Heading level="4" className={base.mb3} underline="blue">Fourth level heading with blue underline</Heading>
 								<Heading level="4" className={base.mb3} underline="purple">Fourth level heading with purple underline</Heading>
 								<Heading level="4" className={base.mb3} underline="orange">Fourth level heading with orange underline</Heading>
@@ -140,7 +138,7 @@ class HeadingsComponent extends React.Component {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="5" className={base.mb3} color="cool-mid-gray">Heading alignment</Heading>
+								<Heading level="7" className={base.mb3} color="cool-mid-gray">Heading alignment</Heading>
 								<Heading level="4" className={base.mb3} align="left">Left aligned</Heading>
 								<Heading level="4" className={base.mb3} align="center">Center aligned</Heading>
 								<Heading level="4" className={base.mb3} align="right">Right aligned</Heading>

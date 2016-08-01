@@ -1,0 +1,8 @@
+{
+  "resolution": "main",
+  "tree": {
+    "src": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/a1c646f26aa7cf3d170b85e938fffde23bd4c7af/flux/flux.d.ts",
+    "raw": "registry:dt/flux#0.0.0+20160618175531",
+    "typings": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/a1c646f26aa7cf3d170b85e938fffde23bd4c7af/flux/flux.d.ts"
+  }
+}

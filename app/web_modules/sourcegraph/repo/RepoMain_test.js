@@ -1,6 +1,4 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 import expect from "expect.js";
 import RepoMain from "sourcegraph/repo/RepoMain";
 import {renderToString} from "sourcegraph/util/componentTestUtils";

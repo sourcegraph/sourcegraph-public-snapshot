@@ -1,0 +1,8 @@
+{
+  "resolution": "main",
+  "tree": {
+    "src": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/220d2c2b5fd4acbd52737e676b24cdaed4ed427b/immutable/immutable.d.ts",
+    "raw": "registry:dt/immutable#3.8.1+20160608070634",
+    "typings": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/220d2c2b5fd4acbd52737e676b24cdaed4ed427b/immutable/immutable.d.ts"
+  }
+}

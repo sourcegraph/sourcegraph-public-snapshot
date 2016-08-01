@@ -1,6 +1,4 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 import RefsContainer from "sourcegraph/def/RefsContainer";
 import {render} from "sourcegraph/util/renderTestUtils";
 

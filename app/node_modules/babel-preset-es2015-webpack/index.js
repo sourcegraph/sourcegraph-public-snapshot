@@ -6,16 +6,16 @@ var babelPresetEs2015,
 babelPresetEs2015 = require('babel-preset-es2015');
 
 try {
-    // npm ^2
-    commonJsPlugin = require('babel-preset-es2015/node_modules/babel-plugin-transform-es2015-modules-commonjs');
+    // npm ^3
+    commonJsPlugin = require('babel-plugin-transform-es2015-modules-commonjs');
 } catch (error) {
 
 }
 
 if (!commonJsPlugin) {
     try {
-        // npm ^3
-        commonJsPlugin = require('babel-plugin-transform-es2015-modules-commonjs');
+        // npm ^2
+        commonJsPlugin = require('babel-preset-es2015/node_modules/babel-plugin-transform-es2015-modules-commonjs');
     } catch (error) {
 
     }

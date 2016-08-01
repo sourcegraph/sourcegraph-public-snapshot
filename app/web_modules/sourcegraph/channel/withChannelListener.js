@@ -1,5 +1,5 @@
 
-import React from "react";
+import * as React from "react";
 
 export type ChannelStatus = ?("connected" | "connecting" | "error");
 export type ChannelStatusCode = ?(0 | 1);

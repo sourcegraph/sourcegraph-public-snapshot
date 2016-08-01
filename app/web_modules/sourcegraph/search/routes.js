@@ -1,5 +1,3 @@
-// @flow
-
 import {rel} from "sourcegraph/app/routePatterns";
 import type {Route, RouterLocation} from "react-router";
 import {searchScopes} from "sourcegraph/search";

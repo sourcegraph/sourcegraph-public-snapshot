@@ -1,6 +1,4 @@
-// @flow weak
-
-import React from "react";
+import * as React from "react";
 import type {Def} from "sourcegraph/def/index";
 
 type Qual = "DepQualified" | "ScopeQualified";

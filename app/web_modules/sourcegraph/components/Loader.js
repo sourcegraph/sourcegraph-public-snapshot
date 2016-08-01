@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 
 import CSSModules from "react-css-modules";
 import style from "sourcegraph/components/styles/loader.css";

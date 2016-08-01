@@ -1,56 +1,10 @@
-@value vars "sourcegraph/components/styles/_vars.css";
-@value base "sourcegraph/components/styles/_base.css";
 @value colors "sourcegraph/components/styles/_colors.css";
-@value layout "sourcegraph/components/styles/_layout.css";
-@value typography "sourcegraph/components/styles/_typography.css";
 
-@value font-size-4 from vars;
-@value media-sm from vars;
 @value c_cool-mid-gray from colors;
 
-.search-input {
-	background-color: white;
-	composes: cool-gray from colors;
-	border-radius: 0;
-	transition: all 550ms cubic-bezier(0.175, 0.885, 0.320, 1);
-	padding: 7px 11px;
-}
+.cool-mid-gray-fill { fill: c_cool-mid-gray; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.flex-fill { flex: 1 0; }
 
-.search-input:not(.with-border) {
-	border: none;
-}
-.with-border {
-	composes: b--cool-pale-gray from colors;
-}
-
-@value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
-@value logo-height from GlobalNav;
-@value input-text-indent 36px; /* used in JavaScript */
-.with-icon {
-    background-image: url('../../../../assets/img/symbols/search-gray.svg');
-    background-repeat: no-repeat;
-    background-size: logo-height auto;
-    background-position: 13px;
-    text-indent: input-text-indent;
-}
-.with-icon:focus {
-    background-image: url('../../../../assets/img/symbols/search-blue.svg');
-}
-
-.search-input input::placeholder {
-       color: c_cool-mid-gray;
-       text-overflow: ellipsis;
-}
-.search-input input[placeholder] { text-overflow: ellipsis; }
-
-.search-input input::placeholder {
-	color: c_cool-mid-gray;
-	text-overflow: ellipsis;
-}
-.search-input input[placeholder] { text-overflow: ellipsis; }
-
-@media media-sm {
-	.search-input {
-		font-size: font-size-4;
-	}
-}
+.layer-btm { z-index: -1; }

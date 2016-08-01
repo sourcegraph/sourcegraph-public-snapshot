@@ -1,5 +1,3 @@
-// @flow
-
 import TreeStore from "sourcegraph/tree/TreeStore";
 import "sourcegraph/tree/TreeBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";

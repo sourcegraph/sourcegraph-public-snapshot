@@ -1,5 +1,3 @@
-// @flow weak
-
 import expect from "expect.js";
 
 import lineFromByte from "sourcegraph/blob/lineFromByte";

@@ -1,0 +1,109 @@
+package langp
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/url"
+	"path"
+	"time"
+)
+
+// Client is a Language Processor REST API client which is safe for use by
+// multiple goroutines concurrently.
+type Client struct {
+	// Endpoint is the HTTP endpoint of the Language Processor.
+	Endpoint *url.URL
+
+	// Client, if specified, is used for making HTTP requests.
+	Client *http.Client
+}
+
+// Definition resolves the specified position, effectively returning where the
+// given definition is defined. For example, this is used for go to definition.
+func (c *Client) Definition(p *Position) (*Position, error) {
+	var result Position
+	err := c.do("definition", p, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// Hover returns hover-over information about the def/ref/etc at the given
+// position.
+func (c *Client) Hover(p *Position) (*Hover, error) {
+	var result Hover
+	err := c.do("hover", p, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// LocalRefs resolves references to repository-local definitions.
+func (c *Client) LocalRefs(p *Position) (*LocalRefs, error) {
+	var result LocalRefs
+	err := c.do("local-refs", p, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+func (c *Client) do(endpoint string, body, results interface{}) error {
+	// TODO: maybe consider retrying upon first request failure to prevent
+	// such errors from ending up on the frontend for reliability purposes.
+	data, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("POST", c.endpoint(endpoint), bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	resp, err := c.Client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		var errResp Error
+		if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {
+			return fmt.Errorf("error parsing language processor error (status code %v): %v", resp.StatusCode, err)
+		}
+		return &errResp
+	}
+	return json.NewDecoder(resp.Body).Decode(results)
+}
+
+// endpoint returns a URL based on c.Endpoint with the given path suffixed.
+func (c *Client) endpoint(p string) string {
+	cpy := *c.Endpoint
+	cpy.Path = path.Join(cpy.Path, p)
+	return cpy.String()
+}
+
+// NewClient returns a new client with the default options connecting to the
+// given Language Processor endpoint.
+//
+// An error is returned only if parsing the endpoint URL fails.
+func NewClient(endpoint string) (*Client, error) {
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return nil, err
+	}
+	if u.Scheme == "" {
+		return nil, fmt.Errorf("must specify endpoint scheme")
+	}
+	if u.Host == "" {
+		return nil, fmt.Errorf("must specify endpoint host")
+	}
+	return &Client{
+		Endpoint: u,
+		Client: &http.Client{
+			Timeout: 5 * time.Second,
+		},
+	}, nil
+}

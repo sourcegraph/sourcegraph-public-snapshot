@@ -10,5 +10,3 @@ browsers:
     version: 13..latest
   - name: android
     version: 4.4..latest
-  - name: iphone
-    version: latest

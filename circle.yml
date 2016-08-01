@@ -4,7 +4,8 @@ machine:
     - postgresql
     - redis
   environment:
-    REPO: ../.go_workspace/src/sourcegraph.com/sourcegraph/sourcegraph
+    GOPATH: $HOME
+    REPO: ../src/sourcegraph.com/sourcegraph/sourcegraph
     PGUSER: ubuntu
     PGDATABASE: circle_test
     PGSSLMODE: disable
@@ -16,32 +17,28 @@ machine:
     # Don't block on `git diff` invocations of `less`.
     GIT_PAGER:
   node:
-    version: 5.11.1
+    version: 6.3.1
 
 dependencies:
-  pre:
-    - ./dev/ci/install-go.sh
-    - ./dev/ci/packages.sh
-    - ./dev/ci/install-test-tools.sh
-
   cache_directories:
     - ~/google-cloud-sdk
     - ~/protobuf-3.0.0-beta-1/src
     - ~/cache
 
   override:
-    - rm -rf $HOME/.go_workspace/src
-    - mkdir -p $HOME/.go_workspace/src/sourcegraph.com/sourcegraph
-    - cp -r $PWD $REPO
-
+    - ./dev/ci/install-go.sh
+    - ./dev/ci/packages.sh
+    - ./dev/ci/install-test-tools.sh
+    - ./dev/ci/install-gcloud.sh
+    - ./dev/ci/install-protobuf.sh
+    - ./dev/ci/patch-exec-latency.sh
     - ./dev/ci/versions.sh
 
     - git config --global user.email "ci@example.com"
     - git config --global user.name "CI User"
 
-    - ./dev/ci/install-gcloud.sh
-    - ./dev/ci/install-protobuf.sh
-    - ./dev/ci/patch-exec-latency.sh
+    - mkdir -p src/sourcegraph.com/sourcegraph && mv sourcegraph src/sourcegraph.com/sourcegraph/sourcegraph && mkdir sourcegraph:
+        pwd: .. 
 
 test:
   override:

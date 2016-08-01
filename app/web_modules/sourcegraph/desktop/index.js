@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import {NotInBeta} from "sourcegraph/desktop/DesktopHome";
 import desktopContainer from "sourcegraph/desktop/DesktopContainer";
 
@@ -17,14 +17,14 @@ export const desktopHome = {
 	},
 };
 
-export const routes: Array<Route> = [
+export const routes = [
 	{
 		...desktopHome,
 		path: rel.desktopHome,
 	},
 ];
 
-export default function desktopRouter(Component: ReactClass<any>): ReactClass<any> {
+export default function desktopRouter(Component) {
 	class DesktopRouter extends React.Component {
 		static contextTypes = {
 			router: React.PropTypes.object.isRequired,

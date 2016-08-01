@@ -25,30 +25,23 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 
 var SourceMap = function () {
-  function SourceMap(position, opts, code) {
+  function SourceMap(opts, code) {
     var _this = this;
 
     (0, _classCallCheck3.default)(this, SourceMap);
 
-    this.position = position;
-    this.opts = opts;
-    this.last = { generated: {}, original: {} };
+    this._opts = opts;
+    this._map = new _sourceMap2.default.SourceMapGenerator({
+      file: opts.sourceMapTarget,
+      sourceRoot: opts.sourceRoot
+    });
 
-    if (opts.sourceMaps) {
-      this.map = new _sourceMap2.default.SourceMapGenerator({
-        file: opts.sourceMapTarget,
-        sourceRoot: opts.sourceRoot
+    if (typeof code === "string") {
+      this._map.setSourceContent(opts.sourceFileName, code);
+    } else if ((typeof code === "undefined" ? "undefined" : (0, _typeof3.default)(code)) === "object") {
+      (0, _keys2.default)(code).forEach(function (sourceFileName) {
+        _this._map.setSourceContent(sourceFileName, code[sourceFileName]);
       });
-
-      if (typeof code === "string") {
-        this.map.setSourceContent(opts.sourceFileName, code);
-      } else if ((typeof code === "undefined" ? "undefined" : (0, _typeof3.default)(code)) === "object") {
-        (0, _keys2.default)(code).forEach(function (sourceFileName) {
-          _this.map.setSourceContent(sourceFileName, code[sourceFileName]);
-        });
-      }
-    } else {
-      this.map = null;
     }
   }
 
@@ -57,12 +50,7 @@ var SourceMap = function () {
    */
 
   SourceMap.prototype.get = function get() {
-    var map = this.map;
-    if (map) {
-      return map.toJSON();
-    } else {
-      return map;
-    }
+    return this._map.toJSON();
   };
 
   /**
@@ -70,34 +58,29 @@ var SourceMap = function () {
    * values to insert a mapping to nothing.
    */
 
-  SourceMap.prototype.mark = function mark(sourcePos) {
-    var map = this.map;
-    if (!map) return; // no source map
-
-    var position = this.position;
-
+  SourceMap.prototype.mark = function mark(generatedLine, generatedColumn, line, column, filename) {
     // Adding an empty mapping at the start of a generated line just clutters the map.
-    if (this._lastGenLine !== position.line && sourcePos.line === null) return;
+    if (this._lastGenLine !== generatedLine && line === null) return;
 
     // If this mapping points to the same source location as the last one, we can ignore it since
     // the previous one covers it.
-    if (this._lastGenLine === position.line && this._lastSourceLine === sourcePos.line && this._lastSourceColumn === sourcePos.column) {
+    if (this._lastGenLine === generatedLine && this._lastSourceLine === line && this._lastSourceColumn === column) {
       return;
     }
 
-    this._lastGenLine = position.line;
-    this._lastSourceLine = sourcePos.line;
-    this._lastSourceColumn = sourcePos.column;
+    this._lastGenLine = generatedLine;
+    this._lastSourceLine = line;
+    this._lastSourceColumn = column;
 
-    map.addMapping({
+    this._map.addMapping({
       generated: {
-        line: position.line,
-        column: position.column
+        line: generatedLine,
+        column: generatedColumn
       },
-      source: sourcePos.line == null ? null : sourcePos.filename || this.opts.sourceFileName,
-      original: sourcePos.line == null ? null : {
-        line: sourcePos.line,
-        column: sourcePos.column
+      source: line == null ? null : filename || this._opts.sourceFileName,
+      original: line == null ? null : {
+        line: line,
+        column: column
       }
     });
   };

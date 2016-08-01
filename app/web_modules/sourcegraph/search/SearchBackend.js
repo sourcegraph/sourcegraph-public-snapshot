@@ -1,5 +1,3 @@
-// @flow weak
-
 import * as SearchActions from "sourcegraph/search/SearchActions";
 import SearchStore from "sourcegraph/search/SearchStore";
 import Dispatcher from "sourcegraph/Dispatcher";

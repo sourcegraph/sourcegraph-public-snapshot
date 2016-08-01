@@ -1,5 +1,3 @@
-// @flow
-
 import {formatPattern} from "react-router/lib/PatternUtils";
 import type {RouteParams} from "react-router";
 import {abs} from "sourcegraph/app/routePatterns";

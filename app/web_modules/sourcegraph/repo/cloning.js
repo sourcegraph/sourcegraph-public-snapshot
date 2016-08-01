@@ -1,5 +1,3 @@
-// @flow
-
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 

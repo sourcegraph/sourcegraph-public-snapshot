@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as UserActions from "sourcegraph/user/UserActions";
@@ -21,8 +21,8 @@ export default class LogoutLink extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.pendingAuthAction = UserStore.pendingAuthActions.get("logout");
-		state.authResponse = UserStore.authResponses.get("logout");
+		state.pendingAuthAction = UserStore.pendingAuthActions["logout"] || false;
+		state.authResponse = UserStore.authResponses["logout"] || null;
 	}
 
 	onStateTransition(prevState, nextState) {

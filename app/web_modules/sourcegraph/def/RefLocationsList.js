@@ -1,6 +1,4 @@
-// @flow
-
-import React from "react";
+import * as React from "react";
 import Helmet from "react-helmet";
 import {Link} from "react-router";
 import {urlToDefInfo} from "sourcegraph/def/routes";

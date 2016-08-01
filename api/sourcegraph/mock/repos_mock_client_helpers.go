@@ -138,6 +138,18 @@ func (s *ReposClient) MockResolveRev_NoCheck(t *testing.T, commitID vcs.CommitID
 	return
 }
 
+func (s *ReposClient) MockResolveRev_NotFound(t *testing.T, repo int32, rev string) (called *bool) {
+	called = new(bool)
+	s.ResolveRev_ = func(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
+		*called = true
+		if op.Repo != repo || op.Rev != rev {
+			t.Errorf("got %+v, want %+v", op, &sourcegraph.ReposResolveRevOp{Repo: repo, Rev: rev})
+		}
+		return nil, grpc.Errorf(codes.NotFound, "revision not found")
+	}
+	return
+}
+
 func (s *ReposClient) MockGetCommit_Return_NoCheck(t *testing.T, commit *vcs.Commit) (called *bool) {
 	called = new(bool)
 	s.GetCommit_ = func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {

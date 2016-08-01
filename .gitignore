@@ -43,7 +43,6 @@ npm-debug.log
 /app/artifacts
 /app/node_modules/fsevents/build
 /app/node_modules/fsevents/lib
-/app/node_modules/flow-bin/vendor
 /app/node_modules/node-sass
 /app/assets/_goTemplates.js
 /app/assets/analytics.js
@@ -55,6 +54,7 @@ npm-debug.log
 /app/assets/test.css
 /app/assets/*.html
 /app/assets/*.map
+/app/.tmp
 *.json.actual
 
 eb-bundle.zip
@@ -70,6 +70,7 @@ eb-bundle.zip
 /deploy/sourcegraph.com/src
 /deploy/sourcegraph/src
 /lang/golang/cmd/langserver-go/guru
+/lang/golang/cmd/langserver-go/godef
 /lang/golang/cmd/langserver-go/langserver-go
 /lang/golang/cmd/langprocessor-go/langprocessor-go
 
