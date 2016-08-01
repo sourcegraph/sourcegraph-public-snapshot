@@ -19,7 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/coverage"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/coverageutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/coverage/tokenizer"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
@@ -145,7 +145,7 @@ type tokCoverage struct {
 	// When coverage calculations began and ended (inclusive of all API
 	// requests, of which there are multiple per token).
 	Start, End time.Time
-	Token      coverageutil.Token
+	Token      tokenizer.Token
 
 	// Error that occured fetching the token as a def or hover.
 	DefError, HoverError error
@@ -383,7 +383,7 @@ func (c *coverageCmd) calcFileCoverage(ctx context.Context, lang, repoURI string
 	}
 
 	// TODO: why *interface{} why??
-	tx := coverageutil.Lookup(lang, file)
+	tx := tokenizer.Lookup(lang, file)
 	if tx == nil {
 		log.Printf("Warning: no tokenizer for language %q file %q\n", lang, file)
 		return nil, nil
@@ -425,7 +425,7 @@ func (c *coverageCmd) calcFileCoverage(ctx context.Context, lang, repoURI string
 	return cov, nil
 }
 
-func (c *coverageCmd) calcTokCoverage(ctx context.Context, lang, repoURI string, repoRev *sourcegraph.RepoRevSpec, fileURI string, tok *coverageutil.Token) (*tokCoverage, error) {
+func (c *coverageCmd) calcTokCoverage(ctx context.Context, lang, repoURI string, repoRev *sourcegraph.RepoRevSpec, fileURI string, tok *tokenizer.Token) (*tokCoverage, error) {
 	var cov = &tokCoverage{
 		Token: *tok,
 		Start: time.Now(),
@@ -542,7 +542,7 @@ func (c *coverageCmd) ensureLocalRepoExists(ctx context.Context, repo string) er
 }
 
 // tokRange returns an LSP equivilent range for the given token.
-func (c *coverageCmd) tokRange(t coverageutil.Token) lsp.Range {
+func (c *coverageCmd) tokRange(t tokenizer.Token) lsp.Range {
 	return lsp.Range{
 		Start: lsp.Position{
 			Line:      t.Line,

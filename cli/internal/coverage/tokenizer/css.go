@@ -1,4 +1,4 @@
-package coverageutil
+package tokenizer
 
 import "github.com/chris-ramon/douceur/parser"
 

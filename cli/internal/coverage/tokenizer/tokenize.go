@@ -1,6 +1,5 @@
-// coverageutil contain aux functions and classes
-// for coverage command
-package coverageutil
+// tokenizer contains a tokenizer for the coverage command.
+package tokenizer
 
 import (
 	"fmt"

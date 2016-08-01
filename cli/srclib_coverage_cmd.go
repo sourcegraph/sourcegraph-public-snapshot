@@ -21,7 +21,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/coverageutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/coverage/tokenizer"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/slack"
@@ -357,16 +357,16 @@ func parseAnnotationURL(annUrl string) (routevar.DefAtRev, error) {
 // annToken stores an annotation (ref) and its associated token (ident)
 type annToken struct {
 	Annotation *sourcegraph.Annotation
-	Token      *coverageutil.Token
+	Token      *tokenizer.Token
 }
 
 // getFileCoverage computes the coverage data for a single file in a repository
 func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, repoPath, path, lang string, reportRefs, reportDefs, reportEmpty bool) (*srclibFileCoverage, error) {
 	fileCvg := &srclibFileCoverage{Path: path}
 
-	var tokenizer coverageutil.Tokenizer
-	if t := coverageutil.Lookup(lang, path); t != nil {
-		tokenizer = *t
+	var tt tokenizer.Tokenizer
+	if t := tokenizer.Lookup(lang, path); t != nil {
+		tt = *t
 	} else {
 		return nil, nil
 	}
@@ -401,12 +401,12 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 		}
 	}
 
-	tokenizer.Init(entry.Contents)
-	defer tokenizer.Done()
+	tt.Init(entry.Contents)
+	defer tt.Done()
 
 	refAnnotations := make([]*annToken, 0)
 	for {
-		tok := tokenizer.Next()
+		tok := tt.Next()
 		if tok == nil {
 			break
 		}
@@ -424,7 +424,7 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 			log15.Warn("no ref for", "repo", repoPath, "rev", repoRev.CommitID, "path", path, "at", tok.Offset, "line", tok.Line, "ident", tok.Text)
 		}
 	}
-	errors := tokenizer.Errors()
+	errors := tt.Errors()
 	if len(errors) > 0 {
 		log15.Warn("parse errors", "repo", repoPath, "path", path, "errors", errors)
 	}

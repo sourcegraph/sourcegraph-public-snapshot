@@ -1,4 +1,4 @@
-package coverageutil
+package tokenizer
 
 import (
 	"bytes"
