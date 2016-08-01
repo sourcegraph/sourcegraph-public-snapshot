@@ -20,6 +20,26 @@ export class FetchedRepo {
 	}
 }
 
+export class WantRepos {
+	querystring: string;
+
+	constructor(querystring: string) {
+		this.querystring = querystring;
+	}
+}
+
+export interface Repos {}; // incomplete
+
+export class ReposFetched {
+	querystring: string;
+	data: Repos;
+
+	constructor(querystring: string, data: Repos) {
+		this.querystring = querystring;
+		this.data = data;
+	}
+}
+
 export class WantResolveRev {
 	repo: string;
 	rev: string;

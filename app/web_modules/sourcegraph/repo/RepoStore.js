@@ -2,7 +2,6 @@ import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
-import * as RepoActions_typed from "sourcegraph/repo/RepoActions_typed";
 import "sourcegraph/repo/RepoBackend";
 
 function keyFor(repo, rev) {
@@ -79,7 +78,7 @@ export class RepoStore extends Store {
 	}
 
 	__onDispatch(action) {
-		if (action instanceof RepoActions_typed.ReposFetched) {
+		if (action instanceof RepoActions.ReposFetched) {
 			this.repos = {
 				...this.repos,
 				listContent: {
