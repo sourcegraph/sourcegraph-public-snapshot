@@ -4,8 +4,15 @@ import {SearchSettings} from "sourcegraph/search/index";
 export interface User {
 	UID: number;
 	Login: string;
+	Name: string;
+	IsOrganization: boolean;
+	AvatarURL: string;
+	Location: string;
+	Company: string;
+	HomepageURL: string;
 	Betas: string[];
 	BetaRegistered: boolean;
+	RegisteredAt: number;
 };
 
 // inBeta tells if the given user is a part of the given beta program.
@@ -28,13 +35,16 @@ export function betaPending(u: User | null): boolean {
 }
 
 export interface AuthInfo {
-	UID?: number;
-	Login?: string;
-	Admin?: boolean;
+	UID: number;
+	Login: string;
+	Write: boolean;
+	Admin: boolean;
+	IntercomHash: string;
 };
 
 export interface EmailAddr {
 	Email: string;
+	Primary: boolean;
 };
 
 export interface ExternalToken {

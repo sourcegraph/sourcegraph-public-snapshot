@@ -1,27 +1,29 @@
 import {setGlobalFeatures} from "sourcegraph/app/features";
-import type {Features} from "sourcegraph/app/features";
+import {Features} from "sourcegraph/app/features";
 import {setGlobalSiteConfig} from "sourcegraph/app/siteConfig";
 import UserStore from "sourcegraph/user/UserStore";
 
-let context: {
+class Context {
 	csrfToken?: string;
 	cacheControl?: string;
 	currentSpanID?: string;
 	userAgentIsBot?: boolean;
-} = {
+
 	// Some fields were migrated to React context from this global context object. These
 	// getters prevent you from accidentally accessing these fields in their old home,
 	// on this object.
-	get currentUser() {
+	get currentUser(): void {
 		throw new Error("currentUser is now accessible via this.context.user in components that specify 'user' in contextTypes");
-	},
-	get userEmail() {
+	}
+	get userEmail(): void {
 		throw new Error("userEmail is no longer available globally; use the UserBackend/UserStore to retrieve it");
-	},
-	get hasLinkedGitHub() {
+	}
+	get hasLinkedGitHub(): void {
 		throw new Error("hasLinkedGitHub is no longer available globally; use the UserBackend/UserStore directly");
-	},
-};
+	}
+}
+
+let context = new Context();
 
 // ContextInput is the input context to set up the JS environment (e.g., from Go).
 type ContextInput = typeof context & {
@@ -37,7 +39,7 @@ type ContextInput = typeof context & {
 };
 
 // Sets the values of the context given a JSContext object from the server.
-export function reset(ctx: ContextInput) {
+export function reset(ctx: ContextInput): void {
 	const features = ctx.features;
 	delete ctx.features;
 	if (typeof features !== "undefined") {

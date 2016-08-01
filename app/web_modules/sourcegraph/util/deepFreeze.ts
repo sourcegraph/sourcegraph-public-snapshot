@@ -10,7 +10,7 @@ export function deepFreeze<T>(o: T): T {
 	return o;
 }
 
-export function assignAndDeepFreeze<T>(o1: T, o2: T): T {
+export function mergeAndDeepFreeze<T>(o1: T, o2: T): T {
 	let o = Object.assign({} as T, o1, o2);
 	return deepFreeze(o);
 }

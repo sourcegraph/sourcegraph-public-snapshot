@@ -25,8 +25,8 @@ export function setGlobalFeatures(features: Features): void {
 // withFeaturesContext passes a "features" context item
 // to Component's children and lets them query the
 // feature flags.
-export function withFeaturesContext(component: any): any {
-	class WithFeatures extends React.Component<any, any> {
+export function withFeaturesContext<P>(component: React.ComponentClass<P>): React.ComponentClass<P> {
+	class WithFeatures extends React.Component<P, {}> {
 		static childContextTypes: React.ValidationMap<any> = {
 			features: React.PropTypes.object,
 		};

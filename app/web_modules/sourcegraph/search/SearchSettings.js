@@ -35,7 +35,7 @@ class SearchSettings extends Container {
 
 	constructor(props) {
 		super(props);
-		this.state = {settings: UserStore.settings.get()};
+		this.state = {settings: UserStore.settings};
 
 	}
 
@@ -66,7 +66,7 @@ class SearchSettings extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 
-		state.settings = UserStore.settings.get();
+		state.settings = UserStore.settings;
 
 		// Use this instead of context signedIn because of the issues surrounding
 		// propagating context through components that use shouldComponentUpdate.

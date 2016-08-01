@@ -136,7 +136,7 @@ class GlobalSearch extends Container {
 		state.className = props.className || "";
 		state.resultClassName = props.resultClassName || "";
 
-		const settings = UserStore.settings.get();
+		const settings = UserStore.settings;
 		state.searchSettings = settings && settings.search ? settings.search : null;
 		const scope = state.searchSettings && state.searchSettings.scope ? state.searchSettings.scope : null;
 		const languages = state.searchSettings && state.searchSettings.languages ? state.searchSettings.languages : null;

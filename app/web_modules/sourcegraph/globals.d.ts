@@ -14,6 +14,7 @@ declare namespace process {
 }
 
 declare namespace global {
+	export var window: any;
 	export var it: any; // only set while testing
 	export var beforeEach: (f: () => void) => void;
 }

@@ -43,7 +43,7 @@ export default class LogoutLink extends Container {
 			Dispatcher.Stores.dispatch(new UserActions.SubmitLogout());
 			Dispatcher.Backends.dispatch(new UserActions.SubmitLogout());
 
-			const settings = UserStore.settings.get();
+			const settings = UserStore.settings;
 			const newSettings = {
 				...settings,
 				search: {

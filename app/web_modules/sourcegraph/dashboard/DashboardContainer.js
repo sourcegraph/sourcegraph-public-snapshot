@@ -40,7 +40,7 @@ class DashboardContainer extends Container {
 	reconcileState(state, props, context) {
 		Object.assign(state, props);
 
-		const settings = UserStore.settings.get();
+		const settings = UserStore.settings;
 		state.langs = settings && settings.search ? settings.search.languages : null;
 		state.scope = settings && settings.search ? settings.search.scope : null;
 		state.signedIn = context && context.signedIn;

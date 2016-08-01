@@ -1,5 +1,21 @@
 import {AuthInfo, EmailAddr, ExternalToken, Settings, User} from "sourcegraph/user/index";
 
+export type Action = FetchedAuthInfo
+	| FetchedUser
+	| FetchedEmails
+	| FetchedGitHubToken
+	| UpdateSettings
+	| SubmitSignup
+	| SubmitLogin
+	| SubmitLogout
+	| SubmitForgotPassword
+	| SubmitResetPassword
+	| SignupCompleted
+	| LoginCompleted
+	| LogoutCompleted
+	| ForgotPasswordCompleted
+	| ResetPasswordCompleted;
+
 export class WantAuthInfo {
 	accessToken: string;
 
@@ -10,9 +26,9 @@ export class WantAuthInfo {
 
 export class FetchedAuthInfo {
 	accessToken: string;
-	authInfo: AuthInfo | {Error: any} | null; // null if unauthenticated
+	authInfo: AuthInfo | null; // null if unauthenticated
 
-	constructor(accessToken: string, authInfo: AuthInfo | {Error: any} | null) {
+	constructor(accessToken: string, authInfo: AuthInfo | null) {
 		this.accessToken = accessToken;
 		this.authInfo = authInfo;
 	}
@@ -28,9 +44,9 @@ export class WantUser {
 
 export class FetchedUser {
 	uid: number;
-	user: User | {Error: any};
+	user: User;
 
-	constructor(uid: number, user: User | {Error: any}) {
+	constructor(uid: number, user: User) {
 		this.uid = uid;
 		this.user = user;
 	}
@@ -46,9 +62,9 @@ export class WantEmails {
 
 export class FetchedEmails {
 	uid: number;
-	emails: EmailAddr[] | {Error: any};
+	emails: EmailAddr[];
 
-	constructor(uid: number, emails: EmailAddr[] | {Error: any}) {
+	constructor(uid: number, emails: EmailAddr[]) {
 		this.uid = uid;
 		this.emails = emails;
 	}
@@ -58,9 +74,9 @@ export class FetchedEmails {
 
 export class FetchedGitHubToken {
 	uid: number;
-	token: ExternalToken | {Error: any};
+	token: ExternalToken;
 
-	constructor(uid: number, token: ExternalToken | {Error: any}) {
+	constructor(uid: number, token: ExternalToken) {
 		this.uid = uid;
 		this.token = token;
 	}

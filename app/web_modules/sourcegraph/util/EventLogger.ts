@@ -1,23 +1,15 @@
 import * as React from "react";
 import Dispatcher from "sourcegraph/Dispatcher";
 import context from "sourcegraph/app/context";
-import type {SiteConfig} from "sourcegraph/app/siteConfig";
-import type {AuthInfo, User} from "sourcegraph/user";
-import {getViewName, getRoutePattern, getRouteParams} from "sourcegraph/app/routePatterns";
-import type {Route} from "react-router";
+import {getRouteParams, getRoutePattern, getViewName} from "sourcegraph/app/routePatterns";
+import {SiteConfig} from "sourcegraph/app/siteConfig";
+import * as DefActions from "sourcegraph/def/DefActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as UserActions from "sourcegraph/user/UserActions";
-import * as DefActions from "sourcegraph/def/DefActions";
 import UserStore from "sourcegraph/user/UserStore";
-import {getLanguageExtensionForPath, defPathToLanguage} from "sourcegraph/util/inventory";
+import {AuthInfo, User} from "sourcegraph/user/index";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-
-export const EventLocation = {
-	Login: "Login",
-	Signup: "Signup",
-	Dashboard: "Dashboard",
-	DefPopup: "DefPopup",
-};
+import {defPathToLanguage, getLanguageExtensionForPath} from "sourcegraph/util/inventory";
 
 export class EventLogger {
 	_amplitude: any = null;
@@ -26,10 +18,15 @@ export class EventLogger {
 	_telligent: any = null;
 
 	_intercomSettings: any;
-	userAgentIsBot: bool;
+	userAgentIsBot: boolean;
 	_dispatcherToken: any;
-	_siteConfig: ?SiteConfig;
+	_siteConfig: SiteConfig | null;
 	_currentPlatform: string = "Web";
+
+	// User data from the previous call to _updateUser.
+	_user: User | null;
+	_authInfo: AuthInfo | null;
+	_primaryEmail: string | null;
 
 	constructor() {
 		this._intercomSettings = null;
@@ -48,28 +45,28 @@ export class EventLogger {
 		}
 	}
 
-	_logDesktopEventForCategory(event) {
+	_logDesktopEventForCategory(event: any): void {
 		if (event && event.detail && event.detail.eventCategory && event.detail.eventAction && event.detail.eventLabel) {
 			this.logEventForCategory(event.detail.eventCategory, event.detail.eventAction, event.detail.eventLabel, event.detail.eventProperties);
 		}
 	}
 
-	_initializeForSourcegraphPlatform(event) {
+	_initializeForSourcegraphPlatform(event: any): void {
 		if (event && event.detail && event.detail.currentPlatform) {
 			this._currentPlatform = event.detail.currentPlatform;
 		}
 	}
 
-	setSiteConfig(siteConfig: SiteConfig) {
+	setSiteConfig(siteConfig: SiteConfig): void {
 		this._siteConfig = siteConfig;
 	}
 
 	// init initializes Amplitude and Intercom.
-	init() {
+	init(): void {
 		if (global.window && !this._amplitude) {
 			this._amplitude = require("amplitude-js");
 
-			this._telligent = window.telligent;
+			this._telligent = global.window.telligent;
 
 			if (!this._siteConfig) {
 				throw new Error("EventLogger requires SiteConfig to be previously set using EventLogger.setSiteConfig before EventLogger can be initialized.");
@@ -116,11 +113,11 @@ export class EventLogger {
 			});
 		}
 
-		if (global.Intercom) this._intercom = global.Intercom;
-		if (global.FS) this._fullStory = global.FS;
+		if (global.window.Intercom) { this._intercom = global.window.Intercom; }
+		if (global.window.FS) { this._fullStory = global.window.FS; }
 
 		if (typeof window !== "undefined") {
-			this._intercomSettings = window.intercomSettings;
+			this._intercomSettings = global.window.intercomSettings;
 		}
 
 		this.userAgentIsBot = Boolean(context.userAgentIsBot);
@@ -129,22 +126,17 @@ export class EventLogger {
 		this._amplitude.setOptOut(this.userAgentIsBot);
 	}
 
-	// User data from the previous call to _updateUser.
-	_user: ?User;
-	_authInfo: AuthInfo = {};
-	_primaryEmail: ?string;
-
 	// _updateUser is be called whenever the user changes (after login or logout,
 	// or on the initial page load);
 	//
 	// If any events have been buffered, it will flush them immediately.
 	// If you do not call _updateUser or it is run on the server,
 	// any subequent calls to logEvent or setUserProperty will be buffered.
-	_updateUser() {
+	_updateUser(): void {
 		const user = UserStore.activeUser();
 		const authInfo = UserStore.activeAuthInfo();
 		const emails = user && user.UID ? (UserStore.emails[user.UID] || null) : null;
-		const primaryEmail = emails && !emails.Error ? emails.filter(e => e.Primary).map(e => e.Email)[0] : null;
+		const primaryEmail = emails ? emails.filter(e => e.Primary).map(e => e.Email)[0] : null;
 
 		this._updateUserForAmplitudeCookies();
 
@@ -154,20 +146,20 @@ export class EventLogger {
 
 				// Distinguish between 2 users who log in from the same browser; see
 				// https://github.com/amplitude/Amplitude-Javascript#logging-out-and-anonymous-users.
-				if (this._amplitude) this._amplitude.regenerateDeviceId();
+				if (this._amplitude) { this._amplitude.regenerateDeviceId(); }
 
 				// Prevent the next user who logs in (e.g., on a public terminal) from
 				// seeing the previous user's Intercom messages.
-				if (this._intercom) this._intercom("shutdown");
+				if (this._intercom) { this._intercom("shutdown"); }
 
-				if (this._fullStory) this._fullStory.clearUserCookie();
+				if (this._fullStory) { this._fullStory.clearUserCookie(); }
 			}
 
 			if (authInfo) {
 				this._setTrackerAuthInfo(authInfo);
 			}
 
-			if (this._intercom) this._intercom("boot", this._intercomSettings);
+			if (this._intercom) { this._intercom("boot", this._intercomSettings); }
 		}
 
 		if (user) {
@@ -196,7 +188,7 @@ export class EventLogger {
 				this.setUserProperty("email", primaryEmail);
 				this.setUserProperty("emails", emails);
 				this.setIntercomProperty("email", primaryEmail);
-				if (this._fullStory) this._fullStory.setUserVars({email: primaryEmail});
+				if (this._fullStory) { this._fullStory.setUserVars({email: primaryEmail}); }
 			}
 		}
 
@@ -205,20 +197,20 @@ export class EventLogger {
 		this._primaryEmail = primaryEmail;
 	}
 
-	_updateUserForAmplitudeCookies() {
+	_updateUserForAmplitudeCookies(): void {
 		if (this._amplitude && this._amplitude.options && this._amplitude.options.deviceId) {
 			this.setAmplitudeDeviceIdForTrackers(this._amplitude.options.deviceId);
 		}
 	}
 
 	// Responsible for setting the login information for all event trackers
-	_setTrackerLoginInfo(loginInfo) {
+	_setTrackerLoginInfo(loginInfo: string): void {
 		if (this._amplitude) {
 			this._amplitude.setUserId(loginInfo);
 		}
 
-		if (window.ga) {
-			window.ga("set", "userId", loginInfo);
+		if (global.window.ga) {
+			global.window.ga("set", "userId", loginInfo);
 		}
 
 		if (this._telligent) {
@@ -228,7 +220,7 @@ export class EventLogger {
 		this.setIntercomProperty("business_user_id", loginInfo);
 	}
 
-	_setTrackerAuthInfo(authInfo) {
+	_setTrackerAuthInfo(authInfo: AuthInfo): void {
 		if (authInfo.Login) {
 			this._setTrackerLoginInfo(authInfo.Login);
 		}
@@ -248,22 +240,23 @@ export class EventLogger {
 		}
 	}
 
-	getAmplitudeIdentificationProps() {
+	getAmplitudeIdentificationProps(): any {
 		if (!this._amplitude || !this._amplitude.options) {
 			return null;
 		}
 
-		return {detail: {deviceId: this._amplitude.options.deviceId, userId: UserStore.activeAuthInfo() ? UserStore.activeAuthInfo().Login : null}};
+		let info = UserStore.activeAuthInfo();
+		return {detail: {deviceId: this._amplitude.options.deviceId, userId: info ? info.Login : null}};
 	}
 
-	setAmplitudeDeviceIdForTrackers(value) {
+	setAmplitudeDeviceIdForTrackers(value: string): void {
 		if (this._telligent) {
 			this._telligent("addStaticMetadataObject", {deviceInfo: {AmplitudeDeviceId: value}});
 		}
 	}
 
 	// sets current user's properties
-	setUserProperty(property, value) {
+	setUserProperty(property: string, value: any): void {
 		if (this._telligent) {
 			this._telligent("addStaticMetadata", property, value, "userInfo");
 		}
@@ -275,19 +268,18 @@ export class EventLogger {
 
 	// Use logViewEvent as the default way to log view events for Amplitude and GA
 	// location is the URL, page is the path.
-	logViewEvent(title, page, eventProperties) {
-
+	logViewEvent(title: string, page: string, eventProperties: any): void {
 		if (this.userAgentIsBot || !page) {
 			return;
 		}
 
-		this._telligent("track", "view", {...eventProperties, platform: this._currentPlatform, page_name: page, page_title: title});
+		this._telligent("track", "view", Object.assign({}, eventProperties, {platform: this._currentPlatform, page_name: page, page_title: title}));
 
 		// Log Amplitude "View" event
-		this._amplitude.logEvent(title, {...eventProperties, Platform: this._currentPlatform});
+		this._amplitude.logEvent(title, Object.assign({}, eventProperties, {Platform: this._currentPlatform}));
 
 		// Log GA "pageview" event without props.
-		window.ga("send", {
+		global.window.ga("send", {
 			hitType: "pageview",
 			page: page,
 			title: title,
@@ -298,15 +290,15 @@ export class EventLogger {
 	// Required fields: eventCategory, eventAction, eventLabel
 	// Optional fields: eventProperties
 	// Example Call: logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SUCCESS, "SignupCompletion", AnalyticsConstants.PAGE_HOME, {signup_channel: GitHub})
-	logEventForCategory(eventCategory, eventAction, eventLabel, eventProperties) {
+	logEventForCategory(eventCategory: string, eventAction: string, eventLabel: string, eventProperties?: any): void {
 		if (this.userAgentIsBot || !eventLabel) {
 			return;
 		}
 
-		this._telligent("track", eventAction, {...eventProperties, eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction, is_authed: this._user ? "true" : "false", Platform: this._currentPlatform});
-		this._amplitude.logEvent(eventLabel, {...eventProperties, eventCategory: eventCategory, eventAction: eventAction, is_authed: this._user ? "true" : "false", Platform: this._currentPlatform});
+		this._telligent("track", eventAction, Object.assign({}, eventProperties, {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction, is_authed: this._user ? "true" : "false", Platform: this._currentPlatform}));
+		this._amplitude.logEvent(eventLabel, Object.assign({}, eventProperties, {eventCategory: eventCategory, eventAction: eventAction, is_authed: this._user ? "true" : "false", Platform: this._currentPlatform}));
 
-		window.ga("send", {
+		global.window.ga("send", {
 			hitType: "event",
 			eventCategory: eventCategory || "",
 			eventAction: eventAction || "",
@@ -315,16 +307,16 @@ export class EventLogger {
 	}
 
 	// sets current user's property value
-	setIntercomProperty(property, value) {
-		if (this._intercom) this._intercomSettings[property] = value;
+	setIntercomProperty(property: string, value: any): void {
+		if (this._intercom) { this._intercomSettings[property] = value; }
 	}
 
 	// records intercom events for the current user
-	logIntercomEvent(eventName, eventProperties) {
-		if (this._intercom && !this.userAgentIsBot) this._intercom("trackEvent", eventName, eventProperties);
+	logIntercomEvent(eventName: string, eventProperties: any): void {
+		if (this._intercom && !this.userAgentIsBot) { this._intercom("trackEvent", eventName, eventProperties); }
 	}
 
-	__onDispatch(action) {
+	__onDispatch(action: any): void {
 		switch (action.constructor) {
 		case RepoActions.ReposFetched:
 			if (action.data.Repos) {
@@ -407,13 +399,13 @@ export default new EventLogger();
 
 // withEventLoggerContext makes eventLogger accessible as this.context.eventLogger
 // in the component's context.
-export function withEventLoggerContext(eventLogger: EventLogger, Component) {
-	class WithEventLogger extends React.Component {
-		static childContextTypes = {
+export function withEventLoggerContext<P>(eventLogger: EventLogger, component: React.ComponentClass<P>): React.ComponentClass<P> {
+	class WithEventLogger extends React.Component<P, {}> {
+		static childContextTypes: React.ValidationMap<any> = {
 			eventLogger: React.PropTypes.object,
 		};
 
-		constructor(props) {
+		constructor(props: P) {
 			super(props);
 			eventLogger.init();
 		}
@@ -422,8 +414,8 @@ export function withEventLoggerContext(eventLogger: EventLogger, Component) {
 			return {eventLogger};
 		}
 
-		render() {
-			return <Component {...this.props} />;
+		render(): JSX.Element {
+			return React.createElement(component, this.props);
 		}
 	}
 	return WithEventLogger;
@@ -431,24 +423,29 @@ export function withEventLoggerContext(eventLogger: EventLogger, Component) {
 
 // withViewEventsLogged calls this.context.eventLogger.logEvent when the
 // location's pathname changes.
-export function withViewEventsLogged(Component) {
-	class WithViewEventsLogged extends React.Component { // eslint-disable-line react/no-multi-comp
-		static propTypes = {
-			routes: React.PropTypes.arrayOf(React.PropTypes.object),
-			location: React.PropTypes.object.isRequired,
-		};
+type WithViewEventsLoggedProps = {
+	routes: ReactRouter.Route[],
+	location: HistoryModule.Location,
+};
 
-		static contextTypes = {
+export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(component: React.ComponentClass<P>): React.ComponentClass<P> {
+	class WithViewEventsLogged extends React.Component<P, {}> { // eslint-disable-line react/no-multi-comp
+		static contextTypes: React.ValidationMap<any> = {
 			router: React.PropTypes.object.isRequired,
 			eventLogger: React.PropTypes.object.isRequired,
 		};
 
-		componentDidMount() {
+		context: {
+			router: any,
+			eventLogger: any,
+		};
+
+		componentDidMount(): void {
 			this._logView(this.props.routes, this.props.location);
 			this._checkEventQuery();
 		}
 
-		componentWillReceiveProps(nextProps) {
+		componentWillReceiveProps(nextProps: P): void {
 			// Greedily log page views. Technically changing the pathname
 			// may match the same "view" (e.g. interacting with the directory
 			// tree navigations will change your URL,  but not feel like separate
@@ -463,59 +460,58 @@ export function withViewEventsLogged(Component) {
 			this._checkEventQuery();
 		}
 
-		camelCaseToUnderscore(input) {
+		camelCaseToUnderscore(input: string): string {
 			if (input.charAt(0) === "_") {
 				input = input.substring(1);
 			}
 
-			return input.replace(/([A-Z])/g, function($1) {
-				return `_${$1.toLowerCase()}`;
-			});
+			return input.replace(/([A-Z])/g, ($1) => `_${$1.toLowerCase()}`);
 		}
 
-		_checkEventQuery() {
+		_checkEventQuery(): void {
 			// Allow tracking events that occurred externally and resulted in a redirect
 			// back to Sourcegraph. Pull the event name out of the URL.
-			if (this.props.location.query && this.props.location.query._event) {
+			if (this.props.location.query && this.props.location.query["_event"]) {
 				// For login signup related metrics a channel will be associated with the signup.
 				// This ensures we can track one metrics "SignupCompleted" and then query on the channel
 				// for more granular metrics.
-				let eventProperties= {};
+				let eventProperties = {};
 				for (let key in this.props.location.query) {
 					if (key !== "_event") {
 						eventProperties[this.camelCaseToUnderscore(key)] = this.props.location.query[key];
 					}
 				}
 
-				if (this.props.location.query._githubAuthed) {
-					this.context.eventLogger.setUserProperty("github_authed", this.props.location.query._githubAuthed);
-					this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SIGNUP, this.props.location.query._event, eventProperties);
+				if (this.props.location.query["_githubAuthed"]) {
+					this.context.eventLogger.setUserProperty("github_authed", this.props.location.query["_githubAuthed"]);
+					this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SIGNUP, this.props.location.query["_event"], eventProperties);
 				} else {
-					this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_EXTERNAL, AnalyticsConstants.ACTION_REDIRECT, this.props.location.query._event, eventProperties);
+					this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_EXTERNAL, AnalyticsConstants.ACTION_REDIRECT, this.props.location.query["_event"], eventProperties);
 				}
 
 				// Won't take effect until we call replace below, but prevents this
 				// from being called 2x before the setTimeout block runs.
-				delete this.props.location.query._event;
-				delete this.props.location.query._githubAuthed;
+				delete this.props.location.query["_event"];
+				delete this.props.location.query["_githubAuthed"];
 
 				// Remove _event from the URL to canonicalize the URL and make it
 				// less ugly.
-				const locWithoutEvent = {...this.props.location,
-					query: {...this.props.location.query, _event: undefined, _signupChannel: undefined, _onboarding: undefined, _githubAuthed: undefined}, // eslint-disable-line no-undefined
-					state: {...this.props.location.state, _onboarding: this.props.location.query._onboarding},
-				};
+				const locWithoutEvent = Object.assign({}, this.props.location, {
+					query: Object.assign({}, this.props.location.query, {_event: undefined, _signupChannel: undefined, _onboarding: undefined, _githubAuthed: undefined}), // eslint-disable-line no-undefined
+					state: Object.assign({}, this.props.location.state, {_onboarding: this.props.location.query["_onboarding"]}),
+				});
 
-				delete this.props.location.query._signupChannel;
-				delete this.props.location.query._onboarding;
+				delete this.props.location.query["_signupChannel"];
+				delete this.props.location.query["_onboarding"];
 
 				this.context.router.replace(locWithoutEvent);
 			}
 		}
 
-		_logView(routes: Array<Route>, location: Location) {
+		_logView(routes: ReactRouter.Route[], location: HistoryModule.Location): void {
 			let eventProps: {
 				url: string;
+				referred_by_integration?: string;
 				referred_by_browser_ext?: string;
 				referred_by_sourcegraph_editor?: string;
 				language?: string;
@@ -558,23 +554,20 @@ export function withViewEventsLogged(Component) {
 				if (viewName === "ViewBlob" && routeParams) {
 					const filePath = routeParams.splat[routeParams.splat.length - 1];
 					const lang = getLanguageExtensionForPath(filePath);
-					if (lang) eventProps.language = lang;
+					if (lang) { eventProps.language = lang; }
 				} else if ((viewName === "ViewDef" || viewName === "ViewDefInfo") && routeParams) {
 					const defPath = routeParams.splat[routeParams.splat.length - 1];
 					const lang = defPathToLanguage(defPath);
-					if (lang) eventProps.language = lang;
+					if (lang) { eventProps.language = lang; }
 				}
 
-				this.context.eventLogger.logViewEvent(viewName, location.pathname, {...eventProps, pattern: getRoutePattern(routes)});
+				this.context.eventLogger.logViewEvent(viewName, location.pathname, Object.assign({}, eventProps, {pattern: getRoutePattern(routes)}));
 			} else {
-				this.context.eventLogger.logViewEvent("UnmatchedRoute", location.pathname, {
-					...eventProps,
-					pattern: getRoutePattern(routes),
-				});
+				this.context.eventLogger.logViewEvent("UnmatchedRoute", location.pathname, Object.assign({}, eventProps, {pattern: getRoutePattern(routes)}));
 			}
 		}
 
-		render() { return <Component {...this.props} />; }
+		render(): JSX.Element { return React.createElement(component, this.props); }
 	}
 	return WithViewEventsLogged;
 }
