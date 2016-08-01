@@ -3,6 +3,7 @@ package golang
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"sync"
@@ -88,10 +89,18 @@ func errResp(req *jsonrpc2.Request, err error) *jsonrpc2.Response {
 	}
 }
 
-func (h *Session) Handle(req *jsonrpc2.Request) *jsonrpc2.Response {
+func (h *Session) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
 	// Coarse lock (for now) to protect h's internal state.
 	h.mu.Lock()
 	defer h.mu.Unlock()
+
+	// Prevent any uncaught panics from taking the entire server down.
+	defer func() {
+		if r := recover(); r != nil {
+			resp = errResp(req, fmt.Errorf("unexpected panic: %v", r))
+			return
+		}
+	}()
 
 	if req.Method != "initialize" && h.init == nil {
 		return errResp(req, errors.New("server must be initialized"))
@@ -156,7 +165,7 @@ func (h *Session) Handle(req *jsonrpc2.Request) *jsonrpc2.Response {
 		return nil
 	}
 
-	resp := &jsonrpc2.Response{ID: req.ID}
+	resp = &jsonrpc2.Response{ID: req.ID}
 	resp.SetResult(result)
 	return resp
 }
