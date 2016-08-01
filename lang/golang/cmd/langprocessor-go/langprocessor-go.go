@@ -128,11 +128,11 @@ func main() {
 	}
 
 	log.Println("Translating HTTP", *httpAddr, "to LSP", *lspAddr)
-	http.Handle("/", &langp.Translator{
+	http.Handle("/", langp.New(&langp.Translator{
 		Addr:    *lspAddr,
 		WorkDir: workDir,
 		Prepare: prepare,
 		FileURI: fileURI,
-	})
+	}))
 	http.ListenAndServe(*httpAddr, nil)
 }
