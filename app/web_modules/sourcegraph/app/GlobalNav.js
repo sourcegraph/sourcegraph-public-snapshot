@@ -272,10 +272,8 @@ class SearchForm extends React.Component {
 	}
 
 	_handleReset(ev: Event) {
-		this.props.router.push(locationForSearch(this.props.location, null, null, null, false, true));
-		this.setState({focused: false, open: false});
-
-		this.props.router.push(locationForSearch(this.props.location, this.state.query, this.state.lang, this.state.scope, true, true));
+		this.setState({focused: false, open: false, query: ""});
+		this._input.value = "";
 	}
 
 	_handleKeyDown(ev: KeyboardEvent) {
@@ -339,7 +337,8 @@ class SearchForm extends React.Component {
 						onKeyDown={this._handleKeyDown}
 						onClick={this._handleFocus}
 						onChange={this._handleChange} />
-						{this.props.showResultsPanel && this.state.open && <button styleName="close-icon" type="reset"></button>}
+						{this.props.showResultsPanel && this.state.open &&
+						<button styleName="close-icon" type="reset" onClick={this._handleReset}></button>}
 				</form>
 				{this.props.showResultsPanel && this.state.open && <SearchResultsPanel query={this.state.query || ""} repo={this.props.repo} location={this.props.location} />}
 			</div>
