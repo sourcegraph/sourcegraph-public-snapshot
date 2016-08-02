@@ -66,7 +66,7 @@ class DesktopHome extends React.Component {
 						Thanks for using Sourcegraph Desktop! If the app is not working as expected, see our GitHub to:
 					</p>
 					<List className={base.mv3}>
-						<li><strong><a target="_blank" href="https://github.com/sourcegraph-beta/sourcegraph-desktop#sourcegraph-desktop">Browse troubleshooting tips</a></strong></li>
+						<li><strong><a target="_blank" href="https://github.com/sourcegraph-beta/sourcegraph-desktop/blob/master/troubleshooting.md#sourcegraph-desktop-troubleshooting">Browse troubleshooting tips</a></strong></li>
 						<li><strong><a target="_blank" href="https://github.com/sourcegraph-beta/sourcegraph-desktop/issues/new">File an issue</a></strong></li>
 					</List>
 					<p>
