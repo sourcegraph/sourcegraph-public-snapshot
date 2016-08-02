@@ -19,6 +19,9 @@ func (h *Session) handleDefinition(req *jsonrpc2.Request, params lsp.TextDocumen
 		return nil, errors.New("invalid position")
 	}
 	def, err := godef(h.filePath("gopath"), h.filePath(params.TextDocument.URI), int(ofs))
+	if err != nil {
+		return nil, err
+	}
 
 	uri, err := h.fileURI(def.Path)
 	if err != nil {
