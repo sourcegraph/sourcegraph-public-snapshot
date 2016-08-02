@@ -326,12 +326,12 @@ export default class BlobAnnotator extends Component {
 		let indicatorText = "";
 		if (!utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
 			indicatorText = "Unsupported language";
-			return (<span id="sourcegraph-build-indicator-text" style={{paddingLeft: "5px"}}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px"}} />{indicatorText}</span>);
+			return (<span id="sourcegraph-build-indicator-text" style={{paddingLeft: "5px"}}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px", WebkitFilter: "grayscale(100%)"}} />{indicatorText}</span>);
 		} else {
 			indicatorText = this._indicatorText(this.state.repoURI, this.state.rev);
 		}
 		if (!this.state.isDelta) {
-			return (<span> <SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px"}} />{this.getBuildIndicator(indicatorText, null)} </span>);
+			return (<span><a href={`https://sourcegraph.com/${this.state.repoURI}@${this.state.rev}/-/blob/${this.state.path}`}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px"}} /></a>{this.getBuildIndicator(indicatorText, null)} </span>);
 		} else {
 			let baseText = this._indicatorText(this.state.baseRepoURI, this.state.baseCommitID);
 			let headText = this._indicatorText(this.state.headRepoURI, this.state.headCommitID);
