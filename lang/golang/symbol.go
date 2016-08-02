@@ -10,7 +10,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
-	"sourcegraph.com/sourcegraph/srclib-go/gog"
 	"sourcegraph.com/sourcegraph/srclib-go/gog/definfo"
 )
 
@@ -19,17 +18,17 @@ func (h *Session) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbol
 	if err != nil {
 		return nil, err
 	}
-	defFilter := func(_ *gog.Def) bool { return false }
-	refFilter := func(_ *gog.Ref) bool { return false }
+	defFilter := func(_ *gogDef) bool { return false }
+	refFilter := func(_ *gogRef) bool { return false }
 	switch q.Type {
 	case "external":
-		refFilter = func(r *gog.Ref) bool {
+		refFilter = func(r *gogRef) bool {
 			local := r.Unit == r.Def.PackageImportPath
 			builtin := r.Def.PackageImportPath == "builtin"
 			return !local && !builtin
 		}
 	case "exported":
-		defFilter = func(d *gog.Def) bool { return d.DefInfo.Exported }
+		defFilter = func(d *gogDef) bool { return d.DefInfo.Exported }
 	default:
 		return nil, fmt.Errorf("unrecognized symbol query type %s", q.Type)
 	}
@@ -108,14 +107,14 @@ func parseSymbolQuery(q string) (*symbolQuery, error) {
 	}, nil
 }
 
-func runGog(env, pkgs []string) (*gog.Output, error) {
+func runGog(env, pkgs []string) (*gogOutput, error) {
 	c := exec.Command("gog", pkgs...)
 	c.Env = env
 	b, err := c.Output()
 	if err != nil {
 		return nil, err
 	}
-	var o gog.Output
+	var o gogOutput
 	err = json.Unmarshal(b, &o)
 	return &o, err
 }
@@ -169,4 +168,39 @@ func offsetToPosition(content []byte, offset int) lsp.Position {
 		}
 	}
 	return p
+}
+
+// TODO(keegancsmith) move gog.Output, etc to gog/definfo. Types copy pasted
+// to avoid vendoring in the whole of gog.
+type gogOutput struct {
+	Defs []*gogDef
+	Refs []*gogRef
+}
+
+type gogDef struct {
+	Name string
+
+	DefKey *gogDefKey
+
+	File      string
+	IdentSpan [2]uint32
+	DeclSpan  [2]uint32
+
+	definfo.DefInfo
+}
+
+type gogDefKey struct {
+	PackageImportPath string
+	Path              []string
+}
+
+type gogRef struct {
+	Unit string
+	File string
+	Span [2]uint32
+	Def  *gogDefKey
+
+	// IsDef is true if ref is to the definition of Def, and false if it's to a
+	// use of Def.
+	IsDef bool
 }
