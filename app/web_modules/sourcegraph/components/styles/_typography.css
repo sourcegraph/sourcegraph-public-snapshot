@@ -57,6 +57,12 @@
 	line-height: 1.65;
 }
 
+.code-deftitle {
+	font-family: Menlo, Consolas, Monaco, monospace;
+	font-size: 18.75px;
+	line-height: 1.45;
+}
+
 
 /*
 	 MEASURE

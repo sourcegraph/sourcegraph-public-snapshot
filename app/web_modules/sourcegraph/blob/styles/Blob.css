@@ -14,6 +14,7 @@
 
 .normal { composes: code-normal from typography; }
 .large { composes: code-large from typography; }
+.deftitle { composes: code-deftitle from typography; }
 
 .pathComponent {}
 .inactivePathComponent {
@@ -78,6 +79,12 @@
 	border-spacing: 0;
 	min-width: 100%;
 }
+.defTitle {
+	composes: code-deftitle from typography;
+	table-layout: fixed;
+	border-spacing: 0;
+	min-width: 100%;
+}
 .lineNumberCell {
 	composes: bg-cool-pale-gray-2 from colors;
 	padding: 0;
@@ -120,6 +127,16 @@
 }
 .lineContent a {
 	font-weight: bold;
+}
+.defTitleLineContent {
+	tab-size: 4;
+	overflow: visible;
+	white-space: pre;
+	padding: 0px;
+}
+.defTitleLineContent a {
+	font-weight: bold;
+	padding: 0px;
 }
 .selectedLineContent {
 	composes: lineContent;
