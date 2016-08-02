@@ -1,7 +1,6 @@
 package oauth2client
 
 import (
-	"bytes"
 	"errors"
 	"net/http"
 	"net/url"
@@ -15,6 +14,7 @@ import (
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/github"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
@@ -32,24 +32,16 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-const (
-	githubAuthorizeURL = "https://github.com/login/oauth/authorize"
-	githubTokenURL     = "https://github.com/login/oauth/access_token"
-)
-
 var (
-	nonceCookiePath = router.Rel.URLTo(router.GitHubOAuth2Receive).Path
+	githubNonceCookiePath = router.Rel.URLTo(router.GitHubOAuth2Receive).Path
 
-	githubClientID     string
-	githubClientSecret string
+	githubClientID     = os.Getenv("GITHUB_CLIENT_ID")
+	githubClientSecret = os.Getenv("GITHUB_CLIENT_SECRET")
 )
 
 func init() {
 	internal.Handlers[router.GitHubOAuth2Initiate] = internal.Handler(serveGitHubOAuth2Initiate)
 	internal.Handlers[router.GitHubOAuth2Receive] = internal.Handler(serveGitHubOAuth2Receive)
-
-	githubClientID = os.Getenv("GITHUB_CLIENT_ID")
-	githubClientSecret = os.Getenv("GITHUB_CLIENT_SECRET")
 }
 
 // serveGitHubOAuth2Initiate generates the OAuth2 authorize URL
@@ -66,7 +58,7 @@ func serveGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 	// JS so we centralize usage analytics there.
 	returnTo = canonicalurl.FromURL(returnTo)
 
-	nonce, err := writeNonceCookie(w, r, nonceCookiePath)
+	nonce, err := writeNonceCookie(w, r, githubNonceCookiePath)
 	if err != nil {
 		return err
 	}
@@ -80,7 +72,7 @@ func serveGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 		scopes = strings.Split(s, ",")
 	}
 
-	destURL, err := oauthLoginURL(r, oauthAuthorizeClientState{Nonce: nonce, ReturnTo: returnTo.String()}, scopes)
+	destURL, err := githubOAuthLoginURL(r, oauthAuthorizeClientState{Nonce: nonce, ReturnTo: returnTo.String()}, scopes)
 	if err != nil {
 		return err
 	}
@@ -89,38 +81,7 @@ func serveGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-// oauthAuthorizeClientState holds the state that the OAuth2 client
-// passes to the provider and expects to receive back, during the
-// OAuth2 authorization flow.
-//
-// No authentication of these values is performed; callers should
-// check that, e.g., the State field matches the cookie nonce.
-type oauthAuthorizeClientState struct {
-	// Nonce is the state nonce that the OAuth2 client expects to
-	// receive from the provider. It is generated and stored in a
-	// cookie by writeNonceCookie.
-	Nonce string
-
-	// ReturnTo is the request URI on the client app that the resource owner
-	// should be redirected to, after successful completion of OAuth2
-	// authorization.
-	ReturnTo string
-}
-
-func (s oauthAuthorizeClientState) MarshalText() ([]byte, error) {
-	return []byte(s.Nonce + ":" + s.ReturnTo), nil
-}
-
-func (s *oauthAuthorizeClientState) UnmarshalText(text []byte) error {
-	parts := bytes.SplitN(text, []byte(":"), 2)
-	if len(parts) != 2 {
-		return errors.New("invalid OAuth2 authorize client state: no ':' delimiter")
-	}
-	*s = oauthAuthorizeClientState{Nonce: string(parts[0]), ReturnTo: string(parts[1])}
-	return nil
-}
-
-func oauthLoginURL(r *http.Request, state oauthAuthorizeClientState, scopes []string) (*url.URL, error) {
+func githubOAuthLoginURL(r *http.Request, state oauthAuthorizeClientState, scopes []string) (*url.URL, error) {
 	ctx := httpctx.FromRequest(r)
 
 	stateText, err := state.MarshalText()
@@ -128,7 +89,17 @@ func oauthLoginURL(r *http.Request, state oauthAuthorizeClientState, scopes []st
 		return nil, err
 	}
 
-	return url.Parse(oauth2Config(ctx, scopes).AuthCodeURL(string(stateText)))
+	return url.Parse(githubOAuth2Config(ctx, scopes).AuthCodeURL(string(stateText)))
+}
+
+func githubOAuth2Config(ctx context.Context, scopes []string) *oauth2.Config {
+	return &oauth2.Config{
+		ClientID:     githubClientID,
+		ClientSecret: githubClientSecret,
+		Endpoint:     github.Endpoint,
+		RedirectURL:  conf.AppURL(ctx).ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String(),
+		Scopes:       scopes,
+	}
 }
 
 func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error) {
@@ -160,7 +131,7 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 	nonce, present := nonceFromCookie(r)
-	deleteNonceCookie(w, nonceCookiePath) // prevent reuse of nonce
+	deleteNonceCookie(w, githubNonceCookiePath) // prevent reuse of nonce
 	if !present || nonce != state.Nonce || nonce == "" {
 		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("invalid state nonce from OAuth2 provider")}
 	}
@@ -311,17 +282,4 @@ func createAccountFromGitHub(w http.ResponseWriter, r *http.Request, ctx context
 	httpctx.SetForRequest(r, ctx)
 
 	return linkAccountWithGitHub(w, r, ctx, cl, createdAcct.UID, ghUser, tok, true, returnTo)
-}
-
-func oauth2Config(ctx context.Context, scopes []string) *oauth2.Config {
-	return &oauth2.Config{
-		ClientID:     githubClientID,
-		ClientSecret: githubClientSecret,
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  githubAuthorizeURL,
-			TokenURL: githubTokenURL,
-		},
-		RedirectURL: conf.AppURL(ctx).ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String(),
-		Scopes:      scopes,
-	}
 }

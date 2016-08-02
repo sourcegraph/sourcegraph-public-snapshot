@@ -995,6 +995,12 @@
 			"revisionTime": "2016-05-20T18:48:49Z"
 		},
 		{
+			"checksumSHA1": "Yokz/Wl4zeuOZG2ev8LuaLtMotE=",
+			"path": "golang.org/x/oauth2/github",
+			"revision": "c406a4cc4ba462e5dc2f16225c5bd9488f9cbe10",
+			"revisionTime": "2016-05-20T18:48:49Z"
+		},
+		{
 			"checksumSHA1": "wOPSJY27UE4XhH+O9ZIDvbKJmrk=",
 			"path": "golang.org/x/oauth2/google",
 			"revision": "c406a4cc4ba462e5dc2f16225c5bd9488f9cbe10",
