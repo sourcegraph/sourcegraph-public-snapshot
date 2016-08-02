@@ -74,6 +74,20 @@ type Range struct {
 	EndCharacter int
 }
 
+// LSP converts this langp range into its LSP equivalent.
+func (r Range) LSP() lsp.Range {
+	return lsp.Range{
+		Start: lsp.Position{
+			Line:      r.StartLine,
+			Character: r.StartCharacter,
+		},
+		End: lsp.Position{
+			Line:      r.EndLine,
+			Character: r.EndCharacter,
+		},
+	}
+}
+
 // LocalRefs represents references to a specific definition.
 type LocalRefs struct {
 	// Refs is a list of references to a definition defined within the requested
