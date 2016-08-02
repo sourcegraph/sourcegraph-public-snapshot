@@ -12,7 +12,7 @@ import typography from "sourcegraph/components/styles/_typography.css";
 import annotationsByLine from "sourcegraph/blob/annotationsByLine";
 import BlobLine from "sourcegraph/blob/BlobLine";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import BlobStore from "sourcegraph/blob/BlobStore";
+import BlobStore, {keyForFile, keyForAnns} from "sourcegraph/blob/BlobStore";
 import blobStyles from "sourcegraph/blob/styles/Blob.css";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -185,8 +185,8 @@ class DefInfo extends Container {
 			return null;
 		}
 
-		let file = BlobStore.files.get(defObj.Repo, defObj.CommitID, defObj.File);
-		let anns = BlobStore.annotations.get(defObj.Repo, defObj.CommitID, defObj.File);
+		let file = BlobStore.files[keyForFile(defObj.Repo, defObj.CommitID, defObj.File)] || null;
+		let anns = BlobStore.annotations[keyForAnns(defObj.Repo, defObj.CommitID, defObj.File)] || null;
 		if (!file || !anns) {
 			return null;
 		}
@@ -260,6 +260,7 @@ class DefInfo extends Container {
 									<tbody>
 										{defLine &&
 											<BlobLine
+												clickEventLabel="DefTitleTokenClicked"
 												ref={null}
 												repo={repo}
 												rev={rev}
