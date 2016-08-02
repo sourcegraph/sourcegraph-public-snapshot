@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"runtime"
 	"sync"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
@@ -98,6 +99,12 @@ func (h *Session) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
 	defer func() {
 		if r := recover(); r != nil {
 			resp = errResp(req, fmt.Errorf("unexpected panic: %v", r))
+
+			// Same as net/http
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			log.Printf("panic serving %v: %v\n%s", req.Method, r, buf)
 			return
 		}
 	}()
