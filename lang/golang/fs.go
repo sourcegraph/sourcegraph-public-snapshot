@@ -3,6 +3,7 @@ package golang
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -38,4 +39,14 @@ func (h *Session) readFile(uri string) ([]byte, error) {
 	// TODO(sqs): sanitize paths, ensure that we can't break outside of h.init.RootPath
 	contents, err := ioutil.ReadFile(path)
 	return contents, err
+}
+
+func (h *Session) goEnv() []string {
+	env := []string{"GOPATH=" + h.filePath("gopath")}
+	for _, e := range os.Environ() {
+		if !strings.HasPrefix(e, "GOPATH=") {
+			env = append(env, e)
+		}
+	}
+	return env
 }

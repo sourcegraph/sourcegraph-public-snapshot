@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -30,7 +29,7 @@ func (h *Session) handleHover(req *jsonrpc2.Request, params lsp.TextDocumentPosi
 	if !valid {
 		return nil, errors.New("invalid position")
 	}
-	def, err := godef(h.filePath("gopath"), h.filePath(params.TextDocument.URI), int(ofs))
+	def, err := godef(h.goEnv(), h.filePath(params.TextDocument.URI), int(ofs))
 	if err != nil {
 		return nil, err
 	}
@@ -47,15 +46,10 @@ type godefResult struct {
 	Info         string
 }
 
-func godef(gopath, path string, offset int) (*godefResult, error) {
+func godef(env []string, path string, offset int) (*godefResult, error) {
 	start := time.Now()
 	c := exec.Command("godef", "-a", "-f", path, "-o", strconv.Itoa(offset))
-	c.Env = []string{"GOPATH=" + gopath}
-	for _, e := range os.Environ() {
-		if !strings.HasPrefix(e, "GOPATH=") {
-			c.Env = append(c.Env, e)
-		}
-	}
+	c.Env = env
 	b, err := c.CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("%v: %v", err, string(b))
