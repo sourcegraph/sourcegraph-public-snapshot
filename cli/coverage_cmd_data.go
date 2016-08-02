@@ -1,6 +1,6 @@
 package cli
 
-var langRepos_ = map[string][]string{
+var langRepos = map[string][]string{
 	"Bash": []string{
 		"github.com/mydzor/bash2048",
 	},

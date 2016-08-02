@@ -1,6 +1,5 @@
-// coverageutil contain aux functions and classes
-// for coverage command
-package coverageutil
+// tokenizer contains a tokenizer for the coverage command.
+package tokenizer
 
 import (
 	"fmt"
@@ -14,6 +13,8 @@ type Token struct {
 	Offset uint32
 	// Line number
 	Line int
+	// Column number
+	Column int
 	// Token text
 	Text string
 }

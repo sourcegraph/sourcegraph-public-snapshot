@@ -1,4 +1,4 @@
-package coverageutil
+package tokenizer
 
 import (
 	"testing"
@@ -12,7 +12,7 @@ func TestGo(testing *testing.T) {
 			{
 				"keywords",
 				"package main",
-				[]Token{{8, 1, "main"}},
+				[]Token{{8, 1, 9, "main"}},
 			},
 		})
 }
