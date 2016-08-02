@@ -26,7 +26,6 @@ export default class App extends React.Component {
 	static propTypes = {
 		main: reactElement,
 		navContext: reactElement,
-		globalNav: reactElement,
 		location: React.PropTypes.object.isRequired,
 		params: React.PropTypes.object,
 		channelStatusCode: React.PropTypes.number,
@@ -70,10 +69,7 @@ export default class App extends React.Component {
 		return (
 			<div styleName={this.state.styleName}>
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
-				{this.props.globalNav || this.props.globalNav === null ?
-					this.props.globalNav :
-					<GlobalNav params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
-				}
+				<GlobalNav params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
 				<div styleName="main-content">
 					{this.props.navContext && <div styleName="breadcrumb">{this.props.navContext}</div>}
 					{this.props.main}
