@@ -123,11 +123,15 @@ func runE2E(t *testing.T, name string) {
 			if err2 != nil {
 				t.Fatal(err2)
 			}
-			err2 = ioutil.WriteFile(path, screenshot, 0666)
-			if err2 != nil {
-				t.Fatal(err2)
+			if screenshot == nil {
+				t.Logf("Skipped writing empty screenshot to %s\n", path)
+			} else {
+				err2 = ioutil.WriteFile(path, screenshot, 0666)
+				if err2 != nil {
+					t.Fatal(err2)
+				}
+				t.Logf("Wrote: %s\n", path)
 			}
-			t.Logf("Wrote: %s\n", path)
 		}
 		t.Fatal(err)
 	}
