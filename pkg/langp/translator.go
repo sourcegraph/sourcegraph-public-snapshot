@@ -58,6 +58,7 @@ func New(opts *Translator) http.Handler {
 		Translator: opts,
 	}
 	mux := http.NewServeMux()
+	mux.Handle("/definition", t.handler("/definition", t.serveDefinition))
 	mux.Handle("/hover", t.handler("/hover", t.serveHover))
 	return mux
 }
@@ -147,6 +148,106 @@ func (t *translator) prepareWorkspace(rootDir, repo, commit string) error {
 		return err
 	}
 	return nil
+}
+
+func (t *translator) serveDefinition(body []byte) (interface{}, error) {
+	// TODO(slimsag): We don't need to create a new JSON RPC 2 connection every
+	// time, but we will need reconnection logic and a non-dumb jsonrpc2.Client
+	// which can handle concurrency (according to Sourcegraph LSP spec we can
+	// and should use one connection for all requests).
+	conn, err := net.Dial("tcp", t.Addr)
+	if err != nil {
+		return nil, err
+	}
+	cl := jsonrpc2.NewClient(conn)
+	defer func() {
+		if err := cl.Close(); err != nil {
+			// TODO: configurable logging
+			log.Println(err)
+		}
+	}()
+
+	// Decode the user request.
+	var pos Position
+	if err := json.Unmarshal(body, &pos); err != nil {
+		return nil, err
+	}
+	if pos.Repo == "" {
+		return nil, fmt.Errorf("Repo field must be set")
+	}
+	if pos.Commit == "" {
+		return nil, fmt.Errorf("Commit field must be set")
+	}
+	if pos.File == "" {
+		return nil, fmt.Errorf("File field must be set")
+	}
+
+	// Determine the root path for the workspace and prepare it.
+	rootPath := filepath.Join(t.WorkDir, pos.Repo, pos.Commit)
+	err = t.prepareWorkspace(rootPath, pos.Repo, pos.Commit)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build the LSP requests.
+	reqInit := &jsonrpc2.Request{
+		ID:     "0",
+		Method: "initialize",
+	}
+	if err := reqInit.SetParams(&lsp.InitializeParams{
+		RootPath: rootPath,
+	}); err != nil {
+		return nil, err
+	}
+	// TODO: should probably check server capabilities before invoking hover,
+	// but good enough for now.
+	reqDefID := "1"
+	reqDef := &jsonrpc2.Request{
+		ID:     reqDefID,
+		Method: "textDocument/definition",
+	}
+	p := pos.LSP()
+	if t.FileURI != nil {
+		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
+	}
+	if err := reqDef.SetParams(p); err != nil {
+		return nil, err
+	}
+	reqShutdown := &jsonrpc2.Request{ID: "2", Method: "shutdown"}
+
+	// Make the batched LSP request.
+	resps, err := cl.RequestBatchAndWaitForAllResponses(
+		reqInit,
+		reqDef,
+		reqShutdown,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal the LSP responses.
+	defResp, ok := resps[reqDefID]
+	if !ok {
+		return nil, fmt.Errorf("response to def request from LSP server not found")
+	}
+	if defResp.Error != nil {
+		return nil, defResp.Error
+	}
+	// TODO: according to spec this could be lsp.Location OR []lsp.Location
+	var respDef []lsp.Location
+	if err := json.Unmarshal(*defResp.Result, &respDef); err != nil {
+		return nil, err
+	}
+
+	// TODO(slimsag): this conversion is lossy, extend our REST protocol to
+	// include ranges.
+	return Position{
+		Repo:      pos.Repo,
+		Commit:    pos.Commit,
+		File:      respDef[0].URI,
+		Line:      respDef[0].Range.Start.Line,
+		Character: respDef[0].Range.Start.Character,
+	}, nil
 }
 
 func (t *translator) serveHover(body []byte) (interface{}, error) {

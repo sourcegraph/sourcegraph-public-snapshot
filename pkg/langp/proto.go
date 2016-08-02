@@ -35,7 +35,7 @@ type Position struct {
 	Character int
 }
 
-// LSP converts this langp position into its closest LSP equivilent.
+// LSP converts this langp position into its closest LSP equivalent.
 func (p Position) LSP() *lsp.TextDocumentPositionParams {
 	return &lsp.TextDocumentPositionParams{
 		TextDocument: lsp.TextDocumentIdentifier{URI: p.File},
