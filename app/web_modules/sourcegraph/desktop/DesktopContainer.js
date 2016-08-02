@@ -8,7 +8,7 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import {urlToDefInfo} from "sourcegraph/def/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
 
-export default function desktopContainer(Component: ReactClass<any>): ReactClass<any> {
+export default function desktopContainer(Component) {
 	class DesktopContainer extends Container {
 		static contextTypes = {
 			router: React.PropTypes.object.isRequired,
