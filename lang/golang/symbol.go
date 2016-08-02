@@ -20,7 +20,14 @@ func (h *Session) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbol
 		return nil, err
 	}
 	defFilter := func(_ *gog.Def) bool { return false }
+	refFilter := func(_ *gog.Ref) bool { return false }
 	switch q.Type {
+	case "external":
+		refFilter = func(r *gog.Ref) bool {
+			local := r.Unit == r.Def.PackageImportPath
+			builtin := r.Def.PackageImportPath == "builtin"
+			return !local && !builtin
+		}
 	case "exported":
 		defFilter = func(d *gog.Def) bool { return d.DefInfo.Exported }
 	default:
@@ -59,6 +66,22 @@ func (h *Session) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbol
 				},
 			},
 			ContainerName: d.DefInfo.Receiver + d.DefInfo.FieldOfStruct,
+		}
+		symbols = append(symbols, s)
+	}
+	seenRef := map[string]bool{}
+	for _, r := range o.Refs {
+		if !refFilter(r) {
+			continue
+		}
+		k := r.Def.PackageImportPath + "/-/" + strings.Join(r.Def.Path, "/")
+		if seenRef[k] {
+			continue
+		}
+		seenRef[k] = true
+		s := lsp.SymbolInformation{
+			Name:          strings.Join(r.Def.Path, "/"),
+			ContainerName: r.Def.PackageImportPath,
 		}
 		symbols = append(symbols, s)
 	}
