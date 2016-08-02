@@ -8,26 +8,26 @@
 	composes: ph2 from base;
 }
 
-.loader-label {
+.loader_label {
 	display: inline-block;
-	animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+	animation: sk_bouncedelay 1.4s infinite ease-in-out both;
 }
 
 .loader1 {
-	composes: loader-label;
+	composes: loader_label;
 	animation-delay: -0.32s;
 }
 
 .loader2 {
-	composes: loader-label;
+	composes: loader_label;
 	animation-delay: -0.16s;
 }
 
 .loader3 {
-	composes: loader-label;
+	composes: loader_label;
 }
 
-@keyframes sk-bouncedelay {
+@keyframes sk_bouncedelay {
 	0%, 80%, 100% {
 		transform: scale(0);
 	} 40% {

@@ -4,6 +4,6 @@
 
 .code {
 	composes: code f6 from typography;
-	composes: bg-cool-pale-gray cool-gray from colors;
+	composes: bg_cool_pale_gray cool_gray from colors;
 	composes: br2 pa1 mr1 from base;
 }

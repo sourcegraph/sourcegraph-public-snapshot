@@ -419,7 +419,7 @@ textarea {
 /* Box Sizing */
 html, body, div, article, section, main, footer, header, form, fieldset, pre,
 code, p, ul, ol, li, dl, dt, dd, textarea, input[type="text"], input[type="tel"],
-input[type="email"], input[type="url"], input[type="password"], .border-box { box-sizing: border-box; }
+input[type="email"], input[type="url"], input[type="password"], .border_box { box-sizing: border-box; }
 
 /* Internal debugging tool */
 :global #debug:hover .verbose {

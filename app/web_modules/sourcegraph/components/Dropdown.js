@@ -75,21 +75,21 @@ class Dropdown extends React.Component {
 
 	render() {
 		return (
-			<div styleName={this.props.disabled ? "wrapper-disabled" : "wrapper"} className={this.props.className}
+			<div styleName={this.props.disabled ? "wrapper_disabled" : "wrapper"} className={this.props.className}
 				ref={(e) => this._wrapper = e}>
 				<span onClick={this.getMenuClickCallback(this.state.selectedValue)}>{this.props.icon} {this.props.title}</span>
-				<span className={`toggle ${this.state.open ? "open-arrow" : ""}`} onClick={this._onToggleDropdown}>
-					<DownPointer width={8} styleName="center-icon" className={base.ml1}/>
+				<span className={`toggle ${this.state.open ? "open_arrow" : ""}`} onClick={this._onToggleDropdown}>
+					<DownPointer width={8} styleName="center_icon" className={base.ml1}/>
 				</span>
-				<div styleName="dropdown-menu">
+				<div styleName="dropdown_menu">
 					<div role="menu"
-						styleName={this.state.open ? "dropdown-menu-open" : "dropdown-menu-closed"}>
-						<ul styleName="list-section">
+						styleName={this.state.open ? "dropdown_menu_open" : "dropdown_menu_closed"}>
+						<ul styleName="list_section">
 							{this.props.items.map((item, i) =>
 								<li key={i} styleName="item" onClick={this.getItemClickCallback(item.value)}>
-									<span styleName="item-content">
-										<CheckIcon styleName={item.value === this.state.selectedValue ? "item-icon" : "item-icon-hidden"} />
-										<span styleName="item-name">{item.name}</span>
+									<span styleName="item_content">
+										<CheckIcon styleName={item.value === this.state.selectedValue ? "item_icon" : "item_icon_hidden"} />
+										<span styleName="item_name">{item.name}</span>
 									</span>
 								</li>
 							)}

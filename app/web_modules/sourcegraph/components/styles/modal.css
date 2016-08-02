@@ -1,10 +1,10 @@
 @value base "./_base.css";
 @value colors "./_colors.css";
 
-@value c_black-30 from colors;
+@value c_black_30 from colors;
 
 .container {
-	composes: bg-black-70 from colors;
+	composes: bg_black_70 from colors;
 	composes: center from base;
 	z-index: 100; /* TODO: extract z-index into module */
 	position: fixed;
@@ -15,14 +15,14 @@
 	overflow-y: auto;
 }
 
-.modal-shadow {
-	box-shadow: 2px 2px 10px 0px c_black-30;
+.modal_shadow {
+	box-shadow: 2px 2px 10px 0px c_black_30;
 }
 
 .modal {
 	composes: center mv6 br2 pa4 from base;
-	composes: bg-white from colors;
-	composes: modal-shadow;
+	composes: bg_white from colors;
+	composes: modal_shadow;
 	max-width: 700px; /* TODO: use rem */
 	min-width: 320px; /* TODO: use rem */
 	z-index: 101; /* TODO: extract z-index into module */

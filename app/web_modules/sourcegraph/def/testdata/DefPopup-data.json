@@ -15,7 +15,7 @@
 										{
 											"type": "span",
 											"props": {
-												"styleName": "def-title",
+												"styleName": "def_title",
 												"children": [
 													"a ",
 													{

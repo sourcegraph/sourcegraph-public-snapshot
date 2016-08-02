@@ -12,7 +12,7 @@ class FlexContainerComponent extends React.Component {
 
 				<Panel hoverLevel="low">
 					<div className={base.pa4}>
-						<Heading level="7" className={base.mb3} color="cool-mid-gray">Default</Heading>
+						<Heading level="7" className={base.mb3} color="cool_mid_gray">Default</Heading>
 						<FlexContainer>
 							<div className={`${base.ba} ${base.pa2}`}>
 								42.
@@ -22,7 +22,7 @@ class FlexContainerComponent extends React.Component {
 							</div>
 						</FlexContainer>
 
-						<Heading level="7" className={base.mv3} color="cool-mid-gray">Wrap</Heading>
+						<Heading level="7" className={base.mv3} color="cool_mid_gray">Wrap</Heading>
 						<FlexContainer wrap={true}>
 							<div className={`${base.ba} ${base.pa2}`}>
 								Man had always assumed that he was more intelligent than dolphins.
@@ -38,7 +38,7 @@ class FlexContainerComponent extends React.Component {
 							</div>
 						</FlexContainer>
 
-						<Heading level="7" className={base.mv3} color="cool-mid-gray">Space Between</Heading>
+						<Heading level="7" className={base.mv3} color="cool_mid_gray">Space Between</Heading>
 						<FlexContainer justify="between">
 							<div className={`${base.ba} ${base.pa2}`}>
 								42.
@@ -54,7 +54,7 @@ class FlexContainerComponent extends React.Component {
 							</div>
 						</FlexContainer>
 
-						<Heading level="7" className={base.mv3} color="cool-mid-gray">Space Around</Heading>
+						<Heading level="7" className={base.mv3} color="cool_mid_gray">Space Around</Heading>
 						<FlexContainer justify="around">
 							<div className={`${base.ba} ${base.pa2}`}>
 								42.
@@ -123,9 +123,9 @@ class FlexContainerComponent extends React.Component {
 						<tbody>
 							<tr>
 								<td><Code>direction</Code></td>
-								<td><Code>left-right</Code></td>
+								<td><Code>left_right</Code></td>
 								<td>
-									<Code>left-right</Code>, <Code>right-left</Code>, <Code>top-bottom</Code>, <Code>bottom-top</Code>
+									<Code>left_right</Code>, <Code>right_left</Code>, <Code>top_bottom</Code>, <Code>bottom_top</Code>
 								</td>
 							</tr>
 							<tr>

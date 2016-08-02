@@ -43,7 +43,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 		<nav
 			id="global-nav"
 			styleName="navbar"
-			className={colors["shadow-gray"]} role="navigation"
+			className={colors["shadow_gray"]} role="navigation"
 			style={shouldHide ? {visibility: "hidden"} : {}}>
 
 			{location.state && location.state.modal === "login" &&
@@ -80,17 +80,17 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 				</LocationStateModal>
 			}
 
-			<div styleName="flex flex-fill flex-center tl" className={base.bn}>
-				{!isHomepage && <Link to="/" styleName="logo-link flex-fixed">
+			<div styleName="flex flex_fill flex_center tl" className={base.bn}>
+				{!isHomepage && <Link to="/" styleName="logo_link flex_fixed">
 					{showLogoMarkOnly ?
 						<Logo styleName="logo logomark"
 							width="21px"
 							type="logomark"/> :
 						<span>
-							<Logo styleName="logo logomark small-only"
+							<Logo styleName="logo logomark small_only"
 								width="21px"
 								type="logomark"/>
-							<Logo styleName="logo not-small-only"
+							<Logo styleName="logo not_small_only"
 								width="144px"
 								type="logotype"/>
 						</span>
@@ -98,39 +98,39 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 				</Link>}
 
 				<div
-					styleName="flex-fill"
-					className={`${base["b--dotted"]} ${base.bn} ${base.brw2} ${colors["b--cool-pale-gray"]}`}>
+					styleName="flex_fill"
+					className={`${base["b__dotted"]} ${base.bn} ${base.brw2} ${colors["b__cool_pale_gray"]}`}>
 					{location.pathname !== "/" && <SearchForm repo={repo} location={location} router={router} showResultsPanel={location.pathname !== `/${rel.search}`} />}
 				</div>
 
-				{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal styleName="icon-ellipsis" title="Your editor could not identify the symbol"/>}
-				{typeof channelStatusCode !== "undefined" && channelStatusCode === 1 && <CheckIcon styleName="icon-check" title="Sourcegraph successfully looked up symbol" />}
+				{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal styleName="icon_ellipsis" title="Your editor could not identify the symbol"/>}
+				{typeof channelStatusCode !== "undefined" && channelStatusCode === 1 && <CheckIcon styleName="icon_check" title="Sourcegraph successfully looked up symbol" />}
 
-				{user && <div styleName="flex flex-fixed" className={`${base.pv2} ${base.ph3}`}>
+				{user && <div styleName="flex flex_fixed" className={`${base.pv2} ${base.ph3}`}>
 					<Popover left={true}>
 						<div styleName="user">
 							{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <div>{user.Login}</div>}
-							<DownPointer width={10} className={base.ml2} styleName="fill-cool-mid-gray" />
+							<DownPointer width={10} className={base.ml2} styleName="fill_cool_mid_gray" />
 						</div>
 						<Menu className={base.pa0} style={{width: "220px"}}>
 							<div className={`${base.pa0} ${base.mb2} ${base.mt3}`}>
-								<Heading level="7" color="cool-mid-gray">Signed in as</Heading>
+								<Heading level="7" color="cool_mid_gray">Signed in as</Heading>
 								{user.Login}
 							</div>
-							<LogoutLink role="menu-item" />
+							<LogoutLink role="menu_item" />
 							<hr role="divider" className={base.mv3} />
-							<Link to="/settings/repos" role="menu-item">Your repositories</Link>
-							<LocationStateToggleLink href="/integrations" modalName="menuIntegrations" role="menu-item" location={location}	onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickToolsandIntegrations", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
+							<Link to="/settings/repos" role="menu_item">Your repositories</Link>
+							<LocationStateToggleLink href="/integrations" modalName="menuIntegrations" role="menu_item" location={location}	onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickToolsandIntegrations", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 								Tools and integrations
 							</LocationStateToggleLink>
-							<LocationStateToggleLink href="/beta" modalName="menuBeta" role="menu-item" location={location}	onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickJoinBeta", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
+							<LocationStateToggleLink href="/beta" modalName="menuBeta" role="menu_item" location={location}	onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickJoinBeta", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 								Beta program
 							</LocationStateToggleLink>
 							<hr role="divider" className={base.mt3} />
-							<div styleName="cool-mid-gray" className={`${base.pv1} ${base.mb1} ${typography.tc}`}>
-								<Link to="/security" className={`${typography.f7} ${typography["link-subtle"]} ${base.pr3}`} styleName="cool-mid-gray">Security</Link>
-								<Link to="/-/privacy" className={`${typography.f7} ${typography["link-subtle"]} ${base.pr3}`} styleName="cool-mid-gray">Privacy</Link>
-								<Link to="/-/terms" className={`${typography.f7} ${typography["link-subtle"]}`}>Terms</Link>
+							<div styleName="cool_mid_gray" className={`${base.pv1} ${base.mb1} ${typography.tc}`}>
+								<Link to="/security" className={`${typography.f7} ${typography["link_subtle"]} ${base.pr3}`} styleName="cool_mid_gray">Security</Link>
+								<Link to="/-/privacy" className={`${typography.f7} ${typography["link_subtle"]} ${base.pr3}`} styleName="cool_mid_gray">Privacy</Link>
+								<Link to="/-/terms" className={`${typography.f7} ${typography["link_subtle"]}`}>Terms</Link>
 							</div>
 						</Menu>
 					</Popover>
@@ -248,7 +248,7 @@ class SearchForm extends React.Component {
 	_handleGlobalHotkey(ev: KeyboardEvent) {
 		if (ev.keyCode === 27 /* ESC */) {
 			// Check that the element exists on the page before trying to set state.
-			if (document.getElementById("e2etest-search-input")) {
+			if (document.getElementById("e2etest-search_input")) {
 				this.setState({
 					open: false,
 				});
@@ -344,7 +344,7 @@ class SearchForm extends React.Component {
 						onClick={this._handleFocus}
 						onChange={this._handleChange} />
 						{this.props.showResultsPanel && this.state.open &&
-						<button styleName="close-icon" type="reset" onClick={this._handleReset}></button>}
+						<button styleName="close_icon" type="reset" onClick={this._handleReset}></button>}
 				</form>
 				{this.props.showResultsPanel && this.state.open && <SearchResultsPanel query={this.state.query || ""} repo={this.props.repo} location={this.props.location} />}
 			</div>

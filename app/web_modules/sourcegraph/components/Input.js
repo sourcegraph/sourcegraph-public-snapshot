@@ -29,12 +29,12 @@ class Input extends React.Component {
 				<input
 					{...this.props}
 					style={style} ref={domRef}
-					styleName={`input ${block ? "block" : ""} ${error ? "border-red" : "border-neutral"}`}
+					styleName={`input ${block ? "block" : ""} ${error ? "border_red" : "border_neutral"}`}
 					placeholder={placeholder ? placeholder : ""} />
 				{helperText && <em styleName="small block" className={base.mt2}>{helperText}</em>}
 				{errorText &&
 					<div styleName="red" className={base.mv2}>
-						<Alert width={16} className={base.mr2} style={{marginTop: "-4px"}} styleName="red-fill" />
+						<Alert width={16} className={base.mr2} style={{marginTop: "-4px"}} styleName="red_fill" />
 						This is an error message.
 					</div>
 				}

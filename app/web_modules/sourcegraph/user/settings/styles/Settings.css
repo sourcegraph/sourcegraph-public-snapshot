@@ -6,7 +6,7 @@
 @value button "sourcegraph/components/styles/button.css";
 @value vars "sourcegraph/components/styles/_vars.css";
 
-@value media-sm from vars;
+@value media_sm from vars;
 
 .container {
 	width: 100%;
@@ -28,7 +28,7 @@
 	flex: 1 1;
 }
 
-@media screen and media-sm {
+@media screen and media_sm {
 	.nav {
 		display: none;
 	}

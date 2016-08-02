@@ -27,18 +27,18 @@ class Stepper extends React.Component {
 		return steps.map((step, i) => {
 			if (i < stepsComplete) {
 				return (
-					<span styleName={`step step-complete line-${color}`} key={i}>
-						<span styleName={`step-node-complete node-${color}`}>
+					<span styleName={`step step_complete line_${color}`} key={i}>
+						<span styleName={`step_node_complete node_${color}`}>
 							<Icon icon="check" width="16px" styleName="check" />
 						</span>
-						<span styleName="step-text">{step}</span>
+						<span styleName="step_text">{step}</span>
 					</span>
 				);
 			}
 			return (
-				<span styleName="step step-incomplete" key={i}>
-					<span styleName="step-node-incomplete" />
-					<span styleName="step-text">{step}</span>
+				<span styleName="step step_incomplete" key={i}>
+					<span styleName="step_node_incomplete" />
+					<span styleName="step_text">{step}</span>
 				</span>
 			);
 		});

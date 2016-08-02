@@ -1,7 +1,7 @@
 @value base "./_base.css";
 @value colors "./_colors.css";
 
-@value c_cool-gray-2 from colors;
+@value c_cool_gray_2 from colors;
 
 .container {
 	position: relative;
@@ -9,7 +9,7 @@
 }
 
 .popover {
-	composes: shadow-gray from colors;
+	composes: shadow_gray from colors;
 	composes: br3 from base;
 	display: flex;
 	flex: 1 1 auto;
@@ -23,8 +23,8 @@
 .popover:before {
 	content: "";
 	background: white;
-	border-left: 1px c_cool-gray-2 solid;
-	border-top: 1px c_cool-gray-2 solid;
+	border-left: 1px c_cool_gray_2 solid;
+	border-top: 1px c_cool_gray_2 solid;
 	display: block;
 	height: 8px;
 	position: absolute;
@@ -35,12 +35,12 @@
 	z-index: 101;
 }
 
-.popover-left {
+.popover_left {
 	composes: popover;
 	right: -8px;
 }
 
-.popover-right {
+.popover_right {
 	composes: popover;
 	left: -8px;
 }

@@ -13,7 +13,7 @@
 	font-weight: bold;
 	composes: pv2 from base;
 	composes: f4 from typography;
-	composes: cool-gray from colors;
+	composes: cool_gray from colors;
 }
 
 .meta {
@@ -32,14 +32,14 @@
 	white-space: nowrap;
 	composes: pr3 from base;
 }
-.sig-name {}
+.sig_name {}
 .name {
 	font-weight: bold;
 }
-.name-secondary {}
+.name_secondary {}
 .username {}
 
-.commit-id {
+.commit_id {
 	flex: 0;
 	text-align: right;
 	composes: pl4 from base;
@@ -47,12 +47,12 @@
 
 .sha {
 	composes: code from typography;
-	composes: cool-gray from colors;
+	composes: cool_gray from colors;
 }
 
 .rest {
 	white-space: pre-wrap;
 	composes: pt3 pb2 from base;
 	composes: code from typography;
-	composes: cool-gray from colors;
+	composes: cool_gray from colors;
 }

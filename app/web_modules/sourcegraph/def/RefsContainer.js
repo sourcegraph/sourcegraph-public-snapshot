@@ -266,7 +266,7 @@ export default class RefsContainer extends Container {
 		}
 
 		return (
-			<div className={`${base.pa4} ${base.bb} ${colors["b--cool-pale-gray"]} ${styles["full-width-sm"]}`}>
+			<div className={`${base.pa4} ${base.bb} ${colors["b__cool_pale_gray"]} ${styles["full_width_sm"]}`}>
 			{this.state.showRepoTitle &&
 				<div>
 					<RepoLink className={styles.repoLink} repo={this.state.refRepo} />
@@ -316,8 +316,8 @@ export default class RefsContainer extends Container {
 
 								let voteStyle = this.state.voteDone ? styles.voteDone : styles.vote;
 								return (
-									<div key={i} className={styles["single-ref-container"]}>
-										{this.context.user && this.context.user.Admin && <div className={`${voteStyle} ${styles["left-align-sm"]}`}>
+									<div key={i} className={styles["single_ref_container"]}>
+										{this.context.user && this.context.user.Admin && <div className={`${voteStyle} ${styles["left_align_sm"]}`}>
 											<a className={styles.upvote} onClick={() => this._vote(true, this.state.refRepo, loc.Path)}><FaThumbsUp /></a>
 											<a className={styles.downvote} onClick={() => this._vote(false, this.state.refRepo, loc.Path)}><FaThumbsDown /></a>
 										</div>}
@@ -339,7 +339,7 @@ export default class RefsContainer extends Container {
 												textSize="large"
 												className={styles.blob} />
 										</div>
-										{this.state.refRepo && <div className={`${base.mt3} ${styles.f7} ${base["hidden-s"]}`}>From <Link to={`${urlToBlob(this.state.refRepo, this.state.refRev, loc.Path)}${ranges ? `#L${ranges[0][2]}` : ""}`} onClick={this._clickedFromRepo.bind(this)}>{this.state.refRepo}</Link></div>}
+										{this.state.refRepo && <div className={`${base.mt3} ${styles.f7} ${base["hidden_s"]}`}>From <Link to={`${urlToBlob(this.state.refRepo, this.state.refRev, loc.Path)}${ranges ? `#L${ranges[0][2]}` : ""}`} onClick={this._clickedFromRepo.bind(this)}>{this.state.refRepo}</Link></div>}
 									</div>
 								);
 							})}

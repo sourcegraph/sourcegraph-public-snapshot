@@ -120,13 +120,13 @@ class ChecklistsComponent extends React.Component {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="7" className={base.mb3} color="cool-mid-gray">Horizontal (default)</Heading>
+								<Heading level="7" className={base.mb3} color="cool_mid_gray">Horizontal (default)</Heading>
 								<Tabs direction="horizontal">
 									<TabItem active={true}>Tab 1</TabItem>
 									<TabItem>Tab 2</TabItem>
 									<TabItem>Tab 3</TabItem>
 								</Tabs>
-								<Heading level="7" className={base.mv3} color="cool-mid-gray">Vertical</Heading>
+								<Heading level="7" className={base.mv3} color="cool_mid_gray">Vertical</Heading>
 								<Tabs direction="vertical">
 									<TabItem active={true}>Tab 1</TabItem>
 									<TabItem>Tab 2</TabItem>

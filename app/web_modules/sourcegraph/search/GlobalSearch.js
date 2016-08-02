@@ -396,7 +396,7 @@ class GlobalSearch extends Container {
 		const langs = this.state.searchSettings ? this.state.searchSettings.languages : null;
 
 		if (!langs || langs.length === 0) {
-			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`} styleName="result result-error">Select a language to search.</div>];
+			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4}`} styleName="result result_error">Select a language to search.</div>];
 		}
 
 		if (this.state.query && !this.state.matchingResults ||
@@ -422,15 +422,15 @@ class GlobalSearch extends Container {
 
 			const firstLineDocString = repo.Description;
 			list.push(
-				<Link styleName={selected ? "block result-selected" : "block result"}
+				<Link styleName={selected ? "block result_selected" : "block result"}
 					className={this.state.resultClassName}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : null}
 					to={repo.URI}
 					key={repo.URI}
 					onClick={() => this._onSelection(true)}>
-					<div styleName="cool-gray flex-container">
-						<div styleName="flex-icon hidden-s">
+					<div styleName="cool_gray flex_container">
+						<div styleName="flex_icon hidden_s">
 							<Icon icon="repository-gray" width={resultIconSize} />
 						</div>
 						<div styleName="flex">
@@ -462,16 +462,16 @@ class GlobalSearch extends Container {
 
 			const firstLineDocString = docstring;
 			list.push(
-				<Link styleName={selected ? "block result-selected" : "block result"}
+				<Link styleName={selected ? "block result_selected" : "block result"}
 					className={this.state.resultClassName}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : null}
 					to={defURL.replace(/GoPackage\/pkg\//, "GoPackage/")}
 					key={defURL}
 					onClick={() => this._onSelection(true)}>
-					<div styleName="cool-gray flex-container" className={base.pt3}>
+					<div styleName="cool_gray flex_container" className={base.pt3}>
 						<div styleName="flex w100">
-							<p styleName="cool-mid-gray block-s" className={`${base.ma0} ${base.pl4} ${base.pr2} ${base.fr}`}>{trimRepo(def.Repo)}</p>
+							<p styleName="cool_mid_gray block_s" className={`${base.ma0} ${base.pl4} ${base.pr2} ${base.fr}`}>{trimRepo(def.Repo)}</p>
 							<code styleName="block f5" className={base.pb3}>
 								{qualifiedNameAndType(def, {nameQual: "DepQualified"})}
 							</code>

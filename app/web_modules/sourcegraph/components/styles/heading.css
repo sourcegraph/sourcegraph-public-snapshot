@@ -18,19 +18,19 @@
 .white { composes: white from colors; }
 .purple { composes: purple from colors; }
 .orange { composes: orange from colors; }
-.cool-mid-gray { composes: cool-mid-gray from colors; }
+.cool_mid_gray { composes: cool_mid_gray from colors; }
 
 .line {
 	composes: bw3 mv3 from base;
-	composes: v-middle from typography;
+	composes: v_middle from typography;
 	display: inline-block;
 	width: 5rem;
 }
-.l-blue { composes: b--blue from colors; }
-.l-green { composes: b--green from colors; }
-.l-purple {	composes: b--purple from colors; }
-.l-white {composes: b--white from colors; }
-.l-orange {	composes: b--orange from colors; }
+.l_blue { composes: b__blue from colors; }
+.l_green { composes: b__green from colors; }
+.l_purple {	composes: b__purple from colors; }
+.l_white {composes: b__white from colors; }
+.l_orange {	composes: b__orange from colors; }
 
 .center { composes: tc from typography; }
 .left { composes: tl from typography; }

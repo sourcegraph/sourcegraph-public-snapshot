@@ -1,7 +1,7 @@
 @value base "sourcegraph/components/styles/_base.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 
-@value c_blue, c_cool-pale-gray from colors;
+@value c_blue, c_cool_pale_gray from colors;
 
 .normal {
 	padding-left: 16px;
@@ -20,7 +20,7 @@
 	content: "";
 	display: block;
 	width: 2px;
-	background-color: c_cool-pale-gray;
+	background-color: c_cool_pale_gray;
 	position: absolute;
 	top: 0.6rem;
 	bottom: 0.6rem;

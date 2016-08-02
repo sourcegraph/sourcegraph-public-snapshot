@@ -54,10 +54,10 @@ class ToolComponent extends React.Component {
 		}
 
 		return (<div>
-			<div styleName="dont-see-div">
-				<a styleName="dont-see-link" onClick={this._toggleView.bind(this)}>{this.state.formVisible ? <TriangleDownIcon /> : <TriangleRightIcon />}{this.props.supportedTool.interestForm.title}</a>
+			<div styleName="dont_see_div">
+				<a styleName="dont_see_link" onClick={this._toggleView.bind(this)}>{this.state.formVisible ? <TriangleDownIcon /> : <TriangleRightIcon />}{this.props.supportedTool.interestForm.title}</a>
 			</div>
-			<div styleName={`beta-container ${this.state.formVisible ? "visible" : "invisible"}`}>
+			<div styleName={`beta_container ${this.state.formVisible ? "visible" : "invisible"}`}>
 				<BetaInterestForm />
 			</div>
 		</div>);
@@ -66,27 +66,27 @@ class ToolComponent extends React.Component {
 	render() {
 		return (
 			<Modal onDismiss={this._dismissModal.bind(this)}>
-				<Panel styleName="tool-item" hoverLevel="high">
-					<div styleName="panel-cta">
+				<Panel styleName="tool_item" hoverLevel="high">
+					<div styleName="panel_cta">
 						<Button onClick={this._dismissModal.bind(this)} color="white">
 							<CloseIcon className={base.pt2} />
 						</Button>
 					</div>
-					<div styleName="flex-container">
-						{this.props.supportedTool.hero.img ? <span styleName="tool-img-container"><img styleName="large-img" src={`${this.context.siteConfig.assetsRoot}${this.props.supportedTool.hero.img}`}></img></span> : <div styleName="tool-img-container"/>}
+					<div styleName="flex_container">
+						{this.props.supportedTool.hero.img ? <span styleName="tool_img_container"><img styleName="large_img" src={`${this.context.siteConfig.assetsRoot}${this.props.supportedTool.hero.img}`}></img></span> : <div styleName="tool_img_container"/>}
 						<div>
 							<Heading align="left" level="2" className={base.pt5}>{this.props.supportedTool.hero.title}</Heading>
-							<div styleName="tool-item-paragraph">
+							<div styleName="tool_item_paragraph">
 								<b>{this.props.supportedTool.hero.subtitle}</b>
 								<br/><br/>
 								{this.props.supportedTool.hero.paragraph}
 							</div>
 						</div>
 					</div>
-					<div styleName="button-container">{this.props.supportedTool.primaryButton()}</div>
+					<div styleName="button_container">{this.props.supportedTool.primaryButton()}</div>
 					{this._optionalFormView()}
 					{this.props.supportedTool.secondaryButton}
-					{this.props.supportedTool.youtube && <div styleName="tool-gif-container">
+					{this.props.supportedTool.youtube && <div styleName="tool_gif_container">
 						<iframe width="420" height="315" src="https://www.youtube.com/embed/ssON7dfaDZo" frameBorder="0" allowFullScreen="true"></iframe>
 					</div>}
 				</Panel>

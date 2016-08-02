@@ -6,15 +6,15 @@
 
 /* TODO (chexee): move some of these to vars or individual components */
 @value marginBoxBorderWidth 4px;
-@value c_blue, c_cool-pale-gray-5, c_yellow-5 from colors;
+@value c_blue, c_cool_pale_gray_5, c_yellow_5 from colors;
 @value contentWidth 690px;
 @value marginWidth 290px;
 @value firstCodeLineTopPadding 16px;
-@value code-normal-line-height from typography;
+@value code_normal_line_height from typography;
 
-.normal { composes: code-normal from typography; }
-.large { composes: code-large from typography; }
-.deftitle { composes: code-deftitle from typography; }
+.normal { composes: code_normal from typography; }
+.large { composes: code_large from typography; }
+.deftitle { composes: code_deftitle from typography; }
 
 .pathComponent {}
 .inactivePathComponent {
@@ -62,7 +62,7 @@
 .blobAndToolbar {
 	composes: content;
 	composes: br from base;
-	composes: b--cool-pale-gray-8 from colors;
+	composes: b--cool_pale_gray-8 from colors;
 }
 .toolbar {
 	/* TODO(sqs!): not really used right now (only has the build indicator) */
@@ -80,13 +80,13 @@
 	min-width: 100%;
 }
 .defTitle {
-	composes: code-deftitle from typography;
+	composes: code_deftitle from typography;
 	table-layout: fixed;
 	border-spacing: 0;
 	min-width: 100%;
 }
 .lineNumberCell {
-	composes: bg-cool-pale-gray-2 from colors;
+	composes: bg-cool_pale_gray-2 from colors;
 	padding: 0;
 	width: 1%;
 	min-width: 40px;
@@ -99,21 +99,21 @@
 	display: block;
 	text-align: right;
 	white-space: nowrap;
-	composes: dark-blue-5 from colors;
+	composes: dark_blue_5 from colors;
 	padding-right: 8px;
 	user-select: none;
 	cursor: pointer;
 }
 .lineNumber:before {
 	content: attr(data-line);
-	line-height: code-normal-line-height;
+	line-height: code_normal_line_height;
 }
 .selectedLineNumber {
 	composes: lineNumber;
-	@value c_blue-2 from colors;
-	background-color: c_blue-2;
-	@value c_dark-blue from colors;
-	color: c_dark-blue;
+	@value c_blue_2 from colors;
+	background-color: c_blue_2;
+	@value c_dark_blue from colors;
+	color: c_dark_blue;
 }
 .line:first-child .lineNumber, .line:first-child .lineContent {
 	padding-top: firstCodeLineTopPadding;
@@ -140,7 +140,7 @@
 }
 .selectedLineContent {
 	composes: lineContent;
-	composes: bg-blue-1 from colors;
+	composes: bg_blue_1 from colors;
 }
 .highlightedAnn {
 	color: black;
@@ -149,33 +149,33 @@
 	cursor: pointer;
 }
 .disabledAnn {
-	@value c_light-gray from colors;
-	outline: solid 1px c_light-gray;
-	background-color: c_light-gray;
+	@value c_light_gray from colors;
+	outline: solid 1px c_light_gray;
+	background-color: c_light_gray;
 	transition: background-color 0.2;
 	cursor: default;
 }
-.activeAnn { background-color: c_yellow-5; }
+.activeAnn { background-color: c_yellow_5; }
 
-.line-expander {
-	composes: cool-mid-gray bg-cool-pale-gray-2 from colors;
+.line_expander {
+	composes: cool_mid_gray bg-cool_pale_gray-2 from colors;
 	line-height: 0.7;
 }
-.line-expander-cell {
-	composes: line-expander;
+.line_expander_cell {
+	composes: line_expander;
 	cursor: pointer;
 }
-.line-expander-cell:hover {
-	background-color: c_cool-pale-gray-5;
+.line_expander_cell:hover {
+	background-color: c_cool_pale_gray_5;
 }
-.line-expander-icon {
+.line_expander_icon {
 	composes: pt1 pb2 pl2 from base;
 }
 
 .placeholderWhitespace {
 	float: right;
 	background-color: white;
-	height: code-normal-line-height;
+	height: code_normal_line_height;
 }
 .lineContentPlaceholder {
 	composes: pa0 from base;
@@ -183,7 +183,7 @@
 .linesContentPlaceholder {
 	composes: lines;
 	composes: ph0 from base;
-	composes: shimmer-animation from animation;
+	composes: shimmer_animation from animation;
 	background: #f6f7f8;
 	background: linear-gradient(to right, #f2f2f2 8%, #e9e9e9 18%, #f2f2f2 53%);
 }

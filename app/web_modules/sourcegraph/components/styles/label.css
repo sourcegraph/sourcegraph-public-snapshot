@@ -13,17 +13,17 @@
 
 .default {
 	composes: label;
-	composes: bg-gray from colors;
+	composes: bg_gray from colors;
 }
 
 .primary {
 	composes: label;
-	composes: bg-blue from colors;
+	composes: bg_blue from colors;
 }
 
 .success {
 	composes: label;
-	composes: bg-green from colors;
+	composes: bg_green from colors;
 }
 
 .info {
@@ -33,60 +33,60 @@
 
 .warning {
 	composes: label;
-	composes: bg-orange from colors;
+	composes: bg_orange from colors;
 }
 
 .danger {
 	composes: label;
-	composes: bg-red from colors;
+	composes: bg_red from colors;
 }
 
 .purple {
 	composes: label;
-	composes: bg-purple from colors;
+	composes: bg_purple from colors;
 }
 
 .outline {
 	composes: br4 ba ph2 pv1 from base;
 	composes: f6 b sans-serif from typography;
-	composes: dark-gray from colors;
+	composes: dark_gray from colors;
 	text-transform: uppercase;
 	display: flex;
 	align-items: center;
 }
 
-.outline-default {
+.outline_default {
 	composes: outline;
-	composes: b--gray from colors;
+	composes: b__gray from colors;
 }
 
-.outline-primary {
+.outline_primary {
 	composes: outline;
-	composes: b--blue from colors;
+	composes: b__blue from colors;
 }
 
-.outline-success {
+.outline_success {
 	composes: outline;
-	composes: b--green from colors;
+	composes: b__green from colors;
 }
 
-.outline-info {
+.outline_info {
 	composes: outline;
 	composes: b--aqua from colors;
 }
 
-.outline-warning {
+.outline_warning {
 	composes: outline;
-	composes: b--orange from colors;
+	composes: b__orange from colors;
 }
 
-.outline-danger {
+.outline_danger {
 	composes: outline;
-	composes: b--red from colors;
+	composes: b__red from colors;
 }
 
-.outline-purple {
+.outline_purple {
 	composes: outline;
-	composes: b--purple from colors;
+	composes: b__purple from colors;
 }
 

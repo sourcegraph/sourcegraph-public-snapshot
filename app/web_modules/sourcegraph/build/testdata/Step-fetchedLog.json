@@ -7,7 +7,7 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "step-title info",
+						"styleName": "step_title info",
 						"children": [
 							{
 								"type": "span",
@@ -23,7 +23,7 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "step-body",
+						"styleName": "step_body",
 						"children": [
 							{
 								"type": "pre",

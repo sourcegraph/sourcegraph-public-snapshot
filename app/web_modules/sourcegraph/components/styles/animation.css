@@ -15,8 +15,8 @@ sparingly!
 .dim { opacity: 1; transition: opacity visual_animation_duration ease-in; }
 .dim:hover, .dim:focus { opacity: .5; transition: opacity visual_animation_duration ease-in; }
 .dim:active { opacity: .8; transition: opacity visual_animation_duration ease-out; }
-.hide-child .child { opacity: 0; transition: opacity visual_animation_duration ease-in; }
-.hide-child:hover  .child, .hide-child:focus  .child, .hide-child:active .child { opacity: 1; transition: opacity visual_animation_duration ease-in; }
+.hide_child .child { opacity: 0; transition: opacity visual_animation_duration ease-in; }
+.hide_child:hover  .child, .hide_child:focus  .child, .hide_child:active .child { opacity: 1; transition: opacity visual_animation_duration ease-in; }
 
 /* Shimmer effects */
 @keyframes shimmer {
@@ -27,7 +27,7 @@ sparingly!
 		background-position: 468px 0
 	}
 }
-.shimmer-animation {
+.shimmer_animation {
 	animation-duration: 900ms;
 	animation-fill-mode: forwards;
 	animation-iteration-count: infinite;

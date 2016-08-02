@@ -37,7 +37,7 @@ class NavContext extends React.Component {
 				{this.props.repoObj &&
 					<RepoLink repo={this.props.repo} rev={this.props.rev} />
 				}
-				<div styleName="repo-nav-context">{this.props.repoNavContext}</div>
+				<div styleName="repo_nav_context">{this.props.repoNavContext}</div>
 				{this.props.commitID && <RevSwitcherContainer
 					repo={this.props.repo}
 					repoObj={this.props.repoObj}

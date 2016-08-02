@@ -18,11 +18,11 @@ export default CSSModules(function AuthorList({
 	return (
 		<div className={className}>
 			{authors && authors.length > 0 &&
-				<ol styleName={`list${horizontal ? "-horizontal" : ""}`}>
-					{horizontal && <PencilIcon title="Authors" styleName="pencil-icon" />}
+				<ol styleName={`list${horizontal ? "_horizontal" : ""}`}>
+					{horizontal && <PencilIcon title="Authors" styleName="pencil_icon" />}
 					{authors.map((a, i) => (
-						<li key={i} styleName={`person${horizontal ? "-horizontal" : ""}`}>
-							<div styleName="badge-wrapper">
+						<li key={i} styleName={`person${horizontal ? "_horizontal" : ""}`}>
+							<div styleName="badge_wrapper">
 								<span styleName="badge">{Math.round(100 * a.BytesProportion) || "< 1"}%</span>
 							</div>
 							<Avatar styleName="avatar" size="tiny" img={a.AvatarURL} />

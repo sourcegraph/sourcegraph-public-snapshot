@@ -8,7 +8,7 @@ class Heading extends React.Component {
 		children: React.PropTypes.any,
 		level: React.PropTypes.string, //  1 is the largest
 		underline: React.PropTypes.string, // blue, purple, white, orange, green
-		color: React.PropTypes.string, // purple, blue, green, orange, cool-mid-gray
+		color: React.PropTypes.string, // purple, blue, green, orange, cool_mid_gray
 		align: React.PropTypes.string, // left, right, center
 		style: React.PropTypes.object,
 	};
@@ -26,7 +26,7 @@ class Heading extends React.Component {
 		return (
 			<div className={className} styleName={`h${level} ${color ? color : ""} ${align ? align : ""}`} style={style}>
 				{children}<br />
-				{underline && <hr styleName={`line l-${underline}`} />}
+				{underline && <hr styleName={`line l_${underline}`} />}
 			</div>
 		);
 	}

@@ -13,7 +13,7 @@ class ListComponent extends React.Component {
 				<Panel hoverLevel="low">
 					<div className={base.pa4}>
 
-						<Heading level="7" className={base.mb3} color="cool-mid-gray">Normal</Heading>
+						<Heading level="7" className={base.mb3} color="cool_mid_gray">Normal</Heading>
 
 						<List>
 							<li>Item 1</li>
@@ -21,7 +21,7 @@ class ListComponent extends React.Component {
 							<li>Item 3</li>
 						</List>
 
-						<Heading level="7" className={base.mb3} color="cool-mid-gray">Node style</Heading>
+						<Heading level="7" className={base.mb3} color="cool_mid_gray">Node style</Heading>
 
 						<List listStyle="node">
 							<li>Item 1</li>

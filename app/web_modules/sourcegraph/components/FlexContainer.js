@@ -5,7 +5,7 @@ import styles from "sourcegraph/components/styles/flexContainer.css";
 
 class FlexContainer extends React.Component {
 	static propTypes = {
-		direction: React.PropTypes.string, // left-right, right-left, top-bottom, bottom-top
+		direction: React.PropTypes.string, // left_right, right_left, top_bottom, bottom_top
 		wrap: React.PropTypes.bool,
 		justify: React.PropTypes.string, // start, end, center, between, around
 		items: React.PropTypes.string, // start, end, center, baseline, stretch
@@ -15,7 +15,7 @@ class FlexContainer extends React.Component {
 	};
 
 	static defaultProps = {
-		direction: "left-right",
+		direction: "left_right",
 		wrap: false,
 		justify: "start",
 		items: "stretch",
@@ -25,7 +25,7 @@ class FlexContainer extends React.Component {
 	render() {
 		const {direction, wrap, justify, items, content, className, children} = this.props;
 		return (
-			<div styleName={`flex ${direction} justify-${justify} items-${items} content-${content} ${wrap ? "wrap" : "nowrap"}`} className={className}>
+			<div styleName={`flex ${direction} justify_${justify} items_${items} content_${content} ${wrap ? "wrap" : "nowrap"}`} className={className}>
 				{children}
 			</div>
 		);

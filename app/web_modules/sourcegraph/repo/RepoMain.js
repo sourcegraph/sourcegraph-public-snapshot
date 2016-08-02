@@ -214,13 +214,13 @@ class RepoMain extends React.Component {
 		const title = this.props.repoObj && !this.props.repoObj.Error ? repoPageTitle(this.props.repoObj) : null;
 
 		return (
-			<div styleName="outer-container">
+			<div styleName="outer_container">
 				{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
 				{isMainRoute && title && <Helmet title={title} />}
 				{this.props.main}
 				{(!this.props.route || !this.props.route.disableTreeSearchOverlay) && this.props.location.state && this.props.location.state.modal === TREE_SEARCH_MODAL_NAME &&
 					<Modal onDismiss={this._dismissTreeSearchModal}>
-						<div styleName="tree-search-modal">
+						<div styleName="tree_search_modal">
 							<TreeSearch
 								repo={this.props.repo}
 								rev={this.props.rev}

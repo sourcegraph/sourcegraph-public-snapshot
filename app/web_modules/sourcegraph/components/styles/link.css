@@ -1,29 +1,29 @@
 @value colors "./_colors.css";
-@value c_blue-text, c_dark-blue, c_cool-gray-5 from colors;
+@value c_blue_text, c_dark_blue, c_cool_gray_5 from colors;
 
 /* Can't use "composes" on tag names */
 a {
 	text-decoration: none;
-	color: c_blue-text;
+	color: c_blue_text;
 }
 a:hover {
 	text-decoration: none;
-	color: c_dark-blue;
+	color: c_dark_blue;
 }
 
 .link {
 	text-decoration: none;
-	color: c_blue-text;
+	color: c_blue_text;
 }
 .link:hover {
 	text-decoration: none;
-	color: c_dark-blue;   /* TODO: can't use compose on pseudoelements. */
+	color: c_dark_blue;   /* TODO: can't use compose on pseudoelements. */
 }
 
-.link-subtle {
-	composes: cool-mid-gray from colors;
+.link_subtle {
+	composes: cool_mid_gray from colors;
 }
 
-.link-subtle:hover {
-	color: c_cool-gray-8;
+.link_subtle:hover {
+	color: c_cool_gray_8;
 }

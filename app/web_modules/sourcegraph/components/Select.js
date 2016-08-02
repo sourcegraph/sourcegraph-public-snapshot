@@ -32,7 +32,7 @@ class Select extends React.Component {
 					required={true}
 					style={style}
 					defaultValue={defaultValue}
-					styleName={`select ${error ? "border-red" : "border-neutral"} ${block ? "block" : ""} `}
+					styleName={`select ${error ? "border_red" : "border_neutral"} ${block ? "block" : ""} `}
 					placeholder={placeholder ? placeholder : ""}>
 					{children}
 				</select>
@@ -40,7 +40,7 @@ class Select extends React.Component {
 				{helperText && <em styleName="small block" className={base.mt2}>{helperText}</em>}
 				{errorText &&
 					<div styleName="red" className={base.mv2}>
-						<Alert width={16} className={base.mr2} style={{marginTop: "-4px"}} styleName="red-fill" />
+						<Alert width={16} className={base.mr2} style={{marginTop: "-4px"}} styleName="red_fill" />
 						This is an error message.
 					</div>
 				}

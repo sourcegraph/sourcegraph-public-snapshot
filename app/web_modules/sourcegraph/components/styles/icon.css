@@ -1,7 +1,7 @@
 @value typography "./_typography.css";
 
 .icon {
-	composes: v-txt-top from typography;
+	composes: v_txt_top from typography;
 	display: inline-flex;
 	align-items: center;
 	pointer-events: none;

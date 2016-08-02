@@ -17,7 +17,7 @@ class Selector extends React.Component {
 			options.push(<option value={value} key={key}>{value}</option>);
 		}
 		return (
-			<select styleName="input-select" required={true} defaultValue={this.props.defaultValue || ""}>
+			<select styleName="input_select" required={true} defaultValue={this.props.defaultValue || ""}>
 				{options}
 			</select>);
 	}

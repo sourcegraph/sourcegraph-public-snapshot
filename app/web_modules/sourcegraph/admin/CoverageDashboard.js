@@ -115,13 +115,13 @@ class CoverageDashboard extends Container {
 							<MagnifyingGlassIcon styleName="icon" />
 						</div>
 						<div styleName="quantiles">
-							<span styleName="quantile-header">Ref Quantiles: </span>
+							<span styleName="quantile_header">Ref Quantiles: </span>
 							{/* show quantile data for most recent day only */}
 							{data[data.length - 1].RefQs.map((q, j) =>
 								<span styleName="quantile" key={j}>{`${Math.round(q * 100)}% (p=${0.25 * (j+1)})`}</span>)}
 						</div>
 						<div styleName="quantiles">
-							<span styleName="quantile-header">Def Quantiles: </span>
+							<span styleName="quantile_header">Def Quantiles: </span>
 							{/* show quantile data for most recent day only */}
 							{data[data.length - 1].DefQs.map((q, j) =>
 								<span styleName="quantile" key={j}>{`${Math.round(q * 100)}% (p=${0.25 * (j+1)})`}</span>)}

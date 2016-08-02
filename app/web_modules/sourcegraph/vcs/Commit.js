@@ -19,14 +19,14 @@ function sigName(sig) {
 	if (!sig) return null;
 	if (sig.Name) {
 		return (
-			<span styleName="sig-name">
+			<span styleName="sig_name">
 				{sig.Name ? <span styleName="name">{sig.Name}&nbsp;</span> : null}
-				<span styleName="name-secondary">({username(sig.Email)})</span>
+				<span styleName="name_secondary">({username(sig.Email)})</span>
 			</span>
 		);
 	}
 	return (
-		<span styleName="sig-name">
+		<span styleName="sig_name">
 			<span styleName="name">{username(sig.Email)}</span>
 		</span>
 	);
@@ -54,7 +54,7 @@ function Commit({repo, commit, full}) {
 						<span styleName="sig">{sigName(commit.Author)} authored <TimeAgo time={commit.Author.Date} /></span><wbr/>
 						{commit.Committer && showBothSigs(commit.Author, commit.Committer) ? <span styleName="sig">{sigName(commit.Committer)} committed <TimeAgo time={commit.Committer.Date} /></span> : null}
 					</div>
-					<div styleName="commit-id">
+					<div styleName="commit_id">
 						<code styleName="sha">{commit.ID.substring(0, 8)}</code>
 					</div>
 				</div>

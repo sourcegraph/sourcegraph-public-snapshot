@@ -19,11 +19,11 @@ class Panel extends React.Component {
 	render() {
 		const {children, color, inverse, hover, hoverLevel, className} = this.props;
 
-		const colorClass = color ? `color ${inverse ? "inverse-" : ""}${color}` : "no-color";
+		const colorClass = color ? `color ${inverse ? "inverse-" : ""}${color}` : "no_color";
 
 		return (
 			<div {...this.props} className={className}
-				styleName={`panel ${colorClass} ${hoverLevel || ""} ${hover && hoverLevel ? `${hoverLevel}-hover hover` : ""}`
+				styleName={`panel ${colorClass} ${hoverLevel || ""} ${hover && hoverLevel ? `${hoverLevel}_hover hover` : ""}`
 			}>
 				{children}
 			</div>

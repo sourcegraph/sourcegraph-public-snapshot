@@ -6,18 +6,18 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "top-level-task-header",
+						"styleName": "top_level_task_header",
 						"children": [
 							{
 								"type": "span",
 								"props": {
-									"styleName": "header-label"
+									"styleName": "header_label"
 								}
 							},
 							{
 								"type": "span",
 								"props": {
-									"styleName": "elapsed-label"
+									"styleName": "elapsed_label"
 								}
 							}
 						]

@@ -50,7 +50,7 @@ class ResetPassword extends Container {
 
 	render() {
 		return (
-			<form styleName="full-page form" onSubmit={this._handleSubmit}>
+			<form styleName="full_page form" onSubmit={this._handleSubmit}>
 				<Helmet title="Reset Password" />
 				<h1>Reset your password</h1>
 				<label>

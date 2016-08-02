@@ -16,7 +16,7 @@ function Button({
 	children,
 	...props,
 }: {
-	block: bool, // display:inline-block by default; use block for full-width buttons
+	block: bool, // display:inline_block by default; use block for full-width buttons
 	outline: bool, // solid by default
 	size: "small" | "large",
 	disabled: bool,
@@ -26,7 +26,7 @@ function Button({
 	imageUrl?: string,
 	children: any,
 }) {
-	let style = `${outline ? "outline-" : "solid-"}${color}`;
+	let style = `${outline ? "outline_" : "solid_"}${color}`;
 	if (disabled || loading) style = `${style} disabled`;
 	if (block) style = `${style} block`;
 	style = `${style} ${size ? size : ""}`;
@@ -34,7 +34,7 @@ function Button({
 	return (
 		<button {...props} styleName={style}
 			onClick={onClick}>
-			{imageUrl ? <img styleName="button-image" src={imageUrl} /> : ""}
+			{imageUrl ? <img styleName="button_image" src={imageUrl} /> : ""}
 			{loading && <Loader stretch={Boolean(block)} {...props}/>}
 			{!loading && children}
 		</button>

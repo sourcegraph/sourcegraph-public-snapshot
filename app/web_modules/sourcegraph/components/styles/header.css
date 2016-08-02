@@ -6,11 +6,11 @@
 	composes: pb6 from base;
 }
 
-.cloning-title {
-	composes: header-center from typography;
+.cloning_title {
+	composes: header_center from typography;
 }
 
-.cloning-subtext {
+.cloning_subtext {
 	composes: pt4 from base;
 	composes: subheader tc from typography;
 }

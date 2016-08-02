@@ -112,10 +112,10 @@ class RevSwitcher extends Component {
 		const commitsBehind = this.state.srclibDataVersion && !this.state.srclibDataVersion.Error ? this.state.srclibDataVersion.CommitsBehind : 0;
 
 		return (
-			<div key={`r${name}.${commitID}`} role="menu-item">
+			<div key={`r${name}.${commitID}`} role="menu_item">
 				<Link to={this._revSwitcherURL(name)} title={commitID}
 					onClick={this._closeDropdown}>
-					<CheckIcon styleName={isCurrent ? "icon" : "icon-hidden"} /> {name && <span>{abbrevRev(name)}</span>}
+					<CheckIcon styleName={isCurrent ? "icon" : "icon_hidden"} /> {name && <span>{abbrevRev(name)}</span>}
 					{isCurrent && commitsBehind ? <span styleName="detail">{commitsBehind} commit{commitsBehind !== 1 && "s"} ahead of index</span> : null}
 					{isCurrent && unindexed ? <span styleName="detail">not indexed</span> : null}
 				</Link>
@@ -253,9 +253,9 @@ class RevSwitcher extends Component {
 				<span styleName="toggle"
 					title={title}
 					onClick={this._onToggleDropdown}>
-					<FaChevronDown styleName="toggle-icon" />
+					<FaChevronDown styleName="toggle_icon" />
 				</span>
-				<div styleName={this.state.open ? "dropdown-menu open" : "dropdown-menu closed"}>
+				<div styleName={this.state.open ? "dropdown_menu open" : "dropdown_menu closed"}>
 					<Menu>
 						<div>
 							<Input block={true}

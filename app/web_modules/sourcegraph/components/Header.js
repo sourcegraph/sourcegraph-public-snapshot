@@ -13,8 +13,8 @@ class Header extends React.Component {
 	render() {
 		return (
 			<div styleName="container">
-				<div styleName="cloning-title">{this.props.title}</div>
-				<div styleName="cloning-subtext">{this.props.loading ? <Loader /> : this.props.subtitle}</div>
+				<div styleName="cloning_title">{this.props.title}</div>
+				<div styleName="cloning_subtext">{this.props.loading ? <Loader /> : this.props.subtitle}</div>
 			</div>
 		);
 	}

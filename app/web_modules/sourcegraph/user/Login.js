@@ -89,7 +89,7 @@ export class LoginForm extends Container {
 				</label>
 				<label>
 					<span>Password</span>
-					<Link styleName="label-link" to="/forgot">Forgot password?</Link>
+					<Link styleName="label_link" to="/forgot">Forgot password?</Link>
 					<Input type="password"
 						id="e2etest-password-field"
 						autoComplete="current-password"
@@ -107,7 +107,7 @@ export class LoginForm extends Container {
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
 					<div styleName="error">{this.state.authResponse.Error.body.message}</div>
 				}
-				<p styleName="sub-text">
+				<p styleName="sub_text">
 					No account yet? <Link tabIndex="5" to="/join">Sign up.</Link>
 				</p>
 			</form>
@@ -119,7 +119,7 @@ LoginForm = CSSModules(LoginForm, style);
 // Login is the standalone login page.
 function Login(props, {router}) {
 	return (
-		<div styleName="full-page">
+		<div styleName="full_page">
 			<Helmet title="Sign In" />
 			<LoginForm {...props}
 				returnTo="/"

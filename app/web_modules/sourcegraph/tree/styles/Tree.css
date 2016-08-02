@@ -5,65 +5,65 @@
 @value breadcrumb "sourcegraph/components/styles/breadcrumb.css";
 @value animation "sourcegraph/components/styles/animation.css";
 
-.tree-container {
+.tree_container {
 	composes: cf from base;
-	composes: col-9 from grid;
+	composes: col_9 from grid;
 	margin: 0 auto;
 }
 
-.tree-common {
+.tree_common {
 	composes: f5 from typography;
-	composes: bg-white from colors;
+	composes: bg_white from colors;
 	width: 100%;
 }
 
-.input-container {
+.input_container {
 	composes: ma3 from base;
 	display: flex;
 }
 
-@value c_near-white from colors;
-.list-header {
+@value c_near_white from colors;
+.list_header {
 	display: flex;
 	align-items: center;
 	composes: mh3 pb1 from base;
 	composes: ftracked f6 from typography;
-	composes: cool-mid-gray from colors;
+	composes: cool_mid_gray from colors;
 }
 
-.list-item-group {
+.list_item_group {
 	composes: pb3 from base;
 }
 
-.list-item {
+.list_item {
 	display: flex;
 	align-items: center;
 	composes: pa3 mh3 bt from base;
-	composes: blue b--cool-pale-gray from colors;
-	word-wrap: break-word;
+	composes: blue b__cool_pale_gray from colors;
+	word-wrap: break_word;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	cursor: pointer;
 	white-space: nowrap;
 }
 
-@value c_mid-gray from colors;
-.list-item-empty {
-	color: c_mid-gray;
+@value c_mid_gray from colors;
+.list_item_empty {
+	color: c_mid_gray;
 }
 
-.content-placeholder {
-	composes: shimmer-animation from animation;
+.content_placeholder {
+	composes: shimmer_animation from animation;
 
-	/* HACK: Using c_blue-5 and c_blue-8 doesn't work (vars aren't interpreted), so hardcode them. */
+	/* HACK: Using c_blue_5 and c_blue_8 doesn't work (vars aren't interpreted), so hardcode them. */
 	background: linear-gradient(to right, #E1F0FC 8%, #CFE8FF 18%, #E1F0FC 83%);
 }
 
-@value c_dark-blue from colors;
-.list-item-selected {
-	composes: list-item;
-	composes: bg-blue-1 from colors;
-	color: c_dark-blue !important;
+@value c_dark_blue from colors;
+.list_item_selected {
+	composes: list_item;
+	composes: bg_blue_1 from colors;
+	color: c_dark_blue !important;
 }
 
 .link {
@@ -71,7 +71,7 @@
 	composes: link from "sourcegraph/components/styles/link.css";
 }
 
-.file-path {
+.file_path {
 	composes: pl3 from base;
 	display: flex;
 	flex-wrap: wrap;
@@ -81,15 +81,15 @@
 	text-transform: none;
 }
 
-.path-sep {
+.path_sep {
 	composes: sep from breadcrumb;
 }
 
-.path-active {
+.path_active {
 	composes: active from breadcrumb;
 }
 
-.path-inactive {
+.path_inactive {
 	composes: inactive from breadcrumb;
 }
 
@@ -98,7 +98,7 @@
 }
 
 
-.parent-dir {
+.parent_dir {
 	font-weight: bold;
 }
 .icon {

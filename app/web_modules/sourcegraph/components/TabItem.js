@@ -27,10 +27,10 @@ class TabItem extends React.Component {
 		const {size, children, hideMobile, active, color, icon, direction} = this.props;
 		return (
 			<span
-				styleName={`${size ? size : ""} ${hideMobile ? "hidden-s" : ""} ${active ? "active" : "inactive"} ${color} ${direction}`}>
+				styleName={`${size ? size : ""} ${hideMobile ? "hidden_s" : ""} ${active ? "active" : "inactive"} ${color} ${direction}`}>
 				{icon && typeof icon === "string" && <Icon icon={`${icon}-blue`} height="14px" width="auto" styleName={`icon ${!active ? "hide" : ""}`}/>}
 				{icon && typeof icon === "string" && <Icon icon={`${icon}-gray`} height="14px" width="auto" styleName={`icon ${active ? "hide" : ""}`}/>}
-				{icon && typeof icon !== "string" && React.cloneElement(icon, {styleName: active ? `component-icon active ${color}` : "component-icon inactive"})}
+				{icon && typeof icon !== "string" && React.cloneElement(icon, {styleName: active ? `component_icon active ${color}` : "component_icon inactive"})}
 				{children}
 			</span>
 		);

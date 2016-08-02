@@ -5,7 +5,7 @@
 @value typography "sourcegraph/components/styles/_typography.css";
 @value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
 
-@value media-sm from vars;
+@value media_sm from vars;
 
 .nav > span {
 	display: inline-block;
@@ -17,11 +17,11 @@
 	composes: b db mr3 from base;
 }
 
-.repo-nav-context { display: inline-block; }
+.repo_nav_context { display: inline-block; }
 
 /* Hide filename on narrow screens. */
-@media screen and media-sm {
-	.repo-nav-context {
+@media screen and media_sm {
+	.repo_nav_context {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		flex: 1;
@@ -32,23 +32,23 @@
 	composes: pt6 from base;
 }
 
-.cloning-title {
-	composes: header-center from typography;
+.cloning_title {
+	composes: header_center from typography;
 }
 
-.cloning-subtext {
+.cloning_subtext {
 	composes: pt4 from base;
 	composes: subheader tc from typography;
 }
 
 /* Repo Main */
-.tree-search-modal {
+.tree_search_modal {
 	composes: f4 from typography;
-	composes: col-9 from grid;
+	composes: col_9 from grid;
 	composes: modal from "sourcegraph/components/styles/modal.css";
 }
 
-.outer-container {
+.outer_container {
 	display: flex;
 	flex-direction: column;
 	flex: auto;

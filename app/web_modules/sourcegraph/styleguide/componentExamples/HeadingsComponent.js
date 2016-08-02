@@ -90,12 +90,12 @@ class HeadingsComponent extends React.Component {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="7" className={base.mb3} color="cool-mid-gray">Headings with color</Heading>
+								<Heading level="7" className={base.mb3} color="cool_mid_gray">Headings with color</Heading>
 								<Heading level="4" className={base.mb3} color="blue">Blue fourth level heading</Heading>
 								<Heading level="4" className={base.mb3} color="purple">Purple fourth level heading</Heading>
 								<Heading level="4" className={base.mb3} color="green">Green fourth level heading</Heading>
 								<Heading level="4" className={base.mb3} color="orange">Orange fourth level heading</Heading>
-								<Heading level="4" className={base.mb3} color="cool-mid-gray">Mid-gray fourth level heading</Heading>
+								<Heading level="4" className={base.mb3} color="cool_mid_gray">Mid-gray fourth level heading</Heading>
 							</div>
 							<hr />
 							<code>
@@ -106,7 +106,7 @@ class HeadingsComponent extends React.Component {
 <Heading level="4" color="purple">Purple fourth level heading</Heading>
 <Heading level="4" color="green">Green fourth level heading</Heading>
 <Heading level="4" color="orange">Orange fourth level heading</Heading>
-<Heading level="4" color="cool-mid-gray">Mid-gray fourth level heading</Heading>
+<Heading level="4" color="cool_mid_gray">Mid-gray fourth level heading</Heading>
 	`
 }
 								</pre>
@@ -114,7 +114,7 @@ class HeadingsComponent extends React.Component {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="7" className={base.mb3} color="cool-mid-gray">Headings with underline</Heading>
+								<Heading level="7" className={base.mb3} color="cool_mid_gray">Headings with underline</Heading>
 								<Heading level="4" className={base.mb3} underline="blue">Fourth level heading with blue underline</Heading>
 								<Heading level="4" className={base.mb3} underline="purple">Fourth level heading with purple underline</Heading>
 								<Heading level="4" className={base.mb3} underline="orange">Fourth level heading with orange underline</Heading>
@@ -138,7 +138,7 @@ class HeadingsComponent extends React.Component {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="7" className={base.mb3} color="cool-mid-gray">Heading alignment</Heading>
+								<Heading level="7" className={base.mb3} color="cool_mid_gray">Heading alignment</Heading>
 								<Heading level="4" className={base.mb3} align="left">Left aligned</Heading>
 								<Heading level="4" className={base.mb3} align="center">Center aligned</Heading>
 								<Heading level="4" className={base.mb3} align="right">Right aligned</Heading>
@@ -180,7 +180,7 @@ class HeadingsComponent extends React.Component {
 								<td><Code>color</Code></td>
 								<td><Code>null</Code></td>
 								<td>
-									<Code>purple</Code>, <Code>blue</Code>, <Code>green</Code>, <Code>orange</Code>, <Code>cool-mid-gray</Code>
+									<Code>purple</Code>, <Code>blue</Code>, <Code>green</Code>, <Code>orange</Code>, <Code>cool_mid_gray</Code>
 								</td>
 							</tr>
 							<tr>

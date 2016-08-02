@@ -4,14 +4,14 @@
 @value typography "sourcegraph/components/styles/_typography.css";
 @value form "sourcegraph/components/styles/form.css";
 
-.full-page {
-	composes: col-9 col-5-m col-4-l from grid;
+.full_page {
+	composes: col_9 col_5_m col_4_l from grid;
 	composes: pa2 mv5 center from base;
 }
 
-.label-link { composes: label-link from form; }
-.mid-text { composes: mid-text from form; }
-.sub-text { composes: sub-text from form; }
+.label_link { composes: label_link from form; }
+.mid_text { composes: mid_text from form; }
+.sub_text { composes: sub_text from form; }
 .error { composes: error from form; }
 .success { composes: success from form; }
 .form {	composes: stacked from form; }

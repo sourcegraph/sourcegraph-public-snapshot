@@ -13,30 +13,30 @@
 	}
 }
 
-.centered-button {
+.centered_button {
 	composes: tc from typography;
 	composes: pa3 from base;
 }
 
 .container {
 	composes: containerFixed from layout;
-	composes: col-12-ns col-11 from grid;
+	composes: col_12_ns col_11 from grid;
 	composes: ph4 from base;
 	max-width: 640px;
 }
-.container-wide {
+.container_wide {
 	composes: container;
 	max-width: 900px !important;
 }
 
-.faqs-div {
+.faqs_div {
 	padding: 20px;
 	border-width: 5px;
 	border-color: gray;
 	border-style: white;
 }
 
-.faqs-div-selected {
+.faqs_div_selected {
 	padding: 20px;
 	border-width: 5px;
 	animation-duration: 2000ms;
@@ -46,7 +46,7 @@
 	border-style: solid;
 }
 
-.faqs-content {
+.faqs_content {
 	composes: pv4 from base;
 	composes: containerFixed from layout;
 	composes: ph4 from base;
@@ -58,9 +58,9 @@
 	composes: container;
 	composes: pv4 from base;
 }
-.content-wide {
+.content_wide {
 	composes: content;
-	composes: container-wide;
+	composes: container_wide;
 }
 .p {
 	composes: mt3 mb3 from base;
@@ -104,7 +104,7 @@
 .plan {
 	min-width: 150px;
 }
-.plan-box {
+.plan_box {
 
 }
 @media screen and (min-width: 48em) {
@@ -113,7 +113,7 @@
 		max-width: 275px;
 		composes: mh3 from base;
 	}
-	.plan-box {
+	.plan_box {
 		composes: mb5 from base;
 		margin-right: 0 !important; /* cancel media query composed rule below */
 	}
@@ -125,13 +125,13 @@
 		margin-bottom: 75px;
 		margin-left: 0 !important; /* cancel media query composed rule above */
 	}
-	.plan-box {
+	.plan_box {
 		composes: mr4 from base;
 		margin-bottom: 0 !important; /* cancel media query composed rule above */
 		flex: 0 0 150px;
 	}
 }
-.plan-panel {
+.plan_panel {
 	composes: pt3 pb2 ph3 mb2 br3 from base;
 	composes: tc from typography;
 	min-height: 210px;
@@ -146,23 +146,23 @@
 .amount {
 	font-size: 4.5rem;
 }
-.plan-cta {
+.plan_cta {
 	composes: fw6 from typography;
 }
-.plan-cta-noop {
+.plan_cta_noop {
 	cursor: default;
 }
 .details {
 	font-size: 1.3rem; /* f4 was slightly too big */
 	composes: pl1 pr1 from base;
 }
-.details-list {
+.details_list {
 	composes: mt0 from base;
 	padding-left: 1.6rem; /* bullets flush with left */
 }
-.details-list li {
+.details_list li {
 	margin-bottom: 1.1rem;
 }
-.details-cumulative {
+.details_cumulative {
 	font-weight: normal;
 }

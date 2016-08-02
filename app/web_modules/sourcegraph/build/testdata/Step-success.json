@@ -7,7 +7,7 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "step-title success",
+						"styleName": "step_title success",
 						"children": [
 							"Clone",
 							{
@@ -27,7 +27,7 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "step-body"
+						"styleName": "step_body"
 					}
 				}
 			]

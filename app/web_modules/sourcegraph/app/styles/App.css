@@ -3,21 +3,21 @@
 @value base "sourcegraph/components/styles/_base.css";
 @value modal "sourcegraph/components/styles/modal.css";
 
-@value desktop-base-size, mobile-base-size, media-sm from vars;
-@value c_cool-gray from colors;
+@value desktop_base_size, mobile_base_size, media_sm from vars;
+@value c_cool_gray from colors;
 
 /*
 Stick footer at bottom even if the page content doesn't take up
 the entire viewport height.
 */
-.main-container {
+.main_container {
 	display: flex;
 	min-height: 100vh;
 	flex-direction: column;
 	width: 100%;
 	overflow: auto;
 }
-.main-content {
+.main_content {
 	display: flex;
 	flex-direction: column;
 	flex: 1 0 auto;
@@ -25,23 +25,23 @@ the entire viewport height.
 
 .breadcrumb {
 	composes: bb ph3 pv2 from base;
-	composes: b--cool-pale-gray-8 bg-white from colors;
+	composes: b__cool_pale_gray_8 bg_white from colors;
 }
 
-.main-container-homepage {
-	composes: main-container;
+.main_container_homepage {
+	composes: main_container;
 }
 
 /* Responsive type scaling */
 
 html {
-	color: c_cool-gray;
-	font-size: desktop-base-size;
+	color: c_cool_gray;
+	font-size: desktop_base_size;
 	line-height: 1.6;
 }
 
-@media only screen and media-sm {
+@media only screen and media_sm {
 	html {
-		font-size: mobile-base-size;
+		font-size: mobile_base_size;
 	}
 }

@@ -49,7 +49,7 @@ class Popover extends Component {
 			<div styleName="container" ref="container">
 				{this.state.children[0]}
 				{this.state.visible &&
-					<div ref="content" styleName={`popover-${this.state.left ? "left" : "right"}`} className={this.state.popoverClassName}>
+					<div ref="content" styleName={`popover_${this.state.left ? "left" : "right"}`} className={this.state.popoverClassName}>
 						{this.state.children[1]}
 					</div>}
 			</div>

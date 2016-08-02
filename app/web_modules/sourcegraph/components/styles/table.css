@@ -1,19 +1,19 @@
 @value base "./_base.css";
 @value colors "./_colors.css";
-@value c_cool-gray-2 from colors;
+@value c_cool_gray_2 from colors;
 
 .default td { padding: 0.75rem 0.75rem 0.75rem 0; }
 .default thead td {
 	font-weight: bold;
-	border-bottom: 2px c_cool-gray-2 solid;
+	border-bottom: 2px c_cool_gray_2 solid;
 }
-.default tbody td { border-bottom: 1px c_cool-gray-2 solid; }
+.default tbody td { border-bottom: 1px c_cool_gray_2 solid; }
 
-.bordered { border: 1px c_cool-gray-2 solid; }
+.bordered { border: 1px c_cool_gray_2 solid; }
 .bordered td { padding: 0.75rem; }
 .bordered thead td {
 	font-weight: bold;
-	border: 1px c_cool-gray-2 solid;
-	border-bottom: 2px c_cool-gray-2 solid;
+	border: 1px c_cool_gray_2 solid;
+	border-bottom: 2px c_cool_gray_2 solid;
 }
-.bordered tbody td { border: 1px c_cool-gray-2 solid; }
+.bordered tbody td { border: 1px c_cool_gray_2 solid; }

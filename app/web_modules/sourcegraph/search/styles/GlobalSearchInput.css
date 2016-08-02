@@ -1,10 +1,10 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 
-@value c_cool-mid-gray from colors;
+@value c_cool_mid_gray from colors;
 
-.cool-mid-gray-fill { fill: c_cool-mid-gray; }
+.cool_mid_gray_fill { fill: c_cool_mid_gray; }
 .relative { position: relative; }
 .absolute { position: absolute; }
-.flex-fill { flex: 1 0; }
+.flex_fill { flex: 1 0; }
 
-.layer-btm { z-index: -1; }
+.layer_btm { z-index: -1; }

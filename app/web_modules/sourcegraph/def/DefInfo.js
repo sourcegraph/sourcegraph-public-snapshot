@@ -249,13 +249,13 @@ class DefInfo extends Container {
 		let defLine = this._getDefLine(defObj);
 
 		return (
-			<FlexContainer styleName="bg-cool-pale-gray-2 flex-grow">
-				<div styleName="container-fixed" className={base.mv3}>
+			<FlexContainer styleName="bg_cool_pale_gray_2 flex_grow">
+				<div styleName="container_fixed" className={base.mv3}>
 					{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
 					<Helmet title={defTitleOK(defObj) ? `${defTitle(defObj)} · ${trimRepo(repo)}` : trimRepo(repo)} />
 					{defObj &&
 						<div className={`${base.mv4} ${base.ph4}`}>
-							<Heading level="5" styleName="break-word" className={base.mv2}>
+							<Heading level="5" styleName="break_word" className={base.mv2}>
 								<table>
 									<tbody>
 										{defLine &&
@@ -323,10 +323,10 @@ class DefInfo extends Container {
 								</div>
 							}
 
-							<div styleName="f7 cool-mid-gray">
-								{defObj && defObj.Repo && <Link to={urlToRepo(defObj.Repo)} styleName="link-subtle" onClick={this._viewRepoClicked.bind(this)}>{defObj.Repo}</Link>}
+							<div styleName="f7 cool_mid_gray">
+								{defObj && defObj.Repo && <Link to={urlToRepo(defObj.Repo)} styleName="link_subtle" onClick={this._viewRepoClicked.bind(this)}>{defObj.Repo}</Link>}
 								&nbsp; &middot; &nbsp;
-								<Link title="View definition in code" to={defBlobUrl} onClick={this._viewDefinitionClicked.bind(this)} styleName="link-subtle">View definition</Link>
+								<Link title="View definition in code" to={defBlobUrl} onClick={this._viewDefinitionClicked.bind(this)} styleName="link_subtle">View definition</Link>
 							</div>
 
 
@@ -363,10 +363,10 @@ class DefInfo extends Container {
 										<div className={`${typography.tc} ${base.center} ${base.mv5}`} style={{maxWidth: "500px"}}>
 											<EmptyNodeIllo className={base.mv3} />
 											<Heading level="5">
-												We can't find any usage examples or <br className={base["hidden-s"]} />
+												We can't find any usage examples or <br className={base["hidden_s"]} />
 												references for this definition
 											</Heading>
-											<p styleName="cool-mid-gray">
+											<p styleName="cool_mid_gray">
 												It looks like this node in the graph is missing.
 												{!this.context.signedIn &&
 													<span> Help us get more nodes in the graph by joining with GitHub.</span>

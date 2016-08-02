@@ -4,11 +4,11 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value vars "sourcegraph/components/styles/_vars.css";
 
-@value c_dark-blue from colors;
-@value media-sm from vars;
+@value c_dark_blue from colors;
+@value media_sm from vars;
 
 
-.single-ref-container {
+.single_ref_container {
 	position: relative;
 }
 .vote {
@@ -49,14 +49,14 @@
 	align-items: center;
 }
 
-@media media-sm {
+@media media_sm {
 	.repo {
 		margin: 0 10px;
 	}
 }
 
 .repoLink {
-	composes: mid-gray from colors;
+	composes: mid_gray from colors;
 }
 
 .repoIcon {
@@ -65,7 +65,7 @@
 }
 
 .refs {
-	composes: b--cool-pale-gray from colors;
+	composes: b__cool_pale_gray from colors;
 	composes: br2 ba bw1 from base;
 	flex: 1 1 auto;
 }
@@ -79,16 +79,16 @@
 .filename {
 	composes: bb from base;
 	composes: f5 fw1 from typography;
-	composes: mid-gray b--light-gray-2 from colors;
+	composes: mid_gray b__light_gray_2 from colors;
 	display: flex;
-	align-content: flex-start;
+	align-content: flex_start;
 	justify-content: center;
 	cursor: pointer;
 }
 
 .breadcrumbIcon{
 	composes: pt2 pb2 from base;
-	composes: bg-light-blue from colors;
+	composes: bg_light_blue from colors;
 	min-width: 39px;
 	display: flex;
 	justify-content: center;
@@ -106,7 +106,7 @@
 }
 
 .toggleIcon {
-	composes: mid-gray from colors;
+	composes: mid_gray from colors;
 	flex: 0 0 15px;
 }
 
@@ -121,7 +121,7 @@
 }
 
 .pageLink:hover {
-	color: c_dark-blue;
+	color: c_dark_blue;
 }
 
 .sep {
@@ -136,17 +136,17 @@
 
 .fileError {
 	composes: pt2 pb2 pl2 pr2 from base;
-	composes: bg-blue-1 from colors;
+	composes: bg_blue_1 from colors;
 	margin-top: 0;
 	margin-bottom: 0;
 }
 
 @media screen and (max-width: 48em) {
-	.full-width-sm {
+	.full_width_sm {
 		padding: 0;
 	}
 
-	.left-align-sm {
+	.left_align_sm {
 		left: 0;
 	}
 }

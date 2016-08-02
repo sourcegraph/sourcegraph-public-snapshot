@@ -2,8 +2,8 @@
 @value typography "sourcegraph/components/styles/_typography.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 
-.label-blue {
-	composes: bg-cool-pale-gray from colors;
+.label_blue {
+	composes: bg_cool_pale_gray from colors;
 	composes: f7 b from typography;
 	composes: br2 pv0 ph1 from base;
 	display: inline-block;

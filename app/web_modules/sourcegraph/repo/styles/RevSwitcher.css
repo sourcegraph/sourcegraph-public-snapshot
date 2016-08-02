@@ -5,8 +5,8 @@
 @value vars "sourcegraph/components/styles/_vars.css";
 @value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
 
-@value c_cool-gray from colors;
-@value media-sm from vars;
+@value c_cool_gray from colors;
+@value media_sm from vars;
 
 .wrapper {
 	position: relative;
@@ -19,15 +19,15 @@
 }
 .toggle {
 	cursor: pointer;
-	composes: cool-mid-gray from colors;
+	composes: cool_mid_gray from colors;
 }
-.toggle:hover { color: c_cool-gray; }
-@value icon-font-size from GlobalNav;
-.toggle-icon {
-	font-size: icon-font-size;
+.toggle:hover { color: c_cool_gray; }
+@value icon_font_size from GlobalNav;
+.toggle_icon {
+	font-size: icon_font_size;
 }
 
-.dropdown-menu {
+.dropdown_menu {
 	position: absolute;
 	min-width: 250px;
 	z-index: 1;
@@ -37,7 +37,7 @@
 
 .input {	width: 100%; }
 
-.list-section {
+.list_section {
 	max-height: 360px;
 	composes: ma0 ph0 from base;
 }
@@ -60,12 +60,12 @@
 	user-select: none;
 	composes: pr1 from base;
 }
-.icon-hidden {
+.icon_hidden {
 	composes: icon;
 	opacity: 0;
 }
 
-@media screen and media-sm {
+@media screen and media_sm {
 	.wrapper { margin-top: 0; }
-	.dropdown-menu { right: 0; }
+	.dropdown_menu { right: 0; }
 }

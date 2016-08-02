@@ -3,7 +3,7 @@
 
 .footer {
 	composes: bt ph2 pv2 from base;
-	composes: b--light-gray from colors;
+	composes: b__light_gray from colors;
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;
@@ -20,12 +20,12 @@
 	composes: ma0 pa0 from base;
 }
 
-.left-box {
+.left_box {
 	composes: box;
 	justify-content: flex-start;
 }
 
-.right-box {
+.right_box {
 	composes: box;
 	justify-content: flex-end;
 }
@@ -34,7 +34,7 @@
 	composes: gray from colors;
 }
 
-.logo-mark {
+.logo_mark {
 	composes: mt2 from base;
 }
 
@@ -47,7 +47,7 @@
 	.item {
 		flex-basis: 100%;
 	}
-	.right-box .item {
+	.right_box .item {
 		text-align: right;
 	}
 }

@@ -340,7 +340,7 @@ class TreeSearch extends Container {
 
 	_listItems(): Array<any> {
 		const items = this.state.fileResults;
-		const emptyItem = <div styleName="list-item list-item-empty" key="_nofiles"><i>No matches.</i></div>;
+		const emptyItem = <div styleName="list_item list_item_empty" key="_nofiles"><i>No matches.</i></div>;
 		if (!items || items.length === 0) return [emptyItem];
 
 		let list = [],
@@ -362,7 +362,7 @@ class TreeSearch extends Container {
 
 			let key = `f:${itemURL}`;
 			list.push(
-				<Link styleName={`${selected ? "list-item-selected" : "list-item"} ${item.isParentDirectory ? "parent-dir" : ""}`}
+				<Link styleName={`${selected ? "list_item_selected" : "list_item"} ${item.isParentDirectory ? "parent_dir" : ""}`}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : null}
 					to={itemURL}
@@ -416,10 +416,10 @@ class TreeSearch extends Container {
 
 		let listItems = this._listItems() || [];
 		return (
-			<div styleName="tree-common">
-				<div styleName="input-container">
+			<div styleName="tree_common">
+				<div styleName="input_container">
 					<Input type="text"
-						id="search-input"
+						id="search_input"
 						block={true}
 						onFocus={() => this.setState({focused: true})}
 						onBlur={(e) => this.setState({focused: false})}
@@ -431,10 +431,10 @@ class TreeSearch extends Container {
 						domRef={(e) => this._queryInput = e} />
 				</div>
 
-				<div styleName="list-header">
+				<div styleName="list_header">
 					Files
 				</div>
-				<div styleName="list-item-group">
+				<div styleName="list_item_group">
 					{listItems}
 				</div>
 			</div>

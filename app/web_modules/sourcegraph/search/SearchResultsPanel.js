@@ -16,9 +16,9 @@ class SearchResultsPanel extends React.Component {
 	render() {
 		const {repo, location, query} = this.props;
 		return (
-			<Panel hoverLevel="low" styleName="search-panel">
-				<SearchSettings styleName="search-settings" innerClassName={styles["search-settings-inner"]} location={location} repo={repo} />
-				{query && <GlobalSearch styleName="search-results" query={query} repo={repo} location={location} resultClassName={styles["search-result"]} />}
+			<Panel hoverLevel="low" styleName="search_panel">
+				<SearchSettings styleName="search_settings" innerClassName={styles["search_settings_inner"]} location={location} repo={repo} />
+				{query && <GlobalSearch styleName="search_results" query={query} repo={repo} location={location} resultClassName={styles["search_result"]} />}
 			</Panel>
 		);
 	}

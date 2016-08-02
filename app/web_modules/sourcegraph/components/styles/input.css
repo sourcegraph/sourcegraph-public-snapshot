@@ -2,11 +2,11 @@
 @value colors "./_colors.css";
 @value typography "./_typography.css";
 
-@value c_cool-mid-gray, c_red, c_blue-8 from colors;
+@value c_cool_mid_gray, c_red, c_blue_8 from colors;
 
 .input:focus {
 	outline: none;
-	border-color: c_cool-mid-gray; /* TODO: can't use compose on pseudoelements. */
+	border-color: c_cool_mid_gray; /* TODO: can't use compose on pseudoelements. */
 	background-color: white;
 }
 
@@ -17,7 +17,7 @@
 
 .input {
 	composes: br3 ba from base;
-	composes: bg-white from colors;
+	composes: bg_white from colors;
 	box-sizing: border-box;
 	padding: 6px 15px;
 	transition: all 0.25s ease-in-out;
@@ -29,24 +29,24 @@
 	width: 100%;
 }
 
-.v-mid { composes: v-mid from typography;}
+.v_mid { composes: v_mid from typography;}
 .red { composes: red from colors; }
-.red-fill { fill: c_red; }
+.red_fill { fill: c_red; }
 .small { composes: f7 from typography; }
-.border-red { composes: b--red from colors; }
-.border-neutral { composes: b--cool-mid-gray-3 from colors; }
+.border_red { composes: b__red from colors; }
+.border_neutral { composes: b__cool_mid_gray_3 from colors; }
 
 .input input[placeholder] { text-overflow: ellipsis; }
 
 .input::-webkit-input-placeholder {
-	color: c_cool-mid-gray; /* TODO: can't use compose on pseudoelements. */
+	color: c_cool_mid_gray; /* TODO: can't use compose on pseudoelements. */
 }
 .input:-moz-placeholder {
-	color: c_cool-mid-gray; /* TODO: can't use compose on pseudoelements. */
+	color: c_cool_mid_gray; /* TODO: can't use compose on pseudoelements. */
 }
 .input::-moz-placeholder {
-	color: c_cool-mid-gray; /* TODO: can't use compose on pseudoelements. */
+	color: c_cool_mid_gray; /* TODO: can't use compose on pseudoelements. */
 }
 .input:-ms-input-placeholder {
-	color: c_cool-mid-gray; /* TODO: can't use compose on pseudoelements. */
+	color: c_cool_mid_gray; /* TODO: can't use compose on pseudoelements. */
 }

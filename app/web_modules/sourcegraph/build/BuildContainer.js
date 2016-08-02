@@ -90,7 +90,7 @@ class BuildContainer extends Container {
 		if (!this.state.build) return null;
 
 		return (
-			<div styleName="build-container">
+			<div styleName="build_container">
 				<Helmet title={`Build #${this.state.id} | ${trimRepo(this.state.repo)}`} />
 				<div styleName="actions">
 					<Link to={urlToBuilds(this.state.repo)}><Button size="large" outline={true}>View All Builds</Button></Link>

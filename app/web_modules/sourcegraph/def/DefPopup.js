@@ -51,7 +51,7 @@ class DefPopup extends Container {
 		return (
 			<div className={s.marginBox}>
 				<header>
-					<Link className={s.boxTitle} to={urlToDefInfo(this.state.defObj, this.state.rev)}><span styleName="def-title">{qualifiedNameAndType(def, {unqualifiedNameClass: s.defName})}</span></Link>
+					<Link className={s.boxTitle} to={urlToDefInfo(this.state.defObj, this.state.rev)}><span styleName="def_title">{qualifiedNameAndType(def, {unqualifiedNameClass: s.defName})}</span></Link>
 					<Link className={s.boxIcon} to={urlToDefInfo(this.state.defObj, this.state.rev)}>&raquo;</Link>
 				</header>
 				<Link to={urlToDefInfo(this.state.defObj, this.state.rev)}>

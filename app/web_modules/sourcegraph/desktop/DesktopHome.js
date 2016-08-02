@@ -30,7 +30,7 @@ class DesktopHome extends React.Component {
 			<div className={`${layout.containerFixed} ${base.pv5} ${base.ph4}`} style={{maxWidth: "560px"}}>
 				<Heading align="center" level="4" underline="blue">
 					See live examples, search code, and view inline
-					<br className={base["hidden-s"]} />&nbsp;documentation to write better code, faster
+					<br className={base["hidden_s"]} />&nbsp;documentation to write better code, faster
 				</Heading>
 
 				<img src={`${this.context.siteConfig.assetsRoot}/img/sg-desktop.gif`} width="356" title="Usage examples right in your editor" alt="Usage examples right in your editor" style={{maxWidth: "100%", display: "block", imageRendering: "pixelated"}} className={base.center}/>
@@ -44,7 +44,7 @@ class DesktopHome extends React.Component {
 				<div className={base.mv4}>
 					<Heading level="5">Semantic, global code search</Heading>
 					<p>
-						Just hit <span styleName="label-blue">⌘ or CTRL </span> + <span styleName="label-blue">SHIFT</span> + <span styleName="label-blue">;</span> or click the search box at the top of this page to semantically search for functions and symbols.
+						Just hit <span styleName="label_blue">⌘ or CTRL </span> + <span styleName="label_blue">SHIFT</span> + <span styleName="label_blue">;</span> or click the search box at the top of this page to semantically search for functions and symbols.
 					</p>
 				</div>
 				<div className={base.mv4}>
@@ -55,7 +55,7 @@ class DesktopHome extends React.Component {
 				</div>
 				<div className={`${base.mt5} ${typography.f7}`}>
 					<Heading level="6">
-						<Cone width={16} className={`${colors["fill-orange"]} ${base.mr2}`} style={{
+						<Cone width={16} className={`${colors["fill_orange"]} ${base.mr2}`} style={{
 							verticalAlign: "baseline",
 							position: "relative",
 							top: "1px",

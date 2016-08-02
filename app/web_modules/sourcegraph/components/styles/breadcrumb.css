@@ -3,7 +3,7 @@
 
 .sep {
 	composes: ph1 from base;
-	composes: cool-mid-gray from colors;
+	composes: cool_mid_gray from colors;
 }
 
 .link {

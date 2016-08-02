@@ -2,18 +2,18 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"styleName": "tree-common",
+			"styleName": "tree_common",
 			"children": [
 				{
 					"type": "div",
 					"props": {
-						"styleName": "input-container",
+						"styleName": "input_container",
 						"children": [
 							{
 								"type": "Input",
 								"props": {
 									"type": "text",
-									"id": "search-input",
+									"id": "search_input",
 									"block": true,
 									"autoFocus": true,
 									"defaultValue": "",
@@ -27,7 +27,7 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "list-header",
+						"styleName": "list_header",
 						"children": [
 							"Files"
 						]
@@ -36,13 +36,13 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "list-item-group",
+						"styleName": "list_item_group",
 						"children": [
 							{
 								"type": "",
 								"key": "f:/repo@rev/-/tree/p1",
 								"props": {
-									"styleName": "list-item-selected parent-dir",
+									"styleName": "list_item_selected parent_dir",
 									"to": "/repo@rev/-/tree/p1",
 									"children": [
 										".."
@@ -55,7 +55,7 @@
 								"type": "",
 								"key": "f:/repo@rev/-/blob/p1/p2/f3",
 								"props": {
-									"styleName": "list-item ",
+									"styleName": "list_item ",
 									"to": "/repo@rev/-/blob/p1/p2/f3",
 									"children": [
 										{

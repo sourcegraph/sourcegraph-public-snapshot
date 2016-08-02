@@ -23,13 +23,13 @@
 	font-weight: bold;
 }
 
-.label-link {
+.label_link {
 	float: right;
 }
-.mid-text {
+.mid_text {
 	composes: mt3 mb3 pa0 from base;
 }
-.sub-text {
+.sub_text {
 	composes: mt4 mb1 pa0 from base;
 }
 
@@ -39,7 +39,7 @@
 
 .error {
 	composes: pb3 pt2 from base;
-	composes: error-text tc from typography;
+	composes: error_text tc from typography;
 }
 
 .success {

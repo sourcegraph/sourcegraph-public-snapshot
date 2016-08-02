@@ -2,11 +2,11 @@
 @value colors "./_colors.css";
 @value typography "./_typography.css";
 
-@value c_cool-mid-gray, c_red from colors;
+@value c_cool_mid_gray, c_red from colors;
 
 .select {
 	composes: br2 ba mt2 from base;
-	composes: bg-white from colors;
+	composes: bg_white from colors;
 	box-sizing: border-box;
 	padding: 8px 38px 8px 15px;
 	transition: all 0.25s ease-in-out;
@@ -16,12 +16,12 @@
 	outline: none;
 }
 
-.border-red { composes: b--red from colors; }
-.border-neutral { composes: b--cool-mid-gray-5 from colors; }
+.border_red { composes: b__red from colors; }
+.border_neutral { composes: b__cool_mid_gray_5 from colors; }
 
-.icon { fill: c_cool-mid-gray; }
+.icon { fill: c_cool_mid_gray; }
 .block { width: 100%; }
 
 .red { composes: red from colors; }
-.red-fill { fill: c_red; }
+.red_fill { fill: c_red; }
 .small { composes: f7 from typography; }

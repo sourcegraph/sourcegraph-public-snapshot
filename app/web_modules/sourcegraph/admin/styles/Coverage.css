@@ -33,7 +33,7 @@
 	composes: pr3 from base;
 }
 
-.quantile-header {
+.quantile_header {
 	composes: quantile;
 	font-weight: bold
 }
@@ -47,18 +47,18 @@
 	composes: containerFixed from layout;
 }
 
-.drilldown-header {
+.drilldown_header {
 	margin-top: 0px;
 }
 
-.srclib-version {
-	composes: light-silver from colors;
+.srclib_version {
+	composes: light_silver from colors;
 	composes: ml3 from base;
 	font-size: 10px;
 	font-style: italic;
 }
 
-.drilldown-dismiss {
+.drilldown_dismiss {
 	float: right;
 }
 
@@ -66,29 +66,29 @@
 	font-weight: bold;
 }
 
-.day-chooser {
+.day_chooser {
 	composes: mh3 from base;
 }
 
 .table {
 	composes: mt4 from base;
-	composes: col-12 from grid;
+	composes: col_12 from grid;
 }
 
 .repo {
-	composes: col-4 from grid;
+	composes: col_4 from grid;
 }
 
 .idents {
-	composes: col-2 from grid;
+	composes: col_2 from grid;
 }
 
 .refs {
-	composes: col-2 from grid;
+	composes: col_2 from grid;
 }
 
 .defs {
-	composes: col-2 from grid;
+	composes: col_2 from grid;
 }
 
 .delta {
@@ -96,17 +96,17 @@
 	composes: ml2 from base;
 }
 
-.delta-increase {
+.delta_increase {
 	composes: delta;
 	composes: green from colors;
 }
 
-.delta-decrease {
+.delta_decrease {
 	composes: delta;
 	composes: red from colors;
 }
 
-.build-label {
+.build_label {
 	composes: mr2 from base;
 	font-size: 10px;
 	display: inline-block;
@@ -115,33 +115,33 @@
 
 .data {
 	composes: pa3 bt from base;
-	composes: b--black-20 from colors;
+	composes: b__black_20 from colors;
 	text-align: center;
 }
 
-.repo-drilldown-icon {
+.repo_drilldown_icon {
 	float: right;
 	cursor: pointer;
 }
 
-.repo-drilldown-modal {
-	composes: col-9 from grid;
+.repo_drilldown_modal {
+	composes: col_9 from grid;
 	composes: modal from "sourcegraph/components/styles/modal.css";
 }
 
-.file-drilldown-row {
+.file_drilldown_row {
 	display: flex;
 	align-items: center;
 }
 
-.file-drilldown-header {
+.file_drilldown_header {
 	flex: 1 1 auto;
 	composes: pv2 bt from base;
-	composes: b--black-20 from colors;
+	composes: b__black_20 from colors;
 }
 
-.file-drilldown-header-uncovered {
-	composes: file-drilldown-header;
+.file_drilldown_header_uncovered {
+	composes: file_drilldown_header;
 	composes: red from colors;
 }
 
@@ -149,28 +149,28 @@
 	composes: f4 from typography;
 }
 
-.file-stats {
+.file_stats {
 	composes: f5 from typography;
 }
 
-.file-link {
+.file_link {
 	composes: f4 from typography;
 }
 
-.unresolved-tokens {
+.unresolved_tokens {
 	display: flex;
 	composes: mb3 from base;
 }
 
-.unresolved-idents {
+.unresolved_idents {
 	flex: 1;
 }
 
-.unresolved-refs {
+.unresolved_refs {
 	flex: 1;
 }
 
-.unresolved-header {
+.unresolved_header {
 	composes: b tc from typography;
 	composes: mt3 from base;
 	text-transform: uppercase;

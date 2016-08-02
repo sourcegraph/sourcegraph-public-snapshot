@@ -5,20 +5,20 @@
 @value typography "sourcegraph/components/styles/_typography.css";
 @value layout "sourcegraph/components/styles/_layout.css";
 
-@value media-sm from vars;
+@value media_sm from vars;
 
-.container-fixed { composes: containerFixed from layout; }
-.bg-white-50 { composes: bg-white-50 from colors; }
-.mid-gray { composes: cool-mid-gray from colors; }
-.cool-pale-gray {	composes: cool-pale-gray from colors; }
-.inline-block { display: inline-block; }
+.container_fixed { composes: containerFixed from layout; }
+.bg_white_50 { composes: bg_white_50 from colors; }
+.mid_gray { composes: cool_mid_gray from colors; }
+.cool_pale_gray {	composes: cool_pale_gray from colors; }
+.inline_block { display: inline-block; }
 .tc { composes: tc from typography; }
 .br3 { composes: br3 from base; }
 
-.max-width-500 { max-width: 500px; }
+.max_width_500 { max-width: 500px; }
 
 .bg {
-	composes: bg-pale-blue-gradient from colors;
+	composes: bg_pale_blue_gradient from colors;
 	flex: 1;
 }
 
@@ -45,7 +45,7 @@
 	composes: center from base;
 	display: block;
 }
-@media screen and media-sm {
+@media screen and media_sm {
 	.logo {
 		width: auto;
 		max-width: 390px;
@@ -67,94 +67,94 @@
 	margin-right: auto;
 	text-align: center;
 }
-.user-actions {
+.user_actions {
 	composes: actions;
 	composes: mv3 from base;
 }
-.search-actions {
+.search_actions {
 	composes: actions;
 	composes: mt4 from base;
 }
-.action-button {
+.action_button {
 	composes: mh2 ph2 mb2 from base;
 }
-.action-icon {
+.action_icon {
 	font-size: 120%;
 	vertical-align: text-top;
 	padding-right: 5px;
 }
-.action-link {
-	composes: action-button;
+.action_link {
+	composes: action_button;
 	border-color: transparent;
 }
-@value c_dark-blue-2 from colors;
-.action-link:hover {
-	border-color: c_dark-blue-2;
+@value c_dark_blue_2 from colors;
+.action_link:hover {
+	border-color: c_dark_blue_2;
 }
 
-.search-input {
+.search_input {
 	composes: f4 from typography;
 }
-.search-button {
+.search_button {
 	font-weight: bold;
-	composes: action-button;
+	composes: action_button;
 	composes: ph4 from base;
 }
 
-.home-container {
-	composes: container-fixed;
+.home_container {
+	composes: container_fixed;
 	composes: mb4 pt4 ph3 from base;
 	max-width: 575px;
 }
 @media screen and (max-height: 950px) {
-	.home-container { margin-top: 0; }
+	.home_container { margin-top: 0; }
 }
 @media screen and (min-height: 950px) {
-	.home-container { margin-top: 6vh; }
+	.home_container { margin-top: 6vh; }
 }
 
-.top-queries-panel {
+.top_queries_panel {
 	composes: mt5 mb4 pb2 from base;
 	padding-top: 1.5rem; /* need in between pt3 and pt4 */
 	min-height: 100px;
 }
 .notice {
 	composes: ma0 from base;
-	composes: cool-mid-gray from colors;
+	composes: cool_mid_gray from colors;
 	text-align: center;
 }
-.search-settings-panel {
+.search_settings_panel {
 	composes: pt2 pb1 from base;
 }
-.search-settings {
+.search_settings {
 }
 
 /* TitledSection */
-.titled-section {
+.titled_section {
 	composes: bt from base;
-	composes: b--cool-pale-gray from colors;
+	composes: b__cool_pale_gray from colors;
 	position: relative;
 }
-.section-title {
+.section_title {
 	background-color: white;
 	composes: pv1 pr3 from base;
 	position: absolute;
 	top: -16px;
 	font-size: 1.1rem;
 	font-weight: bold;
-	composes: cool-mid-gray from colors;
+	composes: cool_mid_gray from colors;
 	user-select: none;
 }
 
 /* Queries */
-@value c_blue-2 from colors;
+@value c_blue_2 from colors;
 .query {
 	font-size: 0.95rem;
 	composes: mr2 mb2 from base;
 	border-width: 1px !important;;
-	border-color: c_blue-2;
+	border-color: c_blue_2;
 	border-radius: 50px;
 }
 .query:hover {
-	border-color: c_dark-blue-2;
+	border-color: c_dark_blue_2;
 }

@@ -4,7 +4,7 @@
 @value typography "sourcegraph/components/styles/_typography.css";
 
 .error {
-	composes: col-10 from grid;
+	composes: col_10 from grid;
 	composes: center from base;
 	text-align: center;
 }
@@ -13,5 +13,5 @@
 	display: inline-block;
 	composes: pv1 ph2 br2 ba from base;
 	composes: f4 from typography;
-	composes: white bg-green-8 b--green from colors;
+	composes: white bg_green_8 b__green from colors;
 }

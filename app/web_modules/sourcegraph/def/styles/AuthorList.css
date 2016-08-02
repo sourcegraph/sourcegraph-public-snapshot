@@ -8,19 +8,19 @@
 	padding-left: 0;
 }
 
-.list-horizontal {
+.list_horizontal {
 	composes: list;
 	display: flex;
 	flex-wrap: wrap;
 }
 
 @media screen and (max-width: 48em) {
-	.list-horizontal {
+	.list_horizontal {
 		margin: 0 10px;
 	}
 }
 
-.pencil-icon {
+.pencil_icon {
 	composes: gray from colors;
 	composes: f4 from typography;
 	composes: pr3 from base;
@@ -29,17 +29,17 @@
 .person {
 	composes: pv1 from base;
 	composes: f6 from typography;
-	composes: mid-gray from colors;
+	composes: mid_gray from colors;
 	display: flex;
 	align-items: center;
 }
 
-.person-horizontal {
+.person_horizontal {
 	composes: person;
 	composes: pr3 from base;
 }
 
-.badge-wrapper {
+.badge_wrapper {
 	min-width: 2.5rem;
 	text-align: right;
 	display: inline-block;
@@ -47,7 +47,7 @@
 
 .badge {
 	composes: br2 pv1 ph2 from base;
-	composes: bg-blue-1 blue from colors;
+	composes: bg_blue_1 blue from colors;
 	composes: b f7 from typography;
 }
 
@@ -57,5 +57,5 @@
 
 .timestamp {
 	composes: ml1 from base;
-	composes: cool-mid-gray from colors;
+	composes: cool_mid_gray from colors;
 }

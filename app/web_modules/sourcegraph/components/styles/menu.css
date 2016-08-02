@@ -1,36 +1,36 @@
 @value base "sourcegraph/components/styles/_base.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 
-@value c_blue-1, c_cool-gray, c_cool-pale-gray-5 from colors;
+@value c_blue_1, c_cool_gray, c_cool_pale_gray_5 from colors;
 
 .container {
 	composes: ph0 pv2 ma0 br3 ba from base;
-	composes: bg-white b--cool-gray-2 from colors;
+	composes: bg_white b__cool_gray_2 from colors;
 	overflow: auto;
 	min-width: 12rem;
 	max-height: 800px;
 	z-index: 100;
 }
 
-.menu-item {
+.menu_item {
 	cursor: pointer;
 	padding-left: 24px;
 	padding-right: 24px;
 }
 
-.menu-item a {
+.menu_item a {
 	padding-top: 0.5em;
 	padding-bottom: 0.5em;
-	color: c_cool-gray;
+	color: c_cool_gray;
 	display: block;
 }
 
-.menu-item:hover,
-.menu-item:hover a {
-	color: c_cool-gray;
+.menu_item:hover,
+.menu_item:hover a {
+	color: c_cool_gray;
 }
 
-.menu-item:hover {	background-color: c_cool-pale-gray-5; }
+.menu_item:hover {	background-color: c_cool_pale_gray_5; }
 
 .divider { composes: ph0 mh0 from base; }
 

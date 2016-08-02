@@ -7,7 +7,7 @@
 					"type": "div",
 					"key": "0",
 					"props": {
-						"styleName": "all-refs",
+						"styleName": "all_refs",
 						"children": [
 							{
 								"type": "header",
@@ -17,7 +17,7 @@
 										{
 											"type": "span",
 											"props": {
-												"styleName": "refs-count"
+												"styleName": "refs_count"
 											}
 										},
 										" ",

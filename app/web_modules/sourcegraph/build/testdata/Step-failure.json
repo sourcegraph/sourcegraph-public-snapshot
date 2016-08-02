@@ -7,7 +7,7 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "step-title danger",
+						"styleName": "step_title danger",
 						"children": [
 							"Bash (indexing)",
 							{
@@ -27,7 +27,7 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "step-body"
+						"styleName": "step_body"
 					}
 				}
 			]

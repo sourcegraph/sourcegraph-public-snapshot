@@ -73,25 +73,25 @@ class Repos extends React.Component {
 		return (
 			<div className={base.pb6}>
 				<header styleName="header">
-					<Heading level="7" color="cool-mid-gray">Your repositories</Heading>
+					<Heading level="7" color="cool_mid_gray">Your repositories</Heading>
 					<p>To get jump-to-definition, search, and code examples, enable indexing on your repositories using the toggle. Private code indexed on Sourcegraph is only available to you and those with permissions to the underlying GitHub repository.</p>
-					<div styleName="input-bar">
-						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} styleName="github-button">Add public repositories</GitHubAuthButton>}
-						{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github-button">Add private repositories</GitHubAuthButton>}
+					<div styleName="input_bar">
+						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} styleName="github_button">Add public repositories</GitHubAuthButton>}
+						{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github_button">Add private repositories</GitHubAuthButton>}
 					</div>
 				</header>
 				<div styleName="settings">
 					{this._hasGithubToken() &&
-					<div styleName="list-heading">
+					<div styleName="list_heading">
 						<Input type="text"
 							placeholder="Find a repository..."
 							domRef={(e) => this._filterInput = e}
 							spellCheck={false}
-							styleName="filter-input"
+							styleName="filter_input"
 							onChange={this._handleFilter} />
-						<span styleName="list-label">Enable Indexing</span>
+						<span styleName="list_label">Enable Indexing</span>
 					</div>}
-					<div styleName="repos-list">
+					<div styleName="repos_list">
 						{repos.length > 0 && repos.map((repo, i) =>
 							<div styleName="row" key={i}>
 								<div styleName="info">
@@ -121,8 +121,8 @@ class Repos extends React.Component {
 				</div>
 				{this.props.location.query.onboarding &&
 					<footer styleName="footer">
-						<a styleName="footer-link" href="/integrations?onboarding=t">
-							<Button color="green" styleName="footer-btn">Continue</Button>
+						<a styleName="footer_link" href="/integrations?onboarding=t">
+							<Button color="green" styleName="footer_btn">Continue</Button>
 						</a>
 					</footer>
 				}

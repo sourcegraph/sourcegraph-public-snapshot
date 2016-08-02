@@ -4,14 +4,14 @@
 @value layout "sourcegraph/components/styles/_layout.css";
 @value typography "sourcegraph/components/styles/_typography.css";
 
-@value c_black-10 from colors;
+@value c_black_10 from colors;
 
 @value SearchSettings "sourcegraph/search/styles/SearchSettings.css";
-.search-settings {
-	composes: groups-bb from SearchSettings;
-	box-shadow: inset 0 7px 10px -7px c_black-10;
+.search_settings {
+	composes: groups_bb from SearchSettings;
+	box-shadow: inset 0 7px 10px -7px c_black_10;
 }
-.search-settings-inner {
+.search_settings_inner {
 	composes: ph3 mh2 from base;
 }
 
@@ -19,12 +19,12 @@
 	composes: mh0 from base;
 }
 
-.bottom-border {
+.bottom_border {
 	composes: bb from base;
-	composes: b--cool-pale-gray from colors;
+	composes: b__cool_pale_gray from colors;
 }
 
 .result {
-	composes: bottom-border;
+	composes: bottom_border;
 	composes: ph4 pt3 pb3 from base;
 }

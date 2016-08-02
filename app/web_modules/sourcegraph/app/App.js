@@ -38,8 +38,8 @@ export default class App extends React.Component {
 
 	constructor(props, context) {
 		super(props);
-		let styleName = "main-container";
-		if (!context.signedIn && location.pathname === "/") styleName = "main-container-homepage";
+		let styleName = "main_container";
+		if (!context.signedIn && location.pathname === "/") styleName = "main_container_homepage";
 		this._handleSourcegraphDesktop = this._handleSourcegraphDesktop.bind(this);
 		this.state = {
 			styleName: styleName,
@@ -70,7 +70,7 @@ export default class App extends React.Component {
 			<div styleName={this.state.styleName}>
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
 				<GlobalNav params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
-				<div styleName="main-content">
+				<div styleName="main_content">
 					{this.props.navContext && <div styleName="breadcrumb">{this.props.navContext}</div>}
 					{this.props.main}
 				</div>

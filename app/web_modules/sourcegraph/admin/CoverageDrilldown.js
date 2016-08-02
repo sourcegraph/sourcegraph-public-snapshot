@@ -139,8 +139,8 @@ class CoverageDrilldown extends Container {
 	}
 
 	deltaStyle(delta) {
-		if (delta.indexOf("+") === 0) return "delta-increase";
-		if (delta.indexOf("-") === 0) return "delta-decrease";
+		if (delta.indexOf("+") === 0) return "delta_increase";
+		if (delta.indexOf("-") === 0) return "delta_decrease";
 		return "";
 	}
 
@@ -148,12 +148,12 @@ class CoverageDrilldown extends Container {
 		return this.state.drilldownFiles.map((file, i) => {
 			const blobURL = urlToBlob(this.state.drilldown.Repo, this.state.drilldown.Rev, file.Path);
 			return (<div key={i}>
-				<div styleName="file-drilldown-row">
-					<div styleName={`file-drilldown-header${this.props.refScore(file) <= 0.75 ? "-uncovered" : ""}`}>
+				<div styleName="file_drilldown_row">
+					<div styleName={`file_drilldown_header${this.props.refScore(file) <= 0.75 ? "_uncovered" : ""}`}>
 						<div styleName="filepath">{file.Path}</div>
-						<div styleName="file-stats">{`Idents (${file.Idents}) Refs (${this.formatScore(this.props.refScore(file))}%) Defs (${this.formatScore(this.props.defScore(file))}%)`}</div>
+						<div styleName="file_stats">{`Idents (${file.Idents}) Refs (${this.formatScore(this.props.refScore(file))}%) Defs (${this.formatScore(this.props.defScore(file))}%)`}</div>
 					</div>
-					<Link styleName="file-link" to={blobURL}>
+					<Link styleName="file_link" to={blobURL}>
 						<FileIcon />
 					</Link>
 				</div>
@@ -178,17 +178,17 @@ class CoverageDrilldown extends Container {
 
 		return (
 			<div styleName="drilldown">
-				<h2 styleName="drilldown-header">
+				<h2 styleName="drilldown_header">
 					{this.props.language}
 					{Object.keys(srclibVersions).map((ver, i) =>
-						<span key={i} styleName="srclib-version">{ver}</span>
+						<span key={i} styleName="srclib_version">{ver}</span>
 					)}
 				</h2>
 				<div>
-					<Button styleName="day-chooser" size="small" outline={true} onClick={this.prevDay.bind(this)}><TriangleLeftIcon /></Button>
+					<Button styleName="day_chooser" size="small" outline={true} onClick={this.prevDay.bind(this)}><TriangleLeftIcon /></Button>
 					<span styleName="day">{datum.Day}</span>
-					<Button styleName="day-chooser" size="small" outline={true} onClick={this.nextDay.bind(this)}><TriangleRightIcon /></Button>
-					<Button styleName="drilldown-dismiss" size="small" outline={true} onClick={this.props.onDismiss}><CloseIcon /></Button>
+					<Button styleName="day_chooser" size="small" outline={true} onClick={this.nextDay.bind(this)}><TriangleRightIcon /></Button>
+					<Button styleName="drilldown_dismiss" size="small" outline={true} onClick={this.props.onDismiss}><CloseIcon /></Button>
 				</div>
 				<table styleName="table">
 					<thead>
@@ -210,12 +210,12 @@ class CoverageDrilldown extends Container {
 								<tr key={i}>
 									<td styleName="data">
 										{builds && builds.length > 0 && <Link to={urlToBuilds(source.Repo)}>
-											<Label color={buildClass(builds[0])} styleName="build-label">{buildStatus(builds[0])}</Label>
+											<Label color={buildClass(builds[0])} styleName="build_label">{buildStatus(builds[0])}</Label>
 											</Link>
 										}
 										<Link to={urlToRepoRev(source.Repo, source.Rev)}>{source.Repo}</Link>
 										{this.state.idx === this.props.data.length - 1 &&
-											<div styleName="repo-drilldown-icon" size="small" outline={true} onClick={() => this._drilldown(source)}><MagnifyingGlassIcon /></div>
+											<div styleName="repo_drilldown_icon" size="small" outline={true} onClick={() => this._drilldown(source)}><MagnifyingGlassIcon /></div>
 										}
 									</td>
 									<td styleName="data">{summary ? summary.Idents : "---"}</td>
@@ -233,7 +233,7 @@ class CoverageDrilldown extends Container {
 					</tbody>
 				</table>
 				{this.state.drilldown && <Modal onDismiss={() => this._drilldown(null)}>
-					<div styleName="repo-drilldown-modal">
+					<div styleName="repo_drilldown_modal">
 						<h3>
 							<Link to={urlToRepoRev(this.state.drilldown.Repo, this.state.drilldown.Rev)}>
 								{this.state.drilldown.Repo}@{this.state.drilldown.Rev}

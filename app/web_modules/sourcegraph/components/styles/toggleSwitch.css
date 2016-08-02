@@ -1,7 +1,7 @@
 @value colors "./_colors.css";
 
-@value c_green-8, c_green-2 from colors;
-@value c_light-gray, c_light-silver from colors;
+@value c_green_8, c_green_2 from colors;
+@value c_light_gray, c_light_silver from colors;
 
 .toggle {
 	position: relative;
@@ -11,25 +11,25 @@
 	-ms-user-select: none;
 }
 
-.toggle-checkbox {
+.toggle_checkbox {
 	display: none;
 }
 
-.toggle-label {
+.toggle_label {
 	display: block;
 	overflow: hidden;
 	cursor: pointer;
 	border-radius: 20px;
 }
 
-.toggle-inner {
+.toggle_inner {
 	display: block;
 	width: 200%;
 	margin-left: -100%;
 	transition: margin 0.3s ease-in 0s;
 }
 
-.toggle-inner:before, .toggle-inner:after {
+.toggle_inner:before, .toggle_inner:after {
 	display: block;
 	float: left;
 	width: 50%;
@@ -40,22 +40,22 @@
 	box-sizing: border-box;
 }
 
-.toggle-inner:before {
-	background-color: c_green-2;
+.toggle_inner:before {
+	background-color: c_green_2;
 	content: " ";
 }
 
-.toggle-inner:after {
+.toggle_inner:after {
 	content: " ";
-	background-color: c_light-gray;
+	background-color: c_light_gray;
 	text-align: right;
 }
 
-.toggle-switch {
+.toggle_switch {
 	display: block;
 	width: 22px;
 	margin: 4px;
-	background: c_light-silver;
+	background: c_light_silver;
 	position: absolute;
 	top: 0;
 	bottom: 0;
@@ -64,11 +64,11 @@
 	transition: all 200ms ease-in 0s;
 }
 
-.toggle-checkbox:checked + .toggle-label .toggle-inner {
+.toggle_checkbox:checked + .toggle_label .toggle_inner {
 	margin-left: 0;
 }
 
-.toggle-checkbox:checked + .toggle-label .toggle-switch {
+.toggle_checkbox:checked + .toggle_label .toggle_switch {
 	right: 0px;
-	background-color: c_green-8;
+	background-color: c_green_8;
 }

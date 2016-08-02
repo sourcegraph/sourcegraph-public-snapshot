@@ -1,7 +1,7 @@
 @value base "sourcegraph/components/styles/_base.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 @value menu "sourcegraph/components/styles/menu.css";
-@value c_cool-mid-gray from colors;
+@value c_cool_mid_gray from colors;
 
 
 .wrapper {
@@ -11,12 +11,12 @@
 	vertical-align: top;
 }
 
-.wrapper-disabled {
+.wrapper_disabled {
 	composes: wrapper;
 	cursor: not-allowed;
 }
 
-.dropdown-menu {
+.dropdown_menu {
 	position: absolute;
 	width: 10rem;
 	z-index: 1;
@@ -26,8 +26,8 @@
 	font-size: 1.5rem;
 }
 
-.center-icon {
-	fill: c_cool-mid-gray;
+.center_icon {
+	fill: c_cool_mid_gray;
 	vertical-align: middle;
 }
 
@@ -36,40 +36,40 @@
 	fill: currentColor;
 }
 
-.open-arrow {
+.open_arrow {
 	transform: rotate(90deg);
 }
 
-.dropdown-menu-open {
+.dropdown_menu_open {
 	composes: container from menu;
 	display: block;
 }
 
-.dropdown-menu-closed {
+.dropdown_menu_closed {
 	display: none;
 }
 
-.list-section {
+.list_section {
 	max-height: 360px;
 	composes: ma0 ph0 from base;
 }
 
 .item { composes: item from menu; }
-.item-content { composes: item-content from menu; }
-.item-current { composes: item from menu; }
-.item-content-current {
-	composes: item-content-current from menu;
+.item_content { composes: item_content from menu; }
+.item_current { composes: item from menu; }
+.item_content_current {
+	composes: item_content_current from menu;
 }
-.item-content-current .item-name {
+.item_content_current .item_name {
 	font-weight: bold;
 }
 
-.item-icon {
+.item_icon {
 	vertical-align: middle;
 	user-select: none;
 	composes: pr1 from base;
 }
-.item-icon-hidden {
+.item_icon_hidden {
 	composes: icon;
 	opacity: 0;
 }

@@ -8,11 +8,11 @@
 .groups {
 	composes: pt2 from base;
 }
-.groups-bb { /* exported */
-	composes: bg-cool-pale-gray-2 b--cool-pale-gray from colors;
+.groups_bb { /* exported */
+	composes: bg_cool_pale_gray_2 b__cool_pale_gray from colors;
 	composes: bb from base;
 }
-.groups-inner {
+.groups_inner {
 }
 
 .row {
@@ -25,7 +25,7 @@
 	min-width: 72px;
 	flex: 0 0;
 	display: inline-block;
-	composes: cool-mid-gray from colors;
+	composes: cool_mid_gray from colors;
 }
 .alert {
 	composes: red from colors;
@@ -40,7 +40,7 @@
 	align-items: baseline;
 }
 
-.choice-button {
+.choice_button {
 	composes: mr2 mb2 from base;
 	display: inline-block;
 }
@@ -53,7 +53,7 @@
 /* TODO: Abstract this – styles should be contained in their components */
 .modal {
 	composes: modal from "sourcegraph/components/styles/modal.css";
-	composes: col-10 from grid;
+	composes: col_10 from grid;
 	max-width: 440px;
 	min-width: 320px;
 	max-height: 85%;

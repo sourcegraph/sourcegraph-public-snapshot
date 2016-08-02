@@ -37,7 +37,7 @@ class ForgotPassword extends Container {
 
 	render() {
 		return (
-			<form styleName="full-page form" onSubmit={this._handleSubmit}>
+			<form styleName="full_page form" onSubmit={this._handleSubmit}>
 				<Helmet title="Forgot Password" />
 				<h1>Forgot your password?</h1>
 				<label>

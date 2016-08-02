@@ -40,13 +40,13 @@ function GlobalSearchInput(props) {
 	const passProps = {...props, styleName: undefined, styles: undefined}; // eslint-disable-line no-undefined
 
 	return (
-		<div styleName="flex-fill relative" className={base.mr3}>
+		<div styleName="flex_fill relative" className={base.mr3}>
 			{props.icon &&
-				<Search width={16} style={{top: "11px", left: "10px"}} styleName="absolute cool-mid-gray-fill layer-btm" />
+				<Search width={16} style={{top: "11px", left: "10px"}} styleName="absolute cool_mid_gray_fill layer_btm" />
 			}
 			<Input
 				{...passProps}
-				id="e2etest-search-input"
+				id="e2etest-search_input"
 				type="text"
 				onMouseDown={props.icon ? positionCursorAtEndIfIconClicked : null}
 				block={true}

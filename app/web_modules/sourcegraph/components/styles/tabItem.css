@@ -3,11 +3,11 @@
 @value colors "./_colors.css";
 @value typography "./_typography.css";
 
-@value c_dark-purple, c_purple, c_cool-mid-gray from colors;
-@value c_dark-blue from colors;
-@value media-sm from vars;
+@value c_dark_purple, c_purple, c_cool_mid_gray from colors;
+@value c_dark_blue from colors;
+@value media_sm from vars;
 
-.hidden-s { composes: hidden-s from base; }
+.hidden_s { composes: hidden_s from base; }
 .hide { display: none; }
 
 .vertical {
@@ -24,39 +24,39 @@
 }
 
 .inactive {
-	composes: cool-mid-gray b--transparent from colors;
+	composes: cool_mid_gray b__transparent from colors;
 	composes: bb bw3 from base;
 }
-.inactive a { color: c_cool-mid-gray; }
+.inactive a { color: c_cool_mid_gray; }
 .vertical.inactive { padding-left: 1.3rem; }
 
 .active { composes: bw3 from base; }
 .horizontal.active { border-bottom-style: solid; }
 .vertical.active { border-left-style: solid; }
 
-.blue { composes: b--blue blue from colors; }
-.blue:hover { color: c_dark-blue; }
+.blue { composes: b__blue blue from colors; }
+.blue:hover { color: c_dark_blue; }
 
-.purple { composes: b--purple purple from colors; }
+.purple { composes: b__purple purple from colors; }
 .active.purple a { color: c_purple; }
-.purple:hover, .purple a:hover { color: c_dark-purple; }
+.purple:hover, .purple a:hover { color: c_dark_purple; }
 
 .small { composes: f5 from typography; }
 .large { composes: f3 from typography; }
 
 .icon {
-	composes: v-mid from typography;
-	composes: hidden-s from base;
+	composes: v_mid from typography;
+	composes: hidden_s from base;
 	margin-right: 8px;
 	position: relative;
 	top: -1px;
 }
-.component-icon {
+.component_icon {
 	font-size: 1.5rem;
 	composes: pr2 from base;
 }
 
-@media media-sm {
+@media media_sm {
 	.tab {
 		margin-left: 2px;
 		margin-right: 2px;

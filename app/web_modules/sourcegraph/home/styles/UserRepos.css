@@ -9,6 +9,6 @@
 }
 
 .repos {
-	composes: col-9-ns from grid;
+	composes: col_9_ns from grid;
 	composes: mt4 center from base;
 }

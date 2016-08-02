@@ -120,7 +120,7 @@ export class SignupForm extends Container {
 						block={true}
 						required={true} />
 				</label>
-				<p styleName="mid-text">
+				<p styleName="mid_text">
 					By creating an account, you agree to our <a href="/-/privacy" target="_blank">privacy policy</a> and <a href="/-/terms" target="_blank">terms</a>.
 				</p>
 				<Button
@@ -132,7 +132,7 @@ export class SignupForm extends Container {
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
 					<div styleName="error">{this.state.authResponse.Error.body.message}</div>
 				}
-				<p styleName="sub-text">
+				<p styleName="sub_text">
 					Already have an account? <Link tabIndex="6" to="/login">Sign in.</Link>
 				</p>
 			</form>
@@ -143,7 +143,7 @@ SignupForm = CSSModules(SignupForm, style);
 
 function Signup(props, {router}) {
 	return (
-		<div styleName="full-page">
+		<div styleName="full_page">
 			<Helmet title="Sign Up" />
 			<SignupForm {...props}
 				returnTo="/"

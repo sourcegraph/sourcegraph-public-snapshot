@@ -47,9 +47,9 @@ class Integrations extends Component {
 		return (
 			<div styleName={this.props.location.state && this.props.location.state.modal === "integrations" ? "" : "container"}>
 				<div styleName="menu">
-					<Heading level="7" color="cool-mid-gray">Install an editor plugin</Heading>
+					<Heading level="7" color="cool_mid_gray">Install an editor plugin</Heading>
 					<p>Choose your editor to download the right plugin and get instructions on installation.</p>
-					<div styleName="tool-list">
+					<div styleName="tool_list">
 						{plugins.map((tool, i) => (
 							<a key={i} href={tool.url} target="_blank" styleName="tool">
 								<img styleName="img" src={`${this.context.siteConfig.assetsRoot}${tool.img}`}></img>
@@ -57,8 +57,8 @@ class Integrations extends Component {
 							</a>
 						))}
 					</div>
-					<Heading level="7" color="cool-mid-gray" className={base.pb3}>Other tools</Heading>
-					<div styleName="tool-list">
+					<Heading level="7" color="cool_mid_gray" className={base.pb3}>Other tools</Heading>
+					<div styleName="tool_list">
 						{otherTools.map((tool, i) => (
 							<a key={i} href={tool.url} target="_blank" styleName="tool">
 								<img styleName="img" src={`${this.context.siteConfig.assetsRoot}${tool.img}`}></img>
@@ -69,8 +69,8 @@ class Integrations extends Component {
 				</div>
 				{this.props.location.query.onboarding &&
 					<footer styleName="footer">
-						<a styleName="footer-link" href="/desktop/home">
-							<Button color="green" styleName="footer-btn">Continue</Button>
+						<a styleName="footer_link" href="/desktop/home">
+							<Button color="green" styleName="footer_btn">Continue</Button>
 						</a>
 					</footer>
 				}

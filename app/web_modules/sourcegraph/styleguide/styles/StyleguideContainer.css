@@ -1,9 +1,9 @@
 @value base "sourcegraph/components/styles/_base.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 
-.bg-near-white { composes: bg-near-white from colors; }
+.bg_near_white { composes: bg_near_white from colors; }
 
-.container-fixed {
+.container_fixed {
 	composes: pv6 ph4 center from base;
 	max-width: 1120px;
 }

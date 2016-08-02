@@ -43,7 +43,7 @@
 																{
 																	"type": "span",
 																	"props": {
-																		"styleName": "sig-name",
+																		"styleName": "sig_name",
 																		"children": [
 																			{
 																				"type": "span",
@@ -77,7 +77,7 @@
 										{
 											"type": "div",
 											"props": {
-												"styleName": "commit-id",
+												"styleName": "commit_id",
 												"children": [
 													{
 														"type": "code",

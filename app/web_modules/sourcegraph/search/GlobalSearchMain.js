@@ -9,7 +9,7 @@ function GlobalSearchMain({location}: {location: Location}) {
 	const q = queryFromStateOrURL(location) || "";
 	return (
 		<div>
-			<SearchSettings styleName="search-settings" innerClassName={styles["search-settings-inner"]} location={location} />
+			<SearchSettings styleName="search_settings" innerClassName={styles["search_settings_inner"]} location={location} />
 			<GlobalSearch query={q} location={location} className={styles["results"]} resultClassName={styles["result"]} />
 		</div>
 	);

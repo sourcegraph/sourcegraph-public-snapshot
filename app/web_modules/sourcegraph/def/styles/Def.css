@@ -7,7 +7,7 @@
 
 .title {
 	composes: code fw5 from typography;
-	word-wrap: break-word;
+	word-wrap: break_word;
 	white-space: pre-line;
 	line-height: normal;
 }
@@ -26,14 +26,14 @@
 	composes: title;
 }
 .boxIcon {
-	composes: cool-mid-gray from colors;
+	composes: cool_mid_gray from colors;
 	composes: pl3 from base;
 	line-height: normal;
 }
 .boxTitle:hover {
 	text-decoration: underline;
 }
-.def-title {
+.def_title {
 	composes: black from colors;
 }
 .defName {
@@ -44,44 +44,44 @@
 	composes: pt3 from base;
 	font-weight: bold;
 }
-.badge-padding {
+.badge_padding {
 	padding: 3px 5px;
 	composes: br2 from base;
 	composes: b f7 from typography;
-	composes: bg-blue-1 blue from colors;
+	composes: bg_blue_1 blue from colors;
 }
 .badge {
-	composes: badge-padding;
+	composes: badge_padding;
 	vertical-align: 1px;
 }
-.all-refs {
+.all_refs {
 	line-height: 1.7;
 	white-space: nowrap;
 	composes: pt1 from base;
 }
-.ref-filename {
-	word-wrap: break-word;
+.ref_filename {
+	word-wrap: break_word;
 	white-space: nowrap;
 	text-overflow: ellipsis;
 	overflow: hidden;
 }
-.refs-count {
+.refs_count {
 	composes: badge;
 }
-.current-file-refs {
+.current_file_refs {
 	font-weight: bold;
 }
 .loading {
 	composes: black from colors;
 }
 
-.private-repos-cta {
+.private_repos_cta {
 	composes: mt2 from base;
 	composes: fa6 from typography;
 	font-style2: italic;
 }
-.cta-link {
-	composes: mid-gray from colors;
+.cta_link {
+	composes: mid_gray from colors;
 }
 
 /* Def tooltip */
@@ -91,7 +91,7 @@
 	max-width: 460px;
 	min-width: 120px;
 	composes: br1 pa3 br2 from base;
-	composes: bg-cool-gray white from colors;
+	composes: bg_cool_gray white from colors;
 }
 .content {
 	composes: f7 from typography;
@@ -102,7 +102,7 @@
 }
 .doc {
 	overflow-y: hidden;
-	word-wrap: break-word;
+	word-wrap: break_word;
 }
 .doc p {
 	margin: 5px 0 0;
@@ -110,9 +110,9 @@
 .repo {
 	display: block;
 	composes: mt2 from base;
-	composes: light-gray from colors;
+	composes: light_gray from colors;
 	composes: f6 from typography;
 }
-.view-all-button {
+.view_all_button {
 	composes: mt2 from base;
 }

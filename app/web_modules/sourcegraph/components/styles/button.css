@@ -2,14 +2,14 @@
 @value colors "./_colors.css";
 @value typography "./_typography.css";
 
-@value btn-transition: all 0.4s;
+@value btn_transition: all 0.4s;
 
-@value c_blue, c_blue-text, c_dark-blue, c_dark-blue-2 from colors;
-@value c_cool-gray, c_cool-gray-5, c_cool-mid-gray, c_cool-dark-gray from colors;
-@value c_green, c_dark-green, c_green-text from colors;
-@value c_orange, c_dark-orange from colors;
-@value c_purple, c_dark-purple from colors;
-@value c_red, c_red-text from colors;
+@value c_blue, c_blue_text, c_dark_blue, c_dark_blue_2 from colors;
+@value c_cool_gray, c_cool_gray_5, c_cool_mid_gray, c_cool_dark_gray from colors;
+@value c_green, c_dark_green, c_green_text from colors;
+@value c_orange, c_dark_orange from colors;
+@value c_purple, c_dark_purple from colors;
+@value c_red, c_red_text from colors;
 
 /*
     Base
@@ -23,7 +23,7 @@
     box-sizing: border-box;
     cursor: pointer;
     display: inline-block;
-    transition: btn-transition;
+    transition: btn_transition;
     user-select: none;
 }
 
@@ -65,83 +65,83 @@
 .outline {
     composes: btn;
     composes: ba bw2 from base;
-    composes: bg-white from colors;
+    composes: bg_white from colors;
     background-image: none;
 }
 
-.outline-blue {
+.outline_blue {
     composes: outline;
-    composes: b--blue blue from colors;
+    composes: b__blue blue from colors;
 }
-.outline-blue:hover,
-.outline-blue:focus {
-    color: c_dark-blue;
-    border-color: c_dark-blue-2;
+.outline_blue:hover,
+.outline_blue:focus {
+    color: c_dark_blue;
+    border-color: c_dark_blue_2;
 }
 
-.outline-purple {
+.outline_purple {
     composes: outline;
-    composes: b--purple purple from colors;
+    composes: b__purple purple from colors;
 }
-.outline-purple:hover,
-.outline-purple:focus {
-    color: c_dark-purple;
-    border-color: c_dark-purple;
+.outline_purple:hover,
+.outline_purple:focus {
+    color: c_dark_purple;
+    border-color: c_dark_purple;
 }
 
-.outline-green {
+.outline_green {
     composes: outline;
-    composes: b--green green from colors;
+    composes: b__green green from colors;
 }
-.outline-green:hover,
-.outline-green:focus {
-    color: c_dark-green;
-    border-color: c_dark-green;
+.outline_green:hover,
+.outline_green:focus {
+    color: c_dark_green;
+    border-color: c_dark_green;
 }
 
-.outline-red {
+.outline_red {
     composes: outline;
-    composes: b--red red from colors;
+    composes: b__red red from colors;
 }
-.outline-red:hover,
-.outline-red:focus {
-    border-color: c_red-text;
+.outline_red:hover,
+.outline_red:focus {
+    border-color: c_red_text;
 }
 
-.outline-orange {
+.outline_orange {
     composes: outline;
-    composes: b--orange orange from colors;
+    composes: b__orange orange from colors;
 }
-.outline-orange:hover,
-.outline-orange:focus {
-    border-color: c_dark-orange;
-    color: c_dark-orange;
+.outline_orange:hover,
+.outline_orange:focus {
+    border-color: c_dark_orange;
+    color: c_dark_orange;
 }
 
-.outline-default {
+.outline_default {
     composes: outline;
-    composes: b--cool-mid-gray cool-gray from colors;
+    composes: b__cool_mid_gray cool_gray from colors;
 }
-.outline-default:hover,
-.outline-default:focus {
-    border-color: c_cool-dark-gray;
-    color: c_cool-gray;
+.outline_default:hover,
+.outline_default:focus {
+    border-color: c_cool_dark_gray;
+    color: c_cool_gray;
 }
 
 /* "active" state for button links */
-/* Set this as <Link activeClassName={buttonStyles["outline-active"]} /> */
+/* Set this as <Link activeClassName={buttonStyles["outline_active"]} /> */
 /* Overrides child button's styles. */
-.outline-active {
+.outline_active {
     composes: outline;
     color: c_purple !important;
     border-color: c_purple !important;
 }
-.outline-active:hover,
-.outline-active:focus {
+.outline_active:hover,
+.outline_active:focus {
     color: c_purple !important;
     border-color: c_purple !important;
 }
-.outline-active > button {
+.outline_active > button {
     border: none;
     color: c_purple !important;;
 }
@@ -156,82 +156,82 @@
 }
 .solid:hover { color: white; }
 
-.solid-default {
+.solid_default {
     composes: solid;
-    composes: bg-cool-mid-gray b--cool-mid-gray from colors;
+    composes: bg_cool_mid_gray b__cool_mid_gray from colors;
 }
-.solid-default:hover {
-    background: c_cool-gray;
-    border-color: c_cool-gray;
+.solid_default:hover {
+    background: c_cool_gray;
+    border-color: c_cool_gray;
 }
 
-.solid-disabled {
+.solid_disabled {
 	composes: solid;
-	composes: bg-cool-pale-gray b--cool-pale-gray from colors;
-	color: c_cool-gray-5;
+	composes: bg_cool_pale_gray b__cool_pale_gray from colors;
+	color: c_cool_gray_5;
 	cursor: not-allowed;
 }
-.solid-disabled:hover {
-	background: c_cool-pale-gray;
-	border-color: c_cool-pale-gray;
-	color: c_cool-gray-5;
+.solid_disabled:hover {
+	background: c_cool_pale_gray;
+	border-color: c_cool_pale_gray;
+	color: c_cool_gray_5;
 }
 
-.solid-blue {
+.solid_blue {
     composes: solid;
-    composes: bg-blue b--blue from colors;
+    composes: bg_blue b__blue from colors;
 }
-.solid-blue:hover {
-    background: c_blue-text;
-    border-color: c_blue-text;
+.solid_blue:hover {
+    background: c_blue_text;
+    border-color: c_blue_text;
 }
 
-.solid-purple {
+.solid_purple {
     composes: solid;
-    composes: bg-purple b--purple from colors;
+    composes: bg_purple b__purple from colors;
 }
-.solid-purple:hover {
-    background: c_dark-purple;
-    border-color: c_dark-purple;
+.solid_purple:hover {
+    background: c_dark_purple;
+    border-color: c_dark_purple;
 }
 
-.solid-green {
+.solid_green {
     composes: solid;
-    composes: bg-green b--green from colors;
+    composes: bg_green b__green from colors;
 }
-.solid-green:hover {
-    background: c_green-text;
-    border-color: c_green-text;
+.solid_green:hover {
+    background: c_green_text;
+    border-color: c_green_text;
 }
 
-.solid-red {
+.solid_red {
     composes: solid;
-    composes: white bg-red b--red from colors;
+    composes: white bg_red b__red from colors;
 }
-.solid-red:hover {
-    background: c_red-text;
-    border-color: c_red-text;
+.solid_red:hover {
+    background: c_red_text;
+    border-color: c_red_text;
 }
 
-.solid-orange {
+.solid_orange {
     composes: solid;
-    composes: white bg-orange b--orange from colors;
+    composes: white bg_orange b__orange from colors;
 }
-.solid-orange:hover {
-    background: c_dark-orange;
-    border-color: c_dark-orange;
+.solid_orange:hover {
+    background: c_dark_orange;
+    border-color: c_dark_orange;
 }
 
-.solid-white {
+.solid_white {
     composes: solid;
-    composes: bg-white b--white from colors;
+    composes: bg_white b__white from colors;
     color: c_purple;
 }
-.solid-white:hover {
+.solid_white:hover {
     background: white;
-    color: c_dark-purple;
+    color: c_dark_purple;
 }
-.button-image{
+.button_image{
     height: 1.5em;
     margin-right: 10px;
     vertical-align: bottom;
@@ -244,13 +244,13 @@
 .disabled:hover,
 .disabled:focus,
 .disabled:active {
-    background: c_cool-gray-5;
+    background: c_cool_gray_5;
     background-image: none;
     border: none;
 		border-style: none;
 		border-width: 0;
     box-shadow: none;
-    color: c_cool-gray;
+    color: c_cool_gray;
     cursor: not-allowed;
     filter: alpha(opacity=70);
     opacity: 0.70;

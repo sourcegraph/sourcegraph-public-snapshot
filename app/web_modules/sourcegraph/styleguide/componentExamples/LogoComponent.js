@@ -23,19 +23,19 @@ class LogoComponent extends React.Component {
 
 				<Panel hoverLevel="low">
 					<div className={base.pa4}>
-						<Heading level="7" className={base.mb3} color="cool-mid-gray">Logomark</Heading>
+						<Heading level="7" className={base.mb3} color="cool_mid_gray">Logomark</Heading>
 						<Logo width="64px" />
 						<Logo width="32px" />
 						<Logo width="16px" />
 					</div>
 					<div className={base.pa4}>
-						<Heading level="7" className={base.mb3} color="cool-mid-gray">Logotype</Heading>
+						<Heading level="7" className={base.mb3} color="cool_mid_gray">Logotype</Heading>
 						<p><Logo width="128px" type="logotype"/></p>
 						<p><Logo width="256px" type="logotype"/></p>
 						<p><Logo width="512px" type="logotype"/></p>
 					</div>
 					<div className={base.pa4}>
-						<Heading level="7" className={base.mb3} color="cool-mid-gray">Logotype with tag</Heading>
+						<Heading level="7" className={base.mb3} color="cool_mid_gray">Logotype with tag</Heading>
 						<p><Logo width="128px" type="logotype-with-tag"/></p>
 						<p><Logo width="256px" type="logotype-with-tag"/></p>
 						<p><Logo width="512px" type="logotype-with-tag"/></p>

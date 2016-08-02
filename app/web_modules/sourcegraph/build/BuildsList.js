@@ -96,39 +96,39 @@ class BuildsList extends Container {
 
 	render() {
 		return (
-			<div styleName="list-container">
+			<div styleName="list_container">
 				<Helmet title={`Builds | ${this.state.repo ? trimRepo(this.state.repo) : ""}`} />
-				<div styleName="list-header">Builds</div>
-				<div styleName="list-filters">
-					<div styleName="filter-button">
-						<Link activeClassName={btnStyles["outline-active"]} to={`${this.state.location.pathname}?filter=all`}><Button size="small" outline={true}>All</Button></Link>
+				<div styleName="list_header">Builds</div>
+				<div styleName="list_filters">
+					<div styleName="filter_button">
+						<Link activeClassName={btnStyles["outline_active"]} to={`${this.state.location.pathname}?filter=all`}><Button size="small" outline={true}>All</Button></Link>
 					</div>
-					<div styleName="filter-button">
-						<Link activeClassName={btnStyles["outline-active"]} to={`${this.state.location.pathname}?filter=priority`}><Button size="small" outline={true}>Priority Queue</Button></Link>
+					<div styleName="filter_button">
+						<Link activeClassName={btnStyles["outline_active"]} to={`${this.state.location.pathname}?filter=priority`}><Button size="small" outline={true}>Priority Queue</Button></Link>
 					</div>
-					<div styleName="filter-button">
-						<Link activeClassName={btnStyles["outline-active"]} to={`${this.state.location.pathname}?filter=active`}><Button size="small" outline={true}>Active</Button></Link>
+					<div styleName="filter_button">
+						<Link activeClassName={btnStyles["outline_active"]} to={`${this.state.location.pathname}?filter=active`}><Button size="small" outline={true}>Active</Button></Link>
 					</div>
-					<div styleName="filter-button">
-						<Link activeClassName={btnStyles["outline-active"]} to={`${this.state.location.pathname}?filter=ended`}><Button size="small" outline={true}>Ended</Button></Link>
+					<div styleName="filter_button">
+						<Link activeClassName={btnStyles["outline_active"]} to={`${this.state.location.pathname}?filter=ended`}><Button size="small" outline={true}>Ended</Button></Link>
 					</div>
-					<div styleName="filter-button">
-						<Link activeClassName={btnStyles["outline-active"]} to={`${this.state.location.pathname}?filter=succeeded`}><Button size="small" outline={true}>Succeeded</Button></Link>
+					<div styleName="filter_button">
+						<Link activeClassName={btnStyles["outline_active"]} to={`${this.state.location.pathname}?filter=succeeded`}><Button size="small" outline={true}>Succeeded</Button></Link>
 					</div>
-					<div styleName="filter-button">
-						<Link activeClassName={btnStyles["outline-active"]} to={`${this.state.location.pathname}?filter=failed`}><Button size="small" outline={true}>Failed</Button></Link>
+					<div styleName="filter_button">
+						<Link activeClassName={btnStyles["outline_active"]} to={`${this.state.location.pathname}?filter=failed`}><Button size="small" outline={true}>Failed</Button></Link>
 					</div>
 				</div>
 				{this.state.builds !== null && this.state.builds.length !== 0 && [
-					<div key="header" styleName="list-item">
-						<span styleName="list-id">#</span>
-						<span styleName="list-repo">Repository</span>
-						<span styleName="list-status">Status</span>
-						<span styleName="list-elapsed">Elapsed</span>
+					<div key="header" styleName="list_item">
+						<span styleName="list_id">#</span>
+						<span styleName="list_repo">Repository</span>
+						<span styleName="list_status">Status</span>
+						<span styleName="list_elapsed">Elapsed</span>
 					</div>,
 					...this.state.builds.map((build, i) =>
-						<div key={i} styleName={`list-item ${buildClass(build)}`}>
-							<span styleName="list-id">
+						<div key={i} styleName={`list_item ${buildClass(build)}`}>
+							<span styleName="list_id">
 								{!build.StartedAt &&
 									<span>{build.ID}</span>
 								}
@@ -136,12 +136,12 @@ class BuildsList extends Container {
 									<Link to={urlToBuild(this.state.repo || build.RepoPath, build.ID)}><Button size="small" block={true} outline={true}>{`${build.ID}`}</Button></Link>
 								}
 							</span>
-							<span styleName="list-repo"><a href={urlToRepo(this.state.repo || build.RepoPath)}>{this.state.repo || build.RepoPath}</a></span>
-							<span styleName="list-status">{this._rowStatus(build)}</span>
-							<span styleName="list-elapsed">{elapsed(build)}</span>
+							<span styleName="list_repo"><a href={urlToRepo(this.state.repo || build.RepoPath)}>{this.state.repo || build.RepoPath}</a></span>
+							<span styleName="list_status">{this._rowStatus(build)}</span>
+							<span styleName="list_elapsed">{elapsed(build)}</span>
 						</div>
 				)]}
-				{this.state.builds !== null && this.state.builds.length === 0 && <div styleName="list-empty-state">Sorry, we didn't find any builds.</div>}
+				{this.state.builds !== null && this.state.builds.length === 0 && <div styleName="list_empty_state">Sorry, we didn't find any builds.</div>}
 			</div>
 		);
 	}

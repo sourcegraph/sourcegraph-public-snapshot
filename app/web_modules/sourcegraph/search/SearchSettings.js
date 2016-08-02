@@ -156,7 +156,7 @@ class SearchSettings extends Container {
 								<Button
 									color="default"
 									size="small"
-									styleName="choice-button"
+									styleName="choice_button"
 									onClick={() => this.setState({betaLanguage: lang})}
 									outline={true}>
 										{langName(lang)}
@@ -167,7 +167,7 @@ class SearchSettings extends Container {
 								key={lang}
 								color={!langs.includes(lang) ? "default" : "blue"}
 								size="small"
-								styleName="choice-button"
+								styleName="choice_button"
 								onClick={() => this._toggleLang(lang)}
 								outline={!langs.includes(lang)}>
 									{langName(lang)}
@@ -177,7 +177,7 @@ class SearchSettings extends Container {
 						<Button
 							color="default"
 							size="small"
-							styleName="choice-button"
+							styleName="choice_button"
 							onClick={() => this.setState({betaLanguage: "more"})}
 							outline={true}>
 								More...
@@ -198,34 +198,34 @@ class SearchSettings extends Container {
 						{this.state.repo && <Button
 							color={scope.repo ? "blue" : "default"}
 							size="small"
-							styleName="choice-button"
+							styleName="choice_button"
 							onClick={() => this._setScope({repo: !scope.repo})}
 							outline={!scope.repo}>{this.state.repo}</Button>}
 						<Button
 							color={this.state.githubToken && !scope.popular ? "default" : "blue"}
 							size="small"
-							styleName="choice-button"
+							styleName="choice_button"
 							onClick={() => {
 								if (this.props.githubToken) this._setScope({popular: !scope.popular});
 							}}
 							outline={this.state.githubToken && !scope.popular}>Popular libraries</Button>
 						{(!this.state.signedIn || !this.props.githubToken) &&
-							<GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>My public projects</GitHubAuthButton>}
+							<GitHubAuthButton color="green" size="small" outline={true} styleName="choice_button" returnTo={this.props.location}>My public projects</GitHubAuthButton>}
 						{this.props.githubToken &&
 							<Button
 								color={!scope.public ? "default" : "blue"}
 								size="small"
-								styleName="choice-button"
+								styleName="choice_button"
 								onClick={() => this._setScope({public: !scope.public})}
 								outline={!scope.public}>My public projects</Button>
 						}
 						{(!this.state.signedIn || !this._hasPrivateGitHubToken()) &&
-							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>My private projects</GitHubAuthButton>}
+							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} styleName="choice_button" returnTo={this.props.location}>My private projects</GitHubAuthButton>}
 						{this._hasPrivateGitHubToken() &&
 							<Button
 								color={!scope.private ? "default" : "blue"}
 								size="small"
-								styleName="choice-button"
+								styleName="choice_button"
 								onClick={() => this._setScope({private: !scope.private})}
 								outline={!scope.private}>My private projects</Button>
 						}
@@ -238,7 +238,7 @@ class SearchSettings extends Container {
 	render() {
 		return (
 			<div styleName="groups" className={this.props.className}>
-				<div styleName="groups-inner" className={this.props.innerClassName}>
+				<div styleName="groups_inner" className={this.props.innerClassName}>
 					<div styleName="row">
 						{this._renderLanguages()}
 					</div>

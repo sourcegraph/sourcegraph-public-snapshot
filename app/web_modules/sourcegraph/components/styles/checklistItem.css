@@ -2,9 +2,9 @@
 @value colors "./_colors.css";
 @value typography "./_typography.css";
 @value vars "./_vars.css";
-@value media-sm from vars;
-@value check-size: 64px;
-@value check-size-mobile: 40px;
+@value media_sm from vars;
+@value check_size: 64px;
+@value check_size_mobile: 40px;
 
 .item {
 	display: flex;
@@ -12,30 +12,30 @@
 	flex-wrap: nowrap;
 }
 
-.check-container {
+.check_container {
 	composes: br100 ba bw2 from base;
 	composes: tc from typography;
-	flex: 0 0 check-size;
-	width: check-size;
-	height: check-size;
-	line-height: check-size;
+	flex: 0 0 check_size;
+	width: check_size;
+	height: check_size;
+	line-height: check_size;
 }
 .check {
-	composes: v-mid from typography;
+	composes: v_mid from typography;
 	position: relative;
 	top: -2px;
 }
-.check-complete {
-	composes: check-container;
-	composes: b--green from colors;
+.check_complete {
+	composes: check_container;
+	composes: b__green from colors;
 }
-.check-incomplete {
-	composes: check-container;
-	composes: b--cool-pale-gray from colors;
+.check_incomplete {
+	composes: check_container;
+	composes: b__cool_pale_gray from colors;
 }
 
 .content { composes: mh4 from base; }
-.content-complete {
+.content_complete {
 	composes: content;
 	opacity: 0.6;
 }
@@ -47,11 +47,11 @@
 	text-align: right;
 }
 
-@media media-sm {
-	.check-container {
-		width: check-size-mobile;
-		height: check-size-mobile;
-		line-height: check-size-mobile;
-		flex: 0 0 check-size-mobile;
+@media media_sm {
+	.check_container {
+		width: check_size_mobile;
+		height: check_size_mobile;
+		line-height: check_size_mobile;
+		flex: 0 0 check_size_mobile;
 	}
 }

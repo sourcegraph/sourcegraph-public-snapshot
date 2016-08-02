@@ -1,4 +1,4 @@
 @value layout "sourcegraph/components/styles/_layout.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 
-.bg-near-white { composes: bg-near-white from colors; }
+.bg_near_white { composes: bg_near_white from colors; }

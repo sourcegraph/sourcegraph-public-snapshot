@@ -45,12 +45,12 @@ class ExamplesContainer extends Container {
 		const expandedSnippets = 3;
 		return (
 			<div>
-				<Heading level="7" className={base.mb3} styleName="cool-mid-gray">
+				<Heading level="7" className={base.mb3} styleName="cool_mid_gray">
 					Usage Example{(refLocs && refLocs.RepoRefs && refLocs.RepoRefs.length > 1) ? "s" : ""}
 				</Heading>
 				<Panel
 					hoverLevel="low"
-					styleName="full-width-sm b--cool-pale-gray"
+					styleName="full_width_sm b__cool_pale_gray"
 					className={base.ba}>
 					<div className={this.props.className}>
 						{!refLocs && <div className={typography.tc}> <Loader className={base.mv4} /></div>}

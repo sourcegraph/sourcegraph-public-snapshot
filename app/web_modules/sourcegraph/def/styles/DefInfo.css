@@ -5,36 +5,36 @@
 @value vars "sourcegraph/components/styles/_vars.css";
 @value layout "sourcegraph/components/styles/_layout.css";
 
-@value c_blue-text, c_dark-blue, c_cool-pale-gray, c_cool-gray from colors;
-@value code-font-size-2 from vars;
+@value c_blue_text, c_dark_blue, c_cool_pale_gray, c_cool_gray from colors;
+@value code_font_size_2 from vars;
 
 pre {
-	background-color: c_cool-gray;
+	background-color: c_cool_gray;
 	border-radius: 3px;
-	color: c_cool-pale-gray;
-	font-size: code-font-size-2;
+	color: c_cool_pale_gray;
+	font-size: code_font_size_2;
 	line-height: 1.45em;
 	padding: 1rem;
 }
 
-.container-fixed { composes: containerFixed from layout; }
-.flex-grow { flex-grow: 1; }
+.container_fixed { composes: containerFixed from layout; }
+.flex_grow { flex_grow: 1; }
 
-.cool-mid-gray { composes: cool-mid-gray from colors; }
-.bg-cool-pale-gray-2 { composes: bg-cool-pale-gray-2 from colors; }
-.b--cool-pale-gray { composes: b--cool-pale-gray from colors; }
+.cool_mid_gray { composes: cool_mid_gray from colors; }
+.bg_cool_pale_gray_2 { composes: bg_cool_pale_gray_2 from colors; }
+.b__cool_pale_gray { composes: b__cool_pale_gray from colors; }
 
-.break-word { word-wrap: break-word; }
-.link-subtle { composes: link-subtle from typography; }
+.break_word { word-wrap: break_word; }
+.link_subtle { composes: link_subtle from typography; }
 .normal { composes: normal from typography; }
 .f7 { composes: f7 from typography; }
 
-.icon-cool-mid-gray { fill: c_blue-text; }
-.link-icon {}
-.link-icon:hover svg{ fill: c_dark-blue; }
+.icon_cool_mid_gray { fill: c_blue_text; }
+.link_icon {}
+.link_icon:hover svg{ fill: c_dark_blue; }
 
 /* Align with Repo text */
-.node-list-item:before { margin-right: 26px }
+.node_list_item:before { margin-right: 26px }
 
 .def { composes: purple from colors; }
 
@@ -51,7 +51,7 @@ pre {
 }
 
 @media screen and (max-width: 48em) {
-	.full-width-sm {
+	.full_width_sm {
 		margin-left: -2rem;
 		margin-right: -2rem;
 	}

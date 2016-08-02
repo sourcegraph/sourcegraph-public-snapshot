@@ -5,30 +5,30 @@
 @value grid "sourcegraph/components/styles/_grid.css";
 @value layout "sourcegraph/components/styles/_layout.css";
 
-@value media-xs, media-sm, media-ns from vars;
+@value media_xs, media_sm, media_ns from vars;
 @value navbarHeight: 60px;
-@value icon-font-size: 0.8rem;
+@value icon_font_size: 0.8rem;
 
-@value c_cool-pale-gray-8, c_cool-mid-gray from colors;
+@value c_cool_pale_gray_8, c_cool_mid_gray from colors;
 
 .tl { composes: tl from typography; }
 .tr {	composes: tr from typography; }
 .flex { display: flex; }
-.flex-fill { flex: 1 0; }
-.flex-item-auto { flex: 1 1 auto; }
-.flex-fixed { flex: 0 0 auto; }
-.flex-center { align-items: center; }
-.flex-end { justify-content: flex-end; }
-.flex-start { justify-content: flex-start; }
+.flex_fill { flex: 1 0; }
+.flex_item_auto { flex: 1 1 auto; }
+.flex_fixed { flex: 0 0 auto; }
+.flex_center { align-items: center; }
+.flex_end { justify-content: flex-end; }
+.flex_start { justify-content: flex-start; }
 .block { display: block; }
-.hidden-s { composes: hidden-s from base; }
-.cool-mid-gray { composes: cool-mid-gray from colors; }
-.fill-cool-mid-gray { fill: c_cool-mid-gray; }
+.hidden_s { composes: hidden_s from base; }
+.cool_mid_gray { composes: cool_mid_gray from colors; }
+.fill_cool_mid_gray { fill: c_cool_mid_gray; }
 
 
 .navbar {
 	composes: bb cf from base;
-	composes: bg-white b--cool-mid-gray-3 from colors;
+	composes: bg_white b__cool_mid_gray_3 from colors;
 	z-index: 100;
 	position: fixed;
 	top: 0;
@@ -40,9 +40,9 @@
 	padding-top: navbarHeight;
 }
 
-@value logo-height 21.508px;
-.logo-link {
-	padding: calc((navbarHeight - logo-height)/2);
+@value logo_height 21.508px;
+.logo_link {
+	padding: calc((navbarHeight - logo_height)/2);
 }
 .logo {
 	display: block;
@@ -56,7 +56,7 @@
 /* TODO: Abstract this – styles should be contained in their components */
 .modal {
 	composes: modal from "sourcegraph/components/styles/modal.css";
-	composes: col-10 from grid;
+	composes: col_10 from grid;
 	max-width: 400px;
 	min-width: 320px;
 }
@@ -68,24 +68,24 @@
 	text-transform: uppercase;
 }
 
-.channel-closed {
+.channel_closed {
 	composes: channel;
-	composes: white bg-gray from colors;
+	composes: white bg_gray from colors;
 }
 
-.channel-connected {
+.channel_connected {
 	composes: channel;
-	composes: white bg-green-8 b--green from colors;
+	composes: white bg_green_8 b__green from colors;
 }
 
-.channel-connecting {
+.channel_connecting {
 	composes: channel;
-	composes: white bg-blue-8 b--blue from colors;
+	composes: white bg_blue_8 b__blue from colors;
 }
 
-.channel-error {
+.channel_error {
 	composes: channel;
-	composes: white bg-red-8 b--red from colors;
+	composes: white bg_red_8 b__red from colors;
 }
 
 .icon {
@@ -95,23 +95,23 @@
 	vertical-align: middle;
 }
 
-.icon-check {
+.icon_check {
 	composes: icon;
-	composes: white bg-green-8 b--green from colors;
+	composes: white bg_green_8 b__green from colors;
 }
 
-.icon-ellipsis {
+.icon_ellipsis {
 	composes: icon;
-	composes: white bg-blue-8 b--blue from colors;
+	composes: white bg_blue_8 b__blue from colors;
 }
 
-@media screen and media-sm {
-	.not-small-only {
+@media screen and media_sm {
+	.not_small_only {
 		display: none;
 	}
 }
-@media screen and media-ns {
-	.small-only {
+@media screen and media_ns {
+	.small_only {
 		display: none;
 	}
 }
@@ -120,17 +120,17 @@
 	display: flex;
 	align-items: center;
 }
-.user-menu-icon {
-	composes: cool-mid-gray from colors;
-	font-size: icon-font-size;
+.user_menu_icon {
+	composes: cool_mid_gray from colors;
+	font-size: icon_font_size;
 	margin-left: 6px;
 }
-.current-user {
-	color: cool-mid-gray;
+.current_user {
+	color: cool_mid_gray;
 }
 
-.close-icon {
-	composes: hidden-ns from base;
+.close_icon {
+	composes: hidden_ns from base;
 	border:1px solid transparent;
 	background-color: transparent;
 	display: inline-block;
@@ -139,7 +139,7 @@
   	cursor: pointer;
 }
 
-.close-icon:after {
+.close_icon:after {
 	content: "X";
 	display: block;
 	width: 15px;
