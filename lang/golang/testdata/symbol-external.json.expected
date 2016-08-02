@@ -1,0 +1,456 @@
+[
+  {
+    "result": {
+      "capabilities": {
+        "hoverProvider": true,
+        "definitionProvider": true,
+        "referencesProvider": true
+      }
+    },
+    "id": "0",
+    "jsonrpc": ""
+  },
+  {
+    "result": [
+      {
+        "name": "",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "errors"
+      },
+      {
+        "name": "",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "fmt"
+      },
+      {
+        "name": "",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "path"
+      },
+      {
+        "name": "",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "regexp"
+      },
+      {
+        "name": "Handler",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "Request",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "ResponseWriter",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "Request/URL",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "URL/Path",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/url"
+      },
+      {
+        "name": "URL/String",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/url"
+      },
+      {
+        "name": "ResponseWriter/Header",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "Header/Set",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "ResponseWriter/WriteHeader",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "StatusMovedPermanently",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "NotFoundHandler",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "Handler/ServeHTTP",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "New",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "errors"
+      },
+      {
+        "name": "Clean",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "path"
+      },
+      {
+        "name": "Errorf",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "fmt"
+      },
+      {
+        "name": "Regexp",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "regexp"
+      },
+      {
+        "name": "Compile",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "regexp"
+      },
+      {
+        "name": "CanonicalHeaderKey",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "Regexp/MatchString",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "regexp"
+      }
+    ],
+    "id": "1",
+    "jsonrpc": ""
+  },
+  {
+    "result": true,
+    "id": "2",
+    "jsonrpc": ""
+  }
+]

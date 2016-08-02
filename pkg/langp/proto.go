@@ -88,11 +88,45 @@ func (r Range) LSP() lsp.Range {
 	}
 }
 
+// RepoRev represents a repository at a specific commit.
+type RepoRev struct {
+	// Repo is the repository URI.
+	Repo string
+
+	// Commit is the Git commit ID (not branch) of the repository.
+	Commit string
+}
+
+// DefSpec is a globally unique identifier for a definition in a repository at
+// a specific revision.
+type DefSpec struct {
+	// Repo is the repository URI.
+	Repo string
+
+	// Commit is the Git commit ID (not branch) of the repository.
+	Commit string
+
+	// UnitType (example GoPackage)
+	UnitType string
+
+	// Unit (example net/http)
+	Unit string
+
+	// Path (example NewRequest)
+	Path string
+}
+
 // LocalRefs represents references to a specific definition.
 type LocalRefs struct {
 	// Refs is a list of references to a definition defined within the requested
 	// repository.
 	Refs []Range
+}
+
+// ExternalRefs contains a list of all Defs used in a repository, but defined
+// outside of it.
+type ExternalRefs struct {
+	Defs []DefSpec
 }
 
 // HoverContent represents a subset of the content for when a user “hovers”

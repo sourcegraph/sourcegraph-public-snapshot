@@ -162,6 +162,14 @@ func (h *Session) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
 			break
 		}
 		result, err = h.handleReferences(req, params)
+
+	case "workspace/symbol":
+		var params lsp.WorkspaceSymbolParams
+		err = json.Unmarshal(*req.Params, &params)
+		if err != nil {
+			break
+		}
+		result, err = h.handleSymbol(req, params)
 	}
 
 	if err != nil {

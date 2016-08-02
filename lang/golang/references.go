@@ -26,7 +26,7 @@ func (h *Session) handleReferences(req *jsonrpc2.Request, params lsp.ReferencePa
 	if !valid {
 		return nil, errors.New("invalid position")
 	}
-	def, pkgs, err := guruReferrers(h.filePath(params.TextDocument.URI), int(ofs))
+	def, pkgs, err := guruReferrers(h.goEnv(), h.filePath(params.TextDocument.URI), int(ofs))
 	if err != nil {
 		return nil, err
 	}
@@ -92,8 +92,9 @@ func (l locationList) Len() int {
 	return len(l)
 }
 
-func guruReferrers(path string, offset int) (*serial.ReferrersInitial, []*serial.ReferrersPackage, error) {
+func guruReferrers(env []string, path string, offset int) (*serial.ReferrersInitial, []*serial.ReferrersPackage, error) {
 	c := exec.Command("guru", "-json", "referrers", fmt.Sprintf("%s:#%d", path, offset))
+	c.Env = env
 	b, err := c.Output()
 	if err != nil {
 		return nil, nil, err

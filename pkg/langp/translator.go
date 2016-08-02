@@ -59,6 +59,7 @@ func New(opts *Translator) http.Handler {
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/definition", t.handler("/definition", t.serveDefinition))
+	mux.Handle("/external-refs", t.handler("/external-refs", t.serveExternalRefs))
 	mux.Handle("/hover", t.handler("/hover", t.serveHover))
 	return mux
 }
@@ -337,6 +338,118 @@ func (t *translator) serveHover(body []byte) (interface{}, error) {
 		return nil, err
 	}
 	return HoverFromLSP(respHover), nil
+}
+
+func (t *translator) serveExternalRefs(body []byte) (interface{}, error) {
+	// TODO(slimsag): We don't need to create a new JSON RPC 2 connection every
+	// time, but we will need reconnection logic and a non-dumb jsonrpc2.Client
+	// which can handle concurrency (according to Sourcegraph LSP spec we can
+	// and should use one connection for all requests).
+	conn, err := net.Dial("tcp", t.Addr)
+	if err != nil {
+		return nil, err
+	}
+	cl := jsonrpc2.NewClient(conn)
+	defer func() {
+		if err := cl.Close(); err != nil {
+			// TODO: configurable logging
+			log.Println(err)
+		}
+	}()
+
+	// Decode the user request.
+	var r RepoRev
+	if err := json.Unmarshal(body, &r); err != nil {
+		return nil, err
+	}
+	if r.Repo == "" {
+		return nil, fmt.Errorf("Repo field must be set")
+	}
+	if r.Commit == "" {
+		return nil, fmt.Errorf("Commit field must be set")
+	}
+
+	// Determine the root path for the workspace and prepare it.
+	rootPath := filepath.Join(t.WorkDir, r.Repo, r.Commit)
+	err = t.prepareWorkspace(rootPath, r.Repo, r.Commit)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build the LSP requests.
+	reqInit := &jsonrpc2.Request{
+		ID:     "0",
+		Method: "initialize",
+	}
+	if err := reqInit.SetParams(&lsp.InitializeParams{
+		RootPath: rootPath,
+	}); err != nil {
+		return nil, err
+	}
+	// TODO: should probably check server capabilities before invoking symbol,
+	// but good enough for now.
+	reqSymbolID := "1"
+	reqSymbol := &jsonrpc2.Request{
+		ID:     reqSymbolID,
+		Method: "workspace/symbol",
+	}
+	p := lsp.WorkspaceSymbolParams{
+		// TODO(keegancsmith) this is go specific
+		Query: "external " + r.Repo + "/...",
+	}
+	if err := reqSymbol.SetParams(p); err != nil {
+		return nil, err
+	}
+	reqShutdown := &jsonrpc2.Request{ID: "2", Method: "shutdown"}
+
+	// Make the batched LSP request.
+	resps, err := cl.RequestBatchAndWaitForAllResponses(
+		reqInit,
+		reqSymbol,
+		reqShutdown,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal the LSP responses.
+	symbolResp, ok := resps[reqSymbolID]
+	if !ok {
+		return nil, fmt.Errorf("response to symbol request from LSP server not found")
+	}
+	if symbolResp.Error != nil {
+		return nil, symbolResp.Error
+	}
+	var respSymbol []lsp.SymbolInformation
+	if err := json.Unmarshal(*symbolResp.Result, &respSymbol); err != nil {
+		return nil, err
+	}
+
+	var defs []DefSpec
+	// TODO(keegancsmith) go specific
+	for _, s := range respSymbol {
+		// TODO(keegancsmith) we should inspect the workspace to find
+		// out the repo of the dependency
+		commit := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+		pkgParts := strings.Split(s.ContainerName, "/")
+		var repo, unit string
+		if len(pkgParts) < 3 {
+			// Hack for stdlib
+			repo = "github.com/golang/go"
+			unit = s.ContainerName
+		} else {
+			repo = strings.Join(pkgParts[:3], "/")
+			unit = strings.Join(pkgParts[3:], "/")
+		}
+		defs = append(defs, DefSpec{
+			Repo:     repo,
+			Commit:   commit,
+			UnitType: "GoPackage",
+			Unit:     unit,
+			Path:     s.Name,
+		})
+	}
+	return ExternalRefs{Defs: defs}, nil
 }
 
 // ExpandSGPath expands the $SGPATH variable in the given string, except it

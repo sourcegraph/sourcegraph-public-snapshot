@@ -93,6 +93,7 @@ func TestFixtures(t *testing.T) {
 func checkExecDeps(t *testing.T) {
 	deps := map[string]string{
 		"godef": "github.com/rogpeppe/godef",
+		"gog":   "sourcegraph.com/sourcegraph/srclib-go/gog/cmd/gog",
 		"guru":  "golang.org/x/tools/cmd/guru",
 	}
 	missing := []string{}
