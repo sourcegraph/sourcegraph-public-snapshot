@@ -5,7 +5,6 @@ export const integrations = {
 	getComponent: (location, callback) => {
 		require.ensure([], (require) => {
 			callback(null, {
-				globalNav: null,
 				navContext: null,
 				main: require("sourcegraph/home/IntegrationsContainer").default,
 			});

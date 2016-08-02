@@ -20,13 +20,19 @@ import GlobalSearchInput from "sourcegraph/search/GlobalSearchInput";
 import {locationForSearch, queryFromStateOrURL, langsFromStateOrURL, scopeFromStateOrURL} from "sourcegraph/search/routes";
 import SearchResultsPanel from "sourcegraph/search/SearchResultsPanel";
 import invariant from "invariant";
-import {rel} from "sourcegraph/app/routePatterns";
+import {rel, abs} from "sourcegraph/app/routePatterns";
 import {repoPath, repoParam} from "sourcegraph/repo";
 import {isPage} from "sourcegraph/page";
 import debounce from "lodash.debounce";
 
+const hiddenNavRoutes = new Set([
+	"/",
+	`/${abs.integrations}`,
+]);
+
 function GlobalNav({navContext, location, params, channelStatusCode}, {user, siteConfig, signedIn, router, eventLogger}) {
 	const isHomepage = location.pathname === "/";
+	const shouldHide = hiddenNavRoutes.has(location.pathname);
 	const isStaticPage = isPage(location.pathname);
 
 	const showLogoMarkOnly = !isStaticPage || user;
@@ -38,7 +44,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 			id="global-nav"
 			styleName="navbar"
 			className={colors["shadow-gray"]} role="navigation"
-			style={isHomepage ? {visibility: "hidden"} : {}}>
+			style={shouldHide ? {visibility: "hidden"} : {}}>
 
 			{location.state && location.state.modal === "login" &&
 			// TODO(chexee): Decouple existence of modals and GlobalNav
