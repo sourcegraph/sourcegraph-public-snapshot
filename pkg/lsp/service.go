@@ -181,10 +181,10 @@ const (
 )
 
 type SymbolInformation struct {
-	Name          string   `json:"name"`
-	Kind          int      `json:"kind"`
-	Location      Location `json:"location"`
-	ContainerName string   `json:"containerName,omitempty"`
+	Name          string     `json:"name"`
+	Kind          SymbolKind `json:"kind"`
+	Location      Location   `json:"location"`
+	ContainerName string     `json:"containerName,omitempty"`
 }
 
 type WorkspaceSymbolParams struct {
