@@ -56,9 +56,11 @@ export default function desktopRouter(Component) {
 		}
 	}
 
-	const DesktopClient = window.navigator.userAgent.includes("Electron");
-	if (DesktopClient) {
-		return desktopContainer(DesktopRouter);
+	if (global.window) {
+		const DesktopClient = window.navigator.userAgent.includes("Electron");
+		if (typeof DesktopClient !== "undefined") {
+			return desktopContainer(DesktopRouter);
+		}
 	}
 	return Component;
 }
