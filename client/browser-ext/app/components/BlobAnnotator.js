@@ -1,10 +1,7 @@
 import React from "react";
-
 import {bindActionCreators} from "redux";
 import {connect} from "react-redux";
-
 import addAnnotations from "../utils/annotations";
-
 import Component from "./Component";
 import {SourcegraphIcon} from "./Icons";
 import * as Actions from "../actions";
@@ -20,6 +17,8 @@ let buildsCache = {};
 		build: state.build,
 		srclibDataVersion: state.srclibDataVersion,
 		annotations: state.annotations,
+		accessToken: state.accessToken,
+		authInfo: state.authInfo,
 	}),
 	(dispatch) => ({
 		actions: bindActionCreators(Actions, dispatch)
@@ -40,7 +39,6 @@ export default class BlobAnnotator extends Component {
 		super(props);
 		this._clickRefresh = this._clickRefresh.bind(this);
 		this.state = utils.parseURL();
-
 		if (this.state.isDelta) {
 			this.state.isSplitDiff = this._isSplitDiff();
 
@@ -120,17 +118,36 @@ export default class BlobAnnotator extends Component {
 				this.state.headRepoURI = this.state.repoURI;
 			}
 		}
+
+		var self = this;
+		var repoURI = this.state.repoURI;
+		var commitID = this.state.commitID;
+		var rev = this.state.rev;
+		var interval = setInterval(function() {
+			var build = self._refreshToCheckBuildStatus(repoURI, commitID, rev);
+			if (build) {
+				clearInterval(interval);
+			}
+		}, 500);
 	}
 
 	componentDidMount() {
 		// Click may be for context expansion, in which case we should
 		// re-annotate the blob (which is smart enough to only annoate
 		// lines which haven't already been annotated).
+		this.props.actions.getAuthentication(this.state);
 		document.addEventListener("click", this._clickRefresh);
 	}
 
 	componentWillUnmount() {
 		document.removeEventListener("click", this._clickRefresh);
+	}
+
+	// when we check for builds if the repo has not been built before,
+	// there's a race condition between that check and the build being
+	// triggered. this keeps looking for builds until it doesn't return null
+	_refreshToCheckBuildStatus(repoURI, CommitID, rev) {
+		return this.state.actions.build(repoURI, CommitID, rev, true);
 	}
 
 	_clickRefresh() {
@@ -139,6 +156,7 @@ export default class BlobAnnotator extends Component {
 		// annotations code. 500ms is arbitrary but seems to work well.
 		setTimeout(() => this._addAnnotations(this.state), 500);
 	}
+
 
 	_isSplitDiff() {
 		if (this.state.isPullRequest) {
@@ -202,10 +220,9 @@ export default class BlobAnnotator extends Component {
 
 	_build(repoURI, commitID, branch) {
 		if (!this.state.actions) return;
-
 		if (!buildsCache[keyFor(repoURI, commitID, branch)]) {
 			buildsCache[keyFor(repoURI, commitID, branch)] = true;
-			this.state.actions.build(repoURI, commitID, branch);
+			this.state.actions.build(repoURI, commitID, branch, false);
 		}
 	}
 
@@ -255,29 +272,73 @@ export default class BlobAnnotator extends Component {
 		}
 	}
 
-	_buildStatus(build) {
-		if (!build || build.Failure || build.Killed) return "n/a";
-		return "Indexing...";
+	_indicatorText(repoURI, rev) {
+		let currentBuild = this._getBuild(repoURI, rev);
+		let dataVer = this._getSrclibDataVersion(repoURI, rev);
+		let isPrivate = this.isPrivateRepo();
+		if (dataVer) return "Indexed";
+
+		let webToken = this.props.accessToken;
+		if (isPrivate && (!webToken || webToken === "")) return "Sign in to see annotations";
+
+		let scopeAuth = "";
+		if (this.props.authInfo && this.props.authInfo.GitHubToken && this.props.authInfo.GitHubToken.scope) scopeAuth = this.props.authInfo.GitHubToken.scope;
+		let hasPrivateAuth = (scopeAuth.includes("read:org") && scopeAuth.includes("repo") && scopeAuth.includes("user")) ? true : false;
+		if (!hasPrivateAuth && this.props.authInfo && this.props.authInfo.Admin) hasPrivateAuth = true;
+		if (isPrivate && !hasPrivateAuth) return "Code not analyzed. Enable Sourcegraph";
+
+		if (!currentBuild || (currentBuild.Failure || currentBuild.Killed)) return "Code not analyzed";
+
+		return "Analyzing...";
 	}
 
-	_indicatorText(repoURI, rev) {
-		const dataVer = this._getSrclibDataVersion(repoURI, rev);
-		if (dataVer) return "Indexed";
-		return this._buildStatus(this._getBuild(repoURI, rev));
+	onClick(ev) {
+		EventLogger.logEvent("ChromeExtensionFaqsClicked", {type: ev.target.text});
+	}
+
+	getBuildIndicator(indicatorText, prefix) {
+		let url = "https://sourcegraph.com";
+
+		switch (indicatorText) {
+			case "Indexed":
+				return (<span/>);
+			case "Analyzing...":
+				return (<span id="sourcegraph-build-indicator-text" style={{paddingLeft: "5px"}}>{prefix}{indicatorText}</span>);
+			case "Sign in to see annotations":
+				return (<a onClick={this.onClick.bind(this)} target="_blank" href={url+"/about/browser-ext-faqs#signin"}><u><font color="#3D3C3A">{prefix}{indicatorText}</font></u></a>);
+			case "Code not analyzed. Enable Sourcegraph":
+				return (<a onClick={this.onClick.bind(this)} target="_blank" href={url+"/about/browser-ext-faqs#enable"}><u><font color="#3D3C3A">{prefix}{indicatorText}</font></u></a>);
+			case "Code not analyzed":
+				this._clickRefresh();
+				return (<a onClick={this.onClick.bind(this)}  target="_blank" href={url+"/about/browser-ext-faqs#build"}><u><font color="#3D3C3A">{prefix}{indicatorText}</font></u></a>);
+			default:
+				return (<span/>);
+		}
+	}
+
+	isPrivateRepo() {
+		let el = document.getElementsByClassName("label label-private v-align-middle");
+		return el.length > 0;
 	}
 
 	render() {
+		let dataVer = this._getSrclibDataVersion(this.state.repoURI, this.state.rev);
 		let indicatorText = "";
 		if (!utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
 			indicatorText = "Unsupported language";
-		} else if (this.state.isDelta) {
-			indicatorText = `base:${this._indicatorText(this.state.baseRepoURI, this.state.baseCommitID)} head:${this._indicatorText(this.state.headRepoURI, this.state.headCommitID)}`
+			return (<span id="sourcegraph-build-indicator-text" style={{paddingLeft: "5px"}}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px"}} />{indicatorText}</span>);
 		} else {
 			indicatorText = this._indicatorText(this.state.repoURI, this.state.rev);
 		}
-		return (<span>
-			{indicatorText && <SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", fontSize: "16px"}} />}
-			{indicatorText && <span id="sourcegraph-build-indicator-text" style={{paddingLeft: "5px"}}>{indicatorText}</span>}
-		</span>);
+		if (!this.state.isDelta) {
+			return (<span> <SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px"}} />{this.getBuildIndicator(indicatorText, null)} </span>);
+		} else {
+			let baseText = this._indicatorText(this.state.baseRepoURI, this.state.baseCommitID);
+			let headText = this._indicatorText(this.state.headRepoURI, this.state.headCommitID);
+			if (baseText === headText) return (<span> <SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px"}} />{this.getBuildIndicator(baseText)} </span>);
+			let baseRender = this.getBuildIndicator(baseText);
+			let headRender = this.getBuildIndicator(headText);
+			return (<span><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px"}} />{this.getBuildIndicator(baseText,"base: ")} {this.getBuildIndicator(headText,"head: ")} </span>);
+		}
 	}
 }

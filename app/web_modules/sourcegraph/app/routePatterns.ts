@@ -30,7 +30,8 @@ export type RouteName = "styleguide" |
 	"admin" |
 	"adminBuilds" |
 	"coverage" |
-	"adminCoverage";
+	"adminCoverage" |
+	"browserExtFaqs";
 
 // NOTE: If you add a top-level route (e.g., "/about"), add it to the
 // topLevel list in app/internal/ui/router.go.
@@ -38,6 +39,7 @@ export const rel = {
 	search: "search",
 	about: "about",
 	beta: "beta",
+	browserExtFaqs: "about/browser-ext-faqs",
 	contact: "contact",
 	desktopHome: "desktop/home",
 	security: "security",
@@ -71,6 +73,7 @@ export const abs = {
 	contact: rel.contact,
 	desktopHome: rel.desktopHome,
 	security: rel.security,
+	browserExtFaqs: rel.browserExtFaqs,
 	pricing: rel.pricing,
 	terms: rel.terms,
 	privacy: rel.privacy,

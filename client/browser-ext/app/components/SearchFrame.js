@@ -125,7 +125,7 @@ export default class SearchFrame extends React.Component {
 							<h3 styleName="list-item-empty">Searching...</h3>
 						}
 						{srclibDataVersionFetch && srclibDataVersionFetch.response && srclibDataVersionFetch.response.status === 404 &&
-							<h3 styleName="list-item-empty">404 Not Found: This repository (or revision) has not been indexed by Sourcegraph.<br/><a href={`https://sourcegraph.com/${this.state.repoURI}@${this.state.rev}`}>Let Sourcegraph index this repository.</a></h3>
+							<h3 styleName="list-item-empty">404 Not Found: This repository (or revision) has not been indexed by Sourcegraph.<br/><a href={`https://sourcegraph.com/${this.state.repoURI}${this.state.rev?("@"+this.state.rev):""}`}>Let Sourcegraph index this repository.</a></h3>
 						}
 						{srclibDataVersionFetch && srclibDataVersionFetch.response && srclibDataVersionFetch.response.status === 401 &&
 							<h3 styleName="list-item-empty">401 Unauthorized: Log in to Sourcegraph to search private code</h3>

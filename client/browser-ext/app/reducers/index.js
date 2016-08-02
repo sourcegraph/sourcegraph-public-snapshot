@@ -2,6 +2,15 @@ import {combineReducers} from "redux";
 import {keyFor} from "./helpers";
 import * as ActionTypes from "../constants/ActionTypes";
 
+const authInfo = function(state = null, action) {
+  	switch (action.type) {
+  	case ActionTypes.FETCHED_AUTH_INFO:
+  		return action.json ? action.json : state;
+  	default:
+  		return state;
+ 	}
+ }
+
 const accessToken = function(state = null, action) {
 	switch (action.type) {
 	case ActionTypes.SET_ACCESS_TOKEN:
@@ -125,4 +134,4 @@ const annotations = function(state = {content: {}}, action) {
 	}
 }
 
-export default combineReducers({accessToken, resolvedRev, srclibDataVersion, build, def, defs, annotations});
+export default combineReducers({authInfo, accessToken, resolvedRev, srclibDataVersion, build, def, defs, annotations});

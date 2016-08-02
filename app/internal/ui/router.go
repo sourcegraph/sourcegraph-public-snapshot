@@ -33,6 +33,7 @@ func newRouter() *mux.Router {
 	topLevel := []string{
 		// These all omit the leading "/".
 		"about",
+		"about/browser-ext-faqs",
 		"beta",
 		"contact",
 		"coverage",

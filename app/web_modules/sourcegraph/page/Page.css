@@ -4,6 +4,20 @@
 @value typography "sourcegraph/components/styles/_typography.css";
 @value layout "sourcegraph/components/styles/_layout.css";
 
+@keyframes frame {
+	from {
+		border-color: black
+	}
+	to {
+		border-color: white
+	}
+}
+
+.centered-button {
+	composes: tc from typography;
+	composes: pa3 from base;
+}
+
 .container {
 	composes: containerFixed from layout;
 	composes: col-12-ns col-11 from grid;
@@ -14,6 +28,32 @@
 	composes: container;
 	max-width: 900px !important;
 }
+
+.faqs-div {
+	padding: 20px;
+	border-width: 5px;
+	border-color: gray;
+	border-style: white;
+}
+
+.faqs-div-selected {
+	padding: 20px;
+	border-width: 5px;
+	animation-duration: 2000ms;
+	animation-name: frame;
+	animation-timing-function: linear;
+	border-color: white;
+	border-style: solid;
+}
+
+.faqs-content {
+	composes: pv4 from base;
+	composes: containerFixed from layout;
+	composes: ph4 from base;
+	max-width: 640px;
+	padding: 20px;
+}
+
 .content {
 	composes: container;
 	composes: pv4 from base;

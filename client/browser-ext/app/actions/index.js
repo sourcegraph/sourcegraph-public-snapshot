@@ -2,6 +2,16 @@ import * as types from "../constants/ActionTypes";
 import {keyFor} from "../reducers/helpers";
 import fetch, {useAccessToken} from "./xhr";
 import {defCache} from "../utils/annotations";
+import EventLogger from "../analytics/EventLogger";
+
+export function getAuthentication(state) {
+	return function (dispatch) {
+		return fetch("https://sourcegraph.com/.api/auth-info")
+			.then((json) => dispatch({type: types.FETCHED_AUTH_INFO, json}))
+			.then((action) => EventLogger.setUserLogin(action.json.Login))
+			.catch((err) => dispatch({type: types.FETCHED_AUTH_INFO, err}));
+	}
+}
 
 export function setAccessToken(token) {
 	useAccessToken(token); // for future fetches
@@ -130,11 +140,13 @@ function _getNewestBuildForCommit(dispatch, state, repo, commitID) {
 		.catch((err) => { dispatch({type: types.FETCHED_BUILD, repo, commitID, err}); throw err; });
 }
 
-export function build(repo, commitID, branch) {
+export function build(repo, commitID, branch, isrefreshRequest) {
 	return function (dispatch, getState) {
 		const state = getState();
-		const build = state.build.content[keyFor(repo, commitID)];
-		if (build) return Promise.resolve();
+		if (!isrefreshRequest) {
+			const build = state.build.content[keyFor(repo, commitID)];
+			if (build) return Promise.resolve();
+		}
 
 		return _getNewestBuildForCommit(dispatch, state, repo, commitID).then((json) => {
 			if (json && json.Builds && json.Builds.length === 1) {

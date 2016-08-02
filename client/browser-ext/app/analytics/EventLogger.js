@@ -22,6 +22,10 @@ export class EventLogger {
 		}
 	}
 
+	setUserLogin(login) {
+		if (login) _amplitude.getInstance().setUserId(login);
+	}
+
 	updateAmplitudePropsForUser(identity) {
 		if (identity) {
 			_amplitude.getInstance().setDeviceId(identity.deviceId);

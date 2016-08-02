@@ -91,4 +91,14 @@ export const routes: Array<Route> = [
 			});
 		},
 	},
+	{
+		path: rel.browserExtFaqs,
+		getComponents: (location, callback) => {
+			require.ensure([], (require) => {
+				callback(null, {
+					main: require("sourcegraph/home/BrowserExtFaqsPage").default,
+				});
+			});
+		},
+	},
 ];
