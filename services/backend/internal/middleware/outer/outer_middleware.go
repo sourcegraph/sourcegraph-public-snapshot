@@ -1769,6 +1769,36 @@ func (s wrappedRepos) ListTags(ctx context.Context, v1 *sourcegraph.ReposListTag
 	return rv, nil
 }
 
+func (s wrappedRepos) EnableWebhook(ctx context.Context, v1 *sourcegraph.RepoWebhookOptions) (returnedResult *pbtypes.Void, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Repos.EnableWebhook: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.ReposOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
+	}
+
+	rv, err := innerSvc.EnableWebhook(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
 func (s wrappedRepos) ListDeps(ctx context.Context, v1 *sourcegraph.URIList) (returnedResult *sourcegraph.URIList, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {

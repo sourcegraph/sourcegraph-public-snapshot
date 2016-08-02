@@ -11,6 +11,7 @@ type GitHubRepoGetter struct {
 	Get_            func(context.Context, string) (*sourcegraph.Repo, error)
 	GetByID_        func(context.Context, int) (*sourcegraph.Repo, error)
 	ListAccessible_ func(context.Context, *gogithub.RepositoryListOptions) ([]*sourcegraph.Repo, error)
+	CreateHook_     func(context.Context, string, *gogithub.Hook) error
 }
 
 func (s *GitHubRepoGetter) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
@@ -23,6 +24,10 @@ func (s *GitHubRepoGetter) GetByID(ctx context.Context, id int) (*sourcegraph.Re
 
 func (s *GitHubRepoGetter) ListAccessible(ctx context.Context, opt *gogithub.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
 	return s.ListAccessible_(ctx, opt)
+}
+
+func (s *GitHubRepoGetter) CreateHook(ctx context.Context, repo string, hook *gogithub.Hook) error {
+	return s.CreateHook_(ctx, repo, hook)
 }
 
 func (s *GitHubRepoGetter) MockGet_Return(ctx context.Context, returns *sourcegraph.Repo) {

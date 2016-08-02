@@ -56,6 +56,7 @@ type githubRepos interface {
 	Get(owner, repo string) (*github.Repository, *github.Response, error)
 	GetByID(id int) (*github.Repository, *github.Response, error)
 	List(user string, opt *github.RepositoryListOptions) ([]github.Repository, *github.Response, error)
+	CreateHook(owner, repo string, hook *github.Hook) (*github.Hook, *github.Response, error)
 }
 
 type githubAuthorizations interface {

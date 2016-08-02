@@ -225,6 +225,11 @@ message RepoListOptions {
 	bool RemoteOnly = 12 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
+// RepoWebhookOptions is used for enable repository webhook.
+message RepoWebhookOptions {
+	string URI = 1;
+}
+
 // RepoRevSpec specifies a repository at a specific commit.
 message RepoRevSpec {
 	int32 Repo = 1;
@@ -336,6 +341,9 @@ service Repos {
 	rpc ListCommits(ReposListCommitsOp) returns (CommitList);
 	rpc ListBranches(ReposListBranchesOp) returns (BranchList);
 	rpc ListTags(ReposListTagsOp) returns (TagList);
+
+	// EnableWebhook adds webhook to the repository to trigger build on pushes.
+	rpc EnableWebhook(RepoWebhookOptions) returns (pbtypes.Void);
 
 	rpc ListDeps(URIList) returns (URIList);
 

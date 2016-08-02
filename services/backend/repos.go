@@ -2,6 +2,7 @@ package backend
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	pathpkg "path"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/neelance/parallel"
+	gogithub "github.com/sourcegraph/go-github/github"
 
 	"strings"
 
@@ -480,4 +482,29 @@ func sendCreateRepoSlackMsg(ctx context.Context, uri, language string, mirror, p
 		msg += fmt.Sprintf(" (%s)", language)
 	}
 	notif.PostOnboardingNotif(msg)
+}
+
+func (s *repos) EnableWebhook(ctx context.Context, op *sourcegraph.RepoWebhookOptions) (*pbtypes.Void, error) {
+	if !github.HasAuthedUser(ctx) {
+		return nil, errors.New("Unauthed user")
+	}
+
+	var err error
+	ctx, err = github.NewContextWithAuthedClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := github.ReposFromContext(ctx).CreateHook(ctx, op.URI, &gogithub.Hook{
+		Name:   gogithub.String("web"),
+		Events: []string{"push", "pull_request"},
+		Config: map[string]interface{}{
+			"url":          conf.AppURL(ctx).String() + "/.api/webhook/callback",
+			"content_type": "json",
+		},
+		Active: gogithub.Bool(true),
+	}); err != nil {
+		return nil, err
+	}
+
+	return &pbtypes.Void{}, nil
 }

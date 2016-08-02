@@ -140,6 +140,12 @@ export const RepoBackend = {
 				break;
 			}
 
+		case RepoActions.WantCreateRepoHook:
+			{
+				RepoBackend.fetch(`/.api/webhook/enable?uri=${action.repo}`)
+				.then(checkStatus);
+			}
+
 		case RepoActions.WantBranches:
 			{
 				let branches = RepoStore.branches.list(action.repo);

@@ -166,6 +166,14 @@ export class RepoCreated {
 	}
 }
 
+export class WantCreateRepoHook {
+	repo: string;
+
+	constructor(repo: string) {
+		this.repo = repo;
+	}
+}
+
 export class WantBranches {
 	repo: string;
 

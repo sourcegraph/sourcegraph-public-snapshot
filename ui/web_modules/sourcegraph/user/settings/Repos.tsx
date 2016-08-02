@@ -9,7 +9,7 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import debounce from "lodash.debounce";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
-import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
+import {privateGitHubOAuthScopes, adminRepoGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 
 interface Props {
 	repos: any[];
@@ -31,6 +31,7 @@ export class Repos extends React.Component<Props, any> {
 		this._handleFilter = this._handleFilter.bind(this);
 		this._handleFilter = debounce(this._handleFilter, 25);
 		this._showRepo = this._showRepo.bind(this);
+		this._enableWebhook = this._enableWebhook.bind(this);
 	}
 
 	// _repoSort is a comparison function that sorts more recently
@@ -70,8 +71,16 @@ export class Repos extends React.Component<Props, any> {
 		return (this.context as any).githubToken && (this.context as any).githubToken.scope && (this.context as any).githubToken.scope.includes("repo") && (this.context as any).githubToken.scope.includes("read:org");
 	}
 
+	_hasHookGitHubToken() {
+		return (this.context as any).githubToken && (this.context as any).githubToken.scope && (this.context as any).githubToken.scope.includes("admin:repo_hook");
+	}
+
 	_toggleRepo(remoteRepo: any) {
 		Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(remoteRepo.URI, remoteRepo, true));
+	}
+
+	_enableWebhook(uri) {
+		Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepoHook(uri));
 	}
 
 	render(): JSX.Element | null {
@@ -85,6 +94,7 @@ export class Repos extends React.Component<Props, any> {
 					<div className={styles.input_bar}>
 						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} className={styles.github_button}>Add public repositories</GitHubAuthButton>}
 						{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>}
+						{!this._hasHookGitHubToken() && <GitHubAuthButton scopes={adminRepoGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add webhook notification</GitHubAuthButton>}
 					</div>
 				</header>
 				<div className={styles.settings}>
@@ -107,6 +117,7 @@ export class Repos extends React.Component<Props, any> {
 										(repo.URI && repo.URI.replace("github.com/", "").replace("/", " / ", 1)) || `${repo.Owner} / ${repo.Name}`
 									}
 									{repo.Description && <p className={styles.description}>
+									{this._hasHookGitHubToken() && <button onClick={() => this._enableWebhook(repo.URI || `github.com/${repo.Owner}/${repo.Name}`)}>Enable Webhook</button>}
 										{repo.Description.length > 100 ? `${repo.Description.substring(0, 100)}...` : repo.Description}
 									</p>}
 								</div>

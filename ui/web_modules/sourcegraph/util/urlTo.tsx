@@ -29,3 +29,4 @@ export function urlToGitHubOAuth(scopes: string | null, returnTo: string | Locat
 	return `/-/github-oauth/initiate${q ? `?${q}` : ""}`;
 }
 export const privateGitHubOAuthScopes = "read:org,repo,user:email";
+export const adminRepoGitHubOAuthScopes = "admin:repo_hook";

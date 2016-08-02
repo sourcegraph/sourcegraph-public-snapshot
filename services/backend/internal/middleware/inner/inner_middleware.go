@@ -1250,6 +1250,27 @@ func (s wrappedRepos) ListTags(ctx context.Context, param *sourcegraph.ReposList
 	return
 }
 
+func (s wrappedRepos) EnableWebhook(ctx context.Context, param *sourcegraph.RepoWebhookOptions) (res *pbtypes.Void, err error) {
+	var errActual error
+	start := time.Now()
+	ctx = trace.Before(ctx, "Repos", "EnableWebhook", param)
+	defer func() {
+		trace.After(ctx, "Repos", "EnableWebhook", param, errActual, time.Since(start))
+	}()
+	res, errActual = backend.Services.Repos.EnableWebhook(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Repos.EnableWebhook returned nil, nil")
+	}
+	err = errActual
+	if err != nil && !DebugMode(ctx) {
+		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Repos.EnableWebhook failed with internal error.")
+		}
+	}
+	return
+}
+
 func (s wrappedRepos) ListDeps(ctx context.Context, param *sourcegraph.URIList) (res *sourcegraph.URIList, err error) {
 	var errActual error
 	start := time.Now()

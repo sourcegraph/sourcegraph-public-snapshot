@@ -54,6 +54,8 @@ const (
 	RepoTreeList             = "repo.tree-list"
 	RepoTreeSearch           = "repo-tree.search"
 	RepoHoverInfo            = "repo.hover-info"
+	RepoWebhookEnable        = "repo.webhook-enable"
+	RepoWebhookCallback      = "repo.webhook-callback"
 	Repos                    = "repos"
 	SourcegraphDesktop       = "sourcegraph-desktop"
 	SrclibImport             = "srclib.import"
@@ -91,6 +93,8 @@ func New(base *mux.Router) *mux.Router {
 
 	base.Path("/repos").Methods("GET").Name(Repos)
 	base.Path("/repos").Methods("POST").Name(RepoCreate)
+	base.Path("/webhook/enable").Methods("GET").Name(RepoWebhookEnable)
+	base.Path("/webhook/callback").Methods("POST").Name(RepoWebhookCallback)
 
 	base.Path("/global-search").Methods("GET").Name(GlobalSearch)
 

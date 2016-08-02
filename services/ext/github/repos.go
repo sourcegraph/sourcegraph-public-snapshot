@@ -36,6 +36,7 @@ type Repos interface {
 	Get(context.Context, string) (*sourcegraph.Repo, error)
 	GetByID(context.Context, int) (*sourcegraph.Repo, error)
 	ListAccessible(context.Context, *github.RepositoryListOptions) ([]*sourcegraph.Repo, error)
+	CreateHook(context.Context, string, *github.Hook) error
 }
 
 type repos struct{}
@@ -211,6 +212,22 @@ func (s *repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOp
 		repos = append(repos, toRepo(&ghRepo))
 	}
 	return repos, nil
+}
+
+// CreateHook creates a Hook for the specified repository.
+//
+// See http://developer.github.com/v3/repos/hooks/#create-a-hook
+// for more information.
+func (s *repos) CreateHook(ctx context.Context, repo string, hook *github.Hook) error {
+	owner, repoName, err := githubutil.SplitRepoURI(repo)
+	if err != nil {
+		return grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
+	}
+	_, resp, err := client(ctx).repos.CreateHook(owner, repoName, hook)
+	if err != nil {
+		return checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.CreateHook %q", githubutil.RepoURI(owner, repoName)))
+	}
+	return nil
 }
 
 // WithRepos returns a copy of parent with the given GitHub Repos service.
