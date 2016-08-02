@@ -184,34 +184,41 @@ class DefInfo extends Container {
 		if (!defObj) {
 			return null;
 		}
+
 		let file = BlobStore.files.get(defObj.Repo, defObj.CommitID, defObj.File);
 		let anns = BlobStore.annotations.get(defObj.Repo, defObj.CommitID, defObj.File);
 		if (!file || !anns) {
 			return null;
 		}
+
 		let lines = fileLines(file.ContentsString);
 		let startLine = lineFromByte(lines, defObj.DefStart) - 1;
-		let lineEndByte = anns.LineStartBytes[startLine + 1];
 		let contents = lines[startLine];
 		let lineAnns = annotationsByLine(anns.LineStartBytes, anns.Annotations, lines)[startLine];
-		let isFuncDef = lineAnns[0].Class === "kwd" && contents.startsWith("func");
-		if (!isFuncDef) {
+
+		if (defObj.Kind !== "func") {
 			return null;
 		}
-		let isSingleLine = lineAnns.every((ann) => ann.EndByte <= lineEndByte);
-		if (!isSingleLine) {
-			return null;
-		}
-		// remove dangling open curly brace at the end of the line
+
+		// try to remove dangling open curly brace at the end of the line,
+		// and detect if this single-line rendering method would fail
 		const whiteSpace = /\s/;
 		for (let i = contents.length - 1; i >= 0; i--) {
 			if (!whiteSpace.test(contents[i])) {
-				if (contents[i] === "{") {
-					contents = `${contents.substr(0, i)} ${contents.substr(i + 1)}`;
+				if (contents[i] !== "{") { i++; }
+				let trimmedLine = contents.substr(0, i).trim();
+				let typeParts = defObj.FmtStrings.Type.ScopeQualified.split(/[\s\.\/]/);
+				let lastTypePart = typeParts.pop();
+				if (!trimmedLine.endsWith(lastTypePart)) {
+					// if the trimmed line doesn't end with the last token of the type,
+					// we're dealing with a tricky function header -> abort
+					return null;
 				}
+				contents = `${contents.substr(0, i)} ${contents.substr(i + 1)}`;
 				break;
 			}
 		}
+
 		return {
 			contents: contents,
 			anns: lineAnns,
