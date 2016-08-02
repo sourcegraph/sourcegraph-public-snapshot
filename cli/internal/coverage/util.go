@@ -31,6 +31,32 @@ func AvgDuration(values []time.Duration) time.Duration {
 	return sum / time.Duration(AtLeastOne(len(values)))
 }
 
+func MinDuration(values []time.Duration) time.Duration {
+	if len(values) == 0 {
+		return time.Duration(0)
+	}
+	min := values[0]
+	for _, i := range values[1:] {
+		if i < min {
+			min = i
+		}
+	}
+	return min
+}
+
+func MaxDuration(values []time.Duration) time.Duration {
+	if len(values) == 0 {
+		return time.Duration(0)
+	}
+	max := values[0]
+	for _, i := range values[1:] {
+		if i > max {
+			max = i
+		}
+	}
+	return max
+}
+
 func Percentile(k int, values []time.Duration) time.Duration {
 	// Copy the slice.
 	if len(values) == 0 {
