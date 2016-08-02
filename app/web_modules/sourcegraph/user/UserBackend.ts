@@ -1,25 +1,30 @@
-import * as UserActions from "sourcegraph/user/UserActions";
 import Dispatcher from "sourcegraph/Dispatcher";
-import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
+import * as UserActions from "sourcegraph/user/UserActions";
 import UserStore from "sourcegraph/user/UserStore";
+import {checkStatus, defaultFetch} from "sourcegraph/util/xhr";
 
-const UserBackend = {
-	fetch: defaultFetch,
+class UserBackend {
+	fetch: typeof defaultFetch;
 
-	__onDispatch(action) {
-		if (action instanceof UserActions.WantAuthInfo) {
+	constructor() {
+		this.fetch = defaultFetch;
+	}
+
+	__onDispatch(payload: UserActions.Action): void {
+		if (payload instanceof UserActions.WantAuthInfo) {
+			const action = payload;
 			if (!UserStore.authInfos[action.accessToken]) {
-				UserBackend.fetch("/.api/auth-info")
+				this.fetch("/.api/auth-info")
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.then(function(data) {
+					.then(function(data: any): void {
 						// The user and emails might've been optimistically included in the API response.
 						let user = data.IncludedUser;
-						if (user) delete data.IncludedUser;
+						if (user) { delete data.IncludedUser; }
 						let emails = data.IncludedEmails;
-						if (emails) delete data.IncludedEmails;
+						if (emails) { delete data.IncludedEmails; }
 						let token = data.GitHubToken;
-						if (token) delete data.GitHubToken;
+						if (token) { delete data.GitHubToken; }
 
 						// Dispatch FetchedUser before FetchedAuthInfo because it's common for components
 						// to dispatch a WantUser when the auth info is received, and dispatching FetchedUser
@@ -36,31 +41,34 @@ const UserBackend = {
 						if (token && data.UID) {
 							Dispatcher.Stores.dispatch(new UserActions.FetchedGitHubToken(data.UID, token));
 						}
-					}, function(err) { console.error(err); });
+					}, function(err: any): void { console.error(err); });
 			}
-		} else if (action instanceof UserActions.WantUser) {
-			if (!UserStore.users[action.uid]) {
-				UserBackend.fetch(`/.api/users/${action.uid}$`) // trailing "$" indicates UID lookup (not login/username)
-					.then(checkStatus)
-					.then((resp) => resp.json())
-					.then(function(data) {
-						Dispatcher.Stores.dispatch(new UserActions.FetchedUser(action.uid, data));
-					}, function(err) { console.error(err); });
-			}
-		} else if (action instanceof UserActions.WantEmails) {
-			if (!UserStore.emails[action.uid]) {
-				UserBackend.fetch(`/.api/users/${action.uid}$/emails`)
-					.then(checkStatus)
-					.then((resp) => resp.json())
-					.then(function(data) {
-						Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(action.uid, data && data.EmailAddrs ? data.EmailAddrs : []));
-					}, function(err) { console.error(err); });
-			}
-		}
 
-		switch (action.constructor) {
-		case UserActions.SubmitSignup:
-			UserBackend.fetch(`/.api/join`, {
+		} else if (payload instanceof UserActions.WantUser) {
+			const action = payload;
+			if (!UserStore.users[action.uid]) {
+				this.fetch(`/.api/users/${action.uid}$`) // trailing "$" indicates UID lookup (not login/username)
+					.then(checkStatus)
+					.then((resp) => resp.json())
+					.then(function(data: any): void {
+						Dispatcher.Stores.dispatch(new UserActions.FetchedUser(action.uid, data));
+					}, function(err: any): void { console.error(err); });
+			}
+
+		} else if (payload instanceof UserActions.WantEmails) {
+			const action = payload;
+			if (!UserStore.emails[action.uid]) {
+				this.fetch(`/.api/users/${action.uid}$/emails`)
+					.then(checkStatus)
+					.then((resp) => resp.json())
+					.then(function(data: any): void {
+						Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(action.uid, data && data.EmailAddrs ? data.EmailAddrs : []));
+					}, function(err: any): void { console.error(err); });
+			}
+
+		} else if (payload instanceof UserActions.SubmitSignup) {
+			const action = payload;
+			this.fetch(`/.api/join`, {
 				method: "POST",
 				body: JSON.stringify({
 					Login: action.login,
@@ -71,15 +79,16 @@ const UserBackend = {
 				.then(checkStatus)
 				.then((resp) => resp.json())
 				.catch((err) => ({Error: err}))
-				.then(function(data) {
+				.then(function(data: any): void {
 					Dispatcher.Stores.dispatch(new UserActions.SignupCompleted(action.email, data));
 					if (data.Success) {
 						window.location.href = "/";
 					}
 				});
-			break;
-		case UserActions.SubmitLogin:
-			UserBackend.fetch(`/.api/login`, {
+
+		} else if (payload instanceof UserActions.SubmitLogin) {
+			const action = payload;
+			this.fetch(`/.api/login`, {
 				method: "POST",
 				body: JSON.stringify({
 					Login: action.login,
@@ -89,32 +98,33 @@ const UserBackend = {
 				.then(checkStatus)
 				.then((resp) => resp.json())
 				.catch((err) => ({Error: err}))
-				.then(function(data) {
+				.then(function(data: any): void {
 					Dispatcher.Stores.dispatch(new UserActions.LoginCompleted(data));
 					// Redirect on login.
 					if (data.Success) {
 						window.location.href = "/";
 					}
 				});
-			break;
-		case UserActions.SubmitLogout:
-			UserBackend.fetch(`/.api/logout`, {
+
+		} else if (payload instanceof UserActions.SubmitLogout) {
+			this.fetch(`/.api/logout`, {
 				method: "POST",
 				body: JSON.stringify({}),
 			})
 				.then(checkStatus)
 				.then((resp) => resp.json())
 				.catch((err) => ({Error: err}))
-				.then(function(data) {
+				.then(function(data: any): void {
 					Dispatcher.Stores.dispatch(new UserActions.LogoutCompleted(data));
 					// Redirect on logout.
 					if (data.Success) {
 						window.location.href = "/#loggedout";
 					}
 				});
-			break;
-		case UserActions.SubmitForgotPassword:
-			UserBackend.fetch(`/.api/forgot`, {
+
+		} else if (payload instanceof UserActions.SubmitForgotPassword) {
+			const action = payload;
+			this.fetch(`/.api/forgot`, {
 				method: "POST",
 				body: JSON.stringify({
 					Email: action.email,
@@ -123,12 +133,13 @@ const UserBackend = {
 				.then(checkStatus)
 				.then((resp) => resp.json())
 				.catch((err) => ({Error: err}))
-				.then(function(data) {
+				.then(function(data: any): void {
 					Dispatcher.Stores.dispatch(new UserActions.ForgotPasswordCompleted(data));
 				});
-			break;
-		case UserActions.SubmitResetPassword:
-			UserBackend.fetch(`/.api/reset`, {
+
+		} else if (payload instanceof UserActions.SubmitResetPassword) {
+			const action = payload;
+			this.fetch(`/.api/reset`, {
 				method: "POST",
 				body: JSON.stringify({
 					Password: action.password,
@@ -139,12 +150,13 @@ const UserBackend = {
 				.then(checkStatus)
 				.then((resp) => resp.json())
 				.catch((err) => ({Error: err}))
-				.then(function(data) {
+				.then(function(data: any): void {
 					Dispatcher.Stores.dispatch(new UserActions.ResetPasswordCompleted(data));
 				});
-			break;
-		case UserActions.SubmitBetaSubscription:
-			UserBackend.fetch(`/.api/beta-subscription`, {
+
+		} else if (payload instanceof UserActions.SubmitBetaSubscription) {
+			const action = payload;
+			this.fetch(`/.api/beta-subscription`, {
 				method: "POST",
 				body: JSON.stringify({
 					Email: action.email,
@@ -158,14 +170,13 @@ const UserBackend = {
 				.then(checkStatus)
 				.then((resp) => resp.json())
 				.catch((err) => ({Error: err}))
-				.then(function(data) {
+				.then(function(data: any): void {
 					Dispatcher.Stores.dispatch(new UserActions.BetaSubscriptionCompleted(data));
 				});
-			break;
 		}
-	},
+	}
 };
 
-Dispatcher.Backends.register(UserBackend.__onDispatch);
-
-export default UserBackend;
+let singleton = new UserBackend();
+Dispatcher.Backends.register(singleton.__onDispatch.bind(singleton));
+export default singleton;

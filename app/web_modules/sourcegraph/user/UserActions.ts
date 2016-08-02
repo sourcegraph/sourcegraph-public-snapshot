@@ -1,7 +1,10 @@
 import {AuthInfo, EmailAddr, ExternalToken, Settings, User} from "sourcegraph/user/index";
 
-export type Action = FetchedAuthInfo
+export type Action = WantAuthInfo
+	| FetchedAuthInfo
+	| WantUser
 	| FetchedUser
+	| WantEmails
 	| FetchedEmails
 	| FetchedGitHubToken
 	| UpdateSettings
