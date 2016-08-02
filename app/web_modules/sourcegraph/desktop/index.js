@@ -35,16 +35,7 @@ export default function desktopRouter(Component) {
 			routes: React.PropTypes.array,
 		};
 
-		constructor(props) {
-			super(props);
-			this.DesktopClient = navigator.userAgent.includes("Electron");
-		}
-
 		render() {
-			if (!this.DesktopClient) {
-				return <Component {...this.props} />;
-			}
-
 			const inbeta = inBeta(this.context.user, betautil.DESKTOP);
 			// Include this.context.user to prevent flicker when user loads
 			if (this.context.signedIn && this.context.user && !inbeta) {
@@ -64,5 +55,12 @@ export default function desktopRouter(Component) {
 		}
 	}
 
-	return DesktopRouter;
+	if (global.document) {
+		const desktopClient = navigator.userAgent.includes("Electron");
+		if (desktopClient) {
+			return DesktopRouter;
+		}
+	}
+
+	return Component;
 }
