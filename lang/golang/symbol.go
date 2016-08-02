@@ -52,10 +52,8 @@ func (h *Session) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbol
 		}
 		// TODO(keegancsmith) duplicated IO + ignoring error for
 		// convenience of packages
-		content, err := ioutil.ReadFile(d.File)
-		if err != nil {
-			return nil, err
-		}
+		var content []byte
+		content, _ = ioutil.ReadFile(d.File)
 		s := lsp.SymbolInformation{
 			Name: d.Name,
 			Kind: gogKindToLSP(d.DefInfo.Kind),
