@@ -33,6 +33,7 @@ class DashboardContainer extends Container {
 		};
 		this._handleInput = this._handleInput.bind(this);
 		this._onSelectQuery = this._onSelectQuery.bind(this);
+		this._installChromeExtensionClicked = this._installChromeExtensionClicked.bind(this);
 	}
 
 	stores() { return [UserStore]; }
@@ -87,6 +88,27 @@ class DashboardContainer extends Container {
 		}
 	}
 
+	_successHandler() {
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionInstalled", {page_name: AnalyticsConstants.PAGE_TOOLS});
+		this.context.eventLogger.setUserProperty("installed_chrome_extension", "true");
+		this.setState({showChromeExtensionCTA: false});
+		setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", this.context.eventLogger.getAmplitudeIdentificationProps())), 10);
+	}
+
+	_failHandler(msg) {
+		console.error(msg);
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_ERROR, "ChromeExtensionInstallFailed", {page_name: AnalyticsConstants.PAGE_TOOLS});
+		this.context.eventLogger.setUserProperty("installed_chrome_extension", "false");
+		this.setState({showChromeExtensionCTA: true});
+	}
+
+	_installChromeExtensionClicked() {
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionCTAClicked", {page_name: AnalyticsConstants.PAGE_TOOLS});
+		if (global.chrome) {
+			global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", this._successHandler.bind(this), this._failHandler.bind(this));
+		}
+	}
+
 	render() {
 		const langSelected = this.state.langs && this.state.langs.length > 0;
 		return (
@@ -101,7 +123,7 @@ class DashboardContainer extends Container {
 
 					<div styleName="user-actions">
 						{!this.context.signedIn && <LocationStateToggleLink href="/login" modalName="login" location={this.props.location}><Button styleName="action-link" type="button" color="blue" outline={true}>Sign in</Button></LocationStateToggleLink>}
-						<a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en"><Button styleName="action-link" type="button" color="blue" outline={true}>Install Chrome extension</Button></a>
+						<a href="#install-chrome" onClick={this._installChromeExtensionClicked}><Button styleName="action-link" type="button" color="blue" outline={true}>Install Chrome extension</Button></a>
 					</div>
 
 					<GlobalSearchInput
