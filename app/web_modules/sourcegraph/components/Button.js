@@ -10,7 +10,7 @@ function Button({
 	size,
 	disabled = false,
 	loading = false,
-	color = "default",
+	color = "normal",
 	onClick,
 	imageUrl,
 	children,

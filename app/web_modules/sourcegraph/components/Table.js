@@ -11,7 +11,7 @@ class Table extends React.Component {
 	};
 
 	static defaultProps = {
-		tableStyle: "default",
+		tableStyle: "normal",
 	};
 
 	render() {

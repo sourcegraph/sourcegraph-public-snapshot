@@ -11,7 +11,7 @@
 	align-items: center;
 }
 
-.default {
+.normal {
 	composes: label;
 	composes: bg_gray from colors;
 }
@@ -55,7 +55,7 @@
 	align-items: center;
 }
 
-.outline_default {
+.outline_normal {
 	composes: outline;
 	composes: b__gray from colors;
 }

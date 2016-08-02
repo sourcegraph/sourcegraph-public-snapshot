@@ -27,7 +27,7 @@
 .info {
 	composes: bg-teal-5 from colors;
 }
-.default {
+.normal {
 	composes: bg_black_20 from colors;
 }
 

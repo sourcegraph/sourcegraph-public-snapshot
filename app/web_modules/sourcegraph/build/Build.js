@@ -29,7 +29,7 @@ export function buildClass(b) {
 	case "Started":
 		return "info";
 	}
-	return "default";
+	return "normal";
 }
 
 export function taskClass(task) {
@@ -37,7 +37,7 @@ export function taskClass(task) {
 	if (task.Failure && !task.Skipped) return "danger";
 	if (!task.Success && !task.Failure && !task.Skipped) return "info";
 	if (task.Success && !task.Skipped) return "success";
-	return "default";
+	return "normal";
 }
 
 export function elapsed(buildOrTask) {

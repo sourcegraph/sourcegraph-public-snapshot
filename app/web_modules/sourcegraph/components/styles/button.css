@@ -118,12 +118,12 @@
     color: c_dark_orange;
 }
 
-.outline_default {
+.outline_normal {
     composes: outline;
     composes: b__cool_mid_gray cool_gray from colors;
 }
-.outline_default:hover,
-.outline_default:focus {
+.outline_normal:hover,
+.outline_normal:focus {
     border-color: c_cool_dark_gray;
     color: c_cool_gray;
 }
@@ -156,11 +156,11 @@
 }
 .solid:hover { color: white; }
 
-.solid_default {
+.solid_normal {
     composes: solid;
     composes: bg_cool_mid_gray b__cool_mid_gray from colors;
 }
-.solid_default:hover {
+.solid_normal:hover {
     background: c_cool_gray;
     border-color: c_cool_gray;
 }

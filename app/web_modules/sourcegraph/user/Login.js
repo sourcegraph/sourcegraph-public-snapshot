@@ -99,7 +99,7 @@ export class LoginForm extends Container {
 						block={true}
 						required={true} />
 				</label>
-				<Button color="default"
+				<Button color="normal"
 					id="e2etest-login-button"
 					tabIndex="4"
 					block={true}

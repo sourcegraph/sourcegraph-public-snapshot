@@ -2,12 +2,12 @@
 @value colors "./_colors.css";
 @value c_cool_gray_2 from colors;
 
-.default td { padding: 0.75rem 0.75rem 0.75rem 0; }
-.default thead td {
+.normal td { padding: 0.75rem 0.75rem 0.75rem 0; }
+.normal thead td {
 	font-weight: bold;
 	border-bottom: 2px c_cool_gray_2 solid;
 }
-.default tbody td { border-bottom: 1px c_cool_gray_2 solid; }
+.normal tbody td { border-bottom: 1px c_cool_gray_2 solid; }
 
 .bordered { border: 1px c_cool_gray_2 solid; }
 .bordered td { padding: 0.75rem; }

@@ -15,7 +15,7 @@ class Label extends React.Component {
 	render() {
 		return (
 			<span className={this.props.className} style={this.props.style}>
-				<span styleName={`${this.props.outline ? "outline_" : ""}${this.props.color || "default"}`}>
+				<span styleName={`${this.props.outline ? "outline_" : ""}${this.props.color || "normal"}`}>
 					{this.props.children}
 				</span>
 			</span>
