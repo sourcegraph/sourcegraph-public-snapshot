@@ -238,15 +238,14 @@ func (t *translator) serveDefinition(body []byte) (interface{}, error) {
 	if err := json.Unmarshal(*defResp.Result, &respDef); err != nil {
 		return nil, err
 	}
-
-	// TODO(slimsag): this conversion is lossy, extend our REST protocol to
-	// include ranges.
-	return Position{
-		Repo:      pos.Repo,
-		Commit:    pos.Commit,
-		File:      respDef[0].URI,
-		Line:      respDef[0].Range.Start.Line,
-		Character: respDef[0].Range.Start.Character,
+	return Range{
+		Repo:           pos.Repo,
+		Commit:         pos.Commit,
+		File:           respDef[0].URI,
+		StartLine:      respDef[0].Range.Start.Line,
+		StartCharacter: respDef[0].Range.Start.Character,
+		EndLine:        respDef[0].Range.End.Line,
+		EndCharacter:   respDef[0].Range.End.Character,
 	}, nil
 }
 

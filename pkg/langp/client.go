@@ -22,8 +22,8 @@ type Client struct {
 
 // Definition resolves the specified position, effectively returning where the
 // given definition is defined. For example, this is used for go to definition.
-func (c *Client) Definition(p *Position) (*Position, error) {
-	var result Position
+func (c *Client) Definition(p *Position) (*Range, error) {
+	var result Range
 	err := c.do("definition", p, &result)
 	if err != nil {
 		return nil, err

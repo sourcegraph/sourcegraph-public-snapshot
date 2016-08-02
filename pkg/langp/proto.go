@@ -46,11 +46,39 @@ func (p Position) LSP() *lsp.TextDocumentPositionParams {
 	}
 }
 
+// Range represents a specific range within a file.
+type Range struct {
+	// Repo is the repository URI in which the file is located.
+	Repo string
+
+	// Commit is the Git commit ID (not branch) of the repository.
+	Commit string
+
+	// File is the file which the user is viewing, relative to the repository root.
+	File string
+
+	// StartLine is the starting line number in the file (zero based), i.e.
+	// where the range starts.
+	StartLine int
+
+	// EndLine is the ending line number in the file (zero based), i.e. where
+	// the range ends.
+	EndLine int
+
+	// StartCharacter is the starting character offset on the starting line in
+	// the file (zero based).
+	StartCharacter int
+
+	// EndCharacter is the ending character offset on the ending line in the
+	// file (zero based).
+	EndCharacter int
+}
+
 // LocalRefs represents references to a specific definition.
 type LocalRefs struct {
 	// Refs is a list of references to a definition defined within the requested
 	// repository.
-	Refs []Position
+	Refs []Range
 }
 
 // HoverContent represents a subset of the content for when a user “hovers”
