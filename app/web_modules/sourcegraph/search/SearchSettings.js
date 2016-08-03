@@ -50,7 +50,6 @@ class SearchSettings extends Container {
 			searchScopes.forEach((scopeName) => scopeParams[scopeName] = this.props.location.query[scopeName] === "true");
 
 			const newSettings = {
-				...this.state.settings,
 				search: {
 					...this.state.settings.search,
 					languages: validLangParams,
@@ -110,7 +109,6 @@ class SearchSettings extends Container {
 		}
 
 		const newSettings = {
-			...this.state.settings,
 			search: {
 				...this.state.settings.search,
 				languages: langs,
@@ -133,7 +131,6 @@ class SearchSettings extends Container {
 		);
 
 		const newSettings = {
-			...this.state.settings,
 			search: {
 				...this.state.settings.search,
 				scope: {

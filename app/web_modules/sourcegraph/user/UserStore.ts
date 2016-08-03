@@ -82,7 +82,7 @@ export class UserStore extends Store<any> {
 
 		} else if (action instanceof UserActions.UpdateSettings) {
 			if (global.window) { window.localStorage.setItem("userSettings", JSON.stringify(action.settings)); }
-			this.settings = deepFreeze(Object.assign({}, this.settings, {content: action.settings}));
+			this.settings = deepFreeze(Object.assign({}, this.settings, action.settings));
 
 		} else if (action instanceof UserActions.SubmitSignup) {
 			this.pendingAuthActions = mergeAndDeepFreeze(this.pendingAuthActions, {signup: true});
