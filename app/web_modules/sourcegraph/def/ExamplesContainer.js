@@ -60,7 +60,6 @@ class ExamplesContainer extends Container {
 							refIndex={i}
 							repo={this.props.repo}
 							rev={this.props.rev}
-							commitID={this.props.commitID}
 							def={this.props.def}
 							defObj={this.props.defObj}
 							repoRefs={repoRefs}
