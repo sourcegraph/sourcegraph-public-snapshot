@@ -108,6 +108,7 @@ code, .code { font-family: Menlo, Consolas, Monaco, monospace; }
 
 html {
 	font-family: 'circular-std', -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'Helvetica', Ubuntu, 'segoe ui', arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
 }
 
 /*
