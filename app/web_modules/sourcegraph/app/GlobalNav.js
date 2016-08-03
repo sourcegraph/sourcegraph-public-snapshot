@@ -3,6 +3,7 @@ import {Link} from "react-router";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import {Avatar, Popover, Menu, Logo, Heading} from "sourcegraph/components";
+import {CloseIcon} from "sourcegraph/components/Icons";
 import LogoutLink from "sourcegraph/user/LogoutLink";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalNav.css";
@@ -63,6 +64,9 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 				<div>
 					<LocationStateModal modalName="menuIntegrations" location={location}>
 						<div styleName="modal">
+							<a styleName="modal-dismiss" onClick={dismissModal("menuIntegrations", location, router)} color="white">
+								<CloseIcon className={base.pt2} />
+							</a>
 							<Integrations location={location}/>
 						</div>
 					</LocationStateModal>

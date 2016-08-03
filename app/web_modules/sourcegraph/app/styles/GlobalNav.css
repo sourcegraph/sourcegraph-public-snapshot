@@ -61,6 +61,14 @@
 	min-width: 320px;
 }
 
+.modal-dismiss {
+	composes: cool_mid_gray_5 from colors;
+	position: relative;	
+	float: right;	
+	top: -2rem;
+	right: -1.3rem;
+}
+
 .channel {
 	display: inline-block;
 	composes: pv1 ph2 br2 ba from base;
