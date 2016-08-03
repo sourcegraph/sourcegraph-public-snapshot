@@ -33,7 +33,7 @@ func cmd(name string, args ...string) *exec.Cmd {
 	return cmd
 }
 
-func prepare(workspace, repo, commit string) error {
+func prepareRepo(workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
 
 	// TODO(slimsag): find a way to pass this information from the app instead
@@ -54,11 +54,21 @@ func prepare(workspace, repo, commit string) error {
 	// Reset to the specific revision.
 	c = cmd("git", "reset", "--hard", commit)
 	c.Dir = repoDir
-	if err := c.Run(); err != nil {
-		return err
+	return c.Run()
+}
+
+func prepareDeps(workspace, repo, commit string) error {
+	gopath := filepath.Join(workspace, "gopath")
+
+	// TODO(slimsag): find a way to pass this information from the app instead
+	// of hard-coding it here.
+	if repo == "sourcegraph/sourcegraph" {
+		repo = "sourcegraph.com/sourcegraph/sourcegraph"
 	}
 
-	c = cmd("go", "get", "-d", "./...")
+	// Clone the repository.
+	repoDir := filepath.Join(gopath, "src", repo)
+	c := cmd("go", "get", "-d", "./...")
 	c.Dir = repoDir
 	c.Env = []string{"PATH=" + os.Getenv("PATH"), "GOPATH=" + gopath}
 	if err := c.Run(); err != nil {
@@ -129,10 +139,11 @@ func main() {
 
 	log.Println("Translating HTTP", *httpAddr, "to LSP", *lspAddr)
 	http.Handle("/", langp.New(&langp.Translator{
-		Addr:    *lspAddr,
-		WorkDir: workDir,
-		Prepare: prepare,
-		FileURI: fileURI,
+		Addr:        *lspAddr,
+		WorkDir:     workDir,
+		PrepareRepo: prepareRepo,
+		PrepareDeps: prepareDeps,
+		FileURI:     fileURI,
 	}))
 	http.ListenAndServe(*httpAddr, nil)
 }

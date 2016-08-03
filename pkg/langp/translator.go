@@ -14,6 +14,8 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
@@ -30,8 +32,16 @@ type Translator struct {
 	// dependencies.
 	WorkDir string
 
-	// Prepare is called when the language processor should prepare the given
-	// workspace directory with the given repository at the given commit.
+	// PrepareRepo is called when the language processor should clone the given
+	// repository into the specified workspace at a subdirectory desired by the
+	// language.
+	//
+	// If an error is returned, it is returned directly to the person who made
+	// the API request which triggered the preperation of the workspace.
+	PrepareRepo func(workspace, repo, commit string) error
+
+	// PrepareDeps is called when the language processor should prepare the
+	// dependencies for the given workspace/repo/commit.
 	//
 	// This is where language processors should perform language-specific tasks
 	// like downloading dependencies via 'go get', etc. into the workspace
@@ -39,7 +49,7 @@ type Translator struct {
 	//
 	// If an error is returned, it is returned directly to the person who made
 	// the API request which triggered the preperation of the workspace.
-	Prepare func(workspace, repo, commit string) error
+	PrepareDeps func(workspace, repo, commit string) error
 
 	// FileURI, if non-nil, is called to form the file URI which is sent to a
 	// language server. Provided is the repo and commit, and a file URI which
@@ -55,7 +65,9 @@ type Translator struct {
 // using the specified options.
 func New(opts *Translator) http.Handler {
 	t := &translator{
-		Translator: opts,
+		Translator:     opts,
+		preparingRepos: newPending(),
+		preparingDeps:  newPending(),
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/definition", t.handler("/definition", t.serveDefinition))
@@ -64,9 +76,67 @@ func New(opts *Translator) http.Handler {
 	return mux
 }
 
+type pending struct {
+	*sync.Mutex
+	m map[string]bool
+}
+
+func newPending() *pending {
+	return &pending{
+		Mutex: &sync.Mutex{},
+		m:     make(map[string]bool),
+	}
+}
+
+// acquire acquires ownership of preparing k. If k is already being prepared
+// by someone else, this methods blocks until preparation of k is finished
+// and handled=true is returned.
+func (p *pending) acquire(k string, timeout time.Duration) (wasTimeout, handled bool) {
+	// If nobody is preparing k, mark ownership and return:
+	p.Lock()
+	if _, pending := p.m[k]; !pending {
+		p.m[k] = true
+		p.Unlock()
+		handled = false
+		return
+	}
+	p.Unlock()
+
+	// Someone is preparing k, wait for completion.
+	start := time.Now()
+	for {
+		p.Lock()
+		_, pending := p.m[k]
+		p.Unlock()
+		if !pending {
+			handled = true
+			return
+		}
+		if time.Since(start) > timeout {
+			wasTimeout = true
+			return
+		}
+		// TODO: timeout request
+		time.Sleep(1 * time.Millisecond)
+	}
+}
+
+// done is called to signal completion for preparation previously acquired by
+// calling acquire.
+func (p *pending) done(k string) {
+	p.Lock()
+	_, pending := p.m[k]
+	if !pending {
+		panic("pending: done() called for non-acquired k")
+	}
+	delete(p.m, k)
+	p.Unlock()
+}
+
 type translator struct {
 	*Translator
-	mux *http.ServeMux
+	mux                           *http.ServeMux
+	preparingRepos, preparingDeps *pending
 }
 
 type handlerFunc func(body []byte) (interface{}, error)
@@ -134,20 +204,55 @@ func (t *translator) prepareWorkspace(rootDir, repo, commit string) error {
 		return nil
 	}
 
+	// Acquire ownership of repository preparation.
+	//
+	// TODO(slimsag): use a smaller timeout which propagates nicely to the
+	// frontend.
+	timeout, handled := t.preparingRepos.acquire(rootDir, 1*time.Hour)
+	if timeout || handled {
+		// A different request prepared the repository.
+		return nil
+	}
+	defer t.preparingRepos.done(rootDir)
+
+	// Prepare the workspace by creating the directory and cloning the
+	// repository.
 	if err := os.MkdirAll(rootDir, 0700); err != nil {
 		return err
 	}
-	if err := t.Prepare(rootDir, repo, commit); err != nil {
+	if err := t.PrepareRepo(rootDir, repo, commit); err != nil {
 		// Preparing the workspace has failed, and thus the workspace is
 		// incomplete. Remove the directory so that the next request causes
 		// preparation again (this is our best chance at keeping the workspace
 		// in a working state).
-		log.Println("preparing workspace:", err)
+		log.Println("preparing workspace repo:", err)
 		if err2 := os.RemoveAll(rootDir); err2 != nil {
 			log.Println(err2)
 		}
 		return err
 	}
+
+	// Acquire ownership of dependency preparation.
+	timeout, handled = t.preparingDeps.acquire(rootDir, 0*time.Second)
+	if timeout || handled {
+		// A different request is preparing the dependencies.
+		return nil
+	}
+
+	// Prepare the dependencies asynchronously.
+	go func() {
+		defer t.preparingDeps.done(rootDir)
+		if err := t.PrepareDeps(rootDir, repo, commit); err != nil {
+			// Preparing the workspace has failed, and thus the workspace is
+			// incomplete. Remove the directory so that the next request causes
+			// preparation again (this is our best chance at keeping the workspace
+			// in a working state).
+			log.Println("preparing workspace deps:", err)
+			if err2 := os.RemoveAll(rootDir); err2 != nil {
+				log.Println(err2)
+			}
+		}
+	}()
 	return nil
 }
 
