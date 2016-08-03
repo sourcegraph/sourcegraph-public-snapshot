@@ -50,9 +50,6 @@ test:
   post:
     - ./dev/circle-ci-gather-coverage.sh:
         pwd: $REPO
-    - npm run graph:
-        pwd: $REPO/app
-    - cp $REPO/app/artifacts/* $CIRCLE_ARTIFACTS
 
 deployment:
   master-branch:
