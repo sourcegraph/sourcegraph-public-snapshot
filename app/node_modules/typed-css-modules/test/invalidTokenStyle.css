@@ -1,0 +1,14 @@
+/* while is reserved by typescript */
+.while {
+  color: red;
+}
+
+/* includes invalid charactor for typescript variable */
+.my-class {
+  color: red;
+}
+
+/* it's ok */
+.myClass {
+  color: red;
+}

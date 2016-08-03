@@ -1,0 +1,4 @@
+.myClass {
+  composes: something from 'path/that/cant/be/found.scss';
+  background: red;
+}
