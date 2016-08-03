@@ -85,6 +85,7 @@
     "test": "npm run lint && npm run test-unit",
     "test-unit": "env NODE_ENV=test ./node_modules/.bin/mocha-webpack 'web_modules/**/*_test.js' && rm -r ./.tmp",
     "dep": "npm rebuild fsevents",
+    "generate": "./generate.sh",
     "graph": "mkdir -p artifacts/; ./node_modules/.bin/babel --no-babelrc --presets react --out-dir artifacts/compiled/ web_modules/; ./node_modules/.bin/madge artifacts/compiled/ -p artifacts/compiled/ -f es6 -i artifacts/app-graph.png -x 'node_modules|_test|util|Dispatcher|Actions|Component'; rm -r artifacts/compiled/",
     "overwrite-autotest": "for f in `find ./web_modules -name '*.json.actual'`; do mv \"$f\" \"${f%.actual}\"; done"
   },

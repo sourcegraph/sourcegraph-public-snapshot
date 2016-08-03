@@ -81,6 +81,7 @@ dist: dist-dep app-dep
 
 generate:
 	go list ./... | grep -v /vendor/ | xargs go generate
+	cd app && npm run generate
 
 db-reset: src
 	src pgsql reset
