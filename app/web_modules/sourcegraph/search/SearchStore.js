@@ -22,10 +22,9 @@ export class SearchStore extends Store {
 		switch (action.constructor) {
 		case SearchActions.ResultsFetched: {
 			let p: SearchActions.ResultsFetchedPayload = action.p;
-			this.content = deepFreeze({
-				...this.content,
+			this.content = deepFreeze(Object.assign({}, this.content, {
 				[keyForResults(p.query, p.repos, p.notRepos, p.commitID, p.limit)]: p.defs,
-			});
+			}));
 			break;
 		}
 		default:

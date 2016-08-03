@@ -28,13 +28,11 @@ class Channel extends React.Component {
 		if (this.props.params.channel) {
 			// Add channel to location state. withChannelListener will
 			// notice this and respond to actions sent on that channel.
-			this.context.router.replace({
-				...this.props.location,
-				state: {
-					...this.props.location.state,
+			this.context.router.replace(Object.assign({}, this.props.location, {
+				state: Object.assign({}, this.props.location.state, {
 					channel: this.props.params.channel,
-				},
-			});
+				}),
+			}));
 		}
 	}
 
@@ -73,7 +71,7 @@ export const routes: Array<Route> = [
 	{
 		path: "-/live/:channel",
 		onEnter: (nextState, replace) => {
-			replace({...nextState.location, pathname: nextState.location.pathname.replace("/-/live/", "/-/channel/")});
+			replace(Object.assign({}, nextState.location, {pathname: nextState.location.pathname.replace("/-/live/", "/-/channel/")}));
 		},
 	},
 ];

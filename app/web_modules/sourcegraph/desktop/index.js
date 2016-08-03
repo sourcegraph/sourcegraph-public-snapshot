@@ -7,19 +7,15 @@ import * as betautil from "sourcegraph/util/betautil";
 import {getRouteName} from "sourcegraph/app/routePatterns";
 import desktopContainer from "sourcegraph/desktop/DesktopContainer";
 
-export const desktopHome = {
-	getComponent: (location, callback) => {
-		require.ensure([], (require) => {
-			callback(null, {
-				main: require("sourcegraph/desktop/DesktopHome").default,
-			});
-		});
-	},
-};
-
 export const routes = [
 	{
-		...desktopHome,
+		getComponent: (location, callback) => {
+			require.ensure([], (require) => {
+				callback(null, {
+					main: require("sourcegraph/desktop/DesktopHome").default,
+				});
+			});
+		},
 		path: rel.desktopHome,
 	},
 ];

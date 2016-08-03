@@ -68,7 +68,7 @@ export function setLocationModalState(router: any, location: Location, modalName
 		console.error(`location.state.modal is not ${modalName}, is:`, location.state.modal);
 	}
 
-	router.replace({...location, state: {...location.state, modal: visible ? modalName : null, ...updatedState}});
+	router.replace(Object.assign({}, location, {state: Object.assign({}, location.state, {modal: visible ? modalName : null}, updatedState)}));
 }
 
 // dismissModal creates a function that dismisses the modal by setting

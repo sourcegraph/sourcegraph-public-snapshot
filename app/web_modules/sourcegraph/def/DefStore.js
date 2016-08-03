@@ -175,10 +175,9 @@ export class DefStore extends Store {
 							}
 						}
 					});
-					this.defs = deepFreeze({
-						...this.defs,
-						pos: {...this.defs.pos, ...defPos},
-					});
+					this.defs = deepFreeze(Object.assign({}, this.defs, {
+						pos: Object.assign({}, this.defs.pos, defPos),
+					}));
 				}
 				break;
 			}

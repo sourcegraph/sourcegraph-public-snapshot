@@ -27,11 +27,10 @@ class RepoNavContext extends Component {
 			(i) => <span key={i} styleName="sep">/</span>,
 			(path, component, i, isLast) => (
 				<Link to={isLast ?
-					urlTo("blob", {...this.state.params}) :
-					urlTo("tree", {
-						...this.state.params,
+					urlTo("blob", Object.assign({}, this.state.params)) :
+					urlTo("tree", Object.assign({}, this.state.params, {
 						splat: [this.state.params.splat[0], pathParts.slice(0, i).join("/")],
-					})}
+					}))}
 					key={i}
 					styleName={isLast ? "active" : "inactive"}>
 					{component}

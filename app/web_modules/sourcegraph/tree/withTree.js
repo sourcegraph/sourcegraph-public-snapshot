@@ -17,7 +17,7 @@ export default function withTree(Component) {
 			let path;
 			if (this.props.params.splat instanceof Array) path = this.props.params.splat[1];
 			if (!path) path = "/";
-			return <Component {...{...this.props, path: path}} />;
+			return <Component {...Object.assign({}, this.props, {path: path})} />;
 		}
 	}
 

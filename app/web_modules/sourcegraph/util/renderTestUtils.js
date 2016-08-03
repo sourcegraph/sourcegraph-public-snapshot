@@ -18,10 +18,9 @@ export function render(component: any, context: ?Object): RenderResult {
 	};
 	let renderer = TestUtils.createRenderer();
 	result.actions = Dispatcher.Backends.catchDispatched(() => {
-		renderer.render(component, {
+		renderer.render(component, Object.assign({
 			router: {},
-			...context,
-		});
+		}, context));
 	});
 	result.element = renderer.getRenderOutput();
 	return result;

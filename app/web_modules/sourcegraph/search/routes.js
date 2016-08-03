@@ -54,7 +54,7 @@ export function locationForSearch(loc: RouterLocation, query: ?string, lang: ?st
 }
 
 function updateScopeAndLanguage(oldState: any, scope, lang) {
-	let state = {...oldState};
+	let state = Object.assign({}, oldState);
 	searchScopes.map((scopeName) => {
 		if (scope && scope[scopeName]) state[scopeName] = true;
 		else delete state[scopeName];

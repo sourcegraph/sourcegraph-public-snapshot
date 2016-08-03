@@ -37,7 +37,7 @@ function positionCursorAtEndIfIconClicked(ev: MouseEvent) {
 
 function GlobalSearchInput(props) {
 	// Omit styles prop so we don't clobber Input's own style mapping.
-	const passProps = {...props, styleName: undefined, styles: undefined}; // eslint-disable-line no-undefined
+	const passProps = Object.assign({}, props, {styleName: undefined, styles: undefined}); // eslint-disable-line no-undefined
 
 	return (
 		<div styleName="flex_fill relative" className={base.mr3}>

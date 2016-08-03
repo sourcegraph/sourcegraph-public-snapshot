@@ -29,7 +29,7 @@ class CoverageDashboard extends Container {
 	}
 
 	_drilldown(lang) {
-		this.context.router.replace({...this.props.location, query: {lang: lang || undefined}}); // eslint-disable-line no-undefined
+		this.context.router.replace(Object.assign({}, this.props.location, {query: {lang: lang || undefined}})); // eslint-disable-line no-undefined
 	}
 
 	reconcileState(state, props) {

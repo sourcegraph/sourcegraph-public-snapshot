@@ -21,7 +21,7 @@ describe("RefLocationsList", () => {
 				def={{Repo: "r", CommitID: "c"}}
 				location={{}}
 				refLocations={{RepoRefs: [{Repo: "r", Files: [{Path: "f", Count: 2}]}]}} />,
-			{...ctx, signedIn: true, githubToken: {scope: "repo"}},
+			Object.assign({}, ctx, {signedIn: true, githubToken: {scope: "repo"}}),
 		);
 	});
 
@@ -47,7 +47,7 @@ describe("RefLocationsList", () => {
 		it("should show signup CTA if not authed", () => {
 			const s = renderToString(
 				<RefLocationsList repo="r" rev="v" def={{Repo: "r", CommitID: "c"}}	location={{}} refLocations={refLocsMoreThan1} />,
-				{...ctx, signedIn: false},
+				Object.assign({}, ctx, {signedIn: false}),
 			);
 			expect(s).to.contain("Sign in");
 			expect(s).to.not.contain("Authorize");
@@ -56,7 +56,7 @@ describe("RefLocationsList", () => {
 		it("should show private repo CTA if signed up but not private-repo authed", () => {
 			const s = renderToString(
 				<RefLocationsList repo="r" rev="v" def={{Repo: "r", CommitID: "c"}}	location={{}} refLocations={refLocsMoreThan1} />,
-				{...ctx, signedIn: true, githubToken: {scope: ""}}, // no "repo" scope
+				Object.assign({}, ctx, {signedIn: true, githubToken: {scope: ""}}), // no "repo" scope
 			);
 			expect(s).to.contain("Authorize");
 			expect(s).to.not.contain("Sign in");
@@ -65,7 +65,7 @@ describe("RefLocationsList", () => {
 		it("should NOT show CTA if already authed", () => {
 			const s = renderToString(
 				<RefLocationsList repo="r" rev="v" def={{Repo: "r", CommitID: "c"}}	location={{}} refLocations={refLocsMoreThan1} />,
-				{...ctx, signedIn: true, githubToken: {scope: "repo"}}, // private repo scope
+				Object.assign({}, ctx, {signedIn: true, githubToken: {scope: "repo"}}), // private repo scope
 			);
 			expect(s).to.not.contain("Authorize");
 			expect(s).to.not.contain("Sign in");

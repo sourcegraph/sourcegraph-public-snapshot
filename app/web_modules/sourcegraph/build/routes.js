@@ -2,37 +2,30 @@ import type {Route} from "react-router";
 import {rel} from "sourcegraph/app/routePatterns";
 import urlTo from "sourcegraph/util/urlTo";
 
-const builds = {
-	onEnter: (nextState, replace) => {
-		if (nextState.location.search === "") {
-			replace(`${nextState.location.pathname}?filter=all`);
-		}
-	},
-	getComponents: (location, callback) => {
-		require.ensure([], (require) => {
-			callback(null, {
-				main: require("sourcegraph/build/BuildsList").default,
-			});
-		});
-	},
-};
-const build = {
-	getComponents: (location, callback) => {
-		require.ensure([], (require) => {
-			callback(null, {
-				main: require("sourcegraph/build/BuildContainer").default,
-			});
-		});
-	},
-};
-
 export const routes: Array<Route> = [
 	{
-		...builds,
+		onEnter: (nextState, replace) => {
+			if (nextState.location.search === "") {
+				replace(`${nextState.location.pathname}?filter=all`);
+			}
+		},
+		getComponents: (location, callback) => {
+			require.ensure([], (require) => {
+				callback(null, {
+					main: require("sourcegraph/build/BuildsList").default,
+				});
+			});
+		},
 		path: rel.builds,
 	},
 	{
-		...build,
+		getComponents: (location, callback) => {
+			require.ensure([], (require) => {
+				callback(null, {
+					main: require("sourcegraph/build/BuildContainer").default,
+				});
+			});
+		},
 		path: rel.build,
 	},
 ];

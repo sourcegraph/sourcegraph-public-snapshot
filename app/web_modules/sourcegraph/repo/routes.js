@@ -6,25 +6,23 @@ import {formatPattern} from "react-router/lib/PatternUtils";
 
 let _components;
 
-const common = {
-	getComponents: (location, callback) => {
-		require.ensure([], (require) => {
-			if (!_components) {
-				const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
-				const withRepoBuild = require("sourcegraph/build/withRepoBuild").default;
-				_components = {
-					navContext: withResolvedRepoRev(require("sourcegraph/repo/NavContext").default, false),
-					main: withResolvedRepoRev(withRepoBuild(require("sourcegraph/repo/RepoMain").default), true),
-				};
-			}
-			callback(null, {
-				main: _components.main,
+const getComponents = (location, callback) => {
+	require.ensure([], (require) => {
+		if (!_components) {
+			const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
+			const withRepoBuild = require("sourcegraph/build/withRepoBuild").default;
+			_components = {
+				navContext: withResolvedRepoRev(require("sourcegraph/repo/NavContext").default, false),
+				main: withResolvedRepoRev(withRepoBuild(require("sourcegraph/repo/RepoMain").default), true),
+			};
+		}
+		callback(null, {
+			main: _components.main,
 
-				// Allow disabling the nav context on a per-route basis.
-				navContext: location.routes[location.routes.length - 1].repoNavContext === false ? null : _components.navContext,
-			});
+			// Allow disabling the nav context on a per-route basis.
+			navContext: location.routes[location.routes.length - 1].repoNavContext === false ? null : _components.navContext,
 		});
-	},
+	});
 };
 
 // routes are the 2 routes needed for repos: the first is the one for repo
@@ -32,7 +30,7 @@ const common = {
 // greedily.
 export const routes: Array<Route> = [
 	{
-		...common,
+		getComponents: getComponents,
 		path: `${rel.repo}/-/`,
 		getChildRoutes: (location, callback) => {
 			require.ensure([], (require) => {
@@ -46,7 +44,7 @@ export const routes: Array<Route> = [
 		},
 	},
 	{
-		...common,
+		getComponents: getComponents,
 		path: rel.repo,
 		indexRoute: {
 			keepScrollPositionOnRouteChangeKey: "tree",
@@ -78,9 +76,8 @@ export function urlWithRev(currentRoutes: Array<Route>, currentRouteParams: Rout
 
 	const path = currentRoutes.map(r => r.path).join("");
 	const repoRev = makeRepoRev(repoPath(repoParam(currentRouteParams.splat)), newRev);
-	const newParams = {
-		...currentRouteParams,
+	const newParams = Object.assign({}, currentRouteParams, {
 		splat: currentRouteParams.splat instanceof Array ? [repoRev, ...currentRouteParams.splat.slice(1)] : repoRev,
-	};
+	});
 	return formatPattern(`/${path}`, newParams);
 }

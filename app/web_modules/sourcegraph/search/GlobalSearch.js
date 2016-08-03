@@ -354,7 +354,7 @@ class GlobalSearch extends Container {
 		eventProps.selectedItem = url;
 		eventProps.totalResults = this.state.matchingResults.Defs.length;
 		if (def.FmtStrings && def.FmtStrings.Kind && def.FmtStrings.Language && def.Repo) {
-			eventProps = {...eventProps, languageSelected: def.FmtStrings.Language, kindSelected: def.FmtStrings.Kind, repoSelected: def.Repo};
+			eventProps = Object.assign({}, eventProps, {languageSelected: def.FmtStrings.Language, kindSelected: def.FmtStrings.Kind, repoSelected: def.Repo});
 		}
 
 		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", eventProps);

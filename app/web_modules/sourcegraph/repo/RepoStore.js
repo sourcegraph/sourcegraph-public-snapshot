@@ -79,29 +79,27 @@ export class RepoStore extends Store {
 
 	__onDispatch(action) {
 		if (action instanceof RepoActions.ReposFetched) {
-			this.repos = {
-				...this.repos,
-				listContent: {
-					...this.repos.listContent,
+			this.repos = deepFreeze(Object.assign({}, this.repos, {
+				listContent: Object.assign({}, this.repos.listContent, {
 					[action.querystring]: action.data,
-				},
-			};
+				}),
+			}));
 			this.__emitChange();
 			return;
 		} else if (action instanceof RepoActions.ResolvedRev) {
-			this.resolvedRevs = deepFreeze({...this.resolvedRevs,
-				content: {...this.resolvedRevs.content,
+			this.resolvedRevs = deepFreeze(Object.assign({}, this.resolvedRevs, {
+				content: Object.assign({}, this.resolvedRevs.content, {
 					[keyFor(action.repo, action.rev)]: action.commitID,
-				},
-			});
+				}),
+			}));
 			this.__emitChange();
 			return;
 		} else if (action instanceof RepoActions.FetchedCommit) {
-			this.commits = deepFreeze({...this.commits,
-				content: {...this.commits.content,
+			this.commits = deepFreeze(Object.assign({}, this.commits, {
+				content: Object.assign({}, this.commits.content, {
 					[keyFor(action.repo, action.rev)]: action.commit,
-				},
-			});
+				}),
+			}));
 			this.__emitChange();
 			return;
 		}

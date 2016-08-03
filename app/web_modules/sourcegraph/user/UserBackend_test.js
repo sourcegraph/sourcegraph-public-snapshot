@@ -25,8 +25,7 @@ describe("UserBackend", () => {
 		it("with authInfo available, with included GitHub token and user and emails", () => {
 			UserBackend.fetch = function(url, options) {
 				expect(url).to.be("/.api/auth-info");
-				return immediateSyncPromise({status: 200, json: () => ({
-					...sampleAuthInfo,
+				return immediateSyncPromise({status: 200, json: () => Object.assign({}, sampleAuthInfo, {
 					GitHubToken: sampleToken,
 					IncludedUser: sampleUser,
 					IncludedEmails: sampleEmails,

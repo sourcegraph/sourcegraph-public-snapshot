@@ -9,10 +9,9 @@ export function render(component, context?: {[key: string]: any}) {
 	testOnly();
 	let renderer = TestUtils.createRenderer();
 	Dispatcher.Backends.catchDispatched(() => {
-		renderer.render(component, {
-			...context,
+		renderer.render(component, Object.assign({}, context, {
 			status: {error() {}},
-		});
+		}));
 	});
 	return renderer.getRenderOutput();
 }

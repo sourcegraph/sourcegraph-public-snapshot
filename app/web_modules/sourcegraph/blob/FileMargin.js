@@ -21,7 +21,7 @@ export default class FileMargin extends React.Component {
 	}
 
 	render() {
-		let passthroughProps = {...this.props};
+		let passthroughProps = Object.assign({}, this.props);
 		delete passthroughProps.children;
 		delete passthroughProps.lineFromByte;
 

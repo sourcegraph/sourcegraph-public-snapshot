@@ -123,33 +123,30 @@ export default function withChannelListener(Component) {
 			if (action && (action.VersionMajor === 0 && action.VersionMinor === 0)) {
 				this.context.router.push({
 					pathname: `/-/channel/${this.state.channelName}-error`,
-					state: {
-						...this.props.location.state,
+					state: Object.assign({}, this.props.location.state, {
 						error: "There is an update for Sourcegraph for your editor",
 						fix: "Make sure you pull the latest version of Sourcegraph for your editor.",
-					},
+					}),
 				});
 			} else if (action && typeof action.Status !== "undefined" && action.Status === 0) {
 				this.setState({statusCode: 0});
 			} else if (action && action.Error && action.Fix && !action.URL) {
 				this.context.router.push({
 					pathname: `/-/channel/${this.state.channelName}-error`,
-					state: {
-						...this.props.location.state,
+					state: Object.assign({}, this.props.location.state, {
 						error: action.Error,
 						fix: action.Fix,
-					},
+					}),
 				});
 			// TODO:matt, right documentation about how to force plugin upgrades using version numbers
 			// Right now, we are checking to make sure version is >= 0.1
 			} else if (action && (action.VersionMajor < 0 && action.VersionMinor <1)) {
 				this.context.router.push({
 					pathname: `/-/channel/${this.state.channelName}-error`,
-					state: {
-						...this.props.location.state,
+					state: Object.assign({}, this.props.location.state, {
 						error: "There is an update for Sourcegraph for your editor",
 						fix: "Make sure you pull the latest version of Sourcegraph for your editor.",
-					},
+					}),
 				});
 			} else if (action && action.Package && action.Repo && action.Status && action.Status === 1 && action.EditorType) {
 				this.setState({statusCode: 1});
@@ -157,11 +154,10 @@ export default function withChannelListener(Component) {
 				this.context.router.replace({
 					pathname: "/-/golang",
 					search: `?def=${def}&pkg=${action.Package}&repo=${action.Repo}&editor_type=${action.EditorType}&utm_source=sourcegraph-editor`,
-					state: {
-						...this.props.location.state,
+					state: Object.assign({}, this.props.location.state, {
 						error: null,
 						fix: null,
-					},
+					}),
 				});
 			}
 		}

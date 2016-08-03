@@ -26,7 +26,7 @@ class RepoNavContext extends Component {
 			`/${this.state.treePath}`,
 			(i) => <span key={i} styleName="sep">/</span>,
 			(path, component, i, isLast) => (
-				<Link to={urlTo("tree", {...this.state.params, splat: [this.state.params.splat[0], pathParts.slice(0, i).join("/")]})}
+				<Link to={urlTo("tree", Object.assign({}, this.state.params, {splat: [this.state.params.splat[0], pathParts.slice(0, i).join("/")]}))}
 					key={i}
 					styleName={isLast ? "active" : "inactive"}>
 					{component}

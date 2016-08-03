@@ -50,11 +50,10 @@ class SearchSettings extends Container {
 			searchScopes.forEach((scopeName) => scopeParams[scopeName] = this.props.location.query[scopeName] === "true");
 
 			const newSettings = {
-				search: {
-					...this.state.settings.search,
+				search: Object.assign({}, this.state.settings.search, {
 					languages: validLangParams,
 					scope: scopeParams,
-				},
+				}),
 			};
 			setTimeout(() => Dispatcher.Stores.dispatch(new UserActions.UpdateSettings(newSettings)));
 		}
@@ -109,10 +108,9 @@ class SearchSettings extends Container {
 		}
 
 		const newSettings = {
-			search: {
-				...this.state.settings.search,
+			search: Object.assign({}, this.state.settings.search, {
 				languages: langs,
-			},
+			}),
 		};
 
 		Dispatcher.Stores.dispatch(new UserActions.UpdateSettings(newSettings));
@@ -131,13 +129,9 @@ class SearchSettings extends Container {
 		);
 
 		const newSettings = {
-			search: {
-				...this.state.settings.search,
-				scope: {
-					...(this.state.settings.search && this.state.settings.search.scope),
-					...scope,
-				},
-			},
+			search: Object.assign({}, this.state.settings.search, {
+				scope: Object.assign({}, this.state.settings.search && this.state.settings.search.scope, scope),
+			}),
 		};
 
 		Dispatcher.Stores.dispatch(new UserActions.UpdateSettings(newSettings));

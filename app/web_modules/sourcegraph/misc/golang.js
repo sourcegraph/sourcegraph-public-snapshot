@@ -36,28 +36,26 @@ export const route: Route = {
 					if (path.startsWith("/github.com/sourcegraph/sourcegraph")) {
 						path = path.replace("GoPackage/github.com", "GoPackage/sourcegraph.com");
 					}
-					replace({
-						...nextRouterState.location,
+					replace(Object.assign({}, nextRouterState.location, {
 						pathname: path,
 						query: {
 							utm_source: "sourcegraph-editor",
 							editor_type: editor_type,
 						},
-					});
+					}));
 					callback();
 				});
 		} else {
 			defaultFetch(`/.api/resolve-custom-import/tree?repo=${repo}&pkg=${pkg}`)
 				.then((resp) => resp.json())
 				.then((data) => {
-					replace({
-						...nextRouterState.location,
+					replace(Object.assign({}, nextRouterState.location, {
 						pathname: data.Path,
 						query: {
 							utm_source: "sourcegraph-editor",
 							editor_type: editor_type,
 						},
-					});
+					}));
 					callback();
 				});
 		}

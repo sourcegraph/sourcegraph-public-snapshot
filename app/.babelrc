@@ -3,7 +3,6 @@
 	"plugins": [
 		"react-hot-loader/babel",
 		"transform-flow-strip-types",
-		"transform-object-rest-spread",
 		"syntax-trailing-function-commas",
 		"transform-class-properties",
 	],
@@ -12,7 +11,6 @@
 			"presets": ["es2015", "react"],
 			"plugins": [
 				"transform-flow-strip-types",
-				"transform-object-rest-spread",
 				"syntax-trailing-function-commas",
 				"transform-class-properties",
 			]

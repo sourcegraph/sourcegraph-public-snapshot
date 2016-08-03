@@ -19,7 +19,7 @@ const renderAndGetContext = (c) => {
 	const e = new C({});
 	e.reconcileState(state, {});
 	e.onStateTransition(state, state);
-	return {...res, context: getChildContext(state)};
+	return Object.assign({}, res, {context: getChildContext(state)});
 };
 
 describe("withUserContext", () => {

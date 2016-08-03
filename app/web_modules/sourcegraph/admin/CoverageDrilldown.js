@@ -84,7 +84,7 @@ class CoverageDrilldown extends Container {
 			drilldownFiles = source.Files.map((f) => Object.assign({}, f)).sort((a, b) => this.props.refScore(a) - this.props.refScore(b));
 		}
 		this.setState({drilldown: source || null, drilldownFiles: drilldownFiles || null}, () => {
-			this.context.router.replace({...this.props.location, query: {lang: this.props.language, repo: source && source.Repo || undefined}}); // eslint-disable-line no-undefined
+			this.context.router.replace(Object.assign({}, this.props.location, {query: {lang: this.props.language, repo: source && source.Repo || undefined}})); // eslint-disable-line no-undefined
 		});
 	}
 
