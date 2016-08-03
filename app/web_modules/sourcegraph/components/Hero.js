@@ -15,7 +15,7 @@ class Hero extends React.Component {
 
 		let styleName = "hero ";
 		styleName += color ? color : "white";
-		styleName += pattern ? ` bg-img-${pattern}` : "";
+		styleName += pattern ? ` bg_img_${pattern}` : "";
 
 		return (
 			<div className={className} styleName={styleName}>
