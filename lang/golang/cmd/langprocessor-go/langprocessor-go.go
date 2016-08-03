@@ -2,12 +2,10 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
@@ -20,18 +18,6 @@ var (
 	profbind = flag.String("prof-http", ":6060", "net/http/pprof http bind address")
 	workDir  = flag.String("workspace", "$SGPATH/workspace/go", "where to create workspace directories")
 )
-
-func cmd(name string, args ...string) *exec.Cmd {
-	s := fmt.Sprintf("exec %s", name)
-	for _, arg := range args {
-		s = fmt.Sprintf("%s %q", s, arg)
-	}
-	log.Println(s)
-	cmd := exec.Command(name, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd
-}
 
 func prepareRepo(workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
@@ -46,15 +32,7 @@ func prepareRepo(workspace, repo, commit string) error {
 
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
-	c := cmd("git", "clone", cloneURI, repoDir)
-	if err := c.Run(); err != nil {
-		return err
-	}
-
-	// Reset to the specific revision.
-	c = cmd("git", "reset", "--hard", commit)
-	c.Dir = repoDir
-	return c.Run()
+	return langp.Clone(cloneURI, repoDir, commit)
 }
 
 func prepareDeps(workspace, repo, commit string) error {
@@ -68,7 +46,7 @@ func prepareDeps(workspace, repo, commit string) error {
 
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
-	c := cmd("go", "get", "-d", "./...")
+	c := langp.Cmd("go", "get", "-d", "./...")
 	c.Dir = repoDir
 	c.Env = []string{"PATH=" + os.Getenv("PATH"), "GOPATH=" + gopath}
 	if err := c.Run(); err != nil {
