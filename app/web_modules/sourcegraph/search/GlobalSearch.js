@@ -30,8 +30,6 @@ export const RESULTS_LIMIT = 20;
 const resultIconSize = "24px";
 
 // GlobalSearch is the global search bar + results component.
-// Tech debt: this duplicates a lot of code with TreeSearch and we
-// should consider merging them at some point.
 class GlobalSearch extends Container {
 	static propTypes = {
 		repo: React.PropTypes.string,

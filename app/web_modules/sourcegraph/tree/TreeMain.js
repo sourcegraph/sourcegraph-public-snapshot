@@ -1,5 +1,5 @@
 import * as React from "react";
-import TreeSearch from "sourcegraph/tree/TreeSearch";
+import TreeList from "sourcegraph/tree/TreeList";
 import {urlToTree} from "sourcegraph/tree/routes";
 import {treeParam} from "sourcegraph/tree";
 import {trimRepo} from "sourcegraph/repo";
@@ -44,7 +44,8 @@ class TreeMain extends React.Component {
 			<div styleName="tree_container">
 				{/* Let RepoMain set title for the root path. */}
 				{path !== "/" && <Helmet title={`${path} · ${trimRepo(this.props.repo)}`} />}
-				<TreeSearch
+				<br />
+				<TreeList
 					repo={this.props.repo}
 					rev={this.props.rev}
 					commitID={this.props.commitID}

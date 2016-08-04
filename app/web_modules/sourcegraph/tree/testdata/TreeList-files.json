@@ -7,26 +7,6 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "input_container",
-						"children": [
-							{
-								"type": "Input",
-								"props": {
-									"type": "text",
-									"id": "search_input",
-									"block": true,
-									"autoFocus": true,
-									"defaultValue": "",
-									"placeholder": "Jump to files...",
-									"spellCheck": false
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "div",
-					"props": {
 						"styleName": "list_header",
 						"children": [
 							"Files"
@@ -42,7 +22,7 @@
 								"type": "",
 								"key": "f:/repo@rev/-/tree/p1",
 								"props": {
-									"styleName": "list_item_selected parent_dir",
+									"styleName": "list_item parent_dir",
 									"to": "/repo@rev/-/tree/p1",
 									"children": [
 										".."
