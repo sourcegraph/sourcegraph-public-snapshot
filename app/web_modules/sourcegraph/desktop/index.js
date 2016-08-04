@@ -5,6 +5,7 @@ import {rel} from "sourcegraph/app/routePatterns";
 import {inBeta} from "sourcegraph/user";
 import * as betautil from "sourcegraph/util/betautil";
 import {getRouteName} from "sourcegraph/app/routePatterns";
+import desktopContainer from "sourcegraph/desktop/DesktopContainer";
 
 export const desktopHome = {
 	getComponent: (location, callback) => {
@@ -58,7 +59,7 @@ export default function desktopRouter(Component) {
 	if (global.document) {
 		const desktopClient = navigator.userAgent.includes("Electron");
 		if (desktopClient) {
-			return DesktopRouter;
+			return desktopContainer(DesktopRouter);
 		}
 	}
 
