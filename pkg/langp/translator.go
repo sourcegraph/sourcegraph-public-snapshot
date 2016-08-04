@@ -411,7 +411,7 @@ func (t *translator) serveExternalRefs(body []byte) (interface{}, error) {
 			unit = s.ContainerName
 		} else {
 			repo = strings.Join(pkgParts[:3], "/")
-			unit = strings.Join(pkgParts[3:], "/")
+			unit = strings.Join(pkgParts, "/")
 		}
 		defs = append(defs, DefSpec{
 			Repo:     repo,
@@ -421,7 +421,7 @@ func (t *translator) serveExternalRefs(body []byte) (interface{}, error) {
 			Path:     s.Name,
 		})
 	}
-	return ExternalRefs{Defs: defs}, nil
+	return &ExternalRefs{Defs: defs}, nil
 }
 
 func (t *translator) lspDo(rootPath string, request *jsonrpc2.Request, result interface{}) error {

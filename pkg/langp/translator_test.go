@@ -98,6 +98,89 @@ func TestTranslator(t *testing.T) {
 			},
 			Got: &Range{},
 		},
+
+		// ServeHover
+		{
+			Path: "/hover",
+			Request: &Position{
+				Repo:      "github.com/foo/bar",
+				Commit:    "deadbeef",
+				File:      "baz.go",
+				Line:      12,
+				Character: 34,
+			},
+			WantLSPMethod: "textDocument/hover",
+			WantLSPParam: &lsp.TextDocumentPositionParams{
+				TextDocument: lsp.TextDocumentIdentifier{URI: "github.com/foo/bar/baz.go"},
+				Position: lsp.Position{
+					Line:      12,
+					Character: 34,
+				},
+			},
+
+			LSPResponseResult: lsp.Hover{
+				Contents: []lsp.MarkedString{{
+					Language: "go",
+					Value:    "NewRouter func() *Router",
+				}},
+				Range: lsp.Range{
+					Start: lsp.Position{
+						Line:      1,
+						Character: 2,
+					},
+					End: lsp.Position{
+						Line:      1,
+						Character: 5,
+					},
+				},
+			},
+			WantResponse: &Hover{
+				Contents: []HoverContent{{
+					Type:  "go",
+					Value: "NewRouter func() *Router",
+				}},
+			},
+			Got: &Hover{},
+		},
+
+		// ServeExternalRefs
+		{
+			Path: "/external-refs",
+			Request: &RepoRev{
+				Repo:   "github.com/foo/bar",
+				Commit: "deadbeef",
+			},
+			WantLSPMethod: "workspace/symbol",
+			WantLSPParam: &lsp.WorkspaceSymbolParams{
+				Query: "external github.com/foo/bar/...",
+			},
+
+			LSPResponseResult: []lsp.SymbolInformation{{
+				Name:          "NewRouter",
+				Kind:          12,
+				Location:      lsp.Location{}, // Ignored
+				ContainerName: "github.com/gorilla/mux",
+			}, {
+				Name:          "Printf",
+				Kind:          12,
+				Location:      lsp.Location{}, // Ignored
+				ContainerName: "fmt",
+			}},
+			WantResponse: &ExternalRefs{Defs: []DefSpec{{
+				Repo:     "github.com/gorilla/mux",
+				Commit:   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", // TODO to translate deps commit
+				UnitType: "GoPackage",
+				Unit:     "github.com/gorilla/mux",
+				Path:     "NewRouter",
+			}, {
+				Repo:     "github.com/golang/go",
+				Commit:   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", // TODO to translate deps commit
+				UnitType: "GoPackage",
+				Unit:     "fmt",
+				Path:     "Printf",
+			}}},
+			Got: &ExternalRefs{},
+		},
 	}
 
 	for _, c := range cases {
@@ -118,7 +201,7 @@ func TestTranslator(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp, err := http.Post(ts.URL+"/definition", "application/json", bytes.NewReader(requestBody))
+		resp, err := http.Post(ts.URL+c.Path, "application/json", bytes.NewReader(requestBody))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -128,7 +211,7 @@ func TestTranslator(t *testing.T) {
 			t.Fatal(err)
 		}
 		if !reflect.DeepEqual(c.Got, c.WantResponse) {
-			t.Fatalf("got %+#v, want %+#v", c.Got, c.WantResponse)
+			t.Fatalf("got\n%+#v, want\n%+#v", c.Got, c.WantResponse)
 		}
 	}
 }
