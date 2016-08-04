@@ -31,7 +31,7 @@ export default class RefsContainer extends Container {
 	static propTypes = {
 		repo: React.PropTypes.string.isRequired,
 		rev: React.PropTypes.string,
-		commitID: React.PropTypes.string.isRequired,
+		commitID: React.PropTypes.string,
 		def: React.PropTypes.string.isRequired,
 		defObj: React.PropTypes.object.isRequired,
 		repoRefs: React.PropTypes.shape({
