@@ -129,6 +129,7 @@ func (p *pending) done(k string) {
 	p.Lock()
 	_, pending := p.m[k]
 	if !pending {
+		p.Unlock()
 		panic("pending: done() called for non-acquired k")
 	}
 	delete(p.m, k)
