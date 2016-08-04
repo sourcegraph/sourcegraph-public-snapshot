@@ -230,22 +230,28 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	}
 }
 
-// TestRepos_Get_autheddoescache tests not found responses from authed
-// clients are cached.
-func TestRepos_Get_autheddoescache(t *testing.T) {
+// TestRepos_Get_authednocache tests authed users do not use the cache.
+func TestRepos_Get_authednocache(t *testing.T) {
 	githubcli.Config.GitHubHost = "github.com"
 	resetCache(t)
 
-	calledGetMissing := false
-	mockGetMissing := mockGitHubRepos{
+	calledGet := false
+	mockGet := mockGitHubRepos{
 		Get_: func(owner, repo string) (*github.Repository, *github.Response, error) {
-			calledGetMissing = true
-			resp := &http.Response{
-				StatusCode: http.StatusNotFound,
-				Body:       ioutil.NopCloser(bytes.NewReader(nil)),
-				Request:    &http.Request{},
-			}
-			return nil, &github.Response{Response: resp}, github.CheckResponse(resp)
+			calledGet = true
+			return &github.Repository{
+				ID:       github.Int(123),
+				Name:     github.String("repo"),
+				FullName: github.String("owner/repo"),
+				Owner:    &github.User{ID: github.Int(1)},
+				CloneURL: github.String("https://github.com/owner/repo.git"),
+				Private:  github.Bool(false),
+				Permissions: &map[string]bool{
+					"pull":  true,
+					"push":  true,
+					"admin": false,
+				},
+			}, nil, nil
 		},
 	}
 
@@ -253,29 +259,47 @@ func TestRepos_Get_autheddoescache(t *testing.T) {
 	ctx := testContext(mock)
 
 	s := &repos{}
-	missingRepo := "github.com/owner/doesnotexist"
-	mock.repos = mockGetMissing
+	repo := "github.com/owner/repo"
+	mock.repos = mockGet
 
-	// An authed user should not get from the cache, but it should store a 404 in the cache.
-	calledGetMissing = false
-	mock.isAuthedUser = true
-	_, err := s.Get(ctx, missingRepo)
-	if grpc.Code(err) != codes.NotFound {
-		t.Fatal(err)
+	authedGet := func() bool {
+		calledGet = false
+		mock.isAuthedUser = true
+		_, err := s.Get(ctx, repo)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return calledGet
 	}
-	if !calledGetMissing {
-		t.Fatal("should not hit cache")
+	unauthedGet := func() bool {
+		calledGet = false
+		mock.isAuthedUser = false
+		_, err := s.Get(ctx, repo)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return calledGet
 	}
 
-	// An unauthed user will hit cache, because authed user's 404 response should have gotten cached.
-	calledGetMissing = false
-	mock.isAuthedUser = false
-	_, err = s.Get(ctx, missingRepo)
-	if grpc.Code(err) != codes.NotFound {
-		t.Fatal(err)
+	// An authed user should not get or populate the cache. We do this
+	// first to ensure we don't populate the cache later.
+	if !authedGet() {
+		t.Fatal("authed should not hit empty cache")
 	}
-	if calledGetMissing {
-		t.Fatal("should have hit cache; if this fails, that means authed user's 404 response wasn't cached")
+
+	// An unauthed user will populate the empty cache
+	if !unauthedGet() {
+		t.Fatal("unauthed should populate empty cache")
+	}
+
+	// An unauthed user should now get from cache
+	if unauthedGet() {
+		t.Fatal("unauthed should get from cache")
+	}
+
+	// The unauthed user should still not be able to get from the cache
+	if !authedGet() {
+		t.Fatal("authed should not get from cache")
 	}
 }
 
