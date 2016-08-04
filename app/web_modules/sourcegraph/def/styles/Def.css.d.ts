@@ -28,3 +28,5 @@ export const tooltipTitle: string;
 export const doc: string;
 export const repo: string;
 export const view_all_button: string;
+
+export default {} as any;

@@ -18,3 +18,5 @@ export const choice_button: string;
 export const modal: string;
 export const modalTitle: string;
 export const modalForm: string;
+
+export default {} as any;

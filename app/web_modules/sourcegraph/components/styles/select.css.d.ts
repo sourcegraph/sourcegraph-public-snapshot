@@ -14,3 +14,5 @@ export const block: string;
 export const red: string;
 export const red_fill: string;
 export const small: string;
+
+export default {} as any;

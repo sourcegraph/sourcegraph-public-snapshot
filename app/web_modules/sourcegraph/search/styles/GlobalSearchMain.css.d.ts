@@ -13,3 +13,5 @@ export const search_settings_inner: string;
 export const results: string;
 export const bottom_border: string;
 export const result: string;
+
+export default {} as any;

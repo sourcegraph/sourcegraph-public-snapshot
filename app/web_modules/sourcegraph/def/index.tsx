@@ -3,12 +3,21 @@ import {repoParam, repoPath, repoRev} from "sourcegraph/repo/index";
 
 export interface Options {};
 
-export interface Repo {};
+export interface Repo {
+	URI: string;
+	Description: string;
+};
 
 export interface Def {
+	Repo: string;
 	UnitType: string;
 	Unit: string;
 	Path: string;
+	FmtStrings: any;
+	Docs: any;
+	Kind: string;
+	File: string;
+	Error: any;
 };
 
 export interface DefKey {
@@ -91,10 +100,11 @@ export function encodeDefPath(path: string): string {
 export interface RefLocationsKey {
 	repo: string;
 	commitID: string | null;
+	rev?: any;
 	def: string;
 	page?: number;
 	perPage?: number;
-	repos: Array<string>;
+	repos: string[];
 }
 
 export interface ExamplesKey {

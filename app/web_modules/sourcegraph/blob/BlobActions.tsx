@@ -10,7 +10,9 @@ export class WantFile {
 	}
 }
 
-export interface File {} // incomplete
+export interface File {
+	ContentsString: string;
+}
 
 export class FileFetched {
 	repo: string;
@@ -34,16 +36,19 @@ export class WantAnnotations {
 	startByte: number | null;
 	endByte: number | null;
 
-	constructor(repo: string, commitID: string, path: string, startByte: number | null, endByte: number | null) {
+	constructor(repo: string, commitID: string, path: string, startByte?: number | null, endByte?: number | null) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.path = path;
-		this.startByte = startByte;
-		this.endByte = endByte;
+		this.startByte = startByte || null;
+		this.endByte = endByte || null;
 	}
 }
 
-export interface Annotations {} // incomplete
+export interface Annotations {
+	LineStartBytes: any;
+	Annotations: any;
+}
 
 export class AnnotationsFetched {
 	repo: string;

@@ -14,3 +14,5 @@ export const dark: string;
 export const green: string;
 export const bg_img_objects: string;
 export const bg_img_objects_fade: string;
+
+export default {} as any;

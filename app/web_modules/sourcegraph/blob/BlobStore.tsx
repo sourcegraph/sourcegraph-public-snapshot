@@ -11,7 +11,7 @@ export function keyForFile(repo: string, commitID: string | null, path: string):
 
 // keyForAnns must stay in sync with the key func in
 // (*ui.BlobStore).AddAnnotations.
-export function keyForAnns(repo: string, commitID: string, path: string, startByte: number | null, endByte: number | null): string {
+export function keyForAnns(repo: string, commitID: string, path: string, startByte?: number | null, endByte?: number | null): string {
 	return `${repo}#${commitID}#${path}#${startByte || 0}#${endByte || 0}`;
 }
 

@@ -45,10 +45,10 @@ export class WantResolveRev {
 	rev: string;
 	force: boolean;
 
-	constructor(repo: string, rev: string, force: boolean) {
+	constructor(repo: string, rev: string, force?: boolean) {
 		this.repo = repo;
 		this.rev = rev;
-		this.force = force;
+		this.force = force || false;
 	}
 }
 
@@ -144,10 +144,10 @@ export class RepoResolved {
 
 export class WantCreateRepo {
 	repo: string;
-	remoteRepo: string;
+	remoteRepo: any;
 	refreshVCS: boolean;
 
-	constructor(repo: string, remoteRepo: string, refreshVCS?: boolean) {
+	constructor(repo: string, remoteRepo: any, refreshVCS?: boolean) {
 		this.repo = repo;
 		this.remoteRepo = remoteRepo;
 		// Settings this option to true will cause the newly create repo to be

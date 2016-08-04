@@ -27,3 +27,5 @@ export const path_inactive: string;
 export const hidden: string;
 export const parent_dir: string;
 export const icon: string;
+
+export default {} as any;

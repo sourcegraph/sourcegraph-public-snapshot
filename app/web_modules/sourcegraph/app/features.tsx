@@ -18,7 +18,7 @@ let _globalFeatures: Features | null = null; // private, access via withFeatures
 // This module assumes that the features object is immutable
 // and it and its subkeys will not change. Violating this will result in
 // undefined behavior.
-export function setGlobalFeatures(features: Features): void {
+export function setGlobalFeatures(features: any): void {
 	_globalFeatures = features;
 }
 
@@ -36,7 +36,7 @@ export function withFeaturesContext<P>(component: React.ComponentClass<P>): Reac
 			return {features: _globalFeatures};
 		}
 
-		render(): JSX.Element {
+		render(): JSX.Element | null {
 			return React.createElement(component, this.props);
 		}
 	}

@@ -10,3 +10,5 @@ export const container: string;
 export const menu_item: string;
 export const divider: string;
 export const inactive: string;
+
+export default {} as any;

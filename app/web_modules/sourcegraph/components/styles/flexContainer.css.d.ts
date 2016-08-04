@@ -23,3 +23,5 @@ export const content_end: string;
 export const content_center: string;
 export const content_between: string;
 export const content_stretch: string;
+
+export default {} as any;

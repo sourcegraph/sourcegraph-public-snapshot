@@ -45,7 +45,7 @@ class Component<P, S> extends React.Component<P, S> {
 		super.setState(newState, callback);
 	}
 
-	_checkForUndefined(obj: Object, type: string): void {
+	_checkForUndefined(obj: any, type: string): void {
 		if (process.env.NODE_ENV === "production") { return; }
 		let keys = Object.keys(obj);
 		for (let i = 0; i < keys.length; i++) {

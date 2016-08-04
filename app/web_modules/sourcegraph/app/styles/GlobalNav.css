@@ -61,7 +61,7 @@
 	min-width: 320px;
 }
 
-.modal-dismiss {
+.modal_dismiss {
 	composes: cool_mid_gray_5 from colors;
 	position: relative;
 	float: right;

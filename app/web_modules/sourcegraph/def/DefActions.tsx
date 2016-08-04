@@ -43,9 +43,9 @@ export class DefAuthorsFetched {
 	repo: string;
 	commitID: string;
 	def: string;
-	authors: Object;
+	authors: any;
 
-	constructor(repo: string, commitID: string, def: string, authors: Object) {
+	constructor(repo: string, commitID: string, def: string, authors: any) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.def = def;
@@ -60,12 +60,12 @@ export class WantDefs {
 	filePathPrefix: string | null;
 	overlay: boolean;
 
-	constructor(repo: string, commitID: string, query: string, filePathPrefix: string | null, overlay: boolean) {
+	constructor(repo: string, commitID: string, query: string, filePathPrefix: string | null, overlay?: boolean) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.query = query;
 		this.filePathPrefix = filePathPrefix || null;
-		this.overlay = overlay; // For metrics purposes
+		this.overlay = overlay || false; // For metrics purposes
 	}
 }
 
@@ -77,13 +77,13 @@ export class DefsFetched {
 	filePathPrefix: string | null;
 	overlay: boolean;
 
-	constructor(repo: string, commitID: string, query: string, filePathPrefix: string | null, defs: Array<Def>, overlay: boolean) {
+	constructor(repo: string, commitID: string, query: string, filePathPrefix: string | null, defs: Array<Def>, overlay?: boolean) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.query = query;
 		this.filePathPrefix = filePathPrefix;
 		this.defs = defs;
-		this.overlay = overlay;
+		this.overlay = overlay || false;
 	}
 }
 
@@ -151,9 +151,9 @@ export class WantRefLocations {
 
 export class RefLocationsFetched {
 	request: WantRefLocations;
-	locations: Object;
+	locations: any;
 
-	constructor(request: WantRefLocations, locations: Object) {
+	constructor(request: WantRefLocations, locations: any) {
 		this.request = request;
 		this.locations = locations;
 	}
@@ -173,9 +173,9 @@ export class WantExamples {
 
 export class ExamplesFetched {
 	request: WantExamples;
-	locations: Object;
+	locations: any;
 
-	constructor(request: WantExamples, locations: Object) {
+	constructor(request: WantExamples, locations: any) {
 		this.request = request;
 		this.locations = locations;
 	}
@@ -188,7 +188,7 @@ export class WantRefs {
 	refRepo: string; // return refs from files in this repo
 	refFile: string | null; // only return refs in this file
 
-	constructor(repo: string, commitID: string, def: string, refRepo: string, refFile: string | null) {
+	constructor(repo: string, commitID: string, def: string, refRepo: string, refFile?: string | null) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.def = def;
@@ -203,9 +203,9 @@ export class RefsFetched {
 	def: string;
 	refRepo: string;
 	refFile: string | null;
-	refs: Array<Ref>;
+	refs: Array<Ref> | null;
 
-	constructor(repo: string, commitID: string, def: string, refRepo: string, refFile: string | null, refs: Array<Ref>) {
+	constructor(repo: string, commitID: string, def: string, refRepo: string, refFile: string | null, refs: Array<Ref> | null) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.def = def;

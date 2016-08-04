@@ -7,3 +7,5 @@ export const c_dark_blue: string;
 export const c_cool_gray_5: string;
 export const link: string;
 export const link_subtle: string;
+
+export default {} as any;

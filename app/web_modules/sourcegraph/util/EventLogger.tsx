@@ -397,7 +397,7 @@ export class EventLogger {
 
 export default new EventLogger();
 
-// withEventLoggerContext makes eventLogger accessible as this.context.eventLogger
+// withEventLoggerContext makes eventLogger accessible as (this.context as any).eventLogger
 // in the component's context.
 export function withEventLoggerContext<P>(eventLogger: EventLogger, component: React.ComponentClass<P>): React.ComponentClass<P> {
 	class WithEventLogger extends React.Component<P, {}> {
@@ -414,14 +414,14 @@ export function withEventLoggerContext<P>(eventLogger: EventLogger, component: R
 			return {eventLogger};
 		}
 
-		render(): JSX.Element {
+		render(): JSX.Element | null {
 			return React.createElement(component, this.props);
 		}
 	}
 	return WithEventLogger;
 }
 
-// withViewEventsLogged calls this.context.eventLogger.logEvent when the
+// withViewEventsLogged calls (this.context as any).eventLogger.logEvent when the
 // location's pathname changes.
 type WithViewEventsLoggedProps = {
 	routes: ReactRouter.Route[],
@@ -454,7 +454,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 			// values are updated.
 			if (this.props.location.pathname !== nextProps.location.pathname) {
 				this._logView(nextProps.routes, nextProps.location);
-				document.dispatchEvent(new CustomEvent("sourcegraph:identify", this.context.eventLogger.getAmplitudeIdentificationProps()));
+				document.dispatchEvent(new CustomEvent("sourcegraph:identify", (this.context as any).eventLogger.getAmplitudeIdentificationProps()));
 			}
 
 			this._checkEventQuery();
@@ -483,10 +483,10 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				}
 
 				if (this.props.location.query["_githubAuthed"]) {
-					this.context.eventLogger.setUserProperty("github_authed", this.props.location.query["_githubAuthed"]);
-					this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SIGNUP, this.props.location.query["_event"], eventProperties);
+					(this.context as any).eventLogger.setUserProperty("github_authed", this.props.location.query["_githubAuthed"]);
+					(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SIGNUP, this.props.location.query["_event"], eventProperties);
 				} else {
-					this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_EXTERNAL, AnalyticsConstants.ACTION_REDIRECT, this.props.location.query["_event"], eventProperties);
+					(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_EXTERNAL, AnalyticsConstants.ACTION_REDIRECT, this.props.location.query["_event"], eventProperties);
 				}
 
 				// Won't take effect until we call replace below, but prevents this
@@ -504,7 +504,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				delete this.props.location.query["_signupChannel"];
 				delete this.props.location.query["_onboarding"];
 
-				this.context.router.replace(locWithoutEvent);
+				(this.context as any).router.replace(locWithoutEvent);
 			}
 		}
 
@@ -561,13 +561,13 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 					if (lang) { eventProps.language = lang; }
 				}
 
-				this.context.eventLogger.logViewEvent(viewName, location.pathname, Object.assign({}, eventProps, {pattern: getRoutePattern(routes)}));
+				(this.context as any).eventLogger.logViewEvent(viewName, location.pathname, Object.assign({}, eventProps, {pattern: getRoutePattern(routes)}));
 			} else {
-				this.context.eventLogger.logViewEvent("UnmatchedRoute", location.pathname, Object.assign({}, eventProps, {pattern: getRoutePattern(routes)}));
+				(this.context as any).eventLogger.logViewEvent("UnmatchedRoute", location.pathname, Object.assign({}, eventProps, {pattern: getRoutePattern(routes)}));
 			}
 		}
 
-		render(): JSX.Element { return React.createElement(component, this.props); }
+		render(): JSX.Element | null { return React.createElement(component, this.props); }
 	}
 	return WithViewEventsLogged;
 }

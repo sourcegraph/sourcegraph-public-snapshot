@@ -90,6 +90,7 @@ declare namespace ReactRouter {
         onUpdate?: () => any
         parseQueryString?: ParseQueryString
         stringifyQuery?: StringifyQuery
+        render?: any
     }
     interface Router extends React.ComponentClass<RouterProps> {}
     interface RouterElement extends React.ReactElement<RouterProps> {}

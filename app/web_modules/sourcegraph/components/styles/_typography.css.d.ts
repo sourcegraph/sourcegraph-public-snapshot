@@ -127,3 +127,5 @@ export const error_text: string;
 export const normal_text: string;
 export const heavy_text: string;
 export const empty_state_text: string;
+
+export default {} as any;

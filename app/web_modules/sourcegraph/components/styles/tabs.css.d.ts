@@ -8,3 +8,5 @@ export const horizontal: string;
 export const vertical: string;
 export const item_vertical: string;
 export const item_horizontal: string;
+
+export default {} as any;

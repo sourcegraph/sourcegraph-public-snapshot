@@ -34,6 +34,7 @@ export const logo: string;
 export const logomark: string;
 export const spin: string;
 export const modal: string;
+export const modal_dismiss: string;
 export const channel: string;
 export const channel_closed: string;
 export const channel_connected: string;
@@ -49,3 +50,5 @@ export const user_menu_icon: string;
 export const current_user: string;
 export const close_button: string;
 export const close_icon: string;
+
+export default {} as any;

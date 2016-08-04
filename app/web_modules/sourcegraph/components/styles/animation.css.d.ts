@@ -9,3 +9,5 @@ export const hide_child: string;
 export const child: string;
 export const shimmer_animation: string;
 export const shimmer: string;
+
+export default {} as any;

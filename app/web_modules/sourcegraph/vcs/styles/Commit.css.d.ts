@@ -18,3 +18,5 @@ export const username: string;
 export const commit_id: string;
 export const sha: string;
 export const rest: string;
+
+export default {} as any;

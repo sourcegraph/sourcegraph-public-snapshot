@@ -4,7 +4,7 @@ import UserStore from "sourcegraph/user/UserStore";
 import {checkStatus, defaultFetch} from "sourcegraph/util/xhr";
 
 class UserBackend {
-	fetch: typeof defaultFetch;
+	fetch: any;
 
 	constructor() {
 		this.fetch = defaultFetch;

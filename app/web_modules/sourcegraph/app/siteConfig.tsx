@@ -42,7 +42,7 @@ export function withSiteConfigContext<P>(component: React.ComponentClass<P>): Re
 			return {siteConfig: _globalSiteConfig};
 		}
 
-		render(): JSX.Element {
+		render(): JSX.Element | null {
 			return React.createElement(component, this.props);
 		}
 	}

@@ -70,7 +70,7 @@ module.exports = {
 	target: "web",
 	cache: true,
 	entry: [
-		"./web_modules/sourcegraph/init/browser.js",
+		"./web_modules/sourcegraph/init/browser.tsx",
 	],
 	resolve: {
 		modules: [`${__dirname}/web_modules`, "node_modules"],

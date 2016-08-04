@@ -33,3 +33,5 @@ export const label: string;
 export const fileError: string;
 export const full_width_sm: string;
 export const left_align_sm: string;
+
+export default {} as any;

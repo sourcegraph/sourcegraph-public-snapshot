@@ -57,3 +57,5 @@ export const col_9_l: string;
 export const col_10_l: string;
 export const col_11_l: string;
 export const col_12_l: string;
+
+export default {} as any;

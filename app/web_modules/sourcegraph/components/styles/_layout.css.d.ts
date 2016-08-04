@@ -4,3 +4,5 @@
 export const base: string;
 export const containerFixed: string;
 export const containerFixedLeft: string;
+
+export default {} as any;

@@ -23,3 +23,5 @@ export const large: string;
 export const icon: string;
 export const component_icon: string;
 export const tab: string;
+
+export default {} as any;

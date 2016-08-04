@@ -29,3 +29,5 @@ export const github_button: string;
 export const footer: string;
 export const footer_link: string;
 export const footer_btn: string;
+
+export default {} as any;

@@ -29,3 +29,5 @@ export const line_orange: string;
 export const check: string;
 export const step_node_incomplete: string;
 export const step_incomplete: string;
+
+export default {} as any;

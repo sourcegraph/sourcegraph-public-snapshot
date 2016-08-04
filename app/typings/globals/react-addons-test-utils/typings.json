@@ -1,0 +1,8 @@
+{
+  "resolution": "main",
+  "tree": {
+    "src": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/08ed4e9f1869e37e29514d862e0158b40e550232/react/react-addons-test-utils.d.ts",
+    "raw": "registry:dt/react-addons-test-utils#0.14.0+20160427035638",
+    "typings": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/08ed4e9f1869e37e29514d862e0158b40e550232/react/react-addons-test-utils.d.ts"
+  }
+}

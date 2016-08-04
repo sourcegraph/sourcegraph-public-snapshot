@@ -35,3 +35,5 @@ export const list_id: string;
 export const list_repo: string;
 export const list_status: string;
 export const list_elapsed: string;
+
+export default {} as any;

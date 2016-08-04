@@ -1,3 +1,5 @@
+@value dummy "";
+
 @media screen {
 	:global .code a {
 		text-decoration: none;
