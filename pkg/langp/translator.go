@@ -91,18 +91,32 @@ func newPending() *pending {
 // acquire acquires ownership of preparing k. If k is already being prepared
 // by someone else, this methods blocks until preparation of k is finished
 // and handled=true is returned.
-func (p *pending) acquire(k string, timeout time.Duration) (wasTimeout, handled bool) {
+//
+// When finished with preparation, done should always be called. If acquire
+// did not acquire ownership, done is no-op.
+func (p *pending) acquire(k string, timeout time.Duration) (wasTimeout, handled bool, done func()) {
 	// If nobody is preparing k, mark ownership and return:
 	p.Lock()
 	if _, pending := p.m[k]; !pending {
 		p.m[k] = true
 		p.Unlock()
+		done = func() {
+			p.Lock()
+			_, pending := p.m[k]
+			if !pending {
+				p.Unlock()
+				panic("pending: done() called for non-acquired k")
+			}
+			delete(p.m, k)
+			p.Unlock()
+		}
 		handled = false
 		return
 	}
 	p.Unlock()
 
 	// Someone is preparing k, wait for completion.
+	done = func() {}
 	log.Printf("preparation of k=%q already underway; waiting\n", k)
 	start := time.Now()
 	for {
@@ -121,19 +135,6 @@ func (p *pending) acquire(k string, timeout time.Duration) (wasTimeout, handled 
 		// TODO: timeout request
 		time.Sleep(1 * time.Millisecond)
 	}
-}
-
-// done is called to signal completion for preparation previously acquired by
-// calling acquire.
-func (p *pending) done(k string) {
-	p.Lock()
-	_, pending := p.m[k]
-	if !pending {
-		p.Unlock()
-		panic("pending: done() called for non-acquired k")
-	}
-	delete(p.m, k)
-	p.Unlock()
 }
 
 type translator struct {
@@ -211,12 +212,12 @@ func (t *translator) prepareWorkspace(rootDir, repo, commit string) error {
 	//
 	// TODO(slimsag): use a smaller timeout which propagates nicely to the
 	// frontend.
-	timeout, handled := t.preparingRepos.acquire(rootDir, 1*time.Hour)
+	timeout, handled, done := t.preparingRepos.acquire(rootDir, 1*time.Hour)
 	if timeout || handled {
 		// A different request prepared the repository.
 		return nil
 	}
-	defer t.preparingRepos.done(rootDir)
+	defer done()
 
 	// Prepare the workspace by creating the directory and cloning the
 	// repository.
@@ -236,7 +237,7 @@ func (t *translator) prepareWorkspace(rootDir, repo, commit string) error {
 	}
 
 	// Acquire ownership of dependency preparation.
-	timeout, handled = t.preparingDeps.acquire(rootDir, 0*time.Second)
+	timeout, handled, done = t.preparingDeps.acquire(rootDir, 0*time.Second)
 	if timeout || handled {
 		// A different request is preparing the dependencies.
 		return nil
@@ -244,7 +245,7 @@ func (t *translator) prepareWorkspace(rootDir, repo, commit string) error {
 
 	// Prepare the dependencies asynchronously.
 	go func() {
-		defer t.preparingDeps.done(rootDir)
+		defer done()
 		if err := t.PrepareDeps(rootDir, repo, commit); err != nil {
 			// Preparing the workspace has failed, and thus the workspace is
 			// incomplete. Remove the directory so that the next request causes
