@@ -103,6 +103,7 @@ func (p *pending) acquire(k string, timeout time.Duration) (wasTimeout, handled 
 	p.Unlock()
 
 	// Someone is preparing k, wait for completion.
+	log.Printf("preparation of k=%q already underway; waiting\n", k)
 	start := time.Now()
 	for {
 		p.Lock()
@@ -114,6 +115,7 @@ func (p *pending) acquire(k string, timeout time.Duration) (wasTimeout, handled 
 		}
 		if time.Since(start) > timeout {
 			wasTimeout = true
+			log.Printf("preparation of k=%q finished\n", k)
 			return
 		}
 		// TODO: timeout request
