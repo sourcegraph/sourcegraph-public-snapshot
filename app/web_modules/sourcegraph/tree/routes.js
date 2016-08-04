@@ -22,7 +22,6 @@ function canonicalizeTreeRoute(nextRouterState, replace) {
 export const routes = [
 	{
 		path: rel.tree,
-		disableTreeSearchOverlay: true,
 		keepScrollPositionOnRouteChangeKey: "tree",
 		onEnter: (nextRouterState: RouterState, replace: Function) => {
 			canonicalizeTreeRoute(nextRouterState, replace);

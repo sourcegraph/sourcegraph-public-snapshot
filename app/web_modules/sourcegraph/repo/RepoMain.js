@@ -1,7 +1,5 @@
 import * as React from "react";
 import Helmet from "react-helmet";
-import TreeSearch from "sourcegraph/tree/TreeSearch";
-import Modal, {setLocationModalState} from "sourcegraph/components/Modal";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Repo.css";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
@@ -14,8 +12,6 @@ import context from "sourcegraph/app/context";
 import {guessBranchName} from "sourcegraph/build/Build";
 import Header from "sourcegraph/components/Header";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-
-const TREE_SEARCH_MODAL_NAME = "TreeSearch";
 
 function repoPageTitle(repo: Object): string {
 	let title = trimRepo(repo.URI);
@@ -49,29 +45,12 @@ class RepoMain extends React.Component {
 
 	constructor(props) {
 		super(props);
-		this.state = {
-			treeSearchPath: "/",
-			treeSearchQuery: "",
-		};
-		this._isMounted = false;
-		this._handleKeyDown = this._handleKeyDown.bind(this);
-		this._showTreeSearchModal = this._showTreeSearchModal.bind(this);
-		this._dismissTreeSearchModal = this._dismissTreeSearchModal.bind(this);
 
 		this._repoResolutionUpdated(this.props.repo, this.props.repoResolution);
 		this._buildUpdated(this.props.repo, this.props.build);
 	}
 
-	state: {
-		treeSearchPath: string,
-		treeSearchQuery: string,
-	};
-
 	componentDidMount() {
-		this._isMounted = true;
-		if (global.document) {
-			document.addEventListener("keydown", this._handleKeyDown);
-		}
 		// Whenever the user navigates to different RepoMain views, e.g.
 		// navigating directories in the directory tree, viewing code
 		// files, etc. we trigger a MirroredRepos.RefreshVCS operation such
@@ -93,13 +72,6 @@ class RepoMain extends React.Component {
 			// Check for !this.props.build to avoid a loop where
 			// after we create a build, this gets triggered again.
 			this._buildUpdated(nextProps.repo, nextProps.build);
-		}
-	}
-
-	componentWillUnmount() {
-		this._isMounted = false;
-		if (global.document) {
-			document.removeEventListener("keydown", this._handleKeyDown);
 		}
 	}
 
@@ -126,43 +98,6 @@ class RepoMain extends React.Component {
 		if (build && build.Error && build.Error.response && build.Error.response.status === 404) {
 			// No build exists, so create one.
 			Dispatcher.Backends.dispatch(new BuildActions.CreateBuild(repo, this.props.commitID, guessBranchName(this.props.rev), null));
-		}
-	}
-
-	_isMounted: boolean;
-	_handleKeyDown: () => void;
-	_showTreeSearchModal: () => void;
-	_dismissTreeSearchModal: () => void;
-
-	_onSelectPath(path: string) {
-		this.setState({treeSearchPath: path});
-	}
-
-	_onChangeQuery(query: string) {
-		this.setState({treeSearchQuery: query});
-	}
-
-	_showTreeSearchModal() {
-		setLocationModalState(this.context.router, this.props.location, TREE_SEARCH_MODAL_NAME, true);
-		this.setState({treeSearchPath: "/", treeSearchQuery: ""});
-	}
-
-	_dismissTreeSearchModal(loc) {
-		setLocationModalState(this.context.router, this.props.location, TREE_SEARCH_MODAL_NAME, false);
-	}
-
-	_handleKeyDown(e: KeyboardEvent) {
-		// Consult deepest-matched route (e.g., the "tree" subroute).
-		const disableTreeSearchOverlay = this.props.routes[this.props.routes.length - 1].disableTreeSearchOverlay;
-
-		const tag = e.target instanceof HTMLElement ? e.target.tagName : "";
-		switch (e.keyCode) {
-		case 84: // "t"
-			if (disableTreeSearchOverlay) break;
-			if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
-			e.preventDefault();
-			this._showTreeSearchModal();
-			break;
 		}
 	}
 
@@ -218,23 +153,6 @@ class RepoMain extends React.Component {
 				{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
 				{isMainRoute && title && <Helmet title={title} />}
 				{this.props.main}
-				{(!this.props.route || !this.props.route.disableTreeSearchOverlay) && this.props.location.state && this.props.location.state.modal === TREE_SEARCH_MODAL_NAME &&
-					<Modal onDismiss={this._dismissTreeSearchModal}>
-						<div styleName="tree_search_modal">
-							<TreeSearch
-								repo={this.props.repo}
-								rev={this.props.rev}
-								commitID={this.props.commitID}
-								overlay={true}
-								path={this.state.treeSearchPath}
-								query={this.state.treeSearchQuery}
-								location={this.props.location}
-								route={this.props.route}
-								onChangeQuery={this._onChangeQuery.bind(this)}
-								onSelectPath={this._onSelectPath.bind(this)} />
-						</div>
-					</Modal>
-				}
 			</div>
 		);
 	}
