@@ -17,6 +17,30 @@
 	 TYPE SCALE
 */
 
+/*
+	 WEB FONTS
+*/
+@font-face {
+  font-family: 'circular-std';
+  src: url('../fonts/circular-std-subsetted/lineto-circular-book.woff') format('woff');
+}
+@font-face {
+  font-family: 'circular-std';
+  src: url('../fonts/circular-std-subsetted/lineto-circular-bookItalic.woff') format('woff');
+	font-style: oblique;
+}
+@font-face {
+  font-family: 'circular-std';
+  src: url('../fonts/circular-std-subsetted/lineto-circular-bold.woff') format('woff');
+	font-weight: bold;
+}
+@font-face {
+  font-family: 'circular-std';
+  src: url('../fonts/circular-std-subsetted/lineto-circular-boldItalic.woff') format('woff');
+	font-weight: bold;
+	font-style: oblique;
+}
+
 /* Type Scale */
 .f1 {
 	font-size: font_size_1;
@@ -83,7 +107,8 @@
 code, .code { font-family: Menlo, Consolas, Monaco, monospace; }
 
 html {
-	font-family: -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'Helvetica', Ubuntu, 'segoe ui', arial, sans-serif;
+	font-family: 'circular-std', -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'Helvetica', Ubuntu, 'segoe ui', arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
 }
 
 /*
