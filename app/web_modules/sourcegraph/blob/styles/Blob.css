@@ -131,7 +131,7 @@
 .defTitleLineContent {
 	tab-size: 4;
 	overflow: visible;
-	white-space: pre;
+	white-space: normal;
 	padding: 0px;
 }
 .defTitleLineContent a {
