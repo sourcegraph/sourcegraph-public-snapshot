@@ -54,7 +54,7 @@ class Channel extends React.Component {
 		}
 
 		return (
-			<Header title="Click on a symbol in your editor to get started!"/>
+			<Header title="We've turned this into a desktop application!" subtitle="Email beta@sourcegraph.com for access"/>
 		);
 	}
 }
