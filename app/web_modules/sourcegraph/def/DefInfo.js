@@ -341,6 +341,7 @@ class DefInfo extends Container {
 													<ExamplesContainer
 														repo={repo}
 														rev={rev}
+														commitID={defCommitID}
 														def={def}
 														defObj={defObj}
 														examples={examples} />
