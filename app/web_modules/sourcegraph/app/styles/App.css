@@ -6,13 +6,11 @@
 @value desktop_base_size, mobile_base_size, media_sm from vars;
 @value c_cool_gray from colors;
 
-
 /*
 Stick footer at bottom even if the page content doesn't take up
 the entire viewport height.
 */
 .main_container {
-	font-family: 'circular-std';
 	display: flex;
 	min-height: 100vh;
 	flex-direction: column;
