@@ -2,12 +2,10 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
@@ -21,19 +19,7 @@ var (
 	workDir  = flag.String("workspace", "$SGPATH/workspace/go", "where to create workspace directories")
 )
 
-func cmd(name string, args ...string) *exec.Cmd {
-	s := fmt.Sprintf("exec %s", name)
-	for _, arg := range args {
-		s = fmt.Sprintf("%s %q", s, arg)
-	}
-	log.Println(s)
-	cmd := exec.Command(name, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd
-}
-
-func prepare(workspace, repo, commit string) error {
+func prepareRepo(workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
 
 	// TODO(slimsag): find a way to pass this information from the app instead
@@ -46,19 +32,21 @@ func prepare(workspace, repo, commit string) error {
 
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
-	c := cmd("git", "clone", cloneURI, repoDir)
-	if err := c.Run(); err != nil {
-		return err
+	return langp.Clone(cloneURI, repoDir, commit)
+}
+
+func prepareDeps(workspace, repo, commit string) error {
+	gopath := filepath.Join(workspace, "gopath")
+
+	// TODO(slimsag): find a way to pass this information from the app instead
+	// of hard-coding it here.
+	if repo == "sourcegraph/sourcegraph" {
+		repo = "sourcegraph.com/sourcegraph/sourcegraph"
 	}
 
-	// Reset to the specific revision.
-	c = cmd("git", "reset", "--hard", commit)
-	c.Dir = repoDir
-	if err := c.Run(); err != nil {
-		return err
-	}
-
-	c = cmd("go", "get", "-d", "./...")
+	// Clone the repository.
+	repoDir := filepath.Join(gopath, "src", repo)
+	c := langp.Cmd("go", "get", "-d", "./...")
 	c.Dir = repoDir
 	c.Env = []string{"PATH=" + os.Getenv("PATH"), "GOPATH=" + gopath}
 	if err := c.Run(); err != nil {
@@ -129,10 +117,11 @@ func main() {
 
 	log.Println("Translating HTTP", *httpAddr, "to LSP", *lspAddr)
 	http.Handle("/", langp.New(&langp.Translator{
-		Addr:    *lspAddr,
-		WorkDir: workDir,
-		Prepare: prepare,
-		FileURI: fileURI,
+		Addr:        *lspAddr,
+		WorkDir:     workDir,
+		PrepareRepo: prepareRepo,
+		PrepareDeps: prepareDeps,
+		FileURI:     fileURI,
 	}))
 	http.ListenAndServe(*httpAddr, nil)
 }
