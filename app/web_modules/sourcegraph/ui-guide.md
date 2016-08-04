@@ -18,7 +18,7 @@ In addition to dispatcher, stores, components and actions, our architecture has 
 All communication with the server API has to be done in a backend. Components don't talk to the backend directly, but instead create `Want*` actions that the backend responds to. When data was fetched from the server, the backend creates a `*Fetched` action to pass data to a store which persists it in its state and makes it available to the components. A `Want*` action may even be created if the data is already available. The backend then decides if it will not do anything and just keep the data which is currently in the store or if it will do another request to the server to update the data.
 
 ### Containers
-Containers, also called controller-views, connect stores and components. The container is the only React component that listens to store changes. On change, it fetches the new data from the stores and passes it down to child components via properties.
+Containers, also called controller-views, connect stores and components. The container is the only React component that listens to store changes. On change, it fetches the new data from the stores and passes it down to child components via properties. Containers must register stores with a `stores` method and they must call the parent `componentWillMount` and `componentWillUnmount` methods.
 
 ### Summary
 When displaying a component with data from the server, the following happens:
