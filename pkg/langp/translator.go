@@ -268,7 +268,9 @@ func (t *translator) pathToWorkspace(repo, commit string) string {
 	//
 	//  <WorkDir>/<Repo>/<Commit>/workspace
 	//
-	// Where <Commit> is the btrfs subvolume/snapshot.
+	// Where <Commit> is the btrfs subvolume/snapshot. Additionally, the
+	// workspace subdir also gives us flexibility to store more data in the
+	// future so it will likely stick around regardless of btrfs.
 	return filepath.Join(t.WorkDir, repo, commit, "workspace")
 }
 
