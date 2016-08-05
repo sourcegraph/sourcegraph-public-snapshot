@@ -331,19 +331,19 @@ func (t *translator) createWorkspace(repo, commit string) (update bool, err erro
 		if err := btrfsSubvolumeSnapshot(latestSubvolume, subvolume); err != nil {
 			return false, err
 		}
-		update = true
-	} else {
-		// We don't have a recently prepared workspace (we will be the
-		// first successful one), so create a new subvolume.
-		if err := btrfsSubvolumeCreate(subvolume); err != nil {
-			return false, err
-		}
-		// Create the workspace subdirectory.
-		if err := os.Mkdir(workspace, 0700); err != nil {
-			return false, err
-		}
+		return true, nil
 	}
-	return update, nil
+
+	// We don't have a recently prepared workspace (we will be the
+	// first successful one), so create a new subvolume.
+	if err := btrfsSubvolumeCreate(subvolume); err != nil {
+		return false, err
+	}
+	// Create the workspace subdirectory.
+	if err := os.Mkdir(workspace, 0700); err != nil {
+		return false, err
+	}
+	return false, nil
 }
 
 // prepareWorkspace prepares a new workspace for the given repository and
