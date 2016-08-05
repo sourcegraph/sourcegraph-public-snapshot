@@ -15,7 +15,7 @@ development environment. Here's what you need:
 - [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
 - [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.2 or higher)
 - [Redis](http://redis.io/) (v3.0.7 or higher)
-- [protoc](https://github.com/google/protobuf/tree/v3.0.0-beta-1#c-installation---unix) (v3.0.0-beta-1)
+- [protoc](https://github.com/google/protobuf/releases/tag/v3.0.2) (v3.0.2)
 
 If you are new to Go, you should also [set up your `GOPATH`](https://golang.org/doc/code.html#GOPATH)
 (a directory which contains all your projects).
@@ -139,8 +139,9 @@ generate`. Code generation is used for a variety of tasks:
 * generate wrappers for interfaces (e.g., `./server/internal/middleware/*` packages)
 * pack app templates and assets into binaries
 
-To re-generate codegenned code, install `protoc` version `v3.0.0-beta-1`, see
-[installation instructions](https://github.com/google/protobuf/tree/v3.0.0-beta-1#c-installation---unix).
+To re-generate codegenned code, install `protoc` version `v3.0.2`.
+Either get it from homebrew via `brew update && brew install protobuf`,
+or [install from source](https://github.com/google/protobuf/releases/tag/v3.0.2).
 
 Then run:
 
