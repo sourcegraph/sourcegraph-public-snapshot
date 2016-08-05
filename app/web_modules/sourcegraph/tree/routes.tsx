@@ -32,17 +32,15 @@ export const routes = [
 			canonicalizeTreeRoute(nextRouterState, replace);
 		},
 		getComponents: (location: Location, callback: Function) => {
-			require.ensure([], (require) => {
-				if (!_components) {
-					const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
-					const withTree = require("sourcegraph/tree/withTree").default;
-					_components = {
-						main: withResolvedRepoRev(withTree(require("sourcegraph/tree/TreeMain").default)),
-						repoNavContext: require("sourcegraph/tree/RepoNavContext").default,
-					};
-				}
-				callback(null, _components);
-			});
+			if (!_components) {
+				const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
+				const withTree = require("sourcegraph/tree/withTree").default;
+				_components = {
+					main: withResolvedRepoRev(withTree(require("sourcegraph/tree/TreeMain").default)),
+					repoNavContext: require("sourcegraph/tree/RepoNavContext").default,
+				};
+			}
+			callback(null, _components);
 		},
 	},
 

@@ -11,11 +11,9 @@ export const routes = [
 		path: rel.blob,
 		keepScrollPositionOnRouteChangeKey: "file",
 		getComponents: (location: Location, callback: Function) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					main: require("sourcegraph/blob/BlobLoader").default,
-					repoNavContext: require("sourcegraph/blob/RepoNavContext").default,
-				});
+			callback(null, {
+				main: require("sourcegraph/blob/BlobLoader").default,
+				repoNavContext: require("sourcegraph/blob/RepoNavContext").default,
 			});
 		},
 		blobLoaderHelpers: [lineColBoundToHash, withLastSrclibDataVersion],

@@ -12,20 +12,16 @@ export const routes: ReactRouter.PlainRoute[] = [
 			}
 		},
 		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					main: require("sourcegraph/build/BuildsList").default,
-				});
+			callback(null, {
+				main: require("sourcegraph/build/BuildsList").default,
 			});
 		},
 		path: rel.builds,
 	},
 	{
 		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					main: require("sourcegraph/build/BuildContainer").default,
-				});
+			callback(null, {
+				main: require("sourcegraph/build/BuildContainer").default,
 			});
 		},
 		path: rel.build,

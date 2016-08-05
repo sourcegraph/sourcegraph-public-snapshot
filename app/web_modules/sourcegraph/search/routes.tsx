@@ -8,11 +8,9 @@ export const routes: any[] = [
 	{
 		path: rel.search,
 		getComponent: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					main: require("sourcegraph/search/GlobalSearchMain").default,
-					navContext: null,
-				});
+			callback(null, {
+				main: require("sourcegraph/search/GlobalSearchMain").default,
+				navContext: null,
 			});
 		},
 	},

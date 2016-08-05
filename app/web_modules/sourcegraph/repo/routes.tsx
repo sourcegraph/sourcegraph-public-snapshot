@@ -9,21 +9,19 @@ import {formatPattern} from "react-router/lib/PatternUtils";
 let _components;
 
 const getComponents = (location, callback) => {
-	require.ensure([], (require) => {
-		if (!_components) {
-			const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
-			const withRepoBuild = require("sourcegraph/build/withRepoBuild").default;
-			_components = {
-				navContext: withResolvedRepoRev(require("sourcegraph/repo/NavContext").default, false),
-				main: withResolvedRepoRev(withRepoBuild(require("sourcegraph/repo/RepoMain").default), true),
-			};
-		}
-		callback(null, {
-			main: _components.main,
+	if (!_components) {
+		const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
+		const withRepoBuild = require("sourcegraph/build/withRepoBuild").default;
+		_components = {
+			navContext: withResolvedRepoRev(require("sourcegraph/repo/NavContext").default, false),
+			main: withResolvedRepoRev(withRepoBuild(require("sourcegraph/repo/RepoMain").default), true),
+		};
+	}
+	callback(null, {
+		main: _components.main,
 
-			// Allow disabling the nav context on a per-route basis.
-			navContext: location.routes[location.routes.length - 1].repoNavContext === false ? null : _components.navContext,
-		});
+		// Allow disabling the nav context on a per-route basis.
+		navContext: location.routes[location.routes.length - 1].repoNavContext === false ? null : _components.navContext,
 	});
 };
 
@@ -35,14 +33,12 @@ export const routes: any[] = [
 		getComponents: getComponents,
 		path: `${rel.repo}/-/`,
 		getChildRoutes: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, [
-					...require("sourcegraph/blob/routes").routes,
-					...require("sourcegraph/build/routes").routes,
-					...require("sourcegraph/def/routes").routes,
-					...require("sourcegraph/tree/routes").routes,
-				]);
-			});
+			callback(null, [
+				...require("sourcegraph/blob/routes").routes,
+				...require("sourcegraph/build/routes").routes,
+				...require("sourcegraph/def/routes").routes,
+				...require("sourcegraph/tree/routes").routes,
+			]);
 		},
 	},
 	{

@@ -101,25 +101,21 @@ export const rootRoute: ReactRouter.PlainRoute = {
 		)
 	),
 	getIndexRoute: (location, callback) => {
-		require.ensure([], (require) => {
-			callback(null, require("sourcegraph/dashboard").routes);
-		});
+		callback(null, require("sourcegraph/dashboard").routes);
 	},
 	getChildRoutes: (location, callback) => {
-		require.ensure([], (require) => {
-			callback(null, [
-				...require("sourcegraph/page").routes,
-				...require("sourcegraph/styleguide").routes,
-				...require("sourcegraph/desktop").routes,
-				...require("sourcegraph/home").routes,
-				...require("sourcegraph/channel").routes,
-				require("sourcegraph/misc/golang").route,
-				...require("sourcegraph/admin/routes").routes,
-				...require("sourcegraph/search/routes").routes,
-				...require("sourcegraph/user").routes,
-				...require("sourcegraph/user/settings/routes").routes,
-				...require("sourcegraph/repo/routes").routes,
-			]);
-		});
+		callback(null, [
+			...require("sourcegraph/page").routes,
+			...require("sourcegraph/styleguide").routes,
+			...require("sourcegraph/desktop").routes,
+			...require("sourcegraph/home").routes,
+			...require("sourcegraph/channel").routes,
+			require("sourcegraph/misc/golang").route,
+			...require("sourcegraph/admin/routes").routes,
+			...require("sourcegraph/search/routes").routes,
+			...require("sourcegraph/user").routes,
+			...require("sourcegraph/user/settings/routes").routes,
+			...require("sourcegraph/repo/routes").routes,
+		]);
 	},
 };

@@ -12,10 +12,8 @@ import desktopContainer from "sourcegraph/desktop/DesktopContainer";
 export const routes = [
 	{
 		getComponent: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					main: require("sourcegraph/desktop/DesktopHome").default,
-				});
+			callback(null, {
+				main: require("sourcegraph/desktop/DesktopHome").default,
 			});
 		},
 		path: rel.desktopHome,

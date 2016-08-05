@@ -19,87 +19,71 @@ export const routes: any[] = [
 	{
 		path: rel.about,
 		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					navContext: null,
-					main: require("sourcegraph/page/AboutPage").default,
-				});
+			callback(null, {
+				navContext: null,
+				main: require("sourcegraph/page/AboutPage").default,
 			});
 		},
 	},
 	{
 		path: rel.beta,
 		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					navContext: null,
-					main: require("sourcegraph/page/BetaPage").default,
-				});
+			callback(null, {
+				navContext: null,
+				main: require("sourcegraph/page/BetaPage").default,
 			});
 		},
 	},
 	{
 		path: rel.contact,
 		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					navContext: null,
-					main: require("sourcegraph/page/ContactPage").default,
-				});
+			callback(null, {
+				navContext: null,
+				main: require("sourcegraph/page/ContactPage").default,
 			});
 		},
 	},
 	{
 		path: rel.security,
 		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					navContext: null,
-					main: require("sourcegraph/page/SecurityPage").default,
-				});
+			callback(null, {
+				navContext: null,
+				main: require("sourcegraph/page/SecurityPage").default,
 			});
 		},
 	},
 	{
 		path: rel.pricing,
 		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					navContext: null,
-					main: require("sourcegraph/page/PricingPage").default,
-				});
+			callback(null, {
+				navContext: null,
+				main: require("sourcegraph/page/PricingPage").default,
 			});
 		},
 	},
 	{
 		path: rel.terms,
 		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					navContext: null,
-					main: require("sourcegraph/page/TermsPage").default,
-				});
+			callback(null, {
+				navContext: null,
+				main: require("sourcegraph/page/TermsPage").default,
 			});
 		},
 	},
 	{
 		path: rel.privacy,
 		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					navContext: null,
-					main: require("sourcegraph/page/PrivacyPage").default,
-				});
+			callback(null, {
+				navContext: null,
+				main: require("sourcegraph/page/PrivacyPage").default,
 			});
 		},
 	},
 	{
 		path: rel.browserExtFaqs,
 		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					main: require("sourcegraph/home/BrowserExtFaqsPage").default,
-				});
+			callback(null, {
+				main: require("sourcegraph/home/BrowserExtFaqsPage").default,
 			});
 		},
 	},

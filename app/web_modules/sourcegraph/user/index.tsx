@@ -61,40 +61,32 @@ export const routes: Array<ReactRouter.PlainRoute> = [
 	{
 		path: rel.login,
 		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					main: require("sourcegraph/user/Login").default,
-				});
+			callback(null, {
+				main: require("sourcegraph/user/Login").default,
 			});
 		},
 	},
 	{
 		path: rel.signup,
 		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					main: require("sourcegraph/user/Signup").default,
-				});
+			callback(null, {
+				main: require("sourcegraph/user/Signup").default,
 			});
 		},
 	},
 	{
 		path: rel.forgot,
 		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					main: require("sourcegraph/user/ForgotPassword").default,
-				});
+			callback(null, {
+				main: require("sourcegraph/user/ForgotPassword").default,
 			});
 		},
 	},
 	{
 		path: rel.reset,
 		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					main: require("sourcegraph/user/ResetPassword").default,
-				});
+			callback(null, {
+				main: require("sourcegraph/user/ResetPassword").default,
 			});
 		},
 	},

@@ -11,10 +11,8 @@ const globalBuilds: ReactRouter.PlainRoute = {
 		}
 	},
 	getComponents: (location, callback) => {
-		require.ensure([], (require) => {
-			callback(null, {
-				main: require("sourcegraph/build/BuildsList").default,
-			});
+		callback(null, {
+			main: require("sourcegraph/build/BuildsList").default,
 		});
 	},
 };
@@ -31,12 +29,10 @@ export const routes: ReactRouter.PlainRoute[] = [
 	{
 		path: rel.admin,
 		getChildRoutes: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, [
-					globalBuilds,
-					coverage,
-				]);
-			});
+			callback(null, [
+				globalBuilds,
+				coverage,
+			]);
 		},
 	},
 ];

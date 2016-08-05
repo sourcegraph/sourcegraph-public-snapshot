@@ -18,32 +18,28 @@ export const routes: any[] = [
 		path: rel.defInfo,
 		repoNavContext: false,
 		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				if (!_defInfoComponents) {
-					const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
-					const withDef = require("sourcegraph/def/withDef").default;
-					_defInfoComponents = {
-						main: withResolvedRepoRev(withDef(require("sourcegraph/def/DefInfo").default)),
-					};
-				}
-				callback(null, _defInfoComponents);
-			});
+			if (!_defInfoComponents) {
+				const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
+				const withDef = require("sourcegraph/def/withDef").default;
+				_defInfoComponents = {
+					main: withResolvedRepoRev(withDef(require("sourcegraph/def/DefInfo").default)),
+				};
+			}
+			callback(null, _defInfoComponents);
 		},
 	},
 	{
 		path: rel.def,
 		keepScrollPositionOnRouteChangeKey: "file",
 		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				if (!_defComponents) {
-					const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
-					_defComponents = {
-						main: require("sourcegraph/blob/BlobLoader").default,
-						repoNavContext: withResolvedRepoRev(require("sourcegraph/def/DefNavContext").default),
-					};
-				}
-				callback(null, _defComponents);
-			});
+			if (!_defComponents) {
+				const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
+				_defComponents = {
+					main: require("sourcegraph/blob/BlobLoader").default,
+					repoNavContext: withResolvedRepoRev(require("sourcegraph/def/DefNavContext").default),
+				};
+			}
+			callback(null, _defComponents);
 		},
 		blobLoaderHelpers: [withLastSrclibDataVersion, withDefAndRefLocations, blobWithDefBox],
 	},
