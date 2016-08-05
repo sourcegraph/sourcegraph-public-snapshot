@@ -1,5 +1,9 @@
 import {rel} from "sourcegraph/app/routePatterns";
 import {SearchSettings} from "sourcegraph/search/index";
+import ForgotPassword from "sourcegraph/user/ForgotPassword";
+import Login from "sourcegraph/user/Login";
+import ResetPassword from "sourcegraph/user/ResetPassword";
+import Signup from "sourcegraph/user/Signup";
 
 export interface User {
 	UID: number;
@@ -62,7 +66,7 @@ export const routes: Array<ReactRouter.PlainRoute> = [
 		path: rel.login,
 		getComponents: (location, callback) => {
 			callback(null, {
-				main: require("sourcegraph/user/Login").default,
+				main: Login,
 			});
 		},
 	},
@@ -70,7 +74,7 @@ export const routes: Array<ReactRouter.PlainRoute> = [
 		path: rel.signup,
 		getComponents: (location, callback) => {
 			callback(null, {
-				main: require("sourcegraph/user/Signup").default,
+				main: Signup,
 			});
 		},
 	},
@@ -78,7 +82,7 @@ export const routes: Array<ReactRouter.PlainRoute> = [
 		path: rel.forgot,
 		getComponents: (location, callback) => {
 			callback(null, {
-				main: require("sourcegraph/user/ForgotPassword").default,
+				main: ForgotPassword,
 			});
 		},
 	},
@@ -86,7 +90,7 @@ export const routes: Array<ReactRouter.PlainRoute> = [
 		path: rel.reset,
 		getComponents: (location, callback) => {
 			callback(null, {
-				main: require("sourcegraph/user/ResetPassword").default,
+				main: ResetPassword,
 			});
 		},
 	},

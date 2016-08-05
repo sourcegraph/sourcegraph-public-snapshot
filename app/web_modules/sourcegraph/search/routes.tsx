@@ -3,13 +3,14 @@
 import {rel} from "sourcegraph/app/routePatterns";
 import {Route} from "react-router";
 import {searchScopes} from "sourcegraph/search/index";
+import GlobalSearchMain from "sourcegraph/search/GlobalSearchMain";
 
 export const routes: any[] = [
 	{
 		path: rel.search,
 		getComponent: (location, callback) => {
 			callback(null, {
-				main: require("sourcegraph/search/GlobalSearchMain").default,
+				main: GlobalSearchMain,
 				navContext: null,
 			});
 		},

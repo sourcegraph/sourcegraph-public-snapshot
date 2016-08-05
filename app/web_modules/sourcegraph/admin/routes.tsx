@@ -2,6 +2,8 @@
 
 import {Route} from "react-router";
 import {rel} from "sourcegraph/app/routePatterns";
+import BuildsList from "sourcegraph/build/BuildsList";
+import CoverageDashboard from "sourcegraph/admin/CoverageDashboard";
 
 const globalBuilds: ReactRouter.PlainRoute = {
 	path: rel.builds,
@@ -12,7 +14,7 @@ const globalBuilds: ReactRouter.PlainRoute = {
 	},
 	getComponents: (location, callback) => {
 		callback(null, {
-			main: require("sourcegraph/build/BuildsList").default,
+			main: BuildsList,
 		});
 	},
 };
@@ -20,8 +22,7 @@ const globalBuilds: ReactRouter.PlainRoute = {
 const coverage: ReactRouter.PlainRoute = {
 	path: rel.coverage,
 	getComponents: (location, callback) => {
-		require("sourcegraph/admin/CoverageDashboard")
-			.then(m => callback(null, {main: m.default}));
+		callback(null, {main: CoverageDashboard});
 	},
 };
 

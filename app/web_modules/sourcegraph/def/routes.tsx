@@ -6,9 +6,14 @@ import {rel} from "sourcegraph/app/routePatterns";
 import {defPath} from "sourcegraph/def/index";
 import {Route} from "react-router";
 import {Def} from "sourcegraph/def/index";
+import DefInfo from "sourcegraph/def/DefInfo";
+import DefNavContext from "sourcegraph/def/DefNavContext";
+import BlobLoader from "sourcegraph/blob/BlobLoader";
 import withLastSrclibDataVersion from "sourcegraph/blob/withLastSrclibDataVersion";
 import withDefAndRefLocations from "sourcegraph/def/withDefAndRefLocations";
 import blobWithDefBox from "sourcegraph/def/blobWithDefBox";
+import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
+import withDef from "sourcegraph/def/withDef";
 
 let _defInfoComponents;
 let _defComponents;
@@ -19,10 +24,8 @@ export const routes: any[] = [
 		repoNavContext: false,
 		getComponents: (location, callback) => {
 			if (!_defInfoComponents) {
-				const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
-				const withDef = require("sourcegraph/def/withDef").default;
 				_defInfoComponents = {
-					main: withResolvedRepoRev(withDef(require("sourcegraph/def/DefInfo").default)),
+					main: withResolvedRepoRev(withDef(DefInfo)),
 				};
 			}
 			callback(null, _defInfoComponents);
@@ -33,10 +36,9 @@ export const routes: any[] = [
 		keepScrollPositionOnRouteChangeKey: "file",
 		getComponents: (location, callback) => {
 			if (!_defComponents) {
-				const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
 				_defComponents = {
-					main: require("sourcegraph/blob/BlobLoader").default,
-					repoNavContext: withResolvedRepoRev(require("sourcegraph/def/DefNavContext").default),
+					main: BlobLoader,
+					repoNavContext: withResolvedRepoRev(DefNavContext),
 				};
 			}
 			callback(null, _defComponents);

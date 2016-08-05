@@ -2,12 +2,13 @@
 
 import {rel} from "sourcegraph/app/routePatterns";
 import {Route} from "react-router";
+import DashboardContainer from "sourcegraph/dashboard/DashboardContainer";
 
 export const routes: any[] = [
 	{
 		getComponent: (location, callback) => {
 			callback(null, {
-				main: require("sourcegraph/dashboard/DashboardContainer").default,
+				main: DashboardContainer,
 				navContext: null,
 			});
 		},

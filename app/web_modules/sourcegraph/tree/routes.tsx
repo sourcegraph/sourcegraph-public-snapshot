@@ -5,6 +5,10 @@ import {makeRepoRev} from "sourcegraph/repo/index";
 import {rel} from "sourcegraph/app/routePatterns";
 import {urlToRepo, urlToRepoRev} from "sourcegraph/repo/routes";
 import {RouterState} from "react-router";
+import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
+import withTree from "sourcegraph/tree/withTree";
+import TreeMain from "sourcegraph/tree/TreeMain";
+import RepoNavContext from "sourcegraph/tree/RepoNavContext";
 
 let _components;
 
@@ -33,11 +37,9 @@ export const routes = [
 		},
 		getComponents: (location: Location, callback: Function) => {
 			if (!_components) {
-				const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
-				const withTree = require("sourcegraph/tree/withTree").default;
 				_components = {
-					main: withResolvedRepoRev(withTree(require("sourcegraph/tree/TreeMain").default)),
-					repoNavContext: require("sourcegraph/tree/RepoNavContext").default,
+					main: withResolvedRepoRev(withTree(TreeMain)),
+					repoNavContext: RepoNavContext,
 				};
 			}
 			callback(null, _components);

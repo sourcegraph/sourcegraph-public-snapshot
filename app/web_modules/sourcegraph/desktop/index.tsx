@@ -1,7 +1,7 @@
 // tslint:disable
 
 import * as React from "react";
-import {NotInBeta} from "sourcegraph/desktop/DesktopHome";
+import {default as DesktopHome, NotInBeta} from "sourcegraph/desktop/DesktopHome";
 
 import {rel} from "sourcegraph/app/routePatterns";
 import {inBeta} from "sourcegraph/user/index";
@@ -13,7 +13,7 @@ export const routes = [
 	{
 		getComponent: (location, callback) => {
 			callback(null, {
-				main: require("sourcegraph/desktop/DesktopHome").default,
+				main: DesktopHome,
 			});
 		},
 		path: rel.desktopHome,

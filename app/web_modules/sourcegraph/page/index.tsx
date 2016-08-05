@@ -3,6 +3,14 @@
 import {Route} from "react-router";
 import {rel, abs} from "sourcegraph/app/routePatterns";
 import * as invariant from "invariant";
+import AboutPage from "sourcegraph/page/AboutPage";
+import BetaPage from "sourcegraph/page/BetaPage";
+import ContactPage from "sourcegraph/page/ContactPage";
+import SecurityPage from "sourcegraph/page/SecurityPage";
+import PricingPage from "sourcegraph/page/PricingPage";
+import TermsPage from "sourcegraph/page/TermsPage";
+import PrivacyPage from "sourcegraph/page/PrivacyPage";
+import BrowserExtFaqsPage from "sourcegraph/home/BrowserExtFaqsPage";
 
 // isPage returns whether the location path refers to one of these
 // static pages.
@@ -21,7 +29,7 @@ export const routes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				navContext: null,
-				main: require("sourcegraph/page/AboutPage").default,
+				main: AboutPage,
 			});
 		},
 	},
@@ -30,7 +38,7 @@ export const routes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				navContext: null,
-				main: require("sourcegraph/page/BetaPage").default,
+				main: BetaPage,
 			});
 		},
 	},
@@ -39,7 +47,7 @@ export const routes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				navContext: null,
-				main: require("sourcegraph/page/ContactPage").default,
+				main: ContactPage,
 			});
 		},
 	},
@@ -48,7 +56,7 @@ export const routes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				navContext: null,
-				main: require("sourcegraph/page/SecurityPage").default,
+				main: SecurityPage,
 			});
 		},
 	},
@@ -57,7 +65,7 @@ export const routes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				navContext: null,
-				main: require("sourcegraph/page/PricingPage").default,
+				main: PricingPage,
 			});
 		},
 	},
@@ -66,7 +74,7 @@ export const routes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				navContext: null,
-				main: require("sourcegraph/page/TermsPage").default,
+				main: TermsPage,
 			});
 		},
 	},
@@ -75,7 +83,7 @@ export const routes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				navContext: null,
-				main: require("sourcegraph/page/PrivacyPage").default,
+				main: PrivacyPage,
 			});
 		},
 	},
@@ -83,7 +91,7 @@ export const routes: any[] = [
 		path: rel.browserExtFaqs,
 		getComponents: (location, callback) => {
 			callback(null, {
-				main: require("sourcegraph/home/BrowserExtFaqsPage").default,
+				main: BrowserExtFaqsPage,
 			});
 		},
 	},

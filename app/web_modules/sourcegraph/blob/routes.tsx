@@ -5,6 +5,8 @@ import urlTo from "sourcegraph/util/urlTo";
 import {makeRepoRev} from "sourcegraph/repo/index";
 import lineColBoundToHash from "sourcegraph/blob/lineColBoundToHash";
 import withLastSrclibDataVersion from "sourcegraph/blob/withLastSrclibDataVersion";
+import BlobLoader from "sourcegraph/blob/BlobLoader";
+import RepoNavContext from "sourcegraph/blob/RepoNavContext";
 
 export const routes = [
 	{
@@ -12,8 +14,8 @@ export const routes = [
 		keepScrollPositionOnRouteChangeKey: "file",
 		getComponents: (location: Location, callback: Function) => {
 			callback(null, {
-				main: require("sourcegraph/blob/BlobLoader").default,
-				repoNavContext: require("sourcegraph/blob/RepoNavContext").default,
+				main: BlobLoader,
+				repoNavContext: RepoNavContext,
 			});
 		},
 		blobLoaderHelpers: [lineColBoundToHash, withLastSrclibDataVersion],

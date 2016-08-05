@@ -3,6 +3,8 @@
 import {Route} from "react-router";
 import {rel} from "sourcegraph/app/routePatterns";
 import urlTo from "sourcegraph/util/urlTo";
+import BuildsList from "sourcegraph/build/BuildsList";
+import BuildContainer from "sourcegraph/build/BuildContainer";
 
 export const routes: ReactRouter.PlainRoute[] = [
 	{
@@ -13,7 +15,7 @@ export const routes: ReactRouter.PlainRoute[] = [
 		},
 		getComponents: (location, callback) => {
 			callback(null, {
-				main: require("sourcegraph/build/BuildsList").default,
+				main: BuildsList,
 			});
 		},
 		path: rel.builds,
@@ -21,7 +23,7 @@ export const routes: ReactRouter.PlainRoute[] = [
 	{
 		getComponents: (location, callback) => {
 			callback(null, {
-				main: require("sourcegraph/build/BuildContainer").default,
+				main: BuildContainer,
 			});
 		},
 		path: rel.build,
