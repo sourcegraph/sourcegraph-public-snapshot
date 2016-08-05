@@ -38,7 +38,7 @@ export default class RefsContainer extends Container<any, any> {
 	static propTypes = {
 		repo: React.PropTypes.string.isRequired,
 		rev: React.PropTypes.string,
-		commitID: React.PropTypes.string.isRequired,
+		commitID: React.PropTypes.string,
 		def: React.PropTypes.string.isRequired,
 		defObj: React.PropTypes.object.isRequired,
 		repoRefs: React.PropTypes.shape({
@@ -129,7 +129,7 @@ export default class RefsContainer extends Container<any, any> {
 		if (state.refs && !state.refs.Error) {
 			for (let ref of state.refs || []) {
 				if (!ref) continue;
-				let refRev = ref.Repo === state.repo ? state.commitID : ref.CommitID;
+				let refRev = ref.CommitID;
 				if (!this.filesByName[ref.File]) {
 					let file = BlobStore.files[keyForFile(ref.Repo, refRev, ref.File)] || null;
 					if (file) {
@@ -174,7 +174,7 @@ export default class RefsContainer extends Container<any, any> {
 		if (nextState.refs && nextState.refs.length > 0 && !nextState.refs.Error && (nextState.refs !== prevState.refs || nextState.shownFiles !== prevState.shownFiles)) {
 			let firstRef = nextState.refs[0]; // hack: assuming that all refs given to a RefsContainer are from the same repo and rev, thus using the first ref to determine which files we want to show
 			let repo = firstRef.Repo;
-			let rev = repo === nextState.repo ? nextState.commitID : firstRef.CommitID;
+			let rev = firstRef.CommitID;
 			for (let file of nextState.shownFiles) {
 				Dispatcher.Backends.dispatch(new BlobActions.WantFile(repo, rev, file));
 				Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(repo, rev, file));

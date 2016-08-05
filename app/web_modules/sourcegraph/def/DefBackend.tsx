@@ -122,7 +122,8 @@ const DefBackend = {
 			{
 				let info = DefStore.hoverInfos.get(action.pos);
 				if (info === null) {
-					let url = `/.api/repos/${action.pos.repo}@${action.pos.commit}/-/hover-info?file=${action.pos.file}&line=${action.pos.line}&character=${action.pos.character}`;
+					let rev = action.pos.commit ? `@${action.pos.commit}` : "";
+					let url = `/.api/repos/${action.pos.repo}${rev}/-/hover-info?file=${action.pos.file}&line=${action.pos.line}&character=${action.pos.character}`;
 					DefBackend.fetch(url)
 						.then(checkStatus)
 						.then((resp) => resp.json())
