@@ -417,11 +417,13 @@ func (t *translator) prepareWorkspace(repo, commit string) (workspace string, er
 				log.Println(err2)
 				return
 			}
+			return
 		}
 
 		// We are the latest commit, so write it as such.
 		if err := writeString(t.pathToLatest(repo), commit); err != nil {
 			log.Println(err)
+			return
 		}
 	}()
 	return workspace, nil
