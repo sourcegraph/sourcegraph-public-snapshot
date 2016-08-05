@@ -224,17 +224,8 @@ func dirExists(p string) (bool, error) {
 func (t *translator) prepareWorkspace(repo, commit string) error {
 	workspace := filepath.Join(t.WorkDir, repo, commit)
 
-	// If the workspace exists already, it has been fully prepared and we don't
-	// need to do anything.
-	exists, err := dirExists(workspace)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return nil
-	}
-
-	// Acquire ownership of repository preparation.
+	// Acquire ownership of repository preparation. Essentially this is a
+	// sync.Mutex unique to the workspace.
 	//
 	// TODO(slimsag): use a smaller timeout which propagates nicely to the
 	// frontend.
@@ -244,6 +235,16 @@ func (t *translator) prepareWorkspace(repo, commit string) error {
 		return nil
 	}
 	defer done()
+
+	// If the workspace exists already, it has been fully prepared and we don't
+	// need to do anything.
+	exists, err := dirExists(workspace)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
 
 	// Prepare the workspace by creating the directory and cloning the
 	// repository.
