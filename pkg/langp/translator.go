@@ -221,10 +221,12 @@ func dirExists(p string) (bool, error) {
 
 // prepareWorkspace prepares a new workspace for the given repository and
 // revision.
-func (t *translator) prepareWorkspace(rootDir, repo, commit string) error {
+func (t *translator) prepareWorkspace(repo, commit string) error {
+	workspace := filepath.Join(t.WorkDir, repo, commit)
+
 	// If the workspace exists already, it has been fully prepared and we don't
 	// need to do anything.
-	exists, err := dirExists(rootDir)
+	exists, err := dirExists(workspace)
 	if err != nil {
 		return err
 	}
@@ -236,7 +238,7 @@ func (t *translator) prepareWorkspace(rootDir, repo, commit string) error {
 	//
 	// TODO(slimsag): use a smaller timeout which propagates nicely to the
 	// frontend.
-	timeout, handled, done := t.preparingRepos.acquire(rootDir, 1*time.Hour)
+	timeout, handled, done := t.preparingRepos.acquire(workspace, 1*time.Hour)
 	if timeout || handled {
 		// A different request prepared the repository.
 		return nil
@@ -245,23 +247,23 @@ func (t *translator) prepareWorkspace(rootDir, repo, commit string) error {
 
 	// Prepare the workspace by creating the directory and cloning the
 	// repository.
-	if err := os.MkdirAll(rootDir, 0700); err != nil {
+	if err := os.MkdirAll(workspace, 0700); err != nil {
 		return err
 	}
-	if err := t.PrepareRepo(rootDir, repo, commit); err != nil {
+	if err := t.PrepareRepo(workspace, repo, commit); err != nil {
 		// Preparing the workspace has failed, and thus the workspace is
 		// incomplete. Remove the directory so that the next request causes
 		// preparation again (this is our best chance at keeping the workspace
 		// in a working state).
 		log.Println("preparing workspace repo:", err)
-		if err2 := os.RemoveAll(rootDir); err2 != nil {
+		if err2 := os.RemoveAll(workspace); err2 != nil {
 			log.Println(err2)
 		}
 		return err
 	}
 
 	// Acquire ownership of dependency preparation.
-	timeout, handled, done = t.preparingDeps.acquire(rootDir, 0*time.Second)
+	timeout, handled, done = t.preparingDeps.acquire(workspace, 0*time.Second)
 	if timeout || handled {
 		// A different request is preparing the dependencies.
 		return nil
@@ -270,13 +272,13 @@ func (t *translator) prepareWorkspace(rootDir, repo, commit string) error {
 	// Prepare the dependencies asynchronously.
 	go func() {
 		defer done()
-		if err := t.PrepareDeps(rootDir, repo, commit); err != nil {
+		if err := t.PrepareDeps(workspace, repo, commit); err != nil {
 			// Preparing the workspace has failed, and thus the workspace is
 			// incomplete. Remove the directory so that the next request causes
 			// preparation again (this is our best chance at keeping the workspace
 			// in a working state).
 			log.Println("preparing workspace deps:", err)
-			if err2 := os.RemoveAll(rootDir); err2 != nil {
+			if err2 := os.RemoveAll(workspace); err2 != nil {
 				log.Println(err2)
 			}
 		}
@@ -301,8 +303,7 @@ func (t *translator) serveDefinition(body []byte) (interface{}, error) {
 	}
 
 	// Determine the root path for the workspace and prepare it.
-	rootPath := filepath.Join(t.WorkDir, pos.Repo, pos.Commit)
-	err := t.prepareWorkspace(rootPath, pos.Repo, pos.Commit)
+	rootPath, err := t.prepareWorkspace(pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -355,8 +356,7 @@ func (t *translator) serveHover(body []byte) (interface{}, error) {
 	}
 
 	// Determine the root path for the workspace and prepare it.
-	rootPath := filepath.Join(t.WorkDir, pos.Repo, pos.Commit)
-	err := t.prepareWorkspace(rootPath, pos.Repo, pos.Commit)
+	rootPath, err := t.prepareWorkspace(pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -396,8 +396,7 @@ func (t *translator) serveExternalRefs(body []byte) (interface{}, error) {
 	}
 
 	// Determine the root path for the workspace and prepare it.
-	rootPath := filepath.Join(t.WorkDir, r.Repo, r.Commit)
-	err := t.prepareWorkspace(rootPath, r.Repo, r.Commit)
+	rootPath, err := t.prepareWorkspace(r.Repo, r.Commit)
 	if err != nil {
 		return nil, err
 	}
