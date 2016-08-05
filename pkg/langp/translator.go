@@ -263,16 +263,16 @@ func (t *translator) prepareWorkspace(repo, commit string) error {
 		return err
 	}
 
-	// Acquire ownership of dependency preparation.
-	timeout, handled, done = t.preparingDeps.acquire(workspace, 0*time.Second)
-	if timeout || handled {
-		// A different request is preparing the dependencies.
-		return nil
-	}
-
 	// Prepare the dependencies asynchronously.
 	go func() {
+		// Acquire ownership of dependency preparation.
+		timeout, handled, done = t.preparingDeps.acquire(workspace, 0*time.Second)
+		if timeout || handled {
+			// A different request is preparing the dependencies.
+			return nil
+		}
 		defer done()
+
 		if err := t.PrepareDeps(workspace, repo, commit); err != nil {
 			// Preparing the workspace has failed, and thus the workspace is
 			// incomplete. Remove the directory so that the next request causes
