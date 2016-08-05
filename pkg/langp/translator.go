@@ -283,6 +283,8 @@ func (t *translator) pathToLatest(repo string) string {
 
 // createWorkspace is called by prepareWorkspace and it creates the workspace
 // directory as needed.
+//
+// This method should only ever be called when t.preparingRepos is acquired.
 func (t *translator) createWorkspace(repo, commit string) (update bool, err error) {
 	workspace := t.pathToWorkspace(repo, commit)
 	subvolume := filepath.Join(t.WorkDir, repo, commit)
