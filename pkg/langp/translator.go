@@ -36,9 +36,13 @@ type Translator struct {
 	// repository into the specified workspace at a subdirectory desired by the
 	// language.
 	//
+	// If update is true, the given workspace is a copy of a prior workspace
+	// for the same repository (at e.g. an older revision) and should be
+	// updated instead of prepared from scratch (for efficiency purposes).
+	//
 	// If an error is returned, it is returned directly to the person who made
 	// the API request which triggered the preperation of the workspace.
-	PrepareRepo func(workspace, repo, commit string) error
+	PrepareRepo func(update bool, workspace, repo, commit string) error
 
 	// PrepareDeps is called when the language processor should prepare the
 	// dependencies for the given workspace/repo/commit.
@@ -47,9 +51,13 @@ type Translator struct {
 	// like downloading dependencies via 'go get', etc. into the workspace
 	// directory.
 	//
+	// If update is true, the given workspace is a copy of a prior workspace
+	// for the same repository (at e.g. an older revision) and should be
+	// updated instead of prepared from scratch (for efficiency purposes).
+	//
 	// If an error is returned, it is returned directly to the person who made
 	// the API request which triggered the preperation of the workspace.
-	PrepareDeps func(workspace, repo, commit string) error
+	PrepareDeps func(update bool, workspace, repo, commit string) error
 
 	// FileURI, if non-nil, is called to form the file URI which is sent to a
 	// language server. Provided is the repo and commit, and a file URI which
