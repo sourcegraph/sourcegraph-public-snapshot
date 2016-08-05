@@ -207,13 +207,28 @@ func (t *translator) writeResponse(w http.ResponseWriter, status int, v interfac
 	log.Printf("POST %s -> %d %s\n\tBody:     %s\n\tResponse: %s\n", path, status, http.StatusText(status), string(body), string(respBody))
 }
 
+// dirExists tells if the directory p exists or not.
+func dirExists(p string) (bool, error) {
+	info, err := os.Stat(p)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return info.IsDir(), nil
+}
+
 // prepareWorkspace prepares a new workspace for the given repository and
 // revision.
 func (t *translator) prepareWorkspace(rootDir, repo, commit string) error {
-	// Ensure the workspace directory exists.
-	_, err := os.Stat(rootDir)
-	if !os.IsNotExist(err) {
-		// Workspace exists already.
+	// If the workspace exists already, it has been fully prepared and we don't
+	// need to do anything.
+	exists, err := dirExists(rootDir)
+	if err != nil {
+		return err
+	}
+	if exists {
 		return nil
 	}
 
