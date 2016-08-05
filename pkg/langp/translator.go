@@ -4,6 +4,7 @@ package langp
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -351,12 +352,14 @@ func (t *translator) createWorkspace(repo, commit string) (update bool, err erro
 func (t *translator) prepareWorkspace(repo, commit string) (workspace string, err error) {
 	// Acquire ownership of repository preparation. Essentially this is a
 	// sync.Mutex unique to the workspace.
-	//
-	// TODO(slimsag): use a smaller timeout which propagates nicely to the
-	// frontend.
 	workspace = t.pathToWorkspace(repo, commit)
 	timeout, handled, done := t.preparingRepos.acquire(workspace, 1*time.Hour)
-	if timeout || handled {
+	if timeout {
+		// TODO(slimsag): use a smaller timeout above and ensure this error is
+		// properly handled by the frontend.
+		return "", errors.New("request timed out")
+	}
+	if handled {
 		// A different request prepared the repository.
 		return workspace, nil
 	}
