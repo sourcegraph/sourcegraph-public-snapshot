@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/user"
 	"path/filepath"
 	"strings"
@@ -20,6 +21,25 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
+
+var btrfsPresent bool
+
+func init() {
+	_, err := exec.LookPath("btrfs")
+	if err == nil {
+		btrfsPresent = true
+	} else {
+		log.Println("btrfs command not available, assuming filesystem is not btrfs")
+	}
+}
+
+func btrfsSubvolumeCreate(path string) error {
+	return Cmd("btrfs", "subvolume", "create", path).Run()
+}
+
+func btrfsSubvolumeSnapshot(subvolumePath, snapshotPath string) error {
+	return Cmd("btrfs", "subvolume", "snapshot", subvolumePath, snapshotPath).Run()
+}
 
 // Translator is an HTTP handler which translates from the Language Processor
 // REST API (defined in proto.go) directly to Sourcegraph LSP batch requests.
@@ -219,20 +239,124 @@ func dirExists(p string) (bool, error) {
 	return info.IsDir(), nil
 }
 
+// readString reads the given file and returns it's data as a string.
+func readString(filename string) (string, error) {
+	data, err := ioutil.ReadFile(filename)
+	return string(data), err
+}
+
+// writeString writes the given data string to the specified file.
+func writeString(filename string, data string) error {
+	return ioutil.WriteFile(filename, []byte(data), 0600)
+}
+
+// pathToWorkspace returns an absolute path to the workspace for the given
+// repo at a specific commit.
+func (t *translator) pathToWorkspace(repo, commit string) string {
+	// btrfs subvolumes/snapshots cannot be deleted due to Docker permissions,
+	// so we nest the directory structure one level deeper in order to have a
+	// directory which we can remove in the event of failed workspace
+	// preparation, like so:
+	//
+	//  <WorkDir>/<Repo>/<Commit>/workspace
+	//
+	// Where <Commit> is the btrfs subvolume/snapshot.
+	return filepath.Join(t.WorkDir, repo, commit, "workspace")
+}
+
+// pathToLatest returns an absolute path to the "latest" file, which holds the
+// commit of the most recently prepared workspace for the given repo.
+func (t *translator) pathToLatest(repo string) string {
+	return filepath.Join(t.WorkDir, repo, "latest")
+}
+
+// createWorkspace is called by prepareWorkspace and it creates the workspace
+// directory as needed.
+func (t *translator) createWorkspace(repo, commit string) (update bool, err error) {
+	workspace := t.pathToWorkspace(repo, commit)
+	subvolume := filepath.Join(t.WorkDir, repo, commit)
+	if !btrfsPresent {
+		// btrfs isn't present (e.g. we're a developer running an ext4 FS), so
+		// just create the directory from scratch normally.
+		if err := os.MkdirAll(workspace, 0700); err != nil {
+			return false, err
+		}
+		return false, nil
+	}
+
+	// At this point, we know that the workspace directory doesn't exist,
+	// but if the subvolume does exist then it means the workspace was
+	// removed after a previous failed attempt at preparation. We can't
+	// recreate the btrfs subvolume/snapshot due to Docker container
+	// permissions, so to resolve this we must either prepare from scratch
+	// OR copy from a previously-prepared workspace for this repo if one
+	// exists.
+	exists, err := dirExists(subvolume)
+	if err != nil {
+		return false, err
+	}
+	if exists {
+		// Prepare the workspace from scratch.
+		// TODO: Optimize this case by recursively copying an existing
+		// btrfs subvolume/snapshot if one exists for this repo. Or if we
+		// can solve the permission issue, just delete the subvolume to
+		// really start from scratch / use a clone as we would in the
+		// normal code path.
+		if err := os.Mkdir(workspace, 0700); err != nil {
+			return false, err
+		}
+		return false, err
+	}
+
+	// Create the parent directory.
+	if err := os.MkdirAll(filepath.Dir(subvolume), 0700); err != nil {
+		return false, err
+	}
+
+	// Determine whether or not we should create a snapshot of an
+	// existing btrfs subvolume/snapshot for this repository. We simply
+	// use the last-prepared commit for this repository, since that is
+	// usually (but not always) the most up-to-date. This spares us of
+	// some more complex commit-date comparison logic.
+	latestCommit, err := readString(t.pathToLatest(repo))
+	if err != nil && !os.IsNotExist(err) {
+		return false, err
+	}
+	if latestCommit != "" {
+		// We have a recently prepared workspace, so clone and update
+		// it instead of preparing a new one from scratch.
+		latestSubvolume := filepath.Join(t.WorkDir, repo, latestCommit)
+		if err := btrfsSubvolumeSnapshot(latestSubvolume, subvolume); err != nil {
+			return false, err
+		}
+		update = true
+	} else {
+		// We don't have a recently prepared workspace (we will be the
+		// first successful one), so create a new subvolume.
+		if err := btrfsSubvolumeCreate(subvolume); err != nil {
+			return false, err
+		}
+		// Create the workspace subdirectory.
+		if err := os.Mkdir(workspace, 0700); err != nil {
+			return false, err
+		}
+	}
+	return update, nil
+}
+
 // prepareWorkspace prepares a new workspace for the given repository and
 // revision.
-func (t *translator) prepareWorkspace(repo, commit string) error {
-	workspace := filepath.Join(t.WorkDir, repo, commit)
-
+func (t *translator) prepareWorkspace(repo, commit string) (workspace string, err error) {
 	// Acquire ownership of repository preparation. Essentially this is a
 	// sync.Mutex unique to the workspace.
 	//
 	// TODO(slimsag): use a smaller timeout which propagates nicely to the
 	// frontend.
+	workspace = t.pathToWorkspace(repo, commit)
 	timeout, handled, done := t.preparingRepos.acquire(workspace, 1*time.Hour)
 	if timeout || handled {
 		// A different request prepared the repository.
-		return nil
+		return workspace, nil
 	}
 	defer done()
 
@@ -240,18 +364,21 @@ func (t *translator) prepareWorkspace(repo, commit string) error {
 	// need to do anything.
 	exists, err := dirExists(workspace)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if exists {
-		return nil
+		return workspace, nil
+	}
+
+	// Create the workspace directory.
+	update, err := t.createWorkspace(repo, commit)
+	if err != nil {
+		return "", err
 	}
 
 	// Prepare the workspace by creating the directory and cloning the
 	// repository.
-	if err := os.MkdirAll(workspace, 0700); err != nil {
-		return err
-	}
-	if err := t.PrepareRepo(workspace, repo, commit); err != nil {
+	if err := t.PrepareRepo(update, workspace, repo, commit); err != nil {
 		// Preparing the workspace has failed, and thus the workspace is
 		// incomplete. Remove the directory so that the next request causes
 		// preparation again (this is our best chance at keeping the workspace
@@ -260,7 +387,7 @@ func (t *translator) prepareWorkspace(repo, commit string) error {
 		if err2 := os.RemoveAll(workspace); err2 != nil {
 			log.Println(err2)
 		}
-		return err
+		return "", err
 	}
 
 	// Prepare the dependencies asynchronously.
@@ -269,11 +396,11 @@ func (t *translator) prepareWorkspace(repo, commit string) error {
 		timeout, handled, done = t.preparingDeps.acquire(workspace, 0*time.Second)
 		if timeout || handled {
 			// A different request is preparing the dependencies.
-			return nil
+			return
 		}
 		defer done()
 
-		if err := t.PrepareDeps(workspace, repo, commit); err != nil {
+		if err := t.PrepareDeps(update, workspace, repo, commit); err != nil {
 			// Preparing the workspace has failed, and thus the workspace is
 			// incomplete. Remove the directory so that the next request causes
 			// preparation again (this is our best chance at keeping the workspace
@@ -281,10 +408,16 @@ func (t *translator) prepareWorkspace(repo, commit string) error {
 			log.Println("preparing workspace deps:", err)
 			if err2 := os.RemoveAll(workspace); err2 != nil {
 				log.Println(err2)
+				return
 			}
 		}
+
+		// We are the latest commit, so write it as such.
+		if err := writeString(t.pathToLatest(repo), commit); err != nil {
+			log.Println(err)
+		}
 	}()
-	return nil
+	return workspace, nil
 }
 
 func (t *translator) serveDefinition(body []byte) (interface{}, error) {

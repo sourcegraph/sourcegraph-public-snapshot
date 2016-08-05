@@ -2,12 +2,14 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
@@ -36,6 +38,19 @@ func prepareRepo(update bool, workspace, repo, commit string) error {
 	return langp.Clone(update, cloneURI, repoDir, commit)
 }
 
+const (
+	alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	numerals = "0123456789"
+)
+
+// safeRepoURI tells if r matches: a-zA-Z0-9/_-.
+func safeRepoURI(r string) bool {
+	for _, c := range alphabet + numerals + "/_-." {
+		r = strings.Replace(r, string(c), "", -1)
+	}
+	return len(r) == 0
+}
+
 func prepareDeps(update bool, workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
 
@@ -45,18 +60,29 @@ func prepareDeps(update bool, workspace, repo, commit string) error {
 		repo = "sourcegraph.com/sourcegraph/sourcegraph"
 	}
 
+	// Since we feed the repo into shell below, we sanitize it here. This
+	// produces errors on first clone, rather than delaying them until later
+	// on a workspace update.
+	if !safeRepoURI(repo) {
+		return fmt.Errorf("repo URI (%q) may only contain: a-zA-Z0-9/_-.", repo)
+	}
+
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
 	var c *exec.Cmd
 	if !update {
 		c = langp.Cmd("go", "get", "-d", "./...")
 	} else {
-		// Note: we use -f flag because the sourcegraph repo isn't cloned from
-		// the canonical source according go go-import meta tags:
+		// Our repository is already updated by PrepareRepo, and go get would
+		// fail on it anyway because `git pull --ff-only` doesn't work when the
+		// repository is at a specific commit / not on a branch:
 		//
-		//  package sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/go-diff/diff: sourcegraph.com/sourcegraph/sourcegraph is a custom import path for https://github.com/sourcegraph/sourcegraph, but /sourcegraph/workspace/go/sourcegraph/sourcegraph/042b3b4e624a6c291f1c3d0aebee413d0c8dd348/workspace/gopath/src/sourcegraph.com/sourcegraph/sourcegraph is checked out from ssh://git@github.com
+		// 	fatal: Not possible to fast-forward, aborting.
 		//
-		c = langp.Cmd("go", "get", "-f", "-u", "-d", "./...")
+		// So instead we list the dependencies and update any not residing in
+		// this repository.
+		shCmd := fmt.Sprintf("$(go list ./... | grep -v %s) | xargs -r go get -u -d", repo)
+		c = langp.Cmd("sh", "-c", shCmd)
 	}
 	c.Dir = repoDir
 	c.Env = []string{"PATH=" + os.Getenv("PATH"), "GOPATH=" + gopath}
