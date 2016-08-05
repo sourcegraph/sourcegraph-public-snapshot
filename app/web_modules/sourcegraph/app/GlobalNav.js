@@ -119,8 +119,8 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 						<Menu className={base.pa0} style={{width: "220px"}}>
 							<div className={`${base.pa0} ${base.mb2} ${base.mt3}`}>
 								<Heading level="7" color="cool_mid_gray">Signed in as</Heading>
-								{user.Login}
 							</div>
+							<div>{user.Login}</div>
 							<LogoutLink role="menu_item" />
 							<hr role="divider" className={base.mv3} />
 							<Link to="/settings/repos" role="menu_item">Your repositories</Link>
@@ -347,8 +347,7 @@ class SearchForm extends React.Component {
 						onKeyDown={this._handleKeyDown}
 						onClick={this._handleFocus}
 						onChange={this._handleChange} />
-						{this.props.showResultsPanel && this.state.open &&
-						<button styleName="close_icon" type="reset" onClick={this._handleReset}></button>}
+						{this.props.showResultsPanel && this.state.open && <button styleName="close_button" type="reset" onClick={this._handleReset}><CloseIcon styleName="close_icon" /></button>}
 				</form>
 				{this.props.showResultsPanel && this.state.open && <SearchResultsPanel query={this.state.query || ""} repo={this.props.repo} location={this.props.location} />}
 			</div>

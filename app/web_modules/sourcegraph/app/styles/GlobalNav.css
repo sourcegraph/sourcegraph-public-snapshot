@@ -63,8 +63,8 @@
 
 .modal-dismiss {
 	composes: cool_mid_gray_5 from colors;
-	position: relative;	
-	float: right;	
+	position: relative;
+	float: right;
 	top: -2rem;
 	right: -1.3rem;
 }
@@ -137,7 +137,7 @@
 	color: cool_mid_gray;
 }
 
-.close_icon {
+.close_button {
 	composes: hidden_ns from base;
 	border:1px solid transparent;
 	background-color: transparent;
@@ -147,11 +147,10 @@
   	cursor: pointer;
 }
 
-.close_icon:after {
-	content: "X";
-	display: block;
-	width: 15px;
-	height: 15px;
+.close_icon {
+	width: 20px;
+	height: 20px;
+	color: white;
 	background-color: #EEEEEE;
 	z-index:1;
 	right: 35px;
@@ -160,9 +159,6 @@
 	margin: auto;
 	padding: 2px;
 	border-radius: 50%;
-	text-align: center;
-	color: white;
-	font-weight: normal;
-	font-size: 10px;
 	cursor: pointer;
+	justify-content: center;
 }

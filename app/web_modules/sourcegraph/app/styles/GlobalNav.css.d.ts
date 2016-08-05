@@ -47,4 +47,5 @@ export const small_only: string;
 export const user: string;
 export const user_menu_icon: string;
 export const current_user: string;
+export const close_button: string;
 export const close_icon: string;
