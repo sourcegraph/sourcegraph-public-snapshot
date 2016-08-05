@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -38,17 +37,39 @@ func prepareRepo(update bool, workspace, repo, commit string) error {
 	return langp.Clone(update, cloneURI, repoDir, commit)
 }
 
-const (
-	alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	numerals = "0123456789"
-)
-
-// safeRepoURI tells if r matches: a-zA-Z0-9/_-.
-func safeRepoURI(r string) bool {
-	for _, c := range alphabet + numerals + "/_-." {
-		r = strings.Replace(r, string(c), "", -1)
+// updateGoDependencies updates all Go dependencies in the repository. It is
+// the same as:
+//
+//  go get -u -d ./...
+//
+// Except it does not update repoURI itself, because it has already been
+// updated by PrepareRepo and go get would run `git pull --ff-only` which,
+// because we're set to a specific commit and not a branch, fail:
+//
+// 	fatal: Not possible to fast-forward, aborting.
+//
+func updateGoDependencies(repoDir string, env []string, repoURI string) error {
+	c := exec.Command("go", "list", "./...")
+	c.Dir = repoDir
+	c.Env = env
+	out, err := c.Output()
+	if err != nil {
+		return err
 	}
-	return len(r) == 0
+	var pkgs []string
+	for _, line := range strings.Split(string(out), "\n") {
+		// TODO(slimsag): prefix isn't 100% correct because in strange cases
+		// you can have a package under the repo URI in a different repository
+		// (e.g. azul3d.org did this for a while). Generally unlikely for most
+		// packages though.
+		if line != "" && !strings.HasPrefix(line, repoURI) {
+			pkgs = append(pkgs, line)
+		}
+	}
+	if len(pkgs) == 0 {
+		return nil
+	}
+	return langp.Cmd("go", "get", "-u", "-d", strings.Join(pkgs, " ")).Run()
 }
 
 func prepareDeps(update bool, workspace, repo, commit string) error {
@@ -60,36 +81,17 @@ func prepareDeps(update bool, workspace, repo, commit string) error {
 		repo = "sourcegraph.com/sourcegraph/sourcegraph"
 	}
 
-	// Since we feed the repo into shell below, we sanitize it here. This
-	// produces errors on first clone, rather than delaying them until later
-	// on a workspace update.
-	if !safeRepoURI(repo) {
-		return fmt.Errorf("repo URI (%q) may only contain: a-zA-Z0-9/_-.", repo)
-	}
-
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
+	env := []string{"PATH=" + os.Getenv("PATH"), "GOPATH=" + gopath}
 	var c *exec.Cmd
 	if !update {
 		c = langp.Cmd("go", "get", "-d", "./...")
-	} else {
-		// Our repository is already updated by PrepareRepo, and go get would
-		// fail on it anyway because `git pull --ff-only` doesn't work when the
-		// repository is at a specific commit / not on a branch:
-		//
-		// 	fatal: Not possible to fast-forward, aborting.
-		//
-		// So instead we list the dependencies and update any not residing in
-		// this repository.
-		shCmd := fmt.Sprintf("$(go list ./... | grep -v %s) | xargs -r go get -u -d", repo)
-		c = langp.Cmd("sh", "-c", shCmd)
+		c.Dir = repoDir
+		c.Env = env
+		return c.Run()
 	}
-	c.Dir = repoDir
-	c.Env = []string{"PATH=" + os.Getenv("PATH"), "GOPATH=" + gopath}
-	if err := c.Run(); err != nil {
-		return err
-	}
-	return nil
+	return updateGoDependencies(repoDir, env, repo)
 }
 
 func fileURI(repo, commit, file string) string {

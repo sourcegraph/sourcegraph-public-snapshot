@@ -419,7 +419,7 @@ func (t *translator) prepareWorkspace(repo, commit string) (workspace string, er
 			log.Println(err)
 			return
 		}
-		if err := os.Symlink(latest, t.pathToSubvolume(repo, commit)); err != nil {
+		if err := os.Symlink(t.pathToSubvolume(repo, commit), latest); err != nil {
 			log.Println(err)
 			return
 		}
