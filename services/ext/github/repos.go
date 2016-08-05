@@ -2,7 +2,6 @@ package github
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -110,8 +109,6 @@ func (s *repos) GetByID(ctx context.Context, id int) (*sourcegraph.Repo, error) 
 	}
 	return toRepo(ghrepo), nil
 }
-
-var errInapplicableCache = errors.New("cached value cannot be used in this scenario")
 
 // getFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
