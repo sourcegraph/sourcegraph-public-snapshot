@@ -248,17 +248,6 @@ func dirExists(p string) (bool, error) {
 	return info.IsDir(), nil
 }
 
-// readString reads the given file and returns it's data as a string.
-func readString(filename string) (string, error) {
-	data, err := ioutil.ReadFile(filename)
-	return string(data), err
-}
-
-// writeString writes the given data string to the specified file.
-func writeString(filename string, data string) error {
-	return ioutil.WriteFile(filename, []byte(data), 0600)
-}
-
 // pathToWorkspace returns an absolute path to the workspace for the given
 // repo at a specific commit.
 func (t *translator) pathToWorkspace(repo, commit string) string {
@@ -273,6 +262,12 @@ func (t *translator) pathToWorkspace(repo, commit string) string {
 	// workspace subdir also gives us flexibility to store more data in the
 	// future so it will likely stick around regardless of btrfs.
 	return filepath.Join(t.WorkDir, repo, commit, "workspace")
+}
+
+// pathToSubvolume returns an absolute path to the subvolume for the given repo
+// and commit.
+func (t *translator) pathToSubvolume(repo, commit string) string {
+	return filepath.Join(t.WorkDir, repo, commit)
 }
 
 // pathToLatest returns an absolute path to the "latest" file, which holds the
@@ -323,14 +318,13 @@ func (t *translator) createWorkspace(repo, commit string) (update bool, err erro
 	// use the last-prepared commit for this repository, since that is
 	// usually (but not always) the most up-to-date. This spares us of
 	// some more complex commit-date comparison logic.
-	latestCommit, err := readString(t.pathToLatest(repo))
+	latestSubvolume := t.pathToLatest(repo)
+	_, err = os.Stat(latestSubvolume)
 	if err != nil && !os.IsNotExist(err) {
 		return false, err
-	}
-	if latestCommit != "" {
+	} else if err == nil {
 		// We have a recently prepared workspace, so clone and update
 		// it instead of preparing a new one from scratch.
-		latestSubvolume := filepath.Join(t.WorkDir, repo, latestCommit)
 		if err := btrfsSubvolumeSnapshot(latestSubvolume, subvolume); err != nil {
 			return false, err
 		}
@@ -417,11 +411,15 @@ func (t *translator) prepareWorkspace(repo, commit string) (workspace string, er
 				log.Println(err2)
 				return
 			}
-			return
 		}
 
-		// We are the latest commit, so write it as such.
-		if err := writeString(t.pathToLatest(repo), commit); err != nil {
+		// We are the latest commit, so update the symlink.
+		latest := t.pathToLatest(repo)
+		if err := os.Remove(latest); err != nil && !os.IsNotExist(err) {
+			log.Println(err)
+			return
+		}
+		if err := os.Symlink(latest, t.pathToSubvolume(repo, commit)); err != nil {
 			log.Println(err)
 			return
 		}
