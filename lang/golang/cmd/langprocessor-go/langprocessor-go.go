@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
@@ -19,7 +20,7 @@ var (
 	workDir  = flag.String("workspace", "$SGPATH/workspace/go", "where to create workspace directories")
 )
 
-func prepareRepo(workspace, repo, commit string) error {
+func prepareRepo(update bool, workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
 
 	// TODO(slimsag): find a way to pass this information from the app instead
@@ -32,10 +33,10 @@ func prepareRepo(workspace, repo, commit string) error {
 
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
-	return langp.Clone(cloneURI, repoDir, commit)
+	return langp.Clone(update, cloneURI, repoDir, commit)
 }
 
-func prepareDeps(workspace, repo, commit string) error {
+func prepareDeps(update bool, workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
 
 	// TODO(slimsag): find a way to pass this information from the app instead
@@ -46,7 +47,17 @@ func prepareDeps(workspace, repo, commit string) error {
 
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
-	c := langp.Cmd("go", "get", "-d", "./...")
+	var c *exec.Cmd
+	if !update {
+		c = langp.Cmd("go", "get", "-d", "./...")
+	} else {
+		// Note: we use -f flag because the sourcegraph repo isn't cloned from
+		// the canonical source according go go-import meta tags:
+		//
+		//  package sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/go-diff/diff: sourcegraph.com/sourcegraph/sourcegraph is a custom import path for https://github.com/sourcegraph/sourcegraph, but /sourcegraph/workspace/go/sourcegraph/sourcegraph/042b3b4e624a6c291f1c3d0aebee413d0c8dd348/workspace/gopath/src/sourcegraph.com/sourcegraph/sourcegraph is checked out from ssh://git@github.com
+		//
+		c = langp.Cmd("go", "get", "-f", "-u", "-d", "./...")
+	}
 	c.Dir = repoDir
 	c.Env = []string{"PATH=" + os.Getenv("PATH"), "GOPATH=" + gopath}
 	if err := c.Run(); err != nil {
