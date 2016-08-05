@@ -30,8 +30,8 @@ func TestTranslator(t *testing.T) {
 	ts := httptest.NewServer(New(&Translator{
 		Addr:        lspMock.Addr,
 		WorkDir:     workDir,
-		PrepareRepo: func(workspace, repo, commit string) error { return nil },
-		PrepareDeps: func(workspace, repo, commit string) error { return nil },
+		PrepareRepo: func(update bool, workspace, repo, commit string) error { return nil },
+		PrepareDeps: func(update bool, workspace, repo, commit string) error { return nil },
 		FileURI:     func(repo, commit, file string) string { return filepath.Join(repo, file) },
 	}))
 	defer ts.Close()
