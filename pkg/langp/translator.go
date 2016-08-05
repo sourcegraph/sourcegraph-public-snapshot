@@ -34,10 +34,18 @@ func init() {
 }
 
 func btrfsSubvolumeCreate(path string) error {
+	if !btrfsPresent {
+		return os.Mkdir(path, 0700)
+	}
 	return Cmd("btrfs", "subvolume", "create", path).Run()
 }
 
 func btrfsSubvolumeSnapshot(subvolumePath, snapshotPath string) error {
+	if !btrfsPresent {
+		// TODO: This isn't portable outside *nix, but it does spare us a lot
+		// of complex logic. Maybe find a good package to copy a directory.
+		return Cmd("cp", "-r", subvolumePath, snapshotPath).Run()
+	}
 	return Cmd("btrfs", "subvolume", "snapshot", subvolumePath, snapshotPath).Run()
 }
 
@@ -275,14 +283,6 @@ func (t *translator) pathToLatest(repo string) string {
 func (t *translator) createWorkspace(repo, commit string) (update bool, err error) {
 	workspace := t.pathToWorkspace(repo, commit)
 	subvolume := filepath.Join(t.WorkDir, repo, commit)
-	if !btrfsPresent {
-		// btrfs isn't present (e.g. we're a developer running an ext4 FS), so
-		// just create the directory from scratch normally.
-		if err := os.MkdirAll(workspace, 0700); err != nil {
-			return false, err
-		}
-		return false, nil
-	}
 
 	// At this point, we know that the workspace directory doesn't exist,
 	// but if the subvolume does exist then it means the workspace was
