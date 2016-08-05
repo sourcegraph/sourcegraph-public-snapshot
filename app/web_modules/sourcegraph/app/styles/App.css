@@ -12,20 +12,21 @@ the entire viewport height.
 */
 .main_container {
 	display: flex;
-	min-height: 100vh;
+	height: 100vh;
 	flex-direction: column;
 	width: 100%;
-	overflow: auto;
 }
 .main_content {
 	display: flex;
 	flex-direction: column;
-	flex: 1 0 auto;
+	flex: 1;
+	overflow-y: scroll;
 }
 
 .breadcrumb {
 	composes: bb ph3 pv2 from base;
 	composes: b__cool_pale_gray_8 bg_white from colors;
+	flex-shrink: 0;
 }
 
 .main_container_homepage {
@@ -33,6 +34,10 @@ the entire viewport height.
 }
 
 /* Responsive type scaling */
+
+body {
+	overflow-y: hidden;
+}
 
 html {
 	color: c_cool_gray;
@@ -44,4 +49,8 @@ html {
 	html {
 		font-size: mobile_base_size;
 	}
+}
+
+.inner_main_content {
+    flex: 1;
 }

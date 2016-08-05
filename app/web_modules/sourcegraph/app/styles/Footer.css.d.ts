@@ -3,6 +3,7 @@
 
 export const base: string;
 export const colors: string;
+export const footerHeight: string;
 export const footer: string;
 export const box: string;
 export const left_box: string;

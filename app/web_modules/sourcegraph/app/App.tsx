@@ -85,10 +85,12 @@ export default class App extends React.Component<any, any> {
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
 				<GlobalNav params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
 				<div styleName="main_content">
-					{this.props.navContext && <div styleName="breadcrumb">{this.props.navContext}</div>}
-					{this.props.main}
+					<div styleName="inner_main_content">
+						{this.props.navContext && <div styleName="breadcrumb">{this.props.navContext}</div>}
+						{this.props.main}
+					</div>
+					{!(this.context as any).signedIn && <Footer />}
 				</div>
-				{!(this.context as any).signedIn && <Footer />}
 			</div>
 		);
 	}

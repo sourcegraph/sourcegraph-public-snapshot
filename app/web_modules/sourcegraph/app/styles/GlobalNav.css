@@ -30,14 +30,8 @@
 	composes: bb cf from base;
 	composes: bg_white b__cool_mid_gray_3 from colors;
 	z-index: 100;
-	position: fixed;
 	top: 0;
 	width: 100%;
-}
-
-.navbar + * {
-	/* Account for navbar's position: fixed. */
-	padding-top: navbarHeight;
 }
 
 @value logo_height 21.508px;

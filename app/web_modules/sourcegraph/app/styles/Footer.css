@@ -1,6 +1,8 @@
 @value base "sourcegraph/components/styles/_base.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 
+@value footerHeight: 62px;
+
 .footer {
 	composes: bt ph2 pv2 from base;
 	composes: b__light_gray from colors;
@@ -9,6 +11,7 @@
 	justify-content: center;
 	align-items: center;
 	z-index: 100;
+	flex: 0 0 footerHeight;
 }
 
 .box {
