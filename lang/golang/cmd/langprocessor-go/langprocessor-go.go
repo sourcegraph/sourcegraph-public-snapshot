@@ -69,7 +69,8 @@ func updateGoDependencies(repoDir string, env []string, repoURI string) error {
 	if len(pkgs) == 0 {
 		return nil
 	}
-	return langp.Cmd("go", "get", "-u", "-d", strings.Join(pkgs, " ")).Run()
+	args := append([]string{"get", "-u", "-d"}, pkgs...)
+	return langp.Cmd("go", args...).Run()
 }
 
 func prepareDeps(update bool, workspace, repo, commit string) error {
