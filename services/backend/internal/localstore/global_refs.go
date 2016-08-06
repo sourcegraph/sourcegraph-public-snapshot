@@ -138,12 +138,12 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		}
 		innerSelectSQL += " AND repo in (" + strings.Join(repoBindVars, ",") + ")"
 	}
-	innerSelectSQL += fmt.Sprintf(" LIMIT %s OFFSET %s", arg(opt.PerPageOrDefault()), arg(opt.Offset()))
-
 	// HACK: if this sql returns a result set that includes only repos the user doesn't have read access to
 	// (even if there are others on subsequent pages that the user DOES have access to) then all results
 	// will be filtered away. This breaks pagination and manifests in a UI which may show no usages.
-	sql = "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM (" + innerSelectSQL + ") res WHERE repo!='github.com/sourcegraph/sourcegraph' AND repo!='sourcegraph/sourcegraph'"
+	innerSelectSQL += fmt.Sprintf(" AND repo!='github.com/sourcegraph/sourcegraph' AND repo!='sourcegraph/sourcegraph' LIMIT %s OFFSET %s", arg(opt.PerPageOrDefault()), arg(opt.Offset()))
+
+	sql = "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM (" + innerSelectSQL + ") res"
 	orderBySQL := " ORDER BY repo_count DESC, count DESC"
 	sql += orderBySQL
 
