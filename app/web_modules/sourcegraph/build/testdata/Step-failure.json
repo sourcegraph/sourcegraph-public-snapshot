@@ -7,7 +7,7 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "step_title danger",
+						"className": "undefined undefined",
 						"children": [
 							"Bash (indexing)",
 							{

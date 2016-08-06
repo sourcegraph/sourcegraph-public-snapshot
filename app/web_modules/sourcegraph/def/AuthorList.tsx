@@ -20,10 +20,10 @@ export default CSSModules(function AuthorList({
 	return (
 		<div className={className}>
 			{authors && authors.length > 0 &&
-				<ol styleName={`list${horizontal ? "_horizontal" : ""}`}>
+				<ol className={horizontal ? styles.list_horizontal : styles.list}>
 					{horizontal && <PencilIcon title="Authors" className={styles.pencil_icon} />}
 					{authors.map((a, i) => (
-						<li key={i} styleName={`person${horizontal ? "_horizontal" : ""}`}>
+						<li key={i} className={horizontal ? styles.person_horizontal : styles.person}>
 							<div className={styles.badge_wrapper}>
 								<span className={styles.badge}>{Math.round(100 * a.BytesProportion) || "< 1"}%</span>
 							</div>

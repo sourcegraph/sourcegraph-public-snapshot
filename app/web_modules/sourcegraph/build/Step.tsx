@@ -82,7 +82,7 @@ class Step extends Component<any, any> {
 	render(): JSX.Element | null {
 		return (
 			<Collapsible collapsed={true}>
-				<div styleName={`step_title ${taskClass(this.state.task)}`}>
+				<div className={`${styles.step_title} ${taskClass(this.state.task)}`}>
 					{this.state.task.Label}
 					<span style={{float: "right"}}>{elapsed(this.state.task)}</span>
 				</div>

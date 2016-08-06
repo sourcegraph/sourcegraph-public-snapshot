@@ -17,7 +17,7 @@ class BuildHeader extends Component<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<header styleName={`header ${buildClass(this.state.build)}`}>
+			<header className={`${styles.header} ${buildClass(this.state.build)}`}>
 				<div className={styles.number}>#{this.state.build.ID}</div>
 				<div className={styles.status}>{buildStatus(this.state.build)}</div>
 				<div className={styles.date}>

@@ -29,7 +29,7 @@ class TopLevelTask extends Component<any, any> {
 
 		return (
 			<div>
-				<div styleName={`top_level_task_header`}>
+				<div className={styles.top_level_task_header}>
 					<span className={styles.header_label}>{task.Label}</span>
 					<span className={styles.elapsed_label}>{elapsed(task)}</span>
 				</div>

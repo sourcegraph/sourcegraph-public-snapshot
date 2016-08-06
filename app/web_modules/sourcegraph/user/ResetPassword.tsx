@@ -56,7 +56,7 @@ class ResetPassword extends Container<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<form styleName="full_page form" onSubmit={this._handleSubmit}>
+			<form className={`${styles.full_page} ${styles.form}`} onSubmit={this._handleSubmit}>
 				<Helmet title="Reset Password" />
 				<h1>Reset your password</h1>
 				<label>

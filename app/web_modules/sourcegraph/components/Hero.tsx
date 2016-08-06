@@ -15,17 +15,26 @@ class Hero extends React.Component<any, any> {
 	render(): JSX.Element | null {
 		const {color, pattern, children, className} = this.props;
 
-		let styleName = "hero ";
-		styleName += color ? color : "white";
-		styleName += pattern ? ` bg_img_${pattern}` : "";
-
 		return (
-			<div className={className} styleName={styleName}>
+			<div className={`${styles.hero} ${colorClasses[color] || styles.white} ${patternClasses[pattern] || ""} ${className}`}>
 				{children}
 			</div>
 		);
 	}
 }
 
+const colorClasses = {
+	"transparent": styles.transparent,
+	"white": styles.white,
+	"purple": styles.purple,
+	"blue": styles.blue,
+	"dark": styles.dark,
+	"green": styles.green,
+};
+
+const patternClasses = {
+	"objects": styles.bg_img_objects,
+	"objects_fade": styles.bg_img_objects_fade,
+};
 
 export default CSSModules(Hero, styles, {allowMultiple: true});

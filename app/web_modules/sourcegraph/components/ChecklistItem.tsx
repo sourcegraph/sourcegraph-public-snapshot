@@ -20,10 +20,10 @@ class ChecklistItem extends React.Component<any, any> {
 		const {className, children, complete, actionText, actionOnClick} = this.props;
 		return (
 			<div className={`${className} ${styles.item}`}>
-				<div styleName={`check_${complete ? "complete" : "incomplete"}`}>
+				<div className={complete ? styles.check_complete : styles.check_incomplete}>
 					{complete && <Icon icon="check-green" width="50%" className={styles.check} />}
 				</div>
-				<div styleName={`content${complete ? "_complete" : ""}`}>{children}</div>
+				<div className={complete ? styles.content_complete : styles.content}>{children}</div>
 				{actionText && !complete && <div className={styles.buttonContainer}>
 					<Button color="green" onClick={actionOnClick} className={base.ph2}>{actionText}</Button>
 				</div>}

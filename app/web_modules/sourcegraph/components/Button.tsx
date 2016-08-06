@@ -32,6 +32,7 @@ function Button(props: {
 		color = "normal",
 		onClick,
 		imageUrl,
+		className,
 		children,
 	} = props;
 	const other = Object.assign({}, props);
@@ -44,14 +45,10 @@ function Button(props: {
 	delete other.onClick;
 	delete other.imageUrl;
 	delete other.children;
-
-	let style = `${outline ? "outline_" : "solid_"}${color}`;
-	if (disabled || loading) style = `${style} disabled`;
-	if (block) style = `${style} block`;
-	style = `${style} ${size ? size : ""}`;
+	delete other.className;
 
 	return (
-		<button {...(other as any)} styleName={style}
+		<button {...(other as any)} className={`${colorClass(color, outline)} ${(disabled || loading) ? styles.disabled : ""} ${block ? styles.block : ""} ${size ? sizeClasses[size] : ""} ${className || ""}`}
 			onClick={onClick}>
 			{imageUrl ? <img className={styles.button_image} src={imageUrl} /> : ""}
 			{loading && <Loader stretch={Boolean(block)} {...props}/>}
@@ -59,5 +56,33 @@ function Button(props: {
 		</button>
 	);
 }
+
+function colorClass(color: string, outline: boolean): string {
+	switch (color) {
+	case "normal":
+		return outline ? styles.outline_normal : styles.solid_normal;
+	case "disabled":
+		return outline ? "" : styles.solid_disabled;
+	case "blue":
+		return outline ? styles.outline_blue : styles.solid_blue;
+	case "purple":
+		return outline ? styles.outline_purple : styles.solid_purple;
+	case "green":
+		return outline ? styles.outline_green : styles.solid_green;
+	case "red":
+		return outline ? styles.outline_red : styles.solid_red;
+	case "orange":
+		return outline ? styles.outline_orange : styles.solid_orange;
+	case "white":
+		return outline ? "" : styles.solid_white;
+	default:
+		return outline ? styles.outline_normal : styles.solid_normal;
+	}
+}
+
+const sizeClasses = {
+	"large": styles.large,
+	"small": styles.small,
+};
 
 export default CSSModules(Button, styles, {allowMultiple: true});

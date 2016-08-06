@@ -8,19 +8,15 @@ class Table extends React.Component<any, any> {
 	static propTypes = {
 		className: React.PropTypes.string,
 		children: React.PropTypes.any,
-		tableStyle: React.PropTypes.string, //  default, bordered
+		bordered: React.PropTypes.bool,
 		style: React.PropTypes.object,
 	};
-
-	static defaultProps = {
-		tableStyle: "normal",
-	};
-
+	
 	render(): JSX.Element | null {
-		const {className, children, tableStyle, style} = this.props;
+		const {className, children, bordered, style} = this.props;
 
 		return (
-			<table className={className} styleName={tableStyle} style={style} cellSpacing="0">
+			<table className={`${className} ${bordered ? styles.bordered : ""}`} style={style} cellSpacing="0">
 				{children}
 			</table>
 		);

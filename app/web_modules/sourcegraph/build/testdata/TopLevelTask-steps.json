@@ -6,7 +6,6 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "top_level_task_header",
 						"children": [
 							{
 								"type": "span",

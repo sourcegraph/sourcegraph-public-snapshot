@@ -105,7 +105,7 @@ class RepoRefsContainer extends Container<any, any> {
 					</Link>
 					<List listStyle="node" className={base.mt2} style={{marginLeft: "6px"}}>
 					{repoRefs.Files && repoRefs.Files.length > 0 && repoRefs.Files.map((file, j) =>
-							<li key={j} className={`${base.mv3} ${base.pt1}`} styleName="cool_mid_gray f7 node_list_item">
+							<li key={j} className={`${base.mv3} ${base.pt1} ${styles.cool_mid_gray} ${styles.f7} ${styles.node_list_item}`}>
 								{file.Count} references in <Link to={urlToBlob(repoRefs.Repo, null, file.Path)} onClick={this._clickedReferencedBlob.bind(this)}>{file.Path}</Link>
 							</li>)
 					}
@@ -115,7 +115,7 @@ class RepoRefsContainer extends Container<any, any> {
 				{refLocs && refLocs.RepoRefs &&
 					(fileCount >= refLocsPerPage || refLocs.TotalRepos > refLocs.RepoRefs.length || !refLocs.TotalRepos) &&
 					!refLocs.StreamTerminated &&
-					<a onClick={this._onNextPage} styleName="f7 link_icon">
+					<a onClick={this._onNextPage} className={`${styles.f7} ${styles.link_icon}`}>
 						{this.state.nextPageLoading ?
 							<strong>Loading <Loader className={base.mr2} /> </strong> :
 							<strong>View more references <DownPointer className={`${styles.icon_cool_mid_gray} ${base.ml1}`} width={9} /></strong>

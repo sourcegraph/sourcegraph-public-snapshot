@@ -20,11 +20,16 @@ class List extends React.Component<any, any> {
 		const {className, children, listStyle} = this.props;
 
 		return (
-			<ul className={className} styleName={`${listStyle}`} style={this.props.style}>
+			<ul className={`${listStyleClasses[listStyle] || styles.normal} ${className}`} style={this.props.style}>
 				{children}
 			</ul>
 		);
 	}
 }
+
+const listStyleClasses = {
+	"normal": styles.normal,
+	"node": styles.node,
+};
 
 export default CSSModules(List, styles, {allowMultiple: true});

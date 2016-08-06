@@ -7,7 +7,7 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "step_title warning",
+						"className": "undefined undefined",
 						"children": [
 							"Warning: Can't automatically generate CI build config for C, Shell, C++, D, GAS, Logos, Perl, Nemerle; please create a .sg-drone.yml file",
 							{

@@ -42,7 +42,7 @@ class ForgotPassword extends Container<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<form styleName="full_page form" onSubmit={this._handleSubmit}>
+			<form className={`${styles.full_page} ${styles.form}`} onSubmit={this._handleSubmit}>
 				<Helmet title="Forgot Password" />
 				<h1>Forgot your password?</h1>
 				<label>

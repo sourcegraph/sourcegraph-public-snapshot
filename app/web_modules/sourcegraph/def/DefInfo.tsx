@@ -251,7 +251,7 @@ class DefInfo extends Container<any, any> {
 		let defLine = this._getDefLine(defObj);
 
 		return (
-			<FlexContainer styleName="bg_cool_pale_gray_2 flex_grow">
+			<FlexContainer className={`${styles.bg_cool_pale_gray_2} ${styles.flex_grow}`}>
 				<div className={`${styles.container_fixed} ${base.mv3}`}>
 					{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
 					<Helmet title={defTitleOK(defObj) ? `${defTitle(defObj)} · ${trimRepo(repo)}` : trimRepo(repo)} />
@@ -325,7 +325,7 @@ class DefInfo extends Container<any, any> {
 								</div>
 							}
 
-							<div styleName="f7 cool_mid_gray">
+							<div className={`${styles.f7} ${styles.cool_mid_gray}`}>
 								{defObj && defObj.Repo && <Link to={urlToRepo(defObj.Repo)} className={styles.link_subtle} onClick={this._viewRepoClicked.bind(this)}>{defObj.Repo}</Link>}
 								&nbsp; &middot; &nbsp;
 								<Link title="View definition in code" to={defBlobUrl} onClick={this._viewDefinitionClicked.bind(this)} className={styles.link_subtle}>View definition</Link>

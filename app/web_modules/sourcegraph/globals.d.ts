@@ -79,12 +79,6 @@ declare module "recharts" {
 	export var ReferenceLine: any;
 }
 
-declare namespace JSX {
-	interface IntrinsicAttributes {
-		styleName?: string,
-	}
-}
-
 declare module "expect.js" {
 	export default function(arg: any): any;
 }

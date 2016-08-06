@@ -29,8 +29,8 @@ class Stepper extends React.Component<any, any> {
 		return steps.map((step, i) => {
 			if (i < stepsComplete) {
 				return (
-					<span styleName={`step step_complete line_${color}`} key={i}>
-						<span styleName={`step_node_complete node_${color}`}>
+					<span className={`${styles.step} ${styles.step_complete} ${lineColorClasses[color] || styles.line_green}`} key={i}>
+						<span className={`${styles.step_node_complete} ${nodeColorClasses[color] || styles.node_green}`}>
 							<Icon icon="check" width="16px" className={styles.check} />
 						</span>
 						<span className={styles.step_text}>{step}</span>
@@ -38,7 +38,7 @@ class Stepper extends React.Component<any, any> {
 				);
 			}
 			return (
-				<span styleName="step step_incomplete" key={i}>
+				<span className={`${styles.step} ${styles.step_incomplete}`} key={i}>
 					<span className={styles.step_node_incomplete} />
 					<span className={styles.step_text}>{step}</span>
 				</span>
@@ -50,5 +50,19 @@ class Stepper extends React.Component<any, any> {
 		return <div className={`${this.props.className} ${styles.stepper}`}>{this.renderSteps()}</div>;
 	}
 }
+
+const lineColorClasses = {
+	"green": styles.line_green,
+	"blue": styles.line_blue,
+	"purple": styles.line_purple,
+	"orange": styles.line_orange,
+};
+
+const nodeColorClasses = {
+	"green": styles.node_green,
+	"blue": styles.node_blue,
+	"purple": styles.node_purple,
+	"orange": styles.node_orange,
+};
 
 export default CSSModules(Stepper, styles, {allowMultiple: true});

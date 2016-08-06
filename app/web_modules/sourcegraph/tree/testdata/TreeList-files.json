@@ -19,7 +19,7 @@
 								"type": "",
 								"key": "f:/repo@rev/-/tree/p1",
 								"props": {
-									"styleName": "list_item parent_dir",
+									"className": "undefined undefined",
 									"to": "/repo@rev/-/tree/p1",
 									"children": [
 										".."
@@ -32,7 +32,7 @@
 								"type": "",
 								"key": "f:/repo@rev/-/blob/p1/p2/f3",
 								"props": {
-									"styleName": "list_item ",
+									"className": "undefined ",
 									"to": "/repo@rev/-/blob/p1/p2/f3",
 									"children": [
 										{

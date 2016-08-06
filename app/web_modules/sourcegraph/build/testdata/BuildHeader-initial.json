@@ -2,7 +2,7 @@
 	"renderOutput": {
 		"type": "header",
 		"props": {
-			"styleName": "header normal",
+			"className": "undefined undefined",
 			"children": [
 				{
 					"type": "div",

@@ -7,7 +7,7 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "step_title info",
+						"className": "undefined undefined",
 						"children": [
 							{
 								"type": "span",

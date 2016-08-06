@@ -26,12 +26,44 @@ class Heading extends React.Component<any, any> {
 		const {className, children, level, color, underline, align, style} = this.props;
 
 		return (
-			<div className={className} styleName={`h${level} ${color ? color : ""} ${align ? align : ""}`} style={style}>
+			<div className={`${levelClasses[level] || styles.h3} ${colorClasses[color] || ""} ${alignClasses[align] || ""} ${className}`} style={style}>
 				{children}<br />
-				{underline && <hr styleName={`line l_${underline}`} />}
+				{underline && <hr className={`${styles.line} ${underlineClasses[underline]}`} />}
 			</div>
 		);
 	}
 }
+
+const levelClasses = {
+	"1": styles.h1,
+	"2": styles.h2,
+	"3": styles.h3,
+	"4": styles.h4,
+	"5": styles.h5,
+	"6": styles.h6,
+	"7": styles.h7,
+};
+
+const colorClasses = {
+	"purple": styles.purple,
+	"blue": styles.blue,
+	"green": styles.green,
+	"orange": styles.orange,
+	"cool_mid_gray": styles.cool_mid_gray,
+};
+
+const alignClasses = {
+	"left": styles.left,
+	"right": styles.right,
+	"center": styles.center,
+};
+
+const underlineClasses = {
+	"blue": styles.l_blue,
+	"purple": styles.l_purple,
+	"white": styles.l_white,
+	"orange": styles.l_orange,
+	"green": styles.l_green,
+};
 
 export default CSSModules(Heading, styles, {allowMultiple: true});

@@ -10,7 +10,7 @@ import {CloseIcon, TriangleLeftIcon, TriangleRightIcon, MagnifyingGlassIcon, Fil
 
 import BuildStore from "sourcegraph/build/BuildStore";
 import * as BuildActions from "sourcegraph/build/BuildActions";
-import {buildStatus, buildClass} from "sourcegraph/build/Build";
+import {buildStatus, buildColor} from "sourcegraph/build/Build";
 import {urlToBuilds} from "sourcegraph/build/routes";
 import {urlToRepoRev} from "sourcegraph/repo/routes";
 import {urlToBlob} from "sourcegraph/blob/routes";
@@ -142,9 +142,9 @@ class CoverageDrilldown extends Container<any, any> {
 		return this.formatDelta(this.props.defScore(nextSummary) - this.props.defScore(prevSummary));
 	}
 
-	deltaStyle(delta) {
-		if (delta.indexOf("+") === 0) return "delta_increase";
-		if (delta.indexOf("-") === 0) return "delta_decrease";
+	deltaStyle(delta): string {
+		if (delta.indexOf("+") === 0) return styles.delta_increase;
+		if (delta.indexOf("-") === 0) return styles.delta_decrease;
 		return "";
 	}
 
@@ -153,7 +153,7 @@ class CoverageDrilldown extends Container<any, any> {
 			const blobURL = urlToBlob(this.state.drilldown.Repo, this.state.drilldown.Rev, file.Path);
 			return (<div key={i}>
 				<div className={styles.file_drilldown_row}>
-					<div styleName={`file_drilldown_header${this.props.refScore(file) <= 0.75 ? "_uncovered" : ""}`}>
+					<div className={this.props.refScore(file) <= 0.75 ? styles.file_drilldown_header_uncovered : styles.file_drilldown_header}>
 						<div className={styles.filepath}>{file.Path}</div>
 						<div className={styles.file_stats}>{`Idents (${file.Idents}) Refs (${this.formatScore(this.props.refScore(file))}%) Defs (${this.formatScore(this.props.defScore(file))}%)`}</div>
 					</div>
@@ -214,7 +214,7 @@ class CoverageDrilldown extends Container<any, any> {
 								<tr key={i}>
 									<td className={styles.data}>
 										{builds && builds.length > 0 && <Link to={urlToBuilds(source.Repo)}>
-											<Label color={buildClass(builds[0])} className={styles.build_label}>{buildStatus(builds[0])}</Label>
+											<Label color={buildColor(builds[0])} className={styles.build_label}>{buildStatus(builds[0])}</Label>
 											</Link>
 										}
 										<Link to={urlToRepoRev(source.Repo, source.Rev)}>{source.Repo}</Link>
@@ -225,11 +225,11 @@ class CoverageDrilldown extends Container<any, any> {
 									<td className={styles.data}>{summary ? summary.Idents : "---"}</td>
 									<td className={styles.data}>
 										{summary ? this.formatScore(this.props.refScore(summary)) : "---"}
-										<span styleName={this.deltaStyle(refDelta)}>{refDelta}</span>
+										<span className={this.deltaStyle(refDelta)}>{refDelta}</span>
 									</td>
 									<td className={styles.data}>
 										{summary ? this.formatScore(this.props.defScore(summary)) : "---"}
-										<span styleName={this.deltaStyle(defDelta)}>{defDelta}</span>
+										<span className={this.deltaStyle(defDelta)}>{defDelta}</span>
 									</td>
 								</tr>
 							);

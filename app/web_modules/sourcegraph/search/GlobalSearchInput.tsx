@@ -39,12 +39,12 @@ function positionCursorAtEndIfIconClicked(ev: MouseEvent) {
 
 function GlobalSearchInput(props) {
 	// Omit styles prop so we don't clobber Input's own style mapping.
-	const passProps = Object.assign({}, props, {styleName: undefined, styles: undefined}); // eslint-disable-line no-undefined
+	const passProps = Object.assign({}, props, {className: undefined, styles: undefined}); // eslint-disable-line no-undefined
 
 	return (
-		<div styleName="flex_fill relative" className={base.mr3}>
+		<div className={`${styles.flex_fill} ${styles.relative} ${base.mr3}`}>
 			{props.icon &&
-				<Search width={16} style={{top: "11px", left: "10px"}} styleName="absolute cool_mid_gray_fill layer_btm" />
+				<Search width={16} style={{top: "11px", left: "10px"}} className={`${styles.absolute} ${styles.cool_mid_gray_fill} ${styles.layer_btm}`} />
 			}
 			<Input
 				{...passProps}

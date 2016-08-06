@@ -53,16 +53,16 @@ export default class App extends React.Component<any, any> {
 
 	constructor(props, context) {
 		super(props);
-		let styleName = "main_container";
-		if (!context.signedIn && location.pathname === "/") styleName = "main_container_homepage";
+		let className = styles.main_container;
+		if (!context.signedIn && location.pathname === "/") className = styles.main_container_homepage;
 		this._handleSourcegraphDesktop = this._handleSourcegraphDesktop.bind(this);
 		this.state = {
-			styleName: styleName,
+			className: className,
 		};
 	}
 
 	state = {
-		styleName: "",
+		className: "",
 	};
 
 	componentDidMount() {
@@ -81,7 +81,7 @@ export default class App extends React.Component<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<div styleName={this.state.styleName}>
+			<div className={this.state.className}>
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
 				<GlobalNav params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
 				<div className={styles.main_content} id="scroller">

@@ -10,19 +10,28 @@ class Label extends React.Component<any, any> {
 		className: React.PropTypes.string,
 		style: React.PropTypes.object,
 		color: React.PropTypes.string,
-		outline: React.PropTypes.bool,
 		children: React.PropTypes.any,
 	};
 
 	render(): JSX.Element | null {
 		return (
 			<span className={this.props.className} style={this.props.style}>
-				<span styleName={`${this.props.outline ? "outline_" : ""}${this.props.color || "normal"}`}>
+				<span className={`${colorClasses[this.props.color] || styles.normal}`}>
 					{this.props.children}
 				</span>
 			</span>
 		);
 	}
 }
+
+const colorClasses = {
+	"normal": styles.normal,
+	"primary": styles.primary,
+	"success": styles.success,
+	"info": styles.info,
+	"warning": styles.warning,
+	"danger": styles.danger,
+	"purple": styles.purple,
+};
 
 export default CSSModules(Label, styles, {allowMultiple: true});

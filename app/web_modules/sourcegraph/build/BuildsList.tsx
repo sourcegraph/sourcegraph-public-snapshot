@@ -131,7 +131,7 @@ class BuildsList extends Container<any, any> {
 						<span className={styles.list_elapsed}>Elapsed</span>
 					</div>,
 					...this.state.builds.map((build, i) =>
-						<div key={i} styleName={`list_item ${buildClass(build)}`}>
+						<div key={i} className={`${styles.list_item} ${buildClass(build)}`}>
 							<span className={styles.list_id}>
 								{!build.StartedAt &&
 									<span>{build.ID}</span>

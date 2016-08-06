@@ -52,8 +52,7 @@ class ExamplesContainer extends Container<any, any> {
 				</Heading>
 				<Panel
 					hoverLevel="low"
-					styleName="full_width_sm b__cool_pale_gray"
-					className={base.ba}>
+					className={`${styles.full_width_sm} ${styles.b__cool_pale_gray} ${base.ba}`}>
 					<div className={this.props.className}>
 						{!refLocs && <div className={typography.tc}> <Loader className={base.mv4} /></div>}
 						{refLocs && !refLocs.RepoRefs && <i>No examples found</i>}

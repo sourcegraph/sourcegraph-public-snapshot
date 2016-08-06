@@ -124,7 +124,7 @@ class TableComponent extends React.Component<any, any> {
 						<TabPanel>
 							<div className={base.pa4}>
 								<Heading level="7" className={base.mb3} color="cool_mid_gray">Default table style</Heading>
-								<Table style={{width: "100%"}} tableStyle="bordered">
+								<Table style={{width: "100%"}} bordered={true}>
 									<thead>
 										<tr>
 											<td>Name</td>
@@ -161,7 +161,7 @@ class TableComponent extends React.Component<any, any> {
 								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
 {
 	`
-<Table style={{width: "100%"}} tableStyle="bordered">
+<Table style={{width: "100%"}} bordered={true}>
 	<thead>
 		<tr>
 			<td>Name</td>

@@ -86,17 +86,17 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 				</LocationStateModal>
 			}
 
-			<div styleName="flex flex_fill flex_center tl" className={base.bn}>
-				{!isHomepage && <Link to="/" styleName="logo_link flex_fixed">
+			<div className={`${styles.flex} ${styles.flex_fill} ${styles.flex_center} ${styles.tl} ${base.bn}`}>
+				{!isHomepage && <Link to="/" className={`${styles.logo_link} ${styles.flex_fixed}`}>
 					{showLogoMarkOnly ?
-						<Logo styleName="logo logomark"
+						<Logo className={`${styles.logo} ${styles.logomark}`}
 							width="21px"
 							type="logomark"/> :
 						<span>
-							<Logo styleName="logo logomark small_only"
+							<Logo className={`${styles.logo} ${styles.logomark} ${styles.small_only}`}
 								width="21px"
 								type="logomark"/>
-							<Logo styleName="logo not_small_only"
+							<Logo className={`${styles.logo} ${styles.not_small_only}`}
 								width="144px"
 								type="logotype"/>
 						</span>
@@ -111,7 +111,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal className={styles.icon_ellipsis} title="Your editor could not identify the symbol"/>}
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 1 && <CheckIcon className={styles.icon_check} title="Sourcegraph successfully looked up symbol" />}
 
-				{user && <div styleName="flex flex_fixed" className={`${base.pv2} ${base.ph3}`}>
+				{user && <div className={`${styles.flex} ${styles.flex_fixed} ${base.pv2} ${base.ph3}`}>
 					<Popover left={true}>
 						<div className={styles.user}>
 							{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <div>{user.Login}</div>}

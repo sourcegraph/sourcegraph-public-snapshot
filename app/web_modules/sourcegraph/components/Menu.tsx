@@ -14,7 +14,7 @@ class Menu extends React.Component<any, any> {
 
 	renderMenuItems() {
 		return React.Children.map(this.props.children, function(ch: React.ReactElement<any>) {
-			return <div key={ch.props} styleName={`${ch.props.role ? ch.props.role : "inactive"}`}>{React.cloneElement(ch)}</div>;
+			return <div key={ch.props} className={roleStyle(ch.props.role)}>{React.cloneElement(ch)}</div>;
 		});
 	}
 
@@ -23,5 +23,17 @@ class Menu extends React.Component<any, any> {
 	}
 }
 
+function roleStyle(role: string): string {
+	switch (role) {
+	case "menu_item":
+		return styles.menu_item;
+	case "divider":
+		return styles.divider;
+	case "inactive":
+		return styles.inactive;
+	default:
+		return styles.inactive;
+	}
+}
 
 export default CSSModules(Menu, styles);

@@ -51,7 +51,7 @@ class Integrations extends Component<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<div styleName={this.props.location.state && this.props.location.state.modal === "integrations" ? "" : "container"}>
+			<div className={this.props.location.state && this.props.location.state.modal === "integrations" ? "" : styles.container}>
 				<div className={styles.menu}>
 					<Heading level="7" color="cool_mid_gray">Install an editor plugin</Heading>
 					<p>Choose your editor to download the right plugin and get instructions on installation.</p>

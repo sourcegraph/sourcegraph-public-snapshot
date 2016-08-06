@@ -7,7 +7,7 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "step_title success",
+						"className": "undefined undefined",
 						"children": [
 							"Clone",
 							{

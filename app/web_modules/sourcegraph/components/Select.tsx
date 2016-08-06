@@ -34,12 +34,12 @@ class Select extends React.Component<any, any> {
 					required={true}
 					style={style}
 					defaultValue={defaultValue}
-					styleName={`select ${error ? "border_red" : "border_neutral"} ${block ? "block" : ""} `}
+					className={`${styles.select} ${error ? styles.border_red : styles.border_neutral} ${block ? styles.block : ""} `}
 					placeholder={placeholder ? placeholder : ""}>
 					{children}
 				</select>
 				<DownPointer style={{marginLeft: "-28px"}} width={11} className={styles.icon} />
-				{helperText && <em styleName="small block" className={base.mt2}>{helperText}</em>}
+				{helperText && <em className={`${styles.small} ${styles.block} ${base.mt2}`}>{helperText}</em>}
 				{errorText &&
 					<div className={`${styles.red} ${base.mv2}`}>
 						<Alert width={16} className={`${base.mr2} ${styles.red_fill}`} style={{marginTop: "-4px"}} />

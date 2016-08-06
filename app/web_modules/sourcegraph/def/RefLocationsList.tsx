@@ -47,7 +47,7 @@ class RefLocationsList extends React.Component<any, any> {
 				{defTitleOK(def) && <Helmet title={`${defTitle(def)} · ${trimRepo(this.props.repo)}`} />}
 				{refLocs.RepoRefs && refLocs.RepoRefs.map((repoRef, i) => (
 					this.props.showMax && i >= this.props.showMax ? null : <div key={i} className={styles.all_refs}>
-						<header styleName={this.props.repo === repoRef.Repo ? "b" : ""}>
+						<header className={this.props.repo === repoRef.Repo ? styles.b : ""}>
 							<span className={styles.refs_count}>{repoRef.Count}</span> <span>{repoRef.Repo}</span>
 						</header>
 					</div>

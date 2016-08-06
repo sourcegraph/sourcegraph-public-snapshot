@@ -11,7 +11,6 @@
 							{
 								"type": "header",
 								"props": {
-									"styleName": "b",
 									"children": [
 										{
 											"type": "span",

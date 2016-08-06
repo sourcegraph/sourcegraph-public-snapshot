@@ -34,7 +34,7 @@ class RepoNavContext extends Component<any, any> {
 						splat: [this.state.params.splat[0], pathParts.slice(0, i).join("/")],
 					}))}
 					key={i}
-					styleName={isLast ? "active" : "inactive"}>
+					className={isLast ? styles.active : styles.inactive}>
 					{component}
 				</Link>
 			),

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import {formatDuration} from "sourcegraph/util/TimeAgo";
+import * as styles from "./styles/Build.css";
 
 export function updatedAt(b) {
 	return b.EndedAt || b.StartedAt || b.CreatedAt || null;
@@ -21,6 +22,22 @@ export function buildStatus(b) {
 export function buildClass(b) {
 	switch (buildStatus(b)) {
 	case "Killed":
+		return styles.danger;
+	case "Warnings":
+		return styles.warning;
+	case "Failed":
+		return styles.danger;
+	case "Succeeded":
+		return styles.success;
+	case "Started":
+		return styles.info;
+	}
+	return styles.normal;
+}
+
+export function buildColor(b) {
+	switch (buildStatus(b)) {
+	case "Killed":
 		return "danger";
 	case "Warnings":
 		return "warning";
@@ -35,11 +52,11 @@ export function buildClass(b) {
 }
 
 export function taskClass(task) {
-	if (task.Warnings) return "warning";
-	if (task.Failure && !task.Skipped) return "danger";
-	if (!task.Success && !task.Failure && !task.Skipped) return "info";
-	if (task.Success && !task.Skipped) return "success";
-	return "normal";
+	if (task.Warnings) return styles.warning;
+	if (task.Failure && !task.Skipped) return styles.danger;
+	if (!task.Success && !task.Failure && !task.Skipped) return styles.info;
+	if (task.Success && !task.Skipped) return styles.success;
+	return styles.normal;
 }
 
 export function elapsed(buildOrTask) {

@@ -29,14 +29,14 @@ class Tabs extends React.Component<any, any> {
 				});
 			}
 			return React.cloneElement(child, {
-				styleName: `item-${this.props.direction}`,
+				className: this.props.direction === "vertical" ? styles.item_vertical : styles.item_horizontal,
 			});
 		});
 	}
 
 	render(): JSX.Element | null {
 		const {direction, className, style} = this.props;
-		return <div styleName={`container ${direction}`} className={className} style={style}>{this._childrenWithProps()}</div>;
+		return <div className={`${styles.container} ${direction === "vertical" ? styles.vertical : styles.horizontal} ${className}`} style={style}>{this._childrenWithProps()}</div>;
 	}
 }
 

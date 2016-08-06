@@ -157,7 +157,7 @@ class TreeList extends Container<TreeListProps, TreeListState> {
 
 	_listItems(): Array<any> {
 		const items = this.state.fileResults;
-		const emptyItem = <div styleName="list_item list_item_empty" key="_nofiles"><i>No matches.</i></div>;
+		const emptyItem = <div className={`${styles.list_item} ${styles.list_item_empty}`} key="_nofiles"><i>No matches.</i></div>;
 		if (!items || items.length === 0) return [emptyItem];
 
 		let list: any[] = [];
@@ -172,7 +172,7 @@ class TreeList extends Container<TreeListProps, TreeListState> {
 
 			let key = `f:${itemURL}`;
 			list.push(
-				<Link styleName={`list_item ${item.isParentDirectory ? "parent_dir" : ""}`}
+				<Link className={`${styles.list_item} ${item.isParentDirectory ? styles.parent_dir : ""}`}
 					to={itemURL}
 					key={key}>
 					{icon}

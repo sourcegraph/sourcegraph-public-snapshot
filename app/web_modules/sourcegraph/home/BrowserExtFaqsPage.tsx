@@ -49,7 +49,7 @@ class BrowserExtFaqsPage extends React.Component<any, any> {
 						<div className={styles.p}>Yep - Sourcegraph indexes popular public repositories written in supported languages, and you'll be able to use jump to def on those repositories. Don't see a public repository you'd like indexed? Sign in at <Link to="https://sourcegraph.com">sourcegraph.com</Link>, and the next time you visit that <a id="signin"/>repository on GitHub, we'll start indexing it for you.</div>
 					</div>
 
-					<div styleName={hash === "#signin" ? "faqs_div_selected" : "faqs_div"}>
+					<div className={hash === "#signin" ? styles.faqs_div_selected : styles.faqs_div}>
 						<Heading level="3" underline="blue">How come I can't see my private code on my private repositories?</Heading>
 						<div className={styles.p}> You must be signed in on Sourcegraph.com and link your GitHub account to access your indexed private repositories. Sign in or
 						sign up below with GitHub OAuth.</div>
@@ -59,7 +59,7 @@ class BrowserExtFaqsPage extends React.Component<any, any> {
 						</div>
 					</div>
 
-					<div styleName={hash === "#enable" ? "faqs_div_selected" : "faqs_div"}>
+					<div className={hash === "#enable" ? styles.faqs_div_selected : styles.faqs_div}>
 						<Heading level="3" underline="blue">How do I use the browser extension with private repositories?</Heading>
 						<p className={styles.p}> Sourcegraph indexes repositories that you have enabled. <Link to="https://sourcegraph.com/settings/repos">
 						Check your repository settings</Link> if you have not enabled below.</p>
@@ -74,7 +74,7 @@ class BrowserExtFaqsPage extends React.Component<any, any> {
 					</div>
 
 					<a id="build"/>
-					<div styleName={hash === "#build" ? "faqs_div_selected" : "faqs_div"}>
+					<div className={hash === "#build" ? styles.faqs_div_selected : styles.faqs_div}>
 						<Heading level="3" underline="blue">Troubleshooting</Heading>
 						<p className={styles.p}> Sourcegraph runs static analysis on your code. The most common reasons your code might not be analyzed are 1) it's in the build queue, and may take some more time; 2) the file is an unsupported language; 3) the project doesn't build, or we don't support the build system in question. If you think you are seeing a bug, please report it at<a href="mailto:support@sourcegraph.com"> support@sourcegraph.com</a>.</p>
 					</div>

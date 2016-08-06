@@ -33,7 +33,7 @@ class RepoLink extends React.Component<any, any> {
 					<Link to={this.props.rev ? urlToRepoRev(this.props.repo, this.props.rev) : urlToRepo(this.props.repo)}
 						title={trimmedPath}
 						key={i}
-						styleName={isLast ? "active" : "inactive"}
+						className={isLast ? styles.active : styles.inactive}
 						onClick={() => (this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_CLICK, "RepoClicked", {repoName: trimmedPath})}>
 						{component}
 					</Link> :
