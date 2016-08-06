@@ -42,7 +42,6 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 
 	if (location.pathname === "/styleguide") return <span />;
 	const repoSplat = repoParam(params.splat);
-	console.log("HRER", colors.shadow_gray === colors.shadow_gray);
 	let repo = repoSplat ? repoPath(repoSplat) : null;	return (
 		<nav
 			id="global-nav"
