@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import styles from "./styles/dropdown.css";
-import base from "./styles/_base.css";
+import * as styles from "./styles/dropdown.css";
+import * as base from "./styles/_base.css";
 import {CheckIcon} from "sourcegraph/components/Icons";
 import {DownPointer} from "sourcegraph/components/symbols/index";
 

@@ -34,5 +34,3 @@ export const plan_cta_noop: string;
 export const details: string;
 export const details_list: string;
 export const details_cumulative: string;
-
-export default {} as any;

@@ -28,5 +28,3 @@ export const def: string;
 export const authors: string;
 export const icon: string;
 export const full_width_sm: string;
-
-export default {} as any;

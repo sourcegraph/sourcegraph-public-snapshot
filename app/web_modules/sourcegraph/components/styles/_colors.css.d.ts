@@ -416,5 +416,3 @@ export const fill_black_05: string;
 export const fill_black_025: string;
 export const fill_black_0125: string;
 export const fill_transparent: string;
-
-export default {} as any;

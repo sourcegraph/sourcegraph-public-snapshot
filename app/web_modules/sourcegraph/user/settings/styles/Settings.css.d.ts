@@ -13,5 +13,3 @@ export const container: string;
 export const main: string;
 export const nav: string;
 export const panel: string;
-
-export default {} as any;

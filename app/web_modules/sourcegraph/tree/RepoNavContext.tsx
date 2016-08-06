@@ -9,7 +9,7 @@ import urlTo from "sourcegraph/util/urlTo";
 import breadcrumb from "sourcegraph/util/breadcrumb";
 
 import CSSModules from "react-css-modules";
-import styles from "sourcegraph/components/styles/breadcrumb.css";
+import * as styles from "sourcegraph/components/styles/breadcrumb.css";
 
 class RepoNavContext extends Component<any, any> {
 	static propTypes = {

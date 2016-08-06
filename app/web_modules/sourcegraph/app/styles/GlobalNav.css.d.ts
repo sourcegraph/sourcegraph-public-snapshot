@@ -50,5 +50,3 @@ export const user_menu_icon: string;
 export const current_user: string;
 export const close_button: string;
 export const close_icon: string;
-
-export default {} as any;

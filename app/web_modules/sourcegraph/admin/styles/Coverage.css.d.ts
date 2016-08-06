@@ -41,5 +41,3 @@ export const unresolved_tokens: string;
 export const unresolved_idents: string;
 export const unresolved_refs: string;
 export const unresolved_header: string;
-
-export default {} as any;

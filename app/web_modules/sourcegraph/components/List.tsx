@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import styles from "./styles/list.css";
+import * as styles from "./styles/list.css";
 
 class List extends React.Component<any, any> {
 	static propTypes = {

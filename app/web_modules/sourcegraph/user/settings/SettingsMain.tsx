@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import styles from "./styles/Settings.css";
+import * as styles from "./styles/Settings.css";
 import {Panel} from "sourcegraph/components/index";
 
 function SettingsMain(props) {

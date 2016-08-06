@@ -1,7 +1,7 @@
 // tslint:disable
 
 import * as React from "react";
-import styles from "sourcegraph/components/styles/hero.css";
+import * as styles from "sourcegraph/components/styles/hero.css";
 import CSSModules from "react-css-modules";
 
 class Hero extends React.Component<any, any> {

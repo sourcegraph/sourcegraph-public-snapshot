@@ -6,7 +6,7 @@ import Helmet from "react-helmet";
 import CSSModules from "react-css-modules";
 import Container from "sourcegraph/Container";
 import UserStore from "sourcegraph/user/UserStore";
-import styles from "./styles/Dashboard.css";
+import * as styles from "./styles/Dashboard.css";
 import {locationForSearch} from "sourcegraph/search/routes";
 import GlobalSearchInput from "sourcegraph/search/GlobalSearchInput";
 import {Button, Logo} from "sourcegraph/components/index";
@@ -141,12 +141,12 @@ class DashboardContainer extends Container<any, any> {
 						<Button styleName="search_button" type="button" color="blue">Find usage examples</Button>
 					</div>
 
-					{<TitledSection title="Top searches" className={styles["top_queries_panel"]}>
+					{<TitledSection title="Top searches" className={styles.top_queries_panel}>
 						{langSelected && <Queries langs={this.state.langs} onSelectQuery={this._onSelectQuery} />}
 						{!langSelected && <p styleName="notice">Select a language below to get started.</p>}
 					</TitledSection>}
 
-					{<TitledSection title="Search options" className={styles["search_settings_panel"]}>
+					{<TitledSection title="Search options" className={styles.search_settings_panel}>
 						<SearchSettings location={this.props.location} styleName="search_settings" />
 					</TitledSection>}
 				</div>

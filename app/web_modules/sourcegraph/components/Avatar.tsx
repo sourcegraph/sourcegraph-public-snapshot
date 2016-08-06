@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import styles from "./styles/avatar.css";
+import * as styles from "./styles/avatar.css";
 
 const PLACEHOLDER_IMAGE = "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
 

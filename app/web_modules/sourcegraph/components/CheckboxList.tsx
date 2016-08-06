@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import styles from "./styles/checkboxList.css";
+import * as styles from "./styles/checkboxList.css";
 
 class CheckboxList extends React.Component<any, any> {
 	static propTypes = {

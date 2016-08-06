@@ -8,10 +8,10 @@ import {Avatar, Popover, Menu, Logo, Heading} from "sourcegraph/components/index
 import {CloseIcon} from "sourcegraph/components/Icons";
 import LogoutLink from "sourcegraph/user/LogoutLink";
 import CSSModules from "react-css-modules";
-import styles from "./styles/GlobalNav.css";
-import base from "sourcegraph/components/styles/_base.css";
-import colors from "sourcegraph/components/styles/_colors.css";
-import typography from "sourcegraph/components/styles/_typography.css";
+import * as styles from "./styles/GlobalNav.css";
+import * as base from "sourcegraph/components/styles/_base.css";
+import * as colors from "sourcegraph/components/styles/_colors.css";
+import * as typography from "sourcegraph/components/styles/_typography.css";
 
 import {LoginForm} from "sourcegraph/user/Login";
 import BetaInterestForm from "sourcegraph/home/BetaInterestForm";
@@ -42,12 +42,12 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 
 	if (location.pathname === "/styleguide") return <span />;
 	const repoSplat = repoParam(params.splat);
-	console.log("HRER", colors["shadow_gray"] === colors.shadow_gray);
+	console.log("HRER", colors.shadow_gray === colors.shadow_gray);
 	let repo = repoSplat ? repoPath(repoSplat) : null;	return (
 		<nav
 			id="global-nav"
 			styleName="navbar"
-			className={colors["shadow_gray"]} role="navigation"
+			className={colors.shadow_gray} role="navigation"
 			style={shouldHide ? {visibility: "hidden"} : {}}>
 
 			{location.state && location.state.modal === "login" &&
@@ -106,7 +106,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 
 				<div
 					styleName="flex_fill"
-					className={`${base["b__dotted"]} ${base.bn} ${base.brw2} ${colors["b__cool_pale_gray"]}`}>
+					className={`${base.b__dotted} ${base.bn} ${base.brw2} ${colors.b__cool_pale_gray}`}>
 					{location.pathname !== "/" && <StyledSearchForm repo={repo} location={location} router={router} showResultsPanel={location.pathname !== `/${rel.search}`} />}
 				</div>
 
@@ -135,9 +135,9 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 							</LocationStateToggleLink>
 							<hr role="divider" className={base.mt3} />
 							<div styleName="cool_mid_gray" className={`${base.pv1} ${base.mb1} ${typography.tc}`}>
-								<Link to="/security" className={`${typography.f7} ${typography["link_subtle"]} ${base.pr3}`} styleName="cool_mid_gray">Security</Link>
-								<Link to="/-/privacy" className={`${typography.f7} ${typography["link_subtle"]} ${base.pr3}`} styleName="cool_mid_gray">Privacy</Link>
-								<Link to="/-/terms" className={`${typography.f7} ${typography["link_subtle"]}`}>Terms</Link>
+								<Link to="/security" className={`${typography.f7} ${typography.link_subtle} ${base.pr3}`} styleName="cool_mid_gray">Security</Link>
+								<Link to="/-/privacy" className={`${typography.f7} ${typography.link_subtle} ${base.pr3}`} styleName="cool_mid_gray">Privacy</Link>
+								<Link to="/-/terms" className={`${typography.f7} ${typography.link_subtle}`}>Terms</Link>
 							</div>
 						</Menu>
 					</Popover>

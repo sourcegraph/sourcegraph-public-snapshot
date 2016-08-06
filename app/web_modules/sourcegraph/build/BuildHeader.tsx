@@ -6,7 +6,7 @@ import Component from "sourcegraph/Component";
 import TimeAgo from "sourcegraph/util/TimeAgo";
 import {buildStatus, buildClass, elapsed} from "sourcegraph/build/Build";
 import CSSModules from "react-css-modules";
-import styles from "./styles/Build.css";
+import * as styles from "./styles/Build.css";
 
 class BuildHeader extends Component<any, any> {
 	reconcileState(state, props) {

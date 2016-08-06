@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import CSSModules from "react-css-modules";
-import styles from "./styles/label.css";
+import * as styles from "./styles/label.css";
 
 class Label extends React.Component<any, any> {
 	static propTypes = {

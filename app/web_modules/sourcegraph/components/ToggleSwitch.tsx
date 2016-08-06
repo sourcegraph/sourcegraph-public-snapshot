@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import styles from "./styles/toggleSwitch.css";
+import * as styles from "./styles/toggleSwitch.css";
 
 class ToggleSwitch extends React.Component<any, any> {
 	static propTypes = {

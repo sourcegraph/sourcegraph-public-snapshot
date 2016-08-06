@@ -11,5 +11,3 @@ export const right_box: string;
 export const link: string;
 export const logo_mark: string;
 export const item: string;
-
-export default {} as any;

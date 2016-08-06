@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import styles from "./styles/header.css";
+import * as styles from "./styles/header.css";
 import Loader from "./Loader";
 
 class Header extends React.Component<any, any> {

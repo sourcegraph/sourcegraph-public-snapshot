@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import styles from "./styles/stepper.css";
+import * as styles from "./styles/stepper.css";
 import Icon from "./Icon";
 
 // @TODO(chexee): Doesn't scale well with large step labels. Keep 'em short for now.

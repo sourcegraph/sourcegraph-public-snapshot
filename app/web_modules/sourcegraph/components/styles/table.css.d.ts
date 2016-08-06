@@ -6,5 +6,3 @@ export const colors: string;
 export const c_cool_gray_2: string;
 export const normal: string;
 export const bordered: string;
-
-export default {} as any;

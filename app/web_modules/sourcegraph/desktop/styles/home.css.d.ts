@@ -5,5 +5,3 @@ export const base: string;
 export const typography: string;
 export const colors: string;
 export const label_blue: string;
-
-export default {} as any;

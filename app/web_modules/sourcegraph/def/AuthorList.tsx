@@ -6,7 +6,7 @@ import {Avatar} from "sourcegraph/components/index";
 import {PencilIcon} from "sourcegraph/components/Icons";
 import {DefAuthor} from "sourcegraph/def/index";
 import CSSModules from "react-css-modules";
-import styles from "./styles/AuthorList.css";
+import * as styles from "./styles/AuthorList.css";
 
 export default CSSModules(function AuthorList({
 	authors,

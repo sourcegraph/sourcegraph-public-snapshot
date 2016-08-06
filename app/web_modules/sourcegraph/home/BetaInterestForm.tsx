@@ -2,11 +2,11 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import styles from "./styles/BetaInterestForm.css";
+import * as styles from "./styles/BetaInterestForm.css";
 import {Button, Input, CheckboxList} from "sourcegraph/components/index";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as UserActions from "sourcegraph/user/UserActions";
-import base from "sourcegraph/components/styles/_base.css";
+import * as base from "sourcegraph/components/styles/_base.css";
 import {languages, editors} from "./HomeUtils";
 import {langName} from "sourcegraph/Language";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";

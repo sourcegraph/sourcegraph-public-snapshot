@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import styles from "sourcegraph/blob/styles/Blob.css";
+import * as styles from "sourcegraph/blob/styles/Blob.css";
 
 const dummyLineLengths = [
 	15, 0, 8, 10, 0, 28, 34, 0, 41, 0, 30,

@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import CSSModules from "react-css-modules";
-import styles from "./styles/modal.css";
+import * as styles from "./styles/modal.css";
 import renderedOnBody from "sourcegraph/util/renderedOnBody";
 
 class Modal extends React.Component<any, any> {

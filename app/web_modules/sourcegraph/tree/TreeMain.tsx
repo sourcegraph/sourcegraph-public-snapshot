@@ -6,7 +6,7 @@ import {urlToTree} from "sourcegraph/tree/routes";
 import {treeParam} from "sourcegraph/tree/index";
 import {trimRepo} from "sourcegraph/repo/index";
 import CSSModules from "react-css-modules";
-import styles from "./styles/Tree.css";
+import * as styles from "./styles/Tree.css";
 import Helmet from "react-helmet";
 
 class TreeMain extends React.Component<any, any> {

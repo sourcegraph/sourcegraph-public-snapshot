@@ -12,7 +12,7 @@ import {urlToTree} from "sourcegraph/tree/routes";
 import breadcrumb from "sourcegraph/util/breadcrumb";
 
 import CSSModules from "react-css-modules";
-import styles from "sourcegraph/components/styles/breadcrumb.css";
+import * as styles from "sourcegraph/components/styles/breadcrumb.css";
 
 class DefNavContext extends Container<any, any> {
 	static propTypes = {

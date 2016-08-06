@@ -4,5 +4,3 @@
 export const layout: string;
 export const colors: string;
 export const bg_near_white: string;
-
-export default {} as any;

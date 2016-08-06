@@ -6,5 +6,3 @@ export const typography: string;
 export const container: string;
 export const cloning_title: string;
 export const cloning_subtext: string;
-
-export default {} as any;

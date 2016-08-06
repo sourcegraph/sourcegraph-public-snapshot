@@ -8,9 +8,9 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import {Heading, List, Loader} from "sourcegraph/components/index";
 import "sourcegraph/blob/BlobBackend";
 import CSSModules from "react-css-modules";
-import styles from "./styles/DefInfo.css";
-import base from "sourcegraph/components/styles/_base.css";
-import typography from "sourcegraph/components/styles/_typography.css";
+import * as styles from "./styles/DefInfo.css";
+import * as base from "sourcegraph/components/styles/_base.css";
+import * as typography from "sourcegraph/components/styles/_typography.css";
 
 import {Link} from "react-router";
 import {refLocsPerPage} from "sourcegraph/def/index";

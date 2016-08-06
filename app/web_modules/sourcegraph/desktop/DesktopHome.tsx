@@ -2,11 +2,11 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import base from "sourcegraph/components/styles/_base.css";
-import layout from "sourcegraph/components/styles/_layout.css";
-import colors from "sourcegraph/components/styles/_colors.css";
-import typography from "sourcegraph/components/styles/_typography.css";
-import styles from "./styles/home.css";
+import * as base from "sourcegraph/components/styles/_base.css";
+import * as layout from "sourcegraph/components/styles/_layout.css";
+import * as colors from "sourcegraph/components/styles/_colors.css";
+import * as typography from "sourcegraph/components/styles/_typography.css";
+import * as styles from "./styles/home.css";
 
 import {Link} from "react-router";
 import {Heading, List} from "sourcegraph/components/index";
@@ -32,7 +32,7 @@ class DesktopHome extends React.Component<any, any> {
 			<div className={`${layout.containerFixed} ${base.pv5} ${base.ph4}`} style={{maxWidth: "560px"}}>
 				<Heading align="center" level="4" underline="blue">
 					See live examples, search code, and view inline
-					<br className={base["hidden_s"]} />&nbsp;documentation to write better code, faster
+					<br className={base.hidden_s} />&nbsp;documentation to write better code, faster
 				</Heading>
 
 				<img src={`${(this.context as any).siteConfig.assetsRoot}/img/sg-desktop.gif`} width="356" title="Usage examples right in your editor" alt="Usage examples right in your editor" style={{maxWidth: "100%", display: "block", imageRendering: "pixelated"}} className={base.center}/>
@@ -57,7 +57,7 @@ class DesktopHome extends React.Component<any, any> {
 				</div>
 				<div className={`${base.mt5} ${typography.f7}`}>
 					<Heading level="6">
-						<Cone width={16} className={`${colors["fill_orange"]} ${base.mr2}`} style={{
+						<Cone width={16} className={`${colors.fill_orange} ${base.mr2}`} style={{
 							verticalAlign: "baseline",
 							position: "relative",
 							top: "1px",

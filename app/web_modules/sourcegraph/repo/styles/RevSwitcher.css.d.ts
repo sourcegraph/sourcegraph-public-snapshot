@@ -22,5 +22,3 @@ export const disabled: string;
 export const detail: string;
 export const icon: string;
 export const icon_hidden: string;
-
-export default {} as any;

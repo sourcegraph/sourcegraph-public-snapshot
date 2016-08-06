@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import Component from "sourcegraph/Component";
-import s from "sourcegraph/blob/styles/Blob.css";
+import * as s from "sourcegraph/blob/styles/Blob.css";
 
 class BlobToolbar extends Component<any, any> {
 	reconcileState(state, props) {

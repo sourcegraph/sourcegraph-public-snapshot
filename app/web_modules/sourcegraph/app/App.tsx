@@ -8,7 +8,7 @@ import GlobalNav from "sourcegraph/app/GlobalNav";
 import Footer from "sourcegraph/app/Footer";
 import CSSModules from "react-css-modules";
 import "sourcegraph/components/styles/_normalize.css";
-import styles from "./styles/App.css";
+import * as styles from "./styles/App.css";
 
 import {withEventLoggerContext, withViewEventsLogged} from "sourcegraph/util/EventLogger";
 import EventLogger from "sourcegraph/util/EventLogger";

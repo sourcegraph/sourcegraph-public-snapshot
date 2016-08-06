@@ -12,7 +12,7 @@ import {urlToBlob} from "sourcegraph/blob/routes";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {fastURLToRepoDef} from "sourcegraph/def/routes";
-import s from "sourcegraph/blob/styles/Blob.css";
+import * as s from "sourcegraph/blob/styles/Blob.css";
 import {isExternalLink} from "sourcegraph/util/externalLink";
 import "sourcegraph/components/styles/code.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";

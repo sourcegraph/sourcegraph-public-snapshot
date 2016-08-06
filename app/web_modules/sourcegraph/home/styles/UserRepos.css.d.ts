@@ -7,5 +7,3 @@ export const colors: string;
 export const typography: string;
 export const container: string;
 export const repos: string;
-
-export default {} as any;

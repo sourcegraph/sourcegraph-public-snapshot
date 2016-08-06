@@ -2,5 +2,3 @@
 // tslint:disable
 
 export const border_box: string;
-
-export default {} as any;

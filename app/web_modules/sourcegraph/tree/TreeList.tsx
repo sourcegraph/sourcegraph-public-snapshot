@@ -17,7 +17,7 @@ import {Route} from "react-router";
 import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
 
 import CSSModules from "react-css-modules";
-import styles from "./styles/Tree.css";
+import * as styles from "./styles/Tree.css";
 
 const EMPTY_PATH = [];
 

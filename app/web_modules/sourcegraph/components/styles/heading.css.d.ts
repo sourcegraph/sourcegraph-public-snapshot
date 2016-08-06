@@ -26,5 +26,3 @@ export const l_orange: string;
 export const center: string;
 export const left: string;
 export const right: string;
-
-export default {} as any;

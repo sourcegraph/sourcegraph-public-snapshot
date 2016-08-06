@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import styles from "./styles/Repos.css";
-import base from "sourcegraph/components/styles/_base.css";
+import * as styles from "./styles/Repos.css";
+import * as base from "sourcegraph/components/styles/_base.css";
 import {Input, Heading, Button, ToggleSwitch} from "sourcegraph/components/index";
 import RepoLink from "sourcegraph/components/RepoLink";
 import Dispatcher from "sourcegraph/Dispatcher";

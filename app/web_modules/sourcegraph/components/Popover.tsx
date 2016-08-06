@@ -5,7 +5,7 @@ import * as React from "react";
 import Component from "sourcegraph/Component";
 
 import CSSModules from "react-css-modules";
-import styles from "./styles/popover.css";
+import * as styles from "./styles/popover.css";
 
 class Popover extends Component<any, any> {
 	constructor(props) {

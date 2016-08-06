@@ -7,7 +7,7 @@ import Component from "sourcegraph/Component";
 import Step from "sourcegraph/build/Step";
 
 import CSSModules from "react-css-modules";
-import styles from "./styles/Build.css";
+import * as styles from "./styles/Build.css";
 
 class TopLevelTask extends Component<any, any> {
 	reconcileState(state, props) {

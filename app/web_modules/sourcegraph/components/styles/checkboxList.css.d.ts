@@ -5,5 +5,3 @@ export const base: string;
 export const grid: string;
 export const fieldset: string;
 export const checkbox: string;
-
-export default {} as any;

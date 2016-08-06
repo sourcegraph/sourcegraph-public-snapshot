@@ -6,7 +6,7 @@ import Component from "sourcegraph/Component";
 import TopLevelTask from "sourcegraph/build/TopLevelTask";
 
 import CSSModules from "react-css-modules";
-import styles from "./styles/Build.css";
+import * as styles from "./styles/Build.css";
 
 class BuildTasks extends Component<any, any> {
 	constructor(props) {

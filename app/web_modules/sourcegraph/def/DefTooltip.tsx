@@ -3,7 +3,7 @@
 import * as React from "react";
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
-import s from "sourcegraph/def/styles/Def.css";
+import * as s from "sourcegraph/def/styles/Def.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {BlobPos} from "sourcegraph/def/DefActions";
 import * as DefActions from "sourcegraph/def/DefActions";

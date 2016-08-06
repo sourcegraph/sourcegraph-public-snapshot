@@ -19,7 +19,7 @@ import {trimRepo} from "sourcegraph/repo/index";
 import {Button} from "sourcegraph/components/index";
 
 import CSSModules from "react-css-modules";
-import styles from "./styles/Build.css";
+import * as styles from "./styles/Build.css";
 
 const updateIntervalMsec = 1500;
 

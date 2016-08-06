@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import styles from "sourcegraph/components/styles/tabs.css";
+import * as styles from "sourcegraph/components/styles/tabs.css";
 
 class Tabs extends React.Component<any, any> {
 	static propTypes = {

@@ -7,15 +7,15 @@ import "sourcegraph/blob/BlobBackend";
 import "whatwg-fetch";
 
 import CSSModules from "react-css-modules";
-import styles from "./styles/DefInfo.css";
-import base from "sourcegraph/components/styles/_base.css";
-import typography from "sourcegraph/components/styles/_typography.css";
+import * as styles from "./styles/DefInfo.css";
+import * as base from "sourcegraph/components/styles/_base.css";
+import * as typography from "sourcegraph/components/styles/_typography.css";
 
 import annotationsByLine from "sourcegraph/blob/annotationsByLine";
 import BlobLine from "sourcegraph/blob/BlobLine";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import BlobStore, {keyForFile, keyForAnns} from "sourcegraph/blob/BlobStore";
-import blobStyles from "sourcegraph/blob/styles/Blob.css";
+import * as blobStyles from "sourcegraph/blob/styles/Blob.css";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import DefStore from "sourcegraph/def/DefStore";
@@ -364,7 +364,7 @@ class DefInfo extends Container<any, any> {
 										<div className={`${typography.tc} ${base.center} ${base.mv5}`} style={{maxWidth: "500px"}}>
 											<EmptyNodeIllo className={base.mv3} />
 											<Heading level="5">
-												We can't find any usage examples or <br className={base["hidden_s"]} />
+												We can't find any usage examples or <br className={base.hidden_s} />
 												references for this definition
 											</Heading>
 											<p styleName="cool_mid_gray">

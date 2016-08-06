@@ -14,7 +14,7 @@ import fileLines from "sourcegraph/util/fileLines";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {computeLineStartBytes} from "sourcegraph/blob/lineFromByte";
 import annotationsByLine from "sourcegraph/blob/annotationsByLine";
-import s from "sourcegraph/blob/styles/Blob.css";
+import * as s from "sourcegraph/blob/styles/Blob.css";
 import {Def} from "sourcegraph/def/index";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 

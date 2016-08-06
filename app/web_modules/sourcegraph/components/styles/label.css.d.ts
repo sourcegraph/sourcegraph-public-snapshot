@@ -20,5 +20,3 @@ export const outline_info: string;
 export const outline_warning: string;
 export const outline_danger: string;
 export const outline_purple: string;
-
-export default {} as any;

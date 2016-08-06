@@ -6,7 +6,7 @@ import RepoLink from "sourcegraph/components/RepoLink";
 import {Label} from "sourcegraph/components/index";
 import RevSwitcherContainer from "sourcegraph/repo/RevSwitcherContainer";
 import CSSModules from "react-css-modules";
-import styles from "./styles/Repo.css";
+import * as styles from "./styles/Repo.css";
 
 class NavContext extends React.Component<any, any> {
 	static propTypes = {

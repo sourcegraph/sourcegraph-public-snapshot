@@ -3,8 +3,8 @@
 import * as React from "react";
 
 import CSSModules from "react-css-modules";
-import base from "./styles/_base.css";
-import styles from "./styles/select.css";
+import * as base from "./styles/_base.css";
+import * as styles from "./styles/select.css";
 import {DownPointer, Alert} from "./symbols/index";
 
 class Select extends React.Component<any, any> {

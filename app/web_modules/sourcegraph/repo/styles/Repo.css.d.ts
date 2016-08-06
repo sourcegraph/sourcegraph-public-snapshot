@@ -16,5 +16,3 @@ export const cloning_title: string;
 export const cloning_subtext: string;
 export const tree_search_modal: string;
 export const outer_container: string;
-
-export default {} as any;

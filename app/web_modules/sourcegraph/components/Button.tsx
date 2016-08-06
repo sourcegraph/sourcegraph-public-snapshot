@@ -4,7 +4,7 @@ import * as React from "react";
 
 import Loader from "./Loader";
 import CSSModules from "react-css-modules";
-import styles from "./styles/button.css";
+import * as styles from "./styles/button.css";
 
 function Button(props: {
 	block?: boolean, // display:inline_block by default; use block for full-width buttons

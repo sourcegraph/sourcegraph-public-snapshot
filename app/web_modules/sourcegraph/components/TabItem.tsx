@@ -3,7 +3,7 @@
 import * as React from "react";
 import Icon from "./Icon";
 import CSSModules from "react-css-modules";
-import styles from "sourcegraph/components/styles/tabItem.css";
+import * as styles from "sourcegraph/components/styles/tabItem.css";
 
 class TabItem extends React.Component<any, any> {
 	static propTypes = {

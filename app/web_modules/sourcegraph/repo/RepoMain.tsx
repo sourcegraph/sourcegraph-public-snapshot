@@ -3,7 +3,7 @@
 import * as React from "react";
 import Helmet from "react-helmet";
 import CSSModules from "react-css-modules";
-import styles from "./styles/Repo.css";
+import * as styles from "./styles/Repo.css";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import "sourcegraph/build/BuildBackend";

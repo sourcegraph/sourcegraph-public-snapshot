@@ -36,5 +36,3 @@ export const result_error: string;
 export const result_selected: string;
 export const repo: string;
 export const docstring: string;
-
-export default {} as any;

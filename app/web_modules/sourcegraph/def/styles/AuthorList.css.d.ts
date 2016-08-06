@@ -13,5 +13,3 @@ export const badge_wrapper: string;
 export const badge: string;
 export const avatar: string;
 export const timestamp: string;
-
-export default {} as any;

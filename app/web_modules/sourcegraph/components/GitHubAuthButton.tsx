@@ -3,7 +3,7 @@
 import * as React from "react";
 import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 import {GitHubIcon} from "./Icons";
-import typography from "./styles/_typography.css";
+import * as typography from "./styles/_typography.css";
 import {Button} from "sourcegraph/components/index";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 

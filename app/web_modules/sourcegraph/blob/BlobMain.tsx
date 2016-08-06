@@ -15,7 +15,7 @@ import DefStore from "sourcegraph/def/DefStore";
 import "sourcegraph/blob/BlobBackend";
 import "sourcegraph/def/DefBackend";
 import "sourcegraph/build/BuildBackend";
-import Style from "sourcegraph/blob/styles/Blob.css";
+import * as Style from "sourcegraph/blob/styles/Blob.css";
 import {lineCol, lineRange, parseLineRange} from "sourcegraph/blob/lineCol";
 import urlTo from "sourcegraph/util/urlTo";
 import {makeRepoRev, trimRepo} from "sourcegraph/repo/index";

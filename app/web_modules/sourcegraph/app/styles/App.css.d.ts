@@ -14,5 +14,3 @@ export const main_content: string;
 export const breadcrumb: string;
 export const main_container_homepage: string;
 export const inner_main_content: string;
-
-export default {} as any;

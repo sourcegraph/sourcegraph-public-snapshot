@@ -11,5 +11,3 @@ export const toggle_checkbox: string;
 export const toggle_label: string;
 export const toggle_inner: string;
 export const toggle_switch: string;
-
-export default {} as any;

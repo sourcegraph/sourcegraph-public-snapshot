@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import CSSModules from "react-css-modules";
-import style from "sourcegraph/components/styles/loader.css";
+import * as style from "sourcegraph/components/styles/loader.css";
 
 class Loader extends React.Component<any, any> {
 	render(): JSX.Element | null {

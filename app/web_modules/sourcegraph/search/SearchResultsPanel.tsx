@@ -5,7 +5,7 @@ import {Panel} from "sourcegraph/components/index";
 import SearchSettings from "sourcegraph/search/SearchSettings";
 import GlobalSearch from "sourcegraph/search/GlobalSearch";
 import CSSModules from "react-css-modules";
-import styles from "./styles/SearchResultsPanel.css";
+import * as styles from "./styles/SearchResultsPanel.css";
 
 
 class SearchResultsPanel extends React.Component<any, any> {
@@ -19,8 +19,8 @@ class SearchResultsPanel extends React.Component<any, any> {
 		const {repo, location, query} = this.props;
 		return (
 			<Panel hoverLevel="low" styleName="search_panel">
-				<SearchSettings styleName="search_settings" innerClassName={styles["search_settings_inner"]} location={location} repo={repo} />
-				{query && <GlobalSearch styleName="search_results" query={query} repo={repo} location={location} resultClassName={styles["search_result"]} />}
+				<SearchSettings styleName="search_settings" innerClassName={styles.search_settings_inner} location={location} repo={repo} />
+				{query && <GlobalSearch styleName="search_results" query={query} repo={repo} location={location} resultClassName={styles.search_result} />}
 			</Panel>
 		);
 	}

@@ -4,7 +4,7 @@ import * as React from "react";
 import Helmet from "react-helmet";
 import {Link} from "react-router";
 import {urlToDefInfo} from "sourcegraph/def/routes";
-import styles from "sourcegraph/def/styles/Def.css";
+import * as styles from "sourcegraph/def/styles/Def.css";
 import CSSModules from "react-css-modules";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import Button from "sourcegraph/components/Button";

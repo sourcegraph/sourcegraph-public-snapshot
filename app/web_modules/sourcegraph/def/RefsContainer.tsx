@@ -21,9 +21,9 @@ import {RepoLink} from "sourcegraph/components/index";
 import {FaAngleDown, FaAngleRight} from "sourcegraph/components/Icons";
 import breadcrumb from "sourcegraph/util/breadcrumb";
 import stripDomain from "sourcegraph/util/stripDomain";
-import styles from "./styles/Refs.css";
-import base from "sourcegraph/components/styles/_base.css";
-import colors from "sourcegraph/components/styles/_colors.css";
+import * as styles from "./styles/Refs.css";
+import * as base from "sourcegraph/components/styles/_base.css";
+import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {FaThumbsUp, FaThumbsDown} from "sourcegraph/components/Icons";
 
@@ -273,7 +273,7 @@ export default class RefsContainer extends Container<any, any> {
 		}
 
 		return (
-			<div className={`${base.pa4} ${base.bb} ${colors["b__cool_pale_gray"]} ${styles["full_width_sm"]}`}>
+			<div className={`${base.pa4} ${base.bb} ${colors.b__cool_pale_gray} ${styles.full_width_sm}`}>
 			{this.state.showRepoTitle &&
 				<div>
 					<RepoLink className={styles.repoLink} repo={this.state.refRepo} />
@@ -322,8 +322,8 @@ export default class RefsContainer extends Container<any, any> {
 
 								let voteStyle = this.state.voteDone ? styles.voteDone : styles.vote;
 								return (
-									<div key={i} className={styles["single_ref_container"]}>
-										{(this.context as any).user && (this.context as any).user.Admin && <div className={`${voteStyle} ${styles["left_align_sm"]}`}>
+									<div key={i} className={styles.single_ref_container}>
+										{(this.context as any).user && (this.context as any).user.Admin && <div className={`${voteStyle} ${styles.left_align_sm}`}>
 											<a className={styles.upvote} onClick={() => this._vote(true, this.state.refRepo, loc.Path)}><FaThumbsUp /></a>
 											<a className={styles.downvote} onClick={() => this._vote(false, this.state.refRepo, loc.Path)}><FaThumbsDown /></a>
 										</div>}
@@ -345,7 +345,7 @@ export default class RefsContainer extends Container<any, any> {
 												textSize="large"
 												className={styles.blob} />
 										</div>
-										{this.state.refRepo && <div className={`${base.mt3} ${styles.f7} ${base["hidden_s"]}`}>From <Link to={`${urlToBlob(this.state.refRepo, this.state.refRev, loc.Path)}${ranges ? `#L${ranges[0][2]}` : ""}`} onClick={this._clickedFromRepo.bind(this)}>{this.state.refRepo}</Link></div>}
+										{this.state.refRepo && <div className={`${base.mt3} ${styles.f7} ${base.hidden_s}`}>From <Link to={`${urlToBlob(this.state.refRepo, this.state.refRev, loc.Path)}${ranges ? `#L${ranges[0][2]}` : ""}`} onClick={this._clickedFromRepo.bind(this)}>{this.state.refRepo}</Link></div>}
 									</div>
 								);
 							})}

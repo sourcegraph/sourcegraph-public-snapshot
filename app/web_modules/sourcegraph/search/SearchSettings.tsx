@@ -3,8 +3,8 @@
 import * as React from "react";
 import Container from "sourcegraph/Container";
 import CSSModules from "react-css-modules";
-import styles from "./styles/SearchSettings.css";
-import base from "sourcegraph/components/styles/_base.css";
+import * as styles from "./styles/SearchSettings.css";
+import * as base from "sourcegraph/components/styles/_base.css";
 import {Button} from "sourcegraph/components/index";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import Dispatcher from "sourcegraph/Dispatcher";

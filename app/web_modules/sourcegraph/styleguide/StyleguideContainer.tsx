@@ -4,8 +4,8 @@ import * as React from "react";
 import {Link} from "react-router";
 import {Hero, Heading, FlexContainer, Tabs, TabItem, Affix} from "sourcegraph/components/index";
 import CSSModules from "react-css-modules";
-import base from "sourcegraph/components/styles/_base.css";
-import styles from "./styles/StyleguideContainer.css";
+import * as base from "sourcegraph/components/styles/_base.css";
+import * as styles from "./styles/StyleguideContainer.css";
 import ComponentsContainer from "./ComponentsContainer";
 
 class StyleguideContainer extends React.Component<any, any> {

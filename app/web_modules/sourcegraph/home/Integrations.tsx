@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import styles from "./styles/Integrations.css";
-import base from "sourcegraph/components/styles/_base.css";
+import * as styles from "./styles/Integrations.css";
+import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Button} from "sourcegraph/components/index";
 import Component from "sourcegraph/Component";
 

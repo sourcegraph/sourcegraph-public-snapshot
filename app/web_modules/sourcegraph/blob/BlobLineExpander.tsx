@@ -4,7 +4,7 @@ import * as React from "react";
 import CSSModules from "react-css-modules";
 
 import Component from "sourcegraph/Component";
-import styles from "sourcegraph/blob/styles/Blob.css";
+import * as styles from "sourcegraph/blob/styles/Blob.css";
 
 export type Range = [number, number];
 

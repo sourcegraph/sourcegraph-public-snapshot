@@ -3,8 +3,8 @@
 import * as React from "react";
 import {Input} from "sourcegraph/components/index";
 import CSSModules from "react-css-modules";
-import styles from "./styles/GlobalSearchInput.css";
-import base from "sourcegraph/components/styles/_base.css";
+import * as styles from "./styles/GlobalSearchInput.css";
+import * as base from "sourcegraph/components/styles/_base.css";
 import * as invariant from "invariant";
 import {Search} from "sourcegraph/components/symbols/index";
 

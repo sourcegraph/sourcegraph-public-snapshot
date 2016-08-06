@@ -12,7 +12,7 @@ import * as CoverageActions from "sourcegraph/admin/CoverageActions";
 import {MagnifyingGlassIcon} from "sourcegraph/components/Icons";
 
 import CSSModules from "react-css-modules";
-import styles from "./styles/Coverage.css";
+import * as styles from "./styles/Coverage.css";
 
 const langTargets = {
 	"Go": 0.95,

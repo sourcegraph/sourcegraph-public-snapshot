@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import {Hero, Heading, Panel, Button} from "sourcegraph/components/index";
-import styles from "./Page.css";
+import * as styles from "./Page.css";
 import {Link} from "react-router";
-import base from "sourcegraph/components/styles/_base.css";
+import * as base from "sourcegraph/components/styles/_base.css";
 import CSSModules from "react-css-modules";
 import {CheckIcon} from "sourcegraph/components/Icons";
 import Helmet from "react-helmet";
@@ -24,16 +24,16 @@ function PricingPage(props, {signedIn, eventLogger}) {
 				<div styleName="plans">
 					<div styleName="plan">
 						<div styleName="plan_box">
-							<Panel color="purple" inverse={true} hover={false} className={styles["plan_panel"] || ""}>
+							<Panel color="purple" inverse={true} hover={false} className={styles.plan_panel || ""}>
 								<Heading level="3" color="white" align="center">Free</Heading>
 								<Heading level="1" color="white" align="center"><span styleName="currency">$</span><span styleName="amount">0</span></Heading>
 								<p>For individuals and teams, for public and private code</p>
 							</Panel>
 							{!signedIn && <Link to="/join"
 								onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "free", page_name: AnalyticsConstants.PAGE_PRICING})}>
-								<Button block={true} className={styles["plan_cta"] || ""} color="purple">Sign up</Button>
+								<Button block={true} className={styles.plan_cta || ""} color="purple">Sign up</Button>
 							</Link>}
-							{signedIn && <Button block={true} outline={true} color="purple" className={styles["plan_cta_noop"] || ""}><CheckIcon styleName="icon" /> Your current plan</Button>}
+							{signedIn && <Button block={true} outline={true} color="purple" className={styles.plan_cta_noop || ""}><CheckIcon styleName="icon" /> Your current plan</Button>}
 						</div>
 						<div styleName="details">
 							<Heading level="4" color="purple" underline="purple">
@@ -52,14 +52,14 @@ function PricingPage(props, {signedIn, eventLogger}) {
 
 					<div styleName="plan">
 						<div styleName="plan_box">
-							<Panel color="green" inverse={true} hover={false} className={styles["plan_panel"] || ""}>
+							<Panel color="green" inverse={true} hover={false} className={styles.plan_panel || ""}>
 								<Heading level="3" color="white" align="center">Standard</Heading>
 								<Heading level="1" color="white" align="center"><span styleName="currency">$</span><span styleName="amount">50</span></Heading>
 								<p>per&nbsp;user per&nbsp;month</p>
 							</Panel>
 							<Link to="/contact"
 								onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "standard", page_name: AnalyticsConstants.PAGE_PRICING})}>
-								<Button block={true} className={styles["plan_cta"] || ""} color="green">Contact us</Button>
+								<Button block={true} className={styles.plan_cta || ""} color="green">Contact us</Button>
 							</Link>
 						</div>
 						<div styleName="details">
@@ -77,14 +77,14 @@ function PricingPage(props, {signedIn, eventLogger}) {
 
 					<div styleName="plan">
 						<div styleName="plan_box">
-							<Panel color="blue" inverse={true} hover={false} className={styles["plan_panel"] || ""}>
+							<Panel color="blue" inverse={true} hover={false} className={styles.plan_panel || ""}>
 								<Heading level="3" color="white" align="center">Enterprise</Heading>
 								<Heading level="1" color="white" align="center"><span styleName="currency">$</span><span styleName="amount">100</span></Heading>
 								<p>per&nbsp;user per&nbsp;month</p>
 							</Panel>
 							<Link to="/contact"
 								onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "free", page_name: AnalyticsConstants.PAGE_PRICING})}>
-								<Button block={true} className={styles["plan_cta"] || ""} color="blue">Contact us</Button>
+								<Button block={true} className={styles.plan_cta || ""} color="blue">Contact us</Button>
 							</Link>
 						</div>
 						<div styleName="details">

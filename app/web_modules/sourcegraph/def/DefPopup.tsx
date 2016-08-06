@@ -5,7 +5,7 @@ import {Link} from "react-router";
 import CSSModules from "react-css-modules";
 import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
-import s from "sourcegraph/def/styles/Def.css";
+import * as s from "sourcegraph/def/styles/Def.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {defPath} from "sourcegraph/def/index";
 import * as DefActions from "sourcegraph/def/DefActions";

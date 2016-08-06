@@ -7,8 +7,8 @@ import breadcrumb from "sourcegraph/util/breadcrumb";
 import stripDomain from "sourcegraph/util/stripDomain";
 
 import CSSModules from "react-css-modules";
-import base from "sourcegraph/components/styles/_base.css";
-import styles from "./styles/breadcrumb.css";
+import * as base from "sourcegraph/components/styles/_base.css";
+import * as styles from "./styles/breadcrumb.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class RepoLink extends React.Component<any, any> {

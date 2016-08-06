@@ -16,5 +16,3 @@ export const check_incomplete: string;
 export const content: string;
 export const content_complete: string;
 export const buttonContainer: string;
-
-export default {} as any;

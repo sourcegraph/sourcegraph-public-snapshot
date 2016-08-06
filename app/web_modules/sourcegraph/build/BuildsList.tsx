@@ -18,8 +18,8 @@ import {Button} from "sourcegraph/components/index";
 import TimeAgo from "sourcegraph/util/TimeAgo";
 
 import CSSModules from "react-css-modules";
-import styles from "./styles/Build.css";
-import btnStyles from "sourcegraph/components/styles/button.css";
+import * as styles from "./styles/Build.css";
+import * as btnStyles from "sourcegraph/components/styles/button.css";
 
 const updateIntervalMsec = 30000;
 
@@ -105,22 +105,22 @@ class BuildsList extends Container<any, any> {
 				<div styleName="list_header">Builds</div>
 				<div styleName="list_filters">
 					<div styleName="filter_button">
-						<Link activeClassName={btnStyles["outline_active"]} to={`${this.state.location.pathname}?filter=all`}><Button size="small" outline={true}>All</Button></Link>
+						<Link activeClassName={btnStyles.outline_active} to={`${this.state.location.pathname}?filter=all`}><Button size="small" outline={true}>All</Button></Link>
 					</div>
 					<div styleName="filter_button">
-						<Link activeClassName={btnStyles["outline_active"]} to={`${this.state.location.pathname}?filter=priority`}><Button size="small" outline={true}>Priority Queue</Button></Link>
+						<Link activeClassName={btnStyles.outline_active} to={`${this.state.location.pathname}?filter=priority`}><Button size="small" outline={true}>Priority Queue</Button></Link>
 					</div>
 					<div styleName="filter_button">
-						<Link activeClassName={btnStyles["outline_active"]} to={`${this.state.location.pathname}?filter=active`}><Button size="small" outline={true}>Active</Button></Link>
+						<Link activeClassName={btnStyles.outline_active} to={`${this.state.location.pathname}?filter=active`}><Button size="small" outline={true}>Active</Button></Link>
 					</div>
 					<div styleName="filter_button">
-						<Link activeClassName={btnStyles["outline_active"]} to={`${this.state.location.pathname}?filter=ended`}><Button size="small" outline={true}>Ended</Button></Link>
+						<Link activeClassName={btnStyles.outline_active} to={`${this.state.location.pathname}?filter=ended`}><Button size="small" outline={true}>Ended</Button></Link>
 					</div>
 					<div styleName="filter_button">
-						<Link activeClassName={btnStyles["outline_active"]} to={`${this.state.location.pathname}?filter=succeeded`}><Button size="small" outline={true}>Succeeded</Button></Link>
+						<Link activeClassName={btnStyles.outline_active} to={`${this.state.location.pathname}?filter=succeeded`}><Button size="small" outline={true}>Succeeded</Button></Link>
 					</div>
 					<div styleName="filter_button">
-						<Link activeClassName={btnStyles["outline_active"]} to={`${this.state.location.pathname}?filter=failed`}><Button size="small" outline={true}>Failed</Button></Link>
+						<Link activeClassName={btnStyles.outline_active} to={`${this.state.location.pathname}?filter=failed`}><Button size="small" outline={true}>Failed</Button></Link>
 					</div>
 				</div>
 				{this.state.builds !== null && this.state.builds.length !== 0 && [

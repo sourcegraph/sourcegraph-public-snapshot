@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import styles from "./styles/panel.css";
+import * as styles from "./styles/panel.css";
 
 class Panel extends React.Component<any, any> {
 	static propTypes = {

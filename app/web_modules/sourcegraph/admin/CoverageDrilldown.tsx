@@ -16,7 +16,7 @@ import {urlToRepoRev} from "sourcegraph/repo/routes";
 import {urlToBlob} from "sourcegraph/blob/routes";
 
 import CSSModules from "react-css-modules";
-import styles from "./styles/Coverage.css";
+import * as styles from "./styles/Coverage.css";
 
 class CoverageDrilldown extends Container<any, any> {
 	buildsQuery: any;

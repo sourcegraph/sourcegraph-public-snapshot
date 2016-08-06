@@ -7,5 +7,3 @@ export const grid: string;
 export const typography: string;
 export const error: string;
 export const readme: string;
-
-export default {} as any;

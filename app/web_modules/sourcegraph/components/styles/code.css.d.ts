@@ -2,5 +2,3 @@
 // tslint:disable
 
 export const dummy: string;
-
-export default {} as any;

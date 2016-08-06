@@ -13,7 +13,7 @@ import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import CSSModules from "react-css-modules";
-import style from "sourcegraph/user/styles/accountForm.css";
+import * as style from "sourcegraph/user/styles/accountForm.css";
 
 export class LoginForm extends Container<any, any> {
 	_loginInput: any;

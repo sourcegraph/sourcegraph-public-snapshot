@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import styles from "./styles/checklistItem.css";
-import base from "./styles/_base.css";
+import * as styles from "./styles/checklistItem.css";
+import * as base from "./styles/_base.css";
 import Icon from "./Icon";
 import Button from "./Button";
 

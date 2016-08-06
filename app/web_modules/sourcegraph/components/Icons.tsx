@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import CSSModules from "react-css-modules";
-import styles from "./styles/icon.css";
+import * as styles from "./styles/icon.css";
 
 export const FileIcon = iconWrapper(require("react-icons/lib/go/file-text"));
 export const FolderIcon = iconWrapper(require("react-icons/lib/go/file-directory"));

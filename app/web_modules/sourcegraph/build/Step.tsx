@@ -10,7 +10,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import {Collapsible} from "sourcegraph/components/index";
 
 import CSSModules from "react-css-modules";
-import styles from "./styles/Build.css";
+import * as styles from "./styles/Build.css";
 
 const updateLogIntervalMsec = 1500;
 

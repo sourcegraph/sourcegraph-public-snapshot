@@ -8,5 +8,3 @@ export const relative: string;
 export const absolute: string;
 export const flex_fill: string;
 export const layer_btm: string;
-
-export default {} as any;

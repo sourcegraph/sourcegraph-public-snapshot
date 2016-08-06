@@ -7,5 +7,3 @@ export const sep: string;
 export const link: string;
 export const active: string;
 export const inactive: string;
-
-export default {} as any;

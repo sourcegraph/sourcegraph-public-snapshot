@@ -3,5 +3,3 @@
 
 export const typography: string;
 export const icon: string;
-
-export default {} as any;

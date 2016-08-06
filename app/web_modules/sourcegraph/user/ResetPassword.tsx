@@ -14,7 +14,7 @@ import UserStore from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import CSSModules from "react-css-modules";
-import style from "sourcegraph/user/styles/accountForm.css";
+import * as style from "sourcegraph/user/styles/accountForm.css";
 
 class ResetPassword extends Container<any, any> {
 	_passwordInput: any;

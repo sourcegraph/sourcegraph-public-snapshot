@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import CSSModules from "react-css-modules";
-import base from "sourcegraph/components/styles/_base.css";
+import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Table, Code, Stepper} from "sourcegraph/components/index";
 
 class StepperComponent extends React.Component<any, any> {
