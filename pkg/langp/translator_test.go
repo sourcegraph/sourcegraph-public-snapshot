@@ -181,6 +181,45 @@ func TestTranslator(t *testing.T) {
 			}}},
 			Got: &ExternalRefs{},
 		},
+
+		// ServeExportedSymbols
+		{
+			Path: "/exported-symbols",
+			Request: &RepoRev{
+				Repo:   "github.com/foo/bar",
+				Commit: "deadbeef",
+			},
+			WantLSPMethod: "workspace/symbol",
+			WantLSPParam: &lsp.WorkspaceSymbolParams{
+				Query: "exported github.com/foo/bar/...",
+			},
+
+			LSPResponseResult: []lsp.SymbolInformation{{
+				Name:          "Baz",
+				Kind:          12,
+				Location:      lsp.Location{}, // Ignored
+				ContainerName: "github.com/foo/bar",
+			}, {
+				Name:          "New",
+				Kind:          12,
+				Location:      lsp.Location{}, // Ignored
+				ContainerName: "github.com/foo/bar",
+			}},
+			WantResponse: &ExportedSymbols{Defs: []DefSpec{{
+				Repo:     "github.com/foo/bar",
+				Commit:   "deadbeef",
+				UnitType: "GoPackage",
+				Unit:     "github.com/foo/bar",
+				Path:     "Baz",
+			}, {
+				Repo:     "github.com/foo/bar",
+				Commit:   "deadbeef",
+				UnitType: "GoPackage",
+				Unit:     "github.com/foo/bar",
+				Path:     "New",
+			}}},
+			Got: &ExportedSymbols{},
+		},
 	}
 
 	for _, c := range cases {

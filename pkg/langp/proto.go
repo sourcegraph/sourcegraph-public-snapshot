@@ -129,6 +129,12 @@ type ExternalRefs struct {
 	Defs []DefSpec
 }
 
+// ExportedSymbols contains a list of all Defs available for use by other
+// repositories.
+type ExportedSymbols struct {
+	Defs []DefSpec
+}
+
 // HoverContent represents a subset of the content for when a user “hovers”
 // over a definition.
 //

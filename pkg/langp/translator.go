@@ -71,6 +71,7 @@ func New(opts *Translator) http.Handler {
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/definition", t.handler("/definition", t.serveDefinition))
+	mux.Handle("/exported-symbols", t.handler("/exported-symbols", t.serveExportedSymbols))
 	mux.Handle("/external-refs", t.handler("/external-refs", t.serveExternalRefs))
 	mux.Handle("/hover", t.handler("/hover", t.serveHover))
 	return mux
@@ -422,6 +423,69 @@ func (t *translator) serveExternalRefs(body []byte) (interface{}, error) {
 		})
 	}
 	return &ExternalRefs{Defs: defs}, nil
+}
+
+func (t *translator) serveExportedSymbols(body []byte) (interface{}, error) {
+	// Decode the user request.
+	var r RepoRev
+	if err := json.Unmarshal(body, &r); err != nil {
+		return nil, err
+	}
+	if r.Repo == "" {
+		return nil, fmt.Errorf("Repo field must be set")
+	}
+	if r.Commit == "" {
+		return nil, fmt.Errorf("Commit field must be set")
+	}
+
+	// Determine the root path for the workspace and prepare it.
+	rootPath := filepath.Join(t.WorkDir, r.Repo, r.Commit)
+	err := t.prepareWorkspace(rootPath, r.Repo, r.Commit)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: should probably check server capabilities before invoking symbol,
+	// but good enough for now.
+	reqSymbol := &jsonrpc2.Request{
+		Method: "workspace/symbol",
+	}
+	p := lsp.WorkspaceSymbolParams{
+		// TODO(keegancsmith) this is go specific
+		Query: "exported " + r.Repo + "/...",
+	}
+	if err := reqSymbol.SetParams(p); err != nil {
+		return nil, err
+	}
+
+	var respSymbol []lsp.SymbolInformation
+	err = t.lspDo(rootPath, reqSymbol, &respSymbol)
+	if err != nil {
+		return nil, err
+	}
+
+	var defs []DefSpec
+	// TODO(keegancsmith) go specific
+	for _, s := range respSymbol {
+		pkgParts := strings.Split(s.ContainerName, "/")
+		var repo, unit string
+		if len(pkgParts) < 3 {
+			// Hack for stdlib
+			repo = "github.com/golang/go"
+			unit = s.ContainerName
+		} else {
+			repo = strings.Join(pkgParts[:3], "/")
+			unit = strings.Join(pkgParts, "/")
+		}
+		defs = append(defs, DefSpec{
+			Repo:     repo,
+			Commit:   r.Commit,
+			UnitType: "GoPackage",
+			Unit:     unit,
+			Path:     s.Name,
+		})
+	}
+	return &ExportedSymbols{Defs: defs}, nil
 }
 
 func (t *translator) lspDo(rootPath string, request *jsonrpc2.Request, result interface{}) error {
