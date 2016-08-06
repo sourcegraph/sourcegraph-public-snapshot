@@ -26,9 +26,7 @@
 				},
 				{
 					"type": "div",
-					"props": {
-						"styleName": "step_body"
-					}
+					"props": {}
 				}
 			]
 		}

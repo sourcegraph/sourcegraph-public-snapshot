@@ -23,7 +23,6 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "step_body",
 						"children": [
 							{
 								"type": "pre",

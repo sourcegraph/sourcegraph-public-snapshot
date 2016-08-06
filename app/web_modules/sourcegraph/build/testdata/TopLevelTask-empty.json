@@ -10,15 +10,11 @@
 						"children": [
 							{
 								"type": "span",
-								"props": {
-									"styleName": "header_label"
-								}
+								"props": {}
 							},
 							{
 								"type": "span",
-								"props": {
-									"styleName": "elapsed_label"
-								}
+								"props": {}
 							}
 						]
 					}

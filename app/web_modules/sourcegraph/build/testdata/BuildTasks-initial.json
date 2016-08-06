@@ -2,7 +2,6 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"styleName": "tasks",
 			"children": [
 				{
 					"type": "TopLevelTask",

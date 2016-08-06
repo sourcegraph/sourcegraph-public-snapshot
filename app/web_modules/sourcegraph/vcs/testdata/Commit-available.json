@@ -2,17 +2,14 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"styleName": "container",
 			"children": [
 				{
 					"type": "div",
 					"props": {
-						"styleName": "main",
 						"children": [
 							{
 								"type": "span",
 								"props": {
-									"styleName": "title",
 									"children": [
 										"msg"
 									]
@@ -21,7 +18,6 @@
 							{
 								"type": "div",
 								"props": {
-									"styleName": "meta",
 									"children": [
 										{
 											"type": "Avatar",
@@ -33,22 +29,18 @@
 										{
 											"type": "div",
 											"props": {
-												"styleName": "signature",
 												"children": [
 													{
 														"type": "span",
 														"props": {
-															"styleName": "sig",
 															"children": [
 																{
 																	"type": "span",
 																	"props": {
-																		"styleName": "sig_name",
 																		"children": [
 																			{
 																				"type": "span",
 																				"props": {
-																					"styleName": "name",
 																					"children": [
 																						"(unknown)"
 																					]
@@ -77,12 +69,10 @@
 										{
 											"type": "div",
 											"props": {
-												"styleName": "commit_id",
 												"children": [
 													{
 														"type": "code",
 														"props": {
-															"styleName": "sha",
 															"children": [
 																"abc"
 															]

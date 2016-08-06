@@ -2,12 +2,10 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"styleName": "tree_common",
 			"children": [
 				{
 					"type": "div",
 					"props": {
-						"styleName": "list_header",
 						"children": [
 							"Files"
 						]
@@ -16,7 +14,6 @@
 				{
 					"type": "div",
 					"props": {
-						"styleName": "list_item_group",
 						"children": [
 							{
 								"type": "",
@@ -40,9 +37,7 @@
 									"children": [
 										{
 											"type": "C",
-											"props": {
-												"styleName": "icon"
-											}
+											"props": {}
 										},
 										"f3"
 									],
