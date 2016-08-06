@@ -29,7 +29,7 @@ class TreeMain extends React.Component<any, any> {
 		const path = treeParam(this.props.routeParams.splat);
 
 		return (
-			<div styleName="tree_container">
+			<div className={styles.tree_container}>
 				{/* Let RepoMain set title for the root path. */}
 				{path !== "/" && <Helmet title={`${path} · ${trimRepo(this.props.repo)}`} />}
 				<br />

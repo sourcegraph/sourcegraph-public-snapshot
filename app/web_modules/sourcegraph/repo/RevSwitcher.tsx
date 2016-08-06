@@ -98,15 +98,15 @@ class RevSwitcher extends Component<any, any> {
 	}
 
 	_loadingItem(what) {
-		return <li styleName="disabled">Loading {what}&hellip;</li>;
+		return <li className={styles.disabled}>Loading {what}&hellip;</li>;
 	}
 
 	_errorItem(what) {
-		return <li styleName="disabled">Error</li>;
+		return <li className={styles.disabled}>Error</li>;
 	}
 
 	_emptyItem(what) {
-		return <li styleName="disabled">None found</li>;
+		return <li className={styles.disabled}>None found</li>;
 	}
 
 	_item(name, commitID) {
@@ -120,8 +120,8 @@ class RevSwitcher extends Component<any, any> {
 				<Link to={this._revSwitcherURL(name)} title={commitID}
 					onClick={this._closeDropdown}>
 					<CheckIcon styleName={isCurrent ? "icon" : "icon_hidden"} /> {name && <span>{abbrevRev(name)}</span>}
-					{isCurrent && commitsBehind ? <span styleName="detail">{commitsBehind} commit{commitsBehind !== 1 && "s"} ahead of index</span> : null}
-					{isCurrent && unindexed ? <span styleName="detail">not indexed</span> : null}
+					{isCurrent && commitsBehind ? <span className={styles.detail}>{commitsBehind} commit{commitsBehind !== 1 && "s"} ahead of index</span> : null}
+					{isCurrent && unindexed ? <span className={styles.detail}>not indexed</span> : null}
 				</Link>
 			</div>
 		);
@@ -252,12 +252,12 @@ class RevSwitcher extends Component<any, any> {
 		else title = `Viewing revision: ${abbrevRev(this.state.commitID)} (not indexed)`;
 
 		return (
-			<div styleName="wrapper"
+			<div className={styles.wrapper}
 				ref={(e) => this._wrapper = e}>
-				<span styleName="toggle"
+				<span className={styles.toggle}
 					title={title}
 					onClick={this._onToggleDropdown}>
-					<FaChevronDown styleName="toggle_icon" />
+					<FaChevronDown className={styles.toggle_icon} />
 				</span>
 				<div styleName={this.state.open ? "dropdown_menu open" : "dropdown_menu closed"}>
 					<Menu>
@@ -265,7 +265,7 @@ class RevSwitcher extends Component<any, any> {
 							<Input block={true}
 								domRef={(e) => this._input = e}
 								type="text"
-								styleName="input"
+								className={styles.input}
 								placeholder="Find branch or tag"
 								onChange={this._onChangeQuery}/>
 						</div>

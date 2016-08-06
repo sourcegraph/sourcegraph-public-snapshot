@@ -52,11 +52,11 @@ class DefNavContext extends Container<any, any> {
 		let defFileParts = this.state.defPos.File.split("/");
 		let pathBreadcrumb = breadcrumb(
 			`/${this.state.defPos.File}`,
-			(i) => <span key={i} styleName="sep">/</span>,
+			(i) => <span key={i} className={styles.sep}>/</span>,
 			(path, component, i, isLast) => (
 				!isLast ? <Link to={urlToTree(this.state.repo, this.state.rev, defFileParts.slice(0, i))}
 					key={i}
-					styleName="inactive">
+					className={styles.inactive}>
 					{component}
 				</Link> :
 				<span key={i}>{component}</span>

@@ -12,11 +12,11 @@ function PrivacyPage(props, {signedIn}) {
 		<div>
 			<Helmet title="Privacy" />
 			<Hero pattern="objects" color="dark" className={base.pv1}>
-				<div styleName="container">
+				<div className={styles.container}>
 					<Heading level="3" color="white">Sourcegraph Privacy Policy</Heading>
 				</div>
 			</Hero>
-			<div styleName="content">
+			<div className={styles.content}>
                 <p>Sourcegraph, Inc. (“<b>Sourcegraph</b>,” “<b>we</b>,” “<b>our</b>,” or “<b>us</b>”) understands that privacy is important to our online visitors to our website and users of our online services (collectively, for the purposes of this Privacy Policy, our “<b>Service</b>”). This Privacy Policy explains how we collect, use, share and protect your personal information that we collect through our Service. By using our Service, you agree to the terms of this Privacy Policy and our <a href="https://sourcegraph.com/-/terms">Terms of Service</a>.</p>
 
                 <p>Capitalized terms that are not defined in this Privacy Policy have the meaning given them in our <a href="https://sourcegraph.com/-/terms">Terms of Service</a>.</p>

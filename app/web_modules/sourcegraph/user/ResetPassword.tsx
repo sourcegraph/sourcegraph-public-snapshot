@@ -14,7 +14,7 @@ import UserStore from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import CSSModules from "react-css-modules";
-import * as style from "sourcegraph/user/styles/accountForm.css";
+import * as styles from "sourcegraph/user/styles/accountForm.css";
 
 class ResetPassword extends Container<any, any> {
 	_passwordInput: any;
@@ -80,10 +80,10 @@ class ResetPassword extends Container<any, any> {
 					block={true}
 					loading={this.state.pendingAuthAction}>Reset Password</Button>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
-					<div styleName="error">{this.state.authResponse.Error.body.message}</div>
+					<div className={styles.error}>{this.state.authResponse.Error.body.message}</div>
 				}
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Success &&
-					<div styleName="success">
+					<div className={styles.success}>
 						Your password has been reset! <Link to="/login">Sign in.</Link>
 					</div>
 				}
@@ -92,4 +92,4 @@ class ResetPassword extends Container<any, any> {
 	}
 }
 
-export default redirectIfLoggedIn("/", CSSModules(ResetPassword, style, {allowMultiple: true}));
+export default redirectIfLoggedIn("/", CSSModules(ResetPassword, styles, {allowMultiple: true}));

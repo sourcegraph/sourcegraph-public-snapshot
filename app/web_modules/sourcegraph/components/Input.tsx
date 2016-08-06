@@ -35,8 +35,8 @@ class Input extends React.Component<any, any> {
 					placeholder={placeholder ? placeholder : ""} />
 				{helperText && <em styleName="small block" className={base.mt2}>{helperText}</em>}
 				{errorText &&
-					<div styleName="red" className={base.mv2}>
-						<Alert width={16} className={base.mr2} style={{marginTop: "-4px"}} styleName="red_fill" />
+					<div className={`${styles.red} ${base.mv2}`}>
+						<Alert width={16} className={`${base.mr2} ${styles.red_fill}`} style={{marginTop: "-4px"}} />
 						This is an error message.
 					</div>
 				}

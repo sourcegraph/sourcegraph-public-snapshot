@@ -88,7 +88,7 @@ class RepoRefsContainer extends Container<any, any> {
 
 		return (
 			<div>
-				<Heading level="7" styleName="cool_mid_gray" className={base.mb4}>
+				<Heading level="7" className={`${styles.cool_mid_gray} ${base.mb4}`}>
 					{refLocs && refLocs.TotalRepos &&
 						`Referenced in ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`
 					}
@@ -118,7 +118,7 @@ class RepoRefsContainer extends Container<any, any> {
 					<a onClick={this._onNextPage} styleName="f7 link_icon">
 						{this.state.nextPageLoading ?
 							<strong>Loading <Loader className={base.mr2} /> </strong> :
-							<strong>View more references <DownPointer styleName="icon_cool_mid_gray" width={9} className={base.ml1} /></strong>
+							<strong>View more references <DownPointer className={`${styles.icon_cool_mid_gray} ${base.ml1}`} width={9} /></strong>
 						}
 					</a>
 				}

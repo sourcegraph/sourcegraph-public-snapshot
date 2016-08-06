@@ -19,7 +19,7 @@ class Menu extends React.Component<any, any> {
 	}
 
 	render(): JSX.Element | null {
-		return <div className={this.props.className} style={this.props.style} styleName="container">{this.renderMenuItems()}</div>;
+		return <div className={`${this.props.className} ${styles.container}`} style={this.props.style}>{this.renderMenuItems()}</div>;
 	}
 }
 

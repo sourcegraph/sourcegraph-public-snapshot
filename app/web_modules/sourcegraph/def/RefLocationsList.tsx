@@ -46,22 +46,22 @@ class RefLocationsList extends React.Component<any, any> {
 			<div>
 				{defTitleOK(def) && <Helmet title={`${defTitle(def)} · ${trimRepo(this.props.repo)}`} />}
 				{refLocs.RepoRefs && refLocs.RepoRefs.map((repoRef, i) => (
-					this.props.showMax && i >= this.props.showMax ? null : <div key={i} styleName="all_refs">
+					this.props.showMax && i >= this.props.showMax ? null : <div key={i} className={styles.all_refs}>
 						<header styleName={this.props.repo === repoRef.Repo ? "b" : ""}>
-							<span styleName="refs_count">{repoRef.Count}</span> <span>{repoRef.Repo}</span>
+							<span className={styles.refs_count}>{repoRef.Count}</span> <span>{repoRef.Repo}</span>
 						</header>
 					</div>
 				))}
 				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.length > 0 && this.props.showMax && (!refLocs.TotalRepos || refLocs.TotalRepos > this.props.showMax) &&
 				<Link to={urlToDefInfo(def, this.props.rev)}>
-					<Button styleName="view_all_button" color="blue">View all references</Button>
+					<Button className={styles.view_all_button} color="blue">View all references</Button>
 				</Link>}
 				{/* Show a CTA for signup, but only if there are other external refs (so we don't
 					annoyingly show it for every single internal ref. */}
 				{(refLocs.RepoRefs && refLocs.RepoRefs.length > 1 && (!context.signedIn || noGitHubPrivateReposScope)) &&
-					<p styleName="private_repos_cta">
+					<p className={styles.private_repos_cta}>
 						{!context.signedIn &&
-							<LocationStateToggleLink styleName="cta_link"
+							<LocationStateToggleLink className={styles.cta_link}
 								location={this.props.location}
 								onClick={() => context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "Conversion_SignInFromRefList", {page_name: location.pathname})}
 								href="/login"
@@ -70,7 +70,7 @@ class RefLocationsList extends React.Component<any, any> {
 							</LocationStateToggleLink>
 						}
 						{context.signedIn && noGitHubPrivateReposScope &&
-							<a styleName="cta_link"
+							<a className={styles.cta_link}
 								href={urlToGitHubOAuth(privateGitHubOAuthScopes, this.props.location)}
 								onClick={() => context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "Conversion_AuthPrivateCodeFromRefList", {page_name: location.pathname})}>
 								<strong>Authorize</strong> to see results from your private code

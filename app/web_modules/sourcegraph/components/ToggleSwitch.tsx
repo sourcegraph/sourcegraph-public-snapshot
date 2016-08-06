@@ -33,11 +33,11 @@ class ToggleSwitch extends React.Component<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<div styleName="toggle" onClick={this._toggle.bind(this)}>
-				<input type="checkbox" name="toggle" styleName="toggle_checkbox" checked={this.state.checked} readOnly={true}/>
-				<label styleName="toggle_label">
-						<span styleName="toggle_inner"></span>
-						<span styleName="toggle_switch"></span>
+			<div className={styles.toggle} onClick={this._toggle.bind(this)}>
+				<input type="checkbox" name="toggle" className={styles.toggle_checkbox} checked={this.state.checked} readOnly={true}/>
+				<label className={styles.toggle_label}>
+						<span className={styles.toggle_inner}></span>
+						<span className={styles.toggle_switch}></span>
 				</label>
 			</div>
 		);

@@ -5,7 +5,7 @@ import {Link} from "react-router";
 import CSSModules from "react-css-modules";
 import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
-import * as s from "sourcegraph/def/styles/Def.css";
+import * as styles from "sourcegraph/def/styles/Def.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {defPath} from "sourcegraph/def/index";
 import * as DefActions from "sourcegraph/def/DefActions";
@@ -51,13 +51,13 @@ class DefPopup extends Container<any, any> {
 		let refLocs = this.props.refLocations;
 
 		return (
-			<div className={s.marginBox}>
+			<div className={styles.marginBox}>
 				<header>
-					<Link className={s.boxTitle} to={urlToDefInfo(this.state.defObj, this.state.rev)}><span styleName="def_title">{qualifiedNameAndType(def, {unqualifiedNameClass: s.defName})}</span></Link>
-					<Link className={s.boxIcon} to={urlToDefInfo(this.state.defObj, this.state.rev)}>&raquo;</Link>
+					<Link className={styles.boxTitle} to={urlToDefInfo(this.state.defObj, this.state.rev)}><span className={styles.def_title}>{qualifiedNameAndType(def, {unqualifiedNameClass: styles.defName})}</span></Link>
+					<Link className={styles.boxIcon} to={urlToDefInfo(this.state.defObj, this.state.rev)}>&raquo;</Link>
 				</header>
 				<Link to={urlToDefInfo(this.state.defObj, this.state.rev)}>
-					<header className={s.sectionTitle}>Used in
+					<header className={styles.sectionTitle}>Used in
 						<span>
 						{refLocs && refLocs.TotalRepos && ` ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`}
 						{refLocs && !refLocs.TotalRepos && refLocs.RepoRefs && ` ${refLocs.RepoRefs.length}+ repositories`}
@@ -65,16 +65,16 @@ class DefPopup extends Container<any, any> {
 					</header>
 				</Link>
 
-				{!refLocs && <span styleName="loading">Loading...</span>}
+				{!refLocs && <span className={styles.loading}>Loading...</span>}
 				{refLocs && (!refLocs.RepoRefs || refLocs.RepoRefs.length === 0) && <i>No usages found</i>}
 				{<RefLocationsList def={def} refLocations={refLocs} showMax={3} repo={this.state.repo} rev={this.state.rev} path={this.state.path} location={this.state.location} />}
 
-				{<header className={s.sectionTitle}>Authors</header>}
-				{!this.state.authors && <span styleName="loading">Loading...</span>}
+				{<header className={styles.sectionTitle}>Authors</header>}
+				{!this.state.authors && <span className={styles.loading}>Loading...</span>}
 				{this.state.authors && !this.state.authors.Error && this.state.authors.DefAuthors.length && <AuthorList authors={this.state.authors.DefAuthors} />}
 			</div>
 		);
 	}
 }
 
-export default CSSModules(DefPopup, s);
+export default CSSModules(DefPopup, styles);

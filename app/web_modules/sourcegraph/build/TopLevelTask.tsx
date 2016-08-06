@@ -30,8 +30,8 @@ class TopLevelTask extends Component<any, any> {
 		return (
 			<div>
 				<div styleName={`top_level_task_header`}>
-					<span styleName="header_label">{task.Label}</span>
-					<span styleName="elapsed_label">{elapsed(task)}</span>
+					<span className={styles.header_label}>{task.Label}</span>
+					<span className={styles.elapsed_label}>{elapsed(task)}</span>
 				</div>
 				{this.state.subtasks.map((subtask) => <Step key={subtask.ID} task={subtask} logs={this.state.logs} />)}
 			</div>

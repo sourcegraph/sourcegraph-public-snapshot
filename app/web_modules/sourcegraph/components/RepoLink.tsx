@@ -27,7 +27,7 @@ class RepoLink extends React.Component<any, any> {
 		let trimmedPath = stripDomain(this.props.repo);
 		let pathBreadcrumb = breadcrumb(
 			trimmedPath,
-			(i) => <span key={i} styleName="sep" className={base.mh1}>/</span>,
+			(i) => <span key={i} className={`${styles.sep} ${base.mh1}`}>/</span>,
 			(path, component, i, isLast) => (
 				isLast && !this.props.disabledLink ?
 					<Link to={this.props.rev ? urlToRepoRev(this.props.repo, this.props.rev) : urlToRepo(this.props.repo)}

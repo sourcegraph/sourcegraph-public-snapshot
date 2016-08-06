@@ -34,7 +34,7 @@ class BuildTasks extends Component<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<div styleName="tasks">
+			<div className={styles.tasks}>
 				{this.state.topLevelTasks.map((task, i) =>
 					<TopLevelTask key={task.ID}
 						task={task} subtasks={this.state.subtasks[task.ID]} logs={this.state.logs} />)}

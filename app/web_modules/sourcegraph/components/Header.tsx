@@ -14,9 +14,9 @@ class Header extends React.Component<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<div styleName="container">
-				<div styleName="cloning_title">{this.props.title}</div>
-				<div styleName="cloning_subtext">{this.props.loading ? <Loader /> : this.props.subtitle}</div>
+			<div className={styles.container}>
+				<div className={styles.cloning_title}>{this.props.title}</div>
+				<div className={styles.cloning_subtext}>{this.props.loading ? <Loader /> : this.props.subtitle}</div>
 			</div>
 		);
 	}

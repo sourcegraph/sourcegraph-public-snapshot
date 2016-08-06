@@ -7,9 +7,9 @@ import {Panel} from "sourcegraph/components/index";
 
 function SettingsMain(props) {
 	return (
-		<div styleName="container">
-			<div styleName="main">
-				<Panel styleName="panel">{props.main}</Panel>
+		<div className={styles.container}>
+			<div className={styles.main}>
+				<Panel className={styles.panel}>{props.main}</Panel>
 			</div>
 		</div>
 	);

@@ -167,8 +167,8 @@ class TreeList extends Container<TreeListProps, TreeListState> {
 
 			let icon;
 			if (item.isParentDirectory) icon = null;
-			else if (item.isDirectory) icon = <FolderIcon styleName="icon" />;
-			else icon = <FileIcon styleName="icon" />;
+			else if (item.isDirectory) icon = <FolderIcon className={styles.icon} />;
+			else icon = <FileIcon className={styles.icon} />;
 
 			let key = `f:${itemURL}`;
 			list.push(
@@ -196,11 +196,11 @@ class TreeList extends Container<TreeListProps, TreeListState> {
 
 		let listItems = this._listItems() || [];
 		return (
-			<div styleName="tree_common">
-				<div styleName="list_header">
+			<div className={styles.tree_common}>
+				<div className={styles.list_header}>
 					Files
 				</div>
-				<div styleName="list_item_group">
+				<div className={styles.list_item_group}>
 					{listItems}
 				</div>
 			</div>

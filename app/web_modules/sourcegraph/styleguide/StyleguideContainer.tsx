@@ -12,14 +12,14 @@ class StyleguideContainer extends React.Component<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<div styleName="bg_near_white">
+			<div className={styles.bg_near_white}>
 				<Hero color="purple" pattern="objects">
 					<Heading level="2" color="white">The Graph Guide</Heading>
 					<p style={{maxWidth: "560px"}} className={base.center}>
 						Welcome to the Graph Guide – a living guide to Sourcegraph's brand identity, voice, visual style, and approach to user experience and user interfaces.
 					</p>
 				</Hero>
-				<FlexContainer styleName="container_fixed">
+				<FlexContainer className={styles.container_fixed}>
 					<Affix offset={20} style={{flex: "0 0 240px"}} className={base.orderlast}>
 						<Tabs direction="vertical" color="purple" className={base.ml5}>
 							<TabItem>

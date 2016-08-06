@@ -152,12 +152,12 @@ class CoverageDrilldown extends Container<any, any> {
 		return this.state.drilldownFiles.map((file, i) => {
 			const blobURL = urlToBlob(this.state.drilldown.Repo, this.state.drilldown.Rev, file.Path);
 			return (<div key={i}>
-				<div styleName="file_drilldown_row">
+				<div className={styles.file_drilldown_row}>
 					<div styleName={`file_drilldown_header${this.props.refScore(file) <= 0.75 ? "_uncovered" : ""}`}>
-						<div styleName="filepath">{file.Path}</div>
-						<div styleName="file_stats">{`Idents (${file.Idents}) Refs (${this.formatScore(this.props.refScore(file))}%) Defs (${this.formatScore(this.props.defScore(file))}%)`}</div>
+						<div className={styles.filepath}>{file.Path}</div>
+						<div className={styles.file_stats}>{`Idents (${file.Idents}) Refs (${this.formatScore(this.props.refScore(file))}%) Defs (${this.formatScore(this.props.defScore(file))}%)`}</div>
 					</div>
-					<Link styleName="file_link" to={blobURL}>
+					<Link className={styles.file_link} to={blobURL}>
 						<FileIcon />
 					</Link>
 				</div>
@@ -181,26 +181,26 @@ class CoverageDrilldown extends Container<any, any> {
 		}
 
 		return (
-			<div styleName="drilldown">
-				<h2 styleName="drilldown_header">
+			<div className={styles.drilldown}>
+				<h2 className={styles.drilldown_header}>
 					{this.props.language}
 					{Object.keys(srclibVersions).map((ver, i) =>
-						<span key={i} styleName="srclib_version">{ver}</span>
+						<span key={i} className={styles.srclib_version}>{ver}</span>
 					)}
 				</h2>
 				<div>
-					<Button styleName="day_chooser" size="small" outline={true} onClick={this.prevDay.bind(this)}><TriangleLeftIcon /></Button>
-					<span styleName="day">{datum.Day}</span>
-					<Button styleName="day_chooser" size="small" outline={true} onClick={this.nextDay.bind(this)}><TriangleRightIcon /></Button>
-					<Button styleName="drilldown_dismiss" size="small" outline={true} onClick={this.props.onDismiss}><CloseIcon /></Button>
+					<Button className={styles.day_chooser} size="small" outline={true} onClick={this.prevDay.bind(this)}><TriangleLeftIcon /></Button>
+					<span className={styles.day}>{datum.Day}</span>
+					<Button className={styles.day_chooser} size="small" outline={true} onClick={this.nextDay.bind(this)}><TriangleRightIcon /></Button>
+					<Button className={styles.drilldown_dismiss} size="small" outline={true} onClick={this.props.onDismiss}><CloseIcon /></Button>
 				</div>
-				<table styleName="table">
+				<table className={styles.table}>
 					<thead>
 						<tr>
-							<th styleName="repo">Repo</th>
-							<th styleName="idents">Idents</th>
-							<th styleName="refs">Refs (%)</th>
-							<th styleName="defs">Defs (%)</th>
+							<th className={styles.repo}>Repo</th>
+							<th className={styles.idents}>Idents</th>
+							<th className={styles.refs}>Refs (%)</th>
+							<th className={styles.defs}>Defs (%)</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -212,22 +212,22 @@ class CoverageDrilldown extends Container<any, any> {
 							const defDelta = prevSummary && summary ? this.defDelta(prevSummary, summary) : "";
 							return (
 								<tr key={i}>
-									<td styleName="data">
+									<td className={styles.data}>
 										{builds && builds.length > 0 && <Link to={urlToBuilds(source.Repo)}>
-											<Label color={buildClass(builds[0])} styleName="build_label">{buildStatus(builds[0])}</Label>
+											<Label color={buildClass(builds[0])} className={styles.build_label}>{buildStatus(builds[0])}</Label>
 											</Link>
 										}
 										<Link to={urlToRepoRev(source.Repo, source.Rev)}>{source.Repo}</Link>
 										{this.state.idx === this.props.data.length - 1 &&
-											<div styleName="repo_drilldown_icon" size="small" outline={true} onClick={() => this._drilldown(source)}><MagnifyingGlassIcon /></div>
+											<div className={styles.repo_drilldown_icon} size="small" outline={true} onClick={() => this._drilldown(source)}><MagnifyingGlassIcon /></div>
 										}
 									</td>
-									<td styleName="data">{summary ? summary.Idents : "---"}</td>
-									<td styleName="data">
+									<td className={styles.data}>{summary ? summary.Idents : "---"}</td>
+									<td className={styles.data}>
 										{summary ? this.formatScore(this.props.refScore(summary)) : "---"}
 										<span styleName={this.deltaStyle(refDelta)}>{refDelta}</span>
 									</td>
-									<td styleName="data">
+									<td className={styles.data}>
 										{summary ? this.formatScore(this.props.defScore(summary)) : "---"}
 										<span styleName={this.deltaStyle(defDelta)}>{defDelta}</span>
 									</td>
@@ -237,7 +237,7 @@ class CoverageDrilldown extends Container<any, any> {
 					</tbody>
 				</table>
 				{this.state.drilldown && <Modal onDismiss={() => this._drilldown(null)}>
-					<div styleName="repo_drilldown_modal">
+					<div className={styles.repo_drilldown_modal}>
 						<h3>
 							<Link to={urlToRepoRev(this.state.drilldown.Repo, this.state.drilldown.Rev)}>
 								{this.state.drilldown.Repo}@{this.state.drilldown.Rev}

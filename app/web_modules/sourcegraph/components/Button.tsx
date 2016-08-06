@@ -53,7 +53,7 @@ function Button(props: {
 	return (
 		<button {...(other as any)} styleName={style}
 			onClick={onClick}>
-			{imageUrl ? <img styleName="button_image" src={imageUrl} /> : ""}
+			{imageUrl ? <img className={styles.button_image} src={imageUrl} /> : ""}
 			{loading && <Loader stretch={Boolean(block)} {...props}/>}
 			{!loading && children}
 		</button>

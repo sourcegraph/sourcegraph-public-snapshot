@@ -14,7 +14,7 @@ import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import CSSModules from "react-css-modules";
-import * as style from "sourcegraph/user/styles/accountForm.css";
+import * as styles from "sourcegraph/user/styles/accountForm.css";
 
 export class SignupForm extends Container<any, any> {
 	_loginInput: any;
@@ -76,14 +76,14 @@ export class SignupForm extends Container<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<form {...this.props} onSubmit={this._handleSubmit} styleName="form">
+			<form {...this.props} onSubmit={this._handleSubmit} className={styles.form}>
 				<Heading level="3" align="center" underline="orange">Sign up for Sourcegraph</Heading>
 				{!this.state.githubError && [
 					<GitHubAuthButton returnTo={this.state.returnTo} tabIndex="1" key="1" block={true}>Continue with GitHub</GitHubAuthButton>,
-					<p key="2" styleName="divider">or</p>,
+					<p key="2" className={styles.divider}>or</p>,
 				]}
-				{this.state.githubError === "username-or-email-taken" && <div styleName="error">Your GitHub username <strong>{this.state.githubLogin}</strong> {this.state.githubEmail && <span>or email <strong>{this.state.githubEmail}</strong></span>} is already taken on Sourcegraph. Sign up on Sourcegraph with a different username/email, then link your GitHub account again.</div>}
-				{this.state.githubError === "unknown" && <div styleName="error">Sorry, signing up via GitHub didn't work. (Check your organization's GitHub 3rd-party application settings.) Try creating a separate Sourcegraph account below.</div>}
+				{this.state.githubError === "username-or-email-taken" && <div className={styles.error}>Your GitHub username <strong>{this.state.githubLogin}</strong> {this.state.githubEmail && <span>or email <strong>{this.state.githubEmail}</strong></span>} is already taken on Sourcegraph. Sign up on Sourcegraph with a different username/email, then link your GitHub account again.</div>}
+				{this.state.githubError === "unknown" && <div className={styles.error}>Sorry, signing up via GitHub didn't work. (Check your organization's GitHub 3rd-party application settings.) Try creating a separate Sourcegraph account below.</div>}
 				<label>
 					<span>Username</span>
 					<Input type="text"
@@ -124,7 +124,7 @@ export class SignupForm extends Container<any, any> {
 						block={true}
 						required={true} />
 				</label>
-				<p styleName="mid_text">
+				<p className={styles.mid_text}>
 					By creating an account, you agree to our <a href="/-/privacy" target="_blank">privacy policy</a> and <a href="/-/terms" target="_blank">terms</a>.
 				</p>
 				<Button
@@ -134,20 +134,20 @@ export class SignupForm extends Container<any, any> {
 					block={true}
 					loading={this.state.submitted && (this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error))}>Create account</Button>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
-					<div styleName="error">{this.state.authResponse.Error.body.message}</div>
+					<div className={styles.error}>{this.state.authResponse.Error.body.message}</div>
 				}
-				<p styleName="sub_text">
+				<p className={styles.sub_text}>
 					Already have an account? <Link tabIndex="6" to="/login">Sign in.</Link>
 				</p>
 			</form>
 		);
 	}
 }
-let StyledSignupForm = CSSModules(SignupForm, style);
+let StyledSignupForm = CSSModules(SignupForm, styles);
 
 function Signup(props, {router}) {
 	return (
-		<div styleName="full_page">
+		<div className={styles.full_page}>
 			<Helmet title="Sign Up" />
 			<StyledSignupForm {...props}
 				returnTo="/"
@@ -162,4 +162,4 @@ function Signup(props, {router}) {
 	router: React.PropTypes.object.isRequired,
 };
 
-export default redirectIfLoggedIn("/", CSSModules(Signup, style));
+export default redirectIfLoggedIn("/", CSSModules(Signup, styles));

@@ -408,13 +408,13 @@ class GlobalSearch extends Container<any, any> {
 
 		if (this.state.query && !this.state.matchingResults ||
 			((!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) && this.state.matchingResults.outstandingFetches !== 0) && this.state.query) {
-			return [<div key="_nosymbol" className={`${base.ph4} ${base.pv4}`} styleName="result">Loading results...</div>];
+			return [<div key="_nosymbol" className={`${base.ph4} ${base.pv4} ${styles.result}`}>Loading results...</div>];
 		}
 
 		if (this.state.query && this.state.matchingResults &&
 			(!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) &&
 			(!this.state.matchingResults.Repos || this.state.matchingResults.Repos.length === 0)) {
-			return [<div className={`${base.ph4} ${base.pv4}`} styleName="result" key="_nosymbol">No results found.</div>];
+			return [<div className={`${base.ph4} ${base.pv4} ${styles.result}`} key="_nosymbol">No results found.</div>];
 		}
 
 		let list: any[] = [], numDefs = 0,
@@ -440,12 +440,12 @@ class GlobalSearch extends Container<any, any> {
 						<div styleName="flex_icon hidden_s">
 							<Icon icon="repository-gray" width={resultIconSize} />
 						</div>
-						<div styleName="flex">
+						<div className={styles.flex}>
 							<code styleName="block f5">
 								Repository
-								<span styleName="bold"> {repo.URI.split(/[// ]+/).pop()}</span>
+								<span className={styles.bold}> {repo.URI.split(/[// ]+/).pop()}</span>
 							</code>
-							{firstLineDocString && <p styleName="docstring" className={base.mt0}>{firstLineDocString}</p>}
+							{firstLineDocString && <p className={`${styles.docstring} ${base.mt0}`}>{firstLineDocString}</p>}
 						</div>
 					</div>
 				</Link>
@@ -482,7 +482,7 @@ class GlobalSearch extends Container<any, any> {
 							<code styleName="block f5" className={base.pb3}>
 								{qualifiedNameAndType(def, {nameQual: "DepQualified"})}
 							</code>
-							{firstLineDocString && <p styleName="docstring" className={base.mt0}>{firstLineDocString}</p>}
+							{firstLineDocString && <p className={`${styles.docstring} ${base.mt0}`}>{firstLineDocString}</p>}
 						</div>
 					</div>
 				</Link>

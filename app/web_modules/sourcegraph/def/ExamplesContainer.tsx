@@ -47,7 +47,7 @@ class ExamplesContainer extends Container<any, any> {
 		const expandedSnippets = 3;
 		return (
 			<div>
-				<Heading level="7" className={base.mb3} styleName="cool_mid_gray">
+				<Heading level="7" className={`${base.mb3} ${styles.cool_mid_gray}`}>
 					Usage Example{(refLocs && refLocs.RepoRefs && refLocs.RepoRefs.length > 1) ? "s" : ""}
 				</Heading>
 				<Panel

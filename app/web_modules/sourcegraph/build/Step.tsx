@@ -86,7 +86,7 @@ class Step extends Component<any, any> {
 					{this.state.task.Label}
 					<span style={{float: "right"}}>{elapsed(this.state.task)}</span>
 				</div>
-				<div styleName="step_body">
+				<div className={styles.step_body}>
 					{this.state.log && <pre>{this.state.log.log}</pre>}
 				</div>
 			</Collapsible>

@@ -18,12 +18,12 @@ class BuildHeader extends Component<any, any> {
 	render(): JSX.Element | null {
 		return (
 			<header styleName={`header ${buildClass(this.state.build)}`}>
-				<div styleName="number">#{this.state.build.ID}</div>
-				<div styleName="status">{buildStatus(this.state.build)}</div>
-				<div styleName="date">
+				<div className={styles.number}>#{this.state.build.ID}</div>
+				<div className={styles.status}>{buildStatus(this.state.build)}</div>
+				<div className={styles.date}>
 					<TimeAgo time={this.state.build.EndedAt || this.state.build.StartedAt || this.state.build.CreatedAt} />
 				</div>
-				<div styleName="elapsed">{elapsed(this.state.build)}</div>
+				<div className={styles.elapsed}>{elapsed(this.state.build)}</div>
 			</header>
 		);
 	}

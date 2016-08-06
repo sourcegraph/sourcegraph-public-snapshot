@@ -13,7 +13,7 @@ import UserStore from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import CSSModules from "react-css-modules";
-import * as style from "sourcegraph/user/styles/accountForm.css";
+import * as styles from "sourcegraph/user/styles/accountForm.css";
 
 // TODO: prevent mounting this component if user is logged in
 class ForgotPassword extends Container<any, any> {
@@ -58,14 +58,14 @@ class ForgotPassword extends Container<any, any> {
 					block={true}
 					loading={this.state.pendingAuthAction}>Reset Password</Button>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
-					<div styleName="error">{this.state.authResponse.Error.body.message}</div>
+					<div className={styles.error}>{this.state.authResponse.Error.body.message}</div>
 				}
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Success &&
-					<div styleName="success">Email sent - check your inbox!</div>
+					<div className={styles.success}>Email sent - check your inbox!</div>
 				}
 			</form>
 		);
 	}
 }
 
-export default redirectIfLoggedIn("/", CSSModules(ForgotPassword, style, {allowMultiple: true}));
+export default redirectIfLoggedIn("/", CSSModules(ForgotPassword, styles, {allowMultiple: true}));

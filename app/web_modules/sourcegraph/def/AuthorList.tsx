@@ -21,15 +21,15 @@ export default CSSModules(function AuthorList({
 		<div className={className}>
 			{authors && authors.length > 0 &&
 				<ol styleName={`list${horizontal ? "_horizontal" : ""}`}>
-					{horizontal && <PencilIcon title="Authors" styleName="pencil_icon" />}
+					{horizontal && <PencilIcon title="Authors" className={styles.pencil_icon} />}
 					{authors.map((a, i) => (
 						<li key={i} styleName={`person${horizontal ? "_horizontal" : ""}`}>
-							<div styleName="badge_wrapper">
-								<span styleName="badge">{Math.round(100 * a.BytesProportion) || "< 1"}%</span>
+							<div className={styles.badge_wrapper}>
+								<span className={styles.badge}>{Math.round(100 * a.BytesProportion) || "< 1"}%</span>
 							</div>
-							<Avatar styleName="avatar" size="tiny" img={a.AvatarURL} />
+							<Avatar className={styles.avatar} size="tiny" img={a.AvatarURL} />
 							{a.Email}
-							<TimeAgo time={a.LastCommitDate} styleName="timestamp" />
+							<TimeAgo time={a.LastCommitDate} className={styles.timestamp} />
 						</li>
 					))}
 				</ol>

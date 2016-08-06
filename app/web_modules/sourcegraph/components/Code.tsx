@@ -13,7 +13,7 @@ class Code extends React.Component<any, any> {
 
 	render(): JSX.Element | null {
 		const {className, children, style} = this.props;
-		return <span className={className} style={style} styleName="code">{children}</span>;
+		return <span className={`${className} ${styles.code}`} style={style}>{children}</span>;
 	}
 }
 

@@ -21,15 +21,15 @@ function sigName(sig) {
 	if (!sig) return null;
 	if (sig.Name) {
 		return (
-			<span styleName="sig_name">
-				{sig.Name ? <span styleName="name">{sig.Name}&nbsp;</span> : null}
-				<span styleName="name_secondary">({username(sig.Email)})</span>
+			<span className={styles.sig_name}>
+				{sig.Name ? <span className={styles.name}>{sig.Name}&nbsp;</span> : null}
+				<span className={styles.name_secondary}>({username(sig.Email)})</span>
 			</span>
 		);
 	}
 	return (
-		<span styleName="sig_name">
-			<span styleName="name">{username(sig.Email)}</span>
+		<span className={styles.sig_name}>
+			<span className={styles.name}>{username(sig.Email)}</span>
 		</span>
 	);
 }
@@ -47,21 +47,21 @@ function Commit({repo, commit, full}) {
 	}
 
 	return (
-		<div styleName="container">
-			<div styleName="main">
-				<span styleName="title">{title}</span>
-				<div styleName="meta">
+		<div className={styles.container}>
+			<div className={styles.main}>
+				<span className={styles.title}>{title}</span>
+				<div className={styles.meta}>
 					<Avatar className={styles.avatar} img={commit.AuthorPerson ? commit.AuthorPerson.AvatarURL : ""} size="small" />
-					<div styleName="signature">
-						<span styleName="sig">{sigName(commit.Author)} authored <TimeAgo time={commit.Author.Date} /></span><wbr/>
-						{commit.Committer && showBothSigs(commit.Author, commit.Committer) ? <span styleName="sig">{sigName(commit.Committer)} committed <TimeAgo time={commit.Committer.Date} /></span> : null}
+					<div className={styles.signature}>
+						<span className={styles.sig}>{sigName(commit.Author)} authored <TimeAgo time={commit.Author.Date} /></span><wbr/>
+						{commit.Committer && showBothSigs(commit.Author, commit.Committer) ? <span className={styles.sig}>{sigName(commit.Committer)} committed <TimeAgo time={commit.Committer.Date} /></span> : null}
 					</div>
-					<div styleName="commit_id">
-						<code styleName="sha">{commit.ID.substring(0, 8)}</code>
+					<div className={styles.commit_id}>
+						<code className={styles.sha}>{commit.ID.substring(0, 8)}</code>
 					</div>
 				</div>
 			</div>
-			{full && rest && <div styleName="rest">{rest}</div>}
+			{full && rest && <div className={styles.rest}>{rest}</div>}
 		</div>
 	);
 }

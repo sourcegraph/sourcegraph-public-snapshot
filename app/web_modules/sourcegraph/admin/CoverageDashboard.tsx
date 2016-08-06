@@ -108,25 +108,25 @@ class CoverageDashboard extends Container<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<div styleName="container">
+			<div className={styles.container}>
 				{this.state.data && !this.state.drilldown && Object.keys(this.state.data).map((lang, i) => {
 					const data = this.state.data[lang];
-					return (<div styleName="graph" key={i}>
-						<div styleName="title" onClick={() => this._drilldown(lang)}>
+					return (<div className={styles.graph} key={i}>
+						<div className={styles.title} onClick={() => this._drilldown(lang)}>
 							{lang}
-							<MagnifyingGlassIcon styleName="icon" />
+							<MagnifyingGlassIcon className={styles.icon} />
 						</div>
-						<div styleName="quantiles">
-							<span styleName="quantile_header">Ref Quantiles: </span>
+						<div className={styles.quantiles}>
+							<span className={styles.quantile_header}>Ref Quantiles: </span>
 							{/* show quantile data for most recent day only */}
 							{data[data.length - 1].RefQs.map((q, j) =>
-								<span styleName="quantile" key={j}>{`${Math.round(q * 100)}% (p=${0.25 * (j+1)})`}</span>)}
+								<span className={styles.quantile} key={j}>{`${Math.round(q * 100)}% (p=${0.25 * (j+1)})`}</span>)}
 						</div>
-						<div styleName="quantiles">
-							<span styleName="quantile_header">Def Quantiles: </span>
+						<div className={styles.quantiles}>
+							<span className={styles.quantile_header}>Def Quantiles: </span>
 							{/* show quantile data for most recent day only */}
 							{data[data.length - 1].DefQs.map((q, j) =>
-								<span styleName="quantile" key={j}>{`${Math.round(q * 100)}% (p=${0.25 * (j+1)})`}</span>)}
+								<span className={styles.quantile} key={j}>{`${Math.round(q * 100)}% (p=${0.25 * (j+1)})`}</span>)}
 						</div>
 						<CoverageGraph data={this.state.data[lang]} target={langTargets[lang]} />
 					</div>);

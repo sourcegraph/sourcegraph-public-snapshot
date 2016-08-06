@@ -24,10 +24,10 @@ class BlobLineExpander extends Component<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<tr styleName="line_expander">
-				<td styleName="line_expander_cell" onClick={this._onClick}>
+			<tr className={styles.line_expander}>
+				<td className={styles.line_expander_cell} onClick={this._onClick}>
 					{/* TODO support doing the up/down arrow logic automatically */}
-					<div styleName="line_expander_icon">...</div>
+					<div className={styles.line_expander_icon}>...</div>
 				</td>
 				{this.state.lineNumbers && <td></td>}
 			</tr>

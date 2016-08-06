@@ -33,11 +33,11 @@ class CheckboxList extends React.Component<any, any> {
 		const {className, title, name, labels} = this.props;
 		let checkboxes: any[] = [];
 		for (let label of labels) {
-			checkboxes.push(<span styleName="checkbox" key={label}><label><input type="checkbox" name={name} defaultValue={label} defaultChecked={this._isDefaultValue(label)} /> {label}</label></span>);
+			checkboxes.push(<span className={styles.checkbox} key={label}><label><input type="checkbox" name={name} defaultValue={label} defaultChecked={this._isDefaultValue(label)} /> {label}</label></span>);
 		}
 
 		return (
-			<fieldset ref={(c) => this._fieldset = c} className={className} styleName="fieldset">
+			<fieldset ref={(c) => this._fieldset = c} className={`${className} ${styles.fieldset}`}>
 				<legend>{title}</legend>
 				{checkboxes}
 			</fieldset>

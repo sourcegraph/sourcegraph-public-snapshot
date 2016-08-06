@@ -117,16 +117,16 @@ class DashboardContainer extends Container<any, any> {
 		return (
 			<div>
 				<Helmet title="Home" />
-				<div styleName="home_container">
-					<Logo type="logotype" styleName="logo" />
+				<div className={styles.home_container}>
+					<Logo type="logotype" className={styles.logo} />
 
-					<h2 styleName="description">
+					<h2 className={styles.description}>
 						<strong>Instant&nbsp;usage&nbsp;examples and&nbsp;more&nbsp;as&nbsp;you&nbsp;code,</strong> automatically&nbsp;drawn&nbsp;from public and (your&nbsp;own)&nbsp;private&nbsp;code.
 					</h2>
 
-					<div styleName="user_actions">
-						{!(this.context as any).signedIn && <LocationStateToggleLink href="/login" modalName="login" location={this.props.location}><Button styleName="action_link" type="button" color="blue" outline={true}>Sign in</Button></LocationStateToggleLink>}
-						<a href="#install-chrome" onClick={this._installChromeExtensionClicked}><Button styleName="action_link" type="button" color="blue" outline={true}>Install Chrome extension</Button></a>
+					<div className={styles.user_actions}>
+						{!(this.context as any).signedIn && <LocationStateToggleLink href="/login" modalName="login" location={this.props.location}><Button className={styles.action_link} type="button" color="blue" outline={true}>Sign in</Button></LocationStateToggleLink>}
+						<a href="#install-chrome" onClick={this._installChromeExtensionClicked}><Button className={styles.action_link} type="button" color="blue" outline={true}>Install Chrome extension</Button></a>
 					</div>
 
 					<GlobalSearchInput
@@ -135,19 +135,19 @@ class DashboardContainer extends Container<any, any> {
 						query={this.props.location.query.q || ""}
 						autoFocus={true}
 						domRef={e => this._input = e}
-						styleName="search_input"
+						className={styles.search_input}
 						onChange={this._handleInput} />
-					<div styleName="search_actions">
-						<Button styleName="search_button" type="button" color="blue">Find usage examples</Button>
+					<div className={styles.search_actions}>
+						<Button className={styles.search_button} type="button" color="blue">Find usage examples</Button>
 					</div>
 
 					{<TitledSection title="Top searches" className={styles.top_queries_panel}>
 						{langSelected && <Queries langs={this.state.langs} onSelectQuery={this._onSelectQuery} />}
-						{!langSelected && <p styleName="notice">Select a language below to get started.</p>}
+						{!langSelected && <p className={styles.notice}>Select a language below to get started.</p>}
 					</TitledSection>}
 
 					{<TitledSection title="Search options" className={styles.search_settings_panel}>
-						<SearchSettings location={this.props.location} styleName="search_settings" />
+						<SearchSettings location={this.props.location} className={styles.search_settings} />
 					</TitledSection>}
 				</div>
 			</div>
@@ -166,8 +166,8 @@ const TitledSection = CSSModules(({
 	children?: any,
 	className: string,
 }) => (
-	<div styleName="titled_section" className={className}>
-		<div styleName="section_title">{title}</div>
+	<div className={`${styles.titled_section} ${className}`}>
+		<div className={styles.section_title}>{title}</div>
 		{children}
 	</div>
 ), styles);
@@ -210,5 +210,5 @@ const Queries = CSSModules(({
 	langs: LanguageID[],
 	onSelectQuery: OnSelectQueryListener,
 }) => (
-	<div>{topQueriesFor(langs).map(q => <Button onClick={(ev) => onSelectQuery(ev, q)} key={q} styleName="query" color="blue" outline={true} size="small">{q}</Button>)}</div>
+	<div>{topQueriesFor(langs).map(q => <Button onClick={(ev) => onSelectQuery(ev, q)} key={q} className={styles.query} color="blue" outline={true} size="small">{q}</Button>)}</div>
 ), styles);

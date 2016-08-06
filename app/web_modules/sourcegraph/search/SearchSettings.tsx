@@ -143,8 +143,8 @@ class SearchSettings extends Container<any, any> {
 		const langs = this._langs();
 
 		return (
-			<div styleName="group">
-				<span styleName="label" className={base.pr3}>Languages:</span>
+			<div className={styles.group}>
+				<span className={`${styles.label} ${base.pr3}`}>Languages:</span>
 				<div>
 					{allLangs.map(lang => (
 						lang === "python" || lang === "javascript" ?
@@ -152,7 +152,7 @@ class SearchSettings extends Container<any, any> {
 								<Button
 									color="normal"
 									size="small"
-									styleName="choice_button"
+									className={styles.choice_button}
 									onClick={() => this.setState({betaLanguage: lang})}
 									outline={true}>
 										{langName(lang)}
@@ -163,7 +163,7 @@ class SearchSettings extends Container<any, any> {
 								key={lang}
 								color={!langs.includes(lang) ? "normal" : "blue"}
 								size="small"
-								styleName="choice_button"
+								className={styles.choice_button}
 								onClick={() => this._toggleLang(lang)}
 								outline={!langs.includes(lang)}>
 									{langName(lang)}
@@ -173,7 +173,7 @@ class SearchSettings extends Container<any, any> {
 						<Button
 							color="normal"
 							size="small"
-							styleName="choice_button"
+							className={styles.choice_button}
 							onClick={() => this.setState({betaLanguage: "more"})}
 							outline={true}>
 								More...
@@ -187,41 +187,41 @@ class SearchSettings extends Container<any, any> {
 	_renderScope() {
 		const scope = this._scope();
 		return (
-			<div styleName="row">
-				<div styleName="group">
-					<span styleName="label" className={base.pr3}>Include:</span>
+			<div className={styles.row}>
+				<div className={styles.group}>
+					<span className={`${styles.label} ${base.pr3}`}>Include:</span>
 					<div>
 						{this.state.repo && <Button
 							color={scope.repo ? "blue" : "normal"}
 							size="small"
-							styleName="choice_button"
+							className={styles.choice_button}
 							onClick={() => this._setScope({repo: !scope.repo})}
 							outline={!scope.repo}>{this.state.repo}</Button>}
 						<Button
 							color={this.state.githubToken && !scope.popular ? "normal" : "blue"}
 							size="small"
-							styleName="choice_button"
+							className={styles.choice_button}
 							onClick={() => {
 								if (this.props.githubToken) this._setScope({popular: !scope.popular});
 							}}
 							outline={this.state.githubToken && !scope.popular}>Popular libraries</Button>
 						{(!this.state.signedIn || !this.props.githubToken) &&
-							<GitHubAuthButton color="green" size="small" outline={true} styleName="choice_button" returnTo={this.props.location}>My public projects</GitHubAuthButton>}
+							<GitHubAuthButton color="green" size="small" outline={true} className={styles.choice_button} returnTo={this.props.location}>My public projects</GitHubAuthButton>}
 						{this.props.githubToken &&
 							<Button
 								color={!scope.public ? "normal" : "blue"}
 								size="small"
-								styleName="choice_button"
+								className={styles.choice_button}
 								onClick={() => this._setScope({public: !scope.public})}
 								outline={!scope.public}>My public projects</Button>
 						}
 						{(!this.state.signedIn || !this._hasPrivateGitHubToken()) &&
-							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} styleName="choice_button" returnTo={this.props.location}>My private projects</GitHubAuthButton>}
+							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} className={styles.choice_button} returnTo={this.props.location}>My private projects</GitHubAuthButton>}
 						{this._hasPrivateGitHubToken() &&
 							<Button
 								color={!scope.private ? "normal" : "blue"}
 								size="small"
-								styleName="choice_button"
+								className={styles.choice_button}
 								onClick={() => this._setScope({private: !scope.private})}
 								outline={!scope.private}>My private projects</Button>
 						}
@@ -233,17 +233,17 @@ class SearchSettings extends Container<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<div styleName="groups" className={this.props.className}>
-				<div styleName="groups_inner" className={this.props.innerClassName}>
-					<div styleName="row">
+			<div className={`${styles.groups} ${this.props.className}`}>
+				<div className={`${styles.groups_inner} ${this.props.innerClassName}`}>
+					<div className={styles.row}>
 						{this._renderLanguages()}
 					</div>
 					{this._renderScope()}
 				</div>
 				{this.props.location.state && this.props.location.state.modal === "beta" && this.state.betaLanguage &&
 					<LocationStateModal modalName="beta" location={this.props.location}>
-						<div styleName="modal">
-							<h2 styleName="modalTitle">Join the {`${this.state.betaLanguage === "more" ? "Sourcegraph" : `${langName(this.state.betaLanguage)}`}`} beta</h2>
+						<div className={styles.modal}>
+							<h2 className={styles.modalTitle}>Join the {`${this.state.betaLanguage === "more" ? "Sourcegraph" : `${langName(this.state.betaLanguage)}`}`} beta</h2>
 							<BetaInterestForm
 								className={styles.modalForm}
 								loginReturnTo="/beta"

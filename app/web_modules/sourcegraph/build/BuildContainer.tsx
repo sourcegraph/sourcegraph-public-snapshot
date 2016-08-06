@@ -94,16 +94,16 @@ class BuildContainer extends Container<any, any> {
 		if (!this.state.build) return null;
 
 		return (
-			<div styleName="build_container">
+			<div className={styles.build_container}>
 				<Helmet title={`Build #${this.state.id} | ${trimRepo(this.state.repo)}`} />
-				<div styleName="actions">
+				<div className={styles.actions}>
 					<Link to={urlToBuilds(this.state.repo)}><Button size="large" outline={true}>View All Builds</Button></Link>
 					{(this.context as any).user && (this.context as any).user.Admin && <Button style={{marginLeft: "1.5rem"}} size="small" outline={true} onClick={() => {
 						Dispatcher.Backends.dispatch(new BuildActions.CreateBuild(this.state.repo, this.state.build.CommitID, this.state.build.Branch, this.state.build.Tag, true));
 					}}>Rebuild</Button>}
 				</div>
 				<BuildHeader build={this.state.build} commit={this.state.commit} />
-				{this.state.commit && <div styleName="commit"><Commit commit={this.state.commit} repo={this.state.repo} full={false} /></div>}
+				{this.state.commit && <div className={styles.commit}><Commit commit={this.state.commit} repo={this.state.repo} full={false} /></div>}
 				{this.state.tasks && this.state.tasks.BuildTasks && <BuildTasks tasks={this.state.tasks.BuildTasks} logs={this.state.logs} />}
 			</div>
 		);

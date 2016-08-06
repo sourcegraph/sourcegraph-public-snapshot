@@ -128,8 +128,8 @@ class BetaInterestForm extends Container<any, any> {
 		}
 
 		if (!(this.context as any).signedIn) {
-			return (<div styleName="cta">
-				<p styleName="p">You must sign in to continue.</p>
+			return (<div className={styles.cta}>
+				<p className={styles.p}>You must sign in to continue.</p>
 				<GitHubAuthButton returnTo={this.props.loginReturnTo} color="blue" className={base.mr3} onClick={this.props.onSubmit ? this.props.onSubmit : () => {}}>
 					<strong>Sign in with GitHub</strong>
 				</GitHubAuthButton>
@@ -163,25 +163,25 @@ class BetaInterestForm extends Container<any, any> {
 					<p>Feel free to update your favorite editors / languages using the form below.</p>
 				</span>}
 				<form className={className} onSubmit={this._sendForm.bind(this)} onChange={this._onChange}>
-						<div styleName="row">
+						<div className={styles.row}>
 							<Input domRef={(c) => this._fullName = c} block={true} type="text" name="fullName" placeholder="Name" required={true} defaultValue={defaultFullName} />
 						</div>
-						{(!emails || emails.length === 0) && <div styleName="row">
+						{(!emails || emails.length === 0) && <div className={styles.row}>
 							<Input domRef={(c) => this._email = c} block={true} type="email" name="email" placeholder="Email address" required={true} defaultValue={defaultEmail} />
 						</div>}
-						<div styleName="row">
+						<div className={styles.row}>
 							<CheckboxList ref={(c) => this._editors = c} title="Preferred editors" name="editors" labels={editors} defaultValues={defaultEditors} />
 						</div>
-						<div styleName="row">
+						<div className={styles.row}>
 							<CheckboxList ref={(c) => this._languages = c} title="Preferred languages" name="languages" labels={languages} defaultValues={defaultLanguages} />
 						</div>
-						<div styleName="row">
-							<textarea ref={(c) => this._message = c} styleName="textarea" name="message" placeholder="Other / comments" defaultValue={defaultMessage}></textarea>
+						<div className={styles.row}>
+							<textarea ref={(c) => this._message = c} className={styles.textarea} name="message" placeholder="Other / comments" defaultValue={defaultMessage}></textarea>
 						</div>
-						<div styleName="row" className={base.pb4}>
+						<div className={`${styles.row} ${base.pb4}`}>
 							<Button block={true} type="submit" color="purple">{betaRegistered ? "Update my interests" : "Participate in the beta"}</Button>
 						</div>
-						<div styleName="row" className={base.pb4}>
+						<div className={`${styles.row} ${base.pb4}`}>
 							{this.state.formError && <strong>{this.state.formError}</strong>}
 							{this.state.resp && this.state.resp.Error && <div>{this.state.resp.Error.body}</div>}
 						</div>

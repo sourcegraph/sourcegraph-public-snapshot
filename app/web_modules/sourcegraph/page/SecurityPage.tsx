@@ -12,18 +12,18 @@ function SecurityPage(props, {signedIn}) {
 		<div>
 			<Helmet title="Security" />
 			<Hero pattern="objects" color="dark" className={base.pv1}>
-				<div styleName="container">
+				<div className={styles.container}>
 					<Heading level="3" color="white">Sourcegraph Security</Heading>
 				</div>
 			</Hero>
-			<div styleName="content">
-				<p styleName="p">We know the security of your code is extremely important. Our business depends on keeping your code safe. We take this commitment very seriously and work every day to continually earn your trust.</p>
+			<div className={styles.content}>
+				<p className={styles.p}>We know the security of your code is extremely important. Our business depends on keeping your code safe. We take this commitment very seriously and work every day to continually earn your trust.</p>
 
-				<p styleName="p">Our commitment to security is strong because Sourcegraph's employees have extensive experience in building secure systems. Prior to Sourcegraph, our founders and early employees built software for highly sensitive environments, including top-5 U.S. financial institutions. Our CEO, Quinn Slack, also performed graduate-level research in the Secure Computer Systems group of the <a href="https://cs.stanford.edu/" target="_blank">Stanford Computer Science Department</a>, helping build <a href="https://en.wikipedia.org/wiki/Tcpcrypt" target="_blank">tcpcrypt</a> and submitting security-related patches to cURL, OpenSSL, GnuTLS, NSS, and Chromium.</p>
+				<p className={styles.p}>Our commitment to security is strong because Sourcegraph's employees have extensive experience in building secure systems. Prior to Sourcegraph, our founders and early employees built software for highly sensitive environments, including top-5 U.S. financial institutions. Our CEO, Quinn Slack, also performed graduate-level research in the Secure Computer Systems group of the <a href="https://cs.stanford.edu/" target="_blank">Stanford Computer Science Department</a>, helping build <a href="https://en.wikipedia.org/wiki/Tcpcrypt" target="_blank">tcpcrypt</a> and submitting security-related patches to cURL, OpenSSL, GnuTLS, NSS, and Chromium.</p>
 
-				<p styleName="p">Beyond keeping your code safe, Sourcegraph can actually help your team <em>improve</em> the security of your own code, by disseminating knowledge and best practices about safe code usage to all of your developers.</p>
+				<p className={styles.p}>Beyond keeping your code safe, Sourcegraph can actually help your team <em>improve</em> the security of your own code, by disseminating knowledge and best practices about safe code usage to all of your developers.</p>
 
-				<p styleName="p">The security policy below details the steps we take to keep your code safe. Contact us at <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a> with questions and feedback.</p>
+				<p className={styles.p}>The security policy below details the steps we take to keep your code safe. Contact us at <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a> with questions and feedback.</p>
 
                 <Heading level="3" underline="blue" className={styles.h5}>Security measures</Heading>
 
@@ -60,7 +60,7 @@ function SecurityPage(props, {signedIn}) {
                     <li>No private code is pulled onto Sourcegraph without explicit permission from an authorized user.</li>
                 </ul>
 
-                <p styleName="p">Sourcegraph maintains application security over time with a 3-tiered defense policy against the introduction of security vulnerabilities:</p>
+                <p className={styles.p}>Sourcegraph maintains application security over time with a 3-tiered defense policy against the introduction of security vulnerabilities:</p>
 
                 <ul>
                     <li>Every new feature with security implications must include tests for potential security flaws.</li>
@@ -70,17 +70,17 @@ function SecurityPage(props, {signedIn}) {
 
                 <Heading level="4" className={styles.h}>Employee access</Heading>
 
-                <p styleName="p">All access to critical internal systems (e.g., VMs, cloud storage, email) is protected by 2-factor authentication.</p>
+                <p className={styles.p}>All access to critical internal systems (e.g., VMs, cloud storage, email) is protected by 2-factor authentication.</p>
 
-                <p styleName="p">No Sourcegraph employee ever accesses private code unless explicitly authorized by a customer for support reasons.</p>
+                <p className={styles.p}>No Sourcegraph employee ever accesses private code unless explicitly authorized by a customer for support reasons.</p>
 
-                <p styleName="p">All employee computers and devices are password-protected with full-disk encryption.</p>
+                <p className={styles.p}>All employee computers and devices are password-protected with full-disk encryption.</p>
 
                 <Heading id="disclose" level="3" underline="blue" className={styles.h5}>Bug bounty program</Heading>
 
-                <p styleName="p">Our bug bounty program is similar to ones offered by Google, Facebook, Mozilla, and GitHub, and offers a way for security researchers and engineers to report vulnerabilities in a responsible fashion and receive cash compensation for their efforts.</p>
+                <p className={styles.p}>Our bug bounty program is similar to ones offered by Google, Facebook, Mozilla, and GitHub, and offers a way for security researchers and engineers to report vulnerabilities in a responsible fashion and receive cash compensation for their efforts.</p>
 
-                <p styleName="p">If you’ve found a vulnerability, email <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a> to report it. Please refer to the rules below for more information.</p>
+                <p className={styles.p}>If you’ve found a vulnerability, email <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a> to report it. Please refer to the rules below for more information.</p>
 
                 <Heading level="4" className={styles.h}>Rules</Heading>
 
@@ -92,7 +92,7 @@ function SecurityPage(props, {signedIn}) {
                     <li>If in doubt, <a href="mailto:security@sourcegraph.com">email us</a>.</li>
                 </ul>
 
-                <p styleName="p">On our end, we:</p>
+                <p className={styles.p}>On our end, we:</p>
 
                 <ul>
                     <li>Won’t take legal action against you if you follow the rules.</li>
@@ -103,7 +103,7 @@ function SecurityPage(props, {signedIn}) {
 
                 <Heading level="4" className={styles.h}>Open bounties</Heading>
 
-                <p styleName="p">Rewards for open bounties range from $10 to $4,000 and are determined at our discretion based on a variety of factors, including but not limited to the percentage of users impacted, the likelihood of encountering the vulnerability under normal use of the site, and the severity of potential service disruption or data leakage.</p>
+                <p className={styles.p}>Rewards for open bounties range from $10 to $4,000 and are determined at our discretion based on a variety of factors, including but not limited to the percentage of users impacted, the likelihood of encountering the vulnerability under normal use of the site, and the severity of potential service disruption or data leakage.</p>
 
                 <ul>
                     <li>Sourcegraph.com: Sourcegraph.com is our main website. It is built in Go and uses a variety of open-source libraries, including <a href="https://srclib.org">srclib</a>.</li>
@@ -127,7 +127,7 @@ function SecurityPage(props, {signedIn}) {
 
 				<Heading level="3" underline="blue" className={styles.h5}>Contact us</Heading>
 
-                <p styleName="p">
+                <p className={styles.p}>
                     Questions, concerns, or comments about our security policy? Contact us at <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a>.
                 </p>
 			</div>

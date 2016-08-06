@@ -76,38 +76,38 @@ class Repos extends React.Component<any, any> {
 
 		return (
 			<div className={base.pb6}>
-				<header styleName="header">
+				<header className={styles.header}>
 					<Heading level="7" color="cool_mid_gray">Your repositories</Heading>
 					<p>To get jump-to-definition, search, and code examples, enable indexing on your repositories using the toggle. Private code indexed on Sourcegraph is only available to you and those with permissions to the underlying GitHub repository.</p>
-					<div styleName="input_bar">
-						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} styleName="github_button">Add public repositories</GitHubAuthButton>}
-						{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github_button">Add private repositories</GitHubAuthButton>}
+					<div className={styles.input_bar}>
+						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} className={styles.github_button}>Add public repositories</GitHubAuthButton>}
+						{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>}
 					</div>
 				</header>
-				<div styleName="settings">
+				<div className={styles.settings}>
 					{this._hasGithubToken() &&
-					<div styleName="list_heading">
+					<div className={styles.list_heading}>
 						<Input type="text"
 							placeholder="Find a repository..."
 							domRef={(e) => this._filterInput = e}
 							spellCheck={false}
-							styleName="filter_input"
+							className={styles.filter_input}
 							onChange={this._handleFilter} />
-						<span styleName="list_label">Enable Indexing</span>
+						<span className={styles.list_label}>Enable Indexing</span>
 					</div>}
-					<div styleName="repos_list">
+					<div className={styles.repos_list}>
 						{repos.length > 0 && repos.map((repo, i) =>
-							<div styleName="row" key={i}>
-								<div styleName="info">
+							<div className={styles.row} key={i}>
+								<div className={styles.info}>
 									{repo.ID ?
 										<RepoLink repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} /> :
 										(repo.URI && repo.URI.replace("github.com/", "").replace("/", " / ", 1)) || `${repo.Owner} / ${repo.Name}`
 									}
-									{repo.Description && <p styleName="description">
+									{repo.Description && <p className={styles.description}>
 										{repo.Description.length > 100 ? `${repo.Description.substring(0, 100)}...` : repo.Description}
 									</p>}
 								</div>
-								<div styleName="toggle">
+								<div className={styles.toggle}>
 									<ToggleSwitch defaultChecked={Boolean(repo.ID)} onChange={(checked) => {
 										this._toggleRepo(repo);
 									}}/>
@@ -116,17 +116,17 @@ class Repos extends React.Component<any, any> {
 						)}
 					</div>
 					{this._hasGithubToken() && repos.length === 0 && (!this._filterInput || !this._filterInput.value) &&
-						<p styleName="indicator">Loading...</p>
+						<p className={styles.indicator}>Loading...</p>
 					}
 
 					{this._hasGithubToken() && this._filterInput && this._filterInput.value && repos.length === 0 &&
-						<p styleName="indicator">No matching repositories</p>
+						<p className={styles.indicator}>No matching repositories</p>
 					}
 				</div>
 				{this.props.location.query.onboarding &&
-					<footer styleName="footer">
-						<a styleName="footer_link" href="/integrations?onboarding=t">
-							<Button color="green" styleName="footer_btn">Continue</Button>
+					<footer className={styles.footer}>
+						<a className={styles.footer_link} href="/integrations?onboarding=t">
+							<Button color="green" className={styles.footer_btn}>Continue</Button>
 						</a>
 					</footer>
 				}

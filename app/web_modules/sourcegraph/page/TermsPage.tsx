@@ -12,11 +12,11 @@ function TermsPage(props, {signedIn}) {
 		<div>
 			<Helmet title="Terms" />
 			<Hero pattern="objects" color="dark" className={base.pv1}>
-				<div styleName="container">
+				<div className={styles.container}>
 					<Heading level="3" color="white">Sourcegraph Terms of Service</Heading>
 				</div>
 			</Hero>
-			<div styleName="content">
+			<div className={styles.content}>
                 <p>These Terms of Service are provided by Sourcegraph, Inc. (“<b>Sourcegraph</b>,” “<b>we</b>,” “<b>our</b>,” or “<b>us</b>”) and govern your use of the software we make available (the “Software”). To use the Software, Users must at all times agree to and abide by these Terms. The Software allows you to automatically analyze your code and certain other information related to your organization and your code (such code and information, collectively, “<b>User Data</b>”).</p>
 
                 <p>Sourcegraph provides a software platform designed to enhance code intelligence. That is, our Software draws insights from automatic analysis of your organization’s code, giving developers and teams instant access to key information about their codebase.</p>

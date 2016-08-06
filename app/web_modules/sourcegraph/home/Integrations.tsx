@@ -52,31 +52,31 @@ class Integrations extends Component<any, any> {
 	render(): JSX.Element | null {
 		return (
 			<div styleName={this.props.location.state && this.props.location.state.modal === "integrations" ? "" : "container"}>
-				<div styleName="menu">
+				<div className={styles.menu}>
 					<Heading level="7" color="cool_mid_gray">Install an editor plugin</Heading>
 					<p>Choose your editor to download the right plugin and get instructions on installation.</p>
-					<div styleName="tool_list">
+					<div className={styles.tool_list}>
 						{plugins.map((tool, i) => (
-							<a key={i} href={tool.url} target="_blank" styleName="tool">
-								<img styleName="img" src={`${(this.context as any).siteConfig.assetsRoot}${tool.img}`}></img>
-								<div styleName="caption">{tool.name}</div>
+							<a key={i} href={tool.url} target="_blank" className={styles.tool}>
+								<img className={styles.img} src={`${(this.context as any).siteConfig.assetsRoot}${tool.img}`}></img>
+								<div className={styles.caption}>{tool.name}</div>
 							</a>
 						))}
 					</div>
 					<Heading level="7" color="cool_mid_gray" className={base.pb3}>Other tools</Heading>
-					<div styleName="tool_list">
+					<div className={styles.tool_list}>
 						{otherTools.map((tool, i) => (
-							<a key={i} href={tool.url} target="_blank" styleName="tool">
-								<img styleName="img" src={`${(this.context as any).siteConfig.assetsRoot}${tool.img}`}></img>
-								<div styleName="caption">{tool.name}</div>
+							<a key={i} href={tool.url} target="_blank" className={styles.tool}>
+								<img className={styles.img} src={`${(this.context as any).siteConfig.assetsRoot}${tool.img}`}></img>
+								<div className={styles.caption}>{tool.name}</div>
 							</a>
 						))}
 					</div>
 				</div>
 				{this.props.location.query.onboarding &&
-					<footer styleName="footer">
-						<a styleName="footer_link" href="/desktop/home">
-							<Button color="green" styleName="footer_btn">Continue</Button>
+					<footer className={styles.footer}>
+						<a className={styles.footer_link} href="/desktop/home">
+							<Button color="green" className={styles.footer_btn}>Continue</Button>
 						</a>
 					</footer>
 				}

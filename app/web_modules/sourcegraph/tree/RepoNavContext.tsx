@@ -26,7 +26,7 @@ class RepoNavContext extends Component<any, any> {
 		let pathParts = this.state.treePath.split("/");
 		let pathBreadcrumb = breadcrumb(
 			`/${this.state.treePath}`,
-			(i) => <span key={i} styleName="sep">/</span>,
+			(i) => <span key={i} className={styles.sep}>/</span>,
 			(path, component, i, isLast) => (
 				<Link to={urlTo("tree", Object.assign({}, this.state.params, {splat: [this.state.params.splat[0], pathParts.slice(0, i).join("/")]}))}
 					key={i}

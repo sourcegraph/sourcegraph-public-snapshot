@@ -44,7 +44,7 @@ class Modal extends React.Component<any, any> {
 	render(): JSX.Element | null {
 		return (
 			<div ref="modal_container"
-				styleName="container"
+				className={styles.container}
 				onClick={this._onClick}>
 					{this.props.children}
 			</div>

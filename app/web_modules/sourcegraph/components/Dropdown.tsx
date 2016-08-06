@@ -83,17 +83,17 @@ class Dropdown extends React.Component<any, any> {
 				ref={(e) => this._wrapper = e}>
 				<span onClick={this.getMenuClickCallback(this.state.selectedValue)}>{this.props.icon} {this.props.title}</span>
 				<span className={`toggle ${this.state.open ? "open_arrow" : ""}`} onClick={this._onToggleDropdown}>
-					<DownPointer width={8} styleName="center_icon" className={base.ml1}/>
+					<DownPointer width={8} className={`${styles.center_icon} ${base.ml1}`} />
 				</span>
-				<div styleName="dropdown_menu">
+				<div className={styles.dropdown_menu}>
 					<div role="menu"
 						styleName={this.state.open ? "dropdown_menu_open" : "dropdown_menu_closed"}>
-						<ul styleName="list_section">
+						<ul className={styles.list_section}>
 							{this.props.items.map((item, i) =>
-								<li key={i} styleName="item" onClick={this.getItemClickCallback(item.value)}>
-									<span styleName="item_content">
+								<li key={i} className={styles.item} onClick={this.getItemClickCallback(item.value)}>
+									<span className={styles.item_content}>
 										<CheckIcon styleName={item.value === this.state.selectedValue ? "item_icon" : "item_icon_hidden"} />
-										<span styleName="item_name">{item.name}</span>
+										<span className={styles.item_name}>{item.name}</span>
 									</span>
 								</li>
 							)}

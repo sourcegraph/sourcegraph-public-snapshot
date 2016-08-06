@@ -30,7 +30,7 @@ class NavContext extends React.Component<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<div styleName="nav">
+			<div className={styles.nav}>
 				{this._isLanguageUnsupported() &&
 					<Label style={{marginRight: "10px"}} color="warning">
 						{`${this.props.inventory.PrimaryProgrammingLanguage} is not yet supported`}
@@ -39,7 +39,7 @@ class NavContext extends React.Component<any, any> {
 				{this.props.repoObj &&
 					<RepoLink repo={this.props.repo} rev={this.props.rev} />
 				}
-				<div styleName="repo_nav_context">{this.props.repoNavContext}</div>
+				<div className={styles.repo_nav_context}>{this.props.repoNavContext}</div>
 				{this.props.commitID && <RevSwitcherContainer
 					repo={this.props.repo}
 					repoObj={this.props.repoObj}

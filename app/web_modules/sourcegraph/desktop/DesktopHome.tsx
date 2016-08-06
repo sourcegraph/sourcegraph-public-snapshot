@@ -46,7 +46,7 @@ class DesktopHome extends React.Component<any, any> {
 				<div className={base.mv4}>
 					<Heading level="5">Semantic, global code search</Heading>
 					<p>
-						Just hit <span styleName="label_blue">⌘ or CTRL </span> + <span styleName="label_blue">SHIFT</span> + <span styleName="label_blue">;</span> or click the search box at the top of this page to semantically search for functions and symbols.
+						Just hit <span className={styles.label_blue}>⌘ or CTRL </span> + <span className={styles.label_blue}>SHIFT</span> + <span className={styles.label_blue}>;</span> or click the search box at the top of this page to semantically search for functions and symbols.
 					</p>
 				</div>
 				<div className={base.mv4}>

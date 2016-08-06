@@ -31,23 +31,23 @@ class Stepper extends React.Component<any, any> {
 				return (
 					<span styleName={`step step_complete line_${color}`} key={i}>
 						<span styleName={`step_node_complete node_${color}`}>
-							<Icon icon="check" width="16px" styleName="check" />
+							<Icon icon="check" width="16px" className={styles.check} />
 						</span>
-						<span styleName="step_text">{step}</span>
+						<span className={styles.step_text}>{step}</span>
 					</span>
 				);
 			}
 			return (
 				<span styleName="step step_incomplete" key={i}>
-					<span styleName="step_node_incomplete" />
-					<span styleName="step_text">{step}</span>
+					<span className={styles.step_node_incomplete} />
+					<span className={styles.step_text}>{step}</span>
 				</span>
 			);
 		});
 	}
 
 	render(): JSX.Element | null {
-		return <div className={this.props.className} styleName="stepper">{this.renderSteps()}</div>;
+		return <div className={`${this.props.className} ${styles.stepper}`}>{this.renderSteps()}</div>;
 	}
 }
 

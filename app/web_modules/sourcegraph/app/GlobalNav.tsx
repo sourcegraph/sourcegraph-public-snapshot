@@ -46,15 +46,15 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 	let repo = repoSplat ? repoPath(repoSplat) : null;	return (
 		<nav
 			id="global-nav"
-			styleName="navbar"
-			className={colors.shadow_gray} role="navigation"
+			className={`${styles.navbar} ${colors.shadow_gray}`}
+			role="navigation"
 			style={shouldHide ? {visibility: "hidden"} : {}}>
 
 			{location.state && location.state.modal === "login" &&
 			// TODO(chexee): Decouple existence of modals and GlobalNav
 				<LocationStateModal modalName="login" location={location}
 					onDismiss={(v) => eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
-					<div styleName="modal">
+					<div className={styles.modal}>
 						<LoginForm
 							onLoginSuccess={dismissModal("login", location, router)}
 							returnTo={location}
@@ -66,8 +66,8 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 			{location.state && location.state.modal === "menuIntegrations" &&
 				<div>
 					<LocationStateModal modalName="menuIntegrations" location={location}>
-						<div styleName="modal">
-							<a styleName="modal_dismiss" onClick={dismissModal("menuIntegrations", location, router)} color="white">
+						<div className={styles.modal}>
+							<a className={styles.modal_dismiss} onClick={dismissModal("menuIntegrations", location, router)} color="white">
 								<CloseIcon className={base.pt2} />
 							</a>
 							<Integrations location={location}/>
@@ -78,7 +78,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 
 			{location.state && location.state.modal === "menuBeta" &&
 				<LocationStateModal modalName="menuBeta" location={location}>
-					<div styleName="modal">
+					<div className={styles.modal}>
 						<Heading level="4" className={base.mb3} align="center">Join our beta program</Heading>
 						<BetaInterestForm
 							loginReturnTo="/beta"
@@ -105,19 +105,18 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 				</Link>}
 
 				<div
-					styleName="flex_fill"
-					className={`${base.b__dotted} ${base.bn} ${base.brw2} ${colors.b__cool_pale_gray}`}>
+					className={`${styles.flex_fill} ${base.b__dotted} ${base.bn} ${base.brw2} ${colors.b__cool_pale_gray}`}>
 					{location.pathname !== "/" && <StyledSearchForm repo={repo} location={location} router={router} showResultsPanel={location.pathname !== `/${rel.search}`} />}
 				</div>
 
-				{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal styleName="icon_ellipsis" title="Your editor could not identify the symbol"/>}
-				{typeof channelStatusCode !== "undefined" && channelStatusCode === 1 && <CheckIcon styleName="icon_check" title="Sourcegraph successfully looked up symbol" />}
+				{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal className={styles.icon_ellipsis} title="Your editor could not identify the symbol"/>}
+				{typeof channelStatusCode !== "undefined" && channelStatusCode === 1 && <CheckIcon className={styles.icon_check} title="Sourcegraph successfully looked up symbol" />}
 
 				{user && <div styleName="flex flex_fixed" className={`${base.pv2} ${base.ph3}`}>
 					<Popover left={true}>
-						<div styleName="user">
+						<div className={styles.user}>
 							{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <div>{user.Login}</div>}
-							<DownPointer width={10} className={base.ml2} styleName="fill_cool_mid_gray" />
+							<DownPointer width={10} className={`${base.ml2} ${styles.fill_cool_mid_gray}`} />
 						</div>
 						<Menu className={base.pa0} style={{width: "220px"}}>
 							<div className={`${base.pa0} ${base.mb2} ${base.mt3}`}>
@@ -134,9 +133,9 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 								Beta program
 							</LocationStateToggleLink>
 							<hr role="divider" className={base.mt3} />
-							<div styleName="cool_mid_gray" className={`${base.pv1} ${base.mb1} ${typography.tc}`}>
-								<Link to="/security" className={`${typography.f7} ${typography.link_subtle} ${base.pr3}`} styleName="cool_mid_gray">Security</Link>
-								<Link to="/-/privacy" className={`${typography.f7} ${typography.link_subtle} ${base.pr3}`} styleName="cool_mid_gray">Privacy</Link>
+							<div className={`${styles.cool_mid_gray} ${base.pv1} ${base.mb1} ${typography.tc}`}>
+								<Link to="/security" className={`${styles.cool_mid_gray} ${typography.f7} ${typography.link_subtle} ${base.pr3}`}>Security</Link>
+								<Link to="/-/privacy" className={`${styles.cool_mid_gray} ${typography.f7} ${typography.link_subtle} ${base.pr3}`}>Privacy</Link>
 								<Link to="/-/terms" className={`${typography.f7} ${typography.link_subtle}`}>Terms</Link>
 							</div>
 						</Menu>
@@ -321,7 +320,7 @@ class SearchForm extends React.Component<any, any> {
 				ref={e => this._container = e}>
 				<form
 					onSubmit={this._handleSubmit}
-					styleName="flex"
+					className={styles.flex}
 					autoComplete="off">
 					<GlobalSearchInput
 						name="q"
@@ -335,7 +334,7 @@ class SearchForm extends React.Component<any, any> {
 						onKeyDown={this._handleKeyDown}
 						onClick={this._handleFocus}
 						onChange={this._handleChange} />
-						{this.props.showResultsPanel && this.state.open && <button styleName="close_button" type="reset" onClick={this._handleReset}><CloseIcon styleName="close_icon" /></button>}
+						{this.props.showResultsPanel && this.state.open && <button className={styles.close_button} type="reset" onClick={this._handleReset}><CloseIcon className={styles.close_icon} /></button>}
 				</form>
 				{this.props.showResultsPanel && this.state.open && <SearchResultsPanel query={this.state.query || ""} repo={this.props.repo} location={this.props.location} />}
 			</div>

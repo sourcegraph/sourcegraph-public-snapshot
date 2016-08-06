@@ -13,7 +13,7 @@ import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import CSSModules from "react-css-modules";
-import * as style from "sourcegraph/user/styles/accountForm.css";
+import * as styles from "sourcegraph/user/styles/accountForm.css";
 
 export class LoginForm extends Container<any, any> {
 	_loginInput: any;
@@ -69,11 +69,11 @@ export class LoginForm extends Container<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<form {...this.props} onSubmit={this._handleSubmit} styleName="form">
+			<form {...this.props} onSubmit={this._handleSubmit} className={styles.form}>
 				<Heading level="3" align="center" underline="orange">Sign in to Sourcegraph</Heading>
-				{this.state.githubError && <div styleName="error">Sorry, signing in via GitHub didn't work. (Check your organization's GitHub 3rd-party application settings.) Try <Link to="/join?github-error=from-login">creating a separate Sourcegraph account</Link>.</div>}
+				{this.state.githubError && <div className={styles.error}>Sorry, signing in via GitHub didn't work. (Check your organization's GitHub 3rd-party application settings.) Try <Link to="/join?github-error=from-login">creating a separate Sourcegraph account</Link>.</div>}
 				<GitHubAuthButton returnTo={this.state.returnTo} tabIndex="1" block={true}>Continue with GitHub</GitHubAuthButton>
-				<p styleName="divider">or</p>
+				<p className={styles.divider}>or</p>
 				<label>
 					<span>Username</span>
 					<Input type="text"
@@ -91,7 +91,7 @@ export class LoginForm extends Container<any, any> {
 				</label>
 				<label>
 					<span>Password</span>
-					<Link styleName="label_link" to="/forgot">Forgot password?</Link>
+					<Link className={styles.label_link} to="/forgot">Forgot password?</Link>
 					<Input type="password"
 						id="e2etest-password-field"
 						autoComplete="current-password"
@@ -107,21 +107,21 @@ export class LoginForm extends Container<any, any> {
 					block={true}
 					loading={this.state.submitted && (this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error))}>Sign in</Button>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
-					<div styleName="error">{this.state.authResponse.Error.body.message}</div>
+					<div className={styles.error}>{this.state.authResponse.Error.body.message}</div>
 				}
-				<p styleName="sub_text">
+				<p className={styles.sub_text}>
 					No account yet? <Link tabIndex="5" to="/join">Sign up.</Link>
 				</p>
 			</form>
 		);
 	}
 }
-let StyledLoginForm = CSSModules(LoginForm, style);
+let StyledLoginForm = CSSModules(LoginForm, styles);
 
 // Login is the standalone login page.
 function Login(props, {router}) {
 	return (
-		<div styleName="full_page">
+		<div className={styles.full_page}>
 			<Helmet title="Sign In" />
 			<StyledLoginForm {...props}
 				returnTo="/"
@@ -134,4 +134,4 @@ function Login(props, {router}) {
 };
 
 
-export default redirectIfLoggedIn("/", CSSModules(Login, style));
+export default redirectIfLoggedIn("/", CSSModules(Login, styles));
