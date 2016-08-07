@@ -274,11 +274,11 @@ export default class RefsContainer extends Container<any, any> {
 
 		return (
 			<div className={`${base.pa4} ${base.bb} ${colors.b__cool_pale_gray} ${styles.full_width_sm}`}>
-			{this.state.showRepoTitle &&
-				<div>
-					<RepoLink className={styles.repoLink} repo={this.state.refRepo} />
-				</div>
-			}
+				{this.state.showRepoTitle &&
+					<div>
+						<RepoLink className={styles.repoLink} repo={this.state.refRepo} />
+					</div>
+				}
 				<div className={styles.container}
 					onMouseEnter={() => {
 						if (!this.state.mouseover) this.setState({mouseover: true, mouseout: false});
