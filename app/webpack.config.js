@@ -85,7 +85,6 @@ module.exports = {
 	plugins: plugins,
 	module: {
 		preLoaders: [
-			{test:	/\.js$/, exclude: /node_modules/, loader: "eslint-loader"},
 			{test:	/\.tsx?$/, exclude: /node_modules/, loader: "tslint-loader"},
 		],
 		loaders: [
