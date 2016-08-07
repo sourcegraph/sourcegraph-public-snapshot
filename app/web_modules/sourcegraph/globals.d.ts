@@ -88,7 +88,7 @@ declare module "react/lib/update" {
 }
 
 declare module "react-router-scroll" {
-	export default {} as any;
+	export function useScroll(arg: any): any;
 }
 
 declare module "react-helmet" {

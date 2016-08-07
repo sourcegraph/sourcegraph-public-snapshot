@@ -6,7 +6,7 @@ import * as ReactDOM from "react-dom";
 import "sourcegraph/util/actionLogger";
 import "sourcegraph/app/appdash";
 import {Router, browserHistory as history, match, applyRouterMiddleware} from "react-router";
-import useScroll from "react-router-scroll";
+import {useScroll} from "react-router-scroll";
 import {rootRoute} from "sourcegraph/app/App";
 import * as context from "sourcegraph/app/context";
 import resetOnAuthChange from "sourcegraph/app/resetOnAuthChange";
