@@ -99,7 +99,6 @@ test: check src app/assets/bundle.js
 	go test -race ${TESTPKGS}
 
 check: ${GOBIN}/go-template-lint
-	cd app && node ./node_modules/.bin/eslint --max-warnings=0 script web_modules
 	cd app && node ./node_modules/.bin/lintspaces -t -n -d tabs ./style/*.scss ./style/**/*.scss ./templates/*.html ./templates/**/*.html
 	go-template-lint -f app/tmpl_funcs.go -t app/internal/tmpl/tmpl.go -td app/templates
 	bash dev/check-for-template-inlines
