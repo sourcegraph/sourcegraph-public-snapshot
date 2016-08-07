@@ -18,25 +18,23 @@ const dummyLineLengths = [
 //
 // It makes the app feel a lot less jittery.
 function BlobContentPlaceholder(props) {
-	let s = props.styles || {};
-
 	const numLines = props.numLines || 60;
 	const lines: any[] = [];
 	for (let i = 0; i < numLines; i++) {
 		const line = i + 1;
 		lines.push(
-			<tr className={s.line} data-line={line} key={i}>
-				<td className={s.lineNumberCell}></td>
-				<td className={`code ${s.lineContentPlaceholder}`} data-line={line}>
-					<div className={s.placeholderWhitespace} style={{width: `${100 - dummyLineLengths[i % dummyLineLengths.length]}%`}}>&nbsp;</div>
+			<tr className={styles.line} data-line={line} key={i}>
+				<td className={styles.lineNumberCell}></td>
+				<td className={`code ${styles.lineContentPlaceholder}`} data-line={line}>
+					<div className={styles.placeholderWhitespace} style={{width: `${100 - dummyLineLengths[i % dummyLineLengths.length]}%`}}>&nbsp;</div>
 				</td>
 			</tr>
 		);
 	}
 
 	return (
-		<div className={s.scroller}>
-			<table className={s.linesContentPlaceholder}>
+		<div className={styles.scroller}>
+			<table className={styles.linesContentPlaceholder}>
 				<tbody>{lines}</tbody>
 			</table>
 		</div>
