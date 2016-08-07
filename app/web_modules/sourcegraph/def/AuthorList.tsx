@@ -5,10 +5,9 @@ import TimeAgo from "sourcegraph/util/TimeAgo";
 import {Avatar} from "sourcegraph/components/index";
 import {PencilIcon} from "sourcegraph/components/Icons";
 import {DefAuthor} from "sourcegraph/def/index";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/AuthorList.css";
 
-export default CSSModules(function AuthorList({
+export default function AuthorList({
 	authors,
 	horizontal = false,
 	className,
@@ -36,5 +35,5 @@ export default CSSModules(function AuthorList({
 			}
 		</div>
 	);
-}, styles);
+};
 

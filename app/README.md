@@ -11,8 +11,7 @@ Run `npm start` in this directory to recompile assets while developing the app.
   the repository.)
 * **{web_modules}/** contains source files used to generate final products for
   assets; the entry point for building these source files is `script/app.js`.
-* **[CSS Modules](https://github.com/gajus/react-css-modules)** are used to style
-  react components; re-usable styles are located at `web_modules/sourcegraph/components/styles`
+* **CSS Modules**: re-usable styles are located at `web_modules/sourcegraph/components/styles`
   while component-specific styles are localized to the component's directory.
 
 To run all the tests for the `app/script` code:

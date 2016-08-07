@@ -11,7 +11,6 @@ import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {urlToTree} from "sourcegraph/tree/routes";
 import breadcrumb from "sourcegraph/util/breadcrumb";
 
-import CSSModules from "react-css-modules";
 import * as styles from "sourcegraph/components/styles/breadcrumb.css";
 
 class DefNavContext extends Container<any, any> {
@@ -67,4 +66,4 @@ class DefNavContext extends Container<any, any> {
 	}
 }
 
-export default CSSModules(DefNavContext, styles);
+export default DefNavContext;

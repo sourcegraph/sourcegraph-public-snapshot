@@ -2,7 +2,6 @@
 
 import * as React from "react";
 
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/input.css";
 import * as base from "./styles/_base.css";
 import {Alert} from "./symbols/index";
@@ -45,4 +44,4 @@ class Input extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(Input, styles, {allowMultiple: true});
+export default Input;

@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/table.css";
 
 class Table extends React.Component<any, any> {
@@ -23,4 +22,4 @@ class Table extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(Table, styles);
+export default Table;

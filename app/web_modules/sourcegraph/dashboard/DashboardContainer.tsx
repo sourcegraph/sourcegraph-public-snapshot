@@ -3,7 +3,6 @@
 import * as React from "react";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import Helmet from "react-helmet";
-import CSSModules from "react-css-modules";
 import Container from "sourcegraph/Container";
 import UserStore from "sourcegraph/user/UserStore";
 import * as styles from "./styles/Dashboard.css";
@@ -155,9 +154,9 @@ class DashboardContainer extends Container<any, any> {
 	}
 }
 
-export default CSSModules(DashboardContainer, styles, {allowMultiple: true});
+export default DashboardContainer;
 
-const TitledSection = CSSModules(({
+const TitledSection = ({
 	title,
 	children,
 	className,
@@ -170,7 +169,7 @@ const TitledSection = CSSModules(({
 		<div className={styles.section_title}>{title}</div>
 		{children}
 	</div>
-), styles);
+);
 
 const topQueries: {[key: string]: string[]} = {
 	javascript: [
@@ -203,7 +202,7 @@ function topQueriesFor(langs: Array<LanguageID>): string[] {
 	}
 	return qs;
 }
-const Queries = CSSModules(({
+const Queries = ({
 	langs,
 	onSelectQuery,
 }: {
@@ -211,4 +210,4 @@ const Queries = CSSModules(({
 	onSelectQuery: OnSelectQueryListener,
 }) => (
 	<div>{topQueriesFor(langs).map(q => <Button onClick={(ev) => onSelectQuery(ev, q)} key={q} className={styles.query} color="blue" outline={true} size="small">{q}</Button>)}</div>
-), styles);
+);

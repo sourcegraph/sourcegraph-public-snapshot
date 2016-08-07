@@ -2,7 +2,6 @@
 
 import * as React from "react";
 
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/label.css";
 
 class Label extends React.Component<any, any> {
@@ -34,4 +33,4 @@ const colorClasses = {
 	"purple": styles.purple,
 };
 
-export default CSSModules(Label, styles, {allowMultiple: true});
+export default Label;

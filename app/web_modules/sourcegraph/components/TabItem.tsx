@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Icon from "./Icon";
-import CSSModules from "react-css-modules";
 import * as styles from "sourcegraph/components/styles/tabItem.css";
 
 class TabItem extends React.Component<any, any> {
@@ -49,4 +48,4 @@ const colorClasses = {
 	"purple": styles.purple,
 };
 
-export default CSSModules(TabItem, styles, {allowMultiple: true});
+export default TabItem;

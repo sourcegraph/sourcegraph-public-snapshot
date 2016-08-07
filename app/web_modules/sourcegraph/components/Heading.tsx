@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/heading.css";
 
 class Heading extends React.Component<any, any> {
@@ -66,4 +65,4 @@ const underlineClasses = {
 	"green": styles.l_green,
 };
 
-export default CSSModules(Heading, styles, {allowMultiple: true});
+export default Heading;

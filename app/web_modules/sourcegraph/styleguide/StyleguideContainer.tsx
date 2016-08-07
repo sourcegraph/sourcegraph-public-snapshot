@@ -3,7 +3,6 @@
 import * as React from "react";
 import {Link} from "react-router";
 import {Hero, Heading, FlexContainer, Tabs, TabItem, Affix} from "sourcegraph/components/index";
-import CSSModules from "react-css-modules";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "./styles/StyleguideContainer.css";
 import ComponentsContainer from "./ComponentsContainer";
@@ -84,4 +83,4 @@ class StyleguideContainer extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(StyleguideContainer, styles, {allowMultiple: true});
+export default StyleguideContainer;

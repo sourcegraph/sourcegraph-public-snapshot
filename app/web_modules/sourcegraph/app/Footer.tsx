@@ -4,7 +4,6 @@ import * as React from "react";
 
 import {Link} from "react-router";
 import Logo from "sourcegraph/components/Logo";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/Footer.css";
 
 class Footer extends React.Component<any, any> {
@@ -36,4 +35,4 @@ class Footer extends React.Component<any, any> {
 		);
 	}
 }
-export default CSSModules(Footer, styles);
+export default Footer;

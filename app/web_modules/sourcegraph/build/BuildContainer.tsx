@@ -18,7 +18,6 @@ import {trimRepo} from "sourcegraph/repo/index";
 
 import {Button} from "sourcegraph/components/index";
 
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/Build.css";
 
 const updateIntervalMsec = 1500;
@@ -110,4 +109,4 @@ class BuildContainer extends Container<any, any> {
 	}
 }
 
-export default CSSModules(BuildContainer, styles);
+export default BuildContainer;

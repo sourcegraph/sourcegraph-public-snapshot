@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "sourcegraph/components/styles/tabs.css";
 
 class Tabs extends React.Component<any, any> {
@@ -40,4 +39,4 @@ class Tabs extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(Tabs, styles, {allowMultiple: true});
+export default Tabs;

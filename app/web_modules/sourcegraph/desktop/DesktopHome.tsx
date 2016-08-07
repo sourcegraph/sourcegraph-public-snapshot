@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as layout from "sourcegraph/components/styles/_layout.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
@@ -81,4 +80,4 @@ class DesktopHome extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(DesktopHome, styles, {allowMultiple: true});
+export default DesktopHome;

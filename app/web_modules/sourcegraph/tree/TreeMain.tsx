@@ -5,7 +5,6 @@ import TreeList from "sourcegraph/tree/TreeList";
 import {urlToTree} from "sourcegraph/tree/routes";
 import {treeParam} from "sourcegraph/tree/index";
 import {trimRepo} from "sourcegraph/repo/index";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/Tree.css";
 import Helmet from "react-helmet";
 
@@ -45,4 +44,4 @@ class TreeMain extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(TreeMain, styles);
+export default TreeMain;

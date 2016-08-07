@@ -2,7 +2,6 @@
 
 import * as React from "react";
 
-import CSSModules from "react-css-modules";
 import * as base from "./styles/_base.css";
 import * as styles from "./styles/select.css";
 import {DownPointer, Alert} from "./symbols/index";
@@ -51,4 +50,4 @@ class Select extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(Select, styles, {allowMultiple: true});
+export default Select;

@@ -4,7 +4,6 @@ import * as React from "react";
 import {Panel} from "sourcegraph/components/index";
 import SearchSettings from "sourcegraph/search/SearchSettings";
 import GlobalSearch from "sourcegraph/search/GlobalSearch";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/SearchResultsPanel.css";
 
 
@@ -26,4 +25,4 @@ class SearchResultsPanel extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(SearchResultsPanel, styles);
+export default SearchResultsPanel;

@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Table, Code, Logo} from "sourcegraph/components/index";
 
@@ -95,4 +94,4 @@ class LogoComponent extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(LogoComponent, base, {allowMultiple: true});
+export default LogoComponent;

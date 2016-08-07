@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/header.css";
 import Loader from "./Loader";
 
@@ -22,4 +21,4 @@ class Header extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(Header, styles);
+export default Header;

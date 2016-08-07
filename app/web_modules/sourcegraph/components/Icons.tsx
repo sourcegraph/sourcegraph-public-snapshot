@@ -2,7 +2,6 @@
 
 import * as React from "react";
 
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/icon.css";
 
 export const FileIcon = iconWrapper(require("react-icons/lib/go/file-text"));
@@ -36,5 +35,5 @@ function iconWrapper(Component): any {
 		className: React.PropTypes.string,
 		title: React.PropTypes.string,
 	};
-	return CSSModules(C, styles);
+	return C;
 }

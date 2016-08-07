@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import * as styles from "sourcegraph/components/styles/hero.css";
-import CSSModules from "react-css-modules";
 
 class Hero extends React.Component<any, any> {
 	static propTypes = {
@@ -37,4 +36,4 @@ const patternClasses = {
 	"objects_fade": styles.bg_img_objects_fade,
 };
 
-export default CSSModules(Hero, styles, {allowMultiple: true});
+export default Hero;

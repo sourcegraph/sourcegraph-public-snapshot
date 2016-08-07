@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Helmet from "react-helmet";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/Repo.css";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as BuildActions from "sourcegraph/build/BuildActions";
@@ -160,4 +159,4 @@ class RepoMain extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(RepoMain, styles);
+export default RepoMain;

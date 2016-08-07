@@ -8,7 +8,6 @@ import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import {Hero, Heading} from "sourcegraph/components/index";
 import * as styles from "sourcegraph/page/Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
-import CSSModules from "react-css-modules";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import Helmet from "react-helmet";
 
@@ -85,4 +84,4 @@ class BrowserExtFaqsPage extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(BrowserExtFaqsPage, styles);
+export default BrowserExtFaqsPage;

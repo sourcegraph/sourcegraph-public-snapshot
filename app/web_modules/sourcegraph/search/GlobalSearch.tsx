@@ -18,7 +18,6 @@ import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
 import {Options, Repo, Def} from "sourcegraph/def/index";
 import {Icon} from "sourcegraph/components/index";
 import {trimRepo} from "sourcegraph/repo/index";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/GlobalSearch.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -497,4 +496,4 @@ class GlobalSearch extends Container<any, any> {
 	}
 }
 
-export default CSSModules(GlobalSearch, styles, {allowMultiple: true});
+export default GlobalSearch;

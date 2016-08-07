@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/panel.css";
 
 class Panel extends React.Component<any, any> {
@@ -63,4 +62,4 @@ function hoverClass(hoverLevel: string, hover: boolean): string {
 	}
 }
 
-export default CSSModules(Panel, styles, {allowMultiple: true});
+export default Panel;

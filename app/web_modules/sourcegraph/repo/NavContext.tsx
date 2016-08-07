@@ -5,7 +5,6 @@ import * as React from "react";
 import RepoLink from "sourcegraph/components/RepoLink";
 import {Label} from "sourcegraph/components/index";
 import RevSwitcherContainer from "sourcegraph/repo/RevSwitcherContainer";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/Repo.css";
 
 class NavContext extends React.Component<any, any> {
@@ -53,4 +52,4 @@ class NavContext extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(NavContext, styles);
+export default NavContext;

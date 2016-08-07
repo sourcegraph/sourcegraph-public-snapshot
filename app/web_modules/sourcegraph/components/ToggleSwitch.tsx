@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/toggleSwitch.css";
 
 class ToggleSwitch extends React.Component<any, any> {
@@ -44,4 +43,4 @@ class ToggleSwitch extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(ToggleSwitch, styles, {allowMultiple: true});
+export default ToggleSwitch;

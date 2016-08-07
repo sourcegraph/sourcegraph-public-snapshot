@@ -4,7 +4,6 @@ import * as React from "react";
 import {Hero, Heading} from "sourcegraph/components/index";
 import * as styles from "./Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
-import CSSModules from "react-css-modules";
 import Helmet from "react-helmet";
 import BetaInterestForm from "sourcegraph/home/BetaInterestForm";
 
@@ -46,4 +45,4 @@ function BetaPage(props) {
 	signedIn: React.PropTypes.bool,
 };
 
-export default CSSModules(BetaPage, styles);
+export default BetaPage;

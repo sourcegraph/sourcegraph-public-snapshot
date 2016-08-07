@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/Repos.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {Input, Heading, Button, ToggleSwitch} from "sourcegraph/components/index";
@@ -135,4 +134,4 @@ class Repos extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(Repos, styles, {allowMultiple: true});
+export default Repos;

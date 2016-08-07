@@ -5,7 +5,6 @@ import {Hero, Heading, Panel, Button} from "sourcegraph/components/index";
 import * as styles from "./Page.css";
 import {Link} from "react-router";
 import * as base from "sourcegraph/components/styles/_base.css";
-import CSSModules from "react-css-modules";
 import {CheckIcon} from "sourcegraph/components/Icons";
 import Helmet from "react-helmet";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -111,4 +110,4 @@ function PricingPage(props, {signedIn, eventLogger}) {
 	eventLogger: React.PropTypes.object.isRequired,
 };
 
-export default CSSModules(PricingPage, styles);
+export default PricingPage;

@@ -6,7 +6,6 @@ import {Route} from "react-router";
 
 import GlobalNav from "sourcegraph/app/GlobalNav";
 import Footer from "sourcegraph/app/Footer";
-import CSSModules from "react-css-modules";
 import "sourcegraph/components/styles/_normalize.css";
 import * as styles from "./styles/App.css";
 
@@ -106,7 +105,7 @@ export const rootRoute: ReactRouter.PlainRoute = {
                         withUserContext(
                             desktopRouter(
                                 withFeaturesContext(
-                                    CSSModules(App, styles)
+                                    App
                                 )
                             )
                         )

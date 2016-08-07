@@ -11,7 +11,6 @@ import CoverageDrilldown from "sourcegraph/admin/CoverageDrilldown";
 import * as CoverageActions from "sourcegraph/admin/CoverageActions";
 import {MagnifyingGlassIcon} from "sourcegraph/components/Icons";
 
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/Coverage.css";
 
 const langTargets = {
@@ -144,4 +143,4 @@ class CoverageDashboard extends Container<any, any> {
 	}
 }
 
-export default CSSModules(CoverageDashboard, styles);
+export default CoverageDashboard;

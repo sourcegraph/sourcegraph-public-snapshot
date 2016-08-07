@@ -3,7 +3,6 @@
 import * as React from "react";
 
 import Loader from "./Loader";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/button.css";
 
 function Button(props: {
@@ -85,4 +84,4 @@ const sizeClasses = {
 	"small": styles.small,
 };
 
-export default CSSModules(Button, styles, {allowMultiple: true});
+export default Button;

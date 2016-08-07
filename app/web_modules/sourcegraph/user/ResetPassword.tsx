@@ -13,7 +13,6 @@ import UserStore from "sourcegraph/user/UserStore";
 
 import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
-import CSSModules from "react-css-modules";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 
 class ResetPassword extends Container<any, any> {
@@ -92,4 +91,4 @@ class ResetPassword extends Container<any, any> {
 	}
 }
 
-export default redirectIfLoggedIn("/", CSSModules(ResetPassword, styles, {allowMultiple: true}));
+export default redirectIfLoggedIn("/", ResetPassword);

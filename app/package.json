@@ -67,7 +67,6 @@
     "lodash.uniq": "4.3.0",
     "raven-js": "1.1.19",
     "react": "15.1.0",
-    "react-css-modules": "3.7.6",
     "react-dom": "15.1.0",
     "react-helmet": "3.0.1",
     "react-icons": "1.0.6",

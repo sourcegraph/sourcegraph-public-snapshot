@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/code_2.css";
 
 class Code extends React.Component<any, any> {
@@ -17,4 +16,4 @@ class Code extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(Code, styles);
+export default Code;

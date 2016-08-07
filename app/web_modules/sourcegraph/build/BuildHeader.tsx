@@ -5,7 +5,6 @@ import * as React from "react";
 import Component from "sourcegraph/Component";
 import TimeAgo from "sourcegraph/util/TimeAgo";
 import {buildStatus, buildClass, elapsed} from "sourcegraph/build/Build";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/Build.css";
 
 class BuildHeader extends Component<any, any> {
@@ -33,4 +32,4 @@ class BuildHeader extends Component<any, any> {
 	build: React.PropTypes.object.isRequired,
 };
 
-export default CSSModules(BuildHeader, styles, {allowMultiple: true});
+export default BuildHeader;

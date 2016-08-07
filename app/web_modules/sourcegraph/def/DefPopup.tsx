@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import {Link} from "react-router";
-import CSSModules from "react-css-modules";
 import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
 import * as styles from "sourcegraph/def/styles/Def.css";
@@ -77,4 +76,4 @@ class DefPopup extends Container<any, any> {
 	}
 }
 
-export default CSSModules(DefPopup, styles);
+export default DefPopup;

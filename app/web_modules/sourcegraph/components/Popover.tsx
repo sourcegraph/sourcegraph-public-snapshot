@@ -4,7 +4,6 @@ import * as React from "react";
 
 import Component from "sourcegraph/Component";
 
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/popover.css";
 
 class Popover extends Component<any, any> {
@@ -75,4 +74,4 @@ class Popover extends Component<any, any> {
 	popoverClassName: React.PropTypes.string,
 };
 
-export default CSSModules(Popover, styles);
+export default Popover;

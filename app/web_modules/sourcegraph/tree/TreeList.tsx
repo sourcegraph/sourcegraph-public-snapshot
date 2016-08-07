@@ -16,7 +16,6 @@ import {Route} from "react-router";
 
 import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
 
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/Tree.css";
 
 const EMPTY_PATH = [];
@@ -208,4 +207,4 @@ class TreeList extends Container<TreeListProps, TreeListState> {
 	}
 }
 
-export default CSSModules(TreeList, styles, {allowMultiple: true});
+export default TreeList;

@@ -6,7 +6,6 @@ import {Link} from "react-router";
 import "sourcegraph/blob/BlobBackend";
 import "whatwg-fetch";
 
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/DefInfo.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
@@ -389,4 +388,4 @@ class DefInfo extends Container<any, any> {
 	}
 }
 
-export default CSSModules(DefInfo, styles, {allowMultiple: true});
+export default DefInfo;

@@ -8,7 +8,6 @@ import {Link} from "react-router";
 import urlTo from "sourcegraph/util/urlTo";
 import breadcrumb from "sourcegraph/util/breadcrumb";
 
-import CSSModules from "react-css-modules";
 import * as styles from "sourcegraph/components/styles/breadcrumb.css";
 
 class RepoNavContext extends Component<any, any> {
@@ -42,4 +41,4 @@ class RepoNavContext extends Component<any, any> {
 	}
 }
 
-export default CSSModules(RepoNavContext, styles);
+export default RepoNavContext;

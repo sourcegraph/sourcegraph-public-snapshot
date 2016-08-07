@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/dropdown.css";
 import * as base from "./styles/_base.css";
 import {CheckIcon} from "sourcegraph/components/Icons";
@@ -105,4 +104,4 @@ class Dropdown extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(Dropdown, styles);
+export default Dropdown;

@@ -9,7 +9,6 @@ import Dispatcher from "sourcegraph/Dispatcher";
 
 import {Collapsible} from "sourcegraph/components/index";
 
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/Build.css";
 
 const updateLogIntervalMsec = 1500;
@@ -99,4 +98,4 @@ class Step extends Component<any, any> {
 	logs: React.PropTypes.object.isRequired,
 };
 
-export default CSSModules(Step, styles, {allowMultiple: true});
+export default Step;

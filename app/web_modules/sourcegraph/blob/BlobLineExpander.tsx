@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 
 import Component from "sourcegraph/Component";
 import * as styles from "sourcegraph/blob/styles/Blob.css";
@@ -35,4 +34,4 @@ class BlobLineExpander extends Component<any, any> {
 	}
 }
 
-export default CSSModules(BlobLineExpander, styles);
+export default BlobLineExpander;

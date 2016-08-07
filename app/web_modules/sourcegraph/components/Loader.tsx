@@ -2,7 +2,6 @@
 
 import * as React from "react";
 
-import CSSModules from "react-css-modules";
 import * as style from "sourcegraph/components/styles/loader.css";
 
 class Loader extends React.Component<any, any> {
@@ -21,4 +20,4 @@ class Loader extends React.Component<any, any> {
 	stretch: React.PropTypes.bool,
 };
 
-export default CSSModules(Loader, style, {allowMultiple: true});
+export default Loader;

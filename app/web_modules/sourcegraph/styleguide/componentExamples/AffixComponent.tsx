@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Table, Code} from "sourcegraph/components/index";
 
@@ -57,4 +56,4 @@ class AffixComponent extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(AffixComponent, base, {allowMultiple: true});
+export default AffixComponent;

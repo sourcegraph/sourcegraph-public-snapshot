@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/Integrations.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Button} from "sourcegraph/components/index";
@@ -85,4 +84,4 @@ class Integrations extends Component<any, any> {
 	}
 }
 
-export default CSSModules(Integrations, styles, {allowMultiple: true});
+export default Integrations;

@@ -48,10 +48,6 @@ declare module "abab" {
 	export function btoa(str: string): string;
 }
 
-declare module "react-css-modules" {
-	export default function<P>(cls: P, styles: any, options?: any): P;
-}
-
 declare module "lodash.debounce" {
 	export default _.debounce;
 }

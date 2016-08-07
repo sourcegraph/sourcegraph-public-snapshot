@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "sourcegraph/blob/styles/Blob.css";
 
 const dummyLineLengths = [
@@ -19,7 +18,7 @@ const dummyLineLengths = [
 //
 // It makes the app feel a lot less jittery.
 function BlobContentPlaceholder(props) {
-	let s = props.styles;
+	let s = props.styles || {};
 
 	const numLines = props.numLines || 60;
 	const lines: any[] = [];
@@ -49,4 +48,4 @@ function BlobContentPlaceholder(props) {
 	numLines: React.PropTypes.number,
 };
 
-export default CSSModules(BlobContentPlaceholder, styles);
+export default BlobContentPlaceholder;

@@ -12,7 +12,6 @@ import UserStore from "sourcegraph/user/UserStore";
 
 import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
-import CSSModules from "react-css-modules";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 
 // TODO: prevent mounting this component if user is logged in
@@ -68,4 +67,4 @@ class ForgotPassword extends Container<any, any> {
 	}
 }
 
-export default redirectIfLoggedIn("/", CSSModules(ForgotPassword, styles, {allowMultiple: true}));
+export default redirectIfLoggedIn("/", ForgotPassword);

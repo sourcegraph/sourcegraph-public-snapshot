@@ -5,7 +5,6 @@ import {Link} from "react-router";
 import {Hero, Heading} from "sourcegraph/components/index";
 import * as styles from "./Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
-import CSSModules from "react-css-modules";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import Helmet from "react-helmet";
 
@@ -71,4 +70,4 @@ function AboutPage(props, {signedIn}) {
 	signedIn: React.PropTypes.bool,
 };
 
-export default CSSModules(AboutPage, styles);
+export default AboutPage;

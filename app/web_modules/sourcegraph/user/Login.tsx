@@ -12,7 +12,6 @@ import UserStore from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
-import CSSModules from "react-css-modules";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 
 export class LoginForm extends Container<any, any> {
@@ -116,7 +115,7 @@ export class LoginForm extends Container<any, any> {
 		);
 	}
 }
-let StyledLoginForm = CSSModules(LoginForm, styles);
+let StyledLoginForm = LoginForm;
 
 // Login is the standalone login page.
 function Login(props, {router}) {
@@ -134,4 +133,4 @@ function Login(props, {router}) {
 };
 
 
-export default redirectIfLoggedIn("/", CSSModules(Login, styles));
+export default redirectIfLoggedIn("/", Login);

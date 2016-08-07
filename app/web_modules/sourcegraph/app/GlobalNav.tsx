@@ -7,7 +7,6 @@ import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import {Avatar, Popover, Menu, Logo, Heading} from "sourcegraph/components/index";
 import {CloseIcon} from "sourcegraph/components/Icons";
 import LogoutLink from "sourcegraph/user/LogoutLink";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/GlobalNav.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
@@ -170,7 +169,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 	eventLogger: React.PropTypes.object.isRequired,
 };
 
-export default CSSModules(GlobalNav, styles, {allowMultiple: true});
+export default GlobalNav;
 
 // TODO(chexee): Move all these components to their own directory.
 
@@ -340,4 +339,4 @@ class SearchForm extends React.Component<any, any> {
 		);
 	}
 }
-let StyledSearchForm = CSSModules(SearchForm, styles);
+let StyledSearchForm = SearchForm;

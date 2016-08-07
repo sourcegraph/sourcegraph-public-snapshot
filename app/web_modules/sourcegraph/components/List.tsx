@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/list.css";
 
 class List extends React.Component<any, any> {
@@ -32,4 +31,4 @@ const listStyleClasses = {
 	"node": styles.node,
 };
 
-export default CSSModules(List, styles, {allowMultiple: true});
+export default List;

@@ -13,7 +13,6 @@ import UserStore from "sourcegraph/user/UserStore";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
-import CSSModules from "react-css-modules";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 
 export class SignupForm extends Container<any, any> {
@@ -143,7 +142,7 @@ export class SignupForm extends Container<any, any> {
 		);
 	}
 }
-let StyledSignupForm = CSSModules(SignupForm, styles);
+let StyledSignupForm = SignupForm;
 
 function Signup(props, {router}) {
 	return (
@@ -162,4 +161,4 @@ function Signup(props, {router}) {
 	router: React.PropTypes.object.isRequired,
 };
 
-export default redirectIfLoggedIn("/", CSSModules(Signup, styles));
+export default redirectIfLoggedIn("/", Signup);

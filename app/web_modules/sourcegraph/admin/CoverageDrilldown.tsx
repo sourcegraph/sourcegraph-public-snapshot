@@ -15,7 +15,6 @@ import {urlToBuilds} from "sourcegraph/build/routes";
 import {urlToRepoRev} from "sourcegraph/repo/routes";
 import {urlToBlob} from "sourcegraph/blob/routes";
 
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/Coverage.css";
 
 class CoverageDrilldown extends Container<any, any> {
@@ -251,4 +250,4 @@ class CoverageDrilldown extends Container<any, any> {
 	}
 }
 
-export default CSSModules(CoverageDrilldown, styles);
+export default CoverageDrilldown;

@@ -2,7 +2,6 @@
 
 import * as React from "react";
 
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/modal.css";
 import renderedOnBody from "sourcegraph/util/renderedOnBody";
 
@@ -60,7 +59,7 @@ class Modal extends React.Component<any, any> {
 	]),
 };
 
-let RenderedModal = renderedOnBody(CSSModules(Modal, styles));
+let RenderedModal = renderedOnBody(Modal);
 export default RenderedModal;
 
 // setLocationModalState shows or hides a modal by setting the location.state.modal

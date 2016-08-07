@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/checklistItem.css";
 import * as base from "./styles/_base.css";
 import Icon from "./Icon";
@@ -32,4 +31,4 @@ class ChecklistItem extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(ChecklistItem, styles, {allowMultiple: true});
+export default ChecklistItem;

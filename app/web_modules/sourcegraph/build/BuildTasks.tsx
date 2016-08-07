@@ -5,7 +5,6 @@ import * as React from "react";
 import Component from "sourcegraph/Component";
 import TopLevelTask from "sourcegraph/build/TopLevelTask";
 
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/Build.css";
 
 class BuildTasks extends Component<any, any> {
@@ -48,4 +47,4 @@ class BuildTasks extends Component<any, any> {
 	logs: React.PropTypes.object.isRequired,
 };
 
-export default CSSModules(BuildTasks, styles);
+export default BuildTasks;

@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code} from "sourcegraph/components/index";
 
@@ -189,4 +188,4 @@ class PanelsComponent extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(PanelsComponent, base, {allowMultiple: true});
+export default PanelsComponent;

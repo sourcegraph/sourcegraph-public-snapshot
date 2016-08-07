@@ -17,7 +17,6 @@ import {Button} from "sourcegraph/components/index";
 
 import TimeAgo from "sourcegraph/util/TimeAgo";
 
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/Build.css";
 import * as btnStyles from "sourcegraph/components/styles/button.css";
 
@@ -151,4 +150,4 @@ class BuildsList extends Container<any, any> {
 	}
 }
 
-export default CSSModules(BuildsList, styles, {allowMultiple: true});
+export default BuildsList;

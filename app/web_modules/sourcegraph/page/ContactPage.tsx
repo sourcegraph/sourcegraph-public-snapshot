@@ -4,7 +4,6 @@ import * as React from "react";
 import {Hero, Heading} from "sourcegraph/components/index";
 import * as styles from "./Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
-import CSSModules from "react-css-modules";
 import Helmet from "react-helmet";
 
 function ContactPage(props, {signedIn}) {
@@ -47,4 +46,4 @@ function ContactPage(props, {signedIn}) {
 	);
 }
 
-export default CSSModules(ContactPage, styles);
+export default ContactPage;

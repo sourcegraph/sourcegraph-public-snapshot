@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/BetaInterestForm.css";
 import {Button, Input, CheckboxList} from "sourcegraph/components/index";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -191,4 +190,4 @@ class BetaInterestForm extends Container<any, any> {
 	}
 }
 
-export default CSSModules(BetaInterestForm, styles);
+export default BetaInterestForm;

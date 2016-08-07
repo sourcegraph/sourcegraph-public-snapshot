@@ -3,7 +3,6 @@
 import * as React from "react";
 import TimeAgo from "sourcegraph/util/TimeAgo";
 import {Avatar} from "sourcegraph/components/index";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/Commit.css";
 
 function showBothSigs(a, b) {
@@ -73,4 +72,4 @@ function Commit({repo, commit, full}) {
 	full: React.PropTypes.bool.isRequired,
 };
 
-export default CSSModules(Commit, styles);
+export default Commit;

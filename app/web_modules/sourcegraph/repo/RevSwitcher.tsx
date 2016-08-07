@@ -13,7 +13,6 @@ import * as styles from "./styles/RevSwitcher.css";
 
 import {FaChevronDown, CheckIcon} from "sourcegraph/components/Icons";
 import {Input, Menu, Heading} from "sourcegraph/components/index";
-import CSSModules from "react-css-modules";
 import {urlWithRev} from "sourcegraph/repo/routes";
 
 class RevSwitcher extends Component<any, any> {
@@ -287,4 +286,4 @@ function abbrevRev(rev) {
 	return rev;
 }
 
-export default CSSModules(RevSwitcher, styles, {allowMultiple: true});
+export default RevSwitcher;

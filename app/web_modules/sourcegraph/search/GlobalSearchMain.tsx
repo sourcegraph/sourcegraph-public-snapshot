@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/GlobalSearchMain.css";
 import {queryFromStateOrURL} from "sourcegraph/search/routes";
 import GlobalSearch from "sourcegraph/search/GlobalSearch";
@@ -17,4 +16,4 @@ function GlobalSearchMain({location}: {location: HistoryModule.Location}) {
 	);
 }
 
-export default CSSModules(GlobalSearchMain, styles);
+export default GlobalSearchMain;

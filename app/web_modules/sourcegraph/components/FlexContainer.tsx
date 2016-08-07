@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "sourcegraph/components/styles/flexContainer.css";
 
 
@@ -66,4 +65,4 @@ const contentClasses = {
 	"stretch": styles.content_stretch,
 };
 
-export default CSSModules(FlexContainer, styles, {allowMultiple: true});
+export default FlexContainer;

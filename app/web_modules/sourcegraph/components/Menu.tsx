@@ -2,7 +2,6 @@
 
 import * as React from "react";
 
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/menu.css";
 
 class Menu extends React.Component<any, any> {
@@ -14,7 +13,7 @@ class Menu extends React.Component<any, any> {
 
 	renderMenuItems() {
 		return React.Children.map(this.props.children, function(ch: React.ReactElement<any>) {
-			return <div key={ch.props} className={roleStyle(ch.props.role)}>{React.cloneElement(ch)}</div>;
+			return ch && <div key={ch.props} className={roleStyle(ch.props.role)}>{React.cloneElement(ch)}</div>;
 		});
 	}
 
@@ -36,4 +35,4 @@ function roleStyle(role: string): string {
 	}
 }
 
-export default CSSModules(Menu, styles);
+export default Menu;

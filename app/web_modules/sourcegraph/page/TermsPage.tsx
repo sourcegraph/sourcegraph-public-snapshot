@@ -4,7 +4,6 @@ import * as React from "react";
 import {Hero, Heading} from "sourcegraph/components/index";
 import * as styles from "./Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
-import CSSModules from "react-css-modules";
 import Helmet from "react-helmet";
 
 function TermsPage(props, {signedIn}) {
@@ -151,4 +150,4 @@ function TermsPage(props, {signedIn}) {
 	);
 }
 
-export default CSSModules(TermsPage, styles);
+export default TermsPage;

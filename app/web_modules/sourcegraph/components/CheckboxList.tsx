@@ -1,7 +1,6 @@
 // tslint:disable
 
 import * as React from "react";
-import CSSModules from "react-css-modules";
 import * as styles from "./styles/checkboxList.css";
 
 class CheckboxList extends React.Component<any, any> {
@@ -45,4 +44,4 @@ class CheckboxList extends React.Component<any, any> {
 	}
 }
 
-export default CSSModules(CheckboxList, styles);
+export default CheckboxList;
