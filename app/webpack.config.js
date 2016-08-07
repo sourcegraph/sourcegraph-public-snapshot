@@ -17,9 +17,6 @@ if (process.env.NODE_ENV === "development") {
 
 const plugins = [
 	new webpack.NormalModuleReplacementPlugin(/\/iconv-loader$/, "node-noop"),
-	new webpack.ProvidePlugin({
-		fetch: "imports?this=>global!exports?global.fetch!isomorphic-fetch",
-	}),
 	new webpack.DefinePlugin({
 		"process.env": {
 			NODE_ENV: JSON.stringify(process.env.NODE_ENV || "development"),
