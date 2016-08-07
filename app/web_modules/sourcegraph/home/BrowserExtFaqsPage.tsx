@@ -1,7 +1,5 @@
 // tslint:disable
 
-// @flow
-
 import * as React from "react";
 import {Link} from "react-router";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
