@@ -10,8 +10,7 @@ module.exports = {
 	},
 	module: {
 		loaders: [
-			{test: /\.js$/, exclude: /node_modules/, loader: "babel-loader?cacheDirectory"},
-			{test: /\.tsx?$/, loader: 'babel-loader?cacheDirectory!ts-loader'},
+			{test: /\.tsx?$/, loader: 'ts-loader'},
 			{test: /\.json$/, exclude: /node_modules/, loader: "json-loader"},
 			{test: /\.svg$/, loader: "null"},
 			{test: /\.css$/, loader: "null"},

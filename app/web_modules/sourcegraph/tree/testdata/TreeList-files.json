@@ -36,7 +36,7 @@
 									"to": "/repo@rev/-/blob/p1/p2/f3",
 									"children": [
 										{
-											"type": "C",
+											"type": "",
 											"props": {}
 										},
 										"f3"

@@ -88,8 +88,7 @@ module.exports = {
 			{test:	/\.tsx?$/, exclude: /node_modules/, loader: "tslint-loader"},
 		],
 		loaders: [
-			{test: /\.js$/, exclude: /node_modules/, loader: "babel-loader?cacheDirectory"},
-			{test: /\.tsx?$/, loader: 'babel-loader?cacheDirectory!ts-loader'},
+			{test: /\.tsx?$/, loader: 'ts-loader'},
 			{test: /\.json$/, exclude: /node_modules/, loader: "json-loader"},
 			{test: /\.woff$/, loader: "url-loader?name=fonts/[name].[ext]"},
 			{test: /\.svg$/, loader: "url"},
