@@ -175,7 +175,7 @@ export default class RefsContainer extends Container<any, any> {
 			let firstRef = nextState.refs[0]; // hack: assuming that all refs given to a RefsContainer are from the same repo and rev, thus using the first ref to determine which files we want to show
 			let repo = firstRef.Repo;
 			let rev = firstRef.CommitID;
-			for (let file of nextState.shownFiles) {
+			for (let file of Array.from(nextState.shownFiles as Set<any>)) {
 				Dispatcher.Backends.dispatch(new BlobActions.WantFile(repo, rev, file));
 				Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(repo, rev, file));
 			}
