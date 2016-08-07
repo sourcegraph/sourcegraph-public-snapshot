@@ -352,7 +352,7 @@ class Blob extends Component<any, any> {
 		if (!this.refs["table"]) { return; }
 		let rect = (this.refs["table"] as Element).getBoundingClientRect();
 		const y = rect.height / this.state.lines.length * (line - 1) - 100;
-		window.scrollTo(0, y);
+		((document as any).getElementById("scroller") as any).scrollTop = y;
 	}
 
 	// _lineIsVisible returns true the line has loaded and is scrolled into view, false
