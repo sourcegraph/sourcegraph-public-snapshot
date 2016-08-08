@@ -28,12 +28,6 @@ ifndef GOBIN
 	endif
 endif
 
-ifeq "$(SGXOS)" "windows"
-	NPM_RUN_DEP := $(CMD) "npm run dep"
-else
-	NPM_RUN_DEP := npm run dep
-endif
-
 install: src
 
 src: ${GOBIN}/src
@@ -44,7 +38,7 @@ ${GOBIN}/src: $(shell /usr/bin/find . -type f -and -name '*.go' -not -path './ve
 dep: dist-dep app-dep
 
 app-dep:
-	cd app && $(NPM_RUN_DEP)
+	cd ui && npm run dep
 
 WEBPACK_DEV_SERVER_URL ?= http://localhost:8080
 PUBLIC_WEBPACK_DEV_SERVER_URL ?= $(WEBPACK_DEV_SERVER_URL)
@@ -63,7 +57,7 @@ serve-dep:
 # the app itself).
 	@[ "$(SGXOS)" = "windows" ] || [ `ulimit -n` -ge 10000 ] || (echo "Error: Please increase the open file limit by running\n\n  ulimit -n 10000\n" 1>&2; exit 1)
 
-	@[ -n "$(WEBPACK_DEV_SERVER_URL)" ] && [ "$(WEBPACK_DEV_SERVER_URL)" != " " ] && (curl -Ss -o /dev/null "$(WEBPACK_DEV_SERVER_URL)" || (cd app && WEBPACK_DEV_SERVER_URL="$(WEBPACK_DEV_SERVER_URL)" PUBLIC_WEBPACK_DEV_SERVER_URL="$(PUBLIC_WEBPACK_DEV_SERVER_URL)" WEBPACK_DEV_SERVER_ADDR="$(WEBPACK_DEV_SERVER_ADDR)" npm start &)) || echo Serving bundled assets, not using Webpack.
+	@[ -n "$(WEBPACK_DEV_SERVER_URL)" ] && [ "$(WEBPACK_DEV_SERVER_URL)" != " " ] && (curl -Ss -o /dev/null "$(WEBPACK_DEV_SERVER_URL)" || (cd ui && WEBPACK_DEV_SERVER_URL="$(WEBPACK_DEV_SERVER_URL)" PUBLIC_WEBPACK_DEV_SERVER_URL="$(PUBLIC_WEBPACK_DEV_SERVER_URL)" WEBPACK_DEV_SERVER_ADDR="$(WEBPACK_DEV_SERVER_ADDR)" npm start &)) || echo Serving bundled assets, not using Webpack.
 
 libvfsgen:
 	go get github.com/shurcooL/vfsgen
@@ -81,7 +75,7 @@ dist: dist-dep app-dep
 
 generate:
 	go list ./... | grep -v /vendor/ | xargs go generate
-	cd app && npm run generate
+	cd ui && npm run generate
 
 db-reset: src
 	src pgsql reset
@@ -90,16 +84,16 @@ drop-test-dbs:
 	psql -A -t -c "select datname from pg_database where datname like 'sgtmp%' or datname like 'graphtmp%';" | xargs -P 10 -n 1 -t dropdb
 
 app/assets/bundle.js: app-dep
-	cd app && npm run build
+	cd ui && npm run build
 
 PGUSER ?= $(USER)
 TESTPKGS ?= $(shell go list ./... | grep -v /vendor/)
 test: check src app/assets/bundle.js
-	cd app && npm test
+	cd ui && npm test
 	go test -race ${TESTPKGS}
 
 check: ${GOBIN}/go-template-lint
-	cd app && node ./node_modules/.bin/lintspaces -t -n -d tabs ./style/*.scss ./style/**/*.scss ./templates/*.html ./templates/**/*.html
+	cd ui && node ./node_modules/.bin/lintspaces -t -n -d tabs ./style/*.scss ./style/**/*.scss ./templates/*.html ./templates/**/*.html
 	go-template-lint -f app/tmpl_funcs.go -t app/internal/tmpl/tmpl.go -td app/templates
 	bash dev/check-for-template-inlines
 	bash dev/check-go-generate-all

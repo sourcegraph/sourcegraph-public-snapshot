@@ -62,7 +62,7 @@ func (c *PackageCmd) Execute(args []string) error {
 
 	if !c.SkipWebpack {
 		webpackCmd := exec.Command("npm", "run", "build")
-		webpackCmd.Dir = "./app"
+		webpackCmd.Dir = "./ui"
 		if err := execCmd(webpackCmd); err != nil {
 			return err
 		}

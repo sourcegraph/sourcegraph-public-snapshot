@@ -5,7 +5,7 @@ Run `npm start` in this directory to recompile assets while developing the app.
 
 ## Filesystem layout
 
-* **assets/** contains final products of assets only. Do not check in final
+* **../app/assets/** contains final products of assets only. Do not check in final
   products whose source files are also checked into the repository. (Do check in
   asset files, such as images, that aren't generated from other files also in
   the repository.)

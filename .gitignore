@@ -40,21 +40,21 @@ npm-debug.log
 
 .tmp/*.jar
 
-/app/artifacts
-/app/node_modules/fsevents/build
-/app/node_modules/fsevents/lib
-/app/node_modules/node-sass
-/app/assets/_goTemplates.js
-/app/assets/analytics.js
-/app/assets/bundle.js
-/app/assets/bundle.css
-/app/assets/sourcebox.js
-/app/assets/sourcebox.css
-/app/assets/test.js
-/app/assets/test.css
-/app/assets/*.html
-/app/assets/*.map
-/app/.tmp
+/ui/artifacts
+/ui/node_modules/fsevents/build
+/ui/node_modules/fsevents/lib
+/ui/node_modules/node-sass
+/ui/assets/_goTemplates.js
+/ui/assets/analytics.js
+/ui/assets/bundle.js
+/ui/assets/bundle.css
+/ui/assets/sourcebox.js
+/ui/assets/sourcebox.css
+/ui/assets/test.js
+/ui/assets/test.css
+/ui/assets/*.html
+/ui/assets/*.map
+/ui/.tmp
 *.json.actual
 
 eb-bundle.zip
