@@ -277,13 +277,6 @@ export class EventLogger {
 
 		// Log Amplitude "View" event
 		this._amplitude.logEvent(title, Object.assign({}, eventProperties, {Platform: this._currentPlatform}));
-
-		// Log GA "pageview" event without props.
-		global.window.ga("send", {
-			hitType: "pageview",
-			page: page,
-			title: title,
-		});
 	}
 
 	// Default tracking call to all of our analytics servies.

@@ -92,7 +92,7 @@
 			window.ga("create", {{googleAnalyticsTrackingID}}, "auto");
 			window.ga("require", "linkid", "https://www.google-analytics.com/plugins/ua/linkid.js");
 			window.ga("require", "urlChangeTracker");
-			window.ga("set", "dimension1", Boolean({{if .AuthInfo.UID}}{{.AuthInfo.Login}}{{else}}false{{end}}));
+			window.ga("set", "dimension1", {{if .AuthInfo.UID}}"true"{{else}}"false"{{end}});
 			window.ga("set", "dimension4", "web");
 			window.ga("send", "pageview");
 		</script>
