@@ -1,4 +1,4 @@
 --webpack-config=webpack.config-test.js
---require babel-polyfill
+--require core-js/shim
 --require isomorphic-fetch
 --require source-map-support/register

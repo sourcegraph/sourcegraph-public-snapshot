@@ -1,6 +1,6 @@
 // tslint:disable
 
-import "babel-polyfill";
+import "core-js/shim";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import "sourcegraph/util/actionLogger";
