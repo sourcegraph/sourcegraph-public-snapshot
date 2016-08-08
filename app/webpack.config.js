@@ -97,6 +97,7 @@ module.exports = {
 		compilerOptions: {
 			noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
 		},
+		transpileOnly: process.env.NODE_ENV !== "production",
   },
 	postcss: [require("postcss-modules-values"), autoprefixer({remove: false})],
 	devServer: {
