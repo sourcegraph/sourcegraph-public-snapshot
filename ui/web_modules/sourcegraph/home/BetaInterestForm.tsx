@@ -11,6 +11,7 @@ import {langName} from "sourcegraph/Language";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import UserStore from "sourcegraph/user/UserStore";
 import Container from "sourcegraph/Container";
+import * as classNames from "classnames";
 
 type OnChangeListener = () => void;
 
@@ -177,10 +178,10 @@ class BetaInterestForm extends Container<any, any> {
 						<div className={styles.row}>
 							<textarea ref={(c) => this._message = c} className={styles.textarea} name="message" placeholder="Other / comments" defaultValue={defaultMessage}></textarea>
 						</div>
-						<div className={`${styles.row} ${base.pb4}`}>
+						<div className={classNames(styles.row, base.pb4)}>
 							<Button block={true} type="submit" color="purple">{betaRegistered ? "Update my interests" : "Participate in the beta"}</Button>
 						</div>
-						<div className={`${styles.row} ${base.pb4}`}>
+						<div className={classNames(styles.row, base.pb4)}>
 							{this.state.formError && <strong>{this.state.formError}</strong>}
 							{this.state.resp && this.state.resp.Error && <div>{this.state.resp.Error.body}</div>}
 						</div>

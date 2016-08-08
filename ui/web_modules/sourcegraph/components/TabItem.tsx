@@ -3,6 +3,7 @@
 import * as React from "react";
 import Icon from "./Icon";
 import * as styles from "sourcegraph/components/styles/tabItem.css";
+import * as classNames from "classnames";
 
 class TabItem extends React.Component<any, any> {
 	static propTypes = {
@@ -28,9 +29,9 @@ class TabItem extends React.Component<any, any> {
 		const {size, children, hideMobile, active, color, icon, direction} = this.props;
 		return (
 			<span
-				className={`${sizeClasses[size] || ""} ${hideMobile ? styles.hidden_s : ""} ${active ? styles.active : styles.inactive} ${colorClasses[color] || styles.blue} ${direction === "vertical" ? styles.vertical : styles.horizontal}`}>
-				{icon && typeof icon === "string" && <Icon icon={`${icon}-blue`} height="14px" width="auto" className={`${styles.icon} ${!active ? styles.hide : ""}`}/>}
-				{icon && typeof icon === "string" && <Icon icon={`${icon}-gray`} height="14px" width="auto" className={`${styles.icon} ${active ? styles.hide : ""}`}/>}
+				className={classNames(sizeClasses[size], hideMobile && styles.hidden_s, active ? styles.active : styles.inactive, colorClasses[color] || styles.blue, direction === "vertical" ? styles.vertical : styles.horizontal)}>
+				{icon && typeof icon === "string" && <Icon icon={`${icon}-blue`} height="14px" width="auto" className={classNames(styles.icon, !active && styles.hide)}/>}
+				{icon && typeof icon === "string" && <Icon icon={`${icon}-gray`} height="14px" width="auto" className={classNames(styles.icon, active && styles.hide)}/>}
 				{icon && typeof icon !== "string" && React.cloneElement(icon, {className: active ? `${styles.component_icon} ${styles.active} ${colorClasses[color]}` : `${styles.component_icon} ${styles.inactive}`})}
 				{children}
 			</span>

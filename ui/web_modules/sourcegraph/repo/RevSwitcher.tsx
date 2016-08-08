@@ -10,6 +10,7 @@ import * as TreeActions from "sourcegraph/tree/TreeActions";
 import Component from "sourcegraph/Component";
 import {Link} from "react-router";
 import * as styles from "./styles/RevSwitcher.css";
+import * as classNames from "classnames";
 
 import {FaChevronDown, CheckIcon} from "sourcegraph/components/Icons";
 import {Input, Menu, Heading} from "sourcegraph/components/index";
@@ -258,7 +259,7 @@ class RevSwitcher extends Component<any, any> {
 					onClick={this._onToggleDropdown}>
 					<FaChevronDown className={styles.toggle_icon} />
 				</span>
-				<div className={`${styles.dropdown_menu} ${this.state.open ? styles.open : styles.closed}`}>
+				<div className={classNames(styles.dropdown_menu, this.state.open ? styles.open : styles.closed)}>
 					<Menu>
 						<div>
 							<Input block={true}

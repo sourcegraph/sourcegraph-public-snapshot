@@ -5,12 +5,13 @@ import * as styles from "./styles/dropdown.css";
 import * as base from "./styles/_base.css";
 import {CheckIcon} from "sourcegraph/components/Icons";
 import {DownPointer} from "sourcegraph/components/symbols/index";
+import * as classNames from "classnames";
 
 // This component is a minimal Dropdown component with some code copied from
 // RevSwitcher.
 class Dropdown extends React.Component<any, any> {
 	_wrapper: any;
-	
+
 	static propTypes = {
 		icon: React.PropTypes.element,
 		title: React.PropTypes.string.isRequired,
@@ -78,11 +79,11 @@ class Dropdown extends React.Component<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<div className={`${this.props.disabled ? styles.wrapper_disabled : styles.wrapper} ${this.props.className}`}
+			<div className={classNames(this.props.disabled ? styles.wrapper_disabled : styles.wrapper, this.props.className)}
 				ref={(e) => this._wrapper = e}>
 				<span onClick={this.getMenuClickCallback(this.state.selectedValue)}>{this.props.icon} {this.props.title}</span>
-				<span className={`toggle ${this.state.open ? "open_arrow" : ""}`} onClick={this._onToggleDropdown}>
-					<DownPointer width={8} className={`${styles.center_icon} ${base.ml1}`} />
+				<span className={classNames(styles.toggle, this.state.open && styles.open_arrow)} onClick={this._onToggleDropdown}>
+					<DownPointer width={8} className={classNames(styles.center_icon, base.ml1)} />
 				</span>
 				<div className={styles.dropdown_menu}>
 					<div role="menu"

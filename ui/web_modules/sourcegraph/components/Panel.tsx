@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as styles from "./styles/panel.css";
+import * as classNames from "classnames";
 
 class Panel extends React.Component<any, any> {
 	static propTypes = {
@@ -21,7 +22,7 @@ class Panel extends React.Component<any, any> {
 		const {children, color, inverse, hover, hoverLevel, className} = this.props;
 
 		return (
-			<div {...this.props} className={`${styles.panel} ${colorClass(color, inverse)} ${hoverClass(hoverLevel, hover)} ${className}`}>
+			<div {...this.props} className={classNames(styles.panel, colorClass(color, inverse), hoverClass(hoverLevel, hover), className)}>
 				{children}
 			</div>
 		);

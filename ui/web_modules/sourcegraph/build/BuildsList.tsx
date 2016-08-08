@@ -3,6 +3,7 @@
 import * as React from "react";
 import Helmet from "react-helmet";
 import {Link} from "react-router";
+import * as classNames from "classnames";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -130,7 +131,7 @@ class BuildsList extends Container<any, any> {
 						<span className={styles.list_elapsed}>Elapsed</span>
 					</div>,
 					...this.state.builds.map((build, i) =>
-						<div key={i} className={`${styles.list_item} ${buildClass(build)}`}>
+						<div key={i} className={classNames(styles.list_item, buildClass(build))}>
 							<span className={styles.list_id}>
 								{!build.StartedAt &&
 									<span>{build.ID}</span>

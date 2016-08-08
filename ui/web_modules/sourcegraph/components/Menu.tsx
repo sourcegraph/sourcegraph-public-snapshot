@@ -1,6 +1,7 @@
 // tslint:disable
 
 import * as React from "react";
+import * as classNames from "classnames";
 
 import * as styles from "./styles/menu.css";
 
@@ -18,7 +19,7 @@ class Menu extends React.Component<any, any> {
 	}
 
 	render(): JSX.Element | null {
-		return <div className={`${this.props.className} ${styles.container}`} style={this.props.style}>{this.renderMenuItems()}</div>;
+		return <div className={classNames(this.props.className, styles.container)} style={this.props.style}>{this.renderMenuItems()}</div>;
 	}
 }
 

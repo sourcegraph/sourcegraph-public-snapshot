@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as styles from "./styles/code_2.css";
+import * as classNames from "classnames";
 
 class Code extends React.Component<any, any> {
 	static propTypes = {
@@ -12,7 +13,7 @@ class Code extends React.Component<any, any> {
 
 	render(): JSX.Element | null {
 		const {className, children, style} = this.props;
-		return <span className={`${className} ${styles.code}`} style={style}>{children}</span>;
+		return <span className={classNames(className, styles.code)} style={style}>{children}</span>;
 	}
 }
 

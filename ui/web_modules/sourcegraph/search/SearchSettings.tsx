@@ -19,6 +19,7 @@ import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import BetaInterestForm from "sourcegraph/home/BetaInterestForm";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {searchScopes} from "sourcegraph/search/index";
+import * as classNames from "classnames";
 
 class SearchSettings extends Container<any, any> {
 	static propTypes = {
@@ -143,7 +144,7 @@ class SearchSettings extends Container<any, any> {
 
 		return (
 			<div className={styles.group}>
-				<span className={`${styles.label} ${base.pr3}`}>Languages:</span>
+				<span className={classNames(styles.label, base.pr3)}>Languages:</span>
 				<div>
 					{allLangs.map(lang => (
 						lang === "python" || lang === "javascript" ?
@@ -188,7 +189,7 @@ class SearchSettings extends Container<any, any> {
 		return (
 			<div className={styles.row}>
 				<div className={styles.group}>
-					<span className={`${styles.label} ${base.pr3}`}>Include:</span>
+					<span className={classNames(styles.label, base.pr3)}>Include:</span>
 					<div>
 						{this.state.repo && <Button
 							color={scope.repo ? "blue" : "normal"}
@@ -232,8 +233,8 @@ class SearchSettings extends Container<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<div className={`${styles.groups} ${this.props.className}`}>
-				<div className={`${styles.groups_inner} ${this.props.innerClassName}`}>
+			<div className={classNames(styles.groups, this.props.className)}>
+				<div className={classNames(styles.groups_inner, this.props.innerClassName)}>
 					<div className={styles.row}>
 						{this._renderLanguages()}
 					</div>

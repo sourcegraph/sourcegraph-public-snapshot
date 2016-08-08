@@ -10,6 +10,7 @@ import "sourcegraph/blob/BlobBackend";
 import * as styles from "./styles/DefInfo.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
+import * as classNames from "classnames";
 
 import {Link} from "react-router";
 import {refLocsPerPage} from "sourcegraph/def/index";
@@ -87,7 +88,7 @@ class RepoRefsContainer extends Container<any, any> {
 
 		return (
 			<div>
-				<Heading level="7" className={`${styles.cool_mid_gray} ${base.mb4}`}>
+				<Heading level="7" className={classNames(styles.cool_mid_gray, base.mb4)}>
 					{refLocs && refLocs.TotalRepos &&
 						`Referenced in ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`
 					}
@@ -104,7 +105,7 @@ class RepoRefsContainer extends Container<any, any> {
 					</Link>
 					<List listStyle="node" className={base.mt2} style={{marginLeft: "6px"}}>
 					{repoRefs.Files && repoRefs.Files.length > 0 && repoRefs.Files.map((file, j) =>
-							<li key={j} className={`${base.mv3} ${base.pt1} ${styles.cool_mid_gray} ${styles.f7} ${styles.node_list_item}`}>
+							<li key={j} className={classNames(base.mv3, base.pt1, styles.cool_mid_gray, styles.f7, styles.node_list_item)}>
 								{file.Count} references in <Link to={urlToBlob(repoRefs.Repo, null, file.Path)} onClick={this._clickedReferencedBlob.bind(this)}>{file.Path}</Link>
 							</li>)
 					}
@@ -114,10 +115,10 @@ class RepoRefsContainer extends Container<any, any> {
 				{refLocs && refLocs.RepoRefs &&
 					(fileCount >= refLocsPerPage || refLocs.TotalRepos > refLocs.RepoRefs.length || !refLocs.TotalRepos) &&
 					!refLocs.StreamTerminated &&
-					<a onClick={this._onNextPage} className={`${styles.f7} ${styles.link_icon}`}>
+					<a onClick={this._onNextPage} className={classNames(styles.f7, styles.link_icon)}>
 						{this.state.nextPageLoading ?
 							<strong>Loading <Loader className={base.mr2} /> </strong> :
-							<strong>View more references <DownPointer className={`${styles.icon_cool_mid_gray} ${base.ml1}`} width={9} /></strong>
+							<strong>View more references <DownPointer className={classNames(styles.icon_cool_mid_gray, base.ml1)} width={9} /></strong>
 						}
 					</a>
 				}

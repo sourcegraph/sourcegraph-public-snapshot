@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code} from "sourcegraph/components/index";
+import * as classNames from "classnames";
 
 class TabsComponent extends React.Component<any, any> {
 	constructor(props) {
@@ -172,7 +173,7 @@ class TabsComponent extends React.Component<any, any> {
 						</TabPanel>
 					</TabPanels>
 				</Panel>
-				<Heading level="4" className={`${base.mt5} ${base.mb3}`}>Tabs Properties</Heading>
+				<Heading level="4" className={classNames(base.mt5, base.mb3)}>Tabs Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{width: "100%"}}>
 						<thead>
@@ -207,7 +208,7 @@ class TabsComponent extends React.Component<any, any> {
 						</tbody>
 					</Table>
 				</Panel>
-				<Heading level="4" className={`${base.mt5} ${base.mb3}`}>TabItem Properties</Heading>
+				<Heading level="4" className={classNames(base.mt5, base.mb3)}>TabItem Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{width: "100%"}}>
 						<thead>

@@ -5,6 +5,7 @@ import * as styles from "./styles/checklistItem.css";
 import * as base from "./styles/_base.css";
 import Icon from "./Icon";
 import Button from "./Button";
+import * as classNames from "classnames";
 
 class ChecklistItem extends React.Component<any, any> {
 	static propTypes = {
@@ -18,7 +19,7 @@ class ChecklistItem extends React.Component<any, any> {
 	render(): JSX.Element | null {
 		const {className, children, complete, actionText, actionOnClick} = this.props;
 		return (
-			<div className={`${className} ${styles.item}`}>
+			<div className={classNames(className, styles.item)}>
 				<div className={complete ? styles.check_complete : styles.check_incomplete}>
 					{complete && <Icon icon="check-green" width="50%" className={styles.check} />}
 				</div>

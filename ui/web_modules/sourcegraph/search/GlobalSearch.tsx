@@ -25,6 +25,7 @@ import popularRepos from "./popularRepos";
 import {SearchSettings} from "sourcegraph/search/index";
 import {WantResultsPayload} from "sourcegraph/search/SearchActions";
 import {locationForSearch} from "sourcegraph/search/routes";
+import * as classNames from "classnames";
 
 export const RESULTS_LIMIT = 20;
 
@@ -402,18 +403,18 @@ class GlobalSearch extends Container<any, any> {
 		const langs = this.state.searchSettings ? this.state.searchSettings.languages : null;
 
 		if (!langs || langs.length === 0) {
-			return [<div key="_nosymbol" className={`${base.ph4} ${base.pt4} ${styles.result} ${styles.result_error}`}>Select a language to search.</div>];
+			return [<div key="_nosymbol" className={classNames(base.ph4, base.pt4, styles.result, styles.result_error)}>Select a language to search.</div>];
 		}
 
 		if (this.state.query && !this.state.matchingResults ||
 			((!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) && this.state.matchingResults.outstandingFetches !== 0) && this.state.query) {
-			return [<div key="_nosymbol" className={`${base.ph4} ${base.pv4} ${styles.result}`}>Loading results...</div>];
+			return [<div key="_nosymbol" className={classNames(base.ph4, base.pv4, styles.result)}>Loading results...</div>];
 		}
 
 		if (this.state.query && this.state.matchingResults &&
 			(!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) &&
 			(!this.state.matchingResults.Repos || this.state.matchingResults.Repos.length === 0)) {
-			return [<div className={`${base.ph4} ${base.pv4} ${styles.result}`} key="_nosymbol">No results found.</div>];
+			return [<div className={classNames(base.ph4, base.pv4, styles.result)} key="_nosymbol">No results found.</div>];
 		}
 
 		let list: any[] = [], numDefs = 0,
@@ -428,22 +429,22 @@ class GlobalSearch extends Container<any, any> {
 
 			const firstLineDocString = repo.Description;
 			list.push(
-				<Link className={`${styles.block} ${selected ? styles.result_selected : styles.result} ${this.state.resultClassName}`}
+				<Link className={classNames(styles.block, selected ? styles.result_selected : styles.result, this.state.resultClassName)}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : null}
 					to={repo.URI}
 					key={repo.URI}
 					onClick={() => this._onSelection(true)}>
-					<div className={`${styles.cool_gray} ${styles.flex_container}`}>
-						<div className={`${styles.flex_icon} ${styles.hidden_s}`}>
+					<div className={classNames(styles.cool_gray, styles.flex_container)}>
+						<div className={classNames(styles.flex_icon, styles.hidden_s)}>
 							<Icon icon="repository-gray" width={resultIconSize} />
 						</div>
 						<div className={styles.flex}>
-							<code className={`${styles.block} ${styles.f5}`}>
+							<code className={classNames(styles.block, styles.f5)}>
 								Repository
 								<span className={styles.bold}> {repo.URI.split(/[// ]+/).pop()}</span>
 							</code>
-							{firstLineDocString && <p className={`${styles.docstring} ${base.mt0}`}>{firstLineDocString}</p>}
+							{firstLineDocString && <p className={classNames(styles.docstring, base.mt0)}>{firstLineDocString}</p>}
 						</div>
 					</div>
 				</Link>
@@ -467,19 +468,19 @@ class GlobalSearch extends Container<any, any> {
 
 			const firstLineDocString = docstring;
 			list.push(
-				<Link className={`${styles.block} ${selected ? styles.result_selected : styles.result} ${this.state.resultClassName}`}
+				<Link className={classNames(styles.block, selected ? styles.result_selected : styles.result, this.state.resultClassName)}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : null}
 					to={defURL.replace(/GoPackage\/pkg\//, "GoPackage/")}
 					key={defURL}
 					onClick={() => this._onSelection(true)}>
-					<div className={`${styles.cool_gray} ${styles.flex_container} ${base.pt3}`}>
-						<div className={`${styles.flex} ${styles.w100}`}>
-							<p className={`${styles.cool_mid_gray} ${styles.block_s} ${base.ma0} ${base.pl4} ${base.pr2} ${base.fr}`}>{trimRepo(def.Repo)}</p>
-							<code className={`${styles.block} ${styles.f5} ${base.pb3}`}>
+					<div className={classNames(styles.cool_gray, styles.flex_container, base.pt3)}>
+						<div className={classNames(styles.flex, styles.w100)}>
+							<p className={classNames(styles.cool_mid_gray, styles.block_s, base.ma0, base.pl4, base.pr2, base.fr)}>{trimRepo(def.Repo)}</p>
+							<code className={classNames(styles.block, styles.f5, base.pb3)}>
 								{qualifiedNameAndType(def, {nameQual: "DepQualified"})}
 							</code>
-							{firstLineDocString && <p className={`${styles.docstring} ${base.mt0}`}>{firstLineDocString}</p>}
+							{firstLineDocString && <p className={classNames(styles.docstring, base.mt0)}>{firstLineDocString}</p>}
 						</div>
 					</div>
 				</Link>
@@ -490,7 +491,7 @@ class GlobalSearch extends Container<any, any> {
 	}
 
 	render(): JSX.Element | null {
-		return (<div className={`${styles.center} ${styles.flex} ${this.state.className}`}>
+		return (<div className={classNames(styles.center, styles.flex, this.state.className)}>
 			{this._results()}
 		</div>);
 	}

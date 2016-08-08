@@ -10,6 +10,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import {Panel, Heading, Loader} from "sourcegraph/components/index";
 import "whatwg-fetch";
+import * as classNames from "classnames";
 
 class ExamplesContainer extends Container<any, any> {
 	static propTypes = {
@@ -46,12 +47,12 @@ class ExamplesContainer extends Container<any, any> {
 		const expandedSnippets = 3;
 		return (
 			<div>
-				<Heading level="7" className={`${base.mb3} ${styles.cool_mid_gray}`}>
+				<Heading level="7" className={classNames(base.mb3, styles.cool_mid_gray)}>
 					Usage Example{(refLocs && refLocs.RepoRefs && refLocs.RepoRefs.length > 1) ? "s" : ""}
 				</Heading>
 				<Panel
 					hoverLevel="low"
-					className={`${styles.full_width_sm} ${styles.b__cool_pale_gray} ${base.ba}`}>
+					className={classNames(styles.full_width_sm, styles.b__cool_pale_gray, base.ba)}>
 					<div className={this.props.className}>
 						{!refLocs && <div className={typography.tc}> <Loader className={base.mv4} /></div>}
 						{refLocs && !refLocs.RepoRefs && <i>No examples found</i>}

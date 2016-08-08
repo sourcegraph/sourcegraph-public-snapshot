@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as styles from "./styles/stepper.css";
 import Icon from "./Icon";
+import * as classNames from "classnames";
 
 // @TODO(chexee): Doesn't scale well with large step labels. Keep 'em short for now.
 // @TODO(chexee): Checks are a little off center in Firefox
@@ -28,8 +29,8 @@ class Stepper extends React.Component<any, any> {
 		return steps.map((step, i) => {
 			if (i < stepsComplete) {
 				return (
-					<span className={`${styles.step} ${styles.step_complete} ${lineColorClasses[color] || styles.line_green}`} key={i}>
-						<span className={`${styles.step_node_complete} ${nodeColorClasses[color] || styles.node_green}`}>
+					<span className={classNames(styles.step, styles.step_complete, lineColorClasses[color] || styles.line_green)} key={i}>
+						<span className={classNames(styles.step_node_complete, nodeColorClasses[color] || styles.node_green)}>
 							<Icon icon="check" width="16px" className={styles.check} />
 						</span>
 						<span className={styles.step_text}>{step}</span>
@@ -37,7 +38,7 @@ class Stepper extends React.Component<any, any> {
 				);
 			}
 			return (
-				<span className={`${styles.step} ${styles.step_incomplete}`} key={i}>
+				<span className={classNames(styles.step, styles.step_incomplete)} key={i}>
 					<span className={styles.step_node_incomplete} />
 					<span className={styles.step_text}>{step}</span>
 				</span>
@@ -46,7 +47,7 @@ class Stepper extends React.Component<any, any> {
 	}
 
 	render(): JSX.Element | null {
-		return <div className={`${this.props.className} ${styles.stepper}`}>{this.renderSteps()}</div>;
+		return <div className={classNames(this.props.className, styles.stepper)}>{this.renderSteps()}</div>;
 	}
 }
 

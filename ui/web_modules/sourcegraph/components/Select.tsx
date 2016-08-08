@@ -1,6 +1,7 @@
 // tslint:disable
 
 import * as React from "react";
+import * as classNames from "classnames";
 
 import * as base from "./styles/_base.css";
 import * as styles from "./styles/select.css";
@@ -33,15 +34,15 @@ class Select extends React.Component<any, any> {
 					required={true}
 					style={style}
 					defaultValue={defaultValue}
-					className={`${styles.select} ${error ? styles.border_red : styles.border_neutral} ${block ? styles.block : ""} `}
+					className={classNames(styles.select, error ? styles.border_red : styles.border_neutral, block && styles.block)}
 					placeholder={placeholder ? placeholder : ""}>
 					{children}
 				</select>
 				<DownPointer style={{marginLeft: "-28px"}} width={11} className={styles.icon} />
-				{helperText && <em className={`${styles.small} ${styles.block} ${base.mt2}`}>{helperText}</em>}
+				{helperText && <em className={classNames(styles.small, styles.block, base.mt2)}>{helperText}</em>}
 				{errorText &&
-					<div className={`${styles.red} ${base.mv2}`}>
-						<Alert width={16} className={`${base.mr2} ${styles.red_fill}`} style={{marginTop: "-4px"}} />
+					<div className={classNames(styles.red, base.mv2)}>
+						<Alert width={16} className={classNames(base.mr2, styles.red_fill)} style={{marginTop: "-4px"}} />
 						This is an error message.
 					</div>
 				}

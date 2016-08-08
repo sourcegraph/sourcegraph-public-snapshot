@@ -2,12 +2,12 @@
 	"renderOutput": {
 		"type": "tr",
 		"props": {
-			"className": "undefined undefined ",
+			"className": "",
 			"children": [
 				{
 					"type": "td",
 					"props": {
-						"className": "code undefined",
+						"className": "code",
 						"children": [
 							"hello\nworld"
 						]

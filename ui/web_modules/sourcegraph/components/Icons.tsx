@@ -1,6 +1,7 @@
 // tslint:disable
 
 import * as React from "react";
+import * as classNames from "classnames";
 
 import * as styles from "./styles/icon.css";
 
@@ -30,7 +31,7 @@ export const FaThumbsDown = iconWrapper(require("react-icons/lib/fa/thumbs-down"
 // iconWrapper lets you pass a style directly to any of the exported components, e.g.
 // <RepoIcon className={styles.foo} />
 function iconWrapper(Component): any {
-	const C = ({className, title}) => <div className={`${className} ${styles.icon}`} title={title}><Component /></div>; // eslint-disable-line react/jsx-key
+	const C = ({className, title}) => <div className={classNames(className, styles.icon)} title={title}><Component /></div>; // eslint-disable-line react/jsx-key
 	(C as any).propTypes = {
 		className: React.PropTypes.string,
 		title: React.PropTypes.string,

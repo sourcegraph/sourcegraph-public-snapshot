@@ -1,6 +1,7 @@
 // tslint:disable
 
 import * as React from "react";
+import * as classNames from "classnames";
 
 import * as styles from "./styles/label.css";
 
@@ -15,7 +16,7 @@ class Label extends React.Component<any, any> {
 	render(): JSX.Element | null {
 		return (
 			<span className={this.props.className} style={this.props.style}>
-				<span className={`${colorClasses[this.props.color] || styles.normal}`}>
+				<span className={colorClasses[this.props.color] || styles.normal}>
 					{this.props.children}
 				</span>
 			</span>

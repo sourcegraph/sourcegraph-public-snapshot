@@ -11,6 +11,7 @@ import * as styles from "./styles/GlobalNav.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
+import * as classNames from "classnames";
 
 import {LoginForm} from "sourcegraph/user/Login";
 import BetaInterestForm from "sourcegraph/home/BetaInterestForm";
@@ -44,7 +45,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 	let repo = repoSplat ? repoPath(repoSplat) : null;	return (
 		<nav
 			id="global-nav"
-			className={`${styles.navbar} ${colors.shadow_gray}`}
+			className={classNames(styles.navbar, colors.shadow_gray)}
 			role="navigation"
 			style={shouldHide ? {visibility: "hidden"} : {}}>
 
@@ -85,17 +86,17 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 				</LocationStateModal>
 			}
 
-			<div className={`${styles.flex} ${styles.flex_fill} ${styles.flex_center} ${styles.tl} ${base.bn}`}>
-				{!isHomepage && <Link to="/" className={`${styles.logo_link} ${styles.flex_fixed}`}>
+			<div className={classNames(styles.flex, styles.flex_fill, styles.flex_center, styles.tl, base.bn)}>
+				{!isHomepage && <Link to="/" className={classNames(styles.logo_link, styles.flex_fixed)}>
 					{showLogoMarkOnly ?
-						<Logo className={`${styles.logo} ${styles.logomark}`}
+						<Logo className={classNames(styles.logo, styles.logomark)}
 							width="21px"
 							type="logomark"/> :
 						<span>
-							<Logo className={`${styles.logo} ${styles.logomark} ${styles.small_only}`}
+							<Logo className={classNames(styles.logo, styles.logomark, styles.small_only)}
 								width="21px"
 								type="logomark"/>
-							<Logo className={`${styles.logo} ${styles.not_small_only}`}
+							<Logo className={classNames(styles.logo, styles.not_small_only)}
 								width="144px"
 								type="logotype"/>
 						</span>
@@ -103,21 +104,21 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 				</Link>}
 
 				<div
-					className={`${styles.flex_fill} ${base.b__dotted} ${base.bn} ${base.brw2} ${colors.b__cool_pale_gray}`}>
+					className={classNames(styles.flex_fill, base.b__dotted, base.bn, base.brw2, colors.b__cool_pale_gray)}>
 					{location.pathname !== "/" && <StyledSearchForm repo={repo} location={location} router={router} showResultsPanel={location.pathname !== `/${rel.search}`} />}
 				</div>
 
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal className={styles.icon_ellipsis} title="Your editor could not identify the symbol"/>}
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 1 && <CheckIcon className={styles.icon_check} title="Sourcegraph successfully looked up symbol" />}
 
-				{user && <div className={`${styles.flex} ${styles.flex_fixed} ${base.pv2} ${base.ph3}`}>
+				{user && <div className={classNames(styles.flex, styles.flex_fixed, base.pv2, base.ph3)}>
 					<Popover left={true}>
 						<div className={styles.user}>
 							{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <div>{user.Login}</div>}
-							<DownPointer width={10} className={`${base.ml2} ${styles.fill_cool_mid_gray}`} />
+							<DownPointer width={10} className={classNames(base.ml2, styles.fill_cool_mid_gray)} />
 						</div>
 						<Menu className={base.pa0} style={{width: "220px"}}>
-							<div className={`${base.pa0} ${base.mb2} ${base.mt3}`}>
+							<div className={classNames(base.pa0, base.mb2, base.mt3)}>
 								<Heading level="7" color="cool_mid_gray">Signed in as</Heading>
 							</div>
 							<div>{user.Login}</div>
@@ -131,17 +132,17 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 								Beta program
 							</LocationStateToggleLink>
 							<hr role="divider" className={base.mt3} />
-							<div className={`${styles.cool_mid_gray} ${base.pv1} ${base.mb1} ${typography.tc}`}>
-								<Link to="/security" className={`${styles.cool_mid_gray} ${typography.f7} ${typography.link_subtle} ${base.pr3}`}>Security</Link>
-								<Link to="/-/privacy" className={`${styles.cool_mid_gray} ${typography.f7} ${typography.link_subtle} ${base.pr3}`}>Privacy</Link>
-								<Link to="/-/terms" className={`${typography.f7} ${typography.link_subtle}`}>Terms</Link>
+							<div className={classNames(styles.cool_mid_gray, base.pv1, base.mb1, typography.tc)}>
+								<Link to="/security" className={classNames(styles.cool_mid_gray, typography.f7, typography.link_subtle, base.pr3)}>Security</Link>
+								<Link to="/-/privacy" className={classNames(styles.cool_mid_gray, typography.f7, typography.link_subtle, base.pr3)}>Privacy</Link>
+								<Link to="/-/terms" className={classNames(typography.f7, typography.link_subtle)}>Terms</Link>
 							</div>
 						</Menu>
 					</Popover>
 				</div>}
 
 				{!signedIn &&
-					<div className={`${base.pv2} ${base.pr3} ${base.pl3}`}>
+					<div className={classNames(base.pv2, base.pr3, base.pl3)}>
 						<div>
 							<LocationStateToggleLink href="/login" modalName="login" location={location}
 								onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ShowLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>

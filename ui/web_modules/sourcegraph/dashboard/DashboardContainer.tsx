@@ -13,6 +13,7 @@ import SearchSettings from "sourcegraph/search/SearchSettings";
 import {LanguageID} from "sourcegraph/Language";
 import * as invariant from "invariant";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import * as classNames from "classnames";
 
 type OnSelectQueryListener = (ev: Event, query: string) => any;
 
@@ -165,7 +166,7 @@ const TitledSection = ({
 	children?: any,
 	className: string,
 }) => (
-	<div className={`${styles.titled_section} ${className}`}>
+	<div className={classNames(styles.titled_section, className)}>
 		<div className={styles.section_title}>{title}</div>
 		{children}
 	</div>

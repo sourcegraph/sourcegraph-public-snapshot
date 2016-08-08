@@ -1,6 +1,7 @@
 // tslint:disable
 
 import * as React from "react";
+import * as classNames from "classnames";
 
 import Loader from "./Loader";
 import * as styles from "./styles/button.css";
@@ -47,7 +48,7 @@ function Button(props: {
 	delete other.className;
 
 	return (
-		<button {...(other as any)} className={`${colorClass(color, outline)} ${(disabled || loading) ? styles.disabled : ""} ${block ? styles.block : ""} ${size ? sizeClasses[size] : ""} ${className || ""}`}
+		<button {...(other as any)} className={classNames(colorClass(color, outline), (disabled || loading) && styles.disabled, block && styles.block, size && sizeClasses[size], className)}
 			onClick={onClick}>
 			{imageUrl ? <img className={styles.button_image} src={imageUrl} /> : ""}
 			{loading && <Loader stretch={Boolean(block)} {...props}/>}

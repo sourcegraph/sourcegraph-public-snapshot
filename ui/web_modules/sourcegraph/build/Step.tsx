@@ -6,6 +6,7 @@ import * as BuildActions from "sourcegraph/build/BuildActions";
 import {taskClass, elapsed} from "sourcegraph/build/Build";
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
+import * as classNames from "classnames";
 
 import {Collapsible} from "sourcegraph/components/index";
 
@@ -81,7 +82,7 @@ class Step extends Component<any, any> {
 	render(): JSX.Element | null {
 		return (
 			<Collapsible collapsed={true}>
-				<div className={`${styles.step_title} ${taskClass(this.state.task)}`}>
+				<div className={classNames(styles.step_title, taskClass(this.state.task))}>
 					{this.state.task.Label}
 					<span style={{float: "right"}}>{elapsed(this.state.task)}</span>
 				</div>

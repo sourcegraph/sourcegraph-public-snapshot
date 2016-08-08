@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as styles from "sourcegraph/components/styles/tabs.css";
+import * as classNames from "classnames";
 
 class Tabs extends React.Component<any, any> {
 	static propTypes = {
@@ -35,7 +36,7 @@ class Tabs extends React.Component<any, any> {
 
 	render(): JSX.Element | null {
 		const {direction, className, style} = this.props;
-		return <div className={`${styles.container} ${direction === "vertical" ? styles.vertical : styles.horizontal} ${className}`} style={style}>{this._childrenWithProps()}</div>;
+		return <div className={classNames(styles.container, direction === "vertical" ? styles.vertical : styles.horizontal, className)} style={style}>{this._childrenWithProps()}</div>;
 	}
 }
 

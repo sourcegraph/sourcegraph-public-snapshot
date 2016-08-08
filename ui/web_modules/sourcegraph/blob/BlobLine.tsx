@@ -188,7 +188,7 @@ class BlobLine extends Component<any, any> {
 			(this.state.selected ? s.selectedLineContent : s.lineContent);
 
 		return (
-			<tr className={`${s.line} ${s[this.state.textSize]} ${this.state.className || ""}`}
+			<tr className={classNames(s.line, s[this.state.textSize], this.state.className)}
 				data-line={this.state.lineNumber}>
 				{this.state.showLineNumber &&
 					<td className={s.lineNumberCell} onClick={(event) => {
@@ -202,7 +202,7 @@ class BlobLine extends Component<any, any> {
 							to={`${urlToBlob(this.state.repo, this.state.rev, this.state.path)}#L${this.state.lineNumber}`} data-line={this.state.lineNumber} />
 					</td>}
 
-				<td className={`code ${lineContentClass}`}>
+				<td className={classNames("code", lineContentClass)}>
 					{contents}
 				</td>
 			</tr>

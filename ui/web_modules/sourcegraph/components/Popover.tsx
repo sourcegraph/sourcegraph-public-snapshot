@@ -1,6 +1,7 @@
 // tslint:disable
 
 import * as React from "react";
+import * as classNames from "classnames";
 
 import Component from "sourcegraph/Component";
 
@@ -52,7 +53,7 @@ class Popover extends Component<any, any> {
 			<div className={styles.container} ref="container">
 				{this.state.children[0]}
 				{this.state.visible &&
-					<div ref="content" className={`${this.state.left ? styles.popover_left : styles.popover_right} ${this.state.popoverClassName}`}>
+					<div ref="content" className={classNames(this.state.left ? styles.popover_left : styles.popover_right, this.state.popoverClassName)}>
 						{this.state.children[1]}
 					</div>}
 			</div>

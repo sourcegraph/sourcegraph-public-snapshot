@@ -13,6 +13,7 @@ import {urlToBlob} from "sourcegraph/blob/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import {Route} from "react-router";
+import * as classNames from "classnames";
 
 import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
 
@@ -156,7 +157,7 @@ class TreeList extends Container<TreeListProps, TreeListState> {
 
 	_listItems(): Array<any> {
 		const items = this.state.fileResults;
-		const emptyItem = <div className={`${styles.list_item} ${styles.list_item_empty}`} key="_nofiles"><i>No matches.</i></div>;
+		const emptyItem = <div className={classNames(styles.list_item, styles.list_item_empty)} key="_nofiles"><i>No matches.</i></div>;
 		if (!items || items.length === 0) return [emptyItem];
 
 		let list: any[] = [];
@@ -171,7 +172,7 @@ class TreeList extends Container<TreeListProps, TreeListState> {
 
 			let key = `f:${itemURL}`;
 			list.push(
-				<Link className={`${styles.list_item} ${item.isParentDirectory ? styles.parent_dir : ""}`}
+				<Link className={classNames(styles.list_item, item.isParentDirectory && styles.parent_dir)}
 					to={itemURL}
 					key={key}>
 					{icon}

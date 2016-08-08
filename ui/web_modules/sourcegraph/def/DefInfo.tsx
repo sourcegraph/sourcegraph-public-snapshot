@@ -5,6 +5,7 @@ import Helmet from "react-helmet";
 import {Link} from "react-router";
 import "sourcegraph/blob/BlobBackend";
 import "whatwg-fetch";
+import * as classNames from "classnames";
 
 import * as styles from "./styles/DefInfo.css";
 import * as base from "sourcegraph/components/styles/_base.css";
@@ -250,13 +251,13 @@ class DefInfo extends Container<any, any> {
 		let defLine = this._getDefLine(defObj);
 
 		return (
-			<FlexContainer className={`${styles.bg_cool_pale_gray_2} ${styles.flex_grow}`}>
-				<div className={`${styles.container_fixed} ${base.mv3}`}>
+			<FlexContainer className={classNames(styles.bg_cool_pale_gray_2, styles.flex_grow)}>
+				<div className={classNames(styles.container_fixed, base.mv3)}>
 					{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
 					<Helmet title={defTitleOK(defObj) ? `${defTitle(defObj)} · ${trimRepo(repo)}` : trimRepo(repo)} />
 					{defObj &&
-						<div className={`${base.mv4} ${base.ph4}`}>
-							<Heading level="5" className={`${styles.break_word} ${base.mv2}`}>
+						<div className={classNames(base.mv4, base.ph4)}>
+							<Heading level="5" className={classNames(styles.break_word, base.mv2)}>
 								<table>
 									<tbody>
 										{defLine &&
@@ -281,8 +282,8 @@ class DefInfo extends Container<any, any> {
 												activeDefRepo={defObj.Repo} />
 										}
 										{!defLine &&
-											<tr className={`${blobStyles.line} ${blobStyles.deftitle}`}>
-												<td className={`code ${blobStyles.defTitleLineContent}`}>
+											<tr className={classNames(blobStyles.line, blobStyles.deftitle)}>
+												<td className={classNames("code", blobStyles.defTitleLineContent)}>
 													{qualifiedNameAndType(defObj, {unqualifiedNameClass: styles.def})}
 												</td>
 											</tr>
@@ -324,7 +325,7 @@ class DefInfo extends Container<any, any> {
 								</div>
 							}
 
-							<div className={`${styles.f7} ${styles.cool_mid_gray}`}>
+							<div className={classNames(styles.f7, styles.cool_mid_gray)}>
 								{defObj && defObj.Repo && <Link to={urlToRepo(defObj.Repo)} className={styles.link_subtle} onClick={this._viewRepoClicked.bind(this)}>{defObj.Repo}</Link>}
 								&nbsp; &middot; &nbsp;
 								<Link title="View definition in code" to={defBlobUrl} onClick={this._viewDefinitionClicked.bind(this)} className={styles.link_subtle}>View definition</Link>
@@ -360,7 +361,7 @@ class DefInfo extends Container<any, any> {
 									}
 
 									{!refLocations.RepoRefs &&
-										<div className={`${typography.tc} ${base.center} ${base.mv5}`} style={{maxWidth: "500px"}}>
+										<div className={classNames(typography.tc, base.center, base.mv5)} style={{maxWidth: "500px"}}>
 											<EmptyNodeIllo className={base.mv3} />
 											<Heading level="5">
 												We can't find any usage examples or <br className={base.hidden_s} />

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as styles from "./styles/table.css";
+import * as classNames from "classnames";
 
 class Table extends React.Component<any, any> {
 	static propTypes = {
@@ -15,7 +16,7 @@ class Table extends React.Component<any, any> {
 		const {className, children, bordered, style} = this.props;
 
 		return (
-			<table className={`${className} ${bordered ? styles.bordered : ""}`} style={style} cellSpacing="0">
+			<table className={classNames(className, bordered && styles.bordered)} style={style} cellSpacing="0">
 				{children}
 			</table>
 		);

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as styles from "sourcegraph/components/styles/hero.css";
+import * as classNames from "classnames";
 
 class Hero extends React.Component<any, any> {
 	static propTypes = {
@@ -15,7 +16,7 @@ class Hero extends React.Component<any, any> {
 		const {color, pattern, children, className} = this.props;
 
 		return (
-			<div className={`${styles.hero} ${colorClasses[color] || styles.white} ${patternClasses[pattern] || ""} ${className}`}>
+			<div className={classNames(styles.hero, colorClasses[color] || styles.white, patternClasses[pattern], className)}>
 				{children}
 			</div>
 		);

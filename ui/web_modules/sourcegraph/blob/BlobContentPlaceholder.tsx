@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as styles from "sourcegraph/blob/styles/Blob.css";
+import * as classNames from "classnames";
 
 const dummyLineLengths = [
 	15, 0, 8, 10, 0, 28, 34, 0, 41, 0, 30,
@@ -25,7 +26,7 @@ function BlobContentPlaceholder(props) {
 		lines.push(
 			<tr className={styles.line} data-line={line} key={i}>
 				<td className={styles.lineNumberCell}></td>
-				<td className={`code ${styles.lineContentPlaceholder}`} data-line={line}>
+				<td className={classNames("code", styles.lineContentPlaceholder)} data-line={line}>
 					<div className={styles.placeholderWhitespace} style={{width: `${100 - dummyLineLengths[i % dummyLineLengths.length]}%`}}>&nbsp;</div>
 				</td>
 			</tr>

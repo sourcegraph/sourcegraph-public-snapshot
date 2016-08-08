@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as styles from "sourcegraph/components/styles/flexContainer.css";
-
+import * as classNames from "classnames";
 
 class FlexContainer extends React.Component<any, any> {
 	static propTypes = {
@@ -27,7 +27,7 @@ class FlexContainer extends React.Component<any, any> {
 		const {direction, wrap, justify, items, content, className, children} = this.props;
 
 		return (
-			<div className={`${styles.flex} ${directionClasses[direction]} ${justifyClasses[justify]} ${itemsClasses[items]} ${contentClasses[content]} ${wrap ? styles.wrap : styles.nowrap} ${className}`}>
+			<div className={classNames(styles.flex, directionClasses[direction], justifyClasses[justify], itemsClasses[items], contentClasses[content], wrap ? styles.wrap : styles.nowrap, className)}>
 				{children}
 			</div>
 		);

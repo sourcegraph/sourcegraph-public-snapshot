@@ -5,6 +5,7 @@ import * as React from "react";
 import * as styles from "./styles/input.css";
 import * as base from "./styles/_base.css";
 import {Alert} from "./symbols/index";
+import * as classNames from "classnames";
 
 class Input extends React.Component<any, any> {
 	static propTypes = {
@@ -30,12 +31,12 @@ class Input extends React.Component<any, any> {
 				<input
 					{...this.props}
 					style={style} ref={domRef}
-					className={`${styles.input} ${block ? styles.block : ""} ${error ? styles.border_red : styles.border_neutral}`}
+					className={classNames(styles.input, block && styles.block, error ? styles.border_red : styles.border_neutral)}
 					placeholder={placeholder ? placeholder : ""} />
-				{helperText && <em className={`${styles.small} ${styles.block} ${base.mt2}`}>{helperText}</em>}
+				{helperText && <em className={classNames(styles.small, styles.block, base.mt2)}>{helperText}</em>}
 				{errorText &&
-					<div className={`${styles.red} ${base.mv2}`}>
-						<Alert width={16} className={`${base.mr2} ${styles.red_fill}`} style={{marginTop: "-4px"}} />
+					<div className={classNames(styles.red, base.mv2)}>
+						<Alert width={16} className={classNames(base.mr2, styles.red_fill)} style={{marginTop: "-4px"}} />
 						This is an error message.
 					</div>
 				}

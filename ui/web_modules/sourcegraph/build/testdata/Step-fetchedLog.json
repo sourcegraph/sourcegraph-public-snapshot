@@ -7,7 +7,7 @@
 				{
 					"type": "div",
 					"props": {
-						"className": "undefined undefined",
+						"className": "",
 						"children": [
 							{
 								"type": "span",

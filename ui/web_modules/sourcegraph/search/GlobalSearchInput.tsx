@@ -6,6 +6,7 @@ import * as styles from "./styles/GlobalSearchInput.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as invariant from "invariant";
 import {Search} from "sourcegraph/components/symbols/index";
+import * as classNames from "classnames";
 
 // If the user clicks the magnifying glass icon, the cursor should be
 // placed at the end of the text, not the beginning. Without this event
@@ -41,9 +42,9 @@ function GlobalSearchInput(props) {
 	const passProps = Object.assign({}, props, {className: undefined, styles: undefined}); // eslint-disable-line no-undefined
 
 	return (
-		<div className={`${styles.flex_fill} ${styles.relative} ${base.mr3}`}>
+		<div className={classNames(styles.flex_fill, styles.relative, base.mr3)}>
 			{props.icon &&
-				<Search width={16} style={{top: "11px", left: "10px"}} className={`${styles.absolute} ${styles.cool_mid_gray_fill} ${styles.layer_btm}`} />
+				<Search width={16} style={{top: "11px", left: "10px"}} className={classNames(styles.absolute, styles.cool_mid_gray_fill, styles.layer_btm)} />
 			}
 			<Input
 				{...passProps}

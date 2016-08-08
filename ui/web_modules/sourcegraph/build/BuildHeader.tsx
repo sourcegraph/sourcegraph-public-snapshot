@@ -1,6 +1,7 @@
 // tslint:disable
 
 import * as React from "react";
+import * as classNames from "classnames";
 
 import Component from "sourcegraph/Component";
 import TimeAgo from "sourcegraph/util/TimeAgo";
@@ -16,7 +17,7 @@ class BuildHeader extends Component<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<header className={`${styles.header} ${buildClass(this.state.build)}`}>
+			<header className={classNames(styles.header, buildClass(this.state.build))}>
 				<div className={styles.number}>#{this.state.build.ID}</div>
 				<div className={styles.status}>{buildStatus(this.state.build)}</div>
 				<div className={styles.date}>

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as styles from "./styles/heading.css";
+import * as classNames from "classnames";
 
 class Heading extends React.Component<any, any> {
 	static propTypes = {
@@ -25,9 +26,9 @@ class Heading extends React.Component<any, any> {
 		const {className, children, level, color, underline, align, style} = this.props;
 
 		return (
-			<div className={`${levelClasses[level] || styles.h3} ${colorClasses[color] || ""} ${alignClasses[align] || ""} ${className}`} style={style}>
+			<div className={classNames(levelClasses[level] || styles.h3, colorClasses[color], alignClasses[align], className)} style={style}>
 				{children}<br />
-				{underline && <hr className={`${styles.line} ${underlineClasses[underline]}`} />}
+				{underline && <hr className={classNames(styles.line, underlineClasses[underline])} />}
 			</div>
 		);
 	}

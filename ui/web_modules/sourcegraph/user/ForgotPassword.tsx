@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Helmet from "react-helmet";
+import * as classNames from "classnames";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -41,7 +42,7 @@ class ForgotPassword extends Container<any, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<form className={`${styles.full_page} ${styles.form}`} onSubmit={this._handleSubmit}>
+			<form className={classNames(styles.full_page, styles.form)} onSubmit={this._handleSubmit}>
 				<Helmet title="Forgot Password" />
 				<h1>Forgot your password?</h1>
 				<label>

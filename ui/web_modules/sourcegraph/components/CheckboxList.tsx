@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as styles from "./styles/checkboxList.css";
+import * as classNames from "classnames";
 
 class CheckboxList extends React.Component<any, any> {
 	static propTypes = {
@@ -36,7 +37,7 @@ class CheckboxList extends React.Component<any, any> {
 		}
 
 		return (
-			<fieldset ref={(c) => this._fieldset = c} className={`${className} ${styles.fieldset}`}>
+			<fieldset ref={(c) => this._fieldset = c} className={classNames(className, styles.fieldset)}>
 				<legend>{title}</legend>
 				{checkboxes}
 			</fieldset>

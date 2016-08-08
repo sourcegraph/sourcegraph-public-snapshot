@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Table, Code, FlexContainer} from "sourcegraph/components/index";
+import * as classNames from "classnames";
 
 class FlexContainerComponent extends React.Component<any, any> {
 
@@ -15,58 +16,58 @@ class FlexContainerComponent extends React.Component<any, any> {
 					<div className={base.pa4}>
 						<Heading level="7" className={base.mb3} color="cool_mid_gray">Default</Heading>
 						<FlexContainer>
-							<div className={`${base.ba} ${base.pa2}`}>
+							<div className={classNames(base.ba, base.pa2)}>
 								42.
 							</div>
-							<div className={`${base.ba} ${base.pa2}`}>
+							<div className={classNames(base.ba, base.pa2)}>
 								For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time.
 							</div>
 						</FlexContainer>
 
 						<Heading level="7" className={base.mv3} color="cool_mid_gray">Wrap</Heading>
 						<FlexContainer wrap={true}>
-							<div className={`${base.ba} ${base.pa2}`}>
+							<div className={classNames(base.ba, base.pa2)}>
 								Man had always assumed that he was more intelligent than dolphins.
 							</div>
-							<div className={`${base.ba} ${base.pa2}`}>
+							<div className={classNames(base.ba, base.pa2)}>
 								Man had always assumed that he was more intelligent than dolphins.
 							</div>
-							<div className={`${base.ba} ${base.pa2}`}>
+							<div className={classNames(base.ba, base.pa2)}>
 								Man had always assumed that he was more intelligent than dolphins.
 							</div>
-							<div className={`${base.ba} ${base.pa2}`}>
+							<div className={classNames(base.ba, base.pa2)}>
 							Man had always assumed that he was more intelligent than dolphins.
 							</div>
 						</FlexContainer>
 
 						<Heading level="7" className={base.mv3} color="cool_mid_gray">Space Between</Heading>
 						<FlexContainer justify="between">
-							<div className={`${base.ba} ${base.pa2}`}>
+							<div className={classNames(base.ba, base.pa2)}>
 								42.
 							</div>
-							<div className={`${base.ba} ${base.pa2}`}>
+							<div className={classNames(base.ba, base.pa2)}>
 								42.
 							</div>
-							<div className={`${base.ba} ${base.pa2}`}>
+							<div className={classNames(base.ba, base.pa2)}>
 								42.
 							</div>
-							<div className={`${base.ba} ${base.pa2}`}>
+							<div className={classNames(base.ba, base.pa2)}>
 								42.
 							</div>
 						</FlexContainer>
 
 						<Heading level="7" className={base.mv3} color="cool_mid_gray">Space Around</Heading>
 						<FlexContainer justify="around">
-							<div className={`${base.ba} ${base.pa2}`}>
+							<div className={classNames(base.ba, base.pa2)}>
 								42.
 							</div>
-							<div className={`${base.ba} ${base.pa2}`}>
+							<div className={classNames(base.ba, base.pa2)}>
 								42.
 							</div>
-							<div className={`${base.ba} ${base.pa2}`}>
+							<div className={classNames(base.ba, base.pa2)}>
 								42.
 							</div>
-							<div className={`${base.ba} ${base.pa2}`}>
+							<div className={classNames(base.ba, base.pa2)}>
 								42.
 							</div>
 						</FlexContainer>
@@ -111,7 +112,7 @@ class FlexContainerComponent extends React.Component<any, any> {
 						</pre>
 					</code>
 				</Panel>
-				<Heading level="4" className={`${base.mt5} ${base.mb3}`}>Properties</Heading>
+				<Heading level="4" className={classNames(base.mt5, base.mb3)}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{width: "100%"}}>
 						<thead>

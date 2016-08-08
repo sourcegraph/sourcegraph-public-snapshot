@@ -19,7 +19,7 @@
 								"type": "",
 								"key": "f:/repo@rev/-/tree/p1",
 								"props": {
-									"className": "undefined undefined",
+									"className": "",
 									"to": "/repo@rev/-/tree/p1",
 									"children": [
 										".."
@@ -32,7 +32,7 @@
 								"type": "",
 								"key": "f:/repo@rev/-/blob/p1/p2/f3",
 								"props": {
-									"className": "undefined ",
+									"className": "",
 									"to": "/repo@rev/-/blob/p1/p2/f3",
 									"children": [
 										{
