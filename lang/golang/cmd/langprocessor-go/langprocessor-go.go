@@ -6,7 +6,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
@@ -19,7 +21,7 @@ var (
 	workDir  = flag.String("workspace", "$SGPATH/workspace/go", "where to create workspace directories")
 )
 
-func prepareRepo(workspace, repo, commit string) error {
+func prepareRepo(update bool, workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
 
 	// TODO(slimsag): find a way to pass this information from the app instead
@@ -32,10 +34,46 @@ func prepareRepo(workspace, repo, commit string) error {
 
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
-	return langp.Clone(cloneURI, repoDir, commit)
+	return langp.Clone(update, cloneURI, repoDir, commit)
 }
 
-func prepareDeps(workspace, repo, commit string) error {
+// updateGoDependencies updates all Go dependencies in the repository. It is
+// the same as:
+//
+//  go get -u -d ./...
+//
+// Except it does not update repoURI itself, because it has already been
+// updated by PrepareRepo and go get would run `git pull --ff-only` which,
+// because we're set to a specific commit and not a branch, fail:
+//
+// 	fatal: Not possible to fast-forward, aborting.
+//
+func updateGoDependencies(repoDir string, env []string, repoURI string) error {
+	c := exec.Command("go", "list", "./...")
+	c.Dir = repoDir
+	c.Env = env
+	out, err := c.Output()
+	if err != nil {
+		return err
+	}
+	var pkgs []string
+	for _, line := range strings.Split(string(out), "\n") {
+		// TODO(slimsag): prefix isn't 100% correct because in strange cases
+		// you can have a package under the repo URI in a different repository
+		// (e.g. azul3d.org did this for a while). Generally unlikely for most
+		// packages though.
+		if line != "" && !strings.HasPrefix(line, repoURI) {
+			pkgs = append(pkgs, line)
+		}
+	}
+	if len(pkgs) == 0 {
+		return nil
+	}
+	args := append([]string{"get", "-u", "-d"}, pkgs...)
+	return langp.Cmd("go", args...).Run()
+}
+
+func prepareDeps(update bool, workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
 
 	// TODO(slimsag): find a way to pass this information from the app instead
@@ -46,13 +84,15 @@ func prepareDeps(workspace, repo, commit string) error {
 
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
-	c := langp.Cmd("go", "get", "-d", "./...")
-	c.Dir = repoDir
-	c.Env = []string{"PATH=" + os.Getenv("PATH"), "GOPATH=" + gopath}
-	if err := c.Run(); err != nil {
-		return err
+	env := []string{"PATH=" + os.Getenv("PATH"), "GOPATH=" + gopath}
+	var c *exec.Cmd
+	if !update {
+		c = langp.Cmd("go", "get", "-d", "./...")
+		c.Dir = repoDir
+		c.Env = env
+		return c.Run()
 	}
-	return nil
+	return updateGoDependencies(repoDir, env, repo)
 }
 
 func fileURI(repo, commit, file string) string {
