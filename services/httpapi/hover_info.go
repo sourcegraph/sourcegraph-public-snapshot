@@ -56,16 +56,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		Def   *sourcegraph.Def `json:"def"`
 	}{}
 
-	// This lets us specify an environment variable in order to restrict this
-	// feature to a single repository.
-	sgUniverseRepo := os.Getenv("SG_UNIVERSE_REPO")
-	if sgUniverseRepo == "" {
-		// Default to the sourcegraph repository.
-		sgUniverseRepo = "sourcegraph/sourcegraph"
-	}
-	isUniverseRepo := sgUniverseRepo == "all" || sgUniverseRepo == repo.URI
-
-	if feature.Features.Universe && isUniverseRepo {
+	if feature.IsUniverseRepo(repo.URI) {
 		hover, err := lpClient.Hover(&langp.Position{
 			Repo:      repo.URI,
 			Commit:    repoRev.CommitID,

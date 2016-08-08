@@ -20,6 +20,11 @@ var Features = struct {
 	Authors: true,
 }
 
+// IsUniverseRepo returns true if the Universe feature has rolled out to repo.
+func IsUniverseRepo(repo string) bool {
+	return repoChecker(Features.Universe, os.Getenv("SG_UNIVERSE_REPO"), repo)
+}
+
 func init() {
 	err := setFeatures(&Features, os.Environ())
 	if err != nil {
@@ -58,4 +63,15 @@ func setFeatures(featureStruct interface{}, environ []string) error {
 		field.SetBool(on)
 	}
 	return nil
+}
+
+func repoChecker(on bool, enabled, repo string) bool {
+	if !on {
+		return false
+	}
+	if enabled == "" {
+		// Default to the sourcegraph repository.
+		enabled = "sourcegraph/sourcegraph"
+	}
+	return enabled == "all" || repo == enabled
 }
