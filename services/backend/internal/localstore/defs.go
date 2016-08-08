@@ -18,8 +18,10 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -422,13 +424,30 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.RefreshIndexO
 	totalEnd := obs.start("update_total")
 	defer totalEnd()
 
-	end := obs.start("graphstore")
-	defs, err := store.GraphFromContext(ctx).Defs(
-		sstore.ByRepoCommitIDs(sstore.Version{Repo: repo.URI, CommitID: op.CommitID}),
-	)
-	end()
-	if err != nil {
-		return err
+	var defs []*graph.Def
+	if lpClient, _ := langpClient(); lpClient != nil && feature.IsUniverseRepo(repo.URI) {
+		end := obs.start("langp")
+		r, err := lpClient.ExportedSymbols(&langp.RepoRev{
+			Repo:   repo.URI,
+			Commit: op.CommitID,
+		})
+		end()
+		if err != nil {
+			log15.Debug("universe defs.Update failed", "repo", repo.URI, "commitID", op.CommitID, "err", err)
+		} else {
+			log15.Debug("universe defs.Update success", "repo", repo.URI, "commitID", op.CommitID, "count", len(r.Defs))
+		}
+	}
+
+	if len(defs) == 0 {
+		end := obs.start("graphstore")
+		defs, err = store.GraphFromContext(ctx).Defs(
+			sstore.ByRepoCommitIDs(sstore.Version{Repo: repo.URI, CommitID: op.CommitID}),
+		)
+		end()
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, def := range defs {
@@ -455,7 +474,7 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.RefreshIndexO
 	dbh := graphDBH(ctx)
 
 	// Update def_keys
-	end = obs.start("def_keys")
+	end := obs.start("def_keys")
 	defKeyIDs := make(map[graph.DefKey]int64)
 	for _, def := range chosenDefs {
 		rp := def.Repo

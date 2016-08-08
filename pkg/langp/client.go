@@ -52,6 +52,26 @@ func (c *Client) LocalRefs(p *Position) (*LocalRefs, error) {
 	return &result, nil
 }
 
+// ExternalRefs resolves references to repository-external definitions.
+func (c *Client) ExternalRefs(r *RepoRev) (*ExternalRefs, error) {
+	var result ExternalRefs
+	err := c.do("external-refs", r, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// ExportedSymbols lists repository-local definitions which are exported.
+func (c *Client) ExportedSymbols(r *RepoRev) (*ExportedSymbols, error) {
+	var result ExportedSymbols
+	err := c.do("exported-symbols", r, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *Client) do(endpoint string, body, results interface{}) error {
 	// TODO: maybe consider retrying upon first request failure to prevent
 	// such errors from ending up on the frontend for reliability purposes.

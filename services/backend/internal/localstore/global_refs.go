@@ -16,8 +16,10 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
@@ -315,13 +317,30 @@ func (g *globalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error 
 		log15.Debug("GlobalRefs.Update re-indexing commit", "repo", repo, "commitID", commitID)
 	}
 
-	start = time.Now()
-	allRefs, err := store.GraphFromContext(ctx).Refs(
-		sstore.ByRepoCommitIDs(sstore.Version{Repo: repo, CommitID: commitID}),
-	)
-	observe("graphstore", start)
-	if err != nil {
-		return err
+	var allRefs []*graph.Ref
+	if lpClient, _ := langpClient(); lpClient != nil && feature.IsUniverseRepo(repo) {
+		start = time.Now()
+		r, err := lpClient.ExternalRefs(&langp.RepoRev{
+			Repo:   repo,
+			Commit: commitID,
+		})
+		observe("langp", start)
+		if err != nil {
+			log15.Debug("universe globalRefs.Update failed", "repo", repo, "commitID", op.CommitID, "err", err)
+		} else {
+			log15.Debug("universe globalRefs.Update success", "repo", repo, "commitID", op.CommitID, "count", len(r.Defs))
+		}
+	}
+
+	if len(allRefs) == 0 {
+		start = time.Now()
+		allRefs, err = store.GraphFromContext(ctx).Refs(
+			sstore.ByRepoCommitIDs(sstore.Version{Repo: repo, CommitID: commitID}),
+		)
+		observe("graphstore", start)
+		if err != nil {
+			return err
+		}
 	}
 
 	refs := make([]*graph.Ref, 0, len(allRefs))
