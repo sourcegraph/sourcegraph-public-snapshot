@@ -3,7 +3,7 @@ const ProgressBarPlugin = require("progress-bar-webpack-plugin");
 module.exports = {
 	target: "node",
 	resolve: {
-		modules: [`${__dirname}/web_modules`, `${__dirname}/test_modules`, "node_modules"],
+		modules: [`${__dirname}/web_modules`, "node_modules"],
 		extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
 	},
 	devtool: "cheap-module-source-map",
