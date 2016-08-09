@@ -48,11 +48,10 @@ export class ComponentsContainer extends React.Component<{}, any> {
 					All of our writing across the product, codebase, and marketing material should stem from these qualities. Tone is variable and contextual – quality of voice should be consistent.
 				</p>
 				<ul>
-					<li>Intelligent, but not arrogant</li>
-					<li>Accountable, but not hyperbolic</li>
-					<li>Authentic, but not elitist</li>
+					<li>Intelligent, but not arrogant or patronizing</li>
+					<li>Accountable, not hyperbolic</li>
+					<li>Authentic, not elitist</li>
 					<li>Efficient and concise, but not aloof</li>
-					<li>Omniscient, but not patronizing</li>
 					<li>Opinionated, but not overzealous</li>
 					<li>Casual, but not unprofessional</li>
 				</ul>
