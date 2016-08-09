@@ -7,6 +7,7 @@ export const languages = [
 	"Go",
 	"Java",
 	"JavaScript",
+	"TypeScript",
 	"Objective-C",
 	"PHP",
 	"Python",
