@@ -69,9 +69,23 @@ func repoChecker(on bool, enabled, repo string) bool {
 	if !on {
 		return false
 	}
-	if enabled == "" {
-		// Default to the sourcegraph repository.
-		enabled = "sourcegraph/sourcegraph"
+	if enabled == "all" {
+		return true
 	}
-	return enabled == "all" || repo == enabled
+	if enabled == "" {
+		// Default to the sourcegraph repository, plus some other forked repos
+		// for testing purposes.
+		enabled = "sourcegraph/sourcegraph"
+		enabled += ",github.com/slimsag/mux"
+		enabled += ",github.com/slimsag/context"
+		enabled += ",github.com/slimsag/docker"
+		enabled += ",github.com/slimsag/kubernetes"
+		enabled += ",github.com/slimsag/prometheus"
+	}
+	for _, e := range strings.Split(enabled, ",") {
+		if repo == e {
+			return true
+		}
+	}
+	return false
 }
