@@ -20,6 +20,14 @@ type Client struct {
 	Client *http.Client
 }
 
+// Prepare informs the Language Processor that it should prepare a workspace
+// for the specified repo / commit. It is sent prior to an actual user request
+// (e.g. as soon as we have access to their repos) in hopes of having
+// preparation completed already when a user makes their first request.
+func (c *Client) Prepare(r *RepoRev) error {
+	return c.do("prepare", r, nil)
+}
+
 // Definition resolves the specified position, effectively returning where the
 // given definition is defined. For example, this is used for go to definition.
 func (c *Client) Definition(p *Position) (*Range, error) {
@@ -95,6 +103,9 @@ func (c *Client) do(endpoint string, body, results interface{}) error {
 			return fmt.Errorf("error parsing language processor error (status code %v): %v", resp.StatusCode, err)
 		}
 		return &errResp
+	}
+	if results == nil {
+		return nil
 	}
 	return json.NewDecoder(resp.Body).Decode(results)
 }

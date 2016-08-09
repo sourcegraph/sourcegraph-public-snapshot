@@ -107,6 +107,7 @@ func New(opts *Translator) http.Handler {
 		preparingDeps:  newPending(),
 	}
 	mux := http.NewServeMux()
+	mux.Handle("/prepare", t.handler("/prepare", t.servePrepare))
 	mux.Handle("/definition", t.handler("/definition", t.serveDefinition))
 	mux.Handle("/exported-symbols", t.handler("/exported-symbols", t.serveExportedSymbols))
 	mux.Handle("/external-refs", t.handler("/external-refs", t.serveExternalRefs))
@@ -347,14 +348,20 @@ func (t *translator) createWorkspace(repo, commit string) (update bool, err erro
 // prepareWorkspace prepares a new workspace for the given repository and
 // revision.
 func (t *translator) prepareWorkspace(repo, commit string) (workspace string, err error) {
+	// TODO(slimsag): use a smaller timeout by default and ensure the timeout
+	// error is properly handled by the frontend.
+	return t.prepareWorkspaceTimeout(repo, commit, 1*time.Hour)
+}
+
+var errTimeout = errors.New("request timed out")
+
+func (t *translator) prepareWorkspaceTimeout(repo, commit string, timeout time.Duration) (workspace string, err error) {
 	// Acquire ownership of repository preparation. Essentially this is a
 	// sync.Mutex unique to the workspace.
 	workspace = t.pathToWorkspace(repo, commit)
-	timeout, handled, done := t.preparingRepos.acquire(workspace, 1*time.Hour)
-	if timeout {
-		// TODO(slimsag): use a smaller timeout above and ensure this error is
-		// properly handled by the frontend.
-		return "", errors.New("request timed out")
+	didTimeout, handled, done := t.preparingRepos.acquire(workspace, timeout)
+	if didTimeout {
+		return "", errTimeout
 	}
 	if handled {
 		// A different request prepared the repository.
@@ -395,8 +402,8 @@ func (t *translator) prepareWorkspace(repo, commit string) (workspace string, er
 	// Prepare the dependencies asynchronously.
 	go func() {
 		// Acquire ownership of dependency preparation.
-		timeout, handled, done = t.preparingDeps.acquire(workspace, 0*time.Second)
-		if timeout || handled {
+		didTimeout, handled, done = t.preparingDeps.acquire(workspace, 0*time.Second)
+		if didTimeout || handled {
 			// A different request is preparing the dependencies.
 			return
 		}
@@ -426,6 +433,28 @@ func (t *translator) prepareWorkspace(repo, commit string) (workspace string, er
 		}
 	}()
 	return workspace, nil
+}
+
+func (t *translator) servePrepare(body []byte) (interface{}, error) {
+	// Decode the user request.
+	var r RepoRev
+	if err := json.Unmarshal(body, &r); err != nil {
+		return nil, err
+	}
+	if r.Repo == "" {
+		return nil, fmt.Errorf("Repo field must be set")
+	}
+	if r.Commit == "" {
+		return nil, fmt.Errorf("Commit field must be set")
+	}
+
+	// Prepare the workspace, and timeout immediately if someone else is
+	// already preparing it.
+	_, err := t.prepareWorkspaceTimeout(r.Repo, r.Commit, 0*time.Second)
+	if err != nil && err != errTimeout {
+		return nil, err
+	}
+	return map[string]string{}, nil
 }
 
 func (t *translator) serveDefinition(body []byte) (interface{}, error) {
