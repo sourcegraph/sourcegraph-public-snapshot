@@ -5,7 +5,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import {Button, Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code} from "sourcegraph/components/index";
 import * as classNames from "classnames";
 
-class ButtonsComponent extends React.Component<{}, any> {
+export class ButtonsComponent extends React.Component<{}, any> {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -167,5 +167,3 @@ class ButtonsComponent extends React.Component<{}, any> {
 		);
 	}
 }
-
-export default ButtonsComponent;

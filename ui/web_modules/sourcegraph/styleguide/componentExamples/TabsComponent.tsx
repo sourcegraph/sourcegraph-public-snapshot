@@ -5,7 +5,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code} from "sourcegraph/components/index";
 import * as classNames from "classnames";
 
-class TabsComponent extends React.Component<{}, any> {
+export class TabsComponent extends React.Component<{}, any> {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -261,5 +261,3 @@ class TabsComponent extends React.Component<{}, any> {
 		);
 	}
 }
-
-export default TabsComponent;

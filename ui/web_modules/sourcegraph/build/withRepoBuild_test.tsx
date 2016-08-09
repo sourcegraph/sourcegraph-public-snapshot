@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import expect from "expect.js";
-import withRepoBuild from "sourcegraph/build/withRepoBuild";
+import {withRepoBuild} from "sourcegraph/build/withRepoBuild";
 import {render} from "sourcegraph/util/renderTestUtils";
-import BuildStore from "sourcegraph/build/BuildStore";
+import {BuildStore} from "sourcegraph/build/BuildStore";
 import * as BuildActions from "sourcegraph/build/BuildActions";
 
 const C = withRepoBuild((props) => null);

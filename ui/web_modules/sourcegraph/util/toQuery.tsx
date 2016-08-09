@@ -1,6 +1,6 @@
 // toQuery translates an object into a URL query. It assumes the
 // object is shallow (no nested objects).
-export default function toQuery(o: any): string {
+export function toQuery(o: any): string {
 	let cmps: string[] = [];
 	for (let k in o) {
 		if (o.hasOwnProperty(k)) {

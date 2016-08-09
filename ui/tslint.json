@@ -4,11 +4,12 @@
 		"indent": [true, "tabs"],
 		"max-line-length": [false],
 		"member-access": false,
-		"variable-name": [true, "check-format", "allow-leading-underscore", "ban-keywords"],
+		"variable-name": [true, "check-format", "allow-leading-underscore", "allow-pascal-case", "ban-keywords"],
 		"object-literal-sort-keys": false,
 		"typedef": [true, "call-signature", "parameter", "property-declaration", "member-variable-declaration"],
 		"interface-name": [false],
-		"no-string-literal": false
+		"no-string-literal": false,
+		"no-default-export": true
   },
   "rulesDirectory": []
 }

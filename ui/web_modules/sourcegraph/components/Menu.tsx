@@ -11,7 +11,7 @@ type Props = {
 	style?: any,
 };
 
-class Menu extends React.Component<Props, any> {
+export class Menu extends React.Component<Props, any> {
 	renderMenuItems() {
 		return React.Children.map(this.props.children, function(ch: React.ReactElement<any>) {
 			return ch && <div key={ch.props} className={roleStyle(ch.props.role)}>{React.cloneElement(ch)}</div>;
@@ -35,5 +35,3 @@ function roleStyle(role: string): string {
 		return styles.inactive;
 	}
 }
-
-export default Menu;

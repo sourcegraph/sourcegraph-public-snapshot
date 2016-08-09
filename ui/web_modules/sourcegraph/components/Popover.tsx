@@ -3,11 +3,11 @@
 import * as React from "react";
 import * as classNames from "classnames";
 
-import Component from "sourcegraph/Component";
+import {Component} from "sourcegraph/Component";
 
 import * as styles from "./styles/popover.css";
 
-class Popover extends Component<Props, any> {
+export class Popover extends Component<Props, any> {
 	constructor(props) {
 		super(props);
 
@@ -71,5 +71,3 @@ type Props = {
 	left?: boolean, // position popover content to the left (default: right)
 	popoverClassName?: string,
 };
-
-export default Popover;

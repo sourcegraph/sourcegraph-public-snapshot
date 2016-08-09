@@ -1,10 +1,10 @@
 // tslint:disable
 
-import autotest from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/autotest";
 
 import * as React from "react";
 
-import BlobLine from "sourcegraph/blob/BlobLine";
+import {BlobLine} from "sourcegraph/blob/BlobLine";
 
 import testdataContents from "sourcegraph/blob/testdata/BlobLine-contents.json";
 import testdataEmpty from "sourcegraph/blob/testdata/BlobLine-empty.json";

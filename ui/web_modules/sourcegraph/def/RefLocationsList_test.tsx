@@ -1,10 +1,10 @@
 // tslint:disable
 
-import autotest from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/autotest";
 
 import * as React from "react";
 import expect from "expect.js";
-import RefLocationsList from "sourcegraph/def/RefLocationsList";
+import {RefLocationsList} from "sourcegraph/def/RefLocationsList";
 import {renderToString} from "sourcegraph/util/componentTestUtils";
 import testdataData from "sourcegraph/def/testdata/RefLocationsList-data.json";
 import testdataEmpty from "sourcegraph/def/testdata/RefLocationsList-empty.json";

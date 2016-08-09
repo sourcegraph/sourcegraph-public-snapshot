@@ -9,7 +9,7 @@ type Props = {
 	offset?: number,
 };
 
-class Affix extends React.Component<Props, any> {
+export class Affix extends React.Component<Props, any> {
 	componentDidMount() {
 		const initialOffset = this._getOffset();
 		window.addEventListener("scroll", () => this._affixEl(initialOffset));
@@ -48,5 +48,3 @@ class Affix extends React.Component<Props, any> {
 		);
 	}
 }
-
-export default Affix;

@@ -2,11 +2,11 @@
 
 import expect from "expect.js";
 
-import Dispatcher from "sourcegraph/Dispatcher";
-import TreeBackend from "sourcegraph/tree/TreeBackend";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {TreeBackend} from "sourcegraph/tree/TreeBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
-import immediateSyncPromise from "sourcegraph/util/immediateSyncPromise";
+import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
 
 describe("TreeBackend", () => {
 	it("should handle WantCommit", () => {

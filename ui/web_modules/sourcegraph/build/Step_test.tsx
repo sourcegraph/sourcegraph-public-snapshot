@@ -1,10 +1,10 @@
 // tslint:disable
 
-import autotest from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/autotest";
 
 import * as React from "react";
 
-import Step from "sourcegraph/build/Step";
+import {Step} from "sourcegraph/build/Step";
 
 import testdataInitial from "sourcegraph/build/testdata/Step-initial.json";
 import testdataFetchedLog from "sourcegraph/build/testdata/Step-fetchedLog.json";

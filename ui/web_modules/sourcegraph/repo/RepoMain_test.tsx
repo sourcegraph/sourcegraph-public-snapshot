@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import expect from "expect.js";
-import RepoMain from "sourcegraph/repo/RepoMain";
+import {RepoMain} from "sourcegraph/repo/RepoMain";
 import {renderToString} from "sourcegraph/util/componentTestUtils";
 import {render} from "sourcegraph/util/renderTestUtils";
 import * as RepoActions from "sourcegraph/repo/RepoActions";

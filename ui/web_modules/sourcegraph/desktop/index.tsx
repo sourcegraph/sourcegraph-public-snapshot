@@ -1,13 +1,13 @@
 // tslint:disable
 
 import * as React from "react";
-import {default as DesktopHome, NotInBeta} from "sourcegraph/desktop/DesktopHome";
+import {DesktopHome, NotInBeta} from "sourcegraph/desktop/DesktopHome";
 
 import {rel} from "sourcegraph/app/routePatterns";
 import {inBeta} from "sourcegraph/user/index";
 import * as betautil from "sourcegraph/util/betautil";
 import {getRouteName} from "sourcegraph/app/routePatterns";
-import desktopContainer from "sourcegraph/desktop/DesktopContainer";
+import {desktopContainer} from "sourcegraph/desktop/DesktopContainer";
 
 export const routes = [
 	{
@@ -20,7 +20,7 @@ export const routes = [
 	},
 ];
 
-export default function desktopRouter(Component) {
+export function desktopRouter(Component) {
 	type Props = {
 		routes: any[],
 	};

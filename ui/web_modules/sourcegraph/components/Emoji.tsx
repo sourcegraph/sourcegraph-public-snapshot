@@ -8,7 +8,7 @@ type Props = {
 	name: string, // See symbols directory
 };
 
-class Emoji extends React.Component<Props, any> {
+export class Emoji extends React.Component<Props, any> {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 	};
@@ -21,5 +21,3 @@ class Emoji extends React.Component<Props, any> {
 		return <img src={`${(this.context as any).siteConfig.assetsRoot}/img/emoji/${this.props.name}.svg`} width={this.props.width} className={this.props.className} />;
 	}
 }
-
-export default Emoji;

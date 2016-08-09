@@ -11,7 +11,7 @@ type Props = {
 	[key: string]: any,
 };
 
-export default class FileMargin extends React.Component<Props, any> {
+export class FileMargin extends React.Component<Props, any> {
 	componentDidUpdate() {
 		const content = this.refs["content"] as HTMLElement;
 		if (content) {

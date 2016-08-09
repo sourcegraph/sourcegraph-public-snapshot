@@ -1,6 +1,6 @@
 // tslint:disable
 
-export default function(f) {
+export function mockTimeout(f) {
 	let orig = global.setTimeout;
 	let callbacks: any[] = [];
 	global.setTimeout = function(callback, delay) {

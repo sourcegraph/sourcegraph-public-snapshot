@@ -14,5 +14,3 @@ export function mergeAndDeepFreeze<T>(o1: T, o2: T): T {
 	let o = Object.assign({} as T, o1, o2);
 	return deepFreeze(o);
 }
-
-export default deepFreeze;

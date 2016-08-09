@@ -2,7 +2,7 @@
 
 import expect from "expect.js";
 
-import RepoStore from "sourcegraph/repo/RepoStore";
+import {RepoStore} from "sourcegraph/repo/RepoStore";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 
 describe("RepoStore", () => {

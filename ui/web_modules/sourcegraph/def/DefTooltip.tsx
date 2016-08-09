@@ -1,8 +1,8 @@
 // tslint:disable
 
 import * as React from "react";
-import Component from "sourcegraph/Component";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Component} from "sourcegraph/Component";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as s from "sourcegraph/def/styles/Def.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {BlobPos} from "sourcegraph/def/DefActions";
@@ -23,7 +23,7 @@ if (typeof document !== "undefined") {
 type Props = {
 }
 
-class DefTooltip extends Component<Props, any> {
+export class DefTooltip extends Component<Props, any> {
 	_elem: any;
 	
 	constructor(props) {
@@ -90,5 +90,3 @@ class DefTooltip extends Component<Props, any> {
 		);
 	}
 }
-
-export default DefTooltip;

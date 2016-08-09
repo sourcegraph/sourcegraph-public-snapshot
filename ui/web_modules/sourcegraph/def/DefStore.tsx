@@ -1,15 +1,15 @@
 // tslint:disable
 
-import Store from "sourcegraph/Store";
-import Dispatcher from "sourcegraph/Dispatcher";
-import deepFreeze from "sourcegraph/util/deepFreeze";
+import {Store} from "sourcegraph/Store";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {deepFreeze} from "sourcegraph/util/deepFreeze";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {defPath} from "sourcegraph/def/index";
 import {Def, ExamplesKey, RefLocationsKey} from "sourcegraph/def/index";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import "sourcegraph/def/DefBackend";
 import {fastParseDefPath} from "sourcegraph/def/index";
-import toQuery from "sourcegraph/util/toQuery";
+import {toQuery} from "sourcegraph/util/toQuery";
 import update from "react/lib/update";
 import {BlobPos} from "sourcegraph/def/DefActions";
 
@@ -52,7 +52,7 @@ type DefPos = {
 	DefEnd: number;
 };
 
-export class DefStore extends Store<any> {
+class DefStoreClass extends Store<any> {
 	authors: any;
 	hoverPos: any;
 	hoverInfos: any;
@@ -282,4 +282,4 @@ export class DefStore extends Store<any> {
 	}
 }
 
-export default new DefStore(Dispatcher.Stores);
+export const DefStore = new DefStoreClass(Dispatcher.Stores);

@@ -11,7 +11,7 @@ type Props = {
 	listStyle?: string, // node, normal
 };
 
-class List extends React.Component<Props, any> {
+export class List extends React.Component<Props, any> {
 	static defaultProps = {
 		listStyle: "normal",
 	};
@@ -31,5 +31,3 @@ const listStyleClasses = {
 	"normal": styles.normal,
 	"node": styles.node,
 };
-
-export default List;

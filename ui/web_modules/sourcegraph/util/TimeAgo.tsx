@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import Component from "sourcegraph/Component";
+import {Component} from "sourcegraph/Component";
 
 export function formatDuration(ms) {
 	if (ms === 0) return "0s";
@@ -32,10 +32,8 @@ type Props = {
 	className?: string,
 };
 
-class TimeAgo extends Component<Props, any> {
+export class TimeAgo extends Component<Props, any> {
 	render(): JSX.Element | null {
 		return <time title={this.props.time} className={this.props.className}>{formatDuration(Date.now() - new Date(this.props.time).getTime())} ago</time>;
 	}
 }
-
-export default TimeAgo;

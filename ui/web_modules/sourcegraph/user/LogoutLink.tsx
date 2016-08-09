@@ -1,17 +1,17 @@
 // tslint:disable
 
 import * as React from "react";
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as UserActions from "sourcegraph/user/UserActions";
-import UserStore from "sourcegraph/user/UserStore";
+import {UserStore} from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend"; // for side effects
 
 type Props = {
 	role: string,
 }
 
-export default class LogoutLink extends Container<Props, any> {
+export class LogoutLink extends Container<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 	};

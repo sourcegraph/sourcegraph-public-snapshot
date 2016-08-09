@@ -1,13 +1,13 @@
 // tslint:disable
 
 import * as React from "react";
-import DefPopup from "sourcegraph/def/DefPopup";
+import {DefPopup} from "sourcegraph/def/DefPopup";
 import {Helper} from "sourcegraph/blob/BlobLoader";
-import DefStore from "sourcegraph/def/DefStore";
+import {DefStore} from "sourcegraph/def/DefStore";
 
 // blobWithDefBox uses the def's path as the blob file to load, and it
 // passes a DefPopup child to be displayed in the blob margin.
-export default ({
+export const blobWithDefBox = ({
 	reconcileState(state, props) {
 		const defPos = state.commitID ? DefStore.defs.getPos(state.repo, state.commitID, state.def) : null;
 		state.path = defPos && !defPos.Error ? defPos.File : state.path;

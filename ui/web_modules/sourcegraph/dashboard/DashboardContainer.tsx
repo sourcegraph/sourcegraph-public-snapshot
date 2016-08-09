@@ -1,15 +1,15 @@
 // tslint:disable
 
 import * as React from "react";
-import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
+import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import Helmet from "react-helmet";
-import Container from "sourcegraph/Container";
-import UserStore from "sourcegraph/user/UserStore";
+import {Container} from "sourcegraph/Container";
+import {UserStore} from "sourcegraph/user/UserStore";
 import * as styles from "./styles/Dashboard.css";
 import {locationForSearch} from "sourcegraph/search/routes";
-import GlobalSearchInput from "sourcegraph/search/GlobalSearchInput";
+import {GlobalSearchInput} from "sourcegraph/search/GlobalSearchInput";
 import {Button, Logo} from "sourcegraph/components/index";
-import SearchSettings from "sourcegraph/search/SearchSettings";
+import {SearchSettings} from "sourcegraph/search/SearchSettings";
 import * as invariant from "invariant";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import * as classNames from "classnames";
@@ -20,7 +20,7 @@ type Props = {
 	location?: any,
 };
 
-class DashboardContainer extends Container<Props, any> {
+export class DashboardContainer extends Container<Props, any> {
 	_input: any;
 
 	static contextTypes = {
@@ -153,8 +153,6 @@ class DashboardContainer extends Container<Props, any> {
 		);
 	}
 }
-
-export default DashboardContainer;
 
 const TitledSection = ({
 	title,

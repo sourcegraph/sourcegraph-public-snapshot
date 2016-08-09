@@ -3,24 +3,24 @@
 import * as React from "react";
 import Helmet from "react-helmet";
 
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
-import Blob from "sourcegraph/blob/Blob";
-import BlobContentPlaceholder from "sourcegraph/blob/BlobContentPlaceholder";
-import BlobToolbar from "sourcegraph/blob/BlobToolbar";
-import FileMargin from "sourcegraph/blob/FileMargin";
-import DefTooltip from "sourcegraph/def/DefTooltip";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {Blob} from "sourcegraph/blob/Blob";
+import {BlobContentPlaceholder} from "sourcegraph/blob/BlobContentPlaceholder";
+import {BlobToolbar} from "sourcegraph/blob/BlobToolbar";
+import {FileMargin} from "sourcegraph/blob/FileMargin";
+import {DefTooltip} from "sourcegraph/def/DefTooltip";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import DefStore from "sourcegraph/def/DefStore";
+import {DefStore} from "sourcegraph/def/DefStore";
 import "sourcegraph/blob/BlobBackend";
 import "sourcegraph/def/DefBackend";
 import "sourcegraph/build/BuildBackend";
 import * as Style from "sourcegraph/blob/styles/Blob.css";
 import {lineCol, lineRange, parseLineRange} from "sourcegraph/blob/lineCol";
-import urlTo from "sourcegraph/util/urlTo";
+import {urlTo} from "sourcegraph/util/urlTo";
 import {makeRepoRev, trimRepo} from "sourcegraph/repo/index";
-import httpStatusCode from "sourcegraph/util/httpStatusCode";
-import Header from "sourcegraph/components/Header";
+import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
+import {Header} from "sourcegraph/components/Header";
 import {createLineFromByteFunc} from "sourcegraph/blob/lineFromByte";
 import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 
@@ -41,7 +41,7 @@ type Props = {
 	location?: any,
 };
 
-export default class BlobMain extends Container<Props, any> {
+export class BlobMain extends Container<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 	};

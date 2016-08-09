@@ -3,7 +3,7 @@
 import {rel} from "sourcegraph/app/routePatterns";
 import {Route} from "react-router";
 import {searchScopes} from "sourcegraph/search/index";
-import GlobalSearchMain from "sourcegraph/search/GlobalSearchMain";
+import {GlobalSearchMain} from "sourcegraph/search/GlobalSearchMain";
 
 export const routes: any[] = [
 	{

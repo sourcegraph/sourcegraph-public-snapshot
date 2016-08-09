@@ -1,11 +1,11 @@
 // tslint:disable
 
-import autotest from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/autotest";
 
 import * as React from "react";
 
-import TreeList from "sourcegraph/tree/TreeList";
-import TreeStore from "sourcegraph/tree/TreeStore";
+import {TreeList} from "sourcegraph/tree/TreeList";
+import {TreeStore} from "sourcegraph/tree/TreeStore";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 
 import testdataFiles from "sourcegraph/tree/testdata/TreeList-files.json";

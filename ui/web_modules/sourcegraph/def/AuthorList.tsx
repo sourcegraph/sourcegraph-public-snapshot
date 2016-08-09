@@ -1,13 +1,13 @@
 // tslint:disable
 
 import * as React from "react";
-import TimeAgo from "sourcegraph/util/TimeAgo";
+import {TimeAgo} from "sourcegraph/util/TimeAgo";
 import {Avatar} from "sourcegraph/components/index";
 import {PencilIcon} from "sourcegraph/components/Icons";
 import {DefAuthor} from "sourcegraph/def/index";
 import * as styles from "./styles/AuthorList.css";
 
-export default function AuthorList({
+export function AuthorList({
 	authors,
 	horizontal = false,
 	className,

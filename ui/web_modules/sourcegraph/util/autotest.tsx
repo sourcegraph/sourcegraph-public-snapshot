@@ -2,15 +2,15 @@
 
 import * as TestUtils from "react-addons-test-utils";
 
-import mockTimeout from "sourcegraph/util/mockTimeout";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {mockTimeout} from "sourcegraph/util/mockTimeout";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 
 import fs from "fs";
 import child_process from "child_process";
 
 let noJSON = undefined; // eslint-disable-line no-undefined
 
-export default function(expected, filename, component, context?) {
+export function autotest(expected, filename, component, context?) {
 	filename = `web_modules/${filename}`;
 	// If fs is available, verify that expected matches the contents of filename.
 	// If they don't match, it could be because the expected or filename arguemnts

@@ -5,9 +5,9 @@ import {Hero, Heading} from "sourcegraph/components/index";
 import * as styles from "./Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import Helmet from "react-helmet";
-import BetaInterestForm from "sourcegraph/home/BetaInterestForm";
+import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
 
-function BetaPage(props) {
+export function BetaPage(props) {
 	return (
 		<div>
 			<Helmet title="Beta" />
@@ -44,5 +44,3 @@ function BetaPage(props) {
 (BetaPage as any).contextTypes = {
 	signedIn: React.PropTypes.bool,
 };
-
-export default BetaPage;

@@ -4,7 +4,7 @@ import * as React from "react";
 import * as styles from "./styles/Integrations.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Button} from "sourcegraph/components/index";
-import Component from "sourcegraph/Component";
+import {Component} from "sourcegraph/Component";
 
 class Tool {
 	name: string;
@@ -35,7 +35,7 @@ type Props = {
 	location: any,
 };
 
-class Integrations extends Component<Props, any> {
+export class Integrations extends Component<Props, any> {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
@@ -83,5 +83,3 @@ class Integrations extends Component<Props, any> {
 		);
 	}
 }
-
-export default Integrations;

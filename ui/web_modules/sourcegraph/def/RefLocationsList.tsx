@@ -5,8 +5,8 @@ import Helmet from "react-helmet";
 import {Link} from "react-router";
 import {urlToDefInfo} from "sourcegraph/def/routes";
 import * as styles from "sourcegraph/def/styles/Def.css";
-import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
-import Button from "sourcegraph/components/Button";
+import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
+import {Button} from "sourcegraph/components/Button";
 import {urlToGitHubOAuth, privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import {trimRepo} from "sourcegraph/repo/index";
 import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
@@ -25,7 +25,7 @@ type Props = {
 	location: any,
 };
 
-class RefLocationsList extends React.Component<Props, any> {
+export class RefLocationsList extends React.Component<Props, any> {
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,
 		githubToken: React.PropTypes.object,
@@ -81,5 +81,3 @@ class RefLocationsList extends React.Component<Props, any> {
 		);
 	}
 }
-
-export default RefLocationsList;

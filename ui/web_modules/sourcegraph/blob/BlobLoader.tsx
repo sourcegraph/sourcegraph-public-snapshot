@@ -1,17 +1,17 @@
 // tslint:disable
 
 import * as React from "react";
-import Container from "sourcegraph/Container";
-import BlobStore from "sourcegraph/blob/BlobStore";
+import {Container} from "sourcegraph/Container";
+import {BlobStore} from "sourcegraph/blob/BlobStore";
 import "sourcegraph/blob/BlobBackend";
-import DefStore from "sourcegraph/def/DefStore";
+import {DefStore} from "sourcegraph/def/DefStore";
 import "sourcegraph/def/DefBackend";
-import TreeStore from "sourcegraph/tree/TreeStore";
+import {TreeStore} from "sourcegraph/tree/TreeStore";
 import "sourcegraph/tree/TreeBackend";
-import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
-import withFileBlob from "sourcegraph/blob/withFileBlob";
-import withAnnotations from "sourcegraph/blob/withAnnotations";
-import BlobMain from "sourcegraph/blob/BlobMain";
+import {withResolvedRepoRev} from "sourcegraph/repo/withResolvedRepoRev";
+import {withFileBlob} from "sourcegraph/blob/withFileBlob";
+import {withAnnotations} from "sourcegraph/blob/withAnnotations";
+import {BlobMain} from "sourcegraph/blob/BlobMain";
 import * as invariant from "invariant";
 
 export type Helper = {
@@ -122,7 +122,7 @@ function blobLoader(Component) {
 	return BlobLoader;
 }
 
-export default (
+export const BlobLoader = (
 	withResolvedRepoRev(
 		blobLoader(
 			withFileBlob(

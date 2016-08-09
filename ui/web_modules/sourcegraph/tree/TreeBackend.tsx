@@ -1,12 +1,12 @@
 // tslint:disable
 
 import * as TreeActions from "sourcegraph/tree/TreeActions";
-import TreeStore from "sourcegraph/tree/TreeStore";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {TreeStore} from "sourcegraph/tree/TreeStore";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
 
-const TreeBackend = {
+export const TreeBackend = {
 	fetch: defaultFetch as any,
 
 	__onDispatch(action) {
@@ -62,5 +62,3 @@ const TreeBackend = {
 };
 
 Dispatcher.Backends.register(TreeBackend.__onDispatch);
-
-export default TreeBackend;

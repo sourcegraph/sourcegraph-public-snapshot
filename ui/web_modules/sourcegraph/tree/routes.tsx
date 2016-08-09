@@ -1,14 +1,14 @@
 // tslint:disable
 
-import urlTo from "sourcegraph/util/urlTo";
+import {urlTo} from "sourcegraph/util/urlTo";
 import {makeRepoRev} from "sourcegraph/repo/index";
 import {rel} from "sourcegraph/app/routePatterns";
 import {urlToRepo, urlToRepoRev} from "sourcegraph/repo/routes";
 import {RouterState} from "react-router";
-import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
-import withTree from "sourcegraph/tree/withTree";
-import TreeMain from "sourcegraph/tree/TreeMain";
-import RepoNavContext from "sourcegraph/tree/RepoNavContext";
+import {withResolvedRepoRev} from "sourcegraph/repo/withResolvedRepoRev";
+import {withTree} from "sourcegraph/tree/withTree";
+import {TreeMain} from "sourcegraph/tree/TreeMain";
+import {RepoNavContext} from "sourcegraph/tree/RepoNavContext";
 
 let _components;
 

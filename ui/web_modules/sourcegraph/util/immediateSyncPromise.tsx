@@ -1,13 +1,13 @@
 // tslint:disable
 
-import testOnly from "sourcegraph/util/testOnly";
+import {testOnly} from "sourcegraph/util/testOnly";
 
 // immediateSyncPromise returns an object that looks like a resolved promise
 // but whose then and catch callbacks are executed synchronously
 // and immediately.
 //
 // Only use it in tests.
-export default function immediateSyncPromise(val, isError?) {
+export function immediateSyncPromise(val, isError?) {
 	testOnly();
 	return {
 		then: (resolve, reject) => {

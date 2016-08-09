@@ -6,7 +6,7 @@ import * as styles from "./Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import Helmet from "react-helmet";
 
-function PrivacyPage(props: {}, {signedIn}) {
+export function PrivacyPage(props: {}, {signedIn}) {
 	return (
 		<div>
 			<Helmet title="Privacy" />
@@ -109,5 +109,3 @@ function PrivacyPage(props: {}, {signedIn}) {
 		</div>
 	);
 }
-
-export default PrivacyPage;

@@ -4,12 +4,12 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import {Link} from "react-router";
 import {rel} from "sourcegraph/app/routePatterns";
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
-import SearchStore from "sourcegraph/search/SearchStore";
-import RepoStore from "sourcegraph/repo/RepoStore";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {SearchStore} from "sourcegraph/search/SearchStore";
+import {RepoStore} from "sourcegraph/repo/RepoStore";
 import "sourcegraph/search/SearchBackend";
-import UserStore from "sourcegraph/user/UserStore";
+import {UserStore} from "sourcegraph/user/UserStore";
 import uniq from "lodash.uniq";
 import debounce from "lodash.debounce";
 import * as SearchActions from "sourcegraph/search/SearchActions";
@@ -21,7 +21,7 @@ import {trimRepo} from "sourcegraph/repo/index";
 import * as styles from "./styles/GlobalSearch.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import popularRepos from "./popularRepos";
+import {popularRepos} from "./popularRepos";
 import {SearchSettings} from "sourcegraph/search/index";
 import {WantResultsPayload} from "sourcegraph/search/SearchActions";
 import {locationForSearch} from "sourcegraph/search/routes";
@@ -40,7 +40,7 @@ type Props = {
 };
 
 // GlobalSearch is the global search bar + results component.
-class GlobalSearch extends Container<Props, any> {
+export class GlobalSearch extends Container<Props, any> {
 	_selectedItem: any;
 	_ignoreMouseSelection: any;
 	_debouncedUnignoreMouseSelection: any;
@@ -496,5 +496,3 @@ class GlobalSearch extends Container<Props, any> {
 		</div>);
 	}
 }
-
-export default GlobalSearch;

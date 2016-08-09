@@ -2,13 +2,13 @@
 
 import * as React from "react";
 
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import "./TreeBackend"; // for side effects
-import TreeStore from "sourcegraph/tree/TreeStore";
+import {TreeStore} from "sourcegraph/tree/TreeStore";
 
-class TreeEntryCommit extends Container<Props, any> {
+export class TreeEntryCommit extends Container<Props, any> {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.commits = TreeStore.commits;
@@ -48,5 +48,3 @@ type Props = {
 	rev: string,
 	path: string,
 };
-
-export default TreeEntryCommit;

@@ -3,13 +3,13 @@
 import * as React from "react";
 import {Link} from "react-router";
 
-import Container from "sourcegraph/Container";
-import DefStore from "sourcegraph/def/DefStore";
-import TreeStore from "sourcegraph/tree/TreeStore";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Container} from "sourcegraph/Container";
+import {DefStore} from "sourcegraph/def/DefStore";
+import {TreeStore} from "sourcegraph/tree/TreeStore";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {urlToTree} from "sourcegraph/tree/routes";
-import breadcrumb from "sourcegraph/util/breadcrumb";
+import {breadcrumb} from "sourcegraph/util/breadcrumb";
 
 import * as styles from "sourcegraph/components/styles/breadcrumb.css";
 
@@ -20,7 +20,7 @@ type Props = {
 	params: any,
 }
 
-class DefNavContext extends Container<Props, any> {
+export class DefNavContext extends Container<Props, any> {
 	reconcileState(state, props) {
 		state.repo = props.repo;
 		state.rev = props.rev;
@@ -65,5 +65,3 @@ class DefNavContext extends Container<Props, any> {
 		return <span>{pathBreadcrumb}</span>;
 	}
 }
-
-export default DefNavContext;

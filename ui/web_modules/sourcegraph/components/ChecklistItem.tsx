@@ -3,8 +3,8 @@
 import * as React from "react";
 import * as styles from "./styles/checklistItem.css";
 import * as base from "./styles/_base.css";
-import Icon from "./Icon";
-import Button from "./Button";
+import {Icon} from "./Icon";
+import {Button} from "./Button";
 import * as classNames from "classnames";
 
 type Props = {
@@ -15,7 +15,7 @@ type Props = {
 	actionOnClick?: () => void,
 };
 
-class ChecklistItem extends React.Component<Props, any> {
+export class ChecklistItem extends React.Component<Props, any> {
 	render(): JSX.Element | null {
 		const {className, children, complete, actionText, actionOnClick} = this.props;
 		return (
@@ -31,5 +31,3 @@ class ChecklistItem extends React.Component<Props, any> {
 		);
 	}
 }
-
-export default ChecklistItem;

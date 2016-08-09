@@ -1,9 +1,9 @@
 // tslint:disable
 
 import * as React from "react";
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
-import UserStore from "sourcegraph/user/UserStore";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {UserStore} from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend";
 import * as UserActions from "sourcegraph/user/UserActions";
 import {User} from "sourcegraph/user/index";

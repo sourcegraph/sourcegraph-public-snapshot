@@ -1,6 +1,6 @@
 // tslint:disable
 
-export default function breadcrumb(path: string, sep: (key: number) => any, elemForPathComponent: (path: string, component: string, index: number, isLast: boolean) => any): Array<any> {
+export function breadcrumb(path: string, sep: (key: number) => any, elemForPathComponent: (path: string, component: string, index: number, isLast: boolean) => any): Array<any> {
 	let components = path.split("/");
 	let elems: any[] = [];
 	components.forEach((c, i) => {

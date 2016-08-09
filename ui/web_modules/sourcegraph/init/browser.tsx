@@ -9,7 +9,7 @@ import {Router, browserHistory as history, match, applyRouterMiddleware} from "r
 import {useScroll} from "react-router-scroll";
 import {rootRoute} from "sourcegraph/app/App";
 import * as context from "sourcegraph/app/context";
-import resetOnAuthChange from "sourcegraph/app/resetOnAuthChange";
+import {resetOnAuthChange} from "sourcegraph/app/resetOnAuthChange";
 import {shouldUpdateScroll, hashLinkScroll} from "sourcegraph/app/routerScrollBehavior";
 import {AppContainer} from "react-hot-loader";
 import Redbox from "redbox-react";

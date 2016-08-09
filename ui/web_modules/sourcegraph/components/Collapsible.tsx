@@ -2,9 +2,9 @@
 
 import * as React from "react";
 
-import Component from "sourcegraph/Component";
+import {Component} from "sourcegraph/Component";
 
-class Collapsible extends Component<Props, any> {
+export class Collapsible extends Component<Props, any> {
 	constructor(props) {
 		super(props);
 
@@ -43,5 +43,3 @@ type Props = {
 	collapsed?: boolean,
 	onToggle?: () => void,
 };
-
-export default Collapsible;

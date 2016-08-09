@@ -1,5 +1,5 @@
 import {Def, ExamplesKey, Ref, RefLocationsKey, refLocsPerPage} from "sourcegraph/def/index";
-import toQuery from "sourcegraph/util/toQuery";
+import {toQuery} from "sourcegraph/util/toQuery";
 
 export class WantDef {
 	repo: string;

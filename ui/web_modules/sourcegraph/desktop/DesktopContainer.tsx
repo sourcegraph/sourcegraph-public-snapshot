@@ -2,15 +2,15 @@
 
 import * as React from "react";
 
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
-import DefStore from "sourcegraph/def/DefStore";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {DefStore} from "sourcegraph/def/DefStore";
 import * as DefActions from "sourcegraph/def/DefActions";
 
 import {urlToDefInfo} from "sourcegraph/def/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
 
-export default function desktopContainer(Component) {
+export function desktopContainer(Component) {
 	class DesktopContainer extends Container<{}, any> {
 		static contextTypes = {
 			router: React.PropTypes.object.isRequired,

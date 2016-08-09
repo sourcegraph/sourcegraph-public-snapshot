@@ -2,7 +2,7 @@
 
 import * as utf8 from "utf8";
 
-export default function(contents: string | string[], bytePos: number) {
+export function lineFromByte(contents: string | string[], bytePos: number) {
 	const lines = typeof contents === "string" ? contents.split("\n") : contents;
 	let pos = 0;
 	for (let i = 0; i < lines.length; i++) {

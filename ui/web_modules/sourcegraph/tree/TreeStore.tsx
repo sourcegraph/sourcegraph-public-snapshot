@@ -1,8 +1,8 @@
 // tslint:disable
 
-import Store from "sourcegraph/Store";
-import Dispatcher from "sourcegraph/Dispatcher";
-import deepFreeze from "sourcegraph/util/deepFreeze";
+import {Store} from "sourcegraph/Store";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {deepFreeze} from "sourcegraph/util/deepFreeze";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import "sourcegraph/tree/TreeBackend";
 
@@ -10,7 +10,7 @@ function keyFor(repo, rev, path?) {
 	return `${repo}#${rev}#${path || ""}`;
 }
 
-export class TreeStore extends Store<any> {
+class TreeStoreClass extends Store<any> {
 	commits: any;
 	fileLists: any;
 	fileTree: any;
@@ -109,4 +109,4 @@ export class TreeStore extends Store<any> {
 	}
 }
 
-export default new TreeStore(Dispatcher.Stores);
+export const TreeStore = new TreeStoreClass(Dispatcher.Stores);

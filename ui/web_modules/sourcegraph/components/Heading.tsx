@@ -14,7 +14,7 @@ type Props = {
 	style?: any,
 };
 
-class Heading extends React.Component<Props, any> {
+export class Heading extends React.Component<Props, any> {
 	static defaultProps = {
 		level: "3", //  1 is the largest
 		underline: null,
@@ -65,5 +65,3 @@ const underlineClasses = {
 	"orange": styles.l_orange,
 	"green": styles.l_green,
 };
-
-export default Heading;

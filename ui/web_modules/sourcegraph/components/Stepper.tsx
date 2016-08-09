@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as styles from "./styles/stepper.css";
-import Icon from "./Icon";
+import {Icon} from "./Icon";
 import * as classNames from "classnames";
 
 // @TODO(chexee): Doesn't scale well with large step labels. Keep 'em short for now.
@@ -17,7 +17,7 @@ type Props = {
 	color?: string, // "purple", "blue", "green", "orange"
 };
 
-class Stepper extends React.Component<Props, any> {
+export class Stepper extends React.Component<Props, any> {
 	static defaultProps = {
 		steps: [null, null, null],
 		stepsComplete: 0,
@@ -64,5 +64,3 @@ const nodeColorClasses = {
 	"purple": styles.node_purple,
 	"orange": styles.node_orange,
 };
-
-export default Stepper;

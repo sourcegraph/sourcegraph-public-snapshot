@@ -1,10 +1,10 @@
 // tslint:disable
 
-import autotest from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/autotest";
 
 import * as React from "react";
 
-import DefPopup from "sourcegraph/def/DefPopup";
+import {DefPopup} from "sourcegraph/def/DefPopup";
 
 import testdataData from "sourcegraph/def/testdata/DefPopup-data.json";
 import testdataNotAvailable from "sourcegraph/def/testdata/DefPopup-notAvailable.json";

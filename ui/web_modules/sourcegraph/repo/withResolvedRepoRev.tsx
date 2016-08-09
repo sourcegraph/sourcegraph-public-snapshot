@@ -2,11 +2,11 @@
 
 import * as React from "react";
 
-import Container from "sourcegraph/Container";
-import RepoStore from "sourcegraph/repo/RepoStore";
+import {Container} from "sourcegraph/Container";
+import {RepoStore} from "sourcegraph/repo/RepoStore";
 import "sourcegraph/repo/RepoBackend";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
-import Dispatcher from "sourcegraph/Dispatcher";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {repoPath, repoRev, repoParam} from "sourcegraph/repo/index";
 
 // withResolvedRepoRev reads the repo, rev, repo resolution, etc.,
@@ -16,7 +16,7 @@ import {repoPath, repoRev, repoParam} from "sourcegraph/repo/index";
 // or else duplicate WantResolveRepo, etc., actions will be dispatched
 // and could lead to multiple WantCreateRepo, etc., actions being sent
 // to the server).
-export default function withResolvedRepoRev(Component, isMainComponent?: boolean) {
+export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
 	type Props = {
 		params: any,
 		location: HistoryModule.Location,

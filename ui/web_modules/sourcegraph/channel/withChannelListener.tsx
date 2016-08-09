@@ -19,7 +19,7 @@ const MAX_FAILURES = 5;
 // set, by having the browser navigate to the Channel component (/-/channel?name=...).
 // Once it has been set, there is no way to unset it except by reloading the
 // page (this is by design; that browser tab is "controlled" by your editor).
-export default function withChannelListener(Component) {
+export function withChannelListener(Component) {
 	type Props = {
 		location: any,
 	};

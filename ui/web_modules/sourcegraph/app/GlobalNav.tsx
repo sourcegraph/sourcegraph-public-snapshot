@@ -2,11 +2,11 @@
 
 import * as React from "react";
 import {Link} from "react-router";
-import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
+import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import {Avatar, Popover, Menu, Logo, Heading} from "sourcegraph/components/index";
 import {CloseIcon} from "sourcegraph/components/Icons";
-import LogoutLink from "sourcegraph/user/LogoutLink";
+import {LogoutLink} from "sourcegraph/user/LogoutLink";
 import * as styles from "./styles/GlobalNav.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
@@ -14,14 +14,14 @@ import * as typography from "sourcegraph/components/styles/_typography.css";
 import * as classNames from "classnames";
 
 import {LoginForm} from "sourcegraph/user/Login";
-import BetaInterestForm from "sourcegraph/home/BetaInterestForm";
-import Integrations from "sourcegraph/home/Integrations";
+import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
+import {Integrations} from "sourcegraph/home/Integrations";
 import {EllipsisHorizontal, CheckIcon} from "sourcegraph/components/Icons";
 import {DownPointer} from "sourcegraph/components/symbols/index";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import GlobalSearchInput from "sourcegraph/search/GlobalSearchInput";
+import {GlobalSearchInput} from "sourcegraph/search/GlobalSearchInput";
 import {locationForSearch, queryFromStateOrURL, langsFromStateOrURL, scopeFromStateOrURL} from "sourcegraph/search/routes";
-import SearchResultsPanel from "sourcegraph/search/SearchResultsPanel";
+import {SearchResultsPanel} from "sourcegraph/search/SearchResultsPanel";
 import * as invariant from "invariant";
 import {rel, abs} from "sourcegraph/app/routePatterns";
 import {repoPath, repoParam} from "sourcegraph/repo/index";
@@ -41,7 +41,7 @@ type GlobalNavProps = {
 	role?: string,
 };
 
-function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavProps, {user, siteConfig, signedIn, router, eventLogger}) {
+export function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavProps, {user, siteConfig, signedIn, router, eventLogger}) {
 	const isHomepage = location.pathname === "/";
 	const shouldHide = hiddenNavRoutes.has(location.pathname);
 	const isStaticPage = isPage(location.pathname);
@@ -171,8 +171,6 @@ function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavP
 	router: React.PropTypes.object.isRequired,
 	eventLogger: React.PropTypes.object.isRequired,
 };
-
-export default GlobalNav;
 
 // TODO(chexee): Move all these components to their own directory.
 

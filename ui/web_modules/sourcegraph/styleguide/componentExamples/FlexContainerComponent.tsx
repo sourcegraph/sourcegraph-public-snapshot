@@ -5,7 +5,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Table, Code, FlexContainer} from "sourcegraph/components/index";
 import * as classNames from "classnames";
 
-class FlexContainerComponent extends React.Component<{}, any> {
+export class FlexContainerComponent extends React.Component<{}, any> {
 
 	render(): JSX.Element | null {
 		return (
@@ -165,5 +165,3 @@ class FlexContainerComponent extends React.Component<{}, any> {
 		);
 	}
 }
-
-export default FlexContainerComponent;

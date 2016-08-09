@@ -11,22 +11,22 @@ import * as styles from "./styles/DefInfo.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 
-import annotationsByLine from "sourcegraph/blob/annotationsByLine";
-import BlobLine from "sourcegraph/blob/BlobLine";
+import {annotationsByLine} from "sourcegraph/blob/annotationsByLine";
+import {BlobLine} from "sourcegraph/blob/BlobLine";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import BlobStore, {keyForFile, keyForAnns} from "sourcegraph/blob/BlobStore";
+import {BlobStore, keyForFile, keyForAnns} from "sourcegraph/blob/BlobStore";
 import * as blobStyles from "sourcegraph/blob/styles/Blob.css";
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
-import DefStore from "sourcegraph/def/DefStore";
-import RepoRefsContainer from "sourcegraph/def/RepoRefsContainer";
-import ExamplesContainer from "sourcegraph/def/ExamplesContainer";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {DefStore} from "sourcegraph/def/DefStore";
+import {RepoRefsContainer} from "sourcegraph/def/RepoRefsContainer";
+import {ExamplesContainer} from "sourcegraph/def/ExamplesContainer";
 import * as DefActions from "sourcegraph/def/DefActions";
-import fileLines from "sourcegraph/util/fileLines";
-import lineFromByte from "sourcegraph/blob/lineFromByte";
+import {fileLines} from "sourcegraph/util/fileLines";
+import {lineFromByte} from "sourcegraph/blob/lineFromByte";
 import {urlToDef} from "sourcegraph/def/routes";
 import {qualifiedNameAndType, defTitle, defTitleOK} from "sourcegraph/def/Formatter";
-import httpStatusCode from "sourcegraph/util/httpStatusCode";
+import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
 import {trimRepo} from "sourcegraph/repo/index";
 import {urlToRepo} from "sourcegraph/repo/routes";
 import {EmptyNodeIllo} from "sourcegraph/components/symbols/index";
@@ -45,7 +45,7 @@ type Props = {
 	defObj?: any,
 };
 
-class DefInfo extends Container<Props, any> {
+export class DefInfo extends Container<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
@@ -385,5 +385,3 @@ class DefInfo extends Container<Props, any> {
 		);
 	}
 }
-
-export default DefInfo;

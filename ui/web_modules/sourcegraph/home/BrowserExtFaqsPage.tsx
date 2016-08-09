@@ -6,14 +6,14 @@ import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import {Hero, Heading} from "sourcegraph/components/index";
 import * as styles from "sourcegraph/page/Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
-import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
+import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import Helmet from "react-helmet";
 
 type Props = {
 	location: any,
 };
 
-class BrowserExtFaqsPage extends React.Component<Props, any> {
+export class BrowserExtFaqsPage extends React.Component<Props, any> {
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,
 		githubToken: React.PropTypes.object,
@@ -81,5 +81,3 @@ class BrowserExtFaqsPage extends React.Component<Props, any> {
 		);
 	}
 }
-
-export default BrowserExtFaqsPage;

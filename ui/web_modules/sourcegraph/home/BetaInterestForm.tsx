@@ -3,14 +3,14 @@
 import * as React from "react";
 import * as styles from "./styles/BetaInterestForm.css";
 import {Button, Input, CheckboxList} from "sourcegraph/components/index";
-import Dispatcher from "sourcegraph/Dispatcher";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {languages, editors} from "./HomeUtils";
 import {langName} from "sourcegraph/Language";
-import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
-import UserStore from "sourcegraph/user/UserStore";
-import Container from "sourcegraph/Container";
+import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
+import {UserStore} from "sourcegraph/user/UserStore";
+import {Container} from "sourcegraph/Container";
 import * as classNames from "classnames";
 
 type OnChangeListener = () => void;
@@ -22,7 +22,7 @@ type Props = {
 	loginReturnTo?: string,
 }
 
-class BetaInterestForm extends Container<Props, any> {
+export class BetaInterestForm extends Container<Props, any> {
 	static contextTypes = {
 		user: React.PropTypes.object,
 		authInfo: React.PropTypes.object,
@@ -189,5 +189,3 @@ class BetaInterestForm extends Container<Props, any> {
 		);
 	}
 }
-
-export default BetaInterestForm;

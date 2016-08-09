@@ -1,6 +1,6 @@
 // tslint:disable
 
-export default {
+export const popularRepos = {
 	golang: [
 		"github.com/golang/go",
 		"github.com/gorilla/mux",

@@ -11,7 +11,7 @@
 // Returns [score, str], Mimics the behavior of Sublime Text search.
 // Higher score means better match. Value has no intrinsic meaning.
 // Range varies with pattern. Can only compare scores with same search pattern.
-export default function fuzzy_score(pattern: string, str: string): Array<any> {
+export function fuzzy_score(pattern: string, str: string): Array<any> {
 	// Score consts
 	let adjacency_bonus = 5; // bonus for adjacent matches
 	let separator_bonus = 10; // bonus if match occurs after a separator

@@ -13,7 +13,7 @@ type Props = {
 	style?: any,
 };
 
-class Tabs extends React.Component<Props, any> {
+export class Tabs extends React.Component<Props, any> {
 	static defaultProps = {
 		direction: "horizontal",
 		color: "blue",
@@ -39,5 +39,3 @@ class Tabs extends React.Component<Props, any> {
 		return <div className={classNames(styles.container, direction === "vertical" ? styles.vertical : styles.horizontal, className)} style={style}>{this._childrenWithProps()}</div>;
 	}
 }
-
-export default Tabs;

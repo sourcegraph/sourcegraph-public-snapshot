@@ -2,7 +2,7 @@
 
 import expect from "expect.js";
 
-import BuildStore from "sourcegraph/build/BuildStore";
+import {BuildStore} from "sourcegraph/build/BuildStore";
 import * as BuildActions from "sourcegraph/build/BuildActions";
 
 describe("BuildStore", () => {

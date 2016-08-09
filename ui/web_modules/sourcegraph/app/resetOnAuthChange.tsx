@@ -1,12 +1,12 @@
 // tslint:disable
 
-import UserStore from "sourcegraph/user/UserStore";
+import {UserStore} from "sourcegraph/user/UserStore";
 import {forEach as forEachStore, reset as resetStores} from "sourcegraph/init/stores";
 
 // resetOnAuthChange clears the authentication information in UserStore
 // and resets all stores to their initial state (with no data) when
 // the authenticated user changes (after login, signup, or logout).
-export default function resetOnAuthChange() {
+export function resetOnAuthChange() {
 	let lastActiveAccessToken = UserStore.activeAccessToken;
 	if (typeof lastActiveAccessToken === "undefined") {
 		throw new Error("resetOnAuthChange must be called after the initial UserStore.activeAccessToken has been set (to null or to the access token string). Usually this means it must be called after setting the JS context.");

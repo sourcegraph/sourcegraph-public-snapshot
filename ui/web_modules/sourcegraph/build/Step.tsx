@@ -4,8 +4,8 @@ import * as React from "react";
 
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import {taskClass, elapsed} from "sourcegraph/build/Build";
-import Component from "sourcegraph/Component";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Component} from "sourcegraph/Component";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as classNames from "classnames";
 
 import {Collapsible} from "sourcegraph/components/index";
@@ -14,7 +14,7 @@ import * as styles from "./styles/Build.css";
 
 const updateLogIntervalMsec = 1500;
 
-class Step extends Component<Props, any> {
+export class Step extends Component<Props, any> {
 	_updateLogIntervalID: any;
 	
 	constructor(props) {
@@ -98,5 +98,3 @@ type Props = {
 	task: any,
 	logs: any,
 };
-
-export default Step;

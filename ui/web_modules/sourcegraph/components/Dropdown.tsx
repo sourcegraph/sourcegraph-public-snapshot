@@ -24,7 +24,7 @@ type Props = {
 
 // This component is a minimal Dropdown component with some code copied from
 // RevSwitcher.
-class Dropdown extends React.Component<Props, any> {
+export class Dropdown extends React.Component<Props, any> {
 	_wrapper: any;
 
 	constructor(props) {
@@ -104,5 +104,3 @@ class Dropdown extends React.Component<Props, any> {
 		);
 	}
 }
-
-export default Dropdown;

@@ -1,17 +1,17 @@
 import * as React from "react";
-import Dispatcher from "sourcegraph/Dispatcher";
-import context from "sourcegraph/app/context";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {context} from "sourcegraph/app/context";
 import {getRouteParams, getRoutePattern, getViewName} from "sourcegraph/app/routePatterns";
 import {SiteConfig} from "sourcegraph/app/siteConfig";
 import * as DefActions from "sourcegraph/def/DefActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as UserActions from "sourcegraph/user/UserActions";
-import UserStore from "sourcegraph/user/UserStore";
+import {UserStore} from "sourcegraph/user/UserStore";
 import {AuthInfo, User} from "sourcegraph/user/index";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {defPathToLanguage, getLanguageExtensionForPath} from "sourcegraph/util/inventory";
 
-export class EventLogger {
+class EventLoggerClass {
 	_amplitude: any = null;
 	_intercom: any = null;
 	_fullStory: any = null;
@@ -388,11 +388,11 @@ export class EventLogger {
 	}
 }
 
-export default new EventLogger();
+export const EventLogger = new EventLoggerClass();
 
 // withEventLoggerContext makes eventLogger accessible as (this.context as any).eventLogger
 // in the component's context.
-export function withEventLoggerContext<P>(eventLogger: EventLogger, component: React.ComponentClass<P>): React.ComponentClass<P> {
+export function withEventLoggerContext<P>(eventLogger: EventLoggerClass, component: React.ComponentClass<P>): React.ComponentClass<P> {
 	class WithEventLogger extends React.Component<P, {}> {
 		static childContextTypes: React.ValidationMap<any> = {
 			eventLogger: React.PropTypes.object,
@@ -403,7 +403,7 @@ export function withEventLoggerContext<P>(eventLogger: EventLogger, component: R
 			eventLogger.init();
 		}
 
-		getChildContext(): {eventLogger: EventLogger} {
+		getChildContext(): {eventLogger: EventLoggerClass} {
 			return {eventLogger};
 		}
 

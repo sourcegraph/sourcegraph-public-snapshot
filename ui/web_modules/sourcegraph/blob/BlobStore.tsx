@@ -1,7 +1,7 @@
-import Dispatcher from "sourcegraph/Dispatcher";
-import Store from "sourcegraph/Store";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {Store} from "sourcegraph/Store";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import deepFreeze from "sourcegraph/util/deepFreeze";
+import {deepFreeze} from "sourcegraph/util/deepFreeze";
 
 // keyFor must stay in sync with the key func in
 // (*ui.BlobStore).AddFile.
@@ -15,7 +15,7 @@ export function keyForAnns(repo: string, commitID: string, path: string, startBy
 	return `${repo}#${commitID}#${path}#${startByte || 0}#${endByte || 0}`;
 }
 
-export class BlobStore extends Store<any> {
+class BlobStoreClass extends Store<any> {
 	files: {[key: string]: BlobActions.File};
 	annotations: {[key: string]: BlobActions.Annotations};
 
@@ -43,4 +43,4 @@ export class BlobStore extends Store<any> {
 	}
 }
 
-export default new BlobStore(Dispatcher.Stores);
+export const BlobStore = new BlobStoreClass(Dispatcher.Stores);

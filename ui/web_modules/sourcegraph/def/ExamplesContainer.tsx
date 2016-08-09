@@ -1,9 +1,9 @@
 // tslint:disable
 
 import * as React from "react";
-import Container from "sourcegraph/Container";
-import RefsContainer from "sourcegraph/def/RefsContainer";
-import DefStore from "sourcegraph/def/DefStore";
+import {Container} from "sourcegraph/Container";
+import {RefsContainer} from "sourcegraph/def/RefsContainer";
+import {DefStore} from "sourcegraph/def/DefStore";
 import "sourcegraph/blob/BlobBackend";
 import * as styles from "./styles/DefInfo.css";
 import * as base from "sourcegraph/components/styles/_base.css";
@@ -22,7 +22,7 @@ type Props = {
 	examples?: any,
 };
 
-class ExamplesContainer extends Container<Props, any> {
+export class ExamplesContainer extends Container<Props, any> {
 	constructor(props) {
 		super(props);
 	}
@@ -73,5 +73,3 @@ class ExamplesContainer extends Container<Props, any> {
 		);
 	}
 }
-
-export default ExamplesContainer;

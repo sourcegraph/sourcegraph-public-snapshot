@@ -23,7 +23,7 @@ type Props = {
 // eventually displayed.
 //
 // It makes the app feel a lot less jittery.
-function BlobContentPlaceholder(props: Props) {
+export function BlobContentPlaceholder(props: Props) {
 	const numLines = props.numLines || 60;
 	const lines: any[] = [];
 	for (let i = 0; i < numLines; i++) {
@@ -46,4 +46,3 @@ function BlobContentPlaceholder(props: Props) {
 		</div>
 	);
 }
-export default BlobContentPlaceholder;

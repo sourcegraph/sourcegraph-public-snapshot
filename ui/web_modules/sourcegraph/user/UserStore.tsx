@@ -1,10 +1,10 @@
-import Dispatcher from "sourcegraph/Dispatcher";
-import Store from "sourcegraph/Store";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {Store} from "sourcegraph/Store";
 import * as UserActions from "sourcegraph/user/UserActions";
 import {AuthInfo, EmailAddr, ExternalToken, Settings, User} from "sourcegraph/user/index";
 import {deepFreeze, mergeAndDeepFreeze} from "sourcegraph/util/deepFreeze";
 
-export class UserStore extends Store<any> {
+class UserStoreClass extends Store<any> {
 	activeAccessToken: string | null;
 	activeGitHubToken: ExternalToken | null;
 	authInfos: {[key: string]: AuthInfo | null};
@@ -133,4 +133,4 @@ export class UserStore extends Store<any> {
 	}
 }
 
-export default new UserStore(Dispatcher.Stores);
+export const UserStore = new UserStoreClass(Dispatcher.Stores);

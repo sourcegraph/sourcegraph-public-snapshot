@@ -1,8 +1,8 @@
 // tslint:disable
 
-import Store from "sourcegraph/Store";
-import Dispatcher from "sourcegraph/Dispatcher";
-import deepFreeze from "sourcegraph/util/deepFreeze";
+import {Store} from "sourcegraph/Store";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {deepFreeze} from "sourcegraph/util/deepFreeze";
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import {updatedAt} from "sourcegraph/build/Build";
 import "sourcegraph/build/BuildBackend";
@@ -19,7 +19,7 @@ function keyForList(repo, search) {
 	return `${repo}${search}`;
 }
 
-export class BuildStore extends Store<any> {
+class BuildStoreClass extends Store<any> {
 	builds: any;
 	buildLists: any;
 	logs: any;
@@ -147,4 +147,4 @@ export class BuildStore extends Store<any> {
 	}
 }
 
-export default new BuildStore(Dispatcher.Stores);
+export const BuildStore = new BuildStoreClass(Dispatcher.Stores);

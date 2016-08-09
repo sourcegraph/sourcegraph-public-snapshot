@@ -1,9 +1,9 @@
 // tslint:disable
 
 import * as React from "react";
-import withDef from "sourcegraph/def/withDef";
+import {withDef} from "sourcegraph/def/withDef";
 import {render} from "sourcegraph/util/renderTestUtils";
-import DefStore from "sourcegraph/def/DefStore";
+import {DefStore} from "sourcegraph/def/DefStore";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {rel as relPath} from "sourcegraph/app/routePatterns";
 

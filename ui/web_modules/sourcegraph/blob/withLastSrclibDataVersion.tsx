@@ -1,9 +1,9 @@
 // tslint:disable
 
-import TreeStore from "sourcegraph/tree/TreeStore";
+import {TreeStore} from "sourcegraph/tree/TreeStore";
 import "sourcegraph/tree/TreeBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
-import Dispatcher from "sourcegraph/Dispatcher";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Helper} from "sourcegraph/blob/BlobLoader";
 import {rel} from "sourcegraph/app/routePatterns";
 
@@ -17,7 +17,7 @@ import {rel} from "sourcegraph/app/routePatterns";
 // Assumes it runs AFTER withFileBlob (which sets state.path) but
 // before withDefAndRefLocations (which uses the state.commitID that
 // this sets).
-export default ({
+export const withLastSrclibDataVersion = ({
 	reconcileState(state, props) {
 		// If a blob, then the path is statically known. Otherwise, reuse
 		// the state.path set after the def loads (that is taken from def.File).

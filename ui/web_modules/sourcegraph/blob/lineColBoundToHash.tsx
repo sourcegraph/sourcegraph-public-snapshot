@@ -3,7 +3,7 @@
 import {parseLineRange} from "sourcegraph/blob/lineCol";
 import {Helper} from "sourcegraph/blob/BlobLoader";
 
-export default ({
+export const lineColBoundToHash = ({
 	reconcileState(state: any, props: any) {
 		// pos will contain {start,end}{Line,Col} properties, if any.
 		let pos = props.location && props.location.hash && props.location.hash.startsWith("#L") ?

@@ -3,12 +3,12 @@
 import * as React from "react";
 import {Link} from "react-router";
 
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Button, Label, Modal} from "sourcegraph/components/index";
 import {CloseIcon, TriangleLeftIcon, TriangleRightIcon, MagnifyingGlassIcon, FileIcon} from "sourcegraph/components/Icons";
 
-import BuildStore from "sourcegraph/build/BuildStore";
+import {BuildStore} from "sourcegraph/build/BuildStore";
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import {buildStatus, buildColor} from "sourcegraph/build/Build";
 import {urlToBuilds} from "sourcegraph/build/routes";
@@ -47,7 +47,7 @@ type Props = {
 	onDismiss: () => void,
 };
 
-class CoverageDrilldown extends Container<Props, any> {
+export class CoverageDrilldown extends Container<Props, any> {
 	buildsQuery: any;
 
 	static contextTypes = {
@@ -249,5 +249,3 @@ class CoverageDrilldown extends Container<Props, any> {
 		);
 	}
 }
-
-export default CoverageDrilldown;

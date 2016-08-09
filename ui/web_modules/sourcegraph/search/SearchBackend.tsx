@@ -1,12 +1,12 @@
 // tslint:disable
 
 import * as SearchActions from "sourcegraph/search/SearchActions";
-import SearchStore from "sourcegraph/search/SearchStore";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {SearchStore} from "sourcegraph/search/SearchStore";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {RESULTS_LIMIT} from "sourcegraph/search/GlobalSearch";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 
-const SearchBackend = {
+export const SearchBackend = {
 	fetch: defaultFetch,
 
 	__onDispatch(action) {
@@ -61,5 +61,3 @@ const SearchBackend = {
 };
 
 Dispatcher.Backends.register(SearchBackend.__onDispatch);
-
-export default SearchBackend;

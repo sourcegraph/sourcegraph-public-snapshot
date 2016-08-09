@@ -2,15 +2,15 @@
 
 import * as React from "react";
 
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import BlobStore, {keyForAnns} from "sourcegraph/blob/BlobStore";
+import {BlobStore, keyForAnns} from "sourcegraph/blob/BlobStore";
 import "sourcegraph/blob/BlobBackend";
 
 // withAnnotations wraps Component and triggers a load of the annotations
 // for the repo, rev, and path passed to it as properties.
-export default function withAnnotations(Component) {
+export function withAnnotations(Component) {
 	type Props = {
 		repo: string,
 		rev?: string,

@@ -5,10 +5,10 @@ import Helmet from "react-helmet";
 import {Link} from "react-router";
 import * as classNames from "classnames";
 
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as BuildActions from "sourcegraph/build/BuildActions";
-import BuildStore from "sourcegraph/build/BuildStore";
+import {BuildStore} from "sourcegraph/build/BuildStore";
 import {buildStatus, buildClass, elapsed} from "sourcegraph/build/Build";
 import {trimRepo} from "sourcegraph/repo/index";
 import {urlToBuild} from "sourcegraph/build/routes";
@@ -16,7 +16,7 @@ import {urlToRepo} from "sourcegraph/repo/routes";
 
 import {Button} from "sourcegraph/components/index";
 
-import TimeAgo from "sourcegraph/util/TimeAgo";
+import {TimeAgo} from "sourcegraph/util/TimeAgo";
 
 import * as styles from "./styles/Build.css";
 import * as btnStyles from "sourcegraph/components/styles/button.css";
@@ -27,7 +27,7 @@ type Props = {
 	params: any,
 };
 
-class BuildsList extends Container<Props, any> {
+export class BuildsList extends Container<Props, any> {
 	_updateIntervalID: any;
 
 	constructor(props) {
@@ -150,5 +150,3 @@ class BuildsList extends Container<Props, any> {
 		);
 	}
 }
-
-export default BuildsList;

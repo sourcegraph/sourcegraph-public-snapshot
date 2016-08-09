@@ -2,7 +2,7 @@
 
 import {rel} from "sourcegraph/app/routePatterns";
 import {Route} from "react-router";
-import IntegrationsContainer from "sourcegraph/home/IntegrationsContainer";
+import {IntegrationsContainer} from "sourcegraph/home/IntegrationsContainer";
 
 export const routes: any[] = [
 	{

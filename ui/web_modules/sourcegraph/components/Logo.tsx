@@ -10,7 +10,7 @@ type Props = {
 	width?: string,
 };
 
-class Logo extends React.Component<Props, any> {
+export class Logo extends React.Component<Props, any> {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 	};
@@ -25,5 +25,3 @@ class Logo extends React.Component<Props, any> {
 		return <img src={`${(this.context as any).siteConfig.assetsRoot}/img/${logoImg}`} width={width} className={className} title="Sourcegraph" alt="Sourcegraph Logo" />;
 	}
 }
-
-export default Logo;

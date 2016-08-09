@@ -1,11 +1,11 @@
 // tslint:disable
 
 import * as CoverageActions from "sourcegraph/admin/CoverageActions";
-import CoverageStore from "sourcegraph/admin/CoverageStore";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {CoverageStore} from "sourcegraph/admin/CoverageStore";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 
-const CoverageBackend = {
+export const CoverageBackend = {
 	fetch: defaultFetch,
 
 	__onDispatch(action) {
@@ -27,5 +27,3 @@ const CoverageBackend = {
 };
 
 Dispatcher.Backends.register(CoverageBackend.__onDispatch);
-
-export default CoverageBackend;

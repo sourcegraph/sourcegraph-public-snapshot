@@ -4,15 +4,15 @@ import * as React from "react";
 import Helmet from "react-helmet";
 import {Link} from "react-router";
 
-import Commit from "sourcegraph/vcs/Commit";
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Commit} from "sourcegraph/vcs/Commit";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as BuildActions from "sourcegraph/build/BuildActions";
-import BuildHeader from "sourcegraph/build/BuildHeader";
-import BuildStore from "sourcegraph/build/BuildStore";
-import BuildTasks from "sourcegraph/build/BuildTasks";
+import {BuildHeader} from "sourcegraph/build/BuildHeader";
+import {BuildStore} from "sourcegraph/build/BuildStore";
+import {BuildTasks} from "sourcegraph/build/BuildTasks";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
-import TreeStore from "sourcegraph/tree/TreeStore";
+import {TreeStore} from "sourcegraph/tree/TreeStore";
 import {urlToBuilds} from "sourcegraph/build/routes";
 import {trimRepo} from "sourcegraph/repo/index";
 
@@ -26,7 +26,7 @@ type Props = {
 	params: any,
 };
 
-class BuildContainer extends Container<Props, any> {
+export class BuildContainer extends Container<Props, any> {
 	_updateIntervalID: any;
 
 	static contextTypes = {
@@ -108,5 +108,3 @@ class BuildContainer extends Container<Props, any> {
 		);
 	}
 }
-
-export default BuildContainer;

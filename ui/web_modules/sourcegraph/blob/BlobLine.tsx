@@ -6,8 +6,8 @@ import * as utf8 from "utf8";
 
 import {annotate} from "sourcegraph/blob/Annotations";
 import * as classNames from "classnames";
-import Component from "sourcegraph/Component";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Component} from "sourcegraph/Component";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
@@ -83,7 +83,7 @@ type Props = {
 	textSize?: string,
 };
 
-class BlobLine extends Component<Props, any> {
+export class BlobLine extends Component<Props, any> {
 	static contextTypes = {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
@@ -241,5 +241,3 @@ class BlobLine extends Component<Props, any> {
 		);
 	}
 }
-
-export default BlobLine;

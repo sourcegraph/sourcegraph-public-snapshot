@@ -1,14 +1,14 @@
 // tslint:disable
 
-export {default as HeadingsComponent} from "./HeadingsComponent";
-export {default as ButtonsComponent} from "./ButtonsComponent";
-export {default as TabsComponent} from "./TabsComponent";
-export {default as PanelsComponent} from "./PanelsComponent";
-export {default as StepperComponent} from "./StepperComponent";
-export {default as ChecklistsComponent} from "./ChecklistsComponent";
-export {default as LogoComponent} from "./LogoComponent";
-export {default as TableComponent} from "./TableComponent";
-export {default as FlexContainerComponent} from "./FlexContainerComponent";
-export {default as AffixComponent} from "./AffixComponent";
-export {default as FormsComponent} from "./FormsComponent";
-export {default as ListComponent} from "./ListComponent";
+export {HeadingsComponent} from "./HeadingsComponent";
+export {ButtonsComponent} from "./ButtonsComponent";
+export {TabsComponent} from "./TabsComponent";
+export {PanelsComponent} from "./PanelsComponent";
+export {StepperComponent} from "./StepperComponent";
+export {ChecklistsComponent} from "./ChecklistsComponent";
+export {LogoComponent} from "./LogoComponent";
+export {TableComponent} from "./TableComponent";
+export {FlexContainerComponent} from "./FlexContainerComponent";
+export {AffixComponent} from "./AffixComponent";
+export {FormsComponent} from "./FormsComponent";
+export {ListComponent} from "./ListComponent";

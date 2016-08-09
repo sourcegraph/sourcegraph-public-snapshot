@@ -1,14 +1,14 @@
 // tslint:disable
 
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import BlobStore, {keyForFile, keyForAnns} from "sourcegraph/blob/BlobStore";
-import Dispatcher from "sourcegraph/Dispatcher";
-import prepareAnnotations from "sourcegraph/blob/prepareAnnotations";
+import {BlobStore, keyForFile, keyForAnns} from "sourcegraph/blob/BlobStore";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {prepareAnnotations} from "sourcegraph/blob/prepareAnnotations";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
 
-const BlobBackend = {
+export const BlobBackend = {
 	fetch: singleflightFetch(defaultFetch),
 
 	__onDispatch(action) {
@@ -62,5 +62,3 @@ const BlobBackend = {
 };
 
 Dispatcher.Backends.register(BlobBackend.__onDispatch);
-
-export default BlobBackend;

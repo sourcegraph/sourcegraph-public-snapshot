@@ -2,8 +2,8 @@
 
 import {Route} from "react-router";
 import {rel} from "sourcegraph/app/routePatterns";
-import BuildsList from "sourcegraph/build/BuildsList";
-import CoverageDashboard from "sourcegraph/admin/CoverageDashboard";
+import {BuildsList} from "sourcegraph/build/BuildsList";
+import {CoverageDashboard} from "sourcegraph/admin/CoverageDashboard";
 
 const globalBuilds: ReactRouter.PlainRoute = {
 	path: rel.builds,

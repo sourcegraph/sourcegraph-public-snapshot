@@ -1,12 +1,12 @@
 // tslint:disable
 
 import * as React from "react";
-import Container from "sourcegraph/Container";
+import {Container} from "sourcegraph/Container";
 import "sourcegraph/repo/RepoBackend";
-import RepoStore from "sourcegraph/repo/RepoStore";
+import {RepoStore} from "sourcegraph/repo/RepoStore";
 import "sourcegraph/tree/TreeBackend";
-import TreeStore from "sourcegraph/tree/TreeStore";
-import RevSwitcher from "sourcegraph/repo/RevSwitcher";
+import {TreeStore} from "sourcegraph/tree/TreeStore";
+import {RevSwitcher} from "sourcegraph/repo/RevSwitcher";
 
 type Props = {
 	repo: string,
@@ -25,7 +25,7 @@ type Props = {
 
 // RevSwitcherContainer is for standalone RevSwitchers that need to
 // be able to respond to changes in RepoStore independently.
-class RevSwitcherContainer extends Container<Props, any> {
+export class RevSwitcherContainer extends Container<Props, any> {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.branches = RepoStore.branches;
@@ -45,5 +45,3 @@ class RevSwitcherContainer extends Container<Props, any> {
 			);
 	}
 }
-
-export default RevSwitcherContainer;

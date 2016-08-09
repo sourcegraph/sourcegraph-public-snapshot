@@ -11,7 +11,7 @@ type Props = {
 	style?: any,
 };
 
-class Table extends React.Component<Props, any> {
+export class Table extends React.Component<Props, any> {
 	render(): JSX.Element | null {
 		const {className, children, bordered, style} = this.props;
 
@@ -22,5 +22,3 @@ class Table extends React.Component<Props, any> {
 		);
 	}
 }
-
-export default Table;

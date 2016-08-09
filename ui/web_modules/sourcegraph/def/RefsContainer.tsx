@@ -3,25 +3,25 @@
 import * as React from "react";
 import * as classNames from "classnames";
 
-import Blob from "sourcegraph/blob/Blob";
-import BlobStore, {keyForFile, keyForAnns} from "sourcegraph/blob/BlobStore";
-import BlobContentPlaceholder from "sourcegraph/blob/BlobContentPlaceholder";
-import Container from "sourcegraph/Container";
-import DefStore from "sourcegraph/def/DefStore";
-import DefTooltip from "sourcegraph/def/DefTooltip";
+import {Blob} from "sourcegraph/blob/Blob";
+import {BlobStore, keyForFile, keyForAnns} from "sourcegraph/blob/BlobStore";
+import {BlobContentPlaceholder} from "sourcegraph/blob/BlobContentPlaceholder";
+import {Container} from "sourcegraph/Container";
+import {DefStore} from "sourcegraph/def/DefStore";
+import {DefTooltip} from "sourcegraph/def/DefTooltip";
 import {Link} from "react-router";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import "sourcegraph/blob/BlobBackend";
-import Dispatcher from "sourcegraph/Dispatcher";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
-import lineFromByte from "sourcegraph/blob/lineFromByte";
+import {lineFromByte} from "sourcegraph/blob/lineFromByte";
 import {urlToBlob} from "sourcegraph/blob/routes";
-import Header from "sourcegraph/components/Header";
-import httpStatusCode from "sourcegraph/util/httpStatusCode";
+import {Header} from "sourcegraph/components/Header";
+import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
 import {RepoLink} from "sourcegraph/components/index";
 import {FaAngleDown, FaAngleRight} from "sourcegraph/components/Icons";
-import breadcrumb from "sourcegraph/util/breadcrumb";
-import stripDomain from "sourcegraph/util/stripDomain";
+import {breadcrumb} from "sourcegraph/util/breadcrumb";
+import {stripDomain} from "sourcegraph/util/stripDomain";
 import * as styles from "./styles/Refs.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
@@ -49,7 +49,7 @@ type Props = {
 	refIndex?: number,
 };
 
-export default class RefsContainer extends Container<Props, any> {
+export class RefsContainer extends Container<Props, any> {
 	rangesMemo: any;
 	filesByName: any;
 	ranges: any;

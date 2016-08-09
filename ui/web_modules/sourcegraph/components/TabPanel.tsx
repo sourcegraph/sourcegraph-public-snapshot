@@ -9,7 +9,7 @@ type Props = {
 	tabPanel?: boolean,
 };
 
-class TabPanel extends React.Component<Props, any> {
+export class TabPanel extends React.Component<Props, any> {
 	static defaultProps = {
 		tabPanel: true,
 	};
@@ -23,5 +23,3 @@ class TabPanel extends React.Component<Props, any> {
 		);
 	}
 }
-
-export default TabPanel;

@@ -1,9 +1,9 @@
 import * as FluxUtils from "flux/utils";
 import {Dispatcher} from "sourcegraph/Dispatcher";
-import deepFreeze from "sourcegraph/util/deepFreeze";
-import testOnly from "sourcegraph/util/testOnly";
+import {deepFreeze} from "sourcegraph/util/deepFreeze";
+import {testOnly} from "sourcegraph/util/testOnly";
 
-class Store<TPayload> extends FluxUtils.Store<TPayload> {
+export class Store<TPayload> extends FluxUtils.Store<TPayload> {
 	// hack: access internal fields of store and dispatcher
 	// tslint:disable-next-line: variable-name
 	__dispatcher: {
@@ -40,5 +40,3 @@ class Store<TPayload> extends FluxUtils.Store<TPayload> {
 		// overrride
 	}
 }
-
-export default Store;

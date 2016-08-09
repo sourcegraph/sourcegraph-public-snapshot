@@ -1,12 +1,12 @@
 // tslint:disable
 
-import autotest from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/autotest";
 
 import * as React from "react";
 
 // import * as BuildActions from "sourcegraph/build/BuildActions";
-// import BuildStore from "sourcegraph/build/BuildStore";
-import BuildContainer from "sourcegraph/build/BuildContainer";
+// import {BuildStore} from "sourcegraph/build/BuildStore";
+import {BuildContainer} from "sourcegraph/build/BuildContainer";
 
 import testdataInitial from "sourcegraph/build/testdata/BuildContainer-initial.json";
 // import testdataAvailable from "sourcegraph/build/testdata/BuildContainer-available.json";

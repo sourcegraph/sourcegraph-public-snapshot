@@ -1,9 +1,9 @@
 // tslint:disable
 
-import autotest from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/autotest";
 
 import * as React from "react";
-import Repos from "sourcegraph/user/settings/Repos";
+import {Repos} from "sourcegraph/user/settings/Repos";
 import {withUserContext} from "sourcegraph/app/user";
 import testdataData from "sourcegraph/user/settings/testdata/Repos-data.json";
 

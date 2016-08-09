@@ -1,5 +1,5 @@
 /* tslint:disable: no-console */
-import Dispatcher from "sourcegraph/Dispatcher";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 
 if (typeof window !== "undefined") {
 	let logger = function(dispatcherName: string): (action: any) => void {

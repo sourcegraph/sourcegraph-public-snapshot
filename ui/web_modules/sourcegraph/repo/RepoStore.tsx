@@ -1,8 +1,8 @@
 // tslint:disable
 
-import Store from "sourcegraph/Store";
-import Dispatcher from "sourcegraph/Dispatcher";
-import deepFreeze from "sourcegraph/util/deepFreeze";
+import {Store} from "sourcegraph/Store";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {deepFreeze} from "sourcegraph/util/deepFreeze";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import "sourcegraph/repo/RepoBackend";
 
@@ -10,7 +10,7 @@ function keyFor(repo, rev?) {
 	return `${repo}@${rev || ""}`;
 }
 
-export class RepoStore extends Store<any> {
+class RepoStoreClass extends Store<any> {
 	repos: any;
 	resolvedRevs: any;
 	commits: any;
@@ -196,4 +196,4 @@ export class RepoStore extends Store<any> {
 	}
 }
 
-export default new RepoStore(Dispatcher.Stores);
+export const RepoStore = new RepoStoreClass(Dispatcher.Stores);

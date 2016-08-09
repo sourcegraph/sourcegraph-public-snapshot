@@ -2,10 +2,10 @@
 
 import expect from "expect.js";
 
-import Dispatcher from "sourcegraph/Dispatcher";
-import UserBackend from "sourcegraph/user/UserBackend";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {UserBackend} from "sourcegraph/user/UserBackend";
 import * as UserActions from "sourcegraph/user/UserActions";
-import immediateSyncPromise from "sourcegraph/util/immediateSyncPromise";
+import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
 import {AuthInfo, User, EmailAddr, ExternalToken} from "sourcegraph/user/index";
 
 const sampleAuthInfo: AuthInfo = {UID: 1, Login: "u", Write: false, Admin: false, IntercomHash: ""};

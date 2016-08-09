@@ -1,7 +1,7 @@
 // tslint:disable
 
 import * as React from "react";
-import RefsContainer from "sourcegraph/def/RefsContainer";
+import {RefsContainer} from "sourcegraph/def/RefsContainer";
 import {render} from "sourcegraph/util/renderTestUtils";
 
 const context = {

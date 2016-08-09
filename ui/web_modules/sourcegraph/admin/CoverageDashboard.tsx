@@ -2,12 +2,12 @@
 
 import * as React from "react";
 
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import "./CoverageBackend"; // for side effects
-import CoverageStore from "sourcegraph/admin/CoverageStore";
-import CoverageGraph from "sourcegraph/admin/CoverageGraph";
-import CoverageDrilldown from "sourcegraph/admin/CoverageDrilldown";
+import {CoverageStore} from "sourcegraph/admin/CoverageStore";
+import {CoverageGraph} from "sourcegraph/admin/CoverageGraph";
+import {CoverageDrilldown} from "sourcegraph/admin/CoverageDrilldown";
 import * as CoverageActions from "sourcegraph/admin/CoverageActions";
 import {MagnifyingGlassIcon} from "sourcegraph/components/Icons";
 
@@ -24,7 +24,7 @@ type Props = {
 	location: any,
 }
 
-class CoverageDashboard extends Container<Props, any> {
+export class CoverageDashboard extends Container<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -146,5 +146,3 @@ class CoverageDashboard extends Container<Props, any> {
 		);
 	}
 }
-
-export default CoverageDashboard;

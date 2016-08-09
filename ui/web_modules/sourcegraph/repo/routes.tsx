@@ -1,14 +1,14 @@
 // tslint:disable
 
 import {rel} from "sourcegraph/app/routePatterns";
-import urlTo from "sourcegraph/util/urlTo";
+import {urlTo} from "sourcegraph/util/urlTo";
 import {makeRepoRev, repoPath, repoParam} from "sourcegraph/repo/index";
 import {Route} from "react-router";
 import {formatPattern} from "react-router/lib/PatternUtils";
-import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
-import withRepoBuild from "sourcegraph/build/withRepoBuild";
-import NavContext from "sourcegraph/repo/NavContext";
-import RepoMain from "sourcegraph/repo/RepoMain";
+import {withResolvedRepoRev} from "sourcegraph/repo/withResolvedRepoRev";
+import {withRepoBuild} from "sourcegraph/build/withRepoBuild";
+import {NavContext} from "sourcegraph/repo/NavContext";
+import {RepoMain} from "sourcegraph/repo/RepoMain";
 
 import {routes as blobRoutes} from "sourcegraph/blob/routes";
 import {routes as buildRoutes} from "sourcegraph/build/routes";

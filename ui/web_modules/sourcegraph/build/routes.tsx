@@ -2,9 +2,9 @@
 
 import {Route} from "react-router";
 import {rel} from "sourcegraph/app/routePatterns";
-import urlTo from "sourcegraph/util/urlTo";
-import BuildsList from "sourcegraph/build/BuildsList";
-import BuildContainer from "sourcegraph/build/BuildContainer";
+import {urlTo} from "sourcegraph/util/urlTo";
+import {BuildsList} from "sourcegraph/build/BuildsList";
+import {BuildContainer} from "sourcegraph/build/BuildContainer";
 
 export const routes: ReactRouter.PlainRoute[] = [
 	{

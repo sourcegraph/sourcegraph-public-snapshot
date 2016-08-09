@@ -1,7 +1,7 @@
 import {setGlobalFeatures} from "sourcegraph/app/features";
 import {Features} from "sourcegraph/app/features";
 import {setGlobalSiteConfig} from "sourcegraph/app/siteConfig";
-import UserStore from "sourcegraph/user/UserStore";
+import {UserStore} from "sourcegraph/user/UserStore";
 
 class Context {
 	csrfToken?: string;
@@ -23,7 +23,7 @@ class Context {
 	}
 }
 
-let context = new Context();
+export const context = new Context();
 
 // ContextInput is the input context to set up the JS environment (e.g., from Go).
 type ContextInput = typeof context & {
@@ -62,5 +62,3 @@ export function reset(ctx: ContextInput): void {
 
 	Object.assign(context, ctx);
 }
-
-export default context;

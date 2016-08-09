@@ -6,7 +6,7 @@ import * as styles from "./Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import Helmet from "react-helmet";
 
-function TermsPage(props: {}, {signedIn}) {
+export function TermsPage(props: {}, {signedIn}) {
 	return (
 		<div>
 			<Helmet title="Terms" />
@@ -149,5 +149,3 @@ function TermsPage(props: {}, {signedIn}) {
 		</div>
 	);
 }
-
-export default TermsPage;

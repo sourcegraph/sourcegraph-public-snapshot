@@ -5,10 +5,10 @@ import {Link} from "react-router";
 import {Hero, Heading} from "sourcegraph/components/index";
 import * as styles from "./Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
-import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
+import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import Helmet from "react-helmet";
 
-function AboutPage(props: {}, {signedIn}) {
+export function AboutPage(props: {}, {signedIn}) {
 	return (
 		<div>
 			<Helmet title="About" />
@@ -69,5 +69,3 @@ function AboutPage(props: {}, {signedIn}) {
 (AboutPage as any).contextTypes = {
 	signedIn: React.PropTypes.bool,
 };
-
-export default AboutPage;

@@ -3,13 +3,13 @@
 import * as React from "react";
 
 import * as styles from "./styles/modal.css";
-import renderedOnBody from "sourcegraph/util/renderedOnBody";
+import {renderedOnBody} from "sourcegraph/util/renderedOnBody";
 
 type ModalProps = {
 	onDismiss?: () => void,
 };
 
-class Modal extends React.Component<ModalProps, any> {
+class ModalComp extends React.Component<ModalProps, any> {
 	constructor(props) {
 		super(props);
 		this._onClick = this._onClick.bind(this);
@@ -55,8 +55,7 @@ class Modal extends React.Component<ModalProps, any> {
 	}
 }
 
-let RenderedModal = renderedOnBody(Modal);
-export default RenderedModal;
+export const Modal = renderedOnBody(ModalComp);
 
 // setLocationModalState shows or hides a modal by setting the location.state.modal
 // property to modalName if shown is true and null otherwise.
@@ -99,9 +98,9 @@ export function LocationStateModal({location, modalName, children, onDismiss}: L
 		if (onDismiss) onDismiss();
 	};
 	return (
-		<RenderedModal onDismiss={onDismiss2}>
+		<Modal onDismiss={onDismiss2}>
 			{children}
-		</RenderedModal>
+		</Modal>
 	);
 }
 

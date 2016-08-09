@@ -3,12 +3,12 @@
 import {browserHistory} from "react-router";
 
 import * as BuildActions from "sourcegraph/build/BuildActions";
-import BuildStore from "sourcegraph/build/BuildStore";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {BuildStore} from "sourcegraph/build/BuildStore";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {urlToBuild} from "sourcegraph/build/routes";
 
-const BuildBackend = {
+export const BuildBackend = {
 	fetch: defaultFetch as any,
 
 	__onDispatch(action) {
@@ -121,5 +121,3 @@ const BuildBackend = {
 };
 
 Dispatcher.Backends.register(BuildBackend.__onDispatch);
-
-export default BuildBackend;

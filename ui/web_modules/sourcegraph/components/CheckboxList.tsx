@@ -13,7 +13,7 @@ type Props = {
 	className?: string,
 };
 
-class CheckboxList extends React.Component<Props, any> {
+export class CheckboxList extends React.Component<Props, any> {
 	// TODO(slimsag): this should be 'element' type?
 	_fieldset: any;
 
@@ -44,5 +44,3 @@ class CheckboxList extends React.Component<Props, any> {
 		);
 	}
 }
-
-export default CheckboxList;

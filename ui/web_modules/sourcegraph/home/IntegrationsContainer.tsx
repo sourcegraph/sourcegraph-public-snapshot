@@ -2,14 +2,14 @@
 
 import * as React from "react";
 import * as styles from "./styles/Integrations.css";
-import Integrations from "./Integrations";
+import {Integrations} from "./Integrations";
 import "sourcegraph/user/UserBackend"; // for side effects
 
 type Props = {
 	location?: any,
 };
 
-class IntegrationsContainer extends React.Component<Props, any> {
+export class IntegrationsContainer extends React.Component<Props, any> {
 	reconcileState(state, props, context) {
 		Object.assign(state, props);
 	}
@@ -20,5 +20,3 @@ class IntegrationsContainer extends React.Component<Props, any> {
 		</div>);
 	}
 }
-
-export default IntegrationsContainer;

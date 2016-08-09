@@ -1,18 +1,18 @@
 // tslint:disable
 
 import * as RepoActions from "sourcegraph/repo/RepoActions";
-import RepoStore from "sourcegraph/repo/RepoStore";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {RepoStore} from "sourcegraph/repo/RepoStore";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {sortBranches, sortTags} from "sourcegraph/repo/vcs";
-import EventLogger from "sourcegraph/util/EventLogger";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 export const Origin_GitHub = 0; // Origin.ServiceType enum value for GitHub origin
 
-const RepoBackend = {
+export const RepoBackend = {
 	fetch: singleflightFetch(defaultFetch),
 
 	__onDispatch(action) {
@@ -194,5 +194,3 @@ const RepoBackend = {
 };
 
 Dispatcher.Backends.register(RepoBackend.__onDispatch);
-
-export default RepoBackend;

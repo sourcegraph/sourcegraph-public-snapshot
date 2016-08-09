@@ -2,10 +2,10 @@
 
 import * as React from "react";
 
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import BlobStore, {keyForFile} from "sourcegraph/blob/BlobStore";
+import {BlobStore, keyForFile} from "sourcegraph/blob/BlobStore";
 import "sourcegraph/blob/BlobBackend";
 import {urlToTree} from "sourcegraph/tree/routes";
 
@@ -14,7 +14,7 @@ import {urlToTree} from "sourcegraph/tree/routes";
 // the URL (in that order).
 //
 // If the path refers to a tree, a redirect occurs.
-export default function withFileBlob(Component) {
+export function withFileBlob(Component) {
 	type Props = {
 		repo: string,
 		rev?: string,

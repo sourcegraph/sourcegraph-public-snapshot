@@ -7,7 +7,7 @@ import shallowCompare from "react/lib/shallowCompare";
 
 // Adapted from https://raw.githubusercontent.com/tajo/react-portal/master/lib/portal.js.
 
-export default function renderedOnBody(Component) {
+export function renderedOnBody(Component) {
 	type Props = {
 		className?: string,
 		style?: any,

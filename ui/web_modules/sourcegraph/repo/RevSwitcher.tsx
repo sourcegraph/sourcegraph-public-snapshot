@@ -2,12 +2,12 @@
 
 import * as React from "react";
 import fuzzysearch from "fuzzysearch";
-import Dispatcher from "sourcegraph/Dispatcher";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import debounce from "lodash.debounce";
 import "sourcegraph/repo/RepoBackend";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
-import Component from "sourcegraph/Component";
+import {Component} from "sourcegraph/Component";
 import {Link} from "react-router";
 import * as styles from "./styles/RevSwitcher.css";
 import * as classNames from "classnames";
@@ -37,7 +37,7 @@ type Props = {
 	routeParams: any,
 };
 
-class RevSwitcher extends Component<Props, any> {
+export class RevSwitcher extends Component<Props, any> {
 	_input: any;
 	_debouncedSetQuery: any;
 	_wrapper: any;
@@ -286,5 +286,3 @@ function abbrevRev(rev) {
 	if (rev.length === 40) return rev.substring(0, 12);
 	return rev;
 }
-
-export default RevSwitcher;

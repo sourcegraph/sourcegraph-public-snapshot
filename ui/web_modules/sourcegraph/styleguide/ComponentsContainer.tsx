@@ -19,7 +19,7 @@ import {
 	ListComponent,
 } from "./componentExamples/index";
 
-class ComponentsContainer extends React.Component<{}, any> {
+export class ComponentsContainer extends React.Component<{}, any> {
 	render(): JSX.Element | null {
 		return (
 			<div>
@@ -113,5 +113,3 @@ class ComponentsContainer extends React.Component<{}, any> {
 		);
 	}
 }
-
-export default ComponentsContainer;

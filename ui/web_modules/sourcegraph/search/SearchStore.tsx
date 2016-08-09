@@ -1,15 +1,15 @@
 // tslint:disable
 
-import Store from "sourcegraph/Store";
-import Dispatcher from "sourcegraph/Dispatcher";
-import deepFreeze from "sourcegraph/util/deepFreeze";
+import {Store} from "sourcegraph/Store";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {deepFreeze} from "sourcegraph/util/deepFreeze";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 
 function keyForResults(query: string, repos: string[] | null, notRepos: string[] | null, commitID: string | null, limit: number | null): string {
 	return `${query}#${repos ? repos.join(":") : ""}#${notRepos ? notRepos.join(":") : ""}#${commitID ? commitID : ""}#${limit || ""}`;
 }
 
-export class SearchStore extends Store<any> {
+class SearchStoreClass extends Store<any> {
 	content: any;
 
 	reset() {
@@ -37,5 +37,4 @@ export class SearchStore extends Store<any> {
 	}
 }
 
-let store_: SearchStore = new SearchStore(Dispatcher.Stores);
-export default store_;
+export const SearchStore = new SearchStoreClass(Dispatcher.Stores);

@@ -1,7 +1,7 @@
 // tslint:disable
 
 import * as React from "react";
-import TimeAgo from "sourcegraph/util/TimeAgo";
+import {TimeAgo} from "sourcegraph/util/TimeAgo";
 import {Avatar} from "sourcegraph/components/index";
 import * as styles from "./styles/Commit.css";
 
@@ -33,7 +33,7 @@ function sigName(sig) {
 	);
 }
 
-function Commit({repo, commit, full}) {
+export function Commit({repo, commit, full}) {
 	const parts = commit.Message ? commit.Message.split("\n") : null;
 	let title = parts ? parts[0] : "(no commit message)";
 	let rest = parts ? parts.slice(1).join("\n") : null;
@@ -71,5 +71,3 @@ type Props = {
 	// full is whether to show the full commit message (beyond the first line).
 	full: boolean,
 };
-
-export default Commit;

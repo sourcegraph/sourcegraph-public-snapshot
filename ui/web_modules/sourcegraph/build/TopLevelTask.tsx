@@ -3,8 +3,8 @@
 import * as React from "react";
 
 import {elapsed} from "sourcegraph/build/Build";
-import Component from "sourcegraph/Component";
-import Step from "sourcegraph/build/Step";
+import {Component} from "sourcegraph/Component";
+import {Step} from "sourcegraph/build/Step";
 
 import * as styles from "./styles/Build.css";
 
@@ -14,7 +14,7 @@ type Props = {
 	logs: any,
 };
 
-class TopLevelTask extends Component<Props, any> {
+export class TopLevelTask extends Component<Props, any> {
 	reconcileState(state, props) {
 		if (state.task !== props.task) {
 			state.task = props.task;
@@ -43,5 +43,3 @@ class TopLevelTask extends Component<Props, any> {
 		);
 	}
 }
-
-export default TopLevelTask;

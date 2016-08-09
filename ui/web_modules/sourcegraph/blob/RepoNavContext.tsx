@@ -3,10 +3,10 @@
 import * as React from "react";
 import {Link} from "react-router";
 
-import Component from "sourcegraph/Component";
+import {Component} from "sourcegraph/Component";
 
-import urlTo from "sourcegraph/util/urlTo";
-import breadcrumb from "sourcegraph/util/breadcrumb";
+import {urlTo} from "sourcegraph/util/urlTo";
+import {breadcrumb} from "sourcegraph/util/breadcrumb";
 
 import * as styles from "sourcegraph/components/styles/breadcrumb.css";
 
@@ -14,7 +14,7 @@ type Props = {
 	params: any,
 };
 
-class RepoNavContext extends Component<Props, any> {
+export class RepoNavContext extends Component<Props, any> {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 	}
@@ -44,5 +44,3 @@ class RepoNavContext extends Component<Props, any> {
 		);
 	}
 }
-
-export default RepoNavContext;

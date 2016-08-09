@@ -3,8 +3,8 @@
 import * as React from "react";
 import * as classNames from "classnames";
 
-import Component from "sourcegraph/Component";
-import TimeAgo from "sourcegraph/util/TimeAgo";
+import {Component} from "sourcegraph/Component";
+import {TimeAgo} from "sourcegraph/util/TimeAgo";
 import {buildStatus, buildClass, elapsed} from "sourcegraph/build/Build";
 import * as styles from "./styles/Build.css";
 
@@ -12,7 +12,7 @@ type Props = {
 	build: any,
 };
 
-class BuildHeader extends Component<Props, any> {
+export class BuildHeader extends Component<Props, any> {
 	reconcileState(state, props) {
 		if (state.build !== props.build) {
 			state.build = props.build;
@@ -32,5 +32,3 @@ class BuildHeader extends Component<Props, any> {
 		);
 	}
 }
-
-export default BuildHeader;

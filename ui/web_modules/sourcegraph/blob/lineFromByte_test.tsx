@@ -2,7 +2,7 @@
 
 import expect from "expect.js";
 
-import lineFromByte from "sourcegraph/blob/lineFromByte";
+import {lineFromByte} from "sourcegraph/blob/lineFromByte";
 import {createLineFromByteFunc} from "sourcegraph/blob/lineFromByte";
 
 const testCases = { // eslint-disable-line quote-props

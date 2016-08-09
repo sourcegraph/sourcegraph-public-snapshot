@@ -7,7 +7,7 @@ import {sortAnns} from "sourcegraph/blob/Annotations";
 // to prepare them in ways described below for presentation in the UI.
 //
 // NOTE: This logic must be kept in sync with annotations.Prepare in Go.
-export default function prepareAnnotations(anns: Array<Annotation>): Array<Annotation> {
+export function prepareAnnotations(anns: Array<Annotation>): Array<Annotation> {
 	if (anns.length === 0) {
 		return anns;
 	}

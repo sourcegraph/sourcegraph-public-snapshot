@@ -2,7 +2,7 @@
 
 
 import * as React from "react";
-import Header from "sourcegraph/components/Header";
+import {Header} from "sourcegraph/components/Header";
 import {Route} from "react-router";
 import * as styles from "./styles/index.css";
 

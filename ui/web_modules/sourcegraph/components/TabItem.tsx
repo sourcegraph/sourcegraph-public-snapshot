@@ -1,7 +1,7 @@
 // tslint:disable
 
 import * as React from "react";
-import Icon from "./Icon";
+import {Icon} from "./Icon";
 import * as styles from "sourcegraph/components/styles/tabItem.css";
 import * as classNames from "classnames";
 
@@ -17,7 +17,7 @@ type Props = {
 	tabItem?: boolean,
 };
 
-class TabItem extends React.Component<Props, any> {
+export class TabItem extends React.Component<Props, any> {
 	static defaultProps = {
 		active: false,
 		color: "blue",
@@ -48,5 +48,3 @@ const colorClasses = {
 	"blue": styles.blue,
 	"purple": styles.purple,
 };
-
-export default TabItem;

@@ -2,11 +2,11 @@
 
 import expect from "expect.js";
 
-import Dispatcher from "sourcegraph/Dispatcher";
-import BuildBackend from "sourcegraph/build/BuildBackend";
-import BuildStore from "sourcegraph/build/BuildStore";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {BuildBackend} from "sourcegraph/build/BuildBackend";
+import {BuildStore} from "sourcegraph/build/BuildStore";
 import * as BuildActions from "sourcegraph/build/BuildActions";
-import immediateSyncPromise from "sourcegraph/util/immediateSyncPromise";
+import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
 
 describe("BuildBackend", () => {
 	it("should handle WantBuild", () => {

@@ -2,7 +2,7 @@
 
 import expect from "expect.js";
 
-import DefStore from "sourcegraph/def/DefStore";
+import {DefStore} from "sourcegraph/def/DefStore";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {Def} from "sourcegraph/def/index";
 

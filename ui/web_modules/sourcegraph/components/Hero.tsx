@@ -11,7 +11,7 @@ type Props = {
 	children?: any,
 };
 
-class Hero extends React.Component<Props, any> {
+export class Hero extends React.Component<Props, any> {
 	render(): JSX.Element | null {
 		const {color, pattern, children, className} = this.props;
 
@@ -36,5 +36,3 @@ const patternClasses = {
 	"objects": styles.bg_img_objects,
 	"objects_fade": styles.bg_img_objects_fade,
 };
-
-export default Hero;

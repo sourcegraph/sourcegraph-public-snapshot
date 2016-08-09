@@ -1,21 +1,21 @@
 // tslint:disable
 
 import * as React from "react";
-import Container from "sourcegraph/Container";
+import {Container} from "sourcegraph/Container";
 import * as styles from "./styles/SearchSettings.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {Button} from "sourcegraph/components/index";
-import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
-import Dispatcher from "sourcegraph/Dispatcher";
-import UserStore from "sourcegraph/user/UserStore";
+import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {UserStore} from "sourcegraph/user/UserStore";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {allLangs, langName, langIsSupported} from "sourcegraph/Language";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import {withUserContext} from "sourcegraph/app/user";
-import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
+import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
-import BetaInterestForm from "sourcegraph/home/BetaInterestForm";
+import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {searchScopes} from "sourcegraph/search/index";
 import * as classNames from "classnames";
@@ -28,7 +28,7 @@ type Props = {
 	githubToken: any,
 };
 
-class SearchSettings extends Container<Props, any> {
+class SearchSettingsComp extends Container<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
@@ -256,4 +256,4 @@ class SearchSettings extends Container<Props, any> {
 	}
 }
 
-export default withUserContext(SearchSettings);
+export const SearchSettings = withUserContext(SearchSettingsComp);

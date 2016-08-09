@@ -2,8 +2,8 @@
 
 import * as React from "react";
 
-import Component from "sourcegraph/Component";
-import TopLevelTask from "sourcegraph/build/TopLevelTask";
+import {Component} from "sourcegraph/Component";
+import {TopLevelTask} from "sourcegraph/build/TopLevelTask";
 
 import * as styles from "./styles/Build.css";
 
@@ -12,7 +12,7 @@ type Props = {
 	logs: any,
 };
 
-class BuildTasks extends Component<Props, any> {
+export class BuildTasks extends Component<Props, any> {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -46,5 +46,3 @@ class BuildTasks extends Component<Props, any> {
 		);
 	}
 }
-
-export default BuildTasks;

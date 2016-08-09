@@ -2,15 +2,15 @@
 
 import * as React from "react";
 import {Link} from "react-router";
-import Container from "sourcegraph/Container";
-import DefStore from "sourcegraph/def/DefStore";
+import {Container} from "sourcegraph/Container";
+import {DefStore} from "sourcegraph/def/DefStore";
 import * as styles from "sourcegraph/def/styles/Def.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {defPath} from "sourcegraph/def/index";
 import * as DefActions from "sourcegraph/def/DefActions";
-import Dispatcher from "sourcegraph/Dispatcher";
-import RefLocationsList from "sourcegraph/def/RefLocationsList";
-import AuthorList from "sourcegraph/def/AuthorList";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {RefLocationsList} from "sourcegraph/def/RefLocationsList";
+import {AuthorList} from "sourcegraph/def/AuthorList";
 import {urlToDefInfo} from "sourcegraph/def/routes";
 
 type Props = {
@@ -21,7 +21,7 @@ type Props = {
 	location?: any,
 };
 
-class DefPopup extends Container<Props, any> {
+export class DefPopup extends Container<Props, any> {
 	static contextTypes = {
 		features: React.PropTypes.object.isRequired,
 	};
@@ -75,5 +75,3 @@ class DefPopup extends Container<Props, any> {
 		);
 	}
 }
-
-export default DefPopup;

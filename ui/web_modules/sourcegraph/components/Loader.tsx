@@ -4,7 +4,7 @@ import * as React from "react";
 
 import * as style from "sourcegraph/components/styles/loader.css";
 
-class Loader extends React.Component<{}, any> {
+export class Loader extends React.Component<{}, any> {
 	render(): JSX.Element | null {
 		return (
 			<div className={style.loader}>
@@ -15,5 +15,3 @@ class Loader extends React.Component<{}, any> {
 		);
 	}
 }
-
-export default Loader;

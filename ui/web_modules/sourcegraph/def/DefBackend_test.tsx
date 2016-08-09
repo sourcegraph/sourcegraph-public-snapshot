@@ -2,11 +2,11 @@
 
 import expect from "expect.js";
 
-import Dispatcher from "sourcegraph/Dispatcher";
-import DefBackend from "sourcegraph/def/DefBackend";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {DefBackend} from "sourcegraph/def/DefBackend";
 import * as DefActions from "sourcegraph/def/DefActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
-import immediateSyncPromise from "sourcegraph/util/immediateSyncPromise";
+import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
 import {Def, Ref} from "sourcegraph/def/index";
 
 describe("DefBackend", () => {

@@ -1,15 +1,15 @@
 // tslint:disable
 
 import * as DefActions from "sourcegraph/def/DefActions";
-import DefStore from "sourcegraph/def/DefStore";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {DefStore} from "sourcegraph/def/DefStore";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {encodeDefPath} from "sourcegraph/def/index";
 import get from "lodash.get";
 
-const DefBackend = {
+export const DefBackend = {
 	fetch: singleflightFetch(defaultFetch),
 
 	__onDispatch(action) {
@@ -149,5 +149,3 @@ function convNotFound(data) {
 }
 
 Dispatcher.Backends.register(DefBackend.__onDispatch);
-
-export default DefBackend;

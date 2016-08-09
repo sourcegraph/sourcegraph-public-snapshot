@@ -4,19 +4,18 @@ import * as React from "react";
 import Helmet from "react-helmet";
 import {Route} from "react-router";
 
-import GlobalNav from "sourcegraph/app/GlobalNav";
-import Footer from "sourcegraph/app/Footer";
+import {GlobalNav} from "sourcegraph/app/GlobalNav";
+import {Footer} from "sourcegraph/app/Footer";
 import "sourcegraph/components/styles/_normalize.css";
 import * as styles from "./styles/App.css";
 
-import {withEventLoggerContext, withViewEventsLogged} from "sourcegraph/util/EventLogger";
-import EventLogger from "sourcegraph/util/EventLogger";
+import {EventLogger, withEventLoggerContext, withViewEventsLogged} from "sourcegraph/util/EventLogger";
 import {withFeaturesContext} from "sourcegraph/app/features";
 import {withSiteConfigContext} from "sourcegraph/app/siteConfig";
 import {withUserContext} from "sourcegraph/app/user";
 import {withAppdashRouteStateRecording} from "sourcegraph/app/appdash";
-import withChannelListener from "sourcegraph/channel/withChannelListener";
-import desktopRouter from "sourcegraph/desktop/index";
+import {withChannelListener} from "sourcegraph/channel/withChannelListener";
+import {desktopRouter} from "sourcegraph/desktop/index";
 
 import {routes as dashboardRoutes} from "sourcegraph/dashboard/index";
 import {routes as pageRoutes} from "sourcegraph/page/index";
@@ -39,7 +38,7 @@ type Props = {
 	channelStatusCode?: number,
 };
 
-export default class App extends React.Component<Props, any> {
+export class App extends React.Component<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		signedIn: React.PropTypes.bool.isRequired,

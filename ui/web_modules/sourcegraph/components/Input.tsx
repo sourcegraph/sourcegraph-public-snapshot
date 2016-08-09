@@ -24,7 +24,7 @@ type Props = {
 	[key: string]: any,
 };
 
-class Input extends React.Component<Props, any> {
+export class Input extends React.Component<Props, any> {
 	render(): JSX.Element | null {
 		const {style, domRef, block, className, placeholder, label, helperText, error, errorText} = this.props;
 		return (
@@ -46,5 +46,3 @@ class Input extends React.Component<Props, any> {
 		);
 	}
 }
-
-export default Input;

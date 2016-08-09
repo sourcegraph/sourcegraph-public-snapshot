@@ -1,9 +1,9 @@
 import {rel} from "sourcegraph/app/routePatterns";
 import {SearchSettings} from "sourcegraph/search/index";
-import ForgotPassword from "sourcegraph/user/ForgotPassword";
-import Login from "sourcegraph/user/Login";
-import ResetPassword from "sourcegraph/user/ResetPassword";
-import Signup from "sourcegraph/user/Signup";
+import {ForgotPassword} from "sourcegraph/user/ForgotPassword";
+import {Login} from "sourcegraph/user/Login";
+import {ResetPassword} from "sourcegraph/user/ResetPassword";
+import {Signup} from "sourcegraph/user/Signup";
 
 export interface User {
 	UID: number;

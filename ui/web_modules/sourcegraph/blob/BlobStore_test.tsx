@@ -2,7 +2,7 @@
 
 import expect from "expect.js";
 
-import BlobStore, {keyForFile} from "sourcegraph/blob/BlobStore";
+import {BlobStore, keyForFile} from "sourcegraph/blob/BlobStore";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 
 describe("BlobStore", () => {

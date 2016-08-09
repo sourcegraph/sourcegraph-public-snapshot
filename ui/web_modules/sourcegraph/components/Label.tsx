@@ -12,7 +12,7 @@ type Props = {
 	children?: any,
 };
 
-class Label extends React.Component<Props, any> {
+export class Label extends React.Component<Props, any> {
 	render(): JSX.Element | null {
 		return (
 			<span className={this.props.className} style={this.props.style}>
@@ -33,5 +33,3 @@ const colorClasses = {
 	"danger": styles.danger,
 	"purple": styles.purple,
 };
-
-export default Label;

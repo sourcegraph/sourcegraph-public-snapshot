@@ -2,16 +2,16 @@
 
 import * as React from "react";
 import {Link} from "react-router";
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import trimLeft from "lodash.trimleft";
-import TreeStore from "sourcegraph/tree/TreeStore";
+import {TreeStore} from "sourcegraph/tree/TreeStore";
 import "sourcegraph/tree/TreeBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
-import Header from "sourcegraph/components/Header";
+import {Header} from "sourcegraph/components/Header";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
-import httpStatusCode from "sourcegraph/util/httpStatusCode";
+import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
 import {Route} from "react-router";
 import * as classNames from "classnames";
 
@@ -44,7 +44,7 @@ function pathDir(path: string): string {
 	return pathJoin(parts.splice(0, parts.length - 1));
 }
 
-type TreeListProps = {
+type Props = {
 	repo: string;
 	rev: string | null;
 	commitID: string;
@@ -53,7 +53,7 @@ type TreeListProps = {
 	route?: ReactRouter.Route;
 }
 
-type TreeListState = {
+type State = {
 	// prop types
 	repo: string;
 	rev: string | null;
@@ -67,23 +67,13 @@ type TreeListState = {
 	fileTree?: any;
 }
 
-
-type Props = {
-	repo: string,
-	rev?: string,
-	commitID: string,
-	path: string,
-	location?: any,
-	route?: any,
-};
-
-class TreeList extends Container<TreeListProps, TreeListState> {
+export class TreeList extends Container<Props, State> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		user: React.PropTypes.object,
 	};
 
-	constructor(props: TreeListProps) {
+	constructor(props: Props) {
 		super(props);
 		this.state = {
 			repo: "",
@@ -94,7 +84,7 @@ class TreeList extends Container<TreeListProps, TreeListState> {
 
 	stores(): FluxUtils.Store<any>[] { return [TreeStore]; }
 
-	reconcileState(state: TreeListState, props: TreeListProps): void {
+	reconcileState(state: State, props: Props): void {
 		let prevPath = state.path;
 		Object.assign(state, props);
 
@@ -149,7 +139,7 @@ class TreeList extends Container<TreeListProps, TreeListState> {
 		}
 	}
 
-	onStateTransition(prevState: TreeListState, nextState: TreeListState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if ((nextState.repo !== prevState.repo || nextState.commitID !== prevState.commitID) && nextState.commitID) {
 			Dispatcher.Backends.dispatch(new TreeActions.WantFileList(nextState.repo, nextState.commitID));
 		}
@@ -207,5 +197,3 @@ class TreeList extends Container<TreeListProps, TreeListState> {
 		);
 	}
 }
-
-export default TreeList;

@@ -1,9 +1,9 @@
 // tslint:disable
 
 import * as React from "react";
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
-import DefStore from "sourcegraph/def/DefStore";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {DefStore} from "sourcegraph/def/DefStore";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {Heading, List, Loader} from "sourcegraph/components/index";
 import "sourcegraph/blob/BlobBackend";
@@ -30,7 +30,7 @@ type Props = {
 	refLocations: any,
 };
 
-class RepoRefsContainer extends Container<Props, any> {
+export class RepoRefsContainer extends Container<Props, any> {
 	static contextTypes = {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
@@ -127,5 +127,3 @@ class RepoRefsContainer extends Container<Props, any> {
 		);
 	}
 }
-
-export default RepoRefsContainer;

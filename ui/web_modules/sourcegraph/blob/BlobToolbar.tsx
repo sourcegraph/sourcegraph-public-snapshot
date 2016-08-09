@@ -2,10 +2,10 @@
 
 import * as React from "react";
 
-import Component from "sourcegraph/Component";
+import {Component} from "sourcegraph/Component";
 import * as s from "sourcegraph/blob/styles/Blob.css";
 
-class BlobToolbar extends Component<Props, any> {
+export class BlobToolbar extends Component<Props, any> {
 	reconcileState(state, props) {
 		state.repo = props.repo;
 		state.rev = props.rev || null;
@@ -29,5 +29,3 @@ type Props = {
 	commitID?: string,
 	path?: string,
 };
-
-export default BlobToolbar;

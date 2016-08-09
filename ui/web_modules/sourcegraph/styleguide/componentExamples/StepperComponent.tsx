@@ -5,7 +5,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Table, Code, Stepper} from "sourcegraph/components/index";
 import * as classNames from "classnames";
 
-class StepperComponent extends React.Component<{}, any> {
+export class StepperComponent extends React.Component<{}, any> {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -89,5 +89,3 @@ class StepperComponent extends React.Component<{}, any> {
 		);
 	}
 }
-
-export default StepperComponent;

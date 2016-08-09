@@ -6,12 +6,12 @@ import * as styles from "./styles/Repo.css";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import "sourcegraph/build/BuildBackend";
-import Dispatcher from "sourcegraph/Dispatcher";
-import httpStatusCode from "sourcegraph/util/httpStatusCode";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
 import {trimRepo} from "sourcegraph/repo/index";
-import context from "sourcegraph/app/context";
+import {context} from "sourcegraph/app/context";
 import {guessBranchName} from "sourcegraph/build/Build";
-import Header from "sourcegraph/components/Header";
+import {Header} from "sourcegraph/components/Header";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 function repoPageTitle(repo: any): string {
@@ -38,7 +38,7 @@ type Props = {
 	routes: any[],
 };
 
-class RepoMain extends React.Component<Props, any> {
+export class RepoMain extends React.Component<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
@@ -158,5 +158,3 @@ class RepoMain extends React.Component<Props, any> {
 		);
 	}
 }
-
-export default RepoMain;

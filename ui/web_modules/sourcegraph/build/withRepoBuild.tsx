@@ -1,16 +1,16 @@
 // tslint:disable
 
 import * as React from "react";
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as BuildActions from "sourcegraph/build/BuildActions";
-import BuildStore from "sourcegraph/build/BuildStore";
+import {BuildStore} from "sourcegraph/build/BuildStore";
 import "sourcegraph/build/BuildBackend";
 
 // withRepoBuild wraps Component and passes it a "build" property that holds
 // the Build object for the most recently created build for the commit,
 // if any.
-export default function withRepoBuild(Component) {
+export function withRepoBuild(Component) {
 	type Props = {
 		repoID?: number,
 		commitID?: string,

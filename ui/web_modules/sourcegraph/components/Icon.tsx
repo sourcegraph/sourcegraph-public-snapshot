@@ -9,7 +9,7 @@ type Props = {
 	icon: string, // See symbols directory
 };
 
-class Icon extends React.Component<Props, any> {
+export class Icon extends React.Component<Props, any> {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 	};
@@ -23,5 +23,3 @@ class Icon extends React.Component<Props, any> {
 		return <img src={`${(this.context as any).siteConfig.assetsRoot}/img/symbols/${this.props.icon}.svg`} width={this.props.width} height={this.props.height} className={this.props.className} />;
 	}
 }
-
-export default Icon;

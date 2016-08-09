@@ -1,9 +1,9 @@
-import Dispatcher from "sourcegraph/Dispatcher";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as UserActions from "sourcegraph/user/UserActions";
-import UserStore from "sourcegraph/user/UserStore";
+import {UserStore} from "sourcegraph/user/UserStore";
 import {checkStatus, defaultFetch} from "sourcegraph/util/xhr";
 
-class UserBackend {
+class UserBackendClass {
 	fetch: any;
 
 	constructor() {
@@ -177,6 +177,5 @@ class UserBackend {
 	}
 };
 
-let singleton = new UserBackend();
-Dispatcher.Backends.register(singleton.__onDispatch.bind(singleton));
-export default singleton;
+export const UserBackend = new UserBackendClass();
+Dispatcher.Backends.register(UserBackend.__onDispatch.bind(UserBackend));

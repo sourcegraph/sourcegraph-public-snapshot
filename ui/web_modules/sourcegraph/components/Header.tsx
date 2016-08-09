@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as styles from "./styles/header.css";
-import Loader from "./Loader";
+import {Loader} from "./Loader";
 
 type Props = {
 	title: string,
@@ -10,7 +10,7 @@ type Props = {
 	loading?: boolean,
 };
 
-class Header extends React.Component<Props, any> {
+export class Header extends React.Component<Props, any> {
 	render(): JSX.Element | null {
 		return (
 			<div className={styles.container}>
@@ -20,5 +20,3 @@ class Header extends React.Component<Props, any> {
 		);
 	}
 }
-
-export default Header;

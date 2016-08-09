@@ -3,17 +3,17 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
-import Component from "sourcegraph/Component";
+import {Component} from "sourcegraph/Component";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import BlobLine from "sourcegraph/blob/BlobLine";
-import BlobLineExpander from "sourcegraph/blob/BlobLineExpander";
+import {BlobLine} from "sourcegraph/blob/BlobLine";
+import {BlobLineExpander} from "sourcegraph/blob/BlobLineExpander";
 import {Range} from "sourcegraph/blob/BlobLineExpander";
-import Dispatcher from "sourcegraph/Dispatcher";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import debounce from "lodash.debounce";
-import fileLines from "sourcegraph/util/fileLines";
-import lineFromByte from "sourcegraph/blob/lineFromByte";
+import {fileLines} from "sourcegraph/util/fileLines";
+import {lineFromByte} from "sourcegraph/blob/lineFromByte";
 import {computeLineStartBytes} from "sourcegraph/blob/lineFromByte";
-import annotationsByLine from "sourcegraph/blob/annotationsByLine";
+import {annotationsByLine} from "sourcegraph/blob/annotationsByLine";
 import * as s from "sourcegraph/blob/styles/Blob.css";
 import {Def} from "sourcegraph/def/index";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -70,7 +70,7 @@ type Props = {
 	displayRanges?: any;
 };
 
-class Blob extends Component<Props, any> {
+export class Blob extends Component<Props, any> {
 	_isMounted: boolean;
 
 	static contextTypes = {
@@ -449,5 +449,3 @@ class Blob extends Component<Props, any> {
 		);
 	}
 }
-
-export default Blob;

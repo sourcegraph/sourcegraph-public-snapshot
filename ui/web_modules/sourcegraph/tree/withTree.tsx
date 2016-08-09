@@ -6,7 +6,7 @@ import * as React from "react";
 // in the URL route.
 //
 // If the path refers to a file, a redirect occurs. (TODO: not yet implemented.)
-export default function withTree(Component) {
+export function withTree(Component) {
 	type Props = {
 		repo: string,
 		rev?: string,

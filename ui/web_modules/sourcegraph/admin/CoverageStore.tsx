@@ -1,12 +1,12 @@
 // tslint:disable
 
-import Store from "sourcegraph/Store";
-import Dispatcher from "sourcegraph/Dispatcher";
-import deepFreeze from "sourcegraph/util/deepFreeze";
+import {Store} from "sourcegraph/Store";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {deepFreeze} from "sourcegraph/util/deepFreeze";
 import * as CoverageActions from "sourcegraph/admin/CoverageActions";
 import "sourcegraph/admin/CoverageBackend";
 
-export class CoverageStore extends Store<any> {
+class CoverageStoreClass extends Store<any> {
 	coverage: any;
 
 	constructor(dispatcher) {
@@ -36,4 +36,4 @@ export class CoverageStore extends Store<any> {
 	}
 }
 
-export default new CoverageStore(Dispatcher.Stores);
+export const CoverageStore = new CoverageStoreClass(Dispatcher.Stores);

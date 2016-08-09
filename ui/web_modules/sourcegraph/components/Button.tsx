@@ -3,10 +3,10 @@
 import * as React from "react";
 import * as classNames from "classnames";
 
-import Loader from "./Loader";
+import {Loader} from "./Loader";
 import * as styles from "./styles/button.css";
 
-function Button(props: {
+export function Button(props: {
 	block?: boolean, // display:inline_block by default; use block for full-width buttons
 	outline?: boolean, // solid by default
 	size?: string,
@@ -84,5 +84,3 @@ const sizeClasses = {
 	"large": styles.large,
 	"small": styles.small,
 };
-
-export default Button;

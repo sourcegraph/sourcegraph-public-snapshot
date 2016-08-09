@@ -1,7 +1,7 @@
 // tslint:disable
 
 import * as React from "react";
-import TreeList from "sourcegraph/tree/TreeList";
+import {TreeList} from "sourcegraph/tree/TreeList";
 import {urlToTree} from "sourcegraph/tree/routes";
 import {treeParam} from "sourcegraph/tree/index";
 import {trimRepo} from "sourcegraph/repo/index";
@@ -17,7 +17,7 @@ type Props = {
 	routeParams: any,
 };
 
-class TreeMain extends React.Component<Props, any> {
+export class TreeMain extends React.Component<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -43,5 +43,3 @@ class TreeMain extends React.Component<Props, any> {
 		);
 	}
 }
-
-export default TreeMain;

@@ -13,7 +13,7 @@ type Props = {
 	target?: number,
 }
 
-export default class CoverageGraph extends React.Component<Props, any> {
+export class CoverageGraph extends React.Component<Props, any> {
 	render(): JSX.Element | null {
 		return (
 			<LineChart width={600} height={300} data={this.props.data}>

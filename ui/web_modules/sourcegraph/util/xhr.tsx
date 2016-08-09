@@ -1,8 +1,8 @@
 import {btoa} from "abab";
 import "whatwg-fetch";
 
-import context from "sourcegraph/app/context";
-import UserStore from "sourcegraph/user/UserStore";
+import {context} from "sourcegraph/app/context";
+import {UserStore} from "sourcegraph/user/UserStore";
 
 // This file provides a common entrypoint to the fetch API.
 

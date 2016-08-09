@@ -1,7 +1,7 @@
 // tslint:disable
 
 import * as RepoActions from "sourcegraph/repo/RepoActions";
-import Dispatcher from "sourcegraph/Dispatcher";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 
 // updateRepoCloning updates the cloning status of a repository based on the response status code.
 // 200 sets it as "not cloning", and 202 sets it to "cloning in progress".

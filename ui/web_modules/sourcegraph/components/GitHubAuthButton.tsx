@@ -20,7 +20,7 @@ type Props = {
 	tabIndex?: string,
 };
 
-class GitHubAuthButton extends React.Component<Props, any> {
+export class GitHubAuthButton extends React.Component<Props, any> {
 	static contextTypes = {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
@@ -46,5 +46,3 @@ class GitHubAuthButton extends React.Component<Props, any> {
 		);
 	}
 }
-
-export default GitHubAuthButton;

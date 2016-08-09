@@ -3,10 +3,10 @@
 import * as React from "react";
 import * as styles from "./styles/GlobalSearchMain.css";
 import {queryFromStateOrURL} from "sourcegraph/search/routes";
-import GlobalSearch from "sourcegraph/search/GlobalSearch";
-import SearchSettings from "sourcegraph/search/SearchSettings";
+import {GlobalSearch} from "sourcegraph/search/GlobalSearch";
+import {SearchSettings} from "sourcegraph/search/SearchSettings";
 
-function GlobalSearchMain({location}: {location: HistoryModule.Location}) {
+export function GlobalSearchMain({location}: {location: HistoryModule.Location}) {
 	const q = queryFromStateOrURL(location) || "";
 	return (
 		<div>
@@ -15,5 +15,3 @@ function GlobalSearchMain({location}: {location: HistoryModule.Location}) {
 		</div>
 	);
 }
-
-export default GlobalSearchMain;

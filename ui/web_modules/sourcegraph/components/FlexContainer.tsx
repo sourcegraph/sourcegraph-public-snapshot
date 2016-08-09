@@ -14,7 +14,7 @@ type Props = {
 	children?: any,
 };
 
-class FlexContainer extends React.Component<Props, any> {
+export class FlexContainer extends React.Component<Props, any> {
 	static defaultProps = {
 		direction: "left_right",
 		wrap: false,
@@ -64,5 +64,3 @@ const contentClasses = {
 	"between": styles.content_between,
 	"stretch": styles.content_stretch,
 };
-
-export default FlexContainer;

@@ -1,6 +1,6 @@
 // tslint:disable
 
-import annotationsByLine from "sourcegraph/blob/annotationsByLine";
+import {annotationsByLine} from "sourcegraph/blob/annotationsByLine";
 import expect from "expect.js";
 
 function labels(annsByLine) {

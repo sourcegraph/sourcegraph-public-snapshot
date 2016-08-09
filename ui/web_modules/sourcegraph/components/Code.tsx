@@ -10,11 +10,9 @@ type Props = {
 	style?: any,
 };
 
-class Code extends React.Component<Props, any> {
+export class Code extends React.Component<Props, any> {
 	render(): JSX.Element | null {
 		const {className, children, style} = this.props;
 		return <span className={classNames(className, styles.code)} style={style}>{children}</span>;
 	}
 }
-
-export default Code;

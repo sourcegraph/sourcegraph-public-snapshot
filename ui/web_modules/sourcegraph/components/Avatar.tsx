@@ -6,7 +6,7 @@ import * as classNames from "classnames";
 
 const PLACEHOLDER_IMAGE = "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
 
-function Avatar({className, size, img}: {className?: any, size: any, img: any}) {
+export function Avatar({className, size, img}: {className?: any, size: any, img: any}) {
 	return (
 		<img className={classNames(className, sizeClasses[size] || styles.small)} src={img || PLACEHOLDER_IMAGE} />
 	);
@@ -23,5 +23,3 @@ const sizeClasses = {
 	"medium": styles.medium,
 	"large": styles.large,
 };
-
-export default Avatar;

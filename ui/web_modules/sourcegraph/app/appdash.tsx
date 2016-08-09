@@ -2,11 +2,11 @@
 
 import * as React from "react";
 import {Route} from "react-router";
-import Component from "sourcegraph/Component";
+import {Component} from "sourcegraph/Component";
 
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {getRouteName} from "./routePatterns";
-import context from "sourcegraph/app/context";
+import {context} from "sourcegraph/app/context";
 
 type Props = {
 	routes: ReactRouter.Route[];

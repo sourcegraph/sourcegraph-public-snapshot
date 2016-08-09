@@ -1,9 +1,9 @@
 // tslint:disable
 
-import autotest from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/autotest";
 
 import * as React from "react";
-import DashboardContainer from "sourcegraph/dashboard/DashboardContainer";
+import {DashboardContainer} from "sourcegraph/dashboard/DashboardContainer";
 import {withUserContext} from "sourcegraph/app/user";
 import testdataData from "sourcegraph/dashboard/testdata/DashboardContainer-data.json";
 

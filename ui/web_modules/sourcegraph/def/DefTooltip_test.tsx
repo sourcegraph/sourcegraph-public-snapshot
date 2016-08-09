@@ -1,10 +1,10 @@
 // tslint:disable
 
-import autotest from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/autotest";
 
 import * as React from "react";
 
-import DefTooltip from "sourcegraph/def/DefTooltip";
+import {DefTooltip} from "sourcegraph/def/DefTooltip";
 
 import testdataData from "sourcegraph/def/testdata/DefTooltip-data.json";
 

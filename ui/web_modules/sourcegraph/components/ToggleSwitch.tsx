@@ -8,7 +8,7 @@ type Props = {
 	onChange: (checked: boolean) => void,
 };
 
-class ToggleSwitch extends React.Component<Props, any> {
+export class ToggleSwitch extends React.Component<Props, any> {
 	static defaultProps = {
 		defaultChecked: false,
 	};
@@ -42,5 +42,3 @@ class ToggleSwitch extends React.Component<Props, any> {
 		);
 	}
 }
-
-export default ToggleSwitch;

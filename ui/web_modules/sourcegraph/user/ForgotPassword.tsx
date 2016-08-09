@@ -4,19 +4,19 @@ import * as React from "react";
 import Helmet from "react-helmet";
 import * as classNames from "classnames";
 
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Button, Input} from "sourcegraph/components/index";
 
 import * as UserActions from "sourcegraph/user/UserActions";
-import UserStore from "sourcegraph/user/UserStore";
+import {UserStore} from "sourcegraph/user/UserStore";
 
 import "sourcegraph/user/UserBackend"; // for side effects
-import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
+import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 
 // TODO: prevent mounting this component if user is logged in
-class ForgotPassword extends Container<{}, any> {
+class ForgotPasswordComp extends Container<{}, any> {
 	_emailInput: any;
 
 	constructor(props) {
@@ -68,4 +68,4 @@ class ForgotPassword extends Container<{}, any> {
 	}
 }
 
-export default redirectIfLoggedIn("/", ForgotPassword);
+export const ForgotPassword = redirectIfLoggedIn("/", ForgotPasswordComp);

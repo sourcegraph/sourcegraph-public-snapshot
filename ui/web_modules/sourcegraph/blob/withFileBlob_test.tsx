@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import expect from "expect.js";
-import withFileBlob from "sourcegraph/blob/withFileBlob";
+import {withFileBlob} from "sourcegraph/blob/withFileBlob";
 import {render} from "sourcegraph/util/renderTestUtils";
-import BlobStore from "sourcegraph/blob/BlobStore";
+import {BlobStore} from "sourcegraph/blob/BlobStore";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {rel as relPath} from "sourcegraph/app/routePatterns";
 

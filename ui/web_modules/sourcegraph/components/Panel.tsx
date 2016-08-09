@@ -13,7 +13,7 @@ type Props = {
 	hover?: boolean,
 };
 
-class Panel extends React.Component<Props, any> {
+export class Panel extends React.Component<Props, any> {
 	static defaultProps = {
 		hover: false,
 	};
@@ -62,5 +62,3 @@ function hoverClass(hoverLevel: string, hover: boolean): string {
 		return "";
 	}
 }
-
-export default Panel;

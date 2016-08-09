@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import {Route, RouterState} from "react-router";
-import Header from "sourcegraph/components/Header";
+import {Header} from "sourcegraph/components/Header";
 import {defaultFetch} from "sourcegraph/util/xhr";
 
 // The "/-/golang" route acts as a redirect. withChannelListener receives information through the websocket

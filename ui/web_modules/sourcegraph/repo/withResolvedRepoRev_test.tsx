@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import expect from "expect.js";
-import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
+import {withResolvedRepoRev} from "sourcegraph/repo/withResolvedRepoRev";
 import {render} from "sourcegraph/util/renderTestUtils";
-import RepoStore from "sourcegraph/repo/RepoStore";
+import {RepoStore} from "sourcegraph/repo/RepoStore";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 
 const C = withResolvedRepoRev((props) => null, true);

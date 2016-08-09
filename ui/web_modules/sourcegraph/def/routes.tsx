@@ -1,19 +1,19 @@
 // tslint:disable
 
-import urlTo from "sourcegraph/util/urlTo";
+import {urlTo} from "sourcegraph/util/urlTo";
 import {urlToTree} from "sourcegraph/tree/routes";
 import {rel} from "sourcegraph/app/routePatterns";
 import {defPath} from "sourcegraph/def/index";
 import {Route} from "react-router";
 import {Def} from "sourcegraph/def/index";
-import DefInfo from "sourcegraph/def/DefInfo";
-import DefNavContext from "sourcegraph/def/DefNavContext";
-import BlobLoader from "sourcegraph/blob/BlobLoader";
-import withLastSrclibDataVersion from "sourcegraph/blob/withLastSrclibDataVersion";
-import withDefAndRefLocations from "sourcegraph/def/withDefAndRefLocations";
-import blobWithDefBox from "sourcegraph/def/blobWithDefBox";
-import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
-import withDef from "sourcegraph/def/withDef";
+import {DefInfo} from "sourcegraph/def/DefInfo";
+import {DefNavContext} from "sourcegraph/def/DefNavContext";
+import {BlobLoader} from "sourcegraph/blob/BlobLoader";
+import {withLastSrclibDataVersion} from "sourcegraph/blob/withLastSrclibDataVersion";
+import {withDefAndRefLocations} from "sourcegraph/def/withDefAndRefLocations";
+import {blobWithDefBox} from "sourcegraph/def/blobWithDefBox";
+import {withResolvedRepoRev} from "sourcegraph/repo/withResolvedRepoRev";
+import {withDef} from "sourcegraph/def/withDef";
 
 let _defInfoComponents;
 let _defComponents;

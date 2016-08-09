@@ -1,18 +1,18 @@
 // tslint:disable
 
 import * as React from "react";
-import DefStore from "sourcegraph/def/DefStore";
+import {DefStore} from "sourcegraph/def/DefStore";
 import "sourcegraph/def/DefBackend";
 import * as DefActions from "sourcegraph/def/DefActions";
-import Dispatcher from "sourcegraph/Dispatcher";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Helper} from "sourcegraph/blob/BlobLoader";
-import Header from "sourcegraph/components/Header";
-import httpStatusCode from "sourcegraph/util/httpStatusCode";
+import {Header} from "sourcegraph/components/Header";
+import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
 import Helmet from "react-helmet";
 
 // withDefAndRefLocations fetches the def and ref locations for the
 // def specified in the properties.
-export default ({
+export const withDefAndRefLocations = ({
 	reconcileState(state, props) {
 		state.def = props.params ? props.params.splat[1] : null;
 		state.defObj = state.def && state.commitID ? DefStore.defs.get(state.repo, state.commitID, state.def) : null;

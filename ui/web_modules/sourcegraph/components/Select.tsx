@@ -20,7 +20,7 @@ type Props = {
 	defaultValue?: string,
 };
 
-class Select extends React.Component<Props, any> {
+export class Select extends React.Component<Props, any> {
 	static defaultProps = {
 		block: true,
 	};
@@ -50,5 +50,3 @@ class Select extends React.Component<Props, any> {
 		);
 	}
 }
-
-export default Select;

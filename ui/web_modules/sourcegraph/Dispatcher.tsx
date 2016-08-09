@@ -1,7 +1,7 @@
 import * as flux from "flux";
 
-import deepFreeze from "sourcegraph/util/deepFreeze";
-import testOnly from "sourcegraph/util/testOnly";
+import {deepFreeze} from "sourcegraph/util/deepFreeze";
+import {testOnly} from "sourcegraph/util/testOnly";
 
 export class Dispatcher extends flux.Dispatcher<any> {
 	_catch: boolean;
@@ -32,7 +32,5 @@ export class Dispatcher extends flux.Dispatcher<any> {
 	}
 }
 
-export default {
-	Stores: new Dispatcher(),
-	Backends: new Dispatcher(),
-};
+export const Stores = new Dispatcher();
+export const Backends = new Dispatcher();

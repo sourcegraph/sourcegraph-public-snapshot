@@ -8,7 +8,7 @@ type Props = {
 	main: JSX.Element,
 };
 
-function SettingsMain(props) {
+export function SettingsMain(props) {
 	return (
 		<div className={styles.container}>
 			<div className={styles.main}>
@@ -17,5 +17,3 @@ function SettingsMain(props) {
 		</div>
 	);
 }
-
-export default SettingsMain;

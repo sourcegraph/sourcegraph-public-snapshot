@@ -5,22 +5,22 @@ import {Link} from "react-router";
 import Helmet from "react-helmet";
 import * as classNames from "classnames";
 
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Button, Input} from "sourcegraph/components/index";
 
 import * as UserActions from "sourcegraph/user/UserActions";
-import UserStore from "sourcegraph/user/UserStore";
+import {UserStore} from "sourcegraph/user/UserStore";
 
 import "sourcegraph/user/UserBackend"; // for side effects
-import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
+import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 
 type Props = {
 	location?: any,
 };
 
-class ResetPassword extends Container<Props, any> {
+class ResetPasswordComp extends Container<Props, any> {
 	_passwordInput: any;
 	_confirmInput: any;
 	
@@ -93,4 +93,4 @@ class ResetPassword extends Container<Props, any> {
 	}
 }
 
-export default redirectIfLoggedIn("/", ResetPassword);
+export const ResetPassword = redirectIfLoggedIn("/", ResetPasswordComp);

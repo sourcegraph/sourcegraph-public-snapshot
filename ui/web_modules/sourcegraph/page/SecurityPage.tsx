@@ -6,7 +6,7 @@ import * as styles from "./Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import Helmet from "react-helmet";
 
-function SecurityPage(props: {}, {signedIn}) {
+export function SecurityPage(props: {}, {signedIn}) {
 	return (
 		<div>
 			<Helmet title="Security" />
@@ -133,5 +133,3 @@ function SecurityPage(props: {}, {signedIn}) {
 		</div>
 	);
 }
-
-export default SecurityPage;

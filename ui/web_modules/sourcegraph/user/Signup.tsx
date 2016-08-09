@@ -4,15 +4,15 @@ import * as React from "react";
 import Helmet from "react-helmet";
 import {Link} from "react-router";
 
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Button, Input, Heading} from "sourcegraph/components/index";
 
 import * as UserActions from "sourcegraph/user/UserActions";
-import UserStore from "sourcegraph/user/UserStore";
-import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
+import {UserStore} from "sourcegraph/user/UserStore";
+import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import "sourcegraph/user/UserBackend"; // for side effects
-import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
+import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 
 type SignupFormProps = {
@@ -144,7 +144,7 @@ export class SignupForm extends Container<SignupFormProps, any> {
 }
 let StyledSignupForm = SignupForm;
 
-function Signup(props: SignupProps, {router}) {
+function SignupComp(props: SignupProps, {router}) {
 	return (
 		<div className={styles.full_page}>
 			<Helmet title="Sign Up" />
@@ -157,8 +157,8 @@ function Signup(props: SignupProps, {router}) {
 type SignupProps = {
 	location: any,
 };
-(Signup as any).contextTypes = {
+(SignupComp as any).contextTypes = {
 	router: React.PropTypes.object.isRequired,
 };
 
-export default redirectIfLoggedIn("/", Signup);
+export const Signup = redirectIfLoggedIn("/", SignupComp);

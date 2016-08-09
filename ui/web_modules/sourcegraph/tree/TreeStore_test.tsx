@@ -2,7 +2,7 @@
 
 import expect from "expect.js";
 
-import TreeStore from "sourcegraph/tree/TreeStore";
+import {TreeStore} from "sourcegraph/tree/TreeStore";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 
 describe("TreeStore", () => {

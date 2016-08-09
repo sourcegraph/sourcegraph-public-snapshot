@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import Component from "sourcegraph/Component";
+import {Component} from "sourcegraph/Component";
 import * as styles from "sourcegraph/blob/styles/Blob.css";
 
 export type Range = [number, number];
@@ -13,7 +13,7 @@ type Props = {
 	onExpand: any,
 }
 
-class BlobLineExpander extends Component<Props, any> {
+export class BlobLineExpander extends Component<Props, any> {
 	constructor(props) {
 		super(props);
 		this._onClick = this._onClick.bind(this);
@@ -39,5 +39,3 @@ class BlobLineExpander extends Component<Props, any> {
 		);
 	}
 }
-
-export default BlobLineExpander;

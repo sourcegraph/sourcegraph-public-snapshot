@@ -1,6 +1,6 @@
 import * as React from "react";
 
-class Component<P, S> extends React.Component<P, S> {
+export class Component<P, S> extends React.Component<P, S> {
 	constructor(props: P) {
 		super(props);
 		this.state = {} as S;
@@ -63,5 +63,3 @@ class Component<P, S> extends React.Component<P, S> {
 		// override
 	}
 }
-
-export default Component;

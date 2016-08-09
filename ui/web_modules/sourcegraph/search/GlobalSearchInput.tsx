@@ -37,7 +37,7 @@ function positionCursorAtEndIfIconClicked(ev: MouseEvent) {
 	input.focus();
 }
 
-function GlobalSearchInput(props) {
+export function GlobalSearchInput(props) {
 	// Omit styles prop so we don't clobber Input's own style mapping.
 	const passProps = Object.assign({}, props, {className: undefined, styles: undefined}); // eslint-disable-line no-undefined
 
@@ -68,5 +68,3 @@ type Props = {
 	border?: boolean,
 	className?: string,
 };
-
-export default GlobalSearchInput;

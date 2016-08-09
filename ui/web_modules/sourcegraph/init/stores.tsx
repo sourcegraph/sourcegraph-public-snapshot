@@ -1,13 +1,13 @@
 // tslint:disable
 
-import BlobStore from "sourcegraph/blob/BlobStore";
-import DefStore from "sourcegraph/def/DefStore";
-import RepoStore from "sourcegraph/repo/RepoStore";
-import TreeStore from "sourcegraph/tree/TreeStore";
-import SearchStore from "sourcegraph/search/SearchStore";
-import BuildStore from "sourcegraph/build/BuildStore";
-import CoverageStore from "sourcegraph/admin/CoverageStore";
-import UserStore from "sourcegraph/user/UserStore";
+import {BlobStore} from "sourcegraph/blob/BlobStore";
+import {DefStore} from "sourcegraph/def/DefStore";
+import {RepoStore} from "sourcegraph/repo/RepoStore";
+import {TreeStore} from "sourcegraph/tree/TreeStore";
+import {SearchStore} from "sourcegraph/search/SearchStore";
+import {BuildStore} from "sourcegraph/build/BuildStore";
+import {CoverageStore} from "sourcegraph/admin/CoverageStore";
+import {UserStore} from "sourcegraph/user/UserStore";
 
 // allStores is a function because there is a cyclic dependency between
 // UserStore and this module, so UserStore is null at eval-time.

@@ -2,9 +2,9 @@
 
 import * as React from "react";
 
-import RepoLink from "sourcegraph/components/RepoLink";
+import {RepoLink} from "sourcegraph/components/RepoLink";
 import {Label} from "sourcegraph/components/index";
-import RevSwitcherContainer from "sourcegraph/repo/RevSwitcherContainer";
+import {RevSwitcherContainer} from "sourcegraph/repo/RevSwitcherContainer";
 import * as styles from "./styles/Repo.css";
 
 type Props = {
@@ -21,7 +21,7 @@ type Props = {
 	routeParams: any,
 };
 
-class NavContext extends React.Component<Props, any> {
+export class NavContext extends React.Component<Props, any> {
 	_isLanguageUnsupported(): boolean {
 		if (!this.props.inventory || !this.props.inventory.Languages || !this.props.inventory.PrimaryProgrammingLanguage) return false; // innocent until proven guilty
 		return this.props.inventory.Languages.filter((lang) => ["Go", "Java", "JavaScript", "Shell"].includes(lang.Name)).length === 0;
@@ -51,5 +51,3 @@ class NavContext extends React.Component<Props, any> {
 		);
 	}
 }
-
-export default NavContext;
