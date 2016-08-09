@@ -4,6 +4,10 @@ import * as React from "react";
 import * as styles from "./styles/Settings.css";
 import {Panel} from "sourcegraph/components/index";
 
+type Props = {
+	main: JSX.Element,
+};
+
 function SettingsMain(props) {
 	return (
 		<div className={styles.container}>
@@ -13,9 +17,5 @@ function SettingsMain(props) {
 		</div>
 	);
 }
-
-(SettingsMain as any).propTypes = {
-	main: React.PropTypes.element,
-};
 
 export default SettingsMain;

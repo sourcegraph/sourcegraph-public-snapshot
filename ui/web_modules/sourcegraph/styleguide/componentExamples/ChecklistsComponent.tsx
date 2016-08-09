@@ -5,7 +5,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code, ChecklistItem} from "sourcegraph/components/index";
 import * as classNames from "classnames";
 
-class ChecklistsComponent extends React.Component<any, any> {
+class ChecklistsComponent extends React.Component<{}, any> {
 	constructor(props) {
 		super(props);
 		this.state = {

@@ -21,15 +21,15 @@ export const routes = [
 ];
 
 export default function desktopRouter(Component) {
-	class DesktopRouter extends React.Component<any, any> {
+	type Props = {
+		routes: any[],
+	};
+
+	class DesktopRouter extends React.Component<Props, any> {
 		static contextTypes = {
 			router: React.PropTypes.object.isRequired,
 			user: React.PropTypes.object,
 			signedIn: React.PropTypes.bool.isRequired,
-		};
-
-		static propTypes = {
-			routes: React.PropTypes.array,
 		};
 
 		render(): JSX.Element | null {

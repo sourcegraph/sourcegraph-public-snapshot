@@ -14,18 +14,18 @@ import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 
-export class LoginForm extends Container<any, any> {
+type Props = {
+	onLoginSuccess: () => void,
+	location: any,
+
+	// returnTo is where the user should be redirected after an OAuth login flow,
+	// either a URL path or a Location object.
+	returnTo: string | HistoryModule.Location,
+};
+
+export class LoginForm extends Container<Props, any> {
 	_loginInput: any;
 	_passwordInput: any;
-
-	static propTypes = {
-		onLoginSuccess: React.PropTypes.func.isRequired,
-		location: React.PropTypes.object.isRequired,
-
-		// returnTo is where the user should be redirected after an OAuth login flow,
-		// either a URL path or a Location object.
-		returnTo: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.object]).isRequired,
-	};
 
 	constructor(props) {
 		super(props);
@@ -118,7 +118,7 @@ export class LoginForm extends Container<any, any> {
 let StyledLoginForm = LoginForm;
 
 // Login is the standalone login page.
-function Login(props, {router}) {
+function Login(props: any, {router}) {
 	return (
 		<div className={styles.full_page}>
 			<Helmet title="Sign In" />

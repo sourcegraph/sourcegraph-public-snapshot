@@ -7,21 +7,21 @@ import {Label} from "sourcegraph/components/index";
 import RevSwitcherContainer from "sourcegraph/repo/RevSwitcherContainer";
 import * as styles from "./styles/Repo.css";
 
-class NavContext extends React.Component<any, any> {
-	static propTypes = {
-		repo: React.PropTypes.string.isRequired,
-		rev: React.PropTypes.string,
-		commitID: React.PropTypes.string,
-		inventory: React.PropTypes.object,
-		repoNavContext: React.PropTypes.element,
-		repoObj: React.PropTypes.object,
-		isCloning: React.PropTypes.bool.isRequired,
+type Props = {
+	repo: string,
+	rev?: string,
+	commitID?: string,
+	inventory?: any,
+	repoNavContext: JSX.Element,
+	repoObj?: any,
+	isCloning: boolean,
 
-		// to pass to RevSwitcherContainer so it can construct URLs
-		routes: React.PropTypes.array.isRequired,
-		routeParams: React.PropTypes.object.isRequired,
-	};
+	// to pass to RevSwitcherContainer so it can construct URLs
+	routes: any[],
+	routeParams: any,
+};
 
+class NavContext extends React.Component<Props, any> {
 	_isLanguageUnsupported(): boolean {
 		if (!this.props.inventory || !this.props.inventory.Languages || !this.props.inventory.PrimaryProgrammingLanguage) return false; // innocent until proven guilty
 		return this.props.inventory.Languages.filter((lang) => ["Go", "Java", "JavaScript", "Shell"].includes(lang.Name)).length === 0;

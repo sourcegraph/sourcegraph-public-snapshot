@@ -2,12 +2,12 @@
 
 import * as React from "react";
 
-class Repository extends React.Component<any, any> {
-	static propTypes = {
-		className: React.PropTypes.string,
-		width: React.PropTypes.number, // appended by "px"
-	};
+type Props = {
+	className?: string,
+	width?: number, // appended by "px"
+};
 
+class Repository extends React.Component<Props, any> {
 	static defaultProps = {
 		width: 16,
 	};

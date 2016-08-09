@@ -19,7 +19,7 @@ import {
 	ListComponent,
 } from "./componentExamples/index";
 
-class ComponentsContainer extends React.Component<any, any> {
+class ComponentsContainer extends React.Component<{}, any> {
 	render(): JSX.Element | null {
 		return (
 			<div>

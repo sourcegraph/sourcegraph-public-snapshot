@@ -15,15 +15,14 @@ import * as classNames from "classnames";
 
 type OnChangeListener = () => void;
 
-class BetaInterestForm extends Container<any, any> {
+type Props = {
+	onSubmit?: () => void,
+	className?: string,
+	language?: string,
+	loginReturnTo?: string,
+}
 
-	static propTypes = {
-		onSubmit: React.PropTypes.func,
-		className: React.PropTypes.string,
-		language: React.PropTypes.string,
-		loginReturnTo: React.PropTypes.string,
-	}
-
+class BetaInterestForm extends Container<Props, any> {
 	static contextTypes = {
 		user: React.PropTypes.object,
 		authInfo: React.PropTypes.object,

@@ -17,38 +17,38 @@ import {urlToBlob} from "sourcegraph/blob/routes";
 
 import * as styles from "./styles/Coverage.css";
 
-class CoverageDrilldown extends Container<any, any> {
-	buildsQuery: any;
+type Props = {
+	language: string,
+	location: any,
+	refScore: (a: any) => number,
+	defScore: (a: any) => number,
+	data: {
+		Day: string,
+		Refs: number,
+		Defs: number,
+		Sources: {
+			Repo: string,
+			Rev?: string,
+			Language: string,
+			SrclibVersion?: string,
+			Summary: {
+				Idents: number,
+				Refs: number,
+				Defs: number,
+			},
+			Files: {
+				Path: string,
+				Idents: number,
+				Refs: number,
+				Defs: number,
+			}[],
+		}[],
+	}[],
+	onDismiss: () => void,
+};
 
-	static propTypes = {
-		language: React.PropTypes.string.isRequired,
-		location: React.PropTypes.object.isRequired,
-		refScore: React.PropTypes.func.isRequired,
-		defScore: React.PropTypes.func.isRequired,
-		data: React.PropTypes.arrayOf(React.PropTypes.shape({
-			Day: React.PropTypes.string.isRequired,
-			Refs: React.PropTypes.number.isRequired,
-			Defs: React.PropTypes.number.isRequired,
-			Sources: React.PropTypes.arrayOf(React.PropTypes.shape({
-				Repo: React.PropTypes.string.isRequired,
-				Rev: React.PropTypes.string,
-				Language: React.PropTypes.string.isRequired,
-				SrclibVersion: React.PropTypes.string,
-				Summary: React.PropTypes.shape({
-					Idents: React.PropTypes.number.isRequired,
-					Refs: React.PropTypes.number.isRequired,
-					Defs: React.PropTypes.number.isRequired,
-				}),
-				Files: React.PropTypes.arrayOf(React.PropTypes.shape({
-					Path: React.PropTypes.string.isRequired,
-					Idents: React.PropTypes.number.isRequired,
-					Refs: React.PropTypes.number.isRequired,
-					Defs: React.PropTypes.number.isRequired,
-				})),
-			})).isRequired,
-		})).isRequired,
-		onDismiss: React.PropTypes.func.isRequired,
-	};
+class CoverageDrilldown extends Container<Props, any> {
+	buildsQuery: any;
 
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
@@ -216,7 +216,7 @@ class CoverageDrilldown extends Container<any, any> {
 											<Label color={buildColor(builds[0])} className={styles.build_label}>{buildStatus(builds[0])}</Label>
 											</Link>
 										}
-										<Link to={urlToRepoRev(source.Repo, source.Rev)}>{source.Repo}</Link>
+										<Link to={urlToRepoRev(source.Repo, source.Rev || null)}>{source.Repo}</Link>
 										{this.state.idx === this.props.data.length - 1 &&
 											<div className={styles.repo_drilldown_icon} size="small" outline={true} onClick={() => this._drilldown(source)}><MagnifyingGlassIcon /></div>
 										}

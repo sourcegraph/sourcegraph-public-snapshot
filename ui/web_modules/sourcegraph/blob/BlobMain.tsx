@@ -24,30 +24,24 @@ import Header from "sourcegraph/components/Header";
 import {createLineFromByteFunc} from "sourcegraph/blob/lineFromByte";
 import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 
-export default class BlobMain extends Container<any, any> {
-	static propTypes = {
-		repo: React.PropTypes.string.isRequired,
-		rev: React.PropTypes.string,
-		commitID: React.PropTypes.string,
-		path: React.PropTypes.string,
-		blob: React.PropTypes.object,
-		anns: React.PropTypes.object,
-		skipAnns: React.PropTypes.bool,
-		startLine: React.PropTypes.number,
-		startCol: React.PropTypes.number,
-		startByte: React.PropTypes.number,
-		endLine: React.PropTypes.number,
-		endCol: React.PropTypes.number,
-		endByte: React.PropTypes.number,
-		location: React.PropTypes.object,
+type Props = {
+	repo: string,
+	rev?: string,
+	commitID?: string,
+	path?: string,
+	blob?: any,
+	anns?: any,
+	skipAnns?: boolean,
+	startLine?: number,
+	startCol?: number,
+	startByte?: number,
+	endLine?: number,
+	endCol?: number,
+	endByte?: number,
+	location?: any,
+};
 
-		// children are the boxes shown in the blob margin.
-		children: React.PropTypes.oneOfType([
-			React.PropTypes.arrayOf(React.PropTypes.element),
-			React.PropTypes.element,
-		]),
-	};
-
+export default class BlobMain extends Container<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -169,7 +163,7 @@ export default class BlobMain extends Container<any, any> {
 						repo={this.state.repo}
 						rev={this.state.rev}
 						commitID={this.state.commitID}
-						ref={(c) => { this.setState({selectionStartLine: (c && c.refs && c.refs.startLineComponent) ? c.refs.startLineComponent : null}); }}
+						ref={(c) => { this.setState({selectionStartLine: (c && c.refs && c.refs["startLineComponent"]) ? c.refs["startLineComponent"] : null}); }}
 						path={this.state.path}
 						contents={this.state.blob.ContentsString}
 						annotations={this.state.anns}

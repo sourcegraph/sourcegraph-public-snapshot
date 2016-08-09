@@ -87,7 +87,7 @@ declare namespace __React {
 
     // Should be Array<ReactNode> but type aliases cannot be recursive
     type ReactFragment = {} | Array<ReactChild | any[] | boolean>;
-    type ReactNode = ReactChild | ReactFragment | boolean;
+    type ReactNode = ReactChild | ReactFragment | boolean | null | undefined;
 
     //
     // Top Level API

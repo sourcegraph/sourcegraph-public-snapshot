@@ -18,8 +18,7 @@ describe("Repos", () => {
 		}];
 		autotest(testdataData, "sourcegraph/user/settings/testdata/Repos-data.json",
 			React.createElement(withUserContext(<Repos
-				repos={repos}
-				linkGitHubURL={""} />)),
+				repos={repos} />)),
 			{signedIn: false},
 		);
 	});

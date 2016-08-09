@@ -1,8 +1,7 @@
-export type LanguageID = "golang" | "java" | "python" | "javascript";
-export const allLangs: Array<LanguageID> = ["golang", "java", "python", "javascript"];
+export const allLangs: Array<string> = ["golang", "java", "python", "javascript"];
 
-export const supportedLangs: Array<LanguageID> = ["golang", "java"];
-export const langIsSupported = (lang: LanguageID) => supportedLangs.includes(lang);
+export const supportedLangs: Array<string> = ["golang", "java"];
+export const langIsSupported = (lang: string) => supportedLangs.includes(lang);
 
 const names: {[key: string]: string} = {
 	golang: "Go",
@@ -10,4 +9,4 @@ const names: {[key: string]: string} = {
 	python: "Python",
 	javascript: "JavaScript",
 };
-export const langName = (lang: LanguageID) => names[lang];
+export const langName = (lang: string) => names[lang];

@@ -5,7 +5,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Table, Code, List} from "sourcegraph/components/index";
 import * as classNames from "classnames";
 
-class ListComponent extends React.Component<any, any> {
+class ListComponent extends React.Component<{}, any> {
 
 	render(): JSX.Element | null {
 		return (

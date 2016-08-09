@@ -15,15 +15,15 @@ import Helmet from "react-helmet";
 // withDef fetches the def specified in the params. It also fetches
 // the def stored in DefStore.highlightedDef.
 export default function withDef(Component) {
-	class WithDef extends Container<any, any> {
-		static propTypes = {
-			repo: React.PropTypes.string.isRequired,
-			rev: React.PropTypes.string,
-			params: React.PropTypes.object.isRequired,
-			isCloning: React.PropTypes.bool,
-			def: React.PropTypes.string,
-		};
+	type Props = {
+		repo: string,
+		rev?: string,
+		params: any,
+		isCloning?: boolean,
+		def?: string,
+	};
 
+	class WithDef extends Container<Props, any> {
 		stores() { return [DefStore, RepoStore]; }
 
 		reconcileState(state, props) {

@@ -4,17 +4,17 @@ import * as React from "react";
 import * as styles from "sourcegraph/components/styles/flexContainer.css";
 import * as classNames from "classnames";
 
-class FlexContainer extends React.Component<any, any> {
-	static propTypes = {
-		direction: React.PropTypes.string, // left_right, right_left, top_bottom, bottom_top
-		wrap: React.PropTypes.bool,
-		justify: React.PropTypes.string, // start, end, center, between, around
-		items: React.PropTypes.string, // start, end, center, baseline, stretch
-		content: React.PropTypes.string, // start, end, center, between, stretch
-		className: React.PropTypes.string,
-		children: React.PropTypes.any,
-	};
+type Props = {
+	direction?: string, // left_right, right_left, top_bottom, bottom_top
+	wrap?: boolean,
+	justify?: string, // start, end, center, between, around
+	items?: string, // start, end, center, baseline, stretch
+	content?: string, // start, end, center, between, stretch
+	className?: string,
+	children?: any,
+};
 
+class FlexContainer extends React.Component<Props, any> {
 	static defaultProps = {
 		direction: "left_right",
 		wrap: false,
@@ -24,7 +24,7 @@ class FlexContainer extends React.Component<any, any> {
 	};
 
 	render(): JSX.Element | null {
-		const {direction, wrap, justify, items, content, className, children} = this.props;
+		const {direction = "left_right", wrap, justify = "start", items = "stretch", content = "stretch", className, children} = this.props;
 
 		return (
 			<div className={classNames(styles.flex, directionClasses[direction], justifyClasses[justify], itemsClasses[items], contentClasses[content], wrap ? styles.wrap : styles.nowrap, className)}>

@@ -5,11 +5,11 @@ import * as styles from "./styles/Integrations.css";
 import Integrations from "./Integrations";
 import "sourcegraph/user/UserBackend"; // for side effects
 
-class IntegrationsContainer extends React.Component<any, any> {
-	static propTypes = {
-		location: React.PropTypes.object,
-	};
+type Props = {
+	location?: any,
+};
 
+class IntegrationsContainer extends React.Component<Props, any> {
 	reconcileState(state, props, context) {
 		Object.assign(state, props);
 	}

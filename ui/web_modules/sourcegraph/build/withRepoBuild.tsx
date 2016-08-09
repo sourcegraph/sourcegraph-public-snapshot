@@ -11,12 +11,12 @@ import "sourcegraph/build/BuildBackend";
 // the Build object for the most recently created build for the commit,
 // if any.
 export default function withRepoBuild(Component) {
-	class WithRepoBuild extends Container<any, any> {
-		static propTypes = {
-			repoID: React.PropTypes.number,
-			commitID: React.PropTypes.string,
-		};
+	type Props = {
+		repoID?: number,
+		commitID?: string,
+	};
 
+	class WithRepoBuild extends Container<Props, any> {
 		stores() { return [BuildStore]; }
 
 		reconcileState(state, props) {

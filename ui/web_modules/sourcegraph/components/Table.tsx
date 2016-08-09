@@ -4,14 +4,14 @@ import * as React from "react";
 import * as styles from "./styles/table.css";
 import * as classNames from "classnames";
 
-class Table extends React.Component<any, any> {
-	static propTypes = {
-		className: React.PropTypes.string,
-		children: React.PropTypes.any,
-		bordered: React.PropTypes.bool,
-		style: React.PropTypes.object,
-	};
-	
+type Props = {
+	className?: string,
+	children?: any,
+	bordered?: boolean,
+	style?: any,
+};
+
+class Table extends React.Component<Props, any> {
 	render(): JSX.Element | null {
 		const {className, children, bordered, style} = this.props;
 

@@ -35,21 +35,21 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 
 // Number of characters of the Docstring to show before showing the "collapse" options.
 const DESCRIPTION_CHAR_CUTOFF = 500;
-//
-class DefInfo extends Container<any, any> {
+
+type Props = {
+	repo?: string,
+	repoObj?: any,
+	def: string,
+	commitID?: string,
+	rev?: string,
+	defObj?: any,
+};
+
+class DefInfo extends Container<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 		signedIn: React.PropTypes.bool.isRequired,
-	};
-
-	static propTypes = {
-		repo: React.PropTypes.string,
-		repoObj: React.PropTypes.object,
-		def: React.PropTypes.string.isRequired,
-		commitID: React.PropTypes.string,
-		rev: React.PropTypes.string,
-		defObj: React.PropTypes.object,
 	};
 
 	constructor(props) {
@@ -263,19 +263,16 @@ class DefInfo extends Container<any, any> {
 										{defLine &&
 											<BlobLine
 												clickEventLabel="DefTitleTokenClicked"
-												ref={null}
 												repo={repo}
 												rev={rev}
 												commitID={defCommitID}
 												path={defObj.Path}
-												lineNumber={null}
 												showLineNumber={false}
 												startByte={defLine.startByte}
 												contents={defLine.contents}
 												textSize="deftitle"
 												lineContentClassName={blobStyles.defTitleLineContent}
 												annotations={defLine.anns}
-												selected={null}
 												highlightedDef={null}
 												highlightedDefObj={null}
 												activeDef={null}

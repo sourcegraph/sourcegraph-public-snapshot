@@ -8,9 +8,24 @@ import "sourcegraph/tree/TreeBackend";
 import TreeStore from "sourcegraph/tree/TreeStore";
 import RevSwitcher from "sourcegraph/repo/RevSwitcher";
 
+type Props = {
+	repo: string,
+	rev?: string,
+	commitID: string,
+	repoObj?: any,
+	isCloning: boolean,
+
+	// srclibDataVersions is TreeStore.srclibDataVersions.
+	srclibDataVersions?: any,
+
+	// to construct URLs
+	routes: any[],
+	routeParams: any,
+};
+
 // RevSwitcherContainer is for standalone RevSwitchers that need to
 // be able to respond to changes in RepoStore independently.
-class RevSwitcherContainer extends Container<any, any> {
+class RevSwitcherContainer extends Container<Props, any> {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.branches = RepoStore.branches;
@@ -21,21 +36,14 @@ class RevSwitcherContainer extends Container<any, any> {
 	stores() { return [RepoStore, TreeStore]; }
 
 	render(): JSX.Element | null {
-		let childProps = this.props;
-		delete childProps.repoStore;
-		delete childProps.treeStore;
 		return (
 			<RevSwitcher
 				branches={this.state.branches}
 				tags={this.state.tags}
 				srclibDataVersions={this.state.srclibDataVersions}
-				{...childProps} />
+				{...this.props} />
 			);
 	}
 }
-
-(RevSwitcherContainer as any).propTypes = {
-	// All of the same properties as RevSwitcher, minus branches and tags.
-};
 
 export default RevSwitcherContainer;

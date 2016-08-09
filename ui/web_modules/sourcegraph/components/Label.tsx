@@ -5,18 +5,18 @@ import * as classNames from "classnames";
 
 import * as styles from "./styles/label.css";
 
-class Label extends React.Component<any, any> {
-	static propTypes = {
-		className: React.PropTypes.string,
-		style: React.PropTypes.object,
-		color: React.PropTypes.string,
-		children: React.PropTypes.any,
-	};
+type Props = {
+	className?: string,
+	style?: any,
+	color?: string,
+	children?: any,
+};
 
+class Label extends React.Component<Props, any> {
 	render(): JSX.Element | null {
 		return (
 			<span className={this.props.className} style={this.props.style}>
-				<span className={colorClasses[this.props.color] || styles.normal}>
+				<span className={colorClasses[this.props.color || ""] || styles.normal}>
 					{this.props.children}
 				</span>
 			</span>

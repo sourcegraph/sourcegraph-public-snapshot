@@ -11,7 +11,7 @@ function GlobalSearchMain({location}: {location: HistoryModule.Location}) {
 	return (
 		<div>
 			<SearchSettings className={styles.search_settings} innerClassName={styles.search_settings_inner} location={location} />
-			<GlobalSearch query={q} location={location} className={styles.results} resultClassName={styles.result} />
+			<GlobalSearch repo={null} query={q} location={location} className={styles.results} resultClassName={styles.result} />
 		</div>
 	);
 }

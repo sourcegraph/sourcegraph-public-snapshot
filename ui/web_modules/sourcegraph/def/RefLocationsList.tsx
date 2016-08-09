@@ -12,20 +12,20 @@ import {trimRepo} from "sourcegraph/repo/index";
 import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-class RefLocationsList extends React.Component<any, any> {
-	static propTypes = {
-		def: React.PropTypes.object.isRequired,
-		refLocations: React.PropTypes.object,
-		showMax: React.PropTypes.number,
+type Props = {
+	def: any,
+	refLocations?: any,
+	showMax?: number,
 
-		// Current repo and path info, so that they can be highlighted.
-		repo: React.PropTypes.string.isRequired,
-		rev: React.PropTypes.string,
-		path: React.PropTypes.string,
+	// Current repo and path info, so that they can be highlighted.
+	repo: string,
+	rev?: string,
+	path?: string,
 
-		location: React.PropTypes.object.isRequired,
-	};
+	location: any,
+};
 
+class RefLocationsList extends React.Component<Props, any> {
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,
 		githubToken: React.PropTypes.object,

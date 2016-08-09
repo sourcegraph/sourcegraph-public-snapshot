@@ -15,9 +15,7 @@ describe("DefPopup", () => {
 	it("should render definition data", () => {
 		autotest(testdataData, "sourcegraph/def/testdata/DefPopup-data.json",
 			<DefPopup
-				def={{Repo: "r", CommitID: "c", FmtStrings: fmtStrings, DocHTML: "someDoc"}}
-				examples={{test: "examples"}}
-				highlightedDef="otherURL" />,
+				def={{Repo: "r", CommitID: "c", FmtStrings: fmtStrings, DocHTML: "someDoc"}} />,
 				{features: {}},
 		);
 	});
@@ -25,9 +23,7 @@ describe("DefPopup", () => {
 	it("should render 'not available'", () => {
 		autotest(testdataNotAvailable, "sourcegraph/def/testdata/DefPopup-notAvailable.json",
 			<DefPopup
-				def={{Repo: "r", CommitID: "c", FmtStrings: fmtStrings}}
-				examples={{test: "examples"}}
-				highlightedDef={null} />,
+				def={{Repo: "r", CommitID: "c", FmtStrings: fmtStrings}} />,
 				{features: {}},
 		);
 	});

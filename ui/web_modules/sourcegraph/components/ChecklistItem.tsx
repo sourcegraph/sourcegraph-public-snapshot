@@ -7,15 +7,15 @@ import Icon from "./Icon";
 import Button from "./Button";
 import * as classNames from "classnames";
 
-class ChecklistItem extends React.Component<any, any> {
-	static propTypes = {
-		className: React.PropTypes.string,
-		children: React.PropTypes.any,
-		complete: React.PropTypes.bool,
-		actionText: React.PropTypes.string, // Button text
-		actionOnClick: React.PropTypes.func,
-	};
+type Props = {
+	className?: string,
+	children?: any,
+	complete?: boolean,
+	actionText?: string, // Button text
+	actionOnClick?: () => void,
+};
 
+class ChecklistItem extends React.Component<Props, any> {
 	render(): JSX.Element | null {
 		const {className, children, complete, actionText, actionOnClick} = this.props;
 		return (

@@ -8,7 +8,7 @@ export default function redirectForUnauthedUser(url: Location | string, Componen
 	class RedirectForUnauthedUser extends React.Component<any, any> {
 		static contextTypes = {
 			signedIn: React.PropTypes.bool.isRequired,
-			router: React.PropTypes.object,
+			router: React.PropTypes.object.isRequired,
 		};
 
 		componentWillMount() {

@@ -7,7 +7,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "./styles/StyleguideContainer.css";
 import ComponentsContainer from "./ComponentsContainer";
 
-class StyleguideContainer extends React.Component<any, any> {
+class StyleguideContainer extends React.Component<{}, any> {
 
 	render(): JSX.Element | null {
 		return (

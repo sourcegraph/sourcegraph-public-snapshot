@@ -3,12 +3,12 @@
 import * as React from "react";
 import * as styles from "./styles/toggleSwitch.css";
 
-class ToggleSwitch extends React.Component<any, any> {
-	static propTypes = {
-		defaultChecked: React.PropTypes.bool,
-		onChange: React.PropTypes.func,
-	};
+type Props = {
+	defaultChecked?: boolean,
+	onChange: (checked: boolean) => void,
+};
 
+class ToggleSwitch extends React.Component<Props, any> {
 	static defaultProps = {
 		defaultChecked: false,
 	};

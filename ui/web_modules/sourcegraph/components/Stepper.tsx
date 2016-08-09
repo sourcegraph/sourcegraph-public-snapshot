@@ -9,15 +9,15 @@ import * as classNames from "classnames";
 // @TODO(chexee): Checks are a little off center in Firefox
 // @TODO(chexee): animation between states
 
-class Stepper extends React.Component<any, any> {
-	static propTypes = {
-		className: React.PropTypes.string,
-		children: React.PropTypes.any,
-		steps: React.PropTypes.array, // Array of step labels. Pass in null for no labels.
-		stepsComplete: React.PropTypes.number, // Number of steps complete
-		color: React.PropTypes.string, // "purple", "blue", "green", "orange"
-	};
+type Props = {
+	className?: string,
+	children?: any,
+	steps: any[], // Array of step labels. Pass in null for no labels.
+	stepsComplete?: number, // Number of steps complete
+	color?: string, // "purple", "blue", "green", "orange"
+};
 
+class Stepper extends React.Component<Props, any> {
 	static defaultProps = {
 		steps: [null, null, null],
 		stepsComplete: 0,
@@ -29,8 +29,8 @@ class Stepper extends React.Component<any, any> {
 		return steps.map((step, i) => {
 			if (i < stepsComplete) {
 				return (
-					<span className={classNames(styles.step, styles.step_complete, lineColorClasses[color] || styles.line_green)} key={i}>
-						<span className={classNames(styles.step_node_complete, nodeColorClasses[color] || styles.node_green)}>
+					<span className={classNames(styles.step, styles.step_complete, lineColorClasses[color || "green"] || styles.line_green)} key={i}>
+						<span className={classNames(styles.step_node_complete, nodeColorClasses[color || "green"] || styles.node_green)}>
 							<Icon icon="check" width="16px" className={styles.check} />
 						</span>
 						<span className={styles.step_text}>{step}</span>

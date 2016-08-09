@@ -4,9 +4,14 @@ import * as React from "react";
 
 import Component from "sourcegraph/Component";
 
-class Collapsible extends Component<any, any> {
+class Collapsible extends Component<Props, any> {
 	constructor(props) {
 		super(props);
+
+		if (props.children.length !== 2) {
+			throw new Error("Collapsible must be constructed with exactly two children.");
+		}
+
 		this.state = {
 			shown: !props.collapsed,
 		};
@@ -34,17 +39,9 @@ class Collapsible extends Component<any, any> {
 	}
 }
 
-(Collapsible as any).propTypes = {
-	children: (props, propName, componentName) => {
-		let v = React.PropTypes.arrayOf(React.PropTypes.element).isRequired(props, propName, componentName);
-		if (v) return v;
-		if (props.children.length !== 2) {
-			return new Error("Collapsible must be constructed with exactly two children.");
-		}
-		return null;
-	},
-	collapsed: React.PropTypes.bool,
-	onToggle: React.PropTypes.func,
+type Props = {
+	collapsed?: boolean,
+	onToggle?: () => void,
 };
 
 export default Collapsible;

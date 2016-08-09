@@ -21,6 +21,10 @@ export type Helper = {
 	render?: (state: any) => JSX.Element;
 };
 
+type Props = {
+	route: any,
+};
+
 // blobLoader performs the portion of the work of loading a blob that differs based
 // on what is originally being loaded. E.g., if we're loading a def, then the blob
 // we show is the file in which the def is defined, so we must first fetch the def.
@@ -47,11 +51,7 @@ export type Helper = {
 // routes file. The 3rd arg to the getComponents callback is defined (by us; it's not a
 // standard react-router thing) to be the helpers used by the BlobLoader.
 function blobLoader(Component) {
-	class BlobLoader extends Container<any, any> {
-		static propTypes = {
-			route: React.PropTypes.object.isRequired,
-		};
-
+	class BlobLoader extends Container<Props, any> {
 		_helpers: Array<Helper> | null;
 
 		constructor(props) {

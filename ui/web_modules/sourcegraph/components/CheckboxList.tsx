@@ -4,16 +4,16 @@ import * as React from "react";
 import * as styles from "./styles/checkboxList.css";
 import * as classNames from "classnames";
 
-class CheckboxList extends React.Component<any, any> {
-	static propTypes = {
-		title: React.PropTypes.string.isRequired,
-		name: React.PropTypes.string.isRequired,
-		labels: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+type Props = {
+	title: string,
+	name: string,
+	labels: string[],
 
-		defaultValues: React.PropTypes.arrayOf(React.PropTypes.string),
-		className: React.PropTypes.string,
-	};
+	defaultValues: string[],
+	className?: string,
+};
 
+class CheckboxList extends React.Component<Props, any> {
 	// TODO(slimsag): this should be 'element' type?
 	_fieldset: any;
 

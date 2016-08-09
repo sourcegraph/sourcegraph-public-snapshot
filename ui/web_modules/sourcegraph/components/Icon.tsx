@@ -2,14 +2,14 @@
 
 import * as React from "react";
 
-class Icon extends React.Component<any, any> {
-	static propTypes = {
-		className: React.PropTypes.string,
-		width: React.PropTypes.string, // appended by "px"
-		height: React.PropTypes.string, // appended by "px"
-		icon: React.PropTypes.string.isRequired, // See symbols directory
-	};
+type Props = {
+	className?: string,
+	width?: string, // appended by "px"
+	height?: string, // appended by "px"
+	icon: string, // See symbols directory
+};
 
+class Icon extends React.Component<Props, any> {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 	};

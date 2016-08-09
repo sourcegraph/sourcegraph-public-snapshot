@@ -20,7 +20,10 @@ if (typeof document !== "undefined") {
 	}, false);
 }
 
-class DefTooltip extends Component<any, any> {
+type Props = {
+}
+
+class DefTooltip extends Component<Props, any> {
 	_elem: any;
 	
 	constructor(props) {

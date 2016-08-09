@@ -64,7 +64,7 @@ export function urlToRepo(repo: string): string {
 	return urlTo("repo", {splat: repo});
 }
 
-export function urlToRepoRev(repo: string, rev: string): string {
+export function urlToRepoRev(repo: string, rev: string | null): string {
 	return urlTo("repo", {splat: makeRepoRev(repo, rev)});
 }
 

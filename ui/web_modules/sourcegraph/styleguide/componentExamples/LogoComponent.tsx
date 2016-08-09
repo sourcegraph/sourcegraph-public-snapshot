@@ -5,7 +5,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Table, Code, Logo} from "sourcegraph/components/index";
 import * as classNames from "classnames";
 
-class LogoComponent extends React.Component<any, any> {
+class LogoComponent extends React.Component<{}, any> {
 
 	constructor(props) {
 		super(props);

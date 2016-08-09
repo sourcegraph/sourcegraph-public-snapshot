@@ -33,7 +33,15 @@ const hiddenNavRoutes = new Set([
 	`/${abs.integrations}`,
 ]);
 
-function GlobalNav({navContext, location, params, channelStatusCode}: {navContext?: any, location: any, params: any, channelStatusCode: any}, {user, siteConfig, signedIn, router, eventLogger}) {
+type GlobalNavProps = {
+	navContext?: JSX.Element,
+	location: any,
+	params: any,
+	channelStatusCode?: number,
+	role?: string,
+};
+
+function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavProps, {user, siteConfig, signedIn, router, eventLogger}) {
 	const isHomepage = location.pathname === "/";
 	const shouldHide = hiddenNavRoutes.has(location.pathname);
 	const isStaticPage = isPage(location.pathname);
@@ -156,12 +164,6 @@ function GlobalNav({navContext, location, params, channelStatusCode}: {navContex
 	);
 }
 
-(GlobalNav as any).propTypes = {
-	navContext: React.PropTypes.element,
-	location: React.PropTypes.object.isRequired,
-	params: React.PropTypes.object,
-	channelStatusCode: React.PropTypes.number,
-};
 (GlobalNav as any).contextTypes = {
 	siteConfig: React.PropTypes.object.isRequired,
 	user: React.PropTypes.object,
@@ -174,14 +176,14 @@ export default GlobalNav;
 
 // TODO(chexee): Move all these components to their own directory.
 
-class SearchForm extends React.Component<any, any> {
-	static propTypes = {
-		repo: React.PropTypes.string,
-		location: React.PropTypes.object.isRequired,
-		router: React.PropTypes.object.isRequired,
-		showResultsPanel: React.PropTypes.bool.isRequired,
-	};
+type SearchFormProps = {
+	repo: string | null,
+	location: any,
+	router: any,
+	showResultsPanel: boolean,
+};
 
+class SearchForm extends React.Component<SearchFormProps, any> {
 	constructor(props) {
 		super(props);
 

@@ -7,13 +7,13 @@ import GlobalSearch from "sourcegraph/search/GlobalSearch";
 import * as styles from "./styles/SearchResultsPanel.css";
 
 
-class SearchResultsPanel extends React.Component<any, any> {
-	static propTypes = {
-		repo: React.PropTypes.string,
-		location: React.PropTypes.object.isRequired,
-		query: React.PropTypes.string.isRequired,
-	};
+type Props = {
+	repo: string | null,
+	location: any,
+	query: string,
+};
 
+class SearchResultsPanel extends React.Component<Props, any> {
 	render(): JSX.Element | null {
 		const {repo, location, query} = this.props;
 		return (

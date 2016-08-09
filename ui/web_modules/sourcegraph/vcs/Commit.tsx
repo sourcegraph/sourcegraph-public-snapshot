@@ -64,12 +64,12 @@ function Commit({repo, commit, full}) {
 		</div>
 	);
 }
-(Commit as any).propTypes = {
-	commit: React.PropTypes.object.isRequired,
-	repo: React.PropTypes.string.isRequired,
+type Props = {
+	commit: any,
+	repo: string,
 
 	// full is whether to show the full commit message (beyond the first line).
-	full: React.PropTypes.bool.isRequired,
+	full: boolean,
 };
 
 export default Commit;

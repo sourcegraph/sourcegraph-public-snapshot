@@ -16,6 +16,7 @@ import * as s from "sourcegraph/blob/styles/Blob.css";
 import {isExternalLink} from "sourcegraph/util/externalLink";
 import "sourcegraph/components/styles/code.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {Def} from "sourcegraph/def/index";
 
 // simpleContentsString converts [string...] (like ["a", "b", "c"]) to
 // a string by joining the elements (to produce "abc", for example).
@@ -51,7 +52,38 @@ function fastInsertRevIntoDefURL(urlNoRev: string, repo: string, rev: string): s
 	return urlNoRev;
 }
 
-class BlobLine extends Component<any, any> {
+type Props = {
+	lineNumber?: number,
+	showLineNumber?: boolean,
+
+	clickEventLabel?: string,
+
+	// Optional: for linking line numbers to the file they came from (e.g., in
+	// ref snippets).
+	repo?: string,
+	rev?: string,
+	commitID?: string,
+	path?: string,
+
+	activeDef: string | null, // the def that the page is about
+	activeDefRepo: string | null;
+
+	// startByte is the byte position of the first byte of contents. It is
+	// required if annotations are specified, so that the annotations can
+	// be aligned to the contents.
+	startByte: number,
+	contents?: string,
+	annotations?: any[],
+	selected?: boolean,
+	highlightedDef: string | null,
+	highlightedDefObj: Def | null;
+	className?: string,
+	onMount?: () => void,
+	lineContentClassName?: string,
+	textSize?: string,
+};
+
+class BlobLine extends Component<Props, any> {
 	static contextTypes = {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
@@ -209,40 +241,5 @@ class BlobLine extends Component<any, any> {
 		);
 	}
 }
-
-(BlobLine as any).propTypes = {
-	lineNumber: (props, propName, componentName) => {
-		let v = React.PropTypes.number(props, propName, componentName);
-		if (v) return v;
-		return null;
-	},
-	showLineNumber: React.PropTypes.bool,
-
-	clickEventLabel: React.PropTypes.string,
-
-	// Optional: for linking line numbers to the file they came from (e.g., in
-	// ref snippets).
-	repo: React.PropTypes.string,
-	rev: React.PropTypes.string,
-	commitID: React.PropTypes.string,
-	path: React.PropTypes.string,
-
-	activeDef: React.PropTypes.string, // the def that the page is about
-
-	// startByte is the byte position of the first byte of contents. It is
-	// required if annotations are specified, so that the annotations can
-	// be aligned to the contents.
-	startByte: (props, propName, componentName) => {
-		if (props.annotations) return React.PropTypes.number.isRequired(props, propName, componentName);
-		return null;
-	},
-	contents: React.PropTypes.string,
-	annotations: React.PropTypes.array,
-	selected: React.PropTypes.bool,
-	highlightedDef: React.PropTypes.string,
-	className: React.PropTypes.string,
-	onMount: React.PropTypes.func,
-	lineContentClassName: React.PropTypes.string,
-};
 
 export default BlobLine;

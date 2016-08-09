@@ -13,14 +13,14 @@ import breadcrumb from "sourcegraph/util/breadcrumb";
 
 import * as styles from "sourcegraph/components/styles/breadcrumb.css";
 
-class DefNavContext extends Container<any, any> {
-	static propTypes = {
-		repo: React.PropTypes.string.isRequired,
-		rev: React.PropTypes.string,
-		commitID: React.PropTypes.string,
-		params: React.PropTypes.object.isRequired,
-	}
+type Props = {
+	repo: string,
+	rev?: string,
+	commitID?: string,
+	params: any,
+}
 
+class DefNavContext extends Container<Props, any> {
 	reconcileState(state, props) {
 		state.repo = props.repo;
 		state.rev = props.rev;

@@ -14,7 +14,7 @@ import * as styles from "./styles/Build.css";
 
 const updateLogIntervalMsec = 1500;
 
-class Step extends Component<any, any> {
+class Step extends Component<Props, any> {
 	_updateLogIntervalID: any;
 	
 	constructor(props) {
@@ -94,9 +94,9 @@ class Step extends Component<any, any> {
 	}
 }
 
-(Step as any).propTypes = {
-	task: React.PropTypes.object.isRequired,
-	logs: React.PropTypes.object.isRequired,
+type Props = {
+	task: any,
+	logs: any,
 };
 
 export default Step;

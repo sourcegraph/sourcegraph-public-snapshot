@@ -8,7 +8,13 @@ import Step from "sourcegraph/build/Step";
 
 import * as styles from "./styles/Build.css";
 
-class TopLevelTask extends Component<any, any> {
+type Props = {
+	task: any,
+	subtasks: any[],
+	logs: any,
+};
+
+class TopLevelTask extends Component<Props, any> {
 	reconcileState(state, props) {
 		if (state.task !== props.task) {
 			state.task = props.task;
@@ -37,11 +43,5 @@ class TopLevelTask extends Component<any, any> {
 		);
 	}
 }
-
-(TopLevelTask as any).propTypes = {
-	task: React.PropTypes.object.isRequired,
-	subtasks: React.PropTypes.array.isRequired,
-	logs: React.PropTypes.object.isRequired,
-};
 
 export default TopLevelTask;

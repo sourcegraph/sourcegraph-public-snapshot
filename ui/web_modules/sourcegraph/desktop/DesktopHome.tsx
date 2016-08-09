@@ -20,8 +20,7 @@ export const NotInBeta = () => (
 	</div>
 );
 
-class DesktopHome extends React.Component<any, any> {
-
+class DesktopHome extends React.Component<{}, any> {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 		user: React.PropTypes.object,

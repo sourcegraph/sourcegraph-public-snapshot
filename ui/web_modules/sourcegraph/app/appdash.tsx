@@ -8,18 +8,18 @@ import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {getRouteName} from "./routePatterns";
 import context from "sourcegraph/app/context";
 
-export function withAppdashRouteStateRecording(ChildComponent: any): any {
-	type Props = {
-		routes: ReactRouter.Route[];
-		route: ReactRouter.Route,
-	};
+type Props = {
+	routes: ReactRouter.Route[];
+	route: ReactRouter.Route,
+};
 
+export function withAppdashRouteStateRecording(ChildComponent: any): any {
 	type State = {
 		routes: ReactRouter.Route[];
 		route: ReactRouter.Route,
 	};
 
-	class WithAppdashRouteStateRecording extends Component<any, any> {
+	class WithAppdashRouteStateRecording extends Component<Props, any> {
 		_recordRenderView: any;
 		_hasMounted: any;
 		

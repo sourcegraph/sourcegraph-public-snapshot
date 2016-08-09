@@ -4,7 +4,7 @@ import * as React from "react";
 
 import * as style from "sourcegraph/components/styles/loader.css";
 
-class Loader extends React.Component<any, any> {
+class Loader extends React.Component<{}, any> {
 	render(): JSX.Element | null {
 		return (
 			<div className={style.loader}>
@@ -15,9 +15,5 @@ class Loader extends React.Component<any, any> {
 		);
 	}
 }
-
-(Loader as any).propTypes = {
-	stretch: React.PropTypes.bool,
-};
 
 export default Loader;

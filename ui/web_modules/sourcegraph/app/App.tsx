@@ -31,26 +31,21 @@ import {routes as userRoutes} from "sourcegraph/user/index";
 import {routes as userSettingsRoutes} from "sourcegraph/user/settings/routes";
 import {routes as repoRoutes} from "sourcegraph/repo/routes";
 
-const reactElement = React.PropTypes.oneOfType([
-	React.PropTypes.arrayOf(React.PropTypes.element),
-	React.PropTypes.element,
-]);
+type Props = {
+	main: JSX.Element,
+	navContext: JSX.Element,
+	location: any,
+	params?: any,
+	channelStatusCode?: number,
+};
 
-export default class App extends React.Component<any, any> {
-	static propTypes = {
-		main: reactElement,
-		navContext: reactElement,
-		location: React.PropTypes.object.isRequired,
-		params: React.PropTypes.object,
-		channelStatusCode: React.PropTypes.number,
-	};
-
+export default class App extends React.Component<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		signedIn: React.PropTypes.bool.isRequired,
 	};
 
-	constructor(props, context) {
+	constructor(props: Props, context) {
 		super(props);
 		let className = styles.main_container;
 		if (!context.signedIn && location.pathname === "/") className = styles.main_container_homepage;

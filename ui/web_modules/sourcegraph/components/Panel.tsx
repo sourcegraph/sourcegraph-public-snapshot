@@ -4,16 +4,16 @@ import * as React from "react";
 import * as styles from "./styles/panel.css";
 import * as classNames from "classnames";
 
-class Panel extends React.Component<any, any> {
-	static propTypes = {
-		className: React.PropTypes.string,
-		children: React.PropTypes.any,
-		color: React.PropTypes.string, // blue, white, purple, green, orange, (empty)
-		inverse: React.PropTypes.bool, // light text on color background
-		hoverLevel: React.PropTypes.string, // high, low, (empty)
-		hover: React.PropTypes.bool,
-	};
+type Props = {
+	className?: string,
+	children?: any,
+	color?: string, // blue, white, purple, green, orange, (empty)
+	inverse?: boolean, // light text on color background
+	hoverLevel?: string, // high, low, (empty)
+	hover?: boolean,
+};
 
+class Panel extends React.Component<Props, any> {
 	static defaultProps = {
 		hover: false,
 	};
@@ -22,7 +22,7 @@ class Panel extends React.Component<any, any> {
 		const {children, color, inverse, hover, hoverLevel, className} = this.props;
 
 		return (
-			<div {...this.props} className={classNames(styles.panel, colorClass(color, inverse), hoverClass(hoverLevel, hover), className)}>
+			<div {...this.props} className={classNames(styles.panel, colorClass(color || "", inverse || false), hoverClass(hoverLevel || "", hover || false), className)}>
 				{children}
 			</div>
 		);

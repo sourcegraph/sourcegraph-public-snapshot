@@ -4,16 +4,16 @@ import * as React from "react";
 import * as styles from "sourcegraph/components/styles/tabs.css";
 import * as classNames from "classnames";
 
-class Tabs extends React.Component<any, any> {
-	static propTypes = {
-		direction: React.PropTypes.string, // vertical, horizontal
-		color: React.PropTypes.string, // blue, purple
-		size: React.PropTypes.string, // small, large
-		children: React.PropTypes.any,
-		className: React.PropTypes.string,
-		style: React.PropTypes.object,
-	};
+type Props = {
+	direction?: string, // vertical, horizontal
+	color?: string, // blue, purple
+	size?: string, // small, large
+	children?: any,
+	className?: string,
+	style?: any,
+};
 
+class Tabs extends React.Component<Props, any> {
 	static defaultProps = {
 		direction: "horizontal",
 		color: "blue",

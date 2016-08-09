@@ -2,14 +2,14 @@
 
 import * as React from "react";
 
-class Search extends React.Component<any, any> {
-	static propTypes = {
-		className: React.PropTypes.string,
-		height: React.PropTypes.number,
-		width: React.PropTypes.number,
-		style: React.PropTypes.object,
-	};
+type Props = {
+	className?: string,
+	height?: number,
+	width?: number,
+	style?: any,
+};
 
+class Search extends React.Component<Props, any> {
 	static defaultProps = {
 		width: 16,
 	};

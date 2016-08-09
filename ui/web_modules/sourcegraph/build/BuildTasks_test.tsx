@@ -7,7 +7,6 @@ import * as React from "react";
 import BuildTasks from "sourcegraph/build/BuildTasks";
 
 import testdataInitial from "sourcegraph/build/testdata/BuildTasks-initial.json";
-import testdataActive from "sourcegraph/build/testdata/BuildTasks-active.json";
 
 const sampleTasks = [
 	{
@@ -21,19 +20,9 @@ const sampleTasks = [
 ];
 
 describe("BuildTasks", () => {
-	it("should initially render empty", () => {
+	it("should render", () => {
 		autotest(testdataInitial, "sourcegraph/build/testdata/BuildTasks-initial.json",
 			<BuildTasks
-				location=""
-				tasks={sampleTasks}
-				logs={{get() { return null; }}} />
-		);
-	});
-
-	it("should render task based on URL", () => {
-		autotest(testdataActive, "sourcegraph/build/testdata/BuildTasks-active.json",
-			<BuildTasks
-				location="#T567"
 				tasks={sampleTasks}
 				logs={{get() { return null; }}} />
 		);

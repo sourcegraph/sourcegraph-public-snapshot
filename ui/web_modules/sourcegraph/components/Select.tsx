@@ -7,20 +7,20 @@ import * as base from "./styles/_base.css";
 import * as styles from "./styles/select.css";
 import {DownPointer, Alert} from "./symbols/index";
 
-class Select extends React.Component<any, any> {
-	static propTypes = {
-		block: React.PropTypes.bool,
-		className: React.PropTypes.string,
-		children: React.PropTypes.any,
-		label: React.PropTypes.string,
-		placeholder: React.PropTypes.string,
-		helperText: React.PropTypes.string,
-		error: React.PropTypes.bool,
-		errorText: React.PropTypes.string,
-		style: React.PropTypes.object,
-		defaultValue: React.PropTypes.string,
-	};
+type Props = {
+	block?: boolean,
+	className?: string,
+	children?: any,
+	label?: string,
+	placeholder?: string,
+	helperText?: string,
+	error?: boolean,
+	errorText?: string,
+	style?: any,
+	defaultValue?: string,
+};
 
+class Select extends React.Component<Props, any> {
 	static defaultProps = {
 		block: true,
 	};

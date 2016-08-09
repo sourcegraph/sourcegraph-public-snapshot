@@ -7,25 +7,25 @@ import {CheckIcon} from "sourcegraph/components/Icons";
 import {DownPointer} from "sourcegraph/components/symbols/index";
 import * as classNames from "classnames";
 
+type Props = {
+	icon: JSX.Element,
+	title: string,
+	initialValue?: string,
+	alwaysOpenMenu?: boolean, // Use initialValue to judge when false
+	disabled?: boolean,
+	items: {
+		name?: string,
+		value?: string,
+	}[],
+	onMenuClick: (val: string) => void,
+	onItemClick: (val: string) => void,
+	className?: string,
+};
+
 // This component is a minimal Dropdown component with some code copied from
 // RevSwitcher.
-class Dropdown extends React.Component<any, any> {
+class Dropdown extends React.Component<Props, any> {
 	_wrapper: any;
-
-	static propTypes = {
-		icon: React.PropTypes.element,
-		title: React.PropTypes.string.isRequired,
-		initialValue: React.PropTypes.string,
-		alwaysOpenMenu: React.PropTypes.bool, // Use initialValue to judge when false
-		disabled: React.PropTypes.bool,
-		items: React.PropTypes.arrayOf(React.PropTypes.shape({
-			name: React.PropTypes.string,
-			value: React.PropTypes.string,
-		})).isRequired,
-		onMenuClick: React.PropTypes.func,
-		onItemClick: React.PropTypes.func,
-		className: React.PropTypes.string,
-	};
 
 	constructor(props) {
 		super(props);

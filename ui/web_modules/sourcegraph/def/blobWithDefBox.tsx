@@ -22,7 +22,6 @@ export default ({
 				def={state.defObj}
 				refLocations={state.refLocations}
 				path={state.path}
-				byte={state.startByte}
 				location={state.location} />,
 		} : null;
 	},

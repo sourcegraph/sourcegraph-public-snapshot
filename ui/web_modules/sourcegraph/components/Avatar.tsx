@@ -11,10 +11,10 @@ function Avatar({className, size, img}: {className?: any, size: any, img: any}) 
 		<img className={classNames(className, sizeClasses[size] || styles.small)} src={img || PLACEHOLDER_IMAGE} />
 	);
 }
-(Avatar as any).propTypes = {
-	img: React.PropTypes.string,
-	size: React.PropTypes.string,
-	className: React.PropTypes.string,
+type Props = {
+	img?: string,
+	size?: string,
+	className?: string,
 };
 
 const sizeClasses = {

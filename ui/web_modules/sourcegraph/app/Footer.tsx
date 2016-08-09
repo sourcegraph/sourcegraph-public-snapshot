@@ -6,7 +6,7 @@ import {Link} from "react-router";
 import Logo from "sourcegraph/components/Logo";
 import * as styles from "./styles/Footer.css";
 
-class Footer extends React.Component<any, any> {
+class Footer extends React.Component<{}, any> {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 	};

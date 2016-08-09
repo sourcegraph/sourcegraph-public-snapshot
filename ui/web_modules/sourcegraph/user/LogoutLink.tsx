@@ -7,7 +7,11 @@ import * as UserActions from "sourcegraph/user/UserActions";
 import UserStore from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend"; // for side effects
 
-export default class LogoutLink extends Container<any, any> {
+type Props = {
+	role: string,
+}
+
+export default class LogoutLink extends Container<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 	};

@@ -18,28 +18,28 @@ const context = {
 describe("BlobLine", () => {
 	it("should render", () => {
 		autotest(testdataContents, "sourcegraph/blob/testdata/BlobLine-contents.json",
-			<BlobLine contents={"hello\nworld"} startByte={0} highlightedDef="secondURL" />,
+			<BlobLine contents={"hello\nworld"} startByte={0} highlightedDef="secondURL" highlightedDefObj={null} activeDef={null} activeDefRepo={null} />,
 			context
 		);
 	});
 
 	it("should render empty", () => {
 		autotest(testdataEmpty, "sourcegraph/blob/testdata/BlobLine-empty.json",
-			<BlobLine contents={"hello\nworld"} startByte={0} />,
+			<BlobLine contents={"hello\nworld"} startByte={0} highlightedDef={null} highlightedDefObj={null} activeDef={null} activeDefRepo={null} />,
 			context
 		);
 	});
 
 	it("should render line number", () => {
 		autotest(testdataLineNumber, "sourcegraph/blob/testdata/BlobLine-lineNumber.json",
-			<BlobLine lineNumber={42} repo="r" rev="v" path="p" contents={"hello\nworld"} startByte={0} />,
+			<BlobLine lineNumber={42} repo="r" rev="v" path="p" contents={"hello\nworld"} startByte={0} highlightedDef={null} highlightedDefObj={null} activeDef={null} activeDefRepo={null} />,
 			context
 		);
 	});
 
 	it("should render selection", () => {
 		autotest(testdataLineSelection, "sourcegraph/blob/testdata/BlobLine-selection.json",
-			<BlobLine contents={"hello\nworld"} startByte={0} selected={true} />,
+			<BlobLine contents={"hello\nworld"} startByte={0} selected={true} highlightedDef={null} highlightedDefObj={null} activeDef={null} activeDefRepo={null} />,
 			context
 		);
 	});

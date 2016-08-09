@@ -10,11 +10,11 @@ import breadcrumb from "sourcegraph/util/breadcrumb";
 
 import * as styles from "sourcegraph/components/styles/breadcrumb.css";
 
-class RepoNavContext extends Component<any, any> {
-	static propTypes = {
-		params: React.PropTypes.object.isRequired,
-	};
+type Props = {
+	params: any,
+};
 
+class RepoNavContext extends Component<Props, any> {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.treePath = Array.isArray(props.params.splat) ? props.params.splat[1] : ""; // on the root of the tree, splat is a string

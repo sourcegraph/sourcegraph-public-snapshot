@@ -7,9 +7,15 @@ import Component from "sourcegraph/Component";
 
 import * as styles from "./styles/popover.css";
 
-class Popover extends Component<any, any> {
+class Popover extends Component<Props, any> {
 	constructor(props) {
 		super(props);
+
+		if (props.children.length !== 2) {
+			throw new Error("Popover must be constructed with exactly two children.");
+			// TODO(chexee): make this accomodate multiple lengths!
+		}
+
 		this.state = {
 			visible: false,
 		};
@@ -61,18 +67,9 @@ class Popover extends Component<any, any> {
 	}
 }
 
-(Popover as any).propTypes = {
-	children: (props, propName, componentName) => {
-		let v = React.PropTypes.arrayOf(React.PropTypes.element).isRequired(props, propName, componentName);
-		if (v) return v;
-		if (props.children.length !== 2) {
-			return new Error("Popover must be constructed with exactly two children.");
-			// TODO(chexee): make this accomodate multiple lengths!
-		}
-		return null;
-	},
-	left: React.PropTypes.bool, // position popover content to the left (default: right)
-	popoverClassName: React.PropTypes.string,
+type Props = {
+	left?: boolean, // position popover content to the left (default: right)
+	popoverClassName?: string,
 };
 
 export default Popover;

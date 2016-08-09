@@ -16,14 +16,14 @@ const context = {
 describe("Blob", () => {
 	it("should render lines", () => {
 		autotest(testdataLines, "sourcegraph/blob/testdata/Blob-lines.json",
-			<Blob contents={"hello\nworld"} lineNumbers={true} startLine={1} endLine={2} highlightedDef="otherDef" />,
+			<Blob contents={"hello\nworld"} lineNumbers={true} startLine={1} endLine={2} highlightedDef="otherDef" highlightedDefObj={null} repo={""} path={""} />,
 			context
 		);
 	});
 
 	it("should not render line numbers by default", () => {
 		autotest(testdataNoLineNumbers, "sourcegraph/blob/testdata/Blob-noLineNumbers.json",
-			<Blob contents={"hello\nworld"} highlightedDef={null} />,
+			<Blob contents={"hello\nworld"} highlightedDef={null} highlightedDefObj={null} repo={""} path={""} />,
 			context
 		);
 	});

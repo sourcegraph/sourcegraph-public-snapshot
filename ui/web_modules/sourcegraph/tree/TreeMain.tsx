@@ -8,16 +8,16 @@ import {trimRepo} from "sourcegraph/repo/index";
 import * as styles from "./styles/Tree.css";
 import Helmet from "react-helmet";
 
-class TreeMain extends React.Component<any, any> {
-	static propTypes = {
-		location: React.PropTypes.object,
-		repo: React.PropTypes.string,
-		rev: React.PropTypes.string,
-		commitID: React.PropTypes.string,
-		route: React.PropTypes.object,
-		routeParams: React.PropTypes.object.isRequired,
-	};
+type Props = {
+	location?: any,
+	repo: string,
+	rev: string,
+	commitID?: string,
+	route?: any,
+	routeParams: any,
+};
 
+class TreeMain extends React.Component<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 	};

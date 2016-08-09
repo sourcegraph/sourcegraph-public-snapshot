@@ -68,16 +68,16 @@ type TreeListState = {
 }
 
 
-class TreeList extends Container<TreeListProps, TreeListState> {
-	static propTypes = {
-		repo: React.PropTypes.string.isRequired,
-		rev: React.PropTypes.string,
-		commitID: React.PropTypes.string.isRequired,
-		path: React.PropTypes.string.isRequired,
-		location: React.PropTypes.object,
-		route: React.PropTypes.object,
-	};
+type Props = {
+	repo: string,
+	rev?: string,
+	commitID: string,
+	path: string,
+	location?: any,
+	route?: any,
+};
 
+class TreeList extends Container<TreeListProps, TreeListState> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		user: React.PropTypes.object,

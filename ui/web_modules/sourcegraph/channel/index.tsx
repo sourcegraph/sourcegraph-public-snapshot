@@ -6,14 +6,14 @@ import Header from "sourcegraph/components/Header";
 import {Route} from "react-router";
 import * as styles from "./styles/index.css";
 
-class Channel extends React.Component<any, any> {
+type Props = {
+	location: any,
+	params: any,
+};
+
+class Channel extends React.Component<Props, any> {
 	_timeout: any;
 	
-	static propTypes = {
-		location: React.PropTypes.object.isRequired,
-		params: React.PropTypes.object.isRequired,
-	};
-
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		features: React.PropTypes.object.isRequired,

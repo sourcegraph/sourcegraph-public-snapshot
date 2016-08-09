@@ -31,11 +31,11 @@ const otherTools = [
 	new Tool("Chrome", "/img/Dashboard/google-chrome.svg", "https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack"),
 ];
 
-class Integrations extends Component<any, any> {
-	static propTypes = {
-		location: React.PropTypes.object.isRequired,
-	};
+type Props = {
+	location: any,
+};
 
+class Integrations extends Component<Props, any> {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,

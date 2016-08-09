@@ -3,8 +3,15 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
-export default class FileMargin extends React.Component<any, any> {
+type Props = {
+	lineFromByte?: () => void,
+	selectionStartLine?: any,
+	startByte?: number,
 
+	[key: string]: any,
+};
+
+export default class FileMargin extends React.Component<Props, any> {
 	componentDidUpdate() {
 		const content = this.refs["content"] as HTMLElement;
 		if (content) {
@@ -37,13 +44,3 @@ export default class FileMargin extends React.Component<any, any> {
 		);
 	}
 }
-(FileMargin as any).propTypes = {
-	children: React.PropTypes.oneOfType([
-		React.PropTypes.arrayOf(React.PropTypes.element),
-		React.PropTypes.element,
-	]),
-
-	lineFromByte: React.PropTypes.func,
-	selectionStartLine: React.PropTypes.any,
-	startByte: React.PropTypes.number,
-};

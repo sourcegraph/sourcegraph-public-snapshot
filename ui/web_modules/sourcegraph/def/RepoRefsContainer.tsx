@@ -20,16 +20,17 @@ import {Repository, DownPointer} from "sourcegraph/components/symbols/index";
 import {urlToRepo} from "sourcegraph/repo/routes";
 import {urlToBlob} from "sourcegraph/blob/routes";
 
-class RepoRefsContainer extends Container<any, any> {
-	static propTypes = {
-		repo: React.PropTypes.string,
-		rev: React.PropTypes.string,
-		commitID: React.PropTypes.string,
-		def: React.PropTypes.string,
-		defObj: React.PropTypes.object,
-		defRepos: React.PropTypes.array,
-	};
+type Props = {
+	repo?: string,
+	rev?: string,
+	commitID?: string,
+	def?: string,
+	defObj?: any,
+	defRepos?: any[],
+	refLocations: any,
+};
 
+class RepoRefsContainer extends Container<Props, any> {
 	static contextTypes = {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
@@ -97,7 +98,7 @@ class RepoRefsContainer extends Container<any, any> {
 					}
 				</Heading>
 
-				{!refLocs && <div className={typography.tc}> <Loader className={base.mv4} /></div>}
+				{!refLocs && <div className={typography.tc}> <Loader /></div>}
 				{refLocs && !refLocs.RepoRefs && <i>No references found</i>}
 				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <div key={i} className={base.mt4}>
 					<Link to={urlToRepo(repoRefs.Repo)} onClick={this._clickedReferencedRepo.bind(this)} className={base.mb3}>
@@ -117,7 +118,7 @@ class RepoRefsContainer extends Container<any, any> {
 					!refLocs.StreamTerminated &&
 					<a onClick={this._onNextPage} className={classNames(styles.f7, styles.link_icon)}>
 						{this.state.nextPageLoading ?
-							<strong>Loading <Loader className={base.mr2} /> </strong> :
+							<strong>Loading <Loader /> </strong> :
 							<strong>View more references <DownPointer className={classNames(styles.icon_cool_mid_gray, base.ml1)} width={9} /></strong>
 						}
 					</a>

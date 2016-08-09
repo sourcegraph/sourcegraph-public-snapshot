@@ -4,16 +4,16 @@ import * as React from "react";
 
 import {LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine} from "recharts";
 
-export default class CoverageGraph extends React.Component<any, any> {
-	static propTypes = {
-		data: React.PropTypes.arrayOf(React.PropTypes.shape({
-			Day: React.PropTypes.string.isRequired,
-			Refs: React.PropTypes.number.isRequired,
-			Defs: React.PropTypes.number.isRequired,
-		})).isRequired,
-		target: React.PropTypes.number,
-	}
+type Props = {
+	data: {
+		Day: string,
+		Refs: number,
+		Defs: number,
+	}[],
+	target?: number,
+}
 
+export default class CoverageGraph extends React.Component<Props, any> {
 	render(): JSX.Element | null {
 		return (
 			<LineChart width={600} height={300} data={this.props.data}>

@@ -4,14 +4,14 @@ import * as React from "react";
 import * as styles from "./styles/list.css";
 import * as classNames from "classnames";
 
-class List extends React.Component<any, any> {
-	static propTypes = {
-		className: React.PropTypes.string,
-		children: React.PropTypes.any,
-		style: React.PropTypes.object,
-		listStyle: React.PropTypes.oneOf(["node", "normal"]),
-	};
+type Props = {
+	className?: string,
+	children?: any,
+	style?: any,
+	listStyle?: string, // node, normal
+};
 
+class List extends React.Component<Props, any> {
 	static defaultProps = {
 		listStyle: "normal",
 	};
@@ -20,7 +20,7 @@ class List extends React.Component<any, any> {
 		const {className, children, listStyle} = this.props;
 
 		return (
-			<ul className={classNames(listStyleClasses[listStyle] || styles.normal, className)} style={this.props.style}>
+			<ul className={classNames(listStyleClasses[listStyle || "normal"] || styles.normal, className)} style={this.props.style}>
 				{children}
 			</ul>
 		);

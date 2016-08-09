@@ -2,13 +2,13 @@
 
 import * as React from "react";
 
-class Cone extends React.Component<any, any> {
-	static propTypes = {
-		className: React.PropTypes.string,
-		width: React.PropTypes.number, // appended by "px"
-		style: React.PropTypes.object,
-	};
+type Props = {
+	className?: string,
+	width?: number, // appended by "px"
+	style?: any,
+};
 
+class Cone extends React.Component<Props, any> {
 	static defaultProps = {
 		width: 16,
 	};

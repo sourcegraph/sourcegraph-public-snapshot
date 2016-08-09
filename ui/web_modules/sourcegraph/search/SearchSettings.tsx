@@ -11,7 +11,6 @@ import UserStore from "sourcegraph/user/UserStore";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {allLangs, langName, langIsSupported} from "sourcegraph/Language";
-import {LanguageID} from "sourcegraph/Language";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import {withUserContext} from "sourcegraph/app/user";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
@@ -21,15 +20,15 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 import {searchScopes} from "sourcegraph/search/index";
 import * as classNames from "classnames";
 
-class SearchSettings extends Container<any, any> {
-	static propTypes = {
-		location: React.PropTypes.object.isRequired,
-		repo: React.PropTypes.string,
-		className: React.PropTypes.string,
-		innerClassName: React.PropTypes.string,
-		githubToken: React.PropTypes.object,
-	};
+type Props = {
+	location: any,
+	repo?: string,
+	className?: string,
+	innerClassName?: string,
+	githubToken: any,
+};
 
+class SearchSettings extends Container<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
@@ -98,7 +97,7 @@ class SearchSettings extends Container<any, any> {
 		return this.props.githubToken && this.props.githubToken.scope && this.props.githubToken.scope.includes("repo") && this.props.githubToken.scope.includes("read:org") && this.props.githubToken.scope.includes("user:email");
 	}
 
-	_toggleLang(lang: LanguageID) {
+	_toggleLang(lang: string) {
 		const langs = this._langs();
 		const enabled = langs.includes(lang);
 

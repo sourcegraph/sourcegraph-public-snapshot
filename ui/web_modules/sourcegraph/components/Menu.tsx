@@ -5,13 +5,13 @@ import * as classNames from "classnames";
 
 import * as styles from "./styles/menu.css";
 
-class Menu extends React.Component<any, any> {
-	static propTypes = {
-		children: React.PropTypes.any,
-		className: React.PropTypes.string,
-		style: React.PropTypes.object,
-	};
+type Props = {
+	children?: any,
+	className?: string,
+	style?: any,
+};
 
+class Menu extends React.Component<Props, any> {
 	renderMenuItems() {
 		return React.Children.map(this.props.children, function(ch: React.ReactElement<any>) {
 			return ch && <div key={ch.props} className={roleStyle(ch.props.role)}>{React.cloneElement(ch)}</div>;

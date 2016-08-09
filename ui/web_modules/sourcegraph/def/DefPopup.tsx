@@ -13,15 +13,15 @@ import RefLocationsList from "sourcegraph/def/RefLocationsList";
 import AuthorList from "sourcegraph/def/AuthorList";
 import {urlToDefInfo} from "sourcegraph/def/routes";
 
-class DefPopup extends Container<any, any> {
-	static propTypes = {
-		def: React.PropTypes.object.isRequired,
-		rev: React.PropTypes.string,
-		refLocations: React.PropTypes.object,
-		path: React.PropTypes.string.isRequired,
-		location: React.PropTypes.object.isRequired,
-	};
+type Props = {
+	def: any,
+	rev?: string,
+	refLocations?: any,
+	path?: string,
+	location?: any,
+};
 
+class DefPopup extends Container<Props, any> {
 	static contextTypes = {
 		features: React.PropTypes.object.isRequired,
 	};

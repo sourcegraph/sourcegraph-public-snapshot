@@ -5,7 +5,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Table, Code} from "sourcegraph/components/index";
 import * as classNames from "classnames";
 
-class AffixComponent extends React.Component<any, any> {
+class AffixComponent extends React.Component<{}, any> {
 
 	render(): JSX.Element | null {
 		return (

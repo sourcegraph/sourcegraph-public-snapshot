@@ -8,7 +8,7 @@ import * as TreeActions from "sourcegraph/tree/TreeActions";
 import "./TreeBackend"; // for side effects
 import TreeStore from "sourcegraph/tree/TreeStore";
 
-class TreeEntryCommit extends Container<any, any> {
+class TreeEntryCommit extends Container<Props, any> {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.commits = TreeStore.commits;
@@ -43,10 +43,10 @@ class TreeEntryCommit extends Container<any, any> {
 	}
 }
 
-(TreeEntryCommit as any).propTypes = {
-	repo: React.PropTypes.string.isRequired,
-	rev: React.PropTypes.string.isRequired,
-	path: React.PropTypes.string.isRequired,
+type Props = {
+	repo: string,
+	rev: string,
+	path: string,
 };
 
 export default TreeEntryCommit;

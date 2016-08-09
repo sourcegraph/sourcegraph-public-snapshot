@@ -7,22 +7,24 @@ import * as base from "./styles/_base.css";
 import {Alert} from "./symbols/index";
 import * as classNames from "classnames";
 
-class Input extends React.Component<any, any> {
-	static propTypes = {
-		block: React.PropTypes.bool,
-		className: React.PropTypes.string,
-		// domRef is like ref, but it is called with the <input> DOM element,
-		// not this pure wrapper component. <Input domRef={...}> is equivalent
-		// to <input ref={...}>.
-		domRef: React.PropTypes.func,
-		label: React.PropTypes.string,
-		placeholder: React.PropTypes.string,
-		helperText: React.PropTypes.string,
-		error: React.PropTypes.bool,
-		errorText: React.PropTypes.string,
-		style: React.PropTypes.object,
-	};
+type Props = {
+	block?: boolean,
+	className?: string,
+	// domRef is like ref, but it is called with the <input> DOM element,
+	// not this pure wrapper component. <Input domRef={...}> is equivalent
+	// to <input ref={...}>.
+	domRef?: () => void,
+	label?: string,
+	placeholder?: string,
+	helperText?: string,
+	error?: boolean,
+	errorText?: string,
+	style?: any,
 
+	[key: string]: any,
+};
+
+class Input extends React.Component<Props, any> {
 	render(): JSX.Element | null {
 		const {style, domRef, block, className, placeholder, label, helperText, error, errorText} = this.props;
 		return (

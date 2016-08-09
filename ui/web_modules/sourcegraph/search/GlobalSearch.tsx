@@ -31,19 +31,19 @@ export const RESULTS_LIMIT = 20;
 
 const resultIconSize = "24px";
 
+type Props = {
+	repo: string | null,
+	location: any,
+	query: string,
+	className?: string,
+	resultClassName?: string,
+};
+
 // GlobalSearch is the global search bar + results component.
-class GlobalSearch extends Container<any, any> {
+class GlobalSearch extends Container<Props, any> {
 	_selectedItem: any;
 	_ignoreMouseSelection: any;
 	_debouncedUnignoreMouseSelection: any;
-
-	static propTypes = {
-		repo: React.PropTypes.string,
-		location: React.PropTypes.object.isRequired,
-		query: React.PropTypes.string.isRequired,
-		className: React.PropTypes.string,
-		resultClassName: React.PropTypes.string,
-	};
 
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,

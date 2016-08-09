@@ -7,7 +7,12 @@ import TopLevelTask from "sourcegraph/build/TopLevelTask";
 
 import * as styles from "./styles/Build.css";
 
-class BuildTasks extends Component<any, any> {
+type Props = {
+	tasks: any[],
+	logs: any,
+};
+
+class BuildTasks extends Component<Props, any> {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -41,10 +46,5 @@ class BuildTasks extends Component<any, any> {
 		);
 	}
 }
-
-(BuildTasks as any).propTypes = {
-	tasks: React.PropTypes.array.isRequired,
-	logs: React.PropTypes.object.isRequired,
-};
 
 export default BuildTasks;

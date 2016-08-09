@@ -23,12 +23,12 @@ import * as btnStyles from "sourcegraph/components/styles/button.css";
 
 const updateIntervalMsec = 30000;
 
-class BuildsList extends Container<any, any> {
+type Props = {
+	params: any,
+};
+
+class BuildsList extends Container<Props, any> {
 	_updateIntervalID: any;
-	
-	static propTypes = {
-		params: React.PropTypes.object.isRequired,
-	};
 
 	constructor(props) {
 		super(props);

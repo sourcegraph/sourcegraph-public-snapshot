@@ -11,14 +11,14 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "./styles/breadcrumb.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-class RepoLink extends React.Component<any, any> {
-	static propTypes = {
-		repo: React.PropTypes.string.isRequired,
-		rev: React.PropTypes.string,
-		disabledLink: React.PropTypes.bool,
-		className: React.PropTypes.string,
-	}
+type Props = {
+	repo: string,
+	rev?: string,
+	disabledLink?: boolean,
+	className?: string,
+}
 
+class RepoLink extends React.Component<Props, any> {
 	static contextTypes = {
 		eventLogger: React.PropTypes.object.isRequired,
 	};

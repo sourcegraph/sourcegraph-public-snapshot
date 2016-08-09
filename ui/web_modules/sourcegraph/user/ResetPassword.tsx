@@ -16,13 +16,14 @@ import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 
-class ResetPassword extends Container<any, any> {
+type Props = {
+	location?: any,
+};
+
+class ResetPassword extends Container<Props, any> {
 	_passwordInput: any;
 	_confirmInput: any;
 	
-	static propTypes = {
-		location: React.PropTypes.object,
-	};
 	static contextTypes = {
 		user: React.PropTypes.object,
 	};

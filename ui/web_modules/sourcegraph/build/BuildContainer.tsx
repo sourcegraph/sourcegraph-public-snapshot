@@ -22,12 +22,12 @@ import * as styles from "./styles/Build.css";
 
 const updateIntervalMsec = 1500;
 
-class BuildContainer extends Container<any, any> {
-	_updateIntervalID: any;
+type Props = {
+	params: any,
+};
 
-	static propTypes = {
-		params: React.PropTypes.object.isRequired,
-	};
+class BuildContainer extends Container<Props, any> {
+	_updateIntervalID: any;
 
 	static contextTypes = {
 		user: React.PropTypes.object,
@@ -101,7 +101,7 @@ class BuildContainer extends Container<any, any> {
 						Dispatcher.Backends.dispatch(new BuildActions.CreateBuild(this.state.repo, this.state.build.CommitID, this.state.build.Branch, this.state.build.Tag, true));
 					}}>Rebuild</Button>}
 				</div>
-				<BuildHeader build={this.state.build} commit={this.state.commit} />
+				<BuildHeader build={this.state.build} />
 				{this.state.commit && <div className={styles.commit}><Commit commit={this.state.commit} repo={this.state.repo} full={false} /></div>}
 				{this.state.tasks && this.state.tasks.BuildTasks && <BuildTasks tasks={this.state.tasks.BuildTasks} logs={this.state.logs} />}
 			</div>

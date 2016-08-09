@@ -4,19 +4,19 @@ import * as React from "react";
 import * as styles from "sourcegraph/components/styles/hero.css";
 import * as classNames from "classnames";
 
-class Hero extends React.Component<any, any> {
-	static propTypes = {
-		className: React.PropTypes.string,
-		pattern: React.PropTypes.string,
-		color: React.PropTypes.string, // white, purple, blue, green, dark
-		children: React.PropTypes.any,
-	};
+type Props = {
+	className?: string,
+	pattern?: string,
+	color?: string, // white, purple, blue, green, dark
+	children?: any,
+};
 
+class Hero extends React.Component<Props, any> {
 	render(): JSX.Element | null {
 		const {color, pattern, children, className} = this.props;
 
 		return (
-			<div className={classNames(styles.hero, colorClasses[color] || styles.white, patternClasses[pattern], className)}>
+			<div className={classNames(styles.hero, colorClasses[color || ""] || styles.white, patternClasses[pattern || ""], className)}>
 				{children}
 			</div>
 		);

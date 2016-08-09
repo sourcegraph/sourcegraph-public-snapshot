@@ -15,19 +15,19 @@ import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 
-export class SignupForm extends Container<any, any> {
+type SignupFormProps = {
+	onSignupSuccess: () => void,
+	location: any,
+
+	// returnTo is where the user should be redirected after an OAuth login flow,
+	// either a URL path or a Location object.
+	returnTo: string | HistoryModule.Location,
+};
+
+export class SignupForm extends Container<SignupFormProps, any> {
 	_loginInput: any;
 	_passwordInput: any;
 	_emailInput: any;
-
-	static propTypes = {
-		onSignupSuccess: React.PropTypes.func.isRequired,
-		location: React.PropTypes.object.isRequired,
-
-		// returnTo is where the user should be redirected after an OAuth login flow,
-		// either a URL path or a Location object.
-		returnTo: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.object]).isRequired,
-	};
 
 	constructor(props) {
 		super(props);
@@ -144,7 +144,7 @@ export class SignupForm extends Container<any, any> {
 }
 let StyledSignupForm = SignupForm;
 
-function Signup(props, {router}) {
+function Signup(props: SignupProps, {router}) {
 	return (
 		<div className={styles.full_page}>
 			<Helmet title="Sign Up" />
@@ -154,8 +154,8 @@ function Signup(props, {router}) {
 		</div>
 	);
 }
-(Signup as any).propTypes = {
-	location: React.PropTypes.object.isRequired,
+type SignupProps = {
+	location: any,
 };
 (Signup as any).contextTypes = {
 	router: React.PropTypes.object.isRequired,

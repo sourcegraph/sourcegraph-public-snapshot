@@ -8,7 +8,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import Helmet from "react-helmet";
 
-function AboutPage(props, {signedIn}) {
+function AboutPage(props: {}, {signedIn}) {
 	return (
 		<div>
 			<Helmet title="About" />

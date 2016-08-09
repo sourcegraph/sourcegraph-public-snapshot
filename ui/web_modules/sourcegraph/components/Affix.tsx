@@ -2,15 +2,14 @@
 
 import * as React from "react";
 
-class Affix extends React.Component<any, any> {
+type Props = {
+	className?: string,
+	style?: any,
+	children?: any,
+	offset?: number,
+};
 
-	static propTypes = {
-		className: React.PropTypes.string,
-		style: React.PropTypes.object,
-		children: React.PropTypes.any,
-		offset: React.PropTypes.number,
-	};
-
+class Affix extends React.Component<Props, any> {
 	componentDidMount() {
 		const initialOffset = this._getOffset();
 		window.addEventListener("scroll", () => this._affixEl(initialOffset));

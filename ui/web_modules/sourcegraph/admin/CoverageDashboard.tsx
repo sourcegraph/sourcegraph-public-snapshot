@@ -20,7 +20,11 @@ const langTargets = {
 	"CSS": 0.75,
 };
 
-class CoverageDashboard extends Container<any, any> {
+type Props = {
+	location: any,
+}
+
+class CoverageDashboard extends Container<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 	};

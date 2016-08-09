@@ -62,11 +62,11 @@ function GlobalSearchInput(props) {
 		</div>
 	);
 }
-(GlobalSearchInput as any).propTypes = {
-	query: React.PropTypes.string.isRequired,
-	icon: React.PropTypes.bool, // whether to show a magnifying glass icon
-	border: React.PropTypes.bool,
-	className: React.PropTypes.string,
+type Props = {
+	query: string,
+	icon?: boolean, // whether to show a magnifying glass icon
+	border?: boolean,
+	className?: string,
 };
 
 export default GlobalSearchInput;

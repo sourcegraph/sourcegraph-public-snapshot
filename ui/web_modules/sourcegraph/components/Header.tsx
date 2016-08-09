@@ -4,13 +4,13 @@ import * as React from "react";
 import * as styles from "./styles/header.css";
 import Loader from "./Loader";
 
-class Header extends React.Component<any, any> {
-	static propTypes = {
-		title: React.PropTypes.string.isRequired,
-		subtitle: React.PropTypes.string,
-		loading: React.PropTypes.bool,
-	};
+type Props = {
+	title: string,
+	subtitle?: string,
+	loading?: boolean,
+};
 
+class Header extends React.Component<Props, any> {
 	render(): JSX.Element | null {
 		return (
 			<div className={styles.container}>

@@ -8,7 +8,11 @@ import TimeAgo from "sourcegraph/util/TimeAgo";
 import {buildStatus, buildClass, elapsed} from "sourcegraph/build/Build";
 import * as styles from "./styles/Build.css";
 
-class BuildHeader extends Component<any, any> {
+type Props = {
+	build: any,
+};
+
+class BuildHeader extends Component<Props, any> {
 	reconcileState(state, props) {
 		if (state.build !== props.build) {
 			state.build = props.build;
@@ -28,9 +32,5 @@ class BuildHeader extends Component<any, any> {
 		);
 	}
 }
-
-(BuildHeader as any).propTypes = {
-	build: React.PropTypes.object.isRequired,
-};
 
 export default BuildHeader;

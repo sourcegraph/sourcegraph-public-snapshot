@@ -22,23 +22,23 @@ function repoPageTitle(repo: any): string {
 	return title;
 }
 
-class RepoMain extends React.Component<any, any> {
-	static propTypes = {
-		location: React.PropTypes.object,
-		repo: React.PropTypes.string,
-		rev: React.PropTypes.string,
-		commitID: React.PropTypes.string,
-		resolvedRev: React.PropTypes.object,
-		repoNavContext: React.PropTypes.object,
-		repoResolution: React.PropTypes.object,
-		build: React.PropTypes.object,
-		repoObj: React.PropTypes.object,
-		main: React.PropTypes.element,
-		isCloning: React.PropTypes.bool,
-		route: React.PropTypes.object,
-		routes: React.PropTypes.array,
-	};
+type Props = {
+	location?: any,
+	repo: string,
+	rev?: string,
+	commitID?: string,
+	resolvedRev?: any,
+	repoNavContext?: any,
+	repoResolution?: any,
+	build?: any,
+	repoObj?: any,
+	main?: JSX.Element,
+	isCloning?: boolean,
+	route?: any,
+	routes: any[],
+};
 
+class RepoMain extends React.Component<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,

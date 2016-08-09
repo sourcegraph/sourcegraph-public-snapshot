@@ -5,7 +5,7 @@ import * as React from "react";
 import Component from "sourcegraph/Component";
 import * as s from "sourcegraph/blob/styles/Blob.css";
 
-class BlobToolbar extends Component<any, any> {
+class BlobToolbar extends Component<Props, any> {
 	reconcileState(state, props) {
 		state.repo = props.repo;
 		state.rev = props.rev || null;
@@ -23,11 +23,11 @@ class BlobToolbar extends Component<any, any> {
 	}
 }
 
-(BlobToolbar as any).propTypes = {
-	repo: React.PropTypes.string.isRequired,
-	rev: React.PropTypes.string,
-	commitID: React.PropTypes.string,
-	path: React.PropTypes.string,
+type Props = {
+	repo: string,
+	rev?: string,
+	commitID?: string,
+	path?: string,
 };
 
 export default BlobToolbar;

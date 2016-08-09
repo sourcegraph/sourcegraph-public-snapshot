@@ -27,14 +27,15 @@ export function formatDuration(ms) {
 	return parts.join(" ");
 }
 
+type Props = {
+	time: string,
+	className?: string,
+};
 
-class TimeAgo extends Component<any, any> {
+class TimeAgo extends Component<Props, any> {
 	render(): JSX.Element | null {
-		return <time title={this.props.time} {...this.props}>{formatDuration(Date.now() - new Date(this.props.time).getTime())} ago</time>;
+		return <time title={this.props.time} className={this.props.className}>{formatDuration(Date.now() - new Date(this.props.time).getTime())} ago</time>;
 	}
 }
-(TimeAgo as any).propTypes = {
-	time: React.PropTypes.string.isRequired,
-};
 
 export default TimeAgo;

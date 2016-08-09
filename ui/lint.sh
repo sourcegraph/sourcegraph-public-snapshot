@@ -8,9 +8,15 @@ if [ ${files[@]} ]; then
 	exit 1
 fi
 
+if grep -qr propTypes web_modules/; then
+	echo "Please use type parameters instead of propTypes:"
+	grep -rn propTypes web_modules/
+	exit 1
+fi
+
 if grep -qr 'className={`' web_modules/; then
 	echo "Please use the classNames helper instead of template strings:"
-	grep -r 'className={`' web_modules/
+	grep -rn 'className={`' web_modules/
 	exit 1
 fi
 

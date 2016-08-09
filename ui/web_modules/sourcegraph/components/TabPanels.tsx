@@ -2,14 +2,14 @@
 
 import * as React from "react";
 
-class TabPanels extends React.Component<any, any> {
-	static propTypes = {
-		className: React.PropTypes.string,
-		children: React.PropTypes.any,
-		active: React.PropTypes.number,
-		styles: React.PropTypes.object,
-	};
+type Props = {
+	className?: string,
+	children?: any,
+	active?: number,
+	styles?: any,
+};
 
+class TabPanels extends React.Component<Props, any> {
 	static defaultProps = {
 		active: 0,
 	};

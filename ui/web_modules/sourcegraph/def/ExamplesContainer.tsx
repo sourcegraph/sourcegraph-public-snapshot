@@ -12,17 +12,17 @@ import {Panel, Heading, Loader} from "sourcegraph/components/index";
 import "whatwg-fetch";
 import * as classNames from "classnames";
 
-class ExamplesContainer extends Container<any, any> {
-	static propTypes = {
-		repo: React.PropTypes.string,
-		rev: React.PropTypes.string,
-		commitID: React.PropTypes.string,
-		def: React.PropTypes.string,
-		defObj: React.PropTypes.object,
-		className: React.PropTypes.string,
-		examples: React.PropTypes.object,
-	};
+type Props = {
+	repo: string,
+	rev?: string,
+	commitID?: string,
+	def: string,
+	defObj?: any,
+	className?: string,
+	examples?: any,
+};
 
+class ExamplesContainer extends Container<Props, any> {
 	constructor(props) {
 		super(props);
 	}
@@ -54,7 +54,7 @@ class ExamplesContainer extends Container<any, any> {
 					hoverLevel="low"
 					className={classNames(styles.full_width_sm, styles.b__cool_pale_gray, base.ba)}>
 					<div className={this.props.className}>
-						{!refLocs && <div className={typography.tc}> <Loader className={base.mv4} /></div>}
+						{!refLocs && <div className={typography.tc}> <Loader /></div>}
 						{refLocs && !refLocs.RepoRefs && <i>No examples found</i>}
 						{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <RefsContainer
 							key={i}
@@ -64,7 +64,6 @@ class ExamplesContainer extends Container<any, any> {
 							def={this.props.def}
 							defObj={this.props.defObj}
 							repoRefs={repoRefs}
-							prefetch={i === 0}
 							initNumSnippets={expandedSnippets}
 							rangeLimit={2}
 							fileCollapseThreshold={5} />)}

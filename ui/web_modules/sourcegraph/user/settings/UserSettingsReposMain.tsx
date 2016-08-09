@@ -10,18 +10,18 @@ import * as RepoActions from "sourcegraph/repo/RepoActions";
 
 const reposQuerystring = "RemoteOnly=true";
 
-export default class UserSettingsReposMain extends Container<any, any> {
-	static propTypes = {
-		location: React.PropTypes.object.isRequired,
-	};
+type Props = {
+	location: any,
+};
 
+export default class UserSettingsReposMain extends Container<Props, any> {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 		user: React.PropTypes.object,
 		signedIn: React.PropTypes.bool.isRequired,
 		githubToken: React.PropTypes.object,
 		eventLogger: React.PropTypes.object.isRequired,
-		router: React.PropTypes.object,
+		router: React.PropTypes.object.isRequired,
 	};
 
 	reconcileState(state, props, context) {

@@ -9,7 +9,7 @@ export default function redirectIfLoggedIn(url: Location | string, Component) {
 	class RedirectIfLoggedIn extends React.Component<any, any> {
 		static contextTypes = {
 			signedIn: React.PropTypes.bool.isRequired,
-			router: React.PropTypes.object,
+			router: React.PropTypes.object.isRequired,
 		};
 
 		componentWillMount() {

@@ -6,7 +6,7 @@ import * as styles from "./Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import Helmet from "react-helmet";
 
-function ContactPage(props, {signedIn}) {
+function ContactPage(props: {}, {signedIn}) {
 	return (
 		<div>
 			<Helmet title="Contact" />

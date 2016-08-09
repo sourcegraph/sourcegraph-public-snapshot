@@ -11,7 +11,7 @@ import {urlToDefInfo} from "sourcegraph/def/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
 
 export default function desktopContainer(Component) {
-	class DesktopContainer extends Container<any, any> {
+	class DesktopContainer extends Container<{}, any> {
 		static contextTypes = {
 			router: React.PropTypes.object.isRequired,
 		};

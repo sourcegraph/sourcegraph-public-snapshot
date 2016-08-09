@@ -16,31 +16,31 @@ import {FaChevronDown, CheckIcon} from "sourcegraph/components/Icons";
 import {Input, Menu, Heading} from "sourcegraph/components/index";
 import {urlWithRev} from "sourcegraph/repo/routes";
 
-class RevSwitcher extends Component<any, any> {
+type Props = {
+	repo: string,
+	rev?: string,
+	commitID: string,
+	repoObj?: any,
+	isCloning: boolean,
+
+	// branches is RepoStore.branches.
+	branches: any,
+
+	// tags is RepoStore.tags.
+	tags: any,
+
+	// srclibDataVersions is TreeStore.srclibDataVersions.
+	srclibDataVersions: any,
+
+	// to construct URLs
+	routes: any[],
+	routeParams: any,
+};
+
+class RevSwitcher extends Component<Props, any> {
 	_input: any;
 	_debouncedSetQuery: any;
 	_wrapper: any;
-
-	static propTypes = {
-		repo: React.PropTypes.string.isRequired,
-		rev: React.PropTypes.string,
-		commitID: React.PropTypes.string.isRequired,
-		repoObj: React.PropTypes.object,
-		isCloning: React.PropTypes.bool.isRequired,
-
-		// branches is RepoStore.branches.
-		branches: React.PropTypes.object.isRequired,
-
-		// tags is RepoStore.tags.
-		tags: React.PropTypes.object.isRequired,
-
-		// srclibDataVersions is TreeStore.srclibDataVersions.
-		srclibDataVersions: React.PropTypes.object.isRequired,
-
-		// to construct URLs
-		routes: React.PropTypes.array.isRequired,
-		routeParams: React.PropTypes.object.isRequired,
-	};
 
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,

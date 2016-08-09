@@ -12,13 +12,18 @@ const dummyLineLengths = [
 	25, 27, 32, 24, 29, 31, 37, 51, 35, 42,
 ];
 
+type Props = {
+	styles?: any,
+	numLines?: number,
+};
+
 // BlobContentPlaceholder implements the "content placeholder" effect
 // seen in the loading screens of mobile apps and the Facebook news
 // feed, where the initial state mimics the layout of what will be
 // eventually displayed.
 //
 // It makes the app feel a lot less jittery.
-function BlobContentPlaceholder(props) {
+function BlobContentPlaceholder(props: Props) {
 	const numLines = props.numLines || 60;
 	const lines: any[] = [];
 	for (let i = 0; i < numLines; i++) {
@@ -41,10 +46,4 @@ function BlobContentPlaceholder(props) {
 		</div>
 	);
 }
-
-(BlobContentPlaceholder as any).propTypes = {
-	styles: React.PropTypes.object,
-	numLines: React.PropTypes.number,
-};
-
 export default BlobContentPlaceholder;

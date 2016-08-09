@@ -17,17 +17,18 @@ import {repoPath, repoRev, repoParam} from "sourcegraph/repo/index";
 // and could lead to multiple WantCreateRepo, etc., actions being sent
 // to the server).
 export default function withResolvedRepoRev(Component, isMainComponent?: boolean) {
+	type Props = {
+		params: any,
+		location: HistoryModule.Location,
+	};
+
 	isMainComponent = Boolean(isMainComponent);
-	class WithResolvedRepoRev extends Container<any, any> {
+	class WithResolvedRepoRev extends Container<Props, any> {
 		_cloningInterval: any;
 		_cloningTimeout: any;
 
 		static contextTypes = {
 			router: React.PropTypes.object.isRequired,
-		};
-
-		static propTypes = {
-			params: React.PropTypes.object.isRequired,
 		};
 
 		stores() {

@@ -11,14 +11,14 @@ import debounce from "lodash.debounce";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 
-class Repos extends React.Component<any, any> {
+type Props = {
+	repos: any[],
+	location?: any,
+};
+
+class Repos extends React.Component<Props, any> {
 	_filterInput: any;
 	
-	static propTypes = {
-		repos: React.PropTypes.arrayOf(React.PropTypes.object),
-		location: React.PropTypes.object.isRequired,
-	};
-
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,
 		githubToken: React.PropTypes.object,

@@ -6,7 +6,7 @@ import * as styles from "./Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import Helmet from "react-helmet";
 
-function SecurityPage(props, {signedIn}) {
+function SecurityPage(props: {}, {signedIn}) {
 	return (
 		<div>
 			<Helmet title="Security" />
@@ -75,7 +75,7 @@ function SecurityPage(props, {signedIn}) {
 
                 <p className={styles.p}>All employee computers and devices are password-protected with full-disk encryption.</p>
 
-                <Heading id="disclose" level="3" underline="blue" className={styles.h5}>Bug bounty program</Heading>
+                <Heading level="3" underline="blue" className={styles.h5}>Bug bounty program</Heading>
 
                 <p className={styles.p}>Our bug bounty program is similar to ones offered by Google, Facebook, Mozilla, and GitHub, and offers a way for security researchers and engineers to report vulnerabilities in a responsible fashion and receive cash compensation for their efforts.</p>
 

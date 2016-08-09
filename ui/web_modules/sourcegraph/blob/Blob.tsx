@@ -18,58 +18,60 @@ import * as s from "sourcegraph/blob/styles/Blob.css";
 import {Def} from "sourcegraph/def/index";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-class Blob extends Component<any, any> {
+type Props = {
+	contents?: string,
+	textSize?: string,
+	annotations?: {
+		Annotations: any[],
+		LineStartBytes: any[],
+	},
+	lineNumbers?: boolean,
+	skipAnns?: boolean,
+	startLine?: number,
+	startCol?: number,
+	startByte?: number,
+	endLine?: number,
+	endCol?: number,
+	endByte?: number,
+	scrollToStartLine?: boolean,
+	highlightedDef: string | null,
+	highlightedDefObj: Def | null,
+
+	// activeDef is the def ID ("UnitType/Unit/-/Path") only of the currently
+	// active def (i.e., the subject of the current DefInfo page). It should
+	// not be the whole def URL path (it should not include the repo and rev).
+	activeDef?: string,
+	activeDefRepo?: string,
+
+	// For linking line numbers to the file they came from (e.g., in
+	// ref snippets).
+	repo: string,
+	rev?: string,
+	commitID?: string,
+	path: string,
+
+	// contentsOffsetLine indicates that the contents string does not
+	// start at line 1 within the file, but rather some other line number.
+	// It must be specified when startLine > 1 but the contents don't begin at
+	// the first line of the file.
+	contentsOffsetLine?: number,
+
+	highlightSelectedLines?: boolean,
+
+	// dispatchSelections is whether this Blob should emit BlobActions.SelectCharRange
+	// actions when the text selection changes. It should be true for the main file view but
+	// not for secondary file views (e.g., usage examples).
+	dispatchSelections?: boolean,
+
+	// display line expanders is whether or not to show only the top line expander,
+	// the bottom line expander, or both
+	displayLineExpanders?: string,
+
+	displayRanges?: any;
+};
+
+class Blob extends Component<Props, any> {
 	_isMounted: boolean;
-
-	static propTypes = {
-		contents: React.PropTypes.string,
-		textSize: React.PropTypes.oneOf(["normal", "large"]),
-		annotations: React.PropTypes.shape({
-			Annotations: React.PropTypes.array,
-			LineStartBytes: React.PropTypes.array,
-		}),
-		lineNumbers: React.PropTypes.bool,
-		skipAnns: React.PropTypes.bool,
-		startLine: React.PropTypes.number,
-		startCol: React.PropTypes.number,
-		startByte: React.PropTypes.number,
-		endLine: React.PropTypes.number,
-		endCol: React.PropTypes.number,
-		endByte: React.PropTypes.number,
-		scrollToStartLine: React.PropTypes.bool,
-		highlightedDef: React.PropTypes.string,
-		highlightedDefObj: React.PropTypes.object,
-
-		// activeDef is the def ID ("UnitType/Unit/-/Path") only of the currently
-		// active def (i.e., the subject of the current DefInfo page). It should
-		// not be the whole def URL path (it should not include the repo and rev).
-		activeDef: React.PropTypes.string,
-		activeDefRepo: React.PropTypes.string,
-
-		// For linking line numbers to the file they came from (e.g., in
-		// ref snippets).
-		repo: React.PropTypes.string.isRequired,
-		rev: React.PropTypes.string,
-		commitID: React.PropTypes.string,
-		path: React.PropTypes.string.isRequired,
-
-		// contentsOffsetLine indicates that the contents string does not
-		// start at line 1 within the file, but rather some other line number.
-		// It must be specified when startLine > 1 but the contents don't begin at
-		// the first line of the file.
-		contentsOffsetLine: React.PropTypes.number,
-
-		highlightSelectedLines: React.PropTypes.bool,
-
-		// dispatchSelections is whether this Blob should emit BlobActions.SelectCharRange
-		// actions when the text selection changes. It should be true for the main file view but
-		// not for secondary file views (e.g., usage examples).
-		dispatchSelections: React.PropTypes.bool,
-
-		// display line expanders is whether or not to show only the top line expander,
-		// the bottom line expander, or both
-		displayLineExpanders: React.PropTypes.string,
-	};
 
 	static contextTypes = {
 		eventLogger: React.PropTypes.object.isRequired,
@@ -408,7 +410,7 @@ class Blob extends Component<any, any> {
 			lines.push(
 				<BlobLine
 					onMount={this.state.scrollTarget && this.state.scrollTarget === i && this.state.scrollCallback ? this.state.scrollCallback : null}
-					ref={this.state.startLine === lineNumber ? "startLineComponent" : null}
+					ref={this.state.startLine === lineNumber ? "startLineComponent" : undefined}
 					repo={this.state.repo}
 					rev={this.state.rev}
 					commitID={this.state.commitID}
@@ -419,7 +421,7 @@ class Blob extends Component<any, any> {
 					contents={line}
 					textSize={this.state.textSize}
 					annotations={this.state.lineAnns ? (this.state.lineAnns[i] || null) : null}
-					selected={this.state.highlightSelectedLines && this.state.startLine && this.state.endLine && this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
+					selected={this.state.highlightSelectedLines && this.state.startLine !== null && this.state.endLine !== null && this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
 					highlightedDef={this.state.highlightedDef}
 					highlightedDefObj={this.state.highlightedDefObj}
 					activeDef={this.state.activeDef}

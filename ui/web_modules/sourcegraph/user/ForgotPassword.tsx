@@ -16,7 +16,7 @@ import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 
 // TODO: prevent mounting this component if user is logged in
-class ForgotPassword extends Container<any, any> {
+class ForgotPassword extends Container<{}, any> {
 	_emailInput: any;
 
 	constructor(props) {

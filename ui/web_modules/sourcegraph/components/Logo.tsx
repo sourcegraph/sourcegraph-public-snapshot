@@ -4,14 +4,13 @@ import * as React from "react";
 
 // This component renders the Sourcegraph logo, logomark, or logomark with tagline at custom sizes.
 
-class Logo extends React.Component<any, any> {
+type Props = {
+	className?: string,
+	type?: string,
+	width?: string,
+};
 
-	static propTypes = {
-		className: React.PropTypes.string,
-		type: React.PropTypes.string,
-		width: React.PropTypes.string,
-	};
-
+class Logo extends React.Component<Props, any> {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 	};

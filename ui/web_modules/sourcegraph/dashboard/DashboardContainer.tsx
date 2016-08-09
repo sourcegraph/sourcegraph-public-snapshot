@@ -10,19 +10,18 @@ import {locationForSearch} from "sourcegraph/search/routes";
 import GlobalSearchInput from "sourcegraph/search/GlobalSearchInput";
 import {Button, Logo} from "sourcegraph/components/index";
 import SearchSettings from "sourcegraph/search/SearchSettings";
-import {LanguageID} from "sourcegraph/Language";
 import * as invariant from "invariant";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import * as classNames from "classnames";
 
 type OnSelectQueryListener = (ev: Event, query: string) => any;
 
-class DashboardContainer extends Container<any, any> {
-	_input: any;
+type Props = {
+	location?: any,
+};
 
-	static propTypes = {
-		location: React.PropTypes.object.isRequired,
-	};
+class DashboardContainer extends Container<Props, any> {
+	_input: any;
 
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,
@@ -194,7 +193,7 @@ const topQueries: {[key: string]: string[]} = {
 		"indent json",
 	],
 };
-function topQueriesFor(langs: Array<LanguageID>): string[] {
+function topQueriesFor(langs: string[]): string[] {
 	let qs = [];
 	for (let lang of langs) {
 		if (topQueries[lang]) {
@@ -207,7 +206,7 @@ const Queries = ({
 	langs,
 	onSelectQuery,
 }: {
-	langs: LanguageID[],
+	langs: string[],
 	onSelectQuery: OnSelectQueryListener,
 }) => (
 	<div>{topQueriesFor(langs).map(q => <Button onClick={(ev) => onSelectQuery(ev, q)} key={q} className={styles.query} color="blue" outline={true} size="small">{q}</Button>)}</div>

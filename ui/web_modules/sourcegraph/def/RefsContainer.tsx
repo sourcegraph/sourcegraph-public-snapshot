@@ -30,29 +30,30 @@ import {FaThumbsUp, FaThumbsDown} from "sourcegraph/components/Icons";
 
 const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above/below a ref
 
-export default class RefsContainer extends Container<any, any> {
+type Props = {
+	repo?: string,
+	rev?: string,
+	commitID?: string,
+	def?: string,
+	defObj?: any,
+	refs?: any,
+	repoRefs: {
+		Repo?: string,
+		Files: any[],
+	},
+	refetch?: boolean,
+	initNumSnippets?: number, // number of snippets to initially expand
+	fileCollapseThreshold?: number, // number of files to show before "and X more..."-style paginator
+	rangeLimit?: number,
+	showRepoTitle?: boolean,
+	refIndex?: number,
+};
+
+export default class RefsContainer extends Container<Props, any> {
 	rangesMemo: any;
 	filesByName: any;
 	ranges: any;
 	anns: any;
-
-	static propTypes = {
-		repo: React.PropTypes.string.isRequired,
-		rev: React.PropTypes.string,
-		commitID: React.PropTypes.string,
-		def: React.PropTypes.string.isRequired,
-		defObj: React.PropTypes.object.isRequired,
-		repoRefs: React.PropTypes.shape({
-			Repo: React.PropTypes.string,
-			Files: React.PropTypes.array,
-		}),
-		refetch: React.PropTypes.bool,
-		initNumSnippets: React.PropTypes.number, // number of snippets to initially expand
-		fileCollapseThreshold: React.PropTypes.number, // number of files to show before "and X more..."-style paginator
-		rangeLimit: React.PropTypes.number,
-		showRepoTitle: React.PropTypes.bool,
-		refIndex: React.PropTypes.number,
-	};
 
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
@@ -90,8 +91,6 @@ export default class RefsContainer extends Container<any, any> {
 	}
 
 	reconcileState(state, props) {
-		state.prefetch = props.prefetch || false;
-
 		if (typeof state.showAllFiles === "undefined") {
 			state.showAllFiles = false;
 		}
@@ -343,8 +342,7 @@ export default class RefsContainer extends Container<any, any> {
 												displayRanges={ranges || null}
 												highlightedDef={null}
 												highlightedDefObj={null}
-												textSize="large"
-												className={styles.blob} />
+												textSize="large" />
 										</div>
 										{this.state.refRepo && <div className={classNames(base.mt3, styles.f7, base.hidden_s)}>From <Link to={`${urlToBlob(this.state.refRepo, this.state.refRev, loc.Path)}${ranges ? `#L${ranges[0][2]}` : ""}`} onClick={this._clickedFromRepo.bind(this)}>{this.state.refRepo}</Link></div>}
 									</div>

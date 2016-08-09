@@ -5,7 +5,11 @@ import * as React from "react";
 import * as styles from "./styles/modal.css";
 import renderedOnBody from "sourcegraph/util/renderedOnBody";
 
-class Modal extends React.Component<any, any> {
+type ModalProps = {
+	onDismiss?: () => void,
+};
+
+class Modal extends React.Component<ModalProps, any> {
 	constructor(props) {
 		super(props);
 		this._onClick = this._onClick.bind(this);
@@ -51,14 +55,6 @@ class Modal extends React.Component<any, any> {
 	}
 }
 
-(Modal as any).propTypes = {
-	onDismiss: React.PropTypes.func,
-	children: React.PropTypes.oneOfType([
-		React.PropTypes.arrayOf(React.PropTypes.element),
-		React.PropTypes.element,
-	]),
-};
-
 let RenderedModal = renderedOnBody(Modal);
 export default RenderedModal;
 
@@ -80,10 +76,22 @@ export function dismissModal(modalName, location, router) {
 	};
 }
 
+type LocationStateModalProps = {
+	location: any,
+
+	// modalName is the name of the modal (location.state.modal value) that this
+	// LocationStateToggleLink component toggles.
+	modalName: string,
+
+	onDismiss?: () => void,
+
+	children?: any,
+};
+
 // LocationStateModal wraps <Modal> and uses a key on the location state
 // to determine whether it is displayed. Use LocationStateModal with
 // LocationStateToggleLink.
-export function LocationStateModal({location, modalName, children, onDismiss}, {router}): any {
+export function LocationStateModal({location, modalName, children, onDismiss}: LocationStateModalProps, {router}): any {
 	if (!location.state || location.state.modal !== modalName) return null;
 
 	const onDismiss2 = () => {
@@ -96,17 +104,7 @@ export function LocationStateModal({location, modalName, children, onDismiss}, {
 		</RenderedModal>
 	);
 }
-(LocationStateModal as any).propTypes = {
-	location: React.PropTypes.object.isRequired,
 
-	// modalName is the name of the modal (location.state.modal value) that this
-	// LocationStateToggleLink component toggles.
-	modalName: React.PropTypes.string.isRequired,
-
-	onDismiss: React.PropTypes.func,
-
-	children: React.PropTypes.any,
-};
 (LocationStateModal as any).contextTypes = {
 	router: React.PropTypes.object.isRequired,
 };

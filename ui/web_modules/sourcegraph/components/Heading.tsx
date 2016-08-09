@@ -4,17 +4,17 @@ import * as React from "react";
 import * as styles from "./styles/heading.css";
 import * as classNames from "classnames";
 
-class Heading extends React.Component<any, any> {
-	static propTypes = {
-		className: React.PropTypes.string,
-		children: React.PropTypes.any,
-		level: React.PropTypes.string, //  1 is the largest
-		underline: React.PropTypes.string, // blue, purple, white, orange, green
-		color: React.PropTypes.string, // purple, blue, green, orange, cool_mid_gray
-		align: React.PropTypes.string, // left, right, center
-		style: React.PropTypes.object,
-	};
+type Props = {
+	className?: string,
+	children?: any,
+	level?: string, //  1 is the largest
+	underline?: string, // blue, purple, white, orange, green
+	color?: string, // purple, blue, green, orange, cool_mid_gray
+	align?: string, // left, right, center
+	style?: any,
+};
 
+class Heading extends React.Component<Props, any> {
 	static defaultProps = {
 		level: "3", //  1 is the largest
 		underline: null,
@@ -26,7 +26,7 @@ class Heading extends React.Component<any, any> {
 		const {className, children, level, color, underline, align, style} = this.props;
 
 		return (
-			<div className={classNames(levelClasses[level] || styles.h3, colorClasses[color], alignClasses[align], className)} style={style}>
+			<div className={classNames(levelClasses[level || "3"] || styles.h3, colorClasses[color || ""], alignClasses[align || ""], className)} style={style}>
 				{children}<br />
 				{underline && <hr className={classNames(styles.line, underlineClasses[underline])} />}
 			</div>

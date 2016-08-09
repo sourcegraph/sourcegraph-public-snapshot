@@ -20,23 +20,7 @@ type Props = {
 	tabIndex?: string,
 };
 
-class GitHubAuthButton extends React.Component<any, any> {
-	static propTypes = {
-		scopes: React.PropTypes.string, // OAuth2 scopes
-
-		// return-to location after GitHub OAuth is complete
-		returnTo: React.PropTypes.oneOfType([React.PropTypes.object, React.PropTypes.string]),
-
-		color: React.PropTypes.string,
-		outline: React.PropTypes.bool,
-		block: React.PropTypes.bool,
-		children: React.PropTypes.oneOfType([
-			React.PropTypes.arrayOf(React.PropTypes.element),
-			React.PropTypes.element,
-			React.PropTypes.string,
-		]),
-		size: React.PropTypes.string,
-	};
+class GitHubAuthButton extends React.Component<Props, any> {
 	static contextTypes = {
 		eventLogger: React.PropTypes.object.isRequired,
 	};

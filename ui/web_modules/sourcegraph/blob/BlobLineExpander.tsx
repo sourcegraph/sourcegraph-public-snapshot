@@ -7,7 +7,13 @@ import * as styles from "sourcegraph/blob/styles/Blob.css";
 
 export type Range = [number, number];
 
-class BlobLineExpander extends Component<any, any> {
+type Props = {
+	direction: any,
+	expandRange: any,
+	onExpand: any,
+}
+
+class BlobLineExpander extends Component<Props, any> {
 	constructor(props) {
 		super(props);
 		this._onClick = this._onClick.bind(this);
