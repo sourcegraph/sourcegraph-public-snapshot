@@ -29,8 +29,6 @@ export type RouteName = "styleguide" |
 	"privacy" |
 	"admin" |
 	"adminBuilds" |
-	"coverage" |
-	"adminCoverage" |
 	"browserExtFaqs";
 
 // NOTE: If you add a top-level route (e.g., "/about"), add it to the
@@ -64,7 +62,6 @@ export const rel = {
 	blob: "blob/*",
 	build: "builds/:id",
 	builds: "builds",
-	coverage: "coverage",
 };
 
 export const abs = {
@@ -88,7 +85,6 @@ export const abs = {
 	reset: rel.reset,
 	admin: rel.admin,
 	adminBuilds: `${rel.admin}${rel.builds}`,
-	adminCoverage: `${rel.admin}${rel.coverage}`,
 	commit: `${rel.repo}/-/${rel.commit}`,
 	def: `${rel.repo}/-/${rel.def}`,
 	defInfo: `${rel.repo}/-/${rel.defInfo}`,
