@@ -602,8 +602,7 @@ func (t *translator) serveExportedSymbols(body []byte) (interface{}, error) {
 	}
 
 	// Determine the root path for the workspace and prepare it.
-	rootPath := filepath.Join(t.WorkDir, r.Repo, r.Commit)
-	err := t.prepareWorkspace(rootPath, r.Repo, r.Commit)
+	rootPath, err := t.prepareWorkspace(r.Repo, r.Commit)
 	if err != nil {
 		return nil, err
 	}
