@@ -372,18 +372,23 @@ func (t *translator) prepareWorkspace(repo, commit string) (workspace string, er
 var errTimeout = errors.New("request timed out")
 
 func (t *translator) prepareWorkspaceTimeout(repo, commit string, timeout time.Duration) (workspace string, err error) {
+	start := time.Now()
+
 	// Acquire ownership of repository preparation. Essentially this is a
 	// sync.Mutex unique to the workspace.
 	workspace = t.pathToWorkspace(repo, commit)
 	didTimeout, handled, done := t.preparingRepos.acquire(workspace, timeout)
 	if didTimeout {
+		observePrepare(start, repo, prepStatusTimeout)
 		return "", errTimeout
 	}
 	if handled {
 		// A different request prepared the repository.
+		observePrepare(start, repo, prepStatusWaiting)
 		return workspace, nil
 	}
 	defer done()
+	defer observePrepare(start, repo, prepStatusOK)
 
 	// If the workspace exists already, it has been fully prepared and we don't
 	// need to do anything.
@@ -494,6 +499,7 @@ func (t *translator) serveDefinition(body []byte) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	start := time.Now()
 
 	// TODO: should probably check server capabilities before invoking hover,
 	// but good enough for now.
@@ -511,24 +517,29 @@ func (t *translator) serveDefinition(body []byte) (interface{}, error) {
 	// TODO: according to spec this could be lsp.Location OR []lsp.Location
 	var respDef []lsp.Location
 	err = t.lspDo(rootPath, reqDef, &respDef)
+	defer observe(start, reqDef.Method, pos.Repo, err, len(respDef) == 0)
 	if err != nil {
 		return nil, err
 	}
 
-	f, err := t.resolveFile(pos.Repo, pos.Commit, respDef[0].URI)
-	if err != nil {
-		return nil, err
+	// TODO: standardize our response when there are no results.
+	var r Range
+	if len(respDef) > 0 {
+		f, err := t.resolveFile(pos.Repo, pos.Commit, respDef[0].URI)
+		if err != nil {
+			return nil, err
+		}
+		r = Range{
+			Repo:           f.Repo,
+			Commit:         f.Commit,
+			File:           f.Path,
+			StartLine:      respDef[0].Range.Start.Line,
+			StartCharacter: respDef[0].Range.Start.Character,
+			EndLine:        respDef[0].Range.End.Line,
+			EndCharacter:   respDef[0].Range.End.Character,
+		}
 	}
-
-	return Range{
-		Repo:           f.Repo,
-		Commit:         f.Commit,
-		File:           f.Path,
-		StartLine:      respDef[0].Range.Start.Line,
-		StartCharacter: respDef[0].Range.Start.Character,
-		EndLine:        respDef[0].Range.End.Line,
-		EndCharacter:   respDef[0].Range.End.Character,
-	}, nil
+	return r, nil
 }
 
 func (t *translator) serveHover(body []byte) (interface{}, error) {
@@ -552,6 +563,7 @@ func (t *translator) serveHover(body []byte) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	start := time.Now()
 
 	// TODO: should probably check server capabilities before invoking hover,
 	// but good enough for now.
@@ -568,6 +580,7 @@ func (t *translator) serveHover(body []byte) (interface{}, error) {
 
 	var respHover lsp.Hover
 	err = t.lspDo(rootPath, reqHover, &respHover)
+	defer observe(start, reqHover.Method, pos.Repo, err, err == nil && len(respHover.Contents) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -592,6 +605,7 @@ func (t *translator) serveExternalRefs(body []byte) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	start := time.Now()
 
 	// TODO: should probably check server capabilities before invoking symbol,
 	// but good enough for now.
@@ -608,6 +622,7 @@ func (t *translator) serveExternalRefs(body []byte) (interface{}, error) {
 
 	var respSymbol []lsp.SymbolInformation
 	err = t.lspDo(rootPath, reqSymbol, &respSymbol)
+	defer observe(start, reqSymbol.Method, r.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -657,6 +672,7 @@ func (t *translator) serveExportedSymbols(body []byte) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	start := time.Now()
 
 	// TODO: should probably check server capabilities before invoking symbol,
 	// but good enough for now.
@@ -673,6 +689,7 @@ func (t *translator) serveExportedSymbols(body []byte) (interface{}, error) {
 
 	var respSymbol []lsp.SymbolInformation
 	err = t.lspDo(rootPath, reqSymbol, &respSymbol)
+	defer observe(start, reqSymbol.Method, r.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -722,6 +739,7 @@ func (t *translator) serveLocalRefs(body []byte) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	start := time.Now()
 
 	// TODO: should probably check server capabilities before invoking references,
 	// but good enough for now.
@@ -738,6 +756,7 @@ func (t *translator) serveLocalRefs(body []byte) (interface{}, error) {
 
 	var resp []lsp.Location
 	err = t.lspDo(rootPath, req, &resp)
+	defer observe(start, req.Method, pos.Repo, err, len(resp) == 0)
 	if err != nil {
 		return nil, err
 	}

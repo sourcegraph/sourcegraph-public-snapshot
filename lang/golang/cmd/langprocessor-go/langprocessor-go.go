@@ -164,6 +164,7 @@ func main() {
 	if *profbind != "" {
 		go debugserver.Start(*profbind)
 	}
+	langp.InitMetrics("go")
 
 	// HACK: copy files from /config to /root/.ssh because that is where our
 	// configs are located. "_" (underscore) is not a valid key name in a

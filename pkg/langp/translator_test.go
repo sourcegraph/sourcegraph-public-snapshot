@@ -18,6 +18,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
+func init() {
+	InitMetrics("test")
+}
+
 func TestTranslator(t *testing.T) {
 	workDir, err := ioutil.TempDir("", "TestServe")
 	if err != nil {
