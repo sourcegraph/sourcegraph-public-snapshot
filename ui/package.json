@@ -65,7 +65,7 @@
     "start": "NODE_ENV=${NODE_ENV:=development} node ./node_modules/.bin/webpack-dev-server",
     "build": "env NODE_ENV=production node ./node_modules/.bin/webpack",
     "test": "npm run lint && npm run test-unit",
-    "lint": "./node_modules/.bin/tsc && find ./web_modules -name '*.ts' -or -name '*.tsx' | xargs ./node_modules/.bin/tslint",
+    "lint": "./lint.sh",
     "test-unit": "env NODE_ENV=test ./node_modules/.bin/mocha-webpack 'web_modules/**/*_test.tsx' && rm -r ./.tmp",
     "dep": "npm rebuild fsevents",
     "generate": "./generate.sh",
