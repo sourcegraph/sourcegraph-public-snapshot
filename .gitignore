@@ -74,6 +74,9 @@ eb-bundle.zip
 /lang/golang/cmd/langserver-go/langserver-go
 /lang/golang/cmd/langprocessor-go/langprocessor-go
 
+
+/lang/java/cmd/langprocessor-java/java-language-processor/
+
 # Sublime
 *.sublime-project
 *.sublime-workspace
