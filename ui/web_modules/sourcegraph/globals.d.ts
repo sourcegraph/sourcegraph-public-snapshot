@@ -64,6 +64,10 @@ declare module "lodash.trimleft" {
 	export default _.trimStart;
 }
 
+declare module "lodash.isequal" {
+	export default _.isEqual;
+}
+
 declare module "recharts" {
 	export var LineChart: any;
 	export var Line: any;

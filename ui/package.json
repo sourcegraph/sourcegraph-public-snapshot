@@ -48,6 +48,7 @@
     "isomorphic-fetch": "2.2.1",
     "lodash.debounce": "4.0.6",
     "lodash.get": "4.3.0",
+    "lodash.isequal": "4.3.1",
     "lodash.trimleft": "3.0.4",
     "lodash.uniq": "4.3.0",
     "raven-js": "1.1.19",
