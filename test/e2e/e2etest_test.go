@@ -52,10 +52,6 @@ func TestSearchFlow4(t *testing.T) {
 	runE2E(t, "search_flow_4")
 }
 
-func TestChannelFlow(t *testing.T) {
-	runE2E(t, "channel_flow")
-}
-
 var fatalMsg string
 
 func TestMain(m *testing.M) {
