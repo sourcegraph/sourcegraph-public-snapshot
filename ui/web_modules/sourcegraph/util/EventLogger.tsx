@@ -22,6 +22,7 @@ class EventLoggerClass {
 	_dispatcherToken: any;
 	_siteConfig: SiteConfig | null;
 	_currentPlatform: string = "Web";
+	_currentPlatformVersion: number = NaN;
 
 	// User data from the previous call to _updateUser.
 	_user: User | null;
@@ -52,8 +53,14 @@ class EventLoggerClass {
 	}
 
 	_initializeForSourcegraphPlatform(event: any): void {
-		if (event && event.detail && event.detail.currentPlatform) {
-			this._currentPlatform = event.detail.currentPlatform;
+		if (event && event.detail) {
+			if (event.detail.currentPlatform) {
+				this._currentPlatform = event.detail.currentPlatform;
+			}
+
+			if (event.detail._currentPlatformVersion) {
+				this._currentPlatformVersion = event.detail._currentPlatformVersion;
+			}
 		}
 	}
 
@@ -95,7 +102,7 @@ class EventLoggerClass {
 
 			this._telligent("newTracker", "sg", "sourcegraph-logging.telligentdata.com", {
 				appId: "SourcegraphWeb",
-				platform: this._currentPlatform,
+				platform: "Web",
 				encodeBase64: false,
 				env: env,
 				configUseCookies: true,
@@ -266,6 +273,15 @@ class EventLoggerClass {
 		}
 	}
 
+	_decorateEventProperties(platformProperties: any): any {
+		// Check if there is a platform version. This can be removed once Amplitude is removed since Telligent will handle NaN or null values appropriately.
+		if (isNaN(this._currentPlatformVersion)) {
+			return Object.assign({}, platformProperties, {Platform: this._currentPlatform, is_authed: this._user ? "true" : "false"});
+		}
+
+		return Object.assign({}, platformProperties, {Platform: this._currentPlatform, platformVersion: this._currentPlatformVersion, is_authed: this._user ? "true" : "false"});
+	}
+
 	// Use logViewEvent as the default way to log view events for Amplitude and GA
 	// location is the URL, page is the path.
 	logViewEvent(title: string, page: string, eventProperties: any): void {
@@ -288,8 +304,8 @@ class EventLoggerClass {
 			return;
 		}
 
-		this._telligent("track", eventAction, Object.assign({}, eventProperties, {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction, is_authed: this._user ? "true" : "false", Platform: this._currentPlatform}));
-		this._amplitude.logEvent(eventLabel, Object.assign({}, eventProperties, {eventCategory: eventCategory, eventAction: eventAction, is_authed: this._user ? "true" : "false", Platform: this._currentPlatform}));
+		this._telligent("track", eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
+		this._amplitude.logEvent(eventLabel, Object.assign({}, this._decorateEventProperties(eventProperties), {eventCategory: eventCategory, eventAction: eventAction}));
 
 		global.window.ga("send", {
 			hitType: "event",
