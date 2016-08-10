@@ -74,10 +74,10 @@ export class Home extends Container<HomeProps, any> {
 					</div>
 
 					{/* section showing welcome message and examples */}
-					<div style={{display: "flex", flowDirection: "row", maxWidth: "960px"}} className={classNames(base.center, base.ph3)} styleName="wrap_sm">
+					<div style={{display: "flex", flowDirection: "row", maxWidth: "960px", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center"}} className={classNames(base.center, base.ph3)} styleName="wrap_sm">
 
 						{/* column with welcome message, short description, and sign up button */}
-						<div style={{flex: "1 0 340px", maxWidth: "400px"}}>
+						<div style={{maxWidth: "400px", flex: "1 1 400px"}}>
 							<Heading align="left" level="2" underline="purple">
 								Welcome to the global graph of code
 							</Heading>
@@ -92,8 +92,8 @@ export class Home extends Container<HomeProps, any> {
 								</LocationStateToggleLink> or <Link className={styles.link} to="/about">Learn more</Link>
 							</p>
 						</div>
-						<div style={{flex: "0 1 32px"}} className={base.hidden_s}></div>
-						<div style={{flex: "1", position: "relative", lineHeight: "0"}} styleName="full_sm">
+
+						<div style={{maxWidth: "400px", maxHeight: "275px", flex: "1 1 400px", position: "relative"}} styleName="full_sm">
 							<LocationStateToggleLink modalName="demo_video" location={this.props.location} styleName="video">
 								<FlexContainer direction="top_bottom" justify="center" style={{position: "absolute", top: "0px", bottom: "0px", right: "0px", left: "0px"}} className={classNames(colors.bg_dark_purple_8, base.br3, typography.tc)} styleName="video_overlay">
 									<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/play.svg`} />
