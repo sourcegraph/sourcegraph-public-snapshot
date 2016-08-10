@@ -11,6 +11,7 @@ export type RouteName = "styleguide" |
 	"def" |
 	"defInfo" |
 	"desktopHome" |
+	"newHome" |
 	"repo" |
 	"tree" |
 	"blob" |
@@ -40,6 +41,7 @@ export const rel = {
 	browserExtFaqs: "about/browser-ext-faqs",
 	contact: "contact",
 	desktopHome: "desktop/home",
+	newHome: "newhome",
 	security: "security",
 	pricing: "pricing",
 	terms: "-/terms",
@@ -69,6 +71,7 @@ export const abs = {
 	about: rel.about,
 	contact: rel.contact,
 	desktopHome: rel.desktopHome,
+	newHome: rel.newHome,
 	security: rel.security,
 	browserExtFaqs: rel.browserExtFaqs,
 	pricing: rel.pricing,

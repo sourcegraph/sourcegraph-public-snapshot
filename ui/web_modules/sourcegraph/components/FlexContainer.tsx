@@ -12,6 +12,8 @@ type Props = {
 	content?: string, // start, end, center, between, stretch
 	className?: string,
 	children?: any,
+	style?: Object,
+	styleName?: string,
 };
 
 export class FlexContainer extends React.Component<Props, any> {
@@ -24,10 +26,10 @@ export class FlexContainer extends React.Component<Props, any> {
 	};
 
 	render(): JSX.Element | null {
-		const {direction = "left_right", wrap, justify = "start", items = "stretch", content = "stretch", className, children} = this.props;
+		const {direction = "left_right", wrap, justify = "start", items = "stretch", content = "stretch", className, children, style, styleName} = this.props;
 
 		return (
-			<div className={classNames(styles.flex, directionClasses[direction], justifyClasses[justify], itemsClasses[items], contentClasses[content], wrap ? styles.wrap : styles.nowrap, className)}>
+			<div className={classNames(styles.flex, directionClasses[direction], justifyClasses[justify], itemsClasses[items], contentClasses[content], wrap ? styles.wrap : styles.nowrap, className)} style={style} styleName={styleName}>
 				{children}
 			</div>
 		);

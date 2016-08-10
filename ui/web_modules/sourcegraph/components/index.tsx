@@ -2,7 +2,6 @@
 
 export {Button} from "./Button";
 export {Input} from "./Input";
-export {Modal} from "./Modal";
 export {Avatar} from "./Avatar";
 export {Loader} from "./Loader";
 export {Menu} from "./Menu";

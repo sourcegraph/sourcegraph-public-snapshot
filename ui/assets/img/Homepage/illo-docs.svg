@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="262px" height="139px" viewBox="0 0 262 139" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: sketchtool 39.1 (31720) - http://www.bohemiancoding.com/sketch -->
+    <title>74675327-1E71-4992-8F21-AF4501D22D1B</title>
+    <desc>Created with sketchtool.</desc>
+    <defs>
+        <rect id="path-1" x="2" y="22" width="258" height="115"></rect>
+        <filter x="-50%" y="-50%" width="200%" height="200%" filterUnits="objectBoundingBox" id="filter-2">
+            <feOffset dx="-18" dy="10" in="SourceAlpha" result="shadowOffsetInner1"></feOffset>
+            <feComposite in="shadowOffsetInner1" in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="shadowInnerInner1"></feComposite>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.08 0" type="matrix" in="shadowInnerInner1"></feColorMatrix>
+        </filter>
+        <rect id="path-3" x="0" y="0" width="262" height="139" rx="4"></rect>
+        <mask id="mask-4" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="262" height="139" fill="white">
+            <use xlink:href="#path-3"></use>
+        </mask>
+        <path d="M58.6,71.8275796 L63,74 L57.5,63 L52,74 L56.4,71.7717112 L56.4,76.7550627 C56.4,77.3487692 56.8924868,77.85 57.5,77.85 C58.1117487,77.85 58.6,77.3597799 58.6,76.7550627 L58.6,71.8275796 Z" id="path-5"></path>
+        <filter x="-50%" y="-50%" width="200%" height="200%" filterUnits="objectBoundingBox" id="filter-6">
+            <feMorphology radius="2" operator="dilate" in="SourceAlpha" result="shadowSpreadOuter1"></feMorphology>
+            <feOffset dx="4" dy="2" in="shadowSpreadOuter1" result="shadowOffsetOuter1"></feOffset>
+            <feComposite in="shadowOffsetOuter1" in2="SourceAlpha" operator="out" result="shadowOffsetOuter1"></feComposite>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.15 0" type="matrix" in="shadowOffsetOuter1"></feColorMatrix>
+        </filter>
+        <mask id="mask-7" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="-2" y="-2" width="15" height="18.85">
+            <rect x="50" y="61" width="15" height="18.85" fill="white"></rect>
+            <use xlink:href="#path-5" fill="black"></use>
+        </mask>
+        <rect id="path-8" x="68" y="72" width="120" height="40" rx="4"></rect>
+        <filter x="-50%" y="-50%" width="200%" height="200%" filterUnits="objectBoundingBox" id="filter-9">
+            <feOffset dx="5" dy="5" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feComposite in="shadowOffsetOuter1" in2="SourceAlpha" operator="out" result="shadowOffsetOuter1"></feComposite>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.103232563 0" type="matrix" in="shadowOffsetOuter1"></feColorMatrix>
+        </filter>
+        <mask id="mask-10" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="120" height="40" fill="white">
+            <use xlink:href="#path-8"></use>
+        </mask>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Homepage---Mobile" transform="translate(-29.000000, -1115.000000)">
+            <g id="Features" transform="translate(29.000000, 1115.000000)">
+                <g id="illo-docs.svg">
+                    <g>
+                        <g id="Rectangle">
+                            <use fill="#0FB6F2" fill-rule="evenodd" xlink:href="#path-1"></use>
+                            <use fill="black" fill-opacity="1" filter="url(#filter-2)" xlink:href="#path-1"></use>
+                        </g>
+                        <use id="Rectangle-9" stroke="#344966" mask="url(#mask-4)" stroke-width="6" xlink:href="#path-3"></use>
+                        <path d="M3.5,22.5 L258.507843,22.5" id="Line" stroke="#344966" stroke-width="3" stroke-linecap="square"></path>
+                        <circle id="Oval-2" fill="#F56869" cx="13.5" cy="11.5" r="4.5"></circle>
+                        <circle id="Oval-2-Copy" fill="#FEC570" cx="27.5" cy="11.5" r="4.5"></circle>
+                        <circle id="Oval-2-Copy-2" fill="#0DCEB7" cx="42.5" cy="11.5" r="4.5"></circle>
+                        <rect id="Rectangle-10" fill="#344966" x="33" y="51" width="184" height="4" rx="2"></rect>
+                        <rect id="Rectangle-10-Copy" fill="#FFFFFF" x="33" y="62" width="94" height="4" rx="2"></rect>
+                        <rect id="Rectangle-10-Copy-2" fill="#344966" x="33" y="74" width="114" height="4" rx="2"></rect>
+                        <rect id="Rectangle-10-Copy-3" fill="#344966" x="33" y="85" width="134" height="4" rx="2"></rect>
+                        <rect id="Rectangle-10-Copy-4" fill="#344966" x="33" y="96" width="44" height="4" rx="2"></rect>
+                        <g id="Combined-Shape" transform="translate(57.500000, 70.425000) rotate(-30.000000) translate(-57.500000, -70.425000) ">
+                            <use fill="black" fill-opacity="1" filter="url(#filter-6)" xlink:href="#path-5"></use>
+                            <use fill="#1A304D" fill-rule="evenodd" xlink:href="#path-5"></use>
+                            <use stroke="#FFFFFF" mask="url(#mask-7)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" xlink:href="#path-5"></use>
+                        </g>
+                        <g id="Rectangle-12">
+                            <use fill="black" fill-opacity="1" filter="url(#filter-9)" xlink:href="#path-8"></use>
+                            <use stroke="#344966" mask="url(#mask-10)" stroke-width="6" fill="#FFFFFF" fill-rule="evenodd" xlink:href="#path-8"></use>
+                        </g>
+                        <path d="M82.5,87.5 L172.5,87.5" id="Line" stroke="#344966" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <path d="M82.5,95.5 L172.5,95.5" id="Line-Copy" stroke="#344966" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

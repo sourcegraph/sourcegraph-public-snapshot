@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import CSSPropertyOperations from "react/lib/CSSPropertyOperations";
 import shallowCompare from "react/lib/shallowCompare";
 
 // Adapted from https://raw.githubusercontent.com/tajo/react-portal/master/lib/portal.js.
@@ -45,9 +44,6 @@ export function renderedOnBody(Component) {
 				this._node = document.createElement("div");
 				if (props.className) {
 					this._node.className = props.className;
-				}
-				if (props.style) {
-					CSSPropertyOperations.setValueForStyles(this._node, props.style);
 				}
 				document.body.appendChild(this._node);
 			}

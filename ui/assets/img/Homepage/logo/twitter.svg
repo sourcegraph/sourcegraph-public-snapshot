@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="30px" height="25px" viewBox="0 0 30 25" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: sketchtool 39.1 (31720) - http://www.bohemiancoding.com/sketch -->
+    <title>CB45E5F1-306E-471F-B2DF-7BAB5436A011</title>
+    <desc>Created with sketchtool.</desc>
+    <defs>
+        <rect id="path-1" x="91" y="28" width="320" height="691"></rect>
+        <filter x="-50%" y="-50%" width="200%" height="200%" filterUnits="objectBoundingBox" id="filter-3">
+            <feOffset dx="0" dy="4" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="6" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.112347147 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Homepage---Mobile" transform="translate(-32.000000, -2357.000000)">
+            <g id="Testimonials" transform="translate(-91.000000, 2172.000000)">
+                <rect id="Rectangle-7" fill="#B114F7" x="0" y="0" width="471" height="759"></rect>
+                <mask id="mask-2" fill="white">
+                    <use xlink:href="#path-1"></use>
+                </mask>
+                <g id="Grey-Background">
+                    <use fill="black" fill-opacity="1" filter="url(#filter-3)" xlink:href="#path-1"></use>
+                    <use fill="#FFFFFF" fill-rule="evenodd" xlink:href="#path-1"></use>
+                </g>
+            </g>
+            <g id="Logos" transform="translate(31.000000, 2355.000000)" fill="#1DA1F2">
+                <path d="M10.4344,26.8430144 C21.7552,26.8430144 27.9472,17.4638144 27.9472,9.33021436 C27.9472,9.06381436 27.9472,8.79861436 27.9292,8.53461436 C29.133796,7.66330636 30.17362,6.58447036 31,5.34861436 C29.876656,5.84637436 28.684996,6.17281036 27.4648,6.31701436 C28.7497,5.54779036 29.711356,4.33793836 30.1708,2.91261436 C28.962592,3.62956636 27.640768,4.13482636 26.2624,4.40661436 C24.354496,2.37788236 21.322864,1.88134636 18.86746,3.19543036 C16.412044,4.50950236 15.143524,7.30739836 15.7732,10.0202144 C10.82428,9.77211436 6.213376,7.43459836 3.088,3.58941436 C1.4543476,6.40179436 2.2887856,9.99964636 4.9936,11.8058144 C4.014088,11.7767864 3.0559348,11.5125464 2.2,11.0354144 L2.2,11.1134144 C2.2008016,14.0433224 4.2661,16.5668624 7.138,17.1470144 C6.231844,17.3941424 5.281096,17.4302744 4.3588,17.2526144 C5.16514,19.7599184 7.475884,21.4775504 10.1092,21.5270144 C7.929676,23.2399304 5.237272,24.1698104 2.4652,24.1670144 C1.9754848,24.1660784 1.4862448,24.1364264 1,24.0782144 C3.8147656,25.8845384 7.089892,26.84267 10.4344,26.8382096" id="Page-1"></path>
+            </g>
+        </g>
+    </g>
+</svg>

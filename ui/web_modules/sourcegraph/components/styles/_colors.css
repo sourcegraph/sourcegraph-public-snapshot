@@ -19,6 +19,7 @@
 @value c_purple_1 rgba(177, 20, 247, .1);
 @value c_light_purple rgba(232, 195, 250, 1);
 @value c_dark_purple rgba(123, 13, 172, 1);
+@value c_dark_purple_8 rgba(123, 13, 172, 0.8);
 
 @value c_orange rgba(249, 99, 22, 1);
 @value c_orange_8 rgba(249, 99, 22, .8);
@@ -134,6 +135,8 @@
 .purple_2 { color: c_purple_2; }
 .purple_1 { color: c_purple_1; }
 .light_purple { color: c_light_purple; }
+.dark_purple { color: c_dark_purple; }
+.dark_purple_8 { color: c_dark_purple_8; }
 .cool_gray { color: c_cool_gray; }
 .cool_gray_8 { color: c_cool_gray_8; }
 .cool_gray_5 { color: c_cool_gray_5; }
@@ -231,6 +234,8 @@
 .bg_purple_2 { background-color: c_purple_2; }
 .bg_purple_1 { background-color: c_purple_1; }
 .bg_light_purple { background-color: c_light_purple; }
+.bg_dark_purple { background-color: c_dark_purple; }
+.bg_dark_purple_8 { background-color: c_dark_purple_8; }
 .bg_purple_gradient {
 	background-image: linear-gradient(-180deg, c_purple 0%, c_dark_purple 100%);
 }
@@ -329,6 +334,8 @@
 .b__purple_2 { border-color: c_purple_2; }
 .b__purple_1 { border-color: c_purple_1; }
 .b__light_purple { border-color: c_light_purple; }
+.b__dark_purple { border-color: c_dark_purple; }
+.b__dark_purple_8 { border-color: c_dark_purple_8; }
 .b__cool_gray { border-color: c_cool_gray; }
 .b__cool_gray_1 { border-color: c_cool_gray_1; }
 .b__cool_gray_2 { border-color: c_cool_gray_2; }
@@ -417,6 +424,8 @@
 .fill_purple_2 { fill: c_purple_2; }
 .fill_purple_1 { fill: c_purple_1; }
 .fill_light_purple { fill: c_light_purple; }
+.fill_dark_purple { fill: c_dark_purple; }
+.fill_dark_purple_8 { fill: c_dark_purple_8; }
 .fill_cool_gray { fill: c_cool_gray; }
 .fill_cool_gray_8 { fill: c_cool_gray_8; }
 .fill_cool_gray_5 { fill: c_cool_gray_5; }
