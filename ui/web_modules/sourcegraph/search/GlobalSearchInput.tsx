@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {Input} from "sourcegraph/components/index";
@@ -13,7 +13,9 @@ import * as classNames from "classnames";
 // handler, these clicks would place the cursor at the beginning.
 function positionCursorAtEndIfIconClicked(ev: MouseEvent) {
 
-	if (ev.button !== 0) return;
+	if (ev.button !== 0) {
+		return;
+	}
 
 	const input = ev.target as HTMLInputElement;
 	invariant(input instanceof HTMLInputElement, "target is not <input>");
@@ -30,7 +32,9 @@ function positionCursorAtEndIfIconClicked(ev: MouseEvent) {
 	invariant(indent > 0, "couldn't find input text-indent");
 
 	// Focus at cursor if click is beyond the icon's bounds (with some pixels of buffer).
-	if (x > (indent + 3) && y >= pt) return;
+	if (x > (indent + 3) && y >= pt) {
+		return;
+	}
 
 	ev.preventDefault();
 	input.setSelectionRange(input.value.length, input.value.length);

@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {Container} from "sourcegraph/Container";
@@ -64,7 +64,9 @@ function blobLoader(Component) {
 				// Clear state properties that were set by previous helpers.
 				if (this._helpers) {
 					this._helpers.forEach((h) => {
-						if (h.reconcileState) h.reconcileState(state, {}, this.context);
+						if (h.reconcileState) {
+							h.reconcileState(state, {}, this.context);
+						}
 					});
 				}
 
@@ -78,7 +80,9 @@ function blobLoader(Component) {
 
 			if (this._helpers) {
 				this._helpers.forEach((h) => {
-					if (h.reconcileState) h.reconcileState(state, props);
+					if (h.reconcileState) {
+						h.reconcileState(state, props);
+					}
 				});
 			}
 		}
@@ -86,7 +90,9 @@ function blobLoader(Component) {
 		onStateTransition(prevState, nextState) {
 			if (this._helpers) {
 				this._helpers.forEach((h) => {
-					if (h.onStateTransition) h.onStateTransition(prevState, nextState);
+					if (h.onStateTransition) {
+						h.onStateTransition(prevState, nextState);
+					}
 				});
 			}
 		}
@@ -103,7 +109,9 @@ function blobLoader(Component) {
 					const h = this._helpers[i];
 					if (h.render) {
 						const out = h.render(this.state);
-						if (out) return out;
+						if (out) {
+							return out;
+						}
 					}
 				}
 			}
@@ -111,7 +119,9 @@ function blobLoader(Component) {
 			let renderProps = {};
 			if (this._helpers) {
 				this._helpers.forEach((h) => {
-					if (h.renderProps) Object.assign(renderProps, h.renderProps(this.state));
+					if (h.renderProps) {
+						Object.assign(renderProps, h.renderProps(this.state));
+					}
 				});
 			}
 			return <Component {...this.props} {...this.state} {...renderProps} />;

@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {Component} from "sourcegraph/Component";
@@ -54,10 +54,14 @@ export class DefTooltip extends Component<Props, any> {
 	}
 
 	_updatePosition(event) {
-		if (!this._elem) return;
+		if (!this._elem) {
+			return;
+		}
 		if (typeof window !== "undefined") {
 			window.requestAnimationFrame(() => {
-				if (!this._elem) return;
+				if (!this._elem) {
+					return;
+				}
 				this._elem.style.top = `${event.clientY + 15}px`;
 				this._elem.style.left = `${Math.min(event.clientX + 15, window.innerWidth - 380)}px`;
 			});

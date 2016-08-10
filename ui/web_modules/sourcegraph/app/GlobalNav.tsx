@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {Link} from "react-router";
@@ -48,7 +48,9 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 
 	const showLogoMarkOnly = !isStaticPage || user;
 
-	if (location.pathname === "/styleguide") return <span />;
+	if (location.pathname === "/styleguide") {
+		return <span />;
+	}
 	const repoSplat = repoParam(params.splat);
 	let repo = repoSplat ? repoPath(repoSplat) : null;	return (
 		<nav
@@ -297,7 +299,9 @@ class SearchForm extends React.Component<SearchFormProps, any> {
 		invariant(ev.currentTarget instanceof HTMLInputElement, "invalid currentTarget");
 		const value = (ev.currentTarget as HTMLInputElement).value;
 		this.setState({query: value});
-		if (value) this.setState({open: true});
+		if (value) {
+			this.setState({open: true});
+		}
 		this._goToDebounced(this.props.router.replace, locationForSearch(this.props.location, value, this.state.lang, this.state.scope, false, this.props.location.pathname.slice(1) === rel.search) as any);
 	}
 

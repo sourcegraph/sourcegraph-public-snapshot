@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {Container} from "sourcegraph/Container";
@@ -71,7 +71,9 @@ export class RepoRefsContainer extends Container<Props, any> {
 	_onNextPage() {
 		let nextPage = this.state.currPage + 1;
 		this.setState({currPage: nextPage, nextPageLoading: true});
-		if ((this.context as any).eventLogger) (this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "RefsPaginatorClicked", {next_page: nextPage, repo: this.props.repo, def: this.props.def});
+		if ((this.context as any).eventLogger) {
+			(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "RefsPaginatorClicked", {next_page: nextPage, repo: this.props.repo, def: this.props.def});
+		}
 	}
 
 	_clickedReferencedRepo() {

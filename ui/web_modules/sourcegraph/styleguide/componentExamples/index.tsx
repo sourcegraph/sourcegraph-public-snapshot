@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 export {HeadingsComponent} from "./HeadingsComponent";
 export {ButtonsComponent} from "./ButtonsComponent";

@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as DefActions from "sourcegraph/def/DefActions";
 import {DefStore} from "sourcegraph/def/DefStore";
@@ -103,7 +103,9 @@ export const DefBackend = {
 				let refs = DefStore.refs.get(action.repo, action.commitID, action.def, action.refRepo, action.refFile);
 				if (refs === null) {
 					let url = `/.api/repos/${action.repo}${action.commitID ? `@${action.commitID}` : ""}/-/def/${action.def}/-/refs?Repo=${encodeURIComponent(action.refRepo)}`;
-					if (action.refFile) url += `&Files=${encodeURIComponent(action.refFile)}`;
+					if (action.refFile) {
+						url += `&Files=${encodeURIComponent(action.refFile)}`;
+					}
 					DefBackend.fetch(url)
 						.then(checkStatus)
 						.then((resp) => resp.json())

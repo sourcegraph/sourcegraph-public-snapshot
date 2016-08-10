@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 
@@ -17,7 +17,9 @@ export class TabPanels extends React.Component<Props, any> {
 	_childrenWithProps(): any {
 		return React.Children.map(this.props.children, (child: React.ReactElement<any>, i) => {
 			if (child.props.tabPanel) {
-				if (this.props.active === i) return React.cloneElement(child, {active: true});
+				if (this.props.active === i) {
+					return React.cloneElement(child, {active: true});
+				}
 				return React.cloneElement(child, {active: false});
 			}
 			return React.cloneElement(child);

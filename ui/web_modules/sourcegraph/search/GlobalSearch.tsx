@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -117,7 +117,9 @@ export class GlobalSearch extends Container<Props, any> {
 
 	_scopeProperties(): string[] | null {
 		const scope = this.state.searchSettings ? this.state.searchSettings.scope : null;
-		if (!scope) return null;
+		if (!scope) {
+			return null;
+		}
 		return Object.keys(scope).filter((key) => key === "repo" ? this.state.repo && Boolean(scope[key]) : Boolean(scope[key]));
 	}
 
@@ -130,7 +132,9 @@ export class GlobalSearch extends Container<Props, any> {
 		for (let repo of repos) {
 			uris.push(`github.com/${repo.Owner}/${repo.Name}`);
 		}
-		if (deps) uris.push(...deps.filter((dep) => dep.startsWith("github.com")));
+		if (deps) {
+			uris.push(...deps.filter((dep) => dep.startsWith("github.com")));
+		}
 		return uris;
 	}
 
@@ -168,10 +172,18 @@ export class GlobalSearch extends Container<Props, any> {
 				state._reposByLang = {};
 				for (const lang of languages) {
 					const repos: any[] = [];
-					if (state.repo && scope.repo) repos.push(state.repo);
-					if (scope.popular && lang) repos.push(...popularRepos[lang]);
-					if (scope.public) repos.push(...state._publicRepos);
-					if (scope.private) repos.push(...state._privateRepos);
+					if (state.repo && scope.repo) {
+						repos.push(state.repo);
+					}
+					if (scope.popular && lang) {
+						repos.push(...popularRepos[lang]);
+					}
+					if (scope.public) {
+						repos.push(...state._publicRepos);
+					}
+					if (scope.private) {
+						repos.push(...state._privateRepos);
+					}
 					state._reposByLang[lang] = uniq(repos);
 				}
 			} else {
@@ -202,11 +214,19 @@ export class GlobalSearch extends Container<Props, any> {
 			if (state._queries) {
 				state.matchingResults = state._queries.reduce((memo, q) => {
 					const results = SearchStore.get(q.query, q.repos, q.notRepos, q.commitID, q.limit);
-					if (results) memo.outstandingFetches -= 1;
+					if (results) {
+						memo.outstandingFetches -= 1;
+					}
 					if (results && !results.Error) {
-						if (results.Repos) memo.Repos.push(...results.Repos);
-						if (results.Defs) memo.Defs.push(...results.Defs);
-						if (results.Options) memo.Options.push(...results.Options);
+						if (results.Repos) {
+							memo.Repos.push(...results.Repos);
+						}
+						if (results.Defs) {
+							memo.Defs.push(...results.Defs);
+						}
+						if (results.Options) {
+							memo.Options.push(...results.Options);
+						}
 					}
 					return memo;
 				}, {Repos: [], Defs: [], Options: [], outstandingFetches: state._queries.length});
@@ -300,7 +320,9 @@ export class GlobalSearch extends Container<Props, any> {
 	}
 
 	_scrollToVisibleSelection() {
-		if (this._selectedItem) (ReactDOM.findDOMNode(this._selectedItem) as HTMLElement).scrollIntoView(false);
+		if (this._selectedItem) {
+			(ReactDOM.findDOMNode(this._selectedItem) as HTMLElement).scrollIntoView(false);
+		}
 	}
 
 	_setSelectedItem(e: any) {
@@ -309,7 +331,9 @@ export class GlobalSearch extends Container<Props, any> {
 
 	_numResults(): number {
 		if (!this.state.matchingResults ||
-			(!this.state.matchingResults.Defs && !this.state.matchingResults.Repos)) return 0;
+			(!this.state.matchingResults.Defs && !this.state.matchingResults.Repos)) {
+				return 0;
+			}
 
 		let count = 0;
 		if (this.state.matchingResults.Defs) {
@@ -348,7 +372,9 @@ export class GlobalSearch extends Container<Props, any> {
 				const url = `/${this.state.matchingResults.Repos[i].URI}`;
 				eventProps.selectedItem = url;
 				(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", eventProps);
-				if (!trackOnly) this._navigateTo(url);
+				if (!trackOnly) {
+					this._navigateTo(url);
+				}
 				return;
 			}
 
@@ -367,7 +393,9 @@ export class GlobalSearch extends Container<Props, any> {
 
 		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", eventProps);
 
-		if (!trackOnly) this._navigateTo(url);
+		if (!trackOnly) {
+			this._navigateTo(url);
+		}
 	}
 
 	_selectItem(i: number): void {
@@ -382,7 +410,9 @@ export class GlobalSearch extends Container<Props, any> {
 	// to incidentally hover a different element. We ignore mouse selections except
 	// those where the mouse was actually moved.
 	_mouseSelectItem(ev: React.MouseEvent, i: number): void {
-		if (this._ignoreMouseSelection) return;
+		if (this._ignoreMouseSelection) {
+			return;
+		}
 		this._selectItem(i);
 	}
 

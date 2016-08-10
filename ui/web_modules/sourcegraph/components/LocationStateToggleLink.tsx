@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 
@@ -46,15 +46,21 @@ export function LocationStateToggleLink(props: Props, {router}) {
 
 	// Copied from react-router Link.js.
 	const handleClick = (ev) => {
-		if (isModifiedEvent(ev) || !isLeftClickEvent(ev)) return;
+		if (isModifiedEvent(ev) || !isLeftClickEvent(ev)) {
+			return;
+		}
 
 		// If target prop is set (e.g., to "_blank"), let browser handle link.
-		if (props.target) return;
+		if (props.target) {
+			return;
+		}
 
 		ev.preventDefault();
 		router.push(Object.assign({}, location, {state: Object.assign({}, location.state, {modal: active ? null : modalName})}));
 
-		if (props.onToggle) props.onToggle(!active);
+		if (props.onToggle) {
+			props.onToggle(!active);
+		}
 	};
 
 	return (

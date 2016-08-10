@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 export function mockTimeout(f) {
 	let orig = global.setTimeout;

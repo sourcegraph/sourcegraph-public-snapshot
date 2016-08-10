@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import Helmet from "react-helmet";
@@ -68,10 +68,14 @@ export class DefInfo extends Container<Props, any> {
 	}
 
 	componentDidMount() {
-		if (super.componentDidMount) super.componentDidMount();
+		if (super.componentDidMount) {
+			super.componentDidMount();
+		}
 		// Fix a bug where navigating from a blob page here does not cause the
 		// browser to scroll to the top of this page.
-		if (typeof window !== "undefined") window.scrollTo(0, 0);
+		if (typeof window !== "undefined") {
+			window.scrollTo(0, 0);
+		}
 	}
 
 	shouldHideDescr(defObj, cutOff: number) {

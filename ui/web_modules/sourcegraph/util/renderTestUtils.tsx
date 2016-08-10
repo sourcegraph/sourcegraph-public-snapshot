@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as TestUtils from "react-addons-test-utils";
 import * as Dispatcher from "sourcegraph/Dispatcher";

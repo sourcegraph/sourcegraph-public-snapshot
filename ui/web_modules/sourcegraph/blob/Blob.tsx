@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -242,11 +242,17 @@ export class Blob extends Component<Props, any> {
 	}
 
 	_consolidateRanges(ranges: Range[]): Range[] | null {
-		if (ranges.length === 0) return null;
+		if (ranges.length === 0) {
+			return null;
+		}
 
 		ranges = ranges.sort((a, b) => {
-			if (a[0] < b[0]) return -1;
-			if (a[0] > b[0]) return 1;
+			if (a[0] < b[0]) {
+				return -1;
+			}
+			if (a[0] > b[0]) {
+				return 1;
+			}
 			return 0;
 		});
 
@@ -265,9 +271,13 @@ export class Blob extends Component<Props, any> {
 	}
 
 	_withinDisplayedRange(lineNumber: number): boolean {
-		if (!this.state.displayRanges) return false;
+		if (!this.state.displayRanges) {
+			return false;
+		}
 		for (let range of this.state.displayRanges) {
-			if (range[0] <= lineNumber && lineNumber <= range[1]) return true;
+			if (range[0] <= lineNumber && lineNumber <= range[1]) {
+				return true;
+			}
 		}
 		return false;
 	}
@@ -280,7 +290,9 @@ export class Blob extends Component<Props, any> {
 	}
 
 	_handleSelectionChange(ev: Event) {
-		if (!this.state.dispatchSelections) return;
+		if (!this.state.dispatchSelections) {
+			return;
+		}
 
 		const sel = document.getSelection();
 		if (!sel || sel.rangeCount === 0) {
@@ -290,7 +302,9 @@ export class Blob extends Component<Props, any> {
 
 		let getLineElem: (node: Node | null) => HTMLElement | null;
 		getLineElem = (node) => {
-			if (!node) return null;
+			if (!node) {
+				return null;
+			}
 			if (node instanceof HTMLElement && node.nodeName === "TR" && node.dataset["line"]) {
 				return node;
 			}
@@ -328,8 +342,12 @@ export class Blob extends Component<Props, any> {
 			return;
 		}
 		const $el = ReactDOM.findDOMNode(this);
-		if (startLineElem && !$el.contains(startLineElem)) return;
-		if (endLineElem && !$el.contains(endLineElem)) return;
+		if (startLineElem && !$el.contains(startLineElem)) {
+			return;
+		}
+		if (endLineElem && !$el.contains(endLineElem)) {
+			return;
+		}
 
 		if (sel.isCollapsed) {
 			// It's a click IN the file view with an empty (collapsed) selection.
@@ -360,12 +378,18 @@ export class Blob extends Component<Props, any> {
 	// _lineIsVisible returns true the line has loaded and is scrolled into view, false
 	// if the line has loaded and isn't scrolled into view, or null if the line hasn't loaded yet.
 	_lineIsVisible(line: number): boolean | null {
-		if (!this._isMounted) return false;
-		if (typeof document === "undefined" || typeof window === "undefined") return false;
+		if (!this._isMounted) {
+			return false;
+		}
+		if (typeof document === "undefined" || typeof window === "undefined") {
+			return false;
+		}
 		let top = document.body.scrollTop;
 		let bottom = top + window.innerHeight;
 		let $line: any = (this.refs["table"] as Element).querySelector(`[data-line="${line}"]`);
-		if (!$line) return null;
+		if (!$line) {
+			return null;
+		}
 		let elemTop = $line.offsetTop;
 		let elemBottom = elemTop + $line.clientHeight;
 		const deadZone = 150; // consider things not visible if they are near the screen top/bottom and hard to notice
@@ -373,18 +397,26 @@ export class Blob extends Component<Props, any> {
 	}
 
 	getOffsetTopForByte(byte: number): number {
-		if (!this._isMounted) return 0;
-		if (typeof byte === "undefined") throw new Error("getOffsetTopForByte byte is undefined");
+		if (!this._isMounted) {
+			return 0;
+		}
+		if (typeof byte === "undefined") {
+			throw new Error("getOffsetTopForByte byte is undefined");
+		}
 		let $el = ReactDOM.findDOMNode(this);
 		let line = lineFromByte(this.state.lines, byte);
 		let $line: any = $el.querySelector(`[data-line="${line}"]`);
 		let $toolbar: any = $el.parentNode.childNodes[0];
-		if ($line) return $line.offsetTop + $toolbar.clientHeight + $toolbar.offsetTop;
+		if ($line) {
+			return $line.offsetTop + $toolbar.clientHeight + $toolbar.offsetTop;
+		}
 		throw new Error(`No element found for line ${line}`);
 	}
 
 	render(): JSX.Element | null {
-		if (!this.state.lines) return null;
+		if (!this.state.lines) {
+			return null;
+		}
 		let lastDisplayedLine = 0;
 		let lastRangeEnd = 0;
 		let lines: any[] = [];

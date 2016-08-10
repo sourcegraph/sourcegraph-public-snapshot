@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import {Store} from "sourcegraph/Store";
 import * as Dispatcher from "sourcegraph/Dispatcher";
@@ -43,17 +43,25 @@ class BuildStoreClass extends Store<any> {
 			// listNewestByCommitID always returns a non-null value (an empty array
 			// if there are no builds).
 			listNewestByCommitID(repo, commitID) {
-				if (!this._fetchedForCommit[keyFor(repo, commitID)]) return null;
+				if (!this._fetchedForCommit[keyFor(repo, commitID)]) {
+					return null;
+				}
 				const builds = (Object as any).values(this.content).filter((b) =>
 					b.Repo === repo && b.CommitID === commitID
 				);
-				if (builds === null) return null;
+				if (builds === null) {
+					return null;
+				}
 				return builds.sort((a, b) => {
 					// These date strings ("2016-03-07T22:51:43.202747Z") lexically sort.
 					const ta = updatedAt(a);
 					const tb = updatedAt(b);
-					if (ta === tb) return 0;
-					if (ta > tb) return -1; // Newest first.
+					if (ta === tb) {
+						return 0;
+					}
+					if (ta > tb) {
+						return -1; // Newest first.
+					}
 					return 1;
 				});
 			},
@@ -131,7 +139,9 @@ class BuildStoreClass extends Store<any> {
 			}
 
 		case BuildActions.TasksFetched:
-			if (JSON.stringify(action.tasks) === JSON.stringify(this.tasks.get(action.repo, action.buildID))) return;
+			if (JSON.stringify(action.tasks) === JSON.stringify(this.tasks.get(action.repo, action.buildID))) {
+				return;
+			}
 			this.tasks = deepFreeze(Object.assign({}, this.tasks, {
 				content: Object.assign({}, this.tasks.content, {
 					[keyFor(action.repo, action.buildID)]: action.tasks,

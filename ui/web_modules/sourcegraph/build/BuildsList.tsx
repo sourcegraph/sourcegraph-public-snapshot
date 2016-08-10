@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import Helmet from "react-helmet";
@@ -91,10 +91,18 @@ export class BuildsList extends Container<Props, any> {
 	}
 
 	_rowStatus(build) {
-		if (build.Success) return [`${buildStatus(build)} `, <TimeAgo key="time" time={build.EndedAt} />];
-		if (build.Failure) return [`${buildStatus(build)} `, <TimeAgo key="time" time={build.EndedAt} />];
-		if (build.Killed) return [`${buildStatus(build)} `, <TimeAgo key="time" time={build.EndedAt} />];
-		if (build.Queue) return [`${buildStatus(build)} `, (build.StartedAt && <TimeAgo key="time" time={build.StartedAt} />)];
+		if (build.Success) {
+			return [`${buildStatus(build)} `, <TimeAgo key="time" time={build.EndedAt} />];
+		}
+		if (build.Failure) {
+			return [`${buildStatus(build)} `, <TimeAgo key="time" time={build.EndedAt} />];
+		}
+		if (build.Killed) {
+			return [`${buildStatus(build)} `, <TimeAgo key="time" time={build.EndedAt} />];
+		}
+		if (build.Queue) {
+			return [`${buildStatus(build)} `, (build.StartedAt && <TimeAgo key="time" time={build.StartedAt} />)];
+		}
 		return null;
 	}
 

@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {Component} from "sourcegraph/Component";
@@ -86,7 +86,9 @@ export function withAppdashRouteStateRecording(ChildComponent: any): any {
 		// everything).
 		_recordInitialPageLoad() {
 			// Not all browsers (e.g., mobile) support this, but most do.
-			if (typeof window.performance === "undefined") return;
+			if (typeof window.performance === "undefined") {
+				return;
+			}
 
 			// Record the time between when the browser was ready to fetch the
 			// document, and when the document.readyState was changed to "complete".
@@ -114,7 +116,9 @@ export function withAppdashRouteStateRecording(ChildComponent: any): any {
 			let debug = document.querySelector("body>#debug>a");
 			const loadTimeSeconds = (endTime - startTime) / 1000;
 
-			if (debug) (debug as HTMLAnchorElement).text = `${loadTimeSeconds}s`;
+			if (debug) {
+				(debug as HTMLAnchorElement).text = `${loadTimeSeconds}s`;
+			}
 		}
 
 		render(): JSX.Element | null {

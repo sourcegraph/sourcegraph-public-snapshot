@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 // Error is a type that describes errors returned by XyzBackends if a network
 // request fails. Generally you will use Error in a union like `MyType | Error`,

@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import * as styles from "./styles/checkboxList.css";
@@ -20,7 +20,9 @@ export class CheckboxList extends React.Component<Props, any> {
 	selected(): string[] {
 		let selected: any[] = [];
 		for (let input of this._fieldset.querySelectorAll("input")) {
-			if (input.checked) selected.push(input.value);
+			if (input.checked) {
+				selected.push(input.value);
+			}
 		}
 		return selected;
 	}

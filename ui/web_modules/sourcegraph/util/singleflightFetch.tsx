@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 // singleflightFetch is a wrapper for fetch that suppresses
 // duplicate calls. At most one call to fetch with the given arguments may
@@ -21,12 +21,16 @@ export function singleflightFetch(fetch): any {
 	};
 	return (input, options) => {
 		// Don't handle complex requests.
-		if (typeof input !== "string" || options) return fetch(input, options);
+		if (typeof input !== "string" || options) {
+			return fetch(input, options);
+		}
 
 		const key: string = input;
 
 		if (inFlight[key]) {
-			if (!waiting[key]) waiting[key] = [];
+			if (!waiting[key]) {
+				waiting[key] = [];
+			}
 			return new Promise((resolve, reject) => {
 				waiting[key].push({resolve, reject});
 			});

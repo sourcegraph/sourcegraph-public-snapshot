@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {Header} from "sourcegraph/components/Header";
@@ -39,7 +39,9 @@ class Channel extends React.Component<Props, any> {
 	}
 
 	componentWillUnmount() {
-		if (this._timeout) clearTimeout(this._timeout);
+		if (this._timeout) {
+			clearTimeout(this._timeout);
+		}
 	}
 
 	render(): JSX.Element | null {

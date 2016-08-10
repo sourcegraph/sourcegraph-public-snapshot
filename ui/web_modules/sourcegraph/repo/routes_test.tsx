@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import {routes as repoRoutes, urlWithRev} from "sourcegraph/repo/routes";
 import {rootRoute} from "sourcegraph/app/App";

@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {Container} from "sourcegraph/Container";
@@ -201,7 +201,9 @@ class SearchSettingsComp extends Container<Props, any> {
 							size="small"
 							className={styles.choice_button}
 							onClick={() => {
-								if (this.props.githubToken) this._setScope({popular: !scope.popular});
+								if (this.props.githubToken) {
+									this._setScope({popular: !scope.popular});
+								}
 							}}
 							outline={this.state.githubToken && !scope.popular}>Popular libraries</Button>
 						{(!this.state.signedIn || !this.props.githubToken) &&

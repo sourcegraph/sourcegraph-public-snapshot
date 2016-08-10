@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import {Store} from "sourcegraph/Store";
 import * as Dispatcher from "sourcegraph/Dispatcher";
@@ -85,7 +85,9 @@ class DefStoreClass extends Store<any> {
 			getPos(repo: string, rev: string | null, def: string): DefPos | null {
 				// Prefer fetching from the def, which has the full def's start and end bytes, etc.
 				const d = this.get(repo, rev, def);
-				if (d && !d.Error) return d;
+				if (d && !d.Error) {
+					return d;
+				}
 				return this.pos[defKey(repo, rev, def)] || null;
 			},
 

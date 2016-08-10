@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {DefStore} from "sourcegraph/def/DefStore";
@@ -29,7 +29,9 @@ export function withDef(Component) {
 		reconcileState(state, props) {
 			Object.assign(state, props);
 
-			if (!props.def) state.def = props.params ? props.params.splat[1] : null;
+			if (!props.def) {
+				state.def = props.params ? props.params.splat[1] : null;
+			}
 			state.defObj = state.def ? DefStore.defs.get(state.repo, state.rev, state.def) : null;
 			state.commitID = state.defObj && !state.defObj.Error ? state.defObj.CommitID : null;
 			state.highlightedDefObj = null;

@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 
@@ -13,11 +13,15 @@ export function redirectIfLoggedIn(url: Location | string, Component) {
 		};
 
 		componentWillMount() {
-			if ((this.context as any).signedIn) this._redirect();
+			if ((this.context as any).signedIn) {
+				this._redirect();
+			}
 		}
 
 		componentWillReceiveProps(nextProps, nextContext?: {signedIn: boolean}) {
-			if (nextContext && nextContext.signedIn) this._redirect();
+			if (nextContext && nextContext.signedIn) {
+				this._redirect();
+			}
 		}
 
 		_redirect() {

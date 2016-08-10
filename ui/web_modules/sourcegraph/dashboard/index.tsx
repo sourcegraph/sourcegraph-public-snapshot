@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import {rel} from "sourcegraph/app/routePatterns";
 import {DashboardContainer} from "sourcegraph/dashboard/DashboardContainer";

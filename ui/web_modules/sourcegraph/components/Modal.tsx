@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 
@@ -34,13 +34,17 @@ class ModalComp extends React.Component<ModalProps, any> {
 
 	_onClick(e) {
 		if (e.target === this.refs["modal_container"]) {
-			if (this.props.onDismiss) this.props.onDismiss();
+			if (this.props.onDismiss) {
+				this.props.onDismiss();
+			}
 		}
 	}
 
 	_handleKeydown(e: KeyboardEvent) {
 		if (e.keyCode === 27 /* ESC */) {
-			if (this.props.onDismiss) this.props.onDismiss();
+			if (this.props.onDismiss) {
+				this.props.onDismiss();
+			}
 		}
 	}
 
@@ -91,11 +95,15 @@ type LocationStateModalProps = {
 // to determine whether it is displayed. Use LocationStateModal with
 // LocationStateToggleLink.
 export function LocationStateModal({location, modalName, children, onDismiss}: LocationStateModalProps, {router}): any {
-	if (!location.state || location.state.modal !== modalName) return null;
+	if (!location.state || location.state.modal !== modalName) {
+		return null;
+	}
 
 	const onDismiss2 = () => {
 		dismissModal(modalName, location, router)();
-		if (onDismiss) onDismiss();
+		if (onDismiss) {
+			onDismiss();
+		}
 	};
 	return (
 		<Modal onDismiss={onDismiss2}>

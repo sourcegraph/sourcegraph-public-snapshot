@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import {rel} from "sourcegraph/app/routePatterns";
 import {searchScopes} from "sourcegraph/search/index";
@@ -19,7 +19,9 @@ export const routes: any[] = [
 // urlToSearch returns the URL to a search results page, or
 // (if query is falsey) the search form page.
 export function urlToSearch(query?: string | null): string {
-	if (!query) return `/${rel.search}`;
+	if (!query) {
+		return `/${rel.search}`;
+	}
 	return `/${rel.search}?q=${encodeURIComponent(query)}`;
 }
 
@@ -35,11 +37,15 @@ export function locationForSearch(loc: HistoryModule.Location, query: string | n
 		loc.pathname = `/${rel.search}`;
 	}
 
-	if (!lang) lang = [];
+	if (!lang) {
+		lang = [];
+	}
 
 	if (!updateQuery) {
 		loc.state = updateScopeAndLanguage(loc.state, scope, lang);
-		if (query && !loc.state) loc.state = {};
+		if (query && !loc.state) {
+			loc.state = {};
+		}
 		if (query) {
 			(loc.state as any).q = query;
 		} else {
@@ -49,13 +55,17 @@ export function locationForSearch(loc: HistoryModule.Location, query: string | n
 	}
 
 	loc.query = updateScopeAndLanguage(loc.query, scope, lang);
-	if (query && !loc.query) loc.query = {};
+	if (query && !loc.query) {
+		loc.query = {};
+	}
 	if (query) {
 		loc.query["q"] = query;
 	} else {
 		delete loc.query["q"];
 	}
-	if (loc.state) delete (loc.state as any).q;
+	if (loc.state) {
+		delete (loc.state as any).q;
+	}
 	return loc;
 }
 

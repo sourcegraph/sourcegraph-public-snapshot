@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {Link} from "react-router";
@@ -46,7 +46,9 @@ export class DefNavContext extends Container<Props, any> {
 	stores() { return [DefStore, TreeStore]; }
 
 	render(): JSX.Element | null {
-		if (!this.state.defPos || this.state.defPos.Error) return null;
+		if (!this.state.defPos || this.state.defPos.Error) {
+			return null;
+		}
 
 		let defFileParts = this.state.defPos.File.split("/");
 		let pathBreadcrumb = breadcrumb(

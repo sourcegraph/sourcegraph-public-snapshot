@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {TimeAgo} from "sourcegraph/util/TimeAgo";
@@ -10,14 +10,20 @@ function showBothSigs(a, b) {
 }
 
 function username(email) {
-	if (!email) return "(unknown)";
+	if (!email) {
+		return "(unknown)";
+	}
 	const i = email.indexOf("@");
-	if (i === -1) return email;
+	if (i === -1) {
+		return email;
+	}
 	return `${email.slice(0, i)}@…`;
 }
 
 function sigName(sig) {
-	if (!sig) return null;
+	if (!sig) {
+		return null;
+	}
 	if (sig.Name) {
 		return (
 			<span className={styles.sig_name}>

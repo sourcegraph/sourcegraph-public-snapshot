@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import Helmet from "react-helmet";
@@ -50,7 +50,9 @@ export class App extends React.Component<Props, any> {
 	constructor(props: Props, context) {
 		super(props);
 		let className = styles.main_container;
-		if (!context.signedIn && location.pathname === "/") className = styles.main_container_homepage;
+		if (!context.signedIn && location.pathname === "/") {
+			className = styles.main_container_homepage;
+		}
 		this._handleSourcegraphDesktop = this._handleSourcegraphDesktop.bind(this);
 		this.state = {
 			className: className,

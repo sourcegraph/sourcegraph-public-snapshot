@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import Helmet from "react-helmet";
@@ -90,7 +90,9 @@ export class BuildContainer extends Container<Props, any> {
 	}
 
 	render(): JSX.Element | null {
-		if (!this.state.build) return null;
+		if (!this.state.build) {
+			return null;
+		}
 
 		return (
 			<div className={styles.build_container}>

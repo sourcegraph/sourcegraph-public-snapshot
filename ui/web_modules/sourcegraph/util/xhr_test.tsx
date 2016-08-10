@@ -1,14 +1,18 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import expect from "expect.js";
 import {combineHeaders} from "sourcegraph/util/xhr";
 import "whatwg-fetch";
 
 function getHeaders(h: Headers | null): {[key: string]: string[]} | null {
-	if (!h) return null;
+	if (!h) {
+		return null;
+	}
 	let m = {};
 	const append = (name, val) => {
-		if (!m[name]) m[name] = [];
+		if (!m[name]) {
+			m[name] = [];
+		}
 		m[name].push(val);
 	};
 

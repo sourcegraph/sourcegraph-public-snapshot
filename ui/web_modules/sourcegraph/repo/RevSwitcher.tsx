@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import fuzzysearch from "fuzzysearch";
@@ -145,18 +145,26 @@ export class RevSwitcher extends Component<Props, any> {
 		ev.preventDefault();
 		ev.stopPropagation();
 		this.setState({open: !this.state.open}, () => {
-			if (this.state.open && this._input) this._input.focus();
+			if (this.state.open && this._input) {
+				this._input.focus();
+			}
 		});
 	}
 
 	_onChangeQuery(ev) {
-		if (this._input) this._debouncedSetQuery(this._input.value);
+		if (this._input) {
+			this._debouncedSetQuery(this._input.value);
+		}
 	}
 
 	// _onClickOutside causes clicks outside the menu to close the menu.
 	_onClickOutside(ev) {
-		if (!this.state.open) return;
-		if (this._wrapper && !this._wrapper.contains(ev.target)) this.setState({open: false});
+		if (!this.state.open) {
+			return;
+		}
+		if (this._wrapper && !this._wrapper.contains(ev.target)) {
+			this.setState({open: false});
+		}
 	}
 
 	// _onKeydown causes ESC to close the menu.
@@ -196,7 +204,9 @@ export class RevSwitcher extends Component<Props, any> {
 			}
 		}
 
-		if (!this.state.open) return;
+		if (!this.state.open) {
+			return;
+		}
 		if (ev.keyCode === 27 /* ESC */) {
 			this.setState({open: false});
 		}
@@ -205,7 +215,9 @@ export class RevSwitcher extends Component<Props, any> {
 	render(): JSX.Element | null {
 		// Hide if cloning the repo, since we require the user to hard-reload. Seeing
 		// the RevSwitcher would confuse them.
-		if (this.state.isCloning) return null;
+		if (this.state.isCloning) {
+			return null;
+		}
 
 		let branches = this.state.branches.list(this.state.repo);
 		if (this.state.branches.error(this.state.repo)) {
@@ -234,17 +246,25 @@ export class RevSwitcher extends Component<Props, any> {
 		let currentItem;
 		if (branches instanceof Array) {
 			branches.forEach((b) => {
-				if (b.Name === this.state.effectiveRev) currentItem = b;
+				if (b.Name === this.state.effectiveRev) {
+					currentItem = b;
+				}
 			});
 		}
 		if (tags instanceof Array) {
 			tags.forEach((t) => {
-				if (t.Name === this.state.effectiveRev) currentItem = t;
+				if (t.Name === this.state.effectiveRev) {
+					currentItem = t;
+				}
 			});
 		}
 
-		if (branches instanceof Array) branches = branches.map((b) => this._item(b.Name, b.Head));
-		if (tags instanceof Array) tags = tags.map((t) => this._item(t.Name, t.CommitID));
+		if (branches instanceof Array) {
+			branches = branches.map((b) => this._item(b.Name, b.Head));
+		}
+		if (tags instanceof Array) {
+			tags = tags.map((t) => this._item(t.Name, t.CommitID));
+		}
 
 		let title;
 		if (this.state.rev) {
@@ -287,6 +307,8 @@ export class RevSwitcher extends Component<Props, any> {
 
 // abbrevRev shortens rev if it is an absolute commit ID.
 function abbrevRev(rev) {
-	if (rev.length === 40) return rev.substring(0, 12);
+	if (rev.length === 40) {
+		return rev.substring(0, 12);
+	}
 	return rev;
 }

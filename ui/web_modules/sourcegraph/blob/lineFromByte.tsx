@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as utf8 from "utf8";
 
@@ -21,11 +21,17 @@ export function lineFromByte(contents: string | string[], bytePos: number) {
 export function createLineFromByteFunc(contents: string): (byte: number) => number {
 	const lsb = computeLineStartBytes(contents.split("\n"));
 	return (byte: number) => {
-		if (lsb.length === 1) return 1;
-		for (let i = 1; i < lsb.length; i++) {
-			if (byte < lsb[i]) return i;
+		if (lsb.length === 1) {
+			return 1;
 		}
-		if (byte <= contents.length) return lsb.length;
+		for (let i = 1; i < lsb.length; i++) {
+			if (byte < lsb[i]) {
+				return i;
+			}
+		}
+		if (byte <= contents.length) {
+			return lsb.length;
+		}
 		throw new Error(`Byte ${byte} is out of bounds`);
 	};
 }

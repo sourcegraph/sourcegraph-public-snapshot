@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 // fileLines returns the lines of the file.
 export function fileLines(contents) {

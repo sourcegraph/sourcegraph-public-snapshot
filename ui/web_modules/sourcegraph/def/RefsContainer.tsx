@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import * as classNames from "classnames";
@@ -78,7 +78,9 @@ export class RefsContainer extends Container<Props, any> {
 	}
 
 	shouldComponentUpdate(nextProps, nextState, nextContext) {
-		if (super.shouldComponentUpdate(nextProps, nextState, nextContext)) return true;
+		if (super.shouldComponentUpdate(nextProps, nextState, nextContext)) {
+			return true;
+		}
 
 		// Since the reference values of the memo'd state don't change even though the contents
 		// may be updated (e.g. as a result of asynchronous fetches) reconcileState
@@ -120,7 +122,9 @@ export class RefsContainer extends Container<Props, any> {
 			// Auto-expand N snippets by default.
 			for (let i = 0; i < props.initNumSnippets; i++) {
 				let loc = state.fileLocations[i];
-				if (loc) state.shownFiles.add(loc.Path);
+				if (loc) {
+					state.shownFiles.add(loc.Path);
+				}
 			}
 			state.initExpanded = true;
 		}
@@ -128,7 +132,9 @@ export class RefsContainer extends Container<Props, any> {
 		state.forceComponentUpdate = false;
 		if (state.refs && !state.refs.Error) {
 			for (let ref of state.refs || []) {
-				if (!ref) continue;
+				if (!ref) {
+					continue;
+				}
 				let refRev = ref.CommitID;
 				if (!this.filesByName[ref.File]) {
 					let file = BlobStore.files[keyForFile(ref.Repo, refRev, ref.File)] || null;
@@ -198,7 +204,9 @@ export class RefsContainer extends Container<Props, any> {
 		);
 		return (
 			<div key={path} className={styles.filename} onClick={(e) => {
-				if (e.button !== 0) return; // only expand on main button click
+				if (e.button !== 0) {
+					return; // only expand on main button click
+				}
 				this._toggleFile(path);
 			}}>
 				<div className={styles.breadcrumbIcon}>
@@ -248,7 +256,9 @@ export class RefsContainer extends Container<Props, any> {
 	}
 
 	render(): JSX.Element | null {
-		if (this.state.fileLocations && this.state.fileLocations.length === 0) return null;
+		if (this.state.fileLocations && this.state.fileLocations.length === 0) {
+			return null;
+		}
 
 		if (this.state.refLocations && this.state.refLocations.Error) {
 			return (
@@ -281,7 +291,9 @@ export class RefsContainer extends Container<Props, any> {
 				}
 				<div className={styles.container}
 					onMouseEnter={() => {
-						if (!this.state.mouseover) this.setState({mouseover: true, mouseout: false});
+						if (!this.state.mouseover) {
+							this.setState({mouseover: true, mouseout: false});
+						}
 					}}
 					onMouseLeave={() => this.setState({mouseover: false, mouseout: true})}
 					onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.Hovering(null))}>
@@ -290,7 +302,9 @@ export class RefsContainer extends Container<Props, any> {
 					<div>
 						<div>
 							{this.state.fileLocations && this.state.fileLocations.map((loc, i) => {
-								if (!this.state.showAllFiles && i >= this.state.fileCollapseThreshold) return null;
+								if (!this.state.showAllFiles && i >= this.state.fileCollapseThreshold) {
+									return null;
+								}
 
 								let err;
 								let file = this.filesByName ? this.filesByName[loc.Path] : null;

@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {BlobStore, keyForFile, keyForAnns} from "sourcegraph/blob/BlobStore";
@@ -48,7 +48,9 @@ export const BlobBackend = {
 						.then((resp) => resp.json())
 						.catch((err) => ({Error: err}))
 						.then((data) => {
-							if (!data.Error && data.Annotations) data.Annotations = prepareAnnotations(data.Annotations);
+							if (!data.Error && data.Annotations) {
+								data.Annotations = prepareAnnotations(data.Annotations);
+							}
 							Dispatcher.Stores.dispatch(
 								new BlobActions.AnnotationsFetched(
 									action.repo, action.commitID, action.path,

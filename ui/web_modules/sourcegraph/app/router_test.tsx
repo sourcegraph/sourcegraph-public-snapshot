@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import expect from "expect.js";
 import matchRoutes from "react-router/lib/matchRoutes";
@@ -14,7 +14,9 @@ describe("repo route", () => {
 		it(`matches '${pathname}'`, (done) => {
 			matchRoutes(repoRoutes, {pathname: pathname}, (err, state) => {
 				expect(err).to.be(null);
-				if (!err) expect(state.params).to.eql(tests[pathname].params);
+				if (!err) {
+					expect(state.params).to.eql(tests[pathname].params);
+				}
 				done();
 			});
 		});

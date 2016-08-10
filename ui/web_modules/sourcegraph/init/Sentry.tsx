@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 // tslint:disable: no-var-requires
 
 // Sentry error monitoring code

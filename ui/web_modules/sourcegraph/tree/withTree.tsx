@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 
@@ -17,8 +17,12 @@ export function withTree(Component) {
 	class WithTree extends React.Component<Props, any> {
 		render(): JSX.Element | null {
 			let path;
-			if (this.props.params.splat instanceof Array) path = this.props.params.splat[1];
-			if (!path) path = "/";
+			if (this.props.params.splat instanceof Array) {
+				path = this.props.params.splat[1];
+			}
+			if (!path) {
+				path = "/";
+			}
 			return <Component {...Object.assign({}, this.props, {path: path})} />;
 		}
 	}

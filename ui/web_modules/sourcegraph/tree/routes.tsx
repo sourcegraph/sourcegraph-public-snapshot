@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import {urlTo} from "sourcegraph/util/urlTo";
 import {makeRepoRev} from "sourcegraph/repo/index";
@@ -61,7 +61,9 @@ export function urlToTree(repo: string, rev: string | null, path: string | strin
 
 	// Fast-path: we redirect the tree root to the repo route anyway, so just construct
 	// the repo route URL directly.
-	if (!path || path === "/" || path.length === 0) return urlToRepoRev(repo, rev);
+	if (!path || path === "/" || path.length === 0) {
+		return urlToRepoRev(repo, rev);
+	}
 
 	const pathStr = typeof path === "string" ? path : path.join("/");
 	return urlTo("tree", {splat: [makeRepoRev(repo, rev), pathStr]} as any);

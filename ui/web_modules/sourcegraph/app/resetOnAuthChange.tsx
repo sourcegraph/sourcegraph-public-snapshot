@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import {UserStore} from "sourcegraph/user/UserStore";
 import {forEach as forEachStore, reset as resetStores} from "sourcegraph/init/stores";

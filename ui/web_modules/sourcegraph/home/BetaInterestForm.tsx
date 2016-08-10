@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import * as styles from "./styles/BetaInterestForm.css";
@@ -47,7 +47,9 @@ export class BetaInterestForm extends Container<Props, any> {
 		this._dispatcherToken = Dispatcher.Stores.register(this._onDispatch.bind(this));
 
 		// Trigger _onChange now to save this.props.language if set.
-		if ((this.context as any).signedIn && this.props.language) this._onChange();
+		if ((this.context as any).signedIn && this.props.language) {
+			this._onChange();
+		}
 	}
 
 	componentWillUnmount() {

@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {Link} from "react-router";
@@ -21,7 +21,9 @@ export class RepoNavContext extends Component<Props, any> {
 
 	render(): JSX.Element | null {
 		let blobPath = this.props.params.splat[1];
-		if (!blobPath) return null;
+		if (!blobPath) {
+			return null;
+		}
 		let pathParts = blobPath.split("/");
 		let pathBreadcrumb = breadcrumb(
 			`/${blobPath}`,

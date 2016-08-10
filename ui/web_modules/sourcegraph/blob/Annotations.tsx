@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as utf8 from "utf8";
 
@@ -70,7 +70,9 @@ export function annotate(text: string, startByte: number, anns: Annotation[], re
 		}
 
 		// Just append to the existing string if the last item is a string.
-		if (typeof utf[b0] === "undefined") throw new Error("undefined text");
+		if (typeof utf[b0] === "undefined") {
+			throw new Error("undefined text");
+		}
 		if (typeof out[0][out[0].length - 1] === "string") {
 			out[0][out[0].length - 1] += utf[b0];
 		} else {

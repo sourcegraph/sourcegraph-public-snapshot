@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import Helmet from "react-helmet";
@@ -57,12 +57,12 @@ export class BlobMain extends Container<Props, any> {
 	}
 
 	componentDidMount() {
-		if (super.componentDidMount) super.componentDidMount();
+		super.componentDidMount();
 		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
 	}
 
 	componentWillUnmount() {
-		if (super.componentWillUnmount) super.componentWillUnmount();
+		super.componentWillUnmount();
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
 
@@ -146,7 +146,9 @@ export class BlobMain extends Container<Props, any> {
 		// NOTE: Title should be kept in sync with app/internal/ui in Go.
 		let title = trimRepo(this.state.repo);
 		const pathParts = this.state.path ? this.state.path.split("/") : null;
-		if (pathParts) title = `${pathParts[pathParts.length - 1]} · ${title}`;
+		if (pathParts) {
+			title = `${pathParts[pathParts.length - 1]} · ${title}`;
+		}
 		if (this.state.defObj && !this.state.defObj.Error && defTitleOK(this.state.defObj)) {
 			title = `${defTitle(this.state.defObj)} · ${title}`;
 		}

@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 
@@ -19,8 +19,12 @@ export class Logo extends React.Component<Props, any> {
 		const {width, type, className} = this.props;
 
 		let logoImg = "sourcegraph-mark.svg";
-		if (type === "logotype") logoImg = "sourcegraph-logo.svg";
-		if (type === "logotype-with-tag") logoImg = "sourcegraph-logo-tagline.svg";
+		if (type === "logotype") {
+			logoImg = "sourcegraph-logo.svg";
+		}
+		if (type === "logotype-with-tag") {
+			logoImg = "sourcegraph-logo-tagline.svg";
+		}
 
 		return <img src={`${(this.context as any).siteConfig.assetsRoot}/img/${logoImg}`} width={width} className={className} title="Sourcegraph" alt="Sourcegraph Logo" />;
 	}

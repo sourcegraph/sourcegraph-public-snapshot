@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import Helmet from "react-helmet";
@@ -126,7 +126,9 @@ export class RepoMain extends React.Component<Props, any> {
 			);
 		}
 
-		if (!this.props.repo) return null;
+		if (!this.props.repo) {
+			return null;
+		}
 
 		if (this.props.isCloning) {
 			return (

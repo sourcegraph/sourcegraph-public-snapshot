@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import {Annotation} from "sourcegraph/blob/Annotations";
 import {sortAnns} from "sourcegraph/blob/Annotations";
@@ -16,8 +16,12 @@ export function prepareAnnotations(anns: Array<Annotation>): Array<Annotation> {
 	// that the CSS colors are applied (otherwise ref links appear in
 	// the normal link color).
 	anns.forEach((a) => {
-		if (!a.URL && (!a.URLs || a.URLs.length === 0)) a.WantInner = 1;
-		if (!a.StartByte) a.StartByte = 0;
+		if (!a.URL && (!a.URLs || a.URLs.length === 0)) {
+			a.WantInner = 1;
+		}
+		if (!a.StartByte) {
+			a.StartByte = 0;
+		}
 	});
 
 	sortAnns(anns);
@@ -40,8 +44,12 @@ export function prepareAnnotations(anns: Array<Annotation>): Array<Annotation> {
 
 					// Sort for determinism.
 					ann.URLs.sort((a, b) => {
-						if (a < b) return -1;
-						if (a > b) return 1;
+						if (a < b) {
+							return -1;
+						}
+						if (a > b) {
+							return 1;
+						}
 						return 0;
 					});
 

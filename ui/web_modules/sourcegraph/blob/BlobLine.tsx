@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {Link} from "react-router";
@@ -21,8 +21,12 @@ import {Def} from "sourcegraph/def/index";
 // simpleContentsString converts [string...] (like ["a", "b", "c"]) to
 // a string by joining the elements (to produce "abc", for example).
 function simpleContentsString(contents) {
-	if (!(contents instanceof Array)) return contents;
-	if (contents.some((e) => typeof e !== "string")) return contents;
+	if (!(contents instanceof Array)) {
+		return contents;
+	}
+	if (contents.some((e) => typeof e !== "string")) {
+		return contents;
+	}
 	return contents.join("");
 }
 
@@ -44,11 +48,15 @@ function fromUtf8(contents) {
 // the given revision (rev) to the URL. It is a special fastpath version
 // because it is called very frequently during rendering of BlobLine.
 function fastInsertRevIntoDefURL(urlNoRev: string, repo: string, rev: string): string {
-	if (!rev) return urlNoRev;
+	if (!rev) {
+		return urlNoRev;
+	}
 
 	const prefix = `/${repo}/-/`;
 	const repl = `/${repo}@${rev}/-/`;
-	if (urlNoRev.startsWith(prefix)) return `${repl}${urlNoRev.slice(prefix.length)}`;
+	if (urlNoRev.startsWith(prefix)) {
+		return `${repl}${urlNoRev.slice(prefix.length)}`;
+	}
 	return urlNoRev;
 }
 
@@ -89,7 +97,9 @@ export class BlobLine extends Component<Props, any> {
 	};
 
 	componentDidMount(nextProps, nextState) {
-		if (this.state.onMount) this.state.onMount();
+		if (this.state.onMount) {
+			this.state.onMount();
+		}
 	}
 
 	reconcileState(state, props) {
@@ -107,8 +117,12 @@ export class BlobLine extends Component<Props, any> {
 			if (state.annotations && state.annotations.length) {
 				state.ownAnnURLs = {};
 				state.annotations.forEach((ann) => {
-					if (ann.URL) state.ownAnnURLs[ann.URL] = true;
-					if (ann.URLs) ann.URLs.forEach((url) => state.ownAnnURLs[url] = true);
+					if (ann.URL) {
+						state.ownAnnURLs[ann.URL] = true;
+					}
+					if (ann.URLs) {
+						ann.URLs.forEach((url) => state.ownAnnURLs[url] = true);
+					}
 				});
 			} else {
 				state.ownAnnURLs = null;
@@ -132,7 +146,9 @@ export class BlobLine extends Component<Props, any> {
 	}
 
 	_hasLink(content) {
-		if (!(content instanceof Array)) return false;
+		if (!(content instanceof Array)) {
+			return false;
+		}
 		return content.some(item => {
 			if (item.type === "a") {
 				return true;
@@ -191,7 +207,9 @@ export class BlobLine extends Component<Props, any> {
 						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.Hovering(null))}
 						onClick={(ev) => {
 							(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, this.state.clickEventLabel, {repo: this.state.repo, path: this.state.path, active_def_url: this.state.activeDefURL});
-							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
+							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) {
+								return;
+							}
 							// TODO: implement multiple defs menu if ann.URLs.length > 0 (more important for languages other than Go)
 							if (this.state.highlightedDefObj && this.state.highlightedDefObj.Error) {
 								// Prevent navigating to a broken ref or not-yet-loaded def.
@@ -214,7 +232,9 @@ export class BlobLine extends Component<Props, any> {
 
 		// A single newline makes this line show up (correctly) as an empty line
 		// when copied and pasted, instead of being omitted entirely.
-		if (!contents) contents = "\n";
+		if (!contents) {
+			contents = "\n";
+		}
 
 		let lineContentClass = this.state.lineContentClassName ||
 			(this.state.selected ? s.selectedLineContent : s.lineContent);

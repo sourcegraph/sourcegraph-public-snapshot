@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import {rel, abs} from "sourcegraph/app/routePatterns";
 import * as invariant from "invariant";

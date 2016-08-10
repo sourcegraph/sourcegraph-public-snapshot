@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import {annotationsByLine} from "sourcegraph/blob/annotationsByLine";
 import expect from "expect.js";

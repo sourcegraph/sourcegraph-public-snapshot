@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import {browserHistory} from "react-router";
 
@@ -18,7 +18,9 @@ export const BuildBackend = {
 				let builds = BuildStore.buildLists.get(action.repo, action.search);
 				if (builds === null || action.force) {
 					let endpoint = !action.repo ? "/.api/builds" : `/.api/repos/${action.repo}/-/builds`;
-					if (action.search) endpoint = `${endpoint}${action.search}`;
+					if (action.search) {
+						endpoint = `${endpoint}${action.search}`;
+					}
 					BuildBackend.fetch(endpoint)
 						.then(checkStatus)
 						.then((resp) => resp.json())

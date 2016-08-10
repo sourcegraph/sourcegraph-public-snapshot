@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 // annotationsByLine returns an array with one entry per line. Each line's entry
 // is the array of annotations that intersect that line.
@@ -26,7 +26,9 @@ export function annotationsByLine(lineStartBytes, annotations, lines) {
 				line++;
 			}
 		}
-		if (line === lines.length) break;
+		if (line === lines.length) {
+			break;
+		}
 
 		// Optimization: add the ann to this line (if it intersects);
 		if (ann.StartByte < lineEndBytes[line] && ann.EndByte >= lineStartBytes[line]) {
@@ -34,9 +36,13 @@ export function annotationsByLine(lineStartBytes, annotations, lines) {
 		}
 
 		// Add the ann to all lines (current and subsequent) it intersects.
-		if (ann.EndByte <= lineEndBytes[line]) continue;
+		if (ann.EndByte <= lineEndBytes[line]) {
+			continue;
+		}
 		for (let line2 = line + 1; line2 < lines.length; line2++) {
-			if (ann.StartByte >= lineEndBytes[line2]) break;
+			if (ann.StartByte >= lineEndBytes[line2]) {
+				break;
+			}
 			if (ann.StartByte < lineEndBytes[line2] && ann.EndByte >= lineStartBytes[line2]) {
 				lineAnns[line2].push(ann);
 			}

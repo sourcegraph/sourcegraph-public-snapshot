@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {Def} from "sourcegraph/def/index";
@@ -12,8 +12,12 @@ export type DefFormatOptions = {
 }
 
 export function qualifiedNameAndType(def, opts?: any): any {
-	if (!def) throw new Error("def is null");
-	if (!def.FmtStrings) return "(unknown def)";
+	if (!def) {
+		throw new Error("def is null");
+	}
+	if (!def.FmtStrings) {
+		return "(unknown def)";
+	}
 	const qual: Qual = opts && opts.nameQual ? opts.nameQual : "ScopeQualified";
 	const f = def.FmtStrings;
 

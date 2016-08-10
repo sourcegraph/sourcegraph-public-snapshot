@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 // isExternalLink returns true if given URL is considered as external link.
 export function isExternalLink(url: string): boolean {

@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import * as styles from "./styles/dropdown.css";
@@ -51,7 +51,9 @@ export class Dropdown extends React.Component<Props, any> {
 	}
 
 	_onToggleDropdown(ev) {
-		if (this.props.disabled) return;
+		if (this.props.disabled) {
+			return;
+		}
 		ev.preventDefault();
 		ev.stopPropagation();
 		this.setState({open: !this.state.open});
@@ -59,12 +61,18 @@ export class Dropdown extends React.Component<Props, any> {
 
 	// _onDocumentClick causes clicks outside the menu to close the menu.
 	_onDocumentClick(ev) {
-		if (!this.state.open) return;
-		if (this._wrapper && !this._wrapper.contains(ev.target)) this.setState({open: false});
+		if (!this.state.open) {
+			return;
+		}
+		if (this._wrapper && !this._wrapper.contains(ev.target)) {
+			this.setState({open: false});
+		}
 	}
 
 	getMenuClickCallback(val) {
-		if (this.props.disabled) return () => null;
+		if (this.props.disabled) {
+			return () => null;
+		}
 		if (this.props.alwaysOpenMenu || !this.props.initialValue) {
 			return () => this.setState({open: !this.state.open});
 		}

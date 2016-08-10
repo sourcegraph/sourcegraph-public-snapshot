@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import {TreeStore} from "sourcegraph/tree/TreeStore";
 import "sourcegraph/tree/TreeBackend";
@@ -22,7 +22,9 @@ export const withLastSrclibDataVersion = ({
 		// If a blob, then the path is statically known. Otherwise, reuse
 		// the state.path set after the def loads (that is taken from def.File).
 		state.path = props.route && props.route.path && props.route.path.startsWith(rel.blob) ? props.params.splat[1] : state.path;
-		if (!state.path) state.path = null;
+		if (!state.path) {
+			state.path = null;
+		}
 
 		// If we specify the path, then srclib-data-version resolution
 		// is stricter: if the named file has changed since the last

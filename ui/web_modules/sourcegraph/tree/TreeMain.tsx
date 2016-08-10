@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {TreeList} from "sourcegraph/tree/TreeList";
@@ -22,7 +22,9 @@ export class TreeMain extends React.Component<Props, any> {
 	};
 
 	render(): JSX.Element | null {
-		if (!this.props.commitID) return null;
+		if (!this.props.commitID) {
+			return null;
+		}
 
 		const path = treeParam(this.props.routeParams.splat);
 

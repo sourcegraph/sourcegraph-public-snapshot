@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
@@ -51,7 +51,9 @@ export class DashboardContainer extends Container<Props, any> {
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (this._input && this._input.value) this._goToSearch(this._input.value);
+		if (this._input && this._input.value) {
+			this._goToSearch(this._input.value);
+		}
 	}
 
 	_goToSearch(query: string) {
@@ -59,7 +61,9 @@ export class DashboardContainer extends Container<Props, any> {
 	}
 
 	_handleInput(ev: KeyboardEvent) {
-		if (!(ev.currentTarget instanceof HTMLInputElement)) return;
+		if (!(ev.currentTarget instanceof HTMLInputElement)) {
+			return;
+		}
 		if (ev.currentTarget.value) {
 			this._goToSearch(ev.currentTarget.value);
 		}

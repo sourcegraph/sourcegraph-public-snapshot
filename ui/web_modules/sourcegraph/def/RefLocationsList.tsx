@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import Helmet from "react-helmet";
@@ -36,7 +36,9 @@ export class RefLocationsList extends React.Component<Props, any> {
 		let def = this.props.def;
 		let refLocs = this.props.refLocations;
 
-		if (!refLocs) return null;
+		if (!refLocs) {
+			return null;
+		}
 
 		const context = this.context as any;
 		const noGitHubPrivateReposScope = !context.githubToken || !context.githubToken.scope || !context.githubToken.scope.includes("repo");

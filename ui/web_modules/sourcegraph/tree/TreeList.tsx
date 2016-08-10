@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 import {Link} from "react-router";
@@ -21,19 +21,27 @@ import * as styles from "./styles/Tree.css";
 const EMPTY_PATH = [];
 
 function pathSplit(path: string): string[] {
-	if (path === "") throw new Error("invalid empty path");
-	if (path === "/") return EMPTY_PATH;
+	if (path === "") {
+		throw new Error("invalid empty path");
+	}
+	if (path === "/") {
+		return EMPTY_PATH;
+	}
 	path = trimLeft(path, "/");
 	return path.split("/");
 }
 
 function pathJoin(pathComponents: string[]): string {
-	if (pathComponents.length === 0) return "/";
+	if (pathComponents.length === 0) {
+		return "/";
+	}
 	return pathComponents.join("/");
 }
 
 function pathJoin2(a: string, b: string): string {
-	if (!a || a === "/") return b;
+	if (!a || a === "/") {
+		return b;
+	}
 	return `${a}/${b}`;
 }
 
@@ -147,7 +155,9 @@ export class TreeList extends Container<Props, State> {
 	_listItems(): Array<any> {
 		const items = this.state.fileResults;
 		const emptyItem = <div className={classNames(styles.list_item, styles.list_item_empty)} key="_nofiles"><i>No matches.</i></div>;
-		if (!items || items.length === 0) return [emptyItem];
+		if (!items || items.length === 0) {
+			return [emptyItem];
+		}
 
 		let list: any[] = [];
 		for (let i = 0; i < items.length; i++) {

@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 export function lineCol(line: number | string, col?: number): string {
 	if (typeof col === "undefined") {

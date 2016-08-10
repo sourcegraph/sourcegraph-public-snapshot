@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import {formatPattern} from "react-router/lib/PatternUtils";
 import {abs} from "sourcegraph/app/routePatterns";

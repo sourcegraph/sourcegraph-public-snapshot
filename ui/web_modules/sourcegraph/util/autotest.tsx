@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as TestUtils from "react-addons-test-utils";
 
@@ -47,7 +47,9 @@ export function autotest(expected, filename, component, context?) {
 			}
 			if (k === "children") {
 				let children = toChildArray(v);
-				if (children.length === 0) return noJSON;
+				if (children.length === 0) {
+					return noJSON;
+				}
 				return mergeText(children);
 			}
 			switch (v.constructor) {

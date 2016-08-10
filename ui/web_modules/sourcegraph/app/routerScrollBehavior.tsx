@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import {RouterState} from "react-router";
 
@@ -9,13 +9,19 @@ import {RouterState} from "react-router";
 // the user clicks on a def (and goes to a def route) on the blob page,
 // or performs an incremental search that updates the URL.
 export function shouldUpdateScroll(prevRouterProps: RouterState | null, nextRouterProps: RouterState | null): boolean {
-	if (!prevRouterProps) return true;
-	if (!nextRouterProps) return true;
+	if (!prevRouterProps) {
+		return true;
+	}
+	if (!nextRouterProps) {
+		return true;
+	}
 
 	const prevRoute = prevRouterProps.routes[prevRouterProps.routes.length - 1];
 	const nextRoute = nextRouterProps.routes[nextRouterProps.routes.length - 1];
 	const changedScrollKey = !(prevRoute as any).keepScrollPositionOnRouteChangeKey || (prevRoute as any).keepScrollPositionOnRouteChangeKey !== (nextRoute as any).keepScrollPositionOnRouteChangeKey;
-	if (!changedScrollKey) return false;
+	if (!changedScrollKey) {
+		return false;
+	}
 	return true;
 }
 
@@ -29,7 +35,9 @@ export function hashLinkScroll() {
 		setTimeout(() => {
 			const id = hash.replace("#", "");
 			const element = document.getElementById(id);
-			if (element) element.scrollIntoView();
+			if (element) {
+				element.scrollIntoView();
+			}
 		}, 0);
 	}
 }

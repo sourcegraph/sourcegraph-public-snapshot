@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as SearchActions from "sourcegraph/search/SearchActions";
 import {SearchStore} from "sourcegraph/search/SearchStore";

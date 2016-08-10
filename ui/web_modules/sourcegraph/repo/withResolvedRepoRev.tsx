@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as React from "react";
 
@@ -36,8 +36,12 @@ export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
 		}
 
 		componentWillUnmount() {
-			if (super.componentWillUnmount) super.componentWillUnmount();
-			if (this._cloningInterval) clearInterval(this._cloningInterval);
+			if (super.componentWillUnmount) {
+				super.componentWillUnmount();
+			}
+			if (this._cloningInterval) {
+				clearInterval(this._cloningInterval);
+			}
 		}
 
 		reconcileState(state, props) {
@@ -58,7 +62,9 @@ export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
 		}
 
 		onStateTransition(prevState, nextState) {
-			if (!isMainComponent) return;
+			if (!isMainComponent) {
+				return;
+			}
 
 			// Handle change in params OR lost resolution (due to auth change, etc.).
 			if (nextState.repo && !nextState.repoResolution && (prevState.repo !== nextState.repo || prevState.repoResolution !== nextState.repoResolution)) {

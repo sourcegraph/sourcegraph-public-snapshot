@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports curly
+// tslint:disable: typedef ordered-imports
 
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {TreeStore} from "sourcegraph/tree/TreeStore";
