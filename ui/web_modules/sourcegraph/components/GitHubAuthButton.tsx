@@ -31,7 +31,6 @@ export class GitHubAuthButton extends React.Component<Props, any> {
 		outline: false,
 		block: false,
 	};
-	props: Props;
 
 	render(): JSX.Element | null {
 		const {scopes, returnTo, outline, color, block, children, size} = this.props;
