@@ -47,23 +47,24 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 		return
 	}
 
-	if event.Type == githttp.PUSH || event.Type == githttp.PUSH_FORCE || event.Type == githttp.TAG {
-		_, err := cl.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{
-			Repo:     repo,
-			CommitID: event.Commit,
-			Tag:      event.Tag,
-			Branch:   event.Branch,
-			Config: sourcegraph.BuildConfig{
-				Queue:    true,
-				Priority: -50,
-			},
-		})
-		if err != nil {
-			log15.Warn("postPushHook: failed to create build", "err", err, "repo", repo, "commit", event.Commit, "branch", event.Branch, "tag", event.Tag)
-			return
-		}
-		log15.Debug("postPushHook: build created", "repo", repo, "branch", event.Branch, "tag", event.Tag, "commit", event.Commit, "event type", event.Type)
+	if event.Type != githttp.PUSH && event.Type != githttp.PUSH_FORCE && event.Type != githttp.TAG {
+		return
 	}
+	_, err := cl.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{
+		Repo:     repo,
+		CommitID: event.Commit,
+		Tag:      event.Tag,
+		Branch:   event.Branch,
+		Config: sourcegraph.BuildConfig{
+			Queue:    true,
+			Priority: -50,
+		},
+	})
+	if err != nil {
+		log15.Warn("postPushHook: failed to create build", "err", err, "repo", repo, "commit", event.Commit, "branch", event.Branch, "tag", event.Tag)
+		return
+	}
+	log15.Debug("postPushHook: build created", "repo", repo, "branch", event.Branch, "tag", event.Tag, "commit", event.Commit, "event type", event.Type)
 }
 
 // inventoryHook triggers a Repos.GetInventory call that computes the
