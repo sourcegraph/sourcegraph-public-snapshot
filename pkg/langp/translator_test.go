@@ -220,6 +220,72 @@ func TestTranslator(t *testing.T) {
 			}}},
 			Got: &ExportedSymbols{},
 		},
+
+		// ServeLocalRefs
+		{
+			Path: "/local-refs",
+			Request: &Position{
+				Repo:      "github.com/foo/bar",
+				Commit:    "deadbeef",
+				File:      "baz.go",
+				Line:      12,
+				Character: 34,
+			},
+			WantLSPMethod: "textDocument/references",
+			WantLSPParam: &lsp.TextDocumentPositionParams{
+				TextDocument: lsp.TextDocumentIdentifier{URI: "github.com/foo/bar/baz.go"},
+				Position: lsp.Position{
+					Line:      12,
+					Character: 34,
+				},
+			},
+
+			LSPResponseResult: []lsp.Location{{
+				URI: "baz.go",
+				Range: lsp.Range{
+					Start: lsp.Position{
+						Line:      1,
+						Character: 2,
+					},
+					End: lsp.Position{
+						Line:      1,
+						Character: 5,
+					},
+				},
+			}, {
+				URI: "baz.go",
+				Range: lsp.Range{
+					Start: lsp.Position{
+						Line:      4,
+						Character: 2,
+					},
+					End: lsp.Position{
+						Line:      4,
+						Character: 5,
+					},
+				},
+			}},
+			WantResponse: &LocalRefs{Refs: []Range{
+				{
+					Repo:           "github.com/foo/bar",
+					Commit:         "deadbeef",
+					File:           "baz.go",
+					StartLine:      1,
+					StartCharacter: 2,
+					EndLine:        1,
+					EndCharacter:   5,
+				}, {
+					Repo:           "github.com/foo/bar",
+					Commit:         "deadbeef",
+					File:           "baz.go",
+					StartLine:      4,
+					StartCharacter: 2,
+					EndLine:        4,
+					EndCharacter:   5,
+				},
+			}},
+			Got: &LocalRefs{},
+		},
 	}
 
 	for _, c := range cases {

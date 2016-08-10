@@ -111,6 +111,7 @@ func New(opts *Translator) http.Handler {
 	mux.Handle("/exported-symbols", t.handler("/exported-symbols", t.serveExportedSymbols))
 	mux.Handle("/external-refs", t.handler("/external-refs", t.serveExternalRefs))
 	mux.Handle("/hover", t.handler("/hover", t.serveHover))
+	mux.Handle("/local-refs", t.handler("/local-refs", t.serveLocalRefs))
 	return mux
 }
 
@@ -648,6 +649,61 @@ func (t *translator) serveExportedSymbols(body []byte) (interface{}, error) {
 		})
 	}
 	return &ExportedSymbols{Defs: defs}, nil
+}
+
+func (t *translator) serveLocalRefs(body []byte) (interface{}, error) {
+	// Decode the user request.
+	var pos Position
+	if err := json.Unmarshal(body, &pos); err != nil {
+		return nil, err
+	}
+	if pos.Repo == "" {
+		return nil, fmt.Errorf("Repo field must be set")
+	}
+	if pos.Commit == "" {
+		return nil, fmt.Errorf("Commit field must be set")
+	}
+	if pos.File == "" {
+		return nil, fmt.Errorf("File field must be set")
+	}
+
+	// Determine the root path for the workspace and prepare it.
+	rootPath, err := t.prepareWorkspace(pos.Repo, pos.Commit)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: should probably check server capabilities before invoking references,
+	// but good enough for now.
+	req := &jsonrpc2.Request{
+		Method: "textDocument/references",
+	}
+	p := pos.LSP()
+	if t.FileURI != nil {
+		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
+	}
+	if err := req.SetParams(p); err != nil {
+		return nil, err
+	}
+
+	var resp []lsp.Location
+	err = t.lspDo(rootPath, req, &resp)
+	if err != nil {
+		return nil, err
+	}
+	refs := make([]Range, 0, len(resp))
+	for _, r := range resp {
+		refs = append(refs, Range{
+			Repo:           pos.Repo,
+			Commit:         pos.Commit,
+			File:           r.URI,
+			StartLine:      r.Range.Start.Line,
+			StartCharacter: r.Range.Start.Character,
+			EndLine:        r.Range.End.Line,
+			EndCharacter:   r.Range.End.Character,
+		})
+	}
+	return &LocalRefs{Refs: refs}, nil
 }
 
 func (t *translator) lspDo(rootPath string, request *jsonrpc2.Request, result interface{}) error {
