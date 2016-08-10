@@ -1,0 +1,43 @@
+@value base "sourcegraph/components/styles/_base.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value grid "sourcegraph/components/styles/_grid.css";
+@value vars "sourcegraph/components/styles/_vars.css";
+
+@value c_purple_8 from colors;
+@value media_sm from vars;
+
+.grey-bg {
+	background-color: rgba(119, 147, 174, 0.1);
+}
+
+.action_button {
+	composes: mh2 ph2 mb2 from base;
+}
+
+.action_link {
+	composes: action_button;
+	border-color: transparent;
+}
+
+.link {
+	composes: gray from colors;
+}
+
+.video:hover .video_overlay { background-color: c_purple_8; }
+.video_overlay { transition: all 0.3s ease-in-out; }
+
+
+@media only screen and media_sm {
+	.full_sm {
+			display: block;
+			width: 100%;
+			flex: 0 0 100%;
+	}
+	.left_sm {
+		justify-content: flex-start !important;
+	}
+	.wrap_sm {
+		flex-wrap: wrap;
+	}
+}

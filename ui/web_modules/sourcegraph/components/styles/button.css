@@ -16,10 +16,10 @@
 */
 
 .btn {
-    composes: tc from typography;
+    composes: tc b from typography;
     composes: ph3 br4 from base;
-		padding-top: 0.35rem;
-		padding-bottom: 0.35rem;
+		padding-top: 0.45rem;
+		padding-bottom: 0.42rem;
     box-sizing: border-box;
     cursor: pointer;
     display: inline-block;

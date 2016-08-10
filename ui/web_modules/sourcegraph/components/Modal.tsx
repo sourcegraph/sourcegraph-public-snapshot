@@ -53,13 +53,13 @@ class ModalComp extends React.Component<ModalProps, any> {
 			<div ref="modal_container"
 				className={styles.container}
 				onClick={this._onClick}>
-					{this.props.children}
+					<div styleName="modal">{this.props.children}</div>
 			</div>
 		);
 	}
 }
 
-export const Modal = renderedOnBody(ModalComp);
+let RenderedModal = renderedOnBody(ModalComp);
 
 // setLocationModalState shows or hides a modal by setting the location.state.modal
 // property to modalName if shown is true and null otherwise.
@@ -81,20 +81,18 @@ export function dismissModal(modalName, location, router) {
 
 type LocationStateModalProps = {
 	location: any,
-
 	// modalName is the name of the modal (location.state.modal value) that this
 	// LocationStateToggleLink component toggles.
 	modalName: string,
-
 	onDismiss?: () => void,
-
 	children?: any,
+	style?: Object,
 };
 
 // LocationStateModal wraps <Modal> and uses a key on the location state
 // to determine whether it is displayed. Use LocationStateModal with
 // LocationStateToggleLink.
-export function LocationStateModal({location, modalName, children, onDismiss}: LocationStateModalProps, {router}): any {
+export function LocationStateModal({location, modalName, children, onDismiss, style}: LocationStateModalProps, {router}): any {
 	if (!location.state || location.state.modal !== modalName) {
 		return null;
 	}
@@ -105,10 +103,11 @@ export function LocationStateModal({location, modalName, children, onDismiss}: L
 			onDismiss();
 		}
 	};
+
 	return (
-		<Modal onDismiss={onDismiss2}>
+		<RenderedModal onDismiss={onDismiss2} style={style}>
 			{children}
-		</Modal>
+		</RenderedModal>
 	);
 }
 

@@ -32,6 +32,7 @@
 	z-index: 100;
 	top: 0;
 	width: 100%;
+	transition: all 0.3s ease-in-out;
 }
 
 @value logo_height 21.508px;
@@ -45,7 +46,6 @@
 	animation: spin 0.5s ease-in-out 1;
 }
 @keyframes spin { 50% { transform: rotate(180deg) scale(1.2) } 100% { transform: rotate(180deg) scale(1)} }
-
 
 /* TODO: Abstract this – styles should be contained in their components */
 .modal {

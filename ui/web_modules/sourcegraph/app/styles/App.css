@@ -4,7 +4,7 @@
 @value modal "sourcegraph/components/styles/modal.css";
 
 @value desktop_base_size, mobile_base_size, media_sm from vars;
-@value c_cool_gray from colors;
+@value c_cool_dark_gray from colors;
 
 /*
 Stick footer at bottom even if the page content doesn't take up
@@ -40,7 +40,7 @@ body {
 }
 
 html {
-	color: c_cool_gray;
+	color: c_cool_dark_gray;
 	font-size: desktop_base_size;
 	line-height: 1.6;
 }

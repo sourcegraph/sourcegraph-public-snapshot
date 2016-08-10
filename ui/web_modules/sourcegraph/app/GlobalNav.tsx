@@ -13,6 +13,7 @@ import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import * as classNames from "classnames";
 
+import {SignupForm} from "sourcegraph/user/Signup";
 import {LoginForm} from "sourcegraph/user/Login";
 import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
 import {Integrations} from "sourcegraph/home/Integrations";
@@ -31,6 +32,7 @@ import debounce from "lodash.debounce";
 const hiddenNavRoutes = new Set([
 	"/",
 	`/${abs.integrations}`,
+	"/styleguide",
 ]);
 
 type GlobalNavProps = {
@@ -61,7 +63,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 
 			{location.state && location.state.modal === "login" &&
 			// TODO(chexee): Decouple existence of modals and GlobalNav
-				<LocationStateModal modalName="login" location={location}
+				<LocationStateModal modalName="login" location={location} style={{maxWidth: "380px", marginLeft: "auto", marginRight: "auto"}}
 					onDismiss={(v) => eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 					<div className={styles.modal}>
 						<LoginForm
@@ -72,9 +74,28 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 				</LocationStateModal>
 			}
 
+			{location.state && location.state.modal === "join" &&
+				<LocationStateModal modalName="join" location={location} style={{maxWidth: "380px", marginLeft: "auto", marginRight: "auto"}}
+					onDismiss={(v) => eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissJoinModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
+					<div className={styles.modal}>
+						<SignupForm
+							onSignupSuccess={dismissModal("join", location, router)}
+							returnTo={location}
+							location={location} />
+					</div>
+				</LocationStateModal>
+			}
+
+			{location.state && location.state.modal === "demo_video" &&
+				// TODO(mate, chexee): consider moving this to Home.tsx
+				<LocationStateModal modalName="demo_video" location={location} style={{maxWidth: "860px", marginRight: "auto", marginLeft: "auto"}}>
+					<iframe width="100%" style={{minHeight: "500px"}} src="https://www.youtube.com/embed/tf93F2nc3Yo?rel=0&amp;showinfo=0" frameBorder="0" allowFullscreen={true}></iframe>
+				</LocationStateModal>
+			}
+
 			{location.state && location.state.modal === "menuIntegrations" &&
 				<div>
-					<LocationStateModal modalName="menuIntegrations" location={location}>
+					<LocationStateModal modalName="menuIntegrations" location={location} style={{maxWidth: "380px", marginLeft: "auto", marginRight: "auto"}}>
 						<div className={styles.modal}>
 							<a className={styles.modal_dismiss} onClick={dismissModal("menuIntegrations", location, router)} color="white">
 								<CloseIcon className={base.pt2} />
@@ -86,7 +107,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 			}
 
 			{location.state && location.state.modal === "menuBeta" &&
-				<LocationStateModal modalName="menuBeta" location={location}>
+				<LocationStateModal modalName="menuBeta" location={location} style={{maxWidth: "380px", marginLeft: "auto", marginRight: "auto"}}>
 					<div className={styles.modal}>
 						<Heading level="4" className={base.mb3} align="center">Join our beta program</Heading>
 						<BetaInterestForm
@@ -97,21 +118,23 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 			}
 
 			<div className={classNames(styles.flex, styles.flex_fill, styles.flex_center, styles.tl, base.bn)}>
-				{!isHomepage && <Link to="/" className={classNames(styles.logo_link, styles.flex_fixed)}>
-					{showLogoMarkOnly ?
-						<Logo className={classNames(styles.logo, styles.logomark)}
-							width="21px"
-							type="logomark"/> :
-						<span>
-							<Logo className={classNames(styles.logo, styles.logomark, styles.small_only)}
+				{!isHomepage &&
+					<Link to="/" className={classNames(styles.logo_link, styles.flex_fixed)}>
+						{showLogoMarkOnly ?
+							<Logo className={classNames(styles.logo, styles.logomark)}
 								width="21px"
-								type="logomark"/>
-							<Logo className={classNames(styles.logo, styles.not_small_only)}
-								width="144px"
-								type="logotype"/>
-						</span>
-					}
-				</Link>}
+								type="logomark"/> :
+							<span>
+								<Logo className={classNames(styles.logo, styles.logomark, styles.small_only)}
+									width="21px"
+									type="logomark"/>
+								<Logo className={classNames(styles.logo, styles.not_small_only)}
+									width="144px"
+									type="logotype"/>
+							</span>
+						}
+					</Link>
+				}
 
 				<div
 					className={classNames(styles.flex_fill, base.b__dotted, base.bn, base.brw2, colors.b__cool_pale_gray)}>
@@ -156,7 +179,12 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 						<div>
 							<LocationStateToggleLink href="/login" modalName="login" location={location}
 								onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ShowLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
-								Sign in
+								Log in
+							</LocationStateToggleLink>
+							<span className={base.mh1}> or </span>
+							<LocationStateToggleLink href="/join" modalName="join" location={location}
+								onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ShowSignUpModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
+								Sign up
 							</LocationStateToggleLink>
 						</div>
 					</div>

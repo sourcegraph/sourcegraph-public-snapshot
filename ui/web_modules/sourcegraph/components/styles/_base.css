@@ -69,6 +69,7 @@
 .bw1 { border-width: 1px; }
 .bw2 { border-width: 2px; }
 .bw3 { border-width: 3px; }
+.bw4 { border-width: 4px; }
 
 .brw2 { border-right-width: 2px; }
 
@@ -183,7 +184,7 @@
 .ph5 { padding-left: 4rem; padding-right: 4rem; }
 .ph6 { padding-left: 8rem; padding-right: 8rem; }
 .ph7 { padding-left: 16rem; padding-right: 16rem; }
-.center { margin-right: auto; margin-left: auto; }
+.center { display: block; margin-right: auto; margin-left: auto; }
 .ma0 { margin: 0; }
 .ma1 { margin: .25rem; }
 .ma2 { margin: .5rem; }

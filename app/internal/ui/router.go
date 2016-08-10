@@ -28,7 +28,7 @@ func newRouter() *mux.Router {
 
 	// Special top-level routes that do NOT refer to repos.
 	//
-	// NOTE: Keep in sync with routePatterns.js. See the NOTE in that
+	// NOTE: Keep in sync with routePatterns.tsx. See the NOTE in that
 	// file for more information.
 	topLevel := []string{
 		// These all omit the leading "/".
@@ -41,6 +41,7 @@ func newRouter() *mux.Router {
 		"join",
 		"legal",
 		"login",
+		"newhome",
 		"pricing",
 		"privacy",
 		"settings/repos",

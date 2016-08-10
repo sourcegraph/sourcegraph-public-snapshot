@@ -78,7 +78,7 @@ export class App extends React.Component<Props, any> {
 			<div className={this.state.className}>
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
 				<GlobalNav params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
-				<div className={styles.main_content} id="scroller">
+				<div className={styles.main_content} id="scroller" ref="mainContent">
 					<div className={styles.inner_main_content}>
 						{this.props.navContext && <div className={styles.breadcrumb}>{this.props.navContext}</div>}
 						{this.props.main}

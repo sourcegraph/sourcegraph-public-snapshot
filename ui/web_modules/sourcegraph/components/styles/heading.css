@@ -21,10 +21,10 @@
 .cool_mid_gray { composes: cool_mid_gray from colors; }
 
 .line {
-	composes: bw3 mv3 from base;
+	composes: bw4 mv3 from base;
 	composes: v_middle from typography;
 	display: inline-block;
-	width: 5rem;
+	width: 6rem;
 }
 .l_blue { composes: b__blue from colors; }
 .l_green { composes: b__green from colors; }

@@ -15,18 +15,14 @@
 	overflow-y: auto;
 }
 
-.modal_shadow {
-	box-shadow: 2px 2px 10px 0px c_black_30;
-}
-
 .modal {
 	composes: center mv6 br2 pa4 from base;
 	composes: bg_white from colors;
-	composes: modal_shadow;
-	max-width: 700px; /* TODO: use rem */
-	min-width: 320px; /* TODO: use rem */
+	box-shadow: 2px 2px 10px 0px c_black_30;
+	max-width: 80vw;
+	min-width: 320px;
+	max-height: 80vw;
 	z-index: 101; /* TODO: extract z-index into module */
-	max-height: 75%;
 	overflow-y: auto;
 }
 
