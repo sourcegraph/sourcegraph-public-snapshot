@@ -45,7 +45,7 @@ export interface Ref {};
 
 // Refs streaming pagnination assumes that the per page amount will be
 // consistent for each fetch.
-export const refLocsPerPage = 30;
+export const refLocsPerPage = 100;
 
 export function routeParams(url: string): {repo: string, rev: string | null, def: string, err: string | null} {
 	let v = getRouteParams(abs.def, url);
