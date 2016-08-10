@@ -1,11 +1,11 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import * as ReactDOMServer from "react-dom/server";
 import expect from "expect.js";
 import {setGlobalFeatures, withFeaturesContext} from "sourcegraph/app/features";
 
-const C0base = (props, context) => <p>{context.features._testingDummyFeature}</p>; // eslint-disable-line react/jsx-key
+const C0base = (props, context) => <p>{context.features._testingDummyFeature}</p>;
 (C0base as any).contextTypes = {features: React.PropTypes.object.isRequired};
 const C0 = withFeaturesContext(C0base as any);
 
@@ -17,4 +17,3 @@ describe("withFeaturesContext", () => {
 		expect(o).to.eql("<p>bar</p>");
 	});
 });
-

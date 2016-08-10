@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import {Hero, Heading} from "sourcegraph/components/index";
@@ -6,7 +6,7 @@ import * as styles from "./Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import Helmet from "react-helmet";
 
-export function ContactPage(props: {}, {signedIn}) {
+export function ContactPage(props: {}, {}) {
 	return (
 		<div>
 			<Helmet title="Contact" />

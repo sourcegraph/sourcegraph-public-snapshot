@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 
@@ -82,5 +82,6 @@ function infoToDef(info) {
 // webview to the desktop app AFAICT.
 function messageDesktop(message) {
 	const json = JSON.stringify(message);
+	// tslint:disable: no-console
 	console.debug(json);
 }

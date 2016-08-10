@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import {Component} from "sourcegraph/Component";
@@ -21,11 +21,14 @@ if (typeof document !== "undefined") {
 }
 
 type Props = {
+	currentRepo?: string,
+	hoverPos: BlobPos,
+	hoverInfos: any,
 }
 
 export class DefTooltip extends Component<Props, any> {
 	_elem: any;
-	
+
 	constructor(props) {
 		super(props);
 		this._updatePosition = this._updatePosition.bind(this);
@@ -39,12 +42,6 @@ export class DefTooltip extends Component<Props, any> {
 		this._elem = null;
 		document.removeEventListener("mousemove", this._updatePosition);
 	}
-
-	props: {
-		currentRepo?: string,
-		hoverPos: BlobPos,
-		hoverInfos: any,
-	};
 
 	reconcileState(state, props) {
 		Object.assign(state, props);

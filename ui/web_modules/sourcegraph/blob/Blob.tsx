@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -71,21 +71,11 @@ type Props = {
 };
 
 export class Blob extends Component<Props, any> {
-	_isMounted: boolean;
-
 	static contextTypes = {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
-	constructor(props) {
-		super(props);
-		this._expandRange = this._expandRange.bind(this);
-		this._handleSelectionChange = debounce(this._handleSelectionChange.bind(this), 200, {
-			leading: false,
-			trailing: true,
-		});
-		this._isMounted = false;
-	}
+	_isMounted: boolean;
 
 	state: {
 		repo: string;
@@ -146,6 +136,16 @@ export class Blob extends Component<Props, any> {
 		displayRanges: null,
 		dispatchSelections: null,
 	};
+
+	constructor(props) {
+		super(props);
+		this._expandRange = this._expandRange.bind(this);
+		this._handleSelectionChange = debounce(this._handleSelectionChange.bind(this), 200, {
+			leading: false,
+			trailing: true,
+		});
+		this._isMounted = false;
+	}
 
 	componentDidMount() {
 		// TODO: This is hacky, but the alternative was too costly (time and code volume)
@@ -396,7 +396,7 @@ export class Blob extends Component<Props, any> {
 			}
 			if (this.state.displayRanges && lastDisplayedLine !== lineNumber - 1 && (this.state.displayLineExpanders === null || this.state.displayLineExpanders !== "bottom")) {
 				// Prevent expanding above the last displayed range.
-				let expandTo = [Math.max(lastRangeEnd, lineNumber-30), lineNumber-1];
+				let expandTo = [Math.max(lastRangeEnd, lineNumber - 30), lineNumber - 1];
 				lines.push(
 					<BlobLineExpander key={`expand-${i}`}
 						direction={renderedLines === 0 ? "up" : null}
@@ -433,7 +433,7 @@ export class Blob extends Component<Props, any> {
 		if (this.state.lines && lastDisplayedLine < this.state.lines.length && (this.state.displayLineExpanders === null || this.state.displayLineExpanders !== "top")) {
 			lines.push(
 				<BlobLineExpander key={`expand-${this.state.lines.length}`}
-					expandRange={[lastDisplayedLine, lastDisplayedLine+30]}
+					expandRange={[lastDisplayedLine, lastDisplayedLine + 30]}
 					onExpand={this._expandRange}
 					direction={"down"}/>
 			);

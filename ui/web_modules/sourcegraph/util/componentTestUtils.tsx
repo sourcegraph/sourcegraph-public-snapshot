@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as TestUtils from "react-addons-test-utils";
 import * as Dispatcher from "sourcegraph/Dispatcher";
@@ -12,7 +12,7 @@ export function render(component, context?: {[key: string]: any}) {
 	let renderer = TestUtils.createRenderer();
 	Dispatcher.Backends.catchDispatched(() => {
 		renderer.render(component, Object.assign({}, context, {
-			status: {error() {}},
+			status: {error() { /* empty */ }},
 		}));
 	});
 	return renderer.getRenderOutput();

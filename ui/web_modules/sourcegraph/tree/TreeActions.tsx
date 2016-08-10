@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 export class WantCommit {
 	repo: any;
@@ -67,7 +67,7 @@ export class FetchedSrclibDataVersion {
 	commitID: any;
 	path: any;
 	version: any;
-	
+
 	constructor(repo, commitID, path?, versionOrNull?) {
 		this.repo = repo;
 		this.commitID = commitID;

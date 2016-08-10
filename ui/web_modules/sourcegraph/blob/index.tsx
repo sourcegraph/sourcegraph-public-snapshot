@@ -1,2 +1,1 @@
-// tslint:disable
-
+// tslint:disable: typedef ordered-imports curly

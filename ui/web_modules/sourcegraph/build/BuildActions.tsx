@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 export class WantBuild {
 	repo: any;
@@ -134,7 +134,7 @@ export class TasksFetched {
 	repo: any;
 	buildID: any;
 	tasks: any;
-	
+
 	constructor(repo, buildID, tasks) {
 		this.repo = repo;
 		this.buildID = buildID;

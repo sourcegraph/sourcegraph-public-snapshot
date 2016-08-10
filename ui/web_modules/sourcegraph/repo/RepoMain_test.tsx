@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import expect from "expect.js";
@@ -7,7 +7,7 @@ import {renderToString} from "sourcegraph/util/componentTestUtils";
 import {render} from "sourcegraph/util/renderTestUtils";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as BuildActions from "sourcegraph/build/BuildActions";
-import {Origin_GitHub} from "sourcegraph/repo/RepoBackend";
+import {OriginGitHub} from "sourcegraph/repo/RepoBackend";
 
 const common = {
 	routes: [],
@@ -27,8 +27,8 @@ describe("RepoMain", () => {
 
 	describe("repo creation", () => {
 		it("should trigger WantCreateRepo for just-resolved remote repos", () => {
-			const res = render(<RepoMain repo="r" repoResolution={{RemoteRepo: {Origin: {ID: "123", Service: Origin_GitHub}}}} location={{pathname: "/r", state: {}}} {...common} />);
-			expect(res.actions).to.eql([new RepoActions.WantCreateRepo("r", {Origin: {ID: "123", Service: Origin_GitHub}})]);
+			const res = render(<RepoMain repo="r" repoResolution={{RemoteRepo: {Origin: {ID: "123", Service: OriginGitHub}}}} location={{pathname: "/r", state: {}}} {...common} />);
+			expect(res.actions).to.eql([new RepoActions.WantCreateRepo("r", {Origin: {ID: "123", Service: OriginGitHub}})]);
 		});
 	});
 

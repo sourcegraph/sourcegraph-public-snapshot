@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import {Container} from "sourcegraph/Container";
@@ -67,7 +67,6 @@ function blobLoader(Component) {
 						if (h.reconcileState) h.reconcileState(state, {}, this.context);
 					});
 				}
-
 
 				// This call is synchronous because we are guaranteed to already have
 				// loaded these components' modules.

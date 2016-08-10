@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import {autotest} from "sourcegraph/util/autotest";
 
@@ -9,7 +9,7 @@ import testdataData from "sourcegraph/user/settings/testdata/Repos-data.json";
 
 describe("Repos", () => {
 	it("should render repos", () => {
-		let repos=[{
+		let repos = [{
 			Private: false,
 			URI: "someURL",
 			Description: "someDescription",

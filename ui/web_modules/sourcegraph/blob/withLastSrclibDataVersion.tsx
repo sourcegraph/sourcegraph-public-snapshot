@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import {TreeStore} from "sourcegraph/tree/TreeStore";
 import "sourcegraph/tree/TreeBackend";
@@ -36,9 +36,13 @@ export const withLastSrclibDataVersion = ({
 		// then the original commit ID). This avoids 2 network fetches and render
 		// cycles where we first show the original then the srclib-resolved version.
 		state.vcsCommitID = props.commitID;
-		if (!state.srclibDataVersion) state.commitID = null;
-		else if (state.srclibDataVersion.Error || !state.srclibDataVersion.CommitID) state.commitID = props.commitID; // from URL
-		else state.commitID = state.srclibDataVersion.CommitID;
+		if (!state.srclibDataVersion) {
+			state.commitID = null;
+		} else if (state.srclibDataVersion.Error || !state.srclibDataVersion.CommitID) {
+			state.commitID = props.commitID; // from URL
+		} else {
+			state.commitID = state.srclibDataVersion.CommitID;
+		}
 	},
 
 	onStateTransition(prevState, nextState) {

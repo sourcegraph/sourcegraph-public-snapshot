@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import Helmet from "react-helmet";
@@ -27,11 +27,11 @@ type Props = {
 };
 
 export class BuildContainer extends Container<Props, any> {
-	_updateIntervalID: any;
-
 	static contextTypes = {
 		user: React.PropTypes.object,
 	};
+
+	_updateIntervalID: any;
 
 	constructor(props) {
 		super(props);
@@ -102,7 +102,7 @@ export class BuildContainer extends Container<Props, any> {
 					}}>Rebuild</Button>}
 				</div>
 				<BuildHeader build={this.state.build} />
-				{this.state.commit && <div className={styles.commit}><Commit commit={this.state.commit} repo={this.state.repo} full={false} /></div>}
+				{this.state.commit && <div className={styles.commit}><Commit commit={this.state.commit} full={false} /></div>}
 				{this.state.tasks && this.state.tasks.BuildTasks && <BuildTasks tasks={this.state.tasks.BuildTasks} logs={this.state.logs} />}
 			</div>
 		);

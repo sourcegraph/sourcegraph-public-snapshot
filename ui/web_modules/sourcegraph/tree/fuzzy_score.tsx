@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 // LICENSE
 //
@@ -13,12 +13,12 @@
 // Range varies with pattern. Can only compare scores with same search pattern.
 export function fuzzy_score(pattern: string, str: string): Array<any> {
 	// Score consts
-	let adjacency_bonus = 5; // bonus for adjacent matches
-	let separator_bonus = 10; // bonus if match occurs after a separator
-	let camel_bonus = 10; // bonus if match is uppercase and prev is lower
-	let leading_letter_penalty = -3; // penalty applied for every letter in str before the first match
-	let max_leading_letter_penalty = -9; // maximum penalty for leading letters
-	let unmatched_letter_penalty = -1; // penalty for every letter that doesn't matter
+	let adjacencyBonus = 5; // bonus for adjacent matches
+	let separatorBonus = 10; // bonus if match occurs after a separator
+	let camelBonus = 10; // bonus if match is uppercase and prev is lower
+	let leadingLetterPenalty = -3; // penalty applied for every letter in str before the first match
+	let maxLeadingLetterPenalty = -9; // maximum penalty for leading letters
+	let unmatchedLetterPenalty = -1; // penalty for every letter that doesn't matter
 
 	// Loop letiables
 	let score = 0;
@@ -67,23 +67,23 @@ export function fuzzy_score(pattern: string, str: string): Array<any> {
 			// Apply penalty for each letter before the first pattern match
 			// Note: std::max because penalties are negative values. So max is smallest penalty.
 			if (patternIdx === 0) {
-				let penalty = Math.max(strIdx * leading_letter_penalty, max_leading_letter_penalty);
+				let penalty = Math.max(strIdx * leadingLetterPenalty, maxLeadingLetterPenalty);
 				score += penalty;
 			}
 
 			// Apply bonus for consecutive bonuses
 			if (prevMatched) {
-				newScore += adjacency_bonus;
+				newScore += adjacencyBonus;
 			}
 
 			// Apply bonus for matches after a separator
 			if (prevSeparator) {
-				newScore += separator_bonus;
+				newScore += separatorBonus;
 			}
 
 			// Apply bonus across camel case boundaries. Includes "clever" isLetter check.
 			if (prevLower && strChar === strUpper && strLower !== strUpper) {
-				newScore += camel_bonus;
+				newScore += camelBonus;
 			}
 
 			// Update patter index IFF the next pattern letter was matched
@@ -96,7 +96,7 @@ export function fuzzy_score(pattern: string, str: string): Array<any> {
 
 				// Apply penalty for now skipped letter
 				if (bestLetter !== null) {
-					score += unmatched_letter_penalty;
+					score += unmatchedLetterPenalty;
 				}
 
 				bestLetter = strChar;
@@ -107,7 +107,7 @@ export function fuzzy_score(pattern: string, str: string): Array<any> {
 
 			prevMatched = true;
 		} else {
-			score += unmatched_letter_penalty;
+			score += unmatchedLetterPenalty;
 			prevMatched = false;
 		}
 

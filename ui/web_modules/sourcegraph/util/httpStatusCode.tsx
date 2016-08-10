@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 // httpStatusCode returns the HTTP status code that is most appropriate
 // for the given Error (or 200 for null errors);

@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import Helmet from "react-helmet";
@@ -48,7 +48,6 @@ export class SignupForm extends Container<SignupFormProps, any> {
 		state.githubLogin = (props.location.query && props.location.query.login) || null;
 		state.githubEmail = (props.location.query && props.location.query.email) || null;
 	}
-
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.authResponse !== nextState.authResponse) {

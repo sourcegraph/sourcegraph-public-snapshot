@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 
@@ -29,7 +29,7 @@ export function withAnnotations(Component) {
 			state.anns = state.path && state.commitID ? (BlobStore.annotations[keyForAnns(state.repo, state.commitID, state.path, 0, 0)] || null) : null;
 			let contentLength = 0;
 			if (state.blob && !state.blob.Error && state.blob.ContentsString) contentLength = state.blob.ContentsString.length;
-			state.skipAnns = contentLength >= 60*10000; // ~ 10000 lines, avg. 60 chars per line
+			state.skipAnns = contentLength >= 60 * 10000; // ~ 10000 lines, avg. 60 chars per line
 		}
 
 		onStateTransition(prevState, nextState) {

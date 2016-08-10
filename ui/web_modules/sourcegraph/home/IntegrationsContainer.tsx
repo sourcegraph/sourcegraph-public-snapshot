@@ -1,7 +1,6 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
-import * as styles from "./styles/Integrations.css";
 import {Integrations} from "./Integrations";
 import "sourcegraph/user/UserBackend"; // for side effects
 

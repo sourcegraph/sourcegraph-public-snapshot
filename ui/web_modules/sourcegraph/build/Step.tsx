@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 
@@ -16,7 +16,7 @@ const updateLogIntervalMsec = 1500;
 
 export class Step extends Component<Props, any> {
 	_updateLogIntervalID: any;
-	
+
 	constructor(props) {
 		super(props);
 		this.state = {

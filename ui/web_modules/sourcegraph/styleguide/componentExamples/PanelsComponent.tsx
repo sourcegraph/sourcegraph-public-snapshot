@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
@@ -6,16 +6,16 @@ import {Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code} from "s
 import * as classNames from "classnames";
 
 export class PanelsComponent extends React.Component<{}, any> {
+	state: {
+		activeExample: number,
+	};
+
 	constructor(props) {
 		super(props);
 		this.state = {
 			activeExample: 0,
 		};
 	}
-
-	state: {
-		activeExample: number,
-	};
 
 	render(): JSX.Element | null {
 		return (

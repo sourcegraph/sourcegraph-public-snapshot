@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import {Link} from "react-router";
@@ -12,7 +12,6 @@ import {Header} from "sourcegraph/components/Header";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
 import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
-import {Route} from "react-router";
 import * as classNames from "classnames";
 
 import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
@@ -152,13 +151,17 @@ export class TreeList extends Container<Props, State> {
 
 		let list: any[] = [];
 		for (let i = 0; i < items.length; i++) {
-			let item = items[i],
-				itemURL = item.url;
+			let item = items[i];
+			let itemURL = item.url;
 
 			let icon;
-			if (item.isParentDirectory) icon = null;
-			else if (item.isDirectory) icon = <FolderIcon className={styles.icon} />;
-			else icon = <FileIcon className={styles.icon} />;
+			if (item.isParentDirectory) {
+				icon = null;
+			} else if (item.isDirectory) {
+				icon = <FolderIcon className={styles.icon} />;
+			} else {
+				icon = <FileIcon className={styles.icon} />;
+			}
 
 			let key = `f:${itemURL}`;
 			list.push(

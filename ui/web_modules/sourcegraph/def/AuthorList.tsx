@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import {TimeAgo} from "sourcegraph/util/TimeAgo";
@@ -36,4 +36,3 @@ export function AuthorList({
 		</div>
 	);
 };
-

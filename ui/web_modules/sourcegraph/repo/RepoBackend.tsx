@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {RepoStore} from "sourcegraph/repo/RepoStore";
@@ -10,7 +10,7 @@ import {sortBranches, sortTags} from "sourcegraph/repo/vcs";
 import {EventLogger} from "sourcegraph/util/EventLogger";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-export const Origin_GitHub = 0; // Origin.ServiceType enum value for GitHub origin
+export const OriginGitHub = 0; // Origin.ServiceType enum value for GitHub origin
 
 export const RepoBackend = {
 	fetch: singleflightFetch(defaultFetch),
@@ -98,7 +98,7 @@ export const RepoBackend = {
 				let body;
 				if (action.remoteRepo.GitHubID) {
 					body = {
-						Op: {Origin: {ID: action.remoteRepo.GitHubID.toString(), Service: Origin_GitHub}},
+						Op: {Origin: {ID: action.remoteRepo.GitHubID.toString(), Service: OriginGitHub}},
 					};
 				} else if (action.remoteRepo.Origin) {
 					body = {

@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import * as styles from "./styles/BetaInterestForm.css";
@@ -28,6 +28,15 @@ export class BetaInterestForm extends Container<Props, any> {
 		authInfo: React.PropTypes.object,
 		signedIn: React.PropTypes.bool.isRequired,
 	};
+
+	_dispatcherToken: string;
+
+	// TODO(slimsag): these should be 'element' type?
+	_fullName: any;
+	_email: any;
+	_editors: any;
+	_languages: any;
+	_message: any;
 
 	constructor(props) {
 		super(props);
@@ -60,15 +69,6 @@ export class BetaInterestForm extends Container<Props, any> {
 			Dispatcher.Backends.dispatch(new UserActions.WantEmails((this.context as any).authInfo.UID));
 		}
 	}
-
-	_dispatcherToken: string;
-
-	// TODO(slimsag): these should be 'element' type?
-	_fullName: any;
-	_email: any;
-	_editors: any;
-	_languages: any;
-	_message: any;
 
 	_onDispatch(action) {
 		if (action instanceof UserActions.BetaSubscriptionCompleted) {
@@ -129,18 +129,19 @@ export class BetaInterestForm extends Container<Props, any> {
 		if (!(this.context as any).signedIn) {
 			return (<div className={styles.cta}>
 				<p className={styles.p}>You must sign in to continue.</p>
-				<GitHubAuthButton returnTo={this.props.loginReturnTo} color="blue" className={base.mr3} onClick={this.props.onSubmit ? this.props.onSubmit : () => {}}>
+				<GitHubAuthButton returnTo={this.props.loginReturnTo} color="blue" className={base.mr3} onClick={this.props.onSubmit ? this.props.onSubmit : () => { /* empty */ }}>
 					<strong>Sign in with GitHub</strong>
 				</GitHubAuthButton>
 			</div>);
 		}
 
-
 		let [className, language] = [this.props.className, this.props.language];
 		let betaRegistered = (this.context as any).user && (this.context as any).user.BetaRegistered;
 		let emails = this.state.emails;
 
-		let defaultFullName, defaultEmail, defaultMessage;
+		let defaultFullName;
+		let defaultEmail;
+		let defaultMessage;
 		let defaultEditors = [];
 		let defaultLanguages: string[] = [];
 		let ls = window.localStorage["beta-interest-form"];
@@ -153,7 +154,9 @@ export class BetaInterestForm extends Container<Props, any> {
 			defaultMessage = ls.message;
 		}
 
-		if (language) defaultLanguages.push(langName(language));
+		if (language) {
+			defaultLanguages.push(langName(language));
+		}
 
 		return (
 			<div>

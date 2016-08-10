@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import Helmet from "react-helmet";
@@ -131,6 +131,5 @@ function LoginComp(props: any, {router}) {
 (LoginComp as any).contextTypes = {
 	router: React.PropTypes.object.isRequired,
 };
-
 
 export const Login = redirectIfLoggedIn("/", LoginComp);

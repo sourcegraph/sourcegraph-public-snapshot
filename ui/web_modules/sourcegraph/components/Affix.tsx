@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 
@@ -10,6 +10,11 @@ type Props = {
 };
 
 export class Affix extends React.Component<Props, any> {
+	_affix: {
+		offsetTop: number,
+		style: any,
+	};
+
 	componentDidMount() {
 		const initialOffset = this._getOffset();
 		window.addEventListener("scroll", () => this._affixEl(initialOffset));
@@ -19,11 +24,6 @@ export class Affix extends React.Component<Props, any> {
 		const initialOffset = this._getOffset();
 		window.removeEventListener("scroll", () => this._affixEl(initialOffset));
 	}
-
-	_affix: {
-		offsetTop: number,
-		style: any,
-	};
 
 	_getOffset(): number {
 		return this._affix.offsetTop;

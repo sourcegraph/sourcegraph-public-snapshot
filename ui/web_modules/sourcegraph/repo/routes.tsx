@@ -1,9 +1,8 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import {rel} from "sourcegraph/app/routePatterns";
 import {urlTo} from "sourcegraph/util/urlTo";
 import {makeRepoRev, repoPath, repoParam} from "sourcegraph/repo/index";
-import {Route} from "react-router";
 import {formatPattern} from "react-router/lib/PatternUtils";
 import {withResolvedRepoRev} from "sourcegraph/repo/withResolvedRepoRev";
 import {withRepoBuild} from "sourcegraph/build/withRepoBuild";

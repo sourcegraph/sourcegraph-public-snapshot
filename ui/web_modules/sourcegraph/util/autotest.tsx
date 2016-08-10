@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as TestUtils from "react-addons-test-utils";
 
@@ -23,7 +23,8 @@ export function autotest(expected, filename, component, context?) {
 	}
 
 	let renderer = TestUtils.createRenderer();
-	let dispatchedToStores, dispatchedToBackends;
+	let dispatchedToStores;
+	let dispatchedToBackends;
 	dispatchedToStores = Dispatcher.Stores.catchDispatched(() => {
 		dispatchedToBackends = Dispatcher.Backends.catchDispatched(() => {
 			mockTimeout(() => {
@@ -64,7 +65,8 @@ export function autotest(expected, filename, component, context?) {
 				if (k.substr(0, 2) === "on") {
 					let defaultPrevented: boolean | undefined = noJSON;
 					let propagationStopped: boolean | undefined = noJSON;
-					let funcDispatchedToStores, funcDispatchedToBackends;
+					let funcDispatchedToStores;
+					let funcDispatchedToBackends;
 					funcDispatchedToStores = Dispatcher.Stores.catchDispatched(() => {
 						funcDispatchedToBackends = Dispatcher.Backends.catchDispatched(() => {
 							mockTimeout(() => {

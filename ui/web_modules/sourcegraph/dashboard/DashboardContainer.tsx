@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
@@ -21,13 +21,13 @@ type Props = {
 };
 
 export class DashboardContainer extends Container<Props, any> {
-	_input: any;
-
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
+
+	_input: any;
 
 	constructor(props) {
 		super(props);

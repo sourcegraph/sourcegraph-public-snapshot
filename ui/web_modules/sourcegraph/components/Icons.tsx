@@ -1,4 +1,5 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
+// tslint:disable: no-var-requires
 
 import * as React from "react";
 import * as classNames from "classnames";

@@ -5,7 +5,7 @@ import {testOnly} from "sourcegraph/util/testOnly";
 
 export class Store<TPayload> extends FluxUtils.Store<TPayload> {
 	// hack: access internal fields of store and dispatcher
-	// tslint:disable-next-line: variable-name
+	// tslint:disable: variable-name
 	__dispatcher: {
 		_startDispatching: (payload: any) => void,
 		_stopDispatching: () => void,

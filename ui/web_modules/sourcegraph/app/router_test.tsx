@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import expect from "expect.js";
 import matchRoutes from "react-router/lib/matchRoutes";

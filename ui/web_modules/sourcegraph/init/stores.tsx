@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import {BlobStore} from "sourcegraph/blob/BlobStore";
 import {DefStore} from "sourcegraph/def/DefStore";

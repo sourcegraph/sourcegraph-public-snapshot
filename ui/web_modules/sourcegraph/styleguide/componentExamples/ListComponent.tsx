@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
@@ -30,7 +30,6 @@ export class ListComponent extends React.Component<{}, any> {
 							<li>Item 2</li>
 							<li>Item 3</li>
 						</List>
-
 
 					</div>
 					<hr />

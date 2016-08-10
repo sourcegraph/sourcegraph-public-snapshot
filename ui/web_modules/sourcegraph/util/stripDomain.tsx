@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 const domains = ["sourcegraph.com/", "github.com/"];
 

@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import {Container} from "sourcegraph/Container";
@@ -22,9 +22,13 @@ export function withRepoBuild(Component) {
 		reconcileState(state, props) {
 			Object.assign(state, props);
 			const builds = state.repoID && state.commitID ? BuildStore.builds.listNewestByCommitID(state.repoID, state.commitID) : null;
-			if (!builds) state.build = null;
-			else if (builds && builds.length > 0) state.build = builds[0];
-			else state.build = {Error: {response: {status: 404}}};
+			if (!builds) {
+				state.build = null;
+			} else if (builds && builds.length > 0) {
+				state.build = builds[0];
+			} else {
+				state.build = {Error: {response: {status: 404}}};
+			}
 		}
 
 		onStateTransition(prevState, nextState) {

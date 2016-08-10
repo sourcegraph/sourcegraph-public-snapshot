@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import * as classNames from "classnames";
@@ -50,16 +50,16 @@ type Props = {
 };
 
 export class RefsContainer extends Container<Props, any> {
-	rangesMemo: any;
-	filesByName: any;
-	ranges: any;
-	anns: any;
-
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 		user: React.PropTypes.object,
 	};
+
+	rangesMemo: any;
+	filesByName: any;
+	ranges: any;
+	anns: any;
 
 	constructor(props) {
 		super(props);
@@ -118,7 +118,7 @@ export class RefsContainer extends Container<Props, any> {
 
 		if (state.fileLocations && !state.initExpanded) {
 			// Auto-expand N snippets by default.
-			for (let i=0; i<props.initNumSnippets; i++) {
+			for (let i = 0; i < props.initNumSnippets; i++) {
 				let loc = state.fileLocations[i];
 				if (loc) state.shownFiles.add(loc.Path);
 			}
@@ -335,7 +335,7 @@ export class RefsContainer extends Container<Props, any> {
 												path={loc.Path}
 												contents={file.ContentsString}
 												annotations={this.anns[loc.Path] || null}
-												skipAnns={file.ContentsString && file.ContentsString.length >= 40*2500}
+												skipAnns={file.ContentsString && file.ContentsString.length >= 40 * 2500}
 												activeDefRepo={this.state.repo}
 												activeDef={this.state.def}
 												lineNumbers={false}

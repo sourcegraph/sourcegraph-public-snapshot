@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 // Betas must be added and written exactly the same in two locations:
 //

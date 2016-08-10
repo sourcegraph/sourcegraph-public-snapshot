@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import {Container} from "sourcegraph/Container";
@@ -66,4 +66,3 @@ export class LogoutLink extends Container<Props, any> {
 		);
 	}
 }
-

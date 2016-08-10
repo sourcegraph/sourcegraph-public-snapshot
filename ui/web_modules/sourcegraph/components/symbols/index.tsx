@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 export {DownPointer} from "./DownPointer";
 export {Repository} from "./Repository";

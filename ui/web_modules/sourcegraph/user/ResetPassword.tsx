@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import {Link} from "react-router";
@@ -21,12 +21,12 @@ type Props = {
 };
 
 class ResetPasswordComp extends Container<Props, any> {
-	_passwordInput: any;
-	_confirmInput: any;
-	
 	static contextTypes = {
 		user: React.PropTypes.object,
 	};
+
+	_passwordInput: any;
+	_confirmInput: any;
 
 	constructor(props) {
 		super(props);

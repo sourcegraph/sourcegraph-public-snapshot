@@ -1,6 +1,5 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
-import {Route} from "react-router";
 import {rel, abs} from "sourcegraph/app/routePatterns";
 import * as invariant from "invariant";
 import {AboutPage} from "sourcegraph/page/AboutPage";

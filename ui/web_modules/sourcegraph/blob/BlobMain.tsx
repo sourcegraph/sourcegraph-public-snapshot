@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import Helmet from "react-helmet";
@@ -46,6 +46,8 @@ export class BlobMain extends Container<Props, any> {
 		router: React.PropTypes.object.isRequired,
 	};
 
+	_dispatcherToken: string;
+
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -63,8 +65,6 @@ export class BlobMain extends Container<Props, any> {
 		if (super.componentWillUnmount) super.componentWillUnmount();
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
-
-	_dispatcherToken: string;
 
 	reconcileState(state, props) {
 		state.repo = props.repo;
@@ -119,8 +119,11 @@ export class BlobMain extends Container<Props, any> {
 		if (hash) {
 			url = `${url}#${hash}`;
 		}
-		if (replace) (this.context as any).router.replace(url);
-		else (this.context as any).router.push(url);
+		if (replace) {
+			(this.context as any).router.replace(url);
+		} else {
+			(this.context as any).router.push(url);
+		}
 	}
 
 	render(): JSX.Element | null {

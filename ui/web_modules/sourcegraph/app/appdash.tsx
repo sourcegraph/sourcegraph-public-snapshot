@@ -1,7 +1,6 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
-import {Route} from "react-router";
 import {Component} from "sourcegraph/Component";
 
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
@@ -22,7 +21,7 @@ export function withAppdashRouteStateRecording(ChildComponent: any): any {
 	class WithAppdashRouteStateRecording extends Component<Props, any> {
 		_recordRenderView: any;
 		_hasMounted: any;
-		
+
 		constructor(props: Props) {
 			super(props);
 			this._recordRenderView = null;
@@ -113,7 +112,7 @@ export function withAppdashRouteStateRecording(ChildComponent: any): any {
 		// timestamps).
 		_updateDebugTimer(startTime: number, endTime: number) {
 			let debug = document.querySelector("body>#debug>a");
-			const loadTimeSeconds = (endTime-startTime) / 1000;
+			const loadTimeSeconds = (endTime - startTime) / 1000;
 
 			if (debug) (debug as HTMLAnchorElement).text = `${loadTimeSeconds}s`;
 		}

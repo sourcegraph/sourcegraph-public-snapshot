@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import fuzzysearch from "fuzzysearch";
@@ -38,13 +38,13 @@ type Props = {
 };
 
 export class RevSwitcher extends Component<Props, any> {
-	_input: any;
-	_debouncedSetQuery: any;
-	_wrapper: any;
-
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 	};
+
+	_input: any;
+	_debouncedSetQuery: any;
+	_wrapper: any;
 
 	constructor(props) {
 		super(props);
@@ -247,9 +247,13 @@ export class RevSwitcher extends Component<Props, any> {
 		if (tags instanceof Array) tags = tags.map((t) => this._item(t.Name, t.CommitID));
 
 		let title;
-		if (this.state.rev) title = `Viewing revision: ${abbrevRev(this.state.rev)}`;
-		else if (this.state.srclibDataVersion && this.state.srclibDataVersion.CommitID) title = `Viewing last-built revision on default branch: ${this.state.commitID ? abbrevRev(this.state.commitID) : ""}`;
-		else title = `Viewing revision: ${abbrevRev(this.state.commitID)} (not indexed)`;
+		if (this.state.rev) {
+			title = `Viewing revision: ${abbrevRev(this.state.rev)}`;
+		} else if (this.state.srclibDataVersion && this.state.srclibDataVersion.CommitID) {
+			title = `Viewing last-built revision on default branch: ${this.state.commitID ? abbrevRev(this.state.commitID) : ""}`;
+		} else {
+			title = `Viewing revision: ${abbrevRev(this.state.commitID)} (not indexed)`;
+		}
 
 		return (
 			<div className={styles.wrapper}

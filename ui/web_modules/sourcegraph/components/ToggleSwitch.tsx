@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import * as styles from "./styles/toggleSwitch.css";
@@ -13,18 +13,18 @@ export class ToggleSwitch extends React.Component<Props, any> {
 		defaultChecked: false,
 	};
 
+	state: {
+		checked: boolean;
+	} = {
+		checked: false,
+	};
+
 	constructor(props) {
 		super(props);
 		this.state = {
 			checked: props.defaultChecked,
 		};
 	}
-
-	state: {
-		checked: boolean;
-	} = {
-		checked: false,
-	};
 
 	_toggle() {
 		this.setState({checked: !this.state.checked}, () => this.props.onChange(this.state.checked));

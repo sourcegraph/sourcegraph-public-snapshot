@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import {parseLineRange} from "sourcegraph/blob/lineCol";
 import {Helper} from "sourcegraph/blob/BlobLoader";

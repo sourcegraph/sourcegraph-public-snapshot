@@ -1,8 +1,7 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import Helmet from "react-helmet";
-import {Route} from "react-router";
 
 import {GlobalNav} from "sourcegraph/app/GlobalNav";
 import {Footer} from "sourcegraph/app/Footer";
@@ -44,6 +43,10 @@ export class App extends React.Component<Props, any> {
 		signedIn: React.PropTypes.bool.isRequired,
 	};
 
+	state = {
+		className: "",
+	};
+
 	constructor(props: Props, context) {
 		super(props);
 		let className = styles.main_container;
@@ -53,10 +56,6 @@ export class App extends React.Component<Props, any> {
 			className: className,
 		};
 	}
-
-	state = {
-		className: "",
-	};
 
 	componentDidMount() {
 		if (typeof document !== "undefined") {
@@ -92,18 +91,18 @@ export class App extends React.Component<Props, any> {
 export const rootRoute: ReactRouter.PlainRoute = {
 	path: "/",
 	component: withEventLoggerContext(EventLogger,
-        withViewEventsLogged(
-            withAppdashRouteStateRecording(
-                withChannelListener(
-                    withSiteConfigContext(
-                        withUserContext(
-                            desktopRouter(
-                                withFeaturesContext(
-                                    App
-                                )
-                            )
-                        )
-                    )
+		withViewEventsLogged(
+			withAppdashRouteStateRecording(
+				withChannelListener(
+					withSiteConfigContext(
+						withUserContext(
+							desktopRouter(
+								withFeaturesContext(
+									App
+								)
+							)
+						)
+					)
 				)
 			)
 		)

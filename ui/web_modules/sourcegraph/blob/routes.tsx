@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import {rel} from "sourcegraph/app/routePatterns";
 import {urlTo} from "sourcegraph/util/urlTo";

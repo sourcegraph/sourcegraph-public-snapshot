@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import expect from "expect.js";
 
@@ -8,7 +8,6 @@ import {prepareAnnotations} from "sourcegraph/blob/prepareAnnotations";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
-
 
 describe("BlobBackend", () => {
 	it("should handle WantFile", () => {

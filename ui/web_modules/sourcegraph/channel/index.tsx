@@ -1,9 +1,7 @@
-// tslint:disable
-
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import {Header} from "sourcegraph/components/Header";
-import {Route} from "react-router";
 import * as styles from "./styles/index.css";
 
 type Props = {
@@ -12,12 +10,12 @@ type Props = {
 };
 
 class Channel extends React.Component<Props, any> {
-	_timeout: any;
-	
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		features: React.PropTypes.object.isRequired,
 	};
+
+	_timeout: any;
 
 	constructor(props) {
 		super(props);

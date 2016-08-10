@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 
@@ -24,12 +24,12 @@ export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
 
 	isMainComponent = Boolean(isMainComponent);
 	class WithResolvedRepoRev extends Container<Props, any> {
-		_cloningInterval: any;
-		_cloningTimeout: any;
-
 		static contextTypes = {
 			router: React.PropTypes.object.isRequired,
 		};
+
+		_cloningInterval: any;
+		_cloningTimeout: any;
 
 		stores() {
 			return [RepoStore];

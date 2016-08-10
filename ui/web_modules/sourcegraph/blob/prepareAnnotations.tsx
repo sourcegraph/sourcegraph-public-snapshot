@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import {Annotation} from "sourcegraph/blob/Annotations";
 import {sortAnns} from "sourcegraph/blob/Annotations";
@@ -30,9 +30,13 @@ export function prepareAnnotations(anns: Array<Annotation>): Array<Annotation> {
 			const ann2 = anns[j];
 			if (ann.StartByte === ann2.StartByte && ann.EndByte === ann2.EndByte) {
 				if ((ann.URLs || ann.URL) && ann2.URL) {
-					if (ann.URLs) ann.URLs = ann.URLs.concat(ann2.URL);
-					else if (ann.URL) ann.URLs = [ann.URL].concat(ann2.URL);
-					else ann.URLs = ([] as any[]).concat(ann2.URL);
+					if (ann.URLs) {
+						ann.URLs = ann.URLs.concat(ann2.URL);
+					} else if (ann.URL) {
+						ann.URLs = [ann.URL].concat(ann2.URL);
+					} else {
+						ann.URLs = ([] as any[]).concat(ann2.URL);
+					}
 
 					// Sort for determinism.
 					ann.URLs.sort((a, b) => {

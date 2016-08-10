@@ -1,7 +1,6 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import {rel} from "sourcegraph/app/routePatterns";
-import {Route} from "react-router";
 import {IntegrationsContainer} from "sourcegraph/home/IntegrationsContainer";
 
 export const routes: any[] = [

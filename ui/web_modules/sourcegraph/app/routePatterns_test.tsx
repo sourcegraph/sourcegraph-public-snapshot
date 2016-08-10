@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import {abs as absRoutes, getRouteParams} from "sourcegraph/app/routePatterns";
 import expect from "expect.js";

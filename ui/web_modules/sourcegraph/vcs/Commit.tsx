@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import {TimeAgo} from "sourcegraph/util/TimeAgo";
@@ -33,7 +33,14 @@ function sigName(sig) {
 	);
 }
 
-export function Commit({repo, commit, full}) {
+type Props = {
+	commit: any,
+
+	// full is whether to show the full commit message (beyond the first line).
+	full: boolean,
+};
+
+export function Commit({commit, full}: Props) {
 	const parts = commit.Message ? commit.Message.split("\n") : null;
 	let title = parts ? parts[0] : "(no commit message)";
 	let rest = parts ? parts.slice(1).join("\n") : null;
@@ -64,10 +71,3 @@ export function Commit({repo, commit, full}) {
 		</div>
 	);
 }
-type Props = {
-	commit: any,
-	repo: string,
-
-	// full is whether to show the full commit message (beyond the first line).
-	full: boolean,
-};

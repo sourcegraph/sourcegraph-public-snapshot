@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import Helmet from "react-helmet";
@@ -327,7 +327,6 @@ export class DefInfo extends Container<Props, any> {
 								&nbsp; &middot; &nbsp;
 								<Link title="View definition in code" to={defBlobUrl} onClick={this._viewDefinitionClicked.bind(this)} className={styles.link_subtle}>View definition</Link>
 							</div>
-
 
 							{!refLocations && <div className={typography.tc}><Loader /></div>}
 

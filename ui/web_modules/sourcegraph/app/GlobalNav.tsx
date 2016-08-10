@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import {Link} from "react-router";
@@ -41,7 +41,7 @@ type GlobalNavProps = {
 	role?: string,
 };
 
-export function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavProps, {user, siteConfig, signedIn, router, eventLogger}) {
+export function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavProps, {user, signedIn, router, eventLogger}) {
 	const isHomepage = location.pathname === "/";
 	const shouldHide = hiddenNavRoutes.has(location.pathname);
 	const isStaticPage = isPage(location.pathname);
@@ -182,6 +182,27 @@ type SearchFormProps = {
 };
 
 class SearchForm extends React.Component<SearchFormProps, any> {
+	_container: HTMLElement;
+	_input: HTMLInputElement;
+
+	_goToDebounced = debounce((routerFunc: any, loc: Location) => {
+		routerFunc(loc);
+	}, 200, {leading: false, trailing: true});
+
+	state: {
+		open: boolean;
+		focused: boolean;
+		query: string | null;
+		lang: string[] | null;
+		scope: any;
+	} = {
+		open: false,
+		focused: false,
+		query: null,
+		lang: null,
+		scope: null,
+	};
+
 	constructor(props) {
 		super(props);
 
@@ -198,20 +219,6 @@ class SearchForm extends React.Component<SearchFormProps, any> {
 		this._handleFocus = this._handleFocus.bind(this);
 		this._handleBlur = this._handleBlur.bind(this);
 	}
-
-	state: {
-		open: boolean;
-		focused: boolean;
-		query: string | null;
-		lang: string[] | null;
-		scope: any;
-	} = {
-		open: false,
-		focused: false,
-		query: null,
-		lang: null,
-		scope: null,
-	};
 
 	componentDidMount() {
 		document.addEventListener("keydown", this._handleGlobalHotkey);
@@ -237,9 +244,6 @@ class SearchForm extends React.Component<SearchFormProps, any> {
 		document.removeEventListener("keydown", this._handleGlobalHotkey);
 		document.removeEventListener("click", this._handleGlobalClick);
 	}
-
-	_container: HTMLElement;
-	_input: HTMLInputElement;
 
 	_handleGlobalHotkey(ev: KeyboardEvent) {
 		if (ev.keyCode === 27 /* ESC */) {
@@ -296,10 +300,6 @@ class SearchForm extends React.Component<SearchFormProps, any> {
 		if (value) this.setState({open: true});
 		this._goToDebounced(this.props.router.replace, locationForSearch(this.props.location, value, this.state.lang, this.state.scope, false, this.props.location.pathname.slice(1) === rel.search) as any);
 	}
-
-	_goToDebounced = debounce((routerFunc: any, loc: Location) => {
-		routerFunc(loc);
-	}, 200, {leading: false, trailing: true});
 
 	_handleFocus(ev: Event) {
 		const update: {focused: boolean; open: boolean; query?: string} = {focused: true, open: true};

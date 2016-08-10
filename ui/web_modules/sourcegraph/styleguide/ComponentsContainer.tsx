@@ -1,7 +1,6 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
-import * as styles from "./styles/ComponentsContainer.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading} from "sourcegraph/components/index";
 import {

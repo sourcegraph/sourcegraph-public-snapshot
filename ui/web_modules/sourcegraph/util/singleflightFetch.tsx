@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 // singleflightFetch is a wrapper for fetch that suppresses
 // duplicate calls. At most one call to fetch with the given arguments may

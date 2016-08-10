@@ -9,7 +9,9 @@
 		"typedef": [true, "call-signature", "parameter", "property-declaration", "member-variable-declaration"],
 		"interface-name": [false],
 		"no-string-literal": false,
-		"no-default-export": true
+		"no-default-export": true,
+		"comment-format": [false],
+		"switch-default": false
   },
   "rulesDirectory": []
 }

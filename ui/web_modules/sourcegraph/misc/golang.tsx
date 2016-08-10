@@ -1,7 +1,7 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
-import {Route, RouterState} from "react-router";
+import {RouterState} from "react-router";
 import {Header} from "sourcegraph/components/Header";
 import {defaultFetch} from "sourcegraph/util/xhr";
 
@@ -23,7 +23,8 @@ type Props = {
 export const route: ReactRouter.PlainRoute = {
 	path: "-/golang",
 	onEnter: (nextRouterState: RouterState, replace: Function, callback: Function) => {
-		let {repo, pkg, def, editor_type} = nextRouterState.location.query;
+		let {repo, pkg, def} = nextRouterState.location.query;
+		let editorType = nextRouterState.location.query["editor_type"];
 		if (/\.(com|org|net|in)\//.test(repo)) {
 			repo = repo.split("/").slice(0, 3).join("/");
 		}
@@ -40,7 +41,7 @@ export const route: ReactRouter.PlainRoute = {
 						pathname: path,
 						query: {
 							utm_source: "sourcegraph-editor",
-							editor_type: editor_type,
+							editor_type: editorType,
 						},
 					}));
 					callback();
@@ -53,7 +54,7 @@ export const route: ReactRouter.PlainRoute = {
 						pathname: data.Path,
 						query: {
 							utm_source: "sourcegraph-editor",
-							editor_type: editor_type,
+							editor_type: editorType,
 						},
 					}));
 					callback();

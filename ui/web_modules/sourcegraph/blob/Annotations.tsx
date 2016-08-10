@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as utf8 from "utf8";
 
@@ -52,8 +52,9 @@ export function annotate(text: string, startByte: number, anns: Annotation[], re
 			let a = anns[i];
 			if ((b === startByte && a.StartByte < startByte) || a.StartByte === b) {
 				// if (a.StartByte < b) throw new Error("start byte out of bounds");
-				if (a.EndByte === b) out[0].push(render(a));
-				else {
+				if (a.EndByte === b) {
+					out[0].push(render(a));
+				} else {
 					// Put this annotation on the stack of annotations that will need
 					// to be closed. We remove it from anns at the end of the loop
 					// (to avoid modifying anns while we're iterating over it).

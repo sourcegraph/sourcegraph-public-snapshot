@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import * as styles from "./styles/Repos.css";
@@ -17,13 +17,13 @@ type Props = {
 };
 
 export class Repos extends React.Component<Props, any> {
-	_filterInput: any;
-	
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,
 		githubToken: React.PropTypes.object,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
+
+	_filterInput: any;
 
 	constructor(props) {
 		super(props);
@@ -36,8 +36,12 @@ export class Repos extends React.Component<Props, any> {
 	// _repoSort is a comparison function that sorts more recently
 	// pushed repos first.
 	_repoSort(a, b) {
-		if (a.PushedAt < b.PushedAt) return 1;
-		else if (a.PushedAt > b.PushedAt) return -1;
+		if (a.PushedAt < b.PushedAt) {
+			return 1;
+		}
+		if (a.PushedAt > b.PushedAt) {
+			return -1;
+		}
 		return 0;
 	}
 

@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -41,13 +41,38 @@ type Props = {
 
 // GlobalSearch is the global search bar + results component.
 export class GlobalSearch extends Container<Props, any> {
-	_selectedItem: any;
-	_ignoreMouseSelection: any;
-	_debouncedUnignoreMouseSelection: any;
-
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
+	};
+
+	_selectedItem: any;
+	_ignoreMouseSelection: any;
+	_debouncedUnignoreMouseSelection: any;
+	_dispatcherToken: string;
+	_debounceForSearch = debounce((f: Function) => f(), 200, {leading: false, trailing: true});
+
+	state: {
+		repo: string | null;
+		query: string;
+		className: string | null;
+		resultClassName: string | null;
+		matchingResults: {
+			Repos: Array<Repo>,
+			Defs: Array<Def>,
+			Options: Array<Options>,
+			outstandingFetches: number,
+		};
+		selectionIndex: number;
+		githubToken: any;
+
+		searchSettings: SearchSettings | null;
+
+		_queries: Array<WantResultsPayload> | null;
+		_searchStore: any,
+		_privateRepos: Array<Repo>;
+		_publicRepos: Array<Repo>;
+		_reposByLang: any;
 	};
 
 	constructor(props) {
@@ -74,29 +99,6 @@ export class GlobalSearch extends Container<Props, any> {
 		this._onSelection = debounce(this._onSelection.bind(this), 200, {leading: false, trailing: true});
 	}
 
-	state: {
-		repo: string | null;
-		query: string;
-		className: string | null;
-		resultClassName: string | null;
-		matchingResults: {
-			Repos: Array<Repo>,
-			Defs: Array<Def>,
-			Options: Array<Options>,
-			outstandingFetches: number,
-		};
-		selectionIndex: number;
-		githubToken: any;
-
-		searchSettings: SearchSettings | null;
-
-		_queries: Array<WantResultsPayload> | null;
-		_searchStore: any,
-		_privateRepos: Array<Repo>;
-		_publicRepos: Array<Repo>;
-		_reposByLang: any;
-	};
-
 	componentDidMount() {
 		super.componentDidMount();
 		if (global.document) {
@@ -112,8 +114,6 @@ export class GlobalSearch extends Container<Props, any> {
 		}
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
-
-	_dispatcherToken: string;
 
 	_scopeProperties(): string[] | null {
 		const scope = this.state.searchSettings ? this.state.searchSettings.scope : null;
@@ -216,8 +216,6 @@ export class GlobalSearch extends Container<Props, any> {
 		}
 	}
 
-	_debounceForSearch = debounce((f: Function) => f(), 200, {leading: false, trailing: true});
-
 	onStateTransition(prevState, nextState) {
 		if (prevState.searchSettings && prevState.searchSettings !== nextState.searchSettings && nextState.location.pathname === "/search") {
 			(this.context as any).router.replace(locationForSearch(nextState.location, nextState.query, nextState.searchSettings.languages, nextState.searchSettings.scope, false, true));
@@ -251,7 +249,8 @@ export class GlobalSearch extends Container<Props, any> {
 	}
 
 	_handleKeyDown(e: KeyboardEvent) {
-		let idx, max;
+		let idx;
+		let max;
 		switch (e.keyCode) {
 		case 40: // ArrowDown
 			idx = this._normalizedSelectionIndex();
@@ -270,7 +269,7 @@ export class GlobalSearch extends Container<Props, any> {
 			max = this._numResults();
 
 			this.setState({
-				selectionIndex: idx <= 0 ? max-1 : idx-1,
+				selectionIndex: idx <= 0 ? max - 1 : idx - 1,
 			}, this._scrollToVisibleSelection);
 
 			this._temporarilyIgnoreMouseSelection();
@@ -417,8 +416,9 @@ export class GlobalSearch extends Container<Props, any> {
 			return [<div className={classNames(base.ph4, base.pv4, styles.result)} key="_nosymbol">No results found.</div>];
 		}
 
-		let list: any[] = [], numDefs = 0,
-			numRepos = this.state.matchingResults.Repos ? this.state.matchingResults.Repos.length : 0;
+		let list: any[] = [];
+		let numDefs = 0;
+		let numRepos = this.state.matchingResults.Repos ? this.state.matchingResults.Repos.length : 0;
 
 		if (this.state.matchingResults.Defs) {
 			numDefs = this.state.matchingResults.Defs.length > RESULTS_LIMIT ? RESULTS_LIMIT : this.state.matchingResults.Defs.length;

@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";

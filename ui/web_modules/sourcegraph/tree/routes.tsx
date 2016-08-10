@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import {urlTo} from "sourcegraph/util/urlTo";
 import {makeRepoRev} from "sourcegraph/repo/index";

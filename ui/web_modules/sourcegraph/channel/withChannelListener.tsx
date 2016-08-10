@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 
@@ -23,20 +23,11 @@ export function withChannelListener(Component) {
 	type Props = {
 		location: any,
 	};
-	
-	class WithChannelListener extends React.Component<Props, any> {
-		_timeout: any;
-		_unlisten: any;
-		_ws: any;
 
+	class WithChannelListener extends React.Component<Props, any> {
 		static contextTypes = {
 			router: React.PropTypes.object.isRequired,
 		};
-
-		constructor(props) {
-			super(props);
-			this._listen = this._listen.bind(this);
-		}
 
 		state: {
 			channelName: string | null;
@@ -49,6 +40,15 @@ export function withChannelListener(Component) {
 			statusCode: null,
 			failures: 0,
 		};
+
+		_timeout: any;
+		_unlisten: any;
+		_ws: any;
+
+		constructor(props) {
+			super(props);
+			this._listen = this._listen.bind(this);
+		}
 
 		componentDidMount() {
 			this._unlisten = (this.context as any).router.listen((loc) => {
@@ -145,7 +145,7 @@ export function withChannelListener(Component) {
 				});
 			// TODO:matt, right documentation about how to force plugin upgrades using version numbers
 			// Right now, we are checking to make sure version is >= 0.1
-			} else if (action && (action.VersionMajor < 0 && action.VersionMinor <1)) {
+			} else if (action && (action.VersionMajor < 0 && action.VersionMinor < 1)) {
 				(this.context as any).router.push({
 					pathname: `/-/channel/${this.state.channelName}-error`,
 					state: Object.assign({}, this.props.location.state, {

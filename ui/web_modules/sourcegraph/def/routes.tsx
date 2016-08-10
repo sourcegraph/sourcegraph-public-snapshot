@@ -1,10 +1,9 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import {urlTo} from "sourcegraph/util/urlTo";
 import {urlToTree} from "sourcegraph/tree/routes";
 import {rel} from "sourcegraph/app/routePatterns";
 import {defPath} from "sourcegraph/def/index";
-import {Route} from "react-router";
 import {Def} from "sourcegraph/def/index";
 import {DefInfo} from "sourcegraph/def/DefInfo";
 import {DefNavContext} from "sourcegraph/def/DefNavContext";

@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import {Store} from "sourcegraph/Store";
 import * as Dispatcher from "sourcegraph/Dispatcher";
@@ -114,9 +114,7 @@ class RepoStoreClass extends Store<any> {
 			return;
 		}
 
-
 		switch (action.constructor) {
-
 		case RepoActions.FetchedRepo:
 			this.repos = deepFreeze(Object.assign({}, this.repos, {
 				content: Object.assign({}, this.repos.content, {

@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 export function breadcrumb(path: string, sep: (key: number) => any, elemForPathComponent: (path: string, component: string, index: number, isLast: boolean) => any): Array<any> {
 	let components = path.split("/");

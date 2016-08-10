@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import {Hero, Heading} from "sourcegraph/components/index";
@@ -6,7 +6,7 @@ import * as styles from "./Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import Helmet from "react-helmet";
 
-export function SecurityPage(props: {}, {signedIn}) {
+export function SecurityPage(props: {}, {}) {
 	return (
 		<div>
 			<Helmet title="Security" />
@@ -24,111 +24,111 @@ export function SecurityPage(props: {}, {signedIn}) {
 
 				<p className={styles.p}>The security policy below details the steps we take to keep your code safe. Contact us at <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a> with questions and feedback.</p>
 
-                <Heading level="3" underline="blue" className={styles.h5}>Security measures</Heading>
+				<Heading level="3" underline="blue" className={styles.h5}>Security measures</Heading>
 
 				<Heading level="4" className={styles.h}>Site security</Heading>
 
-                <ul>
-                  <li>All data from Sourcegraph.com is transmitted strictly over HTTPS.</li>
-                  <li>Best-practice HTTP security headers are enforced (Strict-Transport-Security, Content-Type-Options, XSS-Protection, Frame-Options).</li>
-                  <li>User session cookies are validated using HMAC to prevent forgery.</li>
-                  <li>Hosted third-party content and code is escaped or sanitized before it is displayed to the user.</li>
-                  <li>Monitoring services alert our support team 24x7 of potential attacks.</li>
-                </ul>
+				<ul>
+					<li>All data from Sourcegraph.com is transmitted strictly over HTTPS.</li>
+					<li>Best-practice HTTP security headers are enforced (Strict-Transport-Security, Content-Type-Options, XSS-Protection, Frame-Options).</li>
+					<li>User session cookies are validated using HMAC to prevent forgery.</li>
+					<li>Hosted third-party content and code is escaped or sanitized before it is displayed to the user.</li>
+					<li>Monitoring services alert our support team 24x7 of potential attacks.</li>
+				</ul>
 
-                <Heading level="4" className={styles.h}>Infrastructure</Heading>
+				<Heading level="4" className={styles.h}>Infrastructure</Heading>
 
-                <ul>
-                  <li>All production systems are hosted on Google Cloud Platform. See <a href="https://cloud.google.com/security/">the Google Cloud Platform security policy</a> for more information.</li>
-                  <li>Network communication between production services occurs strictly over TLS/SSH.</li>
-                  <li>External network communication to production systems occurs strictly over TLS/SSH.</li>
-                  <li>External access to production systems is restricted by firewall to known IP ranges.</li>
-                  <li>Two-factor authentication is required on all Google Cloud Platform accounts that have access to production systems.</li>
-                </ul>
+				<ul>
+					<li>All production systems are hosted on Google Cloud Platform. See <a href="https://cloud.google.com/security/">the Google Cloud Platform security policy</a> for more information.</li>
+					<li>Network communication between production services occurs strictly over TLS/SSH.</li>
+					<li>External network communication to production systems occurs strictly over TLS/SSH.</li>
+					<li>External access to production systems is restricted by firewall to known IP ranges.</li>
+					<li>Two-factor authentication is required on all Google Cloud Platform accounts that have access to production systems.</li>
+				</ul>
 
-                <Heading level="4" className={styles.h}>System security</Heading>
+				<Heading level="4" className={styles.h}>System security</Heading>
 
-                <ul>
-                    <li>The latest reported security vulnerabilities are tracked and patches are applied as soon as possible.</li>
-                </ul>
+				<ul>
+					<li>The latest reported security vulnerabilities are tracked and patches are applied as soon as possible.</li>
+				</ul>
 
-                <Heading level="4" className={styles.h}>Application security</Heading>
+				<Heading level="4" className={styles.h}>Application security</Heading>
 
-                <ul>
-                    <li>All language analysis is static.</li>
-                    <li>No private code is pulled onto Sourcegraph without explicit permission from an authorized user.</li>
-                </ul>
+				<ul>
+					<li>All language analysis is static.</li>
+					<li>No private code is pulled onto Sourcegraph without explicit permission from an authorized user.</li>
+				</ul>
 
-                <p className={styles.p}>Sourcegraph maintains application security over time with a 3-tiered defense policy against the introduction of security vulnerabilities:</p>
+				<p className={styles.p}>Sourcegraph maintains application security over time with a 3-tiered defense policy against the introduction of security vulnerabilities:</p>
 
-                <ul>
-                    <li>Every new feature with security implications must include tests for potential security flaws.</li>
-                    <li>We have a strict review policy for changes to core security, authentication, and permissions logic.</li>
-                    <li>We employ static analysis safeguards to detect if any code path can access private user data while bypassing the necessary permissions checks.</li>
-                </ul>
+				<ul>
+					<li>Every new feature with security implications must include tests for potential security flaws.</li>
+					<li>We have a strict review policy for changes to core security, authentication, and permissions logic.</li>
+					<li>We employ static analysis safeguards to detect if any code path can access private user data while bypassing the necessary permissions checks.</li>
+				</ul>
 
-                <Heading level="4" className={styles.h}>Employee access</Heading>
+				<Heading level="4" className={styles.h}>Employee access</Heading>
 
-                <p className={styles.p}>All access to critical internal systems (e.g., VMs, cloud storage, email) is protected by 2-factor authentication.</p>
+				<p className={styles.p}>All access to critical internal systems (e.g., VMs, cloud storage, email) is protected by 2-factor authentication.</p>
 
-                <p className={styles.p}>No Sourcegraph employee ever accesses private code unless explicitly authorized by a customer for support reasons.</p>
+				<p className={styles.p}>No Sourcegraph employee ever accesses private code unless explicitly authorized by a customer for support reasons.</p>
 
-                <p className={styles.p}>All employee computers and devices are password-protected with full-disk encryption.</p>
+				<p className={styles.p}>All employee computers and devices are password-protected with full-disk encryption.</p>
 
-                <Heading level="3" underline="blue" className={styles.h5}>Bug bounty program</Heading>
+				<Heading level="3" underline="blue" className={styles.h5}>Bug bounty program</Heading>
 
-                <p className={styles.p}>Our bug bounty program is similar to ones offered by Google, Facebook, Mozilla, and GitHub, and offers a way for security researchers and engineers to report vulnerabilities in a responsible fashion and receive cash compensation for their efforts.</p>
+				<p className={styles.p}>Our bug bounty program is similar to ones offered by Google, Facebook, Mozilla, and GitHub, and offers a way for security researchers and engineers to report vulnerabilities in a responsible fashion and receive cash compensation for their efforts.</p>
 
-                <p className={styles.p}>If you’ve found a vulnerability, email <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a> to report it. Please refer to the rules below for more information.</p>
+				<p className={styles.p}>If you’ve found a vulnerability, email <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a> to report it. Please refer to the rules below for more information.</p>
 
-                <Heading level="4" className={styles.h}>Rules</Heading>
+				<Heading level="4" className={styles.h}>Rules</Heading>
 
-                <ul>
-                    <li>Don’t publicly disclose a bug before it’s fixed.</li>
-                    <li>Don’t attempt to access another user’s account or data, and don’t disrupt another user’s usage of the site.</li>
-                    <li>Don’t perform any attack that affects the stability or integrity of our site or our data. Spam attacks and DoS attacks are not allowed.</li>
-                    <li>Only technical vulnerabilities are in scope. Don’t attempt social engineering, phishing, trespassing, or physical attacks.</li>
-                    <li>If in doubt, <a href="mailto:security@sourcegraph.com">email us</a>.</li>
-                </ul>
+				<ul>
+					<li>Don’t publicly disclose a bug before it’s fixed.</li>
+					<li>Don’t attempt to access another user’s account or data, and don’t disrupt another user’s usage of the site.</li>
+					<li>Don’t perform any attack that affects the stability or integrity of our site or our data. Spam attacks and DoS attacks are not allowed.</li>
+					<li>Only technical vulnerabilities are in scope. Don’t attempt social engineering, phishing, trespassing, or physical attacks.</li>
+					<li>If in doubt, <a href="mailto:security@sourcegraph.com">email us</a>.</li>
+				</ul>
 
-                <p className={styles.p}>On our end, we:</p>
+				<p className={styles.p}>On our end, we:</p>
 
-                <ul>
-                    <li>Won’t take legal action against you if you follow the rules.</li>
-                    <li>Will respond quickly to your submission.</li>
-                    <li>Will update you on the work to fix the vulnerability you reported.</li>
-                    <li>Will credit you on this page, if you’d like us to.</li>
-                </ul>
+				<ul>
+					<li>Won’t take legal action against you if you follow the rules.</li>
+					<li>Will respond quickly to your submission.</li>
+					<li>Will update you on the work to fix the vulnerability you reported.</li>
+					<li>Will credit you on this page, if you’d like us to.</li>
+				</ul>
 
-                <Heading level="4" className={styles.h}>Open bounties</Heading>
+				<Heading level="4" className={styles.h}>Open bounties</Heading>
 
-                <p className={styles.p}>Rewards for open bounties range from $10 to $4,000 and are determined at our discretion based on a variety of factors, including but not limited to the percentage of users impacted, the likelihood of encountering the vulnerability under normal use of the site, and the severity of potential service disruption or data leakage.</p>
+				<p className={styles.p}>Rewards for open bounties range from $10 to $4,000 and are determined at our discretion based on a variety of factors, including but not limited to the percentage of users impacted, the likelihood of encountering the vulnerability under normal use of the site, and the severity of potential service disruption or data leakage.</p>
 
-                <ul>
-                    <li>Sourcegraph.com: Sourcegraph.com is our main website. It is built in Go and uses a variety of open-source libraries, including <a href="https://srclib.org">srclib</a>.</li>
-                    <li>Sourcegraph API: The Sourcegraph API is used by other applications to programatically interact with Sourcegraph. The API is rooted at <code>https://sourcegraph.com/.api</code>.</li>
-                </ul>
+				<ul>
+					<li>Sourcegraph.com: Sourcegraph.com is our main website. It is built in Go and uses a variety of open-source libraries, including <a href="https://srclib.org">srclib</a>.</li>
+					<li>Sourcegraph API: The Sourcegraph API is used by other applications to programatically interact with Sourcegraph. The API is rooted at <code>https://sourcegraph.com/.api</code>.</li>
+				</ul>
 
-                <Heading level="4" className={styles.h}>Bounty hunters</Heading>
+				<Heading level="4" className={styles.h}>Bounty hunters</Heading>
 
-                <table>
-                    <tbody>
-                        <tr>
-                            <td><a href="https://twitter.com/robin7907">Robin Puri (Deep inder Singh Puri)</a></td>
-                            <td>300 points</td>
-                        </tr>
-                        <tr>
-                            <td><a href="https://www.facebook.com/nithish.varghese">Nithish Varghese</a></td>
-                            <td>200 points</td>
-                        </tr>
-                    </tbody>
-                </table>
+				<table>
+					<tbody>
+						<tr>
+							<td><a href="https://twitter.com/robin7907">Robin Puri (Deep inder Singh Puri)</a></td>
+							<td>300 points</td>
+						</tr>
+						<tr>
+							<td><a href="https://www.facebook.com/nithish.varghese">Nithish Varghese</a></td>
+							<td>200 points</td>
+						</tr>
+					</tbody>
+				</table>
 
 				<Heading level="3" underline="blue" className={styles.h5}>Contact us</Heading>
 
-                <p className={styles.p}>
-                    Questions, concerns, or comments about our security policy? Contact us at <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a>.
-                </p>
+				<p className={styles.p}>
+					Questions, concerns, or comments about our security policy? Contact us at <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a>.
+				</p>
 			</div>
 		</div>
 	);

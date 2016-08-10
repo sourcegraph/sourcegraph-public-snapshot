@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as DefActions from "sourcegraph/def/DefActions";
 import {DefStore} from "sourcegraph/def/DefStore";

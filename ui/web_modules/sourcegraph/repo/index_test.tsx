@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import {repoPath, repoRev} from "sourcegraph/repo/index";
 import expect from "expect.js";

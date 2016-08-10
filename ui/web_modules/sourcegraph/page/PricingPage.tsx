@@ -1,4 +1,4 @@
-// tslint:disable
+// tslint:disable: typedef ordered-imports curly
 
 import * as React from "react";
 import {Hero, Heading, Panel, Button} from "sourcegraph/components/index";
