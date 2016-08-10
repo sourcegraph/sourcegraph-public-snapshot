@@ -37,26 +37,14 @@ type Props = {
 	channelStatusCode?: number,
 };
 
-import {abs} from "sourcegraph/app/routePatterns";
-
-const hiddenNavRoutes = new Set([
-	"/",
-	`/${abs.integrations}`,
-	"/styleguide",
-]);
-
 export class App extends React.Component<Props, any> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		signedIn: React.PropTypes.bool.isRequired,
 	};
 
-	state: {
-		className: string | null;
-		showHeader: boolean;
-	} = {
+	state = {
 		className: "",
-		showHeader: false,
 	};
 
 	constructor(props: Props, context) {
@@ -68,7 +56,6 @@ export class App extends React.Component<Props, any> {
 		this._handleSourcegraphDesktop = this._handleSourcegraphDesktop.bind(this);
 		this.state = {
 			className: className,
-			showHeader: !hiddenNavRoutes.has(props.location.pathname),
 		};
 	}
 
@@ -76,47 +63,21 @@ export class App extends React.Component<Props, any> {
 		if (typeof document !== "undefined") {
 			document.addEventListener("sourcegraph:desktop", this._handleSourcegraphDesktop);
 		}
-		if (hiddenNavRoutes.has(this.props.location.pathname)) {
-			(this.refs["mainContent"] as any).addEventListener("scroll", (e) => this._toggleHeader(e));
-		}
-	}
-
-	componentDidUpdate(nextProps, nextState) {
-		if (this.props.location !== nextProps.location && this.state.showHeader !== nextState.showHeader) {
-			(this.refs["mainContent"] as any).removeEventListener("scroll", (e) => this._toggleHeader(e));
-
-			if (hiddenNavRoutes.has(this.props.location.pathname)) {
-				this.setState({showHeader: false});
-				(this.refs["mainContent"] as any).addEventListener("scroll", (e) => this._toggleHeader(e));
-			} else {
-				this.setState({showHeader: false});
-			}
-		}
 	}
 
 	componentWillUnmount() {
 		document.removeEventListener("sourcegraph:desktop", this._handleSourcegraphDesktop);
-		(this.refs["mainContent"] as any).removeEventListener("scroll", (e) => this._toggleHeader(e));
 	}
 
-	_handleSourcegraphDesktop = (event) => {
+	_handleSourcegraphDesktop(event) {
 		(this.context as any).router.replace(event.detail);
-	}
-
-	_toggleHeader(e) {
-		if ((this.refs["mainContent"] as any).scrollTop >= 460 && !this.state.showHeader) {
-			this.setState({showHeader: true});
-		}
-		if ((this.refs["mainContent"] as any).scrollTop < 460 && this.state.showHeader) {
-			this.setState({showHeader: false});
-		}
 	}
 
 	render(): JSX.Element | null {
 		return (
 			<div className={this.state.className}>
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
-				<GlobalNav params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode} showHeader={this.state.showHeader}/>
+				<GlobalNav params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
 				<div className={styles.main_content} id="scroller" ref="mainContent">
 					<div className={styles.inner_main_content}>
 						{this.props.navContext && <div className={styles.breadcrumb}>{this.props.navContext}</div>}

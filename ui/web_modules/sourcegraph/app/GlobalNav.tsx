@@ -24,10 +24,16 @@ import {GlobalSearchInput} from "sourcegraph/search/GlobalSearchInput";
 import {locationForSearch, queryFromStateOrURL, langsFromStateOrURL, scopeFromStateOrURL} from "sourcegraph/search/routes";
 import {SearchResultsPanel} from "sourcegraph/search/SearchResultsPanel";
 import * as invariant from "invariant";
-import {rel} from "sourcegraph/app/routePatterns";
+import {rel, abs} from "sourcegraph/app/routePatterns";
 import {repoPath, repoParam} from "sourcegraph/repo/index";
 import {isPage} from "sourcegraph/page/index";
 import debounce from "lodash.debounce";
+
+const hiddenNavRoutes = new Set([
+	"/",
+	`/${abs.integrations}`,
+	"/styleguide",
+]);
 
 type GlobalNavProps = {
 	navContext?: JSX.Element,
@@ -35,12 +41,13 @@ type GlobalNavProps = {
 	params: any,
 	channelStatusCode?: number,
 	role?: string,
-	showHeader: boolean,
 };
 
-export function GlobalNav({navContext, location, params, channelStatusCode, showHeader}: GlobalNavProps, {user, signedIn, router, eventLogger}) {
+export function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavProps, {user, signedIn, router, eventLogger}) {
 	const isHomepage = location.pathname === "/";
+	const shouldHide = hiddenNavRoutes.has(location.pathname);
 	const isStaticPage = isPage(location.pathname);
+
 	const showLogoMarkOnly = !isStaticPage || user;
 
 	if (location.pathname === "/styleguide") {
@@ -52,7 +59,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode, show
 			id="global-nav"
 			className={classNames(styles.navbar, colors.shadow_gray)}
 			role="navigation"
-			style={!showHeader ? {opacity: "0", marginTop: "-65px"} : {opacity: "1", marginTop: "0px"}}>
+			style={shouldHide ? {visibility: "hidden"} : {}}>
 
 			{location.state && location.state.modal === "login" &&
 			// TODO(chexee): Decouple existence of modals and GlobalNav
@@ -131,7 +138,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode, show
 
 				<div
 					className={classNames(styles.flex_fill, base.b__dotted, base.bn, base.brw2, colors.b__cool_pale_gray)}>
-					<StyledSearchForm repo={repo} location={location} router={router} showResultsPanel={location.pathname !== `/${rel.search}`} />
+					{location.pathname !== "/" && <StyledSearchForm repo={repo} location={location} router={router} showResultsPanel={location.pathname !== `/${rel.search}`} />}
 				</div>
 
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal className={styles.icon_ellipsis} title="Your editor could not identify the symbol"/>}
