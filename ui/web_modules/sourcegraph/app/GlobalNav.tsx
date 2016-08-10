@@ -89,7 +89,9 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 			{location.state && location.state.modal === "demo_video" &&
 				// TODO(mate, chexee): consider moving this to Home.tsx
 				<LocationStateModal modalName="demo_video" location={location} style={{maxWidth: "860px", marginRight: "auto", marginLeft: "auto"}}>
-					<iframe width="100%" style={{minHeight: "500px"}} src="https://www.youtube.com/embed/tf93F2nc3Yo?rel=0&amp;showinfo=0" frameBorder="0" allowFullscreen={true}></iframe>
+					<div className={styles.video_modal}>
+						<iframe width="100%" style={{minHeight: "500px"}} src="https://www.youtube.com/embed/tf93F2nc3Yo?rel=0&amp;showinfo=0" frameBorder="0" allowFullscreen={true}></iframe>
+					</div>
 				</LocationStateModal>
 			}
 

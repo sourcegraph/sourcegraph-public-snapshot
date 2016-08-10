@@ -63,6 +63,13 @@
 	right: -1.3rem;
 }
 
+.video_modal {
+	composes: modal from "sourcegraph/components/styles/modal.css";
+	composes: col_10 from grid;
+	max-width: 860px;
+	min-width: 430px;
+}
+
 .channel {
 	display: inline-block;
 	composes: pv1 ph2 br2 ba from base;
