@@ -119,11 +119,11 @@ export class Home extends Container<HomeProps, any> {
 					</div>
 
 					{/* section showing feature descriptions */}
-					<div style={{display: "flex", flowDirection: "row", justifyContent: "space-between",
+					<div style={{display: "flex", flowDirection: "row", justifyContent: "space-around",
 								marginRight: "auto", marginLeft: "auto", flexWrap: "wrap"}}>
 
 						{/* column describing examples */}
-						<div style={{flex: "1 1 33%"}} className={base.ph3}>
+						<div style={{maxWidth: "300px", flex: "1 1 300px"}} className={base.ph3}>
 							<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/illo-docs.svg`} width="100%" />
 
 							<p style={{fontWeight: "bold"}}>
@@ -136,7 +136,7 @@ export class Home extends Container<HomeProps, any> {
 						</div>
 
 						{/* column describing search */}
-						<div style={{flex: "1 1 33%"}} className={base.ph3}>
+						<div style={{maxWidth: "300px", flex: "1 1 300px"}} className={base.ph3}>
 							<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/illo-search.svg`} width="100%" />
 
 							<p style={{fontWeight: "bold"}}>
@@ -150,7 +150,7 @@ export class Home extends Container<HomeProps, any> {
 						</div>
 
 						{/* column describing team features */}
-						<div style={{flex: "1 1 33%"}} className={base.ph3}>
+						<div style={{maxWidth: "300px", flex: "1 1 300px"}} className={base.ph3}>
 							<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/illo-team.svg`} width="100%" />
 
 							<p style={{fontWeight: "bold"}}>
