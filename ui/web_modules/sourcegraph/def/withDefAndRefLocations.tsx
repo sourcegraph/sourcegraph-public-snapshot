@@ -44,7 +44,7 @@ export const withDefAndRefLocations = ({
 				repo: state.repo, commit: state.commitID,
 				file: state.defPos.File, line: lineNumber - 1, character: state.defPos.DefStart - lineStartBytes[lineNumber - 1],
 			}, {
-				repo: state.repo, commitID: state.commitID, def: state.def, repos: [], page: 1,
+				repo: state.repo, commitID: state.commitID, def: state.def, repos: [],
 			}));
 		}
 	},
