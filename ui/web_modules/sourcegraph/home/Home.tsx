@@ -198,27 +198,19 @@ export class Home extends Container<HomeProps, any> {
 						</div>
 
 						{/* section showing favorable user feedback */}
-						<div>
-							<table>
-								<tbody>
-									<tr>
-										<td style={{width: "400px", verticalAlign: "top"}}>
-											<blockquote className="twitter-tweet" dataLang="en"><p lang="en" dir="ltr">Just found out <a href="https://twitter.com/srcgraph">@srcgraph</a> ! HUGE productivity gain. Great work ! Waiting for more language support.</p>&mdash; Dharmesh Kakadia (@dharmeshkakadia) <a href="https://twitter.com/dharmeshkakadia/status/738874411437035520">June 3, 2016</a></blockquote>
-										</td>
-										<td style={{width: "400px", verticalAlign: "top"}}>
-											<blockquote className="twitter-tweet" dataLang="en"><p lang="en" dir="ltr">The <a href="https://twitter.com/srcgraph">@srcgraph</a> Chrome extension for GitHub is the best! <a href="https://t.co/CKweAOfbsQ">https://t.co/CKweAOfbsQ</a></p>&mdash; Julius Volz (@juliusvolz) <a href="https://twitter.com/juliusvolz/status/748095329564778496">June 29, 2016</a></blockquote>
-										</td>
-									</tr>
-									<tr>
-										<td style={{width: "400px", verticalAlign: "top"}}>
-											<blockquote className="twitter-tweet" dataLang="en"><p lang="en" dir="ltr">Used <a href="https://twitter.com/srcgraph">@srcgraph</a> jump-to-definition across 3 projects, 2 langs, finally landing deep in Golang src. Took &lt; 10 min to pin down the issue. 💪🏼</p>&mdash; Gabriel Monroy (@gabrtv) <a href="https://twitter.com/gabrtv/status/738861622882508801">June 3, 2016</a></blockquote>
-										</td>
-										<td style={{width: "400px", verticalAlign: "top"}}>
-											<blockquote className="twitter-tweet" dataLang="en"><p lang="en" dir="ltr">Sourcegraph is the cross reference to end all cross references</p>&mdash; Erik Hollensbe (@erikhollensbe) <a href="https://twitter.com/erikhollensbe/status/738880970909089793">June 3, 2016</a></blockquote>
-										</td>
-									</tr>
-								</tbody>
-							</table>
+						<div style={{display: "flex", flowDirection: "row", flexWrap: "wrap", justifyContent: "center"}}>
+							<div style={{width: "360px"}}>
+								<blockquote className="twitter-tweet" dataLang="en"><p lang="en" dir="ltr">Just found out <a href="https://twitter.com/srcgraph">@srcgraph</a> ! HUGE productivity gain. Great work ! Waiting for more language support.</p>&mdash; Dharmesh Kakadia (@dharmeshkakadia) <a href="https://twitter.com/dharmeshkakadia/status/738874411437035520">June 3, 2016</a></blockquote>
+							</div>
+							<div style={{width: "360px"}}>
+								<blockquote className="twitter-tweet" dataLang="en"><p lang="en" dir="ltr">The <a href="https://twitter.com/srcgraph">@srcgraph</a> Chrome extension for GitHub is the best! <a href="https://t.co/CKweAOfbsQ">https://t.co/CKweAOfbsQ</a></p>&mdash; Julius Volz (@juliusvolz) <a href="https://twitter.com/juliusvolz/status/748095329564778496">June 29, 2016</a></blockquote>
+							</div>
+							<div style={{width: "360px"}}>
+								<blockquote className="twitter-tweet" dataLang="en"><p lang="en" dir="ltr">Used <a href="https://twitter.com/srcgraph">@srcgraph</a> jump-to-definition across 3 projects, 2 langs, finally landing deep in Golang src. Took &lt; 10 min to pin down the issue. 💪🏼</p>&mdash; Gabriel Monroy (@gabrtv) <a href="https://twitter.com/gabrtv/status/738861622882508801">June 3, 2016</a></blockquote>
+							</div>
+							<div style={{width: "360px"}}>
+								<blockquote className="twitter-tweet" dataLang="en"><p lang="en" dir="ltr">Sourcegraph is the cross reference to end all cross references</p>&mdash; Erik Hollensbe (@erikhollensbe) <a href="https://twitter.com/erikhollensbe/status/738880970909089793">June 3, 2016</a></blockquote>
+							</div>
 						</div>
 					</div>
 				</div>
