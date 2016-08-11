@@ -15,14 +15,14 @@ import "sourcegraph/user/UserBackend"; // for side effects
 import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 
-type SignupFormProps = {
-	onSignupSuccess: () => void,
-	location: any,
+interface SignupFormProps {
+	onSignupSuccess: () => void;
+	location: any;
 
 	// returnTo is where the user should be redirected after an OAuth login flow,
 	// either a URL path or a Location object.
-	returnTo: string | HistoryModule.Location,
-};
+	returnTo: string | HistoryModule.Location;
+}
 
 export class SignupForm extends Container<SignupFormProps, any> {
 	_loginInput: any;
@@ -143,6 +143,10 @@ export class SignupForm extends Container<SignupFormProps, any> {
 }
 let StyledSignupForm = SignupForm;
 
+interface SignupProps {
+	location: any;
+}
+
 function SignupComp(props: SignupProps, {router}) {
 	return (
 		<div className={styles.full_page}>
@@ -153,9 +157,6 @@ function SignupComp(props: SignupProps, {router}) {
 		</div>
 	);
 }
-type SignupProps = {
-	location: any,
-};
 (SignupComp as any).contextTypes = {
 	router: React.PropTypes.object.isRequired,
 };

@@ -2,10 +2,10 @@
 
 import * as React from "react";
 
-type Props = {
-	className?: string,
-	width?: number, // appended by "px"
-};
+interface Props {
+	className?: string;
+	width?: number; // appended by "px"
+}
 
 export class EmptyNodeIllo extends React.Component<Props, any> {
 	static defaultProps = {

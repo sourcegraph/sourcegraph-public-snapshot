@@ -7,12 +7,12 @@ import shallowCompare from "react/lib/shallowCompare";
 // Adapted from https://raw.githubusercontent.com/tajo/react-portal/master/lib/portal.js.
 
 export function renderedOnBody(Component) {
-	type Props = {
-		className?: string,
-		style?: any,
+	interface Props {
+		className?: string;
+		style?: any;
 
-		[key: string]: any,
-	};
+		[key: string]: any;
+	}
 
 	class RenderedOnBody extends React.Component<Props, any> {
 		_node: any;

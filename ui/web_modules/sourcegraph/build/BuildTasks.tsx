@@ -7,10 +7,10 @@ import {TopLevelTask} from "sourcegraph/build/TopLevelTask";
 
 import * as styles from "./styles/Build.css";
 
-type Props = {
-	tasks: any[],
-	logs: any,
-};
+interface Props {
+	tasks: any[];
+	logs: any;
+}
 
 export class BuildTasks extends Component<Props, any> {
 	constructor(props: Props) {

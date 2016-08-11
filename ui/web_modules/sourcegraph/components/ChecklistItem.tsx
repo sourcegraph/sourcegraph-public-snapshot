@@ -7,13 +7,13 @@ import {Icon} from "./Icon";
 import {Button} from "./Button";
 import * as classNames from "classnames";
 
-type Props = {
-	className?: string,
-	children?: any,
-	complete?: boolean,
-	actionText?: string, // Button text
-	actionOnClick?: () => void,
-};
+interface Props {
+	className?: string;
+	children?: any;
+	complete?: boolean;
+	actionText?: string; // Button text
+	actionOnClick?: () => void;
+}
 
 export class ChecklistItem extends React.Component<Props, any> {
 	render(): JSX.Element | null {

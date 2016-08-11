@@ -12,18 +12,18 @@ import {trimRepo} from "sourcegraph/repo/index";
 import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-type Props = {
-	def: any,
-	refLocations?: any,
-	showMax?: number,
+interface Props {
+	def: any;
+	refLocations?: any;
+	showMax?: number;
 
 	// Current repo and path info, so that they can be highlighted.
-	repo: string,
-	rev?: string,
-	path?: string,
+	repo: string;
+	rev?: string;
+	path?: string;
 
-	location: any,
-};
+	location: any;
+}
 
 export class RefLocationsList extends React.Component<Props, any> {
 	static contextTypes = {

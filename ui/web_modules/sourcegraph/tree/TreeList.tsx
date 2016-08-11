@@ -51,7 +51,7 @@ function pathDir(path: string): string {
 	return pathJoin(parts.splice(0, parts.length - 1));
 }
 
-type Props = {
+interface Props {
 	repo: string;
 	rev: string | null;
 	commitID: string;

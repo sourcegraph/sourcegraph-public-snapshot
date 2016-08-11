@@ -5,9 +5,9 @@ import * as React from "react";
 import * as styles from "./styles/modal.css";
 import {renderedOnBody} from "sourcegraph/util/renderedOnBody";
 
-type ModalProps = {
-	onDismiss?: () => void,
-};
+interface ModalProps {
+	onDismiss?: () => void;
+}
 
 class ModalComp extends React.Component<ModalProps, any> {
 	constructor(props: ModalProps) {
@@ -79,15 +79,15 @@ export function dismissModal(modalName, location, router) {
 	};
 }
 
-type LocationStateModalProps = {
-	location: any,
+interface LocationStateModalProps {
+	location: any;
 	// modalName is the name of the modal (location.state.modal value) that this
 	// LocationStateToggleLink component toggles.
-	modalName: string,
-	onDismiss?: () => void,
-	children?: any,
-	style?: Object,
-};
+	modalName: string;
+	onDismiss?: () => void;
+	children?: any;
+	style?: Object;
+}
 
 // LocationStateModal wraps <Modal> and uses a key on the location state
 // to determine whether it is displayed. Use LocationStateModal with

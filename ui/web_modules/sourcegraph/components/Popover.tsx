@@ -7,11 +7,11 @@ import {Component} from "sourcegraph/Component";
 
 import * as styles from "./styles/popover.css";
 
-type Props = {
-	left?: boolean, // position popover content to the left (default: right)
-	popoverClassName?: string,
-	children?: React.ReactNode,
-};
+interface Props {
+	left?: boolean; // position popover content to the left (default: right)
+	popoverClassName?: string;
+	children?: React.ReactNode;
+}
 
 export class Popover extends Component<Props, any> {
 	constructor(props: Props) {

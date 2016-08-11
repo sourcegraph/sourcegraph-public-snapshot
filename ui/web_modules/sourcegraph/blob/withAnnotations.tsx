@@ -11,12 +11,12 @@ import "sourcegraph/blob/BlobBackend";
 // withAnnotations wraps Component and triggers a load of the annotations
 // for the repo, rev, and path passed to it as properties.
 export function withAnnotations(Component) {
-	type Props = {
-		repo: string,
-		rev?: string,
-		commitID?: string,
-		path?: string,
-	};
+	interface Props {
+		repo: string;
+		rev?: string;
+		commitID?: string;
+		path?: string;
+	}
 
 	class WithAnnotations extends Container<Props, any> {
 		stores() {

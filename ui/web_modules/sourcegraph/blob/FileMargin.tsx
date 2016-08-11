@@ -3,13 +3,13 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
-type Props = {
-	lineFromByte?: () => void,
-	selectionStartLine?: any,
-	startByte?: number,
+interface Props {
+	lineFromByte?: () => void;
+	selectionStartLine?: any;
+	startByte?: number;
 
-	[key: string]: any,
-};
+	[key: string]: any;
+}
 
 export class FileMargin extends React.Component<Props, any> {
 	componentDidUpdate() {

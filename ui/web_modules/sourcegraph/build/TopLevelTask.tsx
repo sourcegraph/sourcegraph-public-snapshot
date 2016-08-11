@@ -8,11 +8,11 @@ import {Step} from "sourcegraph/build/Step";
 
 import * as styles from "./styles/Build.css";
 
-type Props = {
-	task: any,
-	subtasks: any[],
-	logs: any,
-};
+interface Props {
+	task: any;
+	subtasks: any[];
+	logs: any;
+}
 
 export class TopLevelTask extends Component<Props, any> {
 	reconcileState(state, props: Props) {

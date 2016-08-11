@@ -7,8 +7,8 @@ import * as UserActions from "sourcegraph/user/UserActions";
 import {UserStore} from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend"; // for side effects
 
-type Props = {
-	role: string,
+interface Props {
+	role: string;
 }
 
 export class LogoutLink extends Container<Props, any> {

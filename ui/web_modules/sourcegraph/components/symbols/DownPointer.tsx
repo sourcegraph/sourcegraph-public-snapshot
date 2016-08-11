@@ -2,11 +2,11 @@
 
 import * as React from "react";
 
-type Props = {
-	className?: string,
-	width?: number, // appended by "px"
-	style?: any,
-};
+interface Props {
+	className?: string;
+	width?: number; // appended by "px"
+	style?: any;
+}
 
 export class DownPointer extends React.Component<Props, any> {
 	static defaultProps = {

@@ -31,25 +31,25 @@ import {FaThumbsUp, FaThumbsDown} from "sourcegraph/components/Icons";
 
 const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above/below a ref
 
-type Props = {
-	location: HistoryModule.Location,
-	repo?: string,
-	rev?: string,
-	commitID?: string,
-	def?: string,
-	defObj?: any,
-	refs?: any,
+interface Props {
+	location: HistoryModule.Location;
+	repo?: string;
+	rev?: string;
+	commitID?: string;
+	def?: string;
+	defObj?: any;
+	refs?: any;
 	repoRefs: {
-		Repo?: string,
-		Files: any[],
-	},
-	refetch?: boolean,
-	initNumSnippets?: number, // number of snippets to initially expand
-	fileCollapseThreshold?: number, // number of files to show before "and X more..."-style paginator
-	rangeLimit?: number,
-	showRepoTitle?: boolean,
-	refIndex?: number,
-};
+		Repo?: string;
+		Files: any[];
+	};
+	refetch?: boolean;
+	initNumSnippets?: number; // number of snippets to initially expand
+	fileCollapseThreshold?: number; // number of files to show before "and X more..."-style paginator
+	rangeLimit?: number;
+	showRepoTitle?: boolean;
+	refIndex?: number;
+}
 
 export class RefsContainer extends Container<Props, any> {
 	static contextTypes = {

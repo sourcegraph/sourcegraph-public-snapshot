@@ -36,15 +36,15 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 // Number of characters of the Docstring to show before showing the "collapse" options.
 const DESCRIPTION_CHAR_CUTOFF = 500;
 
-type Props = {
-	location: HistoryModule.Location,
-	repo?: string,
-	repoObj?: any,
-	def: string,
-	commitID?: string,
-	rev?: string,
-	defObj?: any,
-};
+interface Props {
+	location: HistoryModule.Location;
+	repo?: string;
+	repoObj?: any;
+	def: string;
+	commitID?: string;
+	rev?: string;
+	defObj?: any;
+}
 
 export class DefInfo extends Container<Props, any> {
 	static contextTypes = {

@@ -2,12 +2,12 @@
 
 import * as React from "react";
 
-type Props = {
-	className?: string,
-	style?: any,
-	children?: any,
-	offset?: number,
-};
+interface Props {
+	className?: string;
+	style?: any;
+	children?: any;
+	offset?: number;
+}
 
 export class Affix extends React.Component<Props, any> {
 	_affix: {

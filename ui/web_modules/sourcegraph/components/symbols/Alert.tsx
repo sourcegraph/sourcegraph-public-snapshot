@@ -2,12 +2,12 @@
 
 import * as React from "react";
 
-type Props = {
-	className?: string,
-	height?: number,
-	width?: number,
-	style?: any,
-};
+interface Props {
+	className?: string;
+	height?: number;
+	width?: number;
+	style?: any;
+}
 
 export class Alert extends React.Component<Props, any> {
 	static defaultProps = {

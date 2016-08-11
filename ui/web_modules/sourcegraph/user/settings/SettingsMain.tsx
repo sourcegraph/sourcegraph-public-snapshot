@@ -1,14 +1,12 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
 import * as styles from "./styles/Settings.css";
+import * as React from "react";
 import {Panel} from "sourcegraph/components/index";
 
-type Props = {
-	main: JSX.Element,
-};
+interface Props {
+	main: JSX.Element;
+}
 
-export function SettingsMain(props) {
+export function SettingsMain(props: Props): JSX.Element {
 	return (
 		<div className={styles.container}>
 			<div className={styles.main}>

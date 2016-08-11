@@ -11,10 +11,10 @@ import "sourcegraph/build/BuildBackend";
 // the Build object for the most recently created build for the commit,
 // if any.
 export function withRepoBuild(Component) {
-	type Props = {
-		repoID?: number,
-		commitID?: string,
-	};
+	interface Props {
+		repoID?: number;
+		commitID?: string;
+	}
 
 	class WithRepoBuild extends Container<Props, any> {
 		stores() { return [BuildStore]; }

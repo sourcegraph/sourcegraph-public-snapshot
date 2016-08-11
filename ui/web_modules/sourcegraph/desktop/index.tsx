@@ -21,9 +21,9 @@ export const routes = [
 ];
 
 export function desktopRouter(Component) {
-	type Props = {
-		routes: any[],
-	};
+	interface Props {
+		routes: any[];
+	}
 
 	class DesktopRouter extends React.Component<Props, any> {
 		static contextTypes = {

@@ -2,12 +2,12 @@
 
 import * as React from "react";
 
-type Props = {
-	className?: string,
-	children?: any,
-	active?: boolean,
-	tabPanel?: boolean,
-};
+interface Props {
+	className?: string;
+	children?: any;
+	active?: boolean;
+	tabPanel?: boolean;
+}
 
 export class TabPanel extends React.Component<Props, any> {
 	static defaultProps = {

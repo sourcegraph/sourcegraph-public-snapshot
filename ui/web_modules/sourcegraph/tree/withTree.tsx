@@ -7,12 +7,12 @@ import * as React from "react";
 //
 // If the path refers to a file, a redirect occurs. (TODO: not yet implemented.)
 export function withTree(Component) {
-	type Props = {
-		repo: string,
-		rev?: string,
-		commitID?: string,
-		params: any,
-	};
+	interface Props {
+		repo: string;
+		rev?: string;
+		commitID?: string;
+		params: any;
+	}
 
 	class WithTree extends React.Component<Props, any> {
 		render(): JSX.Element | null {

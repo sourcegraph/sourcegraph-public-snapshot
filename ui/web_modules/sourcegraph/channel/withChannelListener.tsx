@@ -20,9 +20,9 @@ const MAX_FAILURES = 5;
 // Once it has been set, there is no way to unset it except by reloading the
 // page (this is by design; that browser tab is "controlled" by your editor).
 export function withChannelListener(Component) {
-	type Props = {
-		location: any,
-	};
+	interface Props {
+		location: any;
+	}
 
 	class WithChannelListener extends React.Component<Props, any> {
 		static contextTypes = {

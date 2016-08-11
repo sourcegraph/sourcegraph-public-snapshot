@@ -7,10 +7,10 @@ import * as styles from "sourcegraph/blob/styles/Blob.css";
 
 export type Range = [number, number];
 
-type Props = {
-	direction: any,
-	expandRange: any,
-	onExpand: any,
+interface Props {
+	direction: any;
+	expandRange: any;
+	onExpand: any;
 }
 
 export class BlobLineExpander extends Component<Props, any> {

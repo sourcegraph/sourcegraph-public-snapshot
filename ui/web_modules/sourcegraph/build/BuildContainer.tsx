@@ -22,9 +22,9 @@ import * as styles from "./styles/Build.css";
 
 const updateIntervalMsec = 1500;
 
-type Props = {
-	params: any,
-};
+interface Props {
+	params: any;
+}
 
 export class BuildContainer extends Container<Props, any> {
 	static contextTypes = {

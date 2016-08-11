@@ -33,9 +33,5 @@ export const FaThumbsDown = iconWrapper(require("react-icons/lib/fa/thumbs-down"
 // <RepoIcon className={styles.foo} />
 function iconWrapper(Component): any {
 	const C = ({className, title}) => <div className={classNames(className, styles.icon)} title={title}><Component /></div>; // eslint-disable-line react/jsx-key
-	type Props = {
-		className?: string,
-		title?: string,
-	};
 	return C;
 }

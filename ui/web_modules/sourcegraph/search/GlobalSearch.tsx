@@ -31,13 +31,13 @@ export const RESULTS_LIMIT = 20;
 
 const resultIconSize = "24px";
 
-type Props = {
-	repo: string | null,
-	location: any,
-	query: string,
-	className?: string,
-	resultClassName?: string,
-};
+interface Props {
+	repo: string | null;
+	location: any;
+	query: string;
+	className?: string;
+	resultClassName?: string;
+}
 
 // GlobalSearch is the global search bar + results component.
 export class GlobalSearch extends Container<Props, any> {

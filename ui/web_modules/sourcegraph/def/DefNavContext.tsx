@@ -13,11 +13,11 @@ import {breadcrumb} from "sourcegraph/util/breadcrumb";
 
 import * as styles from "sourcegraph/components/styles/breadcrumb.css";
 
-type Props = {
-	repo: string,
-	rev?: string,
-	commitID?: string,
-	params: any,
+interface Props {
+	repo: string;
+	rev?: string;
+	commitID?: string;
+	params: any;
 }
 
 export class DefNavContext extends Container<Props, any> {

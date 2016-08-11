@@ -16,9 +16,9 @@ function GoLookup(props: Props, context) {
 			subtitle="" />
 	);
 }
-type Props = {
-	location: any,
-};
+interface Props {
+	location: any;
+}
 
 export const route: ReactRouter.PlainRoute = {
 	path: "-/golang",

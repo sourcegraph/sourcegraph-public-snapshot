@@ -15,11 +15,11 @@ import * as classNames from "classnames";
 
 type OnChangeListener = () => void;
 
-type Props = {
-	onSubmit?: () => void,
-	className?: string,
-	language?: string,
-	loginReturnTo?: string,
+interface Props {
+	onSubmit?: () => void;
+	className?: string;
+	language?: string;
+	loginReturnTo?: string;
 }
 
 export class BetaInterestForm extends Container<Props, any> {

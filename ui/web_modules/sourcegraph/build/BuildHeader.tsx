@@ -8,9 +8,9 @@ import {TimeAgo} from "sourcegraph/util/TimeAgo";
 import {buildStatus, buildClass, elapsed} from "sourcegraph/build/Build";
 import * as styles from "./styles/Build.css";
 
-type Props = {
-	build: any,
-};
+interface Props {
+	build: any;
+}
 
 export class BuildHeader extends Component<Props, any> {
 	reconcileState(state, props: Props) {

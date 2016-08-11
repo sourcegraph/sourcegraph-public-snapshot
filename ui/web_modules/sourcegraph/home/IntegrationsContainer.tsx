@@ -4,9 +4,9 @@ import * as React from "react";
 import {Integrations} from "./Integrations";
 import "sourcegraph/user/UserBackend"; // for side effects
 
-type Props = {
-	location?: any,
-};
+interface Props {
+	location?: any;
+}
 
 export class IntegrationsContainer extends React.Component<Props, any> {
 	reconcileState(state, props, context) {

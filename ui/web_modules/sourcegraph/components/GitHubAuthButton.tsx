@@ -7,18 +7,18 @@ import * as typography from "./styles/_typography.css";
 import {Button} from "sourcegraph/components/index";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-type Props = {
-	scopes?: string,
-	returnTo?: string | Location | null,
-	color?: string,
-	outline?: boolean,
-	block?: boolean,
-	size?: string,
-	children?: any,
-	className?: string,
-	onClick?: () => void,
-	tabIndex?: string,
-};
+interface Props {
+	scopes?: string;
+	returnTo?: string | Location | null;
+	color?: string;
+	outline?: boolean;
+	block?: boolean;
+	size?: string;
+	children?: any;
+	className?: string;
+	onClick?: () => void;
+	tabIndex?: string;
+}
 
 export class GitHubAuthButton extends React.Component<Props, any> {
 	static contextTypes = {

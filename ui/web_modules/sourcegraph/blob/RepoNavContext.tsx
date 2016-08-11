@@ -10,9 +10,9 @@ import {breadcrumb} from "sourcegraph/util/breadcrumb";
 
 import * as styles from "sourcegraph/components/styles/breadcrumb.css";
 
-type Props = {
-	params: any,
-};
+interface Props {
+	params: any;
+}
 
 export class RepoNavContext extends Component<Props, any> {
 	reconcileState(state, props: Props) {

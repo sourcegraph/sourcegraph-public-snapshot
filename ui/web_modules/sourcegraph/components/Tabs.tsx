@@ -4,14 +4,14 @@ import * as React from "react";
 import * as styles from "sourcegraph/components/styles/tabs.css";
 import * as classNames from "classnames";
 
-type Props = {
-	direction?: string, // vertical, horizontal
-	color?: string, // blue, purple
-	size?: string, // small, large
-	children?: any,
-	className?: string,
-	style?: any,
-};
+interface Props {
+	direction?: string; // vertical, horizontal
+	color?: string; // blue, purple
+	size?: string; // small, large
+	children?: any;
+	className?: string;
+	style?: any;
+}
 
 export class Tabs extends React.Component<Props, any> {
 	static defaultProps = {

@@ -39,12 +39,12 @@ function sigName(sig) {
 	);
 }
 
-type Props = {
-	commit: any,
+interface Props {
+	commit: any;
 
 	// full is whether to show the full commit message (beyond the first line).
-	full: boolean,
-};
+	full: boolean;
+}
 
 export function Commit({commit, full}: Props) {
 	const parts = commit.Message ? commit.Message.split("\n") : null;

@@ -4,12 +4,12 @@ import * as React from "react";
 import * as styles from "./styles/list.css";
 import * as classNames from "classnames";
 
-type Props = {
-	className?: string,
-	children?: any,
-	style?: any,
-	listStyle?: string, // node, normal
-};
+interface Props {
+	className?: string;
+	children?: any;
+	style?: any;
+	listStyle?: string; // node, normal
+}
 
 export class List extends React.Component<Props, any> {
 	static defaultProps = {

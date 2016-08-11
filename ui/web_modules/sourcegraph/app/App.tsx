@@ -29,13 +29,13 @@ import {routes as userRoutes} from "sourcegraph/user/index";
 import {routes as userSettingsRoutes} from "sourcegraph/user/settings/routes";
 import {routes as repoRoutes} from "sourcegraph/repo/routes";
 
-type Props = {
-	main: JSX.Element,
-	navContext: JSX.Element,
-	location: any,
-	params?: any,
-	channelStatusCode?: number,
-};
+interface Props {
+	main: JSX.Element;
+	navContext: JSX.Element;
+	location: any;
+	params?: any;
+	channelStatusCode?: number;
+}
 
 export class App extends React.Component<Props, any> {
 	static contextTypes = {

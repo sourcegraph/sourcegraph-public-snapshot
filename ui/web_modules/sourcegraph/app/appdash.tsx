@@ -7,10 +7,10 @@ import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {getRouteName} from "./routePatterns";
 import {context} from "sourcegraph/app/context";
 
-type Props = {
+interface Props {
 	routes: ReactRouter.Route[];
-	route: ReactRouter.Route,
-};
+	route: ReactRouter.Route;
+}
 
 export function withAppdashRouteStateRecording(ChildComponent: any): any {
 	type State = {

@@ -22,21 +22,21 @@ function repoPageTitle(repo: any): string {
 	return title;
 }
 
-type Props = {
-	location?: any,
-	repo: string,
-	rev?: string,
-	commitID?: string,
-	resolvedRev?: any,
-	repoNavContext?: any,
-	repoResolution?: any,
-	build?: any,
-	repoObj?: any,
-	main?: JSX.Element,
-	isCloning?: boolean,
-	route?: any,
-	routes: any[],
-};
+interface Props {
+	location?: any;
+	repo: string;
+	rev?: string;
+	commitID?: string;
+	resolvedRev?: any;
+	repoNavContext?: any;
+	repoResolution?: any;
+	build?: any;
+	repoObj?: any;
+	main?: JSX.Element;
+	isCloning?: boolean;
+	route?: any;
+	routes: any[];
+}
 
 export class RepoMain extends React.Component<Props, any> {
 	static contextTypes = {

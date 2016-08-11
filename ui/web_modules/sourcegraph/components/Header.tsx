@@ -4,11 +4,11 @@ import * as React from "react";
 import * as styles from "./styles/header.css";
 import {Loader} from "./Loader";
 
-type Props = {
-	title: string,
-	subtitle?: string,
-	loading?: boolean,
-};
+interface Props {
+	title: string;
+	subtitle?: string;
+	loading?: boolean;
+}
 
 export class Header extends React.Component<Props, any> {
 	render(): JSX.Element | null {

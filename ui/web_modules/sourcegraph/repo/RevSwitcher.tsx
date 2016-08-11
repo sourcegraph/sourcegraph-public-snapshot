@@ -16,26 +16,26 @@ import {FaChevronDown, CheckIcon} from "sourcegraph/components/Icons";
 import {Input, Menu, Heading} from "sourcegraph/components/index";
 import {urlWithRev} from "sourcegraph/repo/routes";
 
-type Props = {
-	repo: string,
-	rev?: string,
-	commitID: string,
-	repoObj?: any,
-	isCloning: boolean,
+interface Props {
+	repo: string;
+	rev?: string;
+	commitID: string;
+	repoObj?: any;
+	isCloning: boolean;
 
 	// branches is RepoStore.branches.
-	branches: any,
+	branches: any;
 
 	// tags is RepoStore.tags.
-	tags: any,
+	tags: any;
 
 	// srclibDataVersions is TreeStore.srclibDataVersions.
-	srclibDataVersions: any,
+	srclibDataVersions: any;
 
 	// to construct URLs
-	routes: any[],
-	routeParams: any,
-};
+	routes: any[];
+	routeParams: any;
+}
 
 export class RevSwitcher extends Component<Props, any> {
 	static contextTypes = {

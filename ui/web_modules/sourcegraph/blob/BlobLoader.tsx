@@ -21,9 +21,9 @@ export type Helper = {
 	render?: (state: any) => JSX.Element;
 };
 
-type Props = {
-	route: any,
-};
+interface Props {
+	route: any;
+}
 
 // blobLoader performs the portion of the work of loading a blob that differs based
 // on what is originally being loaded. E.g., if we're loading a def, then the blob

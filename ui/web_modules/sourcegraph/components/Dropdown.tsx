@@ -7,20 +7,20 @@ import {CheckIcon} from "sourcegraph/components/Icons";
 import {DownPointer} from "sourcegraph/components/symbols/index";
 import * as classNames from "classnames";
 
-type Props = {
-	icon: JSX.Element,
-	title: string,
-	initialValue?: string,
-	alwaysOpenMenu?: boolean, // Use initialValue to judge when false
-	disabled?: boolean,
+interface Props {
+	icon: JSX.Element;
+	title: string;
+	initialValue?: string;
+	alwaysOpenMenu?: boolean; // Use initialValue to judge when false
+	disabled?: boolean;
 	items: {
-		name?: string,
-		value?: string,
-	}[],
-	onMenuClick: (val: string) => void,
-	onItemClick: (val: string) => void,
-	className?: string,
-};
+		name?: string;
+		value?: string;
+	}[];
+	onMenuClick: (val: string) => void;
+	onItemClick: (val: string) => void;
+	className?: string;
+}
 
 // This component is a minimal Dropdown component with some code copied from
 // RevSwitcher.

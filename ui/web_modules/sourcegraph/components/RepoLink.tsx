@@ -11,11 +11,11 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "./styles/breadcrumb.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-type Props = {
-	repo: string,
-	rev?: string,
-	disabledLink?: boolean,
-	className?: string,
+interface Props {
+	repo: string;
+	rev?: string;
+	disabledLink?: boolean;
+	className?: string;
 }
 
 export class RepoLink extends React.Component<Props, any> {

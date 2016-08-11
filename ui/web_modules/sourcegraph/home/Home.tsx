@@ -14,9 +14,9 @@ import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggl
 import {LocationStateModal} from "sourcegraph/components/Modal";
 import {Button, Heading, Logo, FlexContainer} from "sourcegraph/components/index";
 
-type HomeProps = {
-	location: Object,
-};
+interface HomeProps {
+	location: Object;
+}
 
 export class Home extends Container<HomeProps, any> {
 

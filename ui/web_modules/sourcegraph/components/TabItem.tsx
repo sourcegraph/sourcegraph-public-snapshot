@@ -5,17 +5,17 @@ import {Icon} from "./Icon";
 import * as styles from "sourcegraph/components/styles/tabItem.css";
 import * as classNames from "classnames";
 
-type Props = {
-	className?: string,
-	children?: any,
-	hideMobile?: boolean,
-	active?: boolean,
-	color?: string, // blue, purple
-	size?: string, // small, large
-	icon?: string | JSX.Element,
-	direction?: string,
-	tabItem?: boolean,
-};
+interface Props {
+	className?: string;
+	children?: any;
+	hideMobile?: boolean;
+	active?: boolean;
+	color?: string; // blue, purple
+	size?: string; // small, large
+	icon?: string | JSX.Element;
+	direction?: string;
+	tabItem?: boolean;
+}
 
 export class TabItem extends React.Component<Props, any> {
 	static defaultProps = {

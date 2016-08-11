@@ -43,8 +43,8 @@ export class TreeEntryCommit extends Container<Props, any> {
 	}
 }
 
-type Props = {
-	repo: string,
-	rev: string,
-	path: string,
+interface Props {
+	repo: string;
+	rev: string;
+	path: string;
 };

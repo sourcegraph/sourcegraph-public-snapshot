@@ -4,14 +4,14 @@ import * as React from "react";
 import * as styles from "./styles/panel.css";
 import * as classNames from "classnames";
 
-type Props = {
-	className?: string,
-	children?: any,
-	color?: string, // blue, white, purple, green, orange, (empty)
-	inverse?: boolean, // light text on color background
-	hoverLevel?: string, // high, low, (empty)
-	hover?: boolean,
-};
+interface Props {
+	className?: string;
+	children?: any;
+	color?: string; // blue, white, purple, green, orange, (empty)
+	inverse?: boolean; // light text on color background
+	hoverLevel?: string; // high, low, (empty)
+	hover?: boolean;
+}
 
 export class Panel extends React.Component<Props, any> {
 	static defaultProps = {

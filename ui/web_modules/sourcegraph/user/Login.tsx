@@ -14,13 +14,13 @@ import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 
-type Props = {
-	onLoginSuccess: () => void,
-	location: any,
+interface Props {
+	onLoginSuccess: () => void;
+	location: any;
 
 	// returnTo is where the user should be redirected after an OAuth login flow,
 	// either a URL path or a Location object.
-	returnTo: string | HistoryModule.Location,
+	returnTo: string | HistoryModule.Location;
 };
 
 export class LoginForm extends Container<Props, any> {

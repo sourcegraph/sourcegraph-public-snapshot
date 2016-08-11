@@ -20,15 +20,15 @@ import {Repository, DownPointer} from "sourcegraph/components/symbols/index";
 import {urlToRepo} from "sourcegraph/repo/routes";
 import {urlToBlob} from "sourcegraph/blob/routes";
 
-type Props = {
-	repo?: string,
-	rev?: string,
-	commitID?: string,
-	def?: string,
-	defObj?: any,
-	defRepos?: any[],
-	refLocations: any,
-};
+interface Props {
+	repo?: string;
+	rev?: string;
+	commitID?: string;
+	def?: string;
+	defObj?: any;
+	defRepos?: any[];
+	refLocations: any;
+}
 
 export class RepoRefsContainer extends Container<Props, any> {
 	static contextTypes = {

@@ -9,9 +9,9 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import Helmet from "react-helmet";
 
-type Props = {
-	location: any,
-};
+interface Props {
+	location: any;
+}
 
 export class BrowserExtFaqsPage extends React.Component<Props, any> {
 	static contextTypes = {

@@ -9,13 +9,13 @@ import * as classNames from "classnames";
 // @TODO(chexee): Checks are a little off center in Firefox
 // @TODO(chexee): animation between states
 
-type Props = {
-	className?: string,
-	children?: any,
-	steps: any[], // Array of step labels. Pass in null for no labels.
-	stepsComplete?: number, // Number of steps complete
-	color?: string, // "purple", "blue", "green", "orange"
-};
+interface Props {
+	className?: string;
+	children?: any;
+	steps: any[]; // Array of step labels. Pass in null for no labels.
+	stepsComplete?: number; // Number of steps complete
+	color?: string; // "purple", "blue", "green", "orange"
+}
 
 export class Stepper extends React.Component<Props, any> {
 	static defaultProps = {

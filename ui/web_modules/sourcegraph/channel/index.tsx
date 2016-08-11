@@ -4,10 +4,10 @@ import * as React from "react";
 import {Header} from "sourcegraph/components/Header";
 import * as styles from "./styles/index.css";
 
-type Props = {
-	location: any,
-	params: any,
-};
+interface Props {
+	location: any;
+	params: any;
+}
 
 class Channel extends React.Component<Props, any> {
 	static contextTypes = {

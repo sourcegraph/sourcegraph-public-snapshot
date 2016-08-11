@@ -432,10 +432,10 @@ export function withEventLoggerContext<P>(eventLogger: EventLoggerClass, compone
 
 // withViewEventsLogged calls (this.context as any).eventLogger.logEvent when the
 // location's pathname changes.
-type WithViewEventsLoggedProps = {
-	routes: ReactRouter.Route[],
-	location: HistoryModule.Location,
-};
+interface WithViewEventsLoggedProps {
+	routes: ReactRouter.Route[];
+	location: HistoryModule.Location;
+}
 
 export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(component: React.ComponentClass<P>): React.ComponentClass<P> {
 	class WithViewEventsLogged extends React.Component<P, {}> { // eslint-disable-line react/no-multi-comp

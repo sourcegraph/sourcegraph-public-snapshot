@@ -11,10 +11,10 @@ import debounce from "lodash.debounce";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 
-type Props = {
-	repos: any[],
-	location?: any,
-};
+interface Props {
+	repos: any[];
+	location?: any;
+}
 
 export class Repos extends React.Component<Props, any> {
 	static contextTypes = {

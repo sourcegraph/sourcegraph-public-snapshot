@@ -6,10 +6,10 @@ import {SearchSettings} from "sourcegraph/search/SearchSettings";
 import {GlobalSearch} from "sourcegraph/search/GlobalSearch";
 import * as styles from "./styles/SearchResultsPanel.css";
 
-type Props = {
-	repo: string | null,
-	location: any,
-	query: string,
+interface Props {
+	repo: string | null;
+	location: any;
+	query: string;
 };
 
 export class SearchResultsPanel extends React.Component<Props, any> {

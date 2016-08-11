@@ -4,14 +4,14 @@ import * as React from "react";
 import * as styles from "./styles/checkboxList.css";
 import * as classNames from "classnames";
 
-type Props = {
-	title: string,
-	name: string,
-	labels: string[],
+interface Props {
+	title: string;
+	name: string;
+	labels: string[];
 
-	defaultValues: string[],
-	className?: string,
-};
+	defaultValues: string[];
+	className?: string;
+}
 
 export class CheckboxList extends React.Component<Props, any> {
 	// TODO(slimsag): this should be 'element' type?

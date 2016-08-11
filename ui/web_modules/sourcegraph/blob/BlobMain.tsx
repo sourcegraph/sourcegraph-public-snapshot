@@ -24,24 +24,24 @@ import {Header} from "sourcegraph/components/Header";
 import {createLineFromByteFunc} from "sourcegraph/blob/lineFromByte";
 import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 
-type Props = {
-	repo: string,
-	rev?: string,
-	commitID?: string,
-	path?: string,
-	blob?: any,
-	anns?: any,
-	def?: any,
-	skipAnns?: boolean,
-	startLine?: number,
-	startCol?: number,
-	startByte?: number,
-	endLine?: number,
-	endCol?: number,
-	endByte?: number,
-	location: HistoryModule.Location,
-	children?: React.ReactNode,
-};
+interface Props {
+	repo: string;
+	rev?: string;
+	commitID?: string;
+	path?: string;
+	blob?: any;
+	anns?: any;
+	def?: any;
+	skipAnns?: boolean;
+	startLine?: number;
+	startCol?: number;
+	startByte?: number;
+	endLine?: number;
+	endCol?: number;
+	endByte?: number;
+	location: HistoryModule.Location;
+	children?: React.ReactNode;
+}
 
 export class BlobMain extends Container<Props, any> {
 	static contextTypes = {

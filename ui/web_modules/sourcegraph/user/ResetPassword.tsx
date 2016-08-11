@@ -16,9 +16,9 @@ import "sourcegraph/user/UserBackend"; // for side effects
 import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 
-type Props = {
-	location?: any,
-};
+interface Props {
+	location?: any;
+}
 
 class ResetPasswordComp extends Container<Props, any> {
 	static contextTypes = {

@@ -4,11 +4,11 @@ import * as React from "react";
 import * as styles from "./styles/code_2.css";
 import * as classNames from "classnames";
 
-type Props = {
-	className?: string,
-	children?: any,
-	style?: any,
-};
+interface Props {
+	className?: string;
+	children?: any;
+	style?: any;
+}
 
 export class Code extends React.Component<Props, any> {
 	render(): JSX.Element | null {

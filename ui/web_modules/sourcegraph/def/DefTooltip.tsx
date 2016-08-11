@@ -20,10 +20,10 @@ if (typeof document !== "undefined") {
 	}, false);
 }
 
-type Props = {
-	currentRepo?: string,
-	hoverPos: BlobPos,
-	hoverInfos: any,
+interface Props {
+	currentRepo?: string;
+	hoverPos: BlobPos;
+	hoverInfos: any;
 }
 
 export class DefTooltip extends Component<Props, any> {

@@ -16,9 +16,9 @@ import * as classNames from "classnames";
 
 type OnSelectQueryListener = (ev: Event, query: string) => any;
 
-type Props = {
-	location?: any,
-};
+interface Props {
+	location?: any;
+}
 
 export class DashboardContainer extends Container<Props, any> {
 	static contextTypes = {

@@ -20,12 +20,12 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 import {searchScopes} from "sourcegraph/search/index";
 import * as classNames from "classnames";
 
-type Props = {
-	location: any,
-	repo?: string,
-	className?: string,
-	innerClassName?: string,
-	githubToken: any,
+interface Props {
+	location: any;
+	repo?: string;
+	className?: string;
+	innerClassName?: string;
+	githubToken: any;
 };
 
 class SearchSettingsComp extends Container<Props, any> {

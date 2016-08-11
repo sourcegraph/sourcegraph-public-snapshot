@@ -11,11 +11,11 @@ export function Avatar({className, size, img}: {className?: any, size: any, img:
 		<img className={classNames(className, sizeClasses[size] || styles.small)} src={img || PLACEHOLDER_IMAGE} />
 	);
 }
-type Props = {
-	img?: string,
-	size?: string,
-	className?: string,
-};
+interface Props {
+	img?: string;
+	size?: string;
+	className?: string;
+}
 
 const sizeClasses = {
 	"tiny": styles.tiny,

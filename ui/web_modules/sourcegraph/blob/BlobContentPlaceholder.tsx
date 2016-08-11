@@ -12,10 +12,10 @@ const dummyLineLengths = [
 	25, 27, 32, 24, 29, 31, 37, 51, 35, 42,
 ];
 
-type Props = {
-	styles?: any,
-	numLines?: number,
-};
+interface Props {
+	styles?: any;
+	numLines?: number;
+}
 
 // BlobContentPlaceholder implements the "content placeholder" effect
 // seen in the loading screens of mobile apps and the Facebook news

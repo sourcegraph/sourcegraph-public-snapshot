@@ -15,13 +15,13 @@ import {urlToTree} from "sourcegraph/tree/routes";
 //
 // If the path refers to a tree, a redirect occurs.
 export function withFileBlob(Component) {
-	type Props = {
-		repo: string,
-		rev?: string,
-		commitID?: string,
-		params: any,
-		path?: string,
-	};
+	interface Props {
+		repo: string;
+		rev?: string;
+		commitID?: string;
+		params: any;
+		path?: string;
+	}
 
 	class WithFileBlob extends Container<Props, any> {
 		static contextTypes = {

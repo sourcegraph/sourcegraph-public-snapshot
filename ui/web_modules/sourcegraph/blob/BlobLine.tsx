@@ -60,37 +60,37 @@ function fastInsertRevIntoDefURL(urlNoRev: string, repo: string, rev: string): s
 	return urlNoRev;
 }
 
-type Props = {
-	location: HistoryModule.Location,
-	lineNumber?: number,
-	showLineNumber?: boolean,
+interface Props {
+	location: HistoryModule.Location;
+	lineNumber?: number;
+	showLineNumber?: boolean;
 
-	clickEventLabel?: string,
+	clickEventLabel?: string;
 
 	// Optional: for linking line numbers to the file they came from (e.g., in
 	// ref snippets).
-	repo?: string,
-	rev?: string,
-	commitID?: string,
-	path?: string,
+	repo?: string;
+	rev?: string;
+	commitID?: string;
+	path?: string;
 
-	activeDef: string | null, // the def that the page is about
+	activeDef: string | null; // the def that the page is about
 	activeDefRepo: string | null;
 
 	// startByte is the byte position of the first byte of contents. It is
 	// required if annotations are specified, so that the annotations can
 	// be aligned to the contents.
-	startByte: number,
-	contents?: string,
-	annotations?: any[],
-	selected?: boolean,
-	highlightedDef: string | null,
+	startByte: number;
+	contents?: string;
+	annotations?: any[];
+	selected?: boolean;
+	highlightedDef: string | null;
 	highlightedDefObj: Def | null;
-	className?: string,
-	onMount?: () => void,
-	lineContentClassName?: string,
-	textSize?: string,
-};
+	className?: string;
+	onMount?: () => void;
+	lineContentClassName?: string;
+	textSize?: string;
+}
 
 export class BlobLine extends Component<Props, any> {
 	static contextTypes = {

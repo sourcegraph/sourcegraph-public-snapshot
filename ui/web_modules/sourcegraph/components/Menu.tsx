@@ -5,11 +5,11 @@ import * as classNames from "classnames";
 
 import * as styles from "./styles/menu.css";
 
-type Props = {
-	children?: any,
-	className?: string,
-	style?: any,
-};
+interface Props {
+	children?: any;
+	className?: string;
+	style?: any;
+}
 
 export class Menu extends React.Component<Props, any> {
 	renderMenuItems() {

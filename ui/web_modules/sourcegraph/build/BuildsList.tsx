@@ -23,9 +23,9 @@ import * as btnStyles from "sourcegraph/components/styles/button.css";
 
 const updateIntervalMsec = 30000;
 
-type Props = {
-	params: any,
-};
+interface Props {
+	params: any;
+}
 
 export class BuildsList extends Container<Props, any> {
 	_updateIntervalID: any;

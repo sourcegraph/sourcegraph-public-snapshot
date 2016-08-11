@@ -10,9 +10,9 @@ import * as RepoActions from "sourcegraph/repo/RepoActions";
 
 const reposQuerystring = "RemoteOnly=true";
 
-type Props = {
-	location: any,
-};
+interface Props {
+	location: any;
+}
 
 export class UserSettingsReposMain extends Container<Props, any> {
 	static contextTypes = {

@@ -4,11 +4,11 @@ import * as React from "react";
 
 import {Component} from "sourcegraph/Component";
 
-type Props = {
-	collapsed?: boolean,
-	onToggle?: () => void,
-	children?: React.ReactNode,
-};
+interface Props {
+	collapsed?: boolean;
+	onToggle?: () => void;
+	children?: React.ReactNode;
+}
 
 export class Collapsible extends Component<Props, any> {
 	constructor(props: Props) {

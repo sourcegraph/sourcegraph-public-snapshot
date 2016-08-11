@@ -23,9 +23,9 @@ export class BlobToolbar extends Component<Props, any> {
 	}
 }
 
-type Props = {
-	repo: string,
-	rev?: string,
-	commitID?: string,
-	path?: string,
-};
+interface Props {
+	repo: string;
+	rev?: string;
+	commitID?: string;
+	path?: string;
+}

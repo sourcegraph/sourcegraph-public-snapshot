@@ -7,19 +7,19 @@ import {Label} from "sourcegraph/components/index";
 import {RevSwitcherContainer} from "sourcegraph/repo/RevSwitcherContainer";
 import * as styles from "./styles/Repo.css";
 
-type Props = {
-	repo: string,
-	rev?: string,
-	commitID?: string,
-	inventory?: any,
-	repoNavContext: JSX.Element,
-	repoObj?: any,
-	isCloning: boolean,
+interface Props {
+	repo: string;
+	rev?: string;
+	commitID?: string;
+	inventory?: any;
+	repoNavContext: JSX.Element;
+	repoObj?: any;
+	isCloning: boolean;
 
 	// to pass to RevSwitcherContainer so it can construct URLs
-	routes: any[],
-	routeParams: any,
-};
+	routes: any[];
+	routeParams: any;
+}
 
 export class NavContext extends React.Component<Props, any> {
 	_isLanguageUnsupported(): boolean {

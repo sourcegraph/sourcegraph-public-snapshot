@@ -7,13 +7,13 @@ import {trimRepo} from "sourcegraph/repo/index";
 import * as styles from "./styles/Tree.css";
 import Helmet from "react-helmet";
 
-type Props = {
-	location?: any,
-	repo: string,
-	rev: string,
-	commitID?: string,
-	route?: any,
-	routeParams: any,
+interface Props {
+	location?: any;
+	repo: string;
+	rev: string;
+	commitID?: string;
+	route?: any;
+	routeParams: any;
 };
 
 export class TreeMain extends React.Component<Props, any> {

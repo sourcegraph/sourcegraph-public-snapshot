@@ -4,15 +4,15 @@ import * as React from "react";
 import * as styles from "./styles/heading.css";
 import * as classNames from "classnames";
 
-type Props = {
-	className?: string,
-	children?: any,
-	level?: string, //  1 is the largest
-	underline?: string, // blue, purple, white, orange, green
-	color?: string, // purple, blue, green, orange, cool_mid_gray
-	align?: string, // left, right, center
-	style?: any,
-};
+interface Props {
+	className?: string;
+	children?: any;
+	level?: string; //  1 is the largest
+	underline?: string; // blue, purple, white, orange, green
+	color?: string; // purple, blue, green, orange, cool_mid_gray
+	align?: string; // left, right, center
+	style?: any;
+}
 
 export class Heading extends React.Component<Props, any> {
 	static defaultProps = {

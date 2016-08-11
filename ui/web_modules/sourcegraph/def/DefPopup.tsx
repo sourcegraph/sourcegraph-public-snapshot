@@ -13,13 +13,13 @@ import {RefLocationsList} from "sourcegraph/def/RefLocationsList";
 import {AuthorList} from "sourcegraph/def/AuthorList";
 import {urlToDefInfo} from "sourcegraph/def/routes";
 
-type Props = {
-	def: any,
-	rev?: string,
-	refLocations?: any,
-	path?: string,
-	location?: any,
-};
+interface Props {
+	def: any;
+	rev?: string;
+	refLocations?: any;
+	path?: string;
+	location?: any;
+}
 
 export class DefPopup extends Container<Props, any> {
 	static contextTypes = {

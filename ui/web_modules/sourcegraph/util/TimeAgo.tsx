@@ -41,10 +41,10 @@ export function formatDuration(ms) {
 	return parts.join(" ");
 }
 
-type Props = {
-	time: string,
-	className?: string,
-};
+interface Props {
+	time: string;
+	className?: string;
+}
 
 export class TimeAgo extends Component<Props, any> {
 	render(): JSX.Element | null {

@@ -2,12 +2,12 @@
 
 import * as React from "react";
 
-type Props = {
-	className?: string,
-	width?: string, // appended by "px"
-	height?: string, // appended by "px"
-	icon: string, // See symbols directory
-};
+interface Props {
+	className?: string;
+	width?: string; // appended by "px"
+	height?: string; // appended by "px"
+	icon: string; // See symbols directory
+}
 
 export class Icon extends React.Component<Props, any> {
 	static contextTypes = {

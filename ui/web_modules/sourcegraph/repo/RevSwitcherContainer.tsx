@@ -8,20 +8,20 @@ import "sourcegraph/tree/TreeBackend";
 import {TreeStore} from "sourcegraph/tree/TreeStore";
 import {RevSwitcher} from "sourcegraph/repo/RevSwitcher";
 
-type Props = {
-	repo: string,
-	rev?: string,
-	commitID: string,
-	repoObj?: any,
-	isCloning: boolean,
+interface Props {
+	repo: string;
+	rev?: string;
+	commitID: string;
+	repoObj?: any;
+	isCloning: boolean;
 
 	// srclibDataVersions is TreeStore.srclibDataVersions.
-	srclibDataVersions?: any,
+	srclibDataVersions?: any;
 
 	// to construct URLs
-	routes: any[],
-	routeParams: any,
-};
+	routes: any[];
+	routeParams: any;
+}
 
 // RevSwitcherContainer is for standalone RevSwitchers that need to
 // be able to respond to changes in RepoStore independently.

@@ -4,17 +4,17 @@ import * as React from "react";
 import * as styles from "sourcegraph/components/styles/flexContainer.css";
 import * as classNames from "classnames";
 
-type Props = {
-	direction?: string, // left_right, right_left, top_bottom, bottom_top
-	wrap?: boolean,
-	justify?: string, // start, end, center, between, around
-	items?: string, // start, end, center, baseline, stretch
-	content?: string, // start, end, center, between, stretch
-	className?: string,
-	children?: any,
-	style?: Object,
-	styleName?: string,
-};
+interface Props {
+	direction?: string; // left_right, right_left, top_bottom, bottom_top
+	wrap?: boolean;
+	justify?: string; // start, end, center, between, around
+	items?: string; // start, end, center, baseline, stretch
+	content?: string; // start, end, center, between, stretch
+	className?: string;
+	children?: any;
+	style?: Object;
+	styleName?: string;
+}
 
 export class FlexContainer extends React.Component<Props, any> {
 	static defaultProps = {

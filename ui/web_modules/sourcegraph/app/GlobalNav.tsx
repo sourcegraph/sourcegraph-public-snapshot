@@ -35,13 +35,13 @@ const hiddenNavRoutes = new Set([
 	"/styleguide",
 ]);
 
-type GlobalNavProps = {
-	navContext?: JSX.Element,
-	location: any,
-	params: any,
-	channelStatusCode?: number,
-	role?: string,
-};
+interface GlobalNavProps {
+	navContext?: JSX.Element;
+	location: any;
+	params: any;
+	channelStatusCode?: number;
+	role?: string;
+}
 
 export function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavProps, {user, signedIn, router, eventLogger}) {
 	const isHomepage = location.pathname === "/";
@@ -206,12 +206,12 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 
 // TODO(chexee): Move all these components to their own directory.
 
-type SearchFormProps = {
-	repo: string | null,
-	location: any,
-	router: any,
-	showResultsPanel: boolean,
-};
+interface SearchFormProps {
+	repo: string | null;
+	location: any;
+	router: any;
+	showResultsPanel: boolean;
+}
 
 class SearchForm extends React.Component<SearchFormProps, any> {
 	_container: HTMLElement;

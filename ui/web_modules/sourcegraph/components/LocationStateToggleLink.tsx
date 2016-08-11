@@ -6,29 +6,29 @@ import * as React from "react";
 function isLeftClickEvent(ev) { return ev.button === 0; }
 function isModifiedEvent(ev) { return Boolean(ev.metaKey || ev.altKey || ev.ctrlKey || ev.shiftKey); }
 
-type Props = {
-	location: any,
+interface Props {
+	location: any;
 
 	// modalName is the name of the modal (location.state.modal value) that this
 	// LocationStateToggleLink component toggles.
-	modalName: string,
+	modalName: string;
 
 	// href is the URL used if the user opens the link in
 	// a new tab or copies the link.
-	href?: string,
+	href?: string;
 
 	// onToggle is called when the link is toggled ON.
-	onToggle?: (v: boolean) => void,
+	onToggle?: (v: boolean) => void;
 
 	// target is the <a target=""> attribute value.
-	target?: string,
+	target?: string;
 
-	children?: any,
+	children?: any;
 
-	role?: string,
+	role?: string;
 
-	[key: string]: any,
-};
+	[key: string]: any;
+}
 
 // LocationStateToggleLink is like react-router's <Link>, but instead of going
 // to a new URL, it merely toggles a boolean field on the location's state.

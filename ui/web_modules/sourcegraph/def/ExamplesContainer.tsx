@@ -12,16 +12,16 @@ import {Panel, Heading, Loader} from "sourcegraph/components/index";
 import "whatwg-fetch";
 import * as classNames from "classnames";
 
-type Props = {
-	location: HistoryModule.Location,
-	repo: string,
-	rev?: string,
-	commitID?: string,
-	def: string,
-	defObj?: any,
-	className?: string,
-	examples?: any,
-};
+interface Props {
+	location: HistoryModule.Location;
+	repo: string;
+	rev?: string;
+	commitID?: string;
+	def: string;
+	defObj?: any;
+	className?: string;
+	examples?: any;
+}
 
 export class ExamplesContainer extends Container<Props, any> {
 	constructor(props: Props) {

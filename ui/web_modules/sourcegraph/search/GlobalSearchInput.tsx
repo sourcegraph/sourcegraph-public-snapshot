@@ -41,7 +41,16 @@ function positionCursorAtEndIfIconClicked(ev: MouseEvent) {
 	input.focus();
 }
 
-export function GlobalSearchInput(props) {
+interface Props {
+	query: string;
+	icon?: boolean; // whether to show a magnifying glass icon
+	border?: boolean;
+	className?: string;
+
+	[key: string]: any;
+}
+
+export function GlobalSearchInput(props: Props) {
 	// Omit styles prop so we don't clobber Input's own style mapping.
 	const passProps = Object.assign({}, props, {className: undefined, styles: undefined}); // eslint-disable-line no-undefined
 
@@ -66,9 +75,3 @@ export function GlobalSearchInput(props) {
 		</div>
 	);
 }
-type Props = {
-	query: string,
-	icon?: boolean, // whether to show a magnifying glass icon
-	border?: boolean,
-	className?: string,
-};

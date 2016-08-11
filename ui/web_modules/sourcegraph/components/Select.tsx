@@ -7,18 +7,18 @@ import * as base from "./styles/_base.css";
 import * as styles from "./styles/select.css";
 import {DownPointer, Alert} from "./symbols/index";
 
-type Props = {
-	block?: boolean,
-	className?: string,
-	children?: any,
-	label?: string,
-	placeholder?: string,
-	helperText?: string,
-	error?: boolean,
-	errorText?: string,
-	style?: any,
-	defaultValue?: string,
-};
+interface Props {
+	block?: boolean;
+	className?: string;
+	children?: any;
+	label?: string;
+	placeholder?: string;
+	helperText?: string;
+	error?: boolean;
+	errorText?: string;
+	style?: any;
+	defaultValue?: string;
+}
 
 export class Select extends React.Component<Props, any> {
 	static defaultProps = {

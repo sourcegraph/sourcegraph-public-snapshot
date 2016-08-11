@@ -4,12 +4,12 @@ import * as React from "react";
 import * as styles from "sourcegraph/components/styles/hero.css";
 import * as classNames from "classnames";
 
-type Props = {
-	className?: string,
-	pattern?: string,
-	color?: string, // white, purple, blue, green, dark
-	children?: any,
-};
+interface Props {
+	className?: string;
+	pattern?: string;
+	color?: string; // white, purple, blue, green, dark
+	children?: any;
+}
 
 export class Hero extends React.Component<Props, any> {
 	render(): JSX.Element | null {

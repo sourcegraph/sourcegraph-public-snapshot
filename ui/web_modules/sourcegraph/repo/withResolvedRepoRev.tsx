@@ -17,10 +17,10 @@ import {repoPath, repoRev, repoParam} from "sourcegraph/repo/index";
 // and could lead to multiple WantCreateRepo, etc., actions being sent
 // to the server).
 export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
-	type Props = {
-		params: any,
-		location: HistoryModule.Location,
-	};
+	interface Props {
+		params: any;
+		location: HistoryModule.Location;
+	}
 
 	isMainComponent = Boolean(isMainComponent);
 	class WithResolvedRepoRev extends Container<Props, any> {

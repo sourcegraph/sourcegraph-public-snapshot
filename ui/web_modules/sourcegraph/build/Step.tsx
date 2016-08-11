@@ -14,6 +14,11 @@ import * as styles from "./styles/Build.css";
 
 const updateLogIntervalMsec = 1500;
 
+interface Props {
+	task: any;
+	logs: any;
+}
+
 export class Step extends Component<Props, any> {
 	_updateLogIntervalID: any;
 
@@ -93,8 +98,3 @@ export class Step extends Component<Props, any> {
 		);
 	}
 }
-
-type Props = {
-	task: any,
-	logs: any,
-};

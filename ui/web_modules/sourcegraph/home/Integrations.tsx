@@ -31,9 +31,9 @@ const otherTools = [
 	new Tool("Chrome", "/img/Dashboard/google-chrome.svg", "https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack"),
 ];
 
-type Props = {
-	location: any,
-};
+interface Props {
+	location: any;
+}
 
 export class Integrations extends Component<Props, any> {
 	static contextTypes = {
