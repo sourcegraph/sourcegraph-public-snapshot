@@ -103,6 +103,24 @@ export class SelectDef {
 
 export type BlobPos = {repo: string, commit: string, file: string, line: number, character: number};
 
+export class WantJumpDef {
+	pos: BlobPos;
+
+	constructor(pos: BlobPos) {
+		this.pos = pos;
+	}
+}
+
+export class JumpDefFetched {
+	pos: BlobPos;
+	def: any;
+
+	constructor(pos: BlobPos, def: any) {
+		this.pos = pos;
+		this.def = def;
+	}
+}
+
 export class Hovering {
 	pos: BlobPos | null;
 

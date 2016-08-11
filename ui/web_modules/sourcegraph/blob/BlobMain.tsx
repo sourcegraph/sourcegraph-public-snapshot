@@ -38,7 +38,7 @@ type Props = {
 	endLine?: number,
 	endCol?: number,
 	endByte?: number,
-	location?: any,
+	location: HistoryModule.Location,
 };
 
 export class BlobMain extends Container<Props, any> {
@@ -100,7 +100,7 @@ export class BlobMain extends Container<Props, any> {
 		if (action instanceof BlobActions.SelectLine) {
 			this._navigate(action.repo, action.rev, action.path, action.line ? `L${action.line}` : null);
 		} else if (action instanceof BlobActions.SelectLineRange) {
-			let pos = this.props.location.hash ? parseLineRange(this.props.location.hash.replace(/^#L/, "")) : null;
+			let pos = (this.props.location as any).hash ? parseLineRange((this.props.location as any).hash.replace(/^#L/, "")) : null;
 			const startLine = Math.min(pos ? pos.startLine : action.line, action.line);
 			const endLine = Math.max(pos ? (pos.endLine || pos.startLine) : action.line, action.line);
 			this._navigate(action.repo, action.rev, action.path, startLine && endLine ? `L${lineRange(startLine, endLine)}` : null);
@@ -115,7 +115,7 @@ export class BlobMain extends Container<Props, any> {
 
 		// Replace the URL if we're just changing the hash. If we're changing
 		// more (e.g., from a def URL to a blob URL), then push.
-		const replace = this.props.location.pathname === url;
+		const replace = (this.props.location as any).pathname === url;
 		if (hash) {
 			url = `${url}#${hash}`;
 		}
@@ -152,7 +152,6 @@ export class BlobMain extends Container<Props, any> {
 		if (this.state.defObj && !this.state.defObj.Error && defTitleOK(this.state.defObj)) {
 			title = `${defTitle(this.state.defObj)} · ${title}`;
 		}
-
 		return (
 			<div className={Style.container}>
 				{title && <Helmet title={title} />}
@@ -165,10 +164,11 @@ export class BlobMain extends Container<Props, any> {
 					{(!this.state.blob || (this.state.blob && !this.state.blob.Error && !this.state.skipAnns && !this.state.anns)) && <BlobContentPlaceholder />}
 					{this.state.blob && !this.state.blob.Error && typeof this.state.blob.ContentsString !== "undefined" && (this.state.skipAnns || (this.state.anns && !this.state.anns.Error)) &&
 					<Blob
+						startlineCallback = {node => this.setState({selectionStartLine: node})}
+						location={this.props.location}
 						repo={this.state.repo}
 						rev={this.state.rev}
 						commitID={this.state.commitID}
-						ref={(c) => { this.setState({selectionStartLine: (c && c.refs && c.refs["startLineComponent"]) ? c.refs["startLineComponent"] : null}); }}
 						path={this.state.path}
 						contents={this.state.blob.ContentsString}
 						annotations={this.state.anns}

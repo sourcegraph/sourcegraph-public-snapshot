@@ -13,6 +13,7 @@ import "whatwg-fetch";
 import * as classNames from "classnames";
 
 type Props = {
+	location: HistoryModule.Location,
 	repo: string,
 	rev?: string,
 	commitID?: string,
@@ -32,6 +33,7 @@ export class ExamplesContainer extends Container<Props, any> {
 	}
 
 	reconcileState(state, props) {
+		state.location = props.location || null;
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
 		state.def = props.def || null;
@@ -57,6 +59,7 @@ export class ExamplesContainer extends Container<Props, any> {
 						{!refLocs && <div className={typography.tc}> <Loader /></div>}
 						{refLocs && !refLocs.RepoRefs && <i>No examples found</i>}
 						{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <RefsContainer
+							location={this.state.location}
 							key={i}
 							refIndex={i}
 							repo={this.props.repo}

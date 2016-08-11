@@ -9,16 +9,26 @@ const context = {
 	user: null,
 };
 
+const location = {
+			hash: "",
+			key: "",
+			pathname: "",
+			search: "",
+			action: "",
+			query: {},
+			state: {},
+};
+
 describe("RefsContainer", () => {
 	it("should render initially", () => {
-		render(<RefsContainer repoRefs={{Repo: "github.com/gorilla/mux", Files: []}} />, context);
+		render(<RefsContainer location={location} repoRefs={{Repo: "github.com/gorilla/mux", Files: []}} />, context);
 	});
 
 	it("should render if the refs failed ", () => {
-		render(<RefsContainer repoRefs={{Repo: "github.com/gorilla/mux", Files: []}} defObj={{File: "foo.go"}} refs={{Error: true}} />, context);
+		render(<RefsContainer location={location} repoRefs={{Repo: "github.com/gorilla/mux", Files: []}} defObj={{File: "foo.go"}} refs={{Error: true}} />, context);
 	});
 
 	it("should render if the def and refs loaded", () => {
-		render(<RefsContainer repoRefs={{Repo: "github.com/gorilla/mux", Files: []}} defObj={{}} refs={[{Repo: "repo", CommitID: "commit"}]} />, context);
+		render(<RefsContainer location={location} repoRefs={{Repo: "github.com/gorilla/mux", Files: []}} defObj={{}} refs={[{Repo: "repo", CommitID: "commit"}]} />, context);
 	});
 });

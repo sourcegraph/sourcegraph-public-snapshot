@@ -14,32 +14,47 @@ import testdataLineSelection from "sourcegraph/blob/testdata/BlobLine-selection.
 const context = {
 	eventLogger: {logEvent: () => null},
 };
+const common = {
+	location: {
+			hash: "",
+			key: "",
+			pathname: "",
+			search: "",
+			action: "",
+			query: {},
+			state: {},
+		},
+	startByte: 0,
+	highlightedDefObj: null,
+	activeDef: null,
+	activeDefRepo: null,
+};
 
 describe("BlobLine", () => {
 	it("should render", () => {
 		autotest(testdataContents, "sourcegraph/blob/testdata/BlobLine-contents.json",
-			<BlobLine contents={"hello\nworld"} startByte={0} highlightedDef="secondURL" highlightedDefObj={null} activeDef={null} activeDefRepo={null} />,
+			<BlobLine {...common} contents={"hello\nworld"} highlightedDef="secondURL" />,
 			context
 		);
 	});
 
 	it("should render empty", () => {
 		autotest(testdataEmpty, "sourcegraph/blob/testdata/BlobLine-empty.json",
-			<BlobLine contents={"hello\nworld"} startByte={0} highlightedDef={null} highlightedDefObj={null} activeDef={null} activeDefRepo={null} />,
+			<BlobLine {...common} contents={"hello\nworld"} highlightedDef={null} />,
 			context
 		);
 	});
 
 	it("should render line number", () => {
 		autotest(testdataLineNumber, "sourcegraph/blob/testdata/BlobLine-lineNumber.json",
-			<BlobLine lineNumber={42} repo="r" rev="v" path="p" contents={"hello\nworld"} startByte={0} highlightedDef={null} highlightedDefObj={null} activeDef={null} activeDefRepo={null} />,
+			<BlobLine {...common} lineNumber={42} repo="r" rev="v" path="p" contents={"hello\nworld"} highlightedDef={null} />,
 			context
 		);
 	});
 
 	it("should render selection", () => {
 		autotest(testdataLineSelection, "sourcegraph/blob/testdata/BlobLine-selection.json",
-			<BlobLine contents={"hello\nworld"} startByte={0} selected={true} highlightedDef={null} highlightedDefObj={null} activeDef={null} activeDefRepo={null} />,
+			<BlobLine {...common} contents={"hello\nworld"} selected={true} highlightedDef={null} />,
 			context
 		);
 	});

@@ -37,6 +37,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 const DESCRIPTION_CHAR_CUTOFF = 500;
 
 type Props = {
+	location: HistoryModule.Location,
 	repo?: string,
 	repoObj?: any,
 	def: string,
@@ -140,6 +141,7 @@ export class DefInfo extends Container<Props, any> {
 	}
 
 	reconcileState(state, props) {
+		state.location = props.location || null;
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
 		state.def = props.def || null;
@@ -266,6 +268,7 @@ export class DefInfo extends Container<Props, any> {
 									<tbody>
 										{defLine &&
 											<BlobLine
+												location={this.state.location}
 												clickEventLabel="DefTitleTokenClicked"
 												repo={repo}
 												rev={rev}
@@ -341,6 +344,7 @@ export class DefInfo extends Container<Props, any> {
 											{examples &&
 												<div className={base.mt5}>
 													<ExamplesContainer
+														location={this.state.location}
 														repo={repo}
 														rev={rev}
 														def={def}
@@ -352,7 +356,6 @@ export class DefInfo extends Container<Props, any> {
 												<RepoRefsContainer
 													repo={repo}
 													rev={rev}
-													commitID={defCommitID}
 													def={def}
 													defObj={defObj}
 													refLocations={refLocations} />

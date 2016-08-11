@@ -61,6 +61,7 @@ function fastInsertRevIntoDefURL(urlNoRev: string, repo: string, rev: string): s
 }
 
 type Props = {
+	location: HistoryModule.Location,
 	lineNumber?: number,
 	showLineNumber?: boolean,
 
@@ -192,6 +193,13 @@ export class BlobLine extends Component<Props, any> {
 			// otherwise incorrect DOM is built (a > .. > a)
 			if (annURLs && annRevURLs && !this._hasLink(content)) {
 				let isHighlighted = annURLs.includes(this.state.highlightedDef);
+				let annotationPos = {
+					repo: this.state.repo,
+					commit: this.state.commitID,
+					file: this.state.path,
+					line: this.state.lineNumber - 1,
+					character: ann.StartByte - this.state.startByte,
+				};
 				return (
 					<Link
 						className={classNames(ann.Class, {
@@ -202,8 +210,12 @@ export class BlobLine extends Component<Props, any> {
 
 							[s.activeAnn]: annURLs.includes(this.state.activeDefURL),
 						})}
-						to={annRevURLs[0]}
-						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.Hovering({repo: this.state.repo, commit: this.state.commitID, file: this.state.path, line: this.state.lineNumber - 1, character: ann.StartByte - this.state.startByte}))}
+						to={{
+							query: annotationPos,
+							pathname: (this.props.location as any).pathname,
+							state: (this.props.location as any).state,
+						}}
+						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.Hovering(annotationPos))}
 						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.Hovering(null))}
 						onClick={(ev) => {
 							(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, this.state.clickEventLabel, {repo: this.state.repo, path: this.state.path, active_def_url: this.state.activeDefURL});

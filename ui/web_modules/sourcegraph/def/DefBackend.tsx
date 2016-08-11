@@ -139,6 +139,20 @@ export const DefBackend = {
 				}
 				break;
 			}
+
+		case DefActions.WantJumpDef:
+			{
+				let rev = action.pos.commit ? `@${action.pos.commit}` : "";
+				let url = `/.api/repos/${action.pos.repo}${rev}/-/jump-def?file=${action.pos.file}&line=${action.pos.line}&character=${action.pos.character}`;
+				DefBackend.fetch(url)
+					.then(checkStatus)
+					.then((resp) => resp.json())
+					.catch((err) => ({Error: err}))
+					.then((data) => {
+						Dispatcher.Stores.dispatch(new DefActions.JumpDefFetched(action.pos, data));
+					});
+				break;
+			}
 		}
 	},
 };

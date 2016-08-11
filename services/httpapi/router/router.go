@@ -37,6 +37,7 @@ const (
 	DeltaFiles               = "delta.files"
 	GlobalSearch             = "global.search"
 	Repo                     = "repo"
+	RepoJumpDef              = "repo.jump-def"
 	RepoResolve              = "repo.resolve"
 	RepoCreate               = "repo.create"
 	RepoRefresh              = "repo.refresh"
@@ -122,6 +123,7 @@ func New(base *mux.Router) *mux.Router {
 	repoRev.Path("/tree-search").Methods("GET").Name(RepoTreeSearch)
 	repoRev.Path("/tree{Path:.*}").Name(RepoTree)
 	repoRev.Path("/hover-info").Methods("GET").Name(RepoHoverInfo)
+	repoRev.Path("/jump-def").Methods("GET").Name(RepoJumpDef)
 	repo.Path("/tags").Methods("GET").Name(RepoTags)
 
 	repo.Path("/builds").Methods("GET").Name(RepoBuilds)

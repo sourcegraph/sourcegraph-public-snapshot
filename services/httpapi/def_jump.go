@@ -1,0 +1,65 @@
+package httpapi
+
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/srclib/graph"
+)
+
+func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
+	ctx, cl := handlerutil.Client(r)
+
+	_, repoRev, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+	if err != nil {
+		return err
+	}
+
+	file := r.URL.Query().Get("file")
+
+	line, err := strconv.Atoi(r.URL.Query().Get("line"))
+	if err != nil {
+		return err
+	}
+
+	character, err := strconv.Atoi(r.URL.Query().Get("character"))
+	if err != nil {
+		return err
+	}
+
+	defSpec, err := cl.Annotations.GetDefAtPos(ctx, &sourcegraph.AnnotationsGetDefAtPosOptions{
+		Entry: sourcegraph.TreeEntrySpec{
+			RepoRev: repoRev,
+			Path:    file,
+		},
+		Line:      uint32(line),
+		Character: uint32(character),
+	})
+	if err != nil {
+		return err
+	}
+	// We still need the string name (not the UID) of the repository to send back.
+	def, err := cl.Defs.Get(ctx,
+		&sourcegraph.DefsGetOp{
+			Def: sourcegraph.DefSpec{
+				Repo:     defSpec.Repo,
+				CommitID: defSpec.CommitID,
+				UnitType: defSpec.UnitType,
+				Unit:     defSpec.Unit,
+				Path:     defSpec.Path},
+			Opt: nil})
+	if err != nil {
+		return err
+	}
+
+	graphKey := graph.DefKey{Repo: def.Repo, CommitID: def.CommitID, UnitType: def.UnitType, Unit: def.Unit, Path: def.Path}
+
+	return writeJSON(w, &struct {
+		Path string `json:"path"`
+	}{router.Rel.URLToDefKey(graphKey).String()})
+}

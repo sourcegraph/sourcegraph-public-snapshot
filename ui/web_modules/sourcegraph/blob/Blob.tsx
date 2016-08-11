@@ -1,4 +1,4 @@
-// tslint:disable: typedef ordered-imports
+// tslint:disable:typedef ordered-imports no-empty
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -17,8 +17,11 @@ import {annotationsByLine} from "sourcegraph/blob/annotationsByLine";
 import * as s from "sourcegraph/blob/styles/Blob.css";
 import {Def} from "sourcegraph/def/index";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {withJumpToDefRedirect} from "sourcegraph/blob/withJumpToDefRedirect";
 
-type Props = {
+export type Props = {
+	startlineCallback?: any,
+	location: HistoryModule.Location,
 	contents?: string,
 	textSize?: string,
 	annotations?: {
@@ -70,14 +73,20 @@ type Props = {
 	displayRanges?: any;
 };
 
-export class Blob extends Component<Props, any> {
+// BlobTestOnly should only be used on its own for testing purposes. Normally, 
+// you should be using Blob that's at the bottom of this file. 
+export class BlobTestOnly extends Component<Props, any> {
+
 	static contextTypes = {
+		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	_isMounted: boolean;
 
 	state: {
+		startlineCallback: any,
+		location: HistoryModule.Location,
 		repo: string;
 		rev: string;
 		commitID: string;
@@ -107,6 +116,16 @@ export class Blob extends Component<Props, any> {
 		displayRanges: any;
 		dispatchSelections: any;
 	} = {
+		startlineCallback: x => {},
+		location: {
+			hash: "",
+			key: "",
+			pathname: "",
+			search: "",
+			action: "",
+			query: {},
+			state: {},
+		},
 		repo: "",
 		rev: "",
 		commitID: "",
@@ -157,7 +176,6 @@ export class Blob extends Component<Props, any> {
 				this._scrollTo(this.state.startLine);
 			}
 		}, 0);
-
 		document.addEventListener("selectionchange", this._handleSelectionChange);
 		this._isMounted = true;
 	}
@@ -168,6 +186,7 @@ export class Blob extends Component<Props, any> {
 	}
 
 	reconcileState(state, props) {
+		state.startlineCallback = props.startlineCallback || (x => {});
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
 		state.commitID = props.commitID || null;
@@ -245,7 +264,6 @@ export class Blob extends Component<Props, any> {
 		if (ranges.length === 0) {
 			return null;
 		}
-
 		ranges = ranges.sort((a, b) => {
 			if (a[0] < b[0]) {
 				return -1;
@@ -442,7 +460,8 @@ export class Blob extends Component<Props, any> {
 			lines.push(
 				<BlobLine
 					onMount={this.state.scrollTarget && this.state.scrollTarget === i && this.state.scrollCallback ? this.state.scrollCallback : null}
-					ref={this.state.startLine === lineNumber ? "startLineComponent" : undefined}
+					location={this.props.location}
+					ref={this.state.startLine === lineNumber ? this.state.startlineCallback : undefined}
 					repo={this.state.repo}
 					rev={this.state.rev}
 					commitID={this.state.commitID}
@@ -481,3 +500,6 @@ export class Blob extends Component<Props, any> {
 		);
 	}
 }
+
+let blob = withJumpToDefRedirect(BlobTestOnly);
+export {blob as Blob};

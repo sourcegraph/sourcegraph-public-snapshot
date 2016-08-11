@@ -4,6 +4,7 @@ import * as React from "react";
 import * as classNames from "classnames";
 
 import {Blob} from "sourcegraph/blob/Blob";
+
 import {BlobStore, keyForFile, keyForAnns} from "sourcegraph/blob/BlobStore";
 import {BlobContentPlaceholder} from "sourcegraph/blob/BlobContentPlaceholder";
 import {Container} from "sourcegraph/Container";
@@ -31,6 +32,7 @@ import {FaThumbsUp, FaThumbsDown} from "sourcegraph/components/Icons";
 const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above/below a ref
 
 type Props = {
+	location: HistoryModule.Location,
 	repo?: string,
 	rev?: string,
 	commitID?: string,
@@ -93,6 +95,7 @@ export class RefsContainer extends Container<Props, any> {
 	}
 
 	reconcileState(state, props) {
+		state.location = props.location || null;
 		if (typeof state.showAllFiles === "undefined") {
 			state.showAllFiles = false;
 		}
@@ -343,6 +346,7 @@ export class RefsContainer extends Container<Props, any> {
 										</div>}
 										<div className={styles.refs}>
 											<Blob
+												location={this.state.location}
 												repo={this.state.refRepo}
 												rev={this.state.refRev}
 												commitID={this.state.commitID}
