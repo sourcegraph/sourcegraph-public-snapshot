@@ -45,7 +45,7 @@ type GlobalNavProps = {
 
 export function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavProps, {user, signedIn, router, eventLogger}) {
 	const isHomepage = location.pathname === "/";
-	const shouldHide = hiddenNavRoutes.has(location.pathname);
+	const shouldHide = hiddenNavRoutes.has(location.pathname) || !user;
 	const isStaticPage = isPage(location.pathname);
 
 	const showLogoMarkOnly = !isStaticPage || user;
@@ -59,7 +59,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 			id="global-nav"
 			className={classNames(styles.navbar, colors.shadow_gray)}
 			role="navigation"
-			style={shouldHide ? {visibility: "hidden"} : {}}>
+			style={shouldHide ? {display: "none"} : {}}>
 
 			{location.state && location.state.modal === "login" &&
 			// TODO(chexee): Decouple existence of modals and GlobalNav
