@@ -5,22 +5,20 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 )
 
-const (
-	Go   Language = "Go"
-	Java Language = "Java"
-)
+// Prefix for environment variables referring to language processor configuration
+const envLanguageProcessorPrefix = "SG_LANGUAGE_PROCESSOR_"
 
-// Language represents a programming language.
-type Language string
-
-// extToLanguage is a map of file extensions to their respective language.
-var extToLanguage = map[string]Language{
-	".go":   Go,
-	".java": Java,
+// Maps real language name to canonical one, that can be used in environment variable names.
+// For example C++ => CPP
+var languageNameMap = map[string]string{
+	"C++":         "CPP",
+	"Objective-C": "OBJECTIVEC",
 }
 
 // DefaultClient is the default language processor client.
@@ -32,17 +30,22 @@ func init() {
 	}
 
 	newClient := func(v string) *Client {
-		client, err := NewClient(os.Getenv(v))
+		client, err := NewClient(v)
 		if err != nil {
 			log.Fatalf("$%s %v", v, err)
 		}
 		return client
 	}
+	clients := make(map[string]*Client)
+	for _, env := range os.Environ() {
+		parts := strings.SplitN(env, "=", 2)
+		lang := lpEnvLanguage(parts[0])
+		if lang != "" {
+			clients[lang] = newClient(parts[1])
+		}
+	}
 	DefaultClient = &MultiClient{
-		Clients: map[Language]*Client{
-			Go:   newClient("SG_GO_LANGUAGE_PROCESSOR"),
-			Java: newClient("SG_JAVA_LANGUAGE_PROCESSOR"),
-		},
+		Clients: clients,
 	}
 }
 
@@ -51,7 +54,7 @@ func init() {
 // on the request / which langauge the source file is.
 type MultiClient struct {
 	// Clients is a map of languages to their respective clients.
-	Clients map[Language]*Client
+	Clients map[string]*Client
 }
 
 // Prepare invokes Prepare on each underlying client returning the first error
@@ -67,15 +70,19 @@ func (mc *MultiClient) Prepare(r *RepoRev) error {
 
 // find finds the client related to the file extension for filename.
 func (mc *MultiClient) find(filename string) (*Client, error) {
-	language, ok := extToLanguage[filepath.Ext(filename)]
-	if !ok {
-		return nil, fmt.Errorf("MultiClient: no language registered for extension %q", filepath.Ext(filename))
+	candidates := filelang.Langs.ByFilename(filename)
+	for _, candidate := range candidates {
+		normalized, ok := languageNameMap[candidate.Name]
+		if !ok {
+			normalized = candidate.Name
+		}
+		normalized = strings.ToUpper(normalized)
+		client, ok := mc.Clients[normalized]
+		if ok {
+			return client, nil
+		}
 	}
-	client, ok := mc.Clients[language]
-	if !ok {
-		return nil, fmt.Errorf("MultiClient: no client registered for language %s", language)
-	}
-	return client, nil
+	return nil, fmt.Errorf("MultiClient: no client registered for extension %q", filepath.Ext(filename))
 }
 
 // Definition invokes Definition on the client whose language matches p.File.
@@ -131,4 +138,13 @@ func (mc *MultiClient) ExportedSymbols(r *RepoRev) (*ExportedSymbols, error) {
 		result.Defs = append(result.Defs, v.Defs...)
 	}
 	return result, nil
+}
+
+// lpEnvLanguage tries to extract language name from environment variable name
+// which is supposed to be in form PREFIX_LANG
+func lpEnvLanguage(key string) string {
+	if !strings.HasPrefix(key, envLanguageProcessorPrefix) {
+		return ""
+	}
+	return key[len(envLanguageProcessorPrefix):]
 }
