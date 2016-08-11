@@ -17,7 +17,7 @@ const updateLogIntervalMsec = 1500;
 export class Step extends Component<Props, any> {
 	_updateLogIntervalID: any;
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this.state = {
 			task: null,
@@ -52,7 +52,7 @@ export class Step extends Component<Props, any> {
 		}
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		if (state.task !== props.task) {
 			state.task = props.task;
 

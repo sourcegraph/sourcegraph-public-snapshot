@@ -15,7 +15,7 @@ type Props = {
 };
 
 export class TopLevelTask extends Component<Props, any> {
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		if (state.task !== props.task) {
 			state.task = props.task;
 		}

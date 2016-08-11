@@ -31,6 +31,7 @@ type Props = {
 	path?: string,
 	blob?: any,
 	anns?: any,
+	def?: any,
 	skipAnns?: boolean,
 	startLine?: number,
 	startCol?: number,
@@ -39,6 +40,7 @@ type Props = {
 	endCol?: number,
 	endByte?: number,
 	location: HistoryModule.Location,
+	children?: React.ReactNode,
 };
 
 export class BlobMain extends Container<Props, any> {
@@ -48,7 +50,7 @@ export class BlobMain extends Container<Props, any> {
 
 	_dispatcherToken: string;
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this.state = {
 			selectionStartLine: null,
@@ -66,7 +68,7 @@ export class BlobMain extends Container<Props, any> {
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		state.repo = props.repo;
 		state.rev = props.rev || null;
 		state.commitID = props.commitID || null;

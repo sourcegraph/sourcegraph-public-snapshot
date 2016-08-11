@@ -27,7 +27,7 @@ export function withJumpToDefRedirect(Blob) {
 			Dispatcher.Stores.unregister(this._dispatcherToken);
 		}
 
-		reconcileState(state, props) {
+		reconcileState(state, props: Props) {
 			Object.assign(state, props);
 			if (props.location && props.location.query) {
 					let {line, character, file, commit, repo} = props.location.query;

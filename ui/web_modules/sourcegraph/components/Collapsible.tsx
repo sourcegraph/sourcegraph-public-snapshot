@@ -4,11 +4,17 @@ import * as React from "react";
 
 import {Component} from "sourcegraph/Component";
 
+type Props = {
+	collapsed?: boolean,
+	onToggle?: () => void,
+	children?: React.ReactNode,
+};
+
 export class Collapsible extends Component<Props, any> {
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 
-		if (props.children.length !== 2) {
+		if (!(props.children instanceof Array) || props.children.length !== 2) {
 			throw new Error("Collapsible must be constructed with exactly two children.");
 		}
 
@@ -18,7 +24,7 @@ export class Collapsible extends Component<Props, any> {
 		this._onClick = this._onClick.bind(this);
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		Object.assign(state, props);
 	}
 
@@ -38,8 +44,3 @@ export class Collapsible extends Component<Props, any> {
 		);
 	}
 }
-
-type Props = {
-	collapsed?: boolean,
-	onToggle?: () => void,
-};

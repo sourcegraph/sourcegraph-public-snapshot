@@ -26,7 +26,7 @@ export function withDef(Component) {
 	class WithDef extends Container<Props, any> {
 		stores() { return [DefStore, RepoStore]; }
 
-		reconcileState(state, props) {
+		reconcileState(state, props: Props) {
 			Object.assign(state, props);
 
 			if (!props.def) {

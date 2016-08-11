@@ -29,7 +29,7 @@ export class DashboardContainer extends Container<Props, any> {
 
 	_input: any;
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this.state = {
 			isTyping: false,

@@ -38,7 +38,7 @@ export class BetaInterestForm extends Container<Props, any> {
 	_languages: any;
 	_message: any;
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this._onChange = this._onChange.bind(this);
 	}
@@ -58,7 +58,7 @@ export class BetaInterestForm extends Container<Props, any> {
 
 	stores() { return [UserStore]; }
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		Object.assign(state, props);
 
 		if ((this.context as any).authInfo) {

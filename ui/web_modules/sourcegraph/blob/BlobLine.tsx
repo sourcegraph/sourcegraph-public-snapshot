@@ -103,7 +103,7 @@ export class BlobLine extends Component<Props, any> {
 		}
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
 		state.commitID = props.commitID || null;
@@ -131,9 +131,9 @@ export class BlobLine extends Component<Props, any> {
 		}
 
 		// Filter to improve perf.
-		state.highlightedDef = state.ownAnnURLs && state.ownAnnURLs[props.highlightedDef] ? props.highlightedDef : null;
+		state.highlightedDef = (props.highlightedDef && state.ownAnnURLs && state.ownAnnURLs[props.highlightedDef]) ? props.highlightedDef : null;
 		state.highlightedDefObj = state.highlightedDef ? props.highlightedDefObj : null;
-		const activeDefURL = fastURLToRepoDef(props.activeDefRepo || state.repo, null, props.activeDef);
+		const activeDefURL = props.activeDef && fastURLToRepoDef(props.activeDefRepo || state.repo, null, props.activeDef);
 		state.activeDefURL = activeDefURL && state.ownAnnURLs && state.ownAnnURLs[activeDefURL] ? activeDefURL : null;
 
 		state.lineNumber = props.lineNumber || null;

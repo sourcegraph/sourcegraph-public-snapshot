@@ -10,7 +10,7 @@ type ModalProps = {
 };
 
 class ModalComp extends React.Component<ModalProps, any> {
-	constructor(props) {
+	constructor(props: ModalProps) {
 		super(props);
 		this._onClick = this._onClick.bind(this);
 		this._handleKeydown = this._handleKeydown.bind(this);

@@ -46,7 +46,7 @@ export class RevSwitcher extends Component<Props, any> {
 	_debouncedSetQuery: any;
 	_wrapper: any;
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this.state = {
 			open: false,
@@ -75,7 +75,7 @@ export class RevSwitcher extends Component<Props, any> {
 		}
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		Object.assign(state, props);
 
 		state.srclibDataVersion = state.srclibDataVersions ? state.srclibDataVersions.get(state.repo, state.commitID) : null;

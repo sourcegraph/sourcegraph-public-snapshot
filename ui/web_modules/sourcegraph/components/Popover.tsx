@@ -7,11 +7,17 @@ import {Component} from "sourcegraph/Component";
 
 import * as styles from "./styles/popover.css";
 
+type Props = {
+	left?: boolean, // position popover content to the left (default: right)
+	popoverClassName?: string,
+	children?: React.ReactNode,
+};
+
 export class Popover extends Component<Props, any> {
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 
-		if (props.children.length !== 2) {
+		if (!(props.children instanceof Array) || props.children.length !== 2) {
 			throw new Error("Popover must be constructed with exactly two children.");
 			// TODO(chexee): make this accomodate multiple lengths!
 		}
@@ -34,7 +40,7 @@ export class Popover extends Component<Props, any> {
 		}
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		Object.assign(state, props);
 	}
 
@@ -66,8 +72,3 @@ export class Popover extends Component<Props, any> {
 		);
 	}
 }
-
-type Props = {
-	left?: boolean, // position popover content to the left (default: right)
-	popoverClassName?: string,
-};

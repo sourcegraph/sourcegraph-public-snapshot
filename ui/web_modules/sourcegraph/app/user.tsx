@@ -45,13 +45,13 @@ export function withUserContext(Component) {
 			githubToken: React.PropTypes.object,
 		};
 
-		constructor(props) {
+		constructor(props: Props) {
 			super(props);
 		}
 
 		stores() { return [UserStore]; }
 
-		reconcileState(state, props) {
+		reconcileState(state, props: Props) {
 			Object.assign(state, props);
 
 			state.accessToken = UserStore.activeAccessToken || null;

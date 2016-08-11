@@ -63,7 +63,7 @@ export class RefsContainer extends Container<Props, any> {
 	ranges: any;
 	anns: any;
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this.state = {
 			shownFiles: new Set(),
@@ -94,7 +94,7 @@ export class RefsContainer extends Container<Props, any> {
 		return [DefStore, BlobStore];
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		state.location = props.location || null;
 		if (typeof state.showAllFiles === "undefined") {
 			state.showAllFiles = false;

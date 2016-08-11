@@ -235,7 +235,7 @@ class SearchForm extends React.Component<SearchFormProps, any> {
 		scope: null,
 	};
 
-	constructor(props) {
+	constructor(props: SearchFormProps) {
 		super(props);
 
 		this.state.query = queryFromStateOrURL(props.location); // eslint-disable-line react/no-direct-mutation-state

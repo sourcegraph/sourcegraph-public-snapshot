@@ -28,7 +28,7 @@ class ResetPasswordComp extends Container<Props, any> {
 	_passwordInput: any;
 	_confirmInput: any;
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this._passwordInput = null;
 		this._confirmInput = null;

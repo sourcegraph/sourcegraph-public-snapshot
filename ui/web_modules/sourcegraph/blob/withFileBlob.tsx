@@ -32,7 +32,7 @@ export function withFileBlob(Component) {
 			return [BlobStore];
 		}
 
-		reconcileState(state, props) {
+		reconcileState(state, props: Props) {
 			Object.assign(state, props);
 			state.blob = state.path && state.commitID ? (BlobStore.files[keyForFile(state.repo, state.commitID, state.path)] || null) : null;
 		}

@@ -33,7 +33,7 @@ export class BuildContainer extends Container<Props, any> {
 
 	_updateIntervalID: any;
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this._updateIntervalID = null;
 	}
@@ -66,7 +66,7 @@ export class BuildContainer extends Container<Props, any> {
 		Dispatcher.Backends.dispatch(new BuildActions.WantTasks(this.state.repo, this.state.id, true));
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		Object.assign(state, props);
 		state.repo = props.params.splat;
 		state.id = props.params.id;

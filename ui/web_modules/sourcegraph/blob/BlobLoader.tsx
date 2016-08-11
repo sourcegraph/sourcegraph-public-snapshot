@@ -54,12 +54,12 @@ function blobLoader(Component) {
 	class BlobLoader extends Container<Props, any> {
 		_helpers: Array<Helper> | null;
 
-		constructor(props) {
+		constructor(props: Props) {
 			super(props);
 			this._helpers = null;
 		}
 
-		reconcileState(state, props) {
+		reconcileState(state, props: Props) {
 			if (props.route && state.route !== props.route) {
 				// Clear state properties that were set by previous helpers.
 				if (this._helpers) {

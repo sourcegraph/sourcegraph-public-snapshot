@@ -24,7 +24,7 @@ type Props = {
 };
 
 export class ExamplesContainer extends Container<Props, any> {
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 	}
 
@@ -32,14 +32,12 @@ export class ExamplesContainer extends Container<Props, any> {
 		return [DefStore];
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		state.location = props.location || null;
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
 		state.def = props.def || null;
 		state.defObj = props.defObj || null;
-		state.defRepos = props.defRepos || [];
-		state.sorting = props.sorting || null;
 		state.examples = props.examples || null;
 	}
 

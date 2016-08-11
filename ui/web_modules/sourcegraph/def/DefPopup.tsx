@@ -26,7 +26,7 @@ export class DefPopup extends Container<Props, any> {
 		features: React.PropTypes.object.isRequired,
 	};
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		Object.assign(state, props);
 		state.defObj = props.def;
 		state.repo = props.def ? props.def.Repo : null;

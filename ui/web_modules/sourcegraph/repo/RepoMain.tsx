@@ -44,7 +44,7 @@ export class RepoMain extends React.Component<Props, any> {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 
 		this._repoResolutionUpdated(this.props.repo, this.props.repoResolution);

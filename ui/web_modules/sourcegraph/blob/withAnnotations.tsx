@@ -23,7 +23,7 @@ export function withAnnotations(Component) {
 			return [BlobStore];
 		}
 
-		reconcileState(state, props) {
+		reconcileState(state, props: Props) {
 			Object.assign(state, props);
 
 			state.anns = state.path && state.commitID ? (BlobStore.annotations[keyForAnns(state.repo, state.commitID, state.path, 0, 0)] || null) : null;

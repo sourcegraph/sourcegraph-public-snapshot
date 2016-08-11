@@ -27,14 +27,14 @@ export class LoginForm extends Container<Props, any> {
 	_loginInput: any;
 	_passwordInput: any;
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this._loginInput = null;
 		this._passwordInput = null;
 		this._handleSubmit = this._handleSubmit.bind(this);
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		Object.assign(state, props);
 		state.pendingAuthAction = UserStore.pendingAuthActions["login"] || false;
 		state.authResponse = UserStore.authResponses["login"] || null;

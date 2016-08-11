@@ -29,7 +29,7 @@ type Props = {
 export class DefTooltip extends Component<Props, any> {
 	_elem: any;
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this._updatePosition = this._updatePosition.bind(this);
 	}
@@ -43,7 +43,7 @@ export class DefTooltip extends Component<Props, any> {
 		document.removeEventListener("mousemove", this._updatePosition);
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		Object.assign(state, props);
 	}
 

@@ -45,7 +45,7 @@ export function withChannelListener(Component) {
 		_unlisten: any;
 		_ws: any;
 
-		constructor(props) {
+		constructor(props: Props) {
 			super(props);
 			this._listen = this._listen.bind(this);
 		}

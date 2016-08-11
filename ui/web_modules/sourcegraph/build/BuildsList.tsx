@@ -30,7 +30,7 @@ type Props = {
 export class BuildsList extends Container<Props, any> {
 	_updateIntervalID: any;
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this._updateIntervalID = null;
 	}
@@ -62,7 +62,7 @@ export class BuildsList extends Container<Props, any> {
 		Dispatcher.Backends.dispatch(new BuildActions.WantBuilds(this.state.repo, this._translateQuery(this.state.search), true));
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		Object.assign(state, props);
 		state.repo = props.params.splat || null; // null if serving global builds view
 		state.search = state.location.search;

@@ -27,7 +27,7 @@ type Props = {
 export class Dropdown extends React.Component<Props, any> {
 	_wrapper: any;
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this.state = {
 			open: false,

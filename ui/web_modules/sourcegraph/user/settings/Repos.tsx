@@ -25,7 +25,7 @@ export class Repos extends React.Component<Props, any> {
 
 	_filterInput: any;
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this._filterInput = null;
 		this._handleFilter = this._handleFilter.bind(this);

@@ -14,12 +14,12 @@ type Props = {
 }
 
 export class BlobLineExpander extends Component<Props, any> {
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this._onClick = this._onClick.bind(this);
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		Object.assign(state, props);
 	}
 

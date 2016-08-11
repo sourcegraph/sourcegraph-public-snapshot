@@ -34,7 +34,7 @@ class SearchSettingsComp extends Container<Props, any> {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this.state = {settings: UserStore.settings};
 
@@ -62,7 +62,7 @@ class SearchSettingsComp extends Container<Props, any> {
 
 	stores() { return [UserStore]; }
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		Object.assign(state, props);
 
 		state.settings = UserStore.settings;

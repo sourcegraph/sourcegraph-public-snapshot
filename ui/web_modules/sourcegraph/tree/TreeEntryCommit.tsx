@@ -9,7 +9,7 @@ import "./TreeBackend"; // for side effects
 import {TreeStore} from "sourcegraph/tree/TreeStore";
 
 export class TreeEntryCommit extends Container<Props, any> {
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		Object.assign(state, props);
 		state.commits = TreeStore.commits;
 	}

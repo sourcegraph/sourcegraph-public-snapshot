@@ -19,13 +19,13 @@ import * as styles from "sourcegraph/user/styles/accountForm.css";
 class ForgotPasswordComp extends Container<{}, any> {
 	_emailInput: any;
 
-	constructor(props) {
+	constructor(props: {}) {
 		super(props);
 		this._emailInput = null;
 		this._handleSubmit = this._handleSubmit.bind(this);
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: {}) {
 		Object.assign(state, props);
 		state.pendingAuthAction = UserStore.pendingAuthActions["forgot"] || false;
 		state.authResponse = UserStore.authResponses["forgot"] || null;

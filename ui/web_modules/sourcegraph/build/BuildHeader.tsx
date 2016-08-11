@@ -13,7 +13,7 @@ type Props = {
 };
 
 export class BuildHeader extends Component<Props, any> {
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		if (state.build !== props.build) {
 			state.build = props.build;
 		}

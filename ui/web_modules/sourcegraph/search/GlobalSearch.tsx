@@ -75,7 +75,7 @@ export class GlobalSearch extends Container<Props, any> {
 		_reposByLang: any;
 	};
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 
 		this.state = {
@@ -140,7 +140,7 @@ export class GlobalSearch extends Container<Props, any> {
 
 	stores(): FluxUtils.Store<any>[] { return [SearchStore, UserStore, RepoStore]; }
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		Object.assign(state, props);
 		state.githubToken = UserStore.activeGitHubToken;
 		state.language = state.searchSettings && state.searchSettings.languages ? state.searchSettings.languages : null;

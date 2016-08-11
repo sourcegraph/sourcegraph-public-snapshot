@@ -156,7 +156,7 @@ export class BlobTestOnly extends Component<Props, any> {
 		dispatchSelections: null,
 	};
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this._expandRange = this._expandRange.bind(this);
 		this._handleSelectionChange = debounce(this._handleSelectionChange.bind(this), 200, {
@@ -185,7 +185,7 @@ export class BlobTestOnly extends Component<Props, any> {
 		this._isMounted = false;
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		state.startlineCallback = props.startlineCallback || (x => {});
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;

@@ -13,7 +13,7 @@ type Props = {
 };
 
 export class BuildTasks extends Component<Props, any> {
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this.state = {
 			topLevelTasks: [],
@@ -21,7 +21,7 @@ export class BuildTasks extends Component<Props, any> {
 		};
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		state.logs = props.logs;
 
 		if (state.tasks !== props.tasks) {

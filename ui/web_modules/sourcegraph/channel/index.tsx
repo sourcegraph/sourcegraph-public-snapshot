@@ -17,7 +17,7 @@ class Channel extends React.Component<Props, any> {
 
 	_timeout: any;
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this.state = {takingAWhile: false};
 	}

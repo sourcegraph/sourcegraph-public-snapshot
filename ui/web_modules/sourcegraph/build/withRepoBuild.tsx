@@ -19,7 +19,7 @@ export function withRepoBuild(Component) {
 	class WithRepoBuild extends Container<Props, any> {
 		stores() { return [BuildStore]; }
 
-		reconcileState(state, props) {
+		reconcileState(state, props: Props) {
 			Object.assign(state, props);
 			const builds = state.repoID && state.commitID ? BuildStore.builds.listNewestByCommitID(state.repoID, state.commitID) : null;
 			if (!builds) {

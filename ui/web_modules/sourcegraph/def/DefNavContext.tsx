@@ -21,7 +21,7 @@ type Props = {
 }
 
 export class DefNavContext extends Container<Props, any> {
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		state.repo = props.repo;
 		state.rev = props.rev;
 		state.commitID = props.commitID;

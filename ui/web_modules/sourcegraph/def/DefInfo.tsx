@@ -53,7 +53,7 @@ export class DefInfo extends Container<Props, any> {
 		signedIn: React.PropTypes.bool.isRequired,
 	};
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this.state = {
 			defDescrHidden: null,
@@ -140,7 +140,7 @@ export class DefInfo extends Container<Props, any> {
 		this.setState({defDescrHidden: true});
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		state.location = props.location || null;
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;

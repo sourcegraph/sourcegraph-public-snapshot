@@ -16,7 +16,7 @@ export function desktopContainer(Component) {
 			router: React.PropTypes.object.isRequired,
 		};
 
-		constructor(props) {
+		constructor(props: {}) {
 			super(props);
 			this.desktopNavigation = this.desktopNavigation.bind(this);
 			this.state = {
@@ -26,7 +26,7 @@ export function desktopContainer(Component) {
 
 		stores() { return [DefStore]; }
 
-		reconcileState(state, props) {
+		reconcileState(state, props: {}) {
 			Object.assign(state, props);
 		}
 

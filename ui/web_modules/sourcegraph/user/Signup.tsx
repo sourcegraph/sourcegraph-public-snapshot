@@ -29,7 +29,7 @@ export class SignupForm extends Container<SignupFormProps, any> {
 	_passwordInput: any;
 	_emailInput: any;
 
-	constructor(props) {
+	constructor(props: SignupFormProps) {
 		super(props);
 		this._loginInput = null;
 		this._passwordInput = null;
@@ -37,7 +37,7 @@ export class SignupForm extends Container<SignupFormProps, any> {
 		this._handleSubmit = this._handleSubmit.bind(this);
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: SignupFormProps) {
 		Object.assign(state, props);
 		state.pendingAuthAction = UserStore.pendingAuthActions["signup"] || false;
 		state.authResponse = UserStore.authResponses["signup"] || null;

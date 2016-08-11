@@ -8,14 +8,9 @@ import * as classNames from "classnames";
 export class LogoComponent extends React.Component<{}, any> {
 	state: {
 		activeExample: number,
+	} = {
+		activeExample: 0,
 	};
-
-	constructor(props) {
-		super(props);
-		this.state = {
-			activeExample: 0,
-		};
-	}
 
 	render(): JSX.Element | null {
 		return (

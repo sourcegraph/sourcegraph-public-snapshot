@@ -35,7 +35,7 @@ export class RepoRefsContainer extends Container<Props, any> {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this.state = {
 			currPage: 1,
@@ -48,7 +48,7 @@ export class RepoRefsContainer extends Container<Props, any> {
 		return [DefStore];
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
 		state.def = props.def || null;

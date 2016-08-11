@@ -25,7 +25,7 @@ export class Home extends Container<HomeProps, any> {
 		signedIn: React.PropTypes.bool.isRequired,
 	};
 
-	constructor(props) {
+	constructor(props: HomeProps) {
 		super(props);
 	}
 

@@ -15,7 +15,7 @@ type Props = {
 };
 
 export class RepoNavContext extends Component<Props, any> {
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		Object.assign(state, props);
 	}
 

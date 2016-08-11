@@ -16,12 +16,12 @@ export class LogoutLink extends Container<Props, any> {
 		router: React.PropTypes.object.isRequired,
 	};
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this._handleClick = this._handleClick.bind(this);
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props: Props) {
 		Object.assign(state, props);
 		state.pendingAuthAction = UserStore.pendingAuthActions["logout"] || false;
 		state.authResponse = UserStore.authResponses["logout"] || null;

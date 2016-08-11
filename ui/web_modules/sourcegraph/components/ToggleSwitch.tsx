@@ -19,10 +19,10 @@ export class ToggleSwitch extends React.Component<Props, any> {
 		checked: false,
 	};
 
-	constructor(props) {
+	constructor(props: Props) {
 		super(props);
 		this.state = {
-			checked: props.defaultChecked,
+			checked: props.defaultChecked || false,
 		};
 	}
 

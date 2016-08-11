@@ -44,7 +44,7 @@ export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
 			}
 		}
 
-		reconcileState(state, props) {
+		reconcileState(state, props: Props) {
 			Object.assign(state, props);
 
 			const repoSplat = repoParam(props.params.splat);
