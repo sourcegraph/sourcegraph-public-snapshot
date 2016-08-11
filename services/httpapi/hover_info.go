@@ -3,9 +3,7 @@ package httpapi
 import (
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -17,19 +15,6 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sqs/pbtypes"
 )
-
-var lpClient *langp.Client
-
-func init() {
-	if !feature.Features.Universe {
-		return
-	}
-	var err error
-	lpClient, err = langp.NewClient(os.Getenv("SG_LANGUAGE_PROCESSOR"))
-	if err != nil {
-		log.Fatal("$SG_LANGUAGE_PROCESSOR", err)
-	}
-}
 
 func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
@@ -57,7 +42,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 	}{}
 
 	if feature.IsUniverseRepo(repo.URI) {
-		hover, err := lpClient.Hover(&langp.Position{
+		hover, err := langp.DefaultClient.Hover(&langp.Position{
 			Repo:      repo.URI,
 			Commit:    repoRev.CommitID,
 			File:      file,

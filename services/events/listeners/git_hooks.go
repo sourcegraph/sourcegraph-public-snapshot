@@ -7,6 +7,8 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 )
 
@@ -43,12 +45,12 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 	repo := payload.Repo
 	event := payload.Event
 
-	if payload.IgnoreBuild {
+	if event.Type != githttp.PUSH && event.Type != githttp.PUSH_FORCE && event.Type != githttp.TAG {
 		return
 	}
 
-	if event.Type == githttp.PUSH || event.Type == githttp.PUSH_FORCE || event.Type == githttp.TAG {
-		_, err := cl.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{
+	if !payload.IgnoreBuild {
+		_, err = cl.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{
 			Repo:     repo,
 			CommitID: event.Commit,
 			Tag:      event.Tag,
@@ -63,6 +65,27 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 			return
 		}
 		log15.Debug("postPushHook: build created", "repo", repo, "branch", event.Branch, "tag", event.Tag, "commit", event.Commit, "event type", event.Type)
+	}
+
+	if feature.Features.Universe {
+		repoFull, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repo})
+		if err != nil {
+			log15.Error("postPushHook: failed to create build", "err", err)
+			return
+		}
+		if feature.IsUniverseRepo(repoFull.URI) {
+			// Ask the Language Processor to prepare the workspace.
+			if err := langp.DefaultClient.Prepare(&langp.RepoRev{
+				// TODO(slimsag): URI is correct only where the repo URI and clone
+				// URI are directly equal.. but CloneURI is only correct (for Go)
+				// when it directly matches the package import path.
+				Repo:   repoFull.URI,
+				Commit: event.Commit,
+			}); err != nil {
+				log15.Error("postPushHook: failed to create build", "err", err)
+				return
+			}
+		}
 	}
 }
 

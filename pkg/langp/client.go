@@ -4,11 +4,28 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"time"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 )
+
+var DefaultClient *Client
+
+func init() {
+	if !feature.Features.Universe {
+		return
+	}
+	var err error
+	DefaultClient, err = NewClient(os.Getenv("SG_LANGUAGE_PROCESSOR"))
+	if err != nil {
+		log.Fatal("$SG_LANGUAGE_PROCESSOR", err)
+	}
+}
 
 // Client is a Language Processor REST API client which is safe for use by
 // multiple goroutines concurrently.
@@ -18,6 +35,14 @@ type Client struct {
 
 	// Client, if specified, is used for making HTTP requests.
 	Client *http.Client
+}
+
+// Prepare informs the Language Processor that it should prepare a workspace
+// for the specified repo / commit. It is sent prior to an actual user request
+// (e.g. as soon as we have access to their repos) in hopes of having
+// preparation completed already when a user makes their first request.
+func (c *Client) Prepare(r *RepoRev) error {
+	return c.do("prepare", r, nil)
 }
 
 // Definition resolves the specified position, effectively returning where the
@@ -95,6 +120,9 @@ func (c *Client) do(endpoint string, body, results interface{}) error {
 			return fmt.Errorf("error parsing language processor error (status code %v): %v", resp.StatusCode, err)
 		}
 		return &errResp
+	}
+	if results == nil {
+		return nil
 	}
 	return json.NewDecoder(resp.Body).Decode(results)
 }

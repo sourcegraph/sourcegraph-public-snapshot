@@ -10,6 +10,8 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
@@ -134,6 +136,7 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 	if err != nil {
 		return err
 	}
+
 	_, err = svc.Builds(ctx).Create(elevatedActor(ctx), &sourcegraph.BuildsCreateOp{
 		Repo:     repo.ID,
 		CommitID: res.CommitID,
@@ -148,6 +151,21 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 		return nil
 	}
 	log15.Debug("cloneRepo: build created", "repo", repo.URI, "branch", repo.DefaultBranch, "commit", res.CommitID)
+
+	if feature.Features.Universe && feature.IsUniverseRepo(repo.URI) {
+		// Ask the Language Processor to prepare the workspace.
+		err := langp.DefaultClient.Prepare(&langp.RepoRev{
+			// TODO(slimsag): URI is correct only where the repo URI and clone
+			// URI are directly equal.. but CloneURI is only correct (for Go)
+			// when it directly matches the package import path.
+			Repo:   repo.URI,
+			Commit: res.CommitID,
+		})
+		if err != nil {
+			log15.Warn("cloneRepo: language processor failed to prepare workspace", "err", err, "repo", repo.URI, "commit", res.CommitID, "branch", repo.DefaultBranch)
+			return nil
+		}
+	}
 	return nil
 }
 
