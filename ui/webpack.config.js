@@ -10,7 +10,7 @@ if (process.env.NODE_ENV === "development") {
 		try {
 			require("fsevents");
 		} catch (error) {
-			log.warn("WARNING: fsevents not properly installed. This causes a high CPU load when webpack is idle. Run 'make dep' to fix.");
+			log.warn("WARNING: fsevents not properly installed. This causes a high CPU load when webpack is idle. Run 'npm run dep' to fix.");
 		}
 	}
 }
