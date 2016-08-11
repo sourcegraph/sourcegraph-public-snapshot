@@ -22,9 +22,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/go-selenium"
@@ -923,44 +920,4 @@ type defaultTestingT struct{}
 
 func (t defaultTestingT) Logf(fmtStr string, v ...interface{}) {
 	log.Printf(fmtStr, v...)
-}
-
-func loginUser(t *T) error {
-	// Create gRPC client connection so we can talk to the server. e2etest uses
-	// the server's ID key for authentication, which means it can do ANYTHING with
-	// no restrictions. Be careful!
-	ctx, c := t.GRPCClient()
-
-	// Create the test user account.
-	testPassword := "e2etest"
-	_, err := c.Accounts.Create(ctx, &sourcegraph.NewAccount{
-		Login:    t.TestLogin,
-		Email:    t.TestEmail,
-		Password: testPassword,
-	})
-	if err != nil && grpc.Code(err) != codes.AlreadyExists {
-		return err
-	}
-
-	// Get login page.
-	t.Get(t.Endpoint("/login"))
-
-	// Give the JS time to set element focus, etc.
-	time.Sleep(1 * time.Second)
-
-	// Get handles to input fields.
-	username := t.FindElement(selenium.ById, "e2etest-login-field")
-	password := t.FindElement(selenium.ById, "e2etest-password-field")
-
-	// Enter username and password for test account.
-	username.Click()
-	username.SendKeys(t.TestLogin)
-	password.Click()
-	password.SendKeys(testPassword)
-
-	// Click the submit button.
-	t.Click(selenium.ById, "e2etest-login-button")
-
-	t.WaitForRedirect(t.Endpoint("/"), "wait for redirect to home after sign-in")
-	return nil
 }

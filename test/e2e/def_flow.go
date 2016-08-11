@@ -13,12 +13,7 @@ func init() {
 func testDefFlow(t *T) error {
 	wd := t.WebDriver
 
-	err := loginUser(t)
-	if err != nil {
-		return err
-	}
-
-	err = wd.Get(t.Endpoint("/github.com/golang/go/-/info/GoPackage/net/http/-/Header/Get"))
+	err := wd.Get(t.Endpoint("/github.com/golang/go/-/info/GoPackage/net/http/-/Header/Get"))
 	if err != nil {
 		return err
 	}

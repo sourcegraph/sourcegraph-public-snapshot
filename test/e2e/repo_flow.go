@@ -18,12 +18,7 @@ func init() {
 func testRepoFlow(t *T) error {
 	wd := t.WebDriver
 
-	err := loginUser(t)
-	if err != nil {
-		return err
-	}
-
-	err = wd.Get(t.Endpoint("/github.com/gorilla/mux"))
+	err := wd.Get(t.Endpoint("/github.com/gorilla/mux"))
 	if err != nil {
 		return err
 	}
