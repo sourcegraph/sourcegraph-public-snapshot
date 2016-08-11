@@ -4,28 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"time"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 )
-
-var DefaultClient *Client
-
-func init() {
-	if !feature.Features.Universe {
-		return
-	}
-	var err error
-	DefaultClient, err = NewClient(os.Getenv("SG_LANGUAGE_PROCESSOR"))
-	if err != nil {
-		log.Fatal("$SG_LANGUAGE_PROCESSOR", err)
-	}
-}
 
 // Client is a Language Processor REST API client which is safe for use by
 // multiple goroutines concurrently.
