@@ -45,7 +45,7 @@ type GlobalNavProps = {
 
 export function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavProps, {user, signedIn, router, eventLogger}) {
 	const isHomepage = location.pathname === "/";
-	const shouldHide = hiddenNavRoutes.has(location.pathname) || !user;
+	const shouldHide = hiddenNavRoutes.has(location.pathname);
 	const isStaticPage = isPage(location.pathname);
 
 	const showLogoMarkOnly = !isStaticPage || user;
@@ -140,7 +140,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 
 				<div
 					className={classNames(styles.flex_fill, base.b__dotted, base.bn, base.brw2, colors.b__cool_pale_gray)}>
-					{location.pathname !== "/" && <StyledSearchForm repo={repo} location={location} router={router} showResultsPanel={location.pathname !== `/${rel.search}`} />}
+					{user && location.pathname !== "/" && <StyledSearchForm repo={repo} location={location} router={router} showResultsPanel={location.pathname !== `/${rel.search}`} />}
 				</div>
 
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal className={styles.icon_ellipsis} title="Your editor could not identify the symbol"/>}
