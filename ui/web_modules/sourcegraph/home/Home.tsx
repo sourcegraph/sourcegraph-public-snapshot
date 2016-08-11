@@ -74,7 +74,7 @@ export class Home extends Container<HomeProps, any> {
 					</div>
 
 					{/* section showing welcome message and examples */}
-					<div style={{display: "flex", flowDirection: "row", maxWidth: "960px", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center"}} className={classNames(base.center, base.ph3)} styleName="wrap_sm">
+					<div style={{display: "flex", flowDirection: "row", maxWidth: "960px", flexWrap: "wrap", justifyContent: "space-around", alignItems: "center"}} className={classNames(base.center, base.ph3)} styleName="wrap_sm">
 
 						{/* column with welcome message, short description, and sign up button */}
 						<div style={{maxWidth: "400px", flex: "1 1 400px"}}>
