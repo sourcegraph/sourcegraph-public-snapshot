@@ -296,6 +296,24 @@ func (t *T) WaitForRedirectPrefix(prefix, description string) {
 	)
 }
 
+// WaitForRedirectSuffix waits up to 20s for a redirect to a page with the
+// given suffix (e.g., "login" matches if the URL is really
+// "https://github.com/login").
+func (t *T) WaitForRedirectSuffix(suffix, description string) {
+	t.WaitForCondition(
+		20*time.Second,
+		100*time.Millisecond,
+		func() bool {
+			currentURL, err := t.WebDriver.CurrentURL()
+			if err != nil {
+				return false
+			}
+			return strings.HasSuffix(currentURL, suffix)
+		},
+		fmt.Sprintf("%s (%s)", description, suffix),
+	)
+}
+
 // Test represents a single E2E test.
 type Test struct {
 	// Name is the name of your test, which should be short and readable, e.g.,

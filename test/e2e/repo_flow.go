@@ -57,8 +57,8 @@ func testRepoFlow(t *T) error {
 	routerLink.MoveTo(0, 0) // Hover over element.
 	routerLink.Click()      // Click the element.
 
-	t.WaitForRedirect(
-		t.Endpoint("/github.com/gorilla/mux/-/def/GoPackage/github.com/gorilla/mux/-/Router"),
+	t.WaitForRedirectSuffix(
+		"/-/def/GoPackage/github.com/gorilla/mux/-/Router",
 		"wait for Router def to load",
 	)
 	return nil
