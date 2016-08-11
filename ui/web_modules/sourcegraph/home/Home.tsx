@@ -169,13 +169,13 @@ export class Home extends Container<HomeProps, any> {
 				<div style={{backgroundColor: "rgba(119, 147, 174, 0.1)", display: "flex", flowDirection: "row", justifyContent: "center",
 							paddingLeft: "200px", paddingRight: "200px", paddingTop: "10px", paddingBottom: "10px"}}>
 					<div style={{maxWidth: "400px", display: "flex", flowDirection: "row", flexGrow: 1, justifyContent: "space-between"}}>
-						<img width="32px" src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/go2.svg`} />
-						<img width="32px" src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/java.svg`} />
-						<img width="32px" src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/js.svg`} />
-						<img width="32px" src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/python.svg`} />
+						<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/go2.svg`} />
+						<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/java.svg`} />
+						<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/js.svg`} />
+						<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/python.svg`} />
 						{/*
-							<img width="32px" src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/php.svg`} />
-							<img width="32px" src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/scala.svg`} />
+							<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/php.svg`} />
+							<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/scala.svg`} />
 						*/}
 					</div>
 				</div>
