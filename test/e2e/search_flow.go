@@ -28,6 +28,11 @@ func runSearchFlow(t *T, query string) error {
 		return err
 	}
 
+	err = loginUser(t)
+	if err != nil {
+		return err
+	}
+
 	searchInput := t.WaitForElement(selenium.ById, "e2etest-search-input")
 	searchInput.SendKeys(query)
 
