@@ -35,6 +35,7 @@ export const logomark: string;
 export const spin: string;
 export const modal: string;
 export const modal_dismiss: string;
+export const video_modal: string;
 export const channel: string;
 export const channel_closed: string;
 export const channel_connected: string;
