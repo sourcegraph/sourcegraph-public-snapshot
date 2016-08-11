@@ -213,7 +213,15 @@ interface SearchFormProps {
 	showResultsPanel: boolean;
 }
 
-class SearchForm extends React.Component<SearchFormProps, any> {
+interface SearchFormState {
+	open: boolean;
+	focused: boolean;
+	query: string | null;
+	lang: string[] | null;
+	scope: any;
+}
+
+class SearchForm extends React.Component<SearchFormProps, SearchFormState> {
 	_container: HTMLElement;
 	_input: HTMLInputElement;
 
@@ -221,13 +229,7 @@ class SearchForm extends React.Component<SearchFormProps, any> {
 		routerFunc(loc);
 	}, 200, {leading: false, trailing: true});
 
-	state: {
-		open: boolean;
-		focused: boolean;
-		query: string | null;
-		lang: string[] | null;
-		scope: any;
-	} = {
+	state: SearchFormState = {
 		open: false,
 		focused: false,
 		query: null,
@@ -257,18 +259,18 @@ class SearchForm extends React.Component<SearchFormProps, any> {
 		document.addEventListener("click", this._handleGlobalClick);
 	}
 
-	componentWillReceiveProps(nextProps) {
+	componentWillReceiveProps(nextProps: SearchFormProps) {
 		const nextQuery = queryFromStateOrURL(nextProps.location);
 		if (this.state.query !== nextQuery) {
 			if (nextQuery && !this.state.query) {
-				this.setState({open: true});
+				this.setState({open: true} as SearchFormState);
 			} else {
-				this.setState({query: nextQuery});
+				this.setState({query: nextQuery} as SearchFormState);
 			}
 		}
 
 		if (!nextQuery) {
-			this.setState({open: false});
+			this.setState({open: false} as SearchFormState);
 		}
 	}
 
@@ -281,9 +283,7 @@ class SearchForm extends React.Component<SearchFormProps, any> {
 		if (ev.keyCode === 27 /* ESC */) {
 			// Check that the element exists on the page before trying to set state.
 			if (document.getElementById("e2etest-search-input")) {
-				this.setState({
-					open: false,
-				});
+				this.setState({open: false} as SearchFormState);
 			}
 		}
 		// Hotkey "/" to focus search field.
@@ -300,7 +300,7 @@ class SearchForm extends React.Component<SearchFormProps, any> {
 		// Clicking outside of the open results panel should close it.
 		invariant(ev.target instanceof Node, "target is not a node");
 		if (this.state.open && (!this._container || !this._container.contains(ev.target as Node))) {
-			this.setState({open: false});
+			this.setState({open: false} as SearchFormState);
 		}
 	}
 
@@ -310,27 +310,27 @@ class SearchForm extends React.Component<SearchFormProps, any> {
 	}
 
 	_handleReset(ev: Event) {
-		this.setState({focused: false, open: false, query: ""});
+		this.setState({focused: false, open: false, query: ""} as SearchFormState);
 		this._input.value = "";
 	}
 
 	_handleKeyDown(ev: KeyboardEvent) {
 		if (ev.keyCode === 27 /* ESC */) {
-			this.setState({open: false});
+			this.setState({open: false} as SearchFormState);
 			this._input.blur();
 		} else if (ev.keyCode === 13 /* Enter */) {
 			// Close the search results menu AFTER the action has taken place on
 			// the result (if a result was highlighted).
-			setTimeout(() => this.setState({open: false}));
+			setTimeout(() => this.setState({open: false} as SearchFormState));
 		}
 	}
 
 	_handleChange(ev: KeyboardEvent) {
 		invariant(ev.currentTarget instanceof HTMLInputElement, "invalid currentTarget");
 		const value = (ev.currentTarget as HTMLInputElement).value;
-		this.setState({query: value});
+		this.setState({query: value} as SearchFormState);
 		if (value) {
-			this.setState({open: true});
+			this.setState({open: true} as SearchFormState);
 		}
 		this._goToDebounced(this.props.router.replace, locationForSearch(this.props.location, value, this.state.lang, this.state.scope, false, this.props.location.pathname.slice(1) === rel.search) as any);
 	}
@@ -340,11 +340,11 @@ class SearchForm extends React.Component<SearchFormProps, any> {
 		if (this._input && this._input.value) {
 			update.query = this._input.value;
 		}
-		this.setState(update);
+		this.setState(update as SearchFormState);
 	}
 
 	_handleBlur(ev: Event) {
-		this.setState({focused: false});
+		this.setState({focused: false} as SearchFormState);
 	}
 
 	render(): JSX.Element | null {

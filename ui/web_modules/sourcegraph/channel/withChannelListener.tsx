@@ -24,17 +24,19 @@ export function withChannelListener(Component) {
 		location: any;
 	}
 
-	class WithChannelListener extends React.Component<Props, any> {
+	interface State {
+		channelName: string | null;
+		status: ChannelStatus;
+		statusCode: ChannelStatusCode;
+		failures: number;
+	}
+
+	class WithChannelListener extends React.Component<Props, State> {
 		static contextTypes = {
 			router: React.PropTypes.object.isRequired,
 		};
 
-		state: {
-			channelName: string | null;
-			status: ChannelStatus;
-			statusCode: ChannelStatusCode;
-			failures: number;
-		} = {
+		state: State = {
 			channelName: null,
 			status: null,
 			statusCode: null,
@@ -61,7 +63,7 @@ export function withChannelListener(Component) {
 				// Right now we close it when the user navigates on their own AND THEN reloads
 				// the page. This seems arbitrary.
 				if (loc.state && loc.state.channel && loc.state.channel !== this.state.channelName) {
-					this.setState({channelName: loc.state.channel}, this._listen);
+					this.setState({channelName: loc.state.channel} as State, this._listen);
 				}
 			});
 		}
@@ -97,28 +99,28 @@ export function withChannelListener(Component) {
 				throw new Error("_listen called but there is an existing WebSocket conn.");
 			}
 
-			this.setState({status: "connecting"});
+			this.setState({status: "connecting"} as State);
 
 			const l = window.location;
 			this._ws = new WebSocket(`${l.protocol === "https:" ? "wss://" : "ws://"}${l.host}/.api/channel/${encodeURIComponent(this.state.channelName)}`);
 			this._ws.onopen = (ev) => {
-				this.setState({status: "connected", failures: 0, statusCode: 1});
+				this.setState({status: "connected", failures: 0, statusCode: 1} as State);
 			};
 			this._ws.onmessage = (ev) => {
 				this._handleAction(JSON.parse(ev.data));
 			};
 			this._ws.onclose = (ev) => {
-				this.setState({failures: this.state.failures + 1});
+				this.setState({failures: this.state.failures + 1} as State);
 				if (!ev.wasClean) {
 					console.error(`WebSocket closed uncleanly: ${ev.code} ${ev.reason}`);
 				}
 				this._ws = null;
 
 				if (this.state.failures <= MAX_FAILURES) {
-					this.setState({status: "connecting"});
+					this.setState({status: "connecting"} as State);
 					this._delayedListen(1000 + Math.pow(this.state.failures, 2) * 1000);
 				} else {
-					this.setState({status: "error"});
+					this.setState({status: "error"} as State);
 				}
 			};
 		}
@@ -134,7 +136,7 @@ export function withChannelListener(Component) {
 					}),
 				});
 			} else if (action && typeof action.Status !== "undefined" && action.Status === 0) {
-				this.setState({statusCode: 0});
+				this.setState({statusCode: 0} as State);
 			} else if (action && action.Error && action.Fix && !action.URL) {
 				(this.context as any).router.push({
 					pathname: `/-/channel/${this.state.channelName}-error`,
@@ -154,7 +156,7 @@ export function withChannelListener(Component) {
 					}),
 				});
 			} else if (action && action.Package && action.Repo && action.Status && action.Status === 1 && action.EditorType) {
-				this.setState({statusCode: 1});
+				this.setState({statusCode: 1} as State);
 				let def = action.Def ? action.Def : "";
 				(this.context as any).router.replace({
 					pathname: "/-/golang",

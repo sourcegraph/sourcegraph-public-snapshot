@@ -8,14 +8,16 @@ interface Props {
 	onChange: (checked: boolean) => void;
 }
 
-export class ToggleSwitch extends React.Component<Props, any> {
+interface State {
+	checked: boolean;
+}
+
+export class ToggleSwitch extends React.Component<Props, State> {
 	static defaultProps = {
 		defaultChecked: false,
 	};
 
-	state: {
-		checked: boolean;
-	} = {
+	state: State = {
 		checked: false,
 	};
 

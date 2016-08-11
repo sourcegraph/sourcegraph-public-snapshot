@@ -5,10 +5,12 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import {Button, Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code} from "sourcegraph/components/index";
 import * as classNames from "classnames";
 
-export class ButtonsComponent extends React.Component<{}, any> {
-	state: {
-		activeExample: number,
-	} = {
+interface State {
+	activeExample: number;
+}
+
+export class ButtonsComponent extends React.Component<{}, State> {
+	state: State = {
 		activeExample: 0,
 	};
 

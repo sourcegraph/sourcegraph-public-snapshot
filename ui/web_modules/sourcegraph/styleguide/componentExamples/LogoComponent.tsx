@@ -5,10 +5,12 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Table, Code, Logo} from "sourcegraph/components/index";
 import * as classNames from "classnames";
 
-export class LogoComponent extends React.Component<{}, any> {
-	state: {
-		activeExample: number,
-	} = {
+interface State {
+	activeExample: number;
+}
+
+export class LogoComponent extends React.Component<{}, State> {
+	state: State = {
 		activeExample: 0,
 	};
 

@@ -5,10 +5,12 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code, ChecklistItem} from "sourcegraph/components/index";
 import * as classNames from "classnames";
 
-export class ChecklistsComponent extends React.Component<{}, any> {
-	state: {
-		activeExample: number,
-	} = {
+interface State {
+	activeExample: number;
+}
+
+export class ChecklistsComponent extends React.Component<{}, State> {
+	state: State = {
 		activeExample: 0,
 	};
 

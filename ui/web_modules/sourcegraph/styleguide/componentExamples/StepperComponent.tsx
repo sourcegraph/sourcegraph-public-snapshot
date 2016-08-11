@@ -5,10 +5,12 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Table, Code, Stepper} from "sourcegraph/components/index";
 import * as classNames from "classnames";
 
-export class StepperComponent extends React.Component<{}, any> {
-	state: {
-		activeExample: number,
-	} = {
+interface State {
+	activeExample: number;
+}
+
+export class StepperComponent extends React.Component<{}, State> {
+	state: State = {
 		activeExample: 0,
 	};
 
