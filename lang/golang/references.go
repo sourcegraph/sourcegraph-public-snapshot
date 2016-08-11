@@ -93,11 +93,12 @@ func (l locationList) Len() int {
 }
 
 func guruReferrers(env []string, path string, offset int) (*serial.ReferrersInitial, []*serial.ReferrersPackage, error) {
+	cmdStr := fmt.Sprintf("guru -json referrers %s:#%d", path, offset)
 	c := exec.Command("guru", "-json", "referrers", fmt.Sprintf("%s:#%d", path, offset))
 	c.Env = env
-	b, err := c.Output()
+	b, err := c.CombinedOutput()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("%v (running '%s'): output: %q", err, cmdStr, string(b))
 	}
 	// TODO(keegancsmith) directly decode stdout rather than an intermediate buffer
 	r := bytes.NewReader(b)
