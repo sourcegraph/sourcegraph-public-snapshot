@@ -1,7 +1,7 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import {Component} from "sourcegraph/Component";
+import {Component, EventListener} from "sourcegraph/Component";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as s from "sourcegraph/def/styles/Def.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
@@ -34,13 +34,8 @@ export class DefTooltip extends Component<Props, any> {
 		this._updatePosition = this._updatePosition.bind(this);
 	}
 
-	componentDidMount() {
-		document.addEventListener("mousemove", this._updatePosition);
-	}
-
 	componentWillUnmount() {
 		this._elem = null;
-		document.removeEventListener("mousemove", this._updatePosition);
 	}
 
 	reconcileState(state, props: Props) {
@@ -87,6 +82,7 @@ export class DefTooltip extends Component<Props, any> {
 					{def && def.DocHTML && <div className={s.doc} dangerouslySetInnerHTML={def && def.DocHTML}></div>}
 					{def && def.Repo !== this.state.currentRepo && <span className={s.repo}>{def.Repo}</span>}
 				</div>
+				<EventListener target={global.document} event="mousemove" callback={this._updatePosition} />
 			</div>
 		);
 	}

@@ -3,7 +3,7 @@
 import * as React from "react";
 import * as classNames from "classnames";
 
-import {Component} from "sourcegraph/Component";
+import {Component, EventListener} from "sourcegraph/Component";
 
 import * as styles from "./styles/popover.css";
 
@@ -26,18 +26,6 @@ export class Popover extends Component<Props, any> {
 			visible: false,
 		};
 		this._onClick = this._onClick.bind(this);
-	}
-
-	componentDidMount() {
-		if (global.document) {
-			document.addEventListener("click", this._onClick);
-		}
-	}
-
-	componentWillUnmount() {
-		if (global.document) {
-			document.removeEventListener("click", this._onClick);
-		}
 	}
 
 	reconcileState(state, props: Props) {
@@ -68,6 +56,7 @@ export class Popover extends Component<Props, any> {
 					<div ref="content" className={classNames(this.state.left ? styles.popover_left : styles.popover_right, this.state.popoverClassName)}>
 						{this.state.children[1]}
 					</div>}
+				<EventListener target={global.document} event="click" callback={this._onClick} />
 			</div>
 		);
 	}

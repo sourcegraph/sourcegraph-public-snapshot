@@ -3,7 +3,7 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
-import {Component} from "sourcegraph/Component";
+import {Component, EventListener} from "sourcegraph/Component";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {BlobLine} from "sourcegraph/blob/BlobLine";
 import {BlobLineExpander} from "sourcegraph/blob/BlobLineExpander";
@@ -182,12 +182,10 @@ export class BlobTestOnly extends Component<Props, State> {
 				this._scrollTo(this.state.startLine);
 			}
 		}, 0);
-		document.addEventListener("selectionchange", this._handleSelectionChange);
 		this._isMounted = true;
 	}
 
 	componentWillUnmount() {
-		document.removeEventListener("selectionchange", this._handleSelectionChange);
 		this._isMounted = false;
 	}
 
@@ -502,6 +500,7 @@ export class BlobTestOnly extends Component<Props, State> {
 						{lines}
 					</tbody>
 				</table>
+				<EventListener target={global.document} event="selectionchange" callback={this._handleSelectionChange} />
 			</div>
 		);
 	}

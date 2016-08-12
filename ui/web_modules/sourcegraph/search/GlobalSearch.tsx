@@ -5,6 +5,7 @@ import * as ReactDOM from "react-dom";
 import {Link} from "react-router";
 import {rel} from "sourcegraph/app/routePatterns";
 import {Container} from "sourcegraph/Container";
+import {EventListener} from "sourcegraph/Component";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {SearchStore} from "sourcegraph/search/SearchStore";
 import {RepoStore} from "sourcegraph/repo/RepoStore";
@@ -97,17 +98,11 @@ export class GlobalSearch extends Container<Props, State> {
 
 	componentDidMount() {
 		super.componentDidMount();
-		if (global.document) {
-			document.addEventListener("keydown", this._handleKeyDown);
-		}
 		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
 	}
 
 	componentWillUnmount() {
 		super.componentWillUnmount();
-		if (global.document) {
-			document.removeEventListener("keydown", this._handleKeyDown);
-		}
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
 
@@ -519,6 +514,7 @@ export class GlobalSearch extends Container<Props, State> {
 	render(): JSX.Element | null {
 		return (<div className={classNames(styles.center, styles.flex, this.state.className)}>
 			{this._results()}
+			<EventListener target={global.document} event="keydown" callback={this._handleKeyDown} />
 		</div>);
 	}
 }

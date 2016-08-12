@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import {Container} from "sourcegraph/Container";
+import {EventListener} from "sourcegraph/Component";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {DefStore} from "sourcegraph/def/DefStore";
 import * as DefActions from "sourcegraph/def/DefActions";
@@ -30,16 +31,6 @@ export function desktopContainer(Component) {
 			Object.assign(state, props);
 		}
 
-		componentWillMount() {
-			super.componentWillMount();
-			document.addEventListener("sourcegraph:desktop:navToSym", this.desktopNavigation);
-		}
-
-		componentWillUnmount() {
-			super.componentWillUnmount();
-			document.removeEventListener("sourcegraph:desktop:navToSym", this.desktopNavigation);
-		}
-
 		onStateTransition(oldState, newState) {
 			const defSpec = newState.defSpec;
 			const def = DefStore.defs.get(defSpec.repo, null, defSpec.def);
@@ -65,8 +56,13 @@ export function desktopContainer(Component) {
 			Dispatcher.Backends.dispatch(new DefActions.WantDef(info.repo, null, info.def));
 		}
 
-		render() {
-			return <Component {...this.props}/>;
+		render(): JSX.Element {
+			return (
+				<div>
+					<Component {...this.props}/>
+					<EventListener target={global.document} event="sourcegraph:desktop:navToSym" callback={this.desktopNavigation} />
+				</div>
+			);
 		}
 	}
 

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import {Link} from "react-router";
+import {EventListener} from "sourcegraph/Component";
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import {Avatar, Popover, Menu, Logo, Heading} from "sourcegraph/components/index";
@@ -254,11 +255,6 @@ class SearchForm extends React.Component<SearchFormProps, SearchFormState> {
 		this._handleBlur = this._handleBlur.bind(this);
 	}
 
-	componentDidMount() {
-		document.addEventListener("keydown", this._handleGlobalHotkey);
-		document.addEventListener("click", this._handleGlobalClick);
-	}
-
 	componentWillReceiveProps(nextProps: SearchFormProps) {
 		const nextQuery = queryFromStateOrURL(nextProps.location);
 		if (this.state.query !== nextQuery) {
@@ -272,11 +268,6 @@ class SearchForm extends React.Component<SearchFormProps, SearchFormState> {
 		if (!nextQuery) {
 			this.setState({open: false} as SearchFormState);
 		}
-	}
-
-	componentWillUnmount() {
-		document.removeEventListener("keydown", this._handleGlobalHotkey);
-		document.removeEventListener("click", this._handleGlobalClick);
 	}
 
 	_handleGlobalHotkey(ev: KeyboardEvent) {
@@ -370,6 +361,8 @@ class SearchForm extends React.Component<SearchFormProps, SearchFormState> {
 						{this.props.showResultsPanel && this.state.open && <button className={styles.close_button} type="reset" onClick={this._handleReset}><CloseIcon className={styles.close_icon} /></button>}
 				</form>
 				{this.props.showResultsPanel && this.state.open && <SearchResultsPanel query={this.state.query || ""} repo={this.props.repo} location={this.props.location} />}
+				<EventListener target={global.document} event="keydown" callback={this._handleGlobalHotkey} />
+				<EventListener target={global.document} event="click" callback={this._handleGlobalClick} />
 			</div>
 		);
 	}

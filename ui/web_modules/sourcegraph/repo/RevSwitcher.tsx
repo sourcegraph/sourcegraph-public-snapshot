@@ -7,7 +7,7 @@ import debounce from "lodash.debounce";
 import "sourcegraph/repo/RepoBackend";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
-import {Component} from "sourcegraph/Component";
+import {Component, EventListener} from "sourcegraph/Component";
 import {Link} from "react-router";
 import * as styles from "./styles/RevSwitcher.css";
 import * as classNames from "classnames";
@@ -59,20 +59,6 @@ export class RevSwitcher extends Component<Props, any> {
 		this._debouncedSetQuery = debounce((query) => {
 			this.setState({query: query});
 		}, 150, {leading: true, trailing: true});
-	}
-
-	componentDidMount() {
-		if (typeof document !== "undefined") {
-			document.addEventListener("click", this._onClickOutside);
-			document.addEventListener("keydown", this._onKeydown);
-		}
-	}
-
-	componentWillUnmount() {
-		if (typeof document !== "undefined") {
-			document.removeEventListener("click", this._onClickOutside);
-			document.removeEventListener("keydown", this._onKeydown);
-		}
 	}
 
 	reconcileState(state, props: Props) {
@@ -300,6 +286,8 @@ export class RevSwitcher extends Component<Props, any> {
 						{tags}
 					</Menu>
 				</div>
+				<EventListener target={global.document} event="click" callback={this._onClickOutside} />
+				<EventListener target={global.document} event="keydown" callback={this._onKeydown} />
 			</div>
 		);
 	}

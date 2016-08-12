@@ -3,6 +3,7 @@
 import * as React from "react";
 import Helmet from "react-helmet";
 
+import {EventListener} from "sourcegraph/Component";
 import {GlobalNav} from "sourcegraph/app/GlobalNav";
 import {Footer} from "sourcegraph/app/Footer";
 import "sourcegraph/components/styles/_normalize.css";
@@ -59,16 +60,6 @@ export class App extends React.Component<Props, any> {
 		};
 	}
 
-	componentDidMount() {
-		if (typeof document !== "undefined") {
-			document.addEventListener("sourcegraph:desktop", this._handleSourcegraphDesktop);
-		}
-	}
-
-	componentWillUnmount() {
-		document.removeEventListener("sourcegraph:desktop", this._handleSourcegraphDesktop);
-	}
-
 	_handleSourcegraphDesktop(event) {
 		(this.context as any).router.replace(event.detail);
 	}
@@ -85,6 +76,7 @@ export class App extends React.Component<Props, any> {
 					</div>
 					{!(this.context as any).signedIn && <Footer />}
 				</div>
+				<EventListener target={global.document} event="sourcegraph:desktop" callback={this._handleSourcegraphDesktop} />
 			</div>
 		);
 	}

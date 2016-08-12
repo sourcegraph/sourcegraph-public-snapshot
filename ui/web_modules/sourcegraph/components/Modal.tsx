@@ -4,6 +4,7 @@ import * as React from "react";
 
 import * as styles from "./styles/modal.css";
 import {renderedOnBody} from "sourcegraph/util/renderedOnBody";
+import {EventListener} from "sourcegraph/Component";
 
 interface ModalProps {
 	onDismiss?: () => void;
@@ -17,19 +18,12 @@ class ModalComp extends React.Component<ModalProps, any> {
 	}
 
 	componentDidMount() {
-		if (typeof document !== "undefined") {
-			document.addEventListener("keydown", this._handleKeydown);
-
-			// Prevent the page below the modal from scrolling.
-			document.body.style.overflow = "hidden";
-		}
+		// Prevent the page below the modal from scrolling.
+		document.body.style.overflow = "hidden";
 	}
 
 	componentWillUnmount() {
-		if (typeof document !== "undefined") {
-			document.removeEventListener("keydown", this._handleKeydown);
-			document.body.style.overflow = "";
-		}
+		document.body.style.overflow = "";
 	}
 
 	_onClick(e) {
@@ -51,9 +45,10 @@ class ModalComp extends React.Component<ModalProps, any> {
 	render(): JSX.Element | null {
 		return (
 			<div ref="modal_container"
-				className={styles.container}
-				onClick={this._onClick}>
-					<div styleName="modal">{this.props.children}</div>
+					className={styles.container}
+					onClick={this._onClick}>
+				<div styleName="modal">{this.props.children}</div>
+				<EventListener target={global.document} event="keydown" callback={this._handleKeydown} />
 			</div>
 		);
 	}

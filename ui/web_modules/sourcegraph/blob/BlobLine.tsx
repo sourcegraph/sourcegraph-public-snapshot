@@ -97,7 +97,7 @@ export class BlobLine extends Component<Props, any> {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
-	componentDidMount(nextProps, nextState) {
+	componentDidMount() {
 		if (this.state.onMount) {
 			this.state.onMount();
 		}

@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as styles from "./styles/dropdown.css";
 import * as base from "./styles/_base.css";
+import {EventListener} from "sourcegraph/Component";
 import {CheckIcon} from "sourcegraph/components/Icons";
 import {DownPointer} from "sourcegraph/components/symbols/index";
 import * as classNames from "classnames";
@@ -36,18 +37,6 @@ export class Dropdown extends React.Component<Props, any> {
 		this._onToggleDropdown = this._onToggleDropdown.bind(this);
 		this._onDocumentClick = this._onDocumentClick.bind(this);
 		this.getItemClickCallback = this.getItemClickCallback.bind(this);
-	}
-
-	componentDidMount() {
-		if (typeof document !== "undefined") {
-			document.addEventListener("click", this._onDocumentClick);
-		}
-	}
-
-	componentWillUnmount() {
-		if (typeof document !== "undefined") {
-			document.removeEventListener("click", this._onDocumentClick);
-		}
 	}
 
 	_onToggleDropdown(ev) {
@@ -108,6 +97,7 @@ export class Dropdown extends React.Component<Props, any> {
 						</ul>
 					</div>
 				</div>
+				<EventListener target={global.document} event="click" callback={this._onDocumentClick} />
 			</div>
 		);
 	}

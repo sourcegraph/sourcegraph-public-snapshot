@@ -59,6 +59,12 @@
 							}
 						]
 					}
+				},
+				{
+					"type": "EventListener",
+					"props": {
+						"event": "selectionchange"
+					}
 				}
 			]
 		}

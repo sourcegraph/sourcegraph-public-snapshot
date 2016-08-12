@@ -63,3 +63,30 @@ export class Component<P, S> extends React.Component<P, S> {
 		// override
 	}
 }
+
+interface EventListenerProps {
+	target: EventTarget;
+	event: string;
+	callback: EventListenerOrEventListenerObject;
+}
+
+export class EventListener extends React.Component<EventListenerProps, {}> {
+	componentDidMount(): void {
+		this.props.target.addEventListener(this.props.event, this.props.callback);
+	}
+
+	componentWillReceiveProps(nextProps: EventListenerProps): void {
+		if (nextProps.target !== this.props.target || nextProps.event !== this.props.event || nextProps.callback !== this.props.callback) {
+			this.props.target.removeEventListener(this.props.event, this.props.callback);
+			nextProps.target.addEventListener(nextProps.event, nextProps.callback);
+		}
+	}
+
+	componentWillUnmount(): void {
+		this.props.target.removeEventListener(this.props.event, this.props.callback);
+	}
+
+	render(): JSX.Element | null {
+		return null;
+	}
+}

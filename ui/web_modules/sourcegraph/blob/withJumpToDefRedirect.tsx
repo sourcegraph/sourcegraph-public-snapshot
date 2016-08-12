@@ -75,7 +75,7 @@ export function withJumpToDefRedirect(Blob) {
 			}
 		}
 
-		render() {
+		render(): JSX.Element {
 			return <Blob {...this.props} {...this.state} />;
 		}
 	}
