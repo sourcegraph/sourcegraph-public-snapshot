@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
@@ -26,6 +27,9 @@ import (
 var btrfsPresent bool
 
 func init() {
+	if !feature.Features.Universe {
+		return
+	}
 	_, err := exec.LookPath("btrfs")
 	if err == nil {
 		btrfsPresent = true
