@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -24,13 +26,7 @@ var (
 func prepareRepo(update bool, workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
 
-	// TODO(slimsag): find a way to pass this information from the app instead
-	// of hard-coding it here.
-	cloneURI := "https://" + repo
-	if repo == "sourcegraph/sourcegraph" {
-		cloneURI = "git@github.com:sourcegraph/sourcegraph"
-		repo = "sourcegraph.com/sourcegraph/sourcegraph"
-	}
+	repo, cloneURI := resolveRepoAlias(repo)
 
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
@@ -75,12 +71,7 @@ func updateGoDependencies(repoDir string, env []string, repoURI string) error {
 
 func prepareDeps(update bool, workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
-
-	// TODO(slimsag): find a way to pass this information from the app instead
-	// of hard-coding it here.
-	if repo == "sourcegraph/sourcegraph" {
-		repo = "sourcegraph.com/sourcegraph/sourcegraph"
-	}
+	repo, _ = resolveRepoAlias(repo)
 
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
@@ -96,12 +87,75 @@ func prepareDeps(update bool, workspace, repo, commit string) error {
 }
 
 func fileURI(repo, commit, file string) string {
+	repo, _ = resolveRepoAlias(repo)
+	return "file:///" + filepath.Join("gopath", "src", repo, file)
+}
+
+func resolveFile(workspace, _, _, uri string) (*langp.File, error) {
+	if strings.HasPrefix(uri, "stdlib://") {
+		// We don't have stdlib checked out as a dep, so LSP returns a
+		// special URI for them.
+		p := uri[9:]
+		i := strings.Index(p, "/")
+		if i < 0 {
+			return nil, fmt.Errorf("invalid stdlib URI: %s", uri)
+		}
+		return &langp.File{
+			Repo:   "github.com/golang/go",
+			Commit: p[:i],
+			Path:   p[i+1:],
+		}, nil
+	}
+
+	if !strings.HasPrefix(uri, "file:///") {
+		return nil, fmt.Errorf("uri does not start with file:/// : %s", uri)
+	}
+	workspacePath := uri[8:]
+
+	// Query the repo and commit containing workspacePath
+	fullPath := filepath.Join(workspace, workspacePath)
+	dir := fullPath
+	if fi, err := os.Stat(fullPath); err != nil || !fi.IsDir() {
+		dir = filepath.Dir(dir)
+	}
+	cmd := exec.Command("git", "rev-parse", "--show-toplevel", "HEAD")
+	cmd.Dir = dir
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	lines := strings.Fields(string(out))
+	if len(lines) != 2 {
+		return nil, errors.New("unexpected number of lines from git rev-parse")
+	}
+	repoPath := lines[0]
+	commit := lines[1]
+
+	// Repo is repoPath relative to our GOPATH/src
+	repo, err := filepath.Rel(filepath.Join(workspace, "gopath", "src"), repoPath)
+	if err != nil {
+		return nil, err
+	}
+	// Path is fullPath relative to repoPath
+	path, err := filepath.Rel(repoPath, fullPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &langp.File{
+		Repo:   repo,
+		Commit: commit,
+		Path:   path,
+	}, nil
+}
+
+func resolveRepoAlias(repo string) (importPath, cloneURL string) {
 	// TODO(slimsag): find a way to pass this information from the app instead
 	// of hard-coding it here.
 	if repo == "sourcegraph/sourcegraph" {
-		repo = "sourcegraph.com/sourcegraph/sourcegraph"
+		return "sourcegraph.com/sourcegraph/sourcegraph", "git@github.com:sourcegraph/sourcegraph"
 	}
-	return filepath.Join("gopath", "src", repo, file)
+	return repo, "https://" + repo
 }
 
 func main() {
@@ -161,6 +215,7 @@ func main() {
 		WorkDir:     workDir,
 		PrepareRepo: prepareRepo,
 		PrepareDeps: prepareDeps,
+		ResolveFile: resolveFile,
 		FileURI:     fileURI,
 	}))
 	http.ListenAndServe(*httpAddr, nil)

@@ -88,6 +88,18 @@ type Translator struct {
 	// the API request which triggered the preperation of the workspace.
 	PrepareDeps func(update bool, workspace, repo, commit string) error
 
+	// ResolveFile is used to convert file URIs returned by LSP into
+	// repo specific paths that Sourcegraph can use.
+	//
+	// This is where language processors should perform language-specific
+	// tasks like translating paths to fetched dependencies into a path
+	// inside the fetched dependency.
+	//
+	// workspace, repo, commit are the same as passed to PrepareDeps and
+	// PrepareRepo. uri is the uri that requires resolving. It is usually
+	// a file:/// relative to the workspace.
+	ResolveFile func(workspace, repo, commit, uri string) (*File, error)
+
 	// FileURI, if non-nil, is called to form the file URI which is sent to a
 	// language server. Provided is the repo and commit, and a file URI which
 	// is relative to the repository root.
@@ -499,10 +511,15 @@ func (t *translator) serveDefinition(body []byte) (interface{}, error) {
 		return nil, err
 	}
 
+	f, err := t.resolveFile(pos.Repo, pos.Commit, respDef[0].URI)
+	if err != nil {
+		return nil, err
+	}
+
 	return Range{
-		Repo:           pos.Repo,
-		Commit:         pos.Commit,
-		File:           respDef[0].URI,
+		Repo:           f.Repo,
+		Commit:         f.Commit,
+		File:           f.Path,
 		StartLine:      respDef[0].Range.Start.Line,
 		StartCharacter: respDef[0].Range.Start.Character,
 		EndLine:        respDef[0].Range.End.Line,
@@ -722,10 +739,14 @@ func (t *translator) serveLocalRefs(body []byte) (interface{}, error) {
 	}
 	refs := make([]Range, 0, len(resp))
 	for _, r := range resp {
+		f, err := t.resolveFile(pos.Repo, pos.Commit, r.URI)
+		if err != nil {
+			return nil, err
+		}
 		refs = append(refs, Range{
-			Repo:           pos.Repo,
-			Commit:         pos.Commit,
-			File:           r.URI,
+			Repo:           f.Repo,
+			Commit:         f.Commit,
+			File:           f.Path,
 			StartLine:      r.Range.Start.Line,
 			StartCharacter: r.Range.Start.Character,
 			EndLine:        r.Range.End.Line,
@@ -784,6 +805,11 @@ func (t *translator) lspDo(rootPath string, request *jsonrpc2.Request, result in
 		return resp.Error
 	}
 	return json.Unmarshal(*resp.Result, result)
+}
+
+func (t *translator) resolveFile(repo, commit, uri string) (*File, error) {
+	workspace := t.pathToWorkspace(repo, commit)
+	return t.ResolveFile(workspace, repo, commit, uri)
 }
 
 // ExpandSGPath expands the $SGPATH variable in the given string, except it

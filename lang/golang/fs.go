@@ -9,6 +9,9 @@ import (
 	"strings"
 )
 
+// TODO(keegancsmith) Find a more reliable way to get this commit
+const stdlibVersion = "da6b9ec7bf1722fa00196e1eadc10a29156b6b28" // go1.6.3
+
 func (h *Session) filePath(uri string) string {
 	path := strings.TrimPrefix(strings.TrimPrefix(uri, "file://"), "/")
 	return filepath.Join(h.init.RootPath, path)
@@ -20,7 +23,7 @@ func (h *Session) fileURI(path string) (string, error) {
 		return "", err
 	}
 	if strings.HasPrefix(path, runtime.GOROOT()) {
-		return "workspace://github.com/golang/go/-" + strings.TrimPrefix(path, runtime.GOROOT()), nil
+		return "stdlib://" + stdlibVersion + "/" + strings.TrimPrefix(path, runtime.GOROOT()), nil
 	}
 	root, err := filepath.Abs(h.init.RootPath)
 	if err != nil {

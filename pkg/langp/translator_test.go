@@ -3,12 +3,14 @@ package langp
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
@@ -32,7 +34,28 @@ func TestTranslator(t *testing.T) {
 		WorkDir:     workDir,
 		PrepareRepo: func(update bool, workspace, repo, commit string) error { return nil },
 		PrepareDeps: func(update bool, workspace, repo, commit string) error { return nil },
-		FileURI:     func(repo, commit, file string) string { return filepath.Join(repo, file) },
+		ResolveFile: func(workspace, repo, commit, uri string) (*File, error) {
+			if !strings.HasPrefix(uri, "file:///") {
+				return nil, fmt.Errorf("uri does not start with file:/// : %s", uri)
+			}
+			path := uri[8:]
+			deps := map[string]string{
+				"github.com/gorilla/mux": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+				"github.com/golang/go":   "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+			}
+			deps[repo] = commit
+			repo = "unknown"
+			commit = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+			for r, c := range deps {
+				if strings.HasPrefix(path, r) {
+					repo = r
+					commit = c
+					path = path[len(r)+1:]
+				}
+			}
+			return &File{Repo: repo, Commit: commit, Path: path}, nil
+		},
+		FileURI: func(repo, commit, file string) string { return "file:///" + filepath.Join(repo, file) },
 	}))
 	defer ts.Close()
 
@@ -67,7 +90,7 @@ func TestTranslator(t *testing.T) {
 			},
 			WantLSPMethod: "textDocument/definition",
 			WantLSPParam: &lsp.TextDocumentPositionParams{
-				TextDocument: lsp.TextDocumentIdentifier{URI: "github.com/foo/bar/baz.go"},
+				TextDocument: lsp.TextDocumentIdentifier{URI: "file:///github.com/foo/bar/baz.go"},
 				Position: lsp.Position{
 					Line:      12,
 					Character: 34,
@@ -75,7 +98,7 @@ func TestTranslator(t *testing.T) {
 			},
 
 			LSPResponseResult: []lsp.Location{{
-				URI: "baz.go",
+				URI: "file:///github.com/foo/bar/baz.go",
 				Range: lsp.Range{
 					Start: lsp.Position{
 						Line:      1,
@@ -111,7 +134,7 @@ func TestTranslator(t *testing.T) {
 			},
 			WantLSPMethod: "textDocument/hover",
 			WantLSPParam: &lsp.TextDocumentPositionParams{
-				TextDocument: lsp.TextDocumentIdentifier{URI: "github.com/foo/bar/baz.go"},
+				TextDocument: lsp.TextDocumentIdentifier{URI: "file:///github.com/foo/bar/baz.go"},
 				Position: lsp.Position{
 					Line:      12,
 					Character: 34,
@@ -168,13 +191,13 @@ func TestTranslator(t *testing.T) {
 			}},
 			WantResponse: &ExternalRefs{Defs: []DefSpec{{
 				Repo:     "github.com/gorilla/mux",
-				Commit:   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", // TODO to translate deps commit
+				Commit:   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 				UnitType: "GoPackage",
 				Unit:     "github.com/gorilla/mux",
 				Path:     "NewRouter",
 			}, {
 				Repo:     "github.com/golang/go",
-				Commit:   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", // TODO to translate deps commit
+				Commit:   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 				UnitType: "GoPackage",
 				Unit:     "fmt",
 				Path:     "Printf",
@@ -233,7 +256,7 @@ func TestTranslator(t *testing.T) {
 			},
 			WantLSPMethod: "textDocument/references",
 			WantLSPParam: &lsp.TextDocumentPositionParams{
-				TextDocument: lsp.TextDocumentIdentifier{URI: "github.com/foo/bar/baz.go"},
+				TextDocument: lsp.TextDocumentIdentifier{URI: "file:///github.com/foo/bar/baz.go"},
 				Position: lsp.Position{
 					Line:      12,
 					Character: 34,
@@ -241,7 +264,7 @@ func TestTranslator(t *testing.T) {
 			},
 
 			LSPResponseResult: []lsp.Location{{
-				URI: "baz.go",
+				URI: "file:///github.com/foo/bar/baz.go",
 				Range: lsp.Range{
 					Start: lsp.Position{
 						Line:      1,
@@ -253,7 +276,7 @@ func TestTranslator(t *testing.T) {
 					},
 				},
 			}, {
-				URI: "baz.go",
+				URI: "file:///github.com/foo/bar/baz.go",
 				Range: lsp.Range{
 					Start: lsp.Position{
 						Line:      4,

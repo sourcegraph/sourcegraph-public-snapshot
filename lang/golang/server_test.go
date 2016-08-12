@@ -16,10 +16,6 @@ import (
 
 var updateFixtures = flag.Bool("fixtures.update", false, "update the expected files with actual")
 
-var skipFixtures = map[string]string{
-	"testdata/definition-external.json": "We do not support external symbol lookup yet",
-}
-
 func testFixtures(t *testing.T, h jsonrpc2.BatchHandler) {
 	cases, err := filepath.Glob("testdata/*.json")
 	if err != nil {
@@ -27,11 +23,6 @@ func testFixtures(t *testing.T, h jsonrpc2.BatchHandler) {
 	}
 
 	for _, c := range cases {
-		if reason, shouldSkip := skipFixtures[c]; shouldSkip {
-			t.Logf("SKIP %s: %s", c, reason)
-			continue
-		}
-
 		var req []*jsonrpc2.Request
 		unmarshalFile(t, c, &req)
 

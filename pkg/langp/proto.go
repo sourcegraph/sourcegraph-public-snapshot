@@ -169,3 +169,16 @@ func HoverFromLSP(l lsp.Hover) *Hover {
 	}
 	return h
 }
+
+// File is returned by ResolveFile to convert workspace paths into objects
+// Sourcegraph understands.
+type File struct {
+	// Repo is the repository URI in which the file is located.
+	Repo string
+
+	// Commit is the Git commit ID (not branch) of the repository.
+	Commit string
+
+	// Path is the file which the user is viewing, relative to the repository root.
+	Path string
+}
