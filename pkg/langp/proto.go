@@ -98,7 +98,7 @@ type RepoRev struct {
 }
 
 // DefSpec is a globally unique identifier for a definition in a repository at
-// a specific revision.
+// a specific revision. It is the same as the Srclib DefSpec.
 type DefSpec struct {
 	// Repo is the repository URI.
 	Repo string
@@ -114,6 +114,28 @@ type DefSpec struct {
 
 	// Path (example NewRequest)
 	Path string
+}
+
+// Symbol is a symbol in code.
+type Symbol struct {
+	// DefSpec is the DefSpec for this symbol.
+	DefSpec
+
+	// Name of the symbol. This need not be unique.
+	Name string
+
+	// Kind is the kind of thing this definition is. This is
+	// language-specific. Possible values include "type", "func",
+	// "var", etc.
+	Kind string
+
+	// File is the path to the file containing the symbol.
+	File string
+
+	// DocHTML is the docstring for the symbol, in the format 'text/html'.
+	//
+	// Note: You can't assume DocHTML has already been sanitized.
+	DocHTML string
 }
 
 // LocalRefs represents references to a specific definition.
@@ -132,7 +154,7 @@ type ExternalRefs struct {
 // ExportedSymbols contains a list of all Defs available for use by other
 // repositories.
 type ExportedSymbols struct {
-	Defs []*DefSpec
+	Symbols []*Symbol
 }
 
 // Hover represents a message for when a user "hovers" over a definition. It is

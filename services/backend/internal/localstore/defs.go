@@ -435,7 +435,7 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.RefreshIndexO
 		if err != nil {
 			log15.Debug("universe defs.Update failed", "repo", repo.URI, "commitID", op.CommitID, "err", err)
 		} else {
-			log15.Debug("universe defs.Update success", "repo", repo.URI, "commitID", op.CommitID, "count", len(r.Defs))
+			log15.Debug("universe defs.Update success", "repo", repo.URI, "commitID", op.CommitID, "count", len(r.Symbols))
 		}
 	}
 

@@ -233,18 +233,21 @@ func TestTranslator(t *testing.T) {
 				Location:      lsp.Location{}, // Ignored
 				ContainerName: "github.com/foo/bar",
 			}},
-			WantResponse: &ExportedSymbols{Defs: []*DefSpec{{
-				Repo:     "github.com/foo/bar",
-				Commit:   "deadbeef",
-				UnitType: "GoPackage",
-				Unit:     "github.com/foo/bar",
-				Path:     "Baz",
-			}, {
-				Repo:     "github.com/foo/bar",
-				Commit:   "deadbeef",
-				UnitType: "GoPackage",
-				Unit:     "github.com/foo/bar",
-				Path:     "New",
+			WantResponse: &ExportedSymbols{Symbols: []*Symbol{{
+				DefSpec: DefSpec{
+					Repo:     "github.com/foo/bar",
+					Commit:   "deadbeef",
+					UnitType: "GoPackage",
+					Unit:     "github.com/foo/bar",
+					Path:     "Baz",
+				}}, {
+				DefSpec: DefSpec{
+					Repo:     "github.com/foo/bar",
+					Commit:   "deadbeef",
+					UnitType: "GoPackage",
+					Unit:     "github.com/foo/bar",
+					Path:     "New",
+				},
 			}}},
 			Got: &ExportedSymbols{},
 		},

@@ -135,7 +135,7 @@ func (mc *MultiClient) ExportedSymbols(r *RepoRev) (*ExportedSymbols, error) {
 		if err != nil {
 			return nil, err
 		}
-		result.Defs = append(result.Defs, v.Defs...)
+		result.Symbols = append(result.Symbols, v.Symbols...)
 	}
 	return result, nil
 }

@@ -694,7 +694,7 @@ func (t *translator) serveExportedSymbols(body []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	var defs []*DefSpec
+	var symbols []*Symbol
 	// TODO(keegancsmith) go specific
 	for _, s := range respSymbol {
 		pkgParts := strings.Split(s.ContainerName, "/")
@@ -707,15 +707,17 @@ func (t *translator) serveExportedSymbols(body []byte) (interface{}, error) {
 			repo = strings.Join(pkgParts[:3], "/")
 			unit = strings.Join(pkgParts, "/")
 		}
-		defs = append(defs, &DefSpec{
-			Repo:     repo,
-			Commit:   r.Commit,
-			UnitType: "GoPackage",
-			Unit:     unit,
-			Path:     s.Name,
+		symbols = append(symbols, &Symbol{
+			DefSpec: DefSpec{
+				Repo:     repo,
+				Commit:   r.Commit,
+				UnitType: "GoPackage",
+				Unit:     unit,
+				Path:     s.Name,
+			},
 		})
 	}
-	return &ExportedSymbols{Defs: defs}, nil
+	return &ExportedSymbols{Symbols: symbols}, nil
 }
 
 func (t *translator) serveLocalRefs(body []byte) (interface{}, error) {
