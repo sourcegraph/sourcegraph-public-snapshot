@@ -627,7 +627,7 @@ func (t *translator) serveExternalRefs(body []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	var defs []DefSpec
+	var defs []*DefSpec
 	// TODO(keegancsmith) go specific
 	for _, s := range respSymbol {
 		// TODO(keegancsmith) we should inspect the workspace to find
@@ -643,7 +643,7 @@ func (t *translator) serveExternalRefs(body []byte) (interface{}, error) {
 			repo = strings.Join(pkgParts[:3], "/")
 			unit = strings.Join(pkgParts, "/")
 		}
-		defs = append(defs, DefSpec{
+		defs = append(defs, &DefSpec{
 			Repo:     repo,
 			Commit:   commit,
 			UnitType: "GoPackage",
@@ -694,7 +694,7 @@ func (t *translator) serveExportedSymbols(body []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	var defs []DefSpec
+	var defs []*DefSpec
 	// TODO(keegancsmith) go specific
 	for _, s := range respSymbol {
 		pkgParts := strings.Split(s.ContainerName, "/")
@@ -707,7 +707,7 @@ func (t *translator) serveExportedSymbols(body []byte) (interface{}, error) {
 			repo = strings.Join(pkgParts[:3], "/")
 			unit = strings.Join(pkgParts, "/")
 		}
-		defs = append(defs, DefSpec{
+		defs = append(defs, &DefSpec{
 			Repo:     repo,
 			Commit:   r.Commit,
 			UnitType: "GoPackage",
@@ -760,13 +760,13 @@ func (t *translator) serveLocalRefs(body []byte) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	refs := make([]Range, 0, len(resp))
+	refs := make([]*Range, 0, len(resp))
 	for _, r := range resp {
 		f, err := t.resolveFile(pos.Repo, pos.Commit, r.URI)
 		if err != nil {
 			return nil, err
 		}
-		refs = append(refs, Range{
+		refs = append(refs, &Range{
 			Repo:           f.Repo,
 			Commit:         f.Commit,
 			File:           f.Path,

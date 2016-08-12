@@ -162,7 +162,7 @@ func TestTranslator(t *testing.T) {
 				},
 			},
 			WantResponse: &Hover{
-				Contents: []HoverContent{{
+				Contents: []*HoverContent{{
 					Type:  "go",
 					Value: "NewRouter func() *Router",
 				}},
@@ -193,7 +193,7 @@ func TestTranslator(t *testing.T) {
 				Location:      lsp.Location{}, // Ignored
 				ContainerName: "fmt",
 			}},
-			WantResponse: &ExternalRefs{Defs: []DefSpec{{
+			WantResponse: &ExternalRefs{Defs: []*DefSpec{{
 				Repo:     "github.com/gorilla/mux",
 				Commit:   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 				UnitType: "GoPackage",
@@ -232,7 +232,7 @@ func TestTranslator(t *testing.T) {
 				Location:      lsp.Location{}, // Ignored
 				ContainerName: "github.com/foo/bar",
 			}},
-			WantResponse: &ExportedSymbols{Defs: []DefSpec{{
+			WantResponse: &ExportedSymbols{Defs: []*DefSpec{{
 				Repo:     "github.com/foo/bar",
 				Commit:   "deadbeef",
 				UnitType: "GoPackage",
@@ -292,7 +292,7 @@ func TestTranslator(t *testing.T) {
 					},
 				},
 			}},
-			WantResponse: &LocalRefs{Refs: []Range{
+			WantResponse: &LocalRefs{Refs: []*Range{
 				{
 					Repo:           "github.com/foo/bar",
 					Commit:         "deadbeef",

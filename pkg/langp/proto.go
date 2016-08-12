@@ -120,19 +120,19 @@ type DefSpec struct {
 type LocalRefs struct {
 	// Refs is a list of references to a definition defined within the requested
 	// repository.
-	Refs []Range
+	Refs []*Range
 }
 
 // ExternalRefs contains a list of all Defs used in a repository, but defined
 // outside of it.
 type ExternalRefs struct {
-	Defs []DefSpec
+	Defs []*DefSpec
 }
 
 // ExportedSymbols contains a list of all Defs available for use by other
 // repositories.
 type ExportedSymbols struct {
-	Defs []DefSpec
+	Defs []*DefSpec
 }
 
 // HoverContent represents a subset of the content for when a user “hovers”
@@ -154,15 +154,15 @@ type HoverContent struct {
 // Hover represents a message for when a user "hovers" over a definition. It is
 // a human-readable description of a definition.
 type Hover struct {
-	Contents []HoverContent
+	Contents []*HoverContent
 }
 
 func HoverFromLSP(l lsp.Hover) *Hover {
 	h := &Hover{
-		Contents: make([]HoverContent, len(l.Contents)),
+		Contents: make([]*HoverContent, len(l.Contents)),
 	}
 	for i, marked := range l.Contents {
-		h.Contents[i] = HoverContent{
+		h.Contents[i] = &HoverContent{
 			Type:  marked.Language,
 			Value: marked.Value,
 		}
