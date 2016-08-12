@@ -23,7 +23,7 @@ func (h *Session) fileURI(path string) (string, error) {
 		return "", err
 	}
 	if strings.HasPrefix(path, runtime.GOROOT()) {
-		return "stdlib://" + stdlibVersion + "/" + strings.TrimPrefix(path, runtime.GOROOT()), nil
+		return "stdlib://" + stdlibVersion + strings.TrimPrefix(path, runtime.GOROOT()), nil
 	}
 	root, err := filepath.Abs(h.init.RootPath)
 	if err != nil {

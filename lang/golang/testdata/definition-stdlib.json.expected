@@ -13,7 +13,7 @@
   {
     "result": [
       {
-        "uri": "stdlib://da6b9ec7bf1722fa00196e1eadc10a29156b6b28//src/net/http/server.go",
+        "uri": "stdlib://da6b9ec7bf1722fa00196e1eadc10a29156b6b28/src/net/http/server.go",
         "range": {
           "start": {
             "line": 56,
