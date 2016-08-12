@@ -94,7 +94,7 @@ export class Repos extends React.Component<Props, any> {
 					<div className={styles.input_bar}>
 						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} className={styles.github_button}>Add public repositories</GitHubAuthButton>}
 						{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>}
-						{!this._hasHookGitHubToken() && <GitHubAuthButton scopes={adminRepoGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add webhook notification</GitHubAuthButton>}
+						{!this._hasHookGitHubToken() && false && <GitHubAuthButton scopes={adminRepoGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add webhook notification</GitHubAuthButton>}
 					</div>
 				</header>
 				<div className={styles.settings}>
