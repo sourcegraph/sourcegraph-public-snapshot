@@ -82,7 +82,7 @@ func (mc *MultiClient) find(filename string) (*Client, error) {
 			return client, nil
 		}
 	}
-	return nil, fmt.Errorf("MultiClient: no client registered for extension %q", filepath.Ext(filename))
+	return nil, fmt.Errorf("MultiClient: no client registered for extension %q (did you set SG_LANGUAGE_PROCESSOR_<lang> ?)", filepath.Ext(filename))
 }
 
 // Definition invokes Definition on the client whose language matches p.File.
