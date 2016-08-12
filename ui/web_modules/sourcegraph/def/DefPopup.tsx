@@ -68,7 +68,6 @@ export class DefPopup extends Container<Props, any> {
 
 				{!refLocs && <span className={styles.loading}>Loading...</span>}
 				{refLocs && (!refLocs.RepoRefs || refLocs.RepoRefs.length === 0) && (!refLocs.Files || refLocs.Files.length === 0) && <i>No usages found</i>}
-				{<RefLocationsList def={def} refLocations={refLocs} showMax={3} repo={this.state.repo} rev={this.state.rev} path={this.state.path} location={this.state.location} />}
 				{refLocs && refLocs.RepoRefs &&
 					<RefLocationsList def={def} refLocations={refLocs} showMax={3} repo={this.state.repo} rev={this.state.rev} path={this.state.path} location={this.state.location} />}
 				{refLocs && refLocs.Files &&
