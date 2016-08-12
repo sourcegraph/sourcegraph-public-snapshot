@@ -15,15 +15,12 @@ import debounce from "lodash.debounce";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
-import {Options, Repo, Def} from "sourcegraph/def/index";
 import {Icon} from "sourcegraph/components/index";
 import {trimRepo} from "sourcegraph/repo/index";
 import * as styles from "./styles/GlobalSearch.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {popularRepos} from "./popularRepos";
-import {SearchSettings} from "sourcegraph/search/index";
-import {WantResultsPayload} from "sourcegraph/search/SearchActions";
 import {locationForSearch} from "sourcegraph/search/routes";
 import * as classNames from "classnames";
 
@@ -39,8 +36,28 @@ interface Props {
 	resultClassName?: string;
 }
 
+interface State {
+	repo: string | null;
+	query: string;
+	className: string | null;
+	resultClassName: string | null;
+	matchingResults: any;
+	selectionIndex: number;
+	githubToken: any;
+
+	searchSettings: any;
+	location: any;
+	language: any;
+
+	_queries: any;
+	_searchStore: any;
+	_privateRepos: any;
+	_publicRepos: any;
+	_reposByLang: any;
+}
+
 // GlobalSearch is the global search bar + results component.
-export class GlobalSearch extends Container<Props, any> {
+export class GlobalSearch extends Container<Props, State> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
@@ -51,29 +68,6 @@ export class GlobalSearch extends Container<Props, any> {
 	_debouncedUnignoreMouseSelection: any;
 	_dispatcherToken: string;
 	_debounceForSearch = debounce((f: Function) => f(), 200, {leading: false, trailing: true});
-
-	state: {
-		repo: string | null;
-		query: string;
-		className: string | null;
-		resultClassName: string | null;
-		matchingResults: {
-			Repos: Array<Repo>,
-			Defs: Array<Def>,
-			Options: Array<Options>,
-			outstandingFetches: number,
-		};
-		selectionIndex: number;
-		githubToken: any;
-
-		searchSettings: SearchSettings | null;
-
-		_queries: Array<WantResultsPayload> | null;
-		_searchStore: any,
-		_privateRepos: Array<Repo>;
-		_publicRepos: Array<Repo>;
-		_reposByLang: any;
-	};
 
 	constructor(props: Props) {
 		super(props);
@@ -87,6 +81,8 @@ export class GlobalSearch extends Container<Props, any> {
 			selectionIndex: 0,
 			githubToken: null,
 			searchSettings: null,
+			location: null,
+			language: null,
 			_queries: null,
 			_searchStore: null,
 			_privateRepos: [],
@@ -140,7 +136,7 @@ export class GlobalSearch extends Container<Props, any> {
 
 	stores(): FluxUtils.Store<any>[] { return [SearchStore, UserStore, RepoStore]; }
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		Object.assign(state, props);
 		state.githubToken = UserStore.activeGitHubToken;
 		state.language = state.searchSettings && state.searchSettings.languages ? state.searchSettings.languages : null;
@@ -236,7 +232,7 @@ export class GlobalSearch extends Container<Props, any> {
 		}
 	}
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if (prevState.searchSettings && prevState.searchSettings !== nextState.searchSettings && nextState.location.pathname === "/search") {
 			(this.context as any).router.replace(locationForSearch(nextState.location, nextState.query, nextState.searchSettings.languages, nextState.searchSettings.scope, false, true));
 		}
@@ -278,7 +274,7 @@ export class GlobalSearch extends Container<Props, any> {
 
 			this.setState({
 				selectionIndex: idx + 1 >= max ? 0 : idx + 1,
-			}, this._scrollToVisibleSelection);
+			} as State, this._scrollToVisibleSelection);
 
 			this._temporarilyIgnoreMouseSelection();
 			e.preventDefault();
@@ -290,7 +286,7 @@ export class GlobalSearch extends Container<Props, any> {
 
 			this.setState({
 				selectionIndex: idx <= 0 ? max - 1 : idx - 1,
-			}, this._scrollToVisibleSelection);
+			} as State, this._scrollToVisibleSelection);
 
 			this._temporarilyIgnoreMouseSelection();
 			e.preventDefault();
@@ -401,7 +397,7 @@ export class GlobalSearch extends Container<Props, any> {
 	_selectItem(i: number): void {
 		this.setState({
 			selectionIndex: i,
-		});
+		} as State);
 	}
 
 	// _mouseSelectItem causes i to be selected ONLY IF the user is using the

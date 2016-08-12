@@ -73,9 +73,44 @@ export interface Props {
 	displayRanges?: any;
 }
 
+interface State {
+	startlineCallback: any;
+	location: HistoryModule.Location;
+	repo: any;
+	rev: any;
+	commitID: any;
+	path: any;
+	lines: any;
+	highlightSelectedLines: boolean;
+	highlightedDef: string | null;
+	highlightedDefObj: Def | null;
+	startLine: any;
+	startCol: number | null;
+	startByte: number | null;
+	endLine: number | null;
+	endCol: number | null;
+	endByte: number | null;
+	lineStartBytes: any;
+	lineNumbers: boolean;
+	activeDef: string | null;
+	activeDefRepo: string | null;
+	contentsOffsetLine: number;
+	expandedRanges: Range[];
+	displayLineExpanders: string | null;
+	textSize: string;
+	scrollTarget: number | null;
+	scrollCallback: any;
+	lineAnns: any;
+	scrollToStartLine: any;
+	displayRanges: any;
+	dispatchSelections: any;
+	annotations: any;
+	contents: any;
+};
+
 // BlobTestOnly should only be used on its own for testing purposes. Normally, 
 // you should be using Blob that's at the bottom of this file. 
-export class BlobTestOnly extends Component<Props, any> {
+export class BlobTestOnly extends Component<Props, State> {
 
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
@@ -84,38 +119,7 @@ export class BlobTestOnly extends Component<Props, any> {
 
 	_isMounted: boolean;
 
-	state: {
-		startlineCallback: any,
-		location: HistoryModule.Location,
-		repo: string;
-		rev: string;
-		commitID: string;
-		path: string;
-		lines: string[];
-		highlightSelectedLines: boolean;
-		highlightedDef: string | null;
-		highlightedDefObj: Def | null;
-		startLine: number | null;
-		startCol: number | null;
-		startByte: number | null;
-		endLine: number | null;
-		endCol: number | null;
-		endByte: number | null;
-		lineStartBytes: number[];
-		lineNumbers: boolean;
-		activeDef: string | null;
-		activeDefRepo: string | null;
-		contentsOffsetLine: number;
-		expandedRanges: Range[];
-		displayLineExpanders: string | null;
-		textSize: string;
-		scrollTarget: number | null;
-		scrollCallback: any;
-		lineAnns: any;
-		scrollToStartLine: any;
-		displayRanges: any;
-		dispatchSelections: any;
-	} = {
+	state: State = {
 		startlineCallback: x => {},
 		location: {
 			hash: "",
@@ -154,6 +158,8 @@ export class BlobTestOnly extends Component<Props, any> {
 		scrollToStartLine: null,
 		displayRanges: null,
 		dispatchSelections: null,
+		annotations: null,
+		contents: null,
 	};
 
 	constructor(props: Props) {
@@ -185,7 +191,7 @@ export class BlobTestOnly extends Component<Props, any> {
 		this._isMounted = false;
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		state.startlineCallback = props.startlineCallback || (x => {});
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
@@ -216,7 +222,7 @@ export class BlobTestOnly extends Component<Props, any> {
 		let updateAnns = false;
 
 		if (state.annotations !== props.annotations && !props.skipAnns) {
-			state.annotations = props.annotations;
+			state.annotations = props.annotations || null;
 			updateAnns = true;
 		}
 
@@ -304,7 +310,7 @@ export class BlobTestOnly extends Component<Props, any> {
 		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "BlobLineExpanderClicked", {repo: this.state.repo, active_def: this.state.activeDef, path: this.state.path});
 		this.setState({
 			expandedRanges: this.state.expandedRanges.concat([range]),
-		});
+		} as State);
 	}
 
 	_handleSelectionChange(ev: Event) {
