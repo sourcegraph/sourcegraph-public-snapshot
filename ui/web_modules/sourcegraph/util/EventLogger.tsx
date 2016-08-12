@@ -22,7 +22,7 @@ class EventLoggerClass {
 	_dispatcherToken: any;
 	_siteConfig: SiteConfig | null;
 	_currentPlatform: string = "Web";
-	_currentPlatformVersion: number = NaN;
+	_currentPlatformVersion: string = "";
 
 	// User data from the previous call to _updateUser.
 	_user: User | null;
@@ -274,11 +274,6 @@ class EventLoggerClass {
 	}
 
 	_decorateEventProperties(platformProperties: any): any {
-		// Check if there is a platform version. This can be removed once Amplitude is removed since Telligent will handle NaN or null values appropriately.
-		if (isNaN(this._currentPlatformVersion)) {
-			return Object.assign({}, platformProperties, {Platform: this._currentPlatform, is_authed: this._user ? "true" : "false"});
-		}
-
 		return Object.assign({}, platformProperties, {Platform: this._currentPlatform, platformVersion: this._currentPlatformVersion, is_authed: this._user ? "true" : "false"});
 	}
 
