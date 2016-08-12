@@ -223,14 +223,20 @@ func TestTranslator(t *testing.T) {
 			},
 
 			LSPResponseResult: []lsp.SymbolInformation{{
-				Name:          "Baz",
-				Kind:          12,
-				Location:      lsp.Location{}, // Ignored
+				Name: "Baz",
+				Kind: 12,
+				Location: lsp.Location{
+					URI: "file:///github.com/foo/bar/baz.go",
+					// Range ignored
+				},
 				ContainerName: "github.com/foo/bar",
 			}, {
-				Name:          "New",
-				Kind:          12,
-				Location:      lsp.Location{}, // Ignored
+				Name: "New",
+				Kind: 12,
+				Location: lsp.Location{
+					URI: "file:///github.com/foo/bar/baz.go",
+					// Range ignored
+				},
 				ContainerName: "github.com/foo/bar",
 			}},
 			WantResponse: &ExportedSymbols{Symbols: []*Symbol{{
@@ -240,7 +246,11 @@ func TestTranslator(t *testing.T) {
 					UnitType: "GoPackage",
 					Unit:     "github.com/foo/bar",
 					Path:     "Baz",
-				}}, {
+				},
+				Name: "Baz",
+				Kind: "func",
+				File: "baz.go",
+			}, {
 				DefSpec: DefSpec{
 					Repo:     "github.com/foo/bar",
 					Commit:   "deadbeef",
@@ -248,6 +258,9 @@ func TestTranslator(t *testing.T) {
 					Unit:     "github.com/foo/bar",
 					Path:     "New",
 				},
+				Name: "New",
+				Kind: "func",
+				File: "baz.go",
 			}}},
 			Got: &ExportedSymbols{},
 		},
@@ -347,7 +360,15 @@ func TestTranslator(t *testing.T) {
 			t.Fatal(err)
 		}
 		if !reflect.DeepEqual(c.Got, c.WantResponse) {
-			t.Fatalf("got\n%+#v, want\n%+#v", c.Got, c.WantResponse)
+			t.Fatalf("got\n%s, want\n%s", marshal(t, c.Got), marshal(t, c.WantResponse))
 		}
 	}
+}
+
+func marshal(t *testing.T, v interface{}) string {
+	b, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(b)
 }

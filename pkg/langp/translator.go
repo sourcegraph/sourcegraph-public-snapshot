@@ -697,24 +697,29 @@ func (t *translator) serveExportedSymbols(body []byte) (interface{}, error) {
 	var symbols []*Symbol
 	// TODO(keegancsmith) go specific
 	for _, s := range respSymbol {
+		f, err := t.resolveFile(r.Repo, r.Commit, s.Location.URI)
+		if err != nil {
+			return nil, err
+		}
 		pkgParts := strings.Split(s.ContainerName, "/")
-		var repo, unit string
+		var unit string
 		if len(pkgParts) < 3 {
 			// Hack for stdlib
-			repo = "github.com/golang/go"
 			unit = s.ContainerName
 		} else {
-			repo = strings.Join(pkgParts[:3], "/")
 			unit = strings.Join(pkgParts, "/")
 		}
 		symbols = append(symbols, &Symbol{
 			DefSpec: DefSpec{
-				Repo:     repo,
-				Commit:   r.Commit,
+				Repo:     f.Repo,
+				Commit:   f.Commit,
 				UnitType: "GoPackage",
 				Unit:     unit,
 				Path:     s.Name,
 			},
+			Name: s.Name,
+			File: f.Path,
+			Kind: lspKindToSymbol(s.Kind),
 		})
 	}
 	return &ExportedSymbols{Symbols: symbols}, nil
@@ -835,6 +840,31 @@ func (t *translator) lspDo(rootPath string, request *jsonrpc2.Request, result in
 func (t *translator) resolveFile(repo, commit, uri string) (*File, error) {
 	workspace := t.pathToWorkspace(repo, commit)
 	return t.ResolveFile(workspace, repo, commit, uri)
+}
+
+func lspKindToSymbol(kind lsp.SymbolKind) string {
+	switch kind {
+	case lsp.SKPackage:
+		return "package"
+	case lsp.SKField:
+		return "field"
+	case lsp.SKFunction:
+		return "func"
+	case lsp.SKMethod:
+		return "method"
+	case lsp.SKVariable:
+		return "var"
+	case lsp.SKClass:
+		return "type"
+	case lsp.SKInterface:
+		return "interface"
+	case lsp.SKConstant:
+		return "const"
+	default:
+		// TODO(keegancsmith) We haven't implemented all types yet,
+		// just what Go uses
+		return "unknown"
+	}
 }
 
 // ExpandSGPath expands the $SGPATH variable in the given string, except it
