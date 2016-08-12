@@ -83,27 +83,6 @@
 					}
 				},
 				{
-					"type": "RefLocationsList",
-					"props": {
-						"def": {
-							"Repo": "r",
-							"CommitID": "c",
-							"FmtStrings": {
-								"DefKeyword": "a",
-								"NameAndTypeSeparator": "s",
-								"Name": {
-									"ScopeQualified": "n"
-								},
-								"Type": {
-									"ScopeQualified": "t"
-								}
-							}
-						},
-						"showMax": 3,
-						"repo": "r"
-					}
-				},
-				{
 					"type": "header",
 					"props": {
 						"children": [
