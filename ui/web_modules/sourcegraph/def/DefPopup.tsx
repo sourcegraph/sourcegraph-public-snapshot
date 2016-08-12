@@ -10,6 +10,7 @@ import {defPath} from "sourcegraph/def/index";
 import * as DefActions from "sourcegraph/def/DefActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {RefLocationsList} from "sourcegraph/def/RefLocationsList";
+import {LocalRefLocationsList} from "sourcegraph/def/LocalRefLocationsList";
 import {AuthorList} from "sourcegraph/def/AuthorList";
 import {urlToDefInfo} from "sourcegraph/def/routes";
 
@@ -60,13 +61,18 @@ export class DefPopup extends Container<Props, any> {
 						<span>
 						{refLocs && refLocs.TotalRepos && ` ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`}
 						{refLocs && !refLocs.TotalRepos && refLocs.RepoRefs && ` ${refLocs.RepoRefs.length}+ repositories`}
+						{refLocs && refLocs.TotalFiles && ` ${refLocs.TotalFiles} file${refLocs.TotalFiles === 1 ? "" : "s"}`}
 						</span>
 					</header>
 				</Link>
 
 				{!refLocs && <span className={styles.loading}>Loading...</span>}
-				{refLocs && (!refLocs.RepoRefs || refLocs.RepoRefs.length === 0) && <i>No usages found</i>}
+				{refLocs && (!refLocs.RepoRefs || refLocs.RepoRefs.length === 0) && (!refLocs.Files || refLocs.Files.length === 0) && <i>No usages found</i>}
 				{<RefLocationsList def={def} refLocations={refLocs} showMax={3} repo={this.state.repo} rev={this.state.rev} path={this.state.path} location={this.state.location} />}
+				{refLocs && refLocs.RepoRefs &&
+					<RefLocationsList def={def} refLocations={refLocs} showMax={3} repo={this.state.repo} rev={this.state.rev} path={this.state.path} location={this.state.location} />}
+				{refLocs && refLocs.Files &&
+					<LocalRefLocationsList refLocations={refLocs} showMax={5} repo={this.state.repo} rev={this.state.rev} path={this.state.path} />}
 
 				{<header className={styles.sectionTitle}>Authors</header>}
 				{!this.state.authors && <span className={styles.loading}>Loading...</span>}

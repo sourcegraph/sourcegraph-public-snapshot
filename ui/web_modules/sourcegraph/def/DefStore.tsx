@@ -210,6 +210,7 @@ class DefStoreClass extends Store<any> {
 			}));
 			break;
 
+		case DefActions.LocalRefLocationsFetched:
 		case DefActions.RefLocationsFetched:
 			{
 				let a = (action as DefActions.RefLocationsFetched);

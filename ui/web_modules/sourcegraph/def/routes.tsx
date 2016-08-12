@@ -85,6 +85,12 @@ export function urlToRepoDef(repo: string, rev: string | null, def: string): str
 	return urlTo("def", {splat: [`${repo}${revPart}`, def]} as any);
 }
 
+// urlToRepoBlob returns a URL to the given repositories file at the given revision.
+export function urlToRepoBlob(repo: string, rev: string | null, blob: string): string {
+	const revPart = rev ? `@${rev}` : "";
+	return urlTo("blob", {splat: [`${repo}${revPart}`, blob]} as any);
+}
+
 // fastURLToRepoDef is a faster version of urlToRepoDef that hardcodes the route
 // construction. It is brittle to route structure changes, but it is acceptable to
 // use (to improve perf) it if you need to call it a lot.

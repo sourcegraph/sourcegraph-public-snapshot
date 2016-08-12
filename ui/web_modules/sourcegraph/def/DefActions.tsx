@@ -1,5 +1,4 @@
-import {Def, ExamplesKey, Ref, RefLocationsKey, refLocsPerPage} from "sourcegraph/def/index";
-import {toQuery} from "sourcegraph/util/toQuery";
+import {Def, ExamplesKey, Ref, RefLocationsKey} from "sourcegraph/def/index";
 
 export class WantDef {
 	repo: string;
@@ -153,18 +152,6 @@ export class WantRefLocations {
 	constructor(r: RefLocationsKey) {
 		this.resource = r;
 	}
-
-	url(): string {
-		let q = toQuery({
-			Repos: this.resource.repos,
-			Page: this.resource.page,
-			PerPage: refLocsPerPage,
-		});
-		if (q) {
-			q = `?${q}`;
-		}
-		return `/.api/repos/${this.resource.repo}${this.resource.commitID ? `@${this.resource.commitID}` : ""}/-/def/${this.resource.def}/-/ref-locations${q}`;
-	}
 }
 
 export class RefLocationsFetched {
@@ -172,6 +159,27 @@ export class RefLocationsFetched {
 	locations: any;
 
 	constructor(request: WantRefLocations, locations: any) {
+		this.request = request;
+		this.locations = locations;
+	}
+}
+
+export class WantLocalRefLocations {
+	pos: BlobPos;
+	resource: RefLocationsKey;
+
+	// TODO: should only use BlobPos after we completely discarded the old way of showing refLocations.
+	constructor(pos: BlobPos, r: RefLocationsKey) {
+		this.pos = pos;
+		this.resource = r;
+	}
+}
+
+export class LocalRefLocationsFetched {
+	request: WantLocalRefLocations;
+	locations: Object;
+
+	constructor(request: WantLocalRefLocations, locations: Object) {
 		this.request = request;
 		this.locations = locations;
 	}

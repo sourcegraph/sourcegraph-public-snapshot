@@ -107,6 +107,16 @@ export interface RefLocationsKey {
 	repos: string[];
 }
 
+export interface LocalRefLocationKey {
+	Path: string;
+	Count: number;
+}
+
+export interface LocalRefLocationsKey {
+	TotalFiles: number;
+	Files: LocalRefLocationKey[];
+}
+
 export interface ExamplesKey {
 	repo: string;
 	commitID: string | null;

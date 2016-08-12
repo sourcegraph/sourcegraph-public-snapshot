@@ -6,8 +6,9 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
-import {encodeDefPath} from "sourcegraph/def/index";
+import {encodeDefPath, refLocsPerPage} from "sourcegraph/def/index";
 import get from "lodash.get";
+import {toQuery} from "sourcegraph/util/toQuery";
 
 export const DefBackend = {
 	fetch: singleflightFetch(defaultFetch),
@@ -61,17 +62,48 @@ export const DefBackend = {
 
 		case DefActions.WantRefLocations:
 			{
-				let a = action as DefActions.WantRefLocations;
-				let refLocations = DefStore.getRefLocations(a.resource);
+				let refLocations = DefStore.getRefLocations(action.resource);
 				if (refLocations === null) {
-					let url = a.url();
-					DefBackend.fetch(url)
+					let q = toQuery({
+						Repos: action.resource.repos,
+						Page: action.resource.page,
+						PerPage: refLocsPerPage,
+					});
+					if (q) {
+						q = `?${q}`;
+					}
+					DefBackend.fetch(`/.api/repos/${action.resource.repo}${action.resource.commitID ? `@${action.resource.commitID}` : ""}/-/def/${action.resource.def}/-/ref-locations${q}`)
 						.then(checkStatus)
 						.then((resp) => resp.json())
 						.catch((err) => ({Error: err}))
 						.then((data) => {
 							if (!data || !data.Error) {
 								Dispatcher.Stores.dispatch(new DefActions.RefLocationsFetched(action, data));
+							}
+						});
+				}
+				break;
+			}
+
+		case DefActions.WantLocalRefLocations:
+			{
+				let refLocations = DefStore.getRefLocations(action.resource);
+				if (refLocations === null) {
+					let q = toQuery({
+						Repos: action.resource.repos,
+						Page: action.resource.page,
+						PerPage: refLocsPerPage,
+					});
+					if (q) {
+						q = `&${q}`;
+					}
+					DefBackend.fetch(`/.api/repos/${action.resource.repo}${action.resource.commitID ? `@${action.resource.commitID}` : ""}/-/def/${action.resource.def}/-/local-refs?file=${action.pos.file}&line=${action.pos.line}&character=${action.pos.character}${q}`)
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => {
+							if (!data || !data.Error) {
+								Dispatcher.Stores.dispatch(new DefActions.LocalRefLocationsFetched(action, data));
 							}
 						});
 				}
