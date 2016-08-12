@@ -3,6 +3,7 @@ package localstore
 import (
 	"testing"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
@@ -37,5 +38,24 @@ func TestToTextSearchTokens(t *testing.T) {
 	}
 	if !stringSliceEqual(dToks, expectedDToks) {
 		t.Errorf("wrong dToks, expected %#v, got %#v", expectedDToks, dToks)
+	}
+}
+
+func TestSymbolToDef_shouldIndex(t *testing.T) {
+	d := symbolToDef(&langp.Symbol{
+		DefSpec: langp.DefSpec{
+			Repo:     "github.com/foo/bar",
+			Commit:   "deadbeef",
+			UnitType: "GoPackage",
+			Unit:     "github.com/foo/bar",
+			Path:     "Baz",
+		},
+		Name:    "Baz",
+		Kind:    "func",
+		File:    "bar.go",
+		DocHTML: "Baz bazzes",
+	})
+	if !shouldIndex(d) {
+		t.Fatalf("shouldIndex(%+#v) is false", d)
 	}
 }

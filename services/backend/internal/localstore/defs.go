@@ -436,6 +436,10 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.RefreshIndexO
 			log15.Debug("universe defs.Update failed", "repo", repo.URI, "commitID", op.CommitID, "err", err)
 		} else {
 			log15.Debug("universe defs.Update success", "repo", repo.URI, "commitID", op.CommitID, "count", len(r.Symbols))
+			defs = make([]*graph.Def, len(r.Symbols))
+			for _, s := range r.Symbols {
+				defs = append(defs, symbolToDef(s))
+			}
 		}
 	}
 
@@ -850,6 +854,28 @@ func getRepoRevLatest(dbh gorp.SqlExecutor, repo string) (*dbRepoRev, error) {
 		return nil, fmt.Errorf("repo %s has more than one latest version", repo)
 	}
 	return rr[0], nil
+}
+
+func symbolToDef(s *langp.Symbol) *graph.Def {
+	return &graph.Def{
+		DefKey: graph.DefKey{
+			Repo:     s.DefSpec.Repo,
+			CommitID: s.DefSpec.Commit,
+			UnitType: s.DefSpec.UnitType,
+			Unit:     s.DefSpec.Unit,
+			Path:     s.DefSpec.Path,
+		},
+		Name:     s.Name,
+		Kind:     s.Kind,
+		File:     s.File,
+		Exported: true,
+		Local:    false,
+		Test:     false,
+		Docs: []*graph.DefDoc{{
+			Format: "text/html",
+			Data:   s.DocHTML,
+		}},
+	}
 }
 
 func shouldIndex(d *graph.Def) bool {
