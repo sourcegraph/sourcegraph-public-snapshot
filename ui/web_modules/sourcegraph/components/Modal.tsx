@@ -47,7 +47,7 @@ class ModalComp extends React.Component<ModalProps, any> {
 			<div ref="modal_container"
 					className={styles.container}
 					onClick={this._onClick}>
-				<div styleName="modal">{this.props.children}</div>
+				{this.props.children}
 				<EventListener target={global.document} event="keydown" callback={this._handleKeydown} />
 			</div>
 		);

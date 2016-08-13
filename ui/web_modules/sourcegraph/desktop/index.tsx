@@ -20,12 +20,12 @@ export const routes = [
 	},
 ];
 
-export function desktopRouter(Component) {
+export function redirectForDesktop(Component) {
 	interface Props {
 		routes: any[];
 	}
 
-	class DesktopRouter extends React.Component<Props, any> {
+	class RedirectForDesktop extends React.Component<Props, any> {
 		static contextTypes = {
 			router: React.PropTypes.object.isRequired,
 			user: React.PropTypes.object,
@@ -55,7 +55,7 @@ export function desktopRouter(Component) {
 	if (global.document) {
 		const desktopClient = navigator.userAgent.includes("Electron");
 		if (desktopClient) {
-			return desktopContainer(DesktopRouter);
+			return desktopContainer(RedirectForDesktop);
 		}
 	}
 

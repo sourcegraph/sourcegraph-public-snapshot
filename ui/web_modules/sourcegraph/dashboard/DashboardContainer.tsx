@@ -51,7 +51,7 @@ export class DashboardContainer extends Container<Props, any> {
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (this._input && this._input.value) {
+		if (this._input && this._input.value && !prevState.isTyping) {
 			this._goToSearch(this._input.value);
 		}
 	}

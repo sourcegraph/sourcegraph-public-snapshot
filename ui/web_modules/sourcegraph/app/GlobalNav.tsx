@@ -55,7 +55,9 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 		return <span />;
 	}
 	const repoSplat = repoParam(params.splat);
-	let repo = repoSplat ? repoPath(repoSplat) : null;	return (
+	const showSearchForm = !location.pathname.match(/^\/?dashboard$/);
+	let repo = repoSplat ? repoPath(repoSplat) : null;
+	return (
 		<nav
 			id="global-nav"
 			className={classNames(styles.navbar, colors.shadow_gray)}
@@ -141,7 +143,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 
 				<div
 					className={classNames(styles.flex_fill, base.b__dotted, base.bn, base.brw2, colors.b__cool_pale_gray)}>
-					{location.pathname !== "/" && <StyledSearchForm repo={repo} location={location} router={router} showResultsPanel={location.pathname !== `/${rel.search}`} />}
+					{showSearchForm && <StyledSearchForm repo={repo} location={location} router={router} showResultsPanel={location.pathname !== `/${rel.search}`} />}
 				</div>
 
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal className={styles.icon_ellipsis} title="Your editor could not identify the symbol"/>}

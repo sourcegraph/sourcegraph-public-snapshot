@@ -8,10 +8,10 @@ export type RouteName = "styleguide" |
 	"settings" |
 	"settingsRepos" |
 	"commit" |
+	"dashboard" |
 	"def" |
 	"defInfo" |
 	"desktopHome" |
-	"newHome" |
 	"repo" |
 	"tree" |
 	"blob" |
@@ -40,8 +40,8 @@ export const rel = {
 	beta: "beta",
 	browserExtFaqs: "about/browser-ext-faqs",
 	contact: "contact",
+	dashboard: "dashboard",
 	desktopHome: "desktop/home",
-	newHome: "newhome",
 	security: "security",
 	pricing: "pricing",
 	terms: "-/terms",
@@ -70,8 +70,8 @@ export const abs = {
 	search: rel.search,
 	about: rel.about,
 	contact: rel.contact,
+	dashboard: rel.dashboard,
 	desktopHome: rel.desktopHome,
-	newHome: rel.newHome,
 	security: rel.security,
 	browserExtFaqs: rel.browserExtFaqs,
 	pricing: rel.pricing,

@@ -21,6 +21,7 @@ the entire viewport height.
 	flex-direction: column;
 	flex: 1;
 	overflow-y: scroll;
+	-webkit-overflow-scrolling: touch;
 }
 
 .breadcrumb {
@@ -52,5 +53,5 @@ html {
 }
 
 .inner_main_content {
-    flex: 1;
+    flex: 1 0 auto;
 }

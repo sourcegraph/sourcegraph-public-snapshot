@@ -81,9 +81,6 @@ class UserBackendClass {
 				.catch((err) => ({Error: err}))
 				.then(function(data: any): void {
 					Dispatcher.Stores.dispatch(new UserActions.SignupCompleted(action.email, data));
-					if (data.Success) {
-						window.location.href = "/";
-					}
 				});
 
 		} else if (payload instanceof UserActions.SubmitLogin) {
@@ -100,10 +97,6 @@ class UserBackendClass {
 				.catch((err) => ({Error: err}))
 				.then(function(data: any): void {
 					Dispatcher.Stores.dispatch(new UserActions.LoginCompleted(data));
-					// Redirect on login.
-					if (data.Success) {
-						window.location.href = "/";
-					}
 				});
 
 		} else if (payload instanceof UserActions.SubmitLogout) {

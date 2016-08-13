@@ -11,7 +11,7 @@
 	justify-content: center;
 	align-items: center;
 	z-index: 100;
-	flex: 0 0 footerHeight;
+	flex: none;
 }
 
 .box {

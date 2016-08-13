@@ -105,7 +105,7 @@ export class Home extends Container<HomeProps, any> {
 					</div>
 				</div>
 
-				<div className={base.center} style={{maxWidth: "960px", paddingTop: "100px", paddingBottom: "100px"}}>
+				<div className={classNames(base.center, base.ph3)} style={{maxWidth: "960px", paddingTop: "100px", paddingBottom: "100px"}}>
 					{/* section showing questions */}
 					<div style={{maxWidth: "600px", marginRight: "auto", marginLeft: "auto"}}>
 						<Heading className="hook-title" align="center" level="4" underline="blue">
@@ -167,7 +167,7 @@ export class Home extends Container<HomeProps, any> {
 
 				{/* section showing language icons */}
 				<div style={{backgroundColor: "rgba(119, 147, 174, 0.1)", display: "flex", flowDirection: "row", justifyContent: "center",
-							paddingLeft: "200px", paddingRight: "200px", paddingTop: "10px", paddingBottom: "10px"}}>
+							padding: "10px"}}>
 					<div style={{maxWidth: "400px", display: "flex", flowDirection: "row", flexGrow: 1, justifyContent: "space-between"}}>
 						<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/go2.svg`} />
 						<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/java.svg`} />
@@ -181,9 +181,10 @@ export class Home extends Container<HomeProps, any> {
 				</div>
 
 				<div className={colors.bg_purple} style={{paddingTop: "50px", paddingBottom: "50px"}}>
-					<div className={classNames(base.pa5, base.center)} style={{backgroundColor: "white",
-								boxShadow: "0 2px 6px 0 rgba(0, 0, 0, 0.11)", maxWidth: "860px", width: "100%"}}>
+					<div className={base.center} style={{backgroundColor: "white",
+						boxShadow: "0 2px 6px 0 rgba(0, 0, 0, 0.11)", maxWidth: "860px"}}>
 						{/* section showing clients */}
+						<div style={{maxWidth: "760px", padding: "50px 10px"}} className={base.center}>
 						<div style={{display: "flex", flowDirection: "row", flexWrap: "wrap"}}>
 							<Heading align="left" level="4" underline="purple" style={{flex: "0 0 240px"}} className="full_sm">
 								Used by developers everywhere
@@ -193,24 +194,25 @@ export class Home extends Container<HomeProps, any> {
 								<img className={base.mr4} style={{marginBottom: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/twitter.svg`} />
 								<img className={base.mr4} style={{marginBottom: "9px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/red-hat.svg`} />
 								<img className={base.mr4} style={{marginBottom: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/daily-motion.svg`} />
-								<img className={classNames(base.mr4, base.hidden_s)} style={{marginBottom: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/progressly.svg`} />
+								<img className={base.mr4} style={{marginBottom: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/progressly.svg`} />
 							</div>
 						</div>
 
 						{/* section showing favorable user feedback */}
-						<div style={{display: "flex", flowDirection: "row", flexWrap: "wrap", justifyContent: "center"}}>
-							<div style={{width: "360px"}}>
+						<div style={{display: "flex", flowDirection: "row", flexWrap: "wrap", justifyContent: "space-around"}}>
+							<div className={styles.tweet_container}>
 								<blockquote className="twitter-tweet" dataLang="en"><p lang="en" dir="ltr">Just found out <a href="https://twitter.com/srcgraph">@srcgraph</a> ! HUGE productivity gain. Great work ! Waiting for more language support.</p>&mdash; Dharmesh Kakadia (@dharmeshkakadia) <a href="https://twitter.com/dharmeshkakadia/status/738874411437035520">June 3, 2016</a></blockquote>
 							</div>
-							<div style={{width: "360px"}}>
+							<div className={styles.tweet_container}>
 								<blockquote className="twitter-tweet" dataLang="en"><p lang="en" dir="ltr">The <a href="https://twitter.com/srcgraph">@srcgraph</a> Chrome extension for GitHub is the best! <a href="https://t.co/CKweAOfbsQ">https://t.co/CKweAOfbsQ</a></p>&mdash; Julius Volz (@juliusvolz) <a href="https://twitter.com/juliusvolz/status/748095329564778496">June 29, 2016</a></blockquote>
 							</div>
-							<div style={{width: "360px"}}>
+							<div className={styles.tweet_container}>
 								<blockquote className="twitter-tweet" dataLang="en"><p lang="en" dir="ltr">Used <a href="https://twitter.com/srcgraph">@srcgraph</a> jump-to-definition across 3 projects, 2 langs, finally landing deep in Golang src. Took &lt; 10 min to pin down the issue. 💪🏼</p>&mdash; Gabriel Monroy (@gabrtv) <a href="https://twitter.com/gabrtv/status/738861622882508801">June 3, 2016</a></blockquote>
 							</div>
-							<div style={{width: "360px"}}>
+							<div className={styles.tweet_container}>
 								<blockquote className="twitter-tweet" dataLang="en"><p lang="en" dir="ltr">Sourcegraph is the cross reference to end all cross references</p>&mdash; Erik Hollensbe (@erikhollensbe) <a href="https://twitter.com/erikhollensbe/status/738880970909089793">June 3, 2016</a></blockquote>
 							</div>
+						</div>
 						</div>
 					</div>
 				</div>

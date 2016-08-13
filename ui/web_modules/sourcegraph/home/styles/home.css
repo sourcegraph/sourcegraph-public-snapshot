@@ -41,3 +41,8 @@
 		flex-wrap: wrap;
 	}
 }
+
+.tweet_container {
+    max-width: 360px;
+    width: 100%;
+}

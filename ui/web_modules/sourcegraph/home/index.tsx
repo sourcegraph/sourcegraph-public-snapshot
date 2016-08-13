@@ -12,7 +12,7 @@ export const routes: any[] = [
 				navContext: null,
 			});
 		},
-		path: rel.newHome,
+		path: rel.home,
 	},
 	{
 		getComponent: (location, callback) => {

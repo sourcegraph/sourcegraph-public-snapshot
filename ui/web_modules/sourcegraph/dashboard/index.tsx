@@ -11,6 +11,6 @@ export const routes: any[] = [
 				navContext: null,
 			});
 		},
-		path: rel.home,
+		path: rel.dashboard,
 	},
 ];
