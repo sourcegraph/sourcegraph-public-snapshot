@@ -13,7 +13,9 @@ interface Props {
 	style?: any;
 }
 
-export class Tabs extends React.Component<Props, any> {
+type State = any;
+
+export class Tabs extends React.Component<Props, State> {
 	static defaultProps = {
 		direction: "horizontal",
 		color: "blue",

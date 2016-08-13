@@ -13,7 +13,9 @@ interface Props {
 	className?: string;
 }
 
-export class CheckboxList extends React.Component<Props, any> {
+type State = any;
+
+export class CheckboxList extends React.Component<Props, State> {
 	// TODO(slimsag): this should be 'element' type?
 	_fieldset: any;
 

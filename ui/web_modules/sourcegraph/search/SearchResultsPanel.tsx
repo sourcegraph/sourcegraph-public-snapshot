@@ -12,7 +12,9 @@ interface Props {
 	query: string;
 };
 
-export class SearchResultsPanel extends React.Component<Props, any> {
+type State = any;
+
+export class SearchResultsPanel extends React.Component<Props, State> {
 	render(): JSX.Element | null {
 		const {repo, location, query} = this.props;
 		return (

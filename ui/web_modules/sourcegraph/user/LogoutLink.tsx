@@ -11,7 +11,9 @@ interface Props {
 	role: string;
 }
 
-export class LogoutLink extends Container<Props, any> {
+type State = any;
+
+export class LogoutLink extends Container<Props, State> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -21,13 +23,13 @@ export class LogoutLink extends Container<Props, any> {
 		this._handleClick = this._handleClick.bind(this);
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		Object.assign(state, props);
 		state.pendingAuthAction = UserStore.pendingAuthActions["logout"] || false;
 		state.authResponse = UserStore.authResponses["logout"] || null;
 	}
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if (prevState.authResponse !== nextState.authResponse) {
 			if (this.state.submitted) {
 				if (nextState.authResponse && nextState.authResponse.Error) {

@@ -25,7 +25,9 @@ export function redirectForDesktop(Component) {
 		routes: any[];
 	}
 
-	class RedirectForDesktop extends React.Component<Props, any> {
+	type State = any;
+
+	class RedirectForDesktop extends React.Component<Props, State> {
 		static contextTypes = {
 			router: React.PropTypes.object.isRequired,
 			user: React.PropTypes.object,

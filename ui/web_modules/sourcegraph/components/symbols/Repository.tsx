@@ -7,7 +7,9 @@ interface Props {
 	width?: number; // appended by "px"
 }
 
-export class Repository extends React.Component<Props, any> {
+type State = any;
+
+export class Repository extends React.Component<Props, State> {
 	static defaultProps = {
 		width: 16,
 	};

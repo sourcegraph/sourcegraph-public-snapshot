@@ -8,7 +8,9 @@ interface Props {
 	location?: any;
 }
 
-export class IntegrationsContainer extends React.Component<Props, any> {
+type State = any;
+
+export class IntegrationsContainer extends React.Component<Props, State> {
 	reconcileState(state, props, context) {
 		Object.assign(state, props);
 	}

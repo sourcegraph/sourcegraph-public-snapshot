@@ -10,7 +10,9 @@ interface Props {
 	children?: React.ReactNode;
 }
 
-export class Collapsible extends Component<Props, any> {
+type State = any;
+
+export class Collapsible extends Component<Props, State> {
 	constructor(props: Props) {
 		super(props);
 
@@ -24,7 +26,7 @@ export class Collapsible extends Component<Props, any> {
 		this._onClick = this._onClick.bind(this);
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		Object.assign(state, props);
 	}
 

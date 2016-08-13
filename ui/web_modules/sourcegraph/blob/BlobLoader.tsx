@@ -25,6 +25,8 @@ interface Props {
 	route: any;
 }
 
+type State = any;
+
 // blobLoader performs the portion of the work of loading a blob that differs based
 // on what is originally being loaded. E.g., if we're loading a def, then the blob
 // we show is the file in which the def is defined, so we must first fetch the def.
@@ -51,7 +53,7 @@ interface Props {
 // routes file. The 3rd arg to the getComponents callback is defined (by us; it's not a
 // standard react-router thing) to be the helpers used by the BlobLoader.
 function blobLoader(Component) {
-	class BlobLoader extends Container<Props, any> {
+	class BlobLoader extends Container<Props, State> {
 		_helpers: Array<Helper> | null;
 
 		constructor(props: Props) {
@@ -59,7 +61,7 @@ function blobLoader(Component) {
 			this._helpers = null;
 		}
 
-		reconcileState(state, props: Props) {
+		reconcileState(state: State, props: Props) {
 			if (props.route && state.route !== props.route) {
 				// Clear state properties that were set by previous helpers.
 				if (this._helpers) {
@@ -87,7 +89,7 @@ function blobLoader(Component) {
 			}
 		}
 
-		onStateTransition(prevState, nextState) {
+		onStateTransition(prevState: State, nextState: State) {
 			if (this._helpers) {
 				this._helpers.forEach((h) => {
 					if (h.onStateTransition) {

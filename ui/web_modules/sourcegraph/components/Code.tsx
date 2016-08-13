@@ -10,7 +10,9 @@ interface Props {
 	style?: any;
 }
 
-export class Code extends React.Component<Props, any> {
+type State = any;
+
+export class Code extends React.Component<Props, State> {
 	render(): JSX.Element | null {
 		const {className, children, style} = this.props;
 		return <span className={classNames(className, styles.code)} style={style}>{children}</span>;

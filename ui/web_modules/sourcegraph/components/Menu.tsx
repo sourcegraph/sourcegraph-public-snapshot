@@ -11,7 +11,9 @@ interface Props {
 	style?: any;
 }
 
-export class Menu extends React.Component<Props, any> {
+type State = any;
+
+export class Menu extends React.Component<Props, State> {
 	renderMenuItems() {
 		return React.Children.map(this.props.children, function(ch: React.ReactElement<any>) {
 			return ch && <div key={ch.props} className={roleStyle(ch.props.role)}>{React.cloneElement(ch)}</div>;

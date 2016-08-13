@@ -30,8 +30,9 @@ export const getChildContext = (state: any): childContext => ({
 // to Component's children.
 export function withUserContext(Component) {
 	type Props = any;
+	type State = any;
 
-	class WithUser extends Container<Props, any> {
+	class WithUser extends Container<Props, State> {
 		static childContextTypes = {
 			user: React.PropTypes.object,
 			authInfo: React.PropTypes.object,
@@ -51,7 +52,7 @@ export function withUserContext(Component) {
 
 		stores() { return [UserStore]; }
 
-		reconcileState(state, props: Props) {
+		reconcileState(state: State, props: Props) {
 			Object.assign(state, props);
 
 			state.accessToken = UserStore.activeAccessToken || null;
@@ -60,7 +61,7 @@ export function withUserContext(Component) {
 			state.user = state.authInfo && !state.authInfo.Error ? (UserStore.users[state.authInfo.UID] || null) : null;
 		}
 
-		onStateTransition(prevState, nextState) {
+		onStateTransition(prevState: State, nextState: State) {
 			if (nextState.accessToken && !nextState.authInfo && prevState.accessToken !== nextState.accessToken) {
 				Dispatcher.Backends.dispatch(new UserActions.WantAuthInfo(nextState.accessToken));
 			}

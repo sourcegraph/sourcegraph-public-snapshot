@@ -12,7 +12,9 @@ interface Props {
 	logs: any;
 }
 
-export class BuildTasks extends Component<Props, any> {
+type State = any;
+
+export class BuildTasks extends Component<Props, State> {
 	constructor(props: Props) {
 		super(props);
 		this.state = {
@@ -21,7 +23,7 @@ export class BuildTasks extends Component<Props, any> {
 		};
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		state.logs = props.logs;
 
 		if (state.tasks !== props.tasks) {

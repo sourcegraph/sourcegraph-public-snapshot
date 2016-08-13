@@ -8,7 +8,9 @@ interface Props {
 	style?: any;
 }
 
-export class DownPointer extends React.Component<Props, any> {
+type State = any;
+
+export class DownPointer extends React.Component<Props, State> {
 	static defaultProps = {
 		width: 16,
 	};

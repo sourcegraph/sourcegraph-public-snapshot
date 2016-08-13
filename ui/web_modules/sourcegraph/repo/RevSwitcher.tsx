@@ -37,7 +37,9 @@ interface Props {
 	routeParams: any;
 }
 
-export class RevSwitcher extends Component<Props, any> {
+type State = any;
+
+export class RevSwitcher extends Component<Props, State> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -61,7 +63,7 @@ export class RevSwitcher extends Component<Props, any> {
 		}, 150, {leading: true, trailing: true});
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		Object.assign(state, props);
 
 		state.srclibDataVersion = state.srclibDataVersions ? state.srclibDataVersions.get(state.repo, state.commitID) : null;
@@ -70,7 +72,7 @@ export class RevSwitcher extends Component<Props, any> {
 		state.effectiveRev = state.rev || (state.repoObj && !state.repoObj.Error ? state.repoObj.DefaultBranch : null);
 	}
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		const becameOpen = nextState.open && nextState.open !== prevState.open;
 		if (becameOpen || nextState.repo !== prevState.repo) {
 			// Don't load when page loads until we become open.

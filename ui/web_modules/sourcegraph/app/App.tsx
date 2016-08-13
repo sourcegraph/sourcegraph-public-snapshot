@@ -38,7 +38,9 @@ interface Props {
 	channelStatusCode?: number;
 }
 
-export class App extends React.Component<Props, any> {
+type State = any;
+
+export class App extends React.Component<Props, State> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		signedIn: React.PropTypes.bool.isRequired,

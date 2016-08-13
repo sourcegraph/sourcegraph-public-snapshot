@@ -11,7 +11,9 @@ interface Props {
 	listStyle?: string; // node, normal
 }
 
-export class List extends React.Component<Props, any> {
+type State = any;
+
+export class List extends React.Component<Props, State> {
 	static defaultProps = {
 		listStyle: "normal",
 	};

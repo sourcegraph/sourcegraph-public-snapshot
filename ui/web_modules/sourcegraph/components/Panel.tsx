@@ -13,7 +13,9 @@ interface Props {
 	hover?: boolean;
 }
 
-export class Panel extends React.Component<Props, any> {
+type State = any;
+
+export class Panel extends React.Component<Props, State> {
 	static defaultProps = {
 		hover: false,
 	};

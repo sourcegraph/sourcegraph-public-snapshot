@@ -14,7 +14,9 @@ export function withTree(Component) {
 		params: any;
 	}
 
-	class WithTree extends React.Component<Props, any> {
+	type State = any;
+
+	class WithTree extends React.Component<Props, State> {
 		render(): JSX.Element | null {
 			let path;
 			if (this.props.params.splat instanceof Array) {

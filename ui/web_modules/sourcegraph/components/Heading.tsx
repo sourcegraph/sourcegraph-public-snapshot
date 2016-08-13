@@ -14,7 +14,9 @@ interface Props {
 	style?: any;
 }
 
-export class Heading extends React.Component<Props, any> {
+type State = any;
+
+export class Heading extends React.Component<Props, State> {
 	static defaultProps = {
 		level: "3", //  1 is the largest
 		underline: null,

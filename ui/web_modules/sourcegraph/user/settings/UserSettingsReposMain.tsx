@@ -14,7 +14,9 @@ interface Props {
 	location: any;
 }
 
-export class UserSettingsReposMain extends Container<Props, any> {
+type State = any;
+
+export class UserSettingsReposMain extends Container<Props, State> {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 		user: React.PropTypes.object,
@@ -31,7 +33,7 @@ export class UserSettingsReposMain extends Container<Props, any> {
 		state.user = context.user;
 	}
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if (nextState.repos !== prevState.repos) {
 			Dispatcher.Backends.dispatch(new RepoActions.WantRepos(reposQuerystring));
 		}

@@ -7,12 +7,14 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from  "sourcegraph/def/DefActions";
 import {Props} from "sourcegraph/blob/Blob";
 
+type State = any;
+
 /*
 withJumpDefRedirect wraps a Blob component. It handles both sending jumpToDef requests
 to the HTTP API and redirecting when a valid response is received.
 */
 export function withJumpToDefRedirect(Blob) {
-	class WithJumpToDefRedirect extends Container<Props, any> {
+	class WithJumpToDefRedirect extends Container<Props, State> {
 		static contextTypes = {
 			router: React.PropTypes.object,
 		};
@@ -27,7 +29,7 @@ export function withJumpToDefRedirect(Blob) {
 			Dispatcher.Stores.unregister(this._dispatcherToken);
 		}
 
-		reconcileState(state, props: Props) {
+		reconcileState(state: State, props: Props) {
 			Object.assign(state, props);
 			if (props.location && props.location.query) {
 					let {line, character, file, commit, repo} = props.location.query;
@@ -47,7 +49,7 @@ export function withJumpToDefRedirect(Blob) {
 			}
 		}
 
-		onStateTransition(prevState, nextState) {
+		onStateTransition(prevState: State, nextState: State) {
 			if (nextState.soughtJumpDef && !isEqual(prevState.soughtJumpDef, nextState.soughtJumpDef)) {
 				Dispatcher.Backends.dispatch(new DefActions.WantJumpDef(nextState.soughtJumpDef));
 			}

@@ -26,7 +26,9 @@ interface Props {
 	params: any;
 }
 
-export class BuildContainer extends Container<Props, any> {
+type State = any;
+
+export class BuildContainer extends Container<Props, State> {
 	static contextTypes = {
 		user: React.PropTypes.object,
 	};
@@ -66,7 +68,7 @@ export class BuildContainer extends Container<Props, any> {
 		Dispatcher.Backends.dispatch(new BuildActions.WantTasks(this.state.repo, this.state.id, true));
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		Object.assign(state, props);
 		state.repo = props.params.splat;
 		state.id = props.params.id;
@@ -79,7 +81,7 @@ export class BuildContainer extends Container<Props, any> {
 
 	stores() { return [BuildStore, TreeStore]; }
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if (prevState.repo !== nextState.repo || prevState.id !== nextState.id) {
 			Dispatcher.Backends.dispatch(new BuildActions.WantBuild(nextState.repo, nextState.id));
 			Dispatcher.Backends.dispatch(new BuildActions.WantTasks(nextState.repo, nextState.id));

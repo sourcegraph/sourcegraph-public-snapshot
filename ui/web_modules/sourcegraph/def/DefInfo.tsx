@@ -46,7 +46,9 @@ interface Props {
 	defObj?: any;
 }
 
-export class DefInfo extends Container<Props, any> {
+type State = any;
+
+export class DefInfo extends Container<Props, State> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
@@ -140,7 +142,7 @@ export class DefInfo extends Container<Props, any> {
 		this.setState({defDescrHidden: true});
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		state.location = props.location || null;
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
@@ -160,7 +162,7 @@ export class DefInfo extends Container<Props, any> {
 		}
 	}
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if (prevState.defCommitID !== nextState.defCommitID && nextState.defCommitID) {
 			Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.defCommitID, nextState.def));
 		}

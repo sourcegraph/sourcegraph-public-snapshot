@@ -16,7 +16,9 @@ interface Props {
 	location?: any;
 }
 
-export class Repos extends React.Component<Props, any> {
+type State = any;
+
+export class Repos extends React.Component<Props, State> {
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,
 		githubToken: React.PropTypes.object,

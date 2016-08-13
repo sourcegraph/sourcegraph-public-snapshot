@@ -8,7 +8,9 @@ interface Props {
 	name: string; // See symbols directory
 }
 
-export class Emoji extends React.Component<Props, any> {
+type State = any;
+
+export class Emoji extends React.Component<Props, State> {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 	};

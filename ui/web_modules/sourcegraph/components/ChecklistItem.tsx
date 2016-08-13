@@ -15,7 +15,9 @@ interface Props {
 	actionOnClick?: () => void;
 }
 
-export class ChecklistItem extends React.Component<Props, any> {
+type State = any;
+
+export class ChecklistItem extends React.Component<Props, State> {
 	render(): JSX.Element | null {
 		const {className, children, complete, actionText, actionOnClick} = this.props;
 		return (

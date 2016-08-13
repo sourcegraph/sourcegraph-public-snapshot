@@ -8,15 +8,23 @@ import * as TreeActions from "sourcegraph/tree/TreeActions";
 import "./TreeBackend"; // for side effects
 import {TreeStore} from "sourcegraph/tree/TreeStore";
 
-export class TreeEntryCommit extends Container<Props, any> {
-	reconcileState(state, props: Props) {
+interface Props {
+	repo: string;
+	rev: string;
+	path: string;
+};
+
+type State = any;
+
+export class TreeEntryCommit extends Container<Props, State> {
+	reconcileState(state: State, props: Props) {
 		Object.assign(state, props);
 		state.commits = TreeStore.commits;
 	}
 
 	stores() { return [TreeStore]; }
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.path !== nextState.path) {
 			Dispatcher.Backends.dispatch(new TreeActions.WantCommit(nextState.repo, nextState.rev, nextState.path));
 		}
@@ -42,9 +50,3 @@ export class TreeEntryCommit extends Container<Props, any> {
 		);
 	}
 }
-
-interface Props {
-	repo: string;
-	rev: string;
-	path: string;
-};

@@ -23,10 +23,12 @@ export function withDef(Component) {
 		def?: string;
 	}
 
-	class WithDef extends Container<Props, any> {
+	type State = any;
+
+	class WithDef extends Container<Props, State> {
 		stores() { return [DefStore, RepoStore]; }
 
-		reconcileState(state, props: Props) {
+		reconcileState(state: State, props: Props) {
 			Object.assign(state, props);
 
 			if (!props.def) {
@@ -38,7 +40,7 @@ export function withDef(Component) {
 			state.isCloning = RepoStore.repos.isCloning(state.repo);
 		}
 
-		onStateTransition(prevState, nextState) {
+		onStateTransition(prevState: State, nextState: State) {
 			if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
 				Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.repo, nextState.rev, nextState.def));
 			}

@@ -26,7 +26,9 @@ interface Props {
 	hoverInfos: any;
 }
 
-export class DefTooltip extends Component<Props, any> {
+type State = any;
+
+export class DefTooltip extends Component<Props, State> {
 	_elem: any;
 
 	constructor(props: Props) {
@@ -38,11 +40,11 @@ export class DefTooltip extends Component<Props, any> {
 		this._elem = null;
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		Object.assign(state, props);
 	}
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if (prevState.hoverPos !== nextState.hoverPos && nextState.hoverPos !== null) {
 			Dispatcher.Backends.dispatch(new DefActions.WantHoverInfo(nextState.hoverPos));
 		}

@@ -20,7 +20,9 @@ interface Props {
 	defaultValue?: string;
 }
 
-export class Select extends React.Component<Props, any> {
+type State = any;
+
+export class Select extends React.Component<Props, State> {
 	static defaultProps = {
 		block: true,
 	};

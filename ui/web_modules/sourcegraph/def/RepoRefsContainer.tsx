@@ -30,7 +30,9 @@ interface Props {
 	refLocations: any;
 }
 
-export class RepoRefsContainer extends Container<Props, any> {
+type State = any;
+
+export class RepoRefsContainer extends Container<Props, State> {
 	static contextTypes = {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
@@ -48,7 +50,7 @@ export class RepoRefsContainer extends Container<Props, any> {
 		return [DefStore];
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
 		state.def = props.def || null;
@@ -60,7 +62,7 @@ export class RepoRefsContainer extends Container<Props, any> {
 		}
 	}
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if (nextState.currPage !== prevState.currPage || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def || nextState.defObj !== prevState.defObj) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
 				repo: nextState.repo, commitID: nextState.defCommitID, def: nextState.def, repos: nextState.defRepos, page: nextState.currPage,

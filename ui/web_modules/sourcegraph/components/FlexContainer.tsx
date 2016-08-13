@@ -16,7 +16,9 @@ interface Props {
 	styleName?: string;
 }
 
-export class FlexContainer extends React.Component<Props, any> {
+type State = any;
+
+export class FlexContainer extends React.Component<Props, State> {
 	static defaultProps = {
 		direction: "left_right",
 		wrap: false,

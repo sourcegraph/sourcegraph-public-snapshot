@@ -17,7 +17,9 @@ interface Props {
 	tabItem?: boolean;
 }
 
-export class TabItem extends React.Component<Props, any> {
+type State = any;
+
+export class TabItem extends React.Component<Props, State> {
 	static defaultProps = {
 		active: false,
 		color: "blue",

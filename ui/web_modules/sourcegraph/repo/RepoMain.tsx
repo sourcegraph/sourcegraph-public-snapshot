@@ -38,7 +38,9 @@ interface Props {
 	routes: any[];
 }
 
-export class RepoMain extends React.Component<Props, any> {
+type State = any;
+
+export class RepoMain extends React.Component<Props, State> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,

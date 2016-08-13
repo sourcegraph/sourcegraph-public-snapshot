@@ -20,7 +20,9 @@ interface Props {
 	location?: any;
 }
 
-class ResetPasswordComp extends Container<Props, any> {
+type State = any;
+
+class ResetPasswordComp extends Container<Props, State> {
 	static contextTypes = {
 		user: React.PropTypes.object,
 	};

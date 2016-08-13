@@ -13,13 +13,15 @@ interface Props {
 	onExpand: any;
 }
 
-export class BlobLineExpander extends Component<Props, any> {
+type State = any;
+
+export class BlobLineExpander extends Component<Props, State> {
 	constructor(props: Props) {
 		super(props);
 		this._onClick = this._onClick.bind(this);
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		Object.assign(state, props);
 	}
 

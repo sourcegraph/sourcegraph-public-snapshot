@@ -7,6 +7,10 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Helper} from "sourcegraph/blob/BlobLoader";
 import {rel} from "sourcegraph/app/routePatterns";
 
+type Props = any;
+
+type State = any;
+
 // withLastSrclibDataVersion sets the commitID property for all
 // children to be that of the last srclib data version, not the
 // originally passed in commit ID. This occurs only when loading
@@ -18,7 +22,7 @@ import {rel} from "sourcegraph/app/routePatterns";
 // before withDefAndRefLocations (which uses the state.commitID that
 // this sets).
 export const withLastSrclibDataVersion = ({
-	reconcileState(state, props) {
+	reconcileState(state: State, props: Props) {
 		// If a blob, then the path is statically known. Otherwise, reuse
 		// the state.path set after the def loads (that is taken from def.File).
 		state.path = props.route && props.route.path && props.route.path.startsWith(rel.blob) ? props.params.splat[1] : state.path;
@@ -47,7 +51,7 @@ export const withLastSrclibDataVersion = ({
 		}
 	},
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		// Handle change in params OR lost def data (due to auth change, etc.).
 		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.vcsCommitID !== prevState.vcsCommitID || nextState.srclibDataVersionPath !== prevState.srclibDataVersionPath || (!nextState.srclibDataVersion && nextState.srclibDataVersion !== prevState.srclibDataVersion)) {
 			if (nextState.vcsCommitID) {

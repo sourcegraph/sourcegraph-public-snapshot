@@ -20,7 +20,9 @@ interface Props {
 	tabIndex?: string;
 }
 
-export class GitHubAuthButton extends React.Component<Props, any> {
+type State = any;
+
+export class GitHubAuthButton extends React.Component<Props, State> {
 	static contextTypes = {
 		eventLogger: React.PropTypes.object.isRequired,
 	};

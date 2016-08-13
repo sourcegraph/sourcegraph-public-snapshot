@@ -10,7 +10,9 @@ interface ModalProps {
 	onDismiss?: () => void;
 }
 
-class ModalComp extends React.Component<ModalProps, any> {
+type ModalState = any;
+
+class ModalComp extends React.Component<ModalProps, ModalState> {
 	constructor(props: ModalProps) {
 		super(props);
 		this._onClick = this._onClick.bind(this);

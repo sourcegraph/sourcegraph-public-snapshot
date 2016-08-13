@@ -14,8 +14,10 @@ interface Props {
 	params: any;
 }
 
-export class RepoNavContext extends Component<Props, any> {
-	reconcileState(state, props: Props) {
+type State = any;
+
+export class RepoNavContext extends Component<Props, State> {
+	reconcileState(state: State, props: Props) {
 		Object.assign(state, props);
 	}
 

@@ -12,8 +12,10 @@ interface Props {
 	build: any;
 }
 
-export class BuildHeader extends Component<Props, any> {
-	reconcileState(state, props: Props) {
+type State = any;
+
+export class BuildHeader extends Component<Props, State> {
+	reconcileState(state: State, props: Props) {
 		if (state.build !== props.build) {
 			state.build = props.build;
 		}

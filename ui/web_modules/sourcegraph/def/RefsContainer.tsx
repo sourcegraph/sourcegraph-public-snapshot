@@ -51,7 +51,9 @@ interface Props {
 	refIndex?: number;
 }
 
-export class RefsContainer extends Container<Props, any> {
+type State = any;
+
+export class RefsContainer extends Container<Props, State> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
@@ -94,7 +96,7 @@ export class RefsContainer extends Container<Props, any> {
 		return [DefStore, BlobStore];
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		state.location = props.location || null;
 		if (typeof state.showAllFiles === "undefined") {
 			state.showAllFiles = false;
@@ -174,7 +176,7 @@ export class RefsContainer extends Container<Props, any> {
 		}
 	}
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		const refPropsUpdated = prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def || prevState.refRepo !== nextState.refRepo;
 		if (refPropsUpdated) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.repo, nextState.rev, nextState.def, nextState.refRepo));

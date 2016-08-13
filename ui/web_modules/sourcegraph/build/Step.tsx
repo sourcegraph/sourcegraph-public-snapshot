@@ -19,7 +19,9 @@ interface Props {
 	logs: any;
 }
 
-export class Step extends Component<Props, any> {
+type State = any;
+
+export class Step extends Component<Props, State> {
 	_updateLogIntervalID: any;
 
 	constructor(props: Props) {
@@ -57,7 +59,7 @@ export class Step extends Component<Props, any> {
 		}
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		if (state.task !== props.task) {
 			state.task = props.task;
 
@@ -78,7 +80,7 @@ export class Step extends Component<Props, any> {
 		}
 	}
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if (prevState.task !== nextState.task) {
 			Dispatcher.Backends.dispatch(new BuildActions.WantLog(nextState.task.Build.Repo, nextState.task.Build.ID, nextState.task.ID));
 		}

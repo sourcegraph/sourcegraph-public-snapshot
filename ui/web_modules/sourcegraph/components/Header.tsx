@@ -10,7 +10,9 @@ interface Props {
 	loading?: boolean;
 }
 
-export class Header extends React.Component<Props, any> {
+type State = any;
+
+export class Header extends React.Component<Props, State> {
 	render(): JSX.Element | null {
 		return (
 			<div className={styles.container}>

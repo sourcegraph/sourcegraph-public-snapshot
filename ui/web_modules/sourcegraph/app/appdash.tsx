@@ -12,13 +12,13 @@ interface Props {
 	route: ReactRouter.Route;
 }
 
-export function withAppdashRouteStateRecording(ChildComponent: any): any {
-	type State = {
-		routes: ReactRouter.Route[];
-		route: ReactRouter.Route,
-	};
+interface State {
+	routes: ReactRouter.Route[];
+	route: ReactRouter.Route;
+};
 
-	class WithAppdashRouteStateRecording extends Component<Props, any> {
+export function withAppdashRouteStateRecording(ChildComponent: any): any {
+	class WithAppdashRouteStateRecording extends Component<Props, State> {
 		_recordRenderView: any;
 		_hasMounted: any;
 

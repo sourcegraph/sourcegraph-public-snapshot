@@ -11,7 +11,9 @@ interface Props {
 	[key: string]: any;
 }
 
-export class FileMargin extends React.Component<Props, any> {
+type State = any;
+
+export class FileMargin extends React.Component<Props, State> {
 	componentDidUpdate() {
 		const content = this.refs["content"] as HTMLElement;
 		if (content) {

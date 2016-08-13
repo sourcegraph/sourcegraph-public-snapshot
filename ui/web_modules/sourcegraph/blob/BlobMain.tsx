@@ -43,7 +43,9 @@ interface Props {
 	children?: React.ReactNode;
 }
 
-export class BlobMain extends Container<Props, any> {
+type State = any;
+
+export class BlobMain extends Container<Props, State> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -68,7 +70,7 @@ export class BlobMain extends Container<Props, any> {
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		state.repo = props.repo;
 		state.rev = props.rev || null;
 		state.commitID = props.commitID || null;
@@ -90,7 +92,7 @@ export class BlobMain extends Container<Props, any> {
 		state.hoverPos = DefStore.hoverPos;
 	}
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if (prevState.blob !== nextState.blob) {
 			nextState.lineFromByte = nextState.blob && typeof nextState.blob.ContentsString !== "undefined" ? createLineFromByteFunc(nextState.blob.ContentsString) : null;
 		}

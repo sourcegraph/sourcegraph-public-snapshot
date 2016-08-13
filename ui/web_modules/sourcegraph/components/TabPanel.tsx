@@ -9,7 +9,9 @@ interface Props {
 	tabPanel?: boolean;
 }
 
-export class TabPanel extends React.Component<Props, any> {
+type State = any;
+
+export class TabPanel extends React.Component<Props, State> {
 	static defaultProps = {
 		tabPanel: true,
 	};

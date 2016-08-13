@@ -10,14 +10,15 @@ import {defaultFetch} from "sourcegraph/util/xhr";
 // (i.e. onEnter), golang.js figures out the correct path the user wants , whether a tree page or a (def)info
 // page.
 
+interface Props {
+	location: any;
+}
+
 function GoLookup(props: Props, context) {
 	return (
 		<Header title={`Go code not found: '${props.location.query.def}'`}
 			subtitle="" />
 	);
-}
-interface Props {
-	location: any;
 }
 
 export const route: ReactRouter.PlainRoute = {

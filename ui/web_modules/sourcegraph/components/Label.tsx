@@ -11,7 +11,9 @@ interface Props {
 	children?: any;
 }
 
-export class Label extends React.Component<Props, any> {
+type State = any;
+
+export class Label extends React.Component<Props, State> {
 	render(): JSX.Element | null {
 		return (
 			<span className={this.props.className} style={this.props.style}>

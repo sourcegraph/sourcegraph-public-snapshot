@@ -14,10 +14,14 @@ import {Header} from "sourcegraph/components/Header";
 import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
 import Helmet from "react-helmet";
 
+type Props = any;
+
+type State = any;
+
 // withDefAndRefLocations fetches the def and ref locations for the
 // def specified in the properties.
 export const withDefAndRefLocations = ({
-	reconcileState(state, props) {
+	reconcileState(state: State, props: Props) {
 		state.def = props.params ? props.params.splat[1] : null;
 		state.defObj = state.def && state.commitID ? DefStore.defs.get(state.repo, state.commitID, state.def) : null;
 		state.defPos = state.def && state.commitID ? DefStore.defs.getPos(state.repo, state.commitID, state.def) : null;
@@ -45,7 +49,7 @@ export const withDefAndRefLocations = ({
 		}
 	},
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		// Handle change in params OR lost def data (due to auth change, etc.).
 		if (nextState.commitID && nextState.def && (nextState.repo !== prevState.repo || nextState.commitID !== prevState.commitID || nextState.def !== prevState.def || (!nextState.defObj && nextState.defObj !== prevState.defObj) || (!nextState.refLocations && nextState.refLocations !== prevState.refLocations))) {
 			if (!nextState.defObj) {

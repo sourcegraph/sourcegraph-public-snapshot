@@ -16,7 +16,9 @@ interface Props {
 	routeParams: any;
 };
 
-export class TreeMain extends React.Component<Props, any> {
+type State = any;
+
+export class TreeMain extends React.Component<Props, State> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 	};

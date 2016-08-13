@@ -9,7 +9,9 @@ interface Props {
 	params: any;
 }
 
-class Channel extends React.Component<Props, any> {
+type State = any;
+
+class Channel extends React.Component<Props, State> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		features: React.PropTypes.object.isRequired,

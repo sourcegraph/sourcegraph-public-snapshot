@@ -24,7 +24,9 @@ interface Props {
 	[key: string]: any;
 }
 
-export class Input extends React.Component<Props, any> {
+type State = any;
+
+export class Input extends React.Component<Props, State> {
 	render(): JSX.Element | null {
 		const {style, domRef, block, className, placeholder, label, helperText, error, errorText} = this.props;
 		return (

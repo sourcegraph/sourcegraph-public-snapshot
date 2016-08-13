@@ -22,8 +22,10 @@ export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
 		location: HistoryModule.Location;
 	}
 
+	type State = any;
+
 	isMainComponent = Boolean(isMainComponent);
-	class WithResolvedRepoRev extends Container<Props, any> {
+	class WithResolvedRepoRev extends Container<Props, State> {
 		static contextTypes = {
 			router: React.PropTypes.object.isRequired,
 		};
@@ -44,7 +46,7 @@ export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
 			}
 		}
 
-		reconcileState(state, props: Props) {
+		reconcileState(state: State, props: Props) {
 			Object.assign(state, props);
 
 			const repoSplat = repoParam(props.params.splat);
@@ -61,7 +63,7 @@ export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
 			state.isCloning = RepoStore.repos.isCloning(state.repo);
 		}
 
-		onStateTransition(prevState, nextState) {
+		onStateTransition(prevState: State, nextState: State) {
 			if (!isMainComponent) {
 				return;
 			}

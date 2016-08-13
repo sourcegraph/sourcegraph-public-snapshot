@@ -28,7 +28,9 @@ interface Props {
 	githubToken: any;
 };
 
-class SearchSettingsComp extends Container<Props, any> {
+type State = any;
+
+class SearchSettingsComp extends Container<Props, State> {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
@@ -62,7 +64,7 @@ class SearchSettingsComp extends Container<Props, any> {
 
 	stores() { return [UserStore]; }
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		Object.assign(state, props);
 
 		state.settings = UserStore.settings;
@@ -73,7 +75,7 @@ class SearchSettingsComp extends Container<Props, any> {
 		state.signedIn = Boolean(UserStore.activeAuthInfo());
 	}
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if (prevState.settings !== nextState.settings && nextState.settings && nextState.settings.search && nextState.settings.search.scope) {
 			const scope = nextState.settings.search.scope;
 			if (scope.public) {

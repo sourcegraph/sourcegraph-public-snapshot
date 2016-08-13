@@ -5,8 +5,17 @@ import * as React from "react";
 import {Component} from "sourcegraph/Component";
 import * as s from "sourcegraph/blob/styles/Blob.css";
 
-export class BlobToolbar extends Component<Props, any> {
-	reconcileState(state, props: Props) {
+interface Props {
+	repo: string;
+	rev?: string;
+	commitID?: string;
+	path?: string;
+}
+
+type State = any;
+
+export class BlobToolbar extends Component<Props, State> {
+	reconcileState(state: State, props: Props) {
 		state.repo = props.repo;
 		state.rev = props.rev || null;
 		state.commitID = props.commitID || null;
@@ -21,11 +30,4 @@ export class BlobToolbar extends Component<Props, any> {
 			</div>
 		);
 	}
-}
-
-interface Props {
-	repo: string;
-	rev?: string;
-	commitID?: string;
-	path?: string;
 }

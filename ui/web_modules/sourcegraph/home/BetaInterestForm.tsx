@@ -22,7 +22,9 @@ interface Props {
 	loginReturnTo?: string;
 }
 
-export class BetaInterestForm extends Container<Props, any> {
+type State = any;
+
+export class BetaInterestForm extends Container<Props, State> {
 	static contextTypes = {
 		user: React.PropTypes.object,
 		authInfo: React.PropTypes.object,
@@ -58,7 +60,7 @@ export class BetaInterestForm extends Container<Props, any> {
 
 	stores() { return [UserStore]; }
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		Object.assign(state, props);
 
 		if ((this.context as any).authInfo) {
@@ -66,7 +68,7 @@ export class BetaInterestForm extends Container<Props, any> {
 		}
 	}
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if (!nextState.emails && (this.context as any).authInfo) {
 			Dispatcher.Backends.dispatch(new UserActions.WantEmails((this.context as any).authInfo.UID));
 		}

@@ -9,7 +9,9 @@ interface Props {
 	offset?: number;
 }
 
-export class Affix extends React.Component<Props, any> {
+type State = any;
+
+export class Affix extends React.Component<Props, State> {
 	_affix: {
 		offsetTop: number,
 		style: any,

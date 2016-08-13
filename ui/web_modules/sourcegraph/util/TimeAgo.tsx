@@ -46,7 +46,9 @@ interface Props {
 	className?: string;
 }
 
-export class TimeAgo extends Component<Props, any> {
+type State = any;
+
+export class TimeAgo extends Component<Props, State> {
 	render(): JSX.Element | null {
 		return <time title={this.props.time} className={this.props.className}>{formatDuration(Date.now() - new Date(this.props.time).getTime())} ago</time>;
 	}

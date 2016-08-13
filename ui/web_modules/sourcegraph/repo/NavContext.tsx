@@ -21,7 +21,9 @@ interface Props {
 	routeParams: any;
 }
 
-export class NavContext extends React.Component<Props, any> {
+type State = any;
+
+export class NavContext extends React.Component<Props, State> {
 	_isLanguageUnsupported(): boolean {
 		if (!this.props.inventory || !this.props.inventory.Languages || !this.props.inventory.PrimaryProgrammingLanguage) {
 			return false; // innocent until proven guilty

@@ -23,7 +23,9 @@ interface Props {
 	returnTo: string | HistoryModule.Location;
 };
 
-export class LoginForm extends Container<Props, any> {
+type State = any;
+
+export class LoginForm extends Container<Props, State> {
 	_loginInput: any;
 	_passwordInput: any;
 
@@ -34,7 +36,7 @@ export class LoginForm extends Container<Props, any> {
 		this._handleSubmit = this._handleSubmit.bind(this);
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		Object.assign(state, props);
 		state.pendingAuthAction = UserStore.pendingAuthActions["login"] || false;
 		state.authResponse = UserStore.authResponses["login"] || null;
@@ -44,7 +46,7 @@ export class LoginForm extends Container<Props, any> {
 		state.githubError = (props.location.query && props.location.query["github-login-error"]) || null;
 	}
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if (prevState.authResponse !== nextState.authResponse) {
 			if (nextState.submitted && nextState.authResponse && nextState.authResponse.Success) {
 				setTimeout(() => this.props.onLoginSuccess());

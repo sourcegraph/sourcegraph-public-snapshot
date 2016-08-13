@@ -11,7 +11,9 @@ interface Props {
 	children?: any;
 }
 
-export class Hero extends React.Component<Props, any> {
+type State = any;
+
+export class Hero extends React.Component<Props, State> {
 	render(): JSX.Element | null {
 		const {color, pattern, children, className} = this.props;
 

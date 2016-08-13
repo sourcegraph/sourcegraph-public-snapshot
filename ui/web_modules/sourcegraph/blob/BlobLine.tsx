@@ -92,7 +92,9 @@ interface Props {
 	textSize?: string;
 }
 
-export class BlobLine extends Component<Props, any> {
+type State = any;
+
+export class BlobLine extends Component<Props, State> {
 	static contextTypes = {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
@@ -103,7 +105,7 @@ export class BlobLine extends Component<Props, any> {
 		}
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
 		state.commitID = props.commitID || null;

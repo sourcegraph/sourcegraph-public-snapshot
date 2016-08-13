@@ -14,7 +14,9 @@ export function renderedOnBody(Component) {
 		[key: string]: any;
 	}
 
-	class RenderedOnBody extends React.Component<Props, any> {
+	type State = any;
+
+	class RenderedOnBody extends React.Component<Props, State> {
 		_node: any;
 		_elem: any;
 

@@ -6,7 +6,11 @@ import * as React from "react";
 // if there is an authenticated user. It is useful for wrapping
 // login, signup, etc., route components.
 export function redirectIfLoggedIn(url: Location | string, Component) {
-	class RedirectIfLoggedIn extends React.Component<any, any> {
+	type Props = any;
+
+	type State = any;
+
+	class RedirectIfLoggedIn extends React.Component<Props, State> {
 		static contextTypes = {
 			signedIn: React.PropTypes.bool.isRequired,
 			router: React.PropTypes.object.isRequired,

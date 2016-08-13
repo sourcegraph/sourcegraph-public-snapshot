@@ -35,7 +35,9 @@ interface Props {
 	location: any;
 }
 
-export class Integrations extends Component<Props, any> {
+type State = any;
+
+export class Integrations extends Component<Props, State> {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,

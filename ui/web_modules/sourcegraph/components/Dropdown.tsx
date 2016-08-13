@@ -23,9 +23,11 @@ interface Props {
 	className?: string;
 }
 
+type State = any;
+
 // This component is a minimal Dropdown component with some code copied from
 // RevSwitcher.
-export class Dropdown extends React.Component<Props, any> {
+export class Dropdown extends React.Component<Props, State> {
 	_wrapper: any;
 
 	constructor(props: Props) {

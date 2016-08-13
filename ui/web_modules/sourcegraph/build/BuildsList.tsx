@@ -27,7 +27,9 @@ interface Props {
 	params: any;
 }
 
-export class BuildsList extends Container<Props, any> {
+type State = any;
+
+export class BuildsList extends Container<Props, State> {
 	_updateIntervalID: any;
 
 	constructor(props: Props) {
@@ -62,7 +64,7 @@ export class BuildsList extends Container<Props, any> {
 		Dispatcher.Backends.dispatch(new BuildActions.WantBuilds(this.state.repo, this._translateQuery(this.state.search), true));
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		Object.assign(state, props);
 		state.repo = props.params.splat || null; // null if serving global builds view
 		state.search = state.location.search;
@@ -72,7 +74,7 @@ export class BuildsList extends Container<Props, any> {
 
 	stores() { return [BuildStore]; }
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if (prevState.repo !== nextState.repo || prevState.search !== nextState.search) {
 			Dispatcher.Backends.dispatch(new BuildActions.WantBuilds(nextState.repo, this._translateQuery(nextState.search)));
 		}

@@ -18,8 +18,9 @@ interface HomeProps {
 	location: Object;
 }
 
-export class Home extends Container<HomeProps, any> {
+type HomeState = any;
 
+export class Home extends Container<HomeProps, HomeState> {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 		signedIn: React.PropTypes.bool.isRequired,

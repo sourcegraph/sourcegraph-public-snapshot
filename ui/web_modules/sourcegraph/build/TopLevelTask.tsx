@@ -14,8 +14,10 @@ interface Props {
 	logs: any;
 }
 
-export class TopLevelTask extends Component<Props, any> {
-	reconcileState(state, props: Props) {
+type State = any;
+
+export class TopLevelTask extends Component<Props, State> {
+	reconcileState(state: State, props: Props) {
 		if (state.task !== props.task) {
 			state.task = props.task;
 		}

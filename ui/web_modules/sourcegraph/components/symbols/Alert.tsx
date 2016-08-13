@@ -9,7 +9,9 @@ interface Props {
 	style?: any;
 }
 
-export class Alert extends React.Component<Props, any> {
+type State = any;
+
+export class Alert extends React.Component<Props, State> {
 	static defaultProps = {
 		width: 16,
 	};

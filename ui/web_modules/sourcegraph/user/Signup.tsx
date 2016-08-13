@@ -24,7 +24,9 @@ interface SignupFormProps {
 	returnTo: string | HistoryModule.Location;
 }
 
-export class SignupForm extends Container<SignupFormProps, any> {
+type SignupFormState = any;
+
+export class SignupForm extends Container<SignupFormProps, SignupFormState> {
 	_loginInput: any;
 	_passwordInput: any;
 	_emailInput: any;
@@ -49,7 +51,7 @@ export class SignupForm extends Container<SignupFormProps, any> {
 		state.githubEmail = (props.location.query && props.location.query.email) || null;
 	}
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: SignupFormState, nextState: SignupFormState) {
 		if (prevState.authResponse !== nextState.authResponse) {
 			if (nextState.submitted && nextState.authResponse && nextState.authResponse.Success) {
 				setTimeout(() => this.props.onSignupSuccess());

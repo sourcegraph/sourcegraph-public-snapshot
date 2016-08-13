@@ -17,7 +17,9 @@ interface Props {
 	color?: string; // "purple", "blue", "green", "orange"
 }
 
-export class Stepper extends React.Component<Props, any> {
+type State = any;
+
+export class Stepper extends React.Component<Props, State> {
 	static defaultProps = {
 		steps: [null, null, null],
 		stepsComplete: 0,

@@ -23,7 +23,9 @@ export function withFileBlob(Component) {
 		path?: string;
 	}
 
-	class WithFileBlob extends Container<Props, any> {
+	type State = any;
+
+	class WithFileBlob extends Container<Props, State> {
 		static contextTypes = {
 			router: React.PropTypes.object.isRequired,
 		};
@@ -32,12 +34,12 @@ export function withFileBlob(Component) {
 			return [BlobStore];
 		}
 
-		reconcileState(state, props: Props) {
+		reconcileState(state: State, props: Props) {
 			Object.assign(state, props);
 			state.blob = state.path && state.commitID ? (BlobStore.files[keyForFile(state.repo, state.commitID, state.path)] || null) : null;
 		}
 
-		onStateTransition(prevState, nextState) {
+		onStateTransition(prevState: State, nextState: State) {
 			// Handle change in params OR lost file contents (due to auth change, etc.).
 			if (nextState.path && nextState.commitID && !nextState.blob && (prevState.repo !== nextState.repo || prevState.commitID !== nextState.commitID || prevState.path !== nextState.path || prevState.blob !== nextState.blob)) {
 				Dispatcher.Backends.dispatch(new BlobActions.WantFile(nextState.repo, nextState.commitID, nextState.path));

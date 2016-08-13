@@ -20,7 +20,9 @@ interface Props {
 	location?: any;
 }
 
-export class DashboardContainer extends Container<Props, any> {
+type State = any;
+
+export class DashboardContainer extends Container<Props, State> {
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,
 		router: React.PropTypes.object.isRequired,
@@ -50,7 +52,7 @@ export class DashboardContainer extends Container<Props, any> {
 		state.signedIn = context && context.signedIn;
 	}
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if (this._input && this._input.value && !prevState.isTyping) {
 			this._goToSearch(this._input.value);
 		}

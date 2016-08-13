@@ -11,7 +11,9 @@ interface Props {
 	style?: any;
 }
 
-export class Table extends React.Component<Props, any> {
+type State = any;
+
+export class Table extends React.Component<Props, State> {
 	render(): JSX.Element | null {
 		const {className, children, bordered, style} = this.props;
 

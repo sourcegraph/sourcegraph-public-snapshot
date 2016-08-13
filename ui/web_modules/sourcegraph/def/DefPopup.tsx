@@ -22,12 +22,14 @@ interface Props {
 	location?: any;
 }
 
-export class DefPopup extends Container<Props, any> {
+type State = any;
+
+export class DefPopup extends Container<Props, State> {
 	static contextTypes = {
 		features: React.PropTypes.object.isRequired,
 	};
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		Object.assign(state, props);
 		state.defObj = props.def;
 		state.repo = props.def ? props.def.Repo : null;
@@ -38,7 +40,7 @@ export class DefPopup extends Container<Props, any> {
 		state.authors = DefStore.authors.get(state.repo, state.commitID, state.def);
 	}
 
-	onStateTransition(prevState, nextState) {
+	onStateTransition(prevState: State, nextState: State) {
 		if (prevState.repo !== nextState.repo || prevState.commitID !== nextState.commitID || prevState.def !== nextState.def) {
 			Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.commitID, nextState.def));
 		}

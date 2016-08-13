@@ -9,7 +9,9 @@ interface Props {
 	icon: string; // See symbols directory
 }
 
-export class Icon extends React.Component<Props, any> {
+type State = any;
+
+export class Icon extends React.Component<Props, State> {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 	};

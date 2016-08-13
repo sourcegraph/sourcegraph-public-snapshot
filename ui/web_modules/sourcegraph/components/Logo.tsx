@@ -10,7 +10,9 @@ interface Props {
 	width?: string;
 }
 
-export class Logo extends React.Component<Props, any> {
+type State = any;
+
+export class Logo extends React.Component<Props, State> {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 	};

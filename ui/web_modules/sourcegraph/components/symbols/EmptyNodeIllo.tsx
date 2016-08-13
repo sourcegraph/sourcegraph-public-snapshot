@@ -7,7 +7,9 @@ interface Props {
 	width?: number; // appended by "px"
 }
 
-export class EmptyNodeIllo extends React.Component<Props, any> {
+type State = any;
+
+export class EmptyNodeIllo extends React.Component<Props, State> {
 	static defaultProps = {
 		width: 500,
 	};

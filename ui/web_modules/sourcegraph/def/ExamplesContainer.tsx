@@ -23,7 +23,9 @@ interface Props {
 	examples?: any;
 }
 
-export class ExamplesContainer extends Container<Props, any> {
+type State = any;
+
+export class ExamplesContainer extends Container<Props, State> {
 	constructor(props: Props) {
 		super(props);
 	}
@@ -32,7 +34,7 @@ export class ExamplesContainer extends Container<Props, any> {
 		return [DefStore];
 	}
 
-	reconcileState(state, props: Props) {
+	reconcileState(state: State, props: Props) {
 		state.location = props.location || null;
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
