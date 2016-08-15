@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"go/doc"
+	"io/ioutil"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -34,8 +36,42 @@ func (h *Session) handleHover(req *jsonrpc2.Request, params lsp.TextDocumentPosi
 		return nil, err
 	}
 
+	// using def position, find its docs.
+	uri, err := h.fileURI(def.Path)
+	if err != nil {
+		return nil, err
+	}
+	if uri != params.TextDocument.URI {
+		// different file to input. This happens when the definition
+		// lives in a different file to what we are hovering over.
+		contents, err = ioutil.ReadFile(def.Path)
+		if err != nil {
+			return nil, err
+		}
+	}
+	docstring, err := docAtPosition(lsp.Position{Line: def.Line - 1, Character: def.Column - 1}, contents)
+	if err != nil {
+		return nil, err
+	}
+
+	ms := []lsp.MarkedString{{Language: "go", Value: def.Info}}
+	if docstring != "" {
+		var htmlBuf bytes.Buffer
+		doc.ToHTML(&htmlBuf, docstring, nil)
+		ms = append(
+			ms,
+			lsp.MarkedString{
+				Language: "text/html",
+				Value:    htmlBuf.String(),
+			},
+			lsp.MarkedString{
+				Language: "text/plain",
+				Value:    docstring,
+			},
+		)
+	}
 	return &lsp.Hover{
-		Contents: []lsp.MarkedString{{Language: "go", Value: def.Info}},
+		Contents: ms,
 		Range:    r,
 	}, nil
 }

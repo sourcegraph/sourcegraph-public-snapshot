@@ -17,6 +17,14 @@
         {
           "language": "go",
           "value": "NewRouter func() *Router"
+        },
+        {
+          "language": "text/html",
+          "value": "\u003cp\u003e\nNewRouter returns a new router instance.\n\u003c/p\u003e\n"
+        },
+        {
+          "language": "text/plain",
+          "value": "NewRouter returns a new router instance.\n"
         }
       ],
       "range": {
