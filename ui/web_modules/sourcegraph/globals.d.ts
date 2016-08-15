@@ -68,6 +68,10 @@ declare module "lodash.isequal" {
 	export default _.isEqual;
 }
 
+declare module "lodash.clonedeep" {
+	export default _.cloneDeep;
+}
+
 declare module "recharts" {
 	export var LineChart: any;
 	export var Line: any;

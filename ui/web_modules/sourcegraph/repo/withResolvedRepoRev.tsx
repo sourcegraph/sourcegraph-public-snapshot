@@ -8,6 +8,7 @@ import "sourcegraph/repo/RepoBackend";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {repoPath, repoRev, repoParam} from "sourcegraph/repo/index";
+import cloneDeep from "lodash.clonedeep";
 
 // withResolvedRepoRev reads the repo, rev, repo resolution, etc.,
 // from the route params. If isMainComponent is true, then it also dispatches
@@ -79,8 +80,9 @@ export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
 				} else if (nextState.repoResolution.Repo) {
 					let canonicalPath = nextState.repoResolution.CanonicalPath;
 					if (nextState.repo !== canonicalPath) {
-						let canonicalURL = this.props.location.pathname.replace(new RegExp(this.state.repo, "g"), canonicalPath);
-						(this.context as any).router.replace(canonicalURL);
+						let locCopy = cloneDeep(this.props.location);
+						locCopy.pathname = this.props.location.pathname.replace(new RegExp(this.state.repo, "g"), canonicalPath);
+						(this.context as any).router.replace(locCopy);
 						return;
 					}
 

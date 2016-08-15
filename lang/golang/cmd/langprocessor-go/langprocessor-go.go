@@ -136,6 +136,9 @@ func resolveFile(workspace, _, _, uri string) (*langp.File, error) {
 	if err != nil {
 		return nil, err
 	}
+	if repo == "sourcegraph.com/sourcegraph/sourcegraph" {
+		repo = "sourcegraph/sourcegraph"
+	}
 	// Path is fullPath relative to repoPath
 	path, err := filepath.Rel(repoPath, fullPath)
 	if err != nil {

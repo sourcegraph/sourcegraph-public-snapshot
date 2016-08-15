@@ -32,6 +32,13 @@ func (r *Router) URLToDef(def routevar.DefAtRev) *url.URL {
 	)
 }
 
+func (r *Router) URLToBlob(repo, rev, file string, line int) *url.URL {
+	return &url.URL{
+		Path:     fmt.Sprintf("/%s%s/-/blob/%s", repo, revStr(rev), file),
+		Fragment: fmt.Sprintf("L%d", line),
+	}
+}
+
 func (r *Router) URLToDefKey(def graph.DefKey) *url.URL {
 	return r.urlToDef(def.Repo, revStr(def.CommitID), def.UnitType,
 		routevar.DefKeyPathToURLPath(def.Unit),

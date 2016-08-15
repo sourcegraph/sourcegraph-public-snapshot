@@ -8,14 +8,16 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	_, repoRev, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+	repo, repoRev, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -30,6 +32,26 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 	character, err := strconv.Atoi(r.URL.Query().Get("character"))
 	if err != nil {
 		return err
+	}
+
+	var response = &struct {
+		Path string `json:"path"`
+	}{}
+
+	if feature.IsUniverseRepo(repo.URI) {
+		defRange, err := langp.DefaultClient.Definition(&langp.Position{
+			Repo:      repo.URI,
+			Commit:    repoRev.CommitID,
+			File:      file,
+			Line:      line,
+			Character: character,
+		})
+		if err != nil {
+			return err
+		}
+		// We increment the line number by 1 because the blob view is not zero-indexed.
+		response.Path = router.Rel.URLToBlob(defRange.Repo, defRange.Commit, defRange.File, defRange.StartLine+1).String()
+		return writeJSON(w, response)
 	}
 
 	defSpec, err := cl.Annotations.GetDefAtPos(ctx, &sourcegraph.AnnotationsGetDefAtPosOptions{
@@ -58,8 +80,6 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	graphKey := graph.DefKey{Repo: def.Repo, CommitID: def.CommitID, UnitType: def.UnitType, Unit: def.Unit, Path: def.Path}
-
-	return writeJSON(w, &struct {
-		Path string `json:"path"`
-	}{router.Rel.URLToDefKey(graphKey).String()})
+	response.Path = router.Rel.URLToDefKey(graphKey).String()
+	return writeJSON(w, response)
 }
