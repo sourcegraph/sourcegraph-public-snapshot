@@ -1,4 +1,4 @@
-package statsutil
+package metrics
 
 import (
 	"golang.org/x/net/context"

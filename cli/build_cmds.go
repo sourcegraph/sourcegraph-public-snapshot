@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/metrics"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 )
 
 func init() {
@@ -160,7 +160,7 @@ type buildsStatsCmd struct{}
 func (c *buildsStatsCmd) Execute(args []string) error {
 	cl := cliClient
 
-	numBuilds, err := statsutil.ComputeBuildStats(cl, cliContext)
+	numBuilds, err := metrics.ComputeBuildStats(cl, cliContext)
 	if err != nil {
 		return err
 	}

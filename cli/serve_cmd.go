@@ -37,6 +37,7 @@ import (
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/loghandlers"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/metrics"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
@@ -49,7 +50,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/snapshotprof"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/server"
@@ -462,7 +462,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	go statsutil.ComputeUsageStats(usageStatsCtx, 10*time.Minute)
+	go metrics.ComputeUsageStats(usageStatsCtx, 10*time.Minute)
 
 	// HACK(sjl) The Golang garbage collector is a bit conservative with memory that should
 	// be returned to host.  On larger nodes, this can get to be 10 gigabytes or

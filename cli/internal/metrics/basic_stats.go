@@ -1,4 +1,4 @@
-package statsutil
+package metrics
 
 import (
 	"fmt"
