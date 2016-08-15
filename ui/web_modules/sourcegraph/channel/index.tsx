@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import {Header} from "sourcegraph/components/Header";
-import * as styles from "./styles/index.css";
+import * as styles from "sourcegraph/channel/styles/index.css";
 
 interface Props {
 	location: any;

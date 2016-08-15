@@ -3,7 +3,7 @@
 import * as React from "react";
 import {Link} from "react-router";
 import {Hero, Heading} from "sourcegraph/components/index";
-import * as styles from "./Page.css";
+import * as styles from "sourcegraph/page/Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import Helmet from "react-helmet";

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import * as styles from "./styles/label.css";
+import * as styles from "sourcegraph/components/styles/label.css";
 
 interface Props {
 	className?: string;

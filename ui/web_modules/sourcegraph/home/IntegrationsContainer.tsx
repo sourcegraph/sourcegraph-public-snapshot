@@ -1,5 +1,5 @@
-import {Integrations} from "./Integrations";
 import * as React from "react";
+import {Integrations} from "sourcegraph/home/Integrations";
 import "sourcegraph/user/UserBackend"; // for side effects
 
 interface Props {

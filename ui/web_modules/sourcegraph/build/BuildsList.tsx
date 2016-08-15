@@ -18,7 +18,7 @@ import {Button} from "sourcegraph/components/index";
 
 import {TimeAgo} from "sourcegraph/util/TimeAgo";
 
-import * as styles from "./styles/Build.css";
+import * as styles from "sourcegraph/build/styles/Build.css";
 import * as btnStyles from "sourcegraph/components/styles/button.css";
 
 const updateIntervalMsec = 30000;

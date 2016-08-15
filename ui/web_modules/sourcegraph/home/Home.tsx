@@ -8,7 +8,7 @@ import {Container} from "sourcegraph/Container";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
-import * as styles from "./styles/home.css";
+import * as styles from "sourcegraph/home/styles/home.css";
 
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal} from "sourcegraph/components/Modal";

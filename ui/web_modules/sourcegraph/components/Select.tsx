@@ -3,9 +3,9 @@
 import * as React from "react";
 import * as classNames from "classnames";
 
-import * as base from "./styles/_base.css";
-import * as styles from "./styles/select.css";
-import {DownPointer, Alert} from "./symbols/index";
+import * as base from "sourcegraph/components/styles/_base.css";
+import * as styles from "sourcegraph/components/styles/select.css";
+import {DownPointer, Alert} from "sourcegraph/components/symbols/index";
 
 interface Props {
 	block?: boolean;

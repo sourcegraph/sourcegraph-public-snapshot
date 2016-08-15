@@ -6,7 +6,7 @@ import {elapsed} from "sourcegraph/build/Build";
 import {Component} from "sourcegraph/Component";
 import {Step} from "sourcegraph/build/Step";
 
-import * as styles from "./styles/Build.css";
+import * as styles from "sourcegraph/build/styles/Build.css";
 
 interface Props {
 	task: any;

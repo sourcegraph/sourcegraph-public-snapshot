@@ -1,8 +1,8 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import * as styles from "./styles/dropdown.css";
-import * as base from "./styles/_base.css";
+import * as styles from "sourcegraph/components/styles/dropdown.css";
+import * as base from "sourcegraph/components/styles/_base.css";
 import {EventListener} from "sourcegraph/Component";
 import {CheckIcon} from "sourcegraph/components/Icons";
 import {DownPointer} from "sourcegraph/components/symbols/index";

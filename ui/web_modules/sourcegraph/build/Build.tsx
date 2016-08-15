@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import {formatDuration} from "sourcegraph/util/TimeAgo";
-import * as styles from "./styles/Build.css";
+import * as styles from "sourcegraph/build/styles/Build.css";
 
 export function updatedAt(b) {
 	return b.EndedAt || b.StartedAt || b.CreatedAt || null;

@@ -9,7 +9,7 @@ import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {Component, EventListener} from "sourcegraph/Component";
 import {Link} from "react-router";
-import * as styles from "./styles/RevSwitcher.css";
+import * as styles from "sourcegraph/repo/styles/RevSwitcher.css";
 import * as classNames from "classnames";
 
 import {FaChevronDown, CheckIcon} from "sourcegraph/components/Icons";

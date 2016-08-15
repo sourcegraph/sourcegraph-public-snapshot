@@ -1,7 +1,7 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import {Icon} from "./Icon";
+import {Icon} from "sourcegraph/components/Icon";
 import * as styles from "sourcegraph/components/styles/tabItem.css";
 import * as classNames from "classnames";
 

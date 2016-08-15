@@ -1,7 +1,7 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import * as styles from "./styles/Repos.css";
+import * as styles from "sourcegraph/user/settings/styles/Repos.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {Input, Heading, Button, ToggleSwitch} from "sourcegraph/components/index";
 import {RepoLink} from "sourcegraph/components/RepoLink";

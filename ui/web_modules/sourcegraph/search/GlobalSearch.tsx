@@ -18,10 +18,10 @@ import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
 import {Icon} from "sourcegraph/components/index";
 import {trimRepo} from "sourcegraph/repo/index";
-import * as styles from "./styles/GlobalSearch.css";
+import * as styles from "sourcegraph/search/styles/GlobalSearch.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {popularRepos} from "./popularRepos";
+import {popularRepos} from "sourcegraph/search/popularRepos";
 import {locationForSearch} from "sourcegraph/search/routes";
 import * as classNames from "classnames";
 

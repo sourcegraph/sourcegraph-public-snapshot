@@ -23,7 +23,7 @@ import {RepoLink} from "sourcegraph/components/index";
 import {FaAngleDown, FaAngleRight} from "sourcegraph/components/Icons";
 import {breadcrumb} from "sourcegraph/util/breadcrumb";
 import {stripDomain} from "sourcegraph/util/stripDomain";
-import * as styles from "./styles/Refs.css";
+import * as styles from "sourcegraph/def/styles/Refs.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";

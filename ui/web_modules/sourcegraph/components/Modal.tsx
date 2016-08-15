@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import * as styles from "./styles/modal.css";
+import * as styles from "sourcegraph/components/styles/modal.css";
 import {renderedOnBody} from "sourcegraph/util/renderedOnBody";
 import {EventListener} from "sourcegraph/Component";
 

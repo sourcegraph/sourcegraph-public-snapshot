@@ -5,7 +5,7 @@ import {TimeAgo} from "sourcegraph/util/TimeAgo";
 import {Avatar} from "sourcegraph/components/index";
 import {PencilIcon} from "sourcegraph/components/Icons";
 import {DefAuthor} from "sourcegraph/def/index";
-import * as styles from "./styles/AuthorList.css";
+import * as styles from "sourcegraph/def/styles/AuthorList.css";
 
 export function AuthorList({
 	authors,

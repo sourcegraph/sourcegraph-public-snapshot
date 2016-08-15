@@ -5,7 +5,7 @@ import * as classNames from "classnames";
 
 import {Component, EventListener} from "sourcegraph/Component";
 
-import * as styles from "./styles/popover.css";
+import * as styles from "sourcegraph/components/styles/popover.css";
 
 interface Props {
 	left?: boolean; // position popover content to the left (default: right)

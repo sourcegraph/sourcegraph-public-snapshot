@@ -1,8 +1,8 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import * as styles from "./styles/header.css";
-import {Loader} from "./Loader";
+import * as styles from "sourcegraph/components/styles/header.css";
+import {Loader} from "sourcegraph/components/Loader";
 
 interface Props {
 	title: string;

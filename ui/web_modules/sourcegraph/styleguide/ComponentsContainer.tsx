@@ -16,7 +16,7 @@ import {
 	AffixComponent,
 	FormsComponent,
 	ListComponent,
-} from "./componentExamples/index";
+} from "sourcegraph/styleguide/componentExamples/index";
 
 export class ComponentsContainer extends React.Component<{}, any> {
 	render(): JSX.Element | null {

@@ -2,9 +2,9 @@
 
 import * as React from "react";
 
-import * as styles from "./styles/input.css";
-import * as base from "./styles/_base.css";
-import {Alert} from "./symbols/index";
+import * as styles from "sourcegraph/components/styles/input.css";
+import * as base from "sourcegraph/components/styles/_base.css";
+import {Alert} from "sourcegraph/components/symbols/index";
 import * as classNames from "classnames";
 
 interface Props {

@@ -1,7 +1,7 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import * as styles from "./styles/avatar.css";
+import * as styles from "sourcegraph/components/styles/avatar.css";
 import * as classNames from "classnames";
 
 const PLACEHOLDER_IMAGE = "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";

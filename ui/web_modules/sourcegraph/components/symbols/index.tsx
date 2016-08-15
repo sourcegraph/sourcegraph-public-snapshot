@@ -1,8 +1,8 @@
 // tslint:disable: typedef ordered-imports
 
-export {DownPointer} from "./DownPointer";
-export {Repository} from "./Repository";
-export {Alert} from "./Alert";
-export {Search} from "./Search";
-export {EmptyNodeIllo} from "./EmptyNodeIllo";
-export {Cone} from "./Cone";
+export {DownPointer} from "sourcegraph/components/symbols/DownPointer";
+export {Repository} from "sourcegraph/components/symbols/Repository";
+export {Alert} from "sourcegraph/components/symbols/Alert";
+export {Search} from "sourcegraph/components/symbols/Search";
+export {EmptyNodeIllo} from "sourcegraph/components/symbols/EmptyNodeIllo";
+export {Cone} from "sourcegraph/components/symbols/Cone";

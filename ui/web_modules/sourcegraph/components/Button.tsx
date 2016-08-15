@@ -3,8 +3,8 @@
 import * as React from "react";
 import * as classNames from "classnames";
 
-import {Loader} from "./Loader";
-import * as styles from "./styles/button.css";
+import {Loader} from "sourcegraph/components/Loader";
+import * as styles from "sourcegraph/components/styles/button.css";
 
 export function Button(props: {
 	block?: boolean, // display:inline_block by default; use block for full-width buttons

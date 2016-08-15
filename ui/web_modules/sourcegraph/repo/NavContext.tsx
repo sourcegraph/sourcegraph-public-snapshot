@@ -5,7 +5,7 @@ import * as React from "react";
 import {RepoLink} from "sourcegraph/components/RepoLink";
 import {Label} from "sourcegraph/components/index";
 import {RevSwitcherContainer} from "sourcegraph/repo/RevSwitcherContainer";
-import * as styles from "./styles/Repo.css";
+import * as styles from "sourcegraph/repo/styles/Repo.css";
 
 interface Props {
 	repo: string;

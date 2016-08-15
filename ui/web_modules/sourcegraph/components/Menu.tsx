@@ -3,7 +3,7 @@
 import * as React from "react";
 import * as classNames from "classnames";
 
-import * as styles from "./styles/menu.css";
+import * as styles from "sourcegraph/components/styles/menu.css";
 
 interface Props {
 	children?: any;

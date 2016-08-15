@@ -5,7 +5,7 @@ import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggl
 import Helmet from "react-helmet";
 import {Container} from "sourcegraph/Container";
 import {UserStore} from "sourcegraph/user/UserStore";
-import * as styles from "./styles/Dashboard.css";
+import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
 import {locationForSearch} from "sourcegraph/search/routes";
 import {GlobalSearchInput} from "sourcegraph/search/GlobalSearchInput";
 import {Button, Logo} from "sourcegraph/components/index";

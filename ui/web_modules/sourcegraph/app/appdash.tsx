@@ -4,7 +4,7 @@ import * as React from "react";
 import {Component} from "sourcegraph/Component";
 
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
-import {getRouteName} from "./routePatterns";
+import {getRouteName} from "sourcegraph/app/routePatterns";
 import {context} from "sourcegraph/app/context";
 
 interface Props {

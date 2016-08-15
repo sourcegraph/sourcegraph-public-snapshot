@@ -8,7 +8,7 @@ import {stripDomain} from "sourcegraph/util/stripDomain";
 import * as classNames from "classnames";
 
 import * as base from "sourcegraph/components/styles/_base.css";
-import * as styles from "./styles/breadcrumb.css";
+import * as styles from "sourcegraph/components/styles/breadcrumb.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {

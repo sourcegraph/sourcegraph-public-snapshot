@@ -18,7 +18,7 @@ import {trimRepo} from "sourcegraph/repo/index";
 
 import {Button} from "sourcegraph/components/index";
 
-import * as styles from "./styles/Build.css";
+import * as styles from "sourcegraph/build/styles/Build.css";
 
 const updateIntervalMsec = 1500;
 

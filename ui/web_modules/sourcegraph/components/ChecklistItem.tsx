@@ -1,10 +1,10 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import * as styles from "./styles/checklistItem.css";
-import * as base from "./styles/_base.css";
-import {Icon} from "./Icon";
-import {Button} from "./Button";
+import * as styles from "sourcegraph/components/styles/checklistItem.css";
+import * as base from "sourcegraph/components/styles/_base.css";
+import {Icon} from "sourcegraph/components/Icon";
+import {Button} from "sourcegraph/components/Button";
 import * as classNames from "classnames";
 
 interface Props {

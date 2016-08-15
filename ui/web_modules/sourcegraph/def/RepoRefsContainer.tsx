@@ -7,7 +7,7 @@ import {DefStore} from "sourcegraph/def/DefStore";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {Heading, List, Loader} from "sourcegraph/components/index";
 import "sourcegraph/blob/BlobBackend";
-import * as styles from "./styles/DefInfo.css";
+import * as styles from "sourcegraph/def/styles/DefInfo.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import * as classNames from "classnames";

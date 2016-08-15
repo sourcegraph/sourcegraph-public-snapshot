@@ -7,7 +7,7 @@ import "sourcegraph/blob/BlobBackend";
 import "whatwg-fetch";
 import * as classNames from "classnames";
 
-import * as styles from "./styles/DefInfo.css";
+import * as styles from "sourcegraph/def/styles/DefInfo.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 

@@ -1,12 +1,12 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import * as styles from "./styles/BetaInterestForm.css";
+import * as styles from "sourcegraph/home/styles/BetaInterestForm.css";
 import {Button, Input, CheckboxList} from "sourcegraph/components/index";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {languages, editors} from "./HomeUtils";
+import {languages, editors} from "sourcegraph/home/HomeUtils";
 import {langName} from "sourcegraph/Language";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {UserStore} from "sourcegraph/user/UserStore";

@@ -8,7 +8,7 @@ import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import {Avatar, Popover, Menu, Logo, Heading} from "sourcegraph/components/index";
 import {CloseIcon} from "sourcegraph/components/Icons";
 import {LogoutLink} from "sourcegraph/user/LogoutLink";
-import * as styles from "./styles/GlobalNav.css";
+import * as styles from "sourcegraph/app/styles/GlobalNav.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";

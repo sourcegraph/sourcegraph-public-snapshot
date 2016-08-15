@@ -16,7 +16,7 @@ import * as classNames from "classnames";
 
 import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
 
-import * as styles from "./styles/Tree.css";
+import * as styles from "sourcegraph/tree/styles/Tree.css";
 
 const EMPTY_PATH = [];
 

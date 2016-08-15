@@ -1,6 +1,6 @@
-import * as styles from "./styles/Settings.css";
 import * as React from "react";
 import {Panel} from "sourcegraph/components/index";
+import * as styles from "sourcegraph/user/settings/styles/Settings.css";
 
 interface Props {
 	main: JSX.Element;

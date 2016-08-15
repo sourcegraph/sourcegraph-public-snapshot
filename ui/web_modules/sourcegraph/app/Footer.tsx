@@ -4,7 +4,7 @@ import * as React from "react";
 
 import {Link} from "react-router";
 import {Logo} from "sourcegraph/components/Logo";
-import * as styles from "./styles/Footer.css";
+import * as styles from "sourcegraph/app/styles/Footer.css";
 
 export class Footer extends React.Component<{}, any> {
 	static contextTypes = {

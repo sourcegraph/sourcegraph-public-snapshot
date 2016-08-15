@@ -1,8 +1,8 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import * as styles from "./styles/stepper.css";
-import {Icon} from "./Icon";
+import * as styles from "sourcegraph/components/styles/stepper.css";
+import {Icon} from "sourcegraph/components/Icon";
 import * as classNames from "classnames";
 
 // @TODO(chexee): Doesn't scale well with large step labels. Keep 'em short for now.

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import {Hero, Heading} from "sourcegraph/components/index";
-import * as styles from "./Page.css";
+import * as styles from "sourcegraph/page/Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import Helmet from "react-helmet";
 import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";

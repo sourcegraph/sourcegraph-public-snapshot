@@ -3,7 +3,7 @@
 import * as React from "react";
 import {TimeAgo} from "sourcegraph/util/TimeAgo";
 import {Avatar} from "sourcegraph/components/index";
-import * as styles from "./styles/Commit.css";
+import * as styles from "sourcegraph/vcs/styles/Commit.css";
 
 function showBothSigs(a, b) {
 	return a && b && (a.Name !== b.Name || a.Email !== b.Email);

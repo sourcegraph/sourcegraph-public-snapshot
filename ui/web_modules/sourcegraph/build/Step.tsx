@@ -10,7 +10,7 @@ import * as classNames from "classnames";
 
 import {Collapsible} from "sourcegraph/components/index";
 
-import * as styles from "./styles/Build.css";
+import * as styles from "sourcegraph/build/styles/Build.css";
 
 const updateLogIntervalMsec = 1500;
 

@@ -7,7 +7,7 @@ import {EventListener} from "sourcegraph/Component";
 import {GlobalNav} from "sourcegraph/app/GlobalNav";
 import {Footer} from "sourcegraph/app/Footer";
 import "sourcegraph/components/styles/_normalize.css";
-import * as styles from "./styles/App.css";
+import * as styles from "sourcegraph/app/styles/App.css";
 
 import {EventLogger, withEventLoggerContext, withViewEventsLogged} from "sourcegraph/util/EventLogger";
 import {withFeaturesContext} from "sourcegraph/app/features";

@@ -5,7 +5,7 @@ import {Container} from "sourcegraph/Container";
 import {RefsContainer} from "sourcegraph/def/RefsContainer";
 import {DefStore} from "sourcegraph/def/DefStore";
 import "sourcegraph/blob/BlobBackend";
-import * as styles from "./styles/DefInfo.css";
+import * as styles from "sourcegraph/def/styles/DefInfo.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import {Panel, Heading, Loader} from "sourcegraph/components/index";

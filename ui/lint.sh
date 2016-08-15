@@ -8,15 +8,21 @@ if [ ${files[@]} ]; then
 	exit 1
 fi
 
-if grep -qr propTypes web_modules/; then
+if grep -qr --include="*.tsx" propTypes web_modules/; then
 	echo "Please use type parameters instead of propTypes:"
-	grep -rn propTypes web_modules/
+	grep -rn --include="*.tsx" propTypes web_modules/
 	exit 1
 fi
 
-if grep -qr 'className={`' web_modules/; then
+if grep -qr --include="*.tsx" 'className={`' web_modules/; then
 	echo "Please use the classNames helper instead of template strings:"
-	grep -rn 'className={`' web_modules/
+	grep -rn --include="*.tsx" 'className={`' web_modules/
+	exit 1
+fi
+
+if grep -qr --include="*.tsx" ' from "\.' web_modules/; then
+	echo "Please use absolute import paths:"
+	grep -rn --include="*.tsx" ' from "\.' web_modules/
 	exit 1
 fi
 

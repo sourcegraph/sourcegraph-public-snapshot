@@ -5,7 +5,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import * as layout from "sourcegraph/components/styles/_layout.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
-import * as styles from "./styles/home.css";
+import * as styles from "sourcegraph/desktop/styles/home.css";
 import * as classNames from "classnames";
 
 import {Link} from "react-router";

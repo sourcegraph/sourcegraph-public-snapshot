@@ -1,7 +1,7 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import * as styles from "./styles/toggleSwitch.css";
+import * as styles from "sourcegraph/components/styles/toggleSwitch.css";
 
 interface Props {
 	defaultChecked?: boolean;
