@@ -102,6 +102,6 @@ func testRegisterFlow(t *T) error {
 	t.Click(selenium.ById, "e2etest-register-button")
 
 	// Wait for redirect to Sourcegraph homepage.
-	t.WaitForRedirect(t.Endpoint("/"), "wait for redirect to home after register")
+	t.WaitForRedirect(t.Endpoint("/dashboard"), "wait for redirect to dashboard after register")
 	return nil
 }
