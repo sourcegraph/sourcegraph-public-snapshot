@@ -342,7 +342,13 @@ func (t *translator) createWorkspace(repo, commit string) (update bool, err erro
 		return false, err
 	} else if err == nil {
 		// We have a recently prepared workspace, so clone and update
-		// it instead of preparing a new one from scratch.
+		// it instead of preparing a new one from scratch. We must first read
+		// the symlink or else we would create a subvolume of a symlink which
+		// isn't what we want (only the 'latest' file is a symlink).
+		latestSubvolume, err = os.Readlink(latestSubvolume)
+		if err != nil {
+			return false, err
+		}
 		if err := btrfsSubvolumeSnapshot(latestSubvolume, subvolume); err != nil {
 			return false, err
 		}
