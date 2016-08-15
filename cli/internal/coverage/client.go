@@ -114,7 +114,7 @@ func (c *lspClient) Hover(p *langp.Position) (*langp.Hover, error) {
 	); err != nil {
 		return nil, err
 	}
-	return langp.HoverFromLSP(hoverResp), nil
+	return langp.HoverFromLSP(&hoverResp), nil
 }
 
 func (c *lspClient) LocalRefs(p *langp.Position) (*langp.LocalRefs, error) {

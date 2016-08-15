@@ -584,7 +584,7 @@ func (t *translator) serveHover(body []byte) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return HoverFromLSP(respHover), nil
+	return HoverFromLSP(&respHover), nil
 }
 
 func (t *translator) serveExternalRefs(body []byte) (interface{}, error) {

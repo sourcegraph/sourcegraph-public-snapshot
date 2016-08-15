@@ -135,39 +135,34 @@ type ExportedSymbols struct {
 	Defs []*DefSpec
 }
 
-// HoverContent represents a subset of the content for when a user “hovers”
-// over a definition.
-//
-// For example, one HoverContent object may represent the comments of a
-// function, while the another HoverContent object may represent the function
-// signature. In the future we may abuse this field to carry more data, and
-// thus we use “type” instead of “language” like in LSP. In practice at this
-// point, it always maps to a language (Go, Java, etc).
-type HoverContent struct {
-	// Type is the type of content (e.g. "Go").
-	Type string
-
-	// Value is the value of the content (e.g. "func NewRequest() *Request").
-	Value string
-}
-
 // Hover represents a message for when a user "hovers" over a definition. It is
 // a human-readable description of a definition.
 type Hover struct {
-	Contents []*HoverContent
+	// Title is a human-readable string of the
+	// definition. Typically this is the type/function signature.
+	Title string
+
+	// DocHTML is the docstring for the definition, in the format
+	// 'text/html'.
+	//
+	// Note: You can't assume DocHTML has already been sanitized.
+	DocHTML string
 }
 
-func HoverFromLSP(l lsp.Hover) *Hover {
-	h := &Hover{
-		Contents: make([]*HoverContent, len(l.Contents)),
+func HoverFromLSP(l *lsp.Hover) *Hover {
+	if len(l.Contents) == 0 {
+		return &Hover{}
 	}
-	for i, marked := range l.Contents {
-		h.Contents[i] = &HoverContent{
-			Type:  marked.Language,
-			Value: marked.Value,
+	var docHTML string
+	for _, m := range l.Contents[1:] {
+		if m.Language == "text/html" {
+			docHTML = m.Value
 		}
 	}
-	return h
+	return &Hover{
+		Title:   l.Contents[0].Value,
+		DocHTML: docHTML,
+	}
 }
 
 // File is returned by ResolveFile to convert workspace paths into objects

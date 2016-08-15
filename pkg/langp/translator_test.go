@@ -149,6 +149,9 @@ func TestTranslator(t *testing.T) {
 				Contents: []lsp.MarkedString{{
 					Language: "go",
 					Value:    "NewRouter func() *Router",
+				}, {
+					Language: "text/html",
+					Value:    "\u003cp\u003e\nNewRouter returns a new router instance.\n\u003c/p\u003e\n",
 				}},
 				Range: lsp.Range{
 					Start: lsp.Position{
@@ -162,10 +165,8 @@ func TestTranslator(t *testing.T) {
 				},
 			},
 			WantResponse: &Hover{
-				Contents: []*HoverContent{{
-					Type:  "go",
-					Value: "NewRouter func() *Router",
-				}},
+				Title:   "NewRouter func() *Router",
+				DocHTML: "\u003cp\u003e\nNewRouter returns a new router instance.\n\u003c/p\u003e\n",
 			},
 			Got: &Hover{},
 		},
