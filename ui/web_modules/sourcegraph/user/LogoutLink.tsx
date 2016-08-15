@@ -14,7 +14,7 @@ interface Props {
 type State = any;
 
 export class LogoutLink extends Container<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
 
@@ -39,7 +39,9 @@ export class LogoutLink extends Container<Props, State> {
 		}
 	}
 
-	stores() { return [UserStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [UserStore];
+	}
 
 	_handleClick(ev) {
 		ev.preventDefault();

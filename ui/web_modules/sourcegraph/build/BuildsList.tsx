@@ -37,12 +37,12 @@ export class BuildsList extends Container<Props, State> {
 		this._updateIntervalID = null;
 	}
 
-	componentDidMount() {
+	componentDidMount(): void {
 		this._startUpdate();
 		super.componentDidMount();
 	}
 
-	componentWillUnmount() {
+	componentWillUnmount(): void {
 		this._stopUpdate();
 		super.componentWillUnmount();
 	}
@@ -72,7 +72,9 @@ export class BuildsList extends Container<Props, State> {
 		state.builds = BuildStore.buildLists.get(state.repo, this._translateQuery(state.search));
 	}
 
-	stores() { return [BuildStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [BuildStore];
+	}
 
 	onStateTransition(prevState: State, nextState: State): void {
 		if (prevState.repo !== nextState.repo || prevState.search !== nextState.search) {

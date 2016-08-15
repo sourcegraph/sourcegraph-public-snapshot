@@ -61,7 +61,7 @@ export interface Settings {
 	search: SearchSettings | null;
 };
 
-export const routes: Array<ReactRouter.PlainRoute> = [
+export const routes: ReactRouter.PlainRoute[] = [
 	{
 		path: rel.login,
 		getComponents: (location, callback) => {

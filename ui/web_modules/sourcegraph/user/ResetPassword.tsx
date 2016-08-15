@@ -23,7 +23,7 @@ interface Props {
 type State = any;
 
 class ResetPasswordComp extends Container<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		user: React.PropTypes.object,
 	};
 
@@ -44,7 +44,9 @@ class ResetPasswordComp extends Container<Props, State> {
 		state.authResponse = UserStore.authResponses["reset"] || null;
 	}
 
-	stores() { return [UserStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [UserStore];
+	}
 
 	_handleSubmit(ev) {
 		ev.preventDefault();

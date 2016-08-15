@@ -28,7 +28,7 @@ export function withAppdashRouteStateRecording(ChildComponent: any): any {
 			this._hasMounted = false;
 		}
 
-		componentDidMount() {
+		componentDidMount(): void {
 			this._hasMounted = true;
 			this._recordRenderView = null;
 			this._recordInitialPageLoad();

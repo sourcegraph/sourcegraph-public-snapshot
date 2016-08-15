@@ -29,8 +29,8 @@ export interface ResultsFetchedPayload {
 	commitID?: string;
 	limit?: number;
 	includeRepos?: boolean;
-	defs: Array<Def>;
-	options: Array<Object>;
+	defs: Def[];
+	options: Object[];
 }
 
 export class ResultsFetched {

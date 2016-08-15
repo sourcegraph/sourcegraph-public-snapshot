@@ -95,11 +95,11 @@ interface Props {
 type State = any;
 
 export class BlobLine extends Component<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
-	componentDidMount() {
+	componentDidMount(): void {
 		if (this.state.onMount) {
 			this.state.onMount();
 		}

@@ -54,7 +54,7 @@ interface Props {
 type State = any;
 
 export class RefsContainer extends Container<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 		user: React.PropTypes.object,
@@ -92,7 +92,7 @@ export class RefsContainer extends Container<Props, State> {
 		return Boolean(nextState.forceComponentUpdate);
 	}
 
-	stores() {
+	stores(): FluxUtils.Store<any>[] {
 		return [DefStore, BlobStore];
 	}
 

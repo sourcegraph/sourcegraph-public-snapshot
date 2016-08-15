@@ -1,23 +1,18 @@
-// tslint:disable:typedef ordered-imports no-empty
-
+import debounce from "lodash.debounce";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-
 import {Component, EventListener} from "sourcegraph/Component";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {BlobLine} from "sourcegraph/blob/BlobLine";
-import {BlobLineExpander} from "sourcegraph/blob/BlobLineExpander";
-import {Range} from "sourcegraph/blob/BlobLineExpander";
-import * as Dispatcher from "sourcegraph/Dispatcher";
-import debounce from "lodash.debounce";
-import {fileLines} from "sourcegraph/util/fileLines";
-import {lineFromByte} from "sourcegraph/blob/lineFromByte";
-import {computeLineStartBytes} from "sourcegraph/blob/lineFromByte";
+import {BlobLineExpander, Range} from "sourcegraph/blob/BlobLineExpander";
 import {annotationsByLine} from "sourcegraph/blob/annotationsByLine";
+import {computeLineStartBytes, lineFromByte} from "sourcegraph/blob/lineFromByte";
 import * as s from "sourcegraph/blob/styles/Blob.css";
+import {withJumpToDefRedirect} from "sourcegraph/blob/withJumpToDefRedirect";
 import {Def} from "sourcegraph/def/index";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {withJumpToDefRedirect} from "sourcegraph/blob/withJumpToDefRedirect";
+import {fileLines} from "sourcegraph/util/fileLines";
 
 export interface Props {
 	startlineCallback?: any;
@@ -112,7 +107,7 @@ interface State {
 // you should be using Blob that's at the bottom of this file. 
 export class BlobTestOnly extends Component<Props, State> {
 
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
@@ -120,7 +115,7 @@ export class BlobTestOnly extends Component<Props, State> {
 	_isMounted: boolean;
 
 	state: State = {
-		startlineCallback: x => {},
+		startlineCallback: x => { /* empty */ },
 		location: {
 			hash: "",
 			key: "",
@@ -172,7 +167,7 @@ export class BlobTestOnly extends Component<Props, State> {
 		this._isMounted = false;
 	}
 
-	componentDidMount() {
+	componentDidMount(): void {
 		// TODO: This is hacky, but the alternative was too costly (time and code volume)
 		//       and unreliable to implement. Revisit this later if it's neccessary.
 		//
@@ -185,12 +180,12 @@ export class BlobTestOnly extends Component<Props, State> {
 		this._isMounted = true;
 	}
 
-	componentWillUnmount() {
+	componentWillUnmount(): void {
 		this._isMounted = false;
 	}
 
 	reconcileState(state: State, props: Props): void {
-		state.startlineCallback = props.startlineCallback || (x => {});
+		state.startlineCallback = props.startlineCallback || (x => { /* empty */ });
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
 		state.commitID = props.commitID || null;
@@ -311,7 +306,7 @@ export class BlobTestOnly extends Component<Props, State> {
 		} as State);
 	}
 
-	_handleSelectionChange(ev: Event) {
+	_handleSelectionChange(ev: Event): void {
 		if (!this.state.dispatchSelections) {
 			return;
 		}
@@ -336,7 +331,7 @@ export class BlobTestOnly extends Component<Props, State> {
 		const getColInLine = (lineElem, containerElem, offsetInContainer: number) => {
 			let lineContentElem = lineElem.lastChild;
 			let col = 0;
-			let q: Array<any> = [lineContentElem];
+			let q: any[] = [lineContentElem];
 			while (q.length > 0) {
 				let e = q.pop();
 				if (e === containerElem) {

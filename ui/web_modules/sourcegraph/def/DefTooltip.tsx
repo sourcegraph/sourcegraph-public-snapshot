@@ -36,7 +36,7 @@ export class DefTooltip extends Component<Props, State> {
 		this._updatePosition = this._updatePosition.bind(this);
 	}
 
-	componentWillUnmount() {
+	componentWillUnmount(): void {
 		this._elem = null;
 	}
 

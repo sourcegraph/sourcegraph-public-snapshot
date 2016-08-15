@@ -59,7 +59,7 @@ interface State {
 
 // GlobalSearch is the global search bar + results component.
 export class GlobalSearch extends Container<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
@@ -96,12 +96,12 @@ export class GlobalSearch extends Container<Props, State> {
 		this._onSelection = debounce(this._onSelection.bind(this), 200, {leading: false, trailing: true});
 	}
 
-	componentDidMount() {
+	componentDidMount(): void {
 		super.componentDidMount();
 		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
 	}
 
-	componentWillUnmount() {
+	componentWillUnmount(): void {
 		super.componentWillUnmount();
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
@@ -129,7 +129,9 @@ export class GlobalSearch extends Container<Props, State> {
 		return uris;
 	}
 
-	stores(): FluxUtils.Store<any>[] { return [SearchStore, UserStore, RepoStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [SearchStore, UserStore, RepoStore];
+	}
 
 	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);

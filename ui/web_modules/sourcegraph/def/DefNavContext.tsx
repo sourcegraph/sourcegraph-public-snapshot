@@ -45,7 +45,9 @@ export class DefNavContext extends Container<Props, State> {
 		// defPos (if it isn't already populated).
 	}
 
-	stores() { return [DefStore, TreeStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [DefStore, TreeStore];
+	}
 
 	render(): JSX.Element | null {
 		if (!this.state.defPos || this.state.defPos.Error) {

@@ -94,11 +94,11 @@ export class DefsFetched {
 	repo: string;
 	commitID: string;
 	query: string;
-	defs: Array<Def>;
+	defs: Def[];
 	filePathPrefix: string | null;
 	overlay: boolean;
 
-	constructor(repo: string, commitID: string, query: string, filePathPrefix: string | null, defs: Array<Def>, overlay?: boolean) {
+	constructor(repo: string, commitID: string, query: string, filePathPrefix: string | null, defs: Def[], overlay?: boolean) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.query = query;
@@ -257,9 +257,9 @@ export class RefsFetched {
 	def: string;
 	refRepo: string;
 	refFile: string | null;
-	refs: Array<Ref> | null;
+	refs: Ref[] | null;
 
-	constructor(repo: string, commitID: string, def: string, refRepo: string, refFile: string | null, refs: Array<Ref> | null) {
+	constructor(repo: string, commitID: string, def: string, refRepo: string, refFile: string | null, refs: Ref[] | null) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.def = def;

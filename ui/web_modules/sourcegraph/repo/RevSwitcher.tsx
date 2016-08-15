@@ -40,7 +40,7 @@ interface Props {
 type State = any;
 
 export class RevSwitcher extends Component<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
 

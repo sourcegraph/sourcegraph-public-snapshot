@@ -17,12 +17,12 @@ export class Affix extends React.Component<Props, State> {
 		style: any,
 	};
 
-	componentDidMount() {
+	componentDidMount(): void {
 		const initialOffset = this._getOffset();
 		window.addEventListener("scroll", () => this._affixEl(initialOffset));
 	}
 
-	componentWillUnmount() {
+	componentWillUnmount(): void {
 		const initialOffset = this._getOffset();
 		window.removeEventListener("scroll", () => this._affixEl(initialOffset));
 	}

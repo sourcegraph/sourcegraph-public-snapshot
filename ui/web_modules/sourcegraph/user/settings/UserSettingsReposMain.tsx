@@ -17,7 +17,7 @@ interface Props {
 type State = any;
 
 export class UserSettingsReposMain extends Container<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
 		user: React.PropTypes.object,
 		signedIn: React.PropTypes.bool.isRequired,
@@ -39,7 +39,9 @@ export class UserSettingsReposMain extends Container<Props, State> {
 		}
 	}
 
-	stores() { return [RepoStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [RepoStore];
+	}
 
 	render(): JSX.Element | null {
 		return <Repos repos={this.state.repos ? this.state.repos.Repos : null} location={this.props.location} />;

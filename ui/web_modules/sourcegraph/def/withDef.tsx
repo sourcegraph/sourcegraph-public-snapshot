@@ -26,7 +26,9 @@ export function withDef(Component) {
 	type State = any;
 
 	class WithDef extends Container<Props, State> {
-		stores() { return [DefStore, RepoStore]; }
+		stores(): FluxUtils.Store<any>[] {
+			return [DefStore, RepoStore];
+		}
 
 		reconcileState(state: State, props: Props): void {
 			Object.assign(state, props);

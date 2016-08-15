@@ -12,7 +12,7 @@ interface Props {
 type State = any;
 
 class Channel extends React.Component<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 		features: React.PropTypes.object.isRequired,
 	};
@@ -24,7 +24,7 @@ class Channel extends React.Component<Props, State> {
 		this.state = {takingAWhile: false};
 	}
 
-	componentDidMount() {
+	componentDidMount(): void {
 		this._timeout = setTimeout(() => {
 			this.setState({takingAWhile: true});
 		}, 3000);
@@ -40,7 +40,7 @@ class Channel extends React.Component<Props, State> {
 		}
 	}
 
-	componentWillUnmount() {
+	componentWillUnmount(): void {
 		if (this._timeout) {
 			clearTimeout(this._timeout);
 		}

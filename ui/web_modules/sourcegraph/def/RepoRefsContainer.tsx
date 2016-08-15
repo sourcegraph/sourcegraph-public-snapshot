@@ -33,7 +33,7 @@ interface Props {
 type State = any;
 
 export class RepoRefsContainer extends Container<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
@@ -46,7 +46,7 @@ export class RepoRefsContainer extends Container<Props, State> {
 		this._onNextPage = this._onNextPage.bind(this);
 	}
 
-	stores() {
+	stores(): FluxUtils.Store<any>[] {
 		return [DefStore];
 	}
 

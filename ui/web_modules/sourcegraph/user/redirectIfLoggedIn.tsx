@@ -11,12 +11,12 @@ export function redirectIfLoggedIn(url: Location | string, Component) {
 	type State = any;
 
 	class RedirectIfLoggedIn extends React.Component<Props, State> {
-		static contextTypes = {
+		static contextTypes: React.ValidationMap<any> = {
 			signedIn: React.PropTypes.bool.isRequired,
 			router: React.PropTypes.object.isRequired,
 		};
 
-		componentWillMount() {
+		componentWillMount(): void {
 			if ((this.context as any).signedIn) {
 				this._redirect();
 			}

@@ -29,7 +29,7 @@ interface Props {
 type State = any;
 
 export class BuildContainer extends Container<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		user: React.PropTypes.object,
 	};
 
@@ -40,12 +40,12 @@ export class BuildContainer extends Container<Props, State> {
 		this._updateIntervalID = null;
 	}
 
-	componentDidMount() {
+	componentDidMount(): void {
 		this._startUpdate();
 		super.componentDidMount();
 	}
 
-	componentWillUnmount() {
+	componentWillUnmount(): void {
 		this._stopUpdate();
 		super.componentWillUnmount();
 	}
@@ -79,7 +79,9 @@ export class BuildContainer extends Container<Props, State> {
 		state.logs = BuildStore.logs;
 	}
 
-	stores() { return [BuildStore, TreeStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [BuildStore, TreeStore];
+	}
 
 	onStateTransition(prevState: State, nextState: State): void {
 		if (prevState.repo !== nextState.repo || prevState.id !== nextState.id) {

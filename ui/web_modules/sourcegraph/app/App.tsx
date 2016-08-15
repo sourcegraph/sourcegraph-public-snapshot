@@ -41,7 +41,7 @@ interface Props {
 type State = any;
 
 export class App extends React.Component<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 		signedIn: React.PropTypes.bool.isRequired,
 	};

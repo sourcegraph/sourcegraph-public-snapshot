@@ -32,7 +32,7 @@ export function withChannelListener(Component) {
 	}
 
 	class WithChannelListener extends React.Component<Props, State> {
-		static contextTypes = {
+		static contextTypes: React.ValidationMap<any> = {
 			router: React.PropTypes.object.isRequired,
 		};
 
@@ -52,7 +52,7 @@ export function withChannelListener(Component) {
 			this._listen = this._listen.bind(this);
 		}
 
-		componentDidMount() {
+		componentDidMount(): void {
 			this._unlisten = (this.context as any).router.listen((loc) => {
 				// The Channel component at /-/channel communicates with WithChannelListener by
 				// setting the "channel" location state property. Once we see that
@@ -68,7 +68,7 @@ export function withChannelListener(Component) {
 			});
 		}
 
-		componentWillUnmount() {
+		componentWillUnmount(): void {
 			if (this._timeout) {
 				clearTimeout(this._timeout);
 				this._timeout = null;

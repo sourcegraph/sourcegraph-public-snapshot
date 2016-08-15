@@ -23,7 +23,7 @@ interface Props {
 type State = any;
 
 export class DashboardContainer extends Container<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		signedIn: React.PropTypes.bool.isRequired,
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
@@ -41,7 +41,9 @@ export class DashboardContainer extends Container<Props, State> {
 		this._installChromeExtensionClicked = this._installChromeExtensionClicked.bind(this);
 	}
 
-	stores() { return [UserStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [UserStore];
+	}
 
 	reconcileState(state, props, context) {
 		Object.assign(state, props);

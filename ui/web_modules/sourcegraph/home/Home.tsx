@@ -21,7 +21,7 @@ interface HomeProps {
 type HomeState = any;
 
 export class Home extends Container<HomeProps, HomeState> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
 		signedIn: React.PropTypes.bool.isRequired,
 	};
@@ -30,7 +30,7 @@ export class Home extends Container<HomeProps, HomeState> {
 		super(props);
 	}
 
-	componentDidMount() {
+	componentDidMount(): void {
 		let script = document.createElement("script");
 		script.id = "twitter-wjs";
 		script.src = "//platform.twitter.com/widgets.js";

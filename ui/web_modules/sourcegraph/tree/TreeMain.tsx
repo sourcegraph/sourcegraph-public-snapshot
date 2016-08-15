@@ -19,7 +19,7 @@ interface Props {
 type State = any;
 
 export class TreeMain extends React.Component<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
 

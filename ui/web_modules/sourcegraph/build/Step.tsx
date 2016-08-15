@@ -33,7 +33,7 @@ export class Step extends Component<Props, State> {
 		this._updateLogIntervalID = null;
 	}
 
-	componentWillUnmount() {
+	componentWillUnmount(): void {
 		this._stopUpdateLog();
 	}
 

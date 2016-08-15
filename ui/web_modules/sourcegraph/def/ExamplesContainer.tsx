@@ -30,7 +30,7 @@ export class ExamplesContainer extends Container<Props, State> {
 		super(props);
 	}
 
-	stores() {
+	stores(): FluxUtils.Store<any>[] {
 		return [DefStore];
 	}
 

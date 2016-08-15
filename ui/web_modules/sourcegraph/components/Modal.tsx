@@ -19,12 +19,12 @@ class ModalComp extends React.Component<ModalProps, ModalState> {
 		this._handleKeydown = this._handleKeydown.bind(this);
 	}
 
-	componentDidMount() {
+	componentDidMount(): void {
 		// Prevent the page below the modal from scrolling.
 		document.body.style.overflow = "hidden";
 	}
 
-	componentWillUnmount() {
+	componentWillUnmount(): void {
 		document.body.style.overflow = "";
 	}
 

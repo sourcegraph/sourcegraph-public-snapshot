@@ -20,7 +20,7 @@ export function renderedOnBody(Component) {
 		_node: any;
 		_elem: any;
 
-		componentDidMount() {
+		componentDidMount(): void {
 			this._renderOnBody(this.props);
 		}
 
@@ -32,7 +32,7 @@ export function renderedOnBody(Component) {
 			return shallowCompare(this, nextProps, nextState);
 		}
 
-		componentWillUnmount() {
+		componentWillUnmount(): void {
 			if (this._node) {
 				ReactDOM.unmountComponentAtNode(this._node);
 				document.body.removeChild(this._node);

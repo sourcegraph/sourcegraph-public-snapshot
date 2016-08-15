@@ -28,7 +28,7 @@ export function redirectForDesktop(Component) {
 	type State = any;
 
 	class RedirectForDesktop extends React.Component<Props, State> {
-		static contextTypes = {
+		static contextTypes: React.ValidationMap<any> = {
 			router: React.PropTypes.object.isRequired,
 			user: React.PropTypes.object,
 			signedIn: React.PropTypes.bool.isRequired,

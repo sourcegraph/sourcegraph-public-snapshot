@@ -103,15 +103,15 @@ for (let name of Object.keys(abs)) {
 	routeNamesByPattern[abs[name]] = name as RouteName;
 }
 
-export function getRoutePattern(routes: Array<ReactRouter.PlainRoute>): string {
+export function getRoutePattern(routes: ReactRouter.PlainRoute[]): string {
 	return routes.map((route) => route.path).join("").slice(1); // remove leading '/''
 }
 
-export function getRouteName(routes: Array<ReactRouter.PlainRoute>): string | null {
+export function getRouteName(routes: ReactRouter.PlainRoute[]): string | null {
 	return routeNamesByPattern[getRoutePattern(routes)] || null;
 }
 
-export function getViewName(routes: Array<ReactRouter.PlainRoute>): string | null {
+export function getViewName(routes: ReactRouter.PlainRoute[]): string | null {
 	let name = getRouteName(routes);
 	if (name) {
 		return `View${name.charAt(0).toUpperCase()}${name.slice(1)}`;

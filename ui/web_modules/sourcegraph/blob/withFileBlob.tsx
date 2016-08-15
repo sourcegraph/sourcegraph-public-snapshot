@@ -26,11 +26,11 @@ export function withFileBlob(Component) {
 	type State = any;
 
 	class WithFileBlob extends Container<Props, State> {
-		static contextTypes = {
+		static contextTypes: React.ValidationMap<any> = {
 			router: React.PropTypes.object.isRequired,
 		};
 
-		stores() {
+		stores(): FluxUtils.Store<any>[] {
 			return [BlobStore];
 		}
 

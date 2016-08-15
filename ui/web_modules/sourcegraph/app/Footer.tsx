@@ -7,7 +7,7 @@ import {Logo} from "sourcegraph/components/Logo";
 import * as styles from "sourcegraph/app/styles/Footer.css";
 
 export class Footer extends React.Component<{}, any> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
 	};
 

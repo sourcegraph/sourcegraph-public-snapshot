@@ -12,7 +12,7 @@ export function singleflightFetch(fetch): any {
 		resolve: (result: Promise<Response> | Response) => void,
 		reject: (err: any) => void
 	};
-	const waiting: {[key: string]: Array<WaitingFetch>} = {};
+	const waiting: {[key: string]: WaitingFetch[]} = {};
 	const done = (key: string) => {
 		delete inFlight[key];
 		const waitingFetches = waiting[key];

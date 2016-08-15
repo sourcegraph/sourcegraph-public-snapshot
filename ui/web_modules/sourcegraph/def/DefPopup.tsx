@@ -25,7 +25,7 @@ interface Props {
 type State = any;
 
 export class DefPopup extends Container<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		features: React.PropTypes.object.isRequired,
 	};
 
@@ -46,7 +46,9 @@ export class DefPopup extends Container<Props, State> {
 		}
 	}
 
-	stores() { return [DefStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [DefStore];
+	}
 
 	render(): JSX.Element | null {
 		let def = this.props.def;

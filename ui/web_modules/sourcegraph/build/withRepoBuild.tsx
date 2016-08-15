@@ -19,7 +19,9 @@ export function withRepoBuild(Component) {
 	type State = any;
 
 	class WithRepoBuild extends Container<Props, State> {
-		stores() { return [BuildStore]; }
+		stores(): FluxUtils.Store<any>[] {
+			return [BuildStore];
+		}
 
 		reconcileState(state: State, props: Props): void {
 			Object.assign(state, props);

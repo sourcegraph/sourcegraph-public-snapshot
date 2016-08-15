@@ -50,7 +50,9 @@ export function withUserContext(Component) {
 			super(props);
 		}
 
-		stores() { return [UserStore]; }
+		stores(): FluxUtils.Store<any>[] {
+			return [UserStore];
+		}
 
 		reconcileState(state: State, props: Props): void {
 			Object.assign(state, props);

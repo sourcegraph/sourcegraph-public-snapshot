@@ -54,7 +54,7 @@ type State = any;
 // standard react-router thing) to be the helpers used by the BlobLoader.
 function blobLoader(Component) {
 	class BlobLoader extends Container<Props, State> {
-		_helpers: Array<Helper> | null;
+		_helpers: Helper[] | null;
 
 		constructor(props: Props) {
 			super(props);
@@ -103,7 +103,9 @@ function blobLoader(Component) {
 		// since we've imported it anyway if we are here.
 		//
 		// TODO(sqs): dont require using all stores, take them from the helpers store fields
-		stores() { return [DefStore, BlobStore, TreeStore]; }
+		stores(): FluxUtils.Store<any>[] {
+			return [DefStore, BlobStore, TreeStore];
+		}
 
 		render(): JSX.Element | null {
 			if (this._helpers) {

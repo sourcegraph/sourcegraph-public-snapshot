@@ -33,7 +33,9 @@ class ForgotPasswordComp extends Container<{}, State> {
 		state.authResponse = UserStore.authResponses["forgot"] || null;
 	}
 
-	stores() { return [UserStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [UserStore];
+	}
 
 	_handleSubmit(ev) {
 		ev.preventDefault();

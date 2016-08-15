@@ -54,7 +54,9 @@ export class LoginForm extends Container<Props, State> {
 		}
 	}
 
-	stores() { return [UserStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [UserStore];
+	}
 
 	_handleSubmit(ev) {
 		ev.preventDefault();

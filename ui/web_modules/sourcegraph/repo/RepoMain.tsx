@@ -41,7 +41,7 @@ interface Props {
 type State = any;
 
 export class RepoMain extends React.Component<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
@@ -53,7 +53,7 @@ export class RepoMain extends React.Component<Props, State> {
 		this._buildUpdated(this.props.repo, this.props.build);
 	}
 
-	componentDidMount() {
+	componentDidMount(): void {
 		// Whenever the user navigates to different RepoMain views, e.g.
 		// navigating directories in the directory tree, viewing code
 		// files, etc. we trigger a MirroredRepos.RefreshVCS operation such

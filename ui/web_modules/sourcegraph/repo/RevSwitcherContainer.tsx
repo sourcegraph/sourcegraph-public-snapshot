@@ -35,7 +35,9 @@ export class RevSwitcherContainer extends Container<Props, State> {
 		state.srclibDataVersions = TreeStore.srclibDataVersions;
 	}
 
-	stores() { return [RepoStore, TreeStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [RepoStore, TreeStore];
+	}
 
 	render(): JSX.Element | null {
 		return (

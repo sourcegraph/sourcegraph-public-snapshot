@@ -70,12 +70,12 @@ type State = {
 	route?: ReactRouter.Route;
 
 	// other state fields
-	fileResults: any; // Array<any> | {Error: any};
+	fileResults: any; // any[] | {Error: any};
 	fileTree?: any;
 }
 
 export class TreeList extends Container<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 		user: React.PropTypes.object,
 	};
@@ -89,7 +89,9 @@ export class TreeList extends Container<Props, State> {
 		};
 	}
 
-	stores(): FluxUtils.Store<any>[] { return [TreeStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [TreeStore];
+	}
 
 	reconcileState(state: State, props: Props): void {
 		let prevPath = state.path;
@@ -152,7 +154,7 @@ export class TreeList extends Container<Props, State> {
 		}
 	}
 
-	_listItems(): Array<any> {
+	_listItems(): any[] {
 		const items = this.state.fileResults;
 		const emptyItem = <div className={classNames(styles.list_item, styles.list_item_empty)} key="_nofiles"><i>No matches.</i></div>;
 		if (!items || items.length === 0) {

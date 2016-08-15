@@ -10,12 +10,12 @@ type State = any;
 // if there is an unauthenticated user. It is useful for wrapping authed routes.
 export function redirectForUnauthedUser(url: Location | string, Component) {
 	class RedirectForUnauthedUser extends React.Component<Props, State> {
-		static contextTypes = {
+		static contextTypes: React.ValidationMap<any> = {
 			signedIn: React.PropTypes.bool.isRequired,
 			router: React.PropTypes.object.isRequired,
 		};
 
-		componentWillMount() {
+		componentWillMount(): void {
 			if (!(this.context as any).signedIn) {
 				this._redirect();
 			}

@@ -49,7 +49,7 @@ interface Props {
 type State = any;
 
 export class DefInfo extends Container<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 		signedIn: React.PropTypes.bool.isRequired,
@@ -66,11 +66,11 @@ export class DefInfo extends Container<Props, State> {
 		this._onViewLess = this._onViewLess.bind(this);
 	}
 
-	stores() {
+	stores(): FluxUtils.Store<any>[] {
 		return [DefStore, BlobStore];
 	}
 
-	componentDidMount() {
+	componentDidMount(): void {
 		if (super.componentDidMount) {
 			super.componentDidMount();
 		}

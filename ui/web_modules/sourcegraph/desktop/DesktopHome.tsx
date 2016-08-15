@@ -21,7 +21,7 @@ export const NotInBeta = () => (
 );
 
 export class DesktopHome extends React.Component<{}, any> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
 		user: React.PropTypes.object,
 	};

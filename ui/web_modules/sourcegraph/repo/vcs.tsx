@@ -22,7 +22,7 @@ export interface Tag {
 	CommitID: string;
 };
 
-export function sortBranches(branches: Array<Branch>): Array<Branch> {
+export function sortBranches(branches: Branch[]): Branch[] {
 	if (!branches) { return branches; }
 	return branches.sort((a, b) => {
 		const ac = a.Commit;
@@ -36,7 +36,7 @@ export function sortBranches(branches: Array<Branch>): Array<Branch> {
 	});
 }
 
-export function sortTags(tags: Array<Tag>): Array<Tag> {
+export function sortTags(tags: Tag[]): Tag[] {
 	if (!tags) { return tags; }
 	return tags.sort((a, b) => {
 		if (a.Name > b.Name) { return -1; }

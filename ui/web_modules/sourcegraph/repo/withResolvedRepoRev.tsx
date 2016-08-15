@@ -26,18 +26,18 @@ export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
 
 	isMainComponent = Boolean(isMainComponent);
 	class WithResolvedRepoRev extends Container<Props, State> {
-		static contextTypes = {
+		static contextTypes: React.ValidationMap<any> = {
 			router: React.PropTypes.object.isRequired,
 		};
 
 		_cloningInterval: any;
 		_cloningTimeout: any;
 
-		stores() {
+		stores(): FluxUtils.Store<any>[] {
 			return [RepoStore];
 		}
 
-		componentWillUnmount() {
+		componentWillUnmount(): void {
 			if (super.componentWillUnmount) {
 				super.componentWillUnmount();
 			}

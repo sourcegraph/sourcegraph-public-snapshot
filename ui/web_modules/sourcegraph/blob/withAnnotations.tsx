@@ -21,7 +21,7 @@ export function withAnnotations(Component) {
 	type State = any;
 
 	class WithAnnotations extends Container<Props, State> {
-		stores() {
+		stores(): FluxUtils.Store<any>[] {
 			return [BlobStore];
 		}
 

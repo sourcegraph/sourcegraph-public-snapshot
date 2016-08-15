@@ -25,7 +25,7 @@ interface Props {
 type State = any;
 
 export class BetaInterestForm extends Container<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		user: React.PropTypes.object,
 		authInfo: React.PropTypes.object,
 		signedIn: React.PropTypes.bool.isRequired,
@@ -45,7 +45,7 @@ export class BetaInterestForm extends Container<Props, State> {
 		this._onChange = this._onChange.bind(this);
 	}
 
-	componentDidMount() {
+	componentDidMount(): void {
 		this._dispatcherToken = Dispatcher.Stores.register(this._onDispatch.bind(this));
 
 		// Trigger _onChange now to save this.props.language if set.
@@ -54,11 +54,13 @@ export class BetaInterestForm extends Container<Props, State> {
 		}
 	}
 
-	componentWillUnmount() {
+	componentWillUnmount(): void {
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
 
-	stores() { return [UserStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [UserStore];
+	}
 
 	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);

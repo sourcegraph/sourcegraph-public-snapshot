@@ -12,7 +12,7 @@ interface Props {
 type State = any;
 
 export class Icon extends React.Component<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
 	};
 

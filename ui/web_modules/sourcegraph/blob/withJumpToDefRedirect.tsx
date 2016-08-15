@@ -15,17 +15,17 @@ to the HTTP API and redirecting when a valid response is received.
 */
 export function withJumpToDefRedirect(Blob) {
 	class WithJumpToDefRedirect extends Container<Props, State> {
-		static contextTypes = {
+		static contextTypes: React.ValidationMap<any> = {
 			router: React.PropTypes.object,
 		};
 
 		_dispatcherToken: string;
 
-		componentDidMount() {
+		componentDidMount(): void {
 			this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
 		}
 
-		componentWillUnmount() {
+		componentWillUnmount(): void {
 			Dispatcher.Stores.unregister(this._dispatcherToken);
 		}
 

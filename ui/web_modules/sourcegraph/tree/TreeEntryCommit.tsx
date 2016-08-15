@@ -22,7 +22,9 @@ export class TreeEntryCommit extends Container<Props, State> {
 		state.commits = TreeStore.commits;
 	}
 
-	stores() { return [TreeStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [TreeStore];
+	}
 
 	onStateTransition(prevState: State, nextState: State): void {
 		if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.path !== nextState.path) {

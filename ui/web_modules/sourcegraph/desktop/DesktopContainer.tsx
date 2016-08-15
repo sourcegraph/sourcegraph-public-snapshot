@@ -15,7 +15,7 @@ type State = any;
 
 export function desktopContainer(Component) {
 	class DesktopContainer extends Container<{}, State> {
-		static contextTypes = {
+		static contextTypes: React.ValidationMap<any> = {
 			router: React.PropTypes.object.isRequired,
 		};
 
@@ -27,7 +27,9 @@ export function desktopContainer(Component) {
 			};
 		}
 
-		stores() { return [DefStore]; }
+		stores(): FluxUtils.Store<any>[] {
+			return [DefStore];
+		}
 
 		reconcileState(state: State, props: {}): void {
 			Object.assign(state, props);

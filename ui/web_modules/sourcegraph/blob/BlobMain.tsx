@@ -46,7 +46,7 @@ interface Props {
 type State = any;
 
 export class BlobMain extends Container<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
 
@@ -60,12 +60,12 @@ export class BlobMain extends Container<Props, State> {
 
 	}
 
-	componentDidMount() {
+	componentDidMount(): void {
 		super.componentDidMount();
 		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
 	}
 
-	componentWillUnmount() {
+	componentWillUnmount(): void {
 		super.componentWillUnmount();
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
@@ -98,7 +98,9 @@ export class BlobMain extends Container<Props, State> {
 		}
 	}
 
-	stores() { return [DefStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [DefStore];
+	}
 
 	__onDispatch(action) {
 		if (action instanceof BlobActions.SelectLine) {

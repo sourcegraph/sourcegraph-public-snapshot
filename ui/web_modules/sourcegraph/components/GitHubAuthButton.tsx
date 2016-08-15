@@ -23,7 +23,7 @@ interface Props {
 type State = any;
 
 export class GitHubAuthButton extends React.Component<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 	static defaultProps: Props = {

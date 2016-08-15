@@ -1,6 +1,6 @@
-export const allLangs: Array<string> = ["golang", "java", "python", "javascript"];
+export const allLangs: string[] = ["golang", "java", "python", "javascript"];
 
-export const supportedLangs: Array<string> = ["golang", "java"];
+export const supportedLangs: string[] = ["golang", "java"];
 export const langIsSupported = (lang: string) => supportedLangs.includes(lang);
 
 const names: {[key: string]: string} = {

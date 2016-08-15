@@ -28,7 +28,7 @@ interface Props {
 type State = any;
 
 export class RefLocationsList extends React.Component<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		signedIn: React.PropTypes.bool.isRequired,
 		githubToken: React.PropTypes.object,
 		eventLogger: React.PropTypes.object.isRequired,

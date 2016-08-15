@@ -10,7 +10,7 @@ export function AuthorList({
 	horizontal = false,
 	className,
 }: {
-	authors: Array<DefAuthor>,
+	authors: DefAuthor[],
 	horizontal?: boolean,
 	className?: string,
 }): JSX.Element {

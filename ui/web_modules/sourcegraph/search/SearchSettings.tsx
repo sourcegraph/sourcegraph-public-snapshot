@@ -31,7 +31,7 @@ interface Props {
 type State = any;
 
 class SearchSettingsComp extends Container<Props, State> {
-	static contextTypes = {
+	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
@@ -42,7 +42,7 @@ class SearchSettingsComp extends Container<Props, State> {
 
 	}
 
-	componentDidMount() {
+	componentDidMount(): void {
 		super.componentDidMount();
 		const langFromQuery = this.props.location.query.lang ? this.props.location.query.lang : [];
 		const query = this.props.location.query;
@@ -62,7 +62,9 @@ class SearchSettingsComp extends Container<Props, State> {
 		}
 	}
 
-	stores() { return [UserStore]; }
+	stores(): FluxUtils.Store<any>[] {
+		return [UserStore];
+	}
 
 	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);

@@ -11,7 +11,7 @@ import {AuthInfo, User, EmailAddr, ExternalToken} from "sourcegraph/user/index";
 const sampleAuthInfo: AuthInfo = {UID: 1, Login: "u", Write: false, Admin: false, IntercomHash: ""};
 const sampleToken: ExternalToken = {uid: 1, host: "example.com", scope: "s"};
 const sampleUser: User = {UID: 1, Login: "u", Betas: [], BetaRegistered: false} as any;
-const sampleEmails: Array<EmailAddr> = [{Email: "a@a.com"}] as any;
+const sampleEmails: EmailAddr[] = [{Email: "a@a.com"}] as any;
 
 describe("UserBackend", () => {
 	describe("should handle WantAuthInfo", () => {
