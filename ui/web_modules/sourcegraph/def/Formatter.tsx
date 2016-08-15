@@ -5,7 +5,7 @@ import {Def} from "sourcegraph/def/index";
 
 type Qual = "DepQualified" | "ScopeQualified";
 
-export type DefFormatOptions = {
+export interface DefFormatOptions {
 	nameQual?: Qual;
 	nameClass?: string;
 	unqualifiedNameClass?: string;

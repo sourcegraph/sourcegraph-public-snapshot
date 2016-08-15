@@ -14,7 +14,7 @@ import {withAnnotations} from "sourcegraph/blob/withAnnotations";
 import {BlobMain} from "sourcegraph/blob/BlobMain";
 import * as invariant from "invariant";
 
-export type Helper = {
+export interface Helper {
 	reconcileState: (state: any, props: any, context?: any) => void;
 	onStateTransition?: (prevState: any, nextState: any) => void;
 	renderProps?: (state: any) => any;

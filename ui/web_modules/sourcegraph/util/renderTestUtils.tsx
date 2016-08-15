@@ -1,13 +1,11 @@
-// tslint:disable: typedef ordered-imports
-
 import * as TestUtils from "react-addons-test-utils";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {testOnly} from "sourcegraph/util/testOnly";
 
 testOnly();
 
-export type RenderResult = {
-	actions: Array<Object>;
+export interface RenderResult {
+	actions: Object[];
 	element: JSX.Element | null;
 };
 

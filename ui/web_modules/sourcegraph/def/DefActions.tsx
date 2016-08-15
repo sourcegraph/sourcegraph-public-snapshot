@@ -1,5 +1,27 @@
 import {Def, ExamplesKey, Ref, RefLocationsKey} from "sourcegraph/def/index";
 
+export type Action =
+	WantDef |
+	DefFetched |
+	WantDefAuthors |
+	DefAuthorsFetched |
+	WantDefs |
+	DefsFetched |
+	SelectDef |
+	WantJumpDef |
+	JumpDefFetched |
+	Hovering |
+	WantHoverInfo |
+	HoverInfoFetched |
+	WantRefLocations |
+	RefLocationsFetched |
+	WantLocalRefLocations |
+	LocalRefLocationsFetched |
+	WantExamples |
+	ExamplesFetched |
+	WantRefs |
+	RefsFetched;
+
 export class WantDef {
 	repo: string;
 	rev: string | null;
@@ -100,7 +122,13 @@ export class SelectDef {
 	}
 }
 
-export type BlobPos = {repo: string, commit: string, file: string, line: number, character: number};
+export interface BlobPos {
+	repo: string;
+	commit: string;
+	file: string;
+	line: number;
+	character: number;
+};
 
 export class WantJumpDef {
 	pos: BlobPos;
@@ -129,18 +157,18 @@ export class Hovering {
 }
 
 export class WantHoverInfo {
-	pos: BlobPos | null;
+	pos: BlobPos;
 
-	constructor(pos: BlobPos | null) {
+	constructor(pos: BlobPos) {
 		this.pos = pos;
 	}
 }
 
 export class HoverInfoFetched {
-	pos: BlobPos | null;
+	pos: BlobPos;
 	info: any;
 
-	constructor(pos: BlobPos | null, info: any) {
+	constructor(pos: BlobPos, info: any) {
 		this.pos = pos;
 		this.info = info;
 	}

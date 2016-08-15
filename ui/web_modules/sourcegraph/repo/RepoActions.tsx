@@ -1,5 +1,28 @@
 import {Branch, Tag} from "sourcegraph/repo/vcs";
 
+export type Action =
+	WantRepo |
+	FetchedRepo |
+	WantRepos |
+	ReposFetched |
+	WantResolveRev |
+	ResolvedRev |
+	WantCommit |
+	FetchedCommit |
+	WantInventory |
+	FetchedInventory |
+	RepoCloning |
+	WantResolveRepo |
+	RepoResolved |
+	WantCreateRepo |
+	RepoCreated |
+	WantCreateRepoHook |
+	WantBranches |
+	FetchedBranches |
+	WantTags |
+	FetchedTags |
+	RefreshVCS;
+
 export class WantRepo {
 	repo: string;
 

@@ -1,23 +1,24 @@
 import {AuthInfo, EmailAddr, ExternalToken, Settings, User} from "sourcegraph/user/index";
 
-export type Action = WantAuthInfo
-	| FetchedAuthInfo
-	| WantUser
-	| FetchedUser
-	| WantEmails
-	| FetchedEmails
-	| FetchedGitHubToken
-	| UpdateSettings
-	| SubmitSignup
-	| SubmitLogin
-	| SubmitLogout
-	| SubmitForgotPassword
-	| SubmitResetPassword
-	| SignupCompleted
-	| LoginCompleted
-	| LogoutCompleted
-	| ForgotPasswordCompleted
-	| ResetPasswordCompleted;
+export type Action =
+	WantAuthInfo |
+	FetchedAuthInfo |
+	WantUser |
+	FetchedUser |
+	WantEmails |
+	FetchedEmails |
+	FetchedGitHubToken |
+	UpdateSettings |
+	SubmitSignup |
+	SubmitLogin |
+	SubmitLogout |
+	SubmitForgotPassword |
+	SubmitResetPassword |
+	SignupCompleted |
+	LoginCompleted |
+	LogoutCompleted |
+	ForgotPasswordCompleted |
+	ResetPasswordCompleted;
 
 export class WantAuthInfo {
 	accessToken: string;

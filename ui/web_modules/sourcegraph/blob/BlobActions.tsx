@@ -1,9 +1,18 @@
+export type Action =
+	WantFile |
+	FileFetched |
+	WantAnnotations |
+	AnnotationsFetched |
+	SelectLine |
+	SelectLineRange |
+	SelectCharRange;
+
 export class WantFile {
 	repo: string;
-	commitID: string | null;
+	commitID: string;
 	path: string;
 
-	constructor(repo: string, commitID: string | null, path: string) {
+	constructor(repo: string, commitID: string, path: string) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.path = path;

@@ -1,11 +1,9 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
-import {TimeAgo} from "sourcegraph/util/TimeAgo";
-import {Avatar} from "sourcegraph/components/index";
 import {PencilIcon} from "sourcegraph/components/Icons";
+import {Avatar} from "sourcegraph/components/index";
 import {DefAuthor} from "sourcegraph/def/index";
 import * as styles from "sourcegraph/def/styles/AuthorList.css";
+import {TimeAgo} from "sourcegraph/util/TimeAgo";
 
 export function AuthorList({
 	authors,
@@ -15,7 +13,7 @@ export function AuthorList({
 	authors: Array<DefAuthor>,
 	horizontal?: boolean,
 	className?: string,
-}) {
+}): JSX.Element {
 	return (
 		<div className={className}>
 			{authors && authors.length > 0 &&

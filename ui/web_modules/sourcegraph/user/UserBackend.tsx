@@ -43,8 +43,9 @@ class UserBackendClass {
 						}
 					}, function(err: any): void { console.error(err); });
 			}
+		}
 
-		} else if (payload instanceof UserActions.WantUser) {
+		if (payload instanceof UserActions.WantUser) {
 			const action = payload;
 			if (!UserStore.users[action.uid]) {
 				this.fetch(`/.api/users/${action.uid}$`) // trailing "$" indicates UID lookup (not login/username)
@@ -54,8 +55,9 @@ class UserBackendClass {
 						Dispatcher.Stores.dispatch(new UserActions.FetchedUser(action.uid, data));
 					}, function(err: any): void { console.error(err); });
 			}
+		}
 
-		} else if (payload instanceof UserActions.WantEmails) {
+		if (payload instanceof UserActions.WantEmails) {
 			const action = payload;
 			if (!UserStore.emails[action.uid]) {
 				this.fetch(`/.api/users/${action.uid}$/emails`)
@@ -65,8 +67,9 @@ class UserBackendClass {
 						Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(action.uid, data && data.EmailAddrs ? data.EmailAddrs : []));
 					}, function(err: any): void { console.error(err); });
 			}
+		}
 
-		} else if (payload instanceof UserActions.SubmitSignup) {
+		if (payload instanceof UserActions.SubmitSignup) {
 			const action = payload;
 			this.fetch(`/.api/join`, {
 				method: "POST",
@@ -82,8 +85,9 @@ class UserBackendClass {
 				.then(function(data: any): void {
 					Dispatcher.Stores.dispatch(new UserActions.SignupCompleted(action.email, data));
 				});
+		}
 
-		} else if (payload instanceof UserActions.SubmitLogin) {
+		if (payload instanceof UserActions.SubmitLogin) {
 			const action = payload;
 			this.fetch(`/.api/login`, {
 				method: "POST",
@@ -98,8 +102,9 @@ class UserBackendClass {
 				.then(function(data: any): void {
 					Dispatcher.Stores.dispatch(new UserActions.LoginCompleted(data));
 				});
+		}
 
-		} else if (payload instanceof UserActions.SubmitLogout) {
+		if (payload instanceof UserActions.SubmitLogout) {
 			this.fetch(`/.api/logout`, {
 				method: "POST",
 				body: JSON.stringify({}),
@@ -114,8 +119,9 @@ class UserBackendClass {
 						window.location.href = "/#loggedout";
 					}
 				});
+		}
 
-		} else if (payload instanceof UserActions.SubmitForgotPassword) {
+		if (payload instanceof UserActions.SubmitForgotPassword) {
 			const action = payload;
 			this.fetch(`/.api/forgot`, {
 				method: "POST",
@@ -129,8 +135,9 @@ class UserBackendClass {
 				.then(function(data: any): void {
 					Dispatcher.Stores.dispatch(new UserActions.ForgotPasswordCompleted(data));
 				});
+		}
 
-		} else if (payload instanceof UserActions.SubmitResetPassword) {
+		if (payload instanceof UserActions.SubmitResetPassword) {
 			const action = payload;
 			this.fetch(`/.api/reset`, {
 				method: "POST",
@@ -146,8 +153,9 @@ class UserBackendClass {
 				.then(function(data: any): void {
 					Dispatcher.Stores.dispatch(new UserActions.ResetPasswordCompleted(data));
 				});
+		}
 
-		} else if (payload instanceof UserActions.SubmitBetaSubscription) {
+		if (payload instanceof UserActions.SubmitBetaSubscription) {
 			const action = payload;
 			this.fetch(`/.api/beta-subscription`, {
 				method: "POST",

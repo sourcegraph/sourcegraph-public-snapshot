@@ -1,9 +1,9 @@
-export type RepoRev = {
+export interface RepoRev {
 	Repo: string;
 	Rev: string | null;
 };
 
-export type RepoRevSpec = {
+export interface RepoRevSpec {
 	Repo: number;
 	CommitID: string | null;
 };

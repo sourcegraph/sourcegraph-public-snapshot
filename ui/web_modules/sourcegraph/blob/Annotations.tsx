@@ -2,7 +2,7 @@
 
 import * as utf8 from "utf8";
 
-export type Annotation = {
+export interface Annotation {
 	StartByte: number;
 	EndByte: number;
 	URL?: string;

@@ -1,8 +1,10 @@
-// tslint:disable: typedef ordered-imports
-
 import {Def} from "sourcegraph/def/index";
 
-export type WantResultsPayload = {
+export type Action =
+	WantResults |
+	ResultsFetched;
+
+export interface WantResultsPayload {
 	query: string;
 	repos: string[] | null;
 	notRepos: string[] | null;
@@ -20,7 +22,7 @@ export class WantResults {
 	}
 }
 
-export type ResultsFetchedPayload = {
+export interface ResultsFetchedPayload {
 	query: string;
 	repos: string[] | null;
 	notRepos: string[] | null;
