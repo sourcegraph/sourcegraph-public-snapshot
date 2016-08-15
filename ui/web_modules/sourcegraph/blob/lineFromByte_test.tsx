@@ -1,7 +1,4 @@
-// tslint:disable: typedef ordered-imports
-
 import expect from "expect.js";
-
 import {lineFromByte} from "sourcegraph/blob/lineFromByte";
 import {createLineFromByteFunc} from "sourcegraph/blob/lineFromByte";
 

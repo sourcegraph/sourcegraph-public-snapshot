@@ -1,18 +1,15 @@
-// tslint:disable: typedef ordered-imports
-
 import expect from "expect.js";
-
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {DefBackend} from "sourcegraph/def/DefBackend";
 import * as DefActions from "sourcegraph/def/DefActions";
+import {DefBackend} from "sourcegraph/def/DefBackend";
+import {Def, Ref} from "sourcegraph/def/index";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
-import {Def, Ref} from "sourcegraph/def/index";
 
 describe("DefBackend", () => {
 	describe("should handle WantDef", () => {
 		it("with def available", () => {
-			DefBackend.fetch = function(url, options) {
+			DefBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 				expect(url).to.be("/.api/repos/r@v/-/def/d");
 				return immediateSyncPromise({status: 200, json: () => ({Path: "somePath"})});
 			};
@@ -25,7 +22,7 @@ describe("DefBackend", () => {
 		});
 
 		it("with def not available", () => {
-			DefBackend.fetch = function(url, options) {
+			DefBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 				expect(url).to.be("/.api/repos/r@v/-/def/d");
 				return immediateSyncPromise({status: 404, json: () => null});
 			};
@@ -36,7 +33,7 @@ describe("DefBackend", () => {
 	});
 
 	it("should handle WantDefs", () => {
-		DefBackend.fetch = function(url, options) {
+		DefBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 			expect(url).to.be("/.api/defs?RepoRevs=myrepo@mycommitID&Nonlocal=true&Query=myquery&FilePathPrefix=foo%2F");
 			return immediateSyncPromise({status: 200, json: () => ([{Path: "somePath"}])});
 		};
@@ -46,7 +43,7 @@ describe("DefBackend", () => {
 	});
 
 	it("should handle WantRefLocations", () => {
-		DefBackend.fetch = function(url, options) {
+		DefBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 			expect(url).to.contain("/.api/repos/r@v/-/def/d/-/ref-locations");
 			return immediateSyncPromise({status: 200, json: () => "someRefData"});
 		};
@@ -62,7 +59,7 @@ describe("DefBackend", () => {
 
 	describe("should handle WantRefs", () => {
 		it("for all files", () => {
-			DefBackend.fetch = function(url, options) {
+			DefBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 				expect(url).to.be("/.api/repos/r@v/-/def/d/-/refs?Repo=rr");
 				return immediateSyncPromise({status: 200, json: () => "someRefData"});
 			};
@@ -71,7 +68,7 @@ describe("DefBackend", () => {
 			})).to.eql([new DefActions.RefsFetched("r", "v", "d", "rr", null, "someRefData" as any as Ref[])]);
 		});
 		it("for a specific file", () => {
-			DefBackend.fetch = function(url, options) {
+			DefBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 				expect(url).to.be("/.api/repos/r@v/-/def/d/-/refs?Repo=rr&Files=rf");
 				return immediateSyncPromise({status: 200, json: () => "someRefData"});
 			};
@@ -80,7 +77,7 @@ describe("DefBackend", () => {
 			})).to.eql([new DefActions.RefsFetched("r", "v", "d", "rr", "rf", "someRefData" as any as Ref[])]);
 		});
 		it("with no result available", () => {
-			DefBackend.fetch = function(url, options) {
+			DefBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 				expect(url).to.be("/.api/repos/r@v/-/def/d/-/refs?Repo=rr");
 				return immediateSyncPromise({status: 200, json: () => null});
 			};
@@ -89,7 +86,7 @@ describe("DefBackend", () => {
 			})).to.eql([new DefActions.RefsFetched("r", "v", "d", "rr", null, null)]);
 		});
 		it("for a 404 error", () => {
-			DefBackend.fetch = function(url, options) {
+			DefBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 				expect(url).to.be("/.api/repos/r@v/-/def/d/-/refs?Repo=rr");
 				return immediateSyncPromise({response: {status: 404}, text: ""}, true);
 			};

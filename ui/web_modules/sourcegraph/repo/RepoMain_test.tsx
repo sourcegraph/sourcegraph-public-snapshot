@@ -1,13 +1,11 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
 import expect from "expect.js";
+import * as React from "react";
+import * as BuildActions from "sourcegraph/build/BuildActions";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
+import {OriginGitHub} from "sourcegraph/repo/RepoBackend";
 import {RepoMain} from "sourcegraph/repo/RepoMain";
 import {renderToString} from "sourcegraph/util/componentTestUtils";
 import {render} from "sourcegraph/util/renderTestUtils";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
-import * as BuildActions from "sourcegraph/build/BuildActions";
-import {OriginGitHub} from "sourcegraph/repo/RepoBackend";
 
 const common = {
 	routes: [],

@@ -1,9 +1,6 @@
-// tslint:disable: typedef ordered-imports
-
 import expect from "expect.js";
-
-import {DefStore} from "sourcegraph/def/DefStore";
 import * as DefActions from "sourcegraph/def/DefActions";
+import {DefStore} from "sourcegraph/def/DefStore";
 import {Def} from "sourcegraph/def/index";
 
 describe("DefStore", () => {

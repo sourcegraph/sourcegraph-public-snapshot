@@ -1,13 +1,10 @@
-// tslint:disable: typedef ordered-imports
-
-import {autotest} from "sourcegraph/util/autotest";
-
-import * as React from "react";
 import expect from "expect.js";
+import * as React from "react";
 import {RefLocationsList} from "sourcegraph/def/RefLocationsList";
-import {renderToString} from "sourcegraph/util/componentTestUtils";
 import testdataData from "sourcegraph/def/testdata/RefLocationsList-data.json";
 import testdataEmpty from "sourcegraph/def/testdata/RefLocationsList-empty.json";
+import {autotest} from "sourcegraph/util/autotest";
+import {renderToString} from "sourcegraph/util/componentTestUtils";
 
 const ctx = {
 	eventLogger: {},

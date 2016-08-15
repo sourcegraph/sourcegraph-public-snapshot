@@ -1,7 +1,5 @@
-// tslint:disable: typedef ordered-imports
-
-import {repoPath, repoRev} from "sourcegraph/repo/index";
 import expect from "expect.js";
+import {repoPath, repoRev} from "sourcegraph/repo/index";
 
 describe("repoRev and repoPath", () => {
 	let tests = {

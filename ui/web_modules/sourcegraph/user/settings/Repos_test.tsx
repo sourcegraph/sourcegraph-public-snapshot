@@ -1,11 +1,8 @@
-// tslint:disable: typedef ordered-imports
-
-import {autotest} from "sourcegraph/util/autotest";
-
 import * as React from "react";
-import {Repos} from "sourcegraph/user/settings/Repos";
 import {withUserContext} from "sourcegraph/app/user";
+import {Repos} from "sourcegraph/user/settings/Repos";
 import testdataData from "sourcegraph/user/settings/testdata/Repos-data.json";
+import {autotest} from "sourcegraph/util/autotest";
 
 describe("Repos", () => {
 	it("should render repos", () => {

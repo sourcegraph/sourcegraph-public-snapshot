@@ -1,13 +1,8 @@
-// tslint:disable: typedef ordered-imports
-
-import {autotest} from "sourcegraph/util/autotest";
-
 import * as React from "react";
-
 import {TopLevelTask} from "sourcegraph/build/TopLevelTask";
-
 import testdataEmpty from "sourcegraph/build/testdata/TopLevelTask-empty.json";
 import testdataSteps from "sourcegraph/build/testdata/TopLevelTask-steps.json";
+import {autotest} from "sourcegraph/util/autotest";
 
 const sampleTask = {
 	ID: 456,
@@ -20,7 +15,7 @@ describe("TopLevelTask", () => {
 			<TopLevelTask
 				task={sampleTask}
 				subtasks={[]}
-				logs={{get() { return null; }}} />
+				logs={{get(): any { return null; }}} />
 		);
 	});
 
@@ -29,7 +24,7 @@ describe("TopLevelTask", () => {
 			<TopLevelTask
 				task={sampleTask}
 				subtasks={[sampleTask, sampleTask]}
-				logs={{get() { return {log: "a"}; }}} />
+				logs={{get(): any { return {log: "a"}; }}} />
 		);
 	});
 });

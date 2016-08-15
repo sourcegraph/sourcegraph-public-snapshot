@@ -1,7 +1,5 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
 import expect from "expect.js";
+import * as React from "react";
 import {BlobMain} from "sourcegraph/blob/BlobMain";
 import {renderToString} from "sourcegraph/util/componentTestUtils";
 

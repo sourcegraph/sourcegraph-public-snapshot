@@ -1,11 +1,8 @@
-// tslint:disable: typedef ordered-imports
-
 import expect from "expect.js";
-
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {TreeBackend} from "sourcegraph/tree/TreeBackend";
-import * as TreeActions from "sourcegraph/tree/TreeActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
+import * as TreeActions from "sourcegraph/tree/TreeActions";
+import {TreeBackend} from "sourcegraph/tree/TreeBackend";
 import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
 
 describe("TreeBackend", () => {
@@ -17,7 +14,7 @@ describe("TreeBackend", () => {
 		};
 		let expectedURI = `/.api/repos/${entry.repo}/-/commits?Head=${entry.rev}&Path=${entry.path}&PerPage=1`;
 
-		TreeBackend.fetch = function(url, options) {
+		TreeBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 			expect(url).to.be(expectedURI);
 			return immediateSyncPromise({status: 200, json: () => ({Commits: ["someTreeCommit"]})});
 		};
@@ -31,7 +28,7 @@ describe("TreeBackend", () => {
 		const commitID = "aCommitID";
 		let expectedURI = `/.api/repos/${repo}@${commitID}/-/tree-list`;
 
-		TreeBackend.fetch = function(url, options) {
+		TreeBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 			expect(url).to.be(expectedURI);
 			return immediateSyncPromise({status: 200, json: () => ({Files: ["a", "b"]})});
 		};

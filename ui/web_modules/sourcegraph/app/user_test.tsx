@@ -1,12 +1,10 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
 import expect from "expect.js";
-import {withUserContext, getChildContext} from "sourcegraph/app/user";
-import {render} from "sourcegraph/util/renderTestUtils";
-import {UserStore} from "sourcegraph/user/UserStore";
+import * as React from "react";
+import {getChildContext, withUserContext} from "sourcegraph/app/user";
 import * as UserActions from "sourcegraph/user/UserActions";
-import {User, AuthInfo, ExternalToken} from "sourcegraph/user/index";
+import {UserStore} from "sourcegraph/user/UserStore";
+import {AuthInfo, ExternalToken, User} from "sourcegraph/user/index";
+import {render} from "sourcegraph/util/renderTestUtils";
 
 const sampleAuthInfo: AuthInfo = {UID: 1, Login: "u"} as AuthInfo;
 const sampleGitHubToken: ExternalToken = {uid: 1, host: "example.com", scope: "s"};

@@ -1,12 +1,10 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
 import expect from "expect.js";
+import * as React from "react";
+import {rel as relPath} from "sourcegraph/app/routePatterns";
+import * as BlobActions from "sourcegraph/blob/BlobActions";
+import {BlobStore} from "sourcegraph/blob/BlobStore";
 import {withFileBlob} from "sourcegraph/blob/withFileBlob";
 import {render} from "sourcegraph/util/renderTestUtils";
-import {BlobStore} from "sourcegraph/blob/BlobStore";
-import * as BlobActions from "sourcegraph/blob/BlobActions";
-import {rel as relPath} from "sourcegraph/app/routePatterns";
 
 const C = withFileBlob((props) => null);
 

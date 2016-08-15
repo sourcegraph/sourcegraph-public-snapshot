@@ -1,12 +1,9 @@
-// tslint:disable: typedef ordered-imports
-
 import expect from "expect.js";
-
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {UserBackend} from "sourcegraph/user/UserBackend";
 import * as UserActions from "sourcegraph/user/UserActions";
+import {UserBackend} from "sourcegraph/user/UserBackend";
+import {AuthInfo, EmailAddr, ExternalToken, User} from "sourcegraph/user/index";
 import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
-import {AuthInfo, User, EmailAddr, ExternalToken} from "sourcegraph/user/index";
 
 const sampleAuthInfo: AuthInfo = {UID: 1, Login: "u", Write: false, Admin: false, IntercomHash: ""};
 const sampleToken: ExternalToken = {uid: 1, host: "example.com", scope: "s"};
@@ -16,7 +13,7 @@ const sampleEmails: EmailAddr[] = [{Email: "a@a.com"}] as any;
 describe("UserBackend", () => {
 	describe("should handle WantAuthInfo", () => {
 		it("with authInfo available, no included user", () => {
-			UserBackend.fetch = function(url, options) {
+			UserBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 				expect(url).to.be("/.api/auth-info");
 				return immediateSyncPromise({status: 200, json: () => sampleAuthInfo});
 			};
@@ -25,7 +22,7 @@ describe("UserBackend", () => {
 			})).to.eql([new UserActions.FetchedAuthInfo("t", sampleAuthInfo)]);
 		});
 		it("with authInfo available, with included GitHub token and user and emails", () => {
-			UserBackend.fetch = function(url, options) {
+			UserBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 				expect(url).to.be("/.api/auth-info");
 				return immediateSyncPromise({status: 200, json: () => Object.assign({}, sampleAuthInfo, {
 					GitHubToken: sampleToken,
@@ -43,7 +40,7 @@ describe("UserBackend", () => {
 			]);
 		});
 		it("with authInfo unexpected error", () => {
-			UserBackend.fetch = function(url, options) {
+			UserBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 				expect(url).to.be("/.api/auth-info");
 				return immediateSyncPromise({status: 500, text: () => immediateSyncPromise("error", true)});
 			};
@@ -54,7 +51,7 @@ describe("UserBackend", () => {
 	});
 	describe("should handle WantUser", () => {
 		it("with user available", () => {
-			UserBackend.fetch = function(url, options) {
+			UserBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 				expect(url).to.be("/.api/users/1$");
 				return immediateSyncPromise({status: 200, json: () => sampleUser});
 			};
@@ -63,7 +60,7 @@ describe("UserBackend", () => {
 			})).to.eql([new UserActions.FetchedUser(1, sampleUser)]);
 		});
 		it("with user not available", () => {
-			UserBackend.fetch = function(url, options) {
+			UserBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 				expect(url).to.be("/.api/users/1$");
 				return immediateSyncPromise({status: 404, text: () => immediateSyncPromise("error", true)});
 			};
@@ -74,7 +71,7 @@ describe("UserBackend", () => {
 	});
 	describe("should handle WantEmails", () => {
 		it("with emails available", () => {
-			UserBackend.fetch = function(url, options) {
+			UserBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 				expect(url).to.be("/.api/users/1$/emails");
 				return immediateSyncPromise({status: 200, json: () => ({EmailAddrs: sampleEmails})});
 			};
@@ -83,7 +80,7 @@ describe("UserBackend", () => {
 			})).to.eql([new UserActions.FetchedEmails(1, sampleEmails)]);
 		});
 		it("with emails not available", () => {
-			UserBackend.fetch = function(url, options) {
+			UserBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 				expect(url).to.be("/.api/users/1$/emails");
 				return immediateSyncPromise({status: 404, text: () => immediateSyncPromise("error", true)});
 			};

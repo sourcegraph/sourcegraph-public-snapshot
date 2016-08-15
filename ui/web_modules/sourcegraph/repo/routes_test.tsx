@@ -1,8 +1,6 @@
-// tslint:disable: typedef ordered-imports
-
-import {routes as repoRoutes, urlWithRev} from "sourcegraph/repo/routes";
-import {rootRoute} from "sourcegraph/app/App";
 import expect from "expect.js";
+import {rootRoute} from "sourcegraph/app/App";
+import {routes as repoRoutes, urlWithRev} from "sourcegraph/repo/routes";
 
 describe("urlWithRev", () => {
 	let tests = [

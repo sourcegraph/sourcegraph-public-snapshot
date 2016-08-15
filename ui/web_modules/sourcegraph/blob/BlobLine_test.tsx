@@ -1,15 +1,10 @@
-// tslint:disable: typedef ordered-imports
-
-import {autotest} from "sourcegraph/util/autotest";
-
 import * as React from "react";
-
 import {BlobLine} from "sourcegraph/blob/BlobLine";
-
 import testdataContents from "sourcegraph/blob/testdata/BlobLine-contents.json";
 import testdataEmpty from "sourcegraph/blob/testdata/BlobLine-empty.json";
 import testdataLineNumber from "sourcegraph/blob/testdata/BlobLine-lineNumber.json";
 import testdataLineSelection from "sourcegraph/blob/testdata/BlobLine-selection.json";
+import {autotest} from "sourcegraph/util/autotest";
 
 const context = {
 	eventLogger: {logEvent: () => null},

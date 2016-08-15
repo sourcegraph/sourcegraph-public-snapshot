@@ -1,13 +1,8 @@
-// tslint:disable: typedef ordered-imports
-
-import {autotest} from "sourcegraph/util/autotest";
-
 import * as React from "react";
-
 import {DefPopup} from "sourcegraph/def/DefPopup";
-
 import testdataData from "sourcegraph/def/testdata/DefPopup-data.json";
 import testdataNotAvailable from "sourcegraph/def/testdata/DefPopup-notAvailable.json";
+import {autotest} from "sourcegraph/util/autotest";
 
 const fmtStrings = {DefKeyword: "a", NameAndTypeSeparator: "s", Name: {ScopeQualified: "n"}, Type: {ScopeQualified: "t"}};
 

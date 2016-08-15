@@ -1,5 +1,3 @@
-// tslint:disable: typedef ordered-imports
-
 import {autotest} from "sourcegraph/util/autotest";
 
 import * as React from "react";

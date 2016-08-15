@@ -1,9 +1,6 @@
-// tslint:disable: typedef ordered-imports
-
 import expect from "expect.js";
-
-import {BuildStore} from "sourcegraph/build/BuildStore";
 import * as BuildActions from "sourcegraph/build/BuildActions";
+import {BuildStore} from "sourcegraph/build/BuildStore";
 
 describe("BuildStore", () => {
 	it("should handle BuildFetched", () => {

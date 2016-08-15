@@ -1,12 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
-import {autotest} from "sourcegraph/util/autotest";
-
 import * as React from "react";
-
 import {BuildHeader} from "sourcegraph/build/BuildHeader";
-
 import testdataInitial from "sourcegraph/build/testdata/BuildHeader-initial.json";
+import {autotest} from "sourcegraph/util/autotest";
 
 const sampleBuild = {
 	ID: 123,

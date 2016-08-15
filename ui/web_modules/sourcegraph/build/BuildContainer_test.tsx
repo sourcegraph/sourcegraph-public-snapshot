@@ -1,8 +1,5 @@
-// tslint:disable: typedef ordered-imports
-
-import {autotest} from "sourcegraph/util/autotest";
-
 import * as React from "react";
+import {autotest} from "sourcegraph/util/autotest";
 
 // import * as BuildActions from "sourcegraph/build/BuildActions";
 // import {BuildStore} from "sourcegraph/build/BuildStore";

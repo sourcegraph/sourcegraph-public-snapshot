@@ -1,11 +1,9 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
 import expect from "expect.js";
+import * as React from "react";
+import * as BuildActions from "sourcegraph/build/BuildActions";
+import {BuildStore} from "sourcegraph/build/BuildStore";
 import {withRepoBuild} from "sourcegraph/build/withRepoBuild";
 import {render} from "sourcegraph/util/renderTestUtils";
-import {BuildStore} from "sourcegraph/build/BuildStore";
-import * as BuildActions from "sourcegraph/build/BuildActions";
 
 const C = withRepoBuild((props) => null);
 

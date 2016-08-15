@@ -1,16 +1,11 @@
-// tslint:disable: typedef ordered-imports
-
-import {autotest} from "sourcegraph/util/autotest";
-
 import * as React from "react";
-
 import {Step} from "sourcegraph/build/Step";
-
-import testdataInitial from "sourcegraph/build/testdata/Step-initial.json";
+import testdataFailure from "sourcegraph/build/testdata/Step-failure.json";
 import testdataFetchedLog from "sourcegraph/build/testdata/Step-fetchedLog.json";
+import testdataInitial from "sourcegraph/build/testdata/Step-initial.json";
 import testdataSuccess from "sourcegraph/build/testdata/Step-success.json";
 import testdataWarnings from "sourcegraph/build/testdata/Step-warnings.json";
-import testdataFailure from "sourcegraph/build/testdata/Step-failure.json";
+import {autotest} from "sourcegraph/util/autotest";
 
 const sampleTask = {
 	ID: 456,
@@ -66,7 +61,7 @@ describe("Step", () => {
 		autotest(testdataInitial, "sourcegraph/build/testdata/Step-initial.json",
 			<Step
 				task={sampleTask}
-				logs={{get() { return null; }}} />
+				logs={{get(): any { return null; }}} />
 		);
 	});
 
@@ -74,7 +69,7 @@ describe("Step", () => {
 		autotest(testdataFetchedLog, "sourcegraph/build/testdata/Step-fetchedLog.json",
 			<Step
 				task={sampleTask}
-				logs={{get() { return {log: "a"}; }}} />
+				logs={{get(): any { return {log: "a"}; }}} />
 		);
 	});
 
@@ -82,7 +77,7 @@ describe("Step", () => {
 		autotest(testdataSuccess, "sourcegraph/build/testdata/Step-success.json",
 			<Step
 				task={taskSuccess}
-				logs={{get() { return null; }}} />
+				logs={{get(): any { return null; }}} />
 		);
 	});
 
@@ -90,7 +85,7 @@ describe("Step", () => {
 		autotest(testdataWarnings, "sourcegraph/build/testdata/Step-warnings.json",
 			<Step
 				task={taskWarnings}
-				logs={{get() { return null; }}} />
+				logs={{get(): any { return null; }}} />
 		);
 	});
 
@@ -98,7 +93,7 @@ describe("Step", () => {
 		autotest(testdataFailure, "sourcegraph/build/testdata/Step-failure.json",
 			<Step
 				task={taskFailure}
-				logs={{get() { return null; }}} />
+				logs={{get(): any { return null; }}} />
 		);
 	});
 });

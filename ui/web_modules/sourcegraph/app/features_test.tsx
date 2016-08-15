@@ -1,8 +1,6 @@
-// tslint:disable: typedef ordered-imports
-
+import expect from "expect.js";
 import * as React from "react";
 import * as ReactDOMServer from "react-dom/server";
-import expect from "expect.js";
 import {setGlobalFeatures, withFeaturesContext} from "sourcegraph/app/features";
 
 const C0base = (props, context) => <p>{context.features._testingDummyFeature}</p>;

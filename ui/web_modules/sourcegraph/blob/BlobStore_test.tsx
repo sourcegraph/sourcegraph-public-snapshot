@@ -1,9 +1,6 @@
-// tslint:disable: typedef ordered-imports
-
 import expect from "expect.js";
-
-import {BlobStore, keyForFile} from "sourcegraph/blob/BlobStore";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
+import {BlobStore, keyForFile} from "sourcegraph/blob/BlobStore";
 
 describe("BlobStore", () => {
 	it("should handle FileFetched", () => {

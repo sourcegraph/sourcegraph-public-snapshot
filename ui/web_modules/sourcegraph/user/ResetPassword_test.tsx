@@ -1,5 +1,3 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
 import {ResetPassword} from "sourcegraph/user/ResetPassword";
 import {render} from "sourcegraph/util/renderTestUtils";

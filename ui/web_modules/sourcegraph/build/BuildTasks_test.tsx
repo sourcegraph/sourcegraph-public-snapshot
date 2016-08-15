@@ -1,12 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
-import {autotest} from "sourcegraph/util/autotest";
-
 import * as React from "react";
-
 import {BuildTasks} from "sourcegraph/build/BuildTasks";
-
 import testdataInitial from "sourcegraph/build/testdata/BuildTasks-initial.json";
+import {autotest} from "sourcegraph/util/autotest";
 
 const sampleTasks = [
 	{
@@ -24,7 +19,7 @@ describe("BuildTasks", () => {
 		autotest(testdataInitial, "sourcegraph/build/testdata/BuildTasks-initial.json",
 			<BuildTasks
 				tasks={sampleTasks}
-				logs={{get() { return null; }}} />
+				logs={{get(): any { return null; }}} />
 		);
 	});
 });

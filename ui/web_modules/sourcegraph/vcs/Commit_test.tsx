@@ -1,13 +1,8 @@
-// tslint:disable: typedef ordered-imports
-
-import {autotest} from "sourcegraph/util/autotest";
-
 import * as React from "react";
-
+import {autotest} from "sourcegraph/util/autotest";
 import {Commit} from "sourcegraph/vcs/Commit";
-
-import testdataInitial from "sourcegraph/vcs/testdata/Commit-initial.json";
 import testdataAvailable from "sourcegraph/vcs/testdata/Commit-available.json";
+import testdataInitial from "sourcegraph/vcs/testdata/Commit-initial.json";
 import testdataNoAuthorPerson from "sourcegraph/vcs/testdata/Commit-noAuthorPerson.json";
 
 const sampleCommit = {

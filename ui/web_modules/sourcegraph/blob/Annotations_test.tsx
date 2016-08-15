@@ -1,5 +1,3 @@
-// tslint:disable: typedef ordered-imports
-
 import expect from "expect.js";
 import * as utf8 from "utf8";
 
@@ -174,7 +172,7 @@ const testCases = {
 	},
 };
 
-function render(ann, content) {
+function render(ann: any, content: any): any {
 	return ann.Left + (typeof content === "undefined" ? "" : content.join("")) + ann.Right;
 }
 

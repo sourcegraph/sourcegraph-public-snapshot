@@ -1,11 +1,9 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
+import {rel as relPath} from "sourcegraph/app/routePatterns";
+import * as DefActions from "sourcegraph/def/DefActions";
+import {DefStore} from "sourcegraph/def/DefStore";
 import {withDef} from "sourcegraph/def/withDef";
 import {render} from "sourcegraph/util/renderTestUtils";
-import {DefStore} from "sourcegraph/def/DefStore";
-import * as DefActions from "sourcegraph/def/DefActions";
-import {rel as relPath} from "sourcegraph/app/routePatterns";
 
 const C = withDef((props) => null);
 

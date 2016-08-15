@@ -1,9 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
-import {annotationsByLine} from "sourcegraph/blob/annotationsByLine";
 import expect from "expect.js";
+import {annotationsByLine} from "sourcegraph/blob/annotationsByLine";
 
-function labels(annsByLine) {
+function labels(annsByLine: any): string[] {
 	return annsByLine.map((lineAnns) => lineAnns.map((ann) => ann.Label));
 }
 

@@ -1,5 +1,3 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
 import {RefsContainer} from "sourcegraph/def/RefsContainer";
 import {render} from "sourcegraph/util/renderTestUtils";

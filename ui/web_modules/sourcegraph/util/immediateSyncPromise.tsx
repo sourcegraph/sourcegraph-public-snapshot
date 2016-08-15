@@ -7,7 +7,7 @@ import {testOnly} from "sourcegraph/util/testOnly";
 // and immediately.
 //
 // Only use it in tests.
-export function immediateSyncPromise(val, isError?) {
+export function immediateSyncPromise(val, isError?): any {
 	testOnly();
 	return {
 		then: (resolve, reject) => {

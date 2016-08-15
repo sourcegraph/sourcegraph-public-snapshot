@@ -1,5 +1,3 @@
-// tslint:disable: typedef ordered-imports
-
 import expect from "expect.js";
 import {formatDuration} from "sourcegraph/util/TimeAgo";
 

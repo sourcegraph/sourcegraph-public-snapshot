@@ -1,17 +1,15 @@
-// tslint:disable: typedef ordered-imports
-
 import expect from "expect.js";
 
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {BlobBackend} from "sourcegraph/blob/BlobBackend";
 import {prepareAnnotations} from "sourcegraph/blob/prepareAnnotations";
-import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
 
 describe("BlobBackend", () => {
 	it("should handle WantFile", () => {
-		BlobBackend.fetch = function(url, options) {
+		BlobBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 			expect(url).to.be("/.api/repos/aRepo@aCommitID/-/tree/aPath?ContentsAsString=true");
 			return immediateSyncPromise({
 				status: 200,
@@ -26,7 +24,7 @@ describe("BlobBackend", () => {
 		]);
 	});
 	it("should handle WantFile with IncludedAnnotations", () => {
-		BlobBackend.fetch = function(url, options) {
+		BlobBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 			expect(url).to.be("/.api/repos/aRepo@c/-/tree/aPath?ContentsAsString=true");
 			return immediateSyncPromise({
 				status: 200,

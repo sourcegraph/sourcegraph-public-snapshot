@@ -1,11 +1,8 @@
-// tslint:disable: typedef ordered-imports
-
 import expect from "expect.js";
-
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import * as BuildActions from "sourcegraph/build/BuildActions";
 import {BuildBackend} from "sourcegraph/build/BuildBackend";
 import {BuildStore} from "sourcegraph/build/BuildStore";
-import * as BuildActions from "sourcegraph/build/BuildActions";
 import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
 
 describe("BuildBackend", () => {
@@ -16,7 +13,7 @@ describe("BuildBackend", () => {
 		};
 		let expectedURI = `/.api/repos/${action.repo}/-/builds/${action.buildID}`;
 
-		BuildBackend.fetch = function(url, options) {
+		BuildBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 			expect(url).to.be(expectedURI);
 			return immediateSyncPromise({status: 200, json: () => ({ID: 123})});
 		};
@@ -33,9 +30,9 @@ describe("BuildBackend", () => {
 		};
 		let expectedURI = `/.api/repos/${action.repo}/-/builds/${action.buildID}/tasks/${action.taskID}/log`;
 
-		BuildBackend.fetch = function(url, options) {
+		BuildBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 			expect(url).to.be(expectedURI);
-			return immediateSyncPromise({status: 200, text: () => immediateSyncPromise("a"), headers: {get() { return "789"; }}});
+			return immediateSyncPromise({status: 200, text: () => immediateSyncPromise("a"), headers: {get(): string { return "789"; }}});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
 			BuildBackend.__onDispatch(new BuildActions.WantLog(action.repo, action.buildID, action.taskID));
@@ -50,14 +47,14 @@ describe("BuildBackend", () => {
 		};
 
 		// Mock the previous fetch as having returned a maxID of 12.
-		BuildStore.logs = {get() { return {maxID: 12, log: "a\n"}; }};
+		BuildStore.logs = {get(): any { return {maxID: 12, log: "a\n"}; }};
 
 		// Trigger "second" fetch, which should reuse MaxID from
 		// initial fetch as MinID of this fetch.
 		let expectedURI = `/.api/repos/${action.repo}/-/builds/${action.buildID}/tasks/${action.taskID}/log?MinID=12`;
-		BuildBackend.fetch = function(url, options) {
+		BuildBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 			expect(url).to.be(expectedURI);
-			return immediateSyncPromise({status: 200, text: () => immediateSyncPromise("c"), headers: {get() { return 34; }}});
+			return immediateSyncPromise({status: 200, text: () => immediateSyncPromise("c"), headers: {get(): string { return "34"; }}});
 		};
 
 		expect(Dispatcher.Stores.catchDispatched(() => {
@@ -72,7 +69,7 @@ describe("BuildBackend", () => {
 		};
 		let expectedURI = `/.api/repos/${action.repo}/-/builds/${action.buildID}/tasks?PerPage=1000`;
 
-		BuildBackend.fetch = function(url, options) {
+		BuildBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
 			expect(url).to.be(expectedURI);
 			return immediateSyncPromise({status: 200, json: () => [{ID: 456}]});
 		};

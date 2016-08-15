@@ -1,7 +1,5 @@
-// tslint:disable: typedef ordered-imports
-
-import {abs as absRoutes, getRouteParams} from "sourcegraph/app/routePatterns";
 import expect from "expect.js";
+import {abs as absRoutes, getRouteParams} from "sourcegraph/app/routePatterns";
 
 describe("routePatterns", () => {
 	let tests = {

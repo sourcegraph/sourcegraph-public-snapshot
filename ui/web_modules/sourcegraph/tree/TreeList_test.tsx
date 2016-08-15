@@ -1,15 +1,10 @@
-// tslint:disable: typedef ordered-imports
-
-import {autotest} from "sourcegraph/util/autotest";
-
 import * as React from "react";
-
+import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {TreeList} from "sourcegraph/tree/TreeList";
 import {TreeStore} from "sourcegraph/tree/TreeStore";
-import * as TreeActions from "sourcegraph/tree/TreeActions";
-
 import testdataFiles from "sourcegraph/tree/testdata/TreeList-files.json";
 import testdataNotFound from "sourcegraph/tree/testdata/TreeList-notFound.json";
+import {autotest} from "sourcegraph/util/autotest";
 
 describe("TreeList", () => {
 	it("should render files", () => {

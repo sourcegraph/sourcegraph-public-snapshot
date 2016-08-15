@@ -1,9 +1,6 @@
-// tslint:disable: typedef ordered-imports
-
 import expect from "expect.js";
-
-import {TreeStore} from "sourcegraph/tree/TreeStore";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
+import {TreeStore} from "sourcegraph/tree/TreeStore";
 
 describe("TreeStore", () => {
 	it("should handle CommitFetched", () => {
