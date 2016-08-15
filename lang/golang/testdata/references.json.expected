@@ -4,7 +4,8 @@
       "capabilities": {
         "hoverProvider": true,
         "definitionProvider": true,
-        "referencesProvider": true
+        "referencesProvider": true,
+        "workspaceSymbolProvider": true
       }
     },
     "id": "0",

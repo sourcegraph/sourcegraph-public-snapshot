@@ -128,9 +128,10 @@ func (h *Session) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
 		h.reset(&params)
 		result = lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
-				HoverProvider:      true,
-				DefinitionProvider: true,
-				ReferencesProvider: true,
+				DefinitionProvider:      true,
+				HoverProvider:           true,
+				ReferencesProvider:      true,
+				WorkspaceSymbolProvider: true,
 			},
 		}
 
