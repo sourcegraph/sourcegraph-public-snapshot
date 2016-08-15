@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"net/http"
-	"path"
 	"sort"
 	"strconv"
 
@@ -98,7 +97,7 @@ func serveDefLocalRefLocations(w http.ResponseWriter, r *http.Request) error {
 
 		for name, count := range fileSet {
 			localRefLocationsList.Files = append(localRefLocationsList.Files, &sourcegraph.DefFileRef{
-				Path:  path.Base(name),
+				Path:  name,
 				Count: count,
 			})
 		}
