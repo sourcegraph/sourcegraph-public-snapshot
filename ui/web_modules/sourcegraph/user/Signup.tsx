@@ -39,7 +39,7 @@ export class SignupForm extends Container<SignupFormProps, SignupFormState> {
 		this._handleSubmit = this._handleSubmit.bind(this);
 	}
 
-	reconcileState(state, props: SignupFormProps) {
+	reconcileState(state, props: SignupFormProps): void {
 		Object.assign(state, props);
 		state.pendingAuthAction = UserStore.pendingAuthActions["signup"] || false;
 		state.authResponse = UserStore.authResponses["signup"] || null;
@@ -51,7 +51,7 @@ export class SignupForm extends Container<SignupFormProps, SignupFormState> {
 		state.githubEmail = (props.location.query && props.location.query.email) || null;
 	}
 
-	onStateTransition(prevState: SignupFormState, nextState: SignupFormState) {
+	onStateTransition(prevState: SignupFormState, nextState: SignupFormState): void {
 		if (prevState.authResponse !== nextState.authResponse) {
 			if (nextState.submitted && nextState.authResponse && nextState.authResponse.Success) {
 				setTimeout(() => this.props.onSignupSuccess());

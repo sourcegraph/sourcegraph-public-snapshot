@@ -68,7 +68,7 @@ export class BuildContainer extends Container<Props, State> {
 		Dispatcher.Backends.dispatch(new BuildActions.WantTasks(this.state.repo, this.state.id, true));
 	}
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 		state.repo = props.params.splat;
 		state.id = props.params.id;
@@ -81,7 +81,7 @@ export class BuildContainer extends Container<Props, State> {
 
 	stores() { return [BuildStore, TreeStore]; }
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if (prevState.repo !== nextState.repo || prevState.id !== nextState.id) {
 			Dispatcher.Backends.dispatch(new BuildActions.WantBuild(nextState.repo, nextState.id));
 			Dispatcher.Backends.dispatch(new BuildActions.WantTasks(nextState.repo, nextState.id));

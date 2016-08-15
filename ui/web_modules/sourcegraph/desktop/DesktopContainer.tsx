@@ -11,8 +11,10 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import {urlToDefInfo} from "sourcegraph/def/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
 
+type State = any;
+
 export function desktopContainer(Component) {
-	class DesktopContainer extends Container<{}, any> {
+	class DesktopContainer extends Container<{}, State> {
 		static contextTypes = {
 			router: React.PropTypes.object.isRequired,
 		};
@@ -27,11 +29,11 @@ export function desktopContainer(Component) {
 
 		stores() { return [DefStore]; }
 
-		reconcileState(state, props: {}) {
+		reconcileState(state: State, props: {}): void {
 			Object.assign(state, props);
 		}
 
-		onStateTransition(oldState, newState) {
+		onStateTransition(oldState: State, newState: State): void {
 			const defSpec = newState.defSpec;
 			const def = DefStore.defs.get(defSpec.repo, null, defSpec.def);
 			if (!def) { return; }

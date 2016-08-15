@@ -17,7 +17,7 @@ interface Props {
 type State = any;
 
 export class TopLevelTask extends Component<Props, State> {
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		if (state.task !== props.task) {
 			state.task = props.task;
 		}

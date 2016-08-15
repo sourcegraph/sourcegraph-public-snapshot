@@ -50,7 +50,7 @@ export class RepoRefsContainer extends Container<Props, State> {
 		return [DefStore];
 	}
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
 		state.def = props.def || null;
@@ -62,7 +62,7 @@ export class RepoRefsContainer extends Container<Props, State> {
 		}
 	}
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if (nextState.currPage !== prevState.currPage || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def || nextState.defObj !== prevState.defObj) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
 				repo: nextState.repo, commitID: nextState.defCommitID, def: nextState.def, repos: nextState.defRepos, page: nextState.currPage,

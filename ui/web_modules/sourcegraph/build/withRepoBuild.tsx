@@ -21,7 +21,7 @@ export function withRepoBuild(Component) {
 	class WithRepoBuild extends Container<Props, State> {
 		stores() { return [BuildStore]; }
 
-		reconcileState(state: State, props: Props) {
+		reconcileState(state: State, props: Props): void {
 			Object.assign(state, props);
 			const builds = state.repoID && state.commitID ? BuildStore.builds.listNewestByCommitID(state.repoID, state.commitID) : null;
 			if (!builds) {
@@ -33,7 +33,7 @@ export function withRepoBuild(Component) {
 			}
 		}
 
-		onStateTransition(prevState: State, nextState: State) {
+		onStateTransition(prevState: State, nextState: State): void {
 			if (prevState.repoID !== nextState.repoID || prevState.commitID !== nextState.commitID || (!nextState.build && prevState.build !== nextState.build)) {
 				if (!nextState.build && nextState.repoID) {
 					Dispatcher.Backends.dispatch(new BuildActions.WantNewestBuildForCommit(nextState.repoID, nextState.commitID, false));

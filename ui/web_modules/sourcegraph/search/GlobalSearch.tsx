@@ -131,7 +131,7 @@ export class GlobalSearch extends Container<Props, State> {
 
 	stores(): FluxUtils.Store<any>[] { return [SearchStore, UserStore, RepoStore]; }
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 		state.githubToken = UserStore.activeGitHubToken;
 		state.language = state.searchSettings && state.searchSettings.languages ? state.searchSettings.languages : null;
@@ -227,7 +227,7 @@ export class GlobalSearch extends Container<Props, State> {
 		}
 	}
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if (prevState.searchSettings && prevState.searchSettings !== nextState.searchSettings && nextState.location.pathname === "/search") {
 			(this.context as any).router.replace(locationForSearch(nextState.location, nextState.query, nextState.searchSettings.languages, nextState.searchSettings.scope, false, true));
 		}

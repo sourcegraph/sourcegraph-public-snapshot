@@ -12,7 +12,7 @@ type State = any;
 // blobWithDefBox uses the def's path as the blob file to load, and it
 // passes a DefPopup child to be displayed in the blob margin.
 export const blobWithDefBox = ({
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		const defPos = state.commitID ? DefStore.defs.getPos(state.repo, state.commitID, state.def) : null;
 		state.path = defPos && !defPos.Error ? defPos.File : state.path;
 		state.startByte = defPos && !defPos.Error ? defPos.DefStart : null;

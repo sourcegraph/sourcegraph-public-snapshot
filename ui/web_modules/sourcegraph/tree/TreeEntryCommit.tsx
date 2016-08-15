@@ -17,14 +17,14 @@ interface Props {
 type State = any;
 
 export class TreeEntryCommit extends Container<Props, State> {
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 		state.commits = TreeStore.commits;
 	}
 
 	stores() { return [TreeStore]; }
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.path !== nextState.path) {
 			Dispatcher.Backends.dispatch(new TreeActions.WantCommit(nextState.repo, nextState.rev, nextState.path));
 		}

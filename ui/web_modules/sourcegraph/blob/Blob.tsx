@@ -189,7 +189,7 @@ export class BlobTestOnly extends Component<Props, State> {
 		this._isMounted = false;
 	}
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		state.startlineCallback = props.startlineCallback || (x => {});
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;

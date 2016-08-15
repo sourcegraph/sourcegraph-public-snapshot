@@ -63,7 +63,7 @@ export class RevSwitcher extends Component<Props, State> {
 		}, 150, {leading: true, trailing: true});
 	}
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 
 		state.srclibDataVersion = state.srclibDataVersions ? state.srclibDataVersions.get(state.repo, state.commitID) : null;
@@ -72,7 +72,7 @@ export class RevSwitcher extends Component<Props, State> {
 		state.effectiveRev = state.rev || (state.repoObj && !state.repoObj.Error ? state.repoObj.DefaultBranch : null);
 	}
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		const becameOpen = nextState.open && nextState.open !== prevState.open;
 		if (becameOpen || nextState.repo !== prevState.repo) {
 			// Don't load when page loads until we become open.

@@ -25,7 +25,7 @@ export function withAnnotations(Component) {
 			return [BlobStore];
 		}
 
-		reconcileState(state: State, props: Props) {
+		reconcileState(state: State, props: Props): void {
 			Object.assign(state, props);
 
 			state.anns = state.path && state.commitID ? (BlobStore.annotations[keyForAnns(state.repo, state.commitID, state.path, 0, 0)] || null) : null;
@@ -36,7 +36,7 @@ export function withAnnotations(Component) {
 			state.skipAnns = contentLength >= 60 * 10000; // ~ 10000 lines, avg. 60 chars per line
 		}
 
-		onStateTransition(prevState: State, nextState: State) {
+		onStateTransition(prevState: State, nextState: State): void {
 			if (!nextState.anns && nextState.path && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.commitID !== nextState.commitID || prevState.path !== nextState.path || prevState.blob !== nextState.blob)) {
 				if (nextState.commitID && !nextState.skipAnns && nextState.blob) {
 					// Require that the rev has been resolved to a commit ID to fetch,

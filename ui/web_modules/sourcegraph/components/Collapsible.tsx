@@ -26,7 +26,7 @@ export class Collapsible extends Component<Props, State> {
 		this._onClick = this._onClick.bind(this);
 	}
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 	}
 

@@ -37,7 +37,7 @@ class ResetPasswordComp extends Container<Props, State> {
 		this._handleSubmit = this._handleSubmit.bind(this);
 	}
 
-	reconcileState(state, props, context) {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 		state.token = state.location.query && state.location.query.token; // TODO: error handling (missing token)
 		state.pendingAuthAction = UserStore.pendingAuthActions["reset"] || false;

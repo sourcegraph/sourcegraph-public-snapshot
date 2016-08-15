@@ -23,7 +23,7 @@ export class BuildTasks extends Component<Props, State> {
 		};
 	}
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		state.logs = props.logs;
 
 		if (state.tasks !== props.tasks) {

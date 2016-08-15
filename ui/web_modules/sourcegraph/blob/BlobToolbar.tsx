@@ -15,7 +15,7 @@ interface Props {
 type State = any;
 
 export class BlobToolbar extends Component<Props, State> {
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		state.repo = props.repo;
 		state.rev = props.rev || null;
 		state.commitID = props.commitID || null;

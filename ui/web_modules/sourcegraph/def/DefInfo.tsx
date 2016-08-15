@@ -142,7 +142,7 @@ export class DefInfo extends Container<Props, State> {
 		this.setState({defDescrHidden: true});
 	}
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		state.location = props.location || null;
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
@@ -162,7 +162,7 @@ export class DefInfo extends Container<Props, State> {
 		}
 	}
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if (prevState.defCommitID !== nextState.defCommitID && nextState.defCommitID) {
 			Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.defCommitID, nextState.def));
 		}

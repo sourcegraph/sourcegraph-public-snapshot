@@ -22,7 +22,7 @@ type State = any;
 // before withDefAndRefLocations (which uses the state.commitID that
 // this sets).
 export const withLastSrclibDataVersion = ({
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		// If a blob, then the path is statically known. Otherwise, reuse
 		// the state.path set after the def loads (that is taken from def.File).
 		state.path = props.route && props.route.path && props.route.path.startsWith(rel.blob) ? props.params.splat[1] : state.path;
@@ -51,7 +51,7 @@ export const withLastSrclibDataVersion = ({
 		}
 	},
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		// Handle change in params OR lost def data (due to auth change, etc.).
 		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.vcsCommitID !== prevState.vcsCommitID || nextState.srclibDataVersionPath !== prevState.srclibDataVersionPath || (!nextState.srclibDataVersion && nextState.srclibDataVersion !== prevState.srclibDataVersion)) {
 			if (nextState.vcsCommitID) {

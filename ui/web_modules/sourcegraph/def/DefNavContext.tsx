@@ -23,7 +23,7 @@ interface Props {
 type State = any;
 
 export class DefNavContext extends Container<Props, State> {
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		state.repo = props.repo;
 		state.rev = props.rev;
 		state.commitID = props.commitID;
@@ -34,7 +34,7 @@ export class DefNavContext extends Container<Props, State> {
 		state.defPos = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.getPos(state.repo, state.srclibDataVersion.CommitID, defPath) : null;
 	}
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if (prevState.repo !== nextState.repo || prevState.commitID !== nextState.commitID || (!nextState.srclibDataVersion && prevState.srclibDataVersion !== nextState.srclibDataVersion)) {
 			if (nextState.commitID && !nextState.srclibDataVersion) {
 				Dispatcher.Backends.dispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.commitID));

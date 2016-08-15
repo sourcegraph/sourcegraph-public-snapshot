@@ -15,8 +15,10 @@ import "sourcegraph/user/UserBackend"; // for side effects
 import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 
+type State = any;
+
 // TODO: prevent mounting this component if user is logged in
-class ForgotPasswordComp extends Container<{}, any> {
+class ForgotPasswordComp extends Container<{}, State> {
 	_emailInput: any;
 
 	constructor(props: {}) {
@@ -25,7 +27,7 @@ class ForgotPasswordComp extends Container<{}, any> {
 		this._handleSubmit = this._handleSubmit.bind(this);
 	}
 
-	reconcileState(state, props: {}) {
+	reconcileState(state: State, props: {}): void {
 		Object.assign(state, props);
 		state.pendingAuthAction = UserStore.pendingAuthActions["forgot"] || false;
 		state.authResponse = UserStore.authResponses["forgot"] || null;

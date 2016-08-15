@@ -146,7 +146,7 @@ export class TreeList extends Container<Props, State> {
 		}
 	}
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if ((nextState.repo !== prevState.repo || nextState.commitID !== prevState.commitID) && nextState.commitID) {
 			Dispatcher.Backends.dispatch(new TreeActions.WantFileList(nextState.repo, nextState.commitID));
 		}

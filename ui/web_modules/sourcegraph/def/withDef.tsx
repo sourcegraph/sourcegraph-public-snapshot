@@ -28,7 +28,7 @@ export function withDef(Component) {
 	class WithDef extends Container<Props, State> {
 		stores() { return [DefStore, RepoStore]; }
 
-		reconcileState(state: State, props: Props) {
+		reconcileState(state: State, props: Props): void {
 			Object.assign(state, props);
 
 			if (!props.def) {
@@ -40,7 +40,7 @@ export function withDef(Component) {
 			state.isCloning = RepoStore.repos.isCloning(state.repo);
 		}
 
-		onStateTransition(prevState: State, nextState: State) {
+		onStateTransition(prevState: State, nextState: State): void {
 			if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
 				Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.repo, nextState.rev, nextState.def));
 			}

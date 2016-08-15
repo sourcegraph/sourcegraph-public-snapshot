@@ -34,7 +34,7 @@ export class ExamplesContainer extends Container<Props, State> {
 		return [DefStore];
 	}
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		state.location = props.location || null;
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;

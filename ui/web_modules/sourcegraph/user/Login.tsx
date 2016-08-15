@@ -36,7 +36,7 @@ export class LoginForm extends Container<Props, State> {
 		this._handleSubmit = this._handleSubmit.bind(this);
 	}
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 		state.pendingAuthAction = UserStore.pendingAuthActions["login"] || false;
 		state.authResponse = UserStore.authResponses["login"] || null;
@@ -46,7 +46,7 @@ export class LoginForm extends Container<Props, State> {
 		state.githubError = (props.location.query && props.location.query["github-login-error"]) || null;
 	}
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if (prevState.authResponse !== nextState.authResponse) {
 			if (nextState.submitted && nextState.authResponse && nextState.authResponse.Success) {
 				setTimeout(() => this.props.onLoginSuccess());

@@ -59,7 +59,7 @@ export class Step extends Component<Props, State> {
 		}
 	}
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		if (state.task !== props.task) {
 			state.task = props.task;
 
@@ -80,7 +80,7 @@ export class Step extends Component<Props, State> {
 		}
 	}
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if (prevState.task !== nextState.task) {
 			Dispatcher.Backends.dispatch(new BuildActions.WantLog(nextState.task.Build.Repo, nextState.task.Build.ID, nextState.task.ID));
 		}

@@ -1,7 +1,5 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
 import {Integrations} from "./Integrations";
+import * as React from "react";
 import "sourcegraph/user/UserBackend"; // for side effects
 
 interface Props {
@@ -11,7 +9,7 @@ interface Props {
 type State = any;
 
 export class IntegrationsContainer extends React.Component<Props, State> {
-	reconcileState(state, props, context) {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 	}
 

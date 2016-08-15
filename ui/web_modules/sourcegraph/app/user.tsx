@@ -52,7 +52,7 @@ export function withUserContext(Component) {
 
 		stores() { return [UserStore]; }
 
-		reconcileState(state: State, props: Props) {
+		reconcileState(state: State, props: Props): void {
 			Object.assign(state, props);
 
 			state.accessToken = UserStore.activeAccessToken || null;
@@ -61,7 +61,7 @@ export function withUserContext(Component) {
 			state.user = state.authInfo && !state.authInfo.Error ? (UserStore.users[state.authInfo.UID] || null) : null;
 		}
 
-		onStateTransition(prevState: State, nextState: State) {
+		onStateTransition(prevState: State, nextState: State): void {
 			if (nextState.accessToken && !nextState.authInfo && prevState.accessToken !== nextState.accessToken) {
 				Dispatcher.Backends.dispatch(new UserActions.WantAuthInfo(nextState.accessToken));
 			}

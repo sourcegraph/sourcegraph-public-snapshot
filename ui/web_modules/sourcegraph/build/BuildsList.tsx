@@ -64,7 +64,7 @@ export class BuildsList extends Container<Props, State> {
 		Dispatcher.Backends.dispatch(new BuildActions.WantBuilds(this.state.repo, this._translateQuery(this.state.search), true));
 	}
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 		state.repo = props.params.splat || null; // null if serving global builds view
 		state.search = state.location.search;
@@ -74,7 +74,7 @@ export class BuildsList extends Container<Props, State> {
 
 	stores() { return [BuildStore]; }
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if (prevState.repo !== nextState.repo || prevState.search !== nextState.search) {
 			Dispatcher.Backends.dispatch(new BuildActions.WantBuilds(nextState.repo, this._translateQuery(nextState.search)));
 		}

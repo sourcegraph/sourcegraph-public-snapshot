@@ -46,7 +46,7 @@ export class Integrations extends Component<Props, State> {
 		githubToken: React.PropTypes.object,
 	};
 
-	reconcileState(state, props, context) {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 	}
 

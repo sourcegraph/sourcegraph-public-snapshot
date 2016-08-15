@@ -61,7 +61,7 @@ function blobLoader(Component) {
 			this._helpers = null;
 		}
 
-		reconcileState(state: State, props: Props) {
+		reconcileState(state: State, props: Props): void {
 			if (props.route && state.route !== props.route) {
 				// Clear state properties that were set by previous helpers.
 				if (this._helpers) {
@@ -89,7 +89,7 @@ function blobLoader(Component) {
 			}
 		}
 
-		onStateTransition(prevState: State, nextState: State) {
+		onStateTransition(prevState: State, nextState: State): void {
 			if (this._helpers) {
 				this._helpers.forEach((h) => {
 					if (h.onStateTransition) {

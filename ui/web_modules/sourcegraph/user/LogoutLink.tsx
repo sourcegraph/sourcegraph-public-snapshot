@@ -23,13 +23,13 @@ export class LogoutLink extends Container<Props, State> {
 		this._handleClick = this._handleClick.bind(this);
 	}
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 		state.pendingAuthAction = UserStore.pendingAuthActions["logout"] || false;
 		state.authResponse = UserStore.authResponses["logout"] || null;
 	}
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if (prevState.authResponse !== nextState.authResponse) {
 			if (this.state.submitted) {
 				if (nextState.authResponse && nextState.authResponse.Error) {

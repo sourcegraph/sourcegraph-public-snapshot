@@ -46,7 +46,7 @@ export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
 			}
 		}
 
-		reconcileState(state: State, props: Props) {
+		reconcileState(state: State, props: Props): void {
 			Object.assign(state, props);
 
 			const repoSplat = repoParam(props.params.splat);
@@ -63,7 +63,7 @@ export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
 			state.isCloning = RepoStore.repos.isCloning(state.repo);
 		}
 
-		onStateTransition(prevState: State, nextState: State) {
+		onStateTransition(prevState: State, nextState: State): void {
 			if (!isMainComponent) {
 				return;
 			}

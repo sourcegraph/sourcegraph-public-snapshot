@@ -96,7 +96,7 @@ export class RefsContainer extends Container<Props, State> {
 		return [DefStore, BlobStore];
 	}
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		state.location = props.location || null;
 		if (typeof state.showAllFiles === "undefined") {
 			state.showAllFiles = false;
@@ -176,7 +176,7 @@ export class RefsContainer extends Container<Props, State> {
 		}
 	}
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		const refPropsUpdated = prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def || prevState.refRepo !== nextState.refRepo;
 		if (refPropsUpdated) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.repo, nextState.rev, nextState.def, nextState.refRepo));

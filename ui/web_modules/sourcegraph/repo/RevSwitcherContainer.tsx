@@ -28,7 +28,7 @@ type State = any;
 // RevSwitcherContainer is for standalone RevSwitchers that need to
 // be able to respond to changes in RepoStore independently.
 export class RevSwitcherContainer extends Container<Props, State> {
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 		state.branches = RepoStore.branches;
 		state.tags = RepoStore.tags;

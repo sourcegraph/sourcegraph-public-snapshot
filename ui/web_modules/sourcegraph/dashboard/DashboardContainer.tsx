@@ -52,7 +52,7 @@ export class DashboardContainer extends Container<Props, State> {
 		state.signedIn = context && context.signedIn;
 	}
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if (this._input && this._input.value && !prevState.isTyping) {
 			this._goToSearch(this._input.value);
 		}

@@ -26,14 +26,14 @@ export class UserSettingsReposMain extends Container<Props, State> {
 		router: React.PropTypes.object.isRequired,
 	};
 
-	reconcileState(state, props, context) {
+	reconcileState(state: State, props: Props, context: any): void {
 		Object.assign(state, props);
 		state.repos = RepoStore.repos.list(reposQuerystring);
 		state.githubToken = context.githubToken;
 		state.user = context.user;
 	}
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if (nextState.repos !== prevState.repos) {
 			Dispatcher.Backends.dispatch(new RepoActions.WantRepos(reposQuerystring));
 		}

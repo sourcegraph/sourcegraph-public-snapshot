@@ -17,7 +17,7 @@ interface Props {
 type State = any;
 
 export class RepoNavContext extends Component<Props, State> {
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 	}
 

@@ -40,11 +40,11 @@ export class DefTooltip extends Component<Props, State> {
 		this._elem = null;
 	}
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 	}
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if (prevState.hoverPos !== nextState.hoverPos && nextState.hoverPos !== null) {
 			Dispatcher.Backends.dispatch(new DefActions.WantHoverInfo(nextState.hoverPos));
 		}

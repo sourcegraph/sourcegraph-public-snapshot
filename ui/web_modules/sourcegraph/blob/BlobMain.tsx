@@ -70,7 +70,7 @@ export class BlobMain extends Container<Props, State> {
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		state.repo = props.repo;
 		state.rev = props.rev || null;
 		state.commitID = props.commitID || null;
@@ -92,7 +92,7 @@ export class BlobMain extends Container<Props, State> {
 		state.hoverPos = DefStore.hoverPos;
 	}
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if (prevState.blob !== nextState.blob) {
 			nextState.lineFromByte = nextState.blob && typeof nextState.blob.ContentsString !== "undefined" ? createLineFromByteFunc(nextState.blob.ContentsString) : null;
 		}

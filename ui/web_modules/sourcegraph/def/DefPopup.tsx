@@ -29,7 +29,7 @@ export class DefPopup extends Container<Props, State> {
 		features: React.PropTypes.object.isRequired,
 	};
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 		state.defObj = props.def;
 		state.repo = props.def ? props.def.Repo : null;
@@ -40,7 +40,7 @@ export class DefPopup extends Container<Props, State> {
 		state.authors = DefStore.authors.get(state.repo, state.commitID, state.def);
 	}
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if (prevState.repo !== nextState.repo || prevState.commitID !== nextState.commitID || prevState.def !== nextState.def) {
 			Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.commitID, nextState.def));
 		}

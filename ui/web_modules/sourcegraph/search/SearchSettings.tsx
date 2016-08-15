@@ -64,7 +64,7 @@ class SearchSettingsComp extends Container<Props, State> {
 
 	stores() { return [UserStore]; }
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 
 		state.settings = UserStore.settings;
@@ -75,7 +75,7 @@ class SearchSettingsComp extends Container<Props, State> {
 		state.signedIn = Boolean(UserStore.activeAuthInfo());
 	}
 
-	onStateTransition(prevState: State, nextState: State) {
+	onStateTransition(prevState: State, nextState: State): void {
 		if (prevState.settings !== nextState.settings && nextState.settings && nextState.settings.search && nextState.settings.search.scope) {
 			const scope = nextState.settings.search.scope;
 			if (scope.public) {

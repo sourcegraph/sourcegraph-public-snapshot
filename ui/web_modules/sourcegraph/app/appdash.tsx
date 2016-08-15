@@ -56,11 +56,11 @@ export function withAppdashRouteStateRecording(ChildComponent: any): any {
 			}
 		}
 
-		reconcileState(state: State, props: Props) {
+		reconcileState(state: State, props: Props): void {
 			Object.assign(state, props);
 		}
 
-		onStateTransition(prevState: State, nextState: State) {
+		onStateTransition(prevState: State, nextState: State): void {
 			// Begin recording the render time directly after the route changes
 			// as this signals loading a new "page" or "view" of sorts.
 			let nextRoute = getRouteName(nextState.routes);

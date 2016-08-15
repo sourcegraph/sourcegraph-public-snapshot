@@ -105,7 +105,7 @@ export class BlobLine extends Component<Props, State> {
 		}
 	}
 
-	reconcileState(state: State, props: Props) {
+	reconcileState(state: State, props: Props): void {
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
 		state.commitID = props.commitID || null;

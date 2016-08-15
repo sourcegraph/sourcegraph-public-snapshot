@@ -29,7 +29,7 @@ export function withJumpToDefRedirect(Blob) {
 			Dispatcher.Stores.unregister(this._dispatcherToken);
 		}
 
-		reconcileState(state: State, props: Props) {
+		reconcileState(state: State, props: Props): void {
 			Object.assign(state, props);
 			if (props.location && props.location.query) {
 					let {line, character, file, commit, repo} = props.location.query;
@@ -49,7 +49,7 @@ export function withJumpToDefRedirect(Blob) {
 			}
 		}
 
-		onStateTransition(prevState: State, nextState: State) {
+		onStateTransition(prevState: State, nextState: State): void {
 			if (nextState.soughtJumpDef && !isEqual(prevState.soughtJumpDef, nextState.soughtJumpDef)) {
 				Dispatcher.Backends.dispatch(new DefActions.WantJumpDef(nextState.soughtJumpDef));
 			}
