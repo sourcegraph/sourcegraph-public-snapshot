@@ -127,6 +127,7 @@ func New(opts *Translator) http.Handler {
 	mux.Handle("/definition", t.handler("/definition", t.serveDefinition))
 	mux.Handle("/exported-symbols", t.handler("/exported-symbols", t.serveExportedSymbols))
 	mux.Handle("/external-refs", t.handler("/external-refs", t.serveExternalRefs))
+	mux.Handle("/defkey-refs", t.handler("/defkey-refs", t.serveDefKeyRefs))
 	mux.Handle("/hover", t.handler("/hover", t.serveHover))
 	mux.Handle("/local-refs", t.handler("/local-refs", t.serveLocalRefs))
 	return mux
@@ -660,6 +661,115 @@ func (t *translator) serveExternalRefs(body []byte) (interface{}, error) {
 	return &ExternalRefs{Defs: defs}, nil
 }
 
+// parseDefKeyString extracts repo and name information from a def key
+// string representation.
+func parseDefKeyString(def string) (string, string, error) {
+	// TODO: go specific
+	def = strings.TrimPrefix(def, "GoPackage/")
+	idx := strings.Index(def, "-")
+	if idx == -1 {
+		return "", "", fmt.Errorf("delimiter in def not found")
+	} else if idx+2 >= len(def) {
+		return "", "", fmt.Errorf("def is incomplete: missing path")
+	}
+	return def[:idx-1], def[idx+2:], nil
+}
+
+func (t *translator) serveDefKeyRefs(body []byte) (interface{}, error) {
+	// Decode the user request.
+	var defKey DefKey
+	if err := json.Unmarshal(body, &defKey); err != nil {
+		return nil, err
+	}
+	if defKey.Def == "" {
+		return nil, fmt.Errorf("Def field must be set")
+	}
+	if defKey.Repo == "" {
+		return nil, fmt.Errorf("Repo field must be set")
+	}
+
+	defRepo, defName, err := parseDefKeyString(defKey.Def)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch latest commit on HEAD if not given a specific revision.
+	if len(defKey.Commit) == 0 {
+		_, cloneURI := ResolveRepoAlias(defKey.Repo)
+		defKey.Commit, err = GetReferenceCommitID(cloneURI, "HEAD")
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Determine the root path for the workspace and prepare it.
+	rootPath, err := t.prepareWorkspace(defKey.Repo, defKey.Commit)
+	if err != nil {
+		return nil, err
+	}
+	start := time.Now()
+
+	// TODO: should probably check server capabilities before invoking symbol,
+	// but good enough for now.
+	reqSymbol := &jsonrpc2.Request{
+		Method: "workspace/symbol",
+	}
+
+	// Repositories are same indicates query local references.
+	queryType := "defkey-refs-external"
+	if defRepo == defKey.Repo {
+		queryType = "defkey-refs-internal"
+	}
+	p := lsp.WorkspaceSymbolParams{
+		// TODO(keegancsmith) this is go specific
+		Query: queryType + " " + defKey.Repo + "/...",
+	}
+	if err := reqSymbol.SetParams(p); err != nil {
+		return nil, err
+	}
+
+	var respSymbol []lsp.SymbolInformation
+	err = t.lspDo(rootPath, reqSymbol, &respSymbol)
+	defer observe(start, reqSymbol.Method, defKey.Repo, err, len(respSymbol) == 0)
+	if err != nil {
+		return nil, err
+	}
+
+	var refs []*Range
+	// TODO(keegancsmith) go specific
+	for _, s := range respSymbol {
+		pkgParts := strings.Split(s.ContainerName, "/")
+		var unit string
+		if len(pkgParts) < 3 {
+			unit = s.ContainerName
+		} else {
+			unit = strings.Join(pkgParts, "/")
+		}
+
+		// Collect out refs only from def repository and name.
+		if unit != defRepo || defName != s.Name {
+			continue
+		}
+
+		f, err := t.resolveFile(defKey.Repo, defKey.Commit, s.Location.URI)
+		if err != nil {
+			return nil, err
+		}
+
+		refs = append(refs, &Range{
+			Repo:           f.Repo,
+			Commit:         f.Commit,
+			File:           f.Path,
+			StartLine:      s.Location.Range.Start.Line,
+			EndLine:        s.Location.Range.End.Line,
+			StartCharacter: s.Location.Range.Start.Character,
+			EndCharacter:   s.Location.Range.End.Character,
+		})
+	}
+
+	return &RefLocations{Refs: refs}, nil
+}
+
 func (t *translator) serveExportedSymbols(body []byte) (interface{}, error) {
 	// Decode the user request.
 	var r RepoRev
@@ -789,7 +899,7 @@ func (t *translator) serveLocalRefs(body []byte) (interface{}, error) {
 			EndCharacter:   r.Range.End.Character,
 		})
 	}
-	return &LocalRefs{Refs: refs}, nil
+	return &RefLocations{Refs: refs}, nil
 }
 
 func (t *translator) lspDo(rootPath string, request *jsonrpc2.Request, result interface{}) error {

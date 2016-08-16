@@ -15,7 +15,7 @@ import (
 type Client interface {
 	Definition(p *langp.Position) (*langp.Range, error)
 	Hover(p *langp.Position) (*langp.Hover, error)
-	LocalRefs(p *langp.Position) (*langp.LocalRefs, error)
+	LocalRefs(p *langp.Position) (*langp.RefLocations, error)
 	Close() error
 }
 
@@ -117,7 +117,7 @@ func (c *lspClient) Hover(p *langp.Position) (*langp.Hover, error) {
 	return langp.HoverFromLSP(&hoverResp), nil
 }
 
-func (c *lspClient) LocalRefs(p *langp.Position) (*langp.LocalRefs, error) {
+func (c *lspClient) LocalRefs(p *langp.Position) (*langp.RefLocations, error) {
 	var (
 		initResp lsp.InitializeResult
 		refsResp []*lsp.Location

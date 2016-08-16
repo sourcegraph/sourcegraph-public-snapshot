@@ -309,7 +309,7 @@ func TestTranslator(t *testing.T) {
 					},
 				},
 			}},
-			WantResponse: &LocalRefs{Refs: []*Range{
+			WantResponse: &RefLocations{Refs: []*Range{
 				{
 					Repo:           "github.com/foo/bar",
 					Commit:         "deadbeef",
@@ -328,7 +328,7 @@ func TestTranslator(t *testing.T) {
 					EndCharacter:   5,
 				},
 			}},
-			Got: &LocalRefs{},
+			Got: &RefLocations{},
 		},
 	}
 

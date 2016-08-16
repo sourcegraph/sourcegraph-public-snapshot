@@ -26,7 +26,7 @@ var (
 func prepareRepo(update bool, workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
 
-	repo, cloneURI := resolveRepoAlias(repo)
+	repo, cloneURI := langp.ResolveRepoAlias(repo)
 
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
@@ -71,7 +71,7 @@ func updateGoDependencies(repoDir string, env []string, repoURI string) error {
 
 func prepareDeps(update bool, workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
-	repo, _ = resolveRepoAlias(repo)
+	repo, _ = langp.ResolveRepoAlias(repo)
 
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
@@ -87,7 +87,7 @@ func prepareDeps(update bool, workspace, repo, commit string) error {
 }
 
 func fileURI(repo, commit, file string) string {
-	repo, _ = resolveRepoAlias(repo)
+	repo, _ = langp.ResolveRepoAlias(repo)
 	return "file:///" + filepath.Join("gopath", "src", repo, file)
 }
 
@@ -150,15 +150,6 @@ func resolveFile(workspace, _, _, uri string) (*langp.File, error) {
 		Commit: commit,
 		Path:   path,
 	}, nil
-}
-
-func resolveRepoAlias(repo string) (importPath, cloneURL string) {
-	// TODO(slimsag): find a way to pass this information from the app instead
-	// of hard-coding it here.
-	if repo == "sourcegraph/sourcegraph" {
-		return "sourcegraph.com/sourcegraph/sourcegraph", "git@github.com:sourcegraph/sourcegraph"
-	}
-	return repo, "https://" + repo
 }
 
 func main() {

@@ -104,7 +104,7 @@ func (mc *MultiClient) Hover(p *Position) (*Hover, error) {
 }
 
 // LocalRefs invokes LocalRefs on the client whose language matches p.File.
-func (mc *MultiClient) LocalRefs(p *Position) (*LocalRefs, error) {
+func (mc *MultiClient) LocalRefs(p *Position) (*RefLocations, error) {
 	c, err := mc.find(p.File)
 	if err != nil {
 		return nil, err

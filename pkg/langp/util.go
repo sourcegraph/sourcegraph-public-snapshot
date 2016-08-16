@@ -1,11 +1,23 @@
 package langp
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
 )
+
+// ResolveRepoAlias returns import path and clone URI of given repository URI,
+// it takes special care to sourcegraph main repository.
+func ResolveRepoAlias(repo string) (importPath, cloneURI string) {
+	// TODO(slimsag): find a way to pass this information from the app instead
+	// of hard-coding it here.
+	if repo == "sourcegraph/sourcegraph" {
+		return "sourcegraph.com/sourcegraph/sourcegraph", "git@github.com:sourcegraph/sourcegraph"
+	}
+	return repo, "https://" + repo
+}
 
 // Cmd is a small helper which logs the command name and parameters and returns
 // a command with output going to stdout/stderr.
@@ -43,4 +55,20 @@ func Clone(update bool, cloneURI, repoDir, commit string) error {
 	c := Cmd("git", "reset", "--hard", commit)
 	c.Dir = repoDir
 	return c.Run()
+}
+
+// GetReferenceCommitID tries to fetch and return commit ID given reference
+// points to from clone URI.
+func GetReferenceCommitID(cloneURI, ref string) (string, error) {
+	stdout := bytes.NewBuffer(nil)
+	c := Cmd("git", "ls-remote", cloneURI, ref)
+	c.Stdout = stdout
+	if err := c.Run(); err != nil {
+		return "", err
+	}
+	output := stdout.String()
+	if len(output) < 40 {
+		return "", fmt.Errorf("invalid length of output: %d", len(output))
+	}
+	return output[:40], nil
 }

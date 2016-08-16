@@ -51,8 +51,8 @@ func (c *Client) Hover(p *Position) (*Hover, error) {
 }
 
 // LocalRefs resolves references to repository-local definitions.
-func (c *Client) LocalRefs(p *Position) (*LocalRefs, error) {
-	var result LocalRefs
+func (c *Client) LocalRefs(p *Position) (*RefLocations, error) {
+	var result RefLocations
 	err := c.do("local-refs", p, &result)
 	if err != nil {
 		return nil, err

@@ -20,6 +20,8 @@ func (h *Session) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbol
 	}
 	defFilter := func(_ *gogDef) bool { return false }
 	refFilter := func(_ *gogRef) bool { return false }
+	collectAllRefs := false
+	requireRefLocation := false
 	switch q.Type {
 	case "external":
 		refFilter = func(r *gogRef) bool {
@@ -29,6 +31,21 @@ func (h *Session) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbol
 		}
 	case "exported":
 		defFilter = func(d *gogDef) bool { return d.DefInfo.Exported }
+	case "defkey-refs-external":
+		refFilter = func(r *gogRef) bool {
+			local := r.Unit == r.Def.PackageImportPath
+			builtin := r.Def.PackageImportPath == "builtin"
+			return !local && !builtin
+		}
+		collectAllRefs = true
+		requireRefLocation = true
+	case "defkey-refs-internal":
+		refFilter = func(r *gogRef) bool {
+			local := r.Unit == r.Def.PackageImportPath
+			return local
+		}
+		collectAllRefs = true
+		requireRefLocation = true
 	default:
 		return nil, fmt.Errorf("unrecognized symbol query type %s", q.Type)
 	}
@@ -74,13 +91,33 @@ func (h *Session) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbol
 			continue
 		}
 		k := r.Def.PackageImportPath + "/-/" + strings.Join(r.Def.Path, "/")
-		if seenRef[k] {
-			continue
+		if !collectAllRefs {
+			if seenRef[k] {
+				continue
+			}
+			seenRef[k] = true
 		}
-		seenRef[k] = true
+
 		s := lsp.SymbolInformation{
 			Name:          strings.Join(r.Def.Path, "/"),
 			ContainerName: r.Def.PackageImportPath,
+		}
+		if requireRefLocation {
+			uri, err := h.fileURI(r.File)
+			if err != nil {
+				return nil, err
+			}
+			// TODO(keegancsmith) duplicated IO + ignoring error for
+			// convenience of packages
+			var content []byte
+			content, _ = ioutil.ReadFile(r.File)
+			s.Location = lsp.Location{
+				URI: uri,
+				Range: lsp.Range{
+					Start: offsetToPosition(content, int(r.Span[0])),
+					End:   offsetToPosition(content, int(r.Span[1])),
+				},
+			}
 		}
 		symbols = append(symbols, s)
 	}

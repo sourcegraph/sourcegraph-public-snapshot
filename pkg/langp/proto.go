@@ -116,6 +116,15 @@ type DefSpec struct {
 	Path string
 }
 
+// DefKey represents a def key and the repository uses it.
+type DefKey struct {
+	// Def is the string representation of a def key.
+	Def string
+
+	// RepoRev contains the repository URI and revision to find references.
+	RepoRev
+}
+
 // Symbol is a symbol in code.
 type Symbol struct {
 	// DefSpec is the DefSpec for this symbol.
@@ -138,8 +147,8 @@ type Symbol struct {
 	DocHTML string
 }
 
-// LocalRefs represents references to a specific definition.
-type LocalRefs struct {
+// RefLocations contains a list of locations of references to a specific definition.
+type RefLocations struct {
 	// Refs is a list of references to a definition defined within the requested
 	// repository.
 	Refs []*Range
