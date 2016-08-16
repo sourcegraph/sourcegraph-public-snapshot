@@ -3,7 +3,6 @@ package cli_test
 import (
 	"crypto/tls"
 	"flag"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -124,7 +123,7 @@ func testServer(t *testing.T) {
 
 func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 	if err := a.Start(); err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	// Test gRPC server.
