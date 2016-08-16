@@ -135,7 +135,11 @@ func NewClient(endpoint string) (*Client, error) {
 	return &Client{
 		Endpoint: u,
 		Client: &http.Client{
-			Timeout: 5 * time.Second,
+			// TODO(slimsag): Once we have proper async operations we should
+			// lower this timeout to respect those numbers. Until then, some
+			// operations (listing all refs, cloning workspaces, etc) can take
+			// quite a while and we don't want to abort the request.
+			Timeout: 60 * time.Second,
 		},
 	}, nil
 }
