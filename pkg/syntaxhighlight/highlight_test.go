@@ -41,13 +41,13 @@ func TestUnknownFormat(t *testing.T) {
 	collector := &syntaxhighlight.TokenCollectorAnnotator{}
 	syntaxhighlight.Annotate([]byte(source), &syntaxhighlight.FallbackLexer{}, collector)
 	expected := []syntaxhighlight.Token{
-		{"do", syntaxhighlight.Keyword, 0},
-		{" ", syntaxhighlight.Whitespace, 2},
-		{"bats", syntaxhighlight.Name_Other, 3},
-		{" ", syntaxhighlight.Whitespace, 7},
-		{"eat", syntaxhighlight.Name_Other, 8},
-		{" ", syntaxhighlight.Whitespace, 11},
-		{"Cats", syntaxhighlight.Keyword_Type, 12},
+		{Text: "do", Type: syntaxhighlight.Keyword, Offset: 0},
+		{Text: " ", Type: syntaxhighlight.Whitespace, Offset: 2},
+		{Text: "bats", Type: syntaxhighlight.Name_Other, Offset: 3},
+		{Text: " ", Type: syntaxhighlight.Whitespace, Offset: 7},
+		{Text: "eat", Type: syntaxhighlight.Name_Other, Offset: 8},
+		{Text: " ", Type: syntaxhighlight.Whitespace, Offset: 11},
+		{Text: "Cats", Type: syntaxhighlight.Keyword_Type, Offset: 12},
 	}
 
 	if len(collector.Tokens) != len(expected) {

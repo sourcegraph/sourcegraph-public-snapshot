@@ -26,7 +26,7 @@ func TestCollapseDuplicateEvents(t *testing.T) {
 	for _, test := range tests {
 		got := collapseDuplicateEvents(test.events)
 		if !reflect.DeepEqual(test.want, got) {
-			t.Errorf("%q: want %q, got %q", test.events, test.want, got)
+			t.Errorf("%v: want %v, got %v", test.events, test.want, got)
 		}
 	}
 

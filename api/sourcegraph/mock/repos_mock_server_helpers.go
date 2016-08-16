@@ -17,7 +17,7 @@ func (s *ReposServer) MockGet(t *testing.T, wantRepo int32) (called *bool) {
 		*called = true
 		if repo.ID != wantRepo {
 			t.Errorf("got repo %d, want %d", repo.ID, wantRepo)
-			return nil, grpc.Errorf(codes.NotFound, "repo %s not found", wantRepo)
+			return nil, grpc.Errorf(codes.NotFound, "repo %d not found", wantRepo)
 		}
 		return &sourcegraph.Repo{ID: repo.ID}, nil
 	}
@@ -30,7 +30,7 @@ func (s *ReposServer) MockGet_Path(t *testing.T, wantRepo int32, repoPath string
 		*called = true
 		if repo.ID != wantRepo {
 			t.Errorf("got repo %d, want %d", repo.ID, wantRepo)
-			return nil, grpc.Errorf(codes.NotFound, "repo %s not found", wantRepo)
+			return nil, grpc.Errorf(codes.NotFound, "repo %d not found", wantRepo)
 		}
 		return &sourcegraph.Repo{ID: repo.ID, URI: repoPath}, nil
 	}

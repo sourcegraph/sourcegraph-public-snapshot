@@ -58,7 +58,9 @@ func Main() error {
 
 	if duration > 0 {
 		log.Printf("Duration: %s", duration)
-		ctx, _ = context.WithDeadline(ctx, time.Now().Add(duration))
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithDeadline(ctx, time.Now().Add(duration))
+		defer cancel()
 	}
 
 	for {

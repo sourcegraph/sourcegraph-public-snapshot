@@ -30,7 +30,7 @@ func resolveRepoRev(ctx context.Context, repo int32, rev string) (vcs.CommitID, 
 
 	if rev == "" {
 		if repoObj.DefaultBranch == "" {
-			return "", grpc.Errorf(codes.FailedPrecondition, "repo %s has no default branch", repo)
+			return "", grpc.Errorf(codes.FailedPrecondition, "repo %d has no default branch", repo)
 		}
 		rev = repoObj.DefaultBranch
 	}

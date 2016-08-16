@@ -25,6 +25,7 @@ import (
 func serveChannelListen(w http.ResponseWriter, r *http.Request) {
 	ctx, cl := handlerutil.Client(r)
 	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	channel := mux.Vars(r)["Channel"]
 	stream, err := cl.Channel.Listen(ctx, &sourcegraph.ChannelListenOp{Channel: channel})

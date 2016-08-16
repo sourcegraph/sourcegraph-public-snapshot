@@ -96,11 +96,13 @@ func (self *HTMLAnnotator) Done() error {
 
 // Transforms token to annotation
 func (self *HTMLAnnotator) Annotate(token Token) (*annotate.Annotation, error) {
-	return &annotate.Annotation{token.Offset,
-		token.Offset + len(token.Text),
-		[]byte(`<span class="` + self.Config.GetTokenClass(token) + `">`),
-		[]byte(`</span>`),
-		0}, nil
+	return &annotate.Annotation{
+		Start:     token.Offset,
+		End:       token.Offset + len(token.Text),
+		Left:      []byte(`<span class="` + self.Config.GetTokenClass(token) + `">`),
+		Right:     []byte(`</span>`),
+		WantInner: 0,
+	}, nil
 }
 
 // Instantiates new HTML annotator object using given configuration

@@ -44,7 +44,7 @@ func run() error {
 		go debugserver.Start(*profbind)
 	}
 
-	h := &jsonrpc2.LoggingHandler{&golang.Handler{}}
+	h := &jsonrpc2.LoggingHandler{Handler: &golang.Handler{}}
 
 	switch *mode {
 	case "tcp":

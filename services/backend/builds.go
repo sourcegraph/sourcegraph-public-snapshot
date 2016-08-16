@@ -92,7 +92,7 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 	}
 
 	if op.Branch != "" && op.Tag != "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "at most one of Branch and Tag may be specified when creating a build (repo %s commit %q)", op.Repo, op.CommitID)
+		return nil, grpc.Errorf(codes.InvalidArgument, "at most one of Branch and Tag may be specified when creating a build (repo %d commit %q)", op.Repo, op.CommitID)
 	}
 
 	b := &sourcegraph.Build{

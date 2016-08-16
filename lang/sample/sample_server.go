@@ -39,7 +39,7 @@ func run() error {
 		log.SetOutput(io.MultiWriter(os.Stderr, f))
 	}
 
-	h := &jsonrpc2.LoggingHandler{handler{}}
+	h := &jsonrpc2.LoggingHandler{Handler: handler{}}
 
 	switch *mode {
 	case "tcp":

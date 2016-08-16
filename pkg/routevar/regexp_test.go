@@ -12,7 +12,7 @@ func pairs(m map[string]string) []string {
 	return pairs
 }
 
-func TestnamedToNonCapturingGroups(t *testing.T) {
+func TestNamedToNonCapturingGroups(t *testing.T) {
 	tests := []struct {
 		input string
 		want  string
