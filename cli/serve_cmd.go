@@ -427,7 +427,9 @@ func (c *ServeCmd) Execute(args []string) error {
 		var srv http.Server
 		config := srv.TLSConfig
 		if config == nil {
-			config = &tls.Config{}
+			config = &tls.Config{
+				NextProtos: []string{"h2"},
+			}
 		}
 
 		config.Certificates = []tls.Certificate{cert}
