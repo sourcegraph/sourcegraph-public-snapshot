@@ -10,7 +10,7 @@ import (
 )
 
 // TODO(keegancsmith) Find a more reliable way to get this commit
-const stdlibVersion = "da6b9ec7bf1722fa00196e1eadc10a29156b6b28" // go1.6.3
+const stdlibVersion = "0d818588685976407c81c60d2fda289361cbc8ec" // go1.7
 
 func (h *Session) filePath(uri string) string {
 	path := strings.TrimPrefix(strings.TrimPrefix(uri, "file://"), "/")
