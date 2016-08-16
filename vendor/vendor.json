@@ -1195,53 +1195,6 @@
 			"revisionTime": "2016-03-01T20:40:22Z"
 		},
 		{
-			"checksumSHA1": "+dB2Ktuve3Uzx3n2LXpAwk4UCXY=",
-			"path": "sourcegraph.com/sourcegraph/appdash",
-			"revision": "c7ed4c4910327214f2d299cf3dfe84862c205579",
-			"revisionTime": "2016-06-01T01:15:29Z"
-		},
-		{
-			"path": "sourcegraph.com/sourcegraph/appdash-data",
-			"revision": "73f23eafcf67cad684fba328dd545a116ac273ff",
-			"revisionTime": "2015-10-05T15:14:46-07:00"
-		},
-		{
-			"checksumSHA1": "ZeYUSbD7p6GJvvPf0t91NU1LMKc=",
-			"path": "sourcegraph.com/sourcegraph/appdash/httptrace",
-			"revision": "c7ed4c4910327214f2d299cf3dfe84862c205579",
-			"revisionTime": "2016-06-01T01:15:29Z"
-		},
-		{
-			"checksumSHA1": "JYGXK0rF/LoIg8jGrOlaO9OqPbI=",
-			"path": "sourcegraph.com/sourcegraph/appdash/internal/wire",
-			"revision": "c7ed4c4910327214f2d299cf3dfe84862c205579",
-			"revisionTime": "2016-06-01T01:15:29Z"
-		},
-		{
-			"checksumSHA1": "DbYAyk4lKSOp6kv7cyvHLm/OoLU=",
-			"path": "sourcegraph.com/sourcegraph/appdash/sqltrace",
-			"revision": "c7ed4c4910327214f2d299cf3dfe84862c205579",
-			"revisionTime": "2016-06-01T01:15:29Z"
-		},
-		{
-			"checksumSHA1": "RBgld2k488YKnGmhOoBuvmRzMB4=",
-			"path": "sourcegraph.com/sourcegraph/appdash/traceapp",
-			"revision": "c7ed4c4910327214f2d299cf3dfe84862c205579",
-			"revisionTime": "2016-06-01T01:15:29Z"
-		},
-		{
-			"checksumSHA1": "dHwcL1aZyP4ad+dYmHjtQZaz9MA=",
-			"path": "sourcegraph.com/sourcegraph/appdash/traceapp/tmpl",
-			"revision": "c7ed4c4910327214f2d299cf3dfe84862c205579",
-			"revisionTime": "2016-06-01T01:15:29Z"
-		},
-		{
-			"checksumSHA1": "/tWZ3jZTZAqhlTnxexo/5w9WymU=",
-			"path": "sourcegraph.com/sourcegraph/appdash/x/influxdbstore",
-			"revision": "c7ed4c4910327214f2d299cf3dfe84862c205579",
-			"revisionTime": "2016-06-01T01:15:29Z"
-		},
-		{
 			"checksumSHA1": "tdG6SHGiaP32dzPT1dPFDazTs9g=",
 			"path": "sourcegraph.com/sourcegraph/gen-mocks",
 			"revision": "f796f89ae7a552c8c2ff5bf21c23f1cc78231820",
