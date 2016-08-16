@@ -3,7 +3,7 @@ package rcache
 import (
 	"testing"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 func TestTryAcquireMutex(t *testing.T) {

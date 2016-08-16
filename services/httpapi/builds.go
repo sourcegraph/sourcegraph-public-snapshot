@@ -8,7 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"

@@ -1,7 +1,8 @@
 package store
 
 import (
-	"golang.org/x/net/context"
+	"context"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 )

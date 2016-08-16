@@ -1,7 +1,7 @@
 package events
 
 import (
-	"golang.org/x/net/context"
+	"context"
 )
 
 // EventListeners can subscribe to events and perform gRPC operations in

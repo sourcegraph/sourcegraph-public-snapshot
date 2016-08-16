@@ -1,7 +1,8 @@
 package pb
 
 import (
-	"golang.org/x/net/context"
+	"context"
+
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/unit"

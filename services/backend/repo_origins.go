@@ -4,7 +4,8 @@ import (
 	"strconv"
 	"time"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"

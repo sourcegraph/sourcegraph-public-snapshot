@@ -3,7 +3,8 @@
 package mockstore
 
 import (
-	"golang.org/x/net/context"
+	"context"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 

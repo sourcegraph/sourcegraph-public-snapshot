@@ -1,8 +1,9 @@
 package github
 
 import (
+	"context"
+
 	"github.com/sourcegraph/go-github/github"
-	"golang.org/x/net/context"
 )
 
 func testContext(client *minimalClient) context.Context {

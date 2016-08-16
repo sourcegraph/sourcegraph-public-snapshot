@@ -6,7 +6,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"google.golang.org/grpc/metadata"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"

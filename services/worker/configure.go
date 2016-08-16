@@ -7,10 +7,11 @@ import (
 	"path"
 	"strings"
 
+	"context"
+
 	droneexec "github.com/drone/drone-exec/exec"
 	"github.com/drone/drone-plugin-go/plugin"
 	"github.com/whilp/git-urls"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"

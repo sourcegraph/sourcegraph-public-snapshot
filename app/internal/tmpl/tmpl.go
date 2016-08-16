@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/gorilla/mux"
 	"github.com/justinas/nosurf"

@@ -3,7 +3,7 @@ package github
 import (
 	"fmt"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 type Authorizations struct{}

@@ -7,7 +7,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/mock"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 func TestBuildCleanup(t *testing.T) {

@@ -6,7 +6,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"

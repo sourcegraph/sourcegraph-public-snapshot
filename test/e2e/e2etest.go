@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"sourcegraph.com/sourcegraph/go-selenium"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"

@@ -11,11 +11,12 @@ import (
 	"strings"
 	"sync"
 
+	"context"
+
 	droneexec "github.com/drone/drone-exec/exec"
 	droneparser "github.com/drone/drone-exec/parser"
 	dronerunner "github.com/drone/drone-exec/runner"
 	"github.com/drone/drone/yaml/matrix"
-	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker/plan"

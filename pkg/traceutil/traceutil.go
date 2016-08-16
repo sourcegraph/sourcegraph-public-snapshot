@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"os"
 
+	"context"
+
 	gcontext "github.com/gorilla/context"
-	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil/appdashctx"

@@ -22,11 +22,12 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
+	"context"
+
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/soheilhy/cmux"
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

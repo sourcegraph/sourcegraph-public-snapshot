@@ -11,8 +11,9 @@ package appengine // import "google.golang.org/appengine"
 import (
 	"net/http"
 
+	"context"
+
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"google.golang.org/appengine/internal"
 )

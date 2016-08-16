@@ -14,7 +14,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/jwt"
 	"google.golang.org/cloud/compute/metadata"

@@ -18,9 +18,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
 
+	"context"
+
 	"github.com/sourcegraph/go-github/github"
 	"github.com/sourcegraph/httpcache"
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 )
 

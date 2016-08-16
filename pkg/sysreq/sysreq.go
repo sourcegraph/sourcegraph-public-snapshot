@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 // Status describes the status of a system requirement.

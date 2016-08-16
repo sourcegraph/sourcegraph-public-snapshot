@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"

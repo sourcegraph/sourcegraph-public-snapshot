@@ -8,8 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"context"
+
 	"github.com/gorilla/mux"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"

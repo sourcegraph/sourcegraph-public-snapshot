@@ -12,7 +12,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
 

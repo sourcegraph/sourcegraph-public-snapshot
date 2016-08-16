@@ -3,8 +3,9 @@ package testing
 import (
 	"os"
 
+	"context"
+
 	"github.com/AaronO/go-git-http"
-	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitproto"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"

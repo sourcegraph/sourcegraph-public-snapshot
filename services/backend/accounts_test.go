@@ -13,7 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 func TestCreate(t *testing.T) {

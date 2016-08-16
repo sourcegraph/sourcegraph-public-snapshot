@@ -11,7 +11,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 const skipSysReqsEnvVar = "SRC_SKIP_REQS"

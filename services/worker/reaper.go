@@ -9,7 +9,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 // buildReaper periodically removes builds that have not sent a

@@ -1,7 +1,8 @@
 package backend
 
 import (
-	"golang.org/x/net/context"
+	"context"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"

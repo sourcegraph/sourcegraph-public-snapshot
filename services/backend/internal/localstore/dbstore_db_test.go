@@ -3,7 +3,8 @@ package localstore
 import (
 	"net/url"
 
-	"golang.org/x/net/context"
+	"context"
+
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"

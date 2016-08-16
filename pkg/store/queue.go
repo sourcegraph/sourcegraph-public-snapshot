@@ -3,7 +3,7 @@ package store
 import (
 	"time"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 // Queue pushes and dequeues jobs. Note: we don't dequeue a job directly,

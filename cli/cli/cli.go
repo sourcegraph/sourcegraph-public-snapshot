@@ -4,7 +4,8 @@ package cli
 import (
 	"net/http"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"sourcegraph.com/sourcegraph/go-flags"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 )

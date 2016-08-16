@@ -5,7 +5,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"

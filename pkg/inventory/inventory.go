@@ -9,8 +9,9 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 
+	"context"
+
 	"github.com/kr/fs"
-	"golang.org/x/net/context"
 )
 
 // Scan performs an inventory of the tree at fs.

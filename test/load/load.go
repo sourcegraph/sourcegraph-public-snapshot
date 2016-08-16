@@ -14,7 +14,7 @@ import (
 
 	vegeta "github.com/tsenart/vegeta/lib"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 // LoadTest can Run an individual load test

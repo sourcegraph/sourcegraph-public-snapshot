@@ -6,7 +6,8 @@ import (
 
 	"gopkg.in/gorp.v1"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 

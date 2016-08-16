@@ -5,8 +5,9 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
+	"context"
+
 	"github.com/lib/pq"
-	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )

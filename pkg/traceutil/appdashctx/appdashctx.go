@@ -12,7 +12,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/appdash"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 type contextKey int

@@ -4,7 +4,7 @@
 
 package internal
 
-import netcontext "golang.org/x/net/context"
+import netcontext "context"
 
 // These functions are implementations of the wrapper functions
 // in ../appengine/identity.go. See that file for commentary.

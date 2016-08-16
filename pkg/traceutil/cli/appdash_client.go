@@ -8,7 +8,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/appdash"
 	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"

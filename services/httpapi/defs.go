@@ -3,7 +3,7 @@ package httpapi
 import (
 	"net/http"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"

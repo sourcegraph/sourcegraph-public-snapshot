@@ -5,8 +5,9 @@ import (
 	"sort"
 	"strings"
 
+	"context"
+
 	"github.com/cznic/mathutil"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 

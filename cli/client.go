@@ -8,7 +8,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/userauth"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"golang.org/x/oauth2"
 )
 

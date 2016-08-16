@@ -3,7 +3,8 @@ package localstore
 import (
 	"database/sql"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"gopkg.in/gorp.v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"

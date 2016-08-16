@@ -3,7 +3,7 @@
 package sysreq
 
 import (
-	"golang.org/x/net/context"
+	"context"
 )
 
 func rlimitCheck(ctx context.Context) (problem, fix string, err error) {

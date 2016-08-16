@@ -10,7 +10,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"golang.org/x/tools/godoc/vfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"

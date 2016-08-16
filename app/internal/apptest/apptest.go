@@ -12,8 +12,9 @@ package apptest
 import (
 	"net/url"
 
+	"context"
+
 	"github.com/gorilla/mux"
-	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"

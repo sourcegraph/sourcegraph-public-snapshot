@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/drone/drone-exec/docker"
 	"github.com/drone/drone-exec/parser"

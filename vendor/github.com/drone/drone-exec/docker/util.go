@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"golang.org/x/net/context"
+	"context"
 	// "strings"
 
 	log "github.com/Sirupsen/logrus"

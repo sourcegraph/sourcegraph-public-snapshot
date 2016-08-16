@@ -15,7 +15,8 @@ package mock
 import (
 	"testing"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 

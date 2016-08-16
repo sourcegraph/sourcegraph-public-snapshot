@@ -12,7 +12,8 @@ import (
 
 	"github.com/neelance/parallel"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	annotationspkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/annotations"

@@ -6,7 +6,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 var debug bool

@@ -5,8 +5,9 @@
 package internal
 
 import (
+	netcontext "context"
+
 	"github.com/golang/protobuf/proto"
-	netcontext "golang.org/x/net/context"
 )
 
 type CallOverrideFunc func(ctx netcontext.Context, service, method string, in, out proto.Message) error

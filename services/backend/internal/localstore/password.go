@@ -7,8 +7,9 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
+	"context"
+
 	"golang.org/x/crypto/bcrypt"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/clock"

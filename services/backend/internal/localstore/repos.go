@@ -9,10 +9,11 @@ import (
 	"strings"
 	"time"
 
+	"context"
+
 	"github.com/lib/pq"
 	"github.com/neelance/parallel"
 	gogithub "github.com/sourcegraph/go-github/github"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/gorp.v1"

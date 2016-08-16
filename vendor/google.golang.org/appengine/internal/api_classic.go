@@ -15,8 +15,9 @@ import (
 	"appengine_internal"
 	basepb "appengine_internal/base"
 
+	netcontext "context"
+
 	"github.com/golang/protobuf/proto"
-	netcontext "golang.org/x/net/context"
 )
 
 var contextKey = "holds an appengine.Context"

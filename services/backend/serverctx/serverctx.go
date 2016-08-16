@@ -4,7 +4,7 @@
 // config, auth, etc.).
 package serverctx
 
-import "golang.org/x/net/context"
+import "context"
 
 // Funcs are called to alter the ctx before responding to gRPC method
 // calls. These funcs may not rely on any other values to be set in

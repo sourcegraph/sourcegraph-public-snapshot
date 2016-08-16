@@ -3,9 +3,9 @@
 package mockstore
 
 import (
+	"context"
 	"time"
 
-	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )

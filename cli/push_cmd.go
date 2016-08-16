@@ -6,7 +6,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"

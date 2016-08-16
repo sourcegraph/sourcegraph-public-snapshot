@@ -11,7 +11,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/test/load"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 func main() {

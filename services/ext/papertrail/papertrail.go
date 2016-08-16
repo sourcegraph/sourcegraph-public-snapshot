@@ -8,8 +8,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 
+	"context"
+
 	"github.com/sourcegraph/go-papertrail/papertrail"
-	"golang.org/x/net/context"
 )
 
 var (

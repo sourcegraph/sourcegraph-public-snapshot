@@ -13,7 +13,7 @@
 package store
 
 import (
-	"golang.org/x/net/context"
+	"context"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 

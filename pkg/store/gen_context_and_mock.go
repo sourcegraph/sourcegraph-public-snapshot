@@ -151,7 +151,7 @@ func writeStores(ifaces []*ast.TypeSpec, outPkgName string) ([]byte, error) {
 	fmt.Fprint(&w, "package ", outPkgName, "\n")
 	fmt.Fprintln(&w)
 	fmt.Fprintln(&w, "import (")
-	fmt.Fprint(&w, "\t", `"golang.org/x/net/context"`, "\n")
+	fmt.Fprint(&w, "\t", `"context"`, "\n")
 	fmt.Fprint(&w, "\t", `srcstore "sourcegraph.com/sourcegraph/srclib/store"`, "\n")
 	fmt.Fprintln(&w, ")")
 	fmt.Fprintln(&w)

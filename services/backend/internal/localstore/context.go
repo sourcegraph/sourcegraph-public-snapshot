@@ -1,7 +1,8 @@
 package localstore
 
 import (
-	"golang.org/x/net/context"
+	"context"
+
 	"gopkg.in/gorp.v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )

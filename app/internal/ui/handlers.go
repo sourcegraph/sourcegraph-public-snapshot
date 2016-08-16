@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/gorilla/mux"
 

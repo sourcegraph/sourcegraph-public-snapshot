@@ -7,7 +7,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 func buildCleanup(ctx context.Context, activeBuilds *activeBuilds) {

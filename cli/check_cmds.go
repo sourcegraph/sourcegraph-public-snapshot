@@ -9,9 +9,10 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
+	"context"
+
 	droneexec "github.com/drone/drone-exec/exec"
 	"github.com/drone/drone-plugin-go/plugin"
-	"golang.org/x/net/context"
 	"golang.org/x/tools/godoc/vfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 

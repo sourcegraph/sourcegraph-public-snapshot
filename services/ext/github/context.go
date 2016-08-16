@@ -3,8 +3,9 @@ package github
 import (
 	"strings"
 
+	"context"
+
 	"github.com/sourcegraph/go-github/github"
-	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"

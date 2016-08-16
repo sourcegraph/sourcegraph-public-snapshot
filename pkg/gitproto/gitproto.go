@@ -3,8 +3,9 @@
 package gitproto
 
 import (
+	"context"
+
 	githttp "github.com/AaronO/go-git-http"
-	"golang.org/x/net/context"
 )
 
 const (

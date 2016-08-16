@@ -6,8 +6,9 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitproto"
 
+	"context"
+
 	"github.com/AaronO/go-git-http"
-	"golang.org/x/net/context"
 )
 
 // RepoNotExistError is an error that reports a repository doesn't exist.

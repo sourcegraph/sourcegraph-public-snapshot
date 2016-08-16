@@ -6,7 +6,8 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

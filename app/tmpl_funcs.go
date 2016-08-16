@@ -6,7 +6,7 @@ import (
 	htmpl "html/template"
 	"net/url"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"sourcegraph.com/sourcegraph/appdash"
 

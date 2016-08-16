@@ -1,6 +1,6 @@
 package store
 
-import "golang.org/x/net/context"
+import "context"
 
 // Channel defines the interface for a simple interprocess
 // communication channel, implemented by PostgreSQL's LISTEN/NOTIFY

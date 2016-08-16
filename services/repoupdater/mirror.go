@@ -7,7 +7,8 @@ import (
 
 	"github.com/jpillora/backoff"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"

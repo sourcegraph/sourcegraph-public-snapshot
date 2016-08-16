@@ -4,8 +4,9 @@ import (
 	"crypto/tls"
 	"os"
 
+	"context"
+
 	"github.com/samalba/dockerclient"
-	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 )
 

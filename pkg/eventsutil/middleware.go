@@ -4,7 +4,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 )
 

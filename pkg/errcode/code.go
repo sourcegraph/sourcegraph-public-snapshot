@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"strings"
 

@@ -3,7 +3,8 @@ package localstore
 import (
 	"testing"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 

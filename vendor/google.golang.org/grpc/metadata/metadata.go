@@ -39,7 +39,7 @@ import (
 	"fmt"
 	"strings"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 const (

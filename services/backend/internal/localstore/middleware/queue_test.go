@@ -7,7 +7,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 )

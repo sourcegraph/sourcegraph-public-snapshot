@@ -23,8 +23,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	netcontext "context"
+
 	"github.com/golang/protobuf/proto"
-	netcontext "golang.org/x/net/context"
 
 	basepb "google.golang.org/appengine/internal/base"
 	logpb "google.golang.org/appengine/internal/log"

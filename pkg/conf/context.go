@@ -3,7 +3,7 @@ package conf
 import (
 	"net/url"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 type contextKey int

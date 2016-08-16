@@ -7,7 +7,8 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"

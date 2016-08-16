@@ -25,7 +25,8 @@ import graph3 "sourcegraph.com/sourcegraph/srclib/graph"
 import pbtypes "sourcegraph.com/sqs/pbtypes"
 
 import (
-	context "golang.org/x/net/context"
+	context "context"
+
 	grpc "google.golang.org/grpc"
 )
 

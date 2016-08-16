@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
 	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"

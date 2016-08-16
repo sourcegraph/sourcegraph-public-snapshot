@@ -1,6 +1,6 @@
 package store
 
-import "golang.org/x/net/context"
+import "context"
 
 // Password defines the interface for checking, changing and resetting
 // user passwords. It must be implemented by the Sourcegraph mothership.

@@ -9,8 +9,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitproto"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 
+	"context"
+
 	githttp "github.com/AaronO/go-git-http"
-	"golang.org/x/net/context"
 )
 
 func (r *Repository) ReceivePack(ctx context.Context, data []byte, opt gitproto.TransportOpt) ([]byte, []githttp.Event, error) {

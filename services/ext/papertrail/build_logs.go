@@ -5,9 +5,10 @@ import (
 	"log"
 	"time"
 
+	"context"
+
 	"github.com/jpillora/backoff"
 	"github.com/sourcegraph/go-papertrail/papertrail"
-	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"

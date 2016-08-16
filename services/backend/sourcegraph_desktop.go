@@ -1,8 +1,9 @@
 package backend
 
 import (
-	"golang.org/x/net/context"
+	"context"
 	"net/http"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 

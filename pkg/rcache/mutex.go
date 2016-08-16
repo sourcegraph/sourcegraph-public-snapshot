@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"time"
 
+	"context"
+
 	"github.com/garyburd/redigo/redis"
 	"github.com/hjr265/redsync.go/redsync"
-	"golang.org/x/net/context"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

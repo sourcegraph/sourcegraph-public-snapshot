@@ -14,7 +14,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/rwvfs"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"golang.org/x/oauth2/google"
 	"golang.org/x/tools/godoc/vfs"
 	"google.golang.org/api/googleapi"

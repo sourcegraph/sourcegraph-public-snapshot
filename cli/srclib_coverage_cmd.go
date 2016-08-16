@@ -13,9 +13,10 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
+	"context"
+
 	"github.com/gorilla/mux"
 	"github.com/neelance/parallel"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 

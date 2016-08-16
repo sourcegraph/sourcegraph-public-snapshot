@@ -5,7 +5,8 @@ package sysreq
 import (
 	"fmt"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"golang.org/x/sys/unix"
 )
 

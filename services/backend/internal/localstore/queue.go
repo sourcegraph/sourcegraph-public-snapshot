@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"context"
+
 	"github.com/keegancsmith/que-go"
-	"golang.org/x/net/context"
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"

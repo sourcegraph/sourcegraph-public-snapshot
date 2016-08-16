@@ -6,7 +6,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 func (s *Queue) MockEnqueue(t *testing.T, wantJob *store.Job) (called *bool) {

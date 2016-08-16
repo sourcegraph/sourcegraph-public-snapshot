@@ -3,8 +3,9 @@ package middleware
 import (
 	"sync"
 
+	"context"
+
 	"github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )

@@ -4,7 +4,7 @@ import (
 	"github.com/AaronO/go-git-http"
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"

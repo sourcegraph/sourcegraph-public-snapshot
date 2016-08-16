@@ -1,7 +1,8 @@
 package backend
 
 import (
-	"golang.org/x/net/context"
+	"context"
+
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 )
 

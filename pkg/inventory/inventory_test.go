@@ -8,7 +8,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/mapfs"
 )
