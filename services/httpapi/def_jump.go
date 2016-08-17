@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -39,7 +40,7 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 	}{}
 
 	if feature.IsUniverseRepo(repo.URI) {
-		defRange, err := langp.DefaultClient.Definition(&langp.Position{
+		defKey, err := langp.DefaultClient.PositionToDefKey(&langp.Position{
 			Repo:      repo.URI,
 			Commit:    repoRev.CommitID,
 			File:      file,
@@ -49,8 +50,12 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
-		// We increment the line number by 1 because the blob view is not zero-indexed.
-		response.Path = router.Rel.URLToBlob(defRange.Repo, defRange.Commit, defRange.File, defRange.StartLine+1).String()
+
+		rev := ""
+		if repoRev.CommitID != "" {
+			rev = "@" + repoRev.CommitID
+		}
+		response.Path = fmt.Sprintf("/%s%s/-/def/%s", repo.URI, rev, defKey.Def)
 		return writeJSON(w, response)
 	}
 

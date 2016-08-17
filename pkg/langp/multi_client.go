@@ -85,6 +85,31 @@ func (mc *MultiClient) find(filename string) (*Client, error) {
 	return nil, fmt.Errorf("MultiClient: no client registered for extension %q (did you set SG_LANGUAGE_PROCESSOR_<lang> ?)", filepath.Ext(filename))
 }
 
+// PositionToDefKey invokes PositionToDefKey on the client whose language matches
+// p.File.
+func (mc *MultiClient) PositionToDefKey(p *Position) (*DefKey, error) {
+	c, err := mc.find(p.File)
+	if err != nil {
+		return nil, err
+	}
+	return c.PositionToDefKey(p)
+}
+
+// DefKeyToPosition invokes DefKeyToPosition on the client whose language matches
+// the given key.
+func (mc *MultiClient) DefKeyToPosition(k *DefKey) (*Position, error) {
+	// TODO: Go-specific
+	var lang string
+	if strings.HasPrefix(k.Def, "GoPackage/") {
+		lang = "Go"
+	}
+	client, ok := mc.Clients[lang]
+	if ok {
+		return client.DefKeyToPosition(k)
+	}
+	return nil, fmt.Errorf("MultiClient: no client registered for defkey %q (did you set SG_LANGUAGE_PROCESSOR_<lang> ?)", k.Def)
+}
+
 // Definition invokes Definition on the client whose language matches p.File.
 func (mc *MultiClient) Definition(p *Position) (*Range, error) {
 	c, err := mc.find(p.File)
