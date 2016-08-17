@@ -85,29 +85,30 @@ func (mc *MultiClient) find(filename string) (*Client, error) {
 	return nil, fmt.Errorf("MultiClient: no client registered for extension %q (did you set SG_LANGUAGE_PROCESSOR_<lang> ?)", filepath.Ext(filename))
 }
 
-// PositionToDefKey invokes PositionToDefKey on the client whose language matches
+// PositionToDefSpec invokes PositionToDefSpec on the client whose language matches
 // p.File.
-func (mc *MultiClient) PositionToDefKey(p *Position) (*DefKey, error) {
+func (mc *MultiClient) PositionToDefSpec(p *Position) (*DefSpec, error) {
 	c, err := mc.find(p.File)
 	if err != nil {
 		return nil, err
 	}
-	return c.PositionToDefKey(p)
+	return c.PositionToDefSpec(p)
 }
 
-// DefKeyToPosition invokes DefKeyToPosition on the client whose language matches
+// DefSpecToPosition invokes DefSpecToPosition on the client whose language matches
 // the given key.
-func (mc *MultiClient) DefKeyToPosition(k *DefKey) (*Position, error) {
+func (mc *MultiClient) DefSpecToPosition(k *DefSpec) (*Position, error) {
 	// TODO: Go-specific
 	var lang string
-	if strings.HasPrefix(k.Def, "GoPackage/") {
+	switch k.UnitType {
+	case "GoPackage":
 		lang = "Go"
 	}
 	client, ok := mc.Clients[lang]
 	if ok {
-		return client.DefKeyToPosition(k)
+		return client.DefSpecToPosition(k)
 	}
-	return nil, fmt.Errorf("MultiClient: no client registered for defkey %q (did you set SG_LANGUAGE_PROCESSOR_<lang> ?)", k.Def)
+	return nil, fmt.Errorf("MultiClient: no client registered for defkey %q (did you set SG_LANGUAGE_PROCESSOR_<lang> ?)", k.UnitType)
 }
 
 // Definition invokes Definition on the client whose language matches p.File.
@@ -137,11 +138,11 @@ func (mc *MultiClient) LocalRefs(p *Position) (*RefLocations, error) {
 	return c.LocalRefs(p)
 }
 
-// DefKeyRefs invokes DefKeyRefs on the client whose language matches p.File.
-func (mc *MultiClient) DefKeyRefs(k *DefKey) (*RefLocations, error) {
+// DefSpecRefs invokes DefSpecRefs on the client whose language matches p.File.
+func (mc *MultiClient) DefSpecRefs(k *DefSpec) (*RefLocations, error) {
 	result := &RefLocations{}
 	for _, c := range mc.Clients {
-		v, err := c.DefKeyRefs(k)
+		v, err := c.DefSpecRefs(k)
 		if err != nil {
 			return nil, err
 		}

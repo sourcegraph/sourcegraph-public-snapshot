@@ -28,20 +28,20 @@ func (c *Client) Prepare(r *RepoRev) error {
 	return c.do("prepare", r, nil)
 }
 
-// PositionToDefKey returns the DefKey for the given position.
-func (c *Client) PositionToDefKey(p *Position) (*DefKey, error) {
-	var result DefKey
-	err := c.do("position-to-defkey", p, &result)
+// PositionToDefSpec returns the DefSpec for the given position.
+func (c *Client) PositionToDefSpec(p *Position) (*DefSpec, error) {
+	var result DefSpec
+	err := c.do("position-to-defspec", p, &result)
 	if err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-// DefKeyToPosition returns the position of the given DefKey.
-func (c *Client) DefKeyToPosition(k *DefKey) (*Position, error) {
+// DefSpecToPosition returns the position of the given DefSpec.
+func (c *Client) DefSpecToPosition(k *DefSpec) (*Position, error) {
 	var result Position
-	err := c.do("defkey-to-position", k, &result)
+	err := c.do("defspec-to-position", k, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -80,10 +80,10 @@ func (c *Client) LocalRefs(p *Position) (*RefLocations, error) {
 	return &result, nil
 }
 
-// DefKeyRefs resolves references to repository definitions.
-func (c *Client) DefKeyRefs(k *DefKey) (*RefLocations, error) {
+// DefSpecRefs resolves references to repository definitions.
+func (c *Client) DefSpecRefs(k *DefSpec) (*RefLocations, error) {
 	var result RefLocations
-	err := c.do("defkey-refs", k, &result)
+	err := c.do("defspec-refs", k, &result)
 	if err != nil {
 		return nil, err
 	}

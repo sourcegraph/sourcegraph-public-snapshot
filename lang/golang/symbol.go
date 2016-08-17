@@ -31,7 +31,7 @@ func (h *Session) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbol
 		}
 	case "exported":
 		defFilter = func(d *gogDef) bool { return d.DefInfo.Exported }
-	case "defkey-refs-external":
+	case "defspec-refs-external":
 		refFilter = func(r *gogRef) bool {
 			local := r.Unit == r.Def.PackageImportPath
 			builtin := r.Def.PackageImportPath == "builtin"
@@ -39,7 +39,7 @@ func (h *Session) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbol
 		}
 		collectAllRefs = true
 		requireRefLocation = true
-	case "defkey-refs-internal":
+	case "defspec-refs-internal":
 		refFilter = func(r *gogRef) bool {
 			local := r.Unit == r.Def.PackageImportPath
 			return local

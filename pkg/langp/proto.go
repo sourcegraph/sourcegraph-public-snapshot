@@ -1,6 +1,10 @@
 package langp
 
-import "sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+import (
+	"fmt"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+)
 
 // Error is returned in the event of any request error, in addition to the HTTP
 // status 400 Bad Request.
@@ -116,13 +120,18 @@ type DefSpec struct {
 	Path string
 }
 
-// DefKey represents a def key and the repository uses it.
-type DefKey struct {
-	// Def is the string representation of a def key.
-	Def string
+// String returns complete string representation of DefSpec.
+func (d DefSpec) String() string {
+	var rev string
+	if d.Commit != "" {
+		rev = "@" + d.Commit
+	}
+	return fmt.Sprintf("%s/%s%s/-/%s", d.UnitType, d.Unit, rev, d.Path)
+}
 
-	// RepoRev contains the repository URI and revision to find references.
-	RepoRev
+// DefString returns partial string representation without revision of DefSpec.
+func (d DefSpec) DefString() string {
+	return fmt.Sprintf("%s/%s/-/%s", d.UnitType, d.Unit, d.Path)
 }
 
 // Symbol is a symbol in code.

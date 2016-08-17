@@ -127,9 +127,9 @@ func New(opts *Translator) http.Handler {
 	mux.Handle("/definition", t.handler("/definition", t.serveDefinition))
 	mux.Handle("/exported-symbols", t.handler("/exported-symbols", t.serveExportedSymbols))
 	mux.Handle("/external-refs", t.handler("/external-refs", t.serveExternalRefs))
-	mux.Handle("/position-to-defkey", t.handler("/position-to-defkey", t.servePositionToDefKey))
-	mux.Handle("/defkey-to-position", t.handler("/defkey-to-position", t.serveDefKeyToPosition))
-	mux.Handle("/defkey-refs", t.handler("/defkey-refs", t.serveDefKeyRefs))
+	mux.Handle("/position-to-defspec", t.handler("/position-to-defspec", t.servePositionToDefSpec))
+	mux.Handle("/defspec-to-position", t.handler("/defspec-to-position", t.serveDefSpecToPosition))
+	mux.Handle("/defspec-refs", t.handler("/defspec-refs", t.serveDefSpecRefs))
 	mux.Handle("/hover", t.handler("/hover", t.serveHover))
 	mux.Handle("/local-refs", t.handler("/local-refs", t.serveLocalRefs))
 	return mux
@@ -663,21 +663,7 @@ func (t *translator) serveExternalRefs(body []byte) (interface{}, error) {
 	return &ExternalRefs{Defs: defs}, nil
 }
 
-// parseDefKeyString extracts repo and name information from a def key
-// string representation.
-func parseDefKeyString(def string) (string, string, error) {
-	// TODO: go specific
-	def = strings.TrimPrefix(def, "GoPackage/")
-	idx := strings.Index(def, "-")
-	if idx == -1 {
-		return "", "", fmt.Errorf("delimiter in def not found")
-	} else if idx+2 >= len(def) {
-		return "", "", fmt.Errorf("def is incomplete: missing path")
-	}
-	return def[:idx-1], def[idx+2:], nil
-}
-
-func (t *translator) servePositionToDefKey(body []byte) (interface{}, error) {
+func (t *translator) servePositionToDefSpec(body []byte) (interface{}, error) {
 	// Decode the user request.
 	var pos Position
 	if err := json.Unmarshal(body, &pos); err != nil {
@@ -709,7 +695,7 @@ func (t *translator) servePositionToDefKey(body []byte) (interface{}, error) {
 	// Repositories are same indicates query local references.
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
-		Query: "defkey-refs-internal " + pos.Repo + "/...",
+		Query: "defspec-refs-internal " + pos.Repo + "/...",
 	}
 	if err := reqSymbol.SetParams(p); err != nil {
 		return nil, err
@@ -755,41 +741,43 @@ func (t *translator) servePositionToDefKey(body []byte) (interface{}, error) {
 		} else {
 			unit = strings.Join(pkgParts, "/")
 		}
-		return &DefKey{
-			Def: fmt.Sprintf("GoPackage/%s/-/%s", unit, s.Name),
-			RepoRev: RepoRev{
-				Repo:   pos.Repo,
-				Commit: pos.Commit,
-			},
+		// TODO: Go-specific
+		return &DefSpec{
+			Repo:     pos.Repo,
+			Commit:   pos.Commit,
+			Unit:     unit,
+			UnitType: "GoPackage",
+			Path:     s.Name,
 		}, nil
 	}
 	// TODO: formalize not-found errors
 	return nil, errors.New("def key for position not found")
 }
 
-func (t *translator) serveDefKeyToPosition(body []byte) (interface{}, error) {
+func (t *translator) serveDefSpecToPosition(body []byte) (interface{}, error) {
 	// Decode the user request.
-	var defKey DefKey
-	if err := json.Unmarshal(body, &defKey); err != nil {
+	var defSpec DefSpec
+	if err := json.Unmarshal(body, &defSpec); err != nil {
 		return nil, err
 	}
-	if defKey.Def == "" {
-		return nil, fmt.Errorf("Def field must be set")
-	}
-	if defKey.Repo == "" {
+	if defSpec.Repo == "" {
 		return nil, fmt.Errorf("Repo field must be set")
 	}
-	if defKey.Commit == "" {
+	if defSpec.Commit == "" {
 		return nil, fmt.Errorf("Commit field must be set")
 	}
-
-	defRepo, defName, err := parseDefKeyString(defKey.Def)
-	if err != nil {
-		return nil, err
+	if defSpec.Unit == "" {
+		return nil, fmt.Errorf("Unit field must be set")
+	}
+	if defSpec.UnitType == "" {
+		return nil, fmt.Errorf("UnitType field must be set")
+	}
+	if defSpec.Path == "" {
+		return nil, fmt.Errorf("Path field must be set")
 	}
 
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.prepareWorkspace(defKey.Repo, defKey.Commit)
+	rootPath, err := t.prepareWorkspace(defSpec.Repo, defSpec.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -803,7 +791,7 @@ func (t *translator) serveDefKeyToPosition(body []byte) (interface{}, error) {
 
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
-		Query: "defkey-refs-internal " + defKey.Repo + "/...",
+		Query: "defspec-refs-internal " + defSpec.Repo + "/...",
 	}
 	if err := reqSymbol.SetParams(p); err != nil {
 		return nil, err
@@ -812,7 +800,7 @@ func (t *translator) serveDefKeyToPosition(body []byte) (interface{}, error) {
 	// TODO(slimsag): cache symbol information for quicker access
 	var respSymbol []lsp.SymbolInformation
 	err = t.lspDo(rootPath, reqSymbol, &respSymbol)
-	defer observe(start, reqSymbol.Method, defKey.Repo, err, len(respSymbol) == 0)
+	defer observe(start, reqSymbol.Method, defSpec.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -826,19 +814,19 @@ func (t *translator) serveDefKeyToPosition(body []byte) (interface{}, error) {
 			unit = strings.Join(pkgParts, "/")
 		}
 
-		// Collect out refs only from def repository and name.
-		if unit != defRepo || defName != s.Name {
+		// Collect out refs only from def unit and name.
+		if unit != defSpec.Unit || s.Name != defSpec.Path {
 			continue
 		}
 
 		// TODO(slimsag): how do we handle def keys that map to multiple identical
 		// positions? e.g. see the results for:
 		//
-		// 	curl -s -H "Content-Type: application/json" -X POST -d '{"Repo":"github.com/slimsag/mux","Commit":"780415097119f6f61c55475fe59b66f3c3e9ea53","Def":"GoPackage/github.com/slimsag/mux/-/Router/Match"}' http://localhost:4141/defkey-to-position
+		// 	curl -s -H "Content-Type: application/json" -X POST -d '{"Repo":"github.com/slimsag/mux","Commit":"780415097119f6f61c55475fe59b66f3c3e9ea53","Def":"GoPackage/github.com/slimsag/mux/-/Router/Match"}' http://localhost:4141/defspec-to-position
 		//
 		// Right now we assume the first one is right, but this is likely to fail
 		// in some cases? Maybe we should have a count/index as part of the key.
-		f, err := t.resolveFile(defKey.Repo, defKey.Commit, s.Location.URI)
+		f, err := t.resolveFile(defSpec.Repo, defSpec.Commit, s.Location.URI)
 		if err != nil {
 			return nil, err
 		}
@@ -854,29 +842,30 @@ func (t *translator) serveDefKeyToPosition(body []byte) (interface{}, error) {
 	return nil, errors.New("position for def key not found")
 }
 
-func (t *translator) serveDefKeyRefs(body []byte) (interface{}, error) {
+func (t *translator) serveDefSpecRefs(body []byte) (interface{}, error) {
 	// Decode the user request.
-	var defKey DefKey
-	if err := json.Unmarshal(body, &defKey); err != nil {
+	var defSpec DefSpec
+	if err := json.Unmarshal(body, &defSpec); err != nil {
 		return nil, err
 	}
-	if defKey.Def == "" {
-		return nil, fmt.Errorf("Def field must be set")
-	}
-	if defKey.Repo == "" {
+	if defSpec.Repo == "" {
 		return nil, fmt.Errorf("Repo field must be set")
 	}
-	if defKey.Commit == "" {
+	if defSpec.Commit == "" {
 		return nil, fmt.Errorf("Commit field must be set")
 	}
-
-	defRepo, defName, err := parseDefKeyString(defKey.Def)
-	if err != nil {
-		return nil, err
+	if defSpec.Unit == "" {
+		return nil, fmt.Errorf("Unit field must be set")
+	}
+	if defSpec.UnitType == "" {
+		return nil, fmt.Errorf("UnitType field must be set")
+	}
+	if defSpec.Path == "" {
+		return nil, fmt.Errorf("Path field must be set")
 	}
 
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.prepareWorkspace(defKey.Repo, defKey.Commit)
+	rootPath, err := t.prepareWorkspace(defSpec.Repo, defSpec.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -888,14 +877,14 @@ func (t *translator) serveDefKeyRefs(body []byte) (interface{}, error) {
 		Method: "workspace/symbol",
 	}
 
-	// Repositories are same indicates query local references.
-	queryType := "defkey-refs-external"
-	if defRepo == defKey.Repo {
-		queryType = "defkey-refs-internal"
+	// Unit belongs to Repo indicates query local references.
+	queryType := "defspec-refs-external"
+	if strings.HasPrefix(defSpec.Unit, defSpec.Repo) {
+		queryType = "defspec-refs-internal"
 	}
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
-		Query: queryType + " " + defKey.Repo + "/...",
+		Query: queryType + " " + defSpec.Repo + "/...",
 	}
 	if err := reqSymbol.SetParams(p); err != nil {
 		return nil, err
@@ -903,7 +892,7 @@ func (t *translator) serveDefKeyRefs(body []byte) (interface{}, error) {
 
 	var respSymbol []lsp.SymbolInformation
 	err = t.lspDo(rootPath, reqSymbol, &respSymbol)
-	defer observe(start, reqSymbol.Method, defKey.Repo, err, len(respSymbol) == 0)
+	defer observe(start, reqSymbol.Method, defSpec.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -919,12 +908,12 @@ func (t *translator) serveDefKeyRefs(body []byte) (interface{}, error) {
 			unit = strings.Join(pkgParts, "/")
 		}
 
-		// Collect out refs only from def repository and name.
-		if unit != defRepo || defName != s.Name {
+		// Collect out refs only from def unit and name.
+		if unit != defSpec.Unit || s.Name != defSpec.Path {
 			continue
 		}
 
-		f, err := t.resolveFile(defKey.Repo, defKey.Commit, s.Location.URI)
+		f, err := t.resolveFile(defSpec.Repo, defSpec.Commit, s.Location.URI)
 		if err != nil {
 			return nil, err
 		}

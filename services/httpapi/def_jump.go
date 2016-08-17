@@ -40,7 +40,7 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 	}{}
 
 	if feature.IsUniverseRepo(repo.URI) {
-		defKey, err := langp.DefaultClient.PositionToDefKey(&langp.Position{
+		defSpec, err := langp.DefaultClient.PositionToDefSpec(&langp.Position{
 			Repo:      repo.URI,
 			Commit:    repoRev.CommitID,
 			File:      file,
@@ -55,7 +55,7 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 		if repoRev.CommitID != "" {
 			rev = "@" + repoRev.CommitID
 		}
-		response.Path = fmt.Sprintf("/%s%s/-/def/%s", repo.URI, rev, defKey.Def)
+		response.Path = fmt.Sprintf("/%s%s/-/def/%s", repo.URI, rev, defSpec.DefString())
 		return writeJSON(w, response)
 	}
 

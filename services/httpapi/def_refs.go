@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"net/http"
-	"path"
 
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -89,12 +88,12 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if feature.IsUniverseRepo(repo.URI) {
-		refs, err := langp.DefaultClient.DefKeyRefs(&langp.DefKey{
-			Def: path.Join(def.UnitType, def.Repo, "-", def.Path),
-			RepoRev: langp.RepoRev{
-				Repo:   tmp.Repo,
-				Commit: opt.CommitID,
-			},
+		refs, err := langp.DefaultClient.DefSpecRefs(&langp.DefSpec{
+			Repo:     tmp.Repo,
+			Commit:   opt.CommitID,
+			Unit:     def.Unit,
+			UnitType: def.UnitType,
+			Path:     def.Path,
 		})
 		if err != nil {
 			return err
