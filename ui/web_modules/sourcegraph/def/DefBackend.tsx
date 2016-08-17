@@ -2,7 +2,7 @@ import get from "lodash.get";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {DefStore} from "sourcegraph/def/DefStore";
-import {encodeDefPath, refLocsPerPage} from "sourcegraph/def/index";
+import {encodeDefPath} from "sourcegraph/def/index";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {toQuery} from "sourcegraph/util/toQuery";
@@ -60,8 +60,6 @@ export const DefBackend = {
 			if (refLocations === null) {
 				let q = toQuery({
 					Repos: action.resource.repos,
-					Page: action.resource.page,
-					PerPage: refLocsPerPage,
 				});
 				if (q) {
 					q = `?${q}`;
@@ -84,8 +82,6 @@ export const DefBackend = {
 			if (refLocations === null) {
 				let q = toQuery({
 					Repos: action.resource.repos,
-					Page: action.resource.page,
-					PerPage: refLocsPerPage,
 				});
 				if (q) {
 					q = `&${q}`;

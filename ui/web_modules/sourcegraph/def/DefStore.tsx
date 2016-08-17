@@ -10,7 +10,6 @@ import * as BlobActions from "sourcegraph/blob/BlobActions";
 import "sourcegraph/def/DefBackend";
 import {fastParseDefPath} from "sourcegraph/def/index";
 import {toQuery} from "sourcegraph/util/toQuery";
-import update from "react/lib/update";
 import {BlobPos} from "sourcegraph/def/DefActions";
 
 function defKey(repo: string, rev: string | null, def: string): string {
@@ -29,9 +28,6 @@ function refLocationsKeyFor(r: RefLocationsKey): string {
 	let opts: {Repos?: string[], Page?: number, PerPage?: number, Sorting?: string} = {
 		Repos: r.repos,
 	};
-	if (r.page) {
-		opts.Page = r.page;
-	}
 	let q = toQuery(opts);
 	return `/.api/repos/${r.repo}${r.rev ? `@${r.rev}` : ""}/-/def/${r.def}/-/ref-locations?${q}`;
 }
@@ -217,53 +213,6 @@ class DefStoreClass extends Store<any> {
 				let r = a.request.resource;
 				let updatedContent = {};
 				updatedContent[refLocationsKeyFor(r)] = a.locations;
-
-				// We need to support querying for refs without pagination options.
-				// Below we merge contents from any previous fetches with the latest
-				// fetch and store that as a new entry omitting pagination options.
-				//
-				// TODO this is a hack to support streaming pagination for performance
-				// reasons. This should be temporary, or we need to implement a
-				// properly formatted endpoint for this instead.
-				let r2 = Object.assign({}, r);
-				delete r2.page;
-				// Keep track of the position of the pages we've loaded to prevent
-				// saving the same set of refs twice.
-				let page = r.page || 0;
-				let refsForPage = this.getRefLocations(r);
-				let currentRefs = this.getRefLocations(r2);
-				let newRepoRefs = a.locations.RepoRefs;
-				if (!refsForPage && currentRefs && currentRefs.PagesFetched < page) {
-					currentRefs = update(currentRefs, {PagesFetched: {$set: page}});
-					if (currentRefs.RepoRefs && newRepoRefs) {
-						// If any of our new refs come from the same repo as the last ref
-						// in our current list, append those refs to the end of the list.
-						let lastRefIdx = currentRefs.RepoRefs.length - 1;
-						let lastRef = currentRefs.RepoRefs[lastRefIdx];
-						for (let ref of newRepoRefs) {
-							if (ref.Repo === lastRef.Repo) {
-								let mergedRefs = update(lastRef, {
-									Count: {$set: lastRef.Count + ref.Count},
-									Files: {$set: lastRef.Files.concat(ref.Files)},
-								});
-								currentRefs = update(currentRefs, {
-									RepoRefs: {[lastRefIdx]: {$set: mergedRefs}},
-								});
-							} else {
-								currentRefs = update(currentRefs, {
-									RepoRefs: {$push: [ref]},
-								});
-							}
-						}
-					}
-					// If no additional refs were fetched, communicate that the last page has been reached.
-					if (!a.locations.RepoRefs) {
-						currentRefs = update(currentRefs, {StreamTerminated: {$set: true}});
-					}
-					updatedContent[refLocationsKeyFor(r2)] = currentRefs;
-				} else {
-					updatedContent[refLocationsKeyFor(r2)] = Object.assign({}, a.locations, {PagesFetched: page});
-				}
 
 				this._refLocations = deepFreeze(Object.assign({}, this._refLocations, updatedContent));
 				break;

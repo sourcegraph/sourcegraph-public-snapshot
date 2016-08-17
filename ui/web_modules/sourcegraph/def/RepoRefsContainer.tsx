@@ -13,10 +13,9 @@ import * as typography from "sourcegraph/components/styles/_typography.css";
 import * as classNames from "classnames";
 
 import {Link} from "react-router";
-import {refLocsPerPage} from "sourcegraph/def/index";
 import "whatwg-fetch";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {Repository, DownPointer} from "sourcegraph/components/symbols/index";
+import {Repository} from "sourcegraph/components/symbols/index";
 import {urlToRepo} from "sourcegraph/repo/routes";
 import {urlToBlob} from "sourcegraph/blob/routes";
 
@@ -41,9 +40,7 @@ export class RepoRefsContainer extends Container<Props, State> {
 		super(props);
 		this.state = {
 			currPage: 1,
-			nextPageLoading: false,
 		};
-		this._onNextPage = this._onNextPage.bind(this);
 	}
 
 	stores(): FluxUtils.Store<any>[] {
@@ -57,24 +54,13 @@ export class RepoRefsContainer extends Container<Props, State> {
 		state.defObj = props.defObj || null;
 		state.defRepos = props.defRepos || [];
 		state.refLocations = props.refLocations || null;
-		if (state.refLocations && state.refLocations.PagesFetched >= state.currPage) {
-			state.nextPageLoading = false;
-		}
 	}
 
 	onStateTransition(prevState: State, nextState: State): void {
-		if (nextState.currPage !== prevState.currPage || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def || nextState.defObj !== prevState.defObj) {
+		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def || nextState.defObj !== prevState.defObj) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
-				repo: nextState.repo, commitID: nextState.defCommitID, def: nextState.def, repos: nextState.defRepos, page: nextState.currPage,
+				repo: nextState.repo, commitID: nextState.defCommitID, def: nextState.def, repos: nextState.defRepos,
 			}));
-		}
-	}
-
-	_onNextPage() {
-		let nextPage = this.state.currPage + 1;
-		this.setState({currPage: nextPage, nextPageLoading: true});
-		if ((this.context as any).eventLogger) {
-			(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "RefsPaginatorClicked", {next_page: nextPage, repo: this.props.repo, def: this.props.def});
 		}
 	}
 
@@ -88,8 +74,6 @@ export class RepoRefsContainer extends Container<Props, State> {
 
 	render(): JSX.Element | null {
 		let refLocs = this.state.refLocations;
-		let fileCount = refLocs && refLocs.RepoRefs ?
-			refLocs.RepoRefs.reduce((total, refs) => total + refs.Files.length, refLocs.RepoRefs[0].Files.length) : 0;
 
 		return (
 			<div>
@@ -116,17 +100,6 @@ export class RepoRefsContainer extends Container<Props, State> {
 					}
 					</List>
 				</div>)}
-				{/* Display the paginator if we have more files repos or repos to show. */}
-				{refLocs && refLocs.RepoRefs &&
-					(fileCount >= refLocsPerPage || refLocs.TotalRepos > refLocs.RepoRefs.length || !refLocs.TotalRepos) &&
-					!refLocs.StreamTerminated &&
-					<a onClick={this._onNextPage} className={classNames(styles.f7, styles.link_icon)}>
-						{this.state.nextPageLoading ?
-							<strong>Loading <Loader /> </strong> :
-							<strong>View more references <DownPointer className={classNames(styles.icon_cool_mid_gray, base.ml1)} width={9} /></strong>
-						}
-					</a>
-				}
 			</div>
 		);
 	}
