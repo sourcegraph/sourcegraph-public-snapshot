@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package gorilla/mux implements a request router and dispatcher.
+Package mux implements a request router and dispatcher.
 
 The name mux stands for "HTTP request multiplexer". Like the standard
 http.ServeMux, mux.Router matches incoming requests against a list of
@@ -135,6 +135,31 @@ the inner routes use it as base for their paths:
 	s.HandleFunc("/{key}/", ProductHandler)
 	// "/products/{key}/details"
 	s.HandleFunc("/{key}/details", ProductDetailsHandler)
+
+Note that the path provided to PathPrefix() represents a "wildcard": calling
+PathPrefix("/static/").Handler(...) means that the handler will be passed any
+request that matches "/static/*". This makes it easy to serve static files with mux:
+
+	func main() {
+		var dir string
+
+		flag.StringVar(&dir, "dir", ".", "the directory to serve files from. Defaults to the current dir")
+		flag.Parse()
+		r := mux.NewRouter()
+
+		// This will serve files under http://localhost:8000/static/<filename>
+		r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(dir))))
+
+		srv := &http.Server{
+			Handler:      r,
+			Addr:         "127.0.0.1:8000",
+			// Good practice: enforce timeouts for servers you create!
+			WriteTimeout: 15 * time.Second,
+			ReadTimeout:  15 * time.Second,
+		}
+
+		log.Fatal(srv.ListenAndServe())
+	}
 
 Now let's see how to build registered URLs.
 

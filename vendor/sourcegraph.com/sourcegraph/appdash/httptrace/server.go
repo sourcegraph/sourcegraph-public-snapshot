@@ -74,7 +74,7 @@ func Middleware(c appdash.Collector, conf *MiddlewareConfig) func(rw http.Respon
 		usingProvidedSpanID := (spanFromHeader == HeaderSpanID)
 
 		if conf.SetContextSpan != nil {
-			conf.SetContextSpan(r, *spanID)
+			r = conf.SetContextSpan(r, *spanID)
 		}
 
 		e := NewServerEvent(r)
@@ -121,7 +121,7 @@ type MiddlewareConfig struct {
 	// either taken from the client request header or created anew) in
 	// the HTTP request context, so it may be used by other parts of
 	// the handling process.
-	SetContextSpan func(*http.Request, appdash.SpanID)
+	SetContextSpan func(*http.Request, appdash.SpanID) *http.Request
 }
 
 // responseInfoRecorder is an http.ResponseWriter that records a

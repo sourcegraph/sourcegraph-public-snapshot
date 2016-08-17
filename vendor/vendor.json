@@ -253,21 +253,16 @@
 			"revisionTime": "2016-03-11T01:20:12Z"
 		},
 		{
-			"checksumSHA1": "iIUYZyoanCQQTUaWsu8b+iOSPt4=",
-			"path": "github.com/gorilla/context",
-			"revision": "aed02d124ae4a0e94fea4541c8effd05bf0c8296",
-			"revisionTime": "2016-05-25T20:33:19Z"
-		},
-		{
 			"checksumSHA1": "UNlILKZlAiLwYYwj70y+Q8n13D0=",
 			"path": "github.com/gorilla/css/scanner",
 			"revision": "a80e24ada2699166544311f07c26ef37eaf64012",
 			"revisionTime": "2015-03-17T22:22:38Z"
 		},
 		{
+			"checksumSHA1": "8vPswx8tYJY7WdQYyOMWF9+1qaE=",
 			"path": "github.com/gorilla/mux",
-			"revision": "dfc482b2558f4151fc8598139a686caf3fb2ef65",
-			"revisionTime": "2016-02-26T13:29:39-08:00"
+			"revision": "08725bd806d92890b2b0e3e82654e0c536026ad8",
+			"revisionTime": "2016-08-16T16:00:10Z"
 		},
 		{
 			"checksumSHA1": "+OUCr6R5ycUgzUkjhcY6BAdTRCs=",
