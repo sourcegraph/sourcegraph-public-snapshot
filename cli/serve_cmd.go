@@ -52,7 +52,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/snapshotprof"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/server"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
@@ -341,7 +340,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		mw = append(mw, middleware.EnsureHostname)
 	}
 	mw = append(mw, httptrace.Middleware)
-	mw = append(mw, traceutil.HTTPMiddleware)
 	mw = append(mw, middleware.BlackHole)
 	mw = append(mw, middleware.SourcegraphComGoGetHandler)
 	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_GITHUB_CLONE_PROXY")); v {

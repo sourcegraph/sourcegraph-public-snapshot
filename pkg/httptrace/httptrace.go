@@ -11,6 +11,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/oauth2"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/appdash"
+	"sourcegraph.com/sourcegraph/appdash/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
@@ -79,7 +81,26 @@ func Middleware(next http.Handler) http.Handler {
 		routeName := "unknown"
 		r = r.WithContext(context.WithValue(r.Context(), routeNameKey, &routeName))
 
-		next.ServeHTTP(rwIntercept, r)
+		if traceutil.DefaultCollector != nil {
+			config := &httptrace.MiddlewareConfig{
+				RouteName: func(r *http.Request) string {
+					return routeName
+				},
+				SetContextSpan: func(r *http.Request, id appdash.SpanID) *http.Request {
+					ctx := r.Context()
+					ctx = traceutil.NewContext(ctx, id)
+					ctx = sourcegraph.WithClientMetadata(ctx, (&traceutil.Span{SpanID: id}).Metadata())
+					return r.WithContext(ctx)
+				},
+			}
+			m := httptrace.Middleware(traceutil.DefaultCollector, config)
+			m(rw, r, func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("X-Appdash-Trace", traceutil.SpanIDFromContext(r.Context()).Trace.String())
+				next.ServeHTTP(w, r)
+			})
+		} else {
+			next.ServeHTTP(rwIntercept, r)
+		}
 
 		// If the code is zero, the inner Handler never explicitly called
 		// WriterHeader. We can assume the response code is 200 in such a case
