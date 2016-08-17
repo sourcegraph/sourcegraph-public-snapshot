@@ -9,14 +9,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/oauth2"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/appdash/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -49,38 +45,14 @@ func init() {
 }
 
 // Middleware captures and exports metrics to Prometheus, etc.
-func Middleware(next http.Handler) http.Handler {
+func Middleware(next http.Handler, sessionInfo func(*http.Request) (uid, sessionID string)) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		uid := "0"
-		sessionID := "unknown"
-		tok := ""
 		start := time.Now()
-		rwIntercept := &ResponseWriterStatusIntercept{ResponseWriter: rw}
-
-		sess, err := appauth.ReadSessionCookie(r)
-		if err == nil {
-			tok = sess.AccessToken
-			ctx := r.Context()
-			if ctx != nil {
-				for _, cookie := range r.Cookies() {
-					// each environment uses a different cookie name, but they all start with 'amplitude'
-					if strings.Contains(cookie.Name, "amplitude") {
-						sessionID = cookie.Value
-					}
-				}
-			}
-			ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok, TokenType: "Bearer"}))
-			actor, err := accesstoken.ParseAndVerify(idkey.FromContext(ctx), tok)
-			if err != nil {
-				log15.Debug("Cookie parse:", "errror", err)
-			} else {
-				uid = strconv.Itoa(actor.UID)
-			}
-		}
 
 		routeName := "unknown"
 		r = r.WithContext(context.WithValue(r.Context(), routeNameKey, &routeName))
 
+		rwIntercept := &ResponseWriterStatusIntercept{ResponseWriter: rw}
 		if traceutil.DefaultCollector != nil {
 			config := &httptrace.MiddlewareConfig{
 				RouteName: func(r *http.Request) string {
@@ -94,7 +66,7 @@ func Middleware(next http.Handler) http.Handler {
 				},
 			}
 			m := httptrace.Middleware(traceutil.DefaultCollector, config)
-			m(rw, r, func(w http.ResponseWriter, r *http.Request) {
+			m(rwIntercept, r, func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("X-Appdash-Trace", traceutil.SpanIDFromContext(r.Context()).Trace.String())
 				next.ServeHTTP(w, r)
 			})
@@ -119,6 +91,7 @@ func Middleware(next http.Handler) http.Handler {
 		requestDuration.With(labels).Observe(duration.Seconds())
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
+		uid, sessionID := sessionInfo(r)
 		log15.Debug("TRACE HTTP", "method", r.Method, "URL", r.URL.String(), "routename", routeName, "spanID", traceutil.SpanIDFromContext(r.Context()), "code", code, "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent(), "uid", uid, "session", sessionID, "duration", duration)
 	})
 }
