@@ -66,9 +66,9 @@ func serveGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 
 	var scopes []string
 	if s := r.URL.Query().Get("scopes"); s == "" {
-		// scopes remains nil, and the GitHub OAuth2 flow authorizes
-		// either no scopes or the previously authorized scopes to
-		// this application.
+		// if we have no scope, we upgrade the credential to the
+		// minimum scope required, read access to email
+		scopes = []string{"user:email"}
 	} else {
 		scopes = strings.Split(s, ",")
 	}
