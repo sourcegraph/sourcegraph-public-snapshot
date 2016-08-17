@@ -180,12 +180,6 @@
 			"revisionTime": "2015-12-09T14:12:55-08:00"
 		},
 		{
-			"checksumSHA1": "fp6onee59p9HGgBdelXpCZdhELM=",
-			"path": "github.com/dustin/go-humanize",
-			"revision": "f3565c9525600a911af3bd34f8b535ea81b2a9e0",
-			"revisionTime": "2016-05-10T05:46:03Z"
-		},
-		{
 			"checksumSHA1": "kR64D1QzAOSM9LHOnTPdbigC8q0=",
 			"path": "github.com/fatih/camelcase",
 			"revision": "f6a740d52f961c60348ebb109adde9f4635d7540",
@@ -247,18 +241,6 @@
 			"revisionTime": "2016-06-01T15:17:05Z"
 		},
 		{
-			"checksumSHA1": "+cT5a/FtqhkUAnVuajBTUAS2iHU=",
-			"path": "github.com/golang/protobuf/protoc-gen-go/descriptor",
-			"revision": "3b06fc7a4cad73efce5fe6217ab6c33e7231ab4a",
-			"revisionTime": "2016-06-01T15:17:05Z"
-		},
-		{
-			"checksumSHA1": "lL9MtmdY1ZH4qsIe+6WPMev28f4=",
-			"path": "github.com/golang/protobuf/protoc-gen-go/plugin",
-			"revision": "3b06fc7a4cad73efce5fe6217ab6c33e7231ab4a",
-			"revisionTime": "2016-06-01T15:17:05Z"
-		},
-		{
 			"checksumSHA1": "Bj/WIqAUSis+R94Ia0Ay2F4wDYY=",
 			"path": "github.com/golang/snappy",
 			"revision": "d6668316e43571d7dde95be6fd077f96de002f8b",
@@ -313,12 +295,6 @@
 		{
 			"checksumSHA1": "wBlAlMftQZLtHrSFm1zLVLbjrbs=",
 			"path": "github.com/influxdata/influxdb",
-			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
-			"revisionTime": "2016-04-25T20:12:06Z"
-		},
-		{
-			"checksumSHA1": "vRFG8i/Vo+5iu05zxa1ZqB+XTpw=",
-			"path": "github.com/influxdata/influxdb/client",
 			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
 			"revisionTime": "2016-04-25T20:12:06Z"
 		},
@@ -574,11 +550,6 @@
 			"revisionTime": "2015-06-17T06:49:03Z"
 		},
 		{
-			"path": "github.com/kr/binarydist",
-			"revision": "9955b0ab8708602d411341e55fffd7e0700f86bd",
-			"revisionTime": "2012-08-27T23:52:44-07:00"
-		},
-		{
 			"path": "github.com/kr/fs",
 			"revision": "2788f0dbd16903de03cb8186e5c7d97b69ad387b",
 			"revisionTime": "2013-11-07T09:25:44+11:00"
@@ -714,11 +685,6 @@
 			"revisionTime": "2016-05-10T19:09:22Z"
 		},
 		{
-			"path": "github.com/ryanuber/go-glob",
-			"revision": "572520ed46dbddaed19ea3d9541bdd0494163693",
-			"revisionTime": "2016-02-26T00:37:05-08:00"
-		},
-		{
 			"path": "github.com/samalba/dockerclient",
 			"revision": "ccb0d5a7b8a7278f3f57de0135d4c5cc6921fcac",
 			"revisionTime": "2016-02-03T07:44:56-05:00"
@@ -837,11 +803,6 @@
 			"path": "github.com/sqs/fileset",
 			"revision": "012a6d31cbc4d10f3148918e0a37cd333db58a34",
 			"revisionTime": "2016-02-08T20:00:02-08:00"
-		},
-		{
-			"path": "github.com/sqs/go-selfupdate/selfupdate",
-			"revision": "d36f0a97c909dccd193274709266ff9b68a003db",
-			"revisionTime": "2015-09-07T16:31:30-07:00"
 		},
 		{
 			"path": "github.com/sqs/s3",
@@ -1203,16 +1164,6 @@
 			"revisionTime": "2016-03-22T12:14:41+01:00"
 		},
 		{
-			"path": "gopkg.in/inconshreveable/go-update.v0",
-			"revision": "d8b0b1d421aa1cbf392c05869f8abbc669bb7066",
-			"revisionTime": "2015-08-14T13:01:26-07:00"
-		},
-		{
-			"path": "gopkg.in/inconshreveable/go-update.v0/download",
-			"revision": "d8b0b1d421aa1cbf392c05869f8abbc669bb7066",
-			"revisionTime": "2015-08-14T13:01:26-07:00"
-		},
-		{
 			"checksumSHA1": "kTtk24+gnF63AQFyL7d0A7Kp6eY=",
 			"path": "gopkg.in/inconshreveable/log15.v2",
 			"revision": "b105bd37f74e5d9dc7b6ad7806715c7a2b83fd3f",
@@ -1290,12 +1241,6 @@
 			"revisionTime": "2015-04-25T02:47:25-07:00"
 		},
 		{
-			"checksumSHA1": "fbi0Z/hZp9AIopry//+C9OcOKXM=",
-			"path": "sourcegraph.com/sourcegraph/go-diff/diff",
-			"revision": "9bc754992807c688022cda122fbd336d2ed8685c",
-			"revisionTime": "2016-05-09T05:57:52Z"
-		},
-		{
 			"path": "sourcegraph.com/sourcegraph/go-flags",
 			"revision": "dace7e122742808bf6016bdc6510649d84f2a31e",
 			"revisionTime": "2015-12-31T08:22:44-08:00"
@@ -1365,7 +1310,6 @@
 		},
 		{
 			"checksumSHA1": "Bp61DI/pLFHxEL/giUqN/LzzIUs=",
-			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/srclib-java/java_def",
 			"path": "sourcegraph.com/sourcegraph/srclib-java/java_def",
 			"revision": "2fb7ab2648527bbe4ba16812558ac9be64da8098",
 			"revisionTime": "2016-06-10T20:26:44Z"
