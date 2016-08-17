@@ -724,7 +724,6 @@ func (t *translator) servePositionToDefKey(body []byte) (interface{}, error) {
 	}
 
 	// Filter out refs that don't match our position.
-	var symbolsForPos []lsp.SymbolInformation
 	for _, s := range respSymbol {
 		r := s.Location.Range
 		if pos.Line < r.Start.Line || pos.Line > r.End.Line {
@@ -740,36 +739,32 @@ func (t *translator) servePositionToDefKey(body []byte) (interface{}, error) {
 		if f.Path != pos.File {
 			continue
 		}
-		symbolsForPos = append(symbolsForPos, s)
-	}
-	if len(symbolsForPos) == 0 {
-		// TODO: formalize not-found errors
-		return nil, errors.New("def key for position not found")
-	}
 
-	// TODO(slimsag): how do we handle positions that map to multiple unique
-	// def keys? e.g. see the results for:
-	//
-	//  curl -s -H "Content-Type: application/json" -X POST -d '{"Repo":"github.com/slimsag/mux","Commit":"780415097119f6f61c55475fe59b66f3c3e9ea53","File":"mux.go","Line":57,"Character":17}' http://localhost:4141/position-to-defkey | jq
-	//
-	// Right now we assume the first one is right, but this is likely to fail
-	// in some cases? Maybe we should have a count/index as part of the key.
-	symbol := symbolsForPos[0]
-	pkgParts := strings.Split(symbol.ContainerName, "/")
-	var unit string
-	if len(pkgParts) < 3 {
-		// Hack for stdlib
-		unit = symbol.ContainerName
-	} else {
-		unit = strings.Join(pkgParts, "/")
+		// TODO(slimsag): how do we handle positions that map to multiple unique
+		// def keys? e.g. see the results for:
+		//
+		//  curl -s -H "Content-Type: application/json" -X POST -d '{"Repo":"github.com/slimsag/mux","Commit":"780415097119f6f61c55475fe59b66f3c3e9ea53","File":"mux.go","Line":57,"Character":17}' http://localhost:4141/position-to-defkey | jq
+		//
+		// Right now we assume the first one is right, but this is likely to fail
+		// in some cases? Maybe we should have a count/index as part of the key.
+		pkgParts := strings.Split(s.ContainerName, "/")
+		var unit string
+		if len(pkgParts) < 3 {
+			// Hack for stdlib
+			unit = s.ContainerName
+		} else {
+			unit = strings.Join(pkgParts, "/")
+		}
+		return &DefKey{
+			Def: fmt.Sprintf("GoPackage/%s/-/%s", unit, s.Name),
+			RepoRev: RepoRev{
+				Repo:   pos.Repo,
+				Commit: pos.Commit,
+			},
+		}, nil
 	}
-	return &DefKey{
-		Def: fmt.Sprintf("GoPackage/%s/-/%s", unit, symbol.Name),
-		RepoRev: RepoRev{
-			Repo:   pos.Repo,
-			Commit: pos.Commit,
-		},
-	}, nil
+	// TODO: formalize not-found errors
+	return nil, errors.New("def key for position not found")
 }
 
 func (t *translator) serveDefKeyToPosition(body []byte) (interface{}, error) {
