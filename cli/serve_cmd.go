@@ -49,6 +49,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/snapshotprof"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -339,7 +340,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	if v, _ := strconv.ParseBool(os.Getenv("SG_STRICT_HOSTNAME")); v {
 		mw = append(mw, middleware.EnsureHostname)
 	}
-	mw = append(mw, middleware.Metrics)
+	mw = append(mw, httptrace.Middleware)
 	mw = append(mw, traceutil.HTTPMiddleware)
 	mw = append(mw, middleware.BlackHole)
 	mw = append(mw, middleware.SourcegraphComGoGetHandler)

@@ -1,11 +1,13 @@
-package middleware
+package httptrace
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/oauth2"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -13,10 +15,15 @@ import (
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+)
+
+type key int
+
+const (
+	routeNameKey key = iota
 )
 
 var metricLabels = []string{"route", "method", "code", "repo"}
@@ -39,8 +46,8 @@ func init() {
 	prometheus.MustRegister(requestHeartbeat)
 }
 
-// Metrics captures and exports metrics to prometheus for our HTTP handlers
-func Metrics(next http.Handler) http.Handler {
+// Middleware captures and exports metrics to Prometheus, etc.
+func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		uid := "0"
 		sessionID := "unknown"
@@ -69,11 +76,11 @@ func Metrics(next http.Handler) http.Handler {
 			}
 		}
 
+		routeName := "unknown"
+		r = r.WithContext(context.WithValue(r.Context(), routeNameKey, &routeName))
+
 		next.ServeHTTP(rwIntercept, r)
 
-		// If we have an error, name is an empty string which
-		// indicates to httptrace to use a fallback value
-		name, _ := httpctx.RouteNameOrError(r)
 		// If the code is zero, the inner Handler never explicitly called
 		// WriterHeader. We can assume the response code is 200 in such a case
 		code := rwIntercept.Code
@@ -83,7 +90,7 @@ func Metrics(next http.Handler) http.Handler {
 
 		duration := time.Now().Sub(start)
 		labels := prometheus.Labels{
-			"route":  name,
+			"route":  routeName,
 			"method": strings.ToLower(r.Method),
 			"code":   strconv.Itoa(code),
 			"repo":   repotrackutil.GetTrackedRepo(r.URL.Path),
@@ -91,7 +98,16 @@ func Metrics(next http.Handler) http.Handler {
 		requestDuration.With(labels).Observe(duration.Seconds())
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
-		log15.Debug("TRACE HTTP", "method", r.Method, "URL", r.URL.String(), "routename", name, "spanID", traceutil.SpanIDFromContext(r.Context()), "code", code, "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent(), "uid", uid, "session", sessionID, "duration", duration)
+		log15.Debug("TRACE HTTP", "method", r.Method, "URL", r.URL.String(), "routename", routeName, "spanID", traceutil.SpanIDFromContext(r.Context()), "code", code, "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent(), "uid", uid, "session", sessionID, "duration", duration)
+	})
+}
+
+func TraceRoute(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		if p, ok := r.Context().Value(routeNameKey).(*string); ok {
+			*p = mux.CurrentRoute(r).GetName()
+		}
+		next.ServeHTTP(rw, r)
 	})
 }
 

@@ -15,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 
 	// Import for side effects.
@@ -45,19 +46,19 @@ func NewHandler(r *router.Router) http.Handler {
 	// Add git transport routes
 	gitserver.AddHandlers(&r.Router)
 
-	r.Get(router.RobotsTxt).HandlerFunc(robotsTxt)
-	r.Get(router.Favicon).HandlerFunc(favicon)
+	r.Get(router.RobotsTxt).Handler(httptrace.TraceRoute(http.HandlerFunc(robotsTxt)))
+	r.Get(router.Favicon).Handler(httptrace.TraceRoute(http.HandlerFunc(favicon)))
 
-	r.Get(router.SitemapIndex).Handler(internal.Handler(serveSitemapIndex))
-	r.Get(router.RepoSitemap).Handler(internal.Handler(serveRepoSitemap))
+	r.Get(router.SitemapIndex).Handler(httptrace.TraceRoute(internal.Handler(serveSitemapIndex)))
+	r.Get(router.RepoSitemap).Handler(httptrace.TraceRoute(internal.Handler(serveRepoSitemap)))
 
 	// Redirects
-	r.Get(router.OldToolsRedirect).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Get(router.OldToolsRedirect).Handler(httptrace.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/beta", 301)
-	})
+	})))
 
 	for route, handlerFunc := range internal.Handlers {
-		r.Get(route).Handler(handlerFunc)
+		r.Get(route).Handler(httptrace.TraceRoute(handlerFunc))
 	}
 
 	return handlerutil.WithMiddleware(m, mw...)

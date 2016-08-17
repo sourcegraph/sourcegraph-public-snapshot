@@ -15,19 +15,20 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 func init() {
-	router.Get(routeBlob).Handler(handler(serveBlob))
-	router.Get(routeBuild).Handler(handler(serveBuild))
-	router.Get(routeDef).Handler(handler(serveDef))
-	router.Get(routeDefInfo).Handler(handler(serveDefInfo))
-	router.Get(routeRepo).Handler(handler(serveRepo))
-	router.Get(routeRepoBuilds).Handler(handler(serveRepoBuilds))
-	router.Get(routeTree).Handler(handler(serveTree))
-	router.Get(routeTopLevel).Handler(internal.Handler(serveAny))
-	router.PathPrefix("/").Methods("GET").Handler(internal.Handler(serveAny))
+	router.Get(routeBlob).Handler(httptrace.TraceRoute(handler(serveBlob)))
+	router.Get(routeBuild).Handler(httptrace.TraceRoute(handler(serveBuild)))
+	router.Get(routeDef).Handler(httptrace.TraceRoute(handler(serveDef)))
+	router.Get(routeDefInfo).Handler(httptrace.TraceRoute(handler(serveDefInfo)))
+	router.Get(routeRepo).Handler(httptrace.TraceRoute(handler(serveRepo)))
+	router.Get(routeRepoBuilds).Handler(httptrace.TraceRoute(handler(serveRepoBuilds)))
+	router.Get(routeTree).Handler(httptrace.TraceRoute(handler(serveTree)))
+	router.Get(routeTopLevel).Handler(httptrace.TraceRoute(internal.Handler(serveAny)))
+	router.PathPrefix("/").Methods("GET").Handler(httptrace.TraceRoute(internal.Handler(serveAny)))
 	router.NotFoundHandler = internal.Handler(serveAny)
 
 	// Attach to app handler's catch-all UI route. This is better than

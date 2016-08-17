@@ -14,6 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 )
 
 const URLPathPrefix = "/.assets"
@@ -70,11 +71,11 @@ func NewHandler(m *mux.Router) http.Handler {
 	// it harder to change their paths from Go code; (2) they
 	// change very frequently, so we actually prefer to cache
 	// them across version upgrades.
-	m.PathPrefix("/font/").Handler(assetHandler).Name("assets.font")
+	m.PathPrefix("/font/").Handler(httptrace.TraceRoute(assetHandler)).Name("assets.font")
 
-	m.PathPrefix(versionedAssetsBasePath).Handler(http.StripPrefix(versionedAssetsBasePath, assetHandler)).Name("assets.versioned")
+	m.PathPrefix(versionedAssetsBasePath).Handler(httptrace.TraceRoute(http.StripPrefix(versionedAssetsBasePath, assetHandler))).Name("assets.versioned")
 
-	m.PathPrefix("/v/").HandlerFunc(serveRedirectFromOldVersion).Name("assets.redirect-from-old-version")
+	m.PathPrefix("/v/").Handler(httptrace.TraceRoute(http.HandlerFunc(serveRedirectFromOldVersion))).Name("assets.redirect-from-old-version")
 
 	return m
 }

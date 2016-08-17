@@ -17,15 +17,16 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	gitrouter "sourcegraph.com/sourcegraph/sourcegraph/app/internal/gitserver/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 )
 
 // AddHandlers adds git HTTP handlers to r.
 func AddHandlers(r *mux.Router) {
-	r.Get(gitrouter.GitInfoRefs).Handler(handler(serveInfoRefs))
-	r.Get(gitrouter.GitReceivePack).Handler(handler(serveReceivePack))
-	r.Get(gitrouter.GitUploadPack).Handler(handler(serveUploadPack))
+	r.Get(gitrouter.GitInfoRefs).Handler(httptrace.TraceRoute(handler(serveInfoRefs)))
+	r.Get(gitrouter.GitReceivePack).Handler(httptrace.TraceRoute(handler(serveReceivePack)))
+	r.Get(gitrouter.GitUploadPack).Handler(httptrace.TraceRoute(handler(serveUploadPack)))
 }
 
 // handler is a wrapper func for API handlers.
