@@ -58,8 +58,8 @@ class EventLoggerClass {
 				this._currentPlatform = event.detail.currentPlatform;
 			}
 
-			if (event.detail._currentPlatformVersion) {
-				this._currentPlatformVersion = event.detail._currentPlatformVersion;
+			if (event.detail.currentPlatformVersion) {
+				this._currentPlatformVersion = event.detail.currentPlatformVersion;
 			}
 		}
 	}
