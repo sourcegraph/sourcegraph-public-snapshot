@@ -1,12 +1,9 @@
 package app
 
 import (
-	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
-
-	"github.com/justinas/nosurf"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
@@ -18,39 +15,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 
 	// Import for side effects.
 	_ "sourcegraph.com/sourcegraph/sourcegraph/app/internal/redirects"
 )
-
-// NewHandlerWithCSRFProtection creates a new handler that uses the provided
-// handler. It additionally adds support for cross-site request forgery. To make
-// your forms compliant you will have to include a hidden input which contains
-// the CSRFToken that is made available to you in the template via tmpl.Common.
-//
-// Example:
-// 	<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
-//
-func NewHandlerWithCSRFProtection(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h := nosurf.New(handler)
-		// Prevent setting a different cookie for subpaths if someone
-		// directly visits a subpath.
-		h.SetBaseCookie(http.Cookie{
-			Path:     "/",
-			HttpOnly: true,
-			Secure:   appauth.OnlySecureCookies(r.Context()),
-		})
-		h.ExemptRegexps("^/login/oauth/", "git-[\\w-]+$")
-		h.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r = httpctx.WithRouteName(r, "")
-			internal.HandleError(w, r, http.StatusForbidden, errors.New("CSRF check failed"))
-		}))
-		h.ServeHTTP(w, r)
-	})
-}
 
 // NewHandler returns a new app handler that uses the provided app
 // router (or creates a new one if nil).

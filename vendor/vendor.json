@@ -253,6 +253,12 @@
 			"revisionTime": "2016-03-11T01:20:12Z"
 		},
 		{
+			"checksumSHA1": "FX4ZImLeSWQ3++PZf79l2FUj9Aw=",
+			"path": "github.com/gorilla/csrf",
+			"revision": "a9c30aea0c8079c6d335982cbe07d7bafe0b57b7",
+			"revisionTime": "2016-07-21T04:36:29Z"
+		},
+		{
 			"checksumSHA1": "UNlILKZlAiLwYYwj70y+Q8n13D0=",
 			"path": "github.com/gorilla/css/scanner",
 			"revision": "a80e24ada2699166544311f07c26ef37eaf64012",
@@ -269,6 +275,12 @@
 			"path": "github.com/gorilla/schema",
 			"revision": "08023a0215e7fc27a9aecd8b8c50913c40019478",
 			"revisionTime": "2016-04-26T23:15:12Z"
+		},
+		{
+			"checksumSHA1": "nZoAsxDHOA8fLilA56HKvezLqNU=",
+			"path": "github.com/gorilla/securecookie",
+			"revision": "c13558c2b1c44da35e0eb043053609a5ba3a1f19",
+			"revisionTime": "2016-08-16T22:23:38Z"
 		},
 		{
 			"checksumSHA1": "je7UCb5T2ncPtX3RlEev0T1Smqs=",
@@ -510,12 +522,6 @@
 			"revisionTime": "2016-04-14T05:52:04Z"
 		},
 		{
-			"checksumSHA1": "mwbHoaOusbmpEYA6IMtp6eXNDMw=",
-			"path": "github.com/justinas/nosurf",
-			"revision": "2e708f28095ba17463e41438bbfd53abae8b6794",
-			"revisionTime": "2016-05-24T08:13:26Z"
-		},
-		{
 			"checksumSHA1": "icbeXb3ZtWYyg3ap3Vb6ZspNzQE=",
 			"path": "github.com/jwilder/encoding/simple8b",
 			"revision": "b421ab402545ef5a119f4f827784c6551d9bfc37",
@@ -636,6 +642,12 @@
 			"path": "github.com/nlopes/slack",
 			"revision": "e337a7316d3fe9aa55b7063035d6d32f3dbcaeb9",
 			"revisionTime": "2016-04-30T16:04:49Z"
+		},
+		{
+			"checksumSHA1": "QoVjlQFru1ixgV8vh63T4/JAtLI=",
+			"path": "github.com/pkg/errors",
+			"revision": "a22138067af1c4942683050411a841ade67fe1eb",
+			"revisionTime": "2016-08-08T05:55:40Z"
 		},
 		{
 			"path": "github.com/prometheus/client_golang/prometheus",

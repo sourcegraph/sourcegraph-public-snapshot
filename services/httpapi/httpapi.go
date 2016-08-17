@@ -12,7 +12,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
-	"github.com/justinas/nosurf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -55,11 +54,11 @@ func NewHandler(m *mux.Router) http.Handler {
 	}
 
 	// Set handlers for the installed routes.
-	m.Get(apirouter.Signup).Handler(nosurf.New(grpcErrorHandler(serveSignup)))
-	m.Get(apirouter.Login).Handler(nosurf.New(grpcErrorHandler(serveLogin)))
-	m.Get(apirouter.Logout).Handler(nosurf.New(handler(serveLogout)))
-	m.Get(apirouter.ForgotPassword).Handler(nosurf.New(grpcErrorHandler(serveForgotPassword)))
-	m.Get(apirouter.ResetPassword).Handler(nosurf.New(grpcErrorHandler(servePasswordReset)))
+	m.Get(apirouter.Signup).Handler(handlerutil.NewHandlerWithCSRFProtection(grpcErrorHandler(serveSignup)))
+	m.Get(apirouter.Login).Handler(handlerutil.NewHandlerWithCSRFProtection(grpcErrorHandler(serveLogin)))
+	m.Get(apirouter.Logout).Handler(handlerutil.NewHandlerWithCSRFProtection(handler(serveLogout)))
+	m.Get(apirouter.ForgotPassword).Handler(handlerutil.NewHandlerWithCSRFProtection(grpcErrorHandler(serveForgotPassword)))
+	m.Get(apirouter.ResetPassword).Handler(handlerutil.NewHandlerWithCSRFProtection(grpcErrorHandler(servePasswordReset)))
 
 	m.Get(apirouter.Annotations).Handler(handler(serveAnnotations))
 	m.Get(apirouter.AuthInfo).Handler(handler(serveAuthInfo))

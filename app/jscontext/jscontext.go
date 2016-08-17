@@ -5,9 +5,9 @@ import (
 	"regexp"
 	"strings"
 
-	"context"
+	"github.com/gorilla/csrf"
 
-	"github.com/justinas/nosurf"
+	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/auth"
@@ -51,7 +51,7 @@ func NewJSContextFromRequest(ctx context.Context, req *http.Request) (JSContext,
 	jsctx := JSContext{
 		AppURL:         conf.AppURL(ctx).String(),
 		CacheControl:   cacheControl,
-		CSRFToken:      nosurf.Token(req),
+		CSRFToken:      csrf.Token(req),
 		CurrentSpanID:  traceutil.SpanIDFromContext(ctx).String(),
 		UserAgentIsBot: isBot(eventsutil.UserAgentFromContext(ctx)),
 		AssetsRoot:     assets.URL("/").String(),

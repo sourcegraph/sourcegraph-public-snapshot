@@ -14,8 +14,8 @@ import (
 
 	"context"
 
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
-	"github.com/justinas/nosurf"
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
@@ -177,7 +177,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			RequestHost: req.Host,
 
 			Session:   sess,
-			CSRFToken: nosurf.Token(req),
+			CSRFToken: csrf.Token(req),
 
 			TemplateName: name,
 
