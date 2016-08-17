@@ -127,6 +127,7 @@ func New(opts *Translator) http.Handler {
 	mux.Handle("/definition", t.handler("/definition", t.serveDefinition))
 	mux.Handle("/exported-symbols", t.handler("/exported-symbols", t.serveExportedSymbols))
 	mux.Handle("/external-refs", t.handler("/external-refs", t.serveExternalRefs))
+	mux.Handle("/defkey-to-position", t.handler("/defkey-to-position", t.serveDefKeyToPosition))
 	mux.Handle("/defkey-refs", t.handler("/defkey-refs", t.serveDefKeyRefs))
 	mux.Handle("/hover", t.handler("/hover", t.serveHover))
 	mux.Handle("/local-refs", t.handler("/local-refs", t.serveLocalRefs))
@@ -673,6 +674,98 @@ func parseDefKeyString(def string) (string, string, error) {
 		return "", "", fmt.Errorf("def is incomplete: missing path")
 	}
 	return def[:idx-1], def[idx+2:], nil
+}
+
+func (t *translator) serveDefKeyToPosition(body []byte) (interface{}, error) {
+	// Decode the user request.
+	var defKey DefKey
+	if err := json.Unmarshal(body, &defKey); err != nil {
+		return nil, err
+	}
+	if defKey.Def == "" {
+		return nil, fmt.Errorf("Def field must be set")
+	}
+	if defKey.Repo == "" {
+		return nil, fmt.Errorf("Repo field must be set")
+	}
+	if defKey.Commit == "" {
+		return nil, fmt.Errorf("Commit field must be set")
+	}
+
+	defRepo, defName, err := parseDefKeyString(defKey.Def)
+	if err != nil {
+		return nil, err
+	}
+
+	// Determine the root path for the workspace and prepare it.
+	rootPath, err := t.prepareWorkspace(defKey.Repo, defKey.Commit)
+	if err != nil {
+		return nil, err
+	}
+	start := time.Now()
+
+	// TODO: should probably check server capabilities before invoking symbol,
+	// but good enough for now.
+	reqSymbol := &jsonrpc2.Request{
+		Method: "workspace/symbol",
+	}
+
+	p := lsp.WorkspaceSymbolParams{
+		// TODO(keegancsmith) this is go specific
+		Query: "defkey-refs-internal " + defKey.Repo + "/...",
+	}
+	if err := reqSymbol.SetParams(p); err != nil {
+		return nil, err
+	}
+
+	// TODO(slimsag): cache symbol information for quicker access
+	var respSymbol []lsp.SymbolInformation
+	err = t.lspDo(rootPath, reqSymbol, &respSymbol)
+	defer observe(start, reqSymbol.Method, defKey.Repo, err, len(respSymbol) == 0)
+	if err != nil {
+		return nil, err
+	}
+
+	var symbolsForDefKey []lsp.SymbolInformation
+	for _, s := range respSymbol {
+		pkgParts := strings.Split(s.ContainerName, "/")
+		var unit string
+		if len(pkgParts) < 3 {
+			unit = s.ContainerName
+		} else {
+			unit = strings.Join(pkgParts, "/")
+		}
+
+		// Collect out refs only from def repository and name.
+		if unit != defRepo || defName != s.Name {
+			continue
+		}
+		symbolsForDefKey = append(symbolsForDefKey, s)
+	}
+	if len(symbolsForDefKey) == 0 {
+		// TODO: formalize not-found errors
+		return nil, errors.New("position for def key not found")
+	}
+
+	// TODO(slimsag): how do we handle def keys that map to multiple identical
+	// positions? e.g. see the results for:
+	//
+	// 	curl -s -H "Content-Type: application/json" -X POST -d '{"Repo":"github.com/slimsag/mux","Commit":"780415097119f6f61c55475fe59b66f3c3e9ea53","Def":"GoPackage/github.com/slimsag/mux/-/Router/Match"}' http://localhost:4141/defkey-to-position
+	//
+	// Right now we assume the first one is right, but this is likely to fail
+	// in some cases? Maybe we should have a count/index as part of the key.
+	symbol := symbolsForDefKey[0]
+	f, err := t.resolveFile(defKey.Repo, defKey.Commit, symbol.Location.URI)
+	if err != nil {
+		return nil, err
+	}
+	return &Position{
+		Repo:      f.Repo,
+		Commit:    f.Commit,
+		File:      f.Path,
+		Line:      symbol.Location.Range.Start.Line,
+		Character: symbol.Location.Range.Start.Character,
+	}, nil
 }
 
 func (t *translator) serveDefKeyRefs(body []byte) (interface{}, error) {

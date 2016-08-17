@@ -28,6 +28,16 @@ func (c *Client) Prepare(r *RepoRev) error {
 	return c.do("prepare", r, nil)
 }
 
+// DefKeyToPosition returns the position of the given DefKey.
+func (c *Client) DefKeyToPosition(k *DefKey) (*Position, error) {
+	var result Position
+	err := c.do("defkey-to-position", k, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 // Definition resolves the specified position, effectively returning where the
 // given definition is defined. For example, this is used for go to definition.
 func (c *Client) Definition(p *Position) (*Range, error) {
