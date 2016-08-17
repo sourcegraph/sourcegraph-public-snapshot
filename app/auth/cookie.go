@@ -14,7 +14,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 )
 
 // Session is the information stored in a session cookie.
@@ -120,9 +119,7 @@ func DeleteSessionCookie(w http.ResponseWriter) {
 func CookieMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if sess, err := ReadSessionCookie(r); err == nil {
-			ctx := httpctx.FromRequest(r)
-			ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: sess.AccessToken}))
-			httpctx.SetForRequest(r, ctx)
+			r = r.WithContext(sourcegraph.WithCredentials(r.Context(), oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: sess.AccessToken})))
 
 			// Vary based on Authorization header if the request is
 			// operating with any level of authorization, so that the

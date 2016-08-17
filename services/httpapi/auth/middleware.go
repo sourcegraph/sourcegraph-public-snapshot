@@ -10,7 +10,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 )
 
 const oauthBasicUsername = "x-oauth-basic"
@@ -35,8 +34,7 @@ func PasswordMiddleware(next http.Handler) http.Handler {
 				return
 			}
 
-			ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok.AccessToken, TokenType: "Bearer"}))
-			httpctx.SetForRequest(r, ctx)
+			r = r.WithContext(sourcegraph.WithCredentials(r.Context(), oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok.AccessToken, TokenType: "Bearer"})))
 
 			// Vary based on Authorization header if the request is
 			// operating with any level of authorization, so that the
@@ -64,9 +62,7 @@ func OAuth2AccessTokenMiddleware(next http.Handler) http.Handler {
 		}
 
 		if tok != "" {
-			ctx := httpctx.FromRequest(r)
-			ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok, TokenType: tokType}))
-			httpctx.SetForRequest(r, ctx)
+			r = r.WithContext(sourcegraph.WithCredentials(r.Context(), oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok, TokenType: tokType})))
 
 			// Vary based on Authorization header if the request is
 			// operating with any level of authorization, so that the

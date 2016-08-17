@@ -27,7 +27,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/oauth2util"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
 	"sourcegraph.com/sqs/pbtypes"
@@ -83,7 +82,7 @@ func serveGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 }
 
 func githubOAuthLoginURL(r *http.Request, state oauthAuthorizeClientState, scopes []string) (*url.URL, error) {
-	ctx := httpctx.FromRequest(r)
+	ctx := r.Context()
 
 	stateText, err := state.MarshalText()
 	if err != nil {
@@ -175,11 +174,10 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	// just-authenticated linked GitHub account. The user must have previously
 	// linked the accounts for the Auth.GetAccessToken call to return this
 	// Sourcegraph UID, so we can do this safely.
-	ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{
+	r = r.WithContext(sourcegraph.WithCredentials(r.Context(), oauth2.StaticTokenSource(&oauth2.Token{
 		AccessToken: tok.AccessToken,
 		TokenType:   "Bearer",
-	}))
-	httpctx.SetForRequest(r, ctx)
+	})))
 	return linkAccountWithGitHub(w, r, ctx, cl, tok.UID, ghUser, tok, false, state.ReturnTo)
 }
 
@@ -276,11 +274,10 @@ func createAccountFromGitHub(w http.ResponseWriter, r *http.Request, ctx context
 	}
 	log15.Info("Created Sourcegraph account from GitHub account", "uid", createdAcct.UID, "login", newAcct.Login, "email", newAcct.Email)
 
-	ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{
+	r = r.WithContext(sourcegraph.WithCredentials(r.Context(), oauth2.StaticTokenSource(&oauth2.Token{
 		AccessToken: createdAcct.TemporaryAccessToken,
 		TokenType:   "Bearer",
-	}))
-	httpctx.SetForRequest(r, ctx)
+	})))
 
 	return linkAccountWithGitHub(w, r, ctx, cl, createdAcct.UID, ghUser, tok, true, returnTo)
 }

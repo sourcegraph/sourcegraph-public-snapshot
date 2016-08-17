@@ -74,7 +74,7 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 	// Add appdash span ID.
 	spanID, _ := httptrace.GetSpanID(r.Header)
 	if spanID != nil {
-		appdashURL := appdashctx.AppdashURLSafe(httpctx.FromRequest(r))
+		appdashURL := appdashctx.AppdashURLSafe(r.Context())
 
 		if spanID.Trace != 0 {
 			addTag("Appdash trace", spanID.Trace.String())

@@ -35,19 +35,18 @@ const ConfigPath = "/.well-known/sourcegraph"
 // Meta.Config API method.
 func AddConfigHandler(mux *http.ServeMux) {
 	mux.HandleFunc(ConfigPath, func(w http.ResponseWriter, r *http.Request) {
-		httpctx.SetRouteName(r, "well-known")
+		r = httpctx.WithRouteName(r, "well-known")
 		if r.Method != "GET" {
 			http.Error(w, "", http.StatusMethodNotAllowed)
 			return
 		}
 
-		ctx := httpctx.FromRequest(r)
-		cl, err := sourcegraph.NewClientFromContext(ctx)
+		cl, err := sourcegraph.NewClientFromContext(r.Context())
 		if err != nil {
 			http.Error(w, "", http.StatusInternalServerError)
 		}
 
-		config, err := cl.Meta.Config(ctx, &pbtypes.Void{})
+		config, err := cl.Meta.Config(r.Context(), &pbtypes.Void{})
 		if err != nil {
 			log.Printf("Error serving %s: %s.", r.URL, err)
 			// Can't use package errcode due to import cycle.

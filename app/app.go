@@ -41,11 +41,11 @@ func NewHandlerWithCSRFProtection(handler http.Handler) http.Handler {
 		h.SetBaseCookie(http.Cookie{
 			Path:     "/",
 			HttpOnly: true,
-			Secure:   appauth.OnlySecureCookies(httpctx.FromRequest(r)),
+			Secure:   appauth.OnlySecureCookies(r.Context()),
 		})
 		h.ExemptRegexps("^/login/oauth/", "git-[\\w-]+$")
 		h.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			httpctx.SetRouteName(r, "")
+			r = httpctx.WithRouteName(r, "")
 			internal.HandleError(w, r, http.StatusForbidden, errors.New("CSRF check failed"))
 		}))
 		h.ServeHTTP(w, r)

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/appdash"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil/appdashctx"
 )
@@ -37,7 +36,7 @@ func init() {
 // This mostly works around the fact that Appdash does not support JavaScript
 // tracing yet.
 func serveInternalAppdashRecordSpan(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
+	ctx := r.Context()
 
 	// Decode query parameters into an event.
 	ev := &PageLoadEvent{}

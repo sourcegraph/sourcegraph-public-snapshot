@@ -17,7 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 )
 
 func TestGoImportPath(t *testing.T) {
@@ -88,7 +87,7 @@ func TestGoImportPath(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		httpctx.SetForRequest(req, mock.Ctx)
+		req = req.WithContext(mock.Ctx)
 
 		middleware.SourcegraphComGoGetHandler(nil).ServeHTTP(rw, req)
 
@@ -121,7 +120,7 @@ func TestGoImportPath_repoCheckSequence(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	httpctx.SetForRequest(req, mock.Ctx)
+	req = req.WithContext(mock.Ctx)
 
 	middleware.SourcegraphComGoGetHandler(nil).ServeHTTP(rw, req)
 

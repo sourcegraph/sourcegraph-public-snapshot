@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 )
 
 // Client returns the Sourcegraph API client and context for an HTTP
@@ -17,10 +16,9 @@ import (
 // the request is routed to the appropriate server. See the RepoClient
 // docs for more info.
 func Client(r *http.Request) (context.Context, *sourcegraph.Client) {
-	ctx := httpctx.FromRequest(r)
-	cl, err := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(r.Context())
 	if err != nil {
 		panic(fmt.Sprintf("NewClientFromContext: %s", err))
 	}
-	return ctx, cl
+	return r.Context(), cl
 }

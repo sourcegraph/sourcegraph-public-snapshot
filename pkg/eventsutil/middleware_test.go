@@ -4,19 +4,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"context"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 )
 
 func TestAgentMiddleware(t *testing.T) {
 	var called bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		httpctx.SetForRequest(r, context.Background())
 		AgentMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			called = true
-			ctx := httpctx.FromRequest(r)
+			ctx := r.Context()
 
 			userAgent := UserAgentFromContext(ctx)
 			if want := "sourcegraphbot"; userAgent != want {

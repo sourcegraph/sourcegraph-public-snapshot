@@ -20,20 +20,18 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 			name, _ := httpctx.RouteNameOrError(r)
 			return name
 		},
-		SetContextSpan: func(r *http.Request, id appdash.SpanID) {
-			SetSpanID(r, id)
-
-			ctx := httpctx.FromRequest(r)
+		SetContextSpan: func(r *http.Request, id appdash.SpanID) *http.Request {
+			ctx := r.Context()
 			ctx = NewContext(ctx, id)
 			ctx = sourcegraph.WithClientMetadata(ctx, (&span{spanID: id}).Metadata())
-			httpctx.SetForRequest(r, ctx)
+			return r.WithContext(ctx)
 		},
 	}
 
 	m := httptrace.Middleware(DefaultCollector, config)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		m(w, r, func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("X-Appdash-Trace", SpanID(r).Trace.String())
+			w.Header().Set("X-Appdash-Trace", SpanIDFromContext(r.Context()).Trace.String())
 			next.ServeHTTP(w, r)
 		})
 	})

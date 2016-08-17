@@ -3,12 +3,9 @@ package traceutil
 
 import (
 	"log"
-	"net/http"
 	"os"
 
 	"context"
-
-	gcontext "github.com/gorilla/context"
 
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil/appdashctx"
@@ -48,22 +45,4 @@ type discardCollector struct{}
 
 func (discardCollector) Collect(appdash.SpanID, ...appdash.Annotation) error {
 	return nil
-}
-
-type key int
-
-const (
-	spanID key = iota
-)
-
-// SpanID returns the Appdash span ID for the current HTTP request.
-func SpanID(r *http.Request) appdash.SpanID {
-	if v := gcontext.Get(r, spanID); v != nil {
-		return v.(appdash.SpanID)
-	}
-	return appdash.SpanID{}
-}
-
-func SetSpanID(r *http.Request, v appdash.SpanID) {
-	gcontext.Set(r, spanID, v)
 }

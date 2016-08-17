@@ -5,21 +5,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"context"
-
 	"golang.org/x/oauth2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 )
 
 func TestCookieMiddleware(t *testing.T) {
 	var called bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		httpctx.SetForRequest(r, context.Background())
 		CookieMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			called = true
-			ctx := httpctx.FromRequest(r)
+			ctx := r.Context()
 
 			creds := sourcegraph.CredentialsFromContext(ctx)
 			tok, err := creds.(oauth2.TokenSource).Token()

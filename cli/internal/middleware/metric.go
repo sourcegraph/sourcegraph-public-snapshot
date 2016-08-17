@@ -51,7 +51,7 @@ func Metrics(next http.Handler) http.Handler {
 		sess, err := appauth.ReadSessionCookie(r)
 		if err == nil {
 			tok = sess.AccessToken
-			ctx := httpctx.FromRequest(r)
+			ctx := r.Context()
 			if ctx != nil {
 				for _, cookie := range r.Cookies() {
 					// each environment uses a different cookie name, but they all start with 'amplitude'
@@ -91,7 +91,7 @@ func Metrics(next http.Handler) http.Handler {
 		requestDuration.With(labels).Observe(duration.Seconds())
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
-		log15.Debug("TRACE HTTP", "method", r.Method, "URL", r.URL.String(), "routename", name, "spanID", traceutil.SpanID(r), "code", code, "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent(), "uid", uid, "session", sessionID, "duration", duration)
+		log15.Debug("TRACE HTTP", "method", r.Method, "URL", r.URL.String(), "routename", name, "spanID", traceutil.SpanIDFromContext(r.Context()), "code", code, "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent(), "uid", uid, "session", sessionID, "duration", duration)
 	})
 }
 

@@ -5,8 +5,6 @@ import (
 	"net/url"
 
 	"context"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 )
 
 type contextKey int
@@ -19,9 +17,7 @@ const (
 // in the context for downstream HTTP handlers.
 func AgentMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := httpctx.FromRequest(r)
-		ctx = WithUserAgent(ctx, url.QueryEscape(r.UserAgent()))
-		httpctx.SetForRequest(r, ctx)
+		r = r.WithContext(WithUserAgent(r.Context(), url.QueryEscape(r.UserAgent())))
 		next.ServeHTTP(w, r)
 	})
 }

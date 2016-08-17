@@ -15,7 +15,7 @@ func BlackHole(next http.Handler) http.Handler {
 			return
 		}
 
-		httpctx.SetRouteName(r, "blackhole")
+		r = httpctx.WithRouteName(r, "blackhole")
 		w.WriteHeader(http.StatusGone)
 	})
 }

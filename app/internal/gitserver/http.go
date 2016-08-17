@@ -17,7 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	gitrouter "sourcegraph.com/sourcegraph/sourcegraph/app/internal/gitserver/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 )
@@ -71,7 +70,7 @@ func trimGitService(name string) string {
 }
 
 func serveInfoRefs(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
+	ctx := r.Context()
 
 	repo, err := getRepoID(ctx, routevar.ToRepo(mux.Vars(r)))
 	if err != nil {
@@ -119,7 +118,7 @@ func serveInfoRefs(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveReceivePack(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
+	ctx := r.Context()
 
 	repo, err := getRepoID(ctx, routevar.ToRepo(mux.Vars(r)))
 	if err != nil {
@@ -150,7 +149,7 @@ func serveReceivePack(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveUploadPack(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
+	ctx := r.Context()
 
 	repo, err := getRepoID(ctx, routevar.ToRepo(mux.Vars(r)))
 	if err != nil {

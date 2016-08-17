@@ -16,7 +16,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 )
 
 func NewTest(h http.Handler) (*Client, *MockClients) {
@@ -51,7 +50,7 @@ type handlerTransport struct {
 }
 
 func (t handlerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	httpctx.SetForRequest(req, *t.ctx)
+	req = req.WithContext(*t.ctx)
 
 	rw := httptest.NewRecorder()
 	rw.Body = new(bytes.Buffer)

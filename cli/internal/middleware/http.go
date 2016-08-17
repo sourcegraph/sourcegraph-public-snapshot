@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 )
 
 // RealIP sets req.RemoteAddr from the X-Real-Ip header if it exists.
@@ -82,7 +81,7 @@ func NoCacheByDefault(next http.Handler) http.Handler {
 // EnsureHostname ensures that the URL hostname is whatever is in SG_URL.
 func EnsureHostname(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := httpctx.FromRequest(r)
+		ctx := r.Context()
 
 		wantHost := conf.AppURL(ctx).Host
 		if strings.Split(wantHost, ":")[0] == "localhost" {

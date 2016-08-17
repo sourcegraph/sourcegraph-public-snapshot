@@ -190,7 +190,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 
 			Ctx: ctx,
 
-			CurrentSpanID:    traceutil.SpanID(req),
+			CurrentSpanID:    traceutil.SpanIDFromContext(req.Context()),
 			CurrentRouteVars: mux.Vars(req),
 			Debug:            handlerutil.DebugMode,
 

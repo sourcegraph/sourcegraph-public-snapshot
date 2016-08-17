@@ -54,7 +54,7 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 			return
 		}
 
-		httpctx.SetRouteName(req, "go-get")
+		req = httpctx.WithRouteName(req, "go-get")
 		if !strings.HasPrefix(req.URL.Path, "/") {
 			err := fmt.Errorf("req.URL.Path doesn't have a leading /: %q", req.URL.Path)
 			log.Println(err)
@@ -62,7 +62,7 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := httpctx.FromRequest(req)
+		ctx := req.Context()
 		cl, err := sourcegraph.NewClientFromContext(ctx)
 		if err != nil {
 			log.Println("SourcegraphComGoGetHandler: sourcegraph.NewClientFromContext:", err)
