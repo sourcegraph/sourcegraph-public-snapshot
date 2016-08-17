@@ -100,19 +100,19 @@ type RepoRev struct {
 // DefSpec is a globally unique identifier for a definition in a repository at
 // a specific revision. It is the same as the Srclib DefSpec.
 type DefSpec struct {
-	// Repo is the repository URI.
+	// Repo is the repository URI (example github.com/gorilla/mux).
 	Repo string
 
 	// Commit is the Git commit ID (not branch) of the repository.
 	Commit string
 
-	// UnitType (example GoPackage)
+	// UnitType (example GoPackage).
 	UnitType string
 
-	// Unit (example net/http)
+	// Unit (example net/http, or github.com/gorilla/mux/subpkg).
 	Unit string
 
-	// Path (example NewRequest)
+	// Path (example NewRequest).
 	Path string
 }
 
