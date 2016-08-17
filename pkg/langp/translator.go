@@ -822,7 +822,6 @@ func (t *translator) serveDefKeyToPosition(body []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	var symbolsForDefKey []lsp.SymbolInformation
 	for _, s := range respSymbol {
 		pkgParts := strings.Split(s.ContainerName, "/")
 		var unit string
@@ -836,32 +835,28 @@ func (t *translator) serveDefKeyToPosition(body []byte) (interface{}, error) {
 		if unit != defRepo || defName != s.Name {
 			continue
 		}
-		symbolsForDefKey = append(symbolsForDefKey, s)
-	}
-	if len(symbolsForDefKey) == 0 {
-		// TODO: formalize not-found errors
-		return nil, errors.New("position for def key not found")
-	}
 
-	// TODO(slimsag): how do we handle def keys that map to multiple identical
-	// positions? e.g. see the results for:
-	//
-	// 	curl -s -H "Content-Type: application/json" -X POST -d '{"Repo":"github.com/slimsag/mux","Commit":"780415097119f6f61c55475fe59b66f3c3e9ea53","Def":"GoPackage/github.com/slimsag/mux/-/Router/Match"}' http://localhost:4141/defkey-to-position
-	//
-	// Right now we assume the first one is right, but this is likely to fail
-	// in some cases? Maybe we should have a count/index as part of the key.
-	symbol := symbolsForDefKey[0]
-	f, err := t.resolveFile(defKey.Repo, defKey.Commit, symbol.Location.URI)
-	if err != nil {
-		return nil, err
+		// TODO(slimsag): how do we handle def keys that map to multiple identical
+		// positions? e.g. see the results for:
+		//
+		// 	curl -s -H "Content-Type: application/json" -X POST -d '{"Repo":"github.com/slimsag/mux","Commit":"780415097119f6f61c55475fe59b66f3c3e9ea53","Def":"GoPackage/github.com/slimsag/mux/-/Router/Match"}' http://localhost:4141/defkey-to-position
+		//
+		// Right now we assume the first one is right, but this is likely to fail
+		// in some cases? Maybe we should have a count/index as part of the key.
+		f, err := t.resolveFile(defKey.Repo, defKey.Commit, s.Location.URI)
+		if err != nil {
+			return nil, err
+		}
+		return &Position{
+			Repo:      f.Repo,
+			Commit:    f.Commit,
+			File:      f.Path,
+			Line:      s.Location.Range.Start.Line,
+			Character: s.Location.Range.Start.Character,
+		}, nil
 	}
-	return &Position{
-		Repo:      f.Repo,
-		Commit:    f.Commit,
-		File:      f.Path,
-		Line:      symbol.Location.Range.Start.Line,
-		Character: symbol.Location.Range.Start.Character,
-	}, nil
+	// TODO: formalize not-found errors
+	return nil, errors.New("position for def key not found")
 }
 
 func (t *translator) serveDefKeyRefs(body []byte) (interface{}, error) {
