@@ -137,6 +137,19 @@ func (mc *MultiClient) LocalRefs(p *Position) (*RefLocations, error) {
 	return c.LocalRefs(p)
 }
 
+// DefKeyRefs invokes DefKeyRefs on the client whose language matches p.File.
+func (mc *MultiClient) DefKeyRefs(k *DefKey) (*RefLocations, error) {
+	result := &RefLocations{}
+	for _, c := range mc.Clients {
+		v, err := c.DefKeyRefs(k)
+		if err != nil {
+			return nil, err
+		}
+		result.Refs = append(result.Refs, v.Refs...)
+	}
+	return result, nil
+}
+
 // ExternalRefs invokes ExternalRefs for each client and combines the results,
 // returning the first error that occurs, if any.
 func (mc *MultiClient) ExternalRefs(r *RepoRev) (*ExternalRefs, error) {

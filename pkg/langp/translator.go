@@ -866,19 +866,13 @@ func (t *translator) serveDefKeyRefs(body []byte) (interface{}, error) {
 	if defKey.Repo == "" {
 		return nil, fmt.Errorf("Repo field must be set")
 	}
+	if defKey.Commit == "" {
+		return nil, fmt.Errorf("Commit field must be set")
+	}
 
 	defRepo, defName, err := parseDefKeyString(defKey.Def)
 	if err != nil {
 		return nil, err
-	}
-
-	// Fetch latest commit on HEAD if not given a specific revision.
-	if len(defKey.Commit) == 0 {
-		_, cloneURI := ResolveRepoAlias(defKey.Repo)
-		defKey.Commit, err = GetReferenceCommitID(cloneURI, "HEAD")
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	// Determine the root path for the workspace and prepare it.

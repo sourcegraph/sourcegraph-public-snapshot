@@ -80,6 +80,16 @@ func (c *Client) LocalRefs(p *Position) (*RefLocations, error) {
 	return &result, nil
 }
 
+// DefKeyRefs resolves references to repository definitions.
+func (c *Client) DefKeyRefs(k *DefKey) (*RefLocations, error) {
+	var result RefLocations
+	err := c.do("defkey-refs", k, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 // ExternalRefs resolves references to repository-external definitions.
 func (c *Client) ExternalRefs(r *RepoRev) (*ExternalRefs, error) {
 	var result ExternalRefs

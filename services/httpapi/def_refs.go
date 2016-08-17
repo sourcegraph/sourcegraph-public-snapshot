@@ -2,17 +2,31 @@ package httpapi
 
 import (
 	"net/http"
+	"path"
 
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 )
+
+// RefLocation represents location in file of a reference to a definition.
+type RefLocation struct {
+	Repo      string
+	CommitID  string
+	UnitType  string
+	Unit      string
+	File      string
+	StartLine int
+	EndLine   int
+}
 
 func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
 	var tmp struct {
-		Repo repoIDOrPath
+		Repo string
 		sourcegraph.DefListRefsOptions
 	}
 	if err := schemaDecoder.Decode(&tmp, r.URL.Query()); err != nil {
@@ -21,7 +35,7 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 	opt := tmp.DefListRefsOptions
 	if tmp.Repo != "" {
 		var err error
-		opt.Repo, err = getRepoID(ctx, tmp.Repo)
+		opt.Repo, err = getRepoID(ctx, repoIDOrPath(tmp.Repo))
 		if err != nil {
 			return err
 		}
@@ -70,6 +84,35 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 		opt.CommitID = dataVersion.CommitID
+	} else {
+		opt.CommitID = def.CommitID
+	}
+
+	if feature.IsUniverseRepo(repo.URI) {
+		refs, err := langp.DefaultClient.DefKeyRefs(&langp.DefKey{
+			Def: path.Join(def.UnitType, def.Repo, "-", def.Path),
+			RepoRev: langp.RepoRev{
+				Repo:   tmp.Repo,
+				Commit: opt.CommitID,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		refLocations := make([]*RefLocation, 0, len(refs.Refs))
+		for _, ref := range refs.Refs {
+			// TODO: investigate whether or not we can remove Def* fields,
+			// they seems not been used in frontend.
+			refLocations = append(refLocations, &RefLocation{
+				Repo:      ref.Repo,
+				CommitID:  ref.Commit,
+				File:      ref.File,
+				StartLine: ref.StartLine,
+				EndLine:   ref.EndLine,
+			})
+		}
+		return writeJSON(w, refLocations)
 	}
 
 	refs, err := cl.Defs.ListRefs(ctx, &sourcegraph.DefsListRefsOp{

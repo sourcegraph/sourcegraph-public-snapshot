@@ -154,12 +154,21 @@ export class RefsContainer extends Container<Props, State> {
 					this.ranges[ref.File] = this.ranges[ref.File] ? this.ranges[ref.File] : [];
 					const rangeKey = `${ref.File}${ref.Start}`;
 					if (!this.rangesMemo[rangeKey]) {
-						let contents = this.filesByName[ref.File].ContentsString;
-						const startByte = lineFromByte(contents, ref.Start);
+						// Response from LSP comes with StartLine, so we can directly use it if available.
+						let startLineNum;
+						let endLineNum;
+						if (ref.StartLine) {
+							startLineNum = ref.StartLine;
+							endLineNum = ref.EndLine;
+						} else {
+							let contents = this.filesByName[ref.File].ContentsString;
+							startLineNum = lineFromByte(contents, ref.Start);
+							endLineNum = lineFromByte(contents, ref.End);
+						}
 						this.ranges[ref.File].push([
-							Math.max(startByte - SNIPPET_REF_CONTEXT_LINES, 0),
-							lineFromByte(contents, ref.End) + SNIPPET_REF_CONTEXT_LINES,
-							startByte,
+							Math.max(startLineNum - SNIPPET_REF_CONTEXT_LINES, 0),
+							endLineNum + SNIPPET_REF_CONTEXT_LINES,
+							startLineNum,
 						]);
 						this.rangesMemo[rangeKey] = true;
 					}
