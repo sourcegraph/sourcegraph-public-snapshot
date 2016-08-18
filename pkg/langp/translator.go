@@ -621,9 +621,10 @@ func (t *translator) serveExternalRefs(body []byte) (interface{}, error) {
 	reqSymbol := &jsonrpc2.Request{
 		Method: "workspace/symbol",
 	}
+	importPath, _ := ResolveRepoAlias(r.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
-		Query: "external " + r.Repo + "/...",
+		Query: "external " + importPath + "/...",
 	}
 	if err := reqSymbol.SetParams(p); err != nil {
 		return nil, err
@@ -653,7 +654,7 @@ func (t *translator) serveExternalRefs(body []byte) (interface{}, error) {
 			unit = strings.Join(pkgParts, "/")
 		}
 		defs = append(defs, &DefSpec{
-			Repo:     repo,
+			Repo:     UnresolveRepoAlias(repo),
 			Commit:   commit,
 			UnitType: "GoPackage",
 			Unit:     unit,
@@ -693,9 +694,10 @@ func (t *translator) servePositionToDefSpec(body []byte) (interface{}, error) {
 	}
 
 	// Repositories are same indicates query local references.
+	importPath, _ := ResolveRepoAlias(pos.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
-		Query: "defspec-refs-internal " + pos.Repo + "/...",
+		Query: "defspec-refs-internal " + importPath + "/...",
 	}
 	if err := reqSymbol.SetParams(p); err != nil {
 		return nil, err
@@ -743,8 +745,8 @@ func (t *translator) servePositionToDefSpec(body []byte) (interface{}, error) {
 		}
 		// TODO: Go-specific
 		return &DefSpec{
-			Repo:     pos.Repo,
-			Commit:   pos.Commit,
+			Repo:     f.Repo,
+			Commit:   f.Commit,
 			Unit:     unit,
 			UnitType: "GoPackage",
 			Path:     s.Name,
@@ -789,9 +791,10 @@ func (t *translator) serveDefSpecToPosition(body []byte) (interface{}, error) {
 		Method: "workspace/symbol",
 	}
 
+	importPath, _ := ResolveRepoAlias(defSpec.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
-		Query: "defspec-refs-internal " + defSpec.Repo + "/...",
+		Query: "defspec-refs-internal " + importPath + "/...",
 	}
 	if err := reqSymbol.SetParams(p); err != nil {
 		return nil, err
@@ -882,9 +885,10 @@ func (t *translator) serveDefSpecRefs(body []byte) (interface{}, error) {
 	if strings.HasPrefix(defSpec.Unit, defSpec.Repo) {
 		queryType = "defspec-refs-internal"
 	}
+	importPath, _ := ResolveRepoAlias(defSpec.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
-		Query: queryType + " " + defSpec.Repo + "/...",
+		Query: queryType + " " + importPath + "/...",
 	}
 	if err := reqSymbol.SetParams(p); err != nil {
 		return nil, err
@@ -957,9 +961,10 @@ func (t *translator) serveExportedSymbols(body []byte) (interface{}, error) {
 	reqSymbol := &jsonrpc2.Request{
 		Method: "workspace/symbol",
 	}
+	importPath, _ := ResolveRepoAlias(r.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
-		Query: "exported " + r.Repo + "/...",
+		Query: "exported " + importPath + "/...",
 	}
 	if err := reqSymbol.SetParams(p); err != nil {
 		return nil, err
