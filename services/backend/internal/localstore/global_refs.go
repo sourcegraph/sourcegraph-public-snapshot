@@ -1,6 +1,7 @@
 package localstore
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"strings"
@@ -315,55 +316,46 @@ func (g *globalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error 
 		log15.Debug("GlobalRefs.Update re-indexing commit", "repo", repo, "commitID", commitID)
 	}
 
-	var allRefs []*graph.Ref
-	if lpClient, _ := langpClient(); lpClient != nil && feature.IsUniverseRepo(repo) {
+	var langpRefs []*graph.Ref
+	if feature.IsUniverseRepo(repo) {
 		start = time.Now()
-		r, err := lpClient.ExternalRefs(&langp.RepoRev{
-			Repo:   repo,
-			Commit: commitID,
-		})
+		langpRefs, err = lpAllRefs(repo, commitID)
 		observe("langp", start)
 		if err != nil {
 			log15.Debug("universe globalRefs.Update failed", "repo", repo, "commitID", op.CommitID, "err", err)
 		} else {
-			log15.Debug("universe globalRefs.Update success", "repo", repo, "commitID", op.CommitID, "count", len(r.Defs))
+			log15.Debug("universe globalRefs.Update success", "repo", repo, "commitID", op.CommitID, "count", len(langpRefs))
 		}
 	}
 
-	if len(allRefs) == 0 {
+	var refs []*graph.Ref
+	{
+		// In future only run this code if not in universe
 		start = time.Now()
-		allRefs, err = store.GraphFromContext(ctx).Refs(
+		allRefs, err := store.GraphFromContext(ctx).Refs(
 			sstore.ByRepoCommitIDs(sstore.Version{Repo: repo, CommitID: commitID}),
 		)
 		observe("graphstore", start)
 		if err != nil {
 			return err
 		}
+		refs = make([]*graph.Ref, 0, len(allRefs))
+		for _, r := range allRefs {
+			if !shouldIndexRef(r) {
+				continue
+			}
+			// This is a sign that something went wrong in the srclib
+			// stage. Rather not index at all. Alerting on this error
+			// should be handled upstream.
+			if r.DefRepo == "" || r.DefUnit == "" || r.DefUnitType == "" || r.DefPath == "" {
+				return fmt.Errorf("graphstore contains invalid reference: repo=%s commit=%s ref=%+v", repo, commitID, r)
+			}
+			refs = append(refs, r)
+		}
 	}
 
-	refs := make([]*graph.Ref, 0, len(allRefs))
-	for _, r := range allRefs {
-		// Ignore def refs.
-		if r.Def {
-			continue
-		}
-		// Ignore vendored refs.
-		if filelang.IsVendored(r.File, false) {
-			continue
-		}
-		// This is a sign that something went wrong in the srclib
-		// stage. Rather not index at all. Alerting on this error
-		// should be handled upstream.
-		if r.DefRepo == "" || r.DefUnit == "" || r.DefUnitType == "" || r.DefPath == "" {
-			return fmt.Errorf("graphstore contains invalid reference: repo=%s commit=%s ref=%+v", repo, commitID, r)
-		}
-		// Ignore ref to builtin defs of golang/go repo (string, int, bool, etc) as this
-		// doesn't add significant value; yet it adds up to a lot of space in the db,
-		// and queries for refs of builtin defs take long to finish.
-		if r.DefUnitType == "GoPackage" && r.DefRepo == "github.com/golang/go" && r.DefUnit == "builtin" {
-			continue
-		}
-		refs = append(refs, r)
+	if feature.IsUniverseRepo(repo) {
+		logUniverseDiff(refs, langpRefs)
 	}
 
 	log15.Debug("GlobalRefs.Update", "repo", repo, "commitID", commitID, "oldCommitID", oldCommitID, "numRefs", len(refs))
@@ -472,6 +464,125 @@ func (g *globalRefs) versionUpdate(tx gorp.SqlExecutor, repoPath string, commitI
 func (g *globalRefs) StatRefresh(ctx context.Context) error {
 	_, err := graphDBH(ctx).Exec("REFRESH MATERIALIZED VIEW CONCURRENTLY global_refs_stats;")
 	return err
+}
+
+// lpAllRefs fetches all refs using universe
+func lpAllRefs(repo, commitID string) ([]*graph.Ref, error) {
+	if !feature.IsUniverseRepo(repo) {
+		// We handle no refs as having to fall back to srclib
+		return nil, nil
+	}
+	lp, err := langpClient()
+	if err != nil {
+		return nil, err
+	}
+
+	// We want to index external and local exported symbols. So we need to
+	// query both ExternalRefs and ExportedSymbols respectively.
+	rr := &langp.RepoRev{Repo: repo, Commit: commitID}
+	external, err := lp.ExternalRefs(rr)
+	if err != nil {
+		return nil, err
+	}
+	exported, err := lp.ExportedSymbols(rr)
+	if err != nil {
+		return nil, err
+	}
+
+	defs := make([]*langp.DefSpec, 0, len(external.Defs)+len(exported.Symbols))
+	copy(defs, external.Defs)
+	for _, s := range exported.Symbols {
+		defs = append(defs, &s.DefSpec)
+	}
+
+	var allRefs []*graph.Ref
+	for _, d := range defs {
+		refs, err := lp.DefSpecRefs(d)
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range refs.Refs {
+			ref := &graph.Ref{
+				Def:         false,
+				DefRepo:     d.Repo,
+				DefUnitType: d.UnitType,
+				DefUnit:     d.Unit,
+				DefPath:     d.Path,
+				File:        r.File,
+				Repo:        repo,
+			}
+			if shouldIndexRef(ref) {
+				allRefs = append(allRefs, ref)
+			}
+		}
+	}
+	return allRefs, nil
+}
+
+// shouldIndexRef helps filter out refs we do not want in the index.
+func shouldIndexRef(r *graph.Ref) bool {
+	// Ignore def refs.
+	if r.Def {
+		return false
+	}
+	// Ignore vendored refs.
+	if filelang.IsVendored(r.File, false) {
+		return false
+	}
+	// Ignore ref to builtin defs of golang/go repo (string, int, bool, etc) as this
+	// doesn't add significant value; yet it adds up to a lot of space in the db,
+	// and queries for refs of builtin defs take long to finish.
+	if r.DefUnitType == "GoPackage" && r.DefRepo == "github.com/golang/go" && r.DefUnit == "builtin" {
+		return false
+	}
+	return true
+}
+
+// logUniverseDiff is temporary code to compare universe to srclib for references
+func logUniverseDiff(srclib, universe []*graph.Ref) {
+	b := &bytes.Buffer{}
+	type Key struct {
+		graph.DefKey
+		File string
+	}
+	build := func(refs []*graph.Ref) map[Key]int {
+		d := make(map[Key]int)
+		for _, r := range refs {
+			k := Key{
+				DefKey: graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath},
+				File:   r.File,
+			}
+			d[k] = d[k] + 1
+		}
+		return d
+	}
+	s := build(srclib)
+	u := build(universe)
+	total := 0
+	for d := range s {
+		if s[d] != u[d] {
+			total++
+			// limit number of examples
+			if total <= 10 {
+				fmt.Fprintf(b, "%#+v %d %d\n", d, s[d], u[d])
+			}
+		}
+	}
+	for d := range u {
+		if s[d] == 0 {
+			total++
+			// limit number of examples
+			if total <= 10 {
+				fmt.Fprintf(b, "%#+v %d %d\n", d, s[d], u[d])
+			}
+		}
+	}
+	if total == 0 {
+		return
+	}
+	fmt.Printf(`REFS UNIVERSE SRCLIB DIFF: len(srclib) = %d len(universe) = %d len(symdiff) = %d
+diff samples: (key, srclib_count, universe_count)
+%s`, len(s), len(u), total, b.String())
 }
 
 var globalRefsDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
