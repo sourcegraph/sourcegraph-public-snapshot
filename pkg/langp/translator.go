@@ -73,88 +73,9 @@ func (t *translator) Prepare(r *RepoRev) error {
 	return nil
 }
 
-func (t *translator) Definition(pos *Position) (*Range, error) {
+func (t *translator) DefSpecToPosition(defSpec *DefSpec) (*Position, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.preparer.prepareWorkspace(pos.Repo, pos.Commit)
-	if err != nil {
-		return nil, err
-	}
-	start := time.Now()
-
-	// TODO: should probably check server capabilities before invoking hover,
-	// but good enough for now.
-	reqDef := &jsonrpc2.Request{
-		Method: "textDocument/definition",
-	}
-	p := pos.LSP()
-	if t.FileURI != nil {
-		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
-	}
-	if err := reqDef.SetParams(p); err != nil {
-		return nil, err
-	}
-
-	// TODO: according to spec this could be lsp.Location OR []lsp.Location
-	var respDef []lsp.Location
-	err = t.lspDo(rootPath, reqDef, &respDef)
-	defer observe(start, reqDef.Method, pos.Repo, err, len(respDef) == 0)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: standardize our response when there are no results.
-	var r Range
-	if len(respDef) > 0 {
-		f, err := t.resolveFile(pos.Repo, pos.Commit, respDef[0].URI)
-		if err != nil {
-			return nil, err
-		}
-		r = Range{
-			Repo:           f.Repo,
-			Commit:         f.Commit,
-			File:           f.Path,
-			StartLine:      respDef[0].Range.Start.Line,
-			StartCharacter: respDef[0].Range.Start.Character,
-			EndLine:        respDef[0].Range.End.Line,
-			EndCharacter:   respDef[0].Range.End.Character,
-		}
-	}
-	return &r, nil
-}
-
-func (t *translator) Hover(pos *Position) (*Hover, error) {
-	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.preparer.prepareWorkspace(pos.Repo, pos.Commit)
-	if err != nil {
-		return nil, err
-	}
-	start := time.Now()
-
-	// TODO: should probably check server capabilities before invoking hover,
-	// but good enough for now.
-	reqHover := &jsonrpc2.Request{
-		Method: "textDocument/hover",
-	}
-	p := pos.LSP()
-	if t.FileURI != nil {
-		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
-	}
-	if err := reqHover.SetParams(p); err != nil {
-		return nil, err
-	}
-
-	var respHover lsp.Hover
-	err = t.lspDo(rootPath, reqHover, &respHover)
-	defer observe(start, reqHover.Method, pos.Repo, err, err == nil && len(respHover.Contents) == 0)
-	if err != nil {
-		return nil, err
-	}
-	return HoverFromLSP(&respHover), nil
-}
-
-func (t *translator) ExternalRefs(r *RepoRev) (*ExternalRefs, error) {
-	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.preparer.prepareWorkspace(r.Repo, r.Commit)
+	rootPath, err := t.preparer.prepareWorkspace(defSpec.Repo, defSpec.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -168,44 +89,55 @@ func (t *translator) ExternalRefs(r *RepoRev) (*ExternalRefs, error) {
 	importPath, _ := ResolveRepoAlias(r.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
-		Query: "external " + importPath + "/...",
+		Query: "defspec-refs-internal " + importPath + "/...",
 	}
 	if err := reqSymbol.SetParams(p); err != nil {
 		return nil, err
 	}
 
+	// TODO(slimsag): cache symbol information for quicker access
 	var respSymbol []lsp.SymbolInformation
 	err = t.lspDo(rootPath, reqSymbol, &respSymbol)
-	defer observe(start, reqSymbol.Method, r.Repo, err, len(respSymbol) == 0)
+	defer observe(start, reqSymbol.Method, defSpec.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
 	}
 
-	var defs []*DefSpec
-	// TODO(keegancsmith) go specific
 	for _, s := range respSymbol {
-		// TODO(keegancsmith) we should inspect the workspace to find
-		// out the repo of the dependency
-		commit := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 		pkgParts := strings.Split(s.ContainerName, "/")
-		var repo, unit string
+		var unit string
 		if len(pkgParts) < 3 {
-			// Hack for stdlib
-			repo = "github.com/golang/go"
 			unit = s.ContainerName
 		} else {
-			repo = strings.Join(pkgParts[:3], "/")
 			unit = strings.Join(pkgParts, "/")
 		}
-		defs = append(defs, &DefSpec{
-			Repo:     UnresolveRepoAlias(repo),
-			Commit:   commit,
-			UnitType: "GoPackage",
-			Unit:     unit,
-			Path:     s.Name,
-		})
+
+		// Collect out refs only from def unit and name.
+		if unit != defSpec.Unit || s.Name != defSpec.Path {
+			continue
+		}
+
+		// TODO(slimsag): how do we handle def keys that map to multiple identical
+		// positions? e.g. see the results for:
+		//
+		// 	curl -s -H "Content-Type: application/json" -X POST -d '{"Repo":"github.com/slimsag/mux","Commit":"780415097119f6f61c55475fe59b66f3c3e9ea53","Def":"GoPackage/github.com/slimsag/mux/-/Router/Match"}' http://localhost:4141/defspec-to-position
+		//
+		// Right now we assume the first one is right, but this is likely to fail
+		// in some cases? Maybe we should have a count/index as part of the key.
+		f, err := t.resolveFile(defSpec.Repo, defSpec.Commit, s.Location.URI)
+		if err != nil {
+			return nil, err
+		}
+		return &Position{
+			Repo:      f.Repo,
+			Commit:    f.Commit,
+			File:      f.Path,
+			Line:      s.Location.Range.Start.Line,
+			Character: s.Location.Range.Start.Character,
+		}, nil
 	}
-	return &ExternalRefs{Defs: defs}, nil
+	// TODO: formalize not-found errors
+	return nil, errors.New("position for def key not found")
 }
 
 func (t *translator) PositionToDefSpec(pos *Position) (*DefSpec, error) {
@@ -285,9 +217,134 @@ func (t *translator) PositionToDefSpec(pos *Position) (*DefSpec, error) {
 	return nil, errors.New("def key for position not found")
 }
 
-func (t *translator) DefSpecToPosition(defSpec *DefSpec) (*Position, error) {
+func (t *translator) Definition(pos *Position) (*Range, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.preparer.prepareWorkspace(defSpec.Repo, defSpec.Commit)
+	rootPath, err := t.preparer.prepareWorkspace(pos.Repo, pos.Commit)
+	if err != nil {
+		return nil, err
+	}
+	start := time.Now()
+
+	// TODO: should probably check server capabilities before invoking hover,
+	// but good enough for now.
+	reqDef := &jsonrpc2.Request{
+		Method: "textDocument/definition",
+	}
+	p := pos.LSP()
+	if t.FileURI != nil {
+		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
+	}
+	if err := reqDef.SetParams(p); err != nil {
+		return nil, err
+	}
+
+	// TODO: according to spec this could be lsp.Location OR []lsp.Location
+	var respDef []lsp.Location
+	err = t.lspDo(rootPath, reqDef, &respDef)
+	defer observe(start, reqDef.Method, pos.Repo, err, len(respDef) == 0)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: standardize our response when there are no results.
+	var r Range
+	if len(respDef) > 0 {
+		f, err := t.resolveFile(pos.Repo, pos.Commit, respDef[0].URI)
+		if err != nil {
+			return nil, err
+		}
+		r = Range{
+			Repo:           f.Repo,
+			Commit:         f.Commit,
+			File:           f.Path,
+			StartLine:      respDef[0].Range.Start.Line,
+			StartCharacter: respDef[0].Range.Start.Character,
+			EndLine:        respDef[0].Range.End.Line,
+			EndCharacter:   respDef[0].Range.End.Character,
+		}
+	}
+	return &r, nil
+}
+
+func (t *translator) Hover(pos *Position) (*Hover, error) {
+	// Determine the root path for the workspace and prepare it.
+	rootPath, err := t.preparer.prepareWorkspace(pos.Repo, pos.Commit)
+	if err != nil {
+		return nil, err
+	}
+	start := time.Now()
+
+	// TODO: should probably check server capabilities before invoking hover,
+	// but good enough for now.
+	reqHover := &jsonrpc2.Request{
+		Method: "textDocument/hover",
+	}
+	p := pos.LSP()
+	if t.FileURI != nil {
+		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
+	}
+	if err := reqHover.SetParams(p); err != nil {
+		return nil, err
+	}
+
+	var respHover lsp.Hover
+	err = t.lspDo(rootPath, reqHover, &respHover)
+	defer observe(start, reqHover.Method, pos.Repo, err, err == nil && len(respHover.Contents) == 0)
+	if err != nil {
+		return nil, err
+	}
+	return HoverFromLSP(&respHover), nil
+}
+
+func (t *translator) LocalRefs(pos *Position) (*RefLocations, error) {
+	// Determine the root path for the workspace and prepare it.
+	rootPath, err := t.preparer.prepareWorkspace(pos.Repo, pos.Commit)
+	if err != nil {
+		return nil, err
+	}
+	start := time.Now()
+
+	// TODO: should probably check server capabilities before invoking references,
+	// but good enough for now.
+	req := &jsonrpc2.Request{
+		Method: "textDocument/references",
+	}
+	p := pos.LSP()
+	if t.FileURI != nil {
+		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
+	}
+	if err := req.SetParams(p); err != nil {
+		return nil, err
+	}
+
+	var resp []lsp.Location
+	err = t.lspDo(rootPath, req, &resp)
+	defer observe(start, req.Method, pos.Repo, err, len(resp) == 0)
+	if err != nil {
+		return nil, err
+	}
+	refs := make([]*Range, 0, len(resp))
+	for _, r := range resp {
+		f, err := t.resolveFile(pos.Repo, pos.Commit, r.URI)
+		if err != nil {
+			return nil, err
+		}
+		refs = append(refs, &Range{
+			Repo:           f.Repo,
+			Commit:         f.Commit,
+			File:           f.Path,
+			StartLine:      r.Range.Start.Line,
+			StartCharacter: r.Range.Start.Character,
+			EndLine:        r.Range.End.Line,
+			EndCharacter:   r.Range.End.Character,
+		})
+	}
+	return &RefLocations{Refs: refs}, nil
+}
+
+func (t *translator) ExternalRefs(r *RepoRev) (*ExternalRefs, error) {
+	// Determine the root path for the workspace and prepare it.
+	rootPath, err := t.preparer.prepareWorkspace(r.Repo, r.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -302,55 +359,44 @@ func (t *translator) DefSpecToPosition(defSpec *DefSpec) (*Position, error) {
 	importPath, _ := ResolveRepoAlias(defSpec.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
-		Query: "defspec-refs-internal " + importPath + "/...",
+		Query: "external " + importPath + "/...",
 	}
 	if err := reqSymbol.SetParams(p); err != nil {
 		return nil, err
 	}
 
-	// TODO(slimsag): cache symbol information for quicker access
 	var respSymbol []lsp.SymbolInformation
 	err = t.lspDo(rootPath, reqSymbol, &respSymbol)
-	defer observe(start, reqSymbol.Method, defSpec.Repo, err, len(respSymbol) == 0)
+	defer observe(start, reqSymbol.Method, r.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
 	}
 
+	var defs []*DefSpec
+	// TODO(keegancsmith) go specific
 	for _, s := range respSymbol {
+		// TODO(keegancsmith) we should inspect the workspace to find
+		// out the repo of the dependency
+		commit := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 		pkgParts := strings.Split(s.ContainerName, "/")
-		var unit string
+		var repo, unit string
 		if len(pkgParts) < 3 {
+			// Hack for stdlib
+			repo = "github.com/golang/go"
 			unit = s.ContainerName
 		} else {
+			repo = strings.Join(pkgParts[:3], "/")
 			unit = strings.Join(pkgParts, "/")
 		}
-
-		// Collect out refs only from def unit and name.
-		if unit != defSpec.Unit || s.Name != defSpec.Path {
-			continue
-		}
-
-		// TODO(slimsag): how do we handle def keys that map to multiple identical
-		// positions? e.g. see the results for:
-		//
-		// 	curl -s -H "Content-Type: application/json" -X POST -d '{"Repo":"github.com/slimsag/mux","Commit":"780415097119f6f61c55475fe59b66f3c3e9ea53","Def":"GoPackage/github.com/slimsag/mux/-/Router/Match"}' http://localhost:4141/defspec-to-position
-		//
-		// Right now we assume the first one is right, but this is likely to fail
-		// in some cases? Maybe we should have a count/index as part of the key.
-		f, err := t.resolveFile(defSpec.Repo, defSpec.Commit, s.Location.URI)
-		if err != nil {
-			return nil, err
-		}
-		return &Position{
-			Repo:      f.Repo,
-			Commit:    f.Commit,
-			File:      f.Path,
-			Line:      s.Location.Range.Start.Line,
-			Character: s.Location.Range.Start.Character,
-		}, nil
+		defs = append(defs, &DefSpec{
+			Repo:     repo,
+			Commit:   commit,
+			UnitType: "GoPackage",
+			Unit:     unit,
+			Path:     s.Name,
+		})
 	}
-	// TODO: formalize not-found errors
-	return nil, errors.New("position for def key not found")
+	return &ExternalRefs{Defs: defs}, nil
 }
 
 func (t *translator) DefSpecRefs(defSpec *DefSpec) (*RefLocations, error) {
@@ -481,52 +527,6 @@ func (t *translator) ExportedSymbols(r *RepoRev) (*ExportedSymbols, error) {
 		})
 	}
 	return &ExportedSymbols{Symbols: symbols}, nil
-}
-
-func (t *translator) LocalRefs(pos *Position) (*RefLocations, error) {
-	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.preparer.prepareWorkspace(pos.Repo, pos.Commit)
-	if err != nil {
-		return nil, err
-	}
-	start := time.Now()
-
-	// TODO: should probably check server capabilities before invoking references,
-	// but good enough for now.
-	req := &jsonrpc2.Request{
-		Method: "textDocument/references",
-	}
-	p := pos.LSP()
-	if t.FileURI != nil {
-		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
-	}
-	if err := req.SetParams(p); err != nil {
-		return nil, err
-	}
-
-	var resp []lsp.Location
-	err = t.lspDo(rootPath, req, &resp)
-	defer observe(start, req.Method, pos.Repo, err, len(resp) == 0)
-	if err != nil {
-		return nil, err
-	}
-	refs := make([]*Range, 0, len(resp))
-	for _, r := range resp {
-		f, err := t.resolveFile(pos.Repo, pos.Commit, r.URI)
-		if err != nil {
-			return nil, err
-		}
-		refs = append(refs, &Range{
-			Repo:           f.Repo,
-			Commit:         f.Commit,
-			File:           f.Path,
-			StartLine:      r.Range.Start.Line,
-			StartCharacter: r.Range.Start.Character,
-			EndLine:        r.Range.End.Line,
-			EndCharacter:   r.Range.End.Character,
-		})
-	}
-	return &RefLocations{Refs: refs}, nil
 }
 
 func (t *translator) lspDo(rootPath string, request *jsonrpc2.Request, result interface{}) error {
