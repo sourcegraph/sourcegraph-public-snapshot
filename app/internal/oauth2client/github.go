@@ -178,6 +178,8 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		AccessToken: tok.AccessToken,
 		TokenType:   "Bearer",
 	})))
+	ctx = r.Context() // TODO: Figure out style/pattern we want to use. ctx vs r.Context(), ctx = context.WithValue(ctx. ...) vs r = r.WithContext(...), when and where.
+
 	return linkAccountWithGitHub(w, r, ctx, cl, tok.UID, ghUser, tok, false, state.ReturnTo)
 }
 
@@ -278,6 +280,7 @@ func createAccountFromGitHub(w http.ResponseWriter, r *http.Request, ctx context
 		AccessToken: createdAcct.TemporaryAccessToken,
 		TokenType:   "Bearer",
 	})))
+	ctx = r.Context() // TODO: Figure out style/pattern we want to use. ctx vs r.Context(), ctx = context.WithValue(ctx. ...) vs r = r.WithContext(...), when and where.
 
 	return linkAccountWithGitHub(w, r, ctx, cl, createdAcct.UID, ghUser, tok, true, returnTo)
 }
