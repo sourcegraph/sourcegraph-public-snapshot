@@ -477,16 +477,26 @@ func lpAllRefs(repo, commitID string) ([]*graph.Ref, error) {
 		return nil, err
 	}
 
-	defs, err := lp.ExternalRefs(&langp.RepoRev{
-		Repo:   repo,
-		Commit: commitID,
-	})
+	// We want to index external and local exported symbols. So we need to
+	// query both ExternalRefs and ExportedSymbols respectively.
+	rr := &langp.RepoRev{Repo: repo, Commit: commitID}
+	external, err := lp.ExternalRefs(rr)
+	if err != nil {
+		return nil, err
+	}
+	exported, err := lp.ExportedSymbols(rr)
 	if err != nil {
 		return nil, err
 	}
 
+	defs := make([]*langp.DefSpec, 0, len(external.Defs)+len(exported.Symbols))
+	copy(defs, external.Defs)
+	for _, s := range exported.Symbols {
+		defs = append(defs, &s.DefSpec)
+	}
+
 	var allRefs []*graph.Ref
-	for _, d := range defs.Defs {
+	for _, d := range defs {
 		refs, err := lp.DefSpecRefs(d)
 		if err != nil {
 			return nil, err
