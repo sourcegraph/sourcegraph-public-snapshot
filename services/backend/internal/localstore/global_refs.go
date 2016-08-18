@@ -1,6 +1,7 @@
 package localstore
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"strings"
@@ -315,41 +316,46 @@ func (g *globalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error 
 		log15.Debug("GlobalRefs.Update re-indexing commit", "repo", repo, "commitID", commitID)
 	}
 
-	var allRefs []*graph.Ref
+	var langpRefs []*graph.Ref
 	if feature.IsUniverseRepo(repo) {
 		start = time.Now()
-		allRefs, err = lpAllRefs(repo, commitID)
+		langpRefs, err = lpAllRefs(repo, commitID)
 		observe("langp", start)
 		if err != nil {
 			log15.Debug("universe globalRefs.Update failed", "repo", repo, "commitID", op.CommitID, "err", err)
 		} else {
-			log15.Debug("universe globalRefs.Update success", "repo", repo, "commitID", op.CommitID, "count", len(allRefs))
+			log15.Debug("universe globalRefs.Update success", "repo", repo, "commitID", op.CommitID, "count", len(langpRefs))
 		}
 	}
 
-	if len(allRefs) == 0 {
+	var refs []*graph.Ref
+	{
+		// In future only run this code if not in universe
 		start = time.Now()
-		allRefs, err = store.GraphFromContext(ctx).Refs(
+		allRefs, err := store.GraphFromContext(ctx).Refs(
 			sstore.ByRepoCommitIDs(sstore.Version{Repo: repo, CommitID: commitID}),
 		)
 		observe("graphstore", start)
 		if err != nil {
 			return err
 		}
+		refs = make([]*graph.Ref, 0, len(allRefs))
+		for _, r := range allRefs {
+			if !shouldIndexRef(r) {
+				continue
+			}
+			// This is a sign that something went wrong in the srclib
+			// stage. Rather not index at all. Alerting on this error
+			// should be handled upstream.
+			if r.DefRepo == "" || r.DefUnit == "" || r.DefUnitType == "" || r.DefPath == "" {
+				return fmt.Errorf("graphstore contains invalid reference: repo=%s commit=%s ref=%+v", repo, commitID, r)
+			}
+			refs = append(refs, r)
+		}
 	}
 
-	refs := make([]*graph.Ref, 0, len(allRefs))
-	for _, r := range allRefs {
-		if !shouldIndexRef(r) {
-			continue
-		}
-		// This is a sign that something went wrong in the srclib
-		// stage. Rather not index at all. Alerting on this error
-		// should be handled upstream.
-		if r.DefRepo == "" || r.DefUnit == "" || r.DefUnitType == "" || r.DefPath == "" {
-			return fmt.Errorf("graphstore contains invalid reference: repo=%s commit=%s ref=%+v", repo, commitID, r)
-		}
-		refs = append(refs, r)
+	if feature.IsUniverseRepo(repo) {
+		logUniverseDiff(refs, langpRefs)
 	}
 
 	log15.Debug("GlobalRefs.Update", "repo", repo, "commitID", commitID, "oldCommitID", oldCommitID, "numRefs", len(refs))
@@ -486,7 +492,7 @@ func lpAllRefs(repo, commitID string) ([]*graph.Ref, error) {
 			return nil, err
 		}
 		for _, r := range refs.Refs {
-			allRefs = append(allRefs, &graph.Ref{
+			ref := &graph.Ref{
 				Def:         false,
 				DefRepo:     d.Repo,
 				DefUnitType: d.UnitType,
@@ -494,7 +500,10 @@ func lpAllRefs(repo, commitID string) ([]*graph.Ref, error) {
 				DefPath:     d.Path,
 				File:        r.File,
 				Repo:        repo,
-			})
+			}
+			if shouldIndexRef(ref) {
+				allRefs = append(allRefs, ref)
+			}
 		}
 	}
 	return allRefs, nil
@@ -517,6 +526,53 @@ func shouldIndexRef(r *graph.Ref) bool {
 		return false
 	}
 	return true
+}
+
+// logUniverseDiff is temporary code to compare universe to srclib for references
+func logUniverseDiff(srclib, universe []*graph.Ref) {
+	b := &bytes.Buffer{}
+	type Key struct {
+		graph.DefKey
+		File string
+	}
+	build := func(refs []*graph.Ref) map[Key]int {
+		d := make(map[Key]int)
+		for _, r := range refs {
+			k := Key{
+				DefKey: graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath},
+				File:   r.File,
+			}
+			d[k] = d[k] + 1
+		}
+		return d
+	}
+	s := build(srclib)
+	u := build(universe)
+	total := 0
+	for d := range s {
+		if s[d] != u[d] {
+			total++
+			// limit number of examples
+			if total <= 10 {
+				fmt.Fprintf(b, "%#+v %d %d\n", d, s[d], u[d])
+			}
+		}
+	}
+	for d := range u {
+		if s[d] == 0 {
+			total++
+			// limit number of examples
+			if total <= 10 {
+				fmt.Fprintf(b, "%#+v %d %d\n", d, s[d], u[d])
+			}
+		}
+	}
+	if total == 0 {
+		return
+	}
+	fmt.Printf(`REFS UNIVERSE SRCLIB DIFF: len(srclib) = %d len(universe) = %d len(symdiff) = %d
+diff samples: (key, srclib_count, universe_count)
+%s`, len(s), len(u), total, b.String())
 }
 
 var globalRefsDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
