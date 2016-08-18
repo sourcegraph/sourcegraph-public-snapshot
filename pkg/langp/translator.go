@@ -52,21 +52,21 @@ type Translator struct {
 func New(opts *Translator) http.Handler {
 	t := &translator{
 		Translator: opts,
-		preparer:   opts.Preparer,
+		workspace:  opts.Preparer,
 	}
 	return NewServer(t)
 }
 
 type translator struct {
 	*Translator
-	mux      *http.ServeMux
-	preparer *Preparer
+	mux       *http.ServeMux
+	workspace *Preparer
 }
 
 func (t *translator) Prepare(r *RepoRev) error {
 	// Prepare the workspace, and timeout immediately if someone else is
 	// already preparing it.
-	_, err := t.preparer.prepareWorkspaceTimeout(r.Repo, r.Commit, 0*time.Second)
+	_, err := t.workspace.prepareTimeout(r.Repo, r.Commit, 0*time.Second)
 	if err != nil && err != errTimeout {
 		return err
 	}
@@ -75,7 +75,7 @@ func (t *translator) Prepare(r *RepoRev) error {
 
 func (t *translator) DefSpecToPosition(defSpec *DefSpec) (*Position, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.preparer.prepareWorkspace(defSpec.Repo, defSpec.Commit)
+	rootPath, err := t.workspace.prepare(defSpec.Repo, defSpec.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (t *translator) DefSpecToPosition(defSpec *DefSpec) (*Position, error) {
 
 func (t *translator) PositionToDefSpec(pos *Position) (*DefSpec, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.preparer.prepareWorkspace(pos.Repo, pos.Commit)
+	rootPath, err := t.workspace.prepare(pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +219,7 @@ func (t *translator) PositionToDefSpec(pos *Position) (*DefSpec, error) {
 
 func (t *translator) Definition(pos *Position) (*Range, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.preparer.prepareWorkspace(pos.Repo, pos.Commit)
+	rootPath, err := t.workspace.prepare(pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +268,7 @@ func (t *translator) Definition(pos *Position) (*Range, error) {
 
 func (t *translator) Hover(pos *Position) (*Hover, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.preparer.prepareWorkspace(pos.Repo, pos.Commit)
+	rootPath, err := t.workspace.prepare(pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +298,7 @@ func (t *translator) Hover(pos *Position) (*Hover, error) {
 
 func (t *translator) LocalRefs(pos *Position) (*RefLocations, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.preparer.prepareWorkspace(pos.Repo, pos.Commit)
+	rootPath, err := t.workspace.prepare(pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +344,7 @@ func (t *translator) LocalRefs(pos *Position) (*RefLocations, error) {
 
 func (t *translator) ExternalRefs(r *RepoRev) (*ExternalRefs, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.preparer.prepareWorkspace(r.Repo, r.Commit)
+	rootPath, err := t.workspace.prepare(r.Repo, r.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +401,7 @@ func (t *translator) ExternalRefs(r *RepoRev) (*ExternalRefs, error) {
 
 func (t *translator) DefSpecRefs(defSpec *DefSpec) (*RefLocations, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.preparer.prepareWorkspace(defSpec.Repo, defSpec.Commit)
+	rootPath, err := t.workspace.prepare(defSpec.Repo, defSpec.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -471,7 +471,7 @@ func (t *translator) DefSpecRefs(defSpec *DefSpec) (*RefLocations, error) {
 
 func (t *translator) ExportedSymbols(r *RepoRev) (*ExportedSymbols, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.preparer.prepareWorkspace(r.Repo, r.Commit)
+	rootPath, err := t.workspace.prepare(r.Repo, r.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -581,6 +581,6 @@ func (t *translator) lspDo(rootPath string, request *jsonrpc2.Request, result in
 }
 
 func (t *translator) resolveFile(repo, commit, uri string) (*File, error) {
-	workspace := t.preparer.pathToWorkspace(repo, commit)
+	workspace := t.workspace.pathToWorkspace(repo, commit)
 	return t.ResolveFile(workspace, repo, commit, uri)
 }

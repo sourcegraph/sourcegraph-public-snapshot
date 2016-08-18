@@ -19,20 +19,20 @@ func Proxy(target string, preparer *Preparer) (http.Handler, error) {
 		return nil, err
 	}
 	return NewServer(&proxy{
-		client:   client,
-		preparer: preparer,
+		client:    client,
+		workspace: preparer,
 	}), nil
 }
 
 type proxy struct {
-	client   *Client
-	preparer *Preparer
+	client    *Client
+	workspace *Preparer
 }
 
 func (p *proxy) Prepare(r *RepoRev) error {
 	// Prepare the workspace, and timeout immediately if someone else is
 	// already preparing it.
-	_, err := p.preparer.prepareWorkspaceTimeout(r.Repo, r.Commit, 0*time.Second)
+	_, err := p.workspace.prepareTimeout(r.Repo, r.Commit, 0*time.Second)
 	if err != nil && err != errTimeout {
 		return err
 	}
@@ -41,7 +41,7 @@ func (p *proxy) Prepare(r *RepoRev) error {
 
 func (p *proxy) DefSpecToPosition(defSpec *DefSpec) (*Position, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := p.preparer.prepareWorkspace(defSpec.Repo, defSpec.Commit)
+	rootPath, err := p.workspace.prepare(defSpec.Repo, defSpec.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (p *proxy) DefSpecToPosition(defSpec *DefSpec) (*Position, error) {
 
 func (p *proxy) PositionToDefSpec(pos *Position) (*DefSpec, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := p.preparer.prepareWorkspace(pos.Repo, pos.Commit)
+	rootPath, err := p.workspace.prepare(pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (p *proxy) PositionToDefSpec(pos *Position) (*DefSpec, error) {
 
 func (p *proxy) Definition(pos *Position) (*Range, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := p.preparer.prepareWorkspace(pos.Repo, pos.Commit)
+	rootPath, err := p.workspace.prepare(pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (p *proxy) Definition(pos *Position) (*Range, error) {
 
 func (p *proxy) Hover(pos *Position) (*Hover, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := p.preparer.prepareWorkspace(pos.Repo, pos.Commit)
+	rootPath, err := p.workspace.prepare(pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (p *proxy) Hover(pos *Position) (*Hover, error) {
 
 func (p *proxy) LocalRefs(pos *Position) (*RefLocations, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := p.preparer.prepareWorkspace(pos.Repo, pos.Commit)
+	rootPath, err := p.workspace.prepare(pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (p *proxy) LocalRefs(pos *Position) (*RefLocations, error) {
 
 func (p *proxy) ExternalRefs(r *RepoRev) (*ExternalRefs, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := p.preparer.prepareWorkspace(r.Repo, r.Commit)
+	rootPath, err := p.workspace.prepare(r.Repo, r.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func (p *proxy) ExternalRefs(r *RepoRev) (*ExternalRefs, error) {
 
 func (p *proxy) DefSpecRefs(defSpec *DefSpec) (*RefLocations, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := p.preparer.prepareWorkspace(defSpec.Repo, defSpec.Commit)
+	rootPath, err := p.workspace.prepare(defSpec.Repo, defSpec.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (p *proxy) DefSpecRefs(defSpec *DefSpec) (*RefLocations, error) {
 
 func (p *proxy) ExportedSymbols(r *RepoRev) (*ExportedSymbols, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := p.preparer.prepareWorkspace(r.Repo, r.Commit)
+	rootPath, err := p.workspace.prepare(r.Repo, r.Commit)
 	if err != nil {
 		return nil, err
 	}
