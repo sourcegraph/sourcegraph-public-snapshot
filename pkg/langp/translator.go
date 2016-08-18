@@ -12,47 +12,15 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"os/user"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
-
-var btrfsPresent bool
-
-func init() {
-	if !feature.Features.Universe {
-		return
-	}
-	_, err := exec.LookPath("btrfs")
-	if err == nil {
-		btrfsPresent = true
-	} else {
-		log.Println("btrfs command not available, assuming filesystem is not btrfs")
-	}
-}
-
-func btrfsSubvolumeCreate(path string) error {
-	if !btrfsPresent {
-		return os.Mkdir(path, 0700)
-	}
-	return Cmd("btrfs", "subvolume", "create", path).Run()
-}
-
-func btrfsSubvolumeSnapshot(subvolumePath, snapshotPath string) error {
-	if !btrfsPresent {
-		// TODO: This isn't portable outside *nix, but it does spare us a lot
-		// of complex logic. Maybe find a good package to copy a directory.
-		return Cmd("cp", "-r", subvolumePath, snapshotPath).Run()
-	}
-	return Cmd("btrfs", "subvolume", "snapshot", subvolumePath, snapshotPath).Run()
-}
 
 // Translator is an HTTP handler which translates from the Language Processor
 // REST API (defined in proto.go) directly to Sourcegraph LSP batch requests.
