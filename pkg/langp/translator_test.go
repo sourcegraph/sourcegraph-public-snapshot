@@ -34,10 +34,12 @@ func TestTranslator(t *testing.T) {
 	defer lspMock.Close()
 
 	ts := httptest.NewServer(New(&Translator{
-		Addr:        lspMock.Addr,
-		WorkDir:     workDir,
-		PrepareRepo: func(update bool, workspace, repo, commit string) error { return nil },
-		PrepareDeps: func(update bool, workspace, repo, commit string) error { return nil },
+		Addr: lspMock.Addr,
+		Preparer: &Preparer{
+			WorkDir:     workDir,
+			PrepareRepo: func(update bool, workspace, repo, commit string) error { return nil },
+			PrepareDeps: func(update bool, workspace, repo, commit string) error { return nil },
+		},
 		ResolveFile: func(workspace, repo, commit, uri string) (*File, error) {
 			if !strings.HasPrefix(uri, "file:///") {
 				return nil, fmt.Errorf("uri does not start with file:/// : %s", uri)
