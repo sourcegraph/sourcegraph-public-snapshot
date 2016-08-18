@@ -1,7 +1,6 @@
 package langp
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -63,20 +62,4 @@ func Clone(update bool, cloneURI, repoDir, commit string) error {
 	c := Cmd("git", "reset", "--hard", commit)
 	c.Dir = repoDir
 	return c.Run()
-}
-
-// GetReferenceCommitID tries to fetch and return commit ID given reference
-// points to from clone URI.
-func GetReferenceCommitID(cloneURI, ref string) (string, error) {
-	stdout := bytes.NewBuffer(nil)
-	c := Cmd("git", "ls-remote", cloneURI, ref)
-	c.Stdout = stdout
-	if err := c.Run(); err != nil {
-		return "", err
-	}
-	output := stdout.String()
-	if len(output) < 40 {
-		return "", fmt.Errorf("invalid length of output: %d", len(output))
-	}
-	return output[:40], nil
 }
