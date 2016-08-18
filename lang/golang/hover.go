@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"go/doc"
 	"io/ioutil"
-	"os/exec"
 	"strconv"
 	"strings"
-	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
@@ -83,14 +81,10 @@ type godefResult struct {
 }
 
 func godef(env []string, path string, offset int) (*godefResult, error) {
-	start := time.Now()
-	c := exec.Command("godef", "-a", "-f", path, "-o", strconv.Itoa(offset))
-	c.Env = env
-	b, err := c.CombinedOutput()
+	b, err := cmd(env, "godef", "-a", "-f", path, "-o", strconv.Itoa(offset))
 	if err != nil {
 		return nil, fmt.Errorf("%v: %v", err, string(b))
 	}
-	fmt.Printf("TIME: %v %s\n", time.Since(start), strings.Join(c.Args, " "))
 
 	lines := bytes.Split(b, []byte{'\n'})
 	if len(lines) < 2 {

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os/exec"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
@@ -145,9 +144,7 @@ func parseSymbolQuery(q string) (*symbolQuery, error) {
 }
 
 func runGog(env, pkgs []string) (*gogOutput, error) {
-	c := exec.Command("gog", pkgs...)
-	c.Env = env
-	b, err := c.Output()
+	b, err := cmd(env, "gog", pkgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -158,9 +155,7 @@ func runGog(env, pkgs []string) (*gogOutput, error) {
 
 func expandPackages(env, pkgs []string) ([]string, error) {
 	args := append([]string{"list"}, pkgs...)
-	c := exec.Command("go", args...)
-	c.Env = env
-	b, err := c.Output()
+	b, err := cmd(env, "go", args...)
 	if err != nil {
 		return nil, err
 	}

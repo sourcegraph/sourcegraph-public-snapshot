@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os/exec"
 	"sort"
 	"strconv"
 	"strings"
@@ -93,12 +92,9 @@ func (l locationList) Len() int {
 }
 
 func guruReferrers(env []string, path string, offset int) (*serial.ReferrersInitial, []*serial.ReferrersPackage, error) {
-	cmdStr := fmt.Sprintf("guru -json referrers %s:#%d", path, offset)
-	c := exec.Command("guru", "-json", "referrers", fmt.Sprintf("%s:#%d", path, offset))
-	c.Env = env
-	b, err := c.CombinedOutput()
+	b, err := cmd(env, "guru", "-json", "referrers", fmt.Sprintf("%s:#%d", path, offset))
 	if err != nil {
-		return nil, nil, fmt.Errorf("%v (running '%s'): output: %q", err, cmdStr, string(b))
+		return nil, nil, err
 	}
 	// TODO(keegancsmith) directly decode stdout rather than an intermediate buffer
 	r := bytes.NewReader(b)
