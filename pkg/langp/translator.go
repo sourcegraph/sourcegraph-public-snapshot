@@ -86,7 +86,7 @@ func (t *translator) DefSpecToPosition(defSpec *DefSpec) (*Position, error) {
 	reqSymbol := &jsonrpc2.Request{
 		Method: "workspace/symbol",
 	}
-	importPath, _ := ResolveRepoAlias(r.Repo)
+	importPath, _ := ResolveRepoAlias(defSpec.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
 		Query: "defspec-refs-internal " + importPath + "/...",
@@ -356,7 +356,7 @@ func (t *translator) ExternalRefs(r *RepoRev) (*ExternalRefs, error) {
 		Method: "workspace/symbol",
 	}
 
-	importPath, _ := ResolveRepoAlias(defSpec.Repo)
+	importPath, _ := ResolveRepoAlias(r.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
 		Query: "external " + importPath + "/...",
