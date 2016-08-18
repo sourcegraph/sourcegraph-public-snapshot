@@ -6,8 +6,12 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/user"
+	"path/filepath"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
 var btrfsPresent bool
@@ -50,6 +54,45 @@ func dirExists(p string) (bool, error) {
 		return false, err
 	}
 	return info.IsDir(), nil
+}
+
+func lspKindToSymbol(kind lsp.SymbolKind) string {
+	switch kind {
+	case lsp.SKPackage:
+		return "package"
+	case lsp.SKField:
+		return "field"
+	case lsp.SKFunction:
+		return "func"
+	case lsp.SKMethod:
+		return "method"
+	case lsp.SKVariable:
+		return "var"
+	case lsp.SKClass:
+		return "type"
+	case lsp.SKInterface:
+		return "interface"
+	case lsp.SKConstant:
+		return "const"
+	default:
+		// TODO(keegancsmith) We haven't implemented all types yet,
+		// just what Go uses
+		return "unknown"
+	}
+}
+
+// ExpandSGPath expands the $SGPATH variable in the given string, except it
+// uses ~/.sourcegraph as the default if $SGPATH is not set.
+func ExpandSGPath(s string) (string, error) {
+	sgpath := os.Getenv("SGPATH")
+	if sgpath == "" {
+		u, err := user.Current()
+		if err != nil {
+			return "", err
+		}
+		sgpath = filepath.Join(u.HomeDir, ".sourcegraph")
+	}
+	return strings.Replace(s, "$SGPATH", sgpath, -1), nil
 }
 
 // ResolveRepoAlias returns import path and clone URI of given repository URI,
