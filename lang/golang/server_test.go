@@ -16,41 +16,50 @@ import (
 
 var updateFixtures = flag.Bool("fixtures.update", false, "update the expected files with actual")
 
-func testFixtures(t *testing.T, h jsonrpc2.BatchHandler) {
+func TestFixtures(t *testing.T) {
+	checkExecDeps(t)
+
 	cases, err := filepath.Glob("testdata/*.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, c := range cases {
-		var req []*jsonrpc2.Request
-		unmarshalFile(t, c, &req)
+		t.Run(filepath.Base(c), func(t *testing.T) {
+			testFixture(t, c)
+		})
+	}
+}
 
-		// Test data specifies relative paths, but the language server expects
-		// an absolute path. Make the path absolute now.
-		var init lsp.InitializeParams
-		err := json.Unmarshal(*req[0].Params, &init)
-		if err != nil {
-			t.Fatal(err)
-		}
-		init.RootPath, err = filepath.Abs(init.RootPath)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := req[0].SetParams(init); err != nil {
-			t.Fatal(err)
-		}
+func testFixture(t *testing.T, c string) {
+	var req []*jsonrpc2.Request
+	unmarshalFile(t, c, &req)
 
-		resp := h.HandleBatch(req)
-		marshalFile(t, c+".actual", resp)
-		if *updateFixtures {
-			marshalFile(t, c+".expected", resp)
-		}
+	// Test data specifies relative paths, but the language server expects
+	// an absolute path. Make the path absolute now.
+	var init lsp.InitializeParams
+	err := json.Unmarshal(*req[0].Params, &init)
+	if err != nil {
+		t.Fatal(err)
+	}
+	init.RootPath, err = filepath.Abs(init.RootPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := req[0].SetParams(init); err != nil {
+		t.Fatal(err)
+	}
 
-		out, err := exec.Command("diff", c+".expected", c+".actual").Output()
-		if err != nil {
-			t.Errorf("unexpected response, output of diff %s %s:\n%s", c+".expected", c+".actual", string(out))
-		}
+	h := &Handler{}
+	resp := h.HandleBatch(req)
+	marshalFile(t, c+".actual", resp)
+	if *updateFixtures {
+		marshalFile(t, c+".expected", resp)
+	}
+
+	out, err := exec.Command("diff", c+".expected", c+".actual").Output()
+	if err != nil {
+		t.Errorf("unexpected response, output of diff %s %s:\n%s", c+".expected", c+".actual", string(out))
 	}
 }
 
@@ -74,11 +83,6 @@ func marshalFile(t *testing.T, path string, v interface{}) {
 	if err != nil {
 		t.Fatal(err)
 	}
-}
-
-func TestFixtures(t *testing.T) {
-	checkExecDeps(t)
-	testFixtures(t, &Handler{})
 }
 
 func checkExecDeps(t *testing.T) {
