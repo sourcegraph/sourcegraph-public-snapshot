@@ -340,12 +340,7 @@ func (g *globalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error 
 
 	refs := make([]*graph.Ref, 0, len(allRefs))
 	for _, r := range allRefs {
-		// Ignore def refs.
-		if r.Def {
-			continue
-		}
-		// Ignore vendored refs.
-		if filelang.IsVendored(r.File, false) {
+		if !shouldIndexRef(r) {
 			continue
 		}
 		// This is a sign that something went wrong in the srclib
@@ -353,12 +348,6 @@ func (g *globalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error 
 		// should be handled upstream.
 		if r.DefRepo == "" || r.DefUnit == "" || r.DefUnitType == "" || r.DefPath == "" {
 			return fmt.Errorf("graphstore contains invalid reference: repo=%s commit=%s ref=%+v", repo, commitID, r)
-		}
-		// Ignore ref to builtin defs of golang/go repo (string, int, bool, etc) as this
-		// doesn't add significant value; yet it adds up to a lot of space in the db,
-		// and queries for refs of builtin defs take long to finish.
-		if r.DefUnitType == "GoPackage" && r.DefRepo == "github.com/golang/go" && r.DefUnit == "builtin" {
-			continue
 		}
 		refs = append(refs, r)
 	}
@@ -509,6 +498,25 @@ func lpAllRefs(repo, commitID string) ([]*graph.Ref, error) {
 		}
 	}
 	return allRefs, nil
+}
+
+// shouldIndexRef helps filter out refs we do not want in the index.
+func shouldIndexRef(r *graph.Ref) bool {
+	// Ignore def refs.
+	if r.Def {
+		return false
+	}
+	// Ignore vendored refs.
+	if filelang.IsVendored(r.File, false) {
+		return false
+	}
+	// Ignore ref to builtin defs of golang/go repo (string, int, bool, etc) as this
+	// doesn't add significant value; yet it adds up to a lot of space in the db,
+	// and queries for refs of builtin defs take long to finish.
+	if r.DefUnitType == "GoPackage" && r.DefRepo == "github.com/golang/go" && r.DefUnit == "builtin" {
+		return false
+	}
+	return true
 }
 
 var globalRefsDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
