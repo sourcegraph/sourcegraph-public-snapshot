@@ -19,6 +19,14 @@ func ResolveRepoAlias(repo string) (importPath, cloneURI string) {
 	return repo, "https://" + repo
 }
 
+// UnresolveRepoAlias performs the opposite action of ResolveRepoAlias.
+func UnresolveRepoAlias(repo string) string {
+	if repo == "sourcegraph.com/sourcegraph/sourcegraph" {
+		repo = "sourcegraph/sourcegraph"
+	}
+	return repo
+}
+
 // Cmd is a small helper which logs the command name and parameters and returns
 // a command with output going to stdout/stderr.
 func Cmd(name string, args ...string) *exec.Cmd {
