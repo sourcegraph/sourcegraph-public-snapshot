@@ -163,18 +163,6 @@ func (t *translator) writeResponse(w http.ResponseWriter, status int, v interfac
 	log.Printf("POST %s -> %d %s\n\tBody:     %s\n\tResponse: %s\n", path, status, http.StatusText(status), string(body), string(respBody))
 }
 
-// dirExists tells if the directory p exists or not.
-func dirExists(p string) (bool, error) {
-	info, err := os.Stat(p)
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	return info.IsDir(), nil
-}
-
 // pathToWorkspace returns an absolute path to the workspace for the given
 // repo at a specific commit.
 func (t *translator) pathToWorkspace(repo, commit string) string {

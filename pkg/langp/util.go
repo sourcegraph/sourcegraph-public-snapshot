@@ -40,6 +40,18 @@ func btrfsSubvolumeSnapshot(subvolumePath, snapshotPath string) error {
 	return Cmd("btrfs", "subvolume", "snapshot", subvolumePath, snapshotPath).Run()
 }
 
+// dirExists tells if the directory p exists or not.
+func dirExists(p string) (bool, error) {
+	info, err := os.Stat(p)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return info.IsDir(), nil
+}
+
 // ResolveRepoAlias returns import path and clone URI of given repository URI,
 // it takes special care to sourcegraph main repository.
 func ResolveRepoAlias(repo string) (importPath, cloneURI string) {
