@@ -335,35 +335,37 @@ func TestTranslator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lspMock.WantRequest["1"] = &jsonrpc2.Request{
-			ID:           "1",
-			Method:       c.WantLSPMethod,
-			Params:       jsonRawMessage(c.WantLSPParam),
-			Notification: false,
-			JSONRPC:      "2.0",
-		}
-		lspMock.Response["1"] = &jsonrpc2.Response{
-			ID:      "1",
-			Result:  jsonRawMessage(c.LSPResponseResult),
-			JSONRPC: "2.0",
-		}
+		t.Run(c.Path, func(t *testing.T) {
+			lspMock.WantRequest["1"] = &jsonrpc2.Request{
+				ID:           "1",
+				Method:       c.WantLSPMethod,
+				Params:       jsonRawMessage(c.WantLSPParam),
+				Notification: false,
+				JSONRPC:      "2.0",
+			}
+			lspMock.Response["1"] = &jsonrpc2.Response{
+				ID:      "1",
+				Result:  jsonRawMessage(c.LSPResponseResult),
+				JSONRPC: "2.0",
+			}
 
-		requestBody, err := json.Marshal(c.Request)
-		if err != nil {
-			t.Fatal(err)
-		}
-		resp, err := http.Post(ts.URL+c.Path, "application/json", bytes.NewReader(requestBody))
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = json.NewDecoder(resp.Body).Decode(c.Got)
-		resp.Body.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !reflect.DeepEqual(c.Got, c.WantResponse) {
-			t.Fatalf("got\n%s, want\n%s", marshal(t, c.Got), marshal(t, c.WantResponse))
-		}
+			requestBody, err := json.Marshal(c.Request)
+			if err != nil {
+				t.Fatal(err)
+			}
+			resp, err := http.Post(ts.URL+c.Path, "application/json", bytes.NewReader(requestBody))
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = json.NewDecoder(resp.Body).Decode(c.Got)
+			resp.Body.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(c.Got, c.WantResponse) {
+				t.Fatalf("got\n%s, want\n%s", marshal(t, c.Got), marshal(t, c.WantResponse))
+			}
+		})
 	}
 }
 
