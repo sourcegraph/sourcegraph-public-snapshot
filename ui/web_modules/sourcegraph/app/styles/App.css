@@ -15,6 +15,7 @@ the entire viewport height.
 	height: 100vh;
 	flex-direction: column;
 	width: 100%;
+	composes: bg_cool_pale_gray_2 from colors;
 }
 .main_content {
 	display: flex;
@@ -53,5 +54,5 @@ html {
 }
 
 .inner_main_content {
-    flex: 1 0 auto;
+	flex: 1 0 auto;
 }

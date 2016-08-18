@@ -34,6 +34,8 @@
 .content {
 	flex: 1.5 0 contentWidth;
 	max-width: calc(contentWidth * 1.4);
+	composes: bb from base;
+	composes: b__cool_pale_gray_8 from colors;
 }
 .margin {
 	flex: 1 0 marginWidth;
@@ -42,6 +44,9 @@
 	.content {
 		max-width: 100%;
 	}
+}
+.spacer {
+	flex: 1 1 marginWidth;
 }
 
 .marginBox {
@@ -61,7 +66,8 @@
 .blobAndToolbar {
 	composes: content;
 	composes: br from base;
-	composes: b--cool_pale_gray-8 from colors;
+	composes: b__cool_pale_gray_8 from colors;
+	background: white;
 }
 .toolbar {
 	/* TODO(sqs!): not really used right now (only has the build indicator) */
@@ -86,9 +92,13 @@
 }
 .lineNumberCell {
 	composes: bg-cool_pale_gray-2 from colors;
+	composes: br from base;
+	composes: bl from base;
+	composes: b__cool_pale_gray_8 from colors;
 	padding: 0;
 	width: 1%;
 	min-width: 40px;
+	vertical-align: top;
 }
 
 .lineCell { composes: pv0 from base; }
@@ -119,10 +129,10 @@
 }
 .lineContent {
 	composes: lineCell;
-	composes: ph3 from base;
+	composes: ph2 from base;
 	tab-size: 4;
 	overflow: visible;
-	white-space: pre;
+	white-space: pre-wrap;
 }
 .lineContent a {
 	font-weight: bold;

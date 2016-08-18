@@ -161,6 +161,7 @@ export class BlobMain extends Container<Props, State> {
 		return (
 			<div className={Style.container}>
 				{title && <Helmet title={title} />}
+				<div className={Style.spacer} />
 				<div className={Style.blobAndToolbar}>
 					<BlobToolbar
 						repo={this.state.repo}

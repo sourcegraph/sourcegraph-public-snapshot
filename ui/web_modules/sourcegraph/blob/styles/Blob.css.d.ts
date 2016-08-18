@@ -26,6 +26,7 @@ export const activePathComponent: string;
 export const container: string;
 export const content: string;
 export const margin: string;
+export const spacer: string;
 export const marginBox: string;
 export const marginBoxRight: string;
 export const marginBoxLeft: string;
