@@ -2,12 +2,9 @@
 package langp
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -88,78 +85,13 @@ func New(opts *Translator) http.Handler {
 		preparingRepos: newPending(),
 		preparingDeps:  newPending(),
 	}
-	mux := http.NewServeMux()
-	mux.Handle("/prepare", t.handler("/prepare", t.servePrepare))
-	mux.Handle("/definition", t.handler("/definition", t.serveDefinition))
-	mux.Handle("/exported-symbols", t.handler("/exported-symbols", t.serveExportedSymbols))
-	mux.Handle("/external-refs", t.handler("/external-refs", t.serveExternalRefs))
-	mux.Handle("/position-to-defspec", t.handler("/position-to-defspec", t.servePositionToDefSpec))
-	mux.Handle("/defspec-to-position", t.handler("/defspec-to-position", t.serveDefSpecToPosition))
-	mux.Handle("/defspec-refs", t.handler("/defspec-refs", t.serveDefSpecRefs))
-	mux.Handle("/hover", t.handler("/hover", t.serveHover))
-	mux.Handle("/local-refs", t.handler("/local-refs", t.serveLocalRefs))
-	return mux
+	return NewServer(t)
 }
 
 type translator struct {
 	*Translator
 	mux                           *http.ServeMux
 	preparingRepos, preparingDeps *pending
-}
-
-type handlerFunc func(body []byte) (interface{}, error)
-
-// handler returns an HTTP handler which serves the given method at the
-// specified path.
-func (t *translator) handler(path string, m handlerFunc) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Confirm the path because http.ServeMux is fuzzy.
-		if r.URL.Path != path {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		// All Language Processor methods are POST and have no query
-		// parameters.
-		if r.Method != "POST" || len(r.URL.Query()) > 0 {
-			resp := &Error{ErrorMsg: "expected POST with no query parameters"}
-			t.writeResponse(w, http.StatusBadRequest, resp, path, nil)
-			return
-		}
-
-		// Handle the request.
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			resp := &Error{ErrorMsg: err.Error()}
-			t.writeResponse(w, http.StatusBadRequest, resp, path, body)
-			return
-		}
-		resp, err := m(body)
-		if err != nil {
-			resp := &Error{ErrorMsg: err.Error()}
-			t.writeResponse(w, http.StatusBadRequest, resp, path, body)
-			return
-		}
-		t.writeResponse(w, http.StatusOK, resp, path, body)
-	})
-}
-
-func (t *translator) writeResponse(w http.ResponseWriter, status int, v interface{}, path string, body []byte) {
-	w.WriteHeader(status)
-	w.Header().Set("Content-Type", "application/json")
-	respBody, err := json.Marshal(v)
-	if err != nil {
-		// TODO: configurable logging
-		log.Println(err)
-	}
-	_, err = io.Copy(w, bytes.NewReader(respBody))
-	if err != nil {
-		// TODO: configurable logging
-		log.Println(err)
-	}
-
-	// TODO: configurable logging
-	log.Printf("POST %s -> %d %s\n\tBody:     %s\n\tResponse: %s\n", path, status, http.StatusText(status), string(body), string(respBody))
 }
 
 // pathToWorkspace returns an absolute path to the workspace for the given
@@ -358,44 +290,17 @@ func (t *translator) prepareWorkspaceTimeout(repo, commit string, timeout time.D
 	return workspace, nil
 }
 
-func (t *translator) servePrepare(body []byte) (interface{}, error) {
-	// Decode the user request.
-	var r RepoRev
-	if err := json.Unmarshal(body, &r); err != nil {
-		return nil, err
-	}
-	if r.Repo == "" {
-		return nil, fmt.Errorf("Repo field must be set")
-	}
-	if r.Commit == "" {
-		return nil, fmt.Errorf("Commit field must be set")
-	}
-
+func (t *translator) Prepare(r *RepoRev) error {
 	// Prepare the workspace, and timeout immediately if someone else is
 	// already preparing it.
 	_, err := t.prepareWorkspaceTimeout(r.Repo, r.Commit, 0*time.Second)
 	if err != nil && err != errTimeout {
-		return nil, err
+		return err
 	}
-	return map[string]string{}, nil
+	return nil
 }
 
-func (t *translator) serveDefinition(body []byte) (interface{}, error) {
-	// Decode the user request.
-	var pos Position
-	if err := json.Unmarshal(body, &pos); err != nil {
-		return nil, err
-	}
-	if pos.Repo == "" {
-		return nil, fmt.Errorf("Repo field must be set")
-	}
-	if pos.Commit == "" {
-		return nil, fmt.Errorf("Commit field must be set")
-	}
-	if pos.File == "" {
-		return nil, fmt.Errorf("File field must be set")
-	}
-
+func (t *translator) Definition(pos *Position) (*Range, error) {
 	// Determine the root path for the workspace and prepare it.
 	rootPath, err := t.prepareWorkspace(pos.Repo, pos.Commit)
 	if err != nil {
@@ -441,25 +346,10 @@ func (t *translator) serveDefinition(body []byte) (interface{}, error) {
 			EndCharacter:   respDef[0].Range.End.Character,
 		}
 	}
-	return r, nil
+	return &r, nil
 }
 
-func (t *translator) serveHover(body []byte) (interface{}, error) {
-	// Decode the user request.
-	var pos Position
-	if err := json.Unmarshal(body, &pos); err != nil {
-		return nil, err
-	}
-	if pos.Repo == "" {
-		return nil, fmt.Errorf("Repo field must be set")
-	}
-	if pos.Commit == "" {
-		return nil, fmt.Errorf("Commit field must be set")
-	}
-	if pos.File == "" {
-		return nil, fmt.Errorf("File field must be set")
-	}
-
+func (t *translator) Hover(pos *Position) (*Hover, error) {
 	// Determine the root path for the workspace and prepare it.
 	rootPath, err := t.prepareWorkspace(pos.Repo, pos.Commit)
 	if err != nil {
@@ -489,19 +379,7 @@ func (t *translator) serveHover(body []byte) (interface{}, error) {
 	return HoverFromLSP(&respHover), nil
 }
 
-func (t *translator) serveExternalRefs(body []byte) (interface{}, error) {
-	// Decode the user request.
-	var r RepoRev
-	if err := json.Unmarshal(body, &r); err != nil {
-		return nil, err
-	}
-	if r.Repo == "" {
-		return nil, fmt.Errorf("Repo field must be set")
-	}
-	if r.Commit == "" {
-		return nil, fmt.Errorf("Commit field must be set")
-	}
-
+func (t *translator) ExternalRefs(r *RepoRev) (*ExternalRefs, error) {
 	// Determine the root path for the workspace and prepare it.
 	rootPath, err := t.prepareWorkspace(r.Repo, r.Commit)
 	if err != nil {
@@ -557,22 +435,7 @@ func (t *translator) serveExternalRefs(body []byte) (interface{}, error) {
 	return &ExternalRefs{Defs: defs}, nil
 }
 
-func (t *translator) servePositionToDefSpec(body []byte) (interface{}, error) {
-	// Decode the user request.
-	var pos Position
-	if err := json.Unmarshal(body, &pos); err != nil {
-		return nil, err
-	}
-	if pos.Repo == "" {
-		return nil, fmt.Errorf("Repo field must be set")
-	}
-	if pos.Commit == "" {
-		return nil, fmt.Errorf("Commit field must be set")
-	}
-	if pos.File == "" {
-		return nil, fmt.Errorf("File field must be set")
-	}
-
+func (t *translator) PositionToDefSpec(pos *Position) (*DefSpec, error) {
 	// Determine the root path for the workspace and prepare it.
 	rootPath, err := t.prepareWorkspace(pos.Repo, pos.Commit)
 	if err != nil {
@@ -649,28 +512,7 @@ func (t *translator) servePositionToDefSpec(body []byte) (interface{}, error) {
 	return nil, errors.New("def key for position not found")
 }
 
-func (t *translator) serveDefSpecToPosition(body []byte) (interface{}, error) {
-	// Decode the user request.
-	var defSpec DefSpec
-	if err := json.Unmarshal(body, &defSpec); err != nil {
-		return nil, err
-	}
-	if defSpec.Repo == "" {
-		return nil, fmt.Errorf("Repo field must be set")
-	}
-	if defSpec.Commit == "" {
-		return nil, fmt.Errorf("Commit field must be set")
-	}
-	if defSpec.Unit == "" {
-		return nil, fmt.Errorf("Unit field must be set")
-	}
-	if defSpec.UnitType == "" {
-		return nil, fmt.Errorf("UnitType field must be set")
-	}
-	if defSpec.Path == "" {
-		return nil, fmt.Errorf("Path field must be set")
-	}
-
+func (t *translator) DefSpecToPosition(defSpec *DefSpec) (*Position, error) {
 	// Determine the root path for the workspace and prepare it.
 	rootPath, err := t.prepareWorkspace(defSpec.Repo, defSpec.Commit)
 	if err != nil {
@@ -738,28 +580,7 @@ func (t *translator) serveDefSpecToPosition(body []byte) (interface{}, error) {
 	return nil, errors.New("position for def key not found")
 }
 
-func (t *translator) serveDefSpecRefs(body []byte) (interface{}, error) {
-	// Decode the user request.
-	var defSpec DefSpec
-	if err := json.Unmarshal(body, &defSpec); err != nil {
-		return nil, err
-	}
-	if defSpec.Repo == "" {
-		return nil, fmt.Errorf("Repo field must be set")
-	}
-	if defSpec.Commit == "" {
-		return nil, fmt.Errorf("Commit field must be set")
-	}
-	if defSpec.Unit == "" {
-		return nil, fmt.Errorf("Unit field must be set")
-	}
-	if defSpec.UnitType == "" {
-		return nil, fmt.Errorf("UnitType field must be set")
-	}
-	if defSpec.Path == "" {
-		return nil, fmt.Errorf("Path field must be set")
-	}
-
+func (t *translator) DefSpecRefs(defSpec *DefSpec) (*RefLocations, error) {
 	// Determine the root path for the workspace and prepare it.
 	rootPath, err := t.prepareWorkspace(defSpec.Repo, defSpec.Commit)
 	if err != nil {
@@ -829,19 +650,7 @@ func (t *translator) serveDefSpecRefs(body []byte) (interface{}, error) {
 	return &RefLocations{Refs: refs}, nil
 }
 
-func (t *translator) serveExportedSymbols(body []byte) (interface{}, error) {
-	// Decode the user request.
-	var r RepoRev
-	if err := json.Unmarshal(body, &r); err != nil {
-		return nil, err
-	}
-	if r.Repo == "" {
-		return nil, fmt.Errorf("Repo field must be set")
-	}
-	if r.Commit == "" {
-		return nil, fmt.Errorf("Commit field must be set")
-	}
-
+func (t *translator) ExportedSymbols(r *RepoRev) (*ExportedSymbols, error) {
 	// Determine the root path for the workspace and prepare it.
 	rootPath, err := t.prepareWorkspace(r.Repo, r.Commit)
 	if err != nil {
@@ -901,22 +710,7 @@ func (t *translator) serveExportedSymbols(body []byte) (interface{}, error) {
 	return &ExportedSymbols{Symbols: symbols}, nil
 }
 
-func (t *translator) serveLocalRefs(body []byte) (interface{}, error) {
-	// Decode the user request.
-	var pos Position
-	if err := json.Unmarshal(body, &pos); err != nil {
-		return nil, err
-	}
-	if pos.Repo == "" {
-		return nil, fmt.Errorf("Repo field must be set")
-	}
-	if pos.Commit == "" {
-		return nil, fmt.Errorf("Commit field must be set")
-	}
-	if pos.File == "" {
-		return nil, fmt.Errorf("File field must be set")
-	}
-
+func (t *translator) LocalRefs(pos *Position) (*RefLocations, error) {
 	// Determine the root path for the workspace and prepare it.
 	rootPath, err := t.prepareWorkspace(pos.Repo, pos.Commit)
 	if err != nil {
