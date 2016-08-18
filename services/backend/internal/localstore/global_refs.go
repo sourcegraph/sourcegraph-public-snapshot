@@ -316,17 +316,14 @@ func (g *globalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error 
 	}
 
 	var allRefs []*graph.Ref
-	if lpClient, _ := langpClient(); lpClient != nil && feature.IsUniverseRepo(repo) {
+	if feature.IsUniverseRepo(repo) {
 		start = time.Now()
-		r, err := lpClient.ExternalRefs(&langp.RepoRev{
-			Repo:   repo,
-			Commit: commitID,
-		})
+		allRefs, err = lpAllRefs(repo, commitID)
 		observe("langp", start)
 		if err != nil {
 			log15.Debug("universe globalRefs.Update failed", "repo", repo, "commitID", op.CommitID, "err", err)
 		} else {
-			log15.Debug("universe globalRefs.Update success", "repo", repo, "commitID", op.CommitID, "count", len(r.Defs))
+			log15.Debug("universe globalRefs.Update success", "repo", repo, "commitID", op.CommitID, "count", len(allRefs))
 		}
 	}
 
@@ -472,6 +469,46 @@ func (g *globalRefs) versionUpdate(tx gorp.SqlExecutor, repoPath string, commitI
 func (g *globalRefs) StatRefresh(ctx context.Context) error {
 	_, err := graphDBH(ctx).Exec("REFRESH MATERIALIZED VIEW CONCURRENTLY global_refs_stats;")
 	return err
+}
+
+// lpAllRefs fetches all refs using universe
+func lpAllRefs(repo, commitID string) ([]*graph.Ref, error) {
+	if !feature.IsUniverseRepo(repo) {
+		// We handle no refs as having to fall back to srclib
+		return nil, nil
+	}
+	lp, err := langpClient()
+	if err != nil {
+		return nil, err
+	}
+
+	defs, err := lp.ExternalRefs(&langp.RepoRev{
+		Repo:   repo,
+		Commit: commitID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var allRefs []*graph.Ref
+	for _, d := range defs.Defs {
+		refs, err := lp.DefSpecRefs(d)
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range refs.Refs {
+			allRefs = append(allRefs, &graph.Ref{
+				Def:         false,
+				DefRepo:     d.Repo,
+				DefUnitType: d.UnitType,
+				DefUnit:     d.Unit,
+				DefPath:     d.Path,
+				File:        r.File,
+				Repo:        repo,
+			})
+		}
+	}
+	return allRefs, nil
 }
 
 var globalRefsDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
