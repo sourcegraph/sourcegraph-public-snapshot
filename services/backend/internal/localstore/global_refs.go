@@ -1,7 +1,6 @@
 package localstore
 
 import (
-	"bytes"
 	"fmt"
 	"sort"
 	"strings"
@@ -316,21 +315,18 @@ func (g *globalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error 
 		log15.Debug("GlobalRefs.Update re-indexing commit", "repo", repo, "commitID", commitID)
 	}
 
-	var langpRefs []*graph.Ref
+	var refs []*graph.Ref
 	if feature.IsUniverseRepo(repo) {
 		start = time.Now()
-		langpRefs, err = lpAllRefs(ctx, repo, commitID)
+		refs, err = lpAllRefs(ctx, repo, commitID)
 		observe("langp", start)
 		if err != nil {
 			log15.Debug("universe globalRefs.Update failed", "repo", repo, "commitID", op.CommitID, "err", err)
+			return err
 		} else {
-			log15.Debug("universe globalRefs.Update success", "repo", repo, "commitID", op.CommitID, "count", len(langpRefs))
+			log15.Debug("universe globalRefs.Update success", "repo", repo, "commitID", op.CommitID, "count", len(refs))
 		}
-	}
-
-	var refs []*graph.Ref
-	{
-		// In future only run this code if not in universe
+	} else {
 		start = time.Now()
 		allRefs, err := store.GraphFromContext(ctx).Refs(
 			sstore.ByRepoCommitIDs(sstore.Version{Repo: repo, CommitID: commitID}),
@@ -352,10 +348,6 @@ func (g *globalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error 
 			}
 			refs = append(refs, r)
 		}
-	}
-
-	if feature.IsUniverseRepo(repo) {
-		logUniverseDiff(refs, langpRefs)
 	}
 
 	log15.Debug("GlobalRefs.Update", "repo", repo, "commitID", commitID, "oldCommitID", oldCommitID, "numRefs", len(refs))
@@ -542,53 +534,6 @@ func shouldIndexRef(r *graph.Ref) bool {
 		return false
 	}
 	return true
-}
-
-// logUniverseDiff is temporary code to compare universe to srclib for references
-func logUniverseDiff(srclib, universe []*graph.Ref) {
-	b := &bytes.Buffer{}
-	type Key struct {
-		graph.DefKey
-		File string
-	}
-	build := func(refs []*graph.Ref) map[Key]int {
-		d := make(map[Key]int)
-		for _, r := range refs {
-			k := Key{
-				DefKey: graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath},
-				File:   r.File,
-			}
-			d[k] = d[k] + 1
-		}
-		return d
-	}
-	s := build(srclib)
-	u := build(universe)
-	total := 0
-	for d := range s {
-		if s[d] != u[d] {
-			total++
-			// limit number of examples
-			if total <= 10 {
-				fmt.Fprintf(b, "%#+v %d %d\n", d, s[d], u[d])
-			}
-		}
-	}
-	for d := range u {
-		if s[d] == 0 {
-			total++
-			// limit number of examples
-			if total <= 10 {
-				fmt.Fprintf(b, "%#+v %d %d\n", d, s[d], u[d])
-			}
-		}
-	}
-	if total == 0 {
-		return
-	}
-	fmt.Printf(`REFS UNIVERSE SRCLIB DIFF: len(srclib) = %d len(universe) = %d len(symdiff) = %d
-diff samples: (key, srclib_count, universe_count)
-%s`, len(s), len(u), total, b.String())
 }
 
 var globalRefsDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
