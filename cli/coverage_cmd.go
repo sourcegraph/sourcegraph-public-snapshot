@@ -446,7 +446,7 @@ func (c *coverageCmd) calcTokCoverage(ctx context.Context, lang, repoURI string,
 
 	if strings.Contains(c.Methods, "definition") {
 		cov.DefStart = time.Now()
-		def, err := c.backend.Definition(p)
+		def, err := c.backend.Definition(ctx, p)
 		cov.DefEnd = time.Now()
 		if err != nil {
 			cov.DefError = err
@@ -465,7 +465,7 @@ func (c *coverageCmd) calcTokCoverage(ctx context.Context, lang, repoURI string,
 
 	if strings.Contains(c.Methods, "hover") {
 		cov.HoverStart = time.Now()
-		_, err := c.backend.Hover(p)
+		_, err := c.backend.Hover(ctx, p)
 		cov.HoverEnd = time.Now()
 		if err != nil {
 			cov.HoverError = err

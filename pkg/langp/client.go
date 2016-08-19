@@ -2,12 +2,15 @@ package langp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"path"
 	"time"
+
+	opentracing "github.com/opentracing/opentracing-go"
 )
 
 // Client is a Language Processor REST API client which is safe for use by
@@ -24,14 +27,14 @@ type Client struct {
 // for the specified repo / commit. It is sent prior to an actual user request
 // (e.g. as soon as we have access to their repos) in hopes of having
 // preparation completed already when a user makes their first request.
-func (c *Client) Prepare(r *RepoRev) error {
-	return c.do("prepare", r, nil)
+func (c *Client) Prepare(ctx context.Context, r *RepoRev) error {
+	return c.do(ctx, "prepare", r, nil)
 }
 
 // PositionToDefSpec returns the DefSpec for the given position.
-func (c *Client) PositionToDefSpec(p *Position) (*DefSpec, error) {
+func (c *Client) PositionToDefSpec(ctx context.Context, p *Position) (*DefSpec, error) {
 	var result DefSpec
-	err := c.do("position-to-defspec", p, &result)
+	err := c.do(ctx, "position-to-defspec", p, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -39,9 +42,9 @@ func (c *Client) PositionToDefSpec(p *Position) (*DefSpec, error) {
 }
 
 // DefSpecToPosition returns the position of the given DefSpec.
-func (c *Client) DefSpecToPosition(k *DefSpec) (*Position, error) {
+func (c *Client) DefSpecToPosition(ctx context.Context, k *DefSpec) (*Position, error) {
 	var result Position
-	err := c.do("defspec-to-position", k, &result)
+	err := c.do(ctx, "defspec-to-position", k, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -50,9 +53,9 @@ func (c *Client) DefSpecToPosition(k *DefSpec) (*Position, error) {
 
 // Definition resolves the specified position, effectively returning where the
 // given definition is defined. For example, this is used for go to definition.
-func (c *Client) Definition(p *Position) (*Range, error) {
+func (c *Client) Definition(ctx context.Context, p *Position) (*Range, error) {
 	var result Range
-	err := c.do("definition", p, &result)
+	err := c.do(ctx, "definition", p, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -61,9 +64,9 @@ func (c *Client) Definition(p *Position) (*Range, error) {
 
 // Hover returns hover-over information about the def/ref/etc at the given
 // position.
-func (c *Client) Hover(p *Position) (*Hover, error) {
+func (c *Client) Hover(ctx context.Context, p *Position) (*Hover, error) {
 	var result Hover
-	err := c.do("hover", p, &result)
+	err := c.do(ctx, "hover", p, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -71,9 +74,9 @@ func (c *Client) Hover(p *Position) (*Hover, error) {
 }
 
 // LocalRefs resolves references to repository-local definitions.
-func (c *Client) LocalRefs(p *Position) (*RefLocations, error) {
+func (c *Client) LocalRefs(ctx context.Context, p *Position) (*RefLocations, error) {
 	var result RefLocations
-	err := c.do("local-refs", p, &result)
+	err := c.do(ctx, "local-refs", p, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -81,9 +84,9 @@ func (c *Client) LocalRefs(p *Position) (*RefLocations, error) {
 }
 
 // DefSpecRefs resolves references to repository definitions.
-func (c *Client) DefSpecRefs(k *DefSpec) (*RefLocations, error) {
+func (c *Client) DefSpecRefs(ctx context.Context, k *DefSpec) (*RefLocations, error) {
 	var result RefLocations
-	err := c.do("defspec-refs", k, &result)
+	err := c.do(ctx, "defspec-refs", k, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -91,9 +94,9 @@ func (c *Client) DefSpecRefs(k *DefSpec) (*RefLocations, error) {
 }
 
 // ExternalRefs resolves references to repository-external definitions.
-func (c *Client) ExternalRefs(r *RepoRev) (*ExternalRefs, error) {
+func (c *Client) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, error) {
 	var result ExternalRefs
-	err := c.do("external-refs", r, &result)
+	err := c.do(ctx, "external-refs", r, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -101,32 +104,42 @@ func (c *Client) ExternalRefs(r *RepoRev) (*ExternalRefs, error) {
 }
 
 // ExportedSymbols lists repository-local definitions which are exported.
-func (c *Client) ExportedSymbols(r *RepoRev) (*ExportedSymbols, error) {
+func (c *Client) ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error) {
 	var result ExportedSymbols
-	err := c.do("exported-symbols", r, &result)
+	err := c.do(ctx, "exported-symbols", r, &result)
 	if err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-func (c *Client) do(endpoint string, body, results interface{}) error {
+func (c *Client) do(ctx context.Context, endpoint string, body, results interface{}) error {
 	// TODO: maybe consider retrying upon first request failure to prevent
 	// such errors from ending up on the frontend for reliability purposes.
 	data, err := json.Marshal(body)
 	if err != nil {
 		return err
 	}
+
 	req, err := http.NewRequest("POST", c.endpoint(endpoint), bytes.NewReader(data))
-	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
 		return err
 	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header)); err != nil {
+			return err
+		}
+	}
+
 	resp, err := c.Client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		var errResp Error
 		if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {

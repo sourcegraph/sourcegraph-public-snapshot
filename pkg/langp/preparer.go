@@ -1,6 +1,7 @@
 package langp
 
 import (
+	"context"
 	"errors"
 	"log"
 	"os"
@@ -152,15 +153,15 @@ func (p *Preparer) createWorkspace(repo, commit string) (update bool, err error)
 }
 
 // prepare prepares a new workspace for the given repository and revision.
-func (p *Preparer) prepare(repo, commit string) (workspace string, err error) {
+func (p *Preparer) prepare(ctx context.Context, repo, commit string) (workspace string, err error) {
 	// TODO(slimsag): use a smaller timeout by default and ensure the timeout
 	// error is properly handled by the frontend.
-	return p.prepareTimeout(repo, commit, 1*time.Hour)
+	return p.prepareTimeout(ctx, repo, commit, 1*time.Hour)
 }
 
 var errTimeout = errors.New("request timed out")
 
-func (p *Preparer) prepareTimeout(repo, commit string, timeout time.Duration) (workspace string, err error) {
+func (p *Preparer) prepareTimeout(ctx context.Context, repo, commit string, timeout time.Duration) (workspace string, err error) {
 	start := time.Now()
 
 	p.init()

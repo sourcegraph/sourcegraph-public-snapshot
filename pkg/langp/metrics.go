@@ -1,8 +1,11 @@
 package langp
 
 import (
+	"os"
 	"time"
 
+	lightstep "github.com/lightstep/lightstep-tracer-go"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 )
@@ -15,6 +18,12 @@ var (
 // InitMetrics initializes prometheus metrics for the given language which must
 // be a lowercase prometheus-compatible name (e.g. "go" or "java").
 func InitMetrics(language string) {
+	if t := os.Getenv("LIGHTSTEP_ACCESS_TOKEN"); t != "" {
+		opentracing.InitGlobalTracer(lightstep.NewTracer(lightstep.Options{
+			AccessToken: t,
+		}))
+	}
+
 	namespace := "lang"
 	// Workspace preparation metrics.
 	prepLabels := []string{"repo", "status"}

@@ -319,7 +319,7 @@ func (g *globalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error 
 	var langpRefs []*graph.Ref
 	if feature.IsUniverseRepo(repo) {
 		start = time.Now()
-		langpRefs, err = lpAllRefs(repo, commitID)
+		langpRefs, err = lpAllRefs(ctx, repo, commitID)
 		observe("langp", start)
 		if err != nil {
 			log15.Debug("universe globalRefs.Update failed", "repo", repo, "commitID", op.CommitID, "err", err)
@@ -467,7 +467,7 @@ func (g *globalRefs) StatRefresh(ctx context.Context) error {
 }
 
 // lpAllRefs fetches all refs using universe
-func lpAllRefs(repo, commitID string) ([]*graph.Ref, error) {
+func lpAllRefs(ctx context.Context, repo, commitID string) ([]*graph.Ref, error) {
 	if !feature.IsUniverseRepo(repo) {
 		// We handle no refs as having to fall back to srclib
 		return nil, nil
@@ -480,11 +480,11 @@ func lpAllRefs(repo, commitID string) ([]*graph.Ref, error) {
 	// We want to index external and local exported symbols. So we need to
 	// query both ExternalRefs and ExportedSymbols respectively.
 	rr := &langp.RepoRev{Repo: repo, Commit: commitID}
-	external, err := lp.ExternalRefs(rr)
+	external, err := lp.ExternalRefs(ctx, rr)
 	if err != nil {
 		return nil, err
 	}
-	exported, err := lp.ExportedSymbols(rr)
+	exported, err := lp.ExportedSymbols(ctx, rr)
 	if err != nil {
 		return nil, err
 	}
@@ -503,7 +503,7 @@ func lpAllRefs(repo, commitID string) ([]*graph.Ref, error) {
 		if d.Repo == "" || d.Unit == "" || d.UnitType == "" || d.Path == "" {
 			return nil, fmt.Errorf("langp contains invalid def: repo=%s commit=%s def=%+v", repo, commitID, d)
 		}
-		refs, err := lp.DefSpecRefs(d)
+		refs, err := lp.DefSpecRefs(ctx, d)
 		if err != nil {
 			return nil, err
 		}

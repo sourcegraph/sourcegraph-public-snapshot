@@ -75,7 +75,7 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 		}
 		if feature.IsUniverseRepo(repoFull.URI) {
 			// Ask the Language Processor to prepare the workspace.
-			if err := langp.DefaultClient.Prepare(&langp.RepoRev{
+			if err := langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
 				// TODO(slimsag): URI is correct only where the repo URI and clone
 				// URI are directly equal.. but CloneURI is only correct (for Go)
 				// when it directly matches the package import path.

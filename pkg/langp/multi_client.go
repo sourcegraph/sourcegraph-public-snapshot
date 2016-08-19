@@ -1,6 +1,7 @@
 package langp
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -59,9 +60,9 @@ type MultiClient struct {
 
 // Prepare invokes Prepare on each underlying client returning the first error
 // that occurs, if any.
-func (mc *MultiClient) Prepare(r *RepoRev) error {
+func (mc *MultiClient) Prepare(ctx context.Context, r *RepoRev) error {
 	for _, cl := range mc.Clients {
-		if err := cl.Prepare(r); err != nil {
+		if err := cl.Prepare(ctx, r); err != nil {
 			return err
 		}
 	}
@@ -87,17 +88,17 @@ func (mc *MultiClient) find(filename string) (*Client, error) {
 
 // PositionToDefSpec invokes PositionToDefSpec on the client whose language matches
 // p.File.
-func (mc *MultiClient) PositionToDefSpec(p *Position) (*DefSpec, error) {
+func (mc *MultiClient) PositionToDefSpec(ctx context.Context, p *Position) (*DefSpec, error) {
 	c, err := mc.find(p.File)
 	if err != nil {
 		return nil, err
 	}
-	return c.PositionToDefSpec(p)
+	return c.PositionToDefSpec(ctx, p)
 }
 
 // DefSpecToPosition invokes DefSpecToPosition on the client whose language matches
 // the given key.
-func (mc *MultiClient) DefSpecToPosition(k *DefSpec) (*Position, error) {
+func (mc *MultiClient) DefSpecToPosition(ctx context.Context, k *DefSpec) (*Position, error) {
 	// TODO: Go-specific
 	var lang string
 	switch k.UnitType {
@@ -106,43 +107,43 @@ func (mc *MultiClient) DefSpecToPosition(k *DefSpec) (*Position, error) {
 	}
 	client, ok := mc.Clients[lang]
 	if ok {
-		return client.DefSpecToPosition(k)
+		return client.DefSpecToPosition(ctx, k)
 	}
 	return nil, fmt.Errorf("MultiClient: no client registered for defkey %q (did you set SG_LANGUAGE_PROCESSOR_<lang> ?)", k.UnitType)
 }
 
 // Definition invokes Definition on the client whose language matches p.File.
-func (mc *MultiClient) Definition(p *Position) (*Range, error) {
+func (mc *MultiClient) Definition(ctx context.Context, p *Position) (*Range, error) {
 	c, err := mc.find(p.File)
 	if err != nil {
 		return nil, err
 	}
-	return c.Definition(p)
+	return c.Definition(ctx, p)
 }
 
 // Hover invokes Hover on the client whose language matches p.File.
-func (mc *MultiClient) Hover(p *Position) (*Hover, error) {
+func (mc *MultiClient) Hover(ctx context.Context, p *Position) (*Hover, error) {
 	c, err := mc.find(p.File)
 	if err != nil {
 		return nil, err
 	}
-	return c.Hover(p)
+	return c.Hover(ctx, p)
 }
 
 // LocalRefs invokes LocalRefs on the client whose language matches p.File.
-func (mc *MultiClient) LocalRefs(p *Position) (*RefLocations, error) {
+func (mc *MultiClient) LocalRefs(ctx context.Context, p *Position) (*RefLocations, error) {
 	c, err := mc.find(p.File)
 	if err != nil {
 		return nil, err
 	}
-	return c.LocalRefs(p)
+	return c.LocalRefs(ctx, p)
 }
 
 // DefSpecRefs invokes DefSpecRefs on the client whose language matches p.File.
-func (mc *MultiClient) DefSpecRefs(k *DefSpec) (*RefLocations, error) {
+func (mc *MultiClient) DefSpecRefs(ctx context.Context, k *DefSpec) (*RefLocations, error) {
 	result := &RefLocations{}
 	for _, c := range mc.Clients {
-		v, err := c.DefSpecRefs(k)
+		v, err := c.DefSpecRefs(ctx, k)
 		if err != nil {
 			return nil, err
 		}
@@ -153,10 +154,10 @@ func (mc *MultiClient) DefSpecRefs(k *DefSpec) (*RefLocations, error) {
 
 // ExternalRefs invokes ExternalRefs for each client and combines the results,
 // returning the first error that occurs, if any.
-func (mc *MultiClient) ExternalRefs(r *RepoRev) (*ExternalRefs, error) {
+func (mc *MultiClient) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, error) {
 	result := &ExternalRefs{}
 	for _, c := range mc.Clients {
-		v, err := c.ExternalRefs(r)
+		v, err := c.ExternalRefs(ctx, r)
 		if err != nil {
 			return nil, err
 		}
@@ -167,10 +168,10 @@ func (mc *MultiClient) ExternalRefs(r *RepoRev) (*ExternalRefs, error) {
 
 // ExportedSymbols invokes ExportedSymbols for each client and combines the
 // results, returning the first error that occurs, if any.
-func (mc *MultiClient) ExportedSymbols(r *RepoRev) (*ExportedSymbols, error) {
+func (mc *MultiClient) ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error) {
 	result := &ExportedSymbols{}
 	for _, c := range mc.Clients {
-		v, err := c.ExportedSymbols(r)
+		v, err := c.ExportedSymbols(ctx, r)
 		if err != nil {
 			return nil, err
 		}

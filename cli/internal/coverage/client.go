@@ -1,6 +1,7 @@
 package coverage
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -13,9 +14,9 @@ import (
 // Client is a coverage client type, which is effectively either an LSP client
 // or a langp client.
 type Client interface {
-	Definition(p *langp.Position) (*langp.Range, error)
-	Hover(p *langp.Position) (*langp.Hover, error)
-	LocalRefs(p *langp.Position) (*langp.RefLocations, error)
+	Definition(ctx context.Context, p *langp.Position) (*langp.Range, error)
+	Hover(ctx context.Context, p *langp.Position) (*langp.Hover, error)
+	LocalRefs(ctx context.Context, p *langp.Position) (*langp.RefLocations, error)
 	Close() error
 }
 
@@ -59,7 +60,7 @@ type lspClient struct {
 	rootPath string
 }
 
-func (c *lspClient) Definition(p *langp.Position) (*langp.Range, error) {
+func (c *lspClient) Definition(ctx context.Context, p *langp.Position) (*langp.Range, error) {
 	var (
 		initResp lsp.InitializeResult
 		locResp  lsp.Location
@@ -92,7 +93,7 @@ func (c *lspClient) Definition(p *langp.Position) (*langp.Range, error) {
 	}, nil
 }
 
-func (c *lspClient) Hover(p *langp.Position) (*langp.Hover, error) {
+func (c *lspClient) Hover(ctx context.Context, p *langp.Position) (*langp.Hover, error) {
 	var (
 		initResp  lsp.InitializeResult
 		hoverResp lsp.Hover
@@ -117,7 +118,7 @@ func (c *lspClient) Hover(p *langp.Position) (*langp.Hover, error) {
 	return langp.HoverFromLSP(&hoverResp), nil
 }
 
-func (c *lspClient) LocalRefs(p *langp.Position) (*langp.RefLocations, error) {
+func (c *lspClient) LocalRefs(ctx context.Context, p *langp.Position) (*langp.RefLocations, error) {
 	var (
 		initResp lsp.InitializeResult
 		refsResp []*lsp.Location

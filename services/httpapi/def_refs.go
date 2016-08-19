@@ -88,7 +88,7 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if feature.IsUniverseRepo(repo.URI) {
-		refs, err := langp.DefaultClient.DefSpecRefs(&langp.DefSpec{
+		refs, err := langp.DefaultClient.DefSpecRefs(ctx, &langp.DefSpec{
 			Repo:     tmp.Repo,
 			Commit:   opt.CommitID,
 			Unit:     def.Unit,

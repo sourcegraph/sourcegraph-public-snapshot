@@ -155,7 +155,7 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 
 	if feature.Features.Universe && feature.IsUniverseRepo(repo.URI) {
 		// Ask the Language Processor to prepare the workspace.
-		err := langp.DefaultClient.Prepare(&langp.RepoRev{
+		err := langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
 			// TODO(slimsag): URI is correct only where the repo URI and clone
 			// URI are directly equal.. but CloneURI is only correct (for Go)
 			// when it directly matches the package import path.

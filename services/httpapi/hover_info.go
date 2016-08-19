@@ -40,7 +40,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 	}{}
 
 	if feature.IsUniverseRepo(repo.URI) {
-		hover, err := langp.DefaultClient.Hover(&langp.Position{
+		hover, err := langp.DefaultClient.Hover(ctx, &langp.Position{
 			Repo:      repo.URI,
 			Commit:    repoRev.CommitID,
 			File:      file,

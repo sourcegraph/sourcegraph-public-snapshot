@@ -40,7 +40,7 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 	}{}
 
 	if feature.IsUniverseRepo(repo.URI) {
-		defSpec, err := langp.DefaultClient.PositionToDefSpec(&langp.Position{
+		defSpec, err := langp.DefaultClient.PositionToDefSpec(ctx, &langp.Position{
 			Repo:      repo.URI,
 			Commit:    repoRev.CommitID,
 			File:      file,

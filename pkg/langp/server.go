@@ -2,26 +2,29 @@ package langp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	opentracing "github.com/opentracing/opentracing-go"
 )
 
 // Server represents all of the Language Processor REST API methods that must
 // be implemented by a language processor.
 type Server interface {
-	Prepare(r *RepoRev) error
-	DefSpecToPosition(d *DefSpec) (*Position, error)
-	PositionToDefSpec(p *Position) (*DefSpec, error)
-	Definition(p *Position) (*Range, error)
-	Hover(p *Position) (*Hover, error)
-	LocalRefs(p *Position) (*RefLocations, error)
-	ExternalRefs(r *RepoRev) (*ExternalRefs, error)
-	DefSpecRefs(d *DefSpec) (*RefLocations, error)
-	ExportedSymbols(r *RepoRev) (*ExportedSymbols, error)
+	Prepare(ctx context.Context, r *RepoRev) error
+	DefSpecToPosition(ctx context.Context, d *DefSpec) (*Position, error)
+	PositionToDefSpec(ctx context.Context, p *Position) (*DefSpec, error)
+	Definition(ctx context.Context, p *Position) (*Range, error)
+	Hover(ctx context.Context, p *Position) (*Hover, error)
+	LocalRefs(ctx context.Context, p *Position) (*RefLocations, error)
+	ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, error)
+	DefSpecRefs(ctx context.Context, d *DefSpec) (*RefLocations, error)
+	ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error)
 }
 
 // NewServer returns a new HTTP handler which decodes and encodes JSON
@@ -50,7 +53,7 @@ type server struct {
 	s Server
 }
 
-type handlerFunc func(body []byte) (interface{}, error)
+type handlerFunc func(ctx context.Context, body []byte) (interface{}, error)
 
 // handler returns an HTTP handler which serves the given method at the
 // specified path.
@@ -70,6 +73,12 @@ func handler(path string, m handlerFunc) http.Handler {
 			return
 		}
 
+		parentSpanCtx, err := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
+		if err != nil && err != opentracing.ErrSpanContextNotFound {
+			log.Println("could not extract opentracing headers:", err)
+		}
+		span := opentracing.StartSpan("LP: "+path, opentracing.ChildOf(parentSpanCtx))
+
 		// Handle the request.
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -77,7 +86,7 @@ func handler(path string, m handlerFunc) http.Handler {
 			writeResponse(w, http.StatusBadRequest, resp, path, body)
 			return
 		}
-		resp, err := m(body)
+		resp, err := m(opentracing.ContextWithSpan(r.Context(), span), body)
 		if err != nil {
 			resp := &Error{ErrorMsg: err.Error()}
 			writeResponse(w, http.StatusBadRequest, resp, path, body)
@@ -105,7 +114,7 @@ func writeResponse(w http.ResponseWriter, status int, v interface{}, path string
 	log.Printf("POST %s -> %d %s\n\tBody:     %s\n\tResponse: %s\n", path, status, http.StatusText(status), string(body), string(respBody))
 }
 
-func (s *server) servePrepare(body []byte) (interface{}, error) {
+func (s *server) servePrepare(ctx context.Context, body []byte) (interface{}, error) {
 	// Decode the user request and ensure that required fields are specified.
 	var r RepoRev
 	if err := json.Unmarshal(body, &r); err != nil {
@@ -117,10 +126,10 @@ func (s *server) servePrepare(body []byte) (interface{}, error) {
 	if r.Commit == "" {
 		return nil, fmt.Errorf("Commit field must be set")
 	}
-	return map[string]string{}, s.s.Prepare(&r)
+	return map[string]string{}, s.s.Prepare(ctx, &r)
 }
 
-func (s *server) serveDefinition(body []byte) (interface{}, error) {
+func (s *server) serveDefinition(ctx context.Context, body []byte) (interface{}, error) {
 	// Decode the user request and ensure that required fields are specified.
 	var p Position
 	if err := json.Unmarshal(body, &p); err != nil {
@@ -135,10 +144,10 @@ func (s *server) serveDefinition(body []byte) (interface{}, error) {
 	if p.File == "" {
 		return nil, fmt.Errorf("File field must be set")
 	}
-	return s.s.Definition(&p)
+	return s.s.Definition(ctx, &p)
 }
 
-func (s *server) serveExportedSymbols(body []byte) (interface{}, error) {
+func (s *server) serveExportedSymbols(ctx context.Context, body []byte) (interface{}, error) {
 	// Decode the user request and ensure that required fields are specified.
 	var r RepoRev
 	if err := json.Unmarshal(body, &r); err != nil {
@@ -150,10 +159,10 @@ func (s *server) serveExportedSymbols(body []byte) (interface{}, error) {
 	if r.Commit == "" {
 		return nil, fmt.Errorf("Commit field must be set")
 	}
-	return s.s.ExportedSymbols(&r)
+	return s.s.ExportedSymbols(ctx, &r)
 }
 
-func (s *server) serveExternalRefs(body []byte) (interface{}, error) {
+func (s *server) serveExternalRefs(ctx context.Context, body []byte) (interface{}, error) {
 	// Decode the user request and ensure that required fields are specified.
 	var r RepoRev
 	if err := json.Unmarshal(body, &r); err != nil {
@@ -165,10 +174,10 @@ func (s *server) serveExternalRefs(body []byte) (interface{}, error) {
 	if r.Commit == "" {
 		return nil, fmt.Errorf("Commit field must be set")
 	}
-	return s.s.ExternalRefs(&r)
+	return s.s.ExternalRefs(ctx, &r)
 }
 
-func (s *server) servePositionToDefSpec(body []byte) (interface{}, error) {
+func (s *server) servePositionToDefSpec(ctx context.Context, body []byte) (interface{}, error) {
 	// Decode the user request and ensure that required fields are specified.
 	var p Position
 	if err := json.Unmarshal(body, &p); err != nil {
@@ -183,10 +192,10 @@ func (s *server) servePositionToDefSpec(body []byte) (interface{}, error) {
 	if p.File == "" {
 		return nil, fmt.Errorf("File field must be set")
 	}
-	return s.s.PositionToDefSpec(&p)
+	return s.s.PositionToDefSpec(ctx, &p)
 }
 
-func (s *server) serveDefSpecToPosition(body []byte) (interface{}, error) {
+func (s *server) serveDefSpecToPosition(ctx context.Context, body []byte) (interface{}, error) {
 	// Decode the user request and ensure that required fields are specified.
 	var d DefSpec
 	if err := json.Unmarshal(body, &d); err != nil {
@@ -207,10 +216,10 @@ func (s *server) serveDefSpecToPosition(body []byte) (interface{}, error) {
 	if d.Path == "" {
 		return nil, fmt.Errorf("Path field must be set")
 	}
-	return s.s.DefSpecToPosition(&d)
+	return s.s.DefSpecToPosition(ctx, &d)
 }
 
-func (s *server) serveDefSpecRefs(body []byte) (interface{}, error) {
+func (s *server) serveDefSpecRefs(ctx context.Context, body []byte) (interface{}, error) {
 	// Decode the user request and ensure that required fields are specified.
 	var d DefSpec
 	if err := json.Unmarshal(body, &d); err != nil {
@@ -231,10 +240,10 @@ func (s *server) serveDefSpecRefs(body []byte) (interface{}, error) {
 	if d.Path == "" {
 		return nil, fmt.Errorf("Path field must be set")
 	}
-	return s.s.DefSpecRefs(&d)
+	return s.s.DefSpecRefs(ctx, &d)
 }
 
-func (s *server) serveHover(body []byte) (interface{}, error) {
+func (s *server) serveHover(ctx context.Context, body []byte) (interface{}, error) {
 	// Decode the user request and ensure that required fields are specified.
 	var p Position
 	if err := json.Unmarshal(body, &p); err != nil {
@@ -249,10 +258,10 @@ func (s *server) serveHover(body []byte) (interface{}, error) {
 	if p.File == "" {
 		return nil, fmt.Errorf("File field must be set")
 	}
-	return s.s.Hover(&p)
+	return s.s.Hover(ctx, &p)
 }
 
-func (s *server) serveLocalRefs(body []byte) (interface{}, error) {
+func (s *server) serveLocalRefs(ctx context.Context, body []byte) (interface{}, error) {
 	// Decode the user request and ensure that required fields are specified.
 	var p Position
 	if err := json.Unmarshal(body, &p); err != nil {
@@ -267,5 +276,5 @@ func (s *server) serveLocalRefs(body []byte) (interface{}, error) {
 	if p.File == "" {
 		return nil, fmt.Errorf("File field must be set")
 	}
-	return s.s.LocalRefs(&p)
+	return s.s.LocalRefs(ctx, &p)
 }

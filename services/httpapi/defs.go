@@ -71,7 +71,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 			}
 
 			if opt.File == "" {
-				lpDefSpec, err := langp.DefaultClient.DefSpecToPosition(&langp.DefSpec{
+				lpDefSpec, err := langp.DefaultClient.DefSpecToPosition(ctx, &langp.DefSpec{
 					Repo:     repo.URI,
 					Commit:   res.CommitID,
 					UnitType: defSpec.UnitType,
@@ -86,7 +86,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 				opt.Character = lpDefSpec.Character
 			}
 
-			hover, err := langp.DefaultClient.Hover(&langp.Position{
+			hover, err := langp.DefaultClient.Hover(ctx, &langp.Position{
 				Repo:      repo.URI,
 				Commit:    res.CommitID,
 				File:      opt.File,

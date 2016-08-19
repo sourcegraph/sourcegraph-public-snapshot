@@ -68,7 +68,7 @@ func serveDefLocalRefLocations(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 
-		localRefs, err := langp.DefaultClient.LocalRefs(&langp.Position{
+		localRefs, err := langp.DefaultClient.LocalRefs(ctx, &langp.Position{
 			Repo:      repo.URI,
 			Commit:    repoRev.CommitID,
 			File:      file,
