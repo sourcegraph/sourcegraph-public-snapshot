@@ -76,6 +76,8 @@ func repoChecker(on bool, enabled, repo string) bool {
 		// Default to the sourcegraph repository, plus some other forked repos
 		// for testing purposes.
 		enabled = "sourcegraph/sourcegraph"
+		enabled += ",sourcegraph.com/sourcegraph/sourcegraph"
+		enabled += ",github.com/sourcegraph/sourcegraph"
 		enabled += ",github.com/slimsag/mux"
 		enabled += ",github.com/slimsag/context"
 		enabled += ",github.com/slimsag/docker"
