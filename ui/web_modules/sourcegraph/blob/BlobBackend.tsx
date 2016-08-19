@@ -14,7 +14,7 @@ export const BlobBackend = {
 			const action = payload;
 			let file = BlobStore.files[keyForFile(action.repo, action.commitID, action.path)] || null;
 			if (file === null) {
-				let url = `/.api/repos/${action.repo}@${action.commitID}/-/tree/${action.path}?ContentsAsString=true`;
+				let url = `/.api/repos/${action.repo}@${action.commitID}/-/tree/${action.path}?ContentsAsString=true&NoSrclibAnns=true`;
 				BlobBackend.fetch(url)
 					.then(updateRepoCloning(action.repo))
 					.then(checkStatus)
@@ -38,7 +38,7 @@ export const BlobBackend = {
 			const action = payload;
 			let anns = BlobStore.annotations[keyForAnns(action.repo, action.commitID, action.path, action.startByte, action.endByte)] || null;
 			if (anns === null) {
-				let url = `/.api/annotations?Entry.RepoRev.Repo=${action.repo}&Entry.RepoRev.CommitID=${action.commitID}&Entry.Path=${action.path}&Range.StartByte=${action.startByte || 0}&Range.EndByte=${action.endByte || 0}`;
+				let url = `/.api/annotations?Entry.RepoRev.Repo=${action.repo}&Entry.RepoRev.CommitID=${action.commitID}&Entry.Path=${action.path}&Range.StartByte=${action.startByte || 0}&Range.EndByte=${action.endByte || 0}&NoSrclibAnns=true`;
 				BlobBackend.fetch(url)
 					.then(checkStatus)
 					.then((resp) => resp.json())

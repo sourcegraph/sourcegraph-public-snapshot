@@ -10,7 +10,7 @@ import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
 describe("BlobBackend", () => {
 	it("should handle WantFile", () => {
 		BlobBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
-			expect(url).to.be("/.api/repos/aRepo@aCommitID/-/tree/aPath?ContentsAsString=true");
+			expect(url).to.be("/.api/repos/aRepo@aCommitID/-/tree/aPath?ContentsAsString=true&NoSrclibAnns=true");
 			return immediateSyncPromise({
 				status: 200,
 				json: () => "someFile",
@@ -25,7 +25,7 @@ describe("BlobBackend", () => {
 	});
 	it("should handle WantFile with IncludedAnnotations", () => {
 		BlobBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
-			expect(url).to.be("/.api/repos/aRepo@c/-/tree/aPath?ContentsAsString=true");
+			expect(url).to.be("/.api/repos/aRepo@c/-/tree/aPath?ContentsAsString=true&NoSrclibAnns=true");
 			return immediateSyncPromise({
 				status: 200,
 				json: () => ({CommitID: "c", IncludedAnnotations: {Annotations: []}}),
@@ -42,40 +42,23 @@ describe("BlobBackend", () => {
 });
 
 describe("prepareAnnotations", () => {
-	it("should set WantInner on syntax highlighting annotations", () => {
+	it("should duplicate & set WantInner on syntax highlighting annotations", () => {
 		expect(
 			prepareAnnotations([
-				{StartByte: 10, EndByte: 15, Class: "x"},
-				{StartByte: 20, EndByte: 25, URL: "y"},
-				{StartByte: 30, EndByte: 35, Class: "z"},
+				{StartByte: 10, EndByte: 15, Class: "x", WantInner: 1},
+				{StartByte: 20, EndByte: 25, Class: "y", WantInner: 1},
+				{StartByte: 30, EndByte: 35, Class: "z", WantInner: 1},
 			])
 		).to.eql(
 			[
+				{StartByte: 10, EndByte: 15, Class: "x", WantInner: 0},
 				{StartByte: 10, EndByte: 15, Class: "x", WantInner: 1},
-				{StartByte: 20, EndByte: 25, URL: "y"},
+				{StartByte: 20, EndByte: 25, Class: "y", WantInner: 0},
+				{StartByte: 20, EndByte: 25, Class: "y", WantInner: 1},
+				{StartByte: 30, EndByte: 35, Class: "z", WantInner: 0},
 				{StartByte: 30, EndByte: 35, Class: "z", WantInner: 1},
 			]
 		);
-	});
-	it("should combine coincident ref annotations (for multiple defs support)", () => {
-		expect(
-			prepareAnnotations([
-				{StartByte: 1, EndByte: 2, URL: "a"},
-				{StartByte: 1, EndByte: 3, URL: "a"},
-				{StartByte: 2, EndByte: 3, URL: "b"},
-				{StartByte: 2, EndByte: 4, Class: "y"},
-				{StartByte: 2, EndByte: 3, URL: "c"},
-				{StartByte: 2, EndByte: 3, Class: "x"},
-				{StartByte: 3, EndByte: 4, URL: "c"},
-			])
-		).to.eql([
-			{StartByte: 1, EndByte: 3, URL: "a"},
-			{StartByte: 1, EndByte: 2, URL: "a"},
-			{StartByte: 2, EndByte: 4, Class: "y", WantInner: 1},
-			{StartByte: 2, EndByte: 3, URLs: ["b", "c"]},
-			{StartByte: 2, EndByte: 3, Class: "x", WantInner: 1},
-			{StartByte: 3, EndByte: 4, URL: "c"},
-		]);
 	});
 	it("should handle zero annotations", () => {
 		expect(

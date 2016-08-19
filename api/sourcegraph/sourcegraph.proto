@@ -1638,6 +1638,10 @@ message RepoTreeGetOptions {
 	bool ContentsAsString = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	GetFileOptions GetFileOptions = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+
+  	// NoSrclibAnns indicates whether or not srclib annotations should be
+  	// excluded in the (optional) returned list of annotations. 
+  	bool NoSrclibAnns = 6;
 }
 
 // GetFileOptions specifies options for GetFileWithOptions.
@@ -2019,6 +2023,10 @@ message AnnotationsListOptions {
 	// should be fetched for. If it is not set, then all of the file's
 	// annotations are returned.
 	FileRange Range = 2;
+
+  	// NoSrclibAnns indicates whether or not srclib annotations should be
+  	// excluded in the returned list of annotations. 
+  	bool NoSrclibAnns = 3;
 }
 
 // AnnotationsGetDefAtPosOptions specifies options for Annotations.GetDefAtPos

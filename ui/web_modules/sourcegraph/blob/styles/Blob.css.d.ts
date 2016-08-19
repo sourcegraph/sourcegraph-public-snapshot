@@ -41,6 +41,7 @@ export const line: string;
 export const lineNumber: string;
 export const selectedLineNumber: string;
 export const lineContent: string;
+export const boldLink: string;
 export const defTitleLineContent: string;
 export const selectedLineContent: string;
 export const highlightedAnn: string;

@@ -1,5 +1,5 @@
 // tslint:disable: typedef ordered-imports
-
+import * as s from "sourcegraph/blob/styles/Blob.css";
 import * as utf8 from "utf8";
 
 export interface Annotation {
@@ -10,6 +10,21 @@ export interface Annotation {
 	Class?: string;
 	WantInner?: number;
 };
+
+// getAnnLinkStyle returns the classnames (https://www.npmjs.com/package/classnames) 
+// styles object for an annotation if it should have a jump-to-def link. Otherwise, 
+// it returns null.
+export function getAnnLinkStyle(ann) {
+	if (!ann.WantInner) {
+		if (["num", "pun", "kwd", "com"].indexOf(ann.Class) === -1) {
+			let styles = {};
+			styles[ann.Class] = true;
+			styles[s.boldLink] = ann.Class !== "str";
+			return styles;
+		}
+	}
+	return null;
+}
 
 // sortAnns sorts annotations *in place* by start position, breaking ties by preferring
 // longer annotations.

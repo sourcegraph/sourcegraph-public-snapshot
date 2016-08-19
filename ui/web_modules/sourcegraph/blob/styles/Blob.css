@@ -134,7 +134,7 @@
 	overflow: visible;
 	white-space: pre-wrap;
 }
-.lineContent a {
+.lineContent .boldLink{
 	font-weight: bold;
 }
 .defTitleLineContent {

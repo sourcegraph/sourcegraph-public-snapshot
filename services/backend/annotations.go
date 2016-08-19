@@ -63,8 +63,12 @@ func (s *annotations) List(ctx context.Context, opt *sourcegraph.AnnotationsList
 
 	funcs := []func(context.Context, *sourcegraph.AnnotationsListOptions, *sourcegraph.TreeEntry) ([]*sourcegraph.Annotation, error){
 		s.listSyntaxHighlights,
-		s.listRefs,
 	}
+
+	if !opt.NoSrclibAnns {
+		funcs = append(funcs, s.listRefs)
+	}
+
 	par := parallel.NewRun(len(funcs))
 	for _, f := range funcs {
 		f2 := f

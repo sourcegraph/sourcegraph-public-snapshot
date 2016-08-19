@@ -4,7 +4,7 @@ import * as React from "react";
 import {Link} from "react-router";
 import * as utf8 from "utf8";
 
-import {annotate} from "sourcegraph/blob/Annotations";
+import {annotate, getAnnLinkStyle} from "sourcegraph/blob/Annotations";
 import * as classNames from "classnames";
 import {Component} from "sourcegraph/Component";
 import * as Dispatcher from "sourcegraph/Dispatcher";
@@ -13,7 +13,6 @@ import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {fastURLToRepoDef} from "sourcegraph/def/routes";
 import * as s from "sourcegraph/blob/styles/Blob.css";
-import {isExternalLink} from "sourcegraph/util/externalLink";
 import "sourcegraph/components/styles/code.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {Def} from "sourcegraph/def/index";
@@ -41,23 +40,6 @@ function fromUtf8(contents) {
 	return contents.map((e) =>
 		typeof e !== "string" ? e : utf8.decode(e)
 	);
-}
-
-// fastInsertRevIntoDefURL accepts a revisionless def URL (urlNoRev) and
-// its repo (as a hint for the string replace algorithm), and it adds
-// the given revision (rev) to the URL. It is a special fastpath version
-// because it is called very frequently during rendering of BlobLine.
-function fastInsertRevIntoDefURL(urlNoRev: string, repo: string, rev: string): string {
-	if (!rev) {
-		return urlNoRev;
-	}
-
-	const prefix = `/${repo}/-/`;
-	const repl = `/${repo}@${rev}/-/`;
-	if (urlNoRev.startsWith(prefix)) {
-		return `${repl}${urlNoRev.slice(prefix.length)}`;
-	}
-	return urlNoRev;
 }
 
 interface Props {
@@ -166,35 +148,10 @@ export class BlobLine extends Component<Props, State> {
 		return fromUtf8(annotate(this.state.contents, this.state.startByte, this.state.annotations, (ann, content) => {
 			i++;
 
-			const annURLs = (ann.URL ? [ann.URL] : ann.URLs) || null;
-
-			// annRevURLs are the ann's URLs with the correct revision added. The raw
-			// ann.URL/ann.URLs values, if they are def URLs, never contain revs.
-			let annRevURLs = annURLs ? annURLs.map((url) => fastInsertRevIntoDefURL(url, this.state.repo, this.state.rev)) : null;
-
-			// If ann.URL is an absolute URL with scheme http or https, create an anchor with a link to the URL (e.g., an
-			// external URL to Mozilla's CSS reference documentation site.
-			if (annURLs && isExternalLink(annURLs[0])) {
-				let isHighlighted = this.state.highlightedDef === annURLs[0];
-				return (
-					<a
-						className={classNames(ann.Class, {
-							[s.highlightedAnn]: isHighlighted && (!this.state.highlightedDefObj || !this.state.highlightedDefObj.Error),
-						})}
-						target="_blank"
-						href={annURLs[0]}
-						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.Hovering({repo: this.state.repo, commit: this.state.commitID, file: this.state.path, line: this.state.lineNumber - 1, character: ann.StartByte - this.state.startByte}))}
-						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.Hovering(null))}
-						key={i}>
-						{simpleContentsString(content)}
-					</a>
-				);
-			}
-
 			// ensure there are no links inside content to make ReactJS happy
 			// otherwise incorrect DOM is built (a > .. > a)
-			if (annURLs && annRevURLs && !this._hasLink(content)) {
-				let isHighlighted = annURLs.includes(this.state.highlightedDef);
+			let linkStyle = getAnnLinkStyle(ann);
+			if (linkStyle && !this._hasLink(content)) {
 				let annotationPos = {
 					repo: this.state.repo,
 					commit: this.state.commitID,
@@ -204,14 +161,7 @@ export class BlobLine extends Component<Props, State> {
 				};
 				return (
 					<Link
-						className={classNames(ann.Class, {
-							[s.highlightedAnn]: isHighlighted && (!this.state.highlightedDefObj || !this.state.highlightedDefObj.Error),
-
-							// disabledAnn is an ann that you can't click on (possibly a broken ref).
-							[s.disabledAnn]: isHighlighted && (this.state.highlightedDefObj && this.state.highlightedDefObj.Error),
-
-							[s.activeAnn]: annURLs.includes(this.state.activeDefURL),
-						})}
+						className={classNames(linkStyle)}
 						to={{
 							query: annotationPos,
 							pathname: (this.props.location as any).pathname,
