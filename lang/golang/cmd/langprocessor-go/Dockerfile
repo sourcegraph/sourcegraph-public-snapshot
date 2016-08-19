@@ -1,6 +1,6 @@
 FROM alpine:3.4
 
-RUN apk add --no-cache git openssh-client go btrfs-progs
+RUN apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/community git openssh-client go btrfs-progs
 
 ADD langprocessor-go /langprocessor-go
 
