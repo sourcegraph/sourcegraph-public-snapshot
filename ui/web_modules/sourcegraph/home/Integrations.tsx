@@ -5,6 +5,8 @@ import * as styles from "sourcegraph/home/styles/Integrations.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Button} from "sourcegraph/components/index";
 import {Component} from "sourcegraph/Component";
+import {inBeta} from "sourcegraph/user/index";
+import * as betautil from "sourcegraph/util/betautil.tsx";
 
 class Tool {
 	name: string;
@@ -18,13 +20,12 @@ class Tool {
 	}
 }
 
-const plugins = [
-	new Tool("Sublime Text", "/img/Dashboard/sublime-text.svg", "https://github.com/sourcegraph-beta/sourcegraph-sublime-beta#sourcegraph-for-sublime-text-"),
-	new Tool("IntelliJ", "/img/Dashboard/intellij.svg", "https://github.com/sourcegraph/sourcegraph-intellij#sourcegraph-for-intellij-idea"),
-	new Tool("VS Code", "/img/Dashboard/vscode.svg", "https://github.com/sourcegraph-beta/sourcegraph-vscode#sourcegraph-for-visual-studio-code"),
-
-	new Tool("Emacs", "/img/Dashboard/emacs.svg", "https://github.com/sourcegraph/sourcegraph-emacs#sourcegraph-for-emacs"),
-	new Tool("Vim", "/img/Dashboard/vim.svg", "https://github.com/sourcegraph-beta/sourcegraph-vim-beta#sourcegraph-for-vim-"),
+let plugins = [
+	new Tool("Sublime Text", "/img/Dashboard/sublime-text.svg", "https://sourcegraph.com/beta"),
+	new Tool("IntelliJ", "/img/Dashboard/intellij.svg", "https://sourcegraph.com/beta"),
+	new Tool("VS Code", "/img/Dashboard/vscode.svg", "https://sourcegraph.com/beta"),
+	new Tool("Emacs", "/img/Dashboard/emacs.svg", "https://sourcegraph.com/beta"),
+	new Tool("Vim", "/img/Dashboard/vim.svg", "https://sourcegraph.com/beta"),
 ];
 
 const otherTools = [
@@ -44,6 +45,7 @@ export class Integrations extends Component<Props, State> {
 		router: React.PropTypes.object.isRequired,
 		signedIn: React.PropTypes.bool.isRequired,
 		githubToken: React.PropTypes.object,
+		user: React.PropTypes.object,
 	};
 
 	reconcileState(state: State, props: Props): void {
@@ -51,6 +53,14 @@ export class Integrations extends Component<Props, State> {
 	}
 
 	render(): JSX.Element | null {
+		if ((this.context as any).user && inBeta((this.context as any).user, betautil.DESKTOP)) {
+			plugins[0]["url"] = "https://github.com/sourcegraph-beta/sourcegraph-sublime-beta#sourcegraph-for-sublime-text-";
+			plugins[1]["url"] = "https://github.com/sourcegraph-beta/sourcegraph-intellij#sourcegraph-for-intellij-idea";
+			plugins[2]["url"] = "https://github.com/sourcegraph-beta/sourcegraph-vscode#sourcegraph-for-visual-studio-code";
+			plugins[3]["url"] = "https://github.com/sourcegraph-beta/sourcegraph-emacs#sourcegraph-for-emacs";
+			plugins[4]["url"] = "https://github.com/sourcegraph-beta/sourcegraph-vim-beta#sourcegraph-for-vim-";
+		}
+
 		return (
 			<div className={this.props.location.state && this.props.location.state.modal === "integrations" ? "" : styles.container}>
 				<div className={styles.menu}>
