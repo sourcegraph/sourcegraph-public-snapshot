@@ -4,21 +4,20 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"reflect"
 
 	"strconv"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/appdash/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/envutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil/appdashctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sqs/pbtypes"
 
 	"github.com/getsentry/raven-go"
 	"github.com/gorilla/mux"
+	opentracing "github.com/opentracing/opentracing-go"
 )
 
 var ravenClient *raven.Client
@@ -72,30 +71,7 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 	}
 
 	// Add appdash span ID.
-	spanID, _ := httptrace.GetSpanID(r.Header)
-	if spanID != nil {
-		appdashURL := appdashctx.AppdashURLSafe(r.Context())
-
-		if spanID.Trace != 0 {
-			addTag("Appdash trace", spanID.Trace.String())
-			if appdashURL != nil {
-				pkt.Extra["Appdash trace"] = appdashURL.ResolveReference(&url.URL{
-					Path: fmt.Sprintf("/traces/%v", spanID.Trace),
-				}).String()
-			}
-		}
-		if spanID.Span != 0 {
-			addTag("Appdash span", spanID.Span.String())
-			if appdashURL != nil {
-				pkt.Extra["Appdash span"] = appdashURL.ResolveReference(&url.URL{
-					Path: fmt.Sprintf("/traces/%v/%v", spanID.Trace, spanID.Span),
-				}).String()
-			}
-		}
-		if spanID.Parent != 0 {
-			addTag("Appdash parent", spanID.Parent.String())
-		}
-	}
+	addTag("trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
 
 	// Add request context tags.
 	ctx, cl := Client(r)

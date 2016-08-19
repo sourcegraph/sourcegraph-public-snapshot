@@ -2,6 +2,7 @@ package vcs_test
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -1144,7 +1145,7 @@ func TestOpen(t *testing.T) {
 	t.Parallel()
 
 	dir := initGitRepository(t)
-	gitcmd.Open(dir)
+	gitcmd.Open(context.Background(), dir)
 }
 
 func TestClone(t *testing.T) {
@@ -1189,7 +1190,7 @@ func TestRepository_UpdateEverything(t *testing.T) {
 			continue
 		}
 
-		r := gitcmd.Open(test.headDir)
+		r := gitcmd.Open(context.Background(), test.headDir)
 
 		initial, err := r.ResolveRevision("initial")
 		if err != nil {
@@ -1234,7 +1235,7 @@ func TestRepository_UpdateEverything(t *testing.T) {
 		// reopen the mirror because the tags/commits changed (after
 		// UpdateEverything) and we currently have no way to reload the existing
 		// repository.
-		r = gitcmd.Open(test.headDir)
+		r = gitcmd.Open(context.Background(), test.headDir)
 
 		// newfile should exist in the mirror now.
 		second, err := r.ResolveRevision("second")
@@ -1300,7 +1301,7 @@ func makeGitRepositoryBare(t testing.TB, dir string) {
 // returns the repository.
 func makeGitRepositoryCmd(t testing.TB, cmds ...string) *gitcmd.Repository {
 	dir := initGitRepository(t, cmds...)
-	return gitcmd.Open(dir)
+	return gitcmd.Open(context.Background(), dir)
 }
 
 func commitsEqual(a, b *vcs.Commit) bool {

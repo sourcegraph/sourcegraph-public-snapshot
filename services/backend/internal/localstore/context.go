@@ -34,7 +34,7 @@ func appDBH(ctx context.Context) gorp.SqlExecutor {
 	}
 	return traceutil.SQLExecutor{
 		SqlExecutor: dbh,
-		Recorder:    traceutil.Recorder(ctx),
+		Context:     ctx,
 	}
 }
 
@@ -46,6 +46,6 @@ func graphDBH(ctx context.Context) gorp.SqlExecutor {
 	}
 	return traceutil.SQLExecutor{
 		SqlExecutor: dbh,
-		Recorder:    traceutil.Recorder(ctx),
+		Context:     ctx,
 	}
 }

@@ -7,12 +7,11 @@ import (
 	"strings"
 	"time"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/gorilla/mux"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-	"gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/appdash"
-	"sourcegraph.com/sourcegraph/appdash/httptrace"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -48,31 +47,31 @@ func init() {
 func Middleware(next http.Handler, sessionInfo func(*http.Request) (uid, sessionID string)) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		start := time.Now()
+		ctx := r.Context()
 
-		routeName := "unknown"
-		r = r.WithContext(context.WithValue(r.Context(), routeNameKey, &routeName))
+		// -- currently we don't associate XHR calls with the parent page's span --
+		// parentSpanCtx, err := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
+		// if err != nil && err != opentracing.ErrSpanContextNotFound {
+		// 	log15.Error("extracting parent span failed", "error", err)
+		// }
+
+		// start new span
+		span := opentracing.StartSpan("")
+		span.SetTag("URL", r.URL.String())
+		defer span.Finish()
+		rw.Header().Set("X-Trace", traceutil.SpanURL(span))
+		ctx = opentracing.ContextWithSpan(ctx, span)
+		ctx = traceutil.InjectGRPCMetadata(ctx, span.Context()) // this assumes that the span does not change until any GRPC call, which is a bit bad
+
+		routeName := r.URL.Path // default, normally overwritten by route name
+		ctx = context.WithValue(ctx, routeNameKey, &routeName)
 
 		rwIntercept := &ResponseWriterStatusIntercept{ResponseWriter: rw}
-		if traceutil.DefaultCollector != nil {
-			config := &httptrace.MiddlewareConfig{
-				RouteName: func(r *http.Request) string {
-					return routeName
-				},
-				SetContextSpan: func(r *http.Request, id appdash.SpanID) *http.Request {
-					ctx := r.Context()
-					ctx = traceutil.NewContext(ctx, id)
-					ctx = sourcegraph.WithClientMetadata(ctx, (&traceutil.Span{SpanID: id}).Metadata())
-					return r.WithContext(ctx)
-				},
-			}
-			m := httptrace.Middleware(traceutil.DefaultCollector, config)
-			m(rwIntercept, r, func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("X-Appdash-Trace", traceutil.SpanIDFromContext(r.Context()).Trace.String())
-				next.ServeHTTP(w, r)
-			})
-		} else {
-			next.ServeHTTP(rwIntercept, r)
-		}
+		next.ServeHTTP(rwIntercept, r.WithContext(ctx))
+
+		// route name is only known after the request has been handled
+		span.SetOperationName("Serve: " + routeName)
+		span.SetTag("Route", routeName)
 
 		// If the code is zero, the inner Handler never explicitly called
 		// WriterHeader. We can assume the response code is 200 in such a case
@@ -92,7 +91,7 @@ func Middleware(next http.Handler, sessionInfo func(*http.Request) (uid, session
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
 		uid, sessionID := sessionInfo(r)
-		log15.Debug("TRACE HTTP", "method", r.Method, "URL", r.URL.String(), "routename", routeName, "spanID", traceutil.SpanIDFromContext(r.Context()), "code", code, "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent(), "uid", uid, "session", sessionID, "duration", duration)
+		log15.Debug("TRACE HTTP", "method", r.Method, "URL", r.URL.String(), "routename", routeName, "trace", traceutil.SpanURL(span), "code", code, "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent(), "uid", uid, "session", sessionID, "duration", duration)
 	})
 }
 

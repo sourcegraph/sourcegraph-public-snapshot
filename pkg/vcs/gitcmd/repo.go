@@ -2,6 +2,7 @@ package gitcmd
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -15,8 +16,8 @@ import (
 
 	"github.com/alecthomas/binary"
 	"github.com/golang/groupcache/lru"
+	opentracing "github.com/opentracing/opentracing-go"
 
-	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -31,18 +32,18 @@ var (
 )
 
 type Repository struct {
-	URL string
+	Context context.Context
+	URL     string
 
-	editLock   sync.RWMutex // protects ops that change repository data
-	AppdashRec *appdash.Recorder
+	editLock sync.RWMutex // protects ops that change repository data
 }
 
 func (r *Repository) String() string {
 	return fmt.Sprintf("git repo %s", r.URL)
 }
 
-func Open(url string) *Repository {
-	return &Repository{URL: url}
+func Open(ctx context.Context, url string) *Repository {
+	return &Repository{Context: ctx, URL: url}
 }
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
@@ -55,7 +56,9 @@ func checkSpecArgSafety(spec string) error {
 }
 
 func (r *Repository) ResolveRevision(spec string) (vcs.CommitID, error) {
-	defer r.trace(time.Now(), "ResolveRevision", spec)
+	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: ResolveRevision")
+	span.SetTag("Spec", spec)
+	defer span.Finish()
 
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
@@ -102,7 +105,9 @@ func (f branchFilter) add(list []string) {
 }
 
 func (r *Repository) Branches(opt vcs.BranchesOptions) ([]*vcs.Branch, error) {
-	defer r.trace(time.Now(), "Branches", opt)
+	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: Branches")
+	span.SetTag("Opt", opt)
+	defer span.Finish()
 
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
@@ -200,7 +205,8 @@ func (r *Repository) branchesBehindAhead(branch, base string) (*vcs.BehindAhead,
 }
 
 func (r *Repository) Tags() ([]*vcs.Tag, error) {
-	defer r.trace(time.Now(), "Tags")
+	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: Tags")
+	defer span.Finish()
 
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
@@ -276,7 +282,9 @@ func (r *Repository) getCommit(id vcs.CommitID) (*vcs.Commit, error) {
 }
 
 func (r *Repository) GetCommit(id vcs.CommitID) (*vcs.Commit, error) {
-	defer r.trace(time.Now(), "GetCommit", id)
+	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: GetCommit")
+	span.SetTag("Commit", id)
+	defer span.Finish()
 
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
@@ -285,7 +293,9 @@ func (r *Repository) GetCommit(id vcs.CommitID) (*vcs.Commit, error) {
 }
 
 func (r *Repository) Commits(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error) {
-	defer r.trace(time.Now(), "Commits", opt)
+	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: Commits")
+	span.SetTag("Opt", opt)
+	defer span.Finish()
 
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
@@ -446,7 +456,11 @@ func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.D
 		return diff.(*vcs.Diff), nil
 	}
 
-	defer r.trace(time.Now(), "Diff", base, head, opt)
+	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: Diff")
+	span.SetTag("Base", base)
+	span.SetTag("Head", head)
+	span.SetTag("Opt", opt)
+	defer span.Finish()
 
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
@@ -495,7 +509,9 @@ func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.D
 // UpdateEverything updates all branches, tags, etc., to match the
 // default remote repository.
 func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, error) {
-	defer r.trace(time.Now(), "UpdateEverything", opt)
+	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: UpdateEverything")
+	span.SetTag("Opt", opt)
+	defer span.Finish()
 
 	r.editLock.Lock()
 	defer r.editLock.Unlock()
@@ -517,7 +533,9 @@ func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, er
 var blameCache = cache.Sync(lru.New(500))
 
 func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
-	defer r.trace(time.Now(), "BlameFile", path, opt)
+	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: BlameFile")
+	span.SetTag(path, opt)
+	defer span.Finish()
 
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
@@ -655,7 +673,10 @@ func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk,
 }
 
 func (r *Repository) MergeBase(a, b vcs.CommitID) (vcs.CommitID, error) {
-	defer r.trace(time.Now(), "MergeBase", a, b)
+	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: MergeBase")
+	span.SetTag("A", a)
+	span.SetTag("B", b)
+	defer span.Finish()
 
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
@@ -670,13 +691,18 @@ func (r *Repository) MergeBase(a, b vcs.CommitID) (vcs.CommitID, error) {
 }
 
 func (r *Repository) Search(at vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
-	defer r.trace(time.Now(), "Search", at, opt)
+	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: Search")
+	span.SetTag("Commit", at)
+	span.SetTag("Opt", opt)
+	defer span.Finish()
 
 	return gitserver.Search(r.URL, at, opt)
 }
 
 func (r *Repository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, error) {
-	defer r.trace(time.Now(), "Committers", opt)
+	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: Committers")
+	span.SetTag("Opt", opt)
+	defer span.Finish()
 
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
@@ -717,7 +743,9 @@ func (r *Repository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, er
 }
 
 func (r *Repository) ReadFile(commit vcs.CommitID, name string) ([]byte, error) {
-	defer r.trace(time.Now(), "ReadFile", name)
+	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: ReadFile")
+	span.SetTag("Name", name)
+	defer span.Finish()
 
 	if err := checkSpecArgSafety(string(commit)); err != nil {
 		return nil, err
@@ -768,7 +796,10 @@ func (r *Repository) readFileBytes(commit vcs.CommitID, name string) ([]byte, er
 }
 
 func (r *Repository) Lstat(commit vcs.CommitID, path string) (os.FileInfo, error) {
-	defer r.trace(time.Now(), "Lstat", path)
+	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: Lstat")
+	span.SetTag("Commit", commit)
+	span.SetTag("Path", path)
+	defer span.Finish()
 
 	if err := checkSpecArgSafety(string(commit)); err != nil {
 		return nil, err
@@ -796,7 +827,10 @@ func (r *Repository) Lstat(commit vcs.CommitID, path string) (os.FileInfo, error
 }
 
 func (r *Repository) Stat(commit vcs.CommitID, path string) (os.FileInfo, error) {
-	defer r.trace(time.Now(), "Stat", path)
+	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: Stat")
+	span.SetTag("Commit", commit)
+	span.SetTag("Path", path)
+	defer span.Finish()
 
 	if err := checkSpecArgSafety(string(commit)); err != nil {
 		return nil, err
@@ -830,7 +864,11 @@ func (r *Repository) Stat(commit vcs.CommitID, path string) (os.FileInfo, error)
 }
 
 func (r *Repository) ReadDir(commit vcs.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
-	defer r.trace(time.Now(), "ReadDir", path)
+	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: ReadDir")
+	span.SetTag("Commit", commit)
+	span.SetTag("Path", path)
+	span.SetTag("Recurse", recurse)
+	defer span.Finish()
 
 	if err := checkSpecArgSafety(string(commit)); err != nil {
 		return nil, err

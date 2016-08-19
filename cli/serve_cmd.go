@@ -27,6 +27,8 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
 	"github.com/keegancsmith/tmpfriend"
+	lightstep "github.com/lightstep/lightstep-tracer-go"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/soheilhy/cmux"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
@@ -224,6 +226,12 @@ func (c *ServeCmd) Execute(args []string) error {
 		return err
 	}
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, logHandler))
+
+	if t := os.Getenv("LIGHTSTEP_ACCESS_TOKEN"); t != "" {
+		opentracing.InitGlobalTracer(lightstep.NewTracer(lightstep.Options{
+			AccessToken: t,
+		}))
+	}
 
 	// Snapshotters allow us to regularly capture profile data for later
 	// analysis. Not enabled by default since it is similiar to debug logs

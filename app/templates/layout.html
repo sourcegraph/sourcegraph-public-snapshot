@@ -49,9 +49,7 @@
 				{{end}}
 				</div>
 
-				{{if .CurrentSpanID.Span}}
-					<a href="{{urlToAppdashTrace .Ctx .CurrentSpanID.Trace}}" target="_blank">...</a>
-				{{end}}
+				<a href="{{urlToTrace .Ctx}}" target="_blank">...</a>
 			</div>
 		{{end}}
 

@@ -32,13 +32,13 @@ export function defaultFetch(url: string | Request, init?: RequestInit): Promise
 	if (typeof url !== "string") { throw new Error("url must be a string (complex requests are not yet supported)"); }
 
 	let defaultHeaders = new Headers();
-	if (context.csrfToken) { defaultHeaders.set("X-Csrf-Token", context.csrfToken); }
 	if (UserStore.activeAccessToken) {
 		let auth = `x-oauth-basic:${UserStore.activeAccessToken}`;
 		defaultHeaders.set("Authorization", `Basic ${btoa(auth)}`);
 	}
-	if (context.cacheControl) { defaultHeaders.set("Cache-Control", context.cacheControl); }
-	if (context.currentSpanID) { defaultHeaders.set("Parent-Span-ID", context.currentSpanID); }
+	Object.keys(context.xhrHeaders).forEach((key) => {
+		defaultHeaders.set(key, context.xhrHeaders[key]);
+	});
 
 	return fetch(url, {
 		method: (init && init.method) || "GET",

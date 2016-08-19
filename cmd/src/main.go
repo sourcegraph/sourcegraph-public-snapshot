@@ -22,7 +22,6 @@ import (
 	_ "sourcegraph.com/sourcegraph/sourcegraph/services/ext/papertrail"
 
 	// Misc.
-	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil/cli"
 	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
 )
 

@@ -1,15 +1,14 @@
 package outer
 
 import (
-	"strings"
-
 	"context"
+	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/oauth2util"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
@@ -23,12 +22,6 @@ func initContext(ctx context.Context, ctxFunc ContextFunc, services svc.Services
 
 	// Initialize from command-line args.
 	ctx = ctxFunc(ctx)
-
-	// Propagate span ID for tracing.
-	ctx, err = traceutil.MiddlewareGRPC(ctx)
-	if err != nil {
-		return nil, err
-	}
 
 	for _, f := range serverctx.Funcs {
 		ctx, err = f(ctx)

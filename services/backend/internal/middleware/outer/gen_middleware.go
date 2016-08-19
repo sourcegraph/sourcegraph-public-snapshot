@@ -31,17 +31,20 @@ var tmpl = template.Must(template.New("").Delims("<<<", ">>>").Parse(`// GENERAT
 package outer
 
 import (
+	"context"
 	"runtime"
 
-	"context"
+	opentracing "github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/srclib/store/pb"
-	"sourcegraph.com/sqs/pbtypes"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
+	"sourcegraph.com/sourcegraph/srclib/store/pb"
+	"sourcegraph.com/sqs/pbtypes"
 )
 
 // Services returns a full set of services with an implementation of each service method that lets you customize the initial context.Context and map Go errors to gRPC error codes. It is similar to HTTP handler middleware, but for gRPC servers.
@@ -62,6 +65,11 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
   <<<$service := .>>>
 	<<<range .Methods>>>
 		func (s wrapped<<<$service.Name>>>) <<<.Name>>>(ctx context.Context, v1 *<<<.ParamType>>>) (returnedResult *<<<.ResultType>>>, returnedError error) {
+			parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+			span := opentracing.StartSpan("GRPC call: <<<$service.Name>>>.<<<.Name>>>", opentracing.ChildOf(parentSpanCtx))
+			defer span.Finish()
+			ctx = opentracing.ContextWithSpan(ctx, span)
+
 			defer func() {
 				if err := recover(); err != nil {
 					const size = 64 << 10

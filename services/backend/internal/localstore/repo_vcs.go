@@ -8,7 +8,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitproto"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
@@ -42,9 +41,7 @@ func (s *repoVCS) Open(ctx context.Context, repo int32) (vcs.Repository, error) 
 		return nil, err
 	}
 
-	r := gitcmd.Open(dir)
-	r.AppdashRec = traceutil.Recorder(ctx)
-	return r, nil
+	return gitcmd.Open(ctx, dir), nil
 }
 
 func (s *repoVCS) Clone(ctx context.Context, repo int32, info *store.CloneInfo) error {

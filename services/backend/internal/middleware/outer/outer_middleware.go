@@ -13,13 +13,16 @@
 package outer
 
 import (
+	"context"
 	"runtime"
 
-	"context"
+	opentracing "github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
@@ -55,6 +58,11 @@ type wrappedMultiRepoImporter struct {
 }
 
 func (s wrappedMultiRepoImporter) Import(ctx context.Context, v1 *pb.ImportOp) (returnedResult *pbtypes.Void, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: MultiRepoImporter.Import", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -85,6 +93,11 @@ func (s wrappedMultiRepoImporter) Import(ctx context.Context, v1 *pb.ImportOp) (
 }
 
 func (s wrappedMultiRepoImporter) CreateVersion(ctx context.Context, v1 *pb.CreateVersionOp) (returnedResult *pbtypes.Void, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: MultiRepoImporter.CreateVersion", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -115,6 +128,11 @@ func (s wrappedMultiRepoImporter) CreateVersion(ctx context.Context, v1 *pb.Crea
 }
 
 func (s wrappedMultiRepoImporter) Index(ctx context.Context, v1 *pb.IndexOp) (returnedResult *pbtypes.Void, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: MultiRepoImporter.Index", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -150,6 +168,11 @@ type wrappedAccounts struct {
 }
 
 func (s wrappedAccounts) Create(ctx context.Context, v1 *sourcegraph.NewAccount) (returnedResult *sourcegraph.CreatedAccount, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Accounts.Create", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -180,6 +203,11 @@ func (s wrappedAccounts) Create(ctx context.Context, v1 *sourcegraph.NewAccount)
 }
 
 func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegraph.RequestPasswordResetOp) (returnedResult *sourcegraph.PendingPasswordReset, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Accounts.RequestPasswordReset", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -210,6 +238,11 @@ func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegra
 }
 
 func (s wrappedAccounts) ResetPassword(ctx context.Context, v1 *sourcegraph.NewPassword) (returnedResult *pbtypes.Void, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Accounts.ResetPassword", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -240,6 +273,11 @@ func (s wrappedAccounts) ResetPassword(ctx context.Context, v1 *sourcegraph.NewP
 }
 
 func (s wrappedAccounts) Update(ctx context.Context, v1 *sourcegraph.User) (returnedResult *pbtypes.Void, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Accounts.Update", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -270,6 +308,11 @@ func (s wrappedAccounts) Update(ctx context.Context, v1 *sourcegraph.User) (retu
 }
 
 func (s wrappedAccounts) UpdateEmails(ctx context.Context, v1 *sourcegraph.UpdateEmailsOp) (returnedResult *pbtypes.Void, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Accounts.UpdateEmails", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -300,6 +343,11 @@ func (s wrappedAccounts) UpdateEmails(ctx context.Context, v1 *sourcegraph.Updat
 }
 
 func (s wrappedAccounts) Delete(ctx context.Context, v1 *sourcegraph.UserSpec) (returnedResult *pbtypes.Void, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Accounts.Delete", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -335,6 +383,11 @@ type wrappedAnnotations struct {
 }
 
 func (s wrappedAnnotations) List(ctx context.Context, v1 *sourcegraph.AnnotationsListOptions) (returnedResult *sourcegraph.AnnotationList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Annotations.List", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -365,6 +418,11 @@ func (s wrappedAnnotations) List(ctx context.Context, v1 *sourcegraph.Annotation
 }
 
 func (s wrappedAnnotations) GetDefAtPos(ctx context.Context, v1 *sourcegraph.AnnotationsGetDefAtPosOptions) (returnedResult *sourcegraph.DefSpec, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Annotations.GetDefAtPos", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -400,6 +458,11 @@ type wrappedAsync struct {
 }
 
 func (s wrappedAsync) RefreshIndexes(ctx context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (returnedResult *pbtypes.Void, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Async.RefreshIndexes", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -435,6 +498,11 @@ type wrappedAuth struct {
 }
 
 func (s wrappedAuth) GetAccessToken(ctx context.Context, v1 *sourcegraph.AccessTokenRequest) (returnedResult *sourcegraph.AccessTokenResponse, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Auth.GetAccessToken", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -465,6 +533,11 @@ func (s wrappedAuth) GetAccessToken(ctx context.Context, v1 *sourcegraph.AccessT
 }
 
 func (s wrappedAuth) Identify(ctx context.Context, v1 *pbtypes.Void) (returnedResult *sourcegraph.AuthInfo, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Auth.Identify", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -495,6 +568,11 @@ func (s wrappedAuth) Identify(ctx context.Context, v1 *pbtypes.Void) (returnedRe
 }
 
 func (s wrappedAuth) GetExternalToken(ctx context.Context, v1 *sourcegraph.ExternalTokenSpec) (returnedResult *sourcegraph.ExternalToken, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Auth.GetExternalToken", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -525,6 +603,11 @@ func (s wrappedAuth) GetExternalToken(ctx context.Context, v1 *sourcegraph.Exter
 }
 
 func (s wrappedAuth) SetExternalToken(ctx context.Context, v1 *sourcegraph.ExternalToken) (returnedResult *pbtypes.Void, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Auth.SetExternalToken", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -555,6 +638,11 @@ func (s wrappedAuth) SetExternalToken(ctx context.Context, v1 *sourcegraph.Exter
 }
 
 func (s wrappedAuth) DeleteAndRevokeExternalToken(ctx context.Context, v1 *sourcegraph.ExternalTokenSpec) (returnedResult *pbtypes.Void, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Auth.DeleteAndRevokeExternalToken", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -590,6 +678,11 @@ type wrappedBuilds struct {
 }
 
 func (s wrappedBuilds) Get(ctx context.Context, v1 *sourcegraph.BuildSpec) (returnedResult *sourcegraph.Build, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Builds.Get", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -620,6 +713,11 @@ func (s wrappedBuilds) Get(ctx context.Context, v1 *sourcegraph.BuildSpec) (retu
 }
 
 func (s wrappedBuilds) List(ctx context.Context, v1 *sourcegraph.BuildListOptions) (returnedResult *sourcegraph.BuildList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Builds.List", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -650,6 +748,11 @@ func (s wrappedBuilds) List(ctx context.Context, v1 *sourcegraph.BuildListOption
 }
 
 func (s wrappedBuilds) Create(ctx context.Context, v1 *sourcegraph.BuildsCreateOp) (returnedResult *sourcegraph.Build, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Builds.Create", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -680,6 +783,11 @@ func (s wrappedBuilds) Create(ctx context.Context, v1 *sourcegraph.BuildsCreateO
 }
 
 func (s wrappedBuilds) Update(ctx context.Context, v1 *sourcegraph.BuildsUpdateOp) (returnedResult *sourcegraph.Build, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Builds.Update", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -710,6 +818,11 @@ func (s wrappedBuilds) Update(ctx context.Context, v1 *sourcegraph.BuildsUpdateO
 }
 
 func (s wrappedBuilds) ListBuildTasks(ctx context.Context, v1 *sourcegraph.BuildsListBuildTasksOp) (returnedResult *sourcegraph.BuildTaskList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Builds.ListBuildTasks", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -740,6 +853,11 @@ func (s wrappedBuilds) ListBuildTasks(ctx context.Context, v1 *sourcegraph.Build
 }
 
 func (s wrappedBuilds) CreateTasks(ctx context.Context, v1 *sourcegraph.BuildsCreateTasksOp) (returnedResult *sourcegraph.BuildTaskList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Builds.CreateTasks", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -770,6 +888,11 @@ func (s wrappedBuilds) CreateTasks(ctx context.Context, v1 *sourcegraph.BuildsCr
 }
 
 func (s wrappedBuilds) UpdateTask(ctx context.Context, v1 *sourcegraph.BuildsUpdateTaskOp) (returnedResult *sourcegraph.BuildTask, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Builds.UpdateTask", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -800,6 +923,11 @@ func (s wrappedBuilds) UpdateTask(ctx context.Context, v1 *sourcegraph.BuildsUpd
 }
 
 func (s wrappedBuilds) GetTaskLog(ctx context.Context, v1 *sourcegraph.BuildsGetTaskLogOp) (returnedResult *sourcegraph.LogEntries, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Builds.GetTaskLog", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -830,6 +958,11 @@ func (s wrappedBuilds) GetTaskLog(ctx context.Context, v1 *sourcegraph.BuildsGet
 }
 
 func (s wrappedBuilds) DequeueNext(ctx context.Context, v1 *sourcegraph.BuildsDequeueNextOp) (returnedResult *sourcegraph.BuildJob, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Builds.DequeueNext", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -865,6 +998,11 @@ type wrappedChannel struct {
 }
 
 func (s wrappedChannel) Send(ctx context.Context, v1 *sourcegraph.ChannelSendOp) (returnedResult *sourcegraph.ChannelSendResult, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Channel.Send", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -900,6 +1038,11 @@ type wrappedDefs struct {
 }
 
 func (s wrappedDefs) Get(ctx context.Context, v1 *sourcegraph.DefsGetOp) (returnedResult *sourcegraph.Def, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Defs.Get", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -930,6 +1073,11 @@ func (s wrappedDefs) Get(ctx context.Context, v1 *sourcegraph.DefsGetOp) (return
 }
 
 func (s wrappedDefs) List(ctx context.Context, v1 *sourcegraph.DefListOptions) (returnedResult *sourcegraph.DefList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Defs.List", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -960,6 +1108,11 @@ func (s wrappedDefs) List(ctx context.Context, v1 *sourcegraph.DefListOptions) (
 }
 
 func (s wrappedDefs) ListRefs(ctx context.Context, v1 *sourcegraph.DefsListRefsOp) (returnedResult *sourcegraph.RefList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Defs.ListRefs", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -990,6 +1143,11 @@ func (s wrappedDefs) ListRefs(ctx context.Context, v1 *sourcegraph.DefsListRefsO
 }
 
 func (s wrappedDefs) ListRefLocations(ctx context.Context, v1 *sourcegraph.DefsListRefLocationsOp) (returnedResult *sourcegraph.RefLocationsList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Defs.ListRefLocations", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1020,6 +1178,11 @@ func (s wrappedDefs) ListRefLocations(ctx context.Context, v1 *sourcegraph.DefsL
 }
 
 func (s wrappedDefs) ListExamples(ctx context.Context, v1 *sourcegraph.DefsListExamplesOp) (returnedResult *sourcegraph.RefLocationsList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Defs.ListExamples", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1050,6 +1213,11 @@ func (s wrappedDefs) ListExamples(ctx context.Context, v1 *sourcegraph.DefsListE
 }
 
 func (s wrappedDefs) ListAuthors(ctx context.Context, v1 *sourcegraph.DefsListAuthorsOp) (returnedResult *sourcegraph.DefAuthorList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Defs.ListAuthors", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1080,6 +1248,11 @@ func (s wrappedDefs) ListAuthors(ctx context.Context, v1 *sourcegraph.DefsListAu
 }
 
 func (s wrappedDefs) RefreshIndex(ctx context.Context, v1 *sourcegraph.DefsRefreshIndexOp) (returnedResult *pbtypes.Void, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Defs.RefreshIndex", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1115,6 +1288,11 @@ type wrappedDesktop struct {
 }
 
 func (s wrappedDesktop) LatestExists(ctx context.Context, v1 *sourcegraph.ClientDesktopVersion) (returnedResult *sourcegraph.LatestDesktopVersion, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Desktop.LatestExists", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1150,6 +1328,11 @@ type wrappedMeta struct {
 }
 
 func (s wrappedMeta) Config(ctx context.Context, v1 *pbtypes.Void) (returnedResult *sourcegraph.ServerConfig, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Meta.Config", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1185,6 +1368,11 @@ type wrappedMirrorRepos struct {
 }
 
 func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (returnedResult *pbtypes.Void, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: MirrorRepos.RefreshVCS", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1220,6 +1408,11 @@ type wrappedRepoStatuses struct {
 }
 
 func (s wrappedRepoStatuses) GetCombined(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (returnedResult *sourcegraph.CombinedStatus, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: RepoStatuses.GetCombined", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1250,6 +1443,11 @@ func (s wrappedRepoStatuses) GetCombined(ctx context.Context, v1 *sourcegraph.Re
 }
 
 func (s wrappedRepoStatuses) GetCoverage(ctx context.Context, v1 *pbtypes.Void) (returnedResult *sourcegraph.RepoStatusList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: RepoStatuses.GetCoverage", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1280,6 +1478,11 @@ func (s wrappedRepoStatuses) GetCoverage(ctx context.Context, v1 *pbtypes.Void) 
 }
 
 func (s wrappedRepoStatuses) Create(ctx context.Context, v1 *sourcegraph.RepoStatusesCreateOp) (returnedResult *sourcegraph.RepoStatus, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: RepoStatuses.Create", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1315,6 +1518,11 @@ type wrappedRepoTree struct {
 }
 
 func (s wrappedRepoTree) Get(ctx context.Context, v1 *sourcegraph.RepoTreeGetOp) (returnedResult *sourcegraph.TreeEntry, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: RepoTree.Get", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1345,6 +1553,11 @@ func (s wrappedRepoTree) Get(ctx context.Context, v1 *sourcegraph.RepoTreeGetOp)
 }
 
 func (s wrappedRepoTree) Search(ctx context.Context, v1 *sourcegraph.RepoTreeSearchOp) (returnedResult *sourcegraph.VCSSearchResultList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: RepoTree.Search", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1375,6 +1588,11 @@ func (s wrappedRepoTree) Search(ctx context.Context, v1 *sourcegraph.RepoTreeSea
 }
 
 func (s wrappedRepoTree) List(ctx context.Context, v1 *sourcegraph.RepoTreeListOp) (returnedResult *sourcegraph.RepoTreeListResult, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: RepoTree.List", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1410,6 +1628,11 @@ type wrappedRepos struct {
 }
 
 func (s wrappedRepos) Get(ctx context.Context, v1 *sourcegraph.RepoSpec) (returnedResult *sourcegraph.Repo, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.Get", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1440,6 +1663,11 @@ func (s wrappedRepos) Get(ctx context.Context, v1 *sourcegraph.RepoSpec) (return
 }
 
 func (s wrappedRepos) Resolve(ctx context.Context, v1 *sourcegraph.RepoResolveOp) (returnedResult *sourcegraph.RepoResolution, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.Resolve", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1470,6 +1698,11 @@ func (s wrappedRepos) Resolve(ctx context.Context, v1 *sourcegraph.RepoResolveOp
 }
 
 func (s wrappedRepos) List(ctx context.Context, v1 *sourcegraph.RepoListOptions) (returnedResult *sourcegraph.RepoList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.List", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1500,6 +1733,11 @@ func (s wrappedRepos) List(ctx context.Context, v1 *sourcegraph.RepoListOptions)
 }
 
 func (s wrappedRepos) Create(ctx context.Context, v1 *sourcegraph.ReposCreateOp) (returnedResult *sourcegraph.Repo, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.Create", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1530,6 +1768,11 @@ func (s wrappedRepos) Create(ctx context.Context, v1 *sourcegraph.ReposCreateOp)
 }
 
 func (s wrappedRepos) Update(ctx context.Context, v1 *sourcegraph.ReposUpdateOp) (returnedResult *sourcegraph.Repo, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.Update", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1560,6 +1803,11 @@ func (s wrappedRepos) Update(ctx context.Context, v1 *sourcegraph.ReposUpdateOp)
 }
 
 func (s wrappedRepos) Delete(ctx context.Context, v1 *sourcegraph.RepoSpec) (returnedResult *pbtypes.Void, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.Delete", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1590,6 +1838,11 @@ func (s wrappedRepos) Delete(ctx context.Context, v1 *sourcegraph.RepoSpec) (ret
 }
 
 func (s wrappedRepos) GetConfig(ctx context.Context, v1 *sourcegraph.RepoSpec) (returnedResult *sourcegraph.RepoConfig, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.GetConfig", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1620,6 +1873,11 @@ func (s wrappedRepos) GetConfig(ctx context.Context, v1 *sourcegraph.RepoSpec) (
 }
 
 func (s wrappedRepos) GetCommit(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (returnedResult *vcs.Commit, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.GetCommit", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1650,6 +1908,11 @@ func (s wrappedRepos) GetCommit(ctx context.Context, v1 *sourcegraph.RepoRevSpec
 }
 
 func (s wrappedRepos) ResolveRev(ctx context.Context, v1 *sourcegraph.ReposResolveRevOp) (returnedResult *sourcegraph.ResolvedRev, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.ResolveRev", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1680,6 +1943,11 @@ func (s wrappedRepos) ResolveRev(ctx context.Context, v1 *sourcegraph.ReposResol
 }
 
 func (s wrappedRepos) ListCommits(ctx context.Context, v1 *sourcegraph.ReposListCommitsOp) (returnedResult *sourcegraph.CommitList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.ListCommits", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1710,6 +1978,11 @@ func (s wrappedRepos) ListCommits(ctx context.Context, v1 *sourcegraph.ReposList
 }
 
 func (s wrappedRepos) ListBranches(ctx context.Context, v1 *sourcegraph.ReposListBranchesOp) (returnedResult *sourcegraph.BranchList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.ListBranches", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1740,6 +2013,11 @@ func (s wrappedRepos) ListBranches(ctx context.Context, v1 *sourcegraph.ReposLis
 }
 
 func (s wrappedRepos) ListTags(ctx context.Context, v1 *sourcegraph.ReposListTagsOp) (returnedResult *sourcegraph.TagList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.ListTags", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1770,6 +2048,11 @@ func (s wrappedRepos) ListTags(ctx context.Context, v1 *sourcegraph.ReposListTag
 }
 
 func (s wrappedRepos) EnableWebhook(ctx context.Context, v1 *sourcegraph.RepoWebhookOptions) (returnedResult *pbtypes.Void, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.EnableWebhook", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1800,6 +2083,11 @@ func (s wrappedRepos) EnableWebhook(ctx context.Context, v1 *sourcegraph.RepoWeb
 }
 
 func (s wrappedRepos) ListDeps(ctx context.Context, v1 *sourcegraph.URIList) (returnedResult *sourcegraph.URIList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.ListDeps", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1830,6 +2118,11 @@ func (s wrappedRepos) ListDeps(ctx context.Context, v1 *sourcegraph.URIList) (re
 }
 
 func (s wrappedRepos) ListCommitters(ctx context.Context, v1 *sourcegraph.ReposListCommittersOp) (returnedResult *sourcegraph.CommitterList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.ListCommitters", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1860,6 +2153,11 @@ func (s wrappedRepos) ListCommitters(ctx context.Context, v1 *sourcegraph.ReposL
 }
 
 func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, v1 *sourcegraph.TreeEntrySpec) (returnedResult *sourcegraph.SrclibDataVersion, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.GetSrclibDataVersionForPath", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1890,6 +2188,11 @@ func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, v1 *sourc
 }
 
 func (s wrappedRepos) GetInventory(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (returnedResult *inventory.Inventory, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.GetInventory", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1920,6 +2223,11 @@ func (s wrappedRepos) GetInventory(ctx context.Context, v1 *sourcegraph.RepoRevS
 }
 
 func (s wrappedRepos) ReceivePack(ctx context.Context, v1 *sourcegraph.ReceivePackOp) (returnedResult *sourcegraph.Packet, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.ReceivePack", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1950,6 +2258,11 @@ func (s wrappedRepos) ReceivePack(ctx context.Context, v1 *sourcegraph.ReceivePa
 }
 
 func (s wrappedRepos) UploadPack(ctx context.Context, v1 *sourcegraph.UploadPackOp) (returnedResult *sourcegraph.Packet, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Repos.UploadPack", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -1985,6 +2298,11 @@ type wrappedSearch struct {
 }
 
 func (s wrappedSearch) Search(ctx context.Context, v1 *sourcegraph.SearchOp) (returnedResult *sourcegraph.SearchResultsList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Search.Search", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -2020,6 +2338,11 @@ type wrappedUsers struct {
 }
 
 func (s wrappedUsers) Get(ctx context.Context, v1 *sourcegraph.UserSpec) (returnedResult *sourcegraph.User, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Users.Get", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -2050,6 +2373,11 @@ func (s wrappedUsers) Get(ctx context.Context, v1 *sourcegraph.UserSpec) (return
 }
 
 func (s wrappedUsers) GetWithEmail(ctx context.Context, v1 *sourcegraph.EmailAddr) (returnedResult *sourcegraph.User, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Users.GetWithEmail", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -2080,6 +2408,11 @@ func (s wrappedUsers) GetWithEmail(ctx context.Context, v1 *sourcegraph.EmailAdd
 }
 
 func (s wrappedUsers) ListEmails(ctx context.Context, v1 *sourcegraph.UserSpec) (returnedResult *sourcegraph.EmailAddrList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Users.ListEmails", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -2110,6 +2443,11 @@ func (s wrappedUsers) ListEmails(ctx context.Context, v1 *sourcegraph.UserSpec) 
 }
 
 func (s wrappedUsers) List(ctx context.Context, v1 *sourcegraph.UsersListOptions) (returnedResult *sourcegraph.UserList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Users.List", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -2140,6 +2478,11 @@ func (s wrappedUsers) List(ctx context.Context, v1 *sourcegraph.UsersListOptions
 }
 
 func (s wrappedUsers) RegisterBeta(ctx context.Context, v1 *sourcegraph.BetaRegistration) (returnedResult *sourcegraph.BetaResponse, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Users.RegisterBeta", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10

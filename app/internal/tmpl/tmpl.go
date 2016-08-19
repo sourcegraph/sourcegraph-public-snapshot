@@ -16,7 +16,6 @@ import (
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
-	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
@@ -27,7 +26,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -87,11 +85,10 @@ type Common struct {
 	Session   *appauth.Session // the session cookie
 	CSRFToken string
 
-	CurrentRoute  string
-	CurrentURI    *url.URL
-	CurrentURL    *url.URL
-	CurrentQuery  url.Values
-	CurrentSpanID appdash.SpanID
+	CurrentRoute string
+	CurrentURI   *url.URL
+	CurrentURL   *url.URL
+	CurrentQuery url.Values
 
 	// TemplateName is the filename of the template being rendered
 	// (e.g., "repo/main.html").
@@ -190,7 +187,6 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 
 			Ctx: ctx,
 
-			CurrentSpanID:    traceutil.SpanIDFromContext(req.Context()),
 			CurrentRouteVars: mux.Vars(req),
 			Debug:            handlerutil.DebugMode,
 

@@ -4,10 +4,8 @@ import {setGlobalSiteConfig} from "sourcegraph/app/siteConfig";
 import {UserStore} from "sourcegraph/user/UserStore";
 
 class Context {
-	csrfToken?: string;
-	cacheControl?: string;
-	currentSpanID?: string;
-	userAgentIsBot?: boolean;
+	xhrHeaders: {[key: string]: string};
+	userAgentIsBot: boolean;
 
 	// Some fields were migrated to React context from this global context object. These
 	// getters prevent you from accidentally accessing these fields in their old home,

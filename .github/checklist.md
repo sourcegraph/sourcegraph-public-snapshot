@@ -21,7 +21,7 @@ Ops
 
 #### Tracing
 
-- Appdash
+- LightStep
 
 #### User tracking
 

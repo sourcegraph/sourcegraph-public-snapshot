@@ -28,7 +28,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	appdashcli "sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
 	"sourcegraph.com/sourcegraph/srclib/flagutil"
 )
@@ -354,15 +353,6 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 
 	// FS
 	s.Config.Serve.ReposDir = reposDir
-
-	// Disable Appdash, because it depends on InfluxDB we would have to use
-	// random ports for all InfluxDB services (influxd, admin, collectd,
-	// graphite, httpd, opentsdb, and udp services) and also use random influx
-	// directories for both influxdb and it's meta service, otherwise we could
-	// not avoid race conditions between parralel tests. Not worth it.
-	s.Config.ServeFlags = append(s.Config.ServeFlags, &appdashcli.ServerConfig{
-		Disable: true,
-	})
 
 	// Graphstore
 	s.Config.Serve.GraphStoreOpts.Root = reposDir

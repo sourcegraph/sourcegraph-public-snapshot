@@ -3,17 +3,15 @@
 package trace
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"context"
-
-	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
@@ -37,15 +35,9 @@ func prepareArg(server, method string, arg interface{}) interface{} {
 // and method name and the argument. The returned context is passed
 // when invoking the underlying method.
 func Before(ctx context.Context, server, method string, arg interface{}) context.Context {
-	parent := traceutil.SpanIDFromContext(ctx)
-	var spanID appdash.SpanID
-	if parent == (appdash.SpanID{}) {
-		spanID = appdash.NewRootSpanID()
-	} else {
-		spanID = appdash.NewSpanID(parent)
-	}
-	ctx = traceutil.NewContext(ctx, spanID)
 	requestGauge.WithLabelValues(server + "." + method).Inc()
+
+	_, ctx = opentracing.StartSpanFromContext(ctx, server+"."+method)
 	return ctx
 }
 
@@ -80,29 +72,16 @@ func init() {
 // execution time since the method's BeforeFunc was called and the
 // error returned, if any.
 func After(ctx context.Context, server, method string, arg interface{}, err error, elapsed time.Duration) {
-	sr := time.Now().Add(-1 * elapsed)
-	// HACK: make everything show up in the chart
-	if elapsed < time.Millisecond {
-		sr = time.Now().Add(-time.Millisecond)
-	}
-	errStr := ""
+	span := opentracing.SpanFromContext(ctx)
+	span.SetTag("Server", server)
+	span.SetTag("Method", method)
+	span.SetTag("Argument", fmt.Sprintf("%#v", prepareArg(server, method, arg)))
 	if err != nil {
-		errStr = err.Error()
+		span.SetTag("Error", err.Error())
 	}
-	name := server + "." + method
-	call := &traceutil.GRPCCall{
-		Server:     server,
-		Method:     method,
-		Arg:        fmt.Sprintf("%#v", prepareArg(server, method, arg)),
-		ArgType:    fmt.Sprintf("%T", arg),
-		ServerRecv: sr,
-		ServerSend: time.Now(),
-		Err:        errStr,
-	}
-	rec := traceutil.Recorder(ctx)
-	rec.Name(server + "." + method)
-	rec.Event(call)
+	span.Finish()
 
+	name := server + "." + method
 	labels := prometheus.Labels{
 		"method":  name,
 		"success": strconv.FormatBool(err == nil),
@@ -112,5 +91,9 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 	requestGauge.WithLabelValues(name).Dec()
 
 	uid := strconv.Itoa(authpkg.ActorFromContext(ctx).UID)
-	log15.Debug("TRACE gRPC", "rpc", name, "uid", uid, "spanID", traceutil.SpanIDFromContext(ctx), "error", errStr, "duration", elapsed)
+	errStr := ""
+	if err != nil {
+		errStr = err.Error()
+	}
+	log15.Debug("TRACE gRPC", "rpc", name, "uid", uid, "trace", traceutil.SpanURL(span), "error", errStr, "duration", elapsed)
 }

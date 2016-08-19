@@ -12,14 +12,12 @@ import (
 	"os"
 	"time"
 
-	"sourcegraph.com/sourcegraph/appdash"
-	"sourcegraph.com/sourcegraph/appdash/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
 
 	"context"
 
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/go-github/github"
 	"github.com/sourcegraph/httpcache"
 	"golang.org/x/oauth2"
@@ -28,12 +26,12 @@ import (
 // Config specifies configuration options for a GitHub API client used
 // by Sourcegraph code.
 type Config struct {
-	BaseURL       *url.URL          // base URL of GitHub API; e.g., https://api.github.com (or ghcompat URL)
-	OAuth         oauth2.Config     // OAuth config
-	AppdashSpanID appdash.SpanID    // if nonzero, trace API calls and associate them with this span
-	Cache         httpcache.Cache   // if set, caches HTTP responses (namespaced per-token for authed client)
-	CacheControl  string            // cache-control header to set on all client requests, if non-empty
-	Transport     http.RoundTripper // base HTTP transport (if nil, uses http.DefaultTransport)
+	BaseURL      *url.URL          // base URL of GitHub API; e.g., https://api.github.com (or ghcompat URL)
+	OAuth        oauth2.Config     // OAuth config
+	Context      context.Context   // the context for requests to GitHub
+	Cache        httpcache.Cache   // if set, caches HTTP responses (namespaced per-token for authed client)
+	CacheControl string            // cache-control header to set on all client requests, if non-empty
+	Transport    http.RoundTripper // base HTTP transport (if nil, uses http.DefaultTransport)
 }
 
 // UnauthedClient is a GitHub API client using the config's OAuth2
@@ -112,10 +110,13 @@ func (c *Config) ApplicationAuthedClient() *github.Client {
 
 // client creates a new GitHub API client from the transport.
 func (c *Config) client(httpClient *http.Client) *github.Client {
+	if c.Context == nil {
+		c.Context = context.Background()
+	}
 	{
 		// Avoid modifying httpClient.
 		tmp := *httpClient
-		tmp.Transport = c.applyAppdash(tmp.Transport)
+		tmp.Transport = &tracingTransport{tmp.Transport, c.Context}
 		httpClient = &tmp
 	}
 
@@ -151,21 +152,16 @@ func (c *Config) baseTransport() http.RoundTripper {
 	return transport
 }
 
-// applyAppdash wraps t in an appdash transport if appdash is
-// enabled in the config. Otherwise, it returns t as-is.
-//
-// This is not part of baseTransport because we want to insert
-// appdash before the UnauthenticatedRateLimitedTransport, or else
-// our client secret would leak all over appdash.
-func (c *Config) applyAppdash(t http.RoundTripper) http.RoundTripper {
-	if c.AppdashSpanID.Trace == 0 {
-		return t
-	}
-	return &httptrace.Transport{
-		Recorder:  traceutil.NewRecorder(c.AppdashSpanID, traceutil.DefaultCollector),
-		Transport: t,
-		SetName:   true,
-	}
+type tracingTransport struct {
+	t   http.RoundTripper
+	ctx context.Context
+}
+
+func (t *tracingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	span, ctx := opentracing.StartSpanFromContext(t.ctx, "GitHub")
+	span.SetTag("URL", req.URL.String())
+	defer span.Finish()
+	return t.t.RoundTrip(req.WithContext(ctx))
 }
 
 type disabledTransport struct{}

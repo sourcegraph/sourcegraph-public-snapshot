@@ -1,6 +1,7 @@
 package vcs_test
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -23,7 +24,7 @@ func BenchmarkFileSystem_GitCmd(b *testing.B) {
 	}()
 
 	cmds, files := makeGitCommandsAndFiles(benchFileSystemCommits)
-	r := gitcmd.Open(initGitRepository(b, cmds...))
+	r := gitcmd.Open(context.Background(), initGitRepository(b, cmds...))
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -39,7 +40,7 @@ func BenchmarkGetCommit_GitCmd(b *testing.B) {
 
 	cmds, _ := makeGitCommandsAndFiles(benchGetCommitCommits)
 	openRepo := func() vcs.Repository {
-		return gitcmd.Open(initGitRepository(b, cmds...))
+		return gitcmd.Open(context.Background(), initGitRepository(b, cmds...))
 	}
 
 	b.ResetTimer()
@@ -56,7 +57,7 @@ func BenchmarkCommits_GitCmd(b *testing.B) {
 
 	cmds, _ := makeGitCommandsAndFiles(benchCommitsCommits)
 	openRepo := func() vcs.Repository {
-		return gitcmd.Open(initGitRepository(b, cmds...))
+		return gitcmd.Open(context.Background(), initGitRepository(b, cmds...))
 	}
 
 	b.ResetTimer()

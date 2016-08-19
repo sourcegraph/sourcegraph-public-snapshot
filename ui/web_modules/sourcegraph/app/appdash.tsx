@@ -2,10 +2,7 @@
 
 import * as React from "react";
 import {Component} from "sourcegraph/Component";
-
-import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {getRouteName} from "sourcegraph/app/routePatterns";
-import {context} from "sourcegraph/app/context";
 
 interface Props {
 	routes: ReactRouter.Route[];
@@ -152,19 +149,16 @@ type RecordSpanOptions = {
 	metadata: any;
 };
 
-// recordSpan records a single span (operation) to Appdash. Any potential error
-// that would occur is sent to console.error instead of being thrown. It is
-// no-op if Appdash is not enabled (i.e. context.currentSpanID is not present).
+// recordSpan records a single span (operation). Any potential error
+// that would occur is sent to console.error instead of being thrown.
 export function recordSpan(opts: RecordSpanOptions) {
-	if (!context.currentSpanID) {
-		return;
-	}
-	// TODO(slimsag): use opts.metadata
-	defaultFetch(`/.api/internal/appdash/record-span?S=${opts.start}&E=${opts.end}&Name=${opts.name}`, {
-		method: "POST",
-	})
-	.then(checkStatus)
-	.catch((err) => {
-		console.error("appdash:", err);
-	});
+	// -- currently we don't add client side metrics to the tracing --
+	// // TODO(slimsag): use opts.metadata
+	// defaultFetch(`/.api/internal/appdash/record-span?S=${opts.start}&E=${opts.end}&Name=${opts.name}`, {
+	// 	method: "POST",
+	// })
+	// .then(checkStatus)
+	// .catch((err) => {
+	// 	console.error("appdash:", err);
+	// });
 }

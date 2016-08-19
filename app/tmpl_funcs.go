@@ -1,14 +1,11 @@
 package app
 
 import (
-	"encoding/json"
-	"fmt"
-	htmpl "html/template"
-	"net/url"
-
 	"context"
+	"encoding/json"
+	htmpl "html/template"
 
-	"sourcegraph.com/sourcegraph/appdash"
+	opentracing "github.com/opentracing/opentracing-go"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
@@ -16,7 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/envutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil/appdashctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
 func init() {
@@ -58,10 +55,11 @@ var tmplFuncs = htmpl.FuncMap{
 
 	"publicRavenDSN": func() string { return conf.PublicRavenDSN },
 
-	"urlToAppdashTrace": func(ctx context.Context, trace appdash.ID) *url.URL {
-		return appdashctx.AppdashURL(ctx).ResolveReference(&url.URL{
-			Path: fmt.Sprintf("/traces/%v", trace),
-		})
+	"urlToTrace": func(ctx context.Context) string {
+		if span := opentracing.SpanFromContext(ctx); span != nil {
+			return traceutil.SpanURL(span)
+		}
+		return ""
 	},
 
 	"buildvar": func() buildvar.Vars { return buildvar.All },

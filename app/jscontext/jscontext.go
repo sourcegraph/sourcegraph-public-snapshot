@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/csrf"
+	opentracing "github.com/opentracing/opentracing-go"
 
 	"context"
 
@@ -15,21 +16,18 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 type JSContext struct {
-	AppURL         string        `json:"appURL"`
-	AccessToken    string        `json:"accessToken"`
-	CacheControl   string        `json:"cacheControl"`
-	CSRFToken      string        `json:"csrfToken"`
-	CurrentSpanID  string        `json:"currentSpanID"`
-	UserAgentIsBot bool          `json:"userAgentIsBot"`
-	AssetsRoot     string        `json:"assetsRoot"`
-	BuildVars      buildvar.Vars `json:"buildVars"`
-	Features       interface{}   `json:"features"`
+	AppURL         string            `json:"appURL"`
+	AccessToken    string            `json:"accessToken"`
+	XHRHeaders     map[string]string `json:"xhrHeaders"`
+	UserAgentIsBot bool              `json:"userAgentIsBot"`
+	AssetsRoot     string            `json:"assetsRoot"`
+	BuildVars      buildvar.Vars     `json:"buildVars"`
+	Features       interface{}       `json:"features"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -40,19 +38,26 @@ func NewJSContextFromRequest(ctx context.Context, req *http.Request) (JSContext,
 		return JSContext{}, err
 	}
 
+	headers := make(map[string]string)
+
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, opentracing.TextMapCarrier(headers)); err != nil {
+			return JSContext{}, err
+		}
+	}
+
 	// Propagate Cache-Control no-cache and max-age=0 directives
 	// to the requests made by our client-side JavaScript. This is
 	// not a perfect parser, but it catches the important cases.
-	var cacheControl string
 	if cc := req.Header.Get("cache-control"); strings.Contains(cc, "no-cache") || strings.Contains(cc, "max-age=0") {
-		cacheControl = "no-cache"
+		headers["Cache-Control"] = "no-cache"
 	}
+
+	headers["X-Csrf-Token"] = csrf.Token(req)
 
 	jsctx := JSContext{
 		AppURL:         conf.AppURL(ctx).String(),
-		CacheControl:   cacheControl,
-		CSRFToken:      csrf.Token(req),
-		CurrentSpanID:  traceutil.SpanIDFromContext(ctx).String(),
+		XHRHeaders:     headers,
 		UserAgentIsBot: isBot(eventsutil.UserAgentFromContext(ctx)),
 		AssetsRoot:     assets.URL("/").String(),
 		BuildVars:      buildvar.Public,

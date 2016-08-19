@@ -9,7 +9,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 )
 
@@ -55,7 +54,7 @@ func NewContextWithClient(ctx context.Context, isAuthedUser bool, userClient *gi
 // actor has no stored GitHub credentials).
 func NewContextWithAuthedClient(ctx context.Context) (context.Context, error) {
 	ghConf := *githubutil.Default
-	ghConf.AppdashSpanID = traceutil.SpanIDFromContext(ctx)
+	ghConf.Context = ctx
 
 	a := auth.ActorFromContext(ctx)
 	var userClient *github.Client

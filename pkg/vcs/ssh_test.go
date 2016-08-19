@@ -1,6 +1,7 @@
 package vcs_test
 
 import (
+	"context"
 	"os/exec"
 	"path"
 	"path/filepath"
@@ -64,7 +65,7 @@ func TestRepository_Clone_ssh(t *testing.T) {
 				t.Fatalf("%s: Clone: %s", label, err)
 			}
 
-			r := gitcmd.Open(cloneDir)
+			r := gitcmd.Open(context.Background(), cloneDir)
 
 			tags, err := r.Tags()
 			if err != nil {
@@ -136,7 +137,7 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 				return
 			}
 
-			r := gitcmd.Open(test.headDir)
+			r := gitcmd.Open(context.Background(), test.headDir)
 
 			// r should not have any tags yet.
 			tags, err := r.Tags()
