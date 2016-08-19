@@ -1,9 +1,10 @@
 package backend
 
 import (
+	"context"
 	"net/url"
 
-	"context"
+	opentracing "github.com/opentracing/opentracing-go"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/mock"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
@@ -27,6 +28,7 @@ func testContext() (context.Context, *mocks) {
 	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"})
 	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 1, Login: "test"})
 	ctx = accesscontrol.WithInsecureSkip(ctx, true)
+	_, ctx = opentracing.StartSpanFromContext(ctx, "dummy")
 	return ctx, &m
 }
 
