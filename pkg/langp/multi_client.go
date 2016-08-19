@@ -102,7 +102,7 @@ func (mc *MultiClient) DefSpecToPosition(k *DefSpec) (*Position, error) {
 	var lang string
 	switch k.UnitType {
 	case "GoPackage":
-		lang = "Go"
+		lang = "GO"
 	}
 	client, ok := mc.Clients[lang]
 	if ok {
