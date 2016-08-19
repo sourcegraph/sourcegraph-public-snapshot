@@ -32,7 +32,7 @@ func (s *externalAuthTokens) GetUserToken(ctx context.Context, user int, host, c
 	if user == 0 {
 		return nil, errors.New("no uid specified")
 	}
-	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "ExternalAuthTokens.GetExternalToken", int32(user)); err != nil {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "ExternalAuthTokens.GetUserToken", int32(user)); err != nil {
 		return nil, err
 	}
 	var tok store.ExternalAuthToken
@@ -49,7 +49,7 @@ func (s *externalAuthTokens) SetUserToken(ctx context.Context, tok *store.Extern
 	if tok.User == 0 {
 		return errors.New("no uid specified")
 	}
-	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "ExternalAuthTokens.SetExternalToken", int32(tok.User)); err != nil {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "ExternalAuthTokens.SetUserToken", int32(tok.User)); err != nil {
 		return err
 	}
 	return dbutil.Transact(appDBH(ctx), func(tx gorp.SqlExecutor) error {
