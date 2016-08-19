@@ -17,6 +17,7 @@ import (
 
 type serveDefOpt struct {
 	sourcegraph.DefGetOptions
+	File            string
 	Line, Character int
 }
 
@@ -32,6 +33,12 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 
 	var def *sourcegraph.Def
 	if feature.Features.Universe {
+		// TODO(slimsag): The URLs for this are quite ugly when omitting the
+		// defkey:
+		//
+		//  /.api/repos/github.com/slimsag/mux/-/def/-/-/-/-?File=mux.go&Line=57&Character=17
+		//
+		// We should consider ways of making this cleaner.
 		repo, err := handlerutil.GetRepo(ctx, vars)
 		if err != nil {
 			return err
@@ -63,23 +70,28 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 				return err
 			}
 
-			lpDefSpec, err := langp.DefaultClient.DefSpecToPosition(langp.DefSpec{
-				Repo:     repo.URI,
-				Commit:   res.CommitID,
-				UnitType: defSpec.UnitType,
-				Unit:     defSpec.Unit,
-				Path:     defSpec.Path,
-			})
-			if err != nil {
-				return err
+			if opt.File == "" {
+				lpDefSpec, err := langp.DefaultClient.DefSpecToPosition(&langp.DefSpec{
+					Repo:     repo.URI,
+					Commit:   res.CommitID,
+					UnitType: defSpec.UnitType,
+					Unit:     defSpec.Unit,
+					Path:     defSpec.Path,
+				})
+				if err != nil {
+					return err
+				}
+				opt.File = lpDefSpec.File
+				opt.Line = lpDefSpec.Line
+				opt.Character = lpDefSpec.Character
 			}
 
 			hover, err := langp.DefaultClient.Hover(&langp.Position{
 				Repo:      repo.URI,
 				Commit:    res.CommitID,
-				File:      lpDefSpec.File,
-				Line:      lpDefSpec.Line,
-				Character: lpDefSpec.Character,
+				File:      opt.File,
+				Line:      opt.Line,
+				Character: opt.Character,
 			})
 			if err != nil {
 				return err
@@ -94,7 +106,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 						Unit:     defSpec.Unit,
 						Path:     defSpec.Path,
 					},
-					File: lpDefSpec.File,
+					File: opt.File,
 				},
 				FmtStrings: &graph.DefFormatStrings{
 					Name: graph.QualFormatStrings{
