@@ -583,6 +583,24 @@
 			"revisionTime": "2014-12-27T13:56:34+01:00"
 		},
 		{
+			"checksumSHA1": "JJHnLCwpXveEtKOTZQaIHbUWFZA=",
+			"path": "github.com/lightstep/lightstep-tracer-go",
+			"revision": "f3c66066ce6023ad1bd721cfbd9fbd6292eb08cc",
+			"revisionTime": "2016-08-05T20:23:25Z"
+		},
+		{
+			"checksumSHA1": "MahMEnwwXCu+0c6qGyJfalU50fs=",
+			"path": "github.com/lightstep/lightstep-tracer-go/lightstep_thrift",
+			"revision": "f3c66066ce6023ad1bd721cfbd9fbd6292eb08cc",
+			"revisionTime": "2016-08-05T20:23:25Z"
+		},
+		{
+			"checksumSHA1": "b6DFtUQOlP72UEX3R74xXg/LvBQ=",
+			"path": "github.com/lightstep/lightstep-tracer-go/thrift_0_9_2/lib/go/thrift",
+			"revision": "f3c66066ce6023ad1bd721cfbd9fbd6292eb08cc",
+			"revisionTime": "2016-08-05T20:23:25Z"
+		},
+		{
 			"path": "github.com/mattbaird/gochimp",
 			"revision": "b61cabb037b3948f0a87fe544b0a9c656fa37128",
 			"revisionTime": "2015-07-15T10:31:50-07:00"
@@ -642,6 +660,30 @@
 			"path": "github.com/nlopes/slack",
 			"revision": "e337a7316d3fe9aa55b7063035d6d32f3dbcaeb9",
 			"revisionTime": "2016-04-30T16:04:49Z"
+		},
+		{
+			"checksumSHA1": "s6AzF29Kzi7yM3dJAk5XiQpSwUY=",
+			"path": "github.com/opentracing/basictracer-go",
+			"revision": "c7c0202a8a77f658aeb2193a27b6c0cfcc821038",
+			"revisionTime": "2016-08-05T17:05:24Z"
+		},
+		{
+			"checksumSHA1": "bvLGShW2gTFyRs7kHShIczVuR1c=",
+			"path": "github.com/opentracing/basictracer-go/wire",
+			"revision": "c7c0202a8a77f658aeb2193a27b6c0cfcc821038",
+			"revisionTime": "2016-08-05T17:05:24Z"
+		},
+		{
+			"checksumSHA1": "uWYOMA7zdS0E5t2iaPid3V5+uqQ=",
+			"path": "github.com/opentracing/opentracing-go",
+			"revision": "855519783f479520497c6b3445611b05fc42f009",
+			"revisionTime": "2016-08-05T16:40:43Z"
+		},
+		{
+			"checksumSHA1": "vkGAOizL3CvI55dvSOqBIsVCszs=",
+			"path": "github.com/opentracing/opentracing-go/ext",
+			"revision": "855519783f479520497c6b3445611b05fc42f009",
+			"revisionTime": "2016-08-05T16:40:43Z"
 		},
 		{
 			"checksumSHA1": "QoVjlQFru1ixgV8vh63T4/JAtLI=",
@@ -895,6 +937,12 @@
 			"path": "golang.org/x/crypto/ssh/terminal",
 			"revision": "5bcd134fee4dd1475da17714aac19c0aa0142e2f",
 			"revisionTime": "2016-05-16T23:05:56Z"
+		},
+		{
+			"checksumSHA1": "9jjO5GjLa0XF/nfWihF02RoH4qc=",
+			"path": "golang.org/x/net/context",
+			"revision": "07b51741c1d6423d4a6abab1c49940ec09cb1aaf",
+			"revisionTime": "2016-08-11T10:50:59Z"
 		},
 		{
 			"checksumSHA1": "Do+l129/Bafh54VFaquooqtCcfk=",
