@@ -501,7 +501,7 @@ func lpAllRefs(repo, commitID string) ([]*graph.Ref, error) {
 		// stage. Rather not index at all. Alerting on this error
 		// should be handled upstream.
 		if d.Repo == "" || d.Unit == "" || d.UnitType == "" || d.Path == "" {
-			return fmt.Errorf("langp contains invalid def: repo=%s commit=%s def=%+v", repo, commitID, d)
+			return nil, fmt.Errorf("langp contains invalid def: repo=%s commit=%s def=%+v", repo, commitID, d)
 		}
 		refs, err := lp.DefSpecRefs(d)
 		if err != nil {
