@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -88,6 +89,7 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 		}
 	}
 	observe("tokenize", start)
+	opentracing.SpanFromContext(ctx).LogEvent("query tokenized")
 
 	start = time.Now()
 	results, err := store.DefsFromContext(ctx).Search(ctx, store.DefSearchOp{
@@ -98,6 +100,7 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 		return nil, err
 	}
 	observe("defs", start)
+	opentracing.SpanFromContext(ctx).LogEvent("defs fetched")
 
 	start = time.Now()
 	hydratedDefResults, err := hydrateDefsResults(ctx, results.DefResults)
@@ -106,6 +109,7 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 	}
 	results.DefResults = hydratedDefResults
 	observe("hydrate", start)
+	opentracing.SpanFromContext(ctx).LogEvent("defs hydrated")
 
 	// For global search analytics purposes
 	results.SearchQueryOptions = []*sourcegraph.SearchOptions{op.Opt}
@@ -127,6 +131,7 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 	if err != nil {
 		return nil, err
 	}
+	opentracing.SpanFromContext(ctx).LogEvent("fetched repos")
 	return results, nil
 }
 
