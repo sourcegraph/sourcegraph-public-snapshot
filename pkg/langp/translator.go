@@ -90,7 +90,7 @@ func (t *translator) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*
 	importPath, _ := ResolveRepoAlias(defSpec.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
-		Query: "defspec-refs-internal " + importPath + "/...",
+		Query: "exported " + importPath + "/...",
 	}
 	if err := reqSymbol.SetParams(p); err != nil {
 		return nil, err
@@ -159,7 +159,7 @@ func (t *translator) PositionToDefSpec(ctx context.Context, pos *Position) (*Def
 	importPath, _ := ResolveRepoAlias(pos.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
-		Query: "defspec-refs-internal " + importPath + "/...",
+		Query: "exported " + importPath + "/...",
 	}
 	if err := reqSymbol.SetParams(p); err != nil {
 		return nil, err
