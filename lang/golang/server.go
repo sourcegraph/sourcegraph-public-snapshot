@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cmdutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
@@ -69,20 +70,19 @@ func (h *Handler) HandleBatch(req []*jsonrpc2.Request) []*jsonrpc2.Response {
 	return resps
 }
 
-// cmd runs the named command with the given arguments and returns it's stdout
-// output if successful. Otherwise, it returns an error including what command
-// was run, and what stdout looked like.
-func cmd(env []string, name string, args ...string) ([]byte, error) {
-	start := time.Now()
-	c := exec.Command(name, args...)
+// cmdOutput is a helper around c.Output which logs the command, how long it
+// took to run, and a nice error in the event of failure.
+//
+// The specified env is set as cmd.Env (because we do this at ALL callsites
+// today anyway).
+func cmdOutput(env []string, c *exec.Cmd) ([]byte, error) {
 	c.Env = env
-	stdout, err := c.Output()
-	fmt.Printf("TIME: %v '%s'\n", time.Since(start), strings.Join(c.Args, " "))
+	start := time.Now()
+	stdout, err := cmdutil.Output(c)
+	log.Printf("TIME: %v '%s'\n", time.Since(start), strings.Join(c.Args, " "))
 	if err != nil {
-		if e, ok := err.(*exec.ExitError); ok {
-			return nil, fmt.Errorf("%v (running '%s'): output: %q", err, strings.Join(c.Args, " "), string(e.Stderr))
-		}
-		return nil, fmt.Errorf("%v (running '%s')", err, strings.Join(c.Args, " "))
+		log.Println(err)
+		return nil, err
 	}
 	return stdout, nil
 }

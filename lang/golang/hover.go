@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go/doc"
 	"io/ioutil"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -81,7 +82,7 @@ type godefResult struct {
 }
 
 func godef(env []string, path string, offset int) (*godefResult, error) {
-	b, err := cmd(env, "godef", "-a", "-f", path, "-o", strconv.Itoa(offset))
+	b, err := cmdOutput(env, exec.Command("godef", "-a", "-f", path, "-o", strconv.Itoa(offset)))
 	if err != nil {
 		return nil, fmt.Errorf("%v: %v", err, string(b))
 	}
