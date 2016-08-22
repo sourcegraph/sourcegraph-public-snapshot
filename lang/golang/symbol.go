@@ -144,13 +144,21 @@ func parseSymbolQuery(q string) (*symbolQuery, error) {
 }
 
 func runGog(env, pkgs []string) (*gogOutput, error) {
-	b, err := cmd(env, "gog", pkgs...)
-	if err != nil {
-		return nil, err
+	var combined gogOutput
+	for _, pkg := range pkgs {
+		b, err := cmd(env, "gog", pkg)
+		if err != nil {
+			return nil, err
+		}
+		var o gogOutput
+		err = json.Unmarshal(b, &o)
+		if err != nil {
+			return nil, err
+		}
+		combined.Defs = append(combined.Defs, o.Defs...)
+		combined.Refs = append(combined.Refs, o.Refs...)
 	}
-	var o gogOutput
-	err = json.Unmarshal(b, &o)
-	return &o, err
+	return &combined, nil
 }
 
 func expandPackages(env, pkgs []string) ([]string, error) {
