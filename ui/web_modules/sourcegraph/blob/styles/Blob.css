@@ -8,7 +8,7 @@
 @value marginBoxBorderWidth 4px;
 @value c_blue, c_cool_pale_gray_5, c_yellow_5 from colors;
 @value contentWidth 690px;
-@value marginWidth 290px;
+@value marginWidth 25em;
 @value firstCodeLineTopPadding 16px;
 @value code_normal_line_height from typography;
 
@@ -48,20 +48,6 @@
 .spacer {
 	flex: 1 1 marginWidth;
 }
-
-.marginBox {
-	composes: pt1 pb2 ph2 from base;
-}
-.marginBoxRight {
-	composes: marginBox;
-	border-left: solid marginBoxBorderWidth c_blue;
-	margin-left: calc(-1 * marginBoxBorderWidth);
-}
-.marginBoxLeft {
-	composes: marginBox;
-	border-right: solid marginBoxBorderWidth c_blue;
-}
-
 /* Blob content */
 .blobAndToolbar {
 	composes: content;

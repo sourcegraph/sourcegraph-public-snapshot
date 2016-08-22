@@ -18,7 +18,12 @@
 /* Def box (in blob margin) */
 .marginBox {
 	composes: w-100 from base;
-	composes: marginBoxRight from blob;
+	composes: ba from base;
+	composes: b__cool_pale_gray_8 from colors;
+	composes: pa2 from base;
+	background: white;
+	border-radius: 10px;
+	margin: 0 1em 0 .25em;
 }
 
 .boxTitle {
