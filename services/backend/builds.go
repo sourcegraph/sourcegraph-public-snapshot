@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
@@ -63,6 +64,12 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
 	if err != nil {
 		return nil, err
+	}
+
+	if feature.Features.Universe && feature.IsUniverseRepo(repo.URI) {
+		// Do not start builds for universe repos.
+		log15.Info("skipping build for universe repo", "repo", repo.URI)
+		return &sourcegraph.Build{}, nil
 	}
 
 	if repo.Blocked {

@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -29,6 +30,10 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 	repo, err := store.ReposFromContext(ctx).Get(ctx, entry.RepoRev.Repo)
 	if err != nil {
 		return nil, err
+	}
+	if feature.Features.Universe && feature.IsUniverseRepo(repo.URI) {
+		// Prevent access to srclib data for universe repos.
+		return nil, grpc.Errorf(codes.NotFound, "no srclib data version available (universe repo)")
 	}
 
 	// First, try to find an exact match.
