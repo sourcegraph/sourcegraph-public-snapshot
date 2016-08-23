@@ -1,14 +1,15 @@
 package langp
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cmdutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
@@ -31,16 +32,16 @@ func btrfsSubvolumeCreate(path string) error {
 	if !btrfsPresent {
 		return os.Mkdir(path, 0700)
 	}
-	return Cmd("btrfs", "subvolume", "create", path).Run()
+	return CmdRun(exec.Command("btrfs", "subvolume", "create", path))
 }
 
 func btrfsSubvolumeSnapshot(subvolumePath, snapshotPath string) error {
 	if !btrfsPresent {
 		// TODO: This isn't portable outside *nix, but it does spare us a lot
 		// of complex logic. Maybe find a good package to copy a directory.
-		return Cmd("cp", "-r", subvolumePath, snapshotPath).Run()
+		return CmdRun(exec.Command("cp", "-r", subvolumePath, snapshotPath))
 	}
-	return Cmd("btrfs", "subvolume", "snapshot", subvolumePath, snapshotPath).Run()
+	return CmdRun(exec.Command("btrfs", "subvolume", "snapshot", subvolumePath, snapshotPath))
 }
 
 // dirExists tells if the directory p exists or not.
@@ -113,18 +114,30 @@ func UnresolveRepoAlias(repo string) string {
 	return repo
 }
 
-// Cmd is a small helper which logs the command name and parameters and returns
-// a command with output going to stdout/stderr.
-func Cmd(name string, args ...string) *exec.Cmd {
-	s := fmt.Sprintf("exec %s", name)
-	for _, arg := range args {
-		s = fmt.Sprintf("%s %q", s, arg)
+// CmdOutput is a helper around c.Output which logs the command, how long it
+// took to run, and a nice error in the event of failure.
+func CmdOutput(c *exec.Cmd) ([]byte, error) {
+	start := time.Now()
+	stdout, err := cmdutil.Output(c)
+	log.Printf("TIME: %v '%s'\n", time.Since(start), strings.Join(c.Args, " "))
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
-	log.Println(s)
-	cmd := exec.Command(name, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd
+	return stdout, nil
+}
+
+// CmdRun is a helper around c.Run which logs the command, how long it took to
+// run, and a nice error in the event of failure.
+func CmdRun(c *exec.Cmd) error {
+	start := time.Now()
+	err := cmdutil.Run(c)
+	log.Printf("TIME: %v '%s'\n", time.Since(start), strings.Join(c.Args, " "))
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
 }
 
 // Clone clones the specified repository at the given commit into the specified
@@ -132,21 +145,21 @@ func Cmd(name string, args ...string) *exec.Cmd {
 // already exists and can just be fetched / updated.
 func Clone(update bool, cloneURI, repoDir, commit string) error {
 	if !update {
-		c := Cmd("git", "clone", cloneURI, repoDir)
-		if err := c.Run(); err != nil {
+		err := CmdRun(exec.Command("git", "clone", cloneURI, repoDir))
+		if err != nil {
 			return err
 		}
 	} else {
 		// Update our repo to match the remote.
-		c := Cmd("git", "remote", "update", "--prune")
-		c.Dir = repoDir
-		if err := c.Run(); err != nil {
+		cmd := exec.Command("git", "remote", "update", "--prune")
+		cmd.Dir = repoDir
+		if err := CmdRun(cmd); err != nil {
 			return err
 		}
 	}
 
 	// Reset to the specific revision.
-	c := Cmd("git", "reset", "--hard", commit)
-	c.Dir = repoDir
-	return c.Run()
+	cmd := exec.Command("git", "reset", "--hard", commit)
+	cmd.Dir = repoDir
+	return CmdRun(cmd)
 }

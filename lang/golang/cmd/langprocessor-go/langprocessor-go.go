@@ -49,7 +49,7 @@ func updateGoDependencies(repoDir string, env []string, repoURI string) error {
 	c := exec.Command("go", "list", "./...")
 	c.Dir = repoDir
 	c.Env = env
-	out, err := c.Output()
+	out, err := langp.CmdOutput(c)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func updateGoDependencies(repoDir string, env []string, repoURI string) error {
 		return nil
 	}
 	args := append([]string{"get", "-u", "-d"}, pkgs...)
-	return langp.Cmd("go", args...).Run()
+	return langp.CmdRun(exec.Command("go", args...))
 }
 
 func prepareDeps(update bool, workspace, repo, commit string) error {
@@ -79,10 +79,10 @@ func prepareDeps(update bool, workspace, repo, commit string) error {
 	env := []string{"PATH=" + os.Getenv("PATH"), "GOPATH=" + gopath}
 	var c *exec.Cmd
 	if !update {
-		c = langp.Cmd("go", "get", "-d", "./...")
+		c = exec.Command("go", "get", "-d", "./...")
 		c.Dir = repoDir
 		c.Env = env
-		return c.Run()
+		return langp.CmdRun(c)
 	}
 	return updateGoDependencies(repoDir, env, repo)
 }
@@ -121,7 +121,7 @@ func resolveFile(workspace, _, _, uri string) (*langp.File, error) {
 	}
 	cmd := exec.Command("git", "rev-parse", "--show-toplevel", "HEAD")
 	cmd.Dir = dir
-	out, err := cmd.Output()
+	out, err := langp.CmdOutput(cmd)
 	if err != nil {
 		return nil, err
 	}

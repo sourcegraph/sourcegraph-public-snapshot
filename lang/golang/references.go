@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os/exec"
 	"sort"
 	"strconv"
 	"strings"
@@ -92,7 +93,7 @@ func (l locationList) Len() int {
 }
 
 func guruReferrers(env []string, path string, offset int) (*serial.ReferrersInitial, []*serial.ReferrersPackage, error) {
-	b, err := cmd(env, "guru", "-json", "referrers", fmt.Sprintf("%s:#%d", path, offset))
+	b, err := cmdOutput(env, exec.Command("guru", "-json", "referrers", fmt.Sprintf("%s:#%d", path, offset)))
 	if err != nil {
 		return nil, nil, err
 	}
