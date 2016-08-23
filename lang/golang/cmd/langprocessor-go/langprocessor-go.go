@@ -34,8 +34,8 @@ func prepareRepo(update bool, workspace, repo, commit string) error {
 	return langp.Clone(update, cloneURI, repoDir, commit)
 }
 
-// updateGoDependencies updates all Go dependencies in the repository. It is
-// the same as:
+// goGetDependencies gets all Go dependencies in the repository. It is the
+// same as:
 //
 //  go get -u -d ./...
 //
@@ -45,7 +45,7 @@ func prepareRepo(update bool, workspace, repo, commit string) error {
 //
 // 	fatal: Not possible to fast-forward, aborting.
 //
-func updateGoDependencies(repoDir string, env []string, repoURI string) error {
+func goGetDependencies(repoDir string, env []string, repoURI string) error {
 	c := exec.Command("go", "list", "./...")
 	c.Dir = repoDir
 	c.Env = env
@@ -73,18 +73,9 @@ func updateGoDependencies(repoDir string, env []string, repoURI string) error {
 func prepareDeps(update bool, workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
 	repo, _ = langp.ResolveRepoAlias(repo)
-
-	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
 	env := []string{"PATH=" + os.Getenv("PATH"), "GOPATH=" + gopath}
-	var c *exec.Cmd
-	if !update {
-		c = exec.Command("go", "get", "-d", "./...")
-		c.Dir = repoDir
-		c.Env = env
-		return langp.CmdRun(c)
-	}
-	return updateGoDependencies(repoDir, env, repo)
+	return goGetDependencies(repoDir, env, repo)
 }
 
 func fileURI(repo, commit, file string) string {
