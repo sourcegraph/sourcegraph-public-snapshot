@@ -137,7 +137,7 @@ func executeTemplateBase(w http.ResponseWriter, templateName string, data interf
 
 // Exec executes the template (named by `name`) using the template data.
 func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, header http.Header, data interface{}) error {
-	ctx, cl := handlerutil.Client(req)
+	cl := handlerutil.Client(req)
 
 	if data != nil {
 		sess, err := appauth.ReadSessionCookie(req)
@@ -148,7 +148,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 		field := reflect.ValueOf(data).Elem().FieldByName("Common")
 		existingCommon := field.Interface().(Common)
 
-		currentURL := conf.AppURL(ctx).ResolveReference(req.URL)
+		currentURL := conf.AppURL(req.Context()).ResolveReference(req.URL)
 
 		// Propagate Cache-Control no-cache and max-age=0 directives
 		// to the requests made by our client-side JavaScript. This is
@@ -158,12 +158,12 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			cacheControl = "no-cache"
 		}
 
-		jsctx, err := jscontext.NewJSContextFromRequest(ctx, req)
+		jsctx, err := jscontext.NewJSContextFromRequest(req.Context(), req)
 		if err != nil {
 			return err
 		}
 
-		authInfo, err := cl.Auth.Identify(ctx, &pbtypes.Void{})
+		authInfo, err := cl.Auth.Identify(req.Context(), &pbtypes.Void{})
 		if err != nil {
 			return err
 		}
@@ -183,9 +183,9 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			CurrentURL:   currentURL,
 			CurrentQuery: req.URL.Query(),
 
-			AppURL: conf.AppURL(ctx),
+			AppURL: conf.AppURL(req.Context()),
 
-			Ctx: ctx,
+			Ctx: req.Context(),
 
 			CurrentRouteVars: mux.Vars(req),
 			Debug:            handlerutil.DebugMode,

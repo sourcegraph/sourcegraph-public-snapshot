@@ -13,20 +13,20 @@ import (
 )
 
 func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var opt sourcegraph.BuildListOptions
 	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
 		return err
 	}
 
-	repo, err := handlerutil.GetRepoID(ctx, mux.Vars(r))
+	repo, err := handlerutil.GetRepoID(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
 	}
 	opt.Repo = repo
 
-	builds, err := cl.Builds.List(ctx, &opt)
+	builds, err := cl.Builds.List(r.Context(), &opt)
 	if err != nil {
 		return err
 	}
@@ -39,14 +39,14 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
-	buildSpec, err := getBuildSpec(ctx, mux.Vars(r))
+	buildSpec, err := getBuildSpec(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	build, err := cl.Builds.Get(ctx, buildSpec)
+	build, err := cl.Builds.Get(r.Context(), buildSpec)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var op sourcegraph.BuildsCreateOp
 	err := json.NewDecoder(r.Body).Decode(&op)
@@ -69,13 +69,13 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 		Priority: 100,
 	}
 
-	repo, err := handlerutil.GetRepoID(ctx, mux.Vars(r))
+	repo, err := handlerutil.GetRepoID(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
 	}
 	op.Repo = repo
 
-	build, err := cl.Builds.Create(ctx, &op)
+	build, err := cl.Builds.Create(r.Context(), &op)
 	if err != nil {
 		return err
 	}

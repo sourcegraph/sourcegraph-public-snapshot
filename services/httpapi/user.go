@@ -11,14 +11,14 @@ import (
 )
 
 func serveUser(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	userSpec, err := routevar.ParseUserSpec(mux.Vars(r)["User"])
 	if err != nil {
 		return err
 	}
 
-	user, err := cl.Users.Get(ctx, &userSpec)
+	user, err := cl.Users.Get(r.Context(), &userSpec)
 	if err != nil {
 		return err
 	}
@@ -26,14 +26,14 @@ func serveUser(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveUserEmails(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	userSpec, err := routevar.ParseUserSpec(mux.Vars(r)["User"])
 	if err != nil {
 		return err
 	}
 
-	emails, err := cl.Users.ListEmails(ctx, &userSpec)
+	emails, err := cl.Users.ListEmails(r.Context(), &userSpec)
 	if err != nil {
 		return err
 	}
@@ -46,8 +46,8 @@ func serveBetaSubscription(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	ctx, cl := handlerutil.Client(r)
-	resp, err := cl.Users.RegisterBeta(ctx, &sub)
+	cl := handlerutil.Client(r)
+	resp, err := cl.Users.RegisterBeta(r.Context(), &sub)
 	if err != nil {
 		return err
 	}

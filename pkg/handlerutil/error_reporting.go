@@ -74,8 +74,8 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 	addTag("trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
 
 	// Add request context tags.
-	ctx, cl := Client(r)
-	if authInfo, err := cl.Auth.Identify(ctx, &pbtypes.Void{}); err == nil && authInfo.UID != 0 {
+	cl := Client(r)
+	if authInfo, err := cl.Auth.Identify(r.Context(), &pbtypes.Void{}); err == nil && authInfo.UID != 0 {
 		addTag("Authed", "yes")
 		addTag("Authed UID", strconv.Itoa(int(authInfo.UID)))
 		addTag("Authed user", authInfo.Login)

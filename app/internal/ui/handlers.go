@@ -72,8 +72,7 @@ func repoTreeGet(ctx context.Context, routeVars map[string]string) (*sourcegraph
 }
 
 func serveBlob(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	ctx, _ := handlerutil.Client(r)
-	entry, repo, repoRev, err := repoTreeGet(ctx, mux.Vars(r))
+	entry, repo, repoRev, err := repoTreeGet(r.Context(), mux.Vars(r))
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +82,7 @@ func serveBlob(w http.ResponseWriter, r *http.Request) (*meta, error) {
 
 	m := treeOrBlobMeta(entry.Name, repo)
 	m.CanonicalURL = canonicalRepoURL(
-		conf.AppURL(ctx),
+		conf.AppURL(r.Context()),
 		getRouteName(r),
 		mux.Vars(r),
 		r.URL.Query(),
@@ -94,8 +93,7 @@ func serveBlob(w http.ResponseWriter, r *http.Request) (*meta, error) {
 }
 
 func serveBuild(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	ctx, _ := handlerutil.Client(r)
-	_, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	_, err := handlerutil.GetRepo(r.Context(), mux.Vars(r))
 	if err != nil {
 		return nil, err
 	}
@@ -118,8 +116,7 @@ func serveDefInfo(w http.ResponseWriter, r *http.Request) (*meta, error) {
 }
 
 func serveDefCommon(w http.ResponseWriter, r *http.Request, isDefInfo bool) (*meta, error) {
-	ctx, _ := handlerutil.Client(r)
-	def, repo, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
+	def, repo, err := handlerutil.GetDefCommon(r.Context(), mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +125,7 @@ func serveDefCommon(w http.ResponseWriter, r *http.Request, isDefInfo bool) (*me
 	if isDefInfo {
 		// DefInfo canonical URL is DefInfo.
 		m.CanonicalURL = canonicalRepoURL(
-			conf.AppURL(ctx),
+			conf.AppURL(r.Context()),
 			getRouteName(r),
 			mux.Vars(r),
 			r.URL.Query(),
@@ -141,7 +138,7 @@ func serveDefCommon(w http.ResponseWriter, r *http.Request, isDefInfo bool) (*me
 		// on a blob page, for example), so let's tell it that all Def
 		// pages are actually canonically the blob.
 		m.CanonicalURL = canonicalRepoURL(
-			conf.AppURL(ctx),
+			conf.AppURL(r.Context()),
 			routeBlob,
 			routevar.TreeEntryRouteVars(routevar.TreeEntry{
 				RepoRev: routevar.ToRepoRev(mux.Vars(r)),
@@ -162,8 +159,6 @@ func serveDefCommon(w http.ResponseWriter, r *http.Request, isDefInfo bool) (*me
 }
 
 func serveRepo(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	ctx, _ := handlerutil.Client(r)
-
 	rr := routevar.ToRepoRev(mux.Vars(r))
 	if rr.Rev == "" {
 		// Just fetch the repo. Even if the rev doesn't exist, we
@@ -171,13 +166,13 @@ func serveRepo(w http.ResponseWriter, r *http.Request) (*meta, error) {
 		// in the process of being cloned. In that case, the 200 OK
 		// refers to the existence of the repo, not the rev, which is
 		// desirable.
-		repo, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+		repo, err := handlerutil.GetRepo(r.Context(), mux.Vars(r))
 		if err != nil {
 			return nil, err
 		}
 		m := repoMeta(repo)
 		m.CanonicalURL = canonicalRepoURL(
-			conf.AppURL(ctx),
+			conf.AppURL(r.Context()),
 			getRouteName(r),
 			mux.Vars(r),
 			r.URL.Query(),
@@ -187,14 +182,14 @@ func serveRepo(w http.ResponseWriter, r *http.Request) (*meta, error) {
 		return m, nil
 	}
 
-	repo, repoRev, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
 		return nil, err
 	}
 
 	m := repoMeta(repo)
 	m.CanonicalURL = canonicalRepoURL(
-		conf.AppURL(ctx),
+		conf.AppURL(r.Context()),
 		getRouteName(r),
 		mux.Vars(r),
 		r.URL.Query(),
@@ -205,8 +200,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) (*meta, error) {
 }
 
 func serveRepoBuilds(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	ctx, _ := handlerutil.Client(r)
-	_, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	_, err := handlerutil.GetRepo(r.Context(), mux.Vars(r))
 	if err != nil {
 		return nil, err
 	}
@@ -214,8 +208,7 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) (*meta, error) {
 }
 
 func serveTree(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	ctx, _ := handlerutil.Client(r)
-	entry, repo, repoRev, err := repoTreeGet(ctx, mux.Vars(r))
+	entry, repo, repoRev, err := repoTreeGet(r.Context(), mux.Vars(r))
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +218,7 @@ func serveTree(w http.ResponseWriter, r *http.Request) (*meta, error) {
 
 	m := treeOrBlobMeta(entry.Name, repo)
 	m.CanonicalURL = canonicalRepoURL(
-		conf.AppURL(ctx),
+		conf.AppURL(r.Context()),
 		getRouteName(r),
 		mux.Vars(r),
 		r.URL.Query(),

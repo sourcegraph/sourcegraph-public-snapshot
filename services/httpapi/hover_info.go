@@ -15,9 +15,9 @@ import (
 )
 
 func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
-	repo, repoRev, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 	}{}
 
 	if feature.IsUniverseRepo(repo.URI) {
-		hover, err := langp.DefaultClient.Hover(ctx, &langp.Position{
+		hover, err := langp.DefaultClient.Hover(r.Context(), &langp.Position{
 			Repo:      repo.URI,
 			Commit:    repoRev.CommitID,
 			File:      file,
@@ -60,7 +60,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		return writeJSON(w, resp)
 	}
 
-	defSpec, err := cl.Annotations.GetDefAtPos(ctx, &sourcegraph.AnnotationsGetDefAtPosOptions{
+	defSpec, err := cl.Annotations.GetDefAtPos(r.Context(), &sourcegraph.AnnotationsGetDefAtPosOptions{
 		Entry: sourcegraph.TreeEntrySpec{
 			RepoRev: repoRev,
 			Path:    file,
@@ -72,7 +72,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	resp.Def, err = cl.Defs.Get(ctx, &sourcegraph.DefsGetOp{
+	resp.Def, err = cl.Defs.Get(r.Context(), &sourcegraph.DefsGetOp{
 		Def: *defSpec,
 		Opt: &sourcegraph.DefGetOptions{
 			Doc: true,

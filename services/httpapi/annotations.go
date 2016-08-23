@@ -9,7 +9,7 @@ import (
 )
 
 func serveAnnotations(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	// HACK: Make the Entry.RepoRev.Repo value available at the
 	// keypath Repo so that we can decode it into the Repo field. You
@@ -28,13 +28,13 @@ func serveAnnotations(w http.ResponseWriter, r *http.Request) error {
 	opt := tmp.AnnotationsListOptions
 	if tmp.Repo != "" {
 		var err error
-		opt.Entry.RepoRev.Repo, err = getRepoID(ctx, tmp.Repo)
+		opt.Entry.RepoRev.Repo, err = getRepoID(r.Context(), tmp.Repo)
 		if err != nil {
 			return err
 		}
 	}
 
-	anns, err := cl.Annotations.List(ctx, &opt)
+	anns, err := cl.Annotations.List(r.Context(), &opt)
 	if err != nil {
 		return err
 	}

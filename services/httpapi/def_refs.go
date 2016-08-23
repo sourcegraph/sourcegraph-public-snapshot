@@ -22,7 +22,7 @@ type RefLocation struct {
 }
 
 func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var tmp struct {
 		Repo string
@@ -34,13 +34,13 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 	opt := tmp.DefListRefsOptions
 	if tmp.Repo != "" {
 		var err error
-		opt.Repo, err = getRepoID(ctx, repoIDOrPath(tmp.Repo))
+		opt.Repo, err = getRepoID(r.Context(), repoIDOrPath(tmp.Repo))
 		if err != nil {
 			return err
 		}
 	}
 
-	dc, repo, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
+	dc, repo, err := handlerutil.GetDefCommon(r.Context(), mux.Vars(r), nil)
 	if err != nil {
 		return err
 	}
@@ -70,12 +70,12 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 			path = opt.Files[0]
 		}
 
-		res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: opt.Repo, Rev: ""})
+		res, err := cl.Repos.ResolveRev(r.Context(), &sourcegraph.ReposResolveRevOp{Repo: opt.Repo, Rev: ""})
 		if err != nil {
 			return err
 		}
 
-		dataVersion, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
+		dataVersion, err := cl.Repos.GetSrclibDataVersionForPath(r.Context(), &sourcegraph.TreeEntrySpec{
 			RepoRev: sourcegraph.RepoRevSpec{Repo: opt.Repo, CommitID: res.CommitID},
 			Path:    path,
 		})
@@ -88,7 +88,7 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if feature.IsUniverseRepo(repo.URI) {
-		refs, err := langp.DefaultClient.DefSpecRefs(ctx, &langp.DefSpec{
+		refs, err := langp.DefaultClient.DefSpecRefs(r.Context(), &langp.DefSpec{
 			Repo:     tmp.Repo,
 			Commit:   opt.CommitID,
 			Unit:     def.Unit,
@@ -114,7 +114,7 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 		return writeJSON(w, refLocations)
 	}
 
-	refs, err := cl.Defs.ListRefs(ctx, &sourcegraph.DefsListRefsOp{
+	refs, err := cl.Defs.ListRefs(r.Context(), &sourcegraph.DefsListRefsOp{
 		Def: defSpec,
 		Opt: &opt,
 	})
@@ -126,14 +126,14 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var opt sourcegraph.DefListRefLocationsOptions
 	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
 		return err
 	}
 
-	dc, repo, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
+	dc, repo, err := handlerutil.GetDefCommon(r.Context(), mux.Vars(r), nil)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
 		opt.ListOptions.PerPage = 1000
 	}
 
-	refLocations, err := cl.Defs.ListRefLocations(ctx, &sourcegraph.DefsListRefLocationsOp{
+	refLocations, err := cl.Defs.ListRefLocations(r.Context(), &sourcegraph.DefsListRefLocationsOp{
 		Def: defSpec,
 		Opt: &opt,
 	})
@@ -162,14 +162,14 @@ func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var opt sourcegraph.DefsListExamplesOp
 	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
 		return err
 	}
 
-	dc, repo, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
+	dc, repo, err := handlerutil.GetDefCommon(r.Context(), mux.Vars(r), nil)
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 	opt.ListOptions.PerPage = 3
 	opt.ListOptions.Page = 1
 
-	refLocations, err := cl.Defs.ListExamples(ctx, &opt)
+	refLocations, err := cl.Defs.ListExamples(r.Context(), &opt)
 	if err != nil {
 		return err
 	}

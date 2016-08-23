@@ -34,14 +34,14 @@ func (list DefFileRefs) Swap(i, j int) {
 }
 
 func serveDefLocalRefLocations(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var opt sourcegraph.DefListRefLocationsOptions
 	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
 		return err
 	}
 
-	dc, repo, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
+	dc, repo, err := handlerutil.GetDefCommon(r.Context(), mux.Vars(r), nil)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func serveDefLocalRefLocations(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if feature.IsUniverseRepo(repo.URI) {
-		repo, repoRev, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+		repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 		if err != nil {
 			return err
 		}
@@ -68,7 +68,7 @@ func serveDefLocalRefLocations(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 
-		localRefs, err := langp.DefaultClient.LocalRefs(ctx, &langp.Position{
+		localRefs, err := langp.DefaultClient.LocalRefs(r.Context(), &langp.Position{
 			Repo:      repo.URI,
 			Commit:    repoRev.CommitID,
 			File:      file,
@@ -115,7 +115,7 @@ func serveDefLocalRefLocations(w http.ResponseWriter, r *http.Request) error {
 		Path:     def.Path,
 	}
 
-	refLocations, err := cl.Defs.ListRefLocations(ctx, &sourcegraph.DefsListRefLocationsOp{
+	refLocations, err := cl.Defs.ListRefLocations(r.Context(), &sourcegraph.DefsListRefLocationsOp{
 		Def: defSpec,
 		Opt: &opt,
 	})

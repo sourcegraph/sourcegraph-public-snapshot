@@ -26,9 +26,9 @@ type authInfo struct {
 }
 
 func serveAuthInfo(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
-	info, err := cl.Auth.Identify(ctx, &pbtypes.Void{})
+	info, err := cl.Auth.Identify(r.Context(), &pbtypes.Void{})
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func serveAuthInfo(w http.ResponseWriter, r *http.Request) error {
 	res := authInfo{AuthInfo: *info}
 
 	if info.UID != 0 {
-		tok, err := cl.Auth.GetExternalToken(ctx, &sourcegraph.ExternalTokenSpec{
+		tok, err := cl.Auth.GetExternalToken(r.Context(), &sourcegraph.ExternalTokenSpec{
 			UID:      info.UID,
 			Host:     "github.com",
 			ClientID: "", // defaults to GitHub client ID in environment
@@ -54,7 +54,7 @@ func serveAuthInfo(w http.ResponseWriter, r *http.Request) error {
 	// As an optimization, optimistically include the user to avoid
 	// the client needing to make another roundtrip.
 	if info.UID != 0 {
-		user, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: info.UID})
+		user, err := cl.Users.Get(r.Context(), &sourcegraph.UserSpec{UID: info.UID})
 		if err == nil {
 			res.IncludedUser = user
 		} else {
@@ -64,7 +64,7 @@ func serveAuthInfo(w http.ResponseWriter, r *http.Request) error {
 
 	// Also optimistically include emails
 	if info.UID != 0 {
-		emails, err := cl.Users.ListEmails(ctx, &sourcegraph.UserSpec{UID: info.UID})
+		emails, err := cl.Users.ListEmails(r.Context(), &sourcegraph.UserSpec{UID: info.UID})
 		if err == nil {
 			res.IncludedEmails = emails.EmailAddrs
 		} else {
@@ -85,7 +85,7 @@ type authResponse struct {
 }
 
 func serveLogin(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	loginForm := struct {
 		sourcegraph.LoginCredentials
@@ -95,11 +95,11 @@ func serveLogin(w http.ResponseWriter, r *http.Request) error {
 	}
 	defer r.Body.Close()
 
-	return finishLoginOrSignup(ctx, cl, w, loginForm.Login, loginForm.Password)
+	return finishLoginOrSignup(r.Context(), cl, w, loginForm.Login, loginForm.Password)
 }
 
 func serveSignup(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	signupForm := struct {
 		sourcegraph.NewAccount
@@ -109,12 +109,12 @@ func serveSignup(w http.ResponseWriter, r *http.Request) error {
 	}
 	defer r.Body.Close()
 
-	_, err := cl.Accounts.Create(ctx, &signupForm.NewAccount)
+	_, err := cl.Accounts.Create(r.Context(), &signupForm.NewAccount)
 	if err != nil {
 		return err
 	}
 
-	return finishLoginOrSignup(ctx, cl, w, signupForm.Login, signupForm.Password)
+	return finishLoginOrSignup(r.Context(), cl, w, signupForm.Login, signupForm.Password)
 }
 
 func finishLoginOrSignup(ctx context.Context, cl *sourcegraph.Client, w http.ResponseWriter, login, password string) error {
@@ -145,7 +145,7 @@ func serveLogout(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveForgotPassword(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	form := struct {
 		Email string
@@ -155,7 +155,7 @@ func serveForgotPassword(w http.ResponseWriter, r *http.Request) error {
 	}
 	defer r.Body.Close()
 
-	_, err := cl.Accounts.RequestPasswordReset(ctx, &sourcegraph.RequestPasswordResetOp{Email: form.Email})
+	_, err := cl.Accounts.RequestPasswordReset(r.Context(), &sourcegraph.RequestPasswordResetOp{Email: form.Email})
 	if err != nil {
 		return err
 	}
@@ -164,7 +164,7 @@ func serveForgotPassword(w http.ResponseWriter, r *http.Request) error {
 }
 
 func servePasswordReset(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	form := struct {
 		Password        string
@@ -180,7 +180,7 @@ func servePasswordReset(w http.ResponseWriter, r *http.Request) error {
 		return grpc.Errorf(codes.InvalidArgument, "passwords do not match")
 	}
 
-	_, err := cl.Accounts.ResetPassword(ctx, &sourcegraph.NewPassword{Password: form.Password, Token: &sourcegraph.PasswordResetToken{Token: form.Token}})
+	_, err := cl.Accounts.ResetPassword(r.Context(), &sourcegraph.NewPassword{Password: form.Password, Token: &sourcegraph.PasswordResetToken{Token: form.Token}})
 	if err != nil {
 		return err
 	}

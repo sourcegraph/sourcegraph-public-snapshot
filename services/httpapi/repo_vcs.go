@@ -13,10 +13,8 @@ import (
 )
 
 func serveRepoResolveRev(w http.ResponseWriter, r *http.Request) error {
-	ctx, _ := handlerutil.Client(r)
-
 	repoRev := routevar.ToRepoRev(mux.Vars(r))
-	res, err := resolveLocalRepoRev(ctx, repoRev)
+	res, err := resolveLocalRepoRev(r.Context(), repoRev)
 	if err != nil {
 		return err
 	}
@@ -32,16 +30,16 @@ func serveRepoResolveRev(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveCommit(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	rawRepoRev := routevar.ToRepoRev(mux.Vars(r))
 	abs := len(rawRepoRev.Rev) == 40 // absolute commit ID?
 
-	repoRev, err := resolveLocalRepoRev(ctx, rawRepoRev)
+	repoRev, err := resolveLocalRepoRev(r.Context(), rawRepoRev)
 	if err != nil {
 		return err
 	}
-	commit, err := cl.Repos.GetCommit(ctx, repoRev)
+	commit, err := cl.Repos.GetCommit(r.Context(), repoRev)
 	if err != nil {
 		return err
 	}
@@ -57,9 +55,9 @@ func serveCommit(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
-	repoID, err := resolveLocalRepo(ctx, routevar.ToRepo(mux.Vars(r)))
+	repoID, err := resolveLocalRepo(r.Context(), routevar.ToRepo(mux.Vars(r)))
 	if err != nil {
 		return err
 	}
@@ -69,7 +67,7 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	commits, err := cl.Repos.ListCommits(ctx, &sourcegraph.ReposListCommitsOp{Repo: repoID, Opt: &opt})
+	commits, err := cl.Repos.ListCommits(r.Context(), &sourcegraph.ReposListCommitsOp{Repo: repoID, Opt: &opt})
 	if err != nil {
 		return err
 	}
@@ -85,7 +83,7 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var opt sourcegraph.MirrorReposRefreshVCSOp
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -93,12 +91,12 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	repo, err := handlerutil.GetRepoID(ctx, mux.Vars(r))
+	repo, err := handlerutil.GetRepoID(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	authInfo, err := cl.Auth.Identify(ctx, &pbtypes.Void{})
+	authInfo, err := cl.Auth.Identify(r.Context(), &pbtypes.Void{})
 	if err != nil {
 		return err
 	}
@@ -109,7 +107,7 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var opt sourcegraph.RepoListBranchesOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -117,12 +115,12 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	repo, err := handlerutil.GetRepoID(ctx, mux.Vars(r))
+	repo, err := handlerutil.GetRepoID(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	branches, err := cl.Repos.ListBranches(ctx, &sourcegraph.ReposListBranchesOp{Repo: repo, Opt: &opt})
+	branches, err := cl.Repos.ListBranches(r.Context(), &sourcegraph.ReposListBranchesOp{Repo: repo, Opt: &opt})
 	if err != nil {
 		return err
 	}
@@ -130,7 +128,7 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var opt sourcegraph.RepoListTagsOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -138,12 +136,12 @@ func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	repo, err := handlerutil.GetRepoID(ctx, mux.Vars(r))
+	repo, err := handlerutil.GetRepoID(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	tags, err := cl.Repos.ListTags(ctx, &sourcegraph.ReposListTagsOp{Repo: repo, Opt: &opt})
+	tags, err := cl.Repos.ListTags(r.Context(), &sourcegraph.ReposListTagsOp{Repo: repo, Opt: &opt})
 	if err != nil {
 		return err
 	}

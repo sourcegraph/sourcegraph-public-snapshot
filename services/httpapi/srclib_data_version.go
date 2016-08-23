@@ -11,9 +11,9 @@ import (
 )
 
 func serveSrclibDataVersion(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
-	repoRev, err := resolveLocalRepoRev(ctx, routevar.ToRepoRev(mux.Vars(r)))
+	repoRev, err := resolveLocalRepoRev(r.Context(), routevar.ToRepoRev(mux.Vars(r)))
 	if err != nil {
 		return err
 	}
@@ -25,7 +25,7 @@ func serveSrclibDataVersion(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	dataVer, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
+	dataVer, err := cl.Repos.GetSrclibDataVersionForPath(r.Context(), &sourcegraph.TreeEntrySpec{
 		RepoRev: *repoRev,
 		Path:    opt.Path,
 	})

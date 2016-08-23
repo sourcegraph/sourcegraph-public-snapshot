@@ -22,11 +22,11 @@ type treeEntry struct {
 }
 
 func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	vars := mux.Vars(r)
 	orig := routevar.ToTreeEntry(vars)
-	repoRev, err := resolveLocalRepoRev(ctx, orig.RepoRev)
+	repoRev, err := resolveLocalRepoRev(r.Context(), orig.RepoRev)
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	entry, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &opt})
+	entry, err := cl.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &opt})
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	// most cases. Don't do this if the file is large; currently
 	// the heuristic is ~ 2500 lines at avg. 40 chars per line
 	if entry.Type == sourcegraph.FileEntry && len(entry.ContentsString) < (40*2500) {
-		anns, err := cl.Annotations.List(ctx, &sourcegraph.AnnotationsListOptions{
+		anns, err := cl.Annotations.List(r.Context(), &sourcegraph.AnnotationsListOptions{
 			Entry:        entrySpec,
 			Range:        &opt.FileRange,
 			NoSrclibAnns: opt.NoSrclibAnns,
@@ -85,14 +85,14 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
-	repoRev, err := resolveLocalRepoRev(ctx, routevar.ToRepoRev(mux.Vars(r)))
+	repoRev, err := resolveLocalRepoRev(r.Context(), routevar.ToRepoRev(mux.Vars(r)))
 	if err != nil {
 		return err
 	}
 
-	treeList, err := cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{Rev: *repoRev})
+	treeList, err := cl.RepoTree.List(r.Context(), &sourcegraph.RepoTreeListOp{Rev: *repoRev})
 	if err != nil {
 		return err
 	}
@@ -103,9 +103,9 @@ func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoTreeSearch(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
-	repoRev, err := resolveLocalRepoRev(ctx, routevar.ToRepoRev(mux.Vars(r)))
+	repoRev, err := resolveLocalRepoRev(r.Context(), routevar.ToRepoRev(mux.Vars(r)))
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func serveRepoTreeSearch(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	treeSearch, err := cl.RepoTree.Search(ctx, &sourcegraph.RepoTreeSearchOp{
+	treeSearch, err := cl.RepoTree.Search(r.Context(), &sourcegraph.RepoTreeSearchOp{
 		Rev: *repoRev,
 		Opt: &opt,
 	})

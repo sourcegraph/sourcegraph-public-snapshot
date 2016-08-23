@@ -23,12 +23,12 @@ import (
 )
 
 func serveChannelListen(w http.ResponseWriter, r *http.Request) {
-	ctx, cl := handlerutil.Client(r)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	cl := handlerutil.Client(r)
 
+	listenCtx, listenCancel := context.WithCancel(r.Context()) // TODO: This might not be the best or final style of creating a context with cancelation signal, so it's open for improvement, if possible.
+	defer listenCancel()
 	channel := mux.Vars(r)["Channel"]
-	stream, err := cl.Channel.Listen(ctx, &sourcegraph.ChannelListenOp{Channel: channel})
+	stream, err := cl.Channel.Listen(listenCtx, &sourcegraph.ChannelListenOp{Channel: channel})
 	if err != nil {
 		log15.Error("serveChannelListen: failed to establish Channel.Listen stream.", "err", err, "channel", channel)
 		http.Error(w, "", http.StatusInternalServerError)
@@ -55,8 +55,8 @@ func serveChannelListen(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		for {
 			if _, _, err := ws.NextReader(); err != nil {
-				cancel()   // Close connection to gRPC server.
-				ws.Close() // Close connection to browser (WebSocket client).
+				listenCancel() // Close connection to gRPC server.
+				ws.Close()     // Close connection to browser (WebSocket client).
 				if isUnexpectedWebSocketError(err) {
 					log15.Error("serveChannelListen: WebSocket unexpectedly closed.", "err", err)
 				}
@@ -106,8 +106,8 @@ func serveChannelSend(w http.ResponseWriter, r *http.Request) error {
 	}
 	op.Channel = mux.Vars(r)["Channel"]
 
-	ctx, cl := handlerutil.Client(r)
-	res, err := cl.Channel.Send(ctx, op)
+	cl := handlerutil.Client(r)
+	res, err := cl.Channel.Send(r.Context(), op)
 	if err != nil {
 		log15.Error("serveChannelSend: failed to send request over Channel.Listen channel", "err", err)
 		return err

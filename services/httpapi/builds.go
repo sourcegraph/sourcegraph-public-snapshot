@@ -16,9 +16,9 @@ import (
 )
 
 func serveBuildTasks(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
-	buildSpec, err := getBuildSpec(ctx, mux.Vars(r))
+	buildSpec, err := getBuildSpec(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -28,7 +28,7 @@ func serveBuildTasks(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	tasks, err := cl.Builds.ListBuildTasks(ctx, &sourcegraph.BuildsListBuildTasksOp{
+	tasks, err := cl.Builds.ListBuildTasks(r.Context(), &sourcegraph.BuildsListBuildTasksOp{
 		Build: *buildSpec,
 		Opt:   &opt,
 	})
@@ -40,7 +40,7 @@ func serveBuildTasks(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveBuilds(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var tmp struct {
 		Repo repoIDOrPath
@@ -52,20 +52,20 @@ func serveBuilds(w http.ResponseWriter, r *http.Request) error {
 	opt := tmp.BuildListOptions
 	if tmp.Repo != "" {
 		var err error
-		opt.Repo, err = getRepoID(ctx, tmp.Repo)
+		opt.Repo, err = getRepoID(r.Context(), tmp.Repo)
 		if err != nil {
 			return err
 		}
 	}
 
-	builds, err := cl.Builds.List(ctx, &opt)
+	builds, err := cl.Builds.List(r.Context(), &opt)
 	if err != nil {
 		return err
 	}
 
 	// Add a RepoPath field to each build because most API clients
 	// would need that information.
-	builds2, err := addBuildRepoPaths(ctx, builds.Builds)
+	builds2, err := addBuildRepoPaths(r.Context(), builds.Builds)
 	if err != nil {
 		return err
 	}
@@ -78,19 +78,19 @@ func serveBuilds(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveBuildTaskLog(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var opt sourcegraph.BuildGetLogOptions
 	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
 		return err
 	}
 
-	taskSpec, err := getBuildTaskSpec(ctx, mux.Vars(r))
+	taskSpec, err := getBuildTaskSpec(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	entries, err := cl.Builds.GetTaskLog(ctx, &sourcegraph.BuildsGetTaskLogOp{Task: *taskSpec, Opt: &opt})
+	entries, err := cl.Builds.GetTaskLog(r.Context(), &sourcegraph.BuildsGetTaskLogOp{Task: *taskSpec, Opt: &opt})
 	if err != nil {
 		return err
 	}

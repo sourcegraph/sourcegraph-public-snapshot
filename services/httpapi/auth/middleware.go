@@ -20,10 +20,10 @@ func PasswordMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, password, ok := r.BasicAuth()
 		if ok && username != oauthBasicUsername {
-			ctx, cl := handlerutil.Client(r)
+			cl := handlerutil.Client(r)
 
 			// Request access token based on username and password.
-			tok, err := cl.Auth.GetAccessToken(ctx, &sourcegraph.AccessTokenRequest{
+			tok, err := cl.Auth.GetAccessToken(r.Context(), &sourcegraph.AccessTokenRequest{
 				AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
 					ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: username, Password: password},
 				},

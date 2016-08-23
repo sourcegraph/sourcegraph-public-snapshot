@@ -23,7 +23,7 @@ type serveDefOpt struct {
 
 func serveDef(w http.ResponseWriter, r *http.Request) error {
 	vars := mux.Vars(r)
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var opt serveDefOpt
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -39,7 +39,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 		//  /.api/repos/github.com/slimsag/mux/-/def/-/-/-/-?File=mux.go&Line=57&Character=17
 		//
 		// We should consider ways of making this cleaner.
-		repo, err := handlerutil.GetRepo(ctx, vars)
+		repo, err := handlerutil.GetRepo(r.Context(), vars)
 		if err != nil {
 			return err
 		}
@@ -62,7 +62,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 
 			// Determine commit ID based on the request.
 			repoRev := routevar.ToRepoRev(vars)
-			res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+			res, err := cl.Repos.ResolveRev(r.Context(), &sourcegraph.ReposResolveRevOp{
 				Repo: repo.ID,
 				Rev:  repoRev.Rev,
 			})
@@ -71,7 +71,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 			}
 
 			if opt.File == "" {
-				lpDefSpec, err := langp.DefaultClient.DefSpecToPosition(ctx, &langp.DefSpec{
+				lpDefSpec, err := langp.DefaultClient.DefSpecToPosition(r.Context(), &langp.DefSpec{
 					Repo:     repo.URI,
 					Commit:   res.CommitID,
 					UnitType: defSpec.UnitType,
@@ -86,7 +86,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 				opt.Character = lpDefSpec.Character
 			}
 
-			hover, err := langp.DefaultClient.Hover(ctx, &langp.Position{
+			hover, err := langp.DefaultClient.Hover(r.Context(), &langp.Position{
 				Repo:      repo.URI,
 				Commit:    res.CommitID,
 				File:      opt.File,
@@ -119,7 +119,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if def == nil {
-		def, _, err = handlerutil.GetDefCommon(ctx, vars, &opt.DefGetOptions)
+		def, _, err = handlerutil.GetDefCommon(r.Context(), vars, &opt.DefGetOptions)
 		if err != nil {
 			return err
 		}
@@ -129,7 +129,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 
 // DEPRECATED
 func serveDefs(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var opt sourcegraph.DefListOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -146,7 +146,7 @@ func serveDefs(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	defs, err := cl.Defs.List(ctx, &opt)
+	defs, err := cl.Defs.List(r.Context(), &opt)
 	if err != nil {
 		return err
 	}

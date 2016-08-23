@@ -43,9 +43,9 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 		return nil
 	}
 
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
-	repo, repoRev, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 	fs = absolutePathVFS{fs}
 
 	// Import and index over gRPC.
-	remoteStore := newSrclibStoreClient(ctx, pb.NewMultiRepoImporterClient(cl.Conn))
+	remoteStore := newSrclibStoreClient(r.Context(), pb.NewMultiRepoImporterClient(cl.Conn))
 
 	importOpt := srclib.ImportOpt{
 		Repo:     repo.URI,
@@ -106,7 +106,7 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 	}
 
 	// global * reindex, doesn't block import
-	_, err = cl.Async.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
+	_, err = cl.Async.RefreshIndexes(r.Context(), &sourcegraph.AsyncRefreshIndexesOp{
 		Repo:   repoRev.Repo,
 		Source: fmt.Sprintf("import %s", repoRev.CommitID),
 		Force:  true,

@@ -15,9 +15,9 @@ import (
 )
 
 func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
-	repo, repoRev, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 	}{}
 
 	if feature.IsUniverseRepo(repo.URI) {
-		defRange, err := langp.DefaultClient.Definition(ctx, &langp.Position{
+		defRange, err := langp.DefaultClient.Definition(r.Context(), &langp.Position{
 			Repo:      repo.URI,
 			Commit:    repoRev.CommitID,
 			File:      file,
@@ -54,7 +54,7 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 		return writeJSON(w, response)
 	}
 
-	defSpec, err := cl.Annotations.GetDefAtPos(ctx, &sourcegraph.AnnotationsGetDefAtPosOptions{
+	defSpec, err := cl.Annotations.GetDefAtPos(r.Context(), &sourcegraph.AnnotationsGetDefAtPosOptions{
 		Entry: sourcegraph.TreeEntrySpec{
 			RepoRev: repoRev,
 			Path:    file,
@@ -66,7 +66,7 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	// We still need the string name (not the UID) of the repository to send back.
-	def, err := cl.Defs.Get(ctx,
+	def, err := cl.Defs.Get(r.Context(),
 		&sourcegraph.DefsGetOp{
 			Def: sourcegraph.DefSpec{
 				Repo:     defSpec.Repo,

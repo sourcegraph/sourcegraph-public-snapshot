@@ -24,9 +24,7 @@ import (
 )
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	ctx, _ := handlerutil.Client(r)
-
-	repo, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	repo, err := handlerutil.GetRepo(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -48,7 +46,7 @@ type repoResolution struct {
 }
 
 func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var op sourcegraph.RepoResolveOp
 	if err := schemaDecoder.Decode(&op, r.URL.Query()); err != nil {
@@ -56,7 +54,7 @@ func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 	}
 	op.Path = routevar.ToRepo(mux.Vars(r))
 
-	res0, err := cl.Repos.Resolve(ctx, &op)
+	res0, err := cl.Repos.Resolve(r.Context(), &op)
 	if err != nil {
 		return err
 	}
@@ -68,7 +66,7 @@ func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 	// always need the local repo in this case, so including it saves
 	// a round-trip.
 	if res0.Repo != 0 {
-		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: res0.Repo})
+		repo, err := cl.Repos.Get(r.Context(), &sourcegraph.RepoSpec{ID: res0.Repo})
 		if err == nil {
 			res.IncludedRepo = repo
 		} else {
@@ -80,14 +78,14 @@ func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoInventory(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
-	repoRev, err := resolveLocalRepoRev(ctx, routevar.ToRepoRev(mux.Vars(r)))
+	repoRev, err := resolveLocalRepoRev(r.Context(), routevar.ToRepoRev(mux.Vars(r)))
 	if err != nil {
 		return err
 	}
 
-	res, err := cl.Repos.GetInventory(ctx, repoRev)
+	res, err := cl.Repos.GetInventory(r.Context(), repoRev)
 	if err != nil {
 		return err
 	}
@@ -104,7 +102,7 @@ func serveRepoInventory(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepos(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var opt sourcegraph.RepoListOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -112,7 +110,7 @@ func serveRepos(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	repos, err := cl.Repos.List(ctx, &opt)
+	repos, err := cl.Repos.List(r.Context(), &opt)
 	if err != nil {
 		return err
 	}
@@ -125,7 +123,7 @@ func serveRepos(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var op sourcegraph.ReposCreateOp
 	if err := json.NewDecoder(r.Body).Decode(&op); err != nil {
@@ -135,7 +133,7 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	repo, err := cl.Repos.Create(ctx, &op)
+	repo, err := cl.Repos.Create(r.Context(), &op)
 	if err != nil {
 		return err
 	}
@@ -151,14 +149,14 @@ func getRepoLastBuildTime(r *http.Request, repoPath string, commitID string) (ti
 		return time.Time{}, errors.New("refusing (for performance reasons) to get the last build time for non-canonical repository commit ID")
 	}
 
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
-	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
+	res, err := cl.Repos.Resolve(r.Context(), &sourcegraph.RepoResolveOp{Path: repoPath})
 	if err != nil {
 		return time.Time{}, err
 	}
 
-	builds, err := cl.Builds.List(ctx, &sourcegraph.BuildListOptions{
+	builds, err := cl.Builds.List(r.Context(), &sourcegraph.BuildListOptions{
 		Repo:        res.Repo,
 		CommitID:    commitID,
 		Ended:       true,

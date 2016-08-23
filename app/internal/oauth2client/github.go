@@ -82,14 +82,12 @@ func serveGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 }
 
 func githubOAuthLoginURL(r *http.Request, state oauthAuthorizeClientState, scopes []string) (*url.URL, error) {
-	ctx := r.Context()
-
 	stateText, err := state.MarshalText()
 	if err != nil {
 		return nil, err
 	}
 
-	return url.Parse(githubOAuth2Config(ctx, scopes).AuthCodeURL(string(stateText)))
+	return url.Parse(githubOAuth2Config(r.Context(), scopes).AuthCodeURL(string(stateText)))
 }
 
 func githubOAuth2Config(ctx context.Context, scopes []string) *oauth2.Config {
@@ -113,8 +111,8 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		}
 	}()
 
-	ctx, cl := handlerutil.Client(r)
-	authInfo, err := cl.Auth.Identify(ctx, &pbtypes.Void{})
+	cl := handlerutil.Client(r)
+	authInfo, err := cl.Auth.Identify(r.Context(), &pbtypes.Void{})
 	if err != nil {
 		return err
 	}
@@ -141,7 +139,7 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	// above).
 	returnTo = state.ReturnTo
 
-	tok, err := cl.Auth.GetAccessToken(ctx, &sourcegraph.AccessTokenRequest{
+	tok, err := cl.Auth.GetAccessToken(r.Context(), &sourcegraph.AccessTokenRequest{
 		AuthorizationGrant: &sourcegraph.AccessTokenRequest_GitHubAuthCode{
 			GitHubAuthCode: &sourcegraph.GitHubAuthCode{
 				Code: opt.Code,
@@ -160,12 +158,12 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	if tok.UID == 0 {
 		if authInfo.UID != 0 {
 			// Logged in as a Sourcegraph user, has not yet linked GitHub.
-			return linkAccountWithGitHub(w, r, ctx, cl, authInfo.UID, ghUser, tok, true, state.ReturnTo)
+			return linkAccountWithGitHub(w, r, cl, authInfo.UID, ghUser, tok, true, state.ReturnTo)
 		}
 
 		// Not logged in as a Sourcegraph user, has not ever linked
 		// this GitHub account to Sourcegraph.
-		return createAccountFromGitHub(w, r, ctx, cl, ghUser, tok, state.ReturnTo)
+		return createAccountFromGitHub(w, r, cl, ghUser, tok, state.ReturnTo)
 	}
 
 	// Logged in as a Sourcegraph user, has already linked GitHub.
@@ -178,12 +176,11 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		AccessToken: tok.AccessToken,
 		TokenType:   "Bearer",
 	})))
-	ctx = r.Context() // TODO: Figure out style/pattern we want to use. ctx vs r.Context(), ctx = context.WithValue(ctx. ...) vs r = r.WithContext(...), when and where.
 
-	return linkAccountWithGitHub(w, r, ctx, cl, tok.UID, ghUser, tok, false, state.ReturnTo)
+	return linkAccountWithGitHub(w, r, cl, tok.UID, ghUser, tok, false, state.ReturnTo)
 }
 
-func linkAccountWithGitHub(w http.ResponseWriter, r *http.Request, ctx context.Context, cl *sourcegraph.Client, sgUID int32, ghUser *sourcegraph.GitHubUser, tok *sourcegraph.AccessTokenResponse, firstTime bool, returnTo string) (err error) {
+func linkAccountWithGitHub(w http.ResponseWriter, r *http.Request, cl *sourcegraph.Client, sgUID int32, ghUser *sourcegraph.GitHubUser, tok *sourcegraph.AccessTokenResponse, firstTime bool, returnTo string) (err error) {
 	defer func() {
 		if err != nil {
 			log15.Error("Error during GitHub account linking or login flow (suppressing HTTP 500 and returning redirect to non-GitHub login form).", "err", err, "sourcegraph-uid", sgUID, "github-login", ghUser.Login, "first-time", firstTime)
@@ -192,12 +189,12 @@ func linkAccountWithGitHub(w http.ResponseWriter, r *http.Request, ctx context.C
 		}
 	}()
 
-	sgUser, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: sgUID})
+	sgUser, err := cl.Users.Get(r.Context(), &sourcegraph.UserSpec{UID: sgUID})
 	if err != nil {
 		return err
 	}
 
-	_, err = cl.Auth.SetExternalToken(ctx, &sourcegraph.ExternalToken{
+	_, err = cl.Auth.SetExternalToken(r.Context(), &sourcegraph.ExternalToken{
 		UID:      sgUID,
 		Host:     githubcli.Config.Host(),
 		Token:    tok.GitHubAccessToken,
@@ -213,17 +210,17 @@ func linkAccountWithGitHub(w http.ResponseWriter, r *http.Request, ctx context.C
 	sgUser.Location = ghUser.Location
 	sgUser.Company = ghUser.Company
 	sgUser.AvatarURL = ghUser.AvatarURL
-	if _, err := cl.Accounts.Update(ctx, sgUser); err != nil {
+	if _, err := cl.Accounts.Update(r.Context(), sgUser); err != nil {
 		return err
 	}
 
 	// Write cookie.
-	cred := sourcegraph.CredentialsFromContext(ctx)
+	cred := sourcegraph.CredentialsFromContext(r.Context())
 	sgTok, err := cred.Token()
 	if err != nil {
 		return err
 	}
-	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: sgTok.AccessToken}, appauth.OnlySecureCookies(ctx)); err != nil {
+	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: sgTok.AccessToken}, appauth.OnlySecureCookies(r.Context())); err != nil {
 		return err
 	}
 
@@ -247,7 +244,7 @@ func linkAccountWithGitHub(w http.ResponseWriter, r *http.Request, ctx context.C
 	return nil
 }
 
-func createAccountFromGitHub(w http.ResponseWriter, r *http.Request, ctx context.Context, cl *sourcegraph.Client, ghUser *sourcegraph.GitHubUser, tok *sourcegraph.AccessTokenResponse, returnTo string) (err error) {
+func createAccountFromGitHub(w http.ResponseWriter, r *http.Request, cl *sourcegraph.Client, ghUser *sourcegraph.GitHubUser, tok *sourcegraph.AccessTokenResponse, returnTo string) (err error) {
 	defer func() {
 		if err != nil {
 			log15.Error("Error during GitHub account creation (suppressing HTTP 500 and returning redirect to non-GitHub signup form).", "err", err, "github-login", ghUser.Login)
@@ -262,7 +259,7 @@ func createAccountFromGitHub(w http.ResponseWriter, r *http.Request, ctx context
 		newAcct.Email = ghUser.Email
 	}
 
-	createdAcct, err := cl.Accounts.Create(ctx, &newAcct)
+	createdAcct, err := cl.Accounts.Create(r.Context(), &newAcct)
 	if grpc.Code(err) == codes.AlreadyExists {
 		// There is already a Sourcegraph user whose username is this
 		// user's GitHub username. Redirect to the app and tell the
@@ -280,7 +277,6 @@ func createAccountFromGitHub(w http.ResponseWriter, r *http.Request, ctx context
 		AccessToken: createdAcct.TemporaryAccessToken,
 		TokenType:   "Bearer",
 	})))
-	ctx = r.Context() // TODO: Figure out style/pattern we want to use. ctx vs r.Context(), ctx = context.WithValue(ctx. ...) vs r = r.WithContext(...), when and where.
 
-	return linkAccountWithGitHub(w, r, ctx, cl, createdAcct.UID, ghUser, tok, true, returnTo)
+	return linkAccountWithGitHub(w, r, cl, createdAcct.UID, ghUser, tok, true, returnTo)
 }

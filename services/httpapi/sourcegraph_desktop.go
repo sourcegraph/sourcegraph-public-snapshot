@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"net/http"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
@@ -10,13 +11,13 @@ const downloadLink = "https://storage.googleapis.com/sgreleasedesktop/releases/l
 const zips = "/Sourcegraph.zip"
 
 func serveSourcegraphDesktopUpdateURL(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	clientVersion := &sourcegraph.ClientDesktopVersion{
 		ClientVersion: r.Header.Get("Sourcegraph-Version"),
 	}
 
-	res, err := cl.Desktop.LatestExists(ctx, clientVersion)
+	res, err := cl.Desktop.LatestExists(r.Context(), clientVersion)
 	if err != nil {
 		return err
 	}

@@ -10,19 +10,19 @@ import (
 )
 
 func serveDefAuthors(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var opt sourcegraph.DefListAuthorsOptions
 	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
 		return err
 	}
 
-	defSpec, err := resolveDef(ctx, routevar.ToDefAtRev(mux.Vars(r)))
+	defSpec, err := resolveDef(r.Context(), routevar.ToDefAtRev(mux.Vars(r)))
 	if err != nil {
 		return err
 	}
 
-	authors, err := cl.Defs.ListAuthors(ctx, &sourcegraph.DefsListAuthorsOp{
+	authors, err := cl.Defs.ListAuthors(r.Context(), &sourcegraph.DefsListAuthorsOp{
 		Def: *defSpec,
 		Opt: &opt,
 	})

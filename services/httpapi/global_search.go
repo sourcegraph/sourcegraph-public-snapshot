@@ -24,7 +24,7 @@ type SearchOptions struct {
 }
 
 func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var params struct {
 		Query        string
@@ -42,12 +42,12 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 		params.Limit = 100
 	}
 
-	paramsRepos, err := resolveLocalRepos(ctx, params.Repos, true)
+	paramsRepos, err := resolveLocalRepos(r.Context(), params.Repos, true)
 	if err != nil {
 		return err
 	}
 
-	paramsNotRepos, err := resolveLocalRepos(ctx, params.NotRepos, true)
+	paramsNotRepos, err := resolveLocalRepos(r.Context(), params.NotRepos, true)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 		},
 	}
 
-	results, err := cl.Search.Search(ctx, op)
+	results, err := cl.Search.Search(r.Context(), op)
 	if err != nil {
 		return err
 	}

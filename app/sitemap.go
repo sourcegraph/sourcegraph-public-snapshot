@@ -55,9 +55,9 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -83,19 +83,19 @@ func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 
 	// Add repo main page.
 	sm.URLs = append(sm.URLs, sitemap.URL{
-		Loc:        conf.AppURL(ctx).ResolveReference(router.Rel.URLToRepo(rc.Repo.URI)).String(),
+		Loc:        conf.AppURL(r.Context()).ResolveReference(router.Rel.URLToRepo(rc.Repo.URI)).String(),
 		ChangeFreq: chgFreq,
 		Priority:   repoPriority,
 	})
 
 	// Add defs if there is a valid srclib version.
-	dataVer, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec})
+	dataVer, err := cl.Repos.GetSrclibDataVersionForPath(r.Context(), &sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec})
 	if err != nil && grpc.Code(err) != codes.NotFound {
 		return err
 	}
 	if dataVer != nil {
 		seenDefs := map[graph.DefKey]bool{}
-		defs, err := cl.Defs.List(ctx, &sourcegraph.DefListOptions{
+		defs, err := cl.Defs.List(r.Context(), &sourcegraph.DefListOptions{
 			RepoRevs:    []string{rc.Repo.URI + "@" + dataVer.CommitID},
 			Exported:    true,
 			IncludeTest: false,
@@ -125,7 +125,7 @@ func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 				pri = defHiPriority
 			}
 
-			url := conf.AppURL(ctx).ResolveReference(router.Rel.URLToDefKey(def.DefKey)).String()
+			url := conf.AppURL(r.Context()).ResolveReference(router.Rel.URLToDefKey(def.DefKey)).String()
 			if len(url) > 1000 {
 				// Google rejects long URLs >2000 chars, but let's limit
 				// them to 1000 just to be safe/sane.

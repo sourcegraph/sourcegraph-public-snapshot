@@ -12,7 +12,7 @@ import (
 )
 
 func serveRepoWebhookEnable(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 
 	var opt sourcegraph.RepoWebhookOptions
 	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
@@ -22,7 +22,7 @@ func serveRepoWebhookEnable(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("empty URI")
 	}
 
-	_, err := cl.Repos.EnableWebhook(ctx, &opt)
+	_, err := cl.Repos.EnableWebhook(r.Context(), &opt)
 	if err != nil {
 		return err
 	}
@@ -36,10 +36,8 @@ func serveRepoWebhookCallback(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	ctx, _ := handlerutil.Client(r)
-
 	uri := "github.com/" + *payload.Repo.FullName
-	repoID, err := getRepoID(ctx, repoIDOrPath(uri))
+	repoID, err := getRepoID(r.Context(), repoIDOrPath(uri))
 	if err != nil {
 		return err
 	}
