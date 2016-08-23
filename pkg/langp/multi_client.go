@@ -99,13 +99,16 @@ func (mc *MultiClient) PositionToDefSpec(ctx context.Context, p *Position) (*Def
 // DefSpecToPosition invokes DefSpecToPosition on the client whose language matches
 // the given key.
 func (mc *MultiClient) DefSpecToPosition(ctx context.Context, k *DefSpec) (*Position, error) {
-	// TODO: Go-specific
 	var lang string
 	switch k.UnitType {
 	case "GoPackage":
-		lang = "GO"
+		lang = "Go"
+	case "JavaArtifact":
+		lang = "Java"
+	case "JSModule":
+		lang = "JavaScript"
 	}
-	client, ok := mc.Clients[lang]
+	client, ok := mc.Clients[strings.ToUpper(lang)]
 	if ok {
 		return client.DefSpecToPosition(ctx, k)
 	}
