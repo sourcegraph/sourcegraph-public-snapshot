@@ -105,16 +105,8 @@ func (t *translator) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*
 	}
 
 	for _, s := range respSymbol {
-		pkgParts := strings.Split(s.ContainerName, "/")
-		var unit string
-		if len(pkgParts) < 3 {
-			unit = s.ContainerName
-		} else {
-			unit = strings.Join(pkgParts, "/")
-		}
-
-		// Collect out refs only from def unit and name.
-		if unit != defSpec.Unit || s.Name != defSpec.Path {
+		// Collect out refs only from name.
+		if s.Name != defSpec.Path {
 			continue
 		}
 
@@ -126,6 +118,12 @@ func (t *translator) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*
 		// Right now we assume the first one is right, but this is likely to fail
 		// in some cases? Maybe we should have a count/index as part of the key.
 		f, err := t.resolveFile(defSpec.Repo, defSpec.Commit, s.Location.URI)
+
+		// Collect out refs only from unit.
+		if f.Repo != defSpec.Unit {
+			continue
+		}
+
 		if err != nil {
 			return nil, err
 		}
@@ -190,26 +188,10 @@ func (t *translator) PositionToDefSpec(ctx context.Context, pos *Position) (*Def
 			continue
 		}
 
-		// TODO(slimsag): how do we handle positions that map to multiple unique
-		// def keys? e.g. see the results for:
-		//
-		//  curl -s -H "Content-Type: application/json" -X POST -d '{"Repo":"github.com/slimsag/mux","Commit":"780415097119f6f61c55475fe59b66f3c3e9ea53","File":"mux.go","Line":57,"Character":17}' http://localhost:4141/position-to-defkey | jq
-		//
-		// Right now we assume the first one is right, but this is likely to fail
-		// in some cases? Maybe we should have a count/index as part of the key.
-		pkgParts := strings.Split(s.ContainerName, "/")
-		var unit string
-		if len(pkgParts) < 3 {
-			// Hack for stdlib
-			unit = s.ContainerName
-		} else {
-			unit = strings.Join(pkgParts, "/")
-		}
-		// TODO: Go-specific
 		return &DefSpec{
 			Repo:     f.Repo,
 			Commit:   f.Commit,
-			Unit:     unit,
+			Unit:     pos.Repo, // TODO: this is Go-specific (and may break vanity import paths)
 			UnitType: "GoPackage",
 			Path:     s.Name,
 		}, nil
