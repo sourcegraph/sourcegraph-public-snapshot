@@ -32,8 +32,10 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 		return nil, err
 	}
 	if feature.Features.Universe && feature.IsUniverseRepo(repo.URI) {
-		// Prevent access to srclib data for universe repos.
-		return nil, grpc.Errorf(codes.NotFound, "no srclib data version available (universe repo)")
+		return &sourcegraph.SrclibDataVersion{
+			CommitID:      entry.RepoRev.CommitID,
+			CommitsBehind: 0,
+		}, nil
 	}
 
 	// First, try to find an exact match.
