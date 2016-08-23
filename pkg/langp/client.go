@@ -123,20 +123,20 @@ func (c *Client) do(ctx context.Context, endpoint string, body, results interfac
 
 	req, err := http.NewRequest("POST", c.endpoint(endpoint), bytes.NewReader(data))
 	if err != nil {
-		return err
+		return fmt.Errorf("%s (body '%s')", err, string(data))
 	}
 
 	req.Header.Add("Content-Type", "application/json")
 
 	if span := opentracing.SpanFromContext(ctx); span != nil {
 		if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header)); err != nil {
-			return err
+			return fmt.Errorf("%s (body '%s')", err, string(data))
 		}
 	}
 
 	resp, err := c.Client.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("%s (body '%s')", err, string(data))
 	}
 	defer resp.Body.Close()
 
