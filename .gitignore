@@ -79,6 +79,9 @@ eb-bundle.zip
 /lang/java/cmd/langprocessor-java/java-language-processor/
 /lang/java/cmd/langprocessor-java/langprocessor-java
 
+/lang/js/cmd/langprocessor-js/js-language-processor/
+/lang/js/cmd/langprocessor-js/langprocessor-js
+
 # Sublime
 *.sublime-project
 *.sublime-workspace
