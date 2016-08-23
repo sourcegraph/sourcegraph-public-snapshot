@@ -7,9 +7,6 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Helper} from "sourcegraph/blob/BlobLoader";
 import {BlobStore, keyForFile} from "sourcegraph/blob/BlobStore";
-import {fileLines} from "sourcegraph/util/fileLines";
-import {lineFromByte} from "sourcegraph/blob/lineFromByte";
-import {computeLineStartBytes} from "sourcegraph/blob/lineFromByte";
 import {Header} from "sourcegraph/components/Header";
 import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
 import Helmet from "react-helmet";
@@ -32,21 +29,6 @@ export const withDefAndRefLocations = ({
 			def: state.def,
 			repos: [],
 		}) : null;
-
-		if (!state.refLocations && state.defPos && state.blob) {
-			// Compute line start byte where current Def sits.
-			let lines = fileLines(state.blob.ContentsString);
-			let lineNumber = lineFromByte(lines, state.defPos.DefStart);
-			let lineStartBytes = computeLineStartBytes(lines);
-
-			// TODO: remove second argument after we completelt abandon srclib data.
-			Dispatcher.Backends.dispatch(new DefActions.WantLocalRefLocations({
-				repo: state.repo, commit: state.commitID,
-				file: state.defPos.File, line: lineNumber - 1, character: state.defPos.DefStart - lineStartBytes[lineNumber - 1],
-			}, {
-				repo: state.repo, commitID: state.commitID, def: state.def, repos: [],
-			}));
-		}
 	},
 
 	onStateTransition(prevState: State, nextState: State): void {

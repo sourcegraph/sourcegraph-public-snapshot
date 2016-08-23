@@ -4,98 +4,22 @@
 		"props": {
 			"children": [
 				{
-					"type": "header",
-					"props": {
-						"children": [
-							{
-								"type": "",
-								"props": {
-									"to": "/r/-/info/undefined/undefined/-/undefined",
-									"children": [
-										{
-											"type": "span",
-											"props": {
-												"children": [
-													"a ",
-													{
-														"type": "span",
-														"key": "name",
-														"props": {
-															"style": {
-																"fontWeight": "bold"
-															},
-															"children": [
-																"n"
-															]
-														}
-													},
-													"st"
-												]
-											}
-										}
-									],
-									"onlyActiveOnIndex": false,
-									"style": {}
-								}
-							},
-							{
-								"type": "",
-								"props": {
-									"to": "/r/-/info/undefined/undefined/-/undefined",
-									"children": [
-										"»"
-									],
-									"onlyActiveOnIndex": false,
-									"style": {}
-								}
-							}
-						]
-					}
-				},
-				{
 					"type": "",
 					"props": {
 						"to": "/r/-/info/undefined/undefined/-/undefined",
 						"children": [
 							{
-								"type": "header",
+								"type": "Button",
 								"props": {
+									"color": "blue",
 									"children": [
-										"Used in",
-										{
-											"type": "span",
-											"props": {}
-										}
+										"View all references"
 									]
 								}
 							}
 						],
 						"onlyActiveOnIndex": false,
 						"style": {}
-					}
-				},
-				{
-					"type": "span",
-					"props": {
-						"children": [
-							"Loading..."
-						]
-					}
-				},
-				{
-					"type": "header",
-					"props": {
-						"children": [
-							"Authors"
-						]
-					}
-				},
-				{
-					"type": "span",
-					"props": {
-						"children": [
-							"Loading..."
-						]
 					}
 				}
 			]

@@ -5,13 +5,10 @@ import {Link} from "react-router";
 import {Container} from "sourcegraph/Container";
 import {DefStore} from "sourcegraph/def/DefStore";
 import * as styles from "sourcegraph/def/styles/Def.css";
-import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {defPath} from "sourcegraph/def/index";
 import * as DefActions from "sourcegraph/def/DefActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {RefLocationsList} from "sourcegraph/def/RefLocationsList";
-import {LocalRefLocationsList} from "sourcegraph/def/LocalRefLocationsList";
-import {AuthorList} from "sourcegraph/def/AuthorList";
+import {Button} from "sourcegraph/components/Button";
 import {urlToDefInfo} from "sourcegraph/def/routes";
 
 interface Props {
@@ -51,35 +48,11 @@ export class DefPopup extends Container<Props, State> {
 	}
 
 	render(): JSX.Element | null {
-		let def = this.props.def;
-		let refLocs = this.props.refLocations;
-
 		return (
-			<div className={styles.marginBox}>
-				<header>
-					<Link className={styles.boxTitle} to={urlToDefInfo(this.state.defObj, this.state.rev)}><span className={styles.def_title}>{qualifiedNameAndType(def, {unqualifiedNameClass: styles.defName})}</span></Link>
-					<Link className={styles.boxIcon} to={urlToDefInfo(this.state.defObj, this.state.rev)}>&raquo;</Link>
-				</header>
+			<div>
 				<Link to={urlToDefInfo(this.state.defObj, this.state.rev)}>
-					<header className={styles.sectionTitle}>Used in
-						<span>
-						{refLocs && refLocs.TotalRepos && ` ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`}
-						{refLocs && !refLocs.TotalRepos && refLocs.RepoRefs && ` ${refLocs.RepoRefs.length}+ repositories`}
-						{refLocs && refLocs.TotalFiles && ` ${refLocs.TotalFiles} file${refLocs.TotalFiles === 1 ? "" : "s"}`}
-						</span>
-					</header>
+					<Button className={styles.view_all_button} color="blue">View all references</Button>
 				</Link>
-
-				{!refLocs && <span className={styles.loading}>Loading...</span>}
-				{refLocs && (!refLocs.RepoRefs || refLocs.RepoRefs.length === 0) && (!refLocs.Files || refLocs.Files.length === 0) && <i>No usages found</i>}
-				{refLocs && refLocs.RepoRefs &&
-					<RefLocationsList def={def} refLocations={refLocs} showMax={3} repo={this.state.repo} rev={this.state.rev} path={this.state.path} location={this.state.location} />}
-				{refLocs && refLocs.Files &&
-					<LocalRefLocationsList refLocations={refLocs} showMax={5} repo={this.state.repo} rev={this.state.rev} path={this.state.path} />}
-
-				{<header className={styles.sectionTitle}>Authors</header>}
-				{!this.state.authors && <span className={styles.loading}>Loading...</span>}
-				{this.state.authors && !this.state.authors.Error && this.state.authors.DefAuthors.length && <AuthorList authors={this.state.authors.DefAuthors} />}
 			</div>
 		);
 	}
