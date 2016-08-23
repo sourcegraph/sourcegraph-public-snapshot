@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"net/http"
@@ -51,7 +52,7 @@ func main() {
 			WorkDir:     workDir,
 			PrepareRepo: prepareRepo,
 			PrepareDeps: func(update bool, workspace, repo, commit string) error {
-				return client.Prepare(&langp.RepoRev{
+				return client.Prepare(context.Background(), &langp.RepoRev{
 					Repo:   repo,
 					Commit: commit,
 				})

@@ -26,6 +26,7 @@ echo "$changed"
 
 pkgs=()
 covered=()
+# Iterate over packages that have tests.
 for pkg in $(go list -f '{{ if or (gt (len .TestGoFiles) 0) (gt (len .XTestGoFiles ) 0) }}{{ .ImportPath }}{{ end }}' ./... | grep -v /vendor/ | grep -v test/e2e | sort); do
 	if (( i % CIRCLE_NODE_TOTAL == CIRCLE_NODE_INDEX ))
 	then
@@ -39,6 +40,16 @@ for pkg in $(go list -f '{{ if or (gt (len .TestGoFiles) 0) (gt (len .XTestGoFil
 		else
 			pkgs+=("$pkg")
 		fi
+	fi
+	((i=i+1))
+done
+
+# Iterate over packages that don't have tests (i.e., all others).
+for pkg in $(go list -f '{{ if not (or (gt (len .TestGoFiles) 0) (gt (len .XTestGoFiles ) 0)) }}{{ .ImportPath }}{{ end }}' ./... | grep -v /vendor/ | grep -v test/e2e | sort); do
+	if (( i % CIRCLE_NODE_TOTAL == CIRCLE_NODE_INDEX ))
+	then
+		# Just test that they build successfully, without coverage because no actual tests (i.e., coverage is 0).
+		pkgs+=("$pkg")
 	fi
 	((i=i+1))
 done
