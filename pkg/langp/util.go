@@ -99,7 +99,7 @@ func ExpandSGPath(s string) (string, error) {
 func ResolveRepoAlias(repo string) (importPath, cloneURI string) {
 	// TODO(slimsag): find a way to pass this information from the app instead
 	// of hard-coding it here.
-	if repo == "sourcegraph/sourcegraph" {
+	if repo == "github.com/sourcegraph/sourcegraph" {
 		return "sourcegraph.com/sourcegraph/sourcegraph", "git@github.com:sourcegraph/sourcegraph"
 	}
 	return repo, "https://" + repo
@@ -108,7 +108,7 @@ func ResolveRepoAlias(repo string) (importPath, cloneURI string) {
 // UnresolveRepoAlias performs the opposite action of ResolveRepoAlias.
 func UnresolveRepoAlias(repo string) string {
 	if repo == "sourcegraph.com/sourcegraph/sourcegraph" {
-		repo = "sourcegraph/sourcegraph"
+		repo = "github.com/sourcegraph/sourcegraph"
 	}
 	return repo
 }
