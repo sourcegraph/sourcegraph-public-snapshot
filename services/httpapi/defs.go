@@ -111,6 +111,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 				FmtStrings: &graph.DefFormatStrings{
 					Name: graph.QualFormatStrings{
 						ScopeQualified: hover.Title,
+						DepQualified:   hover.Title,
 					},
 				},
 			}
