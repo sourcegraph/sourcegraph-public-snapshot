@@ -115,7 +115,7 @@ export class Home extends Container<HomeProps, HomeState> {
 
 						<p className={classNames(typography.tc, base.mt0, base.mb5)} >
 							These questions require you to constantly context-switch between your editor, terminal, and browser.
-							Sourcegraph can help you stop losing focus and wasting hours.
+							Sourcegraph can help you stop losing focus and wasting time.
 						</p>
 					</div>
 
@@ -146,7 +146,7 @@ export class Home extends Container<HomeProps, HomeState> {
 
 							<p>
 								Find exactly the function you're looking for.
-								Search your private code and thousands of open source repositories.
+								Search your private code and thousands of open-source repositories.
 							</p>
 						</div>
 
@@ -221,7 +221,7 @@ export class Home extends Container<HomeProps, HomeState> {
 				{/* section showing tagline with a CTA to sign up */}
 				<div style={{maxWidth: "660px"}} className={classNames(base.center, base.mv5, base.ph3)}>
 					<Heading align="center" level="3">
-						Programming should be about algorithms and architectures, not searching for docs and usage examples
+						Programming should be about building architectures and algorithms, not struggling with how to use a library or function
 					</Heading>
 
 					<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} className={classNames(base.mb5, base.mt4, typography.tc)} style={{display: "block"}}>
