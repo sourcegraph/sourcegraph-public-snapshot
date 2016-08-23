@@ -81,14 +81,11 @@ module.exports = {
 	plugins: plugins,
 	module: {
 		loaders: [
-			{test: /\.tsx?$/, loader: 'ts-loader'},
-			{test: /\.json$/, exclude: /node_modules/, loader: "json-loader"},
-			{test: /\.woff$/, loader: "url-loader?name=fonts/[name].[ext]"},
+			{test: /\.tsx?$/, loader: 'ts'},
+			{test: /\.json$/, loader: "json"},
+			{test: /\.woff$/, loader: "url?name=fonts/[name].[ext]"},
 			{test: /\.svg$/, loader: "url"},
-			{
-				test: /\.css$/,
-				loader: "style!css?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss",
-			},
+			{test: /\.css$/, loader: "style!css?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss"},
 		],
 		noParse: /\.min\.js$/,
 	},
