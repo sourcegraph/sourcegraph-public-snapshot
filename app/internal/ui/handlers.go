@@ -24,6 +24,7 @@ func init() {
 	router.Get(routeBuild).Handler(httptrace.TraceRoute(handler(serveBuild)))
 	router.Get(routeDef).Handler(httptrace.TraceRoute(handler(serveDef)))
 	router.Get(routeDefInfo).Handler(httptrace.TraceRoute(handler(serveDefInfo)))
+	router.Get(routeDefLanding).Handler(httptrace.TraceRoute(internal.Handler(serveDefLanding)))
 	router.Get(routeRepo).Handler(httptrace.TraceRoute(handler(serveRepo)))
 	router.Get(routeRepoBuilds).Handler(httptrace.TraceRoute(handler(serveRepoBuilds)))
 	router.Get(routeTree).Handler(httptrace.TraceRoute(handler(serveTree)))

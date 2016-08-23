@@ -63,4 +63,6 @@ var tmplFuncs = htmpl.FuncMap{
 	},
 
 	"buildvar": func() buildvar.Vars { return buildvar.All },
+
+	"dangerouslySetHTML": func(s string) htmpl.HTML { return htmpl.HTML(s) },
 }

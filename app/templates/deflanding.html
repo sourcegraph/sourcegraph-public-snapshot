@@ -1,0 +1,67 @@
+{{define "Head"}}<title>{{with .Meta.Title}}{{.}} · {{end}}Sourcegraph</title>{{end}}
+
+{{define "Nav"}}
+<span>{{.Repo.URI}} : {{.Def.Def.File}}</span>
+{{end}}
+
+{{define "Body"}}
+
+{{with .Def}}
+
+{{with .FmtStrings}}
+<h1>{{.DefKeyword}} {{.Name.ScopeQualified}}{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</h1>
+{{end}}
+
+<button>View source</button>
+
+<h2>Docs</h2>
+<p>{{dangerouslySetHTML .DocHTML.HTML}}</p>
+
+{{end}}{{/* end "with .Def" */}}
+
+
+
+
+
+
+
+<h2>How to use</h2>
+
+<button>View all usage examples</button>
+
+<p>
+	Here's an example of how you can use <tt>{{.Def.Name}}</tt>.
+</p>
+
+{{range .RefEntries}}
+<pre>
+	{{.ContentsString}}
+</pre>
+{{end}}
+
+
+
+<h2><tt>{{.Def.Name}}</tt> is used by</h2>
+<ul>
+	{{range .RefLocs.RepoRefs}}
+	<li>
+		{{.Repo}} {{.Count}} times
+		<ul>
+			{{range .Files}}
+			<li>{{.Path}} ({{.Count}} times)</li>
+			{{end}}
+		</ul>
+	</li>
+	{{end}}
+</ul>
+
+<h2>Definition</h2>
+
+<pre>
+	{{.DefEntry.ContentsString}}
+</pre>
+
+{{end}}
+
+{{define "Footer"}}
+{{end}}
