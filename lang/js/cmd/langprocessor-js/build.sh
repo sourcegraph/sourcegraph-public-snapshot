@@ -11,5 +11,5 @@ fi
 npm install
 tsc -p .
 cd ..
-#docker build -t us.gcr.io/sourcegraph-dev/langprocessor-js .
+docker build -t us.gcr.io/sourcegraph-dev/langprocessor-js .
 #gcloud docker push us.gcr.io/sourcegraph-dev/langprocessor-js

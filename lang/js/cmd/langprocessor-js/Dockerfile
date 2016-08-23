@@ -12,10 +12,7 @@ RUN npm install typescript -g
 
 ENV SGPATH="/sourcegraph"
 
-WORKDIR js-language-processor
-RUN npm install
-RUN tsc -p .
-ADD build /
-ADD node_modules /node_modules
+ADD js-language-processor/build /
+ADD js-language-processor/node_modules /node_modules
 
 ENTRYPOINT node /main.js
