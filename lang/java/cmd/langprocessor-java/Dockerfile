@@ -32,4 +32,4 @@ ADD ./java-language-processor/vendor/android-ndk /android-ndk
 
 ENV SGPATH="/sourcegraph"
 
-ENTRYPOINT java -cp $JAVA_HOME/lib/tools.jar:/java-language-processor.jar org.springframework.boot.loader.JarLauncher --server.port=4142
+ENTRYPOINT java -cp $JAVA_HOME/lib/tools.jar:/java-language-processor.jar org.springframework.boot.loader.JarLauncher --server.port=4143
