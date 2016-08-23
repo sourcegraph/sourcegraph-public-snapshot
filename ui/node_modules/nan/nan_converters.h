@@ -49,7 +49,7 @@ X(int32_t)
 }  // end of namespace imp
 
 template<typename T>
-NAN_INLINE
+inline
 typename imp::ToFactory<T>::return_t To(v8::Local<v8::Value> val) {
   return imp::ToFactory<T>::convert(val);
 }

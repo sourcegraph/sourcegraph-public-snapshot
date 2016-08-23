@@ -37,7 +37,12 @@ Factory<v8::Boolean>::New(bool value) {
 
 Factory<v8::BooleanObject>::return_t
 Factory<v8::BooleanObject>::New(bool value) {
+#if (NODE_MODULE_VERSION >= NODE_6_0_MODULE_VERSION)
+  return v8::BooleanObject::New(
+    v8::Isolate::GetCurrent(), value).As<v8::BooleanObject>();
+#else
   return v8::BooleanObject::New(value).As<v8::BooleanObject>();
+#endif
 }
 
 //=== Context ==================================================================

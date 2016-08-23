@@ -4,7 +4,9 @@ var fs        =  require('graceful-fs')
   , path      =  require('path')
   , minimatch =  require('minimatch')
   , toString  =  Object.prototype.toString
+  , si        =  require('set-immediate-shim')
   ;
+
 
 // Standard helpers
 function isFunction (obj) {
@@ -45,6 +47,7 @@ function readdir(opts, callback1, callback2) {
     , allProcessed
     , realRoot
     , aborted = false
+    , paused = false
     ;
 
   // If no callbacks were given we will use a streaming interface
@@ -57,6 +60,8 @@ function readdir(opts, callback1, callback2) {
     handleFatalError =  api.handleFatalError;
 
     stream.on('close', function () { aborted = true; });
+    stream.on('pause', function () { paused = true; });
+    stream.on('resume', function () { paused = false; });
   } else {
     handleError      =  function (err) { errors.push(err); };
     handleFatalError =  function (err) {
@@ -199,7 +204,14 @@ function readdir(opts, callback1, callback2) {
   }
 
   function readdirRec(currentDir, depth, callCurrentDirProcessed) {
+    var args = arguments;
     if (aborted) return;
+    if (paused) {
+      si(function () {
+        readdirRec.apply(null, args);
+      })
+      return;
+    } 
 
     fs.readdir(currentDir, function (err, entries) {
       if (err) {

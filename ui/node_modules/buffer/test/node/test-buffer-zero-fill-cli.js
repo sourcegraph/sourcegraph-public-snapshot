@@ -1,6 +1,6 @@
 'use strict';
 var Buffer = require('../../').Buffer;
-if (Buffer.TYPED_ARRAY_SUPPORT) return;
+
 // Flags: --zero-fill-buffers
 
 // when using --zero-fill-buffers, every Buffer and SlowBuffer

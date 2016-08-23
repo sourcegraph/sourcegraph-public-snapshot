@@ -50,16 +50,16 @@ function Writer(options) {
   // A list of offsets in the buffer where we need to insert
   // sequence tag/len pairs.
   this._seq = [];
-
-  var self = this;
-  this.__defineGetter__('buffer', function() {
-    if (self._seq.length)
-      throw new InvalidAsn1Error(self._seq.length + ' unended sequence(s)');
-
-    return self._buf.slice(0, self._offset);
-  });
 }
 
+Object.defineProperty(Writer.prototype, 'buffer', {
+  get: function () {
+    if (this._seq.length)
+      throw new InvalidAsn1Error(this._seq.length + ' unended sequence(s)');
+
+    return (this._buf.slice(0, this._offset));
+  }
+});
 
 Writer.prototype.writeByte = function(b) {
   if (typeof(b) !== 'number')
@@ -78,7 +78,7 @@ Writer.prototype.writeInt = function(i, tag) {
 
   var sz = 4;
 
-  while ((((i & 0xff800000) === 0) || ((i & 0xff800000) === 0xff800000)) &&
+  while ((((i & 0xff800000) === 0) || ((i & 0xff800000) === 0xff800000 >> 0)) &&
          (sz > 1)) {
     sz--;
     i <<= 8;
@@ -92,7 +92,7 @@ Writer.prototype.writeInt = function(i, tag) {
   this._buf[this._offset++] = sz;
 
   while (sz-- > 0) {
-    this._buf[this._offset++] = ((i & 0xff000000) >> 24);
+    this._buf[this._offset++] = ((i & 0xff000000) >>> 24);
     i <<= 8;
   }
 
@@ -236,7 +236,6 @@ Writer.prototype.writeLength = function(len) {
     this._buf[this._offset++] = len >> 8;
     this._buf[this._offset++] = len;
   } else if (len <= 0xffffff) {
-    this._shift(start, len, 1);
     this._buf[this._offset++] = 0x83;
     this._buf[this._offset++] = len >> 16;
     this._buf[this._offset++] = len >> 8;

@@ -58,14 +58,17 @@ class AsyncWorker {
 ```
 
 <a name="api_nan_async_progress_worker"></a>
-### Nan::AsyncProgressWorker
+### Nan::AsyncProgressWorkerBase & Nan::AsyncProgressWorker
 
-`Nan::AsyncProgressWorker` is an _abstract_ class that extends `Nan::AsyncWorker` and adds additional progress reporting callbacks that can be used during the asynchronous work execution to provide progress data back to JavaScript.
+`Nan::AsyncProgressWorkerBase` is an _abstract_ class template that extends `Nan::AsyncWorker` and adds additional progress reporting callbacks that can be used during the asynchronous work execution to provide progress data back to JavaScript.
+
+Previously the definiton of `Nan::AsyncProgressWorker` only allowed sending `const char` data. Now extending `Nan::AsyncProgressWorker` will yield an instance of the implicit `Nan::AsyncProgressWorkerBase` template with type `<char>` for compatibility.
 
 Definition:
 
 ```c++
-class AsyncProgressWorker : public AsyncWorker {
+template<class T>
+class AsyncProgressWorkerBase<T> : public AsyncWorker {
  public:
   explicit AsyncProgressWorker(Callback *callback_);
 
@@ -76,14 +79,16 @@ class AsyncProgressWorker : public AsyncWorker {
   class ExecutionProgress {
    public:
     void Signal() const;
-    void Send(const char* data, size_t size) const;
+    void Send(const T* data, size_t size) const;
   };
 
   virtual void Execute(const ExecutionProgress& progress) = 0;
 
-  virtual void HandleProgressCallback(const char *data, size_t size) = 0;
+  virtual void HandleProgressCallback(const T *data, size_t size) = 0;
 
   virtual void Destroy();
+
+typedef AsyncProgressWorkerBase<T> AsyncProgressWorker;
 ```
 
 <a name="api_nan_async_queue_worker"></a>

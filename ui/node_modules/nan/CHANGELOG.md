@@ -1,6 +1,23 @@
 # NAN ChangeLog
 
-**Version 2.3.3: current Node 6.0.0, Node 12: 0.12.13, Node 10: 0.10.44, iojs: 3.3.1**
+**Version 2.4.0: current Node 6.3.0, Node 12: 0.12.15, Node 10: 0.10.46, iojs: 3.3.1**
+
+### 2.4.0 Jul 10 2016
+
+  - Feature: Rewrite Callback to add Callback::Reset c4cf44d61f8275cd5f7b0c911d7a806d4004f649
+  - Feature: AsyncProgressWorker: add template types for .send 1242c9a11a7ed481c8f08ec06316385cacc513d0
+  - Bugfix: Add constness to old Persistent comparison operators bd43cb9982c7639605d60fd073efe8cae165d9b2
+
+### 2.3.5 May 31 2016
+
+  - Bugfix: Replace NAN_INLINE with 'inline' keyword. 71819d8725f822990f439479c9aba3b240804909
+
+### 2.3.4 May 31 2016
+
+  - Bugfix: Remove V8 deprecation warnings 0592fb0a47f3a1c7763087ebea8e1138829f24f9
+  - Bugfix: Fix new versions not to use WeakCallbackInfo::IsFirstPass 615c19d9e03d4be2049c10db0151edbc3b229246
+  - Bugfix: Make ObjectWrap::handle() const d19af99595587fe7a26bd850af6595c2a7145afc
+  - Bugfix: Fix compilation errors related to 0592fb0a47f3a1c7763087ebea8e1138829f24f9 e9191c525b94f652718325e28610a1adcf90fed8
 
 ### 2.3.3 May 4 2016
 

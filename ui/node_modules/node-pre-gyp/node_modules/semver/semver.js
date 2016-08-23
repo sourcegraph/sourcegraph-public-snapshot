@@ -1186,3 +1186,9 @@ function outside(version, range, hilo, loose) {
   }
   return true;
 }
+
+exports.prerelease = prerelease;
+function prerelease(version, loose) {
+  var parsed = parse(version, loose);
+  return (parsed && parsed.prerelease.length) ? parsed.prerelease : null;
+}

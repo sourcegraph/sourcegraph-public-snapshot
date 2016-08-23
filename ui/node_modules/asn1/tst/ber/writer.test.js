@@ -105,6 +105,80 @@ test('write 4 byte int', function(t) {
 });
 
 
+test('write 1 byte negative int', function(t) {
+  var writer = new BerWriter();
+
+  writer.writeInt(-128);
+  var ber = writer.buffer;
+
+  t.ok(ber);
+
+  t.equal(ber.length, 3, 'Wrong length for an int');
+  t.equal(ber[0], 0x02, 'ASN.1 tag wrong');
+  t.equal(ber[1], 0x01, 'length wrong');
+  t.equal(ber[2], 0x80, 'value wrong (byte 1)');
+
+  t.end();
+});
+
+
+test('write 2 byte negative int', function(t) {
+  var writer = new BerWriter();
+
+  writer.writeInt(-22400);
+  var ber = writer.buffer;
+
+  t.ok(ber);
+
+  t.equal(ber.length, 4, 'Wrong length for an int');
+  t.equal(ber[0], 0x02, 'ASN.1 tag wrong');
+  t.equal(ber[1], 0x02, 'length wrong');
+  t.equal(ber[2], 0xa8, 'value wrong (byte 1)');
+  t.equal(ber[3], 0x80, 'value wrong (byte 2)');
+
+  t.end();
+});
+
+
+test('write 3 byte negative int', function(t) {
+  var writer = new BerWriter();
+
+  writer.writeInt(-481653);
+  var ber = writer.buffer;
+
+  t.ok(ber);
+
+  t.equal(ber.length, 5, 'Wrong length for an int');
+  t.equal(ber[0], 0x02, 'ASN.1 tag wrong');
+  t.equal(ber[1], 0x03, 'length wrong');
+  t.equal(ber[2], 0xf8, 'value wrong (byte 1)');
+  t.equal(ber[3], 0xa6, 'value wrong (byte 2)');
+  t.equal(ber[4], 0x8b, 'value wrong (byte 3)');
+
+  t.end();
+});
+
+
+test('write 4 byte negative int', function(t) {
+  var writer = new BerWriter();
+
+  writer.writeInt(-1522904131);
+  var ber = writer.buffer;
+
+  t.ok(ber);
+
+  t.equal(ber.length, 6, 'Wrong length for an int');
+  t.equal(ber[0], 0x02, 'ASN.1 tag wrong');
+  t.equal(ber[1], 0x04, 'length wrong');
+  t.equal(ber[2], 0xa5, 'value wrong (byte 1)');
+  t.equal(ber[3], 0x3a, 'value wrong (byte 2)');
+  t.equal(ber[4], 0x53, 'value wrong (byte 3)');
+  t.equal(ber[5], 0xbd, 'value wrong (byte 4)');
+
+  t.end();
+});
+
+
 test('write boolean', function(t) {
   var writer = new BerWriter();
 

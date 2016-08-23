@@ -289,6 +289,8 @@ strings that they parse.
     same as `prepatch`. It increments the patch version, then makes a
     prerelease. If the input version is already a prerelease it simply
     increments it.
+* `prerelease(v)`: Returns an array of prerelease components, or null
+  if none exist. Example: `prerelease('1.2.3-alpha.1') -> ['alpha', 1]`
 * `major(v)`: Return the major version number.
 * `minor(v)`: Return the minor version number.
 * `patch(v)`: Return the patch version number.

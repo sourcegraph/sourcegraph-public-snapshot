@@ -1,11 +1,11 @@
 var assert = require('assert');
 var ourProcess = require('./browser');
-describe('test against process', function () {
-    test(process);
+describe('test against our process', function () {
+    test(ourProcess);
 });
 if (!process.browser) {
-  describe('test against our shim', function () {
-    test(ourProcess);
+  describe('test against node', function () {
+    test(process);
   });
   vmtest();
 }
@@ -37,7 +37,7 @@ function test (ourProcess) {
           }, 2);
         });
     });
-
+if (!process.browser) {
     describe('test errors', function (t) {
         it ('works', function (done) {
         var order = 0;
@@ -64,7 +64,7 @@ function test (ourProcess) {
         });
         });
     });
-
+}
     describe('rename globals', function (t) {
       var oldTimeout = setTimeout;
       var oldClear = clearTimeout;
@@ -75,17 +75,24 @@ function test (ourProcess) {
         clearTimeout = function () {
           ok = false;
         }
+        var ran = false;
+        console.log('clear timeout start');
+        function cleanup() {
+          console.log('seccond');
+          clearTimeout = oldClear;
+          var err;
+          try {
+            assert.ok(ok, 'fake clearTimeout ran');
+            assert.ok(ran, 'should have run');
+          } catch (e) {
+            err = e;
+          }
+          done(err);
+        }
+        setTimeout(cleanup, 1000);
         ourProcess.nextTick(function () {
-          setTimeout(function () {
-            clearTimeout = oldClear;
-            var err;
-            try {
-              assert.ok(ok, 'fake clearTimeout ran');
-            } catch (e) {
-              err = e;
-            }
-            done(err);
-          }, 50);
+          console.log('first');
+          ran = true;
         });
       });
       it('just setTimeout', function (done){

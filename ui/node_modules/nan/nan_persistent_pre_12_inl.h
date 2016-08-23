@@ -21,16 +21,16 @@ class PersistentBase {
   template<typename S> friend class ReturnValue;
 
  public:
-  NAN_INLINE PersistentBase() :
+  inline PersistentBase() :
       persistent() {}
 
-  NAN_INLINE void Reset() {
+  inline void Reset() {
     persistent.Dispose();
     persistent.Clear();
   }
 
   template<typename S>
-  NAN_INLINE void Reset(const v8::Local<S> &other) {
+  inline void Reset(const v8::Local<S> &other) {
     TYPE_CHECK(T, S);
 
     if (!persistent.IsEmpty()) {
@@ -45,7 +45,7 @@ class PersistentBase {
   }
 
   template<typename S>
-  NAN_INLINE void Reset(const PersistentBase<S> &other) {
+  inline void Reset(const PersistentBase<S> &other) {
     TYPE_CHECK(T, S);
 
     if (!persistent.IsEmpty()) {
@@ -59,50 +59,50 @@ class PersistentBase {
     }
   }
 
-  NAN_INLINE bool IsEmpty() const { return persistent.IsEmpty(); }
+  inline bool IsEmpty() const { return persistent.IsEmpty(); }
 
-  NAN_INLINE void Empty() { persistent.Clear(); }
+  inline void Empty() { persistent.Clear(); }
 
   template<typename S>
-  NAN_INLINE bool operator==(const PersistentBase<S> &that) {
+  inline bool operator==(const PersistentBase<S> &that) const {
     return this->persistent == that.persistent;
   }
 
   template<typename S>
-  NAN_INLINE bool operator==(const v8::Local<S> &that) {
+  inline bool operator==(const v8::Local<S> &that) const {
     return this->persistent == that;
   }
 
   template<typename S>
-  NAN_INLINE bool operator!=(const PersistentBase<S> &that) {
+  inline bool operator!=(const PersistentBase<S> &that) const {
     return !operator==(that);
   }
 
   template<typename S>
-  NAN_INLINE bool operator!=(const v8::Local<S> &that) {
+  inline bool operator!=(const v8::Local<S> &that) const {
     return !operator==(that);
   }
 
   template<typename P>
-  NAN_INLINE void SetWeak(
+  inline void SetWeak(
     P *parameter
     , typename WeakCallbackInfo<P>::Callback callback
     , WeakCallbackType type);
 
-  NAN_INLINE void ClearWeak() { persistent.ClearWeak(); }
+  inline void ClearWeak() { persistent.ClearWeak(); }
 
-  NAN_INLINE void MarkIndependent() { persistent.MarkIndependent(); }
+  inline void MarkIndependent() { persistent.MarkIndependent(); }
 
-  NAN_INLINE bool IsIndependent() const { return persistent.IsIndependent(); }
+  inline bool IsIndependent() const { return persistent.IsIndependent(); }
 
-  NAN_INLINE bool IsNearDeath() const { return persistent.IsNearDeath(); }
+  inline bool IsNearDeath() const { return persistent.IsNearDeath(); }
 
-  NAN_INLINE bool IsWeak() const { return persistent.IsWeak(); }
+  inline bool IsWeak() const { return persistent.IsWeak(); }
 
  private:
-  NAN_INLINE explicit PersistentBase(v8::Persistent<T> that) :
+  inline explicit PersistentBase(v8::Persistent<T> that) :
       persistent(that) { }
-  NAN_INLINE explicit PersistentBase(T *val) : persistent(val) {}
+  inline explicit PersistentBase(T *val) : persistent(val) {}
   template<typename S, typename M> friend class Persistent;
   template<typename S> friend class Global;
   friend class ObjectWrap;
@@ -115,12 +115,12 @@ class NonCopyablePersistentTraits {
       NonCopyablePersistent;
   static const bool kResetInDestructor = false;
   template<typename S, typename M>
-  NAN_INLINE static void Copy(const Persistent<S, M> &source,
+  inline static void Copy(const Persistent<S, M> &source,
                              NonCopyablePersistent *dest) {
     Uncompilable<v8::Object>();
   }
 
-  template<typename O> NAN_INLINE static void Uncompilable() {
+  template<typename O> inline static void Uncompilable() {
     TYPE_CHECK(O, v8::Primitive);
   }
 };
@@ -130,50 +130,50 @@ struct CopyablePersistentTraits {
   typedef Persistent<T, CopyablePersistentTraits<T> > CopyablePersistent;
   static const bool kResetInDestructor = true;
   template<typename S, typename M>
-  static NAN_INLINE void Copy(const Persistent<S, M> &source,
+  static inline void Copy(const Persistent<S, M> &source,
                              CopyablePersistent *dest) {}
 };
 
 template<typename T, typename M> class Persistent :
     public PersistentBase<T> {
  public:
-  NAN_INLINE Persistent() {}
+  inline Persistent() {}
 
-  template<typename S> NAN_INLINE Persistent(v8::Handle<S> that)
+  template<typename S> inline Persistent(v8::Handle<S> that)
       : PersistentBase<T>(v8::Persistent<T>::New(that)) {
     TYPE_CHECK(T, S);
   }
 
-  NAN_INLINE Persistent(const Persistent &that) : PersistentBase<T>() {
+  inline Persistent(const Persistent &that) : PersistentBase<T>() {
     Copy(that);
   }
 
   template<typename S, typename M2>
-  NAN_INLINE Persistent(const Persistent<S, M2> &that) :
+  inline Persistent(const Persistent<S, M2> &that) :
       PersistentBase<T>() {
     Copy(that);
   }
 
-  NAN_INLINE Persistent &operator=(const Persistent &that) {
+  inline Persistent &operator=(const Persistent &that) {
     Copy(that);
     return *this;
   }
 
   template <class S, class M2>
-  NAN_INLINE Persistent &operator=(const Persistent<S, M2> &that) {
+  inline Persistent &operator=(const Persistent<S, M2> &that) {
     Copy(that);
     return *this;
   }
 
-  NAN_INLINE ~Persistent() {
+  inline ~Persistent() {
     if (M::kResetInDestructor) this->Reset();
   }
 
  private:
-  NAN_INLINE T *operator*() const { return *PersistentBase<T>::persistent; }
+  inline T *operator*() const { return *PersistentBase<T>::persistent; }
 
   template<typename S, typename M2>
-  NAN_INLINE void Copy(const Persistent<S, M2> &that) {
+  inline void Copy(const Persistent<S, M2> &that) {
     TYPE_CHECK(T, S);
 
     this->Reset();
@@ -188,37 +188,37 @@ template<typename T, typename M> class Persistent :
 template<typename T>
 class Global : public PersistentBase<T> {
   struct RValue {
-    NAN_INLINE explicit RValue(Global* obj) : object(obj) {}
+    inline explicit RValue(Global* obj) : object(obj) {}
     Global* object;
   };
 
  public:
-  NAN_INLINE Global() : PersistentBase<T>(0) { }
+  inline Global() : PersistentBase<T>(0) { }
 
   template <typename S>
-  NAN_INLINE Global(v8::Local<S> that)
+  inline Global(v8::Local<S> that)
       : PersistentBase<T>(v8::Persistent<T>::New(that)) {
     TYPE_CHECK(T, S);
   }
 
   template <typename S>
-  NAN_INLINE Global(const PersistentBase<S> &that)
+  inline Global(const PersistentBase<S> &that)
     : PersistentBase<T>(that) {
     TYPE_CHECK(T, S);
   }
   /**
    * Move constructor.
    */
-  NAN_INLINE Global(RValue rvalue)
+  inline Global(RValue rvalue)
     : PersistentBase<T>(rvalue.object->persistent) {
     rvalue.object->Reset();
   }
-  NAN_INLINE ~Global() { this->Reset(); }
+  inline ~Global() { this->Reset(); }
   /**
    * Move via assignment.
    */
   template<typename S>
-  NAN_INLINE Global &operator=(Global<S> rhs) {
+  inline Global &operator=(Global<S> rhs) {
     TYPE_CHECK(T, S);
     this->Reset(rhs.persistent);
     rhs.Reset();
@@ -227,7 +227,7 @@ class Global : public PersistentBase<T> {
   /**
    * Cast operator for moves.
    */
-  NAN_INLINE operator RValue() { return RValue(this); }
+  inline operator RValue() { return RValue(this); }
   /**
    * Pass allows returning uniques from functions, etc.
    */

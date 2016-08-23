@@ -65,8 +65,7 @@ function testfixer (filename) {
 
     if (firstline) {
       // require buffer explicitly
-      var preamble = 'var Buffer = require(\'../../\').Buffer;\n' +
-        'if (Buffer.TYPED_ARRAY_SUPPORT) return;'
+      var preamble = 'var Buffer = require(\'../../\').Buffer;\n'
       if (/use strict/.test(line)) line += '\n' + preamble
       else line + preamble + '\n' + line
       firstline = false
@@ -76,7 +75,7 @@ function testfixer (filename) {
     line = line.replace(/(const|let) /g, 'var ')
 
     // make `var common = require('common')` work
-    line = line.replace(/(var common = require.*)/g, 'var common = {};')
+    line = line.replace(/(var common = require.*)/g, 'var common = { skip: function () {} };')
 
     // make `require('../common')` work
     line = line.replace(/require\('\.\.\/common'\);/g, '')

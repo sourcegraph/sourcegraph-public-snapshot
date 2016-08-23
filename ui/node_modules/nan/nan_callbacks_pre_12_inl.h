@@ -275,7 +275,7 @@ class ReturnValueImp : public ReturnValue<T> {
  public:
   explicit ReturnValueImp(ReturnValue<T> that) :
       ReturnValue<T>(that) {}
-  NAN_INLINE v8::Handle<T> Value() {
+  inline v8::Handle<T> Value() {
       return *ReturnValue<T>::value_;
   }
 };

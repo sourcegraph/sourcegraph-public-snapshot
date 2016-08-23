@@ -12,25 +12,25 @@
 template<typename T>
 class MaybeLocal {
  public:
-  NAN_INLINE MaybeLocal() : val_(v8::Local<T>()) {}
+  inline MaybeLocal() : val_(v8::Local<T>()) {}
 
   template<typename S>
 # if NODE_MODULE_VERSION >= NODE_0_12_MODULE_VERSION
-  NAN_INLINE MaybeLocal(v8::Local<S> that) : val_(that) {}
+  inline MaybeLocal(v8::Local<S> that) : val_(that) {}
 # else
-  NAN_INLINE MaybeLocal(v8::Local<S> that) :
+  inline MaybeLocal(v8::Local<S> that) :
       val_(*reinterpret_cast<v8::Local<T>*>(&that)) {}
 # endif
 
-  NAN_INLINE bool IsEmpty() const { return val_.IsEmpty(); }
+  inline bool IsEmpty() const { return val_.IsEmpty(); }
 
   template<typename S>
-  NAN_INLINE bool ToLocal(v8::Local<S> *out) const {
+  inline bool ToLocal(v8::Local<S> *out) const {
     *out = val_;
     return !IsEmpty();
   }
 
-  NAN_INLINE v8::Local<T> ToLocalChecked() const {
+  inline v8::Local<T> ToLocalChecked() const {
 #if defined(V8_ENABLE_CHECKS)
     assert(!IsEmpty() && "ToLocalChecked is Empty");
 #endif  // V8_ENABLE_CHECKS
@@ -38,7 +38,7 @@ class MaybeLocal {
   }
 
   template<typename S>
-  NAN_INLINE v8::Local<S> FromMaybe(v8::Local<S> default_value) const {
+  inline v8::Local<S> FromMaybe(v8::Local<S> default_value) const {
     return IsEmpty() ? default_value : val_;
   }
 
@@ -49,26 +49,26 @@ class MaybeLocal {
 template<typename T>
 class Maybe {
  public:
-  NAN_INLINE bool IsNothing() const { return !has_value_; }
-  NAN_INLINE bool IsJust() const { return has_value_; }
+  inline bool IsNothing() const { return !has_value_; }
+  inline bool IsJust() const { return has_value_; }
 
-  NAN_INLINE T FromJust() const {
+  inline T FromJust() const {
 #if defined(V8_ENABLE_CHECKS)
     assert(IsJust() && "FromJust is Nothing");
 #endif  // V8_ENABLE_CHECKS
     return value_;
   }
 
-  NAN_INLINE T FromMaybe(const T& default_value) const {
+  inline T FromMaybe(const T& default_value) const {
     return has_value_ ? value_ : default_value;
   }
 
-  NAN_INLINE bool operator==(const Maybe &other) const {
+  inline bool operator==(const Maybe &other) const {
     return (IsJust() == other.IsJust()) &&
         (!IsJust() || FromJust() == other.FromJust());
   }
 
-  NAN_INLINE bool operator!=(const Maybe &other) const {
+  inline bool operator!=(const Maybe &other) const {
     return !operator==(other);
   }
 
@@ -94,27 +94,27 @@ inline Maybe<T> Just(const T& t) {
   return Maybe<T>(t);
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::String> ToDetailString(v8::Handle<v8::Value> val) {
   return MaybeLocal<v8::String>(val->ToDetailString());
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::Uint32> ToArrayIndex(v8::Handle<v8::Value> val) {
   return MaybeLocal<v8::Uint32>(val->ToArrayIndex());
 }
 
-NAN_INLINE
+inline
 Maybe<bool> Equals(v8::Handle<v8::Value> a, v8::Handle<v8::Value>(b)) {
   return Just<bool>(a->Equals(b));
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::Object> NewInstance(v8::Handle<v8::Function> h) {
   return MaybeLocal<v8::Object>(h->NewInstance());
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::Object> NewInstance(
       v8::Local<v8::Function> h
     , int argc
@@ -122,31 +122,31 @@ MaybeLocal<v8::Object> NewInstance(
   return MaybeLocal<v8::Object>(h->NewInstance(argc, argv));
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::Object> NewInstance(v8::Handle<v8::ObjectTemplate> h) {
   return MaybeLocal<v8::Object>(h->NewInstance());
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::Function> GetFunction(v8::Handle<v8::FunctionTemplate> t) {
   return MaybeLocal<v8::Function>(t->GetFunction());
 }
 
-NAN_INLINE Maybe<bool> Set(
+inline Maybe<bool> Set(
     v8::Handle<v8::Object> obj
   , v8::Handle<v8::Value> key
   , v8::Handle<v8::Value> value) {
   return Just<bool>(obj->Set(key, value));
 }
 
-NAN_INLINE Maybe<bool> Set(
+inline Maybe<bool> Set(
     v8::Handle<v8::Object> obj
   , uint32_t index
   , v8::Handle<v8::Value> value) {
   return Just<bool>(obj->Set(index, value));
 }
 
-NAN_INLINE Maybe<bool> ForceSet(
+inline Maybe<bool> ForceSet(
     v8::Handle<v8::Object> obj
   , v8::Handle<v8::Value> key
   , v8::Handle<v8::Value> value
@@ -154,107 +154,107 @@ NAN_INLINE Maybe<bool> ForceSet(
   return Just<bool>(obj->ForceSet(key, value, attribs));
 }
 
-NAN_INLINE MaybeLocal<v8::Value> Get(
+inline MaybeLocal<v8::Value> Get(
     v8::Handle<v8::Object> obj
   , v8::Handle<v8::Value> key) {
   return MaybeLocal<v8::Value>(obj->Get(key));
 }
 
-NAN_INLINE MaybeLocal<v8::Value> Get(
+inline MaybeLocal<v8::Value> Get(
     v8::Handle<v8::Object> obj
   , uint32_t index) {
   return MaybeLocal<v8::Value>(obj->Get(index));
 }
 
-NAN_INLINE Maybe<v8::PropertyAttribute> GetPropertyAttributes(
+inline Maybe<v8::PropertyAttribute> GetPropertyAttributes(
     v8::Handle<v8::Object> obj
   , v8::Handle<v8::Value> key) {
   return Just<v8::PropertyAttribute>(obj->GetPropertyAttributes(key));
 }
 
-NAN_INLINE Maybe<bool> Has(
+inline Maybe<bool> Has(
     v8::Handle<v8::Object> obj
   , v8::Handle<v8::String> key) {
   return Just<bool>(obj->Has(key));
 }
 
-NAN_INLINE Maybe<bool> Has(
+inline Maybe<bool> Has(
     v8::Handle<v8::Object> obj
   , uint32_t index) {
   return Just<bool>(obj->Has(index));
 }
 
-NAN_INLINE Maybe<bool> Delete(
+inline Maybe<bool> Delete(
     v8::Handle<v8::Object> obj
   , v8::Handle<v8::String> key) {
   return Just<bool>(obj->Delete(key));
 }
 
-NAN_INLINE Maybe<bool> Delete(
+inline Maybe<bool> Delete(
     v8::Handle<v8::Object> obj
   , uint32_t index) {
   return Just<bool>(obj->Delete(index));
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::Array> GetPropertyNames(v8::Handle<v8::Object> obj) {
   return MaybeLocal<v8::Array>(obj->GetPropertyNames());
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::Array> GetOwnPropertyNames(v8::Handle<v8::Object> obj) {
   return MaybeLocal<v8::Array>(obj->GetOwnPropertyNames());
 }
 
-NAN_INLINE Maybe<bool> SetPrototype(
+inline Maybe<bool> SetPrototype(
     v8::Handle<v8::Object> obj
   , v8::Handle<v8::Value> prototype) {
   return Just<bool>(obj->SetPrototype(prototype));
 }
 
-NAN_INLINE MaybeLocal<v8::String> ObjectProtoToString(
+inline MaybeLocal<v8::String> ObjectProtoToString(
     v8::Handle<v8::Object> obj) {
   return MaybeLocal<v8::String>(obj->ObjectProtoToString());
 }
 
-NAN_INLINE Maybe<bool> HasOwnProperty(
+inline Maybe<bool> HasOwnProperty(
     v8::Handle<v8::Object> obj
   , v8::Handle<v8::String> key) {
   return Just<bool>(obj->HasOwnProperty(key));
 }
 
-NAN_INLINE Maybe<bool> HasRealNamedProperty(
+inline Maybe<bool> HasRealNamedProperty(
     v8::Handle<v8::Object> obj
   , v8::Handle<v8::String> key) {
   return Just<bool>(obj->HasRealNamedProperty(key));
 }
 
-NAN_INLINE Maybe<bool> HasRealIndexedProperty(
+inline Maybe<bool> HasRealIndexedProperty(
     v8::Handle<v8::Object> obj
   , uint32_t index) {
   return Just<bool>(obj->HasRealIndexedProperty(index));
 }
 
-NAN_INLINE Maybe<bool> HasRealNamedCallbackProperty(
+inline Maybe<bool> HasRealNamedCallbackProperty(
     v8::Handle<v8::Object> obj
   , v8::Handle<v8::String> key) {
   return Just<bool>(obj->HasRealNamedCallbackProperty(key));
 }
 
-NAN_INLINE MaybeLocal<v8::Value> GetRealNamedPropertyInPrototypeChain(
+inline MaybeLocal<v8::Value> GetRealNamedPropertyInPrototypeChain(
     v8::Handle<v8::Object> obj
   , v8::Handle<v8::String> key) {
   return MaybeLocal<v8::Value>(
       obj->GetRealNamedPropertyInPrototypeChain(key));
 }
 
-NAN_INLINE MaybeLocal<v8::Value> GetRealNamedProperty(
+inline MaybeLocal<v8::Value> GetRealNamedProperty(
     v8::Handle<v8::Object> obj
   , v8::Handle<v8::String> key) {
   return MaybeLocal<v8::Value>(obj->GetRealNamedProperty(key));
 }
 
-NAN_INLINE MaybeLocal<v8::Value> CallAsFunction(
+inline MaybeLocal<v8::Value> CallAsFunction(
     v8::Handle<v8::Object> obj
   , v8::Handle<v8::Object> recv
   , int argc
@@ -262,37 +262,37 @@ NAN_INLINE MaybeLocal<v8::Value> CallAsFunction(
   return MaybeLocal<v8::Value>(obj->CallAsFunction(recv, argc, argv));
 }
 
-NAN_INLINE MaybeLocal<v8::Value> CallAsConstructor(
+inline MaybeLocal<v8::Value> CallAsConstructor(
     v8::Handle<v8::Object> obj
   , int argc
   , v8::Local<v8::Value> argv[]) {
   return MaybeLocal<v8::Value>(obj->CallAsConstructor(argc, argv));
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::String> GetSourceLine(v8::Handle<v8::Message> msg) {
   return MaybeLocal<v8::String>(msg->GetSourceLine());
 }
 
-NAN_INLINE Maybe<int> GetLineNumber(v8::Handle<v8::Message> msg) {
+inline Maybe<int> GetLineNumber(v8::Handle<v8::Message> msg) {
   return Just<int>(msg->GetLineNumber());
 }
 
-NAN_INLINE Maybe<int> GetStartColumn(v8::Handle<v8::Message> msg) {
+inline Maybe<int> GetStartColumn(v8::Handle<v8::Message> msg) {
   return Just<int>(msg->GetStartColumn());
 }
 
-NAN_INLINE Maybe<int> GetEndColumn(v8::Handle<v8::Message> msg) {
+inline Maybe<int> GetEndColumn(v8::Handle<v8::Message> msg) {
   return Just<int>(msg->GetEndColumn());
 }
 
-NAN_INLINE MaybeLocal<v8::Object> CloneElementAt(
+inline MaybeLocal<v8::Object> CloneElementAt(
     v8::Handle<v8::Array> array
   , uint32_t index) {
   return MaybeLocal<v8::Object>(array->CloneElementAt(index));
 }
 
-NAN_INLINE MaybeLocal<v8::Value> Call(
+inline MaybeLocal<v8::Value> Call(
     v8::Local<v8::Function> fun
   , v8::Local<v8::Object> recv
   , int argc

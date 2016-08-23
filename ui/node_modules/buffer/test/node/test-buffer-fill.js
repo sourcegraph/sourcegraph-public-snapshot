@@ -1,6 +1,6 @@
 'use strict';
 var Buffer = require('../../').Buffer;
-if (Buffer.TYPED_ARRAY_SUPPORT) return;
+
 
 
 var assert = require('assert');
@@ -73,6 +73,27 @@ testBufs('\u0222aa', 8, 1, 'binary');
 testBufs('a\u0234b\u0235c\u0236', 4, -1, 'binary');
 testBufs('a\u0234b\u0235c\u0236', 4, 1, 'binary');
 testBufs('a\u0234b\u0235c\u0236', 12, 1, 'binary');
+
+
+// LATIN1
+testBufs('abc', 'latin1');
+testBufs('\u0222aa', 'latin1');
+testBufs('a\u0234b\u0235c\u0236', 'latin1');
+testBufs('abc', 4, 'latin1');
+testBufs('abc', 5, 'latin1');
+testBufs('abc', SIZE, 'latin1');
+testBufs('\u0222aa', 2, 'latin1');
+testBufs('\u0222aa', 8, 'latin1');
+testBufs('a\u0234b\u0235c\u0236', 4, 'latin1');
+testBufs('a\u0234b\u0235c\u0236', 12, 'latin1');
+testBufs('abc', 4, -1, 'latin1');
+testBufs('abc', 4, 1, 'latin1');
+testBufs('abc', 5, 1, 'latin1');
+testBufs('\u0222aa', 2, -1, 'latin1');
+testBufs('\u0222aa', 8, 1, 'latin1');
+testBufs('a\u0234b\u0235c\u0236', 4, -1, 'latin1');
+testBufs('a\u0234b\u0235c\u0236', 4, 1, 'latin1');
+testBufs('a\u0234b\u0235c\u0236', 12, 1, 'latin1');
 
 
 // UCS2

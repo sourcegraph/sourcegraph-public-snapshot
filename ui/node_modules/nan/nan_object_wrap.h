@@ -39,8 +39,8 @@ class ObjectWrap {
   }
 
 
-  inline v8::Local<v8::Object> handle() {
-    return New(persistent());
+  inline v8::Local<v8::Object> handle() const {
+    return New(handle_);
   }
 
 

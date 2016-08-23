@@ -8,6 +8,7 @@ var test_           = !debug ? function () {} : require('tap').test
   , util            = require('util')
   , TransformStream = require('readable-stream').Transform
   , through         = require('through2')
+  , proxyquire      = require('proxyquire')
   , streamapi       = require('../stream-api')
   , readdirp        = require('..')
   , root            = path.join(__dirname, 'bed')
@@ -216,7 +217,6 @@ test('\nintegrated', function (t) {
 
 test('\napi separately', function (t) {
 
-
   t.test('\n# handleError', function (t) {
     t.plan(1);
 
@@ -264,6 +264,34 @@ test('\napi separately', function (t) {
     }, 1)
   })
 
+  t.test('\n# when a stream is paused it stops walking the fs', function (t) {
+    var resumed = false,
+      mockedAPI = streamapi();
+
+    mockedAPI.processEntry = function (entry) {
+      if (!resumed) t.notOk(true, 'should not emit while paused')
+      t.ok(entry, 'emitted while resumed')
+    }.bind(mockedAPI.stream)
+
+    function wrapper () {
+      return mockedAPI
+    }
+
+    var readdirp = proxyquire('../readdirp', {'./stream-api': wrapper})
+      , stream = readdirp(opts())
+      .on('error', function (err) {
+        t.fail('should not throw error', err);
+      })
+      .on('end', function () {
+        t.end()
+      })
+      .pause();
+
+    setTimeout(function () {
+      resumed = true;
+      stream.resume();
+    }, 5)
+  })
 
   t.test('\n# when a stream is destroyed, it emits "closed", but no longer emits "data", "warn" and "error"', function (t) {
     var api = streamapi()

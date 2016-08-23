@@ -112,6 +112,16 @@ function do_build(gyp,argv,callback) {
   process.nextTick(callback);
 }
 
+function print_fallback_error(err,opts,package_json) {
+    var fallback_message = ' (falling back to source compile with node-gyp)';
+    var full_message = "Pre-built binaries not found for " + package_json.name + "@" + package_json.version;
+    full_message += " and " + opts.runtime + "@" + (opts.target || process.versions.node) + " (" + opts.node_abi + " ABI)";
+    full_message += fallback_message;
+    log.error("Tried to download: " + opts.hosted_tarball);
+    log.error(full_message);
+    log.http(err.message);
+}
+
 function install(gyp, argv, callback) {
     var package_json = JSON.parse(fs.readFileSync('./package.json'));
     var source_build = gyp.opts['build-from-source'] || gyp.opts.build_from_source;
@@ -151,7 +161,7 @@ function install(gyp, argv, callback) {
                         place_binary(from,to,opts,function(err) {
                             if (err) {
                                 if (should_do_fallback_build) {
-                                    log.http(err.message + ' (falling back to source compile with node-gyp)');
+                                    print_fallback_error(err,opts,package_json);
                                     return do_build(gyp,argv,callback);
                                 } else {
                                     return callback(err);
@@ -171,7 +181,7 @@ function install(gyp, argv, callback) {
                 if (!update_binary) log.info('check','checked for "' + binary_module + '" (not found)');
                 place_binary(from,to,opts,function(err) {
                     if (err && should_do_fallback_build) {
-                        log.http(err.message + ' (falling back to source compile with node-gyp)');
+                        print_fallback_error(err,opts,package_json);
                         return do_build(gyp,argv,callback);
                     } else if (err) {
                         return callback(err);

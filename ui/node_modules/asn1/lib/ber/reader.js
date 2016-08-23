@@ -24,17 +24,25 @@ function Reader(data) {
   // These hold the "current" state
   this._len = 0;
   this._offset = 0;
-
-  var self = this;
-  this.__defineGetter__('length', function() { return self._len; });
-  this.__defineGetter__('offset', function() { return self._offset; });
-  this.__defineGetter__('remain', function() {
-    return self._size - self._offset;
-  });
-  this.__defineGetter__('buffer', function() {
-    return self._buf.slice(self._offset);
-  });
 }
+
+Object.defineProperty(Reader.prototype, 'length', {
+  enumerable: true,
+  get: function () { return (this._len); }
+});
+
+Object.defineProperty(Reader.prototype, 'offset', {
+  enumerable: true,
+  get: function () { return (this._offset); }
+});
+
+Object.defineProperty(Reader.prototype, 'remain', {
+  get: function () { return (this._size - this._offset); }
+});
+
+Object.defineProperty(Reader.prototype, 'buffer', {
+  get: function () { return (this._buf.slice(this._offset)); }
+});
 
 
 /**
@@ -171,7 +179,7 @@ Reader.prototype.readString = function(tag, retbuf) {
   this._offset = o;
 
   if (this.length === 0)
-    return '';
+    return retbuf ? new Buffer(0) : '';
 
   var str = this._buf.slice(this._offset, this._offset + this.length);
   this._offset += this.length;
@@ -183,28 +191,15 @@ Reader.prototype.readOID = function(tag) {
   if (!tag)
     tag = ASN1.OID;
 
-  var b = this.peek();
+  var b = this.readString(tag, true);
   if (b === null)
     return null;
-
-  if (b !== tag)
-    throw newInvalidAsn1Error('Expected 0x' + tag.toString(16) +
-                              ': got 0x' + b.toString(16));
-
-  var o = this.readLength(this._offset + 1); // stored in `length`
-  if (o === null)
-    return null;
-
-  if (this.length > this._size - o)
-    return null;
-
-  this._offset = o;
 
   var values = [];
   var value = 0;
 
-  for (var i = 0; i < this.length; i++) {
-    var byte = this._buf[this._offset++] & 0xff;
+  for (var i = 0; i < b.length; i++) {
+    var byte = b[i] & 0xff;
 
     value <<= 7;
     value += byte & 0x7f;
@@ -245,19 +240,18 @@ Reader.prototype._readTag = function(tag) {
     return null;
   this._offset = o;
 
-  var fb = this._buf[this._offset++];
+  var fb = this._buf[this._offset];
   var value = 0;
 
-  value = fb & 0x7F;
-  for (var i = 1; i < this.length; i++) {
+  for (var i = 0; i < this.length; i++) {
     value <<= 8;
     value |= (this._buf[this._offset++] & 0xff);
   }
 
-  if ((fb & 0x80) == 0x80)
-    value = -value;
+  if ((fb & 0x80) == 0x80 && i !== 4)
+    value -= (1 << (i * 8));
 
-  return value;
+  return value >> 0;
 };
 
 

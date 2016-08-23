@@ -12,7 +12,7 @@
 template<typename T>
 class TypedArrayContents {
  public:
-  NAN_INLINE explicit TypedArrayContents(v8::Local<v8::Value> from) :
+  inline explicit TypedArrayContents(v8::Local<v8::Value> from) :
       length_(0), data_(NULL) {
 
     size_t length = 0;
@@ -69,9 +69,9 @@ class TypedArrayContents {
     data_   = static_cast<T*>(data);
   }
 
-  NAN_INLINE size_t length() const      { return length_; }
-  NAN_INLINE T* operator*()             { return data_;   }
-  NAN_INLINE const T* operator*() const { return data_;   }
+  inline size_t length() const      { return length_; }
+  inline T* operator*()             { return data_;   }
+  inline const T* operator*() const { return data_;   }
 
  private:
   NAN_DISALLOW_ASSIGN_COPY_MOVE(TypedArrayContents)

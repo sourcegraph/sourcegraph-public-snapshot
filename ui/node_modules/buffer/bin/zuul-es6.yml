@@ -3,5 +3,4 @@ browsers:
   - name: chrome
     version: '-1..latest'
   - name: firefox
-    version: 55, 56
-    # version: '-1..latest'
+    version: '-1..latest'

@@ -16,38 +16,38 @@ template<typename T>
 using Maybe = v8::Maybe<T>;
 
 template<typename T>
-NAN_INLINE Maybe<T> Nothing() {
+inline Maybe<T> Nothing() {
   return v8::Nothing<T>();
 }
 
 template<typename T>
-NAN_INLINE Maybe<T> Just(const T& t) {
+inline Maybe<T> Just(const T& t) {
   return v8::Just<T>(t);
 }
 
 v8::Local<v8::Context> GetCurrentContext();
 
-NAN_INLINE
+inline
 MaybeLocal<v8::String> ToDetailString(v8::Local<v8::Value> val) {
   return val->ToDetailString(GetCurrentContext());
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::Uint32> ToArrayIndex(v8::Local<v8::Value> val) {
   return val->ToArrayIndex(GetCurrentContext());
 }
 
-NAN_INLINE
+inline
 Maybe<bool> Equals(v8::Local<v8::Value> a, v8::Local<v8::Value>(b)) {
   return a->Equals(GetCurrentContext(), b);
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::Object> NewInstance(v8::Local<v8::Function> h) {
   return h->NewInstance(GetCurrentContext());
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::Object> NewInstance(
       v8::Local<v8::Function> h
     , int argc
@@ -55,32 +55,32 @@ MaybeLocal<v8::Object> NewInstance(
   return h->NewInstance(GetCurrentContext(), argc, argv);
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::Object> NewInstance(v8::Local<v8::ObjectTemplate> h) {
   return h->NewInstance(GetCurrentContext());
 }
 
 
-NAN_INLINE MaybeLocal<v8::Function> GetFunction(
+inline MaybeLocal<v8::Function> GetFunction(
     v8::Local<v8::FunctionTemplate> t) {
   return t->GetFunction(GetCurrentContext());
 }
 
-NAN_INLINE Maybe<bool> Set(
+inline Maybe<bool> Set(
     v8::Local<v8::Object> obj
   , v8::Local<v8::Value> key
   , v8::Local<v8::Value> value) {
   return obj->Set(GetCurrentContext(), key, value);
 }
 
-NAN_INLINE Maybe<bool> Set(
+inline Maybe<bool> Set(
     v8::Local<v8::Object> obj
   , uint32_t index
   , v8::Local<v8::Value> value) {
   return obj->Set(GetCurrentContext(), index, value);
 }
 
-NAN_INLINE Maybe<bool> ForceSet(
+inline Maybe<bool> ForceSet(
     v8::Local<v8::Object> obj
   , v8::Local<v8::Value> key
   , v8::Local<v8::Value> value
@@ -88,102 +88,102 @@ NAN_INLINE Maybe<bool> ForceSet(
   return obj->ForceSet(GetCurrentContext(), key, value, attribs);
 }
 
-NAN_INLINE MaybeLocal<v8::Value> Get(
+inline MaybeLocal<v8::Value> Get(
     v8::Local<v8::Object> obj
   , v8::Local<v8::Value> key) {
   return obj->Get(GetCurrentContext(), key);
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::Value> Get(v8::Local<v8::Object> obj, uint32_t index) {
   return obj->Get(GetCurrentContext(), index);
 }
 
-NAN_INLINE v8::PropertyAttribute GetPropertyAttributes(
+inline v8::PropertyAttribute GetPropertyAttributes(
     v8::Local<v8::Object> obj
   , v8::Local<v8::Value> key) {
   return obj->GetPropertyAttributes(GetCurrentContext(), key).FromJust();
 }
 
-NAN_INLINE Maybe<bool> Has(
+inline Maybe<bool> Has(
     v8::Local<v8::Object> obj
   , v8::Local<v8::String> key) {
   return obj->Has(GetCurrentContext(), key);
 }
 
-NAN_INLINE Maybe<bool> Has(v8::Local<v8::Object> obj, uint32_t index) {
+inline Maybe<bool> Has(v8::Local<v8::Object> obj, uint32_t index) {
   return obj->Has(GetCurrentContext(), index);
 }
 
-NAN_INLINE Maybe<bool> Delete(
+inline Maybe<bool> Delete(
     v8::Local<v8::Object> obj
   , v8::Local<v8::String> key) {
   return obj->Delete(GetCurrentContext(), key);
 }
 
-NAN_INLINE
+inline
 Maybe<bool> Delete(v8::Local<v8::Object> obj, uint32_t index) {
   return obj->Delete(GetCurrentContext(), index);
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::Array> GetPropertyNames(v8::Local<v8::Object> obj) {
   return obj->GetPropertyNames(GetCurrentContext());
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::Array> GetOwnPropertyNames(v8::Local<v8::Object> obj) {
   return obj->GetOwnPropertyNames(GetCurrentContext());
 }
 
-NAN_INLINE Maybe<bool> SetPrototype(
+inline Maybe<bool> SetPrototype(
     v8::Local<v8::Object> obj
   , v8::Local<v8::Value> prototype) {
   return obj->SetPrototype(GetCurrentContext(), prototype);
 }
 
-NAN_INLINE MaybeLocal<v8::String> ObjectProtoToString(
+inline MaybeLocal<v8::String> ObjectProtoToString(
     v8::Local<v8::Object> obj) {
   return obj->ObjectProtoToString(GetCurrentContext());
 }
 
-NAN_INLINE Maybe<bool> HasOwnProperty(
+inline Maybe<bool> HasOwnProperty(
     v8::Local<v8::Object> obj
   , v8::Local<v8::String> key) {
   return obj->HasOwnProperty(GetCurrentContext(), key);
 }
 
-NAN_INLINE Maybe<bool> HasRealNamedProperty(
+inline Maybe<bool> HasRealNamedProperty(
     v8::Local<v8::Object> obj
   , v8::Local<v8::String> key) {
   return obj->HasRealNamedProperty(GetCurrentContext(), key);
 }
 
-NAN_INLINE Maybe<bool> HasRealIndexedProperty(
+inline Maybe<bool> HasRealIndexedProperty(
     v8::Local<v8::Object> obj
   , uint32_t index) {
   return obj->HasRealIndexedProperty(GetCurrentContext(), index);
 }
 
-NAN_INLINE Maybe<bool> HasRealNamedCallbackProperty(
+inline Maybe<bool> HasRealNamedCallbackProperty(
     v8::Local<v8::Object> obj
   , v8::Local<v8::String> key) {
   return obj->HasRealNamedCallbackProperty(GetCurrentContext(), key);
 }
 
-NAN_INLINE MaybeLocal<v8::Value> GetRealNamedPropertyInPrototypeChain(
+inline MaybeLocal<v8::Value> GetRealNamedPropertyInPrototypeChain(
     v8::Local<v8::Object> obj
   , v8::Local<v8::String> key) {
   return obj->GetRealNamedPropertyInPrototypeChain(GetCurrentContext(), key);
 }
 
-NAN_INLINE MaybeLocal<v8::Value> GetRealNamedProperty(
+inline MaybeLocal<v8::Value> GetRealNamedProperty(
     v8::Local<v8::Object> obj
   , v8::Local<v8::String> key) {
   return obj->GetRealNamedProperty(GetCurrentContext(), key);
 }
 
-NAN_INLINE MaybeLocal<v8::Value> CallAsFunction(
+inline MaybeLocal<v8::Value> CallAsFunction(
     v8::Local<v8::Object> obj
   , v8::Local<v8::Object> recv
   , int argc
@@ -191,36 +191,50 @@ NAN_INLINE MaybeLocal<v8::Value> CallAsFunction(
   return obj->CallAsFunction(GetCurrentContext(), recv, argc, argv);
 }
 
-NAN_INLINE MaybeLocal<v8::Value> CallAsConstructor(
+inline MaybeLocal<v8::Value> CallAsConstructor(
     v8::Local<v8::Object> obj
   , int argc, v8::Local<v8::Value> argv[]) {
   return obj->CallAsConstructor(GetCurrentContext(), argc, argv);
 }
 
-NAN_INLINE
+inline
 MaybeLocal<v8::String> GetSourceLine(v8::Local<v8::Message> msg) {
   return msg->GetSourceLine(GetCurrentContext());
 }
 
-NAN_INLINE Maybe<int> GetLineNumber(v8::Local<v8::Message> msg) {
+inline Maybe<int> GetLineNumber(v8::Local<v8::Message> msg) {
   return msg->GetLineNumber(GetCurrentContext());
 }
 
-NAN_INLINE Maybe<int> GetStartColumn(v8::Local<v8::Message> msg) {
+inline Maybe<int> GetStartColumn(v8::Local<v8::Message> msg) {
   return msg->GetStartColumn(GetCurrentContext());
 }
 
-NAN_INLINE Maybe<int> GetEndColumn(v8::Local<v8::Message> msg) {
+inline Maybe<int> GetEndColumn(v8::Local<v8::Message> msg) {
   return msg->GetEndColumn(GetCurrentContext());
 }
 
-NAN_INLINE MaybeLocal<v8::Object> CloneElementAt(
+inline MaybeLocal<v8::Object> CloneElementAt(
     v8::Local<v8::Array> array
   , uint32_t index) {
+#if (NODE_MODULE_VERSION >= NODE_6_0_MODULE_VERSION)
+  v8::EscapableHandleScope handle_scope(v8::Isolate::GetCurrent());
+  v8::Local<v8::Context> context = GetCurrentContext();
+  v8::Local<v8::Value> elem;
+  if (!array->Get(context, index).ToLocal(&elem)) {
+    return MaybeLocal<v8::Object>();
+  }
+  v8::Local<v8::Object> obj;
+  if (!elem->ToObject(context).ToLocal(&obj)) {
+    return MaybeLocal<v8::Object>();
+  }
+  return MaybeLocal<v8::Object>(handle_scope.Escape(obj->Clone()));
+#else
   return array->CloneElementAt(GetCurrentContext(), index);
+#endif
 }
 
-NAN_INLINE MaybeLocal<v8::Value> Call(
+inline MaybeLocal<v8::Value> Call(
     v8::Local<v8::Function> fun
   , v8::Local<v8::Object> recv
   , int argc

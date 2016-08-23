@@ -1,7 +1,6 @@
 'use strict';
 
-var si = typeof setImmediate !== 'undefined' ? setImmediate : function (fn) { setTimeout(fn, 0) };
-
+var si =  require('set-immediate-shim');
 var stream = require('readable-stream');
 var util = require('util');
 
@@ -15,7 +14,7 @@ function ReaddirpReadable (opts) {
   if (!(this instanceof ReaddirpReadable)) return new ReaddirpReadable(opts);
 
   opts = opts || {};
-  
+
   opts.objectMode = true;
   Readable.call(this, opts);
 
@@ -71,7 +70,7 @@ proto._done = function () {
 // within the initial event loop before any event listeners subscribed
 proto._handleError = function (err) {
   var self = this;
-  si(function () { 
+  si(function () {
     if (self._paused) return self._warnings.push(err);
     if (!self._destroyed) self.emit('warn', err);
   });
@@ -79,7 +78,7 @@ proto._handleError = function (err) {
 
 proto._handleFatalError = function (err) {
   var self = this;
-  si(function () { 
+  si(function () {
     if (self._paused) return self._errors.push(err);
     if (!self._destroyed) self.emit('error', err);
   });
@@ -88,7 +87,7 @@ proto._handleFatalError = function (err) {
 function createStreamAPI () {
   var stream = new ReaddirpReadable();
 
-  return { 
+  return {
       stream           :  stream
     , processEntry     :  stream._processEntry.bind(stream)
     , done             :  stream._done.bind(stream)

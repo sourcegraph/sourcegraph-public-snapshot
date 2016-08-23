@@ -62,6 +62,11 @@ describe('BN.js/Binary', function () {
       assert.equal(new BN('123456789', 16).imaskn(16).toString(16), '6789');
       assert.equal(new BN('123456789', 16).imaskn(28).toString(16), '3456789');
     });
+
+    it('should not mask when number is bigger than length', function () {
+      assert.equal(new BN(0xe3).imaskn(56).toString(16), 'e3');
+      assert.equal(new BN(0xe3).imaskn(26).toString(16), 'e3');
+    });
   });
 
   describe('.testn()', function () {

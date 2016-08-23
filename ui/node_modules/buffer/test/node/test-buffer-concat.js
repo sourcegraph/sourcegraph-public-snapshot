@@ -1,11 +1,11 @@
 'use strict';
 var Buffer = require('../../').Buffer;
-if (Buffer.TYPED_ARRAY_SUPPORT) return;
+
 
 var assert = require('assert');
 
 var zero = [];
-var one  = [ Buffer.from('asdf') ];
+var one = [ Buffer.from('asdf') ];
 var long = [];
 for (var i = 0; i < 10; i++) long.push(Buffer.from('asdf'));
 

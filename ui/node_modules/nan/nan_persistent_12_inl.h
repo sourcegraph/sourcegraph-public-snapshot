@@ -12,38 +12,38 @@
 template<typename T, typename M> class Persistent :
     public v8::Persistent<T, M> {
  public:
-  NAN_INLINE Persistent() : v8::Persistent<T, M>() {}
+  inline Persistent() : v8::Persistent<T, M>() {}
 
-  template<typename S> NAN_INLINE Persistent(v8::Local<S> that) :
+  template<typename S> inline Persistent(v8::Local<S> that) :
       v8::Persistent<T, M>(v8::Isolate::GetCurrent(), that) {}
 
   template<typename S, typename M2>
-  NAN_INLINE Persistent(const v8::Persistent<S, M2> &that) :
+  inline Persistent(const v8::Persistent<S, M2> &that) :
       v8::Persistent<T, M2>(v8::Isolate::GetCurrent(), that) {}
 
-  NAN_INLINE void Reset() { v8::PersistentBase<T>::Reset(); }
+  inline void Reset() { v8::PersistentBase<T>::Reset(); }
 
   template <typename S>
-  NAN_INLINE void Reset(const v8::Local<S> &other) {
+  inline void Reset(const v8::Local<S> &other) {
     v8::PersistentBase<T>::Reset(v8::Isolate::GetCurrent(), other);
   }
 
   template <typename S>
-  NAN_INLINE void Reset(const v8::PersistentBase<S> &other) {
+  inline void Reset(const v8::PersistentBase<S> &other) {
     v8::PersistentBase<T>::Reset(v8::Isolate::GetCurrent(), other);
   }
 
   template<typename P>
-  NAN_INLINE void SetWeak(
+  inline void SetWeak(
     P *parameter
     , typename WeakCallbackInfo<P>::Callback callback
     , WeakCallbackType type);
 
  private:
-  NAN_INLINE T *operator*() const { return *PersistentBase<T>::persistent; }
+  inline T *operator*() const { return *PersistentBase<T>::persistent; }
 
   template<typename S, typename M2>
-  NAN_INLINE void Copy(const Persistent<S, M2> &that) {
+  inline void Copy(const Persistent<S, M2> &that) {
     TYPE_CHECK(T, S);
 
     this->Reset();
@@ -60,29 +60,29 @@ template<typename T, typename M> class Persistent :
 template<typename T>
 class Global : public v8::Global<T> {
  public:
-  NAN_INLINE Global() : v8::Global<T>() {}
+  inline Global() : v8::Global<T>() {}
 
-  template<typename S> NAN_INLINE Global(v8::Local<S> that) :
+  template<typename S> inline Global(v8::Local<S> that) :
     v8::Global<T>(v8::Isolate::GetCurrent(), that) {}
 
   template<typename S>
-  NAN_INLINE Global(const v8::PersistentBase<S> &that) :
+  inline Global(const v8::PersistentBase<S> &that) :
       v8::Global<S>(v8::Isolate::GetCurrent(), that) {}
 
-  NAN_INLINE void Reset() { v8::PersistentBase<T>::Reset(); }
+  inline void Reset() { v8::PersistentBase<T>::Reset(); }
 
   template <typename S>
-  NAN_INLINE void Reset(const v8::Local<S> &other) {
+  inline void Reset(const v8::Local<S> &other) {
     v8::PersistentBase<T>::Reset(v8::Isolate::GetCurrent(), other);
   }
 
   template <typename S>
-  NAN_INLINE void Reset(const v8::PersistentBase<S> &other) {
+  inline void Reset(const v8::PersistentBase<S> &other) {
     v8::PersistentBase<T>::Reset(v8::Isolate::GetCurrent(), other);
   }
 
   template<typename P>
-  NAN_INLINE void SetWeak(
+  inline void SetWeak(
     P *parameter
     , typename WeakCallbackInfo<P>::Callback callback
     , WeakCallbackType type) {
@@ -94,29 +94,29 @@ class Global : public v8::Global<T> {
 template<typename T>
 class Global : public v8::UniquePersistent<T> {
  public:
-  NAN_INLINE Global() : v8::UniquePersistent<T>() {}
+  inline Global() : v8::UniquePersistent<T>() {}
 
-  template<typename S> NAN_INLINE Global(v8::Local<S> that) :
+  template<typename S> inline Global(v8::Local<S> that) :
     v8::UniquePersistent<T>(v8::Isolate::GetCurrent(), that) {}
 
   template<typename S>
-  NAN_INLINE Global(const v8::PersistentBase<S> &that) :
+  inline Global(const v8::PersistentBase<S> &that) :
       v8::UniquePersistent<S>(v8::Isolate::GetCurrent(), that) {}
 
-  NAN_INLINE void Reset() { v8::PersistentBase<T>::Reset(); }
+  inline void Reset() { v8::PersistentBase<T>::Reset(); }
 
   template <typename S>
-  NAN_INLINE void Reset(const v8::Local<S> &other) {
+  inline void Reset(const v8::Local<S> &other) {
     v8::PersistentBase<T>::Reset(v8::Isolate::GetCurrent(), other);
   }
 
   template <typename S>
-  NAN_INLINE void Reset(const v8::PersistentBase<S> &other) {
+  inline void Reset(const v8::PersistentBase<S> &other) {
     v8::PersistentBase<T>::Reset(v8::Isolate::GetCurrent(), other);
   }
 
   template<typename P>
-  NAN_INLINE void SetWeak(
+  inline void SetWeak(
     P *parameter
     , typename WeakCallbackInfo<P>::Callback callback
     , WeakCallbackType type) {

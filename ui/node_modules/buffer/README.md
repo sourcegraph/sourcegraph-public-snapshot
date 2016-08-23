@@ -362,7 +362,7 @@ This is what's run in Travis, to check against various browsers. The list of bro
 
 This module uses [JavaScript Standard Style](https://github.com/feross/standard).
 
-[![js-standard-style](https://raw.githubusercontent.com/feross/standard/master/badge.png)](https://github.com/feross/standard)
+[![JavaScript Style Guide](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
 To test that the code conforms to the style, `npm install` and run:
 

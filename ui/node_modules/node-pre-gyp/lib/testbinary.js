@@ -20,6 +20,15 @@ function testbinary(gyp, argv, callback) {
     // ensure on windows that / are used for require path
     var binary_module = opts.module.replace(/\\/g, '/');
     var nw = (opts.runtime && opts.runtime === 'node-webkit');
+    if ((process.arch != opts.target_arch) ||
+        (process.platform != opts.target_platform)) {
+        var msg = "skipping validation since host platform/arch (";
+        msg += process.platform+'/'+process.arch+")";
+        msg += " does not match target (";
+        msg += opts.target_platform+'/'+opts.target_arch+")";
+        log.info('validate', msg);
+        return callback();
+    }
     if (nw) {
         options.timeout = 5000;
         if (process.platform === 'darwin') {
@@ -51,15 +60,6 @@ function testbinary(gyp, argv, callback) {
             return callback();
         });
         return;
-    }
-    if ((process.arch != opts.target_arch) ||
-        (process.platform != opts.target_platform)) {
-        var msg = "skipping validation since host platform/arch (";
-        msg += process.platform+'/'+process.arch+")";
-        msg += " does not match target (";
-        msg += opts.target_platform+'/'+opts.target_arch+")";
-        log.info('validate', msg);
-        return callback();
     }
     args.push('--eval');
     args.push("'require(\\'" + binary_module.replace(/\'/g, '\\\'') +"\\')'");
