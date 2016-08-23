@@ -1,10 +1,6 @@
-#
 # Docker image for Java Language Processor
-#
 
-#
 # Dependencies
-#
 FROM maven:3-jdk-8
 
 RUN apt-get update -y
