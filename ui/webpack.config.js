@@ -1,7 +1,6 @@
 const webpack = require("webpack");
 const autoprefixer = require("autoprefixer");
 const url = require("url");
-const log = require("logalot");
 const ProgressBarPlugin = require("progress-bar-webpack-plugin");
 
 // Check dev dependencies.
@@ -10,7 +9,7 @@ if (process.env.NODE_ENV === "development") {
 		try {
 			require("fsevents");
 		} catch (error) {
-			log.warn("WARNING: fsevents not properly installed. This causes a high CPU load when webpack is idle. Run 'npm run dep' to fix.");
+			console.warn("WARNING: fsevents not properly installed. This causes a high CPU load when webpack is idle. Run 'npm run dep' to fix.");
 		}
 	}
 }
