@@ -61,15 +61,15 @@ func TestRepoChecker(t *testing.T) {
 	}{
 		// Test that sourcegraph is default
 		{"", "foo", false},
-		{"", "sourcegraph/sourcegraph", true},
+		{"", "github.com/sourcegraph/sourcegraph", true},
 
 		// Test all
 		{"all", "foo", true},
-		{"all", "sourcegraph/sourcegraph", true},
+		{"all", "github.com/sourcegraph/sourcegraph", true},
 
 		// Test specified
 		{"foo", "foo", true},
-		{"foo", "sourcegraph/sourcegraph", false},
+		{"foo", "github.com/sourcegraph/sourcegraph", false},
 	}
 	for _, c := range cases {
 		if repoChecker(false, c.Enabled, c.Repo) {
