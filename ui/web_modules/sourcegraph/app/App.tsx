@@ -51,6 +51,10 @@ export class App extends React.Component<Props, State> {
 
 	constructor(props: Props, context) {
 		super(props);
+
+	    var m = document.getElementById("main");
+            var innerHTML = m.innerHTML
+            
 		let className = styles.main_container;
 		if (!context.signedIn && location.pathname === "/") {
 			className = styles.main_container_homepage;
@@ -58,6 +62,7 @@ export class App extends React.Component<Props, State> {
 		this._handleSourcegraphDesktop = this._handleSourcegraphDesktop.bind(this);
 		this.state = {
 			className: className,
+		    innerHTML: innerHTML,
 		};
 	}
 
@@ -66,6 +71,17 @@ export class App extends React.Component<Props, State> {
 	}
 
 	render(): JSX.Element | null {
+	    if (this.state.innerHTML) {
+		return (
+			<div className={this.state.className}>
+				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
+				<GlobalNav params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
+				<div className={styles.main_content} id="scroller" ref="mainContent" dangerouslySetInnerHTML={{__html: this.state.innerHTML}} >
+				</div>
+				<EventListener target={global.document} event="sourcegraph:desktop" callback={this._handleSourcegraphDesktop} />
+			</div>
+		);
+            } else {
 		return (
 			<div className={this.state.className}>
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
@@ -80,6 +96,7 @@ export class App extends React.Component<Props, State> {
 				<EventListener target={global.document} event="sourcegraph:desktop" callback={this._handleSourcegraphDesktop} />
 			</div>
 		);
+            }
 	}
 }
 

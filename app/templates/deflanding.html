@@ -1,66 +1,180 @@
-{{define "Head"}}<title>{{with .Meta.Title}}{{.}} · {{end}}Sourcegraph</title>{{end}}
+{{define "Head"}}
+<title>{{with .Meta.Title}}{{.}} · {{end}}Sourcegraph</title>
+<style>
+	body {
+	background-color: rgba(213, 229, 242, 0.2);
+	}
 
-{{define "Nav"}}
-<span>{{.Repo.URI}} : {{.Def.Def.File}}</span>
+	.dl-container {
+	width: 100%;
+	max-width: 940px;
+	margin-left: auto;
+	margin-right: auto;
+	color: rgba(26, 48, 77, 1);
+	font-family: 'circular-std', -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'Helvetica', Ubuntu, 'segoe ui', arial, sans-serif;
+	}
+
+	.dl-container pre {
+	background-color: rgba(62, 90, 126, 1);
+	color: rgba(213, 229, 242, 1);
+	border-radius: 3px;
+	padding: 1rem;
+	font-size: 15px;
+	}
+
+	.dl-container pre.snippet {
+	background-color: white;
+	color: rgba(26, 48, 77, 1);
+	border: 1px solid rgb(213, 229, 242);
+	}
+
+	.dl-container .highlight {
+	color: rgba(177, 20, 247, 1);
+	}
+
+	.dl-container pre.snippet a {
+	text-decoration: none;
+	color: #00a4de;
+	}
+	.dl-container pre.snippet .pln {
+	color: #435c79;
+	}
+	.dl-container pre.snippet .str {
+	color: #f14648;
+	}
+	.dl-container pre.snippet .kwd {
+	color: #00a4de;
+	}
+	.dl-container pre.snippet .com {
+	color: #89a4bc;
+	}
+	.dl-container pre.snippet .typ {
+	color: #8f2dba;
+	}
+	.dl-container pre.snippet .lit {
+	color: #f14648;
+	}
+	.dl-container pre.snippet .pun,
+	.dl-container pre.snippet .opn,
+	.dl-container pre.snippet .clo {
+	color: #435c79;
+	}
+	.dl-container pre.snippet .tag {
+	color: #00a4de;
+	}
+	.dl-container pre.snippet .atn {
+	color: #8f2dba;
+	}
+	.dl-container pre.snippet .atv {
+	color: #15b8ae;
+	}
+	.dl-container pre.snippet .dec,
+	.dl-container pre.snippet .var {
+	color: #15b8ae;
+	}
+	.dl-container pre.snippet .fun {
+	color: #00a4de;
+	}
+
+	.dl-container ul li {
+	color: rgba(0, 146, 214, 1);
+	list-style-type: none;
+	padding-top: 3.75px;
+	}
+
+	.dl-container ul li li {
+	color: rgba(119, 147, 174, 1);
+	list-style-type: circle;
+	}
+
+	.dl-container button {
+	background-color: rgba(177, 20, 247, 1);
+	color: white;
+	font-family: 'circular-std', -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'Helvetica', Ubuntu, 'segoe ui', arial, sans-serif;
+	font-size: 15px;
+	line-height: 24px;
+	font-weight: bold;
+	border-radius: 4px;
+	border-color: transparent;
+	padding-top: 0.45rem;
+	padding-bottom: 0.42rem;
+	padding-left: 15px;
+	padding-right: 15px;
+	}
+
+	.dl-container span.nav {
+	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
+	font-size: 14.75px;
+	color: rgb(119, 147, 174);
+	}
+</style>
 {{end}}
+
+{{define "Nav"}}{{end}}
 
 {{define "Body"}}
+<div class="dl-container">
 
-{{with .Def}}
+	<span class="nav">{{.Repo.URI}}&nbsp;·&nbsp;{{.Def.Def.File}}</span>
 
-{{with .FmtStrings}}
-<h1>{{.DefKeyword}} {{.Name.ScopeQualified}}{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</h1>
-{{end}}
+	{{with .Def}}
 
-<button>View source</button>
-
-<h2>Docs</h2>
-<p>{{dangerouslySetHTML .DocHTML.HTML}}</p>
-
-{{end}}{{/* end "with .Def" */}}
-
-
-
-
-
-
-
-<h2>How to use</h2>
-
-<button>View all usage examples</button>
-
-<p>
-	Here's an example of how you can use <tt>{{.Def.Name}}</tt>.
-</p>
-
-{{range .RefEntries}}
-<pre>
-	{{.ContentsString}}
-</pre>
-{{end}}
-
-
-
-<h2><tt>{{.Def.Name}}</tt> is used by</h2>
-<ul>
-	{{range .RefLocs.RepoRefs}}
-	<li>
-		{{.Repo}} {{.Count}} times
-		<ul>
-			{{range .Files}}
-			<li>{{.Path}} ({{.Count}} times)</li>
-			{{end}}
-		</ul>
-	</li>
+	{{with .FmtStrings}}
+	<h1><tt>{{.DefKeyword}} <span class="highlight">{{.Name.ScopeQualified}}</span>{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</tt></h1>
 	{{end}}
-</ul>
 
-<h2>Definition</h2>
+	<button>View source</button>
 
-<pre>
-	{{.DefEntry.ContentsString}}
-</pre>
+	<h2>Documentation</h2>
+	<p>{{dangerouslySetHTML .DocHTML.HTML}}</p>
 
+	{{end}}{{/* end "with .Def" */}}
+
+
+
+
+
+
+
+	<h2>How to use</h2>
+
+	<p>
+		Here's an example of how you can use <tt>{{.Def.Name}}</tt>.
+	</p>
+
+	{{range .RefSnippets}}
+	<pre class="snippet">{{renderSnippet .}}</pre><br>
+	{{end}}
+
+	<button>View all usage examples</button>
+
+	{{/*
+	{{range .RefEntries}}
+	<pre class="snippet">{{.ContentsString}}</pre>
+	{{end}}
+	*/}}
+
+
+
+	<h2><tt>{{.Def.Name}}</tt> is used in <span class="highlight">{{len .RefLocs.RepoRefs}}</span> {{numberedNoun (len .RefLocs.RepoRefs) "repository"}}</h2>
+	<ul style="padding-left: 0;">
+		{{range .RefLocs.RepoRefs}}
+		<li>
+			{{.Repo}} ({{.Count}} times)
+			<ul>
+				{{range .Files}}
+				<li>{{.Path}} ({{.Count}} times)</li>
+				{{end}}
+			</ul>
+		</li>
+		{{end}}
+	</ul>
+
+	<h2>Definition</h2>
+
+	<pre class="snippet">{{renderSnippet .DefSnippet}}</pre>
+
+</div>
 {{end}}
 
 {{define "Footer"}}

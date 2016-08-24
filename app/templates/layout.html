@@ -36,7 +36,8 @@
 
 		{{template "Nav" $}}
 
-		<div class="xcontainer" id="main">{{template "Body" $}}</div>
+		<!-- TODO: change `if true` to better if check -->
+		<div class="xcontainer {{if true}}server-side{{end}}" id="main">{{template "Body" $}}</div>
 
 		{{template "Footer" $}}
 
@@ -57,8 +58,10 @@
 			<div id="custom-feedback-form">{{customFeedbackForm}}</div>
 		{{end}}
 
-		<script src="{{assetURL "/main.browser.js"}}"></script>
-
+		{{if not .Meta.SEO}}
+			<script src="{{assetURL "/main.browser.js"}}"></script>
+		{{end}}
+		
 		{{appconf.ExtraBodyHTML}}
 	</body>
 </html>

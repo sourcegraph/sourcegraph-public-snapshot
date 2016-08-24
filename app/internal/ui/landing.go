@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/app"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
@@ -26,7 +27,9 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	var def *sourcegraph.Def
 	var refLocs *sourcegraph.RefLocationsList
 	var defEntry *sourcegraph.TreeEntry
+	var defSnippet *app.Snippet
 	var refEntries []*sourcegraph.TreeEntry
+	var refSnippets []*app.Snippet
 
 	if feature.IsUniverseRepo(repo.URI) {
 		// TODO
@@ -71,6 +74,19 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
+		defAnns, err := cl.Annotations.List(ctx, &sourcegraph.AnnotationsListOptions{
+			Entry:        entrySpec,
+			Range:        &opt.FileRange,
+			NoSrclibAnns: opt.NoSrclibAnns,
+		})
+		if err != nil {
+			return err
+		}
+		defSnippet = &app.Snippet{
+			StartByte:   defEntry.FileRange.StartByte,
+			Code:        defEntry.ContentsString,
+			Annotations: defAnns,
+		}
 
 		// fetch example
 		refs, err := cl.Defs.ListRefs(ctx, &sourcegraph.DefsListRefsOp{
@@ -105,6 +121,26 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 				return fmt.Errorf("could not get ref tree: %s", err)
 			}
 			refEntries = append(refEntries, refEntry)
+			refAnns, err := cl.Annotations.List(ctx, &sourcegraph.AnnotationsListOptions{
+				Entry: refEntrySpec,
+				Range: &sourcegraph.FileRange{
+					// note(beyang): specify line range here, instead of byte range, because the
+					// annotation byte offsets will be relative to the start of the snippet in the
+					// former, but relative to the start of the file in the latter. This makes the
+					// behavior consistent with the def snippet.
+					StartLine: refEntry.FileRange.StartLine,
+					EndLine:   refEntry.FileRange.EndLine,
+				},
+				NoSrclibAnns: opt.NoSrclibAnns,
+			})
+			if err != nil {
+				return err
+			}
+			refSnippets = append(refSnippets, &app.Snippet{
+				StartByte:   refEntry.FileRange.StartByte,
+				Code:        refEntry.ContentsString,
+				Annotations: refAnns,
+			})
 		}
 	}
 
@@ -112,18 +148,25 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		tmpl.Common
 		Meta meta
 
-		Repo       *sourcegraph.Repo
-		RepoRev    sourcegraph.RepoRevSpec
-		Def        *sourcegraph.Def
-		DefEntry   *sourcegraph.TreeEntry
-		RefLocs    *sourcegraph.RefLocationsList
-		RefEntries []*sourcegraph.TreeEntry
+		Repo        *sourcegraph.Repo
+		RepoRev     sourcegraph.RepoRevSpec
+		Def         *sourcegraph.Def
+		DefEntry    *sourcegraph.TreeEntry
+		DefSnippet  *app.Snippet
+		RefLocs     *sourcegraph.RefLocationsList
+		RefEntries  []*sourcegraph.TreeEntry
+		RefSnippets []*app.Snippet
 	}{
-		Repo:       repo,
-		RepoRev:    repoRev,
-		Def:        def,
-		DefEntry:   defEntry,
-		RefLocs:    refLocs,
-		RefEntries: refEntries,
+		Meta: meta{
+			SEO: true,
+		},
+		Repo:        repo,
+		RepoRev:     repoRev,
+		Def:         def,
+		DefEntry:    defEntry,
+		DefSnippet:  defSnippet,
+		RefLocs:     refLocs,
+		RefEntries:  refEntries,
+		RefSnippets: refSnippets,
 	})
 }

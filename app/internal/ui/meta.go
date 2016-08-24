@@ -30,6 +30,10 @@ type meta struct {
 	// CanonicalURL is the canonical URL for the page.
 	CanonicalURL string
 
+	// SEO is whether this page is meant for search engines (in which
+	// case, we don't load the full app)
+	SEO bool
+
 	Index, Follow bool // robots directives (in <meta> tags); default is noindex and nofollow
 }
 
