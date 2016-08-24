@@ -4,6 +4,7 @@
     "module": "es6", // generate "import" statements which will be processed by webpack
     "moduleResolution": "node",
     "baseUrl": "web_modules",
+    "types": ["mocha", "lodash"],
     "jsx": "react",
     "strictNullChecks": true,
     "sourceMap": true,

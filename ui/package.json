@@ -4,6 +4,12 @@
   "description": "",
   "private": true,
   "devDependencies": {
+    "@types/classnames": "0.0.28",
+    "@types/invariant": "2.2.27",
+    "@types/lodash": "4.14.33",
+    "@types/mocha": "2.2.30",
+    "@types/utf8": "0.0.2",
+    "@types/whatwg-fetch": "0.0.29",
     "autoprefixer": "6.3.3",
     "css-loader": "0.23.1",
     "expect.js": "0.3.1",
