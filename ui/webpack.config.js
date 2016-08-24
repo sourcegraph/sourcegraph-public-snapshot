@@ -1,10 +1,13 @@
 const webpack = require("webpack");
 const autoprefixer = require("autoprefixer");
 const url = require("url");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
 const ProgressBarPlugin = require("progress-bar-webpack-plugin");
 
+const production = (process.env.NODE_ENV === "production");
+
 // Check dev dependencies.
-if (process.env.NODE_ENV === "development") {
+if (!production) {
 	if (process.platform === "darwin") {
 		try {
 			require("fsevents");
@@ -27,7 +30,7 @@ const plugins = [
 	new ProgressBarPlugin(),
 ];
 
-if (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) {
+if (production && !process.env.WEBPACK_QUICK) {
 	plugins.push(
 		new webpack.optimize.OccurrenceOrderPlugin(),
 		new webpack.optimize.DedupePlugin(),
@@ -40,7 +43,7 @@ if (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) {
 	);
 }
 
-const useHot = process.env.NODE_ENV !== "production" || process.env.WEBPACK_QUICK;
+const useHot = !production || process.env.WEBPACK_QUICK;
 if (useHot) {
 	plugins.push(
 		new webpack.HotModuleReplacementPlugin()
@@ -61,6 +64,8 @@ if (process.env.PUBLIC_WEBPACK_DEV_SERVER_URL) {
 	publicWebpackDevServer = uStruct.host;
 }
 
+plugins.push(new CopyWebpackPlugin([{from: `node_modules/monaco-editor/${production ? "min" : "dev"}/vs`, to: "vs"}]));
+
 module.exports = {
 	name: "browser",
 	target: "web",
@@ -72,7 +77,7 @@ module.exports = {
 		modules: [`${__dirname}/web_modules`, "node_modules"],
 		extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
 	},
-	devtool: (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) ? "source-map" : "eval",
+	devtool: (production && !process.env.WEBPACK_QUICK) ? "source-map" : "eval",
 	output: {
 		path: `${__dirname}/assets`,
 		filename: "[name].browser.js",
@@ -111,6 +116,6 @@ if (useHot) {
 	module.exports.entry.unshift("webpack/hot/only-dev-server");
 	module.exports.entry.unshift("react-hot-loader/patch");
 }
-if (process.env.NODE_ENV !== "production") {
+if (!production) {
 	module.exports.entry.unshift(`webpack-dev-server/client?http://${publicWebpackDevServer}`);
 }

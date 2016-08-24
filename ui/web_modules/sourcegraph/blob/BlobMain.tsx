@@ -6,6 +6,7 @@ import Helmet from "react-helmet";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Blob} from "sourcegraph/blob/Blob";
+import {BlobLegacy} from "sourcegraph/blob/BlobLegacy";
 import {BlobContentPlaceholder} from "sourcegraph/blob/BlobContentPlaceholder";
 import {BlobToolbar} from "sourcegraph/blob/BlobToolbar";
 import {FileMargin} from "sourcegraph/blob/FileMargin";
@@ -158,6 +159,7 @@ export class BlobMain extends Container<Props, State> {
 		if (this.state.defObj && !this.state.defObj.Error && defTitleOK(this.state.defObj)) {
 			title = `${defTitle(this.state.defObj)} · ${title}`;
 		}
+		let BlobComponent = localStorage.getItem("monaco") === "true" ? Blob : BlobLegacy;
 		return (
 			<div className={Style.container}>
 				{title && <Helmet title={title} />}
@@ -170,7 +172,7 @@ export class BlobMain extends Container<Props, State> {
 						path={this.state.path} />
 					{(!this.state.blob || (this.state.blob && !this.state.blob.Error && !this.state.skipAnns && !this.state.anns)) && <BlobContentPlaceholder />}
 					{this.state.blob && !this.state.blob.Error && typeof this.state.blob.ContentsString !== "undefined" && (this.state.skipAnns || (this.state.anns && !this.state.anns.Error)) &&
-					<Blob
+					<BlobComponent
 						startlineCallback = {node => this.setState({selectionStartLine: node})}
 						location={this.props.location}
 						repo={this.state.repo}
