@@ -80,7 +80,7 @@ eb-bundle.zip
 /lang/java/cmd/langproxy-java/langproxy-java
 
 /lang/js/cmd/langprocessor-js/js-language-processor/
-/lang/js/cmd/langprocessor-js/langprocessor-js
+/lang/js/cmd/langproxy-js/langproxy-js
 
 # Sublime
 *.sublime-project

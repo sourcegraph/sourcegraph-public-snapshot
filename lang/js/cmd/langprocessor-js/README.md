@@ -1,4 +1,4 @@
-# JavaScript Language Processor Proxy Server
+# JavaScript Language Processor Server
 
 ## Prerequisites
 

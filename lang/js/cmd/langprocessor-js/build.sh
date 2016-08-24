@@ -1,8 +1,6 @@
 #!/bin/bash
 set -ex
 
-GOOS=linux GOARCH=amd64 go build -o langprocessor-js .
-
 if [ ! -d "js-language-processor" ]; then
     git clone https://github.com/antonina-cherednichenko/poc-jslang-server js-language-processor && cd js-language-processor
 else
