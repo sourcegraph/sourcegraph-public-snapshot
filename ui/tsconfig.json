@@ -2,7 +2,8 @@
   "compilerOptions": {
     "target": "es5", // don't generate "class" statements, etc.
     "module": "es6", // generate "import" statements which will be processed by webpack
-    "moduleResolution": "classic",
+    "moduleResolution": "node",
+    "baseUrl": "web_modules",
     "jsx": "react",
     "strictNullChecks": true,
     "sourceMap": true,
