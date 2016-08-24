@@ -73,16 +73,26 @@ func repoChecker(on bool, enabled, repo string) bool {
 		return true
 	}
 	if enabled == "" {
-		// Default to the sourcegraph repository, plus some other forked repos
-		// for testing purposes.
-		enabled = "sourcegraph/sourcegraph"
-		enabled += ",sourcegraph.com/sourcegraph/sourcegraph"
-		enabled += ",github.com/sourcegraph/sourcegraph"
+		// Go testing repos.
+		enabled = "github.com/sourcegraph/sourcegraph"
 		enabled += ",github.com/slimsag/mux"
 		enabled += ",github.com/slimsag/context"
 		enabled += ",github.com/slimsag/docker"
 		enabled += ",github.com/slimsag/kubernetes"
 		enabled += ",github.com/slimsag/prometheus"
+
+		// Java testing repos.
+		enabled += ",github.com/slimsag/RxJava"
+		enabled += ",github.com/slimsag/guava"
+		enabled += ",github.com/slimsag/joda-time"
+
+		// JavaScript testing repos.
+		enabled += ",github.com/sgtest/javascript-nodejs-sample-0"
+		enabled += ",github.com/sgtest/javascript-nodejs-xrefs-0"
+		enabled += ",github.com/sgtest/minimal_nodejs_stdlib"
+		enabled += ",github.com/sgtest/js-misc"
+		enabled += ",github.com/sgtest/js-misc"
+		enabled += ",github.com/sgtest/javascript-es6-tests"
 	}
 	for _, e := range strings.Split(enabled, ",") {
 		if repo == e {
