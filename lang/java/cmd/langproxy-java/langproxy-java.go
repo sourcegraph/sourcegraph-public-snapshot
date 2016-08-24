@@ -6,8 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/lang"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 )
@@ -20,7 +18,6 @@ var (
 )
 
 func prepareRepo(update bool, workspace, repo, commit string) error {
-
 	_, cloneURI := langp.ResolveRepoAlias(repo)
 
 	// Clone the repository.
@@ -34,8 +31,6 @@ func main() {
 		go debugserver.Start(*profbind)
 	}
 	langp.InitMetrics("java")
-
-	lang.PrepareKeys()
 
 	workDir, err := langp.ExpandSGPath(*workDir)
 	if err != nil {
