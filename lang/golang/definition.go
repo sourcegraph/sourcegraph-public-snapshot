@@ -27,6 +27,13 @@ func (h *Handler) handleDefinition(req *jsonrpc2.Request, params lsp.TextDocumen
 	if err != nil {
 		return nil, err
 	}
+
+	if def.Position.IsDir {
+		return []lsp.Location{lsp.Location{
+			URI: uri,
+		}}, nil
+	}
+
 	if uri != params.TextDocument.URI {
 		// different file to input
 		contents, err = ioutil.ReadFile(def.Position.Path)

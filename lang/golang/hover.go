@@ -42,6 +42,15 @@ func (h *Handler) handleHover(req *jsonrpc2.Request, params lsp.TextDocumentPosi
 	if err != nil {
 		return nil, err
 	}
+	if def.Position.IsDir {
+		pkg := strings.TrimPrefix(uri, "stdlib://"+stdlibVersion+"/src/")
+		pkg = strings.TrimPrefix(pkg, "file:///gopath/src/")
+		return &lsp.Hover{
+			Contents: []lsp.MarkedString{lsp.MarkedString{
+				Language: "go",
+				Value:    "pkg " + pkg,
+			}}}, nil
+	}
 	if uri != params.TextDocument.URI {
 		// different file to input. This happens when the definition
 		// lives in a different file to what we are hovering over.
