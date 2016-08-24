@@ -20,7 +20,6 @@ var (
 )
 
 func prepareRepo(update bool, workspace, repo, commit string) error {
-
 	_, cloneURI := langp.ResolveRepoAlias(repo)
 
 	// Clone the repository.

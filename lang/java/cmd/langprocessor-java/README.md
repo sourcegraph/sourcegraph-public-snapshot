@@ -1,4 +1,4 @@
-# Java Language Processor Proxy Server
+# Java Language Processor Server
 
 ## Prerequisites
 
@@ -13,12 +13,6 @@
 ```
 
 ## Running
-
-Start `langprocessor-java` (cd to this directory first):
-
-```bash
-rego .
-```
 
 Clone the Java server:
 
