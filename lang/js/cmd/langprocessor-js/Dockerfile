@@ -2,7 +2,7 @@
 
 FROM node:5.7.0-slim
 
-RUN apt-get update -y
+RUN apt-get update -y && apt-get install -y git
 RUN npm install typescript -g 
 
 ENV SGPATH="/sourcegraph"
