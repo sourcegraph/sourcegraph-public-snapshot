@@ -356,7 +356,7 @@ function addPopover(el, path, repoRevSpec) {
 
 	function showPopover(html, x, y) {
 		if (!popover) {
-			EventLogger.logEvent("HighlightDef", {isDelta: repoRevSpec.isDelta, language: utils.getPathExtension(path)});
+			EventLogger.logEventForCategory("Def", "Hover", "HighlightDef", {isDelta: repoRevSpec.isDelta, language: utils.getPathExtension(path)});
 			popover = document.createElement("div");
 			popover.classList.add(styles.popover);
 			popover.classList.add("sg-popover");

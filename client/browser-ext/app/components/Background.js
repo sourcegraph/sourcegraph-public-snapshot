@@ -70,11 +70,11 @@ export default class Background extends React.Component {
 
 			const directURLToDef = this._directURLToDef(urlProps);
 			if (directURLToDef) {
-				EventLogger.logEvent("ClickedDef", {defPath: urlProps.defPath, repo: urlProps.repoURI, user: urlProps.user, direct: "true"});
+				EventLogger.logEventForCategory("Def", "Click", "ClickedDef", {defPath: urlProps.defPath, repo: urlProps.repoURI, user: urlProps.user, direct: "true"});
 				ev.target.href = `${directURLToDef.pathname}${directURLToDef.hash}`;
 				this._renderDefInfo(this.props, urlProps);
 			} else {
-				EventLogger.logEvent("ClickedDef", {defPath: urlProps.defPath, repo: urlProps.repoURI, user: urlProps.user, direct: "false"});
+				EventLogger.logEventForCategory("Def", "Click", "ClickedDef", {defPath: urlProps.defPath, repo: urlProps.repoURI, user: urlProps.user, direct: "false"});
 				pjaxGoTo(ev.target.href, urlProps.repoURI === currLocation.repoURI);
 			}
 		}
@@ -138,7 +138,7 @@ export default class Background extends React.Component {
 		this._renderDefInfo(props, urlProps);
 
 		chrome.runtime.sendMessage(null, {type: "getIdentity"}, {}, (identity) => {
-			if (identity) EventLogger.updateAmplitudePropsForUser(identity);
+			if (identity) EventLogger.updatePropsForUser(identity);
 		})
 	}
 

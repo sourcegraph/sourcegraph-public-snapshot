@@ -25,4 +25,5 @@ promisifyAll(chrome.storage, [
 ]);
 
 require("./background/storage");
+require("./background/tracker");
 require("./background/inject");

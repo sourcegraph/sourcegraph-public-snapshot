@@ -22,14 +22,14 @@ export default class SearchInput extends React.Component {
 	handleSubmit = (e) => {
 		const text = e.target.value.trim();
 		if (e.which === 13) {
-			EventLogger.logEvent("ForceSubmitGitHubSearchQuery", {query: text});
+			EventLogger.logEventForCategory("Repo", "Click", "ForceSubmitGitHubSearchQuery", {query: text});
 			this.props.onSubmit(text);
 		}
 	};
 
 	handleChange = (e) => {
 		const text = e.target.value.trim();
-		EventLogger.logEvent("UpdateGitHubSearchQuery", {query: text});
+		EventLogger.logEventForCategory("Repo", "Success", "UpdateGitHubSearchQuery", {query: text});
 		this.setState({value: text}, () => {
 			if (this.props.onChange) this.props.onChange(text);
 		})

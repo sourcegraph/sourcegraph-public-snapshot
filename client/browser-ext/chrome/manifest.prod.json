@@ -1,5 +1,5 @@
 {
-  "version": "1.1.30",
+  "version": "1.1.31",
   "name": "Sourcegraph for GitHub",
   "manifest_version": 2,
   "description": "Browse and search code on GitHub like an IDE, with jump-to-definition, doc tooltips, and semantic search.",
@@ -25,5 +25,5 @@
     "scripts": ["js/background.bundle.js"]
   },
   "permissions": [ "storage", "https://github.com/*", "https://sourcegraph.com/*" ],
-  "content_security_policy": "default-src 'self'; script-src 'self'; style-src * 'unsafe-inline'; img-src 'self' data:;"
+  "content_security_policy": "default-src 'self'; script-src 'self' 'unsafe-eval'; connect-src 'self' https://sourcegraph-logging.telligentdata.com; style-src * 'unsafe-inline'; img-src 'self' data:;"
 }

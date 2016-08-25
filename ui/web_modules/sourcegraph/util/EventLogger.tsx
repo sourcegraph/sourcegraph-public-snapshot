@@ -458,7 +458,8 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 			// values are updated.
 			if (this.props.location.pathname !== nextProps.location.pathname) {
 				this._logView(nextProps.routes, nextProps.location);
-				document.dispatchEvent(new CustomEvent("sourcegraph:identify", (this.context as any).eventLogger.getAmplitudeIdentificationProps()));
+				// Set the identity of the chrome extension only after it is mounted.
+				setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", (this.context as any).eventLogger.getAmplitudeIdentificationProps())), 50);
 			}
 
 			this._checkEventQuery();

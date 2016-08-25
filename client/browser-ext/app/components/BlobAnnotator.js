@@ -293,7 +293,7 @@ export default class BlobAnnotator extends Component {
 	}
 
 	onClick(ev) {
-		EventLogger.logEvent("ChromeExtensionFaqsClicked", {type: ev.target.text});
+		EventLogger.logEventForCategory("Help", "Click", "ChromeExtensionFaqsClicked", {type: ev.target.text, is_private_repo: this.isPrivateRepo()});
 	}
 
 	getBuildIndicator(indicatorText, prefix) {

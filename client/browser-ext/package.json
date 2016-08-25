@@ -70,6 +70,7 @@
     "redux": "^3.2.1",
     "redux-logger": "^2.6.1",
     "redux-thunk": "^2.0.1",
+    "telligent-tracker": "^0.1.1",
     "utf8": "^2.1.1"
   }
 }

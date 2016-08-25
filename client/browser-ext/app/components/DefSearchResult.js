@@ -26,7 +26,7 @@ export default class DefSearchResult extends React.Component {
 					</svg>
 				</td>
 				<td>
-					<a onClick={() => EventLogger.logEvent("GitHubSearchItemSelected", {query: this.props.query})} href={this.props.href + "?utm_source=browser-ext&browser_type=chrome"}>{this.props.qualifiedNameAndType}</a>
+					<a onClick={() => EventLogger.logEventForCategory("GlobalSearch", "Click", "GitHubSearchItemSelected", {query: this.props.query, href: this.props.href})} href={this.props.href + "?utm_source=browser-ext&browser_type=chrome"}>{this.props.qualifiedNameAndType}</a>
 				</td>
 			</tr>
 		);

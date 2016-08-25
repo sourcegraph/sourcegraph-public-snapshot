@@ -31,7 +31,7 @@ function createSearchFrame() {
 }
 
 function toggleSearchFrame() {
-	EventLogger.logEvent("ToggleSearchInput", {visibility: isSearchAppShown ? "hidden" : "visible"});
+	EventLogger.logEventForCategory("GlobalSearch", "Toggle", "ToggleSearchInput", {visibility: isSearchAppShown ? "hidden" : "visible"});
 	function focusInput() {
 		const el = document.querySelector(".sg-input");
 		if (el) setTimeout(() => el.focus()); // Auto focus input, with slight delay so 'T' doesn't appear
@@ -176,7 +176,7 @@ window.addEventListener("load", () => {
 		injectModules();
 	});
 	chrome.runtime.sendMessage(null, {type: "getIdentity"}, {}, (identity) => {
-		if (identity) EventLogger.updateAmplitudePropsForUser(identity);
+		if (identity) EventLogger.updatePropsForUser(identity);
 	});
 });
 document.addEventListener("pjax:success", () => {
@@ -186,7 +186,7 @@ document.addEventListener("pjax:success", () => {
 
 document.addEventListener("sourcegraph:identify", (ev) => {
 	if (ev && ev.detail) {
-		EventLogger.updateAmplitudePropsForUser(ev.detail);
+		EventLogger.updatePropsForUser(ev.detail);
 		chrome.runtime.sendMessage(null, {type: "setIdentity", identity: ev.detail}, {});
 	}
 });
