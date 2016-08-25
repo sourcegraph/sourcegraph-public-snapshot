@@ -58,7 +58,7 @@ class Channel extends React.Component<Props, State> {
 		}
 
 		return (
-			<Header title="We've turned this into a desktop application!" subtitle="Email beta@sourcegraph.com for access"/>
+			<Header title="We've turned this into a desktop application! This will require an upgrade by August 31, 2016." subtitle="Email beta@sourcegraph.com to migrate to the new version."/>
 		);
 	}
 }
