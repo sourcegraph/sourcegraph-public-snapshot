@@ -148,7 +148,7 @@
 	position: relative;
 }
 .section_title {
-	background-color: white;
+	composes: bg_pale_blue from colors;
 	composes: pv1 pr3 from base;
 	position: absolute;
 	top: -16px;
