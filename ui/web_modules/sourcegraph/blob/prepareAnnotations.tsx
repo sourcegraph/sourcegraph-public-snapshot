@@ -2,7 +2,7 @@
 
 import {Annotation} from "sourcegraph/blob/Annotations";
 import {sortAnns} from "sourcegraph/blob/Annotations";
-import cloneDeep from "lodash.clonedeep";
+import * as cloneDeep from "lodash/cloneDeep";
 
 // prepareAnnotations should be called on annotations added on the client side
 // to prepare them in ways described below for presentation in the UI.

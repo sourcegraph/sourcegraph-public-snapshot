@@ -8,7 +8,7 @@ import "sourcegraph/repo/RepoBackend";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {repoPath, repoRev, repoParam} from "sourcegraph/repo/index";
-import cloneDeep from "lodash.clonedeep";
+import * as cloneDeep from "lodash/cloneDeep";
 
 // withResolvedRepoRev reads the repo, rev, repo resolution, etc.,
 // from the route params. If isMainComponent is true, then it also dispatches

@@ -7,7 +7,7 @@ import {Input, Heading, Button, ToggleSwitch} from "sourcegraph/components/index
 import {RepoLink} from "sourcegraph/components/RepoLink";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
-import debounce from "lodash.debounce";
+import * as debounce from "lodash/debounce";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {privateGitHubOAuthScopes, adminRepoGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 

@@ -4,7 +4,7 @@ import * as React from "react";
 import {Link} from "react-router";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import trimLeft from "lodash.trimleft";
+import * as trimStart from "lodash/trimStart";
 import {TreeStore} from "sourcegraph/tree/TreeStore";
 import "sourcegraph/tree/TreeBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
@@ -27,7 +27,7 @@ function pathSplit(path: string): string[] {
 	if (path === "/") {
 		return EMPTY_PATH;
 	}
-	path = trimLeft(path, "/");
+	path = trimStart(path, "/");
 	return path.split("/");
 }
 

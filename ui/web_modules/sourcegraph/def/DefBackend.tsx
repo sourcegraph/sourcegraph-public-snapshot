@@ -1,4 +1,4 @@
-import get from "lodash.get";
+import * as get from "lodash/get";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {DefStore} from "sourcegraph/def/DefStore";

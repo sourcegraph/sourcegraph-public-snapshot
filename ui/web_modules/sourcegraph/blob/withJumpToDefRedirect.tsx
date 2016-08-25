@@ -1,6 +1,6 @@
 // tslint:disable typedef ordered-imports
 
-import isEqual from "lodash.isequal";
+import * as isEqual from "lodash/isEqual";
 import * as React from "react";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";

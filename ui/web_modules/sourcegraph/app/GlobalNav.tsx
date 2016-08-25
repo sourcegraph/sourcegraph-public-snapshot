@@ -28,7 +28,7 @@ import * as invariant from "invariant";
 import {rel, abs} from "sourcegraph/app/routePatterns";
 import {repoPath, repoParam} from "sourcegraph/repo/index";
 import {isPage} from "sourcegraph/page/index";
-import debounce from "lodash.debounce";
+import * as debounce from "lodash/debounce";
 
 const hiddenNavRoutes = new Set([
 	"/",

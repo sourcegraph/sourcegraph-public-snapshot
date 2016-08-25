@@ -48,30 +48,6 @@ declare module "abab" {
 	export function btoa(str: string): string;
 }
 
-declare module "lodash.debounce" {
-	export default _.debounce;
-}
-
-declare module "lodash.get" {
-	export default _.get;
-}
-
-declare module "lodash.uniq" {
-	export default _.uniq;
-}
-
-declare module "lodash.trimleft" {
-	export default _.trimStart;
-}
-
-declare module "lodash.isequal" {
-	export default _.isEqual;
-}
-
-declare module "lodash.clonedeep" {
-	export default _.cloneDeep;
-}
-
 declare module "recharts" {
 	export var LineChart: any;
 	export var Line: any;

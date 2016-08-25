@@ -1,4 +1,4 @@
-import debounce from "lodash.debounce";
+import * as debounce from "lodash/debounce";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import {Component, EventListener} from "sourcegraph/Component";
