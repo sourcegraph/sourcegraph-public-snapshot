@@ -11,7 +11,7 @@ import * as styles from "sourcegraph/def/styles/DefInfo.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import * as classNames from "classnames";
-
+import {Store} from "sourcegraph/Store";
 import {Link} from "react-router";
 import "whatwg-fetch";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -43,7 +43,7 @@ export class RepoRefsContainer extends Container<Props, State> {
 		};
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [DefStore];
 	}
 

@@ -1,5 +1,6 @@
 // tslint:disable: typedef ordered-imports
 
+import {Location} from "history";
 import * as React from "react";
 import {Link} from "react-router";
 import * as utf8 from "utf8";
@@ -43,7 +44,7 @@ function fromUtf8(contents) {
 }
 
 interface Props {
-	location: HistoryModule.Location;
+	location: Location;
 	lineNumber?: number;
 	showLineNumber?: boolean;
 

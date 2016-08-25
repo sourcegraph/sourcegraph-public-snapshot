@@ -1,5 +1,6 @@
 // tslint:disable: typedef ordered-imports
 
+import {Location} from "history";
 import * as React from "react";
 import Helmet from "react-helmet";
 import {Link} from "react-router";
@@ -14,6 +15,7 @@ import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import "sourcegraph/user/UserBackend"; // for side effects
 import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
+import {Store} from "sourcegraph/Store";
 
 interface SignupFormProps {
 	onSignupSuccess: () => void;
@@ -21,7 +23,7 @@ interface SignupFormProps {
 
 	// returnTo is where the user should be redirected after an OAuth login flow,
 	// either a URL path or a Location object.
-	returnTo: string | HistoryModule.Location;
+	returnTo: string | Location;
 }
 
 type SignupFormState = any;
@@ -59,7 +61,7 @@ export class SignupForm extends Container<SignupFormProps, SignupFormState> {
 		}
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [UserStore];
 	}
 
@@ -139,7 +141,7 @@ export class SignupForm extends Container<SignupFormProps, SignupFormState> {
 					<div className={styles.error}>{this.state.authResponse.Error.body.message}</div>
 				}
 				<p className={styles.sub_text}>
-					Already have an account? <Link tabIndex="6" to="/login">Sign in.</Link>
+					Already have an account? <Link tabIndex={6} to="/login">Sign in.</Link>
 				</p>
 			</form>
 		);

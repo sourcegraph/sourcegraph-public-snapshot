@@ -1,7 +1,7 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import {RouterState} from "react-router";
+import {PlainRoute, RouterState} from "react-router";
 import {Header} from "sourcegraph/components/Header";
 import {defaultFetch} from "sourcegraph/util/xhr";
 
@@ -21,10 +21,12 @@ function GoLookup(props: Props, context) {
 	);
 }
 
-export const route: ReactRouter.PlainRoute = {
+export const route: PlainRoute = {
 	path: "-/golang",
 	onEnter: (nextRouterState: RouterState, replace: Function, callback: Function) => {
-		let {repo, pkg, def} = nextRouterState.location.query;
+		let repo = nextRouterState.location.query["repo"];
+		let pkg = nextRouterState.location.query["pkg"];
+		let def = nextRouterState.location.query["def"];
 		let editorType = nextRouterState.location.query["editor_type"];
 		if (/\.(com|org|net|in)\//.test(repo)) {
 			repo = repo.split("/").slice(0, 3).join("/");

@@ -1,5 +1,6 @@
 // tslint:disable: typedef ordered-imports
 
+import {Location} from "history";
 import * as React from "react";
 
 import {Container} from "sourcegraph/Container";
@@ -9,6 +10,7 @@ import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {repoPath, repoRev, repoParam} from "sourcegraph/repo/index";
 import * as cloneDeep from "lodash/cloneDeep";
+import {Store} from "sourcegraph/Store";
 
 // withResolvedRepoRev reads the repo, rev, repo resolution, etc.,
 // from the route params. If isMainComponent is true, then it also dispatches
@@ -20,7 +22,7 @@ import * as cloneDeep from "lodash/cloneDeep";
 export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
 	interface Props {
 		params: any;
-		location: HistoryModule.Location;
+		location: Location;
 	}
 
 	type State = any;
@@ -34,7 +36,7 @@ export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
 		_cloningInterval: any;
 		_cloningTimeout: any;
 
-		stores(): FluxUtils.Store<any>[] {
+		stores(): Store<any>[] {
 			return [RepoStore];
 		}
 

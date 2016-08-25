@@ -1,4 +1,6 @@
+import {Location} from "history";
 import * as React from "react";
+import {Route} from "react-router";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {context} from "sourcegraph/app/context";
 import {getRouteParams, getRoutePattern, getViewName} from "sourcegraph/app/routePatterns";
@@ -448,8 +450,8 @@ export function withEventLoggerContext<P>(eventLogger: EventLoggerClass, compone
 // withViewEventsLogged calls (this.context as any).eventLogger.logEvent when the
 // location's pathname changes.
 interface WithViewEventsLoggedProps {
-	routes: ReactRouter.Route[];
-	location: HistoryModule.Location;
+	routes: Route[];
+	location: Location;
 }
 
 export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(component: React.ComponentClass<P>): React.ComponentClass<P> {
@@ -533,7 +535,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 			}
 		}
 
-		_logView(routes: ReactRouter.Route[], location: HistoryModule.Location): void {
+		_logView(routes: Route[], location: Location): void {
 			let eventProps: {
 				url: string;
 				referred_by_integration?: string;

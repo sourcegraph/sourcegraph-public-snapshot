@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import {Container} from "sourcegraph/Container";
+import {Store} from "sourcegraph/Store";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {BlobStore, keyForFile} from "sourcegraph/blob/BlobStore";
@@ -30,7 +31,7 @@ export function withFileBlob(Component) {
 			router: React.PropTypes.object.isRequired,
 		};
 
-		stores(): FluxUtils.Store<any>[] {
+		stores(): Store<any>[] {
 			return [BlobStore];
 		}
 

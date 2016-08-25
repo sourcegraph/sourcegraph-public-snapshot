@@ -1,7 +1,7 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import {Link} from "react-router";
+import {Link, Route} from "react-router";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as trimStart from "lodash/trimStart";
@@ -13,9 +13,8 @@ import {urlToBlob} from "sourcegraph/blob/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
 import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
 import * as classNames from "classnames";
-
+import {Store} from "sourcegraph/Store";
 import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
-
 import * as styles from "sourcegraph/tree/styles/Tree.css";
 
 const EMPTY_PATH = [];
@@ -57,7 +56,7 @@ interface Props {
 	commitID: string;
 	path: string;
 	location: any;
-	route?: ReactRouter.Route;
+	route?: Route;
 }
 
 type State = {
@@ -67,7 +66,7 @@ type State = {
 	commitID?: string;
 	path?: string;
 	location?: any;
-	route?: ReactRouter.Route;
+	route?: Route;
 
 	// other state fields
 	fileResults: any; // any[] | {Error: any};
@@ -89,7 +88,7 @@ export class TreeList extends Container<Props, State> {
 		};
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [TreeStore];
 	}
 

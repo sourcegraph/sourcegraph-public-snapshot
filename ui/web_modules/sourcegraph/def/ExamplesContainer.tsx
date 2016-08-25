@@ -1,5 +1,6 @@
 // tslint:disable: typedef ordered-imports
 
+import {Location} from "history";
 import * as React from "react";
 import {Container} from "sourcegraph/Container";
 import {RefsContainer} from "sourcegraph/def/RefsContainer";
@@ -11,9 +12,10 @@ import * as typography from "sourcegraph/components/styles/_typography.css";
 import {Panel, Heading, Loader} from "sourcegraph/components/index";
 import "whatwg-fetch";
 import * as classNames from "classnames";
+import {Store} from "sourcegraph/Store";
 
 interface Props {
-	location: HistoryModule.Location;
+	location: Location;
 	repo: string;
 	rev?: string;
 	commitID?: string;
@@ -30,7 +32,7 @@ export class ExamplesContainer extends Container<Props, State> {
 		super(props);
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [DefStore];
 	}
 

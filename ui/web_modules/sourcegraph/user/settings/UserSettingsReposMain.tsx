@@ -7,6 +7,7 @@ import "sourcegraph/repo/RepoBackend"; // for side effects
 import {RepoStore} from "sourcegraph/repo/RepoStore";
 import {Repos} from "sourcegraph/user/settings/Repos";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
+import {Store} from "sourcegraph/Store";
 
 const reposQuerystring = "RemoteOnly=true";
 
@@ -39,7 +40,7 @@ export class UserSettingsReposMain extends Container<Props, State> {
 		}
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [RepoStore];
 	}
 

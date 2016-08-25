@@ -1,3 +1,4 @@
+import {Location} from "history";
 import * as React from "react";
 import {Component} from "sourcegraph/Component";
 import {withJumpToDefRedirect} from "sourcegraph/blob/withJumpToDefRedirect";
@@ -5,7 +6,7 @@ import {Def} from "sourcegraph/def/index";
 
 export interface Props {
 	startlineCallback?: any;
-	location: HistoryModule.Location;
+	location: Location;
 	contents: string;
 	textSize?: string;
 	annotations?: {

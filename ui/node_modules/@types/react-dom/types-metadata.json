@@ -1,0 +1,28 @@
+{
+    "authors": "Asana <https://asana.com>, AssureSign <http://www.assuresign.com>, Microsoft <https://microsoft.com>",
+    "definitionFilename": "index.d.ts",
+    "libraryDependencies": [],
+    "moduleDependencies": [
+        "react"
+    ],
+    "libraryMajorVersion": "0",
+    "libraryMinorVersion": "14",
+    "libraryName": "React v0.14 (react-dom)",
+    "typingsPackageName": "react-dom",
+    "projectName": "http://facebook.github.io/react/",
+    "sourceRepoURL": "https://www.github.com/DefinitelyTyped/DefinitelyTyped",
+    "sourceBranch": "types-2.0",
+    "kind": "UMD",
+    "globals": [
+        "ReactDOM"
+    ],
+    "declaredModules": [
+        "react-dom/server"
+    ],
+    "files": [
+        "index.d.ts",
+        "react-dom.server.d.ts"
+    ],
+    "hasPackageJson": false,
+    "contentHash": "98810b5828ba36d3526817944f4f174177c39737c2f7f6ee6e18f977fbd64b92"
+}

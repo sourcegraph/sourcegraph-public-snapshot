@@ -1,10 +1,12 @@
 // tslint:disable: typedef ordered-imports
 
+import {Location} from "history";
 import * as React from "react";
 import Helmet from "react-helmet";
 
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import {Store} from "sourcegraph/Store";
 import {Blob} from "sourcegraph/blob/Blob";
 import {BlobLegacy} from "sourcegraph/blob/BlobLegacy";
 import {BlobContentPlaceholder} from "sourcegraph/blob/BlobContentPlaceholder";
@@ -40,7 +42,7 @@ interface Props {
 	endLine?: number;
 	endCol?: number;
 	endByte?: number;
-	location: HistoryModule.Location;
+	location: Location;
 	children?: React.ReactNode;
 }
 
@@ -99,7 +101,7 @@ export class BlobMain extends Container<Props, State> {
 		}
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [DefStore];
 	}
 

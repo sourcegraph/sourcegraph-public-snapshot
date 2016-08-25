@@ -11,6 +11,7 @@ import {routeParams as defRouteParams} from "sourcegraph/def/index";
 import {Header} from "sourcegraph/components/Header";
 import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
 import Helmet from "react-helmet";
+import {Store} from "sourcegraph/Store";
 
 // withDef fetches the def specified in the params. It also fetches
 // the def stored in DefStore.highlightedDef.
@@ -26,7 +27,7 @@ export function withDef(Component) {
 	type State = any;
 
 	class WithDef extends Container<Props, State> {
-		stores(): FluxUtils.Store<any>[] {
+		stores(): Store<any>[] {
 			return [DefStore, RepoStore];
 		}
 

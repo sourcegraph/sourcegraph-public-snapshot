@@ -1,6 +1,6 @@
 import FluxStoreGroup from "flux/lib/FluxStoreGroup";
-
 import {Component} from "sourcegraph/Component";
+import {Store} from "sourcegraph/Store";
 
 export class Container<P, S> extends Component<P, S> {
 	_containerSubscriptions: any[];
@@ -28,7 +28,7 @@ export class Container<P, S> extends Component<P, S> {
 		}
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [];
 	}
 }

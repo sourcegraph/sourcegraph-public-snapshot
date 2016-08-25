@@ -15,6 +15,7 @@ import {UserStore} from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend"; // for side effects
 import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
+import {Store} from "sourcegraph/Store";
 
 interface Props {
 	location?: any;
@@ -44,7 +45,7 @@ class ResetPasswordComp extends Container<Props, State> {
 		state.authResponse = UserStore.authResponses["reset"] || null;
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [UserStore];
 	}
 

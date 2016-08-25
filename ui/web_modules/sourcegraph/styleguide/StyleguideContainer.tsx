@@ -22,15 +22,15 @@ export class StyleguideContainer extends React.Component<{}, any> {
 					<Affix offset={20} style={{flex: "0 0 240px"}} className={base.orderlast}>
 						<Tabs direction="vertical" color="purple" className={base.ml5}>
 							<TabItem>
-								<Link to={{pathname: "styleguide", hash: "#principles"}}>Principles</Link>
+								<Link to={{pathname: "styleguide", search: "#principles"}}>Principles</Link>
 							</TabItem>
 
 							<Heading level="6" className={base.mt4}>Brand</Heading>
 							<TabItem>
-								<Link to={{pathname: "styleguide", hash: "#brand-voice"}}>Voice</Link>
+								<Link to={{pathname: "styleguide", search: "#brand-voice"}}>Voice</Link>
 							</TabItem>
 							<TabItem>
-								<Link to={{pathname: "styleguide", hash: "#brand-logo"}}>Logo and Logotype</Link>
+								<Link to={{pathname: "styleguide", search: "#brand-logo"}}>Logo and Logotype</Link>
 							</TabItem>
 							{/* <TabItem>Colors</TabItem>
 							<TabItem>Typography</TabItem>}
@@ -43,36 +43,36 @@ export class StyleguideContainer extends React.Component<{}, any> {
 
 							<Heading level="6" className={base.mt4}>Layout Components</Heading>
 							<TabItem>
-								<Link to={{pathname: "styleguide", hash: "#layout-flexcontainer"}}>FlexContainer</Link>
+								<Link to={{pathname: "styleguide", search: "#layout-flexcontainer"}}>FlexContainer</Link>
 							</TabItem>
 							<TabItem>
-								<Link to={{pathname: "styleguide", hash: "#layout-affix"}}>Affix</Link>
+								<Link to={{pathname: "styleguide", search: "#layout-affix"}}>Affix</Link>
 							</TabItem>
 
 							<Heading level="6" className={base.mt4}>UI Components</Heading>
 							<TabItem>
-								<Link to={{pathname: "styleguide", hash: "#components-headings"}}>Headings</Link>
+								<Link to={{pathname: "styleguide", search: "#components-headings"}}>Headings</Link>
 							</TabItem>
 							<TabItem>
-								<Link to={{pathname: "styleguide", hash: "#components-forms"}}>Forms</Link>
+								<Link to={{pathname: "styleguide", search: "#components-forms"}}>Forms</Link>
 							</TabItem>
 							<TabItem>
-								<Link to={{pathname: "styleguide", hash: "#components-buttons"}}>Buttons</Link>
+								<Link to={{pathname: "styleguide", search: "#components-buttons"}}>Buttons</Link>
 							</TabItem>
 							<TabItem>
-								<Link to={{pathname: "styleguide", hash: "components-tabs"}}>Tabs</Link>
+								<Link to={{pathname: "styleguide", search: "components-tabs"}}>Tabs</Link>
 							</TabItem>
 							<TabItem>
-								<Link to={{pathname: "styleguide", hash: "#components-panels"}}>Panels</Link>
+								<Link to={{pathname: "styleguide", search: "#components-panels"}}>Panels</Link>
 							</TabItem>
 							<TabItem>
-								<Link to={{pathname: "styleguide", hash: "#components-stepper"}}>Stepper</Link>
+								<Link to={{pathname: "styleguide", search: "#components-stepper"}}>Stepper</Link>
 							</TabItem>
 							<TabItem>
-								<Link to={{pathname: "styleguide", hash: "#components-checklists"}}>Checklist Items</Link>
+								<Link to={{pathname: "styleguide", search: "#components-checklists"}}>Checklist Items</Link>
 							</TabItem>
 							<TabItem>
-								<Link to={{pathname: "styleguide", hash: "#components-table"}}>Table</Link>
+								<Link to={{pathname: "styleguide", search: "#components-table"}}>Table</Link>
 							</TabItem>
 						</Tabs>
 					</Affix>

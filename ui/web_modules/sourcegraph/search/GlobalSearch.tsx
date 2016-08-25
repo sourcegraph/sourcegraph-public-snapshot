@@ -24,6 +24,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 import {popularRepos} from "sourcegraph/search/popularRepos";
 import {locationForSearch} from "sourcegraph/search/routes";
 import * as classNames from "classnames";
+import {Store} from "sourcegraph/Store";
 
 export const RESULTS_LIMIT = 20;
 
@@ -129,7 +130,7 @@ export class GlobalSearch extends Container<Props, State> {
 		return uris;
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [SearchStore, UserStore, RepoStore];
 	}
 
@@ -402,7 +403,7 @@ export class GlobalSearch extends Container<Props, State> {
 	// keys to change the selection and the window scrolls, causing the mouse cursor
 	// to incidentally hover a different element. We ignore mouse selections except
 	// those where the mouse was actually moved.
-	_mouseSelectItem(ev: React.MouseEvent, i: number): void {
+	_mouseSelectItem(ev: React.MouseEvent<{}>, i: number): void {
 		if (this._ignoreMouseSelection) {
 			return;
 		}
@@ -454,7 +455,7 @@ export class GlobalSearch extends Container<Props, State> {
 			list.push(
 				<Link className={classNames(styles.block, selected ? styles.result_selected : styles.result, this.state.resultClassName)}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
-					ref={selected ? this._setSelectedItem : null}
+					ref={selected ? this._setSelectedItem : undefined}
 					to={repo.URI}
 					key={repo.URI}
 					onClick={() => this._onSelection(true)}>
@@ -493,7 +494,7 @@ export class GlobalSearch extends Container<Props, State> {
 			list.push(
 				<Link className={classNames(styles.block, selected ? styles.result_selected : styles.result, this.state.resultClassName)}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
-					ref={selected ? this._setSelectedItem : null}
+					ref={selected ? this._setSelectedItem : undefined}
 					to={defURL.replace(/GoPackage\/pkg\//, "GoPackage/")}
 					key={defURL}
 					onClick={() => this._onSelection(true)}>

@@ -1,9 +1,10 @@
 // tslint:disable: typedef ordered-imports
 
+import {PlainRoute} from "react-router";
 import {rel} from "sourcegraph/app/routePatterns";
 import {BuildsList} from "sourcegraph/build/BuildsList";
 
-const globalBuilds: ReactRouter.PlainRoute = {
+const globalBuilds: PlainRoute = {
 	path: rel.builds,
 	onEnter: (nextState, replace) => {
 		if (nextState.location.search === "") {
@@ -17,7 +18,7 @@ const globalBuilds: ReactRouter.PlainRoute = {
 	},
 };
 
-export const routes: ReactRouter.PlainRoute[] = [
+export const routes: PlainRoute[] = [
 	{
 		path: rel.admin,
 		getChildRoutes: (location, callback) => {

@@ -7,6 +7,7 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import "./TreeBackend"; // for side effects
 import {TreeStore} from "sourcegraph/tree/TreeStore";
+import {Store} from "sourcegraph/Store";
 
 interface Props {
 	repo: string;
@@ -22,7 +23,7 @@ export class TreeEntryCommit extends Container<Props, State> {
 		state.commits = TreeStore.commits;
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [TreeStore];
 	}
 

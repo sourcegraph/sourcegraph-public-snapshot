@@ -3,6 +3,7 @@
 import * as React from "react";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import {Store} from "sourcegraph/Store";
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import {BuildStore} from "sourcegraph/build/BuildStore";
 import "sourcegraph/build/BuildBackend";
@@ -19,7 +20,7 @@ export function withRepoBuild(Component) {
 	type State = any;
 
 	class WithRepoBuild extends Container<Props, State> {
-		stores(): FluxUtils.Store<any>[] {
+		stores(): Store<any>[] {
 			return [BuildStore];
 		}
 

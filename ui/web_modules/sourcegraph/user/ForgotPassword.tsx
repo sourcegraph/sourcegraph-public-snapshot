@@ -14,6 +14,7 @@ import {UserStore} from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend"; // for side effects
 import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
+import {Store} from "sourcegraph/Store";
 
 type State = any;
 
@@ -33,7 +34,7 @@ class ForgotPasswordComp extends Container<{}, State> {
 		state.authResponse = UserStore.authResponses["forgot"] || null;
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [UserStore];
 	}
 

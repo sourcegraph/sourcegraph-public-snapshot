@@ -19,6 +19,7 @@ import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {searchScopes} from "sourcegraph/search/index";
 import * as classNames from "classnames";
+import {Store} from "sourcegraph/Store";
 
 interface Props {
 	location: any;
@@ -62,7 +63,7 @@ class SearchSettingsComp extends Container<Props, State> {
 		}
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [UserStore];
 	}
 

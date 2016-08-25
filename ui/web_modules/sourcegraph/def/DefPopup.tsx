@@ -10,6 +10,7 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Button} from "sourcegraph/components/Button";
 import {urlToDefInfo} from "sourcegraph/def/routes";
+import {Store} from "sourcegraph/Store";
 
 interface Props {
 	def: any;
@@ -43,7 +44,7 @@ export class DefPopup extends Container<Props, State> {
 		}
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [DefStore];
 	}
 

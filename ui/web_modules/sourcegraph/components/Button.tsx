@@ -13,7 +13,7 @@ export function Button(props: {
 	disabled?: boolean,
 	loading?: boolean,
 	color?: string,
-	onClick?: Function,
+	onClick?: React.EventHandler<React.MouseEvent<HTMLButtonElement>>,
 	imageUrl?: string,
 	children?: any,
 	className?: string,

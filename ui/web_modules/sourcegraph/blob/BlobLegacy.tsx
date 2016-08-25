@@ -1,3 +1,4 @@
+import {Location} from "history";
 import * as debounce from "lodash/debounce";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -17,7 +18,7 @@ import {fileLines} from "sourcegraph/util/fileLines";
 
 interface State {
 	startlineCallback: any;
-	location: HistoryModule.Location;
+	location: Location;
 	repo: any;
 	rev: any;
 	commitID: any;
@@ -64,7 +65,6 @@ export class BlobLegacyTestOnly extends Component<Props, State> {
 	state: State = {
 		startlineCallback: x => { /* empty */ },
 		location: {
-			hash: "",
 			key: "",
 			pathname: "",
 			search: "",

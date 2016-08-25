@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import {Container} from "sourcegraph/Container";
+import {Store} from "sourcegraph/Store";
 import {BlobStore} from "sourcegraph/blob/BlobStore";
 import "sourcegraph/blob/BlobBackend";
 import {DefStore} from "sourcegraph/def/DefStore";
@@ -103,7 +104,7 @@ function blobLoader(Component) {
 		// since we've imported it anyway if we are here.
 		//
 		// TODO(sqs): dont require using all stores, take them from the helpers store fields
-		stores(): FluxUtils.Store<any>[] {
+		stores(): Store<any>[] {
 			return [DefStore, BlobStore, TreeStore];
 		}
 

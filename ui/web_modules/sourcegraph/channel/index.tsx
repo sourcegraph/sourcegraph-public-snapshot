@@ -1,6 +1,7 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
+import {PlainRoute} from "react-router";
 import {Header} from "sourcegraph/components/Header";
 import * as styles from "sourcegraph/channel/styles/index.css";
 
@@ -63,7 +64,7 @@ class Channel extends React.Component<Props, State> {
 	}
 }
 
-export const routes: ReactRouter.PlainRoute[] = [
+export const routes: PlainRoute[] = [
 	{
 		path: "-/channel/:channel",
 		components: {

@@ -93,7 +93,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 				// TODO(mate, chexee): consider moving this to Home.tsx
 				<LocationStateModal modalName="demo_video" location={location} style={{maxWidth: "860px", marginRight: "auto", marginLeft: "auto"}}>
 					<div className={styles.video_modal}>
-						<iframe width="100%" style={{minHeight: "500px"}} src="https://www.youtube.com/embed/tf93F2nc3Yo?rel=0&amp;showinfo=0" frameBorder="0" allowFullscreen={true}></iframe>
+						<iframe width="100%" style={{minHeight: "500px"}} src="https://www.youtube.com/embed/tf93F2nc3Yo?rel=0&amp;showinfo=0" frameBorder="0" allowFullScreen={true}></iframe>
 					</div>
 				</LocationStateModal>
 			}
@@ -297,12 +297,12 @@ class SearchForm extends React.Component<SearchFormProps, SearchFormState> {
 		}
 	}
 
-	_handleSubmit(ev: Event) {
+	_handleSubmit(ev: React.FormEvent<HTMLFormElement>) {
 		ev.preventDefault();
 		this.props.router.push(locationForSearch(this.props.location, this.state.query, this.state.lang, this.state.scope, false, true));
 	}
 
-	_handleReset(ev: Event) {
+	_handleReset(ev: React.MouseEvent<HTMLButtonElement>) {
 		this.setState({focused: false, open: false, query: ""} as SearchFormState);
 		this._input.value = "";
 	}

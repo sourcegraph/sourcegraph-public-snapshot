@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import {Container} from "sourcegraph/Container";
+import {Store} from "sourcegraph/Store";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {UserStore} from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend";
@@ -50,7 +51,7 @@ export function withUserContext(Component) {
 			super(props);
 		}
 
-		stores(): FluxUtils.Store<any>[] {
+		stores(): Store<any>[] {
 			return [UserStore];
 		}
 

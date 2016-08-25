@@ -32,7 +32,11 @@ export function withJumpToDefRedirect(Blob) {
 		reconcileState(state: State, props: Props): void {
 			Object.assign(state, props);
 			if (props.location && props.location.query) {
-					let {line, character, file, commit, repo} = props.location.query;
+					let line = props.location.query["line"];
+					let character = props.location.query["character"];
+					let file = props.location.query["file"];
+					let commit = props.location.query["commit"];
+					let repo = props.location.query["repo"];
 					if ([line, character, file, repo].every(Boolean)) { // Commit is allowed to be null / undefined.
 						if (this.state.path === file && this.state.commitID === commit && this.state.repo === repo) {
 							state.soughtJumpDef = {

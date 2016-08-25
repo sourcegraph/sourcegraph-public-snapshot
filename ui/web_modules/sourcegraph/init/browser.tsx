@@ -57,7 +57,7 @@ function matchWithRedirectHandling(recursed) {
 					<Router
 						key={hotReloadCounter}
 						onUpdate={hashLinkScroll}
-						{...renderProps}
+						{...renderProps as any}
 						render={applyRouterMiddleware(useScroll(shouldUpdateScroll))} />
 				</AppContainer>,
 				rootEl,

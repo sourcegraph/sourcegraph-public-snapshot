@@ -7,6 +7,7 @@ import {RepoStore} from "sourcegraph/repo/RepoStore";
 import "sourcegraph/tree/TreeBackend";
 import {TreeStore} from "sourcegraph/tree/TreeStore";
 import {RevSwitcher} from "sourcegraph/repo/RevSwitcher";
+import {Store} from "sourcegraph/Store";
 
 interface Props {
 	repo: string;
@@ -35,7 +36,7 @@ export class RevSwitcherContainer extends Container<Props, State> {
 		state.srclibDataVersions = TreeStore.srclibDataVersions;
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [RepoStore, TreeStore];
 	}
 

@@ -1,5 +1,6 @@
 // tslint:disable: typedef ordered-imports
 
+import {Location} from "history";
 import {rel} from "sourcegraph/app/routePatterns";
 import {searchScopes} from "sourcegraph/search/index";
 import {GlobalSearchMain} from "sourcegraph/search/GlobalSearchMain";
@@ -32,7 +33,7 @@ export function urlToSearch(query?: string | null): string {
 // This function modifies loc.
 // @NOTE `loc` cannot have immutable properties. `lang` and `scope` might be immutable.
 // Ensure that if you assign new properties to loc that the properties are mutable.
-export function locationForSearch(loc: HistoryModule.Location, query: string | null, lang: string[] | null, scope: any, updatePath: boolean, updateQuery: boolean): HistoryModule.Location {
+export function locationForSearch(loc: Location, query: string | null, lang: string[] | null, scope: any, updatePath: boolean, updateQuery: boolean): Location {
 	if (updatePath) {
 		loc.pathname = `/${rel.search}`;
 	}
@@ -87,7 +88,7 @@ function firstQueryValue(v: string | string[]): string {
 	return typeof v === "string" ? v : v[0];
 }
 
-export function queryFromStateOrURL(loc: HistoryModule.Location): string | null {
+export function queryFromStateOrURL(loc: Location): string | null {
 	if (loc.state && loc.state.hasOwnProperty("q")) {
 		return (loc.state as any).q;
 	}
@@ -97,7 +98,7 @@ export function queryFromStateOrURL(loc: HistoryModule.Location): string | null 
 	return null;
 }
 
-export function langsFromStateOrURL(loc: HistoryModule.Location): string[] | null {
+export function langsFromStateOrURL(loc: Location): string[] | null {
 	if (loc.state && loc.state.hasOwnProperty("lang")) {
 		return (loc.state as any).lang;
 	}
@@ -107,12 +108,12 @@ export function langsFromStateOrURL(loc: HistoryModule.Location): string[] | nul
 	return null;
 }
 
-export function scopeFromStateOrURL(loc: HistoryModule.Location): any {
+export function scopeFromStateOrURL(loc: Location): any {
 	let scope = {};
 	searchScopes.forEach((scopeName) => {
 		if (loc.state && loc.state.hasOwnProperty(scopeName)) {
 			scope[scopeName] = (loc.state as any).scopeName;
-		} else if (loc.query.hasOwnProperty(scopeName)) {
+		} else if (loc.query && loc.query.hasOwnProperty(scopeName)) {
 			scope[scopeName] = loc.query["scopeName"];
 		}
 	});

@@ -6,7 +6,7 @@ import {RouteName} from "sourcegraph/app/routePatterns";
 
 // urlTo produces the full URL, given a route and route parameters. The
 // route names are defined in sourcegraph/app/routePatterns.
-export function urlTo(name: RouteName, params: ReactRouter.Params): string {
+export function urlTo(name: RouteName, params: {}): string {
 	return formatPattern(`/${abs[name]}`, params);
 }
 

@@ -1,13 +1,12 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-
 import {Container} from "sourcegraph/Container";
 import {EventListener} from "sourcegraph/Component";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {DefStore} from "sourcegraph/def/DefStore";
 import * as DefActions from "sourcegraph/def/DefActions";
-
+import {Store} from "sourcegraph/Store";
 import {urlToDefInfo} from "sourcegraph/def/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
 
@@ -27,7 +26,7 @@ export function desktopContainer(Component) {
 			};
 		}
 
-		stores(): FluxUtils.Store<any>[] {
+		stores(): Store<any>[] {
 			return [DefStore];
 		}
 

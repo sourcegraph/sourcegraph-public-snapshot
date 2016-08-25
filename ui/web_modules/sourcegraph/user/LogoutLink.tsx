@@ -6,6 +6,7 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as UserActions from "sourcegraph/user/UserActions";
 import {UserStore} from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend"; // for side effects
+import {Store} from "sourcegraph/Store";
 
 interface Props {
 	role: string;
@@ -39,7 +40,7 @@ export class LogoutLink extends Container<Props, State> {
 		}
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [UserStore];
 	}
 

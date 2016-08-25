@@ -7,6 +7,7 @@ import * as classNames from "classnames";
 
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import {Store} from "sourcegraph/Store";
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import {BuildStore} from "sourcegraph/build/BuildStore";
 import {buildStatus, buildClass, elapsed} from "sourcegraph/build/Build";
@@ -72,7 +73,7 @@ export class BuildsList extends Container<Props, State> {
 		state.builds = BuildStore.buildLists.get(state.repo, this._translateQuery(state.search));
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [BuildStore];
 	}
 

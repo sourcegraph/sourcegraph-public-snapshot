@@ -1,5 +1,6 @@
 // tslint:disable: typedef ordered-imports
 
+import {Location} from "history";
 import * as React from "react";
 import * as classNames from "classnames";
 
@@ -8,6 +9,7 @@ import {BlobLegacy} from "sourcegraph/blob/BlobLegacy";
 import {BlobStore, keyForFile, keyForAnns} from "sourcegraph/blob/BlobStore";
 import {BlobContentPlaceholder} from "sourcegraph/blob/BlobContentPlaceholder";
 import {Container} from "sourcegraph/Container";
+import {Store} from "sourcegraph/Store";
 import {DefStore} from "sourcegraph/def/DefStore";
 import {DefTooltip} from "sourcegraph/def/DefTooltip";
 import {Link} from "react-router";
@@ -32,7 +34,7 @@ import {FaThumbsUp, FaThumbsDown} from "sourcegraph/components/Icons";
 const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above/below a ref
 
 interface Props {
-	location: HistoryModule.Location;
+	location: Location;
 	repo?: string;
 	rev?: string;
 	commitID?: string;
@@ -92,7 +94,7 @@ export class RefsContainer extends Container<Props, State> {
 		return Boolean(nextState.forceComponentUpdate);
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [DefStore, BlobStore];
 	}
 

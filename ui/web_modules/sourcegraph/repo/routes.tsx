@@ -3,6 +3,7 @@
 import {rel} from "sourcegraph/app/routePatterns";
 import {urlTo} from "sourcegraph/util/urlTo";
 import {makeRepoRev, repoPath, repoParam} from "sourcegraph/repo/index";
+import {PlainRoute} from "react-router";
 import {formatPattern} from "react-router/lib/PatternUtils";
 import {withResolvedRepoRev} from "sourcegraph/repo/withResolvedRepoRev";
 import {withRepoBuild} from "sourcegraph/build/withRepoBuild";
@@ -70,7 +71,7 @@ export function urlToRepoRev(repo: string, rev: string | null): string {
 // urlWithRev constructs a URL that is equivalent to the current URL (whose
 // current routes and routeParams are passed in), but pointing to a new rev. Only the
 // rev is overwritten in the returned URL.
-export function urlWithRev(currentRoutes: ReactRouter.PlainRoute[], currentRouteParams: any, newRev: string): string {
+export function urlWithRev(currentRoutes: PlainRoute[], currentRouteParams: any, newRev: string): string {
 	// Ensure this is a repo subroute. If not, it's meaningless to change the rev.
 	// The 0th route is the rootRoute; the next should be one of the repo base routes.
 	if (!currentRoutes[1] || !routes.includes(currentRoutes[1])) {

@@ -10,6 +10,7 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {urlToTree} from "sourcegraph/tree/routes";
 import {breadcrumb} from "sourcegraph/util/breadcrumb";
+import {Store} from "sourcegraph/Store";
 
 import * as styles from "sourcegraph/components/styles/breadcrumb.css";
 
@@ -45,7 +46,7 @@ export class DefNavContext extends Container<Props, State> {
 		// defPos (if it isn't already populated).
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [DefStore, TreeStore];
 	}
 

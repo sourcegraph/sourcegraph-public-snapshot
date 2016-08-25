@@ -39,7 +39,7 @@ export class FileMargin extends React.Component<Props, State> {
 
 		return (
 			<div {...passthroughProps} style={{position: "relative"}}>
-				{React.Children.map(this.props.children, (child, i) => (
+				{React.Children.map(this.props.children || [], (child, i) => (
 					<div key={i} ref="content" style={{position: "absolute"}}>{child}</div>
 				))}
 			</div>

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Helmet from "react-helmet";
+import {PlainRoute} from "react-router";
 
 import {EventListener} from "sourcegraph/Component";
 import {GlobalNav} from "sourcegraph/app/GlobalNav";
@@ -84,7 +85,7 @@ export class App extends React.Component<Props, State> {
 	}
 }
 
-export const rootRoute: ReactRouter.PlainRoute = {
+export const rootRoute: PlainRoute = {
 	path: "/",
 	component: withEventLoggerContext(EventLogger,
 		withViewEventsLogged(

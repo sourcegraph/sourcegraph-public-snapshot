@@ -12,6 +12,7 @@ import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {UserStore} from "sourcegraph/user/UserStore";
 import {Container} from "sourcegraph/Container";
 import * as classNames from "classnames";
+import {Store} from "sourcegraph/Store";
 
 type OnChangeListener = () => void;
 
@@ -58,7 +59,7 @@ export class BetaInterestForm extends Container<Props, State> {
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [UserStore];
 	}
 

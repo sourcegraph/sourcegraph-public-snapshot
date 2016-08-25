@@ -25,7 +25,7 @@ export class BlobLineExpander extends Component<Props, State> {
 		Object.assign(state, props);
 	}
 
-	_onClick(e: Event) {
+	_onClick(e: React.MouseEvent<HTMLTableDataCellElement>) {
 		this.state.onExpand(this.state.expandRange);
 	}
 

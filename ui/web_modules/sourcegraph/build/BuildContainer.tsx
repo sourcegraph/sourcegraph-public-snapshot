@@ -7,6 +7,7 @@ import {Link} from "react-router";
 import {Commit} from "sourcegraph/vcs/Commit";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import {Store} from "sourcegraph/Store";
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import {BuildHeader} from "sourcegraph/build/BuildHeader";
 import {BuildStore} from "sourcegraph/build/BuildStore";
@@ -79,7 +80,7 @@ export class BuildContainer extends Container<Props, State> {
 		state.logs = BuildStore.logs;
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [BuildStore, TreeStore];
 	}
 

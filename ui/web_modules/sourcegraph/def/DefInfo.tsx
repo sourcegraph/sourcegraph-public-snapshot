@@ -1,5 +1,6 @@
 // tslint:disable: typedef ordered-imports
 
+import {Location} from "history";
 import * as React from "react";
 import Helmet from "react-helmet";
 import {Link} from "react-router";
@@ -32,12 +33,13 @@ import {urlToRepo} from "sourcegraph/repo/routes";
 import {EmptyNodeIllo} from "sourcegraph/components/symbols/index";
 import {Header, Heading, FlexContainer, GitHubAuthButton, Loader} from "sourcegraph/components/index";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {Store} from "sourcegraph/Store";
 
 // Number of characters of the Docstring to show before showing the "collapse" options.
 const DESCRIPTION_CHAR_CUTOFF = 500;
 
 interface Props {
-	location: HistoryModule.Location;
+	location: Location;
 	repo?: string;
 	repoObj?: any;
 	def: string;
@@ -66,7 +68,7 @@ export class DefInfo extends Container<Props, State> {
 		this._onViewLess = this._onViewLess.bind(this);
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [DefStore, BlobStore];
 	}
 

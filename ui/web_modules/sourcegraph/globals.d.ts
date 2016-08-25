@@ -24,22 +24,6 @@ declare namespace global {
 	export var module: any;
 }
 
-declare module "flux/lib/FluxStoreGroup" {
-	class FluxStoreGroup {
-		constructor(stores: FluxUtils.Store<any>[], callback: () => void);
-		release(): void;
-	}
-	export default FluxStoreGroup;
-}
-
-declare module "react-router" {
-	export var applyRouterMiddleware: any;
-}
-
-declare module "react-router/lib/PatternUtils" {
-	export function matchPattern(pattern: string, pathname: string): {paramNames: string[], paramValues: string[]};
-}
-
 declare module "react-router/lib/matchRoutes" {
 	export default function matchRoutes(routes: any, location: any, callback: any, remainingPathname?: any); 
 }

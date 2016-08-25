@@ -1,17 +1,18 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
+import {Route} from "react-router";
 import {Component} from "sourcegraph/Component";
 import {getRouteName} from "sourcegraph/app/routePatterns";
 
 interface Props {
-	routes: ReactRouter.Route[];
-	route: ReactRouter.Route;
+	routes: Route[];
+	route: Route;
 }
 
 interface State {
-	routes: ReactRouter.Route[];
-	route: ReactRouter.Route;
+	routes: Route[];
+	route: Route;
 };
 
 export function withAppdashRouteStateRecording(ChildComponent: any): any {

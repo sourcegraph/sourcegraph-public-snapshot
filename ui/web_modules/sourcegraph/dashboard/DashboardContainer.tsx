@@ -14,8 +14,9 @@ import * as invariant from "invariant";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import * as classNames from "classnames";
 import {ChromeExtensionOnboarding} from "sourcegraph/dashboard/ChromeExtensionOnboarding";
+import {Store} from "sourcegraph/Store";
 
-type OnSelectQueryListener = (ev: Event, query: string) => any;
+type OnSelectQueryListener = (ev: React.MouseEvent<HTMLButtonElement>, query: string) => any;
 
 interface Props {
 	location?: any;
@@ -47,7 +48,7 @@ export class DashboardContainer extends Container<Props, State> {
 		this._installChromeExtensionClicked = this._installChromeExtensionClicked.bind(this);
 	}
 
-	stores(): FluxUtils.Store<any>[] {
+	stores(): Store<any>[] {
 		return [UserStore];
 	}
 
@@ -88,7 +89,7 @@ export class DashboardContainer extends Container<Props, State> {
 		}
 	}
 
-	_onSelectQuery(ev: Event, query: string) {
+	_onSelectQuery(ev: React.MouseEvent<HTMLButtonElement>, query: string) {
 		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "ExistingQueryClicked", {query: query, languages: this.state.langs, page_name: AnalyticsConstants.PAGE_DASHBOARD});
 
 		invariant(this._input, "no input field");

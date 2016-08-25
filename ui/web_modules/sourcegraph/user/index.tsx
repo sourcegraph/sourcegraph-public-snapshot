@@ -1,3 +1,4 @@
+import {PlainRoute} from "react-router";
 import {rel} from "sourcegraph/app/routePatterns";
 import {SearchSettings} from "sourcegraph/search/index";
 import {ForgotPassword} from "sourcegraph/user/ForgotPassword";
@@ -61,7 +62,7 @@ export interface Settings {
 	search: SearchSettings | null;
 };
 
-export const routes: ReactRouter.PlainRoute[] = [
+export const routes: PlainRoute[] = [
 	{
 		path: rel.login,
 		getComponents: (location, callback) => {
