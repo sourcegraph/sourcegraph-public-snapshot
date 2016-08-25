@@ -16,7 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
-func (h *Session) handleHover(req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) (*lsp.Hover, error) {
+func (h *Handler) handleHover(req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) (*lsp.Hover, error) {
 	// Find the range of the symbol
 	contents, err := h.readFile(params.TextDocument.URI)
 	if err != nil {

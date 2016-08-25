@@ -12,12 +12,18 @@ import (
 // TODO(keegancsmith) Find a more reliable way to get this commit
 const stdlibVersion = "0d818588685976407c81c60d2fda289361cbc8ec" // go1.7
 
-func (h *Session) filePath(uri string) string {
-	path := strings.TrimPrefix(strings.TrimPrefix(uri, "file://"), "/")
-	return filepath.Join(h.init.RootPath, path)
+func (h *Handler) filePath(uri string) string {
+	path := strings.TrimPrefix(uri, "file://")
+	if strings.HasPrefix(path, "/gopath/") {
+		path = strings.TrimPrefix(path, "/")
+	}
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(h.init.RootPath, path)
+	}
+	return path
 }
 
-func (h *Session) fileURI(path string) (string, error) {
+func (h *Handler) fileURI(path string) (string, error) {
 	path, err := filepath.Abs(path)
 	if err != nil {
 		return "", err
@@ -36,7 +42,7 @@ func (h *Session) fileURI(path string) (string, error) {
 	return "file:///" + f, err
 }
 
-func (h *Session) readFile(uri string) ([]byte, error) {
+func (h *Handler) readFile(uri string) ([]byte, error) {
 	path := h.filePath(uri)
 
 	// TODO(sqs): sanitize paths, ensure that we can't break outside of h.init.RootPath
@@ -44,7 +50,7 @@ func (h *Session) readFile(uri string) ([]byte, error) {
 	return contents, err
 }
 
-func (h *Session) goEnv() []string {
+func (h *Handler) goEnv() []string {
 	env := []string{"GOPATH=" + h.filePath("gopath")}
 	for _, e := range os.Environ() {
 		if !strings.HasPrefix(e, "GOPATH=") {

@@ -1,8 +1,10 @@
 package jsonrpc2test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
 	"testing"
 
@@ -15,15 +17,15 @@ type Server struct {
 
 	// Response with the key ID is returned for a request with the
 	// corresponding ID.
-	Response map[string]*jsonrpc2.Response
+	Response map[uint64]interface{}
 
 	// SeenRequest is the latest request received with key ID.
-	SeenRequest map[string]*jsonrpc2.Request
+	SeenRequest map[uint64]*jsonrpc2.Request
 
 	// T if set will ensure that if a request with ID key is received, it
 	// matches what is in WantRequest.
 	T           testing.TB
-	WantRequest map[string]*jsonrpc2.Request
+	WantRequest map[uint64]*jsonrpc2.Request
 }
 
 // NewServer creates and starts a Server listening on Server.Addr. Callers
@@ -34,15 +36,19 @@ func NewServer() *Server {
 		Addr:     conn.Addr().String(),
 		Listener: conn,
 
-		Response:    map[string]*jsonrpc2.Response{},
-		SeenRequest: map[string]*jsonrpc2.Request{},
-		WantRequest: map[string]*jsonrpc2.Request{},
+		Response:    map[uint64]interface{}{},
+		SeenRequest: map[uint64]*jsonrpc2.Request{},
+		WantRequest: map[uint64]*jsonrpc2.Request{},
 	}
-	go jsonrpc2.Serve(conn, s)
+	go func() {
+		if err := jsonrpc2.Serve(context.Background(), conn, jsonrpc2.HandlerWithError(s.Handle)); err != nil {
+			log.Printf("jsonrpc2test serve: %s", err)
+		}
+	}()
 	return s
 }
 
-func (h *Server) Handle(req *jsonrpc2.Request) *jsonrpc2.Response {
+func (h *Server) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
 	h.SeenRequest[req.ID] = req
 	want, ok := h.WantRequest[req.ID]
 	if ok && h.T != nil {
@@ -51,17 +57,14 @@ func (h *Server) Handle(req *jsonrpc2.Request) *jsonrpc2.Response {
 		got, _ := json.Marshal(req)
 		w, _ := json.Marshal(want)
 		if string(got) != string(w) {
-			h.T.Errorf("got req %s, want %s", string(got), string(w))
+			h.T.Errorf("got req\n%s, want\n%s", string(got), string(w))
 		}
 	}
 	resp, ok := h.Response[req.ID]
 	if !ok {
-		return &jsonrpc2.Response{
-			ID:    req.ID,
-			Error: &jsonrpc2.Error{Message: "no mocked response for " + req.ID},
-		}
+		return nil, &jsonrpc2.Error{Message: fmt.Sprintf("no mocked response for %d", req.ID)}
 	}
-	return resp
+	return resp, nil
 }
 
 func (h *Server) Close() error {

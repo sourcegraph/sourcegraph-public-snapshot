@@ -1,33 +1,33 @@
-# Running the sample language server via a Visual Studio code extension
+# vscode-client
 
-This describes how to run the sample language server in `../sample`
-in Visual Studio Code via the Visual Studio Code extension in this directory.
+The vscode-client extension for Visual Studio Code helps you develop
+and debug language servers. It lets you run multiple language servers
+at once with minimal extra configuration per language.
 
-To run the sample language server and extension:
 
-1.  Run `npm install` in this directory (`vscode-client`).
-1.  Open this directory by itself in Visual Studio Code.
-1.  `cd ../sample`. Build the the `sample_server` program and
-    ensure it is in the `$PATH` that Visual Studio Code sees
-    (e.g., `go build -o /usr/local/bin/sample_server sample_server.go`).
-1.  Follow the instructions in the
-    [Node.js example language server tutorial](https://code.visualstudio.com/docs/extensions/example-language-server)
-    under "To test the language server do the following:" to build and
-    run the vscode-client sample extension.
-1.  When the new Visual Studio Code window opens with the extension,
-    create a new text file and type some text. Move your mouse cursor
-    over the text, and you should see "Hello over LSP!" in a tooltip.
-    Right click on any text and click "Go to Definition", and you'll
-    be taken to the beginning of the file. Right click on any text and
-    click "Find All References", and if your text is longer than 6
-    characters, you'll be shown two references in the first line of your
-    file.
+## Using this extension
 
-Debug tips if extension throws an error:
+1. Follow the [Go language server installation instructions](../golang/README.md) and [sample language server installation instructions](../sample/README.md)
+1. Run `npm install`.
+1. Run `npm run vscode` to start a new VSCode instance. Use `npm run vscode -- /path/to/mydir` to open the editor to a specific directory.
+1. Open a `.go` or `.txt` file and hover over text to start using the language servers. Refer to the language servers' installation instructions for detailed usage information.
 
-1.  Open the debug pane (Cmd+Shift+D) to see the call stack.
-1.  Open the debug console (Cmd+Shift+Y) and press the green
-    "play"/triangle button to see the error logs.
-1.  Commonly seen error is the server is not in a `$PATH` that VSCode sees.
+To view a language server's stderr output in VSCode, select View → Output (temporary note: see the known issue section). To debug further, see the "Hacking on this extension" section below.
 
-To run your own language server with this extension, see [`../sample/README.md`](../sample/README.md).
+After updating the binary for a language server (during development or after an upgrade), just kill the process (e.g., `killall langserver-go`). VSCode will automatically restart and reconnect to the language server process.
+
+> **Note for those who use VSCode as their primary editor:** Because this extension's functionality conflicts with other VSCode extensions (e.g., showing Go hover information), the `npm run vscode` script launches an separate instance of VSCode and stores its config in `../.vscode-dev`. It will still show your existing extensions in the panel (which seems to be a VSCode bug), but they won't be activated.
+
+
+## Hacking on this extension
+
+1. Run `npm install` in this directory (`vscode-client`).
+1. Open this directory by itself in Visual Studio Code.
+1. Hit F5 to open a new VSCode instance in a debugger running this extension. (This is equivalent to going to the Debug pane on the left and running the "Launch Extension" task.)
+
+See the [Node.js example language server tutorial](https://code.visualstudio.com/docs/extensions/example-language-server) under "To test the language server" for more information.
+
+
+## Known issues
+
+* To view language server stderr output, we must apply the change from https://github.com/Microsoft/vscode-languageserver-node/pull/83 to the vscode-languageclient dependency. This patch is applied in a npm postinstall script automatically. When that PR is merged, we'll remove this hack.

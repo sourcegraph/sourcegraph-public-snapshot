@@ -1,10 +1,10 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"os"
@@ -30,16 +30,19 @@ func main() {
 }
 
 func run() error {
+	l := log.New(os.Stderr, "", 0)
+
 	if *logfile != "" {
 		f, err := os.Create(*logfile)
 		if err != nil {
 			return err
 		}
 		defer f.Close()
-		log.SetOutput(io.MultiWriter(os.Stderr, f))
+		l.SetOutput(f)
+		log.SetOutput(f)
 	}
 
-	h := &jsonrpc2.LoggingHandler{Handler: handler{}}
+	h := jsonrpc2.HandlerWithError(handle)
 
 	switch *mode {
 	case "tcp":
@@ -48,88 +51,87 @@ func run() error {
 			return err
 		}
 		defer lis.Close()
-		log.Println("listening on", *addr)
-		return jsonrpc2.Serve(lis, h)
+		l.Println("listening on", *addr)
+		return jsonrpc2.Serve(context.Background(), lis, h, jsonrpc2.LogMessages(l))
 
 	case "stdio":
-		log.Println("reading on stdin, writing on stdout")
-		jsonrpc2.NewServerConn(os.Stdin, os.Stdout, h)
-		select {}
+		l.Println("reading on stdin, writing on stdout")
+		<-jsonrpc2.NewConn(context.Background(), stdrwc{}, h, jsonrpc2.LogMessages(l)).DisconnectNotify()
+		l.Println("connection closed")
+		return nil
 
 	default:
 		return fmt.Errorf("invalid mode %q", *mode)
 	}
 }
 
-type handler struct{}
+type stdrwc struct{}
 
-func (handler) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
-	if !req.Notification {
-		resp = &jsonrpc2.Response{ID: req.ID}
+func (v stdrwc) Read(p []byte) (int, error) {
+	return os.Stdin.Read(p)
+}
+
+func (v stdrwc) Write(p []byte) (int, error) {
+	return os.Stdout.Write(p)
+}
+
+func (stdrwc) Close() error {
+	if err := os.Stdin.Close(); err != nil {
+		return err
 	}
+	return os.Stdout.Close()
+}
 
+func handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
 	switch req.Method {
 	case "initialize":
-		resp.SetResult(lsp.InitializeResult{
+		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
 				HoverProvider:      true,
 				DefinitionProvider: true,
 				ReferencesProvider: true,
 			},
-		})
+		}, nil
 
 	case "shutdown":
 		// Result is undefined, per
 		// https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#shutdown-request.
-		err := resp.SetResult(true)
-		if err != nil {
-			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
-			return
-		}
+		return nil, nil
 
 	case "textDocument/hover":
 		var params lsp.TextDocumentPositionParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
-			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
-			return
+			return nil, err
 		}
 
 		pos := params.Position
-		err := resp.SetResult(lsp.Hover{
+		return lsp.Hover{
 			Contents: []lsp.MarkedString{{Language: "markdown", Value: "Hello over LSP!"}},
 			Range: lsp.Range{
 				Start: lsp.Position{Line: pos.Line, Character: pos.Character - 3},
 				End:   lsp.Position{Line: pos.Line, Character: pos.Character + 3},
 			},
-		})
-		if err != nil {
-			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
-			return
-		}
+		}, nil
+
 	case "textDocument/definition":
 		var params lsp.TextDocumentPositionParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
-			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
-			return
+			return nil, err
 		}
-		err := resp.SetResult(lsp.Location{
+		return lsp.Location{
 			URI: params.TextDocument.URI,
 			Range: lsp.Range{
 				Start: lsp.Position{Line: 0, Character: 0},
 				End:   lsp.Position{Line: 0, Character: 0},
 			},
-		})
-		if err != nil {
-			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
-			return
-		}
+		}, nil
+
 	case "textDocument/references":
 		var params lsp.ReferenceParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
-			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
-			return
+			return nil, err
 		}
-		err := resp.SetResult([]lsp.Location{lsp.Location{
+		return []lsp.Location{lsp.Location{
 			URI: params.TextDocument.URI,
 			Range: lsp.Range{
 				Start: lsp.Position{Line: 0, Character: 0},
@@ -141,12 +143,8 @@ func (handler) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
 				Start: lsp.Position{Line: 0, Character: 4},
 				End:   lsp.Position{Line: 0, Character: 6},
 			},
-		}})
-		if err != nil {
-			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
-			return
-		}
+		}}, nil
 	}
 
-	return
+	return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("method not supported: %s", req.Method)}
 }

@@ -3,9 +3,7 @@ package langp
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -84,22 +82,16 @@ func (t *translator) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*
 
 	// TODO: should probably check server capabilities before invoking symbol,
 	// but good enough for now.
-	reqSymbol := &jsonrpc2.Request{
-		Method: "workspace/symbol",
-	}
 	importPath, _ := ResolveRepoAlias(defSpec.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
 		Query: "exported " + importPath + "/...",
 	}
-	if err := reqSymbol.SetParams(p); err != nil {
-		return nil, err
-	}
 
 	// TODO(slimsag): cache symbol information for quicker access
 	var respSymbol []lsp.SymbolInformation
-	err = t.lspDo(rootPath, reqSymbol, &respSymbol)
-	defer observe(start, reqSymbol.Method, defSpec.Repo, err, len(respSymbol) == 0)
+	err = t.lspDo(rootPath, "workspace/symbol", p, &respSymbol)
+	defer observe(start, "workspace/symbol", defSpec.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -147,22 +139,14 @@ func (t *translator) PositionToDefSpec(ctx context.Context, pos *Position) (*Def
 	}
 	start := time.Now()
 
-	// TODO: should probably check server capabilities before invoking hover,
-	// but good enough for now.
-	reqHover := &jsonrpc2.Request{
-		Method: "textDocument/hover",
-	}
 	p := pos.LSP()
 	if t.FileURI != nil {
 		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
 	}
-	if err := reqHover.SetParams(p); err != nil {
-		return nil, err
-	}
 
 	var respHover lsp.Hover
-	err = t.lspDo(rootPath, reqHover, &respHover)
-	defer observe(start, reqHover.Method, pos.Repo, err, err == nil && len(respHover.Contents) == 0)
+	err = t.lspDo(rootPath, "textDocument/hover", p, &respHover)
+	defer observe(start, "textDocument/hover", pos.Repo, err, err == nil && len(respHover.Contents) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -207,21 +191,15 @@ func (t *translator) Definition(ctx context.Context, pos *Position) (*Range, err
 
 	// TODO: should probably check server capabilities before invoking hover,
 	// but good enough for now.
-	reqDef := &jsonrpc2.Request{
-		Method: "textDocument/definition",
-	}
 	p := pos.LSP()
 	if t.FileURI != nil {
 		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
 	}
-	if err := reqDef.SetParams(p); err != nil {
-		return nil, err
-	}
 
 	// TODO: according to spec this could be lsp.Location OR []lsp.Location
 	var respDef []lsp.Location
-	err = t.lspDo(rootPath, reqDef, &respDef)
-	defer observe(start, reqDef.Method, pos.Repo, err, len(respDef) == 0)
+	err = t.lspDo(rootPath, "textDocument/definition", p, &respDef)
+	defer observe(start, "textDocument/definition", pos.Repo, err, len(respDef) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -256,20 +234,14 @@ func (t *translator) Hover(ctx context.Context, pos *Position) (*Hover, error) {
 
 	// TODO: should probably check server capabilities before invoking hover,
 	// but good enough for now.
-	reqHover := &jsonrpc2.Request{
-		Method: "textDocument/hover",
-	}
 	p := pos.LSP()
 	if t.FileURI != nil {
 		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
 	}
-	if err := reqHover.SetParams(p); err != nil {
-		return nil, err
-	}
 
 	var respHover lsp.Hover
-	err = t.lspDo(rootPath, reqHover, &respHover)
-	defer observe(start, reqHover.Method, pos.Repo, err, err == nil && len(respHover.Contents) == 0)
+	err = t.lspDo(rootPath, "textDocument/hover", p, &respHover)
+	defer observe(start, "textDocument/hover", pos.Repo, err, err == nil && len(respHover.Contents) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -286,20 +258,14 @@ func (t *translator) LocalRefs(ctx context.Context, pos *Position) (*RefLocation
 
 	// TODO: should probably check server capabilities before invoking references,
 	// but good enough for now.
-	req := &jsonrpc2.Request{
-		Method: "textDocument/references",
-	}
 	p := pos.LSP()
 	if t.FileURI != nil {
 		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
 	}
-	if err := req.SetParams(p); err != nil {
-		return nil, err
-	}
 
 	var resp []lsp.Location
-	err = t.lspDo(rootPath, req, &resp)
-	defer observe(start, req.Method, pos.Repo, err, len(resp) == 0)
+	err = t.lspDo(rootPath, "textDocument/references", p, &resp)
+	defer observe(start, "textDocument/references", pos.Repo, err, len(resp) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -332,22 +298,15 @@ func (t *translator) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRef
 
 	// TODO: should probably check server capabilities before invoking symbol,
 	// but good enough for now.
-	reqSymbol := &jsonrpc2.Request{
-		Method: "workspace/symbol",
-	}
-
 	importPath, _ := ResolveRepoAlias(r.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
 		Query: "external " + importPath + "/...",
 	}
-	if err := reqSymbol.SetParams(p); err != nil {
-		return nil, err
-	}
 
 	var respSymbol []lsp.SymbolInformation
-	err = t.lspDo(rootPath, reqSymbol, &respSymbol)
-	defer observe(start, reqSymbol.Method, r.Repo, err, len(respSymbol) == 0)
+	err = t.lspDo(rootPath, "workspace/symbol", p, &respSymbol)
+	defer observe(start, "workspace/symbol", r.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -387,12 +346,6 @@ func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLoc
 	}
 	start := time.Now()
 
-	// TODO: should probably check server capabilities before invoking symbol,
-	// but good enough for now.
-	reqSymbol := &jsonrpc2.Request{
-		Method: "workspace/symbol",
-	}
-
 	// Unit belongs to Repo indicates query local references.
 	queryType := "defspec-refs-external"
 	if strings.HasPrefix(defSpec.Unit, defSpec.Repo) {
@@ -403,13 +356,10 @@ func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLoc
 		// TODO(keegancsmith) this is go specific
 		Query: queryType + " " + importPath + "/...",
 	}
-	if err := reqSymbol.SetParams(p); err != nil {
-		return nil, err
-	}
 
 	var respSymbol []lsp.SymbolInformation
-	err = t.lspDo(rootPath, reqSymbol, &respSymbol)
-	defer observe(start, reqSymbol.Method, defSpec.Repo, err, len(respSymbol) == 0)
+	err = t.lspDo(rootPath, "defspec-refs-internal", p, &respSymbol)
+	defer observe(start, "defspec-refs-internal", defSpec.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -459,21 +409,13 @@ func (t *translator) ExportedSymbols(ctx context.Context, r *RepoRev) (*Exported
 
 	// TODO: should probably check server capabilities before invoking symbol,
 	// but good enough for now.
-	reqSymbol := &jsonrpc2.Request{
-		Method: "workspace/symbol",
-	}
 	importPath, _ := ResolveRepoAlias(r.Repo)
-	p := lsp.WorkspaceSymbolParams{
+	var respSymbol []lsp.SymbolInformation
+	err = t.lspDo(rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
 		Query: "exported " + importPath + "/...",
-	}
-	if err := reqSymbol.SetParams(p); err != nil {
-		return nil, err
-	}
-
-	var respSymbol []lsp.SymbolInformation
-	err = t.lspDo(rootPath, reqSymbol, &respSymbol)
-	defer observe(start, reqSymbol.Method, r.Repo, err, len(respSymbol) == 0)
+	}, &respSymbol)
+	defer observe(start, "workspace/symbol", r.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -509,7 +451,7 @@ func (t *translator) ExportedSymbols(ctx context.Context, r *RepoRev) (*Exported
 	return &ExportedSymbols{Symbols: symbols}, nil
 }
 
-func (t *translator) lspDo(rootPath string, request *jsonrpc2.Request, result interface{}) error {
+func (t *translator) lspDo(rootPath string, method string, request interface{}, result interface{}) error {
 	// TODO(slimsag): We don't need to create a new JSON RPC 2 connection every
 	// time, but we will need reconnection logic and a non-dumb jsonrpc2.Client
 	// which can handle concurrency (according to Sourcegraph LSP spec we can
@@ -518,46 +460,25 @@ func (t *translator) lspDo(rootPath string, request *jsonrpc2.Request, result in
 	if err != nil {
 		return err
 	}
-	cl := jsonrpc2.NewClient(conn)
+	c := jsonrpc2.NewConn(context.Background(), conn, nil)
 	defer func() {
-		if err := cl.Close(); err != nil {
+		if err := c.Close(); err != nil {
 			// TODO: configurable logging
 			log.Println(err)
 		}
 	}()
 
-	// Build the LSP requests.
-	reqInit := &jsonrpc2.Request{
-		ID:     "0",
-		Method: "initialize",
-	}
-	if err := reqInit.SetParams(&lsp.InitializeParams{
-		RootPath: rootPath,
-	}); err != nil {
+	// Make the LSP requests.
+	if err := c.Call(context.Background(), "initialize", lsp.InitializeParams{RootPath: rootPath}, nil); err != nil {
 		return err
 	}
-	request.ID = "1"
-	reqShutdown := &jsonrpc2.Request{ID: "2", Method: "shutdown"}
-
-	// Make the batched LSP request.
-	resps, err := cl.RequestBatchAndWaitForAllResponses(
-		reqInit,
-		request,
-		reqShutdown,
-	)
-	if err != nil {
+	if err := c.Call(context.Background(), method, request, result); err != nil {
 		return err
 	}
-
-	// Unmarshal the LSP responses.
-	resp, ok := resps["1"]
-	if !ok {
-		return fmt.Errorf("response to %s request from LSP server not found", request.Method)
+	if err := c.Call(context.Background(), "shutdown", nil, nil); err != nil {
+		return err
 	}
-	if resp.Error != nil {
-		return resp.Error
-	}
-	return json.Unmarshal(*resp.Result, result)
+	return nil
 }
 
 func (t *translator) resolveFile(repo, commit, uri string) (*File, error) {

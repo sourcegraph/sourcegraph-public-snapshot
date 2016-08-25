@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os/exec"
+	"sort"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
@@ -13,7 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/srclib-go/gog/definfo"
 )
 
-func (h *Session) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
+func (h *Handler) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
 	q, err := parseSymbolQuery(params.Query)
 	if err != nil {
 		return nil, err
@@ -121,8 +122,21 @@ func (h *Session) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbol
 		}
 		symbols = append(symbols, s)
 	}
+	sort.Sort(sortableSymbolInformation(symbols))
 	return symbols, nil
 }
+
+type sortableSymbolInformation []lsp.SymbolInformation
+
+func (v sortableSymbolInformation) Len() int { return len(v) }
+func (v sortableSymbolInformation) Less(i, j int) bool {
+	li, lj := v[i].Location, v[j].Location
+	if li.URI == "" && lj.URI == "" {
+		return v[i].ContainerName+":"+v[i].Name < v[j].ContainerName+":"+v[j].Name
+	}
+	return li.URI < lj.URI || (li.URI == lj.URI && li.Range.Start.Line < lj.Range.End.Line)
+}
+func (v sortableSymbolInformation) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
 
 type symbolQuery struct {
 	// Type is the type of symbol query we are performing.

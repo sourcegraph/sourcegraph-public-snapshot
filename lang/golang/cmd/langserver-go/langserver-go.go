@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -31,12 +32,15 @@ func main() {
 }
 
 func run() error {
+	l := log.New(os.Stderr, "", 0)
+
 	if *logfile != "" {
 		f, err := os.Create(*logfile)
 		if err != nil {
 			return err
 		}
 		defer f.Close()
+		l.SetOutput(io.MultiWriter(os.Stderr, f))
 		log.SetOutput(io.MultiWriter(os.Stderr, f))
 	}
 
@@ -44,7 +48,7 @@ func run() error {
 		go debugserver.Start(*profbind)
 	}
 
-	h := &jsonrpc2.LoggingHandler{Handler: &golang.Handler{}}
+	h := jsonrpc2.HandlerWithError((&golang.Handler{}).Handle)
 
 	switch *mode {
 	case "tcp":
@@ -54,14 +58,32 @@ func run() error {
 		}
 		defer lis.Close()
 		log.Println("listening on", *addr)
-		return jsonrpc2.Serve(lis, h)
+		return jsonrpc2.Serve(context.Background(), lis, h)
 
 	case "stdio":
 		log.Println("reading on stdin, writing on stdout")
-		jsonrpc2.NewServerConn(os.Stdin, os.Stdout, h)
-		select {}
+		<-jsonrpc2.NewConn(context.Background(), stdrwc{}, h, jsonrpc2.LogMessages(l)).DisconnectNotify()
+		log.Println("connection closed")
+		return nil
 
 	default:
 		return fmt.Errorf("invalid mode %q", *mode)
 	}
+}
+
+type stdrwc struct{}
+
+func (stdrwc) Read(p []byte) (int, error) {
+	return os.Stdin.Read(p)
+}
+
+func (stdrwc) Write(p []byte) (int, error) {
+	return os.Stdout.Write(p)
+}
+
+func (stdrwc) Close() error {
+	if err := os.Stdin.Close(); err != nil {
+		return err
+	}
+	return os.Stdout.Close()
 }

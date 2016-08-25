@@ -1,5 +1,6 @@
 [
   {
+    "id": 0,
     "result": {
       "capabilities": {
         "hoverProvider": true,
@@ -8,13 +9,31 @@
         "workspaceSymbolProvider": true
       }
     },
-    "id": "0",
-    "jsonrpc": ""
+    "jsonrpc": "2.0"
   },
   {
+    "id": 1,
     "result": [
       {
         "name": "",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "errors"
+      },
+      {
+        "name": "New",
         "kind": 0,
         "location": {
           "uri": "",
@@ -50,6 +69,24 @@
         "containerName": "fmt"
       },
       {
+        "name": "Errorf",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "fmt"
+      },
+      {
         "name": "",
         "kind": 0,
         "location": {
@@ -68,7 +105,7 @@
         "containerName": "net/http"
       },
       {
-        "name": "",
+        "name": "CanonicalHeaderKey",
         "kind": 0,
         "location": {
           "uri": "",
@@ -83,28 +120,64 @@
             }
           }
         },
-        "containerName": "path"
-      },
-      {
-        "name": "",
-        "kind": 0,
-        "location": {
-          "uri": "",
-          "range": {
-            "start": {
-              "line": 0,
-              "character": 0
-            },
-            "end": {
-              "line": 0,
-              "character": 0
-            }
-          }
-        },
-        "containerName": "regexp"
+        "containerName": "net/http"
       },
       {
         "name": "Handler",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "Handler/ServeHTTP",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "Header/Set",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "NotFoundHandler",
         "kind": 0,
         "location": {
           "uri": "",
@@ -140,24 +213,6 @@
         "containerName": "net/http"
       },
       {
-        "name": "ResponseWriter",
-        "kind": 0,
-        "location": {
-          "uri": "",
-          "range": {
-            "start": {
-              "line": 0,
-              "character": 0
-            },
-            "end": {
-              "line": 0,
-              "character": 0
-            }
-          }
-        },
-        "containerName": "net/http"
-      },
-      {
         "name": "Request/URL",
         "kind": 0,
         "location": {
@@ -176,43 +231,7 @@
         "containerName": "net/http"
       },
       {
-        "name": "URL/Path",
-        "kind": 0,
-        "location": {
-          "uri": "",
-          "range": {
-            "start": {
-              "line": 0,
-              "character": 0
-            },
-            "end": {
-              "line": 0,
-              "character": 0
-            }
-          }
-        },
-        "containerName": "net/url"
-      },
-      {
-        "name": "URL/String",
-        "kind": 0,
-        "location": {
-          "uri": "",
-          "range": {
-            "start": {
-              "line": 0,
-              "character": 0
-            },
-            "end": {
-              "line": 0,
-              "character": 0
-            }
-          }
-        },
-        "containerName": "net/url"
-      },
-      {
-        "name": "ResponseWriter/Header",
+        "name": "ResponseWriter",
         "kind": 0,
         "location": {
           "uri": "",
@@ -230,7 +249,7 @@
         "containerName": "net/http"
       },
       {
-        "name": "Header/Set",
+        "name": "ResponseWriter/Header",
         "kind": 0,
         "location": {
           "uri": "",
@@ -284,7 +303,7 @@
         "containerName": "net/http"
       },
       {
-        "name": "NotFoundHandler",
+        "name": "URL/Path",
         "kind": 0,
         "location": {
           "uri": "",
@@ -299,10 +318,10 @@
             }
           }
         },
-        "containerName": "net/http"
+        "containerName": "net/url"
       },
       {
-        "name": "Handler/ServeHTTP",
+        "name": "URL/String",
         "kind": 0,
         "location": {
           "uri": "",
@@ -317,10 +336,10 @@
             }
           }
         },
-        "containerName": "net/http"
+        "containerName": "net/url"
       },
       {
-        "name": "New",
+        "name": "",
         "kind": 0,
         "location": {
           "uri": "",
@@ -335,7 +354,7 @@
             }
           }
         },
-        "containerName": "errors"
+        "containerName": "path"
       },
       {
         "name": "Clean",
@@ -356,25 +375,7 @@
         "containerName": "path"
       },
       {
-        "name": "Errorf",
-        "kind": 0,
-        "location": {
-          "uri": "",
-          "range": {
-            "start": {
-              "line": 0,
-              "character": 0
-            },
-            "end": {
-              "line": 0,
-              "character": 0
-            }
-          }
-        },
-        "containerName": "fmt"
-      },
-      {
-        "name": "Regexp",
+        "name": "",
         "kind": 0,
         "location": {
           "uri": "",
@@ -410,7 +411,7 @@
         "containerName": "regexp"
       },
       {
-        "name": "CanonicalHeaderKey",
+        "name": "Regexp",
         "kind": 0,
         "location": {
           "uri": "",
@@ -425,7 +426,7 @@
             }
           }
         },
-        "containerName": "net/http"
+        "containerName": "regexp"
       },
       {
         "name": "Regexp/MatchString",
@@ -446,12 +447,11 @@
         "containerName": "regexp"
       }
     ],
-    "id": "1",
-    "jsonrpc": ""
+    "jsonrpc": "2.0"
   },
   {
-    "result": true,
-    "id": "2",
-    "jsonrpc": ""
+    "id": 2,
+    "result": null,
+    "jsonrpc": "2.0"
   }
 ]

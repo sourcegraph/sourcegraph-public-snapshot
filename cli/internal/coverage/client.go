@@ -42,13 +42,12 @@ func LSPClient(addr, rootPath string, printCaps bool) (Client, error) {
 		return nil, err
 	}
 
+	ctx := context.Background()
 	c := &lspClient{
-		c: &betterClient{
-			c: jsonrpc2.NewClient(conn),
-		},
+		c:        jsonrpc2.NewConn(ctx, conn, nil),
 		rootPath: rootPath,
 	}
-	if err := c.checkServerCaps(printCaps); err != nil {
+	if err := c.checkServerCaps(ctx, printCaps); err != nil {
 		return nil, err
 	}
 
@@ -56,93 +55,64 @@ func LSPClient(addr, rootPath string, printCaps bool) (Client, error) {
 }
 
 type lspClient struct {
-	c        *betterClient
+	c        *jsonrpc2.Conn
 	rootPath string
 }
 
 func (c *lspClient) Definition(ctx context.Context, p *langp.Position) (*langp.Range, error) {
-	var (
-		initResp lsp.InitializeResult
-		locResp  lsp.Location
-	)
-	if err := c.c.RequestBatchAndWaitForAllResponses(
-		betterRequest{
-			Method: "initialize",
-			Params: &lsp.InitializeParams{
-				RootPath: c.rootPath,
-			},
-			Results: &initResp,
-		},
-		betterRequest{
-			Method:  "textDocument/definition",
-			Params:  p.LSP(),
-			Results: &locResp, // TODO: this can return multiple locations.. BetterClient doesn't handle that.
-		},
-		betterRequest{Method: "shutdown"},
-	); err != nil {
+	if err := c.c.Call(ctx, "initialize", &lsp.InitializeParams{RootPath: c.rootPath}, nil); err != nil {
 		return nil, err
+	}
+	var locResp []lsp.Location
+	if err := c.c.Call(ctx, "textDocument/definition", p.LSP(), &locResp); err != nil {
+		return nil, err
+	}
+	if err := c.c.Call(ctx, "shutdown", nil, nil); err != nil {
+		return nil, err
+	}
+	if len(locResp) != 1 {
+		return nil, fmt.Errorf("could not find definition")
 	}
 	return &langp.Range{
 		Repo:           p.Repo,
 		Commit:         p.Commit,
 		File:           p.File,
-		StartLine:      locResp.Range.Start.Line,
-		StartCharacter: locResp.Range.Start.Character,
-		EndLine:        locResp.Range.End.Line,
-		EndCharacter:   locResp.Range.End.Character,
+		StartLine:      locResp[0].Range.Start.Line,
+		StartCharacter: locResp[0].Range.Start.Character,
+		EndLine:        locResp[0].Range.End.Line,
+		EndCharacter:   locResp[0].Range.End.Character,
 	}, nil
 }
 
 func (c *lspClient) Hover(ctx context.Context, p *langp.Position) (*langp.Hover, error) {
-	var (
-		initResp  lsp.InitializeResult
-		hoverResp lsp.Hover
-	)
-	if err := c.c.RequestBatchAndWaitForAllResponses(
-		betterRequest{
-			Method: "initialize",
-			Params: &lsp.InitializeParams{
-				RootPath: c.rootPath,
-			},
-			Results: &initResp,
-		},
-		betterRequest{
-			Method:  "textDocument/hover",
-			Params:  p.LSP(),
-			Results: &hoverResp, // TODO: this can return multiple locations.. BetterClient doesn't handle that.
-		},
-		betterRequest{Method: "shutdown"},
-	); err != nil {
+	if err := c.c.Call(ctx, "initialize", &lsp.InitializeParams{RootPath: c.rootPath}, nil); err != nil {
+		return nil, err
+	}
+	var hoverResp lsp.Hover
+	if err := c.c.Call(ctx, "textDocument/hover", p.LSP(), &hoverResp); err != nil {
+		return nil, err
+	}
+	if err := c.c.Call(ctx, "shutdown", nil, nil); err != nil {
 		return nil, err
 	}
 	return langp.HoverFromLSP(&hoverResp), nil
 }
 
 func (c *lspClient) LocalRefs(ctx context.Context, p *langp.Position) (*langp.RefLocations, error) {
-	var (
-		initResp lsp.InitializeResult
-		refsResp []*lsp.Location
-	)
-	if err := c.c.RequestBatchAndWaitForAllResponses(
-		betterRequest{
-			Method: "initialize",
-			Params: &lsp.InitializeParams{
-				RootPath: c.rootPath,
-			},
-			Results: &initResp,
+	if err := c.c.Call(ctx, "initialize", &lsp.InitializeParams{RootPath: c.rootPath}, nil); err != nil {
+		return nil, err
+	}
+	rp := lsp.ReferenceParams{
+		TextDocumentPositionParams: *p.LSP(),
+		Context: lsp.ReferenceContext{
+			IncludeDeclaration: false, // for posterity
 		},
-		betterRequest{
-			Method: "textDocument/references",
-			Params: &lsp.ReferenceParams{
-				TextDocumentPositionParams: *p.LSP(),
-				Context: lsp.ReferenceContext{
-					IncludeDeclaration: false, // for posterity
-				},
-			},
-			Results: &refsResp,
-		},
-		betterRequest{Method: "shutdown"},
-	); err != nil {
+	}
+	var refsResp []*lsp.Location
+	if err := c.c.Call(ctx, "textDocument/references", rp, &refsResp); err != nil {
+		return nil, err
+	}
+	if err := c.c.Call(ctx, "shutdown", nil, nil); err != nil {
 		return nil, err
 	}
 	panic("not fully implemented (translate refsResp to langp.LocalRefs")
@@ -152,18 +122,13 @@ func (c *lspClient) Close() error {
 	return c.c.Close()
 }
 
-func (c *lspClient) checkServerCaps(printCaps bool) error {
-	var (
-		initResp lsp.InitializeResult
-	)
-	if err := c.c.RequestBatchAndWaitForAllResponses(
-		betterRequest{
-			Method:  "initialize",
-			Params:  &lsp.InitializeParams{},
-			Results: &initResp,
-		},
-		betterRequest{Method: "shutdown"},
-	); err != nil {
+func (c *lspClient) checkServerCaps(ctx context.Context, printCaps bool) error {
+	var initResp lsp.InitializeResult
+	if err := c.c.Call(ctx, "initialize", &lsp.InitializeParams{RootPath: c.rootPath}, &initResp); err != nil {
+		return err
+	}
+
+	if err := c.c.Call(ctx, "shutdown", nil, nil); err != nil {
 		return err
 	}
 

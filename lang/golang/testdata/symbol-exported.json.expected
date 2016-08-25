@@ -1,5 +1,6 @@
 [
   {
+    "id": 0,
     "result": {
       "capabilities": {
         "hoverProvider": true,
@@ -8,10 +9,10 @@
         "workspaceSymbolProvider": true
       }
     },
-    "id": "0",
-    "jsonrpc": ""
+    "jsonrpc": "2.0"
   },
   {
+    "id": 1,
     "result": [
       {
         "name": "",
@@ -590,12 +591,11 @@
         "containerName": "mux"
       }
     ],
-    "id": "1",
-    "jsonrpc": ""
+    "jsonrpc": "2.0"
   },
   {
-    "result": true,
-    "id": "2",
-    "jsonrpc": ""
+    "id": 2,
+    "result": null,
+    "jsonrpc": "2.0"
   }
 ]

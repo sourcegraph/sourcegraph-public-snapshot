@@ -1,0 +1,13 @@
+diff -ur node_modules/vscode-languageclient/lib/main.js node_modules/vscode-languageclient/lib/main.js
+--- a/node_modules/vscode-languageclient/lib/main.js	2016-08-28 10:23:18.815639484 -0700
++++ b/node_modules/vscode-languageclient/lib/main.js	2016-08-28 10:23:10.843622624 -0700
+@@ -774,6 +774,9 @@
+                 return Promise.reject("Launching server using command " + command.command + " failed.");
+             }
+             this._childProcess = process_2;
++            if (process_2.stderr) {
++                process_2.stderr.on('data', function (data) { return _this.outputChannel.append(data.toString()); });
++            }
+             return Promise.resolve(createConnection(process_2.stdout, process_2.stdin, errorHandler, closeHandler));
+         }
+         return Promise.reject(new Error("Unsupported server configuartion " + JSON.stringify(server, null, 4)));

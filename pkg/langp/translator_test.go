@@ -30,7 +30,6 @@ func TestTranslator(t *testing.T) {
 	defer os.RemoveAll(workDir)
 
 	lspMock := jsonrpc2test.NewServer()
-	lspMock.T = t
 	defer lspMock.Close()
 
 	ts := httptest.NewServer(New(&Translator{
@@ -335,19 +334,26 @@ func TestTranslator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(c.Path, func(t *testing.T) {
-			lspMock.WantRequest["1"] = &jsonrpc2.Request{
-				ID:           "1",
-				Method:       c.WantLSPMethod,
-				Params:       jsonRawMessage(c.WantLSPParam),
-				Notification: false,
-				JSONRPC:      "2.0",
+		t.Run(strings.TrimPrefix(c.Path, "/"), func(t *testing.T) {
+			lspMock.T = t
+			lspMock.WantRequest[0] = &jsonrpc2.Request{
+				ID:     0,
+				Method: "initialize",
+				Params: jsonRawMessage(lsp.InitializeParams{RootPath: filepath.Join(workDir, "github.com/foo/bar/deadbeef/workspace")}),
 			}
-			lspMock.Response["1"] = &jsonrpc2.Response{
-				ID:      "1",
-				Result:  jsonRawMessage(c.LSPResponseResult),
-				JSONRPC: "2.0",
+			lspMock.WantRequest[1] = &jsonrpc2.Request{
+				ID:     1,
+				Method: c.WantLSPMethod,
+				Params: jsonRawMessage(c.WantLSPParam),
 			}
+			lspMock.WantRequest[2] = &jsonrpc2.Request{
+				ID:     2,
+				Method: "shutdown",
+			}
+
+			lspMock.Response[0] = nil
+			lspMock.Response[1] = c.LSPResponseResult
+			lspMock.Response[2] = nil
 
 			requestBody, err := json.Marshal(c.Request)
 			if err != nil {
@@ -356,6 +362,9 @@ func TestTranslator(t *testing.T) {
 			resp, err := http.Post(ts.URL+c.Path, "application/json", bytes.NewReader(requestBody))
 			if err != nil {
 				t.Fatal(err)
+			}
+			if resp.StatusCode != http.StatusOK {
+				t.Fatalf("got HTTP status code %d, want HTTP 200 OK", resp.StatusCode)
 			}
 			err = json.NewDecoder(resp.Body).Decode(c.Got)
 			resp.Body.Close()

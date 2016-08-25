@@ -1,6 +1,6 @@
 [
   {
-    "id": "0",
+    "id": 0,
     "jsonrpc": "2.0",
     "method": "initialize",
     "params": {
@@ -9,7 +9,7 @@
     }
   },
   {
-    "id": "1",
+    "id": 1,
     "jsonrpc": "2.0",
     "method": "textDocument/hover",
     "params": {
@@ -23,7 +23,7 @@
     }
   },
   {
-    "id": "2",
+    "id": 2,
     "jsonrpc": "2.0",
     "method": "shutdown",
     "params": null

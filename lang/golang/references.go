@@ -17,7 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
-func (h *Session) handleReferences(req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {
+func (h *Handler) handleReferences(req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {
 	contents, err := h.readFile(params.TextDocument.URI)
 	if err != nil {
 		return nil, err

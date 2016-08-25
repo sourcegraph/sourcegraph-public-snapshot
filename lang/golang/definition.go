@@ -8,7 +8,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
-func (h *Session) handleDefinition(req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) ([]lsp.Location, error) {
+func (h *Handler) handleDefinition(req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) ([]lsp.Location, error) {
 	// Find start of definition using guru
 	contents, err := h.readFile(params.TextDocument.URI)
 	if err != nil {

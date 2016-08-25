@@ -1,6 +1,7 @@
 package golang
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"io/ioutil"
@@ -51,10 +52,21 @@ func testFixture(t *testing.T, c string) {
 	}
 
 	h := &Handler{}
-	resp := h.HandleBatch(req)
-	marshalFile(t, c+".actual", resp)
+	resps := make([]jsonrpc2.Response, len(req))
+	for i, req := range req {
+		result, err := h.Handle(context.Background(), nil, req)
+		if err != nil {
+			t.Errorf("call %v: %s", req, err)
+			continue
+		}
+		resps[i].ID = uint64(i)
+		if err := resps[i].SetResult(result); err != nil {
+			t.Fatal(err)
+		}
+	}
+	marshalFile(t, c+".actual", resps)
 	if *updateFixtures {
-		marshalFile(t, c+".expected", resp)
+		marshalFile(t, c+".expected", resps)
 	}
 
 	out, err := exec.Command("diff", c+".expected", c+".actual").Output()
