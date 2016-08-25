@@ -32,6 +32,10 @@
 	color: rgba(177, 20, 247, 1);
 	}
 
+	.dl-container .plainlink {
+	text-decoration: none;
+	}
+
 	.dl-container pre.snippet a {
 	text-decoration: none;
 	color: #00a4de;
@@ -162,7 +166,7 @@
 
 	<h2>Definition</h2>
 
-	<pre class="snippet">{{renderSnippet .DefSnippet}}</pre>
+	<a href="{{defToBlobURL .Def.Def}}" class="plainlink"><pre class="snippet">{{renderSnippet .DefSnippet}}</pre></a>
 
 </div>
 {{end}}
