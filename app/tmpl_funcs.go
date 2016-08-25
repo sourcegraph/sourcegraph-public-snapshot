@@ -14,10 +14,12 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/envutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 func init() {
@@ -80,6 +82,10 @@ var tmplFuncs = htmpl.FuncMap{
 			return word
 		}
 		return word
+	},
+
+	"defToBlobURL": func(def graph.Def) string {
+		return router.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0).String()
 	},
 }
 
