@@ -49,26 +49,11 @@ declare module "abab" {
 	export function btoa(str: string): string;
 }
 
-declare module "recharts" {
-	export var LineChart: any;
-	export var Line: any;
-	export var XAxis: any;
-	export var YAxis: any;
-	export var CartesianGrid: any;
-	export var Tooltip: any;
-	export var Legend: any;
-	export var ReferenceLine: any;
-}
-
 declare module "expect.js" {
 	export default function(arg: any): any;
 }
 
 declare module "fuzzysearch" {
-	export default {} as any;
-}
-
-declare module "react/lib/update" {
 	export default {} as any;
 }
 
@@ -93,10 +78,6 @@ declare module "fs" {
 }
 
 declare module "child_process" {
-	export default {} as any;
-}
-
-declare module "react/lib/CSSPropertyOperations" {
 	export default {} as any;
 }
 
