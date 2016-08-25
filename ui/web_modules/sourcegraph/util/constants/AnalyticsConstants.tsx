@@ -6,6 +6,8 @@
 
 // Log when the user performs an action related to authentication. e.g. 'label SignupCompleted'
 export const CATEGORY_AUTH = "Auth";
+export const CATEGORY_DASHBOARD = "Dashboard";
+export const CATEGORY_ONBOARDING = "Onboarding";
 export const CATEGORY_REPOSITORY = "Repository";
 export const CATEGORY_HOME = "Home";
 export const CATEGORY_TOOLS = "Tools";
@@ -41,6 +43,7 @@ export const ACTION_LOGIN = "Login";
 // Page constants
 // Page name constants to provide additional context around where an event was fired from
 export const PAGE_HOME = "Home";
+export const PAGE_DASHBOARD = "Dashboard";
 export const PAGE_TOOLS = "DashboardTools";
 export const PAGE_PRICING = "Pricing";
 

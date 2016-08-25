@@ -13,17 +13,20 @@ import {SearchSettings} from "sourcegraph/search/SearchSettings";
 import * as invariant from "invariant";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import * as classNames from "classnames";
+import {ChromeExtensionOnboarding} from "sourcegraph/dashboard/ChromeExtensionOnboarding";
 
 type OnSelectQueryListener = (ev: Event, query: string) => any;
 
 interface Props {
 	location?: any;
+	route?: any;
 }
 
 type State = any;
 
 export class DashboardContainer extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
+		siteConfig: React.PropTypes.object.isRequired,
 		signedIn: React.PropTypes.bool.isRequired,
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
@@ -33,9 +36,12 @@ export class DashboardContainer extends Container<Props, State> {
 
 	constructor(props: Props) {
 		super(props);
+
 		this.state = {
 			isTyping: false,
+			onboarding: UserStore.authResponses["signup"] ? true : false,
 		};
+
 		this._handleInput = this._handleInput.bind(this);
 		this._onSelectQuery = this._onSelectQuery.bind(this);
 		this._installChromeExtensionClicked = this._installChromeExtensionClicked.bind(this);
@@ -43,6 +49,15 @@ export class DashboardContainer extends Container<Props, State> {
 
 	stores(): FluxUtils.Store<any>[] {
 		return [UserStore];
+	}
+
+	componentDidMount() {
+		super.componentDidMount();
+		(this.context as any).router.setRouteLeaveHook(this.props.route, (route: any) => {
+			if (this.state.onboarding && route.pathname.includes("/info/")) {
+				return false;
+			}
+		});
 	}
 
 	reconcileState(state, props, context) {
@@ -74,7 +89,7 @@ export class DashboardContainer extends Container<Props, State> {
 	}
 
 	_onSelectQuery(ev: Event, query: string) {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "ExistingQueryClicked", {query: query, languages: this.state.langs});
+		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "ExistingQueryClicked", {query: query, languages: this.state.langs, page_name: AnalyticsConstants.PAGE_DASHBOARD});
 
 		invariant(this._input, "no input field");
 
@@ -99,27 +114,26 @@ export class DashboardContainer extends Container<Props, State> {
 	}
 
 	_successHandler() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionInstalled", {page_name: AnalyticsConstants.PAGE_TOOLS});
+		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DASHBOARD, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionInstalled", {page_name: AnalyticsConstants.PAGE_DASHBOARD});
 		(this.context as any).eventLogger.setUserProperty("installed_chrome_extension", "true");
-		this.setState({showChromeExtensionCTA: false});
+		this.setState({showChromeExtensionCTA: false, onboarding: false});
 		setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", (this.context as any).eventLogger.getAmplitudeIdentificationProps())), 10);
 	}
 
 	_failHandler(msg) {
-		console.error(msg);
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_ERROR, "ChromeExtensionInstallFailed", {page_name: AnalyticsConstants.PAGE_TOOLS});
+		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DASHBOARD, AnalyticsConstants.ACTION_ERROR, "ChromeExtensionInstallFailed", {page_name: AnalyticsConstants.PAGE_DASHBOARD});
 		(this.context as any).eventLogger.setUserProperty("installed_chrome_extension", "false");
-		this.setState({showChromeExtensionCTA: true});
+		this.setState({showChromeExtensionCTA: true, onboarding: false});
 	}
 
 	_installChromeExtensionClicked() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionCTAClicked", {page_name: AnalyticsConstants.PAGE_TOOLS});
+		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DASHBOARD, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionCTAClicked", {page_name: AnalyticsConstants.PAGE_DASHBOARD});
 		if (global.chrome) {
 			global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", this._successHandler.bind(this), this._failHandler.bind(this));
 		}
 	}
 
-	render(): JSX.Element | null {
+	_defaultAuthedDashboard(): JSX.Element | null {
 		const langSelected = this.state.langs && this.state.langs.length > 0;
 		return (
 			<div>
@@ -157,6 +171,21 @@ export class DashboardContainer extends Container<Props, State> {
 						<SearchSettings location={this.props.location} className={styles.search_settings} />
 					</TitledSection>}
 				</div>
+			</div>
+		);
+	}
+
+	_completeOnboarding() {
+		this.setState({
+			onboarding: false,
+		});
+	}
+
+	render(): JSX.Element | null {
+		const conditionalDashboardRender = this.state.onboarding ? <ChromeExtensionOnboarding completeStep={this._completeOnboarding.bind(this)} location={this.props.location}/> : this._defaultAuthedDashboard();
+		return (
+			<div>
+				{conditionalDashboardRender}
 			</div>
 		);
 	}

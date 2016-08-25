@@ -106,6 +106,18 @@
 	composes: mb4 pt4 ph3 from base;
 	max-width: 575px;
 }
+
+.onboarding_container {
+	composes: container_fixed;
+	composes: mb4 pt5 pb5 ph3 from base;
+	max-width: 850px;
+}
+
+.inline_actions {
+	composes: user_actions;
+	display: inline-block;
+}
+
 @media screen and (max-height: 950px) {
 	.home_container { margin-top: 0; }
 }

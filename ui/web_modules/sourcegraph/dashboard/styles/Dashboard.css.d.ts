@@ -34,6 +34,8 @@ export const action_link: string;
 export const search_input: string;
 export const search_button: string;
 export const home_container: string;
+export const onboarding_container: string;
+export const inline_actions: string;
 export const top_queries_panel: string;
 export const notice: string;
 export const search_settings_panel: string;
