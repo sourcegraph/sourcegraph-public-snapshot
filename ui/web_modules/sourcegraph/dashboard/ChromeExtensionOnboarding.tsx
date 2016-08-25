@@ -192,7 +192,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 							</p>
 						</div>
 							<p>
-								<a href="#install-chrome" onClick={this._installChromeExtensionClicked}><Button className={styles.action_link} type="button" color="blue">Install Sourcegraph for GitHub</Button></a>
+								<Button onClick={this._installChromeExtensionClicked} className={styles.action_link} type="button" color="blue">Install Sourcegraph for GitHub</Button>
 							</p>
 							<p>
 								<a onClick={this._skipClicked.bind(this)}>Skip</a>
