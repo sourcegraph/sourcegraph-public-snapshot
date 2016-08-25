@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -14,7 +16,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/lang"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
 var (
@@ -25,6 +29,17 @@ var (
 )
 
 func prepareRepo(update bool, workspace, repo, commit string) error {
+	// We check if there is an existing cache directory. Our LSP server
+	// does not incrementally change that, so we need to delete it to
+	// prevent it serving old data.
+	cache := filepath.Join(workspace, "cache")
+	if _, err := os.Stat(cache); err == nil {
+		err = os.RemoveAll(cache)
+		if err != nil {
+			return err
+		}
+	}
+
 	gopath := filepath.Join(workspace, "gopath")
 
 	repo, cloneURI := langp.ResolveRepoAlias(repo)
@@ -70,12 +85,46 @@ func goGetDependencies(repoDir string, env []string, repoURI string) error {
 	return langp.CmdRun(exec.Command("go", args...))
 }
 
+// prepareLSPCache sends a workspace/symbols request. The underlying LSP
+// implementation should cache the data it calculates, so future requests to
+// it should respond quickly.
+func prepareLSPCache(update bool, workspace, repo string) error {
+	conn, err := net.Dial("tcp", *lspAddr)
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	c := jsonrpc2.NewConn(ctx, conn, nil)
+	defer func() {
+		if err := c.Close(); err != nil {
+			log.Println(err)
+		}
+	}()
+
+	if err := c.Call(ctx, "initialize", lsp.InitializeParams{RootPath: workspace}, nil); err != nil {
+		return err
+	}
+	if err := c.Call(ctx, "workspace/symbol", lsp.WorkspaceSymbolParams{Query: "external " + repo + "/..."}, nil); err != nil {
+		return err
+	}
+	if err := c.Call(ctx, "shutdown", nil, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func prepareDeps(update bool, workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
 	repo, _ = langp.ResolveRepoAlias(repo)
 	repoDir := filepath.Join(gopath, "src", repo)
 	env := []string{"PATH=" + os.Getenv("PATH"), "GOPATH=" + gopath}
-	return goGetDependencies(repoDir, env, repo)
+	err := goGetDependencies(repoDir, env, repo)
+	if err != nil {
+		return err
+	}
+
+	return prepareLSPCache(update, workspace, repo)
 }
 
 func fileURI(repo, commit, file string) string {
