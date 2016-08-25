@@ -46,7 +46,6 @@
     "webpack-dev-server": "2.1.0-beta.0"
   },
   "dependencies": {
-    "abab": "1.0.3",
     "amplitude-js": "git://github.com/amplitude/Amplitude-Javascript.git#v2.12.1",
     "autotrack": "0.6.2",
     "classnames": "2.1.3",

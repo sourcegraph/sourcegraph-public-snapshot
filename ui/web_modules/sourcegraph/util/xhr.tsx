@@ -1,4 +1,3 @@
-import {btoa} from "abab";
 import "whatwg-fetch";
 
 import {context} from "sourcegraph/app/context";

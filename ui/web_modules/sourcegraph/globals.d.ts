@@ -44,11 +44,6 @@ declare module "react-router/lib/matchRoutes" {
 	export default function matchRoutes(routes: any, location: any, callback: any, remainingPathname?: any); 
 }
 
-declare module "abab" {
-	export function atob(b64: string): string;
-	export function btoa(str: string): string;
-}
-
 declare module "expect.js" {
 	export default function(arg: any): any;
 }
