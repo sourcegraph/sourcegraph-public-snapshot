@@ -23,18 +23,18 @@ func (h *Session) handleDefinition(req *jsonrpc2.Request, params lsp.TextDocumen
 		return nil, err
 	}
 
-	uri, err := h.fileURI(def.Path)
+	uri, err := h.fileURI(def.Position.Path)
 	if err != nil {
 		return nil, err
 	}
 	if uri != params.TextDocument.URI {
 		// different file to input
-		contents, err = ioutil.ReadFile(def.Path)
+		contents, err = ioutil.ReadFile(def.Position.Path)
 		if err != nil {
 			return nil, err
 		}
 	}
-	r, err := rangeAtPosition(lsp.Position{Line: def.Line - 1, Character: def.Column - 1}, contents)
+	r, err := rangeAtPosition(lsp.Position{Line: def.Position.Line - 1, Character: def.Position.Column - 1}, contents)
 	if err != nil {
 		return nil, err
 	}

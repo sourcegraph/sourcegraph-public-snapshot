@@ -72,7 +72,7 @@ func (h *Session) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbol
 		var content []byte
 		content, _ = ioutil.ReadFile(d.File)
 		s := lsp.SymbolInformation{
-			Name: d.Name,
+			Name: strings.Join(d.Path, "/"),
 			Kind: gogKindToLSP(d.DefInfo.Kind),
 			Location: lsp.Location{
 				URI: uri,
@@ -81,7 +81,7 @@ func (h *Session) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbol
 					End:   offsetToPosition(content, int(d.IdentSpan[1])),
 				},
 			},
-			ContainerName: d.DefInfo.Receiver + d.DefInfo.FieldOfStruct,
+			ContainerName: d.PackageImportPath,
 		}
 		symbols = append(symbols, s)
 	}
@@ -220,8 +220,7 @@ type gogOutput struct {
 
 type gogDef struct {
 	Name string
-
-	DefKey *gogDefKey
+	*gogDefKey
 
 	File      string
 	IdentSpan [2]uint32

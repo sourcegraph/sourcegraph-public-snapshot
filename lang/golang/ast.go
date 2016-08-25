@@ -2,7 +2,6 @@ package golang
 
 import (
 	"errors"
-	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -62,11 +61,7 @@ func rangeAtPosition(p lsp.Position, contents []byte) (lsp.Range, error) {
 	if len(nodes) == 0 {
 		return r, errors.New("no nodes found at def")
 	}
-	node, ok := nodes[0].(*ast.Ident)
-	if !ok {
-		return r, fmt.Errorf("node is %T, not ident, at %+v", nodes[0], p)
-	}
-	return rangeForNode(fset, node), nil
+	return rangeForNode(fset, nodes[0]), nil
 }
 
 func docAtPosition(p lsp.Position, contents []byte) (string, error) {

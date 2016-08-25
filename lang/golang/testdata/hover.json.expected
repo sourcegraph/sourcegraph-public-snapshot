@@ -25,6 +25,18 @@
         {
           "language": "text/plain",
           "value": "NewRouter returns a new router instance.\n"
+        },
+        {
+          "language": "text/unit",
+          "value": "mux"
+        },
+        {
+          "language": "text/uri",
+          "value": "file:///gopath/src/mux/mux.go"
+        },
+        {
+          "language": "text/name",
+          "value": "NewRouter"
         }
       ],
       "range": {

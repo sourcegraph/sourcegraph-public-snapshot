@@ -87,7 +87,7 @@ func marshalFile(t *testing.T, path string, v interface{}) {
 
 func checkExecDeps(t *testing.T) {
 	deps := map[string]string{
-		"godef": "github.com/rogpeppe/godef",
+		"godef": "github.com/sourcegraph/godef",
 		"gog":   "sourcegraph.com/sourcegraph/srclib-go/gog/cmd/gog",
 		"guru":  "golang.org/x/tools/cmd/guru",
 	}

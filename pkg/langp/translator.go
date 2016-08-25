@@ -147,57 +147,54 @@ func (t *translator) PositionToDefSpec(ctx context.Context, pos *Position) (*Def
 	}
 	start := time.Now()
 
-	// TODO: should probably check server capabilities before invoking symbol,
+	// TODO: should probably check server capabilities before invoking hover,
 	// but good enough for now.
-	reqSymbol := &jsonrpc2.Request{
-		Method: "workspace/symbol",
+	reqHover := &jsonrpc2.Request{
+		Method: "textDocument/hover",
 	}
-
-	// Repositories are same indicates query local references.
-	importPath, _ := ResolveRepoAlias(pos.Repo)
-	p := lsp.WorkspaceSymbolParams{
-		// TODO(keegancsmith) this is go specific
-		Query: "exported " + importPath + "/...",
+	p := pos.LSP()
+	if t.FileURI != nil {
+		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
 	}
-	if err := reqSymbol.SetParams(p); err != nil {
+	if err := reqHover.SetParams(p); err != nil {
 		return nil, err
 	}
 
-	// TODO(slimsag): cache symbol information for quicker access
-	var respSymbol []lsp.SymbolInformation
-	err = t.lspDo(rootPath, reqSymbol, &respSymbol)
-	defer observe(start, reqSymbol.Method, pos.Repo, err, len(respSymbol) == 0)
+	var respHover lsp.Hover
+	err = t.lspDo(rootPath, reqHover, &respHover)
+	defer observe(start, reqHover.Method, pos.Repo, err, err == nil && len(respHover.Contents) == 0)
 	if err != nil {
 		return nil, err
 	}
 
-	// Filter out refs that don't match our position.
-	for _, s := range respSymbol {
-		r := s.Location.Range
-		if pos.Line < r.Start.Line || pos.Line > r.End.Line {
-			continue
-		}
-		if pos.Character < r.Start.Character || pos.Character > r.End.Character {
-			continue
-		}
-		f, err := t.resolveFile(pos.Repo, pos.Commit, s.Location.URI)
-		if err != nil {
-			return nil, err
-		}
-		if f.Path != pos.File {
-			continue
-		}
-
-		return &DefSpec{
-			Repo:     f.Repo,
-			Commit:   f.Commit,
-			Unit:     pos.Repo, // TODO: this is Go-specific (and may break vanity import paths)
-			UnitType: "GoPackage",
-			Path:     s.Name,
-		}, nil
+	if len(respHover.Contents) == 0 {
+		return nil, errors.New("def spec for position not found")
 	}
-	// TODO: formalize not-found errors
-	return nil, errors.New("def key for position not found")
+
+	var uri, unit, name string
+	for _, m := range respHover.Contents[1:] {
+		switch m.Language {
+		case "text/unit":
+			unit = m.Value
+		case "text/uri":
+			uri = m.Value
+		case "text/name":
+			name = m.Value
+		}
+	}
+
+	f, err := t.resolveFile(pos.Repo, pos.Commit, uri)
+	if err != nil {
+		return nil, err
+	}
+
+	return &DefSpec{
+		Repo:     f.Repo,
+		Commit:   f.Commit,
+		Unit:     unit,
+		UnitType: "GoPackage",
+		Path:     name,
+	}, nil
 }
 
 func (t *translator) Definition(ctx context.Context, pos *Position) (*Range, error) {
