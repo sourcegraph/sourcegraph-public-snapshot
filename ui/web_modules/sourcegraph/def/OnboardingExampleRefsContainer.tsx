@@ -3,7 +3,7 @@
 import * as React from "react";
 import * as classNames from "classnames";
 
-import {Blob} from "sourcegraph/blob/Blob";
+import {BlobLegacy} from "sourcegraph/blob/BlobLegacy";
 
 import {BlobStore, keyForFile, keyForAnns} from "sourcegraph/blob/BlobStore";
 import {BlobContentPlaceholder} from "sourcegraph/blob/BlobContentPlaceholder";
@@ -244,7 +244,7 @@ export class OnboardingExampleRefsContainer extends Container<Props, State> {
 								return (
 									<div key={i} className={styles.single_ref_container}>
 										<div className={styles.refs}>
-											<Blob
+											<BlobLegacy
 												location={this.state.location}
 												repo={this.state.refRepo}
 												rev={this.state.refRev}
