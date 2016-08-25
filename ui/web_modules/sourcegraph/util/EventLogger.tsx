@@ -310,6 +310,26 @@ class EventLoggerClass {
 		});
 	}
 
+	// Tracking call for event level calls that we wish to track, but do not wish to impact bounce rate on our site for Google analytics.
+	// An example of this would be the event that gets fired following a view event on a Repo that 404s. We fire a view event and then a 404 event.
+	// By adding a non-interactive flag to the 404 event the page will correctly calculate bounce rate even with the additional event fired.
+	logNonInteractionEventForCategory(eventCategory: string, eventAction: string, eventLabel: string, eventProperties?: any): void {
+		if (this.userAgentIsBot || !eventLabel) {
+			return;
+		}
+
+		this._telligent("track", eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
+		this._amplitude.logEvent(eventLabel, Object.assign({}, this._decorateEventProperties(eventProperties), {eventCategory: eventCategory, eventAction: eventAction}));
+
+		global.window.ga("send", {
+			hitType: "event",
+			eventCategory: eventCategory || "",
+			eventAction: eventAction || "",
+			eventLabel: eventLabel,
+			nonInteraction: true,
+		});
+	}
+
 	// sets current user's property value
 	setIntercomProperty(property: string, value: any): void {
 		if (this._intercom) { this._intercomSettings[property] = value; }
