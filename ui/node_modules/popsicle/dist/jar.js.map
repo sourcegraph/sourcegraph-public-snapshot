@@ -1,1 +1,0 @@
-{"version":3,"file":"jar.js","sourceRoot":"","sources":["../lib/jar.ts"],"names":[],"mappings":";AAAA,6BAA0B,cAE1B,CAAC,CAFuC;AAExC,mBAAmC,KAAW;IAC5C,MAAM,CAAC,IAAI,wBAAS,CAAC,KAAK,CAAC,CAAA;AAC7B,CAAC;AAFD;2BAEC,CAAA","sourcesContent":["import { CookieJar } from 'tough-cookie'\n\nexport default function cookieJar (store?: any) {\n  return new CookieJar(store)\n}\n"]}

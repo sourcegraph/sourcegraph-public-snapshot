@@ -1,1 +1,0 @@
-{"version":3,"file":"interfaces.js","sourceRoot":"","sources":["../src/interfaces.ts"],"names":[],"mappings":";AAGyC","sourcesContent":["export * from './interfaces/config'\nexport * from './interfaces/rc'\nexport * from './interfaces/emitter'\nexport * from './interfaces/dependencies'\n"]}
