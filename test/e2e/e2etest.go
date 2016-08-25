@@ -36,6 +36,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+var usernamePrefix = e2etestuser.Prefix
+
 // T is passed as context into all tests. It provides generic helper methods to
 // make life during testing easier.
 type T struct {
@@ -656,8 +658,8 @@ func (t *testRunner) newWebDriver() (selenium.WebDriver, error) {
 func (t *testRunner) newT(test *Test, wd selenium.WebDriver) *T {
 	ctx := &T{
 		Target:    t.target,
-		TestLogin: e2etestuser.Prefix + test.Name,
-		TestEmail: e2etestuser.Prefix + test.Name + "@sourcegraph.com",
+		TestLogin: usernamePrefix + test.Name,
+		TestEmail: usernamePrefix + test.Name + "@sourcegraph.com",
 		WebDriver: wd,
 		testingT:  defaultTestingT{},
 		tr:        t,

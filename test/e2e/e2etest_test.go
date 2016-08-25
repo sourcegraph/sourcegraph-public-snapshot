@@ -12,8 +12,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/test/e2e/e2etestuser"
 )
 
 func TestDefFlow(t *testing.T) {
@@ -72,7 +70,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	e2etestuser.Prefix = e2etestuser.Prefix + hwid
+	usernamePrefix = usernamePrefix + hwid
 
 	seleniumTrace = testing.Verbose()
 	os.Exit(m.Run())
