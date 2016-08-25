@@ -83,7 +83,8 @@ func handler(path string, m handlerFunc) http.Handler {
 		if err != nil && err != opentracing.ErrSpanContextNotFound {
 			log.Println("could not extract opentracing headers:", err)
 		}
-		span := opentracing.StartSpan("LP: "+path, opentracing.ChildOf(parentSpanCtx))
+		span := opentracing.StartSpan("LP Serve: "+path, opentracing.ChildOf(parentSpanCtx))
+		defer span.Finish()
 
 		// Handle the request.
 		body, err := ioutil.ReadAll(r.Body)
