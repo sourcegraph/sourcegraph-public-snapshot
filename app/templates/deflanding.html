@@ -152,12 +152,12 @@
 
 	<h2><tt>{{.Def.Name}}</tt> is used in <span class="highlight">{{.RefLocs.TotalRepos}}</span> {{numberedNoun .RefLocs.TotalRepos "repository"}}</h2>
 	<ul style="padding-left: 0;">
-		{{range .RefLocs.RepoRefs}}
+		{{range $repo := .RefLocs.RepoRefs}}
 		<li>
-			{{.Repo}} ({{.Count}} times)
+			<a href="{{repoToURL $repo.Repo}}">{{$repo.Repo}}</a> ({{$repo.Count}} times)
 			<ul>
-				{{range .Files}}
-				<li>{{.Path}} ({{.Count}} times)</li>
+				{{range $file := $repo.Files}}
+				<li><a href="{{repoPathToBlobURL $repo.Repo $file.Path}}">{{$file.Path}}</a> ({{$file.Count}} times)</li>
 				{{end}}
 			</ul>
 		</li>

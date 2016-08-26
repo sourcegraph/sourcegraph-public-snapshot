@@ -87,6 +87,14 @@ var tmplFuncs = htmpl.FuncMap{
 	"defToBlobURL": func(def graph.Def) string {
 		return router.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0).String()
 	},
+
+	"repoToURL": func(repo string) string {
+		return router.Rel.URLToRepo(repo).String()
+	},
+
+	"repoPathToBlobURL": func(repo, path string) string {
+		return router.Rel.URLToBlob(repo, "", path, 0).String()
+	},
 }
 
 type Snippet struct {
