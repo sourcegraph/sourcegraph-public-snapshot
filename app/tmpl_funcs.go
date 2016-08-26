@@ -81,6 +81,12 @@ var tmplFuncs = htmpl.FuncMap{
 			}
 			return word
 		}
+		if strings.HasSuffix(word, "e") {
+			if count > 1 || count == 0 {
+				return word + "s"
+			}
+			return word
+		}
 		return word
 	},
 

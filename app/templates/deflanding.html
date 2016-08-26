@@ -32,11 +32,31 @@
 	color: rgba(177, 20, 247, 1);
 	}
 
+	.dl-container .highlight-h2 {
+	color: rgba(177, 20, 247, 1);
+	font-size: 28px;
+	}
+
 	.dl-container .plainlink {
 	text-decoration: none;
 	}
 
-	.dl-container .repolink {
+	.dl-container .refsheadtext {
+	box-sizing: border-box;
+	color: rgb(119, 147, 174);
+	display: block;
+	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
+	font-size: 12.75px;
+	font-weight: bold;
+	height: 18px;
+	line-height: 18.4875px;
+	margin-bottom: 30px;
+	text-transform: uppercase;
+	width: 880px;
+	-webkit-font-smoothing: antialiased;
+	}
+
+	.dl-container .refsrepolink {
 	color: rgb(0, 146, 214);
 	cursor: pointer;
 	display: inline;
@@ -50,7 +70,7 @@
 	-webkit-font-smoothing: antialiased;
 	}
 
-	.dl-container .filelink {
+	.dl-container .refsfilelink {
 	background-color: rgba(0, 0, 0, 0);
 	color: rgb(0, 146, 214);
 	cursor: pointer;
@@ -63,6 +83,24 @@
 	text-align: left;
 	text-decoration: none;
 	width: auto;
+	-webkit-font-smoothing: antialiased;
+	}
+
+	.dl-container .refsfiletext {
+	color: rgb(119, 147, 174);
+	display: list-item;
+	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
+	font-size: 12.75px;
+	height: 21.75px;
+	line-height: 18.4875px;
+	list-style-type: none;
+	margin-bottom: 15px;
+	margin-right: 16px;
+	margin-top: 15px;
+	padding-top: 3.75px;
+	position: relative;
+	text-align: left;
+	width: 858px;
 	-webkit-font-smoothing: antialiased;
 	}
 
@@ -174,14 +212,14 @@
 	<a href="{{.SourceURL}}" class="plainlink"><pre class="snippet">{{renderSnippet .}}</pre></a><br>
 	{{end}}
 
-	<h2><tt>{{.Def.Name}}</tt> is used in <span class="highlight">{{.RefLocs.TotalRepos}}</span> {{numberedNoun .RefLocs.TotalRepos "repository"}}</h2>
+	<h2><tt><span class="highlight-h2">{{.Def.Name}}</span></tt> is referenced in <span class="highlight">{{.RefLocs.TotalRepos}}</span> {{numberedNoun .RefLocs.TotalRepos "repository"}}</h2>
 	<ul style="padding-left: 0;">
 		{{range $repo := .RefLocs.RepoRefs}}
 		<li>
-			<a href="{{repoToURL $repo.Repo}}" class="repolink">{{$repo.Repo}}</a> ({{$repo.Count}} times)
+			<a href="{{repoToURL $repo.Repo}}" class="refsrepolink">{{$repo.Repo}}</a>
 			<ul>
 				{{range $file := $repo.Files}}
-				<li><a href="{{repoPathToBlobURL $repo.Repo $file.Path}}" class="filelink">{{$file.Path}}</a> ({{$file.Count}} times)</li>
+				<li class="refsfiletext">{{$file.Count}} {{numberedNoun $file.Count "reference"}} in <a href="{{repoPathToBlobURL $repo.Repo $file.Path}}" class="refsfilelink">{{$file.Path}}</a></li>
 				{{end}}
 			</ul>
 		</li>
