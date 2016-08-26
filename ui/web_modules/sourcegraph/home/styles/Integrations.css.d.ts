@@ -16,3 +16,4 @@ export const caption: string;
 export const footer: string;
 export const footer_link: string;
 export const footer_btn: string;
+

@@ -17,3 +17,4 @@ export const font_size_6: string;
 export const font_size_7: string;
 export const code_font_size_1: string;
 export const code_font_size_2: string;
+

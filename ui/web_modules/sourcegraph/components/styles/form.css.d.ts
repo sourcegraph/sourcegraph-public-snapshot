@@ -12,3 +12,4 @@ export const sub_text: string;
 export const button: string;
 export const error: string;
 export const success: string;
+

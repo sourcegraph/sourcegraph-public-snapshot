@@ -43,3 +43,4 @@ export const search_settings: string;
 export const titled_section: string;
 export const section_title: string;
 export const query: string;
+

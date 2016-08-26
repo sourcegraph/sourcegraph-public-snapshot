@@ -3,3 +3,4 @@
 
 export const bg_pattern_objects: string;
 export const bg_pattern_objects_fade: string;
+

@@ -10,3 +10,4 @@ export const search_settings: string;
 export const search_settings_inner: string;
 export const search_results: string;
 export const search_result: string;
+
