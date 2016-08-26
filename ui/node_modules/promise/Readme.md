@@ -76,6 +76,36 @@ var Promise = require('promise/lib/es6-extensions');
 // or require('promise/setimmediate/es6-extensions');
 ```
 
+## Unhandled Rejections
+
+By default, promises silence any unhandled rejections.
+
+You can enable logging of unhandled ReferenceErrors and TypeErrors via:
+
+```js
+require('promise/lib/rejection-tracking').enable();
+```
+
+Due to the performance cost, you should only do this during development.
+
+You can enable logging of all unhandled rejections if you need to debug an exception you think is being swallowed by promises:
+
+```js
+require('promise/lib/rejection-tracking').enable(
+  {allRejections: true}
+);
+```
+
+Due to the high probability of false positives, I only recommend using this when debugging specific issues that you think may be being swallowed.  For the preferred debugging method, see `Promise#done(onFulfilled, onRejected)`.
+
+`rejection-tracking.enable(options)` takes the following options:
+
+ - allRejections (`boolean`) - track all exceptions, not just reference errors and type errors.  Note that this has a high probability of resulting in false positives if your code loads data optimisticly
+ - whitelist (`Array<ErrorConstructor>`) - this defaults to `[ReferenceError, TypeError]` but you can override it with your own list of error constructors to track.
+ - `onUnhandled(id, error)` and `onHandled(id, error)` - you can use these to provide your own customised display for errors.  Note that if possible you should indicate that the error was a false positive if `onHandled` is called.  `onHandled` is only called if `onUnhandled` has already been called.
+
+To reduce the chance of false-positives there is a delay of up to 2 seconds before errors are logged.  This means that if you attach an error handler within 2 seconds, it won't be logged as a false positive.  ReferenceErrors and TypeErrors are only subject to a 100ms delay due to the higher likelihood that the error is due to programmer error.
+
 ## API
 
 Before all examples, you will need:

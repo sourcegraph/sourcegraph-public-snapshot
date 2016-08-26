@@ -58,12 +58,15 @@ function Promise(fn) {
   if (typeof fn !== 'function') {
     throw new TypeError('not a function');
   }
+  this._deferredState = 0;
   this._state = 0;
   this._value = null;
-  this._deferreds = [];
+  this._deferreds = null;
   if (fn === noop) return;
   doResolve(fn, this);
 }
+Promise._onHandle = null;
+Promise._onReject = null;
 Promise._noop = noop;
 
 Promise.prototype.then = function(onFulfilled, onRejected) {
@@ -86,10 +89,27 @@ function handle(self, deferred) {
   while (self._state === 3) {
     self = self._value;
   }
+  if (Promise._onHandle) {
+    Promise._onHandle(self);
+  }
   if (self._state === 0) {
+    if (self._deferredState === 0) {
+      self._deferredState = 1;
+      self._deferreds = deferred;
+      return;
+    }
+    if (self._deferredState === 1) {
+      self._deferredState = 2;
+      self._deferreds = [self._deferreds, deferred];
+      return;
+    }
     self._deferreds.push(deferred);
     return;
   }
+  handleResolved(self, deferred);
+}
+
+function handleResolved(self, deferred) {
   asap(function() {
     var cb = self._state === 1 ? deferred.onFulfilled : deferred.onRejected;
     if (cb === null) {
@@ -145,13 +165,22 @@ function resolve(self, newValue) {
 function reject(self, newValue) {
   self._state = 2;
   self._value = newValue;
+  if (Promise._onReject) {
+    Promise._onReject(self, newValue);
+  }
   finale(self);
 }
 function finale(self) {
-  for (var i = 0; i < self._deferreds.length; i++) {
-    handle(self, self._deferreds[i]);
+  if (self._deferredState === 1) {
+    handle(self, self._deferreds);
+    self._deferreds = null;
   }
-  self._deferreds = null;
+  if (self._deferredState === 2) {
+    for (var i = 0; i < self._deferreds.length; i++) {
+      handle(self, self._deferreds[i]);
+    }
+    self._deferreds = null;
+  }
 }
 
 function Handler(onFulfilled, onRejected, promise){

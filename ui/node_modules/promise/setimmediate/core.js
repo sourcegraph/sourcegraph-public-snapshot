@@ -58,13 +58,16 @@ function Promise(fn) {
   if (typeof fn !== 'function') {
     throw new TypeError('not a function');
   }
-  this._37 = 0;
-  this._12 = null;
-  this._59 = [];
+  this._45 = 0;
+  this._81 = 0;
+  this._65 = null;
+  this._54 = null;
   if (fn === noop) return;
   doResolve(fn, this);
 }
-Promise._99 = noop;
+Promise._10 = null;
+Promise._97 = null;
+Promise._61 = noop;
 
 Promise.prototype.then = function(onFulfilled, onRejected) {
   if (this.constructor !== Promise) {
@@ -83,24 +86,41 @@ function safeThen(self, onFulfilled, onRejected) {
   });
 };
 function handle(self, deferred) {
-  while (self._37 === 3) {
-    self = self._12;
+  while (self._81 === 3) {
+    self = self._65;
   }
-  if (self._37 === 0) {
-    self._59.push(deferred);
+  if (Promise._10) {
+    Promise._10(self);
+  }
+  if (self._81 === 0) {
+    if (self._45 === 0) {
+      self._45 = 1;
+      self._54 = deferred;
+      return;
+    }
+    if (self._45 === 1) {
+      self._45 = 2;
+      self._54 = [self._54, deferred];
+      return;
+    }
+    self._54.push(deferred);
     return;
   }
+  handleResolved(self, deferred);
+}
+
+function handleResolved(self, deferred) {
   setImmediate(function() {
-    var cb = self._37 === 1 ? deferred.onFulfilled : deferred.onRejected;
+    var cb = self._81 === 1 ? deferred.onFulfilled : deferred.onRejected;
     if (cb === null) {
-      if (self._37 === 1) {
-        resolve(deferred.promise, self._12);
+      if (self._81 === 1) {
+        resolve(deferred.promise, self._65);
       } else {
-        reject(deferred.promise, self._12);
+        reject(deferred.promise, self._65);
       }
       return;
     }
-    var ret = tryCallOne(cb, self._12);
+    var ret = tryCallOne(cb, self._65);
     if (ret === IS_ERROR) {
       reject(deferred.promise, LAST_ERROR);
     } else {
@@ -128,8 +148,8 @@ function resolve(self, newValue) {
       then === self.then &&
       newValue instanceof Promise
     ) {
-      self._37 = 3;
-      self._12 = newValue;
+      self._81 = 3;
+      self._65 = newValue;
       finale(self);
       return;
     } else if (typeof then === 'function') {
@@ -137,21 +157,30 @@ function resolve(self, newValue) {
       return;
     }
   }
-  self._37 = 1;
-  self._12 = newValue;
+  self._81 = 1;
+  self._65 = newValue;
   finale(self);
 }
 
 function reject(self, newValue) {
-  self._37 = 2;
-  self._12 = newValue;
+  self._81 = 2;
+  self._65 = newValue;
+  if (Promise._97) {
+    Promise._97(self, newValue);
+  }
   finale(self);
 }
 function finale(self) {
-  for (var i = 0; i < self._59.length; i++) {
-    handle(self, self._59[i]);
+  if (self._45 === 1) {
+    handle(self, self._54);
+    self._54 = null;
   }
-  self._59 = null;
+  if (self._45 === 2) {
+    for (var i = 0; i < self._54.length; i++) {
+      handle(self, self._54[i]);
+    }
+    self._54 = null;
+  }
 }
 
 function Handler(onFulfilled, onRejected, promise){

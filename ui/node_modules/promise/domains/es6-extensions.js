@@ -16,9 +16,9 @@ var ZERO = valuePromise(0);
 var EMPTYSTRING = valuePromise('');
 
 function valuePromise(value) {
-  var p = new Promise(Promise._99);
-  p._37 = 1;
-  p._12 = value;
+  var p = new Promise(Promise._61);
+  p._81 = 1;
+  p._65 = value;
   return p;
 }
 Promise.resolve = function (value) {
@@ -55,11 +55,11 @@ Promise.all = function (arr) {
     function res(i, val) {
       if (val && (typeof val === 'object' || typeof val === 'function')) {
         if (val instanceof Promise && val.then === Promise.prototype.then) {
-          while (val._37 === 3) {
-            val = val._12;
+          while (val._81 === 3) {
+            val = val._65;
           }
-          if (val._37 === 1) return res(i, val._12);
-          if (val._37 === 2) reject(val._12);
+          if (val._81 === 1) return res(i, val._65);
+          if (val._81 === 2) reject(val._65);
           val.then(function (val) {
             res(i, val);
           }, reject);
