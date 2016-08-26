@@ -19,7 +19,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/envutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 func init() {
@@ -88,10 +87,6 @@ var tmplFuncs = htmpl.FuncMap{
 			return word
 		}
 		return word
-	},
-
-	"defToBlobURL": func(def graph.Def) string {
-		return router.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0).String()
 	},
 
 	"repoToURL": func(repo string) string {
