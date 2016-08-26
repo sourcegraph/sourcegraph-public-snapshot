@@ -242,3 +242,8 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
+
+if os.environ.get('SENTRY_FEDERATED_DOCS') != '1':
+    sys.path.insert(0, os.path.abspath('_sentryext'))
+    import sentryext
+    sentryext.activate()

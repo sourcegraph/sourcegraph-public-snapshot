@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Raven.js Test Suite</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" href="../../node_modules/mocha/mocha.css" />
+  </head>
+  <body>
+    <div id="mocha"></div>
+    <!-- Mocha -->
+    <script src="../../node_modules/mocha/mocha.js"></script>
+    <script src="../../node_modules/chai/chai.js"></script>
+    <script>
+        mocha.ui('bdd');
+        mocha.reporter('html');
+        var assert = chai.assert
+    </script>
+
+    <!-- Mocking -->
+    <script src="../../node_modules/sinon/pkg/sinon.js"></script>
+    <script src="../../build/raven.js"></script>
+    <script>
+    beforeEach(function() {
+        this.sinon = sinon.sandbox.create();
+        var xhr = sinon.useFakeXMLHttpRequest();
+        window.requests = this.requests = [];
+
+        xhr.onCreate = function (xhr) {
+          requests.push(xhr);
+        };
+    });
+
+    afterEach(function() {
+        this.sinon.restore();
+    });
+    </script>
+
+    <!-- Tests -->
+    <script src="test.js"></script>
+
+    <script>
+      if (!window.PHANTOMJS) {
+        (function (runner) {
+          window.runner = runner;
+          var failed = [];
+
+          runner.on('fail', function (test, err) {
+            failed.push({
+              title: test.title,
+              fullTitle: test.fullTitle(),
+              error: {
+                message: err.message,
+                stack: err.stack
+              }
+            });
+          });
+
+          runner.on('end', function () {
+            runner.stats.failed = failed;
+            window.mochaResults = runner.stats;
+          });
+        })(mocha.run());
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,68 @@
+{
+  "support_level": "production",
+  "platforms": {
+    "javascript": {
+      "name": "JavaScript",
+      "type": "language",
+      "doc_link": "install/",
+      "wizard": [
+        "index#installation",
+        "index#configuring-the-client",
+        "index#reporting-errors"
+      ]
+    },
+    "javascript.angular": {
+      "name": "Angular 1",
+      "type": "framework",
+      "doc_link": "integrations/angular/",
+      "wizard": [
+        "integrations/angular#installation",
+        "integrations/angular#configuring-the-client"
+      ]
+    },
+    "javascript.angular2": {
+      "name": "Angular 2",
+      "type": "framework",
+      "doc_link": "integrations/angular2/",
+      "wizard": [
+        "integrations/angular2#installation",
+        "integrations/angular2#configuration"
+      ]
+    },
+    "javascript.backbone": {
+      "name": "Backbone",
+      "type": "framework",
+      "doc_link": "integrations/backbone/",
+      "wizard": [
+        "integrations/backbone#installation",
+        "integrations/backbone#configuring-the-client"
+      ]
+    },
+    "javascript.ember": {
+      "name": "Ember",
+      "type": "framework",
+      "doc_link": "integrations/ember/",
+      "wizard": [
+        "integrations/ember#installation",
+        "integrations/ember#configuring-the-client"
+      ]
+    },
+    "javascript.react": {
+      "name": "React",
+      "type": "framework",
+      "doc_link": "integrations/react/",
+      "wizard": [
+        "integrations/react#installation",
+        "integrations/react#configuring-the-client"
+      ]
+    },
+    "javascript.vue": {
+      "name": "Vue",
+      "type": "framework",
+      "doc_link": "integrations/vue/",
+      "wizard": [
+        "integrations/vue#installation"
+      ]
+    }
+  }
+}

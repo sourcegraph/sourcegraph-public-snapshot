@@ -5,7 +5,6 @@
 
 if (typeof global.window !== "undefined" && global.window._sentryRavenDSN) {
 	require("raven-js/dist/raven.js");
-	require("raven-js/plugins/native.js");
 	require("raven-js/plugins/console.js");
 
 	// Ignore rules (from https://gist.github.com/impressiver/5092952).

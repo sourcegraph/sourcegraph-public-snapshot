@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title></title>
+  <script>
+    // http://paulirish.com/2011/requestanimationframe-for-smart-animating/
+    // http://my.opera.com/emoller/blog/2011/12/20/requestanimationframe-for-smart-er-animating
+
+    // requestAnimationFrame polyfill by Erik Möller. fixes from Paul Irish and Tino Zijdel
+
+    // MIT license
+
+    (function() {
+      var lastTime = 0;
+      var vendors = ['ms', 'moz', 'webkit', 'o'];
+      for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+        window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+        window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame']
+                || window[vendors[x]+'CancelRequestAnimationFrame'];
+      }
+
+      if (!window.requestAnimationFrame)
+        window.requestAnimationFrame = function(callback, element) {
+          var currTime = new Date().getTime();
+          var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+          var id = window.setTimeout(function() { callback(currTime + timeToCall); },
+                  timeToCall);
+          lastTime = currTime + timeToCall;
+          return id;
+        };
+
+      if (!window.cancelAnimationFrame)
+        window.cancelAnimationFrame = function(id) {
+          clearTimeout(id);
+        };
+    }());
+  </script>
+  <script src="../../node_modules/jquery/dist/jquery.js"></script>
+  <script src="../../build/raven.js"></script>
+  <script>
+    // stub _makeRequest so we don't actually transmit any data
+    Raven._makeRequest = function () {};
+
+    // store references to original, unwrapped built-ins in order to:
+    // - get a clean, unwrapped setTimeout (so stack traces don't include
+    //   frames from mocha)
+    // - make assertions re: wrapped functions
+
+    window.originalBuiltIns  = {
+      setTimeout: setTimeout,
+      setInterval: setInterval,
+      requestAnimationFrame: requestAnimationFrame,
+      xhrProtoOpen: XMLHttpRequest.prototype.open,
+      headAddEventListener: document.head.addEventListener, // use <head> 'cause body isn't closed yet
+      headRemoveEventListener: document.head.removeEventListener
+    };
+
+    window.ravenData = [];
+    Raven.config('https://public@example.com/1', {
+      dataCallback: function (data) {
+        ravenData.push(data);
+      }
+    }).install();
+
+    function bar() {
+      baz();
+    }
+
+    function foo() {
+      bar();
+    }
+  </script>
+</head>
+<body>
+  <!-- test element for breadcrumbs -->
+  <form id="foo-form">
+    <input name="foo" placeholder="lol"/>
+  </form>
+
+  <div class="c">
+    <div class="b">
+      <div class="a"/>
+    </div>
+  </div>
+</body>
+</html>
