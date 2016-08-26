@@ -38,7 +38,7 @@ export function withRepoBuild(Component) {
 
 		onStateTransition(prevState: State, nextState: State): void {
 			if (prevState.repoID !== nextState.repoID || prevState.commitID !== nextState.commitID || (!nextState.build && prevState.build !== nextState.build)) {
-				if (!nextState.build && nextState.repoID) {
+				if (!nextState.build && nextState.repoID && nextState.commitID) {
 					Dispatcher.Backends.dispatch(new BuildActions.WantNewestBuildForCommit(nextState.repoID, nextState.commitID, false));
 				}
 			}
