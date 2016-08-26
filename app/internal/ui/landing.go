@@ -10,7 +10,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
 
@@ -32,10 +31,6 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	var refEntries []*sourcegraph.TreeEntry
 	var refSnippets []*app.Snippet
 
-	if feature.IsUniverseRepo(repo.URI) {
-		// TODO
-	}
-
 	if def == nil {
 		def, _, err = handlerutil.GetDefCommon(ctx, vars, &sourcegraph.DefGetOptions{Doc: true, ComputeLineRange: true})
 		if err != nil {
@@ -55,9 +50,8 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		refLocs, err = cl.Defs.ListRefLocations(ctx, &sourcegraph.DefsListRefLocationsOp{
 			Def: defSpec,
 			Opt: &sourcegraph.DefListRefLocationsOptions{
-				ListOptions: sourcegraph.ListOptions{
-					PerPage: reflocRepoLimit, // NOTE(mate): this has no effect at the moment
-				},
+				// NOTE(mate): this has no effect at the moment
+				ListOptions: sourcegraph.ListOptions{PerPage: reflocRepoLimit},
 			},
 		})
 		if err != nil {
@@ -68,7 +62,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		if truncLen > reflocRepoLimit {
 			truncLen = reflocRepoLimit
 		}
-		refLocs.RepoRefs = refLocs.RepoRefs[0:truncLen]
+		refLocs.RepoRefs = refLocs.RepoRefs[:truncLen]
 
 		// fetch definition
 		entrySpec := sourcegraph.TreeEntrySpec{
@@ -175,9 +169,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		RefEntries       []*sourcegraph.TreeEntry
 		RefSnippets      []*app.Snippet
 	}{
-		Meta: meta{
-			SEO: true,
-		},
+		Meta:             meta{SEO: true},
 		Repo:             repo,
 		RepoRev:          repoRev,
 		Def:              def,
