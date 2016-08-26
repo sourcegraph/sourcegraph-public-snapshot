@@ -200,7 +200,11 @@
 	<h1><tt>{{.DefKeyword}} <span class="highlight">{{.Name.ScopeQualified}}</span>{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</tt></h1>
 	{{end}}
 
-	<a href="{{defToBlobURL .Def}}"><button>View source</button></a>
+	{{end}}{{/* end "with .Def" */}}
+
+	<a href="{{.DefSnippet.SourceURL}}"><button>View source</button></a>
+
+	{{with .Def}}
 
 	<h2>Documentation</h2>
 	<p>{{dangerouslySetHTML .DocHTML.HTML}}</p>
