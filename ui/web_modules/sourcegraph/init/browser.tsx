@@ -25,7 +25,7 @@ context.reset(global.window.__sourcegraphJSContext);
 resetOnAuthChange();
 global.__webpack_public_path__ = document.head.dataset["webpackPublicPath"]; // eslint-disable-line no-undef
 
-const rootEl = document.getElementById("main") as HTMLElement; // TODO: different root element here???
+const rootEl = document.getElementById("main") as HTMLElement;
 
 let hotReloadCounter = 0;
 
@@ -52,12 +52,10 @@ function matchWithRedirectHandling(recursed) {
 		}
 
 		setTimeout(() => {
-
-			// console.log("main", main.classList);
 			var html;
 			if (main.classList.contains("server-side")) {
-                            var html = main.innerHTML;
-                        }
+				var html = main.innerHTML;
+			}
 
 			ReactDOM.render(
 				<AppContainer errorReporter={Redbox} >
