@@ -93,6 +93,7 @@ type Snippet struct {
 	StartByte   int64
 	Code        string
 	Annotations *sourcegraph.AnnotationList
+	SourceURL   string
 }
 
 func renderSnippet(s *Snippet) htmpl.HTML {

@@ -141,7 +141,7 @@
 	</p>
 
 	{{range .RefSnippets}}
-	<pre class="snippet">{{renderSnippet .}}</pre><br>
+	<a href="{{.SourceURL}}" class="plainlink"><pre class="snippet">{{renderSnippet .}}</pre></a><br>
 	{{end}}
 
 	{{/*

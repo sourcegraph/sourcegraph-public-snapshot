@@ -9,6 +9,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
+	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
@@ -100,6 +101,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 			StartByte:   defEntry.FileRange.StartByte,
 			Code:        defEntry.ContentsString,
 			Annotations: defAnns,
+			SourceURL:   approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0).String(),
 		}
 
 		// fetch example
@@ -154,6 +156,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 				StartByte:   refEntry.FileRange.StartByte,
 				Code:        refEntry.ContentsString,
 				Annotations: refAnns,
+				SourceURL:   approuter.Rel.URLToBlob(ref.Repo, ref.CommitID, ref.File, 0).String(),
 			})
 		}
 	}
