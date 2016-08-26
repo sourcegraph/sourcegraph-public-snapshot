@@ -1,3 +1,12 @@
+4.0.4 / 2016-07-04
+==================
+  * [Fix] Cache original `getOwnPropertySymbols`, and use that when `Object.getOwnPropertySymbols` is unavailable
+  * [Deps] update `object-keys`
+  * [Dev Deps] update `eslint`, `get-own-property-symbols`, `core-js`, `jscs`, `nsp`, `browserify`, `@ljharb/eslint-config`, `tape`, `@es-shims/api`
+  * [Tests] up to `node` `v6.2`, `v5.10`, `v4.4`
+  * [Tests] run sham tests on node 0.10
+  * [Tests] use pretest/posttest for linting/security
+
 4.0.3 / 2015-10-21
 ==================
   * [Fix] Support core-js's Symbol sham (#17)

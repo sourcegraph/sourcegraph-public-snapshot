@@ -15,7 +15,8 @@ var hasSymbols = require('../../hasSymbols');
 
 test('polyfilled Symbols', function (t) {
 	t.equal(hasSymbols(), false, 'hasSymbols is false before polyfilling');
-	require('core-js/modules/es6.symbol');
+	require('core-js/fn/symbol');
+	require('core-js/fn/symbol/to-string-tag');
 	var hasSymbolsAfter = hasSymbols();
 	t.equal(hasSymbolsAfter, true, 'hasSymbols is true after polyfilling');
 	/* eslint-disable global-require */

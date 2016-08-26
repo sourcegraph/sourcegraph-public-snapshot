@@ -7,12 +7,12 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule reactComponentExpect
- * @nolint
  */
 
 'use strict';
 
-var _assign = require('object-assign');
+var _prodInvariant = require('./reactProdInvariant'),
+    _assign = require('object-assign');
 
 var ReactInstanceMap = require('./ReactInstanceMap');
 var ReactTestUtils = require('./ReactTestUtils');
@@ -31,7 +31,7 @@ function reactComponentExpect(instance) {
   expect(instance).not.toBeNull();
   expect(instance).not.toBeUndefined();
 
-  !ReactTestUtils.isCompositeComponent(instance) ? process.env.NODE_ENV !== 'production' ? invariant(false, 'reactComponentExpect(...): instance must be a composite component') : invariant(false) : void 0;
+  !ReactTestUtils.isCompositeComponent(instance) ? process.env.NODE_ENV !== 'production' ? invariant(false, 'reactComponentExpect(...): instance must be a composite component') : _prodInvariant('15') : void 0;
   var internalInstance = ReactInstanceMap.get(instance);
 
   expect(typeof internalInstance).toBe('object');

@@ -11,6 +11,8 @@
  */
 'use strict';
 
+var _prodInvariant = require('./reactProdInvariant');
+
 var invariant = require('fbjs/lib/invariant');
 
 /**
@@ -42,7 +44,7 @@ var ReactNativeTagHandles = {
   },
 
   assertRootTag: function (tag) {
-    !this.reactTagIsNativeTopRootID(tag) ? process.env.NODE_ENV !== 'production' ? invariant(false, 'Expect a native root tag, instead got %s', tag) : invariant(false) : void 0;
+    !this.reactTagIsNativeTopRootID(tag) ? process.env.NODE_ENV !== 'production' ? invariant(false, 'Expect a native root tag, instead got %s', tag) : _prodInvariant('19', tag) : void 0;
   },
 
   reactTagIsNativeTopRootID: function (reactTag) {

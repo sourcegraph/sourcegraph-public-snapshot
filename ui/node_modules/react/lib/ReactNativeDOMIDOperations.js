@@ -7,13 +7,12 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule ReactNativeDOMIDOperations
- * 
  */
 'use strict';
 
 var ReactNativeComponentTree = require('./ReactNativeComponentTree');
 var ReactMultiChildUpdateTypes = require('./ReactMultiChildUpdateTypes');
-var UIManager = require('UIManager');
+var UIManager = require('react-native/lib/UIManager');
 
 /**
  * Updates a component's children by processing a series of updates.

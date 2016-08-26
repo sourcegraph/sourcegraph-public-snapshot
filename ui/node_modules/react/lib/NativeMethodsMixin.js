@@ -11,9 +11,11 @@
  */
 'use strict';
 
+var _prodInvariant = require('./reactProdInvariant');
+
 var ReactNativeAttributePayload = require('./ReactNativeAttributePayload');
-var TextInputState = require('TextInputState');
-var UIManager = require('UIManager');
+var TextInputState = require('react-native/lib/TextInputState');
+var UIManager = require('react-native/lib/UIManager');
 
 var findNodeHandle = require('./findNodeHandle');
 var invariant = require('fbjs/lib/invariant');
@@ -140,7 +142,7 @@ if (process.env.NODE_ENV !== 'production') {
   // __DEV__ without actually implementing them (setting them to undefined
   // isn't allowed by ReactClass)
   var NativeMethodsMixin_DEV = NativeMethodsMixin;
-  !(!NativeMethodsMixin_DEV.componentWillMount && !NativeMethodsMixin_DEV.componentWillReceiveProps) ? process.env.NODE_ENV !== 'production' ? invariant(false, 'Do not override existing functions.') : invariant(false) : void 0;
+  !(!NativeMethodsMixin_DEV.componentWillMount && !NativeMethodsMixin_DEV.componentWillReceiveProps) ? process.env.NODE_ENV !== 'production' ? invariant(false, 'Do not override existing functions.') : _prodInvariant('16') : void 0;
   NativeMethodsMixin_DEV.componentWillMount = function () {
     throwOnStylesProp(this, this.props);
   };
@@ -153,13 +155,13 @@ if (process.env.NODE_ENV !== 'production') {
  * In the future, we should cleanup callbacks by cancelling them instead of
  * using this.
  */
-var mountSafeCallback = function (context, callback) {
+function mountSafeCallback(context, callback) {
   return function () {
     if (!callback || context.isMounted && !context.isMounted()) {
       return undefined;
     }
     return callback.apply(context, arguments);
   };
-};
+}
 
 module.exports = NativeMethodsMixin;

@@ -17,5 +17,8 @@
     "css-modulesify": "^0.24.0",
     "typescript": "^1.8.10",
     "typed-css-modules": "file:../"
+  },
+  "devDependencies": {
+    "tslint": "^3.14.0"
   }
 }

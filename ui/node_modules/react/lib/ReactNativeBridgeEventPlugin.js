@@ -17,7 +17,7 @@ var _extends = _assign || function (target) { for (var i = 1; i < arguments.leng
 
 var EventPropagators = require('./EventPropagators');
 var SyntheticEvent = require('./SyntheticEvent');
-var UIManager = require('UIManager');
+var UIManager = require('react-native/lib/UIManager');
 
 var warning = require('fbjs/lib/warning');
 

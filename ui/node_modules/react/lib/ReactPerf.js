@@ -17,6 +17,7 @@ var _extends = _assign || function (target) { for (var i = 1; i < arguments.leng
 
 var ReactDebugTool = require('./ReactDebugTool');
 var warning = require('fbjs/lib/warning');
+var alreadyWarned = false;
 
 function roundFloat(val) {
   var base = arguments.length <= 1 || arguments[1] === undefined ? 2 : arguments[1];
@@ -25,12 +26,32 @@ function roundFloat(val) {
   return Math.floor(val * n) / n;
 }
 
-function getFlushHistory() {
+function warnInProduction() {
+  if (alreadyWarned) {
+    return;
+  }
+  alreadyWarned = true;
+  if (typeof console !== 'undefined') {
+    console.error('ReactPerf is not supported in the production builds of React. ' + 'To collect measurements, please use the development build of React instead.');
+  }
+}
+
+function getLastMeasurements() {
+  if (!(process.env.NODE_ENV !== 'production')) {
+    warnInProduction();
+    return [];
+  }
+
   return ReactDebugTool.getFlushHistory();
 }
 
 function getExclusive() {
-  var flushHistory = arguments.length <= 0 || arguments[0] === undefined ? getFlushHistory() : arguments[0];
+  var flushHistory = arguments.length <= 0 || arguments[0] === undefined ? getLastMeasurements() : arguments[0];
+
+  if (!(process.env.NODE_ENV !== 'production')) {
+    warnInProduction();
+    return [];
+  }
 
   var aggregatedStats = {};
   var affectedIDs = {};
@@ -87,7 +108,12 @@ function getExclusive() {
 }
 
 function getInclusive() {
-  var flushHistory = arguments.length <= 0 || arguments[0] === undefined ? getFlushHistory() : arguments[0];
+  var flushHistory = arguments.length <= 0 || arguments[0] === undefined ? getLastMeasurements() : arguments[0];
+
+  if (!(process.env.NODE_ENV !== 'production')) {
+    warnInProduction();
+    return [];
+  }
 
   var aggregatedStats = {};
   var affectedIDs = {};
@@ -167,7 +193,12 @@ function getInclusive() {
 }
 
 function getWasted() {
-  var flushHistory = arguments.length <= 0 || arguments[0] === undefined ? getFlushHistory() : arguments[0];
+  var flushHistory = arguments.length <= 0 || arguments[0] === undefined ? getLastMeasurements() : arguments[0];
+
+  if (!(process.env.NODE_ENV !== 'production')) {
+    warnInProduction();
+    return [];
+  }
 
   var aggregatedStats = {};
   var affectedIDs = {};
@@ -200,7 +231,7 @@ function getWasted() {
 
     var isDefinitelyNotWastedByID = {};
 
-    // Find native components associated with an operation in this batch.
+    // Find host components associated with an operation in this batch.
     // Mark all components in their parent tree as definitely not wasted.
     operations.forEach(function (operation) {
       var instanceID = operation.instanceID;
@@ -272,7 +303,12 @@ function getWasted() {
 }
 
 function getOperations() {
-  var flushHistory = arguments.length <= 0 || arguments[0] === undefined ? getFlushHistory() : arguments[0];
+  var flushHistory = arguments.length <= 0 || arguments[0] === undefined ? getLastMeasurements() : arguments[0];
+
+  if (!(process.env.NODE_ENV !== 'production')) {
+    warnInProduction();
+    return [];
+  }
 
   var stats = [];
   flushHistory.forEach(function (flush, flushIndex) {
@@ -304,6 +340,11 @@ function getOperations() {
 }
 
 function printExclusive(flushHistory) {
+  if (!(process.env.NODE_ENV !== 'production')) {
+    warnInProduction();
+    return;
+  }
+
   var stats = getExclusive(flushHistory);
   var table = stats.map(function (item) {
     var key = item.key;
@@ -326,6 +367,11 @@ function printExclusive(flushHistory) {
 }
 
 function printInclusive(flushHistory) {
+  if (!(process.env.NODE_ENV !== 'production')) {
+    warnInProduction();
+    return;
+  }
+
   var stats = getInclusive(flushHistory);
   var table = stats.map(function (item) {
     var key = item.key;
@@ -344,6 +390,11 @@ function printInclusive(flushHistory) {
 }
 
 function printWasted(flushHistory) {
+  if (!(process.env.NODE_ENV !== 'production')) {
+    warnInProduction();
+    return;
+  }
+
   var stats = getWasted(flushHistory);
   var table = stats.map(function (item) {
     var key = item.key;
@@ -362,6 +413,11 @@ function printWasted(flushHistory) {
 }
 
 function printOperations(flushHistory) {
+  if (!(process.env.NODE_ENV !== 'production')) {
+    warnInProduction();
+    return;
+  }
+
   var stats = getOperations(flushHistory);
   var table = stats.map(function (stat) {
     return {
@@ -391,15 +447,34 @@ function getMeasurementsSummaryMap(measurements) {
 }
 
 function start() {
+  if (!(process.env.NODE_ENV !== 'production')) {
+    warnInProduction();
+    return;
+  }
+
   ReactDebugTool.beginProfiling();
 }
 
 function stop() {
+  if (!(process.env.NODE_ENV !== 'production')) {
+    warnInProduction();
+    return;
+  }
+
   ReactDebugTool.endProfiling();
 }
 
+function isRunning() {
+  if (!(process.env.NODE_ENV !== 'production')) {
+    warnInProduction();
+    return false;
+  }
+
+  return ReactDebugTool.isProfiling();
+}
+
 var ReactPerfAnalysis = {
-  getLastMeasurements: getFlushHistory,
+  getLastMeasurements: getLastMeasurements,
   getExclusive: getExclusive,
   getInclusive: getInclusive,
   getWasted: getWasted,
@@ -410,6 +485,7 @@ var ReactPerfAnalysis = {
   printOperations: printOperations,
   start: start,
   stop: stop,
+  isRunning: isRunning,
   // Deprecated:
   printDOM: printDOM,
   getMeasurementsSummaryMap: getMeasurementsSummaryMap

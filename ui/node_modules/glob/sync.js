@@ -2,6 +2,7 @@ module.exports = globSync
 globSync.GlobSync = GlobSync
 
 var fs = require('fs')
+var rp = require('fs.realpath')
 var minimatch = require('minimatch')
 var Minimatch = minimatch.Minimatch
 var Glob = require('./glob.js').Glob
@@ -57,7 +58,7 @@ GlobSync.prototype._finish = function () {
       for (var p in matchset) {
         try {
           p = self._makeAbs(p)
-          var real = fs.realpathSync(p, self.realpathCache)
+          var real = rp.realpathSync(p, self.realpathCache)
           set[real] = true
         } catch (er) {
           if (er.syscall === 'stat')
@@ -305,7 +306,14 @@ GlobSync.prototype._readdirError = function (f, er) {
   switch (er.code) {
     case 'ENOTSUP': // https://github.com/isaacs/node-glob/issues/205
     case 'ENOTDIR': // totally normal. means it *does* exist.
-      this.cache[this._makeAbs(f)] = 'FILE'
+      var abs = this._makeAbs(f)
+      this.cache[abs] = 'FILE'
+      if (abs === this.cwdAbs) {
+        var error = new Error(er.code + ' invalid cwd ' + this.cwd)
+        error.path = this.cwd
+        error.code = er.code
+        throw error
+      }
       break
 
     case 'ENOENT': // not terribly unusual

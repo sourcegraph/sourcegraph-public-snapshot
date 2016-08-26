@@ -34,6 +34,7 @@ var assignHasPendingExceptions = function () {
 	} catch (e) {
 		return thrower[1] === 'y';
 	}
+	return false;
 };
 
 module.exports = function getPolyfill() {

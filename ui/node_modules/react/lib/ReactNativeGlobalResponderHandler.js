@@ -10,7 +10,7 @@
  */
 'use strict';
 
-var UIManager = require('UIManager');
+var UIManager = require('react-native/lib/UIManager');
 
 var ReactNativeGlobalResponderHandler = {
   onChange: function (from, to, blockNativeResponder) {

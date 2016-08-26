@@ -12,6 +12,8 @@
 
 'use strict';
 
+var _prodInvariant = require('./reactProdInvariant');
+
 var ReactCurrentOwner = require('./ReactCurrentOwner');
 var ReactInstanceMap = require('./ReactInstanceMap');
 
@@ -70,7 +72,7 @@ function findNodeHandle(componentOrHandle) {
   // ReactInstanceMap.get here will always succeed for mounted components
   var internalInstance = ReactInstanceMap.get(component);
   if (internalInstance) {
-    return internalInstance.getNativeNode();
+    return internalInstance.getHostNode();
   } else {
     var rootNodeID = component._rootNodeID;
     if (rootNodeID) {
@@ -80,8 +82,8 @@ function findNodeHandle(componentOrHandle) {
       // Native
       typeof component === 'object' && '_rootNodeID' in component ||
       // Composite
-      component.render != null && typeof component.render === 'function') ? process.env.NODE_ENV !== 'production' ? invariant(false, 'findNodeHandle(...): Argument is not a component ' + '(type: %s, keys: %s)', typeof component, Object.keys(component)) : invariant(false) : void 0;
-      !false ? process.env.NODE_ENV !== 'production' ? invariant(false, 'findNodeHandle(...): Unable to find node handle for unmounted ' + 'component.') : invariant(false) : void 0;
+      component.render != null && typeof component.render === 'function') ? process.env.NODE_ENV !== 'production' ? invariant(false, 'findNodeHandle(...): Argument is not a component (type: %s, keys: %s)', typeof component, Object.keys(component)) : _prodInvariant('21', typeof component, Object.keys(component)) : void 0;
+      !false ? process.env.NODE_ENV !== 'production' ? invariant(false, 'findNodeHandle(...): Unable to find node handle for unmounted component.') : _prodInvariant('22') : void 0;
     }
   }
 }

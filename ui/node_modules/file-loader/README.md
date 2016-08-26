@@ -13,6 +13,15 @@ var url = require("file!./file.png");
 By default the filename of the resulting file is the MD5 hash of the file's contents 
 with the original extension of the required resource.
 
+By default a file is emitted, however this can be disabled if required (e.g. for server
+side packages).
+
+``` javascript
+var url = require("file?emitFile=false!./file.png");
+// => returns the public url but does NOT emit a file
+// => returns i. e. "/public-path/0dcbbaa701328a3c262cfd45869e351f.png"
+```
+
 ## Filename templates
 
 You can configure a custom filename template for your file using the query
@@ -25,7 +34,7 @@ use `?name=[path][name].[ext]`.
 * `[ext]` the extension of the resource
 * `[name]` the basename of the resource
 * `[path]` the path of the resource relative to the `context` query parameter or option.
-* `[hash]` the hash or the content
+* `[hash]` the hash of the content, `hex`-encoded `md5` by default
 * `[<hashType>:hash:<digestType>:<length>]` optionally you can configure
   * other `hashType`s, i. e. `sha1`, `md5`, `sha256`, `sha512`
   * other `digestType`s, i. e. `hex`, `base26`, `base32`, `base36`, `base49`, `base52`, `base58`, `base62`, `base64`
@@ -58,6 +67,10 @@ require("file?name=picture.png!./myself.png");
 require("file?name=[path][name].[ext]?[hash]!./dir/file.png")
 // => dir/file.png?e43b20c069c4a01867c31e98cbce33c9
 ```
+
+## Installation
+
+```npm install file-loader --save-dev```
 
 ## License
 

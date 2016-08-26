@@ -19,9 +19,9 @@ var ReactNativeComponentTree = require('./ReactNativeComponentTree');
 var ReactNativeEventEmitter = require('./ReactNativeEventEmitter');
 var ReactNativeTagHandles = require('./ReactNativeTagHandles');
 var ReactMultiChild = require('./ReactMultiChild');
-var UIManager = require('UIManager');
+var UIManager = require('react-native/lib/UIManager');
 
-var deepFreezeAndThrowOnMutationInDev = require('deepFreezeAndThrowOnMutationInDev');
+var deepFreezeAndThrowOnMutationInDev = require('react-native/lib/deepFreezeAndThrowOnMutationInDev');
 
 var registrationNames = ReactNativeEventEmitter.registrationNames;
 var putListener = ReactNativeEventEmitter.putListener;
@@ -54,7 +54,7 @@ ReactNativeBaseComponent.Mixin = {
     ReactNativeComponentTree.uncacheNode(this);
     deleteAllListeners(this);
     this.unmountChildren();
-    this._rootNodeID = null;
+    this._rootNodeID = 0;
   },
 
   /**
@@ -150,21 +150,23 @@ ReactNativeBaseComponent.Mixin = {
    *
    * @return {null} Null.
    */
-  getNativeNode: function () {
+  getHostNode: function () {
     return this._rootNodeID;
   },
 
   /**
-   * @param {string} rootID Root ID of this subtree.
-   * @param {Transaction} transaction For creating/updating.
+   * @param {ReactNativeReconcileTransaction} transaction
+   * @param {?ReactNativeBaseComponent} the parent component instance
+   * @param {?object} info about the host container
+   * @param {object} context
    * @return {string} Unique iOS view tag.
    */
-  mountComponent: function (transaction, nativeParent, nativeContainerInfo, context) {
+  mountComponent: function (transaction, hostParent, hostContainerInfo, context) {
     var tag = ReactNativeTagHandles.allocateTag();
 
     this._rootNodeID = tag;
-    this._nativeParent = nativeParent;
-    this._nativeContainerInfo = nativeContainerInfo;
+    this._hostParent = hostParent;
+    this._hostContainerInfo = hostContainerInfo;
 
     if (process.env.NODE_ENV !== 'production') {
       for (var key in this.viewConfig.validAttributes) {
@@ -176,7 +178,7 @@ ReactNativeBaseComponent.Mixin = {
 
     var updatePayload = ReactNativeAttributePayload.create(this._currentElement.props, this.viewConfig.validAttributes);
 
-    var nativeTopRootTag = nativeContainerInfo._tag;
+    var nativeTopRootTag = hostContainerInfo._tag;
     UIManager.createView(tag, this.viewConfig.uiViewClassName, nativeTopRootTag, updatePayload);
 
     ReactNativeComponentTree.precacheNode(this, tag);

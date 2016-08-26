@@ -18,7 +18,6 @@ var ResponderSyntheticEvent = require('./ResponderSyntheticEvent');
 var ResponderTouchHistoryStore = require('./ResponderTouchHistoryStore');
 
 var accumulate = require('./accumulate');
-var invariant = require('fbjs/lib/invariant');
 var keyOf = require('fbjs/lib/keyOf');
 
 var isStartish = EventPluginUtils.isStartish;
@@ -45,11 +44,11 @@ var trackedTouchCount = 0;
  */
 var previousActiveTouches = 0;
 
-var changeResponder = function (nextResponderInst, blockNativeResponder) {
+var changeResponder = function (nextResponderInst, blockHostResponder) {
   var oldResponderInst = responderInst;
   responderInst = nextResponderInst;
   if (ResponderEventPlugin.GlobalResponderHandler !== null) {
-    ResponderEventPlugin.GlobalResponderHandler.onChange(oldResponderInst, nextResponderInst, blockNativeResponder);
+    ResponderEventPlugin.GlobalResponderHandler.onChange(oldResponderInst, nextResponderInst, blockHostResponder);
   }
 };
 
@@ -342,7 +341,7 @@ function setResponderAndExtractTransfer(topLevelType, targetInst, nativeEvent, n
   grantEvent.touchHistory = ResponderTouchHistoryStore.touchHistory;
 
   EventPropagators.accumulateDirectDispatches(grantEvent);
-  var blockNativeResponder = executeDirectDispatch(grantEvent) === true;
+  var blockHostResponder = executeDirectDispatch(grantEvent) === true;
   if (responderInst) {
 
     var terminationRequestEvent = ResponderSyntheticEvent.getPooled(eventTypes.responderTerminationRequest, responderInst, nativeEvent, nativeEventTarget);
@@ -358,7 +357,7 @@ function setResponderAndExtractTransfer(topLevelType, targetInst, nativeEvent, n
       terminateEvent.touchHistory = ResponderTouchHistoryStore.touchHistory;
       EventPropagators.accumulateDirectDispatches(terminateEvent);
       extracted = accumulate(extracted, [grantEvent, terminateEvent]);
-      changeResponder(wantsResponderInst, blockNativeResponder);
+      changeResponder(wantsResponderInst, blockHostResponder);
     } else {
       var rejectEvent = ResponderSyntheticEvent.getPooled(eventTypes.responderReject, wantsResponderInst, nativeEvent, nativeEventTarget);
       rejectEvent.touchHistory = ResponderTouchHistoryStore.touchHistory;
@@ -367,7 +366,7 @@ function setResponderAndExtractTransfer(topLevelType, targetInst, nativeEvent, n
     }
   } else {
     extracted = accumulate(extracted, grantEvent);
-    changeResponder(wantsResponderInst, blockNativeResponder);
+    changeResponder(wantsResponderInst, blockHostResponder);
   }
   return extracted;
 }
@@ -432,11 +431,15 @@ var ResponderEventPlugin = {
     if (isStartish(topLevelType)) {
       trackedTouchCount += 1;
     } else if (isEndish(topLevelType)) {
-      trackedTouchCount -= 1;
-      !(trackedTouchCount >= 0) ? process.env.NODE_ENV !== 'production' ? invariant(false, 'Ended a touch event which was not counted in trackedTouchCount.') : invariant(false) : void 0;
+      if (trackedTouchCount >= 0) {
+        trackedTouchCount -= 1;
+      } else {
+        console.error('Ended a touch event which was not counted in `trackedTouchCount`.');
+        return null;
+      }
     }
 
-    ResponderTouchHistoryStore.recordTouchTrack(topLevelType, nativeEvent, nativeEventTarget);
+    ResponderTouchHistoryStore.recordTouchTrack(topLevelType, nativeEvent);
 
     var extracted = canTriggerTransfer(topLevelType, targetInst, nativeEvent) ? setResponderAndExtractTransfer(topLevelType, targetInst, nativeEvent, nativeEventTarget) : null;
     // Responder may or may not have transferred on a new touch start/move.

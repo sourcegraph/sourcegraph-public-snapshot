@@ -48,7 +48,7 @@ Pass arbitrary values between your module files
 }
 ```
 
-Note that the `:` in a `@value` definition is optional as to not break Sass.
+**If you are using Sass** along with this PostCSS plugin, do not use the colon `:` in your `@value` definitions. It will cause Sass to crash.
 
 ### Justification
 

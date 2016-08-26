@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule deprecated
+ * 
  */
 
 'use strict';
@@ -42,7 +43,12 @@ function deprecated(fnName, newModule, newPackage, ctx, fn) {
     };
     // We need to make sure all properties of the original fn are copied over.
     // In particular, this is needed to support PropTypes
-    return _assign(newFn, fn);
+    _assign(newFn, fn);
+
+    // Flow is not smart enough to figure out that newFn is of the same type as
+    // fn. Since we don't want to lose out the type of the function, casting
+    // to any and force flow to use T.
+    return newFn;
   }
 
   return fn;

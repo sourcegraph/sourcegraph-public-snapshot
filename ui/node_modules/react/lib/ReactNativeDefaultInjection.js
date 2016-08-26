@@ -18,17 +18,19 @@
  * TODO: require this in packager, not in React #10932517
  */
 
-require('InitializeJavaScriptAppEngine');
+var _prodInvariant = require('./reactProdInvariant');
+
+require('react-native/lib/InitializeJavaScriptAppEngine');
 
 var EventPluginHub = require('./EventPluginHub');
 var EventPluginUtils = require('./EventPluginUtils');
-var RCTEventEmitter = require('RCTEventEmitter');
+var RCTEventEmitter = require('react-native/lib/RCTEventEmitter');
 var ReactComponentEnvironment = require('./ReactComponentEnvironment');
 var ReactDefaultBatchingStrategy = require('./ReactDefaultBatchingStrategy');
 var ReactElement = require('./ReactElement');
 var ReactEmptyComponent = require('./ReactEmptyComponent');
 var ReactNativeBridgeEventPlugin = require('./ReactNativeBridgeEventPlugin');
-var ReactNativeComponent = require('./ReactNativeComponent');
+var ReactHostComponent = require('./ReactHostComponent');
 var ReactNativeComponentEnvironment = require('./ReactNativeComponentEnvironment');
 var ReactNativeComponentTree = require('./ReactNativeComponentTree');
 var ReactNativeEventEmitter = require('./ReactNativeEventEmitter');
@@ -74,7 +76,7 @@ function inject() {
 
   var EmptyComponent = function (instantiate) {
     // Can't import View at the top because it depends on React to make its composite
-    var View = require('View');
+    var View = require('react-native/lib/View');
     return new ReactSimpleEmptyComponent(ReactElement.createElement(View, {
       collapsable: true,
       style: { position: 'absolute' }
@@ -83,14 +85,14 @@ function inject() {
 
   ReactEmptyComponent.injection.injectEmptyComponentFactory(EmptyComponent);
 
-  ReactNativeComponent.injection.injectTextComponentClass(ReactNativeTextComponent);
-  ReactNativeComponent.injection.injectGenericComponentClass(function (tag) {
+  ReactHostComponent.injection.injectTextComponentClass(ReactNativeTextComponent);
+  ReactHostComponent.injection.injectGenericComponentClass(function (tag) {
     // Show a nicer error message for non-function tags
     var info = '';
     if (typeof tag === 'string' && /^[a-z]/.test(tag)) {
       info += ' Each component name should start with an uppercase letter.';
     }
-    !false ? process.env.NODE_ENV !== 'production' ? invariant(false, 'Expected a component class, got %s.%s', tag, info) : invariant(false) : void 0;
+    !false ? process.env.NODE_ENV !== 'production' ? invariant(false, 'Expected a component class, got %s.%s', tag, info) : _prodInvariant('18', tag, info) : void 0;
   });
 }
 

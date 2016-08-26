@@ -13,8 +13,8 @@
 
 var ReactNativePropRegistry = require('./ReactNativePropRegistry');
 
-var deepDiffer = require('deepDiffer');
-var flattenStyle = require('flattenStyle');
+var deepDiffer = require('react-native/lib/deepDiffer');
+var flattenStyle = require('react-native/lib/flattenStyle');
 
 var emptyObject = {};
 
@@ -282,6 +282,9 @@ function diffProperties(updatePayload, prevProps, nextProps, validAttributes) {
       // default: fallthrough case when nested properties are defined
       removedKeys = null;
       removedKeyCount = 0;
+      // We think that attributeConfig is not CustomAttributeConfiguration at
+      // this point so we assume it must be AttributeConfiguration.
+      // $FlowFixMe
       updatePayload = diffNestedProperty(updatePayload, prevProp, nextProp, attributeConfig);
       if (removedKeyCount > 0 && updatePayload) {
         restoreDeletedValuesInNestedArray(updatePayload, nextProp, attributeConfig);

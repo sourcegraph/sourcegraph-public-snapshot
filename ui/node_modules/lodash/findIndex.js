@@ -13,8 +13,8 @@ var nativeMax = Math.max;
  * @memberOf _
  * @since 1.1.0
  * @category Array
- * @param {Array} array The array to search.
- * @param {Array|Function|Object|string} [predicate=_.identity]
+ * @param {Array} array The array to inspect.
+ * @param {Function} [predicate=_.identity]
  *  The function invoked per iteration.
  * @param {number} [fromIndex=0] The index to search from.
  * @returns {number} Returns the index of the found element, else `-1`.

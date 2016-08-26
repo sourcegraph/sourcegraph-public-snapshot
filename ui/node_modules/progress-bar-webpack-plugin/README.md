@@ -28,9 +28,9 @@ Accepts almost all of the same options as [node-progress](https://github.com/tj/
 - `format` the format of the progress bar
 - `width` the displayed width of the progress bar defaulting to total
 - `complete` completion character defaulting to "="
-- `incomplete` incomplete character defaulting to "-"
+- `incomplete` incomplete character defaulting to " "
 - `renderThrottle` minimum time between updates in milliseconds defaulting to 16
-- `clear` option to clear the bar on completion defaulting to false
+- `clear` option to clear the bar on completion defaulting to true
 - `callback` optional function to call when the progress bar completes
 - `stream` the output stream defaulting to stderr
 - `summary` option to show summary of time taken defaulting to true
