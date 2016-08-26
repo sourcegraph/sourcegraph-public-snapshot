@@ -81,3 +81,9 @@ deployment:
       - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_TAG sourcegraph/sourcegraph:latest
       - docker push sourcegraph/sourcegraph:$CIRCLE_TAG
       - docker push sourcegraph/sourcegraph:latest
+
+  docker-images:
+    branch: /docker-images\/.*/
+    commands:
+      - make -f dev/ci/Makefile.docker ${CIRCLE_BRANCH:14}:
+          pwd: $REPO

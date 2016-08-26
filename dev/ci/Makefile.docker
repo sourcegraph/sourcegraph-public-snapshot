@@ -1,0 +1,24 @@
+# Build docker images other than the main sourcegraph app.
+# NOTE: It is expected to run this from the project root.
+
+.PHONY: default gcloud langp-go langp-java langp-js
+
+default:
+	@echo "Please select a target"
+
+gcloud:
+	echo ${GCLOUD_SERVICE_ACCOUNT} | base64 --decode > gcloud-service-account.json
+	gcloud auth activate-service-account --key-file gcloud-service-account.json
+	gcloud config set project sourcegraph-dev
+
+langp-go: gcloud
+	cd lang/golang/cmd/langprocessor-go && ./build.sh
+	cd lang/golang/cmd/langserver-go && ./build.sh
+
+langp-java: gcloud
+	cd lang/java/cmd/langprocessor-java && ./build.sh
+	cd lang/java/cmd/langproxy-java && ./build.sh
+
+langp-js: gcloud
+	cd lang/js/cmd/langprocessor-js && ./build.sh
+	cd lang/js/cmd/langproxy-js && ./build.sh
