@@ -95,7 +95,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 			StartByte:   defEntry.FileRange.StartByte,
 			Code:        defEntry.ContentsString,
 			Annotations: defAnns,
-			SourceURL:   approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0).String(),
+			SourceURL:   approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine)).String(),
 		}
 
 		// fetch example
