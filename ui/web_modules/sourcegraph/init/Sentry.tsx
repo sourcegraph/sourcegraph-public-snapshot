@@ -4,8 +4,8 @@
 // Sentry error monitoring code
 
 if (typeof global.window !== "undefined" && global.window._sentryRavenDSN) {
-	require("raven-js/dist/raven.js");
-	require("raven-js/plugins/console.js");
+	require("raven-js/dist/raven.min.js");
+	require("raven-js/dist/plugins/console.min.js");
 
 	// Ignore rules (from https://gist.github.com/impressiver/5092952).
 	let opt = {
