@@ -63,7 +63,7 @@ func Middleware(next http.Handler, sessionInfo func(*http.Request) (uid, session
 		ctx = opentracing.ContextWithSpan(ctx, span)
 		ctx = traceutil.InjectGRPCMetadata(ctx, span.Context()) // this assumes that the span does not change until any GRPC call, which is a bit bad
 
-		routeName := r.URL.Path // default, normally overwritten by route name
+		routeName := "unknown"
 		ctx = context.WithValue(ctx, routeNameKey, &routeName)
 
 		rwIntercept := &ResponseWriterStatusIntercept{ResponseWriter: rw}
@@ -72,6 +72,8 @@ func Middleware(next http.Handler, sessionInfo func(*http.Request) (uid, session
 		// route name is only known after the request has been handled
 		span.SetOperationName("Serve: " + routeName)
 		span.SetTag("Route", routeName)
+		span.SetTag("Method", r.Method)
+		span.SetTag("URL", r.URL.String())
 
 		// If the code is zero, the inner Handler never explicitly called
 		// WriterHeader. We can assume the response code is 200 in such a case
