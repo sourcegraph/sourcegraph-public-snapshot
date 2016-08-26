@@ -59,8 +59,8 @@
     "react-dom": "15.3.1",
     "react-helmet": "3.1.0",
     "react-icons": "1.0.6",
-    "react-router": "2.4.1",
-    "react-router-scroll": "0.3.0",
+    "react-router": "2.7.0",
+    "react-router-scroll": "0.3.2",
     "split": "1.0.0",
     "utf8": "2.1.1"
   },

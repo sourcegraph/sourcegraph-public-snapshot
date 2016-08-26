@@ -6,7 +6,7 @@ react-router-scroll is a React Router middleware that adds scroll management usi
 
 ## Usage
 
-```jsx
+```js
 import { applyRouterMiddleware, browserHistory, Router } from 'react-router';
 import { useScroll } from 'react-router-scroll';
 
@@ -45,7 +45,7 @@ You can return:
 - a position array such as `[0, 100]` to scroll to that position
 - a truthy value to get normal scroll behavior
 
-```jsx
+```js
 useScroll((prevRouterProps, { location }) => (
   prevRouterProps && location.pathname !== prevRouterProps.location.pathname
 ));
@@ -67,7 +67,7 @@ useScroll((prevRouterProps, { routes }) => {
 
 Use `<ScrollContainer>` in components rendered by a router with the `useScroll` middleware to manage the scroll behavior of elements other than `window`. Each `<ScrollContainer>` must be given a unique `scrollKey`, and can be given an optional `shouldUpdateScroll` callback that behaves as above.
 
-```jsx
+```js
 import { ScrollContainer } from 'react-router-scroll';
 
 function Page() {
@@ -92,7 +92,7 @@ function Page() {
 
 If you are not using `<ScrollContainer>`, you can reduce your bundle size by importing the `useScroll` module directly.
 
-```jsx
+```js
 import useScroll from 'react-router-scroll/lib/useScroll';
 ```
 
