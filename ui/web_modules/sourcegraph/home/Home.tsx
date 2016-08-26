@@ -75,7 +75,7 @@ export class Home extends Container<HomeProps, HomeState> {
 					</div>
 
 					{/* section showing welcome message and examples */}
-					<div style={{display: "flex", flowDirection: "row", maxWidth: "960px", flexWrap: "wrap", justifyContent: "space-around", alignItems: "center"}} className={classNames(base.center, base.ph3)} styleName="wrap_sm">
+					<div style={{display: "flex", flowDirection: "row", maxWidth: "960px", flexWrap: "wrap", justifyContent: "space-around", alignItems: "center"}} className={classNames(base.center, base.ph3)}>
 
 						{/* column with welcome message, short description, and sign up button */}
 						<div style={{maxWidth: "400px", flex: "1 1 400px"}}>
@@ -94,9 +94,9 @@ export class Home extends Container<HomeProps, HomeState> {
 							</p>
 						</div>
 
-						<div style={{maxWidth: "400px", maxHeight: "275px", flex: "1 1 400px", position: "relative"}} styleName="full_sm">
-							<LocationStateToggleLink modalName="demo_video" location={this.props.location} styleName="video">
-								<FlexContainer direction="top_bottom" justify="center" style={{position: "absolute", top: "0px", bottom: "0px", right: "0px", left: "0px"}} className={classNames(colors.bg_dark_purple_8, base.br3, typography.tc)} styleName="video_overlay">
+						<div style={{maxWidth: "400px", maxHeight: "275px", flex: "1 1 400px", position: "relative"}}>
+							<LocationStateToggleLink modalName="demo_video" location={this.props.location}>
+								<FlexContainer direction="top_bottom" justify="center" style={{position: "absolute", top: "0px", bottom: "0px", right: "0px", left: "0px"}} className={classNames(colors.bg_dark_purple_8, base.br3, typography.tc)}>
 									<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/play.svg`} />
 								</FlexContainer>
 								<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/video-screenshot.png`} width="100%" height="auto%" className={base.br3} />
@@ -191,7 +191,7 @@ export class Home extends Container<HomeProps, HomeState> {
 								Used by developers everywhere
 							</Heading>
 
-							<div style={{flex: "1 1", display: "flex", flexWrap: "wrap", justifyContent: "flex-end"}} styleName="left_sm">
+							<div style={{flex: "1 1", display: "flex", flexWrap: "wrap", justifyContent: "flex-end"}}>
 								<img className={base.mr4} style={{marginBottom: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/twitter.svg`} />
 								<img className={base.mr4} style={{marginBottom: "9px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/red-hat.svg`} />
 								<img className={base.mr4} style={{marginBottom: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/daily-motion.svg`} />

@@ -32,7 +32,6 @@ export class Tabs extends React.Component<Props, State> {
 			}
 			return React.cloneElement(child, {
 				className: this.props.direction === "vertical" ? styles.item_vertical : styles.item_horizontal,
-				styleName: `item_${this.props.direction}`,
 			});
 		});
 	}

@@ -13,7 +13,6 @@ interface Props {
 	className?: string;
 	children?: any;
 	style?: Object;
-	styleName?: string;
 }
 
 type State = any;
@@ -28,10 +27,10 @@ export class FlexContainer extends React.Component<Props, State> {
 	};
 
 	render(): JSX.Element | null {
-		const {direction = "left_right", wrap, justify = "start", items = "stretch", content = "stretch", className, children, style, styleName} = this.props;
+		const {direction = "left_right", wrap, justify = "start", items = "stretch", content = "stretch", className, children, style} = this.props;
 
 		return (
-			<div className={classNames(styles.flex, directionClasses[direction], justifyClasses[justify], itemsClasses[items], contentClasses[content], wrap ? styles.wrap : styles.nowrap, className)} style={style} styleName={styleName}>
+			<div className={classNames(styles.flex, directionClasses[direction], justifyClasses[justify], itemsClasses[items], contentClasses[content], wrap ? styles.wrap : styles.nowrap, className)} style={style}>
 				{children}
 			</div>
 		);

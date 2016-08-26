@@ -26,7 +26,7 @@ export class LocalRefLocationsList extends React.Component<Props, any> {
 		return (
 			<div>
 				{refLocs.Files && refLocs.Files.map((fileRef, i) => (
-					this.props.showMax && i >= this.props.showMax ? null : <div key={i} styleName={styles.all_refs}>
+					this.props.showMax && i >= this.props.showMax ? null : <div key={i}>
 						<Link to={urlToRepoBlob(this.props.repo, this.props.rev, fileRef.Path)}>
 							<header className={this.props.path === fileRef.Path ? styles.b : ""}>
 								<span className={styles.refs_count}>{fileRef.Count}</span> <span>{fileRef.Path}</span>
