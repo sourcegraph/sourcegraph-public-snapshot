@@ -36,6 +36,36 @@
 	text-decoration: none;
 	}
 
+	.dl-container .repolink {
+	color: rgb(0, 146, 214);
+	cursor: pointer;
+	display: inline;
+	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
+	font-size: 15px;
+	font-weight: bold;
+	text-decoration: none;
+	height: auto;
+	line-height: 24px;
+	width: auto;
+	-webkit-font-smoothing: antialiased;
+	}
+
+	.dl-container .filelink {
+	background-color: rgba(0, 0, 0, 0);
+	color: rgb(0, 146, 214);
+	cursor: pointer;
+	display: inline;
+	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
+	font-size: 12.75px;
+	height: auto;
+	line-height: 18.4875px;
+	list-style-type: none;
+	text-align: left;
+	text-decoration: none;
+	width: auto;
+	-webkit-font-smoothing: antialiased;
+	}
+
 	.dl-container pre.snippet a {
 	text-decoration: none;
 	color: #00a4de;
@@ -148,10 +178,10 @@
 	<ul style="padding-left: 0;">
 		{{range $repo := .RefLocs.RepoRefs}}
 		<li>
-			<a href="{{repoToURL $repo.Repo}}">{{$repo.Repo}}</a> ({{$repo.Count}} times)
+			<a href="{{repoToURL $repo.Repo}}" class="repolink">{{$repo.Repo}}</a> ({{$repo.Count}} times)
 			<ul>
 				{{range $file := $repo.Files}}
-				<li><a href="{{repoPathToBlobURL $repo.Repo $file.Path}}">{{$file.Path}}</a> ({{$file.Count}} times)</li>
+				<li><a href="{{repoPathToBlobURL $repo.Repo $file.Path}}" class="filelink">{{$file.Path}}</a> ({{$file.Count}} times)</li>
 				{{end}}
 			</ul>
 		</li>
