@@ -38,13 +38,13 @@ export class Step extends Component<Props, State> {
 	}
 
 	_startUpdateLog() {
-		if (this._updateLogIntervalID === null && !global.it) { // skip when testing
+		if (this._updateLogIntervalID === null && typeof it === "undefined") { // skip when testing
 			this._updateLogIntervalID = setInterval(this._updateLog.bind(this), updateLogIntervalMsec);
 		}
 	}
 
 	_stopUpdateLog() {
-		if (this._updateLogIntervalID !== null && !global.it) { // skip when testing
+		if (this._updateLogIntervalID !== null && typeof it === "undefined") { // skip when testing
 			clearInterval(this._updateLogIntervalID);
 			this._updateLogIntervalID = null;
 		}

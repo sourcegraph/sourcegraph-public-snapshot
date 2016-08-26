@@ -16,8 +16,8 @@ export class Store<TPayload> extends FluxUtilsStore<TPayload> {
 		this.reset();
 
 		// reset store for each test
-		if (global.beforeEach) {
-			global.beforeEach(() => { this.reset(); });
+		if (typeof beforeEach !== "undefined") {
+			beforeEach(() => { this.reset(); });
 		}
 	}
 

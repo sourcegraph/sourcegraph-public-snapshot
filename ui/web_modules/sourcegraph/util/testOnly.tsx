@@ -1,5 +1,5 @@
 export function testOnly(): void {
-	if (!global.it) {
+	if (typeof it === "undefined") {
 		throw new Error("this function can only be used tests");
 	}
 }

@@ -139,7 +139,7 @@ export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
 						this._cloningInterval = null;
 					}
 					this._cloningTimeout = false;
-					if (!global.it) { // skip when testing
+					if (typeof it === "undefined") { // skip when testing
 						this._cloningInterval = setInterval(() => {
 							Dispatcher.Backends.dispatch(new RepoActions.WantResolveRev(nextState.repo, nextState.rev, true));
 						}, pollInterval);

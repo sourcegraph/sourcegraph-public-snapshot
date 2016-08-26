@@ -17,9 +17,6 @@ declare namespace global {
 	export var window: any;
 	export var document: any;
 	export var chrome: any;
-	export var it: any; // only set while testing
-	export var beforeEach: (f: () => void) => void;
-	export var setTimeout: any;
 	export var __webpack_public_path__: any;
 	export var module: any;
 }

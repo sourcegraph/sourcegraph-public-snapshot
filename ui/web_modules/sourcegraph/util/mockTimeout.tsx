@@ -1,9 +1,9 @@
 // tslint:disable: typedef ordered-imports
 
 export function mockTimeout(f) {
-	let orig = global.setTimeout;
+	let orig = (global as any).setTimeout;
 	let callbacks: any[] = [];
-	global.setTimeout = function(callback, delay) {
+	(global as any).setTimeout = function(callback, delay) {
 		callbacks.push(callback);
 	};
 	try {
@@ -12,6 +12,6 @@ export function mockTimeout(f) {
 		while (callbacks.length > 0) {
 			callbacks.shift()();
 		}
-		global.setTimeout = orig;
+		(global as any).setTimeout = orig;
 	}
 }
