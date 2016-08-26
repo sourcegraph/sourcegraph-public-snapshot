@@ -1,9 +1,9 @@
-// tslint:disable: typedef ordered-imports
-
+// tslint:disable typedef ordered-imports
 import * as React from "react";
+import {abs} from "sourcegraph/app/routePatterns";
 import {Container} from "sourcegraph/Container";
-import {EventListener} from "sourcegraph/Component";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import {EventListener} from "sourcegraph/Component";
 import {DefStore} from "sourcegraph/def/DefStore";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {Store} from "sourcegraph/Store";
@@ -16,7 +16,10 @@ export function desktopContainer(Component) {
 	class DesktopContainer extends Container<{}, State> {
 		static contextTypes: React.ValidationMap<any> = {
 			router: React.PropTypes.object.isRequired,
+			signedIn: React.PropTypes.bool.isRequired,
 		};
+
+		context: {router: any, signedIn: Boolean};
 
 		constructor(props: {}) {
 			super(props);
@@ -60,6 +63,9 @@ export function desktopContainer(Component) {
 		}
 
 		render(): JSX.Element {
+			if (!this.context.signedIn && !allowUnauthed(location.pathname)) {
+				location.pathname = abs.login;
+			}
 			return (
 				<div>
 					<Component {...this.props}/>
@@ -70,6 +76,18 @@ export function desktopContainer(Component) {
 	}
 
 	return DesktopContainer;
+}
+
+const unauthedRoutes = new Set([
+	abs.login,
+	abs.signup,
+	abs.forgot,
+]);
+function allowUnauthed(location: string) {
+	location = location[0] === "/" ?
+		location.substring(1) :
+		location;
+	return unauthedRoutes.has(location);
 }
 
 function infoToDef(info) {

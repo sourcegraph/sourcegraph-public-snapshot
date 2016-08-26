@@ -83,6 +83,6 @@ func testLoginFlow(t *T) error {
 	// Click the submit button.
 	t.Click(selenium.ById, "e2etest-login-button")
 
-	t.WaitForRedirect(t.Endpoint("/dashboard"), "wait for redirect to dashboard after sign-in")
+	t.WaitForRedirect(t.Endpoint("/"), "wait for redirect to home after sign-in")
 	return nil
 }

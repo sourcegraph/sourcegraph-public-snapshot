@@ -16,13 +16,11 @@ import {withSiteConfigContext} from "sourcegraph/app/siteConfig";
 import {withUserContext} from "sourcegraph/app/user";
 import {withAppdashRouteStateRecording} from "sourcegraph/app/appdash";
 import {withChannelListener} from "sourcegraph/channel/withChannelListener";
-import {redirectForDashboard} from "sourcegraph/app/dashboardRedirect";
+import {desktopContainer} from "sourcegraph/desktop/DesktopContainer";
 
 import {routes as homeRoutes} from "sourcegraph/home/index";
-import {routes as dashboardRoutes} from "sourcegraph/dashboard/index";
 import {routes as pageRoutes} from "sourcegraph/page/index";
 import {routes as styleguideRoutes} from "sourcegraph/styleguide/index";
-import {routes as desktopRoutes} from "sourcegraph/desktop/index";
 import {routes as channelRoutes} from "sourcegraph/channel/index";
 import {route as miscRoute} from "sourcegraph/misc/golang";
 import {routes as adminRoutes} from "sourcegraph/admin/routes";
@@ -71,7 +69,7 @@ export class App extends React.Component<Props, State> {
 		return (
 			<div className={this.state.className}>
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
-				<GlobalNav params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
+				<GlobalNav desktop={desktopClient} params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
 				<div className={styles.main_content} id="scroller" ref="mainContent">
 					<div className={styles.inner_main_content}>
 						{this.props.navContext && <div className={styles.breadcrumb}>{this.props.navContext}</div>}
@@ -85,6 +83,7 @@ export class App extends React.Component<Props, State> {
 	}
 }
 
+const desktopClient = global.document && navigator.userAgent.includes("Electron");
 export const rootRoute: PlainRoute = {
 	path: "/",
 	component: withEventLoggerContext(EventLogger,
@@ -94,9 +93,7 @@ export const rootRoute: PlainRoute = {
 					withSiteConfigContext(
 						withUserContext(
 							withFeaturesContext(
-								redirectForDashboard(
-									App
-								)
+								desktopClient ? desktopContainer(App) : App
 							)
 						)
 					)
@@ -111,8 +108,6 @@ export const rootRoute: PlainRoute = {
 		callback(null, [
 			...pageRoutes,
 			...styleguideRoutes,
-			...dashboardRoutes,
-			...desktopRoutes,
 			...homeRoutes,
 			...channelRoutes,
 			miscRoute,

@@ -42,11 +42,12 @@ interface GlobalNavProps {
 	params: any;
 	channelStatusCode?: number;
 	role?: string;
+	desktop: boolean
 }
 
-export function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavProps, {user, signedIn, router, eventLogger}) {
-	const isHomepage = location.pathname === "/";
-	const shouldHide = hiddenNavRoutes.has(location.pathname);
+export function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavProps, {user, signedIn, router, eventLogger, desktop}) {
+	const dash = location.pathname.match(/^\/?$/) && signedIn;
+	const shouldHide = hiddenNavRoutes.has(location.pathname) && !dash;
 	const isStaticPage = isPage(location.pathname);
 
 	const showLogoMarkOnly = !isStaticPage || user;
@@ -55,7 +56,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 		return <span />;
 	}
 	const repoSplat = repoParam(params.splat);
-	const showSearchForm = !location.pathname.match(/^\/?dashboard$/);
+	const showSearchForm = !dash || desktop;
 	let repo = repoSplat ? repoPath(repoSplat) : null;
 	return (
 		<nav
@@ -123,23 +124,21 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 			}
 
 			<div className={classNames(styles.flex, styles.flex_fill, styles.flex_center, styles.tl, base.bn)}>
-				{!isHomepage &&
-					<Link to="/" className={classNames(styles.logo_link, styles.flex_fixed)}>
-						{showLogoMarkOnly ?
-							<Logo className={classNames(styles.logo, styles.logomark)}
+				<Link to="/" className={classNames(styles.logo_link, styles.flex_fixed)}>
+					{showLogoMarkOnly ?
+						<Logo className={classNames(styles.logo, styles.logomark)}
+							width="21px"
+							type="logomark"/> :
+						<span>
+							<Logo className={classNames(styles.logo, styles.logomark, styles.small_only)}
 								width="21px"
-								type="logomark"/> :
-							<span>
-								<Logo className={classNames(styles.logo, styles.logomark, styles.small_only)}
-									width="21px"
-									type="logomark"/>
-								<Logo className={classNames(styles.logo, styles.not_small_only)}
-									width="144px"
-									type="logotype"/>
-							</span>
-						}
-					</Link>
-				}
+								type="logomark"/>
+							<Logo className={classNames(styles.logo, styles.not_small_only)}
+								width="144px"
+								type="logotype"/>
+						</span>
+					}
+				</Link>
 
 				<div
 					className={classNames(styles.flex_fill, base.b__dotted, base.bn, base.brw2, colors.b__cool_pale_gray)}>
