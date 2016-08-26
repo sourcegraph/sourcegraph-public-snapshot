@@ -1,12 +1,7 @@
-// tslint:disable: typedef ordered-imports
-// tslint:disable: no-var-requires
-
 // Sentry error monitoring code
+import * as Raven from "raven-js";
 
 if (typeof global.window !== "undefined" && global.window._sentryRavenDSN) {
-	require("raven-js/dist/raven.min.js");
-	require("raven-js/dist/plugins/console.min.js");
-
 	// Ignore rules (from https://gist.github.com/impressiver/5092952).
 	let opt = {
 		tags: global.window._sentryTags,
@@ -54,5 +49,5 @@ if (typeof global.window !== "undefined" && global.window._sentryRavenDSN) {
 			/metrics\.itunes\.apple\.com\.edgesuite\.net\//i,
 		],
 	};
-	global.window.Raven.config(global.window._sentryRavenDSN, opt).install();
+	Raven.config(global.window._sentryRavenDSN, opt).install();
 }
