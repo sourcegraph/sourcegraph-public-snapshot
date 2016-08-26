@@ -24,10 +24,6 @@ declare namespace global {
 	export var module: any;
 }
 
-declare module "react-router/lib/matchRoutes" {
-	export default function matchRoutes(routes: any, location: any, callback: any, remainingPathname?: any); 
-}
-
 declare module "expect.js" {
 	export default function(arg: any): any;
 }
@@ -57,9 +53,5 @@ declare module "fs" {
 }
 
 declare module "child_process" {
-	export default {} as any;
-}
-
-declare module "react/lib/shallowCompare" {
 	export default {} as any;
 }
