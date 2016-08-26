@@ -51,7 +51,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		// get all caller repositories with counts (global refs)
-		const reflocRepoLimit = 2
+		const reflocRepoLimit = 5
 		refLocs, err = cl.Defs.ListRefLocations(ctx, &sourcegraph.DefsListRefLocationsOp{
 			Def: defSpec,
 			Opt: &sourcegraph.DefListRefLocationsOptions{
