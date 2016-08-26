@@ -16,6 +16,7 @@
 
 
 var constants = require('./constants');
+var utilities = require('./utilities');
 
 
 // Adds the dev ID to the list of dev IDs if any plugin is used.
@@ -24,17 +25,20 @@ var constants = require('./constants');
 
 /**
  * Provides a plugin for use with analytics.js, accounting for the possibility
- * that the global command queue has been renamed.
+ * that the global command queue has been renamed or not yet defined.
  * @param {string} pluginName The plugin name identifier.
  * @param {Function} pluginConstructor The plugin constructor function.
  */
 module.exports = function providePlugin(pluginName, pluginConstructor) {
-  var w = window;
-  var g = w.GoogleAnalyticsObject || 'ga';
+  var gaAlias = window['GoogleAnalyticsObject'] || 'ga';
+  window[gaAlias] = window[gaAlias] || function() {
+    (window[gaAlias]['q'] = window[gaAlias]['q'] || []).push(arguments);
+  };
 
-  // Creates the global command queue if it's not defined.
-  w[g] = w[g] || function(){(w[g].q=w[g].q||[]).push(arguments)};
-  w[g].l = w[g].l || +new Date;
+  // Formally provides the plugin for use with analytics.js.
+  window[gaAlias]('provide', pluginName, pluginConstructor);
 
-  w[g]('provide', pluginName, pluginConstructor);
+  // Registers the plugin on the global gaplugins object.
+  window.gaplugins = window.gaplugins || {};
+  window.gaplugins[utilities.capitalize(pluginName)] = pluginConstructor;
 };

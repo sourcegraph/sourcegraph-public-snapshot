@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+<head>
+  <script>
+    window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+  </script>
+  <script src="../node_modules/intersection-observer/intersection-observer.js"></script>
+
+  <!--
+  // Loads autotrack sync so the following bug-fixing logic can be run
+  // prior to analytics.js loading the impressionTracker plugin.
+  -->
+  <script src="/autotrack.js"></script>
+  <script>
+  // Fixes the records ordering of the IntersectionObserver callback.
+  // This is nessary to do here until https://crbug.com/613679 is live.
+  var originalHandleIntersectionChanges =
+      gaplugins.ImpressionTracker.prototype.handleIntersectionChanges;
+
+  gaplugins.ImpressionTracker.prototype.handleIntersectionChanges =
+      function(records) {
+
+    var sortedRecords = [];
+    for (var i = 0, item; item = this.items[i]; i++) {
+      for (var j = 0, record; record = records[j]; j++) {
+        if (record.target.id === item.id) {
+          sortedRecords.push(record);
+          continue;
+        }
+      }
+    }
+    originalHandleIntersectionChanges.call(this, sortedRecords);
+  }
+  </script>
+  <script async src="https://www.google-analytics.com/analytics.js"></script>
+  <style>
+    html, body { margin: 0; overflow: auto; }
+    .spacer { height: 900px; }
+    .container { overflow: hidden; height: 100px; }
+    .box { background: #eee; float: left; height: 100%; width: 50%; }
+  </style>
+</head>
+<body>
+
+<div id="container">
+  <div class="spacer"></div>
+  <div class="container" id="foo">
+    <div class="box" id="foo-1">
+      <div class="box" id="foo-1-1"></div>
+      <div class="box" id="foo-1-2"></div>
+    </div>
+    <div class="box" id="foo-2">
+      <div class="box" id="foo-2-1"></div>
+      <div class="box" id="foo-2-2"></div>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="container" id="bar">
+    <div class="box" id="bar-1">
+      <div class="box" id="bar-1-1"></div>
+      <div class="box" id="bar-1-2"></div>
+    </div>
+    <div class="box" id="bar-2">
+      <div class="box" id="bar-2-1"></div>
+      <div class="box" id="bar-2-2"></div>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="container" id="attrs">
+    <div
+      class="box"
+      id="attrs-1"
+      ga-event-category="Element"
+      ga-event-action="visible">
+    </div>
+    <div
+      class="box"
+      id="attrs-2"
+      data-ga-event-category="Window"
+      data-ga-non-interaction="true">
+    </div>
+  </div>
+  <div class="spacer"></div>
+</div>
+
+</body>
+</html>
