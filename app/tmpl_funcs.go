@@ -74,7 +74,7 @@ var tmplFuncs = htmpl.FuncMap{
 
 	"renderSnippet": renderSnippet,
 
-	"numberedNoun": func(count int, word string) string {
+	"numberedNoun": func(count int32, word string) string {
 		if strings.HasSuffix(word, "y") {
 			if count > 1 || count == 0 {
 				return word[:len(word)-1] + "ies"

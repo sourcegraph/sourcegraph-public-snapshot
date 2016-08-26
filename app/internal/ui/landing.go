@@ -50,10 +50,24 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		// get all caller repositories with counts (global refs)
-		refLocs, err = cl.Defs.ListRefLocations(ctx, &sourcegraph.DefsListRefLocationsOp{Def: defSpec})
+		const reflocRepoLimit = 2
+		refLocs, err = cl.Defs.ListRefLocations(ctx, &sourcegraph.DefsListRefLocationsOp{
+			Def: defSpec,
+			Opt: &sourcegraph.DefListRefLocationsOptions{
+				ListOptions: sourcegraph.ListOptions{
+					PerPage: reflocRepoLimit, // NOTE(mate): this has no effect at the moment
+				},
+			},
+		})
 		if err != nil {
 			return err
 		}
+		// WORKAROUND(mate): because ListRefLocations ignores pagination options
+		truncLen := len(refLocs.RepoRefs)
+		if truncLen > reflocRepoLimit {
+			truncLen = reflocRepoLimit
+		}
+		refLocs.RepoRefs = refLocs.RepoRefs[0:truncLen]
 
 		// fetch definition
 		entrySpec := sourcegraph.TreeEntrySpec{
@@ -148,25 +162,27 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		tmpl.Common
 		Meta meta
 
-		Repo        *sourcegraph.Repo
-		RepoRev     sourcegraph.RepoRevSpec
-		Def         *sourcegraph.Def
-		DefEntry    *sourcegraph.TreeEntry
-		DefSnippet  *app.Snippet
-		RefLocs     *sourcegraph.RefLocationsList
-		RefEntries  []*sourcegraph.TreeEntry
-		RefSnippets []*app.Snippet
+		Repo             *sourcegraph.Repo
+		RepoRev          sourcegraph.RepoRevSpec
+		Def              *sourcegraph.Def
+		DefEntry         *sourcegraph.TreeEntry
+		DefSnippet       *app.Snippet
+		RefLocs          *sourcegraph.RefLocationsList
+		TruncatedRefLocs bool
+		RefEntries       []*sourcegraph.TreeEntry
+		RefSnippets      []*app.Snippet
 	}{
 		Meta: meta{
 			SEO: true,
 		},
-		Repo:        repo,
-		RepoRev:     repoRev,
-		Def:         def,
-		DefEntry:    defEntry,
-		DefSnippet:  defSnippet,
-		RefLocs:     refLocs,
-		RefEntries:  refEntries,
-		RefSnippets: refSnippets,
+		Repo:             repo,
+		RepoRev:          repoRev,
+		Def:              def,
+		DefEntry:         defEntry,
+		DefSnippet:       defSnippet,
+		RefLocs:          refLocs,
+		TruncatedRefLocs: refLocs.TotalRepos > int32(len(refLocs.RepoRefs)),
+		RefEntries:       refEntries,
+		RefSnippets:      refSnippets,
 	})
 }
