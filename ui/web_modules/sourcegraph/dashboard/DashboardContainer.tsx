@@ -41,6 +41,7 @@ export class DashboardContainer extends Container<Props, State> {
 		this.state = {
 			isTyping: false,
 			onboarding: UserStore.authResponses["signup"] ? true : false,
+			chromeExtensionInstalled: false,
 		};
 
 		this._handleInput = this._handleInput.bind(this);
@@ -59,6 +60,10 @@ export class DashboardContainer extends Container<Props, State> {
 				return false;
 			}
 		});
+
+		setTimeout(() => this.setState({
+			chromeExtensionInstalled: document.getElementById("sourcegraph-app-bootstrap"),
+		}), 10);
 	}
 
 	reconcileState(state, props, context) {
@@ -148,7 +153,7 @@ export class DashboardContainer extends Container<Props, State> {
 
 					<div className={styles.user_actions}>
 						{!(this.context as any).signedIn && <LocationStateToggleLink href="/login" modalName="login" location={this.props.location}><Button className={styles.action_link} type="button" color="blue" outline={true}>Sign in</Button></LocationStateToggleLink>}
-						<a href="#install-chrome" onClick={this._installChromeExtensionClicked}><Button className={styles.action_link} type="button" color="blue" outline={true}>Install Chrome extension</Button></a>
+						{!this.state.chromeExtensionInstalled && <Button onClick={this._installChromeExtensionClicked} className={styles.action_link} type="button" color="blue" outline={true}>Install Chrome extension</Button>}
 					</div>
 
 					<GlobalSearchInput
@@ -176,8 +181,9 @@ export class DashboardContainer extends Container<Props, State> {
 		);
 	}
 
-	_completeOnboarding() {
+	_completeOnboarding(chromeExtensionInstalled) {
 		this.setState({
+			chromeExtensionInstalled: chromeExtensionInstalled,
 			onboarding: false,
 		});
 	}

@@ -36,13 +36,12 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionInstalled", {page_name: "ChromeExtensionOnboarding"});
 		(this.context as any).eventLogger.setUserProperty("installed_chrome_extension", "true");
 		setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", (this.context as any).eventLogger.getAmplitudeIdentificationProps())), 10);
-		this.props.completeStep();
+		this.props.completeStep(true);
 	}
 
 	_failHandler(msg) {
 		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_ERROR, "ChromeExtensionInstallFailed", {page_name: "ChromeExtensionOnboarding"});
 		(this.context as any).eventLogger.setUserProperty("installed_chrome_extension", "false");
-		this.props.completeStep();
 	}
 
 	_installChromeExtensionClicked() {
@@ -58,7 +57,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 
 	_skipClicked() {
 		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "SkipChromeExtensionCTAClicked", {page_name: "ChromeExtensionOnboarding"});
-		this.props.completeStep();
+		this.props.completeStep(false);
 	}
 
 	_exampleProps(): JSX.Element | null {
