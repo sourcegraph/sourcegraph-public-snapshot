@@ -42,7 +42,7 @@ interface GlobalNavProps {
 	params: any;
 	channelStatusCode?: number;
 	role?: string;
-	desktop: boolean
+	desktop: boolean;
 }
 
 export function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavProps, {user, signedIn, router, eventLogger, desktop}) {
