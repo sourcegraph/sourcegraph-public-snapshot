@@ -1,19 +1,20 @@
-var fs = require('fs')
-var path = require('path')
+const fs = require('fs')
+const path = require('path')
 
 // add bash completions to your
 //  yargs-powered applications.
-module.exports = function (yargs, usage) {
-  var self = {
+module.exports = function (yargs, usage, command) {
+  const self = {
     completionKey: 'get-yargs-completions'
   }
 
   // get a list of completion commands.
-  self.getCompletion = function (done) {
-    var completions = []
-    var current = process.argv[process.argv.length - 1]
-    var previous = process.argv.slice(process.argv.indexOf('--' + self.completionKey) + 1)
-    var argv = yargs.parse(previous)
+  // 'args' is the array of strings from the line to be completed
+  self.getCompletion = function (args, done) {
+    const completions = []
+    const current = args.length ? args[args.length - 1] : ''
+    const argv = yargs.parse(args, true)
+    const aliases = yargs.parsed.aliases
 
     // a custom completion function can be provided
     // to completion().
@@ -40,16 +41,16 @@ module.exports = function (yargs, usage) {
       }
     }
 
-    var handlers = yargs.getCommandHandlers()
-    for (var i = 0, ii = previous.length; i < ii; ++i) {
-      if (handlers[previous[i]]) {
-        return handlers[previous[i]](yargs.reset())
+    var handlers = command.getCommandHandlers()
+    for (var i = 0, ii = args.length; i < ii; ++i) {
+      if (handlers[args[i]] && handlers[args[i]].builder) {
+        return handlers[args[i]].builder(yargs.reset()).argv
       }
     }
 
     if (!current.match(/^-/)) {
       usage.getCommands().forEach(function (command) {
-        if (previous.indexOf(command[0]) === -1) {
+        if (args.indexOf(command[0]) === -1) {
           completions.push(command[0])
         }
       })
@@ -57,7 +58,14 @@ module.exports = function (yargs, usage) {
 
     if (current.match(/^-/)) {
       Object.keys(yargs.getOptions().key).forEach(function (key) {
-        completions.push('--' + key)
+        // If the key and its aliases aren't in 'args', add the key to 'completions'
+        var keyAndAliases = [key].concat(aliases[key] || [])
+        var notInArgs = keyAndAliases.every(function (val) {
+          return args.indexOf('--' + val) === -1
+        })
+        if (notInArgs) {
+          completions.push('--' + key)
+        }
       })
     }
 

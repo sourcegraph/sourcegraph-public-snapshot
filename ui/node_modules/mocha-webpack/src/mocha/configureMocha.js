@@ -1,6 +1,6 @@
 import _ from 'lodash';
-import checkReporter from './checkReporter';
 import Mocha from 'mocha';
+import checkReporter from './checkReporter';
 
 const defaults = {
   reporterOptions: {},

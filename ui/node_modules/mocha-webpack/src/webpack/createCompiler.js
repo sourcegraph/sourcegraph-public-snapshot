@@ -2,8 +2,9 @@ import invariant from 'invariant';
 import _ from 'lodash';
 import webpack from 'webpack';
 
-export default function createCompiler(webpackConfig, cb) {
-  invariant(arguments.length === 2, 'parameters are missing');
+const missing = () => { invariant(false, 'parameters are missing'); };
+
+export default function createCompiler(webpackConfig, cb = missing()) {
   invariant(_.isPlainObject(webpackConfig), 'webpackConfig must be a plain object');
   invariant(_.isFunction(cb), 'cb must be a function');
 

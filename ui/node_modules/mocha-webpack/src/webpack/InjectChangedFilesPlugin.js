@@ -79,34 +79,34 @@ export default class InjectChangedFilesPlugin {
     });
   }
 
-   setChangedFiles(compilation, file) {
-     const original = compilation.assets[file];
-     const originalSource = original.source();
-     const originalMap = original.map();
+  setChangedFiles(compilation, file) {
+    const original = compilation.assets[file];
+    const originalSource = original.source();
+    const originalMap = original.map();
 
-     const result = new ReplaceSource(original);
-     const regex = /__webpackManifest__\s*=\s*\[\s*\]/g;
-     const files = this.hotFiles.concat(this.failedFiles);
-     const changedFiles = `['${files.join("', '")}']`;
-     const replacement = `__webpackManifest__ = ${changedFiles}`;
+    const result = new ReplaceSource(original);
+    const regex = /__webpackManifest__\s*=\s*\[\s*\]/g;
+    const files = this.hotFiles.concat(this.failedFiles);
+    const changedFiles = `['${files.join("', '")}']`;
+    const replacement = `__webpackManifest__ = ${changedFiles}`;
 
-     let match;
-     while ((match = regex.exec(originalSource)) !== null) { // eslint-disable-line no-cond-assign
-       const start = match.index;
-       const end = match.index + match[0].length - 1;
-       result.replace(start, end, replacement);
-     }
+    let match;
+    while ((match = regex.exec(originalSource)) !== null) { // eslint-disable-line no-cond-assign
+      const start = match.index;
+      const end = match.index + (match[0].length - 1);
+      result.replace(start, end, replacement);
+    }
 
-     const resultSource = result.source();
-     const resultMap = result.map();
+    const resultSource = result.source();
+    const resultMap = result.map();
 
-     compilation.assets[file] = new SourceMapSource( // eslint-disable-line no-param-reassign
-       resultSource,
-       file,
-       resultMap,
-       originalSource,
-       originalMap
-     );
-   }
+    compilation.assets[file] = new SourceMapSource( // eslint-disable-line no-param-reassign
+      resultSource,
+      file,
+      resultMap,
+      originalSource,
+      originalMap
+    );
+  }
 
 }

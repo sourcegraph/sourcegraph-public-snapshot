@@ -25,7 +25,11 @@ export function run(options, webpackConfig) {
 
   webpackBuild(webpackConfig, (err) => {
     if (err) {
-      return options.exit ? exit(1) : exitLater(1);
+      if (options.exit) {
+        exit(1);
+      } else {
+        exitLater(1);
+      }
     }
 
     mocha.files = [outputFilePath];

@@ -21,8 +21,8 @@ module.exports = (function () {
       width = tty.getWindowSize()[1];
       height = tty.getWindowSize()[0];
     } else if (process.stdout.columns && process.stdout.rows) {
-      height = process.stdout.columns;
-      width = process.stdout.rows;
+      height = process.stdout.rows;
+      width = process.stdout.columns;
     }
   } else {
     Error('window-size could not get size with tty or process.stdout.');

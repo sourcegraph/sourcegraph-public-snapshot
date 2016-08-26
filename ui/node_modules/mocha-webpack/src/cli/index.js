@@ -22,14 +22,14 @@ const defaultOptions = parseArgv([]);
 const options = _.defaults({}, cliOptions, configOptions, defaultOptions);
 
 options.require.forEach((mod) => {
-  require(resolve(mod));
+  require(resolve(mod)); // eslint-disable-line global-require
 });
 
 options.include = options.include.map(resolve);
 
 if (options.webpackConfig) {
   const webpackConfigPath = path.resolve(options.webpackConfig);
-  options.webpackConfig = require(webpackConfigPath);
+  options.webpackConfig = require(webpackConfigPath); // eslint-disable-line global-require
 } else {
   options.webpackConfig = {};
 }
