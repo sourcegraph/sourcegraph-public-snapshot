@@ -41,6 +41,10 @@
 	text-decoration: none;
 	}
 
+	.dl-container .refslist {
+	padding-left: 0;
+	}
+
 	.dl-container .refsheadtext {
 	box-sizing: border-box;
 	color: rgb(119, 147, 174);
@@ -213,7 +217,7 @@
 	{{end}}
 
 	<h2><tt><span class="highlight-h2">{{.Def.Name}}</span></tt> is referenced in <span class="highlight">{{.RefLocs.TotalRepos}}</span> {{numberedNoun .RefLocs.TotalRepos "repository"}}</h2>
-	<ul style="padding-left: 0;">
+	<ul class="refslist">
 		{{range $repo := .RefLocs.RepoRefs}}
 		<li>
 			<a href="{{repoToURL $repo.Repo}}" class="refsrepolink">{{$repo.Repo}}</a>
