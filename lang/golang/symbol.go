@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -54,7 +56,7 @@ func (h *Handler) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbol
 	if err != nil {
 		return nil, err
 	}
-	o, err := runGog(h.goEnv(), pkgs)
+	o, err := runGog(h.cacheDir(), h.goEnv(), pkgs)
 	if err != nil {
 		return nil, err
 	}
@@ -158,12 +160,31 @@ func parseSymbolQuery(q string) (*symbolQuery, error) {
 	}, nil
 }
 
-func runGog(env, pkgs []string) (*gogOutput, error) {
+func runGog(cacheDir string, env, pkgs []string) (*gogOutput, error) {
+	// Coarse lock for this workspace. We don't lock per package to
+	// prevent concurrent memory heavy operations running.
+	unlock := lock(cacheDir)
+	defer unlock()
+
+	normalize := strings.NewReplacer(".", "-", "/", "-")
+
 	var combined gogOutput
 	for _, pkg := range pkgs {
-		b, err := cmdOutput(env, exec.Command("gog", pkg))
+		cache := filepath.Join(cacheDir, "gog", normalize.Replace(pkg)) + ".json"
+		b, err := ioutil.ReadFile(cache)
 		if err != nil {
-			return nil, err
+			b, err = cmdOutput(env, exec.Command("gog", pkg))
+			if err != nil {
+				return nil, err
+			}
+			err = os.MkdirAll(filepath.Dir(cache), 0700)
+			if err != nil {
+				return nil, err
+			}
+			err = ioutil.WriteFile(cache, b, 0600)
+			if err != nil {
+				return nil, err
+			}
 		}
 		var o gogOutput
 		err = json.Unmarshal(b, &o)

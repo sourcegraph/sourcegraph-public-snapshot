@@ -19,6 +19,7 @@ var updateFixtures = flag.Bool("fixtures.update", false, "update the expected fi
 
 func TestFixtures(t *testing.T) {
 	checkExecDeps(t)
+	defer os.RemoveAll("testdata/cache")
 
 	cases, err := filepath.Glob("testdata/*.json")
 	if err != nil {

@@ -59,3 +59,7 @@ func (h *Handler) goEnv() []string {
 	}
 	return env
 }
+
+func (h *Handler) cacheDir() string {
+	return filepath.Join(h.init.RootPath, "cache")
+}
