@@ -57,6 +57,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 	}
 
 	_skipClicked() {
+		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "SkipChromeExtensionCTAClicked", {page_name: "ChromeExtensionOnboarding"});
 		this.props.completeStep();
 	}
 

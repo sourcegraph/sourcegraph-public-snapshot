@@ -276,7 +276,7 @@ class EventLoggerClass {
 	}
 
 	_decorateEventProperties(platformProperties: any): any {
-		return Object.assign({}, platformProperties, {Platform: this._currentPlatform, platformVersion: this._currentPlatformVersion, is_authed: this._user ? "true" : "false"});
+		return Object.assign({}, platformProperties, {Platform: this._currentPlatform, platformVersion: this._currentPlatformVersion, is_authed: this._user ? "true" : "false", path_name: window.location.pathname ? window.location.pathname.slice(1) : ""});
 	}
 
 	// Use logViewEvent as the default way to log view events for Amplitude and GA
