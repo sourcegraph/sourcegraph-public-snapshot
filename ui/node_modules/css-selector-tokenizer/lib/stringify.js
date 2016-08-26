@@ -2,11 +2,21 @@
 
 var stringify;
 
-function escape(str) {
+var regexpu = require("regexpu-core");
+var identifierEscapeRegexp = new RegExp(
+	regexpu("(^[^A-Za-z_\\-\\u{00a0}-\\u{10ffff}]|^\\-\\-|[^A-Za-z_0-9\\-\\u{00a0}-\\u{10ffff}])", "ug"),
+	"g"
+);
+
+function escape(str, identifier) {
 	if(str === "*") {
 		return "*";
 	}
-	return str.replace(/(^[^A-Za-z_\\-]|^\-\-|[^A-Za-z_0-9\\-])/g, "\\$1");
+	if (identifier) {
+		return str.replace(identifierEscapeRegexp, "\\$1");
+	} else {
+		return str.replace(/(^[^A-Za-z_\\-]|^\-\-|[^A-Za-z_0-9\\-])/g, "\\$1");
+	}
 }
 
 function stringifyWithoutBeforeAfter(tree) {
@@ -18,9 +28,9 @@ function stringifyWithoutBeforeAfter(tree) {
 	case "element":
 		return (typeof tree.namespace === "string" ? escape(tree.namespace) + "|" : "") + escape(tree.name);
 	case "class":
-		return "." + escape(tree.name);
+		return "." + escape(tree.name, true);
 	case "id":
-		return "#" + escape(tree.name);
+		return "#" + escape(tree.name, true);
 	case "attribute":
 		return "[" + tree.content + "]";
 	case "spacing":

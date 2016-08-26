@@ -1,3 +1,7 @@
+2016-08-23: Version 2.7.3
+
+      * Fix tokenizer confusion with a comment (issue 1493, 1516)
+
 2016-02-02: Version 2.7.2
 
       * Fix out-of-bound error location in an invalid string literal (issue 1457)

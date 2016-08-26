@@ -11,18 +11,28 @@ This is the module's main entry point.
 var parser = require('postcss-selector-parser');
 ```
 
-### `parser(transform)`
+### `parser([transform])`
+
+Creates a new `processor` instance
 
 ```js
+var processor = parser();
+
+// or, with optional transform function
 var transform = function (selectors) {
     selectors.eachUniversal(function (selector) {
         selector.remove();
     });
 };
 
-var result = parser(transform).process('*.class').result;
+var processor = parser(transform)
+
+// Example
+var result = processor.process('*.class').result;
 // => .class
 ```
+
+[See processor documentation](#processor)
 
 Arguments:
 
@@ -586,3 +596,29 @@ around it.
 [id=Bar i ] /* " i " */
 [id=Bar   i  ] /* "   i  " */
 ```
+
+## `processor`
+
+### `process(cssText, [options])`
+
+Processes the `cssText`, returning the parsed output
+
+```js
+var processor = parser();
+
+var result = processor.process(' .class').result;
+// =>  .class
+
+// To have the parser normalize whitespace values, utilize the options
+var result = processor.process('  .class  ', {lossless: false}).result;
+// => .class
+```
+
+Arguments:
+
+* `cssText (string)`: The css to be parsed.
+* `[options] (object)`: Process options
+
+Options:
+
+* `loseless (boolean)`: false to normalize the selector whitespace, defaults to true

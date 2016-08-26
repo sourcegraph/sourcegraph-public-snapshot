@@ -134,6 +134,25 @@ var out = postcss()
   .css
 ```
 
+#### `selectors` (default: `false`)
+
+Allows calc() usage as part of selectors.
+
+```js
+var out = postcss()
+  .use(calc({selectors: true}))
+  .process(css)
+  .css
+```
+
+Example:
+
+```css
+div[data-size="calc(3*3)"] {
+  width: 100px;
+}
+```
+
 ---
 
 ## Contributing

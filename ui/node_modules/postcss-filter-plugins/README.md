@@ -47,7 +47,7 @@ console.log(out);
 
 ##### direction
 
-Type: `string`
+Type: `string`  
 Default: `'both'`
 
 Pass `'forward'`, `'backward'`, or `'both'` to customise the direction in which the
@@ -62,7 +62,7 @@ postcss([ filter({
 
 ##### exclude
 
-Type: `array`
+Type: `array`  
 Default: `[] (empty)`
 
 Plugins that should be excluded from the filter. Pass an array of plugin names.
@@ -75,7 +75,7 @@ postcss([ filter({
 
 ##### silent
 
-Type: `boolean`
+Type: `boolean`  
 Default: `false`
 
 Set this to true to disable the plugin from emitting any PostCSS warnings.
@@ -88,7 +88,7 @@ postcss([ filter({
 
 ##### template
 
-Type: `function`
+Type: `function`  
 Default: `format function`
 
 This function will be passed each PostCSS plugin object. You are expected to
@@ -108,10 +108,18 @@ postcss([ filter({
 See the [PostCSS documentation](https://github.com/postcss/postcss#usage) for
 examples for your environment.
 
-## Contributing
+## Contributors
 
-Pull requests are welcome. If you add functionality, then please add unit tests
-to cover it.
+Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+| [<img src="https://avatars.githubusercontent.com/u/1282980?v=3" width="100px;"/><br /><sub>Ben Briggs</sub>](http://beneb.info)<br />[💻](https://github.com/postcss/postcss-filter-plugins/commits?author=ben-eb) [📖](https://github.com/postcss/postcss-filter-plugins/commits?author=ben-eb) 👀 [⚠️](https://github.com/postcss/postcss-filter-plugins/commits?author=ben-eb) | [<img src="https://avatars.githubusercontent.com/u/157534?v=3" width="100px;"/><br /><sub>Maxime Thirouin</sub>](https://moox.io/)<br />[📖](https://github.com/postcss/postcss-filter-plugins/commits?author=MoOx) | [<img src="https://avatars.githubusercontent.com/u/373545?v=3" width="100px;"/><br /><sub>Andreas Lind</sub>](https://github.com/papandreou)<br />[💻](https://github.com/postcss/postcss-filter-plugins/commits?author=papandreou) |
+| :---: | :---: | :---: |
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/kentcdodds/all-contributors) specification.
+Contributions of any kind welcome!
+
 
 ## License
 

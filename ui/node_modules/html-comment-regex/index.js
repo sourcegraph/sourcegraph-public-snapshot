@@ -1,2 +1,2 @@
 'use strict';
-module.exports = /<!--((?:.|\s)*?)-->/g;
+module.exports = /<!--([\s\S]*?)-->/g;

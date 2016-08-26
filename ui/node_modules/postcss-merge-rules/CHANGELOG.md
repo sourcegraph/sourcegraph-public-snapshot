@@ -1,3 +1,8 @@
+# 2.0.10
+
+* Replaces the internal list of vendor prefixes with the `vendors` module
+  (now, some less widely used prefixes are supported).
+
 # 2.0.9
 
 * Resolves an issue where the module would merge rules that had colliding

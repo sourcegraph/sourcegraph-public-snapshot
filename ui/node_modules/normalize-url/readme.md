@@ -96,6 +96,26 @@ normalizeUrl('www.sindresorhus.com?foo=bar&ref=test_ref', {
 //=> 'http://sindresorhus.com/?foo=bar'
 ```
 
+##### removeTrailingSlash
+
+Type: `boolean`<br>
+Default: `true`
+
+Remove trailing slash.
+
+**Note:** Trailing slash is always removed if the URL doesn't have a pathname.
+
+```js
+normalizeUrl('http://sindresorhus.com/redirect/');
+//=> 'http://sindresorhus.com/redirect'
+
+normalizeUrl('http://sindresorhus.com/redirect/', {removeTrailingSlash: false});
+//=> 'http://sindresorhus.com/redirect/'
+
+normalizeUrl('http://sindresorhus.com/', {removeTrailingSlash: false});
+//=> 'http://sindresorhus.com'
+```
+
 
 ## Related
 

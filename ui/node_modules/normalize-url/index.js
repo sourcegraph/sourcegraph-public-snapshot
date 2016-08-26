@@ -37,7 +37,8 @@ module.exports = function (str, opts) {
 		normalizeProtocol: true,
 		stripFragment: true,
 		stripWWW: true,
-		removeQueryParameters: [/^utm_\w+/i]
+		removeQueryParameters: [/^utm_\w+/i],
+		removeTrailingSlash: true
 	}, opts);
 
 	if (typeof str !== 'string') {
@@ -121,7 +122,9 @@ module.exports = function (str, opts) {
 	str = url.format(urlObj);
 
 	// remove ending `/`
-	str = str.replace(/\/$/, '');
+	if (opts.removeTrailingSlash || urlObj.pathname === '/') {
+		str = str.replace(/\/$/, '');
+	}
 
 	// restore relative protocol, if applicable
 	if (hasRelativeProtocol && !opts.normalizeProtocol) {

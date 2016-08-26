@@ -16,6 +16,7 @@ module.exports = postcss.plugin("postcss-calc", function(options) {
   var preserve = options.preserve
   var warnWhenCannotResolve = options.warnWhenCannotResolve
   var mediaQueries = options.mediaQueries
+  var selectors = options.selectors
 
   return function(style, result) {
     function transformValue(node, property) {
@@ -52,6 +53,9 @@ module.exports = postcss.plugin("postcss-calc", function(options) {
       }
       else if (rule.type === "decl") {
         return transformValue(rule, "value")
+      }
+      else if (selectors && rule.type === "rule") {
+        return transformValue(rule, "selector")
       }
     })
   }

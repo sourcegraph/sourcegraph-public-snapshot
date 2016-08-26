@@ -1,3 +1,7 @@
+# 2.1.7
+
+* Replaced the `has-own` module with `has`.
+
 # 2.1.6
 
 * Fixes an issue where the module would discard at-rules that were defined in

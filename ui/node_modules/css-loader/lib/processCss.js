@@ -2,6 +2,7 @@
 	MIT License http://www.opensource.org/licenses/mit-license.php
 	Author Tobias Koppers @sokra
 */
+var formatCodeFrame = require("babel-code-frame");
 var Tokenizer = require("css-selector-tokenizer");
 var postcss = require("postcss");
 var loaderUtils = require("loader-utils");
@@ -208,6 +209,43 @@ module.exports = function processCss(inputSource, inputMap, options, callback) {
 			urlItemRegExp: /___CSS_LOADER_URL___([0-9]+)___/
 		});
 	}).catch(function(err) {
-		callback(err);
+		if (err.name === 'CssSyntaxError') {
+			var wrappedError = new CSSLoaderError(
+				'Syntax Error',
+				err.reason,
+				err.line != null && err.column != null
+					? {line: err.line, column: err.column}
+					: null,
+				err.input.source
+			);
+			callback(wrappedError);
+		} else {
+			callback(err);
+		}
 	});
 };
+
+function formatMessage(message, loc, source) {
+	var formatted = message;
+	if (loc) {
+		formatted = formatted
+			+ ' (' + loc.line + ':' + loc.column + ')';
+	}
+	if (loc && source) {
+		formatted = formatted
+			+ '\n\n' + formatCodeFrame(source, loc.line, loc.column) + '\n';
+	}
+	return formatted;
+}
+
+function CSSLoaderError(name, message, loc, source, error) {
+	Error.call(this);
+	Error.captureStackTrace(this, CSSLoaderError);
+	this.name = name;
+	this.error = error;
+	this.message = formatMessage(message, loc, source);
+	this.hideStack = true;
+}
+
+CSSLoaderError.prototype = Object.create(Error.prototype);
+CSSLoaderError.prototype.constructor = CSSLoaderError;

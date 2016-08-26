@@ -24,6 +24,14 @@ var transform = function (selectors) {
 var transformed = parser(transform).process('h1, h2, h3').result;
 ```
 
+To normalize selector whitespace:
+
+```js
+var parser = require('postcss-selector-parser');
+var normalized = parser().process('h1, h2, h3', {lossless:false}).result;
+// -> h1,h2,h3
+```
+
 ## API
 
 Please see [API.md](API.md).

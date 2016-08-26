@@ -1,3 +1,8 @@
+# 2.1.4
+
+* Fixes an issue where postcss-svgo would throw with some SVGs that were
+  not properly URI encoded.
+
 # 2.1.3
 
 * Upgrade is-svg to version 2.
