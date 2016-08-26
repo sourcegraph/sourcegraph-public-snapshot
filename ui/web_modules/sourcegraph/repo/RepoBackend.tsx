@@ -1,10 +1,10 @@
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {RepoStore} from "sourcegraph/repo/RepoStore";
-import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {sortBranches, sortTags} from "sourcegraph/repo/vcs";
-import {EventLogger} from "sourcegraph/util/EventLogger";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {checkStatus, defaultFetch} from "sourcegraph/util/xhr";
 

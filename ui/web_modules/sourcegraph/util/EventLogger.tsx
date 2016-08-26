@@ -1,15 +1,15 @@
 import {Location} from "history";
 import * as React from "react";
 import {Route} from "react-router";
-import * as Dispatcher from "sourcegraph/Dispatcher";
 import {context} from "sourcegraph/app/context";
 import {getRouteParams, getRoutePattern, getViewName} from "sourcegraph/app/routePatterns";
 import {SiteConfig} from "sourcegraph/app/siteConfig";
 import * as DefActions from "sourcegraph/def/DefActions";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
+import {AuthInfo, User} from "sourcegraph/user/index";
 import * as UserActions from "sourcegraph/user/UserActions";
 import {UserStore} from "sourcegraph/user/UserStore";
-import {AuthInfo, User} from "sourcegraph/user/index";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {defPathToLanguage, getLanguageExtensionForPath} from "sourcegraph/util/inventory";
 

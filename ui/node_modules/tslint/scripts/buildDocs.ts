@@ -39,7 +39,7 @@ import * as path from "path";
 import {AbstractRule} from "../lib/language/rule/abstractRule";
 import {IRuleMetadata} from "../lib/language/rule/rule";
 
-const DOCS_DIR = "../../tslint-gh-pages";
+const DOCS_DIR = "../docs";
 const DOCS_RULE_DIR = path.join(DOCS_DIR, "rules");
 
 const rulePaths = glob.sync("../lib/rules/*Rule.js");

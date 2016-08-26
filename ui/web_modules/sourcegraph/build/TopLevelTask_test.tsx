@@ -1,7 +1,7 @@
 import * as React from "react";
-import {TopLevelTask} from "sourcegraph/build/TopLevelTask";
 import testdataEmpty from "sourcegraph/build/testdata/TopLevelTask-empty.json";
 import testdataSteps from "sourcegraph/build/testdata/TopLevelTask-steps.json";
+import {TopLevelTask} from "sourcegraph/build/TopLevelTask";
 import {autotest} from "sourcegraph/util/autotest";
 
 const sampleTask = {

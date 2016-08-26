@@ -1,6 +1,6 @@
+import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Store} from "sourcegraph/Store";
-import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {deepFreeze} from "sourcegraph/util/deepFreeze";
 
 // keyFor must stay in sync with the key func in

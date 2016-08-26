@@ -14,6 +14,7 @@ circle.yml
 Gruntfile.js
 tslint.json
 /build/
+/docs/
 /src/
 /test/
 tscommand*.txt

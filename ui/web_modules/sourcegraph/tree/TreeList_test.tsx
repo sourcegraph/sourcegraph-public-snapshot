@@ -1,9 +1,9 @@
 import * as React from "react";
+import testdataFiles from "sourcegraph/tree/testdata/TreeList-files.json";
+import testdataNotFound from "sourcegraph/tree/testdata/TreeList-notFound.json";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {TreeList} from "sourcegraph/tree/TreeList";
 import {TreeStore} from "sourcegraph/tree/TreeStore";
-import testdataFiles from "sourcegraph/tree/testdata/TreeList-files.json";
-import testdataNotFound from "sourcegraph/tree/testdata/TreeList-notFound.json";
 import {autotest} from "sourcegraph/util/autotest";
 
 describe("TreeList", () => {

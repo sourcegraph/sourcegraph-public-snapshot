@@ -1,8 +1,8 @@
 import * as get from "lodash/get";
-import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {DefStore} from "sourcegraph/def/DefStore";
 import {encodeDefPath} from "sourcegraph/def/index";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {toQuery} from "sourcegraph/util/toQuery";

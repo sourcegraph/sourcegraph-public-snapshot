@@ -6,13 +6,14 @@
 TSLint
 ======
 
-An extensible linter for the TypeScript language.
+An extensible linter for the [TypeScript language](https://github.com/Microsoft/TypeScript).
 
-Supports:
+TSLint supports:
 
-- custom rules
-- custom formatters
+- custom lint rules
+- custom formatters (failure reporters)
 - inline disabling / enabling of rules
+- configuration presets (`tslint:latest`, `tslint-react`, etc.) & composition
 - integration with [msbuild](https://github.com/joshuakgoldberg/tslint.msbuild), [grunt](https://github.com/palantir/grunt-tslint), [gulp](https://github.com/panuhorsmalahti/gulp-tslint), [atom](https://github.com/AtomLinter/linter-tslint), [eclipse](https://github.com/palantir/eclipse-tslint), [emacs](http://flycheck.org), [sublime](https://packagecontrol.io/packages/SublimeLinter-contrib-tslint), [vim](https://github.com/scrooloose/syntastic), [visual studio](https://visualstudiogallery.msdn.microsoft.com/6edc26d4-47d8-4987-82ee-7c820d79be1d), [vscode](https://marketplace.visualstudio.com/items?itemName=eg2.tslint), [webstorm](https://www.jetbrains.com/webstorm/help/tslint.html), and more
 
 Table of Contents
@@ -245,152 +246,22 @@ Core Rules
 -----
 <sup>[back to ToC &uarr;](#table-of-contents)</sup>
 
-Core rules are included in the `tslint` package.
+[See the TSLint website for a list of core rules included in the `tslint` package.]
+(http://palantir.github.io/tslint/rules/)
 
-* `align` enforces vertical alignment. Rule options:
-  * `"parameters"` checks alignment of function parameters.
-  * `"arguments"` checks alignment of function call arguments.
-  * `"statements"` checks alignment of statements.
-* `arrow-parens` requires parentheses around the parameters of arrow function definitions.
-* `ban` bans the use of specific functions. Options are `["object", "function"]` pairs that ban the use of `object.function()`.  An optional 3rd parameter may be provided (`["object", "function", "Use 'object.otherFunc' instead."]`) to offer an explanation as to why the function has been banned or to offer an alternative.
-* `class-name` enforces PascalCased class and interface names.
-* `comment-format` enforces rules for single-line comments. Rule options:
-    * `"check-space"` enforces the rule that all single-line comments must begin with a space, as in `// comment`
-        * note that comments starting with `///` are also allowed, for things such as `///<reference>`
-    * `"check-lowercase"` enforces the rule that the first non-whitespace character of a comment must be lowercase, if applicable.
-    * `"check-uppercase"` enforces the rule that the first non-whitespace character of a comment must be uppercase, if applicable.
-* `curly` enforces braces for `if`/`for`/`do`/`while` statements.
-* `eofline` enforces the file to end with a newline.
-* `forin` enforces a `for ... in` statement to be filtered with an `if` statement.
-* `indent` enforces indentation with tabs or spaces. Rule options (one is required):
-    * `"tabs"` enforces consistent tabs.
-    * `"spaces"` enforces consistent spaces.
-* `interface-name` enforces consistent interface names. Rule options:
-    * `"always-prefix"` enforces interface names must have an 'I' prefix
-    * `"never-prefix"` enforces interface names must not have an 'I' prefix
-* `jsdoc-format` enforces basic format rules for jsdoc comments -- comments starting with `/**`
-    * each line contains an asterisk and asterisks must be aligned
-    * each asterisk must be followed by either a space or a newline (except for the first and the last)
-    * the only characters before the asterisk on each line must be whitespace characters
-    * one line comments must start with `/** ` and end with ` */`
-* `label-position` enforces labels only on sensible statements.
-* `label-undefined` checks that labels are defined before usage.
-* `linebreak-style` checks that line breaks used in source files are either linefeed or carriage-return linefeeds. By default linefeeds are required. This rule accepts one parameter, either "LF" or "CRLF".
-* `max-file-line-count` sets the maximum number of lines for files.
-* `max-line-length` sets the maximum length of a line.
-* `member-access` enforces using explicit visibility on class members
-    * `"check-accessor"` enforces explicit visibility on get/set accessors
-    * `"check-constructor"` enforces explicit visibility on constructors
-* `member-ordering` enforces member ordering. The first option should be an object with an `order` key.
-   Values for `order` can be `fields-first`, `statics-first`, `instance-sandwich`, or a custom order.
-* `new-parens` enforces parentheses when invoking a constructor via the `new` keyword.
-* `no-angle-bracket-type-assertion` disallows usages of `<>` type assertions in favor of using the `as` keyword.
-* `no-any` diallows usages of `any` as a type decoration.
-* `no-arg` disallows access to `arguments.callee`.
-* `no-bitwise` disallows bitwise operators.
-* `no-conditional-assignment` disallows any type of assignment in any conditionals. This applies to `do-while`, `for`, `if`, and `while` statements.
-* `no-consecutive-blank-lines` disallows having more than one blank line in a row in a file.
-* `no-console` disallows access to the specified functions on `console`. Rule options are functions to ban on the console variable.
-* `no-construct` disallows access to the constructors of `String`, `Number`, and `Boolean`.
-* `no-constructor-vars` disallows the `public` and `private` modifiers for constructor parameters.
-* `no-debugger` disallows `debugger` statements.
-* `no-default-export` disallows default exports in ES6-style modules. Use named exports instead.
-* `no-duplicate-key` disallows duplicate keys in object literals.
-* `no-duplicate-variable` disallows duplicate variable declarations in the same block scope.
-* `no-empty` disallows empty blocks.
-* `no-eval` disallows `eval` function invocations.
-* `no-for-in-array` disallows iterating over an array with a for-in loop (requires type checking).
-* `no-inferrable-types` disallows explicit type declarations for variables or parameters initialized to a number, string, or boolean.
-   * `ignore-params` allows specifying an inferrable type as a function param
-* `no-internal-module` disallows internal `module` (use `namespace` instead).
-* `no-invalid-this` disallows using the `this` keyword outside of classes.
-    * `check-function-in-method` disallows using the `this` keyword in functions within class methods.
-* `no-mergeable-namespace` disallows mergeable namespaces in the same file.
-* `no-namespace` disallows both internal `module`s and `namespace`, but allows ES6-style external modules.
-    * `allow-declarations` allows `declare namespace ... {}` to describe external APIs.
-* `no-null-keyword` disallows use of the `null` keyword literal.
-* `no-reference` disallows `/// <reference path=>` imports (use ES6-style imports instead).
-* `no-require-imports` disallows invocation of `require()` (use ES6-style imports instead).
-* `no-shadowed-variable` disallows shadowed variable declarations.
-* `no-string-literal` disallows object access via string literals.
-* `no-switch-case-fall-through` disallows falling through case statements. As of TypeScript version 1.8, this rule can be enabled within the compiler by passing the `--noFallthroughCasesInSwitch` flag.
-* `no-trailing-whitespace` disallows trailing whitespace at the end of a line.
-* `no-unreachable` disallows unreachable code after `break`, `catch`, `throw`, and `return` statements. This rule is supported and enforced by default within the TypeScript compiler since version 1.8.
-* `no-unused-expression` disallows unused expression statements, that is, expression statements that are not assignments or function invocations (and thus no-ops). Combine with `no-unused-new` to disallow expressions containing the new keyword.
-* `no-unused-new` disallows unused expressions statements which include the new keyword.
-* `no-unused-variable` disallows unused imports, variables, functions and private class members. Rule options:
-    * `"check-parameters"` disallows unused function and constructor parameters.
-        * NOTE: this option is experimental and does not work with classes that use abstract method declarations, among other things. Use at your own risk.
-    * `"react"` relaxes the rule for a namespace import named `React` (from either the module `"react"` or `"react/addons"`). Any JSX expression in the file will be treated as a usage of `React` (because it expands to `React.createElement`).
-    * `{"ignore-pattern": "pattern"}` where pattern is a case-sensitive regexp. Variable names that match the pattern will be ignored.
-* `no-use-before-declare` disallows usage of variables before their declaration.
-* `no-var-keyword` disallows usage of the `var` keyword, use `let` or `const` instead.
-* `no-var-requires` disallows the use of require statements except in import statements, banning the use of forms such as `var module = require("module")`.
-* `object-literal-sort-keys` checks that keys in object literals are declared in alphabetical order (useful to prevent merge conflicts).
-* `one-line` enforces the specified tokens to be on the same line as the expression preceding it. Rule options:
-  * `"check-catch"` checks that `catch` is on the same line as the closing brace for `try`.
-  * `"check-else"` checks that `else` is on the same line as the closing brace for `if`.
-  * `"check-finally"` checks that `finally` is on the same line as the closing brace for the preceding `try` or `catch`.
-  * `"check-open-brace"` checks that an open brace falls on the same line as its preceding expression.
-  * `"check-whitespace"` checks preceding whitespace for the specified tokens.
-* `one-variable-per-declaration` disallows multiple variable definitions in the same statement.
-  * `"ignore-for-loop"` allows multiple variable definitions in for loop statement.
-* `only-arrow-functions` disallows traditional `function () { ... }` declarations, preferring `() => { ... }` arrow lambdas.
-* `quotemark` enforces consistent single or double quoted string literals. Rule options (at least one of `"double"` or `"single"` is required):
-    * `"single"` enforces single quotes.
-    * `"double"` enforces double quotes.
-    * `"jsx-single"` enforces single quotes for JSX attributes.
-    * `"jsx-double"` enforces double quotes for JSX attributes.
-    * `"avoid-escape"` allows you to use the "other" quotemark in cases where escaping would normally be required. For example, `[true, "double", "avoid-escape"]` would not report a failure on the string literal `'Hello "World"'`.
-* `radix` enforces the radix parameter of `parseInt`.
-* `restrict-plus-operands` enforces the type of addition operands to be both `string` or both `number` (requires type checking).
-* `semicolon` enforces consistent semicolon usage at the end of every statement. Rule options:
-    * `"always"` enforces semicolons at the end of every statement.
-    * `"never"` disallows semicolons at the end of every statement except for when they are necessary.
-* `switch-default` enforces a `default` case in `switch` statements.
-* `trailing-comma` enforces or disallows trailing comma within array and object literals, destructuring assignment and named imports.
-  Each rule option requires a value of `"always"` or `"never"`. Rule options:
-    * `"multiline"` checks multi-line object literals.
-    * `"singleline"` checks single-line object literals.
-* `triple-equals` enforces `===` and `!==` in favor of `==` and `!=`.
-    * `"allow-null-check"` allows `==` and `!=` when comparing to `null`.
-    * `"allow-undefined-check"` allows `==` and `!=` when comparing to `undefined`.
-* `typedef` enforces type definitions to exist. Rule options:
-    * `"call-signature"` checks return type of non-arrow functions.
-    * `"arrow-call-signature"` checks return type of arrow functions.
-    * `"parameter"` checks type specifier of function parameters for non-arrow functions.
-    * `"arrow-parameter"` checks type specifier of function parameters for arrow functions.
-    * `"property-declaration"` checks return types of interface properties.
-    * `"variable-declaration"` checks variable declarations.
-    * `"member-variable-declaration"` checks member variable declarations. For arrow functions being assigned as properties, either the property itself or the arrow functions parameters must have a typedef.
-* `typedef-whitespace` enforces spacing whitespace for type definitions. Each rule option requires a value of `"nospace"`,
-  `"onespace"` or `"space"` to require no space, exactly one or at least one space before or after the type specifier's
-  colon. You can specify two objects containing the five options. The first one describes the left, the second one the
-  right hand side of the typedef colon. To omit checks for either side, omit the second object or pass an empty object
-  for the first. Rule options:
-    * `"call-signature"` checks return type of functions.
-    * `"index-signature"` checks index type specifier of indexers.
-    * `"parameter"` checks function parameters.
-    * `"property-declaration"` checks object property declarations.
-    * `"variable-declaration"` checks variable declaration.
-* `use-isnan` enforces that you use the isNaN() function to check for NaN references instead of a comparison to the NaN constant.
-* `use-strict` enforces ECMAScript 5's strict mode.
-    * `check-module` checks that all top-level modules are using strict mode.
-    * `check-function` checks that all top-level functions are using strict mode.
-* `variable-name` checks variables names for various errors.  Rule options:
-  * `"check-format"`: allows only camelCased or UPPER_CASED variable names
-    * `"allow-leading-underscore"` allows underscores at the beginning.
-    * `"allow-trailing-underscore"` allows underscores at the end.
-    * `"allow-pascal-case"` allows PascalCase in addition to camelCase.
-  * `"ban-keywords"`: disallows the use of certain TypeScript keywords (`any`, `Number`, `number`, `String`, `string`, `Boolean`, `boolean`, `undefined`) as variable or parameter names.
-* `whitespace` enforces spacing whitespace. Rule options:
-  * `"check-branch"` checks branching statements (`if`/`else`/`for`/`while`) are followed by whitespace.
-  * `"check-decl"`checks that variable declarations have whitespace around the equals token.
-  * `"check-module"` checks for whitespace in import & export statements.
-  * `"check-operator"` checks for whitespace around operator tokens.
-  * `"check-separator"` checks for whitespace after separator tokens (`,`/`;`).
-  * `"check-type"` checks for whitespace before a variable type specification.
-  * `"check-typecast"` checks for whitespace between a typecast and its target.
+Core Formatters
+-----
+
+Formatters are used to format the results of the linter before outputting it to stdout or
+the configured output file. The core formatters are:
+
+- __prose__: human readable (default)
+- __json__: machine readable
+- __verbose__: human readable (includes rule names)
+- __pmd__
+- __msbuild__
+- __checkstyle__
+- __vso__
 
 Rule Flags
 -----

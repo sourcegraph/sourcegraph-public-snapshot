@@ -42,7 +42,7 @@
     "source-map-support": "0.4.2",
     "style-loader": "0.13.1",
     "ts-loader": "0.8.2",
-    "tslint": "3.14.0",
+    "tslint": "3.15.1",
     "typed-css-modules": "0.1.12",
     "typescript": "2.0.0",
     "url-loader": "0.5.7",

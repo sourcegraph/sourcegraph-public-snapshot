@@ -1,9 +1,9 @@
 import expect from "expect.js";
 
-import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {BlobBackend} from "sourcegraph/blob/BlobBackend";
 import {prepareAnnotations} from "sourcegraph/blob/prepareAnnotations";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
 

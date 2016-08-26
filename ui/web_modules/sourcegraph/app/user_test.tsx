@@ -1,9 +1,9 @@
 import expect from "expect.js";
 import * as React from "react";
 import {getChildContext, withUserContext} from "sourcegraph/app/user";
+import {AuthInfo, ExternalToken, User} from "sourcegraph/user/index";
 import * as UserActions from "sourcegraph/user/UserActions";
 import {UserStore} from "sourcegraph/user/UserStore";
-import {AuthInfo, ExternalToken, User} from "sourcegraph/user/index";
 import {render} from "sourcegraph/util/renderTestUtils";
 
 const sampleAuthInfo: AuthInfo = {UID: 1, Login: "u"} as AuthInfo;

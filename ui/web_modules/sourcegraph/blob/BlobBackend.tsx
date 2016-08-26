@@ -1,7 +1,7 @@
-import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {BlobStore, keyForAnns, keyForFile} from "sourcegraph/blob/BlobStore";
 import {prepareAnnotations} from "sourcegraph/blob/prepareAnnotations";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {checkStatus, defaultFetch} from "sourcegraph/util/xhr";

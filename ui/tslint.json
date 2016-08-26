@@ -11,7 +11,10 @@
 		"no-string-literal": false,
 		"no-default-export": true,
 		"comment-format": [false],
-		"switch-default": false
+		"switch-default": false,
+		"object-literal-shorthand": false,
+		"object-literal-key-quotes": false,
+		"only-arrow-functions": false
   },
   "rulesDirectory": []
 }

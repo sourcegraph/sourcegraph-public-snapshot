@@ -1,7 +1,7 @@
 import {Location} from "history";
 import * as React from "react";
-import {Component} from "sourcegraph/Component";
 import {withJumpToDefRedirect} from "sourcegraph/blob/withJumpToDefRedirect";
+import {Component} from "sourcegraph/Component";
 import {Def} from "sourcegraph/def/index";
 
 export interface Props {

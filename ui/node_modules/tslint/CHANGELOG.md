@@ -1,6 +1,40 @@
 Change Log
 ===
 
+v3.15.1
+---
+* Enabled additional rules in `tslint:latest` configuration (#1506)
+
+v3.15.0
+---
+* Stable release containing changes from the last dev release (v3.15.0-dev.0)
+
+v3.15.0-dev.0
+---
+* [enhancement] Rules can automatically fix errors (#1423)
+* [enhancement] Better error messages for invalid source files (#1480)
+* [new-rule] `adjacent-overload-signatures` rule (#1426)
+* [new-rule] `file-header` rule (#1411)
+* [new-rule] `object-literal-shorthand` rule (#1488)
+* [new-rule-option] `allow-declarations` option for `only-arrow-functions` rule (#1452)
+* [new-rule-option] `import-sources-order` option for `ordered-imports` rule (#1466)
+* [bugfix] `arrow-parens` rule handles async and generics (#1446, #1479)
+* [bugfix] `comment-format` rule ignores tslint control comments (#1473)
+* [bugfix] Fix `no-shadowed-variable` rule false positives (#1482)
+
+Thanks to our contributors!
+* @apacala
+* @danvk
+* @DovydasNavickas
+* @glen-84
+* @IllusionMH
+* @JoshuaKGoldberg
+* @markwongsk
+* @rakatyal
+* @rhysd
+* @ScottSWu
+* @YuichiNukiyama
+
 v3.14.0
 ---
 * Stable release containing changes from the last dev releases (v3.14.0-dev.0, v3.14.0-dev.1)
