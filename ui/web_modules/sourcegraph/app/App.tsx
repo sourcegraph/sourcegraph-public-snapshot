@@ -47,13 +47,14 @@ export class App extends React.Component<Props, State> {
 
 	state = {
 		className: "",
+		innerHTML: "",
 	};
 
 	constructor(props: Props, context) {
 		super(props);
 
-		var m = document.getElementById("main");
-		var innerHTML = m.innerHTML;
+		let m = document.getElementById("main");
+		let innerHTML = m && m.innerHTML || "";
 
 		let className = styles.main_container;
 		if (!context.signedIn && location.pathname === "/") {

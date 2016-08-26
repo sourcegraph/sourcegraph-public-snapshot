@@ -52,9 +52,9 @@ function matchWithRedirectHandling(recursed) {
 		}
 
 		setTimeout(() => {
-			var html;
-			if (main.classList.contains("server-side")) {
-				var html = main.innerHTML;
+			let html = "";
+			if (rootEl.classList.contains("server-side")) {
+				html = rootEl.innerHTML;
 			}
 
 			ReactDOM.render(
