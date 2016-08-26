@@ -150,7 +150,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 				StartByte:   refEntry.FileRange.StartByte,
 				Code:        refEntry.ContentsString,
 				Annotations: refAnns,
-				SourceURL:   approuter.Rel.URLToBlob(ref.Repo, ref.CommitID, ref.File, 0).String(),
+				SourceURL:   approuter.Rel.URLToBlob(ref.Repo, ref.CommitID, ref.File, int(refEntry.FileRange.StartLine+1)).String(),
 			})
 		}
 	}
