@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	htmpl "html/template"
-	"log"
 	"strings"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -117,11 +116,6 @@ func renderSnippet(s *Snippet) htmpl.HTML {
 		}
 	}
 
-	log.Printf("# rendering snippet: %+v", s)
-	for _, ann := range clsAnns {
-		log.Printf("# ann: %+v", ann)
-	}
-
 	var prevEnd int64 = 0
 	for _, ann := range clsAnns {
 		start, end := int64(ann.StartByte), int64(ann.EndByte)
@@ -136,37 +130,6 @@ func renderSnippet(s *Snippet) htmpl.HTML {
 		prevEnd = int64(ann.EndByte)
 	}
 	toks = append(toks, htmpl.HTMLEscapeString(s.Code[prevEnd:]))
-
-	// TODO: add in URL annotations
-
-	//////////////////////////////////////////
-
-	/*
-		var prevAnn *sourcegraph.Annotation
-		for _, ann := range s.Annotations.Annotations {
-			var prevEnd int64 = 0
-			if prevAnn != nil {
-				prevEnd = int64(prevAnn.EndByte) - s.StartByte
-			}
-			start, end := int64(ann.StartByte)-s.StartByte, int64(ann.EndByte)-s.StartByte
-
-			if start < 0 || end > int64(len(s.Code)) {
-				continue
-			}
-
-			if start > prevEnd {
-				toks = append(toks, htmpl.HTMLEscapeString(s.Code[prevEnd:start]))
-			}
-			// log.Printf("# %+v", ann)
-			toks = append(toks, fmt.Sprintf("<span class=%s>", ann.Class), htmpl.HTMLEscapeString(s.Code[start:end]), "</span>")
-			prevAnn = ann
-		}
-		if prevAnn != nil {
-			toks = append(toks, htmpl.HTMLEscapeString(s.Code[int64(prevAnn.EndByte)-s.StartByte:]))
-		}
-	*/
-
-	// log.Printf("# toks: %+v", toks)
 
 	return htmpl.HTML(strings.Join(toks, ""))
 }
