@@ -6,7 +6,6 @@ import {PlainRoute} from "react-router";
 
 import {EventListener} from "sourcegraph/Component";
 import {GlobalNav} from "sourcegraph/app/GlobalNav";
-import {Footer} from "sourcegraph/app/Footer";
 import "sourcegraph/components/styles/_normalize.css";
 import * as styles from "sourcegraph/app/styles/App.css";
 
@@ -70,13 +69,8 @@ export class App extends React.Component<Props, State> {
 			<div className={this.state.className}>
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
 				<GlobalNav desktop={desktopClient} params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
-				<div className={styles.main_content} id="scroller" ref="mainContent">
-					<div className={styles.inner_main_content}>
-						{this.props.navContext && <div className={styles.breadcrumb}>{this.props.navContext}</div>}
-						{this.props.main}
-					</div>
-					{!(this.context as any).signedIn && <Footer />}
-				</div>
+				{this.props.navContext && <div className={styles.breadcrumb}>{this.props.navContext}</div>}
+				{this.props.main}
 				<EventListener target={global.document} event="sourcegraph:desktop" callback={this._handleSourcegraphDesktop} />
 			</div>
 		);

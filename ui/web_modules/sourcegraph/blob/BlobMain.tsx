@@ -10,10 +10,10 @@ import {Store} from "sourcegraph/Store";
 import {Blob} from "sourcegraph/blob/Blob";
 import {BlobLegacy} from "sourcegraph/blob/BlobLegacy";
 import {BlobContentPlaceholder} from "sourcegraph/blob/BlobContentPlaceholder";
+import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {BlobToolbar} from "sourcegraph/blob/BlobToolbar";
 import {FileMargin} from "sourcegraph/blob/FileMargin";
 import {DefTooltip} from "sourcegraph/def/DefTooltip";
-import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {DefStore} from "sourcegraph/def/DefStore";
 import "sourcegraph/blob/BlobBackend";
 import "sourcegraph/def/DefBackend";
@@ -161,56 +161,88 @@ export class BlobMain extends Container<Props, State> {
 		if (this.state.defObj && !this.state.defObj.Error && defTitleOK(this.state.defObj)) {
 			title = `${defTitle(this.state.defObj)} · ${title}`;
 		}
-		let BlobComponent = localStorage.getItem("monaco") === "true" ? Blob : BlobLegacy;
-		return (
-			<div className={Style.container}>
-				{title && <Helmet title={title} />}
-				<div className={Style.spacer} />
-				<div className={Style.blobAndToolbar}>
-					<BlobToolbar
-						repo={this.state.repo}
-						rev={this.state.rev}
-						commitID={this.state.commitID}
-						path={this.state.path} />
-					{(!this.state.blob || (this.state.blob && !this.state.blob.Error && !this.state.skipAnns && !this.state.anns)) && <BlobContentPlaceholder />}
-					{this.state.blob && !this.state.blob.Error && typeof this.state.blob.ContentsString !== "undefined" && (this.state.skipAnns || (this.state.anns && !this.state.anns.Error)) &&
-					<BlobComponent
-						startlineCallback = {node => this.setState({selectionStartLine: node})}
-						location={this.props.location}
-						repo={this.state.repo}
-						rev={this.state.rev}
-						commitID={this.state.commitID}
-						path={this.state.path}
-						contents={this.state.blob.ContentsString}
-						annotations={this.state.anns}
-						skipAnns={this.state.skipAnns}
-						lineNumbers={true}
-						highlightSelectedLines={true}
-						highlightedDef={null}
-						highlightedDefObj={null}
-						activeDef={this.state.def}
-						startLine={this.state.startLine}
-						startCol={this.state.startCol}
-						startByte={this.state.startByte}
-						endLine={this.state.endLine}
-						endCol={this.state.endCol}
-						endByte={this.state.endByte}
-						scrollToStartLine={true}
-						dispatchSelections={true} />}
-					<DefTooltip
-						currentRepo={this.state.repo}
-						hoverPos={this.state.hoverPos}
-						hoverInfos={this.state.hoverInfos} />
+		if (localStorage.getItem("monaco") === "true") {
+			return (
+				<div className={Style.container}>
+					{title && <Helmet title={title} />}
+						{(!this.state.blob || (this.state.blob && !this.state.blob.Error && !this.state.skipAnns && !this.state.anns)) && <BlobContentPlaceholder />}
+						{this.state.blob && !this.state.blob.Error && typeof this.state.blob.ContentsString !== "undefined" && (this.state.skipAnns || (this.state.anns && !this.state.anns.Error)) &&
+						<Blob
+							startlineCallback = {node => this.setState({selectionStartLine: node})}
+							location={this.props.location}
+							repo={this.state.repo}
+							rev={this.state.rev}
+							commitID={this.state.commitID}
+							path={this.state.path}
+							contents={this.state.blob.ContentsString}
+							annotations={this.state.anns}
+							skipAnns={this.state.skipAnns}
+							lineNumbers={true}
+							highlightSelectedLines={true}
+							highlightedDef={null}
+							highlightedDefObj={null}
+							activeDef={this.state.def}
+							startLine={this.state.startLine}
+							startCol={this.state.startCol}
+							startByte={this.state.startByte}
+							endLine={this.state.endLine}
+							endCol={this.state.endCol}
+							endByte={this.state.endByte}
+							scrollToStartLine={true}
+							dispatchSelections={true} />}
 				</div>
-				<FileMargin
-					className={Style.margin}
-					style={(!this.state.blob || !this.state.anns) ? {visibility: "hidden"} : null}
-					lineFromByte={this.state.lineFromByte}
-					selectionStartLine={this.state.selectionStartLine ? this.state.selectionStartLine : null}
-					startByte={this.state.startByte}>
-					{this.state.children}
-				</FileMargin>
-			</div>
+			);
+		} else {
+			return (
+				<div className={Style.container}>
+					{title && <Helmet title={title} />}
+					<div className={Style.spacer} />
+					<div className={Style.blobAndToolbar}>
+						<BlobToolbar
+							repo={this.state.repo}
+							rev={this.state.rev}
+							commitID={this.state.commitID}
+							path={this.state.path} />
+						{(!this.state.blob || (this.state.blob && !this.state.blob.Error && !this.state.skipAnns && !this.state.anns)) && <BlobContentPlaceholder />}
+						{this.state.blob && !this.state.blob.Error && typeof this.state.blob.ContentsString !== "undefined" && (this.state.skipAnns || (this.state.anns && !this.state.anns.Error)) &&
+						<BlobLegacy
+							startlineCallback = {node => this.setState({selectionStartLine: node})}
+							location={this.props.location}
+							repo={this.state.repo}
+							rev={this.state.rev}
+							commitID={this.state.commitID}
+							path={this.state.path}
+							contents={this.state.blob.ContentsString}
+							annotations={this.state.anns}
+							skipAnns={this.state.skipAnns}
+							lineNumbers={true}
+							highlightSelectedLines={true}
+							highlightedDef={null}
+							highlightedDefObj={null}
+							activeDef={this.state.def}
+							startLine={this.state.startLine}
+							startCol={this.state.startCol}
+							startByte={this.state.startByte}
+							endLine={this.state.endLine}
+							endCol={this.state.endCol}
+							endByte={this.state.endByte}
+							scrollToStartLine={true}
+							dispatchSelections={true} />}
+						<DefTooltip
+							currentRepo={this.state.repo}
+							hoverPos={this.state.hoverPos}
+							hoverInfos={this.state.hoverInfos} />
+					</div>
+					<FileMargin
+						className={Style.margin}
+						style={(!this.state.blob || !this.state.anns) ? {visibility: "hidden"} : null}
+						lineFromByte={this.state.lineFromByte}
+						selectionStartLine={this.state.selectionStartLine ? this.state.selectionStartLine : null}
+						startByte={this.state.startByte}>
+						{this.state.children}
+					</FileMargin>
+				</div>
 		);
+		}
 	}
 }

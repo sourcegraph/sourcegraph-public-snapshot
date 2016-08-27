@@ -30,12 +30,14 @@
 .container {
 	display: flex;
 	align-items: start;
+	flex: auto;
 }
 .content {
 	flex: 1.5 0 contentWidth;
 	max-width: calc(contentWidth * 1.4);
 	composes: bb from base;
 	composes: b__cool_pale_gray_8 from colors;
+	height: 100%;
 }
 .margin {
 	flex: 1 0 marginWidth;

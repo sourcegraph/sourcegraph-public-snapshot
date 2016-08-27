@@ -1,7 +1,7 @@
 import {Location} from "history";
 import * as React from "react";
 import {withJumpToDefRedirect} from "sourcegraph/blob/withJumpToDefRedirect";
-import {Component} from "sourcegraph/Component";
+import {Component, EventListener} from "sourcegraph/Component";
 import {Def} from "sourcegraph/def/index";
 
 export interface Props {
@@ -79,6 +79,10 @@ export class BlobTestOnly extends Component<Props, State> {
 
 	_editor?: monaco.editor.IStandaloneCodeEditor;
 
+	constructor(props: Props) {
+		super(props);
+		this._findInPage = this._findInPage.bind(this);
+	}
 	componentDidMount(): void {
 		if ((global as any).require) {
 			this.loaderReady();
@@ -132,8 +136,24 @@ export class BlobTestOnly extends Component<Props, State> {
 		}
 	}
 
+	_findInPage(e: Event): void {
+		const mac = navigator.userAgent.indexOf("Macintosh") >= 0;
+		const ctrl = mac ? (e as KeyboardEvent).metaKey : (e as KeyboardEvent).ctrlKey;
+		const FKey = 70;
+		if ((e as KeyboardEvent).keyCode === FKey && ctrl) {
+			if (this._editor) {
+				e.preventDefault();
+				(document.getElementsByClassName("inputarea")[0] as any).focus(); // HACK
+				this._editor.trigger("keyboard", "actions.find", {});
+			}
+		}
+	}
+
 	render(): JSX.Element | null {
-		return <div ref="container" style={{width: "100%", height: "500px"}} />;
+		return <div style={{display: "flex", flex: "auto"}}>
+			<div ref="container" style={{width: "100%"}} />
+			<EventListener target={global.document} event="keydown" callback={this._findInPage} />
+		</div>;
 	}
 }
 

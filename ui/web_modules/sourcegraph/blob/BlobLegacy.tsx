@@ -115,15 +115,9 @@ export class BlobLegacyTestOnly extends Component<Props, State> {
 	}
 
 	componentDidMount(): void {
-		// TODO: This is hacky, but the alternative was too costly (time and code volume)
-		//       and unreliable to implement. Revisit this later if it's neccessary.
-		//
-		// Delay scrolling to give BlobRouter a chance to populate startLine.
-		setTimeout(() => {
-			if (this.state.startLine && this.state.scrollToStartLine) {
-				this._scrollTo(this.state.startLine);
-			}
-		}, 0);
+		if (this.state.startLine && this.state.scrollToStartLine) {
+			this._scrollTo(this.state.startLine);
+		}
 		this._isMounted = true;
 	}
 
@@ -336,7 +330,7 @@ export class BlobLegacyTestOnly extends Component<Props, State> {
 		if (!this.refs["table"]) { return; }
 		let rect = (this.refs["table"] as Element).getBoundingClientRect();
 		const y = rect.height / this.state.lines.length * (line - 1) - 100;
-		((document as any).getElementById("scroller") as any).scrollTop = y;
+		(document as any).body.scrollTop = y;
 	}
 
 	// _lineIsVisible returns true the line has loaded and is scrolled into view, false
