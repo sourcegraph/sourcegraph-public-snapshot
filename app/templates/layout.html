@@ -57,8 +57,10 @@
 			<div id="custom-feedback-form">{{customFeedbackForm}}</div>
 		{{end}}
 
-		<script src="{{assetURL "/main.browser.js"}}"></script>
-
+		{{if not .Meta.SEO}}
+			<script src="{{assetURL "/main.browser.js"}}"></script>
+		{{end}}
+		
 		{{appconf.ExtraBodyHTML}}
 	</body>
 </html>
