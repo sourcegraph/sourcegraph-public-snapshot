@@ -52,11 +52,6 @@ function matchWithRedirectHandling(recursed) {
 		}
 
 		setTimeout(() => {
-			let html = "";
-			if (rootEl.classList.contains("server-side")) {
-				html = rootEl.innerHTML;
-			}
-
 			ReactDOM.render(
 				<AppContainer errorReporter={Redbox} >
 					<Router
