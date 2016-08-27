@@ -16,10 +16,10 @@ import (
 func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	// TODO: load GlobalNav after the fact?
 
-	ctx, cl := handlerutil.Client(r)
+	cl := handlerutil.Client(r)
 	vars := mux.Vars(r)
 
-	repo, repoRev, err := handlerutil.GetRepoAndRev(ctx, vars)
+	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), vars)
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	var refSnippets []*app.Snippet
 
 	if def == nil {
-		def, _, err = handlerutil.GetDefCommon(ctx, vars, &sourcegraph.DefGetOptions{Doc: true, ComputeLineRange: true})
+		def, _, err = handlerutil.GetDefCommon(r.Context(), vars, &sourcegraph.DefGetOptions{Doc: true, ComputeLineRange: true})
 		if err != nil {
 			return err
 		}
@@ -47,7 +47,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 
 		// get all caller repositories with counts (global refs)
 		const reflocRepoLimit = 5
-		refLocs, err = cl.Defs.ListRefLocations(ctx, &sourcegraph.DefsListRefLocationsOp{
+		refLocs, err = cl.Defs.ListRefLocations(r.Context(), &sourcegraph.DefsListRefLocationsOp{
 			Def: defSpec,
 			Opt: &sourcegraph.DefListRefLocationsOptions{
 				// NOTE(mate): this has no effect at the moment
@@ -79,11 +79,11 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 			},
 			NoSrclibAnns: false,
 		}
-		defEntry, err = cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &opt})
+		defEntry, err = cl.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &opt})
 		if err != nil {
 			return err
 		}
-		defAnns, err := cl.Annotations.List(ctx, &sourcegraph.AnnotationsListOptions{
+		defAnns, err := cl.Annotations.List(r.Context(), &sourcegraph.AnnotationsListOptions{
 			Entry:        entrySpec,
 			Range:        &opt.FileRange,
 			NoSrclibAnns: opt.NoSrclibAnns,
@@ -99,7 +99,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		// fetch example
-		refs, err := cl.Defs.ListRefs(ctx, &sourcegraph.DefsListRefsOp{
+		refs, err := cl.Defs.ListRefs(r.Context(), &sourcegraph.DefsListRefsOp{
 			Def: defSpec,
 			Opt: &sourcegraph.DefListRefsOptions{ListOptions: sourcegraph.ListOptions{PerPage: 1}},
 		})
@@ -118,7 +118,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 				},
 				NoSrclibAnns: false,
 			}
-			refRepo, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: ref.Repo})
+			refRepo, err := cl.Repos.Resolve(r.Context(), &sourcegraph.RepoResolveOp{Path: ref.Repo})
 			if err != nil {
 				return err
 			}
@@ -126,12 +126,12 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 				RepoRev: sourcegraph.RepoRevSpec{Repo: refRepo.Repo, CommitID: ref.CommitID},
 				Path:    ref.File,
 			}
-			refEntry, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: refEntrySpec, Opt: opt})
+			refEntry, err := cl.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{Entry: refEntrySpec, Opt: opt})
 			if err != nil {
 				return fmt.Errorf("could not get ref tree: %s", err)
 			}
 			refEntries = append(refEntries, refEntry)
-			refAnns, err := cl.Annotations.List(ctx, &sourcegraph.AnnotationsListOptions{
+			refAnns, err := cl.Annotations.List(r.Context(), &sourcegraph.AnnotationsListOptions{
 				Entry: refEntrySpec,
 				Range: &sourcegraph.FileRange{
 					// note(beyang): specify line range here, instead of byte range, because the
