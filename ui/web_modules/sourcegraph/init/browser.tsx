@@ -53,7 +53,7 @@ function matchWithRedirectHandling(recursed) {
 
 		setTimeout(() => {
 			ReactDOM.render(
-				<AppContainer errorReporter={Redbox} >
+				<AppContainer errorReporter={Redbox}>
 					<Router
 						key={hotReloadCounter}
 						onUpdate={hashLinkScroll}
