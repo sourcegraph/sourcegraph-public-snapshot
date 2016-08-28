@@ -45,7 +45,7 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 								Enable Sourcegraph on any private GitHub repositories for a better coding experience
 							</p>
 							<div className={classNames(base.pv5)}>
-								<img width={332} style={{marginBottom: "-95px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/dashboard/OnboardingRepos.png`}></img>
+								<img width={332} style={{marginBottom: "-95px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Dashboard/OnboardingRepos.png`}></img>
 								<GitHubAuthButton pageName={"GitHubPrivateCodeOnboarding"} scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>
 							</div>
 							<p>
