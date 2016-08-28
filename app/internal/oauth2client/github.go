@@ -235,6 +235,11 @@ func linkAccountWithGitHub(w http.ResponseWriter, r *http.Request, cl *sourcegra
 		q.Set("_signupChannel", "GitHubOAuth")
 		q.Set("_githubAuthed", "true")
 	} else {
+		// Do not redirect a user while inside the onboarding flow.
+		// This is accomplished by not removing the onboarding query params.
+		if q.Get("ob") != "github" {
+			q.Del("ob")
+		}
 		q.Set("_event", "CompletedGitHubOAuth2Flow")
 		q.Set("_githubAuthed", "true")
 	}

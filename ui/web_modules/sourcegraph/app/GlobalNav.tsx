@@ -34,6 +34,8 @@ const hiddenNavRoutes = new Set([
 	"/",
 	`/${abs.integrations}`,
 	"/styleguide",
+	"login",
+	"join",
 ]);
 
 interface GlobalNavProps {
@@ -84,7 +86,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 					<div className={styles.modal}>
 						<SignupForm
 							onSignupSuccess={dismissModal("join", location, router)}
-							returnTo={location}
+							returnTo={shouldHide ? "/?ob=chrome" : location}
 							location={location} />
 					</div>
 				</LocationStateModal>

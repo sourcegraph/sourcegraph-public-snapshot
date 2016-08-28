@@ -170,3 +170,46 @@
 .query:hover {
 	border-color: c_dark_blue_2;
 }
+
+.github_button {
+	composes: mr3 mb2 from base;
+	z-index: 10;
+}
+
+.repos {
+	width: 100%;
+}
+
+.repos_list {
+	composes: pv3 from base;
+}
+.row {
+	composes: pv2 from base;
+	width: 100%;
+	display: flex;
+	align-items: center;
+}
+.info {
+	text-align: left;
+}
+.toggle {
+	padding-left: 10px;
+	margin-left: auto;
+}
+
+.list_label_right {
+	composes: mid_gray from colors;
+	float: right; 
+	display: inline;
+	margin-right: 5px;
+	font-size: 0.9rem;
+}
+
+.description {
+	composes: mt0 mb0 from base;
+	composes: cool_mid_gray from colors;
+	min-width: 0;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	font-size: 0.9rem;
+}

@@ -43,4 +43,11 @@ export const search_settings: string;
 export const titled_section: string;
 export const section_title: string;
 export const query: string;
+export const github_button: string;
+export const repos: string;
+export const repos_list: string;
+export const row: string;
+export const info: string;
+export const toggle: string;
+export const list_label_right: string;
 

@@ -13,7 +13,7 @@ import {SearchSettings} from "sourcegraph/search/SearchSettings";
 import * as invariant from "invariant";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import * as classNames from "classnames";
-import {ChromeExtensionOnboarding} from "sourcegraph/dashboard/ChromeExtensionOnboarding";
+import {OnboardingContainer} from "sourcegraph/dashboard/OnboardingContainer";
 import {Store} from "sourcegraph/Store";
 
 type OnSelectQueryListener = (ev: React.MouseEvent<HTMLButtonElement>, query: string) => any;
@@ -40,7 +40,6 @@ export class DashboardContainer extends Container<Props, State> {
 
 		this.state = {
 			isTyping: false,
-			onboarding: UserStore.authResponses["signup"] ? true : false,
 			chromeExtensionInstalled: false,
 		};
 
@@ -56,10 +55,17 @@ export class DashboardContainer extends Container<Props, State> {
 	componentDidMount() {
 		super.componentDidMount();
 		(this.context as any).router.setRouteLeaveHook(this.props.route, (route: any) => {
-			if (this.state.onboarding && route.pathname.includes("/info/")) {
+			if (Boolean(this._shouldStartOnboarding()) && route.pathname.includes("/info/")) {
 				return false;
 			}
+
+			return true;
 		});
+
+		if (UserStore.authResponses["signup"]) {
+			const newLoc = Object.assign({}, this.props.location, {query: {ob: "chrome"}});
+			(this.context as any).router.replace(newLoc);
+		}
 
 		setTimeout(() => this.setState({
 			chromeExtensionInstalled: document.getElementById("sourcegraph-app-bootstrap"),
@@ -73,6 +79,14 @@ export class DashboardContainer extends Container<Props, State> {
 		state.langs = settings && settings.search ? settings.search.languages : null;
 		state.scope = settings && settings.search ? settings.search.scope : null;
 		state.signedIn = context && context.signedIn;
+	}
+
+	_shouldStartOnboarding(): string | null {
+		if (this.props.location && (this.props.location.query["ob"] === "chrome" || this.props.location.query["ob"] === "github")) {
+			return this.props.location.query["ob"];
+		}
+
+		return null;
 	}
 
 	onStateTransition(prevState: State, nextState: State): void {
@@ -122,14 +136,14 @@ export class DashboardContainer extends Container<Props, State> {
 	_successHandler() {
 		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DASHBOARD, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionInstalled", {page_name: AnalyticsConstants.PAGE_DASHBOARD});
 		(this.context as any).eventLogger.setUserProperty("installed_chrome_extension", "true");
-		this.setState({showChromeExtensionCTA: false, onboarding: false});
+		this.setState({showChromeExtensionCTA: false, onboarding: null});
 		setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", (this.context as any).eventLogger.getAmplitudeIdentificationProps())), 10);
 	}
 
 	_failHandler(msg) {
 		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DASHBOARD, AnalyticsConstants.ACTION_ERROR, "ChromeExtensionInstallFailed", {page_name: AnalyticsConstants.PAGE_DASHBOARD});
 		(this.context as any).eventLogger.setUserProperty("installed_chrome_extension", "false");
-		this.setState({showChromeExtensionCTA: true, onboarding: false});
+		this.setState({showChromeExtensionCTA: true, onboarding: null});
 	}
 
 	_installChromeExtensionClicked() {
@@ -181,15 +195,9 @@ export class DashboardContainer extends Container<Props, State> {
 		);
 	}
 
-	_completeOnboarding(chromeExtensionInstalled) {
-		this.setState({
-			chromeExtensionInstalled: chromeExtensionInstalled,
-			onboarding: false,
-		});
-	}
-
 	render(): JSX.Element | null {
-		const conditionalDashboardRender = this.state.onboarding ? <ChromeExtensionOnboarding completeStep={this._completeOnboarding.bind(this)} location={this.props.location}/> : this._defaultAuthedDashboard();
+		let onboarding = this._shouldStartOnboarding();
+		const conditionalDashboardRender = onboarding ? <OnboardingContainer currentStep={onboarding} location={this.props.location}/> : this._defaultAuthedDashboard();
 		return (
 			<div>
 				{conditionalDashboardRender}
