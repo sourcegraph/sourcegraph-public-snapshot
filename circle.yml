@@ -1,3 +1,8 @@
+general:
+  branches:
+    ignore:
+      - /work\/.*/
+
 machine:
   services:
     - docker
