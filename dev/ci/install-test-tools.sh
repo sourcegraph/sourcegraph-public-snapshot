@@ -2,6 +2,10 @@
 
 set -ex
 
-go get github.com/nullbio/go-junit-report
-go get github.com/wadey/gocovmerge
-go get honnef.co/go/staticcheck/cmd/staticcheck
+function get {
+    hash $(basename $1) 2>/dev/null || go get $1
+}
+
+get github.com/nullbio/go-junit-report
+get github.com/wadey/gocovmerge
+get honnef.co/go/staticcheck/cmd/staticcheck
