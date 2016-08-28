@@ -32,6 +32,24 @@ func TestResolveFile(t *testing.T) {
 		mkRepoPath(t, workspace, "github.com/foo/bar", "src/main.go"),
 		mkRepoPath(t, workspace, "github.com/baz/bam", "main.go"),
 	}
+	// Test that dirs also can be resolved
+	cases = append(cases, workspacePath{
+		File: langp.File{
+			Repo:   "github.com/foo/bar",
+			Commit: cases[0].File.Commit,
+			Path:   ".",
+		},
+		URI: "file:///gopath/src/github.com/foo/bar/.",
+	})
+	cases = append(cases, workspacePath{
+		File: langp.File{
+			Repo:   "github.com/foo/bar",
+			Commit: cases[0].File.Commit,
+			Path:   "src",
+		},
+		URI: "file:///gopath/src/github.com/foo/bar/src",
+	})
+	// Test that stdlib works
 	cases = append(cases, workspacePath{
 		File: langp.File{
 			Repo:   "github.com/golang/go",

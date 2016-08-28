@@ -49,8 +49,13 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
-		// We increment the line number by 1 because the blob view is not zero-indexed.
-		response.Path = router.Rel.URLToBlob(defRange.Repo, defRange.Commit, defRange.File, defRange.StartLine+1).String()
+		if defRange.File == "." {
+			// Special case the top level directory
+			response.Path = router.Rel.URLToRepoTreeEntry(defRange.Repo, defRange.Commit, "").String()
+		} else {
+			// We increment the line number by 1 because the blob view is not zero-indexed.
+			response.Path = router.Rel.URLToBlob(defRange.Repo, defRange.Commit, defRange.File, defRange.StartLine+1).String()
+		}
 		return writeJSON(w, response)
 	}
 
