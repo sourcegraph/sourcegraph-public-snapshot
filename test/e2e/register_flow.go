@@ -20,9 +20,6 @@ func init() {
 }
 
 func testRegisterFlow(t *T) error {
-	t.Logf("skipped (broken on master)")
-	return nil
-
 	// Create gRPC client connection so we can talk to the server. e2etest uses
 	// the server's ID key for authentication, which means it can do ANYTHING with
 	// no restrictions. Be careful!
@@ -105,6 +102,6 @@ func testRegisterFlow(t *T) error {
 	t.Click(selenium.ById, "e2etest-register-button")
 
 	// Wait for redirect to Sourcegraph homepage.
-	t.WaitForRedirect(t.Endpoint("/"), "wait for redirect to home after registration")
+	t.WaitForRedirect(t.Endpoint("/?ob=chrome"), "wait for redirect to home after registration")
 	return nil
 }

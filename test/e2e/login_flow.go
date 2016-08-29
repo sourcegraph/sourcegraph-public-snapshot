@@ -19,9 +19,6 @@ func init() {
 }
 
 func testLoginFlow(t *T) error {
-	t.Logf("skipped (broken on master)")
-	return nil
-
 	// Create gRPC client connection so we can talk to the server. e2etest uses
 	// the server's ID key for authentication, which means it can do ANYTHING with
 	// no restrictions. Be careful!
