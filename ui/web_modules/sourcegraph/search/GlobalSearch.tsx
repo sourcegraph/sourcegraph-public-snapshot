@@ -477,7 +477,7 @@ export class GlobalSearch extends Container<Props, State> {
 
 		for (let i = numRepos; i < numRepos + numDefs; i++) {
 			let def = this.state.matchingResults.Defs[i - numRepos];
-			let defURL = urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def);
+			let defURL = urlToDef(def);
 
 			const selected = this._normalizedSelectionIndex() === i;
 

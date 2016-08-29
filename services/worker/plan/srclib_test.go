@@ -38,14 +38,6 @@ type wantBuildItem struct {
 func TestConfigureSrclib_withLangs(t *testing.T) {
 	tests := []testConfigureSrclib_withLangs_Case{{
 		inv: &inventory.Inventory{
-			Languages: []*inventory.Lang{{Name: "Go", TotalBytes: 5}, {Name: "JavaScript", TotalBytes: 5}},
-		},
-		wantBuildItems: []wantBuildItem{
-			{key: "Go (indexing)", allowFailure: false},
-			{key: "JavaScript (indexing)", allowFailure: true},
-		},
-	}, {
-		inv: &inventory.Inventory{
 			Languages: []*inventory.Lang{{Name: "Go", TotalBytes: 5}},
 		},
 		wantBuildItems: []wantBuildItem{{key: "Go (indexing)", allowFailure: false}},

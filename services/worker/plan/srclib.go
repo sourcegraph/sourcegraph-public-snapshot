@@ -118,17 +118,6 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: true,
 		},
 	},
-	"JavaScript": {
-		Key: "JavaScript (indexing)",
-		Build: droneyaml.Build{
-			Container: droneyaml.Container{
-				Image:  droneSrclibJavaScriptImage,
-				Memory: defaultMemLimit,
-			},
-			Commands:     srclibBuildCommands,
-			AllowFailure: true,
-		},
-	},
 	"Java": {
 		Key: "Java (indexing)",
 		Build: droneyaml.Build{
@@ -145,17 +134,6 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
 				Image:  droneSrclibBashImage,
-				Memory: defaultMemLimit,
-			},
-			Commands:     srclibBuildCommands,
-			AllowFailure: true,
-		},
-	},
-	"TypeScript": {
-		Key: "TypeScript (indexing)",
-		Build: droneyaml.Build{
-			Container: droneyaml.Container{
-				Image:  droneSrclibTypeScriptImage,
 				Memory: defaultMemLimit,
 			},
 			Commands:     srclibBuildCommands,
@@ -206,12 +184,79 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: true,
 		},
 	},
-
 	"JSON": {
 		Key: "JSON (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
 				Image:  droneSrclibJSONImage,
+				Memory: defaultMemLimit,
+			},
+			Commands:     srclibBuildCommands,
+			AllowFailure: true,
+		},
+	},
+
+	"TypeScript": {
+		Key: "TypeScript (ctag-based indexing)",
+		Build: droneyaml.Build{
+			Container: droneyaml.Container{
+				Image:  droneSrclibCtagsImage,
+				Memory: 16 * 1000 * 1000 * 1000, // 16GB
+			},
+			Commands:     srclibBuildCommands,
+			AllowFailure: true,
+		},
+	},
+
+	"PHP": {
+		Key: "PHP (ctag-based indexing)",
+		Build: droneyaml.Build{
+			Container: droneyaml.Container{
+				Image:  droneSrclibCtagsImage,
+				Memory: defaultMemLimit,
+			},
+			Commands:     srclibBuildCommands,
+			AllowFailure: true,
+		},
+	},
+	"JavaScript": {
+		Key: "JavaScript (ctag-based indexing)",
+		Build: droneyaml.Build{
+			Container: droneyaml.Container{
+				Image:  droneSrclibCtagsImage,
+				Memory: defaultMemLimit,
+			},
+			Commands:     srclibBuildCommands,
+			AllowFailure: true,
+		},
+	},
+	"Ruby": {
+		Key: "Ruby (ctag-based indexing)",
+		Build: droneyaml.Build{
+			Container: droneyaml.Container{
+				Image:  droneSrclibCtagsImage,
+				Memory: defaultMemLimit,
+			},
+			Commands:     srclibBuildCommands,
+			AllowFailure: true,
+		},
+	},
+	"Rust": {
+		Key: "Rust (ctag-based indexing)",
+		Build: droneyaml.Build{
+			Container: droneyaml.Container{
+				Image:  droneSrclibCtagsImage,
+				Memory: defaultMemLimit,
+			},
+			Commands:     srclibBuildCommands,
+			AllowFailure: true,
+		},
+	},
+	"Clojure": {
+		Key: "Clojure (ctag-based indexing)",
+		Build: droneyaml.Build{
+			Container: droneyaml.Container{
+				Image:  droneSrclibCtagsImage,
 				Memory: defaultMemLimit,
 			},
 			Commands:     srclibBuildCommands,

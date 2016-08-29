@@ -880,7 +880,9 @@ func symbolToDef(s *langp.Symbol) *graph.Def {
 }
 
 func shouldIndex(d *graph.Def) bool {
-	// Ignore broken defs
+	if !strings.HasSuffix(d.File, ".go") && !strings.HasSuffix(d.File, ".java") {
+		return true
+	}
 	if d.Path == "" {
 		return false
 	}
