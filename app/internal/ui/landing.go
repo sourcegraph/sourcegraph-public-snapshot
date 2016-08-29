@@ -24,6 +24,8 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	repoURL := approuter.Rel.URLToRepoRev(repo.URI, repoRev.CommitID).String()
+	var fileURL string
 	var def *sourcegraph.Def
 	var refLocs *sourcegraph.RefLocationsList
 	var defEntry *sourcegraph.TreeEntry
@@ -98,6 +100,8 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 			SourceURL:   approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine)).String(),
 		}
 
+		fileURL = approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0).String()
+
 		// fetch example
 		refs, err := cl.Defs.ListRefs(r.Context(), &sourcegraph.DefsListRefsOp{
 			Def: defSpec,
@@ -161,6 +165,8 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 
 		Repo             *sourcegraph.Repo
 		RepoRev          sourcegraph.RepoRevSpec
+		RepoURL          string
+		FileURL          string
 		Def              *sourcegraph.Def
 		DefEntry         *sourcegraph.TreeEntry
 		DefSnippet       *app.Snippet
@@ -172,6 +178,8 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		Meta:             meta{SEO: true},
 		Repo:             repo,
 		RepoRev:          repoRev,
+		RepoURL:          repoURL,
+		FileURL:          fileURL,
 		Def:              def,
 		DefEntry:         defEntry,
 		DefSnippet:       defSnippet,
