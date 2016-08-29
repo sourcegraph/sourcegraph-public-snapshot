@@ -22,9 +22,8 @@ export class Panel extends React.Component<Props, State> {
 
 	render(): JSX.Element | null {
 		const {children, color, inverse, hover, hoverLevel, className} = this.props;
-
 		return (
-			<div {...this.props} className={classNames(styles.panel, colorClass(color || "", inverse || false), hoverClass(hoverLevel || "", hover || false), className)}>
+			<div className={classNames(styles.panel, colorClass(color || "", inverse || false), hoverClass(hoverLevel || "", hover || false), className)}>
 				{children}
 			</div>
 		);
