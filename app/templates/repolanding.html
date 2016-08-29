@@ -1,0 +1,130 @@
+{{define "Head"}}
+<title>{{with .Meta.Title}}{{.}} · {{end}}Sourcegraph</title>
+<style ignore-csp>
+	body {
+	background-color: rgba(213, 229, 242, 0.2);
+	}
+
+	.dl-container {
+	width: 100%;
+	max-width: 940px;
+	margin-left: auto;
+	margin-right: auto;
+	color: rgba(26, 48, 77, 1);
+	font-family: 'circular-std', -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'Helvetica', Ubuntu, 'segoe ui', arial, sans-serif;
+	}
+
+	.dl-container pre {
+	background-color: rgba(62, 90, 126, 1);
+	color: rgba(213, 229, 242, 1);
+	border-radius: 3px;
+	padding: 1rem;
+	font-size: 15px;
+	}
+
+	.dl-container .highlight {
+	color: rgba(177, 20, 247, 1);
+	text-decoration: none;
+	}
+
+	.dl-container .toplink {
+	color: rgb(119, 147, 174);
+	display: inline;
+	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
+	font-size: 14.75px;
+	cursor: pointer;
+	font-weight: regular;
+	text-decoration: none;
+	-webkit-font-smoothing: antialiased;
+	}
+
+	.dl-container .defslist {
+	padding-left: 0;
+	}
+
+	.dl-container .defslandlink {
+	color: rgb(0, 146, 214);
+	cursor: pointer;
+	display: inline;
+	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
+	font-size: 15px;
+	font-weight: bold;
+	text-decoration: none;
+	height: auto;
+	line-height: 24px;
+	width: auto;
+	-webkit-font-smoothing: antialiased;
+	}
+
+	.dl-container .defssrclink {
+	background-color: rgba(0, 0, 0, 0);
+	color: rgb(0, 146, 214);
+	cursor: pointer;
+	display: inline;
+	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
+	font-size: 12.75px;
+	height: auto;
+	line-height: 18.4875px;
+	list-style-type: none;
+	text-align: left;
+	text-decoration: none;
+	width: auto;
+	-webkit-font-smoothing: antialiased;
+	}
+
+	.dl-container ul li {
+	color: rgba(0, 146, 214, 1);
+	list-style-type: none;
+	padding-top: 3.75px;
+	}
+
+	.dl-container ul li li {
+	color: rgba(119, 147, 174, 1);
+	list-style-type: circle;
+	}
+
+	.dl-container button {
+	background-color: rgba(177, 20, 247, 1);
+	color: white;
+	cursor: pointer;
+	font-family: 'circular-std', -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'Helvetica', Ubuntu, 'segoe ui', arial, sans-serif;
+	font-size: 15px;
+	line-height: 24px;
+	font-weight: bold;
+	border-radius: 4px;
+	border-color: transparent;
+	padding-top: 0.45rem;
+	padding-bottom: 0.42rem;
+	padding-left: 15px;
+	padding-right: 15px;
+	}
+
+	.dl-container span.nav {
+	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
+	font-size: 14.75px;
+	color: rgb(119, 147, 174);
+	}
+</style>
+{{end}}
+
+{{define "Nav"}}{{end}}
+
+{{define "Body"}}
+<div class="dl-container">
+
+	<span class="nav"><a href="{{.RepoURL}}" class="toplink">{{.Repo.URI}}</a></span>
+
+	<h1>Top Definitions</h1>
+
+	<ul class="defslist">
+	{{range $def := .Defs}}
+		{{with $def.Def.FmtStrings}}
+		<li><tt>{{.DefKeyword}} <a href="{{$def.LandURL}}" class="highlight">{{.Name.ScopeQualified}}</a>{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</tt> · <a href="{{$def.SourceURL}}" class="defssrclink">source</a></li>
+		{{end}}
+	{{end}}
+
+</div>
+{{end}}
+
+{{define "Footer"}}
+{{end}}

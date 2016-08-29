@@ -46,6 +46,13 @@ func (r *Router) URLToDefKey(def graph.DefKey) *url.URL {
 	)
 }
 
+func (r *Router) LandURLToDefKey(def graph.DefKey) *url.URL {
+	return &url.URL{
+		Path: fmt.Sprintf("/%s%s/-/land/%s/%s/-/%s",
+			def.Repo, revStr(def.CommitID), def.UnitType, routevar.DefKeyPathToURLPath(def.Unit), routevar.DefKeyPathToURLPath(def.Path)),
+	}
+}
+
 func (r *Router) urlToDef(repo, rev, unitType, unit, path string) *url.URL {
 	return &url.URL{
 		Path: fmt.Sprintf("/%s%s/-/def/%s/%s/-/%s", repo, rev, unitType, unit, path),

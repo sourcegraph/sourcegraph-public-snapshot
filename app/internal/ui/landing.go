@@ -13,6 +13,78 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
 
+type defDescr struct {
+	Def       *sourcegraph.Def
+	LandURL   string
+	SourceURL string
+}
+
+func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
+	// TODO: load GlobalNav after the fact?
+
+	cl := handlerutil.Client(r)
+	vars := mux.Vars(r)
+
+	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), vars)
+	if err != nil {
+		return err
+	}
+
+	// terminate early on non-Go repos
+	if repo.Language != "Go" {
+		// TODO: what to do here? return error?
+	}
+
+	repoURL := approuter.Rel.URLToRepoRev(repo.URI, repoRev.CommitID).String()
+	repoRevURI := fmt.Sprintf("%s@%s", repo.URI, repoRev.CommitID)
+	defs, err := cl.Defs.List(r.Context(), &sourcegraph.DefListOptions{
+		RepoRevs:    []string{repoRevURI},
+		Exported:    true,
+		IncludeTest: false,
+		ListOptions: sourcegraph.ListOptions{PerPage: 100},
+	})
+	if err != nil {
+		return err
+	}
+
+	var defDescrs []defDescr
+	for _, def := range defs.Defs {
+		def, err = cl.Defs.Get(r.Context(), &sourcegraph.DefsGetOp{
+			Def: sourcegraph.NewDefSpecFromDefKey(def.Def.DefKey, repo.ID),
+			Opt: &sourcegraph.DefGetOptions{Doc: false, ComputeLineRange: true},
+		})
+		if err != nil {
+			return err
+		}
+
+		if def.Kind == "package" {
+			continue
+		}
+
+		defDescrs = append(defDescrs, defDescr{
+			Def:       def,
+			LandURL:   approuter.Rel.LandURLToDefKey(def.DefKey).String(),
+			SourceURL: approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine)).String(),
+		})
+	}
+
+	return tmpl.Exec(r, w, "repolanding.html", http.StatusOK, nil, &struct {
+		tmpl.Common
+		Meta meta
+
+		Repo    *sourcegraph.Repo
+		RepoRev sourcegraph.RepoRevSpec
+		RepoURL string
+		Defs    []defDescr
+	}{
+		Meta:    meta{SEO: true},
+		Repo:    repo,
+		RepoRev: repoRev,
+		RepoURL: repoURL,
+		Defs:    defDescrs,
+	})
+}
+
 func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	// TODO: load GlobalNav after the fact?
 

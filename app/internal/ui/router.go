@@ -8,14 +8,15 @@ import (
 )
 
 const (
-	routeBlob       = "blob"
-	routeBuild      = "build"
-	routeDef        = "def"
-	routeDefInfo    = "def.info"
-	routeDefLanding = "def.landing"
-	routeRepo       = "repo"
-	routeRepoBuilds = "repo.builds"
-	routeTree       = "tree"
+	routeBlob        = "blob"
+	routeBuild       = "build"
+	routeDef         = "def"
+	routeDefInfo     = "def.info"
+	routeDefLanding  = "def.landing"
+	routeRepo        = "repo"
+	routeRepoBuilds  = "repo.builds"
+	routeRepoLanding = "repo.landing"
+	routeTree        = "tree"
 
 	routeTopLevel = "toplevel" // non-repo top-level routes
 )
@@ -74,6 +75,7 @@ func newRouter() *mux.Router {
 	repoRev.Path("/def/" + routevar.Def).Methods("GET").Name(routeDef)
 	repoRev.Path("/info/" + routevar.Def).Methods("GET").Name(routeDefInfo)
 	repoRev.Path("/land/" + routevar.Def).Methods("GET").Name(routeDefLanding)
+	repoRev.Path("/land").Methods("GET").Name(routeRepoLanding)
 
 	return m
 }
