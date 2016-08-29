@@ -41,6 +41,17 @@
 	text-decoration: none;
 	}
 
+	.dl-container .toplink {
+	color: rgb(119, 147, 174);
+	display: inline;
+	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
+	font-size: 14.75px;
+	cursor: pointer;
+	font-weight: regular;
+	text-decoration: none;
+	-webkit-font-smoothing: antialiased;
+	}
+
 	.dl-container .refslist {
 	padding-left: 0;
 	}
@@ -192,7 +203,7 @@
 {{define "Body"}}
 <div class="dl-container">
 
-	<span class="nav">{{.Repo.URI}}&nbsp;·&nbsp;{{.Def.Def.File}}</span>
+	<span class="nav"><a href="{{.RepoURL}}" class="toplink">{{.Repo.URI}}</a>&nbsp;·&nbsp;<a href="{{.FileURL}}" class="toplink">{{.Def.Def.File}}</a></span>
 
 	{{with .Def}}
 
