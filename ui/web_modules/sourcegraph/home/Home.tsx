@@ -31,6 +31,8 @@ export class Home extends Container<HomeProps, HomeState> {
 	}
 
 	componentDidMount(): void {
+		/* The twitter-wjs module loaded here is only used for this page
+		   That's why it's in this file and not in app/templates/scripts.html */
 		let script = document.createElement("script");
 		script.id = "twitter-wjs";
 		script.src = "//platform.twitter.com/widgets.js";
