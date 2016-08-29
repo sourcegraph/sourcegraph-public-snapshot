@@ -86,10 +86,10 @@ export class LoginForm extends Container<Props, State> {
 						name="username"
 						autoComplete="username"
 						autoFocus={true}
-						autoCapitalize={false}
-						autoCorrect={false}
-						minLength="3"
-						tabIndex="2"
+						autoCapitalize="off"
+						autoCorrect="off"
+						minLength={3}
+						tabIndex={2}
 						domRef={(e) => this._loginInput = e}
 						block={true}
 						required={true} />
@@ -101,7 +101,7 @@ export class LoginForm extends Container<Props, State> {
 						id="e2etest-password-field"
 						autoComplete="current-password"
 						name="password"
-						tabIndex="3"
+						tabIndex={3}
 						domRef={(e) => this._passwordInput = e}
 						block={true}
 						required={true} />

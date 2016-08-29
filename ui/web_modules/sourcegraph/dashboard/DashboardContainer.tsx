@@ -99,7 +99,7 @@ export class DashboardContainer extends Container<Props, State> {
 		(this.context as any).router.push(locationForSearch(this.props.location, query, this.state.langs, this.state.scope, true, true));
 	}
 
-	_handleInput(ev: KeyboardEvent) {
+	_handleInput(ev: React.FormEvent<HTMLInputElement>) {
 		if (!(ev.currentTarget instanceof HTMLInputElement)) {
 			return;
 		}
@@ -172,7 +172,6 @@ export class DashboardContainer extends Container<Props, State> {
 
 					<GlobalSearchInput
 						name="q"
-						border={true}
 						query={this.props.location.query.q || ""}
 						autoFocus={true}
 						domRef={e => this._input = e}

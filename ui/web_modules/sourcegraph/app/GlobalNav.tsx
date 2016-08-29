@@ -308,7 +308,7 @@ class SearchForm extends React.Component<SearchFormProps, SearchFormState> {
 		this._input.value = "";
 	}
 
-	_handleKeyDown(ev: KeyboardEvent) {
+	_handleKeyDown(ev: React.KeyboardEvent<HTMLInputElement>) {
 		if (ev.keyCode === 27 /* ESC */) {
 			this.setState({open: false} as SearchFormState);
 			this._input.blur();
@@ -319,7 +319,7 @@ class SearchForm extends React.Component<SearchFormProps, SearchFormState> {
 		}
 	}
 
-	_handleChange(ev: KeyboardEvent) {
+	_handleChange(ev: React.KeyboardEvent<HTMLInputElement>) {
 		invariant(ev.currentTarget instanceof HTMLInputElement, "invalid currentTarget");
 		const value = (ev.currentTarget as HTMLInputElement).value;
 		this.setState({query: value} as SearchFormState);
@@ -329,7 +329,7 @@ class SearchForm extends React.Component<SearchFormProps, SearchFormState> {
 		this._goToDebounced(this.props.router.replace, locationForSearch(this.props.location, value, this.state.lang, this.state.scope, false, this.props.location.pathname.slice(1) === rel.search) as any);
 	}
 
-	_handleFocus(ev: Event) {
+	_handleFocus(ev: React.FocusEvent<HTMLInputElement>) {
 		const update: {focused: boolean; open: boolean; query?: string} = {focused: true, open: true};
 		if (this._input && this._input.value) {
 			update.query = this._input.value;
@@ -337,7 +337,7 @@ class SearchForm extends React.Component<SearchFormProps, SearchFormState> {
 		this.setState(update as SearchFormState);
 	}
 
-	_handleBlur(ev: Event) {
+	_handleBlur(ev: React.FocusEvent<HTMLInputElement>) {
 		this.setState({focused: false} as SearchFormState);
 	}
 
@@ -351,7 +351,7 @@ class SearchForm extends React.Component<SearchFormProps, SearchFormState> {
 					autoComplete="off">
 					<GlobalSearchInput
 						name="q"
-						icon={true}
+						showIcon={true}
 						autoComplete="off"
 						query={this.state.query || ""}
 						domRef={e => this._input = e}

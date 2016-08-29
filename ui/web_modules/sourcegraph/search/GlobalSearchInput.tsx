@@ -1,7 +1,7 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import {Input} from "sourcegraph/components/index";
+import {Input, Props as InputProps} from "sourcegraph/components/Input";
 import * as styles from "sourcegraph/search/styles/GlobalSearchInput.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as invariant from "invariant";
@@ -11,8 +11,7 @@ import * as classNames from "classnames";
 // If the user clicks the magnifying glass icon, the cursor should be
 // placed at the end of the text, not the beginning. Without this event
 // handler, these clicks would place the cursor at the beginning.
-function positionCursorAtEndIfIconClicked(ev: MouseEvent) {
-
+function positionCursorAtEndIfIconClicked(ev: React.MouseEvent<HTMLInputElement>) {
 	if (ev.button !== 0) {
 		return;
 	}
@@ -41,37 +40,35 @@ function positionCursorAtEndIfIconClicked(ev: MouseEvent) {
 	input.focus();
 }
 
-interface Props {
+interface Props extends InputProps {
 	query: string;
-	icon?: boolean; // whether to show a magnifying glass icon
-	border?: boolean;
+	showIcon?: boolean; // whether to show a magnifying glass icon
 	className?: string;
-
-	[key: string]: any;
 }
 
 export function GlobalSearchInput(props: Props) {
-	// Omit styles prop so we don't clobber Input's own style mapping.
-	const passProps = Object.assign({}, props, {className: undefined, styles: undefined}); // eslint-disable-line no-undefined
-
+	let other = Object.assign({}, props);
+	delete other.query;
+	delete other.showIcon;
+	delete other.className;
 	return (
 		<div className={classNames(styles.flex_fill, styles.relative, base.mr3)}>
-			{props.icon &&
+			{props.showIcon &&
 				<Search width={16} style={{top: "11px", left: "10px"}} className={classNames(styles.absolute, styles.cool_mid_gray_fill, styles.layer_btm)} />
 			}
 			<Input
-				{...passProps}
+				{...other}
 				id="e2etest-search-input"
 				type="text"
-				onMouseDown={props.icon ? positionCursorAtEndIfIconClicked : null}
+				onMouseDown={props.showIcon ? positionCursorAtEndIfIconClicked : undefined}
 				block={true}
 				autoCorrect="off"
 				autoCapitalize="off"
-				spellCheck="off"
+				spellCheck={false}
 				autoComplete="off"
 				defaultValue={props.query}
 				className={props.className || ""}
-				style={{textIndent: props.icon ? "18px" : "0px", backgroundColor: "transparent"}} />
+				style={{textIndent: props.showIcon ? "18px" : "0px", backgroundColor: "transparent"}} />
 		</div>
 	);
 }

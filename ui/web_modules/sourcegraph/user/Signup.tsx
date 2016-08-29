@@ -97,10 +97,10 @@ export class SignupForm extends Container<SignupFormProps, SignupFormState> {
 						domRef={(e) => this._loginInput = e}
 						autoComplete="username"
 						autoFocus={true}
-						autoCapitalize={false}
-						autoCorrect={false}
-						minLength="3"
-						tabIndex="2"
+						autoCapitalize="off"
+						autoCorrect="off"
+						minLength={3}
+						tabIndex={2}
 						block={true}
 						required={true} />
 				</label>
@@ -111,8 +111,8 @@ export class SignupForm extends Container<SignupFormProps, SignupFormState> {
 						name="email"
 						defaultValue={this.state.githubEmail || null}
 						autoComplete="email"
-						autoCapitalize={false}
-						tabIndex="3"
+						autoCapitalize="off"
+						tabIndex={3}
 						domRef={(e) => this._emailInput = e}
 						block={true}
 						required={true} />
@@ -124,7 +124,7 @@ export class SignupForm extends Container<SignupFormProps, SignupFormState> {
 						name="password"
 						autoComplete="new-password"
 						domRef={(e) => this._passwordInput = e}
-						tabIndex="4"
+						tabIndex={4}
 						block={true}
 						required={true} />
 				</label>
