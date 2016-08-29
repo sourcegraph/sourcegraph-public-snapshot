@@ -235,7 +235,7 @@ export class BlobMain extends Container<Props, State> {
 					</div>
 					<FileMargin
 						className={Style.margin}
-						style={(!this.state.blob || !this.state.anns) ? {visibility: "hidden"} : null}
+						style={(!this.state.blob || !this.state.anns) ? {visibility: "hidden"} : undefined}
 						lineFromByte={this.state.lineFromByte}
 						selectionStartLine={this.state.selectionStartLine ? this.state.selectionStartLine : null}
 						startByte={this.state.startByte}>

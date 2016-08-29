@@ -3,12 +3,10 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
-interface Props {
+interface Props extends React.HTMLAttributes<HTMLDivElement> {
 	lineFromByte?: () => void;
 	selectionStartLine?: any;
 	startByte?: number;
-
-	[key: string]: any;
 }
 
 type State = any;
@@ -36,7 +34,8 @@ export class FileMargin extends React.Component<Props, State> {
 		let passthroughProps = Object.assign({}, this.props);
 		delete passthroughProps.children;
 		delete passthroughProps.lineFromByte;
-
+		delete passthroughProps.selectionStartLine;
+		delete passthroughProps.startByte;
 		return (
 			<div {...passthroughProps} style={{position: "relative"}}>
 				{React.Children.map(this.props.children || [], (child, i) => (
