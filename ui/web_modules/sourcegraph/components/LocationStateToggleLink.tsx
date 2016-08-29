@@ -6,7 +6,7 @@ import * as React from "react";
 function isLeftClickEvent(ev) { return ev.button === 0; }
 function isModifiedEvent(ev) { return Boolean(ev.metaKey || ev.altKey || ev.ctrlKey || ev.shiftKey); }
 
-interface Props {
+interface Props extends React.HTMLAttributes<HTMLAnchorElement> {
 	location: any;
 
 	// modalName is the name of the modal (location.state.modal value) that this
@@ -20,14 +20,7 @@ interface Props {
 	// onToggle is called when the link is toggled ON.
 	onToggle?: (v: boolean) => void;
 
-	// target is the <a target=""> attribute value.
-	target?: string;
-
 	children?: any;
-
-	role?: string;
-
-	[key: string]: any;
 }
 
 // LocationStateToggleLink is like react-router's <Link>, but instead of going
@@ -40,8 +33,10 @@ export function LocationStateToggleLink(props: Props, {router}) {
 	const {location, children, modalName} = props;
 	const other = Object.assign({}, props);
 	delete other.location;
-	delete other.children;
 	delete other.modalName;
+	delete other.href;
+	delete other.onToggle;
+	delete other.children;
 	const active = location.state && location.state.modal === modalName;
 
 	// Copied from react-router Link.js.
@@ -64,7 +59,7 @@ export function LocationStateToggleLink(props: Props, {router}) {
 	};
 
 	return (
-		<a {...other} // eslint-disable-line no-undef
+		<a {...other}
 			href={props.href}
 			onClick={handleClick}>
 			{children}
