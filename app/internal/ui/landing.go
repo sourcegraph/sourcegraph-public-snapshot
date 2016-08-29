@@ -32,7 +32,8 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 
 	// terminate early on non-Go repos
 	if repo.Language != "Go" {
-		// TODO: what to do here? return error?
+		http.Error(w, "404 - Page not found. (No landing page for non-Go repo.)", http.StatusNotFound)
+		return nil
 	}
 
 	repoURL := approuter.Rel.URLToRepoRev(repo.URI, repoRev.CommitID).String()
