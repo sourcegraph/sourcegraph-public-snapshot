@@ -37,19 +37,22 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	repoURL := approuter.Rel.URLToRepoRev(repo.URI, repoRev.CommitID).String()
-	repoRevURI := fmt.Sprintf("%s@%s", repo.URI, repoRev.CommitID)
-	defs, err := cl.Defs.List(r.Context(), &sourcegraph.DefListOptions{
-		RepoRevs:    []string{repoRevURI},
-		Exported:    true,
-		IncludeTest: false,
-		ListOptions: sourcegraph.ListOptions{PerPage: 100},
+
+	results, err := cl.Search.Search(r.Context(), &sourcegraph.SearchOp{
+		Opt: &sourcegraph.SearchOptions{
+			Repos:        []int32{repo.ID},
+			Languages:    []string{"Go"},
+			IncludeRepos: false,
+			ListOptions:  sourcegraph.ListOptions{PerPage: 100},
+		},
 	})
 	if err != nil {
 		return err
 	}
 
 	var defDescrs []defDescr
-	for _, def := range defs.Defs {
+	for _, defResult := range results.DefResults {
+		def := &defResult.Def
 		def, err = cl.Defs.Get(r.Context(), &sourcegraph.DefsGetOp{
 			Def: sourcegraph.NewDefSpecFromDefKey(def.Def.DefKey, repo.ID),
 			Opt: &sourcegraph.DefGetOptions{Doc: false, ComputeLineRange: true},

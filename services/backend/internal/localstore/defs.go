@@ -47,7 +47,7 @@ var toDBLang_ = map[string]dbLang{
 }
 
 func toDBLang(lang string) (dbLang, error) {
-	if l, exists := toDBLang_[lang]; exists {
+	if l, exists := toDBLang_[strings.ToLower(lang)]; exists {
 		return l, nil
 	}
 	return 0, fmt.Errorf("unrecognized language %s", lang)
@@ -323,8 +323,10 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 			wheres = append(wheres, `kind NOT IN (`+strings.Join(notKindList, ", ")+`)`)
 		}
 
-		wheres = append(wheres, "bow != ''")
-		wheres = append(wheres, `to_tsquery('english', `+arg(bowQuery)+`) @@ bow`)
+		if bowQuery != "" {
+			wheres = append(wheres, "bow != ''")
+			wheres = append(wheres, `to_tsquery('english', `+arg(bowQuery)+`) @@ bow`)
+		}
 
 		whereSQL = fmt.Sprint(`WHERE (`+strings.Join(wheres, ") AND (")+`)`) + prefixSQL
 		fastWheres := append(wheres, "ref_ct > 10") // this corresponds to a partial index
