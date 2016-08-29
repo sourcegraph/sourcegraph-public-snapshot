@@ -59,15 +59,10 @@ type T struct {
 	// calling Fatalf).
 	WebDriver selenium.WebDriver
 
-	// testingT provides a Logf implementation
-	testingT TestingT
+	// logf provides a Logf implementation
+	logf func(fmt string, v ...interface{})
 
 	tr *testRunner
-}
-
-// Minimal interface for what testing.T provides
-type TestingT interface {
-	Logf(fmt string, v ...interface{})
 }
 
 type internalError struct {
@@ -96,7 +91,7 @@ func (t *T) Fatalf(fmtStr string, v ...interface{}) {
 
 // Logf implements TestingT
 func (t *T) Logf(fmtStr string, v ...interface{}) {
-	t.testingT.Logf(fmtStr, v...)
+	t.logf(fmtStr, v...)
 }
 
 // Endpoint returns an absolute URL given one relative to the target instance
@@ -641,7 +636,10 @@ func (t *testRunner) runTest(test *Test, testingT *testing.T) (err error, screen
 	}()
 
 	ctx := t.newT(test, wd)
-	ctx.testingT = testingT
+	ctx.logf = t.log.Printf
+	if testingT != nil {
+		ctx.logf = testingT.Logf
+	}
 	return test.Func(ctx), nil
 }
 
@@ -661,7 +659,7 @@ func (t *testRunner) newT(test *Test, wd selenium.WebDriver) *T {
 		TestLogin: usernamePrefix + test.Name,
 		TestEmail: usernamePrefix + test.Name + "@sourcegraph.com",
 		WebDriver: wd,
-		testingT:  defaultTestingT{},
+		logf:      t.log.Printf,
 		tr:        t,
 	}
 	ctx.WebDriverT = ctx.WebDriver.T(ctx)
@@ -916,10 +914,4 @@ Flags:
 	}
 
 	tr.run()
-}
-
-type defaultTestingT struct{}
-
-func (t defaultTestingT) Logf(fmtStr string, v ...interface{}) {
-	log.Printf(fmtStr, v...)
 }
