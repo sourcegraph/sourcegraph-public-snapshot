@@ -77,7 +77,7 @@ export class LoginForm extends Container<Props, State> {
 			<form {...this.props} onSubmit={this._handleSubmit} className={styles.form}>
 				<Heading level="3" align="center" underline="orange">Sign in to Sourcegraph</Heading>
 				{this.state.githubError && <div className={styles.error}>Sorry, signing in via GitHub didn't work. (Check your organization's GitHub 3rd-party application settings.) Try <Link to="/join?github-error=from-login">creating a separate Sourcegraph account</Link>.</div>}
-				<GitHubAuthButton returnTo={this.state.returnTo} tabIndex="1" block={true}>Continue with GitHub</GitHubAuthButton>
+				<GitHubAuthButton returnTo={this.state.returnTo} tabIndex={1} block={true}>Continue with GitHub</GitHubAuthButton>
 				<p className={styles.divider}>or</p>
 				<label>
 					<span>Username</span>
