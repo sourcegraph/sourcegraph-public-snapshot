@@ -1,6 +1,7 @@
 package golang
 
 import (
+	"context"
 	"errors"
 	"io/ioutil"
 
@@ -8,7 +9,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
-func (h *Handler) handleDefinition(req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) ([]lsp.Location, error) {
+func (h *Handler) handleDefinition(ctx context.Context, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) ([]lsp.Location, error) {
 	// Find start of definition using guru
 	contents, err := h.readFile(params.TextDocument.URI)
 	if err != nil {
@@ -18,7 +19,7 @@ func (h *Handler) handleDefinition(req *jsonrpc2.Request, params lsp.TextDocumen
 	if !valid {
 		return nil, errors.New("invalid position")
 	}
-	def, err := godef(h.goEnv(), h.filePath(params.TextDocument.URI), int(ofs))
+	def, err := godef(ctx, h.goEnv(), h.filePath(params.TextDocument.URI), int(ofs))
 	if err != nil {
 		return nil, err
 	}
