@@ -52,7 +52,7 @@ export function GlobalSearchInput(props: Props) {
 	delete other.showIcon;
 	delete other.className;
 	return (
-		<div className={classNames(styles.flex_fill, styles.relative, base.mr3)}>
+		<div className={classNames(styles.flex_fill, styles.relative)}>
 			{props.showIcon &&
 				<Search width={16} style={{top: "11px", left: "10px"}} className={classNames(styles.absolute, styles.cool_mid_gray_fill)} />
 			}
@@ -68,7 +68,7 @@ export function GlobalSearchInput(props: Props) {
 				autoComplete="off"
 				defaultValue={props.query}
 				className={props.className || ""}
-				style={{textIndent: props.showIcon ? "18px" : "0px", backgroundColor: "transparent"}} />
+				style={{textIndent: props.showIcon ? "18px" : "0px"}} />
 		</div>
 	);
 }

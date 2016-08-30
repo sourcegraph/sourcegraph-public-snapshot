@@ -75,7 +75,7 @@ export class CompletedOnboardingDashboard extends Container<Props, State> {
 
 	_renderGlobalSearchForm(): JSX.Element | null {
 		return (
-			<div className={classNames(base.pl3, base.pt4)} style={{maxWidth: "550px", margin: "0 auto"}}>
+			<div className={classNames(base.pt4, base.center)}>
 				<GlobalSearchInput
 					placeholder="Search for any function, symbol or package"
 					name="q"
@@ -90,30 +90,28 @@ export class CompletedOnboardingDashboard extends Container<Props, State> {
 	render(): JSX.Element | null {
 		return (
 			<div>
-				<div className={styles.onboarding_container}>
-					<Panel className={classNames(base.pb3, base.ph4, base.ba, base.br2, colors.b__cool_pale_gray)}>
+				<div className={styles.onboarding_container} style={{maxWidth: "750px"}}>
+					<div className={classNames(base.pb3, base.ph4, base.br2)}>
 						<div className={base.pt4}>
-							<div className={classNames(base.pb3, base.ph4, base.br2, colors.bg_green, base.hidden_s)} style={{maxWidth: "550px", margin: "0 auto"}}>
-								<img width={35} style={{marginTop: "22px", float: "left", display: "inline", marginLeft: "-10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Dashboard/PartyPopper.png`}></img>
+							<div className={classNames(base.pb3, base.ph4, base.br2, colors.bg_green, base.hidden_s, base.center)}>
+								<img width={35} style={{marginTop: "22px", float: "left", display: "inline", marginLeft: "-10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/emoji/tada.svg`}></img>
 								<h4 className={classNames(base.mv0, colors.white)} style={{paddingLeft: "40px", paddingTop: "18px"}}>Thanks for joining Sourcegraph!</h4>
-								<span className={classNames(base.mv0, base.pl3, colors.white)}>Get started by searching for some code or exploring a repository.</span>
+								<span className={classNames(base.mv0, base.pl3, colors.white)}>Get started by searching for usage examples or exploring a public repository.</span>
 							</div>
 						</div>
-						<Heading className={classNames(base.pt5)} align="center" level="">
+						<Heading className={classNames(base.pt5)} align="center" level="4">
 							Start exploring code
 						</Heading>
-						<div className={classNames(styles.user_actions, base.pt2)} style={{maxWidth: "500px"}}>
-							<p className={classNames(typography.tc, base.mt3, base.mb2, typography.f6, colors.cool_gray_8)} >
-								You've got everything you need to start browsing code smarter. Get started by searching for usage examples or exploring repositories.
-							</p>
-						</div>
+						<p className={classNames(typography.tc, base.mt3, base.mb4, typography.f6, colors.cool_gray_8)} >
+							You've got everything you need to browse code smarter.
+						</p>
 						{this._renderGlobalSearchForm()}
 						<div className={classNames(styles.user_actions, colors.cool_gray_8)}>
 							Try these top searches:
 							<a onClick={this._topQuerySelected.bind(this, "new http request")}> new http request</a>, <a onClick={this._topQuerySelected.bind(this, "read file")}>read file</a>, <a onClick={this._topQuerySelected.bind(this, "json encoder")}>json encoder</a>
 						</div>
-						<div className={classNames(styles.user_actions, base.pt3, base.hidden_s)}>
-							<h3 className={base.pb3}>Explore repositories</h3>
+						<div className={classNames(styles.user_actions, base.pt5, base.hidden_s)}>
+							<Heading className={base.pb3} level="5">Explore public repositories</Heading>
 							<Table style={{width: "575px", paddingLeft: "60px", margin: "0 auto"}} className={classNames(typography.tl)}>
 								<tbody>
 									<tr className={classNames(base.pt3)}>
@@ -137,7 +135,7 @@ export class CompletedOnboardingDashboard extends Container<Props, State> {
 								</tbody>
 							</Table>
 						</div>
-					</Panel>
+					</div>
 				</div>
 			</div>
 		);
