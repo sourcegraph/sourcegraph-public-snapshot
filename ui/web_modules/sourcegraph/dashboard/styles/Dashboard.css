@@ -52,6 +52,16 @@
 		height: auto;
 	}
 }
+
+.repo_description {
+	composes: mt0 mb0 from base;
+	composes: cool_mid_gray from colors;
+	min-width: 0;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	font-size: 0.9rem;
+}
+
 .description {
 	text-align: center;
 	composes: mt3 mb0 from base;
@@ -95,6 +105,13 @@
 .search_input {
 	composes: f4 from typography;
 }
+
+.onboarding_search_input {
+	composes: f4 from typography;
+	composeS: pt2 from base;
+	vertical-align: middle;
+}
+
 .search_button {
 	font-weight: bold;
 	composes: action_button;

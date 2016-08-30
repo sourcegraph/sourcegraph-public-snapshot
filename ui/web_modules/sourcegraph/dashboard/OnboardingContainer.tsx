@@ -11,6 +11,7 @@ import {ChromeExtensionOnboarding} from "sourcegraph/dashboard/ChromeExtensionOn
 import {GitHubPrivateAuthOnboarding} from "sourcegraph/dashboard/GitHubPrivateAuthOnboarding";
 import {Store} from "sourcegraph/Store";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {CompletedOnboardingDashboard} from "sourcegraph/dashboard/CompletedOnboardingDashboard";
 
 interface Props {
 	location?: any;
@@ -54,7 +55,8 @@ export class OnboardingContainer extends Container<Props, State> {
 		if (this.props.currentStep === "chrome") {
 			(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionStepCompleted", {page_name: "ChromeExtensionOnboarding"});
 			nextStep = {ob: "github"};
-		} else {
+		} else if (this.props.currentStep === "github") {
+			nextStep = {ob: "search"};
 			(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "GitHubStepCompleted", {page_name: "GitHubPrivateCodeOnboarding"});
 		}
 
@@ -68,7 +70,11 @@ export class OnboardingContainer extends Container<Props, State> {
 			return <ChromeExtensionOnboarding completeStep={this._completeStep.bind(this)} location={this.props.location}/>;
 		}
 
-		return <GitHubPrivateAuthOnboarding completeStep={this._completeStep.bind(this)} repos={this.state.repos ? this.state.repos.Repos : []} privateCodeAuthed={this._isPrivateCodeUser()} location={this.props.location}/>;
+		if (this.props.currentStep === "github") {
+			return <GitHubPrivateAuthOnboarding completeStep={this._completeStep.bind(this)} repos={this.state.repos ? this.state.repos.Repos : []} privateCodeAuthed={this._isPrivateCodeUser()} location={this.props.location}/>;
+		}
+
+		return <CompletedOnboardingDashboard location={this.props.location}/>;
 	}
 
 	render(): JSX.Element | null {

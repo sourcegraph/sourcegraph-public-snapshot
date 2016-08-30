@@ -31,6 +31,13 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
+	constructor(props) {
+		super(props);
+		this.state = {
+			showAll: false,
+		};
+	}
+
 	_renderPrivateAuthCTA(): JSX.Element | null {
 		return (
 			<div>
@@ -85,8 +92,22 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 		this.props.completeStep();
 	}
 
+	_showAllReposClicked() {
+		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ShowAllGitHubRepositories", {page_name: "GitHubPrivateCodeOnboarding"});
+		this.setState({
+			showAll: true,
+		});
+	}
+
 	_renderRepoBuildCTA(): JSX.Element | null {
-		let repos: any[] = this.props.repos ? this.props.repos.slice(0).sort(this._repoSort).slice(0, 5) : [];
+		let repos: any[] = [];
+		if (this.props.repos) {
+			if (this.state.showAll) {
+				repos = this.props.repos.slice(0).sort(this._repoSort);
+			} else {
+				repos = this.props.repos.slice(0).sort(this._repoSort).slice(0, 5);
+			}
+		}
 
 		return (
 			<div>
@@ -111,7 +132,7 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 												<RepoLink repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} /> :
 												(repo.URI && repo.URI.replace("github.com/", "").replace("/", " / ", 1)) || `${repo.Owner} / ${repo.Name}`
 											}
-										{repo.Description && <p className={styles.description}>
+										{repo.Description && <p className={styles.repo_description}>
 											{repo.Description.length > 40 ? `${repo.Description.substring(0, 40)}...` : repo.Description}
 										</p>}
 										</div>
@@ -122,6 +143,9 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 										</div>
 									</div>
 								)}
+								{(!this.state.showAll && this.props.repos.length > 5) && <div className={classNames(styles.info, base.pt2)}>
+									<a onClick={this._showAllReposClicked.bind(this)}>Show more</a>
+								</div>}
 							</div>
 							<p>
 								<Button onClick={this.props.completeStep.bind(this)} className={styles.action_link} type="button" color="blue">Save and continue</Button>

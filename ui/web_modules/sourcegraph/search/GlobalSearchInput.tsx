@@ -54,7 +54,7 @@ export function GlobalSearchInput(props: Props) {
 	return (
 		<div className={classNames(styles.flex_fill, styles.relative, base.mr3)}>
 			{props.showIcon &&
-				<Search width={16} style={{top: "11px", left: "10px"}} className={classNames(styles.absolute, styles.cool_mid_gray_fill, styles.layer_btm)} />
+				<Search width={16} style={{top: "11px", left: "10px"}} className={classNames(styles.absolute, styles.cool_mid_gray_fill)} />
 			}
 			<Input
 				{...other}

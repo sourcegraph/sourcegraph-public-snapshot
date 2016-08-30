@@ -62,6 +62,7 @@ export class DashboardContainer extends Container<Props, State> {
 			return true;
 		});
 
+		// Immediately after sign up update the query params to start the onboarding flow at the chrome extension.
 		if (UserStore.authResponses["signup"]) {
 			const newLoc = Object.assign({}, this.props.location, {query: {ob: "chrome"}});
 			(this.context as any).router.replace(newLoc);
@@ -82,7 +83,7 @@ export class DashboardContainer extends Container<Props, State> {
 	}
 
 	_shouldStartOnboarding(): string | null {
-		if (this.props.location && (this.props.location.query["ob"] === "chrome" || this.props.location.query["ob"] === "github")) {
+		if (this.props.location && (this.props.location.query["ob"] === "chrome" || this.props.location.query["ob"] === "github" || this.props.location.query["ob"] === "search")) {
 			return this.props.location.query["ob"];
 		}
 
