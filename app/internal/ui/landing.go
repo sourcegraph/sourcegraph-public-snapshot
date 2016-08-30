@@ -53,6 +53,11 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 	var defDescrs []defDescr
 	for _, defResult := range results.DefResults {
 		def := &defResult.Def
+
+		if !def.Exported {
+			continue
+		}
+
 		def, err = cl.Defs.Get(r.Context(), &sourcegraph.DefsGetOp{
 			Def: sourcegraph.NewDefSpecFromDefKey(def.Def.DefKey, repo.ID),
 			Opt: &sourcegraph.DefGetOptions{Doc: true, ComputeLineRange: true},
