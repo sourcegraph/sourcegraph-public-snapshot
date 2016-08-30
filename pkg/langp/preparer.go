@@ -265,9 +265,16 @@ func (p *Preparer) prepareDeps(ctx context.Context, update bool, repo, commit st
 		// preparation again (this is our best chance at keeping the workspace
 		// in a working state).
 		log.Println("preparing workspace deps:", err)
+
+		// TODO(slimsag): In the event that this occurs, we will remove the
+		// workspace (as we should). However, if any requests are currently
+		// relying on the repository (but not dependencies) the workspace will
+		// dissapear right out from underneath them. This is a race condition
+		// we should solve.
 		if err2 := os.RemoveAll(workspace); err2 != nil {
 			return prepStatusError, err2
 		}
+		return prepStatusError, err
 	}
 
 	// We are the latest commit, so update the symlink.
@@ -276,7 +283,6 @@ func (p *Preparer) prepareDeps(ctx context.Context, update bool, repo, commit st
 		return prepStatusError, err
 	}
 	if err := os.Symlink(p.pathToSubvolume(repo, commit), latest); err != nil {
-		status = prepStatusError
 		return prepStatusError, err
 	}
 	return prepStatusOK, nil
