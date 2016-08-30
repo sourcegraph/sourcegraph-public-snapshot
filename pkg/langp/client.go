@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -128,10 +129,13 @@ func (c *Client) do(ctx context.Context, endpoint string, body, results interfac
 
 	req.Header.Add("Content-Type", "application/json")
 
-	if span := opentracing.SpanFromContext(ctx); span != nil {
-		if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header)); err != nil {
-			return fmt.Errorf("%s (body '%s')", err, string(data))
-		}
+	operationName := fmt.Sprintf("LP Client: POST %s", c.endpoint(endpoint))
+	span := opentracing.StartSpan(operationName, opentracing.ChildOf(opentracing.SpanFromContext(ctx).Context()))
+	span.LogEventWithPayload("request body", body)
+	defer span.Finish()
+
+	if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header)); err != nil {
+		return fmt.Errorf("%s (body '%s')", err, string(data))
 	}
 
 	resp, err := c.Client.Do(req)
@@ -140,9 +144,16 @@ func (c *Client) do(ctx context.Context, endpoint string, body, results interfac
 	}
 	defer resp.Body.Close()
 
+	// 1 KB is a good, safe choice for medium-to-high throughput traces.
+	saver := &prefixSuffixSaver{N: 1 * 1024}
+	tee := io.TeeReader(resp.Body, saver)
+	defer func() {
+		span.LogEventWithPayload("response - "+resp.Status, string(saver.Bytes()))
+	}()
+
 	if resp.StatusCode != http.StatusOK {
 		var errResp Error
-		if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {
+		if err := json.NewDecoder(tee).Decode(&errResp); err != nil {
 			return fmt.Errorf("error parsing language processor error (status code %v): %v", resp.StatusCode, err)
 		}
 		return &errResp
@@ -150,7 +161,7 @@ func (c *Client) do(ctx context.Context, endpoint string, body, results interfac
 	if results == nil {
 		return nil
 	}
-	return json.NewDecoder(resp.Body).Decode(results)
+	return json.NewDecoder(tee).Decode(results)
 }
 
 // endpoint returns a URL based on c.Endpoint with the given path suffixed.
