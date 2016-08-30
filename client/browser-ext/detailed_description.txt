@@ -1,0 +1,44 @@
+///////////////////////////////////////////////////////////////////////////
+// Editor's note: This is the plaintext description (excluding this      //
+// editor's note) that should be pasted into the "Detailed description"  //
+// field when uploading the extension. This field must be manually       //
+// updated on the Chrome Web Store.                                      //
+//                                                                       //
+// If the description is edited, it should try to retain the following   //
+// keywords near the top:                                                //
+//                                                                       //
+// * code review                                                         //
+// * code browser                                                        //
+// * read-only cloud IDE                                                 //
+// * read code                                                           //
+// * view source code                                                    //
+// * usage examples                                                      //
+// * code search                                                         //
+// * pull requests                                                        //
+///////////////////////////////////////////////////////////////////////////
+
+Sourcegraph gives GitHub IDE-like powers. In both the GitHub code browser and GitHub code review / pull requests, it lets you
+
+1) jump to definition
+2) find usage examples
+3) hover over to see documentation and type info
+4) search over the functions, types, and packages in a repository (semantic code search) with a keyboard shortcut (Shift-T)
+
+The Sourcegraph Chrome extension for GitHub turns GitHub into something like a read-only cloud IDE optimized for exploring and understanding code. View source code that's fully interactive, so you don't have to context-switch back and forth between multiple browser tabs, your terminal, and your code editor. Integrates seamlessly into the GitHub workflow and UI.
+
+After you install it, view some code on GitHub and mouse over some identifiers:
+
+* Go: https://github.com/gorilla/mux/blob/master/mux.go
+* Java: https://github.com/JodaOrg/joda-time/blob/master/src/main/java/org/joda/time/Days.java#L42
+
+If the extension isn't working on a specific repository, email support@sourcegraph.com or Tweet to @srcgraph. (Please don't post a review to report issues; we can fix them much faster if you contact us directly.)
+
+Here's what people are saying about Sourcegraph:
+
+- "It's already my favorite online doc tool. give it a try" - @edapx
+- "Sourcegraph has been quickly moving up in priority in my Chrome bookmarks. You need to check out this tool." - @goinggodotnet
+- "Loving Sourcegraph.com to find documentation and real code examples" - @IndianGuru
+- "Being able to search actual open source code is amazing. Very very fast as well! Sourcegraph is blowing my mind right now." - @joshtaylor
+- "Sourcegraph is amazing" - Jakub W.
+- "Sourcegraph is an essential tool for every Gopher." - @nimolix
+- "Impressive #golang code navigation by Sourcegraph!" - @francesc
