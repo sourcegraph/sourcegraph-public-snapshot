@@ -22,6 +22,12 @@
 	font-size: 15px;
 	}
 
+	.dl-container .link-h1 {
+	color: rgb(26, 48, 77);
+	cursor: pointer;
+	text-decoration: none;
+	}
+
 	.dl-container .highlight {
 	color: rgba(177, 20, 247, 1);
 	text-decoration: none;
@@ -132,9 +138,9 @@
 
 	<span class="nav"><a href="{{.RepoURL}}" class="toplink">Search {{dangerouslySetHTML .SearchIconSVG}} within {{.Repo.URI}}</a></span>
 
-	<h1>{{.Repo.URI}}</h1>
+	<h1><a href="{{.RepoURL}}" class="link-h1">{{.Repo.URI}}</a></h1>
 
-	<h2>Top Definitions in <tt class="highlight-h2">{{.Repo.Name}}</tt></h2>
+	<h2>Top definitions in <tt class="highlight-h2">{{.Repo.Name}}</tt></h2>
 
 	<ul class="defslist">
 	{{range $def := .Defs}}
