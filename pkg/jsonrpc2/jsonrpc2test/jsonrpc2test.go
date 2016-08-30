@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync/atomic"
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
@@ -26,6 +27,8 @@ type Server struct {
 	// matches what is in WantRequest.
 	T           testing.TB
 	WantRequest map[uint64]*jsonrpc2.Request
+
+	closed uint32
 }
 
 // NewServer creates and starts a Server listening on Server.Addr. Callers
@@ -41,7 +44,7 @@ func NewServer() *Server {
 		WantRequest: map[uint64]*jsonrpc2.Request{},
 	}
 	go func() {
-		if err := jsonrpc2.Serve(context.Background(), conn, jsonrpc2.HandlerWithError(s.Handle)); err != nil {
+		if err := jsonrpc2.Serve(context.Background(), conn, jsonrpc2.HandlerWithError(s.Handle)); err != nil && atomic.LoadUint32(&s.closed) == 0 {
 			log.Printf("jsonrpc2test serve: %s", err)
 		}
 	}()
@@ -68,6 +71,7 @@ func (h *Server) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.
 }
 
 func (h *Server) Close() error {
+	atomic.StoreUint32(&h.closed, 1)
 	return h.Listener.Close()
 }
 

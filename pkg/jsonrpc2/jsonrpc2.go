@@ -437,7 +437,7 @@ func (c *Conn) readMessages(ctx context.Context, r *bufio.Reader) {
 	}
 	c.mu.Unlock()
 	c.sending.Unlock()
-	if err != io.EOF && !closing {
+	if err != io.ErrUnexpectedEOF && !closing {
 		log.Println("jsonrpc2: protocol error:", err)
 	}
 	close(c.disconnect)
