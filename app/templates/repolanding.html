@@ -145,7 +145,7 @@
 	<ul class="defslist">
 	{{range $def := .Defs}}
 		{{with $def.Def.FmtStrings}}
-		<li><tt>{{.DefKeyword}} <a href="{{$def.LandURL}}" class="highlight-h3">{{.Name.ScopeQualified}}</a>{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</tt></li>
+		<li><tt>{{.DefKeyword}} <a href="{{$def.LandURL}}" class="highlight-h3">{{.Name.Unqualified}}</a>{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</tt></li>
 		<p><a href="{{$def.SourceURL}}" class="defssrclink">view source</a>{{if $def.RefCount}} | referenced {{$def.RefCount}} {{numberedNoun $def.RefCount "time"}}{{end}}</p>
 		<div class="defdoctext">{{dangerouslySetHTML $def.Def.DocHTML.HTML}}</div>
 		{{end}}
