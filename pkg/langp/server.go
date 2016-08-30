@@ -13,6 +13,12 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 )
 
+type contextKey int
+
+const (
+	methodNameKey contextKey = 1
+)
+
 // Server represents all of the Language Processor REST API methods that must
 // be implemented by a language processor.
 type Server interface {
@@ -86,7 +92,9 @@ func handler(path string, m handlerFunc) http.Handler {
 			writeResponse(w, http.StatusBadRequest, resp, path, body)
 			return
 		}
-		resp, err := m(opentracing.ContextWithSpan(r.Context(), span), body)
+		r = r.WithContext(opentracing.ContextWithSpan(r.Context(), span))
+		r = r.WithContext(context.WithValue(r.Context(), methodNameKey, path))
+		resp, err := m(r.Context(), body)
 		if err != nil {
 			resp := &Error{ErrorMsg: err.Error()}
 			writeResponse(w, http.StatusBadRequest, resp, path, body)

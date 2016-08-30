@@ -1,6 +1,7 @@
 package langp
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -26,7 +27,7 @@ func InitMetrics(language string) {
 
 	namespace := "lang"
 	// Workspace preparation metrics.
-	prepLabels := []string{"repo", "status"}
+	prepLabels := []string{"type", "method", "repo", "status"}
 	prepDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: namespace,
 		Subsystem: language,
@@ -39,7 +40,7 @@ func InitMetrics(language string) {
 		Subsystem: language,
 		Name:      "workspace_prep_last_timestamp_unixtime",
 		Help:      "last time a " + language + " workspace was prepared.",
-	}, prepLabels)
+	}, []string{"method", "repo", "status"})
 	prometheus.MustRegister(prepDuration)
 	prometheus.MustRegister(prepHeartbeat)
 
@@ -63,6 +64,14 @@ func InitMetrics(language string) {
 }
 
 const (
+	// prepStatusBug signals a bug in which the preparation code did not
+	// properly set the status.
+	prepStatusBug = "bug"
+
+	// prepStatusNoWork signals that no work was needed to prepare the
+	// workspace (i.e. it was already prepared).
+	prepStatusNoWork = "no-work"
+
 	// prepStatusTimeout signals that workspace preparation was already under
 	// way, and it took longer than our request was willing to wait, thus our
 	// request timed out.
@@ -73,26 +82,49 @@ const (
 	prepStatusWaiting = "waiting"
 
 	// prepStatusOK signals that our request triggered workspace preparation
-	// and finished it.
+	// and finished it successfully.
 	prepStatusOK = "ok"
+
+	// prepStatusError signals that our request failed in some way to prepare
+	// the workspace.
+	prepStatusError = "error"
 )
 
-// observePrepare observes repository preparation as having began at the given
-// start time (and finished now) for the given repository. The status parameter
-// should be one of the prepStatus constants.
-func observePrepare(start time.Time, repo, status string) {
-	prepDuration.WithLabelValues(repo, status).Observe(time.Since(start).Seconds())
-	prepHeartbeat.WithLabelValues(repo, status).Set(float64(time.Now().Unix()))
+const (
+	// prepTypeRepo specifies that the preparation was for cloning/updating the
+	// repository.
+	prepTypeRepo = "repo"
+
+	// prepTypeDeps specifies that the preparation was for fetching/updating
+	// the workspace dependencies.
+	prepTypeDeps = "deps"
+)
+
+// observePrepareRepo observes repository preparation as having began at the
+// given start time (and finished now) for the given repository. The status
+// parameter should be one of the prepStatus constants.
+func observePrepareRepo(ctx context.Context, start time.Time, repo, status string) {
+	method := ctx.Value(methodNameKey).(string)
+	prepDuration.WithLabelValues("repo", method, repo, status).Observe(time.Since(start).Seconds())
+	prepHeartbeat.WithLabelValues(method, repo, status).Set(float64(time.Now().Unix()))
 }
 
-// observe observes an LSP request, recording information about it to
+// observePrepareDeps observes dependency preparation as having began at the given
+// start time (and finished now) for the given repository.
+func observePrepareDeps(ctx context.Context, start time.Time, repo, status string) {
+	method := ctx.Value(methodNameKey).(string)
+	prepDuration.WithLabelValues("deps", method, repo, status).Observe(time.Since(start).Seconds())
+}
+
+// observe observes a language processor request, recording information about it to
 // prometheus.
 //
 // err should be the error which the LSP server responded with, if any.
 //
 // unresolved should be true if the request to the LSP server did not yield any
 // results (i.e. an error did not occur, but no results were found).
-func observe(start time.Time, method, repo string, err error, unresolved bool) {
+func observe(ctx context.Context, start time.Time, repo string, err error, unresolved bool) {
+	method := ctx.Value(methodNameKey).(string)
 	d := time.Since(start).Seconds()
 	status := "ok"
 	if err != nil {

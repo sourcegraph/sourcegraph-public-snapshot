@@ -153,6 +153,9 @@ func (p *Preparer) createWorkspace(repo, commit string) (update bool, err error)
 }
 
 // prepare prepares a new workspace for the given repository and revision.
+//
+// method must be the language processor REST API method which triggered
+// the request (e.g. "prepare" or "external-symbols"). It is used for metrics.
 func (p *Preparer) prepare(ctx context.Context, repo, commit string) (workspace string, err error) {
 	// TODO(slimsag): use a smaller timeout by default and ensure the timeout
 	// error is properly handled by the frontend.
@@ -162,7 +165,13 @@ func (p *Preparer) prepare(ctx context.Context, repo, commit string) (workspace 
 var errTimeout = errors.New("request timed out")
 
 func (p *Preparer) prepareTimeout(ctx context.Context, repo, commit string, timeout time.Duration) (workspace string, err error) {
-	start := time.Now()
+	var (
+		start  = time.Now()
+		status = prepStatusBug
+	)
+	defer func() {
+		observePrepareRepo(ctx, start, repo, status)
+	}()
 
 	p.init()
 
@@ -171,30 +180,32 @@ func (p *Preparer) prepareTimeout(ctx context.Context, repo, commit string, time
 	workspace = p.pathToWorkspace(repo, commit)
 	didTimeout, handled, done := p.preparingRepos.acquire(workspace, timeout)
 	if didTimeout {
-		observePrepare(start, repo, prepStatusTimeout)
+		status = prepStatusTimeout
 		return "", errTimeout
 	}
 	if handled {
 		// A different request prepared the repository.
-		observePrepare(start, repo, prepStatusWaiting)
+		status = prepStatusWaiting
 		return workspace, nil
 	}
 	defer done()
-	defer observePrepare(start, repo, prepStatusOK)
 
 	// If the workspace exists already, it has been fully prepared and we don't
 	// need to do anything.
 	exists, err := dirExists(workspace)
 	if err != nil {
+		status = prepStatusError
 		return "", err
 	}
 	if exists {
+		status = prepStatusNoWork
 		return workspace, nil
 	}
 
 	// Create the workspace directory.
 	update, err := p.createWorkspace(repo, commit)
 	if err != nil {
+		status = prepStatusError
 		return "", err
 	}
 
@@ -205,6 +216,7 @@ func (p *Preparer) prepareTimeout(ctx context.Context, repo, commit string, time
 		// incomplete. Remove the directory so that the next request causes
 		// preparation again (this is our best chance at keeping the workspace
 		// in a working state).
+		status = prepStatusError
 		log.Println("preparing workspace repo:", err)
 		if err2 := os.RemoveAll(workspace); err2 != nil {
 			log.Println(err2)
@@ -214,10 +226,19 @@ func (p *Preparer) prepareTimeout(ctx context.Context, repo, commit string, time
 
 	// Prepare the dependencies asynchronously.
 	go func() {
+		var (
+			start  = time.Now()
+			status = prepStatusOK
+		)
+		defer func() {
+			observePrepareDeps(ctx, start, repo, status)
+		}()
+
 		// Acquire ownership of dependency preparation.
 		didTimeout, handled, done = p.preparingDeps.acquire(workspace, 0*time.Second)
 		if didTimeout || handled {
 			// A different request is preparing the dependencies.
+			status = prepStatusNoWork
 			return
 		}
 		defer done()
@@ -227,6 +248,7 @@ func (p *Preparer) prepareTimeout(ctx context.Context, repo, commit string, time
 			// incomplete. Remove the directory so that the next request causes
 			// preparation again (this is our best chance at keeping the workspace
 			// in a working state).
+			status = prepStatusError
 			log.Println("preparing workspace deps:", err)
 			if err2 := os.RemoveAll(workspace); err2 != nil {
 				log.Println(err2)
@@ -237,13 +259,17 @@ func (p *Preparer) prepareTimeout(ctx context.Context, repo, commit string, time
 		// We are the latest commit, so update the symlink.
 		latest := p.pathToLatest(repo)
 		if err := os.Remove(latest); err != nil && !os.IsNotExist(err) {
+			status = prepStatusError
 			log.Println(err)
 			return
 		}
 		if err := os.Symlink(p.pathToSubvolume(repo, commit), latest); err != nil {
+			status = prepStatusError
 			log.Println(err)
 			return
 		}
+		status = prepStatusOK
 	}()
+	status = prepStatusOK
 	return workspace, nil
 }
