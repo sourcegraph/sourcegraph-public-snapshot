@@ -152,25 +152,27 @@ func (p *Preparer) createWorkspace(repo, commit string) (update bool, err error)
 	return false, nil
 }
 
-// prepare prepares a new workspace for the given repository and revision.
+var errTimeout = errors.New("request timed out")
+
+// Prepare prepares a new workspace for the given repository and revision.
 //
 // method must be the language processor REST API method which triggered
 // the request (e.g. "prepare" or "external-symbols"). It is used for metrics.
-func (p *Preparer) prepare(ctx context.Context, repo, commit string) (workspace string, err error) {
+func (p *Preparer) Prepare(ctx context.Context, repo, commit string) (workspace string, err error) {
 	// TODO(slimsag): use a smaller timeout by default and ensure the timeout
 	// error is properly handled by the frontend.
-	return p.prepareTimeout(ctx, repo, commit, 1*time.Hour)
+	return p.PrepareTimeout(ctx, repo, commit, 1*time.Hour)
 }
 
-var errTimeout = errors.New("request timed out")
-
-func (p *Preparer) prepareTimeout(ctx context.Context, repo, commit string, timeout time.Duration) (workspace string, err error) {
+// PrepareTimeout is just like Prepare except it uses a custom timeout.
+func (p *Preparer) PrepareTimeout(ctx context.Context, repo, commit string, timeout time.Duration) (workspace string, err error) {
 	start := time.Now()
 	workspace, status, err := p.prepareRepo(ctx, repo, commit, timeout)
 	observePrepareRepo(ctx, start, repo, status)
 	return workspace, err
 }
 
+// prepareRepo should not be called outside of Preparer itself.
 func (p *Preparer) prepareRepo(ctx context.Context, repo, commit string, timeout time.Duration) (workspace, status string, err error) {
 	p.init()
 
@@ -229,6 +231,7 @@ func (p *Preparer) prepareRepo(ctx context.Context, repo, commit string, timeout
 	return workspace, prepStatusOK, nil
 }
 
+// prepareDeps should not be called outside of Preparer itself.
 func (p *Preparer) prepareDeps(ctx context.Context, update bool, repo, commit string) (status string, err error) {
 	// Acquire ownership of dependency preparation.
 	workspace := p.pathToWorkspace(repo, commit)
