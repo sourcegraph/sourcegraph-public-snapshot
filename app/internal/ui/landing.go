@@ -60,14 +60,6 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 			continue
 		}
 
-		def, err = cl.Defs.Get(r.Context(), &sourcegraph.DefsGetOp{
-			Def: sourcegraph.NewDefSpecFromDefKey(def.Def.DefKey, repo.ID),
-			Opt: &sourcegraph.DefGetOptions{Doc: true, ComputeLineRange: true},
-		})
-		if err != nil {
-			return err
-		}
-
 		if def.Kind == "package" {
 			continue
 		}
@@ -96,7 +88,7 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 			Def:       def,
 			RefCount:  defResult.RefCount,
 			LandURL:   approuter.Rel.DefKeyToLandURL(def.DefKey).String(),
-			SourceURL: approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine)).String(),
+			SourceURL: approuter.Rel.URLToDefKey(def.DefKey).String(),
 		})
 	}
 
