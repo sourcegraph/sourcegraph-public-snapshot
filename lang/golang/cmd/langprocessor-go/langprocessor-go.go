@@ -209,11 +209,11 @@ func main() {
 	log.Println("Translating HTTP", *httpAddr, "to LSP", *lspAddr)
 	http.Handle("/", langp.New(&langp.Translator{
 		Addr: *lspAddr,
-		Preparer: &langp.Preparer{
+		Preparer: langp.NewPreparer(&langp.PreparerOpts{
 			WorkDir:     workDir,
 			PrepareRepo: prepareRepo,
 			PrepareDeps: prepareDeps,
-		},
+		}),
 		ResolveFile: resolveFile,
 		FileURI:     fileURI,
 	}))

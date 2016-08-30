@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type Preparer struct {
+type PreparerOpts struct {
 	// WorkDir is where workspaces are created by cloning repositories and
 	// dependencies.
 	WorkDir string
@@ -40,15 +40,20 @@ type Preparer struct {
 	// If an error is returned, it is returned directly to the person who made
 	// the API request which triggered the preperation of the workspace.
 	PrepareDeps func(update bool, workspace, repo, commit string) error
-
-	preparingRepos, preparingDeps *pending
 }
 
-func (p *Preparer) init() {
-	if p.preparingRepos == nil {
-		p.preparingRepos = newPending()
-		p.preparingDeps = newPending()
+// NewPreparer returns a new preparer with the internal fields initialized.
+func NewPreparer(opts *PreparerOpts) *Preparer {
+	return &Preparer{
+		PreparerOpts:   opts,
+		preparingRepos: newPending(),
+		preparingDeps:  newPending(),
 	}
+}
+
+type Preparer struct {
+	*PreparerOpts
+	preparingRepos, preparingDeps *pending
 }
 
 // pathToWorkspace returns an absolute path to the workspace for the given
@@ -174,8 +179,6 @@ func (p *Preparer) PrepareTimeout(ctx context.Context, repo, commit string, time
 
 // prepareRepo should not be called outside of Preparer itself.
 func (p *Preparer) prepareRepo(ctx context.Context, repo, commit string, timeout time.Duration) (workspace, status string, err error) {
-	p.init()
-
 	// Acquire ownership of repository preparation. Essentially this is a
 	// sync.Mutex unique to the workspace.
 	workspace = p.pathToWorkspace(repo, commit)
