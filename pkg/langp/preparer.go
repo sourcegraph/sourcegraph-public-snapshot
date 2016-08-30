@@ -225,51 +225,54 @@ func (p *Preparer) prepareTimeout(ctx context.Context, repo, commit string, time
 	}
 
 	// Prepare the dependencies asynchronously.
-	go func() {
-		var (
-			start  = time.Now()
-			status = prepStatusOK
-		)
-		defer func() {
-			observePrepareDeps(ctx, start, repo, status)
-		}()
-
-		// Acquire ownership of dependency preparation.
-		didTimeout, handled, done = p.preparingDeps.acquire(workspace, 0*time.Second)
-		if didTimeout || handled {
-			// A different request is preparing the dependencies.
-			status = prepStatusNoWork
-			return
-		}
-		defer done()
-
-		if err := p.PrepareDeps(update, workspace, repo, commit); err != nil {
-			// Preparing the workspace has failed, and thus the workspace is
-			// incomplete. Remove the directory so that the next request causes
-			// preparation again (this is our best chance at keeping the workspace
-			// in a working state).
-			status = prepStatusError
-			log.Println("preparing workspace deps:", err)
-			if err2 := os.RemoveAll(workspace); err2 != nil {
-				log.Println(err2)
-				return
-			}
-		}
-
-		// We are the latest commit, so update the symlink.
-		latest := p.pathToLatest(repo)
-		if err := os.Remove(latest); err != nil && !os.IsNotExist(err) {
-			status = prepStatusError
-			log.Println(err)
-			return
-		}
-		if err := os.Symlink(p.pathToSubvolume(repo, commit), latest); err != nil {
-			status = prepStatusError
-			log.Println(err)
-			return
-		}
-		status = prepStatusOK
-	}()
+	go p.prepareDeps(ctx, update, repo, commit)
 	status = prepStatusOK
 	return workspace, nil
+}
+
+func (p *Preparer) prepareDeps(ctx context.Context, update bool, repo, commit string) {
+	var (
+		start  = time.Now()
+		status = prepStatusOK
+	)
+	defer func() {
+		observePrepareDeps(ctx, start, repo, status)
+	}()
+
+	// Acquire ownership of dependency preparation.
+	workspace := p.pathToWorkspace(repo, commit)
+	didTimeout, handled, done := p.preparingDeps.acquire(workspace, 0*time.Second)
+	if didTimeout || handled {
+		// A different request is preparing the dependencies.
+		status = prepStatusNoWork
+		return
+	}
+	defer done()
+
+	if err := p.PrepareDeps(update, workspace, repo, commit); err != nil {
+		// Preparing the workspace has failed, and thus the workspace is
+		// incomplete. Remove the directory so that the next request causes
+		// preparation again (this is our best chance at keeping the workspace
+		// in a working state).
+		status = prepStatusError
+		log.Println("preparing workspace deps:", err)
+		if err2 := os.RemoveAll(workspace); err2 != nil {
+			log.Println(err2)
+			return
+		}
+	}
+
+	// We are the latest commit, so update the symlink.
+	latest := p.pathToLatest(repo)
+	if err := os.Remove(latest); err != nil && !os.IsNotExist(err) {
+		status = prepStatusError
+		log.Println(err)
+		return
+	}
+	if err := os.Symlink(p.pathToSubvolume(repo, commit), latest); err != nil {
+		status = prepStatusError
+		log.Println(err)
+		return
+	}
+	status = prepStatusOK
 }
