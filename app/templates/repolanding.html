@@ -119,7 +119,10 @@
 	<ul class="defslist">
 	{{range $def := .Defs}}
 		{{with $def.Def.FmtStrings}}
-		<li><tt>{{.DefKeyword}} <a href="{{$def.LandURL}}" class="highlight">{{.Name.ScopeQualified}}</a>{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</tt> · <a href="{{$def.SourceURL}}" class="defssrclink">source</a></li>
+		<li>
+		<tt>{{.DefKeyword}} <a href="{{$def.LandURL}}" class="highlight">{{.Name.ScopeQualified}}</a>{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</tt> · <a href="{{$def.SourceURL}}" class="defssrclink">source</a><br>
+		<p>{{dangerouslySetHTML $def.Def.DocHTML.HTML}}</p>
+		</li>
 		{{end}}
 	{{end}}
 
