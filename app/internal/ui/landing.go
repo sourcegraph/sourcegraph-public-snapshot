@@ -98,6 +98,8 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		tmpl.Common
 		Meta meta
 
+		MetaTitle     string
+		MetaDescr     string
 		SearchIconSVG string
 		Repo          *sourcegraph.Repo
 		RepoRev       sourcegraph.RepoRevSpec
@@ -105,6 +107,8 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		Defs          []defDescr
 	}{
 		Meta:          meta{SEO: true},
+		MetaTitle:     fmt.Sprintf("%s · Sourcegraph", repo.URI),
+		MetaDescr:     fmt.Sprintf("Top definitions from %s with type signature, documentation, links to source and usage examples", repo.URI),
 		SearchIconSVG: searchIconSVG,
 		Repo:          repo,
 		RepoRev:       repoRev,
