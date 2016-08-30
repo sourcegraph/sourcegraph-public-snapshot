@@ -59,3 +59,11 @@ func TestSymbolToDef_shouldIndex(t *testing.T) {
 		t.Fatalf("shouldIndex(%+#v) is false", d)
 	}
 }
+
+func TestToDBLangCaseInsensitivity(t *testing.T) {
+	res1, err1 := toDBLang("jAvA")
+	res2, err2 := toDBLang("java")
+	if res1 != res2 || err1 != err2 {
+		t.Fatalf(`toDBLang("jAvA") != toDBLang("java"); case insensitivity is broken`)
+	}
+}
