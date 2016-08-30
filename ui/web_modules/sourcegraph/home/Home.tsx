@@ -82,11 +82,11 @@ export class Home extends Container<HomeProps, HomeState> {
 						{/* column with welcome message, short description, and sign up button */}
 						<div style={{maxWidth: "400px", flex: "1 1 400px"}}>
 							<Heading align="left" level="2" underline="purple">
-								Welcome to the global graph of code
+								The best way to read and understand code
 							</Heading>
 
 							<p className={classNames(typography.f5, base.mt0)}>
-								<strong>Sourcegraph</strong> answers everyday programming questions in seconds
+								<strong>Sourcegraph</strong> is a code explorer with the brains of an IDE. Search over popular Go and Java code in seconds.
 							</p>
 
 							<p className={base.mt4}>
@@ -112,12 +112,13 @@ export class Home extends Container<HomeProps, HomeState> {
 					{/* section showing questions */}
 					<div style={{maxWidth: "600px", marginRight: "auto", marginLeft: "auto"}}>
 						<Heading className="hook-title" align="center" level="4" underline="blue">
-							How do I use this function? Who can I ask about this code? <em>What does this code even do?</em>
+							The fast way to answer everyday programming questions.
 						</Heading>
 
 						<p className={classNames(typography.tc, base.mt0, base.mb5)} >
-							These questions require you to constantly context-switch between your editor, terminal, and browser.
-							Sourcegraph can help you stop losing focus and wasting time.
+							Simple questions too often require you to context-switch<br/>
+							between your editor, terminal, and web browser.<br/>
+							Sourcegraph helps you get answers without losing focus and wasting time.
 						</p>
 					</div>
 
@@ -130,11 +131,11 @@ export class Home extends Container<HomeProps, HomeState> {
 							<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/illo-docs.svg`} width="100%" />
 
 							<p style={{fontWeight: "bold"}}>
-								Usage examples and instant documentation
+								How do I use this code?
 							</p>
 
 							<p>
-								Quickly understand new libraries instead of reinventing the wheel.
+								Find usage examples of every function and library.
 							</p>
 						</div>
 
@@ -143,12 +144,11 @@ export class Home extends Container<HomeProps, HomeState> {
 							<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/illo-search.svg`} width="100%" />
 
 							<p style={{fontWeight: "bold"}}>
-								Global search by function, package, or symbol name
+								Where is this function defined?
 							</p>
 
 							<p>
-								Find exactly the function you're looking for.
-								Search your private code and thousands of open-source repositories.
+								Jump-to-def search over the open-source universe and your private code.
 							</p>
 						</div>
 
@@ -157,11 +157,11 @@ export class Home extends Container<HomeProps, HomeState> {
 							<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/illo-team.svg`} width="100%" />
 
 							<p style={{fontWeight: "bold"}}>
-								Designed with teams in mind
+								Who do I ask? Who do I blame?
 							</p>
 
 							<p>
-								Jump to definition in a code review and instantly see who you should ask about a piece of code.
+								Instant inline authorship information for any piece of code.
 							</p>
 						</div>
 
