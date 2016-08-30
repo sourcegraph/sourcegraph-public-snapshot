@@ -42,6 +42,10 @@
 	padding-left: 0;
 	}
 
+	.dl-container .defdoctext {
+	color: black;
+	}
+
 	.dl-container .defslandlink {
 	color: rgb(0, 146, 214);
 	cursor: pointer;
@@ -121,7 +125,7 @@
 		{{with $def.Def.FmtStrings}}
 		<li>
 		<tt>{{.DefKeyword}} <a href="{{$def.LandURL}}" class="highlight">{{.Name.ScopeQualified}}</a>{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</tt> · <a href="{{$def.SourceURL}}" class="defssrclink">source</a><br>
-		<p>{{dangerouslySetHTML $def.Def.DocHTML.HTML}}</p>
+		<p class="defdoctext">{{dangerouslySetHTML $def.Def.DocHTML.HTML}}</p>
 		</li>
 		{{end}}
 	{{end}}
