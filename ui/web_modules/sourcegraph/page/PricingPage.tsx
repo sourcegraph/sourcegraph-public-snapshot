@@ -26,7 +26,7 @@ export function PricingPage(props: {}, {signedIn, eventLogger}) {
 							<Panel color="purple" inverse={true} hover={false} className={styles.plan_panel || ""}>
 								<Heading level="3" color="white" align="center">Free</Heading>
 								<Heading level="1" color="white" align="center"><span className={styles.currency}>$</span><span className={styles.amount}>0</span></Heading>
-								<p>For individuals and teams, for public and private code</p>
+								<p style={{minHeight: '3.5em'}}>for individuals and teams, for public and private code</p>
 							</Panel>
 							{!signedIn && <Link to="/join"
 								onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "free", page_name: AnalyticsConstants.PAGE_PRICING})}>
@@ -54,7 +54,7 @@ export function PricingPage(props: {}, {signedIn, eventLogger}) {
 							<Panel color="green" inverse={true} hover={false} className={styles.plan_panel || ""}>
 								<Heading level="3" color="white" align="center">Standard</Heading>
 								<Heading level="1" color="white" align="center"><span className={styles.currency}>$</span><span className={styles.amount}>50</span></Heading>
-								<p>per&nbsp;user per&nbsp;month</p>
+								<p style={{minHeight: '3.5em'}}>per&nbsp;user per&nbsp;month</p>
 							</Panel>
 							<Link to="/contact"
 								onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "standard", page_name: AnalyticsConstants.PAGE_PRICING})}>
@@ -64,7 +64,7 @@ export function PricingPage(props: {}, {signedIn, eventLogger}) {
 						<div className={styles.details}>
 							<Heading level="4" color="green" underline="green">
 								Standard includes<br/>
-								<span className={styles.details_cumulative}>Everything in Free, and:</span>
+								<span className={styles.details_cumulative}>Everything in Free,<br/>and:</span>
 							</Heading>
 							<ul className={styles.details_list}>
 								<li>Unlimited branches and commits for private projects</li>
@@ -79,7 +79,7 @@ export function PricingPage(props: {}, {signedIn, eventLogger}) {
 							<Panel color="blue" inverse={true} hover={false} className={styles.plan_panel || ""}>
 								<Heading level="3" color="white" align="center">Enterprise</Heading>
 								<Heading level="1" color="white" align="center"><span className={styles.currency}>$</span><span className={styles.amount}>100</span></Heading>
-								<p>per&nbsp;user per&nbsp;month</p>
+								<p style={{minHeight: '3.5em'}}>per&nbsp;user per&nbsp;month</p>
 							</Panel>
 							<Link to="/contact"
 								onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "free", page_name: AnalyticsConstants.PAGE_PRICING})}>
