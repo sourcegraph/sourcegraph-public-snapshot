@@ -27,6 +27,17 @@
 	text-decoration: none;
 	}
 
+	.dl-container .highlight-h2 {
+	color: rgba(177, 20, 247, 1);
+	font-size: 28px;
+	}
+
+	.dl-container .highlight-h3 {
+	color: rgba(177, 20, 247, 1);
+	text-decoration: none;
+	font-size: 1.1em;
+	}
+
 	.dl-container .toplink {
 	color: rgb(119, 147, 174);
 	display: inline;
@@ -43,7 +54,10 @@
 	}
 
 	.dl-container .defdoctext {
-	color: black;
+	color: rgb(26, 48, 77);
+	display: block;
+	padding-left: 2em;
+	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
 	}
 
 	.dl-container .defslandlink {
@@ -66,9 +80,7 @@
 	cursor: pointer;
 	display: inline;
 	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
-	font-size: 12.75px;
 	height: auto;
-	line-height: 18.4875px;
 	list-style-type: none;
 	text-align: left;
 	text-decoration: none;
@@ -80,11 +92,13 @@
 	color: rgba(0, 146, 214, 1);
 	list-style-type: none;
 	padding-top: 3.75px;
+	font-size: 15px;
 	}
 
 	.dl-container ul li li {
 	color: rgba(119, 147, 174, 1);
 	list-style-type: circle;
+	font-size: 15px;
 	}
 
 	.dl-container button {
@@ -116,15 +130,18 @@
 {{define "Body"}}
 <div class="dl-container">
 
-	<span class="nav"><a href="{{.RepoURL}}" class="toplink">{{.Repo.URI}}</a></span>
+	<span class="nav"><a href="{{.RepoURL}}" class="toplink">Search {{dangerouslySetHTML .SearchIconSVG}} within {{.Repo.URI}}</a></span>
 
-	<h1>Top Definitions</h1>
+	<h1>{{.Repo.URI}}</h1>
+
+	<h2>Top Definitions in <tt class="highlight-h2">{{.Repo.Name}}</tt></h2>
 
 	<ul class="defslist">
 	{{range $def := .Defs}}
 		{{with $def.Def.FmtStrings}}
 		<li>
-		<tt>{{.DefKeyword}} <a href="{{$def.LandURL}}" class="highlight">{{.Name.ScopeQualified}}</a>{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</tt> · <a href="{{$def.SourceURL}}" class="defssrclink">source</a><br>
+		<tt>{{.DefKeyword}} <a href="{{$def.LandURL}}" class="highlight-h3">{{.Name.ScopeQualified}}</a>{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</tt><br>
+		<p><a href="{{$def.SourceURL}}" class="defssrclink">view source</a> | referenced {{$def.RefCount}} {{numberedNoun $def.RefCount "time"}}</p>
 		<p class="defdoctext">{{dangerouslySetHTML $def.Def.DocHTML.HTML}}</p>
 		</li>
 		{{end}}
