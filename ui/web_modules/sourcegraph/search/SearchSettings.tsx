@@ -76,6 +76,7 @@ class SearchSettingsComp extends Container<Props, State> {
 		// propagating context through components that use shouldComponentUpdate.
 		// We're already observing UserStore, so this doesn't add any extra overhead.
 		state.signedIn = Boolean(UserStore.activeAuthInfo());
+		state.user = UserStore.activeUser();
 	}
 
 	onStateTransition(prevState: State, nextState: State): void {
@@ -146,11 +147,17 @@ class SearchSettingsComp extends Container<Props, State> {
 	_renderLanguages() {
 		const langs = this._langs();
 
+		let langOptions = allLangs.slice(0); // clone array
+		if (localStorage.getItem("srclib_lang_support") !== "true" && (this.state.user && this.state.user.Login !== "sourcegraph")) {
+			let idx = langOptions.indexOf("other");
+			langOptions.splice(idx, 1);
+		}
+
 		return (
 			<div className={styles.group}>
 				<span className={classNames(styles.label, base.pr3)}>Languages:</span>
 				<div>
-					{allLangs.map(lang => (
+					{langOptions.map(lang => (
 						lang === "python" || lang === "javascript" ?
 							<LocationStateToggleLink key={lang} href="/beta" modalName="beta" location={this.props.location}>
 								<Button
