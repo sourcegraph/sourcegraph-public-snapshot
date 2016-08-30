@@ -67,7 +67,7 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 
 		defDescrs = append(defDescrs, defDescr{
 			Def:       def,
-			LandURL:   approuter.Rel.LandURLToDefKey(def.DefKey).String(),
+			LandURL:   approuter.Rel.DefKeyToLandURL(def.DefKey).String(),
 			SourceURL: approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine)).String(),
 		})
 	}
