@@ -65,7 +65,7 @@ type translator struct {
 func (t *translator) Prepare(ctx context.Context, r *RepoRev) error {
 	// Prepare the workspace, and timeout immediately if someone else is
 	// already preparing it.
-	_, err := t.workspace.prepareTimeout(ctx, r.Repo, r.Commit, 0*time.Second)
+	_, err := t.workspace.PrepareTimeout(ctx, r.Repo, r.Commit, 0*time.Second)
 	if err != nil && err != errTimeout {
 		return err
 	}
@@ -74,7 +74,7 @@ func (t *translator) Prepare(ctx context.Context, r *RepoRev) error {
 
 func (t *translator) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*Position, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.workspace.prepare(ctx, defSpec.Repo, defSpec.Commit)
+	rootPath, err := t.workspace.Prepare(ctx, defSpec.Repo, defSpec.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (t *translator) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*
 
 func (t *translator) PositionToDefSpec(ctx context.Context, pos *Position) (*DefSpec, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.workspace.prepare(ctx, pos.Repo, pos.Commit)
+	rootPath, err := t.workspace.Prepare(ctx, pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func (t *translator) PositionToDefSpec(ctx context.Context, pos *Position) (*Def
 
 func (t *translator) Definition(ctx context.Context, pos *Position) (*Range, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.workspace.prepare(ctx, pos.Repo, pos.Commit)
+	rootPath, err := t.workspace.Prepare(ctx, pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +226,7 @@ func (t *translator) Definition(ctx context.Context, pos *Position) (*Range, err
 
 func (t *translator) Hover(ctx context.Context, pos *Position) (*Hover, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.workspace.prepare(ctx, pos.Repo, pos.Commit)
+	rootPath, err := t.workspace.Prepare(ctx, pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +250,7 @@ func (t *translator) Hover(ctx context.Context, pos *Position) (*Hover, error) {
 
 func (t *translator) LocalRefs(ctx context.Context, pos *Position) (*RefLocations, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.workspace.prepare(ctx, pos.Repo, pos.Commit)
+	rootPath, err := t.workspace.Prepare(ctx, pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +290,7 @@ func (t *translator) LocalRefs(ctx context.Context, pos *Position) (*RefLocation
 
 func (t *translator) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.workspace.prepare(ctx, r.Repo, r.Commit)
+	rootPath, err := t.workspace.Prepare(ctx, r.Repo, r.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -340,7 +340,7 @@ func (t *translator) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRef
 
 func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLocations, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.workspace.prepare(ctx, defSpec.Repo, defSpec.Commit)
+	rootPath, err := t.workspace.Prepare(ctx, defSpec.Repo, defSpec.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +401,7 @@ func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLoc
 
 func (t *translator) ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error) {
 	// Determine the root path for the workspace and prepare it.
-	rootPath, err := t.workspace.prepare(ctx, r.Repo, r.Commit)
+	rootPath, err := t.workspace.Prepare(ctx, r.Repo, r.Commit)
 	if err != nil {
 		return nil, err
 	}

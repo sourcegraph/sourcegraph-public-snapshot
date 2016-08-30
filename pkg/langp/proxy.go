@@ -25,7 +25,7 @@ type proxy struct {
 func (p *proxy) Prepare(ctx context.Context, r *RepoRev) error {
 	// Prepare the workspace, and timeout immediately if someone else is
 	// already preparing it.
-	_, err := p.workspace.prepareTimeout(ctx, r.Repo, r.Commit, 0*time.Second)
+	_, err := p.workspace.PrepareTimeout(ctx, r.Repo, r.Commit, 0*time.Second)
 	if err != nil && err != errTimeout {
 		return err
 	}
@@ -34,7 +34,7 @@ func (p *proxy) Prepare(ctx context.Context, r *RepoRev) error {
 
 func (p *proxy) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*Position, error) {
 	// Determine the root path for the workspace and prepare it.
-	_, err := p.workspace.prepare(ctx, defSpec.Repo, defSpec.Commit)
+	_, err := p.workspace.Prepare(ctx, defSpec.Repo, defSpec.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (p *proxy) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*Posit
 
 func (p *proxy) PositionToDefSpec(ctx context.Context, pos *Position) (*DefSpec, error) {
 	// Determine the root path for the workspace and prepare it.
-	_, err := p.workspace.prepare(ctx, pos.Repo, pos.Commit)
+	_, err := p.workspace.Prepare(ctx, pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (p *proxy) PositionToDefSpec(ctx context.Context, pos *Position) (*DefSpec,
 
 func (p *proxy) Definition(ctx context.Context, pos *Position) (*Range, error) {
 	// Determine the root path for the workspace and prepare it.
-	_, err := p.workspace.prepare(ctx, pos.Repo, pos.Commit)
+	_, err := p.workspace.Prepare(ctx, pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (p *proxy) Definition(ctx context.Context, pos *Position) (*Range, error) {
 
 func (p *proxy) Hover(ctx context.Context, pos *Position) (*Hover, error) {
 	// Determine the root path for the workspace and prepare it.
-	_, err := p.workspace.prepare(ctx, pos.Repo, pos.Commit)
+	_, err := p.workspace.Prepare(ctx, pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (p *proxy) Hover(ctx context.Context, pos *Position) (*Hover, error) {
 
 func (p *proxy) LocalRefs(ctx context.Context, pos *Position) (*RefLocations, error) {
 	// Determine the root path for the workspace and prepare it.
-	_, err := p.workspace.prepare(ctx, pos.Repo, pos.Commit)
+	_, err := p.workspace.Prepare(ctx, pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (p *proxy) LocalRefs(ctx context.Context, pos *Position) (*RefLocations, er
 
 func (p *proxy) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, error) {
 	// Determine the root path for the workspace and prepare it.
-	_, err := p.workspace.prepare(ctx, r.Repo, r.Commit)
+	_, err := p.workspace.Prepare(ctx, r.Repo, r.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (p *proxy) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, er
 
 func (p *proxy) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLocations, error) {
 	// Determine the root path for the workspace and prepare it.
-	_, err := p.workspace.prepare(ctx, defSpec.Repo, defSpec.Commit)
+	_, err := p.workspace.Prepare(ctx, defSpec.Repo, defSpec.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (p *proxy) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLocation
 
 func (p *proxy) ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error) {
 	// Determine the root path for the workspace and prepare it.
-	_, err := p.workspace.prepare(ctx, r.Repo, r.Commit)
+	_, err := p.workspace.Prepare(ctx, r.Repo, r.Commit)
 	if err != nil {
 		return nil, err
 	}

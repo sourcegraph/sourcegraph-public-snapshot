@@ -64,10 +64,6 @@ func InitMetrics(language string) {
 }
 
 const (
-	// prepStatusBug signals a bug in which the preparation code did not
-	// properly set the status.
-	prepStatusBug = "bug"
-
 	// prepStatusNoWork signals that no work was needed to prepare the
 	// workspace (i.e. it was already prepared).
 	prepStatusNoWork = "no-work"

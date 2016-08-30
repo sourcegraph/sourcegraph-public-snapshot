@@ -7,9 +7,12 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 )
 
-type Preparer struct {
+type PreparerOpts struct {
 	// WorkDir is where workspaces are created by cloning repositories and
 	// dependencies.
 	WorkDir string
@@ -40,15 +43,20 @@ type Preparer struct {
 	// If an error is returned, it is returned directly to the person who made
 	// the API request which triggered the preperation of the workspace.
 	PrepareDeps func(update bool, workspace, repo, commit string) error
-
-	preparingRepos, preparingDeps *pending
 }
 
-func (p *Preparer) init() {
-	if p.preparingRepos == nil {
-		p.preparingRepos = newPending()
-		p.preparingDeps = newPending()
+// NewPreparer returns a new preparer with the internal fields initialized.
+func NewPreparer(opts *PreparerOpts) *Preparer {
+	return &Preparer{
+		PreparerOpts:   opts,
+		preparingRepos: newPending(),
+		preparingDeps:  newPending(),
 	}
+}
+
+type Preparer struct {
+	*PreparerOpts
+	preparingRepos, preparingDeps *pending
 }
 
 // pathToWorkspace returns an absolute path to the workspace for the given
@@ -152,41 +160,49 @@ func (p *Preparer) createWorkspace(repo, commit string) (update bool, err error)
 	return false, nil
 }
 
-// prepare prepares a new workspace for the given repository and revision.
+var errTimeout = errors.New("request timed out")
+
+// Prepare prepares a new workspace for the given repository and revision.
 //
 // method must be the language processor REST API method which triggered
 // the request (e.g. "prepare" or "external-symbols"). It is used for metrics.
-func (p *Preparer) prepare(ctx context.Context, repo, commit string) (workspace string, err error) {
+func (p *Preparer) Prepare(ctx context.Context, repo, commit string) (workspace string, err error) {
 	// TODO(slimsag): use a smaller timeout by default and ensure the timeout
 	// error is properly handled by the frontend.
-	return p.prepareTimeout(ctx, repo, commit, 1*time.Hour)
+	return p.PrepareTimeout(ctx, repo, commit, 1*time.Hour)
 }
 
-var errTimeout = errors.New("request timed out")
+// PrepareTimeout is just like Prepare except it uses a custom timeout.
+func (p *Preparer) PrepareTimeout(ctx context.Context, repo, commit string, timeout time.Duration) (workspace string, err error) {
+	var span opentracing.Span
+	span, ctx = opentracing.StartSpanFromContext(ctx, "prepare workspace repo")
+	defer span.Finish()
+	span.SetTag("repo", repo)
+	span.SetTag("commit", commit)
+	span.SetTag("timeout", timeout)
 
-func (p *Preparer) prepareTimeout(ctx context.Context, repo, commit string, timeout time.Duration) (workspace string, err error) {
-	var (
-		start  = time.Now()
-		status = prepStatusBug
-	)
-	defer func() {
-		observePrepareRepo(ctx, start, repo, status)
-	}()
+	start := time.Now()
+	workspace, status, err := p.prepareRepo(ctx, repo, commit, timeout)
+	observePrepareRepo(ctx, start, repo, status)
+	span.SetTag("status", status)
+	if status == prepStatusError {
+		ext.Error.Set(span, true)
+	}
+	return workspace, err
+}
 
-	p.init()
-
+// prepareRepo should not be called outside of Preparer itself.
+func (p *Preparer) prepareRepo(ctx context.Context, repo, commit string, timeout time.Duration) (workspace, status string, err error) {
 	// Acquire ownership of repository preparation. Essentially this is a
 	// sync.Mutex unique to the workspace.
 	workspace = p.pathToWorkspace(repo, commit)
 	didTimeout, handled, done := p.preparingRepos.acquire(workspace, timeout)
 	if didTimeout {
-		status = prepStatusTimeout
-		return "", errTimeout
+		return "", prepStatusTimeout, errTimeout
 	}
 	if handled {
 		// A different request prepared the repository.
-		status = prepStatusWaiting
-		return workspace, nil
+		return workspace, prepStatusWaiting, nil
 	}
 	defer done()
 
@@ -194,82 +210,92 @@ func (p *Preparer) prepareTimeout(ctx context.Context, repo, commit string, time
 	// need to do anything.
 	exists, err := dirExists(workspace)
 	if err != nil {
-		status = prepStatusError
-		return "", err
+		return "", prepStatusError, err
 	}
 	if exists {
-		status = prepStatusNoWork
-		return workspace, nil
+		return workspace, prepStatusNoWork, nil
 	}
 
 	// Create the workspace directory.
 	update, err := p.createWorkspace(repo, commit)
 	if err != nil {
-		status = prepStatusError
-		return "", err
+		return "", prepStatusError, err
 	}
 
 	// Prepare the workspace by creating the directory and cloning the
 	// repository.
-	if err := p.PrepareRepo(update, workspace, repo, commit); err != nil {
+	if err := p.tracedPrepareRepo(ctx, update, workspace, repo, commit); err != nil {
 		// Preparing the workspace has failed, and thus the workspace is
 		// incomplete. Remove the directory so that the next request causes
 		// preparation again (this is our best chance at keeping the workspace
 		// in a working state).
-		status = prepStatusError
 		log.Println("preparing workspace repo:", err)
 		if err2 := os.RemoveAll(workspace); err2 != nil {
 			log.Println(err2)
 		}
-		return "", err
+		return "", prepStatusError, err
 	}
 
 	// Prepare the dependencies asynchronously.
 	go func() {
-		var (
-			start  = time.Now()
-			status = prepStatusOK
-		)
-		defer func() {
-			observePrepareDeps(ctx, start, repo, status)
-		}()
-
-		// Acquire ownership of dependency preparation.
-		didTimeout, handled, done = p.preparingDeps.acquire(workspace, 0*time.Second)
-		if didTimeout || handled {
-			// A different request is preparing the dependencies.
-			status = prepStatusNoWork
-			return
-		}
-		defer done()
-
-		if err := p.PrepareDeps(update, workspace, repo, commit); err != nil {
-			// Preparing the workspace has failed, and thus the workspace is
-			// incomplete. Remove the directory so that the next request causes
-			// preparation again (this is our best chance at keeping the workspace
-			// in a working state).
-			status = prepStatusError
-			log.Println("preparing workspace deps:", err)
-			if err2 := os.RemoveAll(workspace); err2 != nil {
-				log.Println(err2)
-				return
-			}
-		}
-
-		// We are the latest commit, so update the symlink.
-		latest := p.pathToLatest(repo)
-		if err := os.Remove(latest); err != nil && !os.IsNotExist(err) {
-			status = prepStatusError
+		depsStart := time.Now()
+		depsStatus, err := p.prepareDeps(ctx, update, repo, commit)
+		if err != nil {
 			log.Println(err)
-			return
 		}
-		if err := os.Symlink(p.pathToSubvolume(repo, commit), latest); err != nil {
-			status = prepStatusError
-			log.Println(err)
-			return
-		}
-		status = prepStatusOK
+		observePrepareDeps(ctx, depsStart, repo, depsStatus)
 	}()
-	status = prepStatusOK
-	return workspace, nil
+	return workspace, prepStatusOK, nil
+}
+
+// prepareDeps should not be called outside of Preparer itself.
+func (p *Preparer) prepareDeps(ctx context.Context, update bool, repo, commit string) (status string, err error) {
+	// Acquire ownership of dependency preparation.
+	workspace := p.pathToWorkspace(repo, commit)
+	didTimeout, handled, done := p.preparingDeps.acquire(workspace, 0*time.Second)
+	if didTimeout || handled {
+		// A different request is preparing the dependencies.
+		return prepStatusNoWork, nil
+	}
+	defer done()
+
+	if err := p.tracedPrepareDeps(ctx, update, workspace, repo, commit); err != nil {
+		// Preparing the workspace has failed, and thus the workspace is
+		// incomplete. Remove the directory so that the next request causes
+		// preparation again (this is our best chance at keeping the workspace
+		// in a working state).
+		log.Println("preparing workspace deps:", err)
+
+		// TODO(slimsag): In the event that this occurs, we will remove the
+		// workspace (as we should). However, if any requests are currently
+		// relying on the repository (but not dependencies) the workspace will
+		// dissapear right out from underneath them. This is a race condition
+		// we should solve.
+		if err2 := os.RemoveAll(workspace); err2 != nil {
+			return prepStatusError, err2
+		}
+		return prepStatusError, err
+	}
+
+	// We are the latest commit, so update the symlink.
+	latest := p.pathToLatest(repo)
+	if err := os.Remove(latest); err != nil && !os.IsNotExist(err) {
+		return prepStatusError, err
+	}
+	if err := os.Symlink(p.pathToSubvolume(repo, commit), latest); err != nil {
+		return prepStatusError, err
+	}
+	return prepStatusOK, nil
+}
+
+func (p *Preparer) tracedPrepareRepo(ctx context.Context, update bool, workspace, repo, commit string) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "PreparerOpts.PrepareRepo")
+	defer span.Finish()
+	return p.PreparerOpts.PrepareRepo(update, workspace, repo, commit)
+}
+
+func (p *Preparer) tracedPrepareDeps(ctx context.Context, update bool, workspace, repo, commit string) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "PreparerOpts.PrepareDeps")
+	defer span.Finish()
+	return p.PreparerOpts.PrepareDeps(update, workspace, repo, commit)
 }

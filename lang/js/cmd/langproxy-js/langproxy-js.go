@@ -47,7 +47,7 @@ func main() {
 	}
 
 	handler, err := langp.NewProxy(client,
-		&langp.Preparer{
+		langp.NewPreparer(&langp.PreparerOpts{
 			WorkDir:     workDir,
 			PrepareRepo: prepareRepo,
 			PrepareDeps: func(update bool, workspace, repo, commit string) error {
@@ -56,7 +56,7 @@ func main() {
 					Commit: commit,
 				})
 			},
-		},
+		}),
 	)
 	if err != nil {
 		log.Fatal(err)
