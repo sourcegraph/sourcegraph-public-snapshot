@@ -7,6 +7,9 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 )
 
 type PreparerOpts struct {
@@ -171,9 +174,20 @@ func (p *Preparer) Prepare(ctx context.Context, repo, commit string) (workspace 
 
 // PrepareTimeout is just like Prepare except it uses a custom timeout.
 func (p *Preparer) PrepareTimeout(ctx context.Context, repo, commit string, timeout time.Duration) (workspace string, err error) {
+	var span opentracing.Span
+	span, ctx = opentracing.StartSpanFromContext(ctx, "prepare workspace repo")
+	defer span.Finish()
+	span.SetTag("repo", repo)
+	span.SetTag("commit", commit)
+	span.SetTag("timeout", timeout)
+
 	start := time.Now()
 	workspace, status, err := p.prepareRepo(ctx, repo, commit, timeout)
 	observePrepareRepo(ctx, start, repo, status)
+	span.SetTag("status", status)
+	if status == prepStatusError {
+		ext.Error.Set(span, true)
+	}
 	return workspace, err
 }
 
@@ -210,7 +224,7 @@ func (p *Preparer) prepareRepo(ctx context.Context, repo, commit string, timeout
 
 	// Prepare the workspace by creating the directory and cloning the
 	// repository.
-	if err := p.PrepareRepo(update, workspace, repo, commit); err != nil {
+	if err := p.tracedPrepareRepo(ctx, update, workspace, repo, commit); err != nil {
 		// Preparing the workspace has failed, and thus the workspace is
 		// incomplete. Remove the directory so that the next request causes
 		// preparation again (this is our best chance at keeping the workspace
@@ -245,7 +259,7 @@ func (p *Preparer) prepareDeps(ctx context.Context, update bool, repo, commit st
 	}
 	defer done()
 
-	if err := p.PrepareDeps(update, workspace, repo, commit); err != nil {
+	if err := p.tracedPrepareDeps(ctx, update, workspace, repo, commit); err != nil {
 		// Preparing the workspace has failed, and thus the workspace is
 		// incomplete. Remove the directory so that the next request causes
 		// preparation again (this is our best chance at keeping the workspace
@@ -266,4 +280,16 @@ func (p *Preparer) prepareDeps(ctx context.Context, update bool, repo, commit st
 		return prepStatusError, err
 	}
 	return prepStatusOK, nil
+}
+
+func (p *Preparer) tracedPrepareRepo(ctx context.Context, update bool, workspace, repo, commit string) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "PreparerOpts.PrepareRepo")
+	defer span.Finish()
+	return p.PreparerOpts.PrepareRepo(update, workspace, repo, commit)
+}
+
+func (p *Preparer) tracedPrepareDeps(ctx context.Context, update bool, workspace, repo, commit string) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "PreparerOpts.PrepareDeps")
+	defer span.Finish()
+	return p.PreparerOpts.PrepareDeps(update, workspace, repo, commit)
 }
