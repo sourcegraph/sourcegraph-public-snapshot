@@ -17,6 +17,7 @@ background-color: rgba(62, 90, 126, 1);
 color: rgba(213, 229, 242, 1);
 border-radius: 3px;
 padding: 1.3rem;
+font-size: 1.2em;
 }
 
 .dl-container pre.snippet {
