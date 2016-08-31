@@ -55,7 +55,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/snapshotprof"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/server"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
@@ -231,12 +230,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		opentracing.InitGlobalTracer(lightstep.NewTracer(lightstep.Options{
 			AccessToken: t,
 		}))
-	}
-
-	// Snapshotters allow us to regularly capture profile data for later
-	// analysis. Not enabled by default since it is similiar to debug logs
-	if p := os.Getenv("SG_SNAPSHOTPROF_PATH"); p != "" {
-		runSnapshotProfiler(p)
 	}
 
 	// Don't proceed if system requirements are missing, to avoid
@@ -720,18 +713,6 @@ func (c *ServeCmd) runGitServer() {
 	go io.Copy(ioutil.Discard, stdoutReader) // drain pipe
 
 	gitserver.Connect(addr)
-}
-
-// runSnapshotProfiler starts up the snapshotprof in a goroutine
-func runSnapshotProfiler(path string) {
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
-	if err != nil {
-		log.Fatalf("snapshot-profiler failed to open %s: %s", path, err)
-	}
-	go func() {
-		err := snapshotprof.Run(f, 5*time.Minute)
-		log15.Error("snapshot-profiler failed writing to log file", "error", err, "path", path)
-	}()
 }
 
 // tcpKeepAliveListener sets TCP keep-alive timeouts on accepted
