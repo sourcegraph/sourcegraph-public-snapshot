@@ -17,6 +17,18 @@ import (
 	"sync"
 )
 
+type contextKey int
+
+const (
+	metaKey contextKey = 1
+)
+
+// WithMeta returns a copy of context with the specified meta object attached
+// for the request.
+func WithMeta(ctx context.Context, meta interface{}) context.Context {
+	return context.WithValue(ctx, metaKey, meta)
+}
+
 // Request represents a JSON-RPC request or
 // notification. See
 // http://www.jsonrpc.org/specification#request_object and
@@ -25,6 +37,7 @@ type Request struct {
 	Method string           `json:"method"`
 	Params *json.RawMessage `json:"params,omitempty"`
 	ID     uint64           `json:"id"`
+	Meta   *json.RawMessage `json:"meta,omitempty"`
 	Notif  bool             `json:"-"`
 }
 
@@ -38,10 +51,12 @@ func (r *Request) MarshalJSON() ([]byte, error) {
 		Method  string           `json:"method"`
 		Params  *json.RawMessage `json:"params,omitempty"`
 		ID      *uint64          `json:"id,omitempty"`
+		Meta    *json.RawMessage `json:"meta,omitempty"`
 		JSONRPC string           `json:"jsonrpc"`
 	}{
 		Method:  r.Method,
 		Params:  r.Params,
+		Meta:    r.Meta,
 		JSONRPC: "2.0",
 	}
 	if !r.Notif {
@@ -55,6 +70,7 @@ func (r *Request) UnmarshalJSON(data []byte) error {
 	var r2 struct {
 		Method string           `json:"method"`
 		Params *json.RawMessage `json:"params,omitempty"`
+		Meta   *json.RawMessage `json:"meta,omitempty"`
 		ID     *uint64          `json:"id"`
 	}
 	if err := json.Unmarshal(data, &r2); err != nil {
@@ -62,6 +78,7 @@ func (r *Request) UnmarshalJSON(data []byte) error {
 	}
 	r.Method = r2.Method
 	r.Params = r2.Params
+	r.Meta = r2.Meta
 	if r2.ID == nil {
 		r.ID = 0
 		r.Notif = true
@@ -80,6 +97,17 @@ func (r *Request) SetParams(v interface{}) error {
 		return err
 	}
 	r.Params = (*json.RawMessage)(&b)
+	return nil
+}
+
+// SetMeta sets r.Meta to the JSON representation of v. If JSON
+// marshaling fails, it returns an error.
+func (r *Request) SetMeta(v interface{}) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	r.Meta = (*json.RawMessage)(&b)
 	return nil
 }
 
@@ -284,6 +312,11 @@ func (c *Conn) Call(ctx context.Context, method string, params, result interface
 	req := &Request{Method: method}
 	if err := req.SetParams(params); err != nil {
 		return err
+	}
+	if meta := ctx.Value(metaKey); meta != nil {
+		if err := req.SetMeta(meta); err != nil {
+			return err
+		}
 	}
 	call, err := c.send(ctx, &anyMessage{request: &requestOrRequestBatch{single: req}}, true)
 	if err != nil {
