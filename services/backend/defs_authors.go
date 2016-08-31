@@ -2,6 +2,8 @@ package backend
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -10,7 +12,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/emailaddrs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gravatar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -110,11 +111,26 @@ func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsO
 }
 
 func emailUserNoDomain(email string) string {
-	user, _, _ := emailaddrs.Split(email)
+	user, _, _ := emailAddrSplit(email)
 	if user == "" {
 		return "(unknown)"
 	}
 	return user
+}
+
+func emailAddrSplit(email string) (user, domain string, err error) {
+	parts := strings.SplitN(email, "@", 2)
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("email has no '@': %q", email)
+	}
+	user, domain = parts[0], parts[1]
+	if len(user) == 0 {
+		return "", "", fmt.Errorf("email user is empty: %q", email)
+	}
+	if len(domain) == 0 {
+		return "", "", fmt.Errorf("email domain is empty: %q", email)
+	}
+	return
 }
 
 type defAuthorsByBytes []*sourcegraph.DefAuthor
