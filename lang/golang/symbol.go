@@ -1,6 +1,7 @@
 package golang
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,7 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/srclib-go/gog/definfo"
 )
 
-func (h *Handler) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
+func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
 	q, err := parseSymbolQuery(params.Query)
 	if err != nil {
 		return nil, err
@@ -52,11 +53,11 @@ func (h *Handler) handleSymbol(req *jsonrpc2.Request, params lsp.WorkspaceSymbol
 	default:
 		return nil, fmt.Errorf("unrecognized symbol query type %s", q.Type)
 	}
-	pkgs, err := expandPackages(h.goEnv(), q.Packages)
+	pkgs, err := expandPackages(ctx, h.goEnv(), q.Packages)
 	if err != nil {
 		return nil, err
 	}
-	o, err := runGog(h.cacheDir(), h.goEnv(), pkgs)
+	o, err := runGog(ctx, h.cacheDir(), h.goEnv(), pkgs)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +161,7 @@ func parseSymbolQuery(q string) (*symbolQuery, error) {
 	}, nil
 }
 
-func runGog(cacheDir string, env, pkgs []string) (*gogOutput, error) {
+func runGog(ctx context.Context, cacheDir string, env, pkgs []string) (*gogOutput, error) {
 	// Coarse lock for this workspace. We don't lock per package to
 	// prevent concurrent memory heavy operations running.
 	unlock := lock(cacheDir)
@@ -173,7 +174,7 @@ func runGog(cacheDir string, env, pkgs []string) (*gogOutput, error) {
 		cache := filepath.Join(cacheDir, "gog", normalize.Replace(pkg)) + ".json"
 		b, err := ioutil.ReadFile(cache)
 		if err != nil {
-			b, err = cmdOutput(env, exec.Command("gog", pkg))
+			b, err = cmdOutput(ctx, env, exec.Command("gog", pkg))
 			if err != nil {
 				return nil, err
 			}
@@ -197,9 +198,9 @@ func runGog(cacheDir string, env, pkgs []string) (*gogOutput, error) {
 	return &combined, nil
 }
 
-func expandPackages(env, pkgs []string) ([]string, error) {
+func expandPackages(ctx context.Context, env, pkgs []string) ([]string, error) {
 	args := append([]string{"list"}, pkgs...)
-	b, err := cmdOutput(env, exec.Command("go", args...))
+	b, err := cmdOutput(ctx, env, exec.Command("go", args...))
 	if err != nil {
 		return nil, err
 	}

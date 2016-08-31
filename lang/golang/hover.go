@@ -2,6 +2,7 @@ package golang
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,7 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
-func (h *Handler) handleHover(req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) (*lsp.Hover, error) {
+func (h *Handler) handleHover(ctx context.Context, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) (*lsp.Hover, error) {
 	// Find the range of the symbol
 	contents, err := h.readFile(params.TextDocument.URI)
 	if err != nil {
@@ -32,7 +33,7 @@ func (h *Handler) handleHover(req *jsonrpc2.Request, params lsp.TextDocumentPosi
 	if !valid {
 		return nil, errors.New("invalid position")
 	}
-	def, err := godef(h.goEnv(), h.filePath(params.TextDocument.URI), int(ofs))
+	def, err := godef(ctx, h.goEnv(), h.filePath(params.TextDocument.URI), int(ofs))
 	if err != nil {
 		return nil, err
 	}
@@ -143,8 +144,8 @@ type godefResult struct {
 }
 
 // TODO(unknwon): parse JSON output from godef to have better handling.
-func godef(env []string, path string, offset int) (*godefResult, error) {
-	b, err := cmdOutput(env, exec.Command("godef", "-json", "-t", "-f", path, "-o", strconv.Itoa(offset)))
+func godef(ctx context.Context, env []string, path string, offset int) (*godefResult, error) {
+	b, err := cmdOutput(ctx, env, exec.Command("godef", "-json", "-t", "-f", path, "-o", strconv.Itoa(offset)))
 	if err != nil {
 		return nil, fmt.Errorf("%v: %v", err, string(b))
 	}

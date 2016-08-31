@@ -7,11 +7,15 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os/exec"
 	"runtime"
 	"strings"
 	"sync"
 	"time"
+
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cmdutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
@@ -47,7 +51,12 @@ func ListenAddr() string {
 //
 // The specified env is set as cmd.Env (because we do this at ALL callsites
 // today anyway).
-func cmdOutput(env []string, c *exec.Cmd) ([]byte, error) {
+func cmdOutput(ctx context.Context, env []string, c *exec.Cmd) ([]byte, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, c.Args[0])
+	defer span.Finish()
+	span.SetTag("command", strings.Join(c.Args, " "))
+	span.SetTag("env", strings.Join(env, "; "))
+
 	c.Env = env
 	start := time.Now()
 	stdout, err := cmdutil.Output(c)
@@ -94,6 +103,25 @@ func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		return nil, errors.New("server must be initialized")
 	}
 
+	operationName := "LS Serve: " + req.Method
+	var span opentracing.Span
+	if req.Meta != nil {
+		var header http.Header
+		if err := json.Unmarshal(*req.Meta, &header); err != nil {
+			return nil, err
+		}
+		carrier := opentracing.HTTPHeadersCarrier(header)
+		clientContext, err := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, carrier)
+		if err != nil {
+			return nil, err
+		}
+		span = opentracing.GlobalTracer().StartSpan(operationName, ext.RPCServerOption(clientContext))
+		ctx = opentracing.ContextWithSpan(ctx, span)
+	} else {
+		span, ctx = opentracing.StartSpanFromContext(ctx, operationName)
+	}
+	defer span.Finish()
+
 	switch req.Method {
 	case "initialize":
 		var params lsp.InitializeParams
@@ -123,28 +151,28 @@ func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		if err = json.Unmarshal(*req.Params, &params); err != nil {
 			return
 		}
-		return h.handleHover(req, params)
+		return h.handleHover(ctx, req, params)
 
 	case "textDocument/definition":
 		var params lsp.TextDocumentPositionParams
 		if err = json.Unmarshal(*req.Params, &params); err != nil {
 			return
 		}
-		return h.handleDefinition(req, params)
+		return h.handleDefinition(ctx, req, params)
 
 	case "textDocument/references":
 		var params lsp.ReferenceParams
 		if err = json.Unmarshal(*req.Params, &params); err != nil {
 			break
 		}
-		return h.handleReferences(req, params)
+		return h.handleReferences(ctx, req, params)
 
 	case "workspace/symbol":
 		var params lsp.WorkspaceSymbolParams
 		if err = json.Unmarshal(*req.Params, &params); err != nil {
 			break
 		}
-		return h.handleSymbol(req, params)
+		return h.handleSymbol(ctx, req, params)
 	}
 
 	return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("method not supported: %s", req.Method)}

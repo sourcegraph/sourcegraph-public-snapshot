@@ -12,12 +12,13 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/net/context"
 	"golang.org/x/tools/cmd/guru/serial"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
-func (h *Handler) handleReferences(req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {
+func (h *Handler) handleReferences(ctx context.Context, req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {
 	contents, err := h.readFile(params.TextDocument.URI)
 	if err != nil {
 		return nil, err
@@ -26,7 +27,7 @@ func (h *Handler) handleReferences(req *jsonrpc2.Request, params lsp.ReferencePa
 	if !valid {
 		return nil, errors.New("invalid position")
 	}
-	def, pkgs, err := guruReferrers(h.goEnv(), h.filePath(params.TextDocument.URI), int(ofs))
+	def, pkgs, err := guruReferrers(ctx, h.goEnv(), h.filePath(params.TextDocument.URI), int(ofs))
 	if err != nil {
 		return nil, err
 	}
@@ -92,8 +93,8 @@ func (l locationList) Len() int {
 	return len(l)
 }
 
-func guruReferrers(env []string, path string, offset int) (*serial.ReferrersInitial, []*serial.ReferrersPackage, error) {
-	b, err := cmdOutput(env, exec.Command("guru", "-json", "referrers", fmt.Sprintf("%s:#%d", path, offset)))
+func guruReferrers(ctx context.Context, env []string, path string, offset int) (*serial.ReferrersInitial, []*serial.ReferrersPackage, error) {
+	b, err := cmdOutput(ctx, env, exec.Command("guru", "-json", "referrers", fmt.Sprintf("%s:#%d", path, offset)))
 	if err != nil {
 		return nil, nil, err
 	}

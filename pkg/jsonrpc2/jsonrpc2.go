@@ -17,6 +17,23 @@ import (
 	"sync"
 )
 
+type CallOption interface {
+	apply(r *Request) error
+}
+
+type callOptionFunc func(r *Request) error
+
+func (c callOptionFunc) apply(r *Request) error { return c(r) }
+
+// Meta returns a call option which attaches the given meta object to the JSON
+// RPC 2 request (this is a Sourcegraph extension to JSON RPC 2 for carrying
+// metadata).
+func Meta(meta interface{}) CallOption {
+	return callOptionFunc(func(r *Request) error {
+		return r.SetMeta(meta)
+	})
+}
+
 // Request represents a JSON-RPC request or
 // notification. See
 // http://www.jsonrpc.org/specification#request_object and
@@ -25,6 +42,7 @@ type Request struct {
 	Method string           `json:"method"`
 	Params *json.RawMessage `json:"params,omitempty"`
 	ID     uint64           `json:"id"`
+	Meta   *json.RawMessage `json:"meta,omitempty"`
 	Notif  bool             `json:"-"`
 }
 
@@ -38,10 +56,12 @@ func (r *Request) MarshalJSON() ([]byte, error) {
 		Method  string           `json:"method"`
 		Params  *json.RawMessage `json:"params,omitempty"`
 		ID      *uint64          `json:"id,omitempty"`
+		Meta    *json.RawMessage `json:"meta,omitempty"`
 		JSONRPC string           `json:"jsonrpc"`
 	}{
 		Method:  r.Method,
 		Params:  r.Params,
+		Meta:    r.Meta,
 		JSONRPC: "2.0",
 	}
 	if !r.Notif {
@@ -55,6 +75,7 @@ func (r *Request) UnmarshalJSON(data []byte) error {
 	var r2 struct {
 		Method string           `json:"method"`
 		Params *json.RawMessage `json:"params,omitempty"`
+		Meta   *json.RawMessage `json:"meta,omitempty"`
 		ID     *uint64          `json:"id"`
 	}
 	if err := json.Unmarshal(data, &r2); err != nil {
@@ -62,6 +83,7 @@ func (r *Request) UnmarshalJSON(data []byte) error {
 	}
 	r.Method = r2.Method
 	r.Params = r2.Params
+	r.Meta = r2.Meta
 	if r2.ID == nil {
 		r.ID = 0
 		r.Notif = true
@@ -80,6 +102,17 @@ func (r *Request) SetParams(v interface{}) error {
 		return err
 	}
 	r.Params = (*json.RawMessage)(&b)
+	return nil
+}
+
+// SetMeta sets r.Meta to the JSON representation of v. If JSON
+// marshaling fails, it returns an error.
+func (r *Request) SetMeta(v interface{}) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	r.Meta = (*json.RawMessage)(&b)
 	return nil
 }
 
@@ -280,10 +313,15 @@ func (c *Conn) send(ctx context.Context, m *anyMessage, wait bool) (*call, error
 // params, and waits for the response. If the response is successful,
 // its result is stored in result (a pointer to a value that can be
 // JSON-unmarshaled into); otherwise, a non-nil error is returned.
-func (c *Conn) Call(ctx context.Context, method string, params, result interface{}) error {
+func (c *Conn) Call(ctx context.Context, method string, params, result interface{}, opts ...CallOption) error {
 	req := &Request{Method: method}
 	if err := req.SetParams(params); err != nil {
 		return err
+	}
+	for _, opt := range opts {
+		if err := opt.apply(req); err != nil {
+			return err
+		}
 	}
 	call, err := c.send(ctx, &anyMessage{request: &requestOrRequestBatch{single: req}}, true)
 	if err != nil {
@@ -313,10 +351,15 @@ func (c *Conn) Call(ctx context.Context, method string, params, result interface
 // Notify is like Call, but it returns when the notification request
 // is sent (without waiting for a response, because JSON-RPC
 // notifications do not have responses).
-func (c *Conn) Notify(ctx context.Context, method string, params interface{}) error {
+func (c *Conn) Notify(ctx context.Context, method string, params interface{}, opts ...CallOption) error {
 	req := &Request{Method: method, Notif: true}
 	if err := req.SetParams(params); err != nil {
 		return err
+	}
+	for _, opt := range opts {
+		if err := opt.apply(req); err != nil {
+			return err
+		}
 	}
 	_, err := c.send(ctx, &anyMessage{request: &requestOrRequestBatch{single: req}}, false)
 	return err
