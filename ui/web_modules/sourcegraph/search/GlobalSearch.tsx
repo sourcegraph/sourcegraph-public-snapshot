@@ -491,6 +491,14 @@ export class GlobalSearch extends Container<Props, State> {
 			}
 
 			const firstLineDocString = docstring;
+			const name = qualifiedNameAndType(def, {namequal: "depqualified"});
+			// KLUDGE: Specical case for testing.
+			if (this.state.repo === "github.com/electerious/Lychee") {
+				let n = name[0];
+				if (n.length > 200) {
+					continue;
+				}
+			}
 			list.push(
 				<Link className={classNames(styles.block, selected ? styles.result_selected : styles.result, this.state.resultClassName)}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
@@ -502,7 +510,7 @@ export class GlobalSearch extends Container<Props, State> {
 						<div className={classNames(styles.flex, styles.w100)}>
 							<p className={classNames(styles.cool_mid_gray, styles.block_s, base.ma0, base.pl4, base.pr2, base.fr)}>{trimRepo(def.Repo)}</p>
 							<code className={classNames(styles.block, styles.f5, base.pb3)}>
-								{qualifiedNameAndType(def, {nameQual: "DepQualified"})}
+								{name}
 							</code>
 							{firstLineDocString && <p className={classNames(styles.docstring, base.mt0)}>{firstLineDocString}</p>}
 						</div>
