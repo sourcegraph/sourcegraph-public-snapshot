@@ -5,7 +5,7 @@
     "moduleResolution": "node",
     "baseUrl": "web_modules",
     "lib": ["es2016", "dom"],
-    "types": ["mocha", "lodash"],
+    "types": ["mocha", "lodash", "monaco-editor/monaco"],
     "jsx": "react",
     "strictNullChecks": true,
     "sourceMap": true,
