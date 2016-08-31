@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -92,7 +93,7 @@ func (c *searchCmd) Execute(args []string) error {
 		},
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("error from Search.Search: %s", err)
 	}
 
 	if len(results.DefResults) == 0 {
