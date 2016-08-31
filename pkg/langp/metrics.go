@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	prepDuration, reqDuration   *prometheus.HistogramVec
-	prepHeartbeat, reqHeartbeat *prometheus.GaugeVec
+	prepDuration, reqDuration, reqAndWorkspaceDuration *prometheus.HistogramVec
+	prepHeartbeat, reqHeartbeat                        *prometheus.GaugeVec
 )
 
 // InitMetrics initializes prometheus metrics for the given language which must
@@ -53,6 +53,13 @@ func InitMetrics(language string) {
 		Help:      "The HTTP request latencies in seconds.",
 		Buckets:   statsutil.UserLatencyBuckets,
 	}, reqLabels)
+	reqAndWorkspaceDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: namespace,
+		Subsystem: language,
+		Name:      "request_and_workspace_duration_seconds",
+		Help:      "The HTTP request latencies, including workspace preparation, in seconds.",
+		Buckets:   statsutil.UserLatencyBuckets,
+	}, reqLabels)
 	reqHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: namespace,
 		Subsystem: language,
@@ -60,6 +67,7 @@ func InitMetrics(language string) {
 		Help:      "Last time a request finished for a http endpoint.",
 	}, reqLabels)
 	prometheus.MustRegister(reqDuration)
+	prometheus.MustRegister(reqAndWorkspaceDuration)
 	prometheus.MustRegister(reqHeartbeat)
 }
 
@@ -119,14 +127,14 @@ func observePrepareDeps(ctx context.Context, start time.Time, repo, status strin
 //
 // unresolved should be true if the request to the LSP server did not yield any
 // results (i.e. an error did not occur, but no results were found).
-func observe(ctx context.Context, start time.Time, repo string, err error, unresolved bool) {
+func observe(ctx context.Context, start, workspaceStart time.Time, repo string, err error, unresolved bool) {
 	method := ctx.Value(methodNameKey).(string)
-	d := time.Since(start).Seconds()
 	status := "ok"
 	if err != nil {
 		status = "error"
 	} else if unresolved {
 		status = "unresolved"
 	}
-	reqDuration.WithLabelValues(method, repo, status).Observe(d)
+	reqAndWorkspaceDuration.WithLabelValues(method, repo, status).Observe(time.Since(workspaceStart).Seconds())
+	reqDuration.WithLabelValues(method, repo, status).Observe(time.Since(start).Seconds())
 }

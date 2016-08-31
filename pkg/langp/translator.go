@@ -76,6 +76,7 @@ func (t *translator) Prepare(ctx context.Context, r *RepoRev) error {
 
 func (t *translator) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*Position, error) {
 	// Determine the root path for the workspace and prepare it.
+	workspaceStart := time.Now()
 	rootPath, err := t.workspace.Prepare(ctx, defSpec.Repo, defSpec.Commit)
 	if err != nil {
 		return nil, err
@@ -93,7 +94,7 @@ func (t *translator) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*
 	// TODO(slimsag): cache symbol information for quicker access
 	var respSymbol []lsp.SymbolInformation
 	err = t.lspDo(ctx, rootPath, "workspace/symbol", p, &respSymbol)
-	defer observe(ctx, start, defSpec.Repo, err, len(respSymbol) == 0)
+	defer observe(ctx, start, workspaceStart, defSpec.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -135,6 +136,7 @@ func (t *translator) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*
 
 func (t *translator) PositionToDefSpec(ctx context.Context, pos *Position) (*DefSpec, error) {
 	// Determine the root path for the workspace and prepare it.
+	workspaceStart := time.Now()
 	rootPath, err := t.workspace.Prepare(ctx, pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
@@ -148,7 +150,7 @@ func (t *translator) PositionToDefSpec(ctx context.Context, pos *Position) (*Def
 
 	var respHover lsp.Hover
 	err = t.lspDo(ctx, rootPath, "textDocument/hover", p, &respHover)
-	defer observe(ctx, start, pos.Repo, err, err == nil && len(respHover.Contents) == 0)
+	defer observe(ctx, start, workspaceStart, pos.Repo, err, err == nil && len(respHover.Contents) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -185,6 +187,7 @@ func (t *translator) PositionToDefSpec(ctx context.Context, pos *Position) (*Def
 
 func (t *translator) Definition(ctx context.Context, pos *Position) (*Range, error) {
 	// Determine the root path for the workspace and prepare it.
+	workspaceStart := time.Now()
 	rootPath, err := t.workspace.Prepare(ctx, pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
@@ -201,7 +204,7 @@ func (t *translator) Definition(ctx context.Context, pos *Position) (*Range, err
 	// TODO: according to spec this could be lsp.Location OR []lsp.Location
 	var respDef []lsp.Location
 	err = t.lspDo(ctx, rootPath, "textDocument/definition", p, &respDef)
-	defer observe(ctx, start, pos.Repo, err, len(respDef) == 0)
+	defer observe(ctx, start, workspaceStart, pos.Repo, err, len(respDef) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -228,6 +231,7 @@ func (t *translator) Definition(ctx context.Context, pos *Position) (*Range, err
 
 func (t *translator) Hover(ctx context.Context, pos *Position) (*Hover, error) {
 	// Determine the root path for the workspace and prepare it.
+	workspaceStart := time.Now()
 	rootPath, err := t.workspace.Prepare(ctx, pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
@@ -243,7 +247,7 @@ func (t *translator) Hover(ctx context.Context, pos *Position) (*Hover, error) {
 
 	var respHover lsp.Hover
 	err = t.lspDo(ctx, rootPath, "textDocument/hover", p, &respHover)
-	defer observe(ctx, start, pos.Repo, err, err == nil && len(respHover.Contents) == 0)
+	defer observe(ctx, start, workspaceStart, pos.Repo, err, err == nil && len(respHover.Contents) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -252,6 +256,7 @@ func (t *translator) Hover(ctx context.Context, pos *Position) (*Hover, error) {
 
 func (t *translator) LocalRefs(ctx context.Context, pos *Position) (*RefLocations, error) {
 	// Determine the root path for the workspace and prepare it.
+	workspaceStart := time.Now()
 	rootPath, err := t.workspace.Prepare(ctx, pos.Repo, pos.Commit)
 	if err != nil {
 		return nil, err
@@ -267,7 +272,7 @@ func (t *translator) LocalRefs(ctx context.Context, pos *Position) (*RefLocation
 
 	var resp []lsp.Location
 	err = t.lspDo(ctx, rootPath, "textDocument/references", p, &resp)
-	defer observe(ctx, start, pos.Repo, err, len(resp) == 0)
+	defer observe(ctx, start, workspaceStart, pos.Repo, err, len(resp) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -292,6 +297,7 @@ func (t *translator) LocalRefs(ctx context.Context, pos *Position) (*RefLocation
 
 func (t *translator) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, error) {
 	// Determine the root path for the workspace and prepare it.
+	workspaceStart := time.Now()
 	rootPath, err := t.workspace.Prepare(ctx, r.Repo, r.Commit)
 	if err != nil {
 		return nil, err
@@ -308,7 +314,7 @@ func (t *translator) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRef
 
 	var respSymbol []lsp.SymbolInformation
 	err = t.lspDo(ctx, rootPath, "workspace/symbol", p, &respSymbol)
-	defer observe(ctx, start, r.Repo, err, len(respSymbol) == 0)
+	defer observe(ctx, start, workspaceStart, r.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -342,6 +348,7 @@ func (t *translator) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRef
 
 func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLocations, error) {
 	// Determine the root path for the workspace and prepare it.
+	workspaceStart := time.Now()
 	rootPath, err := t.workspace.Prepare(ctx, defSpec.Repo, defSpec.Commit)
 	if err != nil {
 		return nil, err
@@ -361,7 +368,7 @@ func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLoc
 
 	var respSymbol []lsp.SymbolInformation
 	err = t.lspDo(ctx, rootPath, "defspec-refs-internal", p, &respSymbol)
-	defer observe(ctx, start, defSpec.Repo, err, len(respSymbol) == 0)
+	defer observe(ctx, start, workspaceStart, defSpec.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -403,6 +410,7 @@ func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLoc
 
 func (t *translator) ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error) {
 	// Determine the root path for the workspace and prepare it.
+	workspaceStart := time.Now()
 	rootPath, err := t.workspace.Prepare(ctx, r.Repo, r.Commit)
 	if err != nil {
 		return nil, err
@@ -417,7 +425,7 @@ func (t *translator) ExportedSymbols(ctx context.Context, r *RepoRev) (*Exported
 		// TODO(keegancsmith) this is go specific
 		Query: "exported " + importPath + "/...",
 	}, &respSymbol)
-	defer observe(ctx, start, r.Repo, err, len(respSymbol) == 0)
+	defer observe(ctx, start, workspaceStart, r.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
 	}
