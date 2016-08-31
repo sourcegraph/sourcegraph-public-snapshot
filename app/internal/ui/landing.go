@@ -42,6 +42,7 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		Opt: &sourcegraph.SearchOptions{
 			Repos:        []int32{repo.ID},
 			Languages:    []string{"Go"},
+			NotKinds:     []string{"package"},
 			IncludeRepos: false,
 			ListOptions:  sourcegraph.ListOptions{PerPage: 20},
 		},
@@ -55,10 +56,6 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		def := &defResult.Def
 
 		if !def.Exported {
-			continue
-		}
-
-		if def.Kind == "package" {
 			continue
 		}
 
