@@ -5,6 +5,14 @@ import (
 	"errors"
 )
 
+// oauthReceiveParams holds OAuth2 receive-token params.
+type oauthReceiveParams struct {
+	ClientID string `schema:"client_id" url:"client_id,omitempty"`
+	Code     string `schema:"code" url:"code,omitempty"`
+	Scope    string `schema:"scope" url:"scope,omitempty"`
+	State    string `schema:"state" url:"state,omitempty"`
+}
+
 // oauthAuthorizeClientState holds the state that the OAuth2 client
 // passes to the provider and expects to receive back, during the
 // OAuth2 authorization flow.

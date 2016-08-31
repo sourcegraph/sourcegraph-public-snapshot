@@ -27,7 +27,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/oauth2util"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -117,7 +116,7 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		return err
 	}
 
-	var opt oauth2util.ReceiveParams
+	var opt oauthReceiveParams
 	if err := schemautil.Decode(&opt, r.URL.Query()); err != nil {
 		return err
 	}
