@@ -130,7 +130,8 @@ func (c *Client) do(ctx context.Context, endpoint string, body, results interfac
 	req.Header.Add("Content-Type", "application/json")
 
 	operationName := fmt.Sprintf("LP Client: POST %s", c.endpoint(endpoint))
-	span := opentracing.StartSpan(operationName, opentracing.ChildOf(opentracing.SpanFromContext(ctx).Context()))
+	var span opentracing.Span
+	span, ctx = opentracing.StartSpanFromContext(ctx, operationName)
 	span.LogEventWithPayload("request body", body)
 	defer span.Finish()
 
