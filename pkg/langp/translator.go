@@ -471,6 +471,7 @@ func (t *translator) lspDo(ctx context.Context, rootPath string, method string, 
 	}()
 
 	// Extract opentracing HTTP headers for propagation across LSP borders.
+	var opts []jsonrpc2.CallOption
 	if span := opentracing.SpanFromContext(ctx); span != nil {
 		header := make(http.Header)
 		carrier := opentracing.HTTPHeadersCarrier(header)
@@ -479,18 +480,18 @@ func (t *translator) lspDo(ctx context.Context, rootPath string, method string, 
 			return err
 		}
 		if len(header) > 0 {
-			ctx = jsonrpc2.WithMeta(ctx, header)
+			opts = append(opts, jsonrpc2.Meta(header))
 		}
 	}
 
 	// Initialize.
-	if err := c.Call(ctx, "initialize", lsp.InitializeParams{RootPath: rootPath}, nil); err != nil {
+	if err := c.Call(ctx, "initialize", lsp.InitializeParams{RootPath: rootPath}, nil, opts...); err != nil {
 		return err
 	}
-	if err := c.Call(ctx, method, request, result); err != nil {
+	if err := c.Call(ctx, method, request, result, opts...); err != nil {
 		return err
 	}
-	if err := c.Call(ctx, "shutdown", nil, nil); err != nil {
+	if err := c.Call(ctx, "shutdown", nil, nil, opts...); err != nil {
 		return err
 	}
 	return nil

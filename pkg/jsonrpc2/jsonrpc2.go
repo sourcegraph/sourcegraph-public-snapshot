@@ -17,16 +17,21 @@ import (
 	"sync"
 )
 
-type contextKey int
+type CallOption interface {
+	apply(r *Request) error
+}
 
-const (
-	metaKey contextKey = 1
-)
+type callOptionFunc func(r *Request) error
 
-// WithMeta returns a copy of context with the specified meta object attached
-// for the request.
-func WithMeta(ctx context.Context, meta interface{}) context.Context {
-	return context.WithValue(ctx, metaKey, meta)
+func (c callOptionFunc) apply(r *Request) error { return c(r) }
+
+// Meta returns a call option which attaches the given meta object to the JSON
+// RPC 2 request (this is a Sourcegraph extension to JSON RPC 2 for carrying
+// metadata).
+func Meta(meta interface{}) CallOption {
+	return callOptionFunc(func(r *Request) error {
+		return r.SetMeta(meta)
+	})
 }
 
 // Request represents a JSON-RPC request or
@@ -308,13 +313,13 @@ func (c *Conn) send(ctx context.Context, m *anyMessage, wait bool) (*call, error
 // params, and waits for the response. If the response is successful,
 // its result is stored in result (a pointer to a value that can be
 // JSON-unmarshaled into); otherwise, a non-nil error is returned.
-func (c *Conn) Call(ctx context.Context, method string, params, result interface{}) error {
+func (c *Conn) Call(ctx context.Context, method string, params, result interface{}, opts ...CallOption) error {
 	req := &Request{Method: method}
 	if err := req.SetParams(params); err != nil {
 		return err
 	}
-	if meta := ctx.Value(metaKey); meta != nil {
-		if err := req.SetMeta(meta); err != nil {
+	for _, opt := range opts {
+		if err := opt.apply(req); err != nil {
 			return err
 		}
 	}
@@ -346,10 +351,15 @@ func (c *Conn) Call(ctx context.Context, method string, params, result interface
 // Notify is like Call, but it returns when the notification request
 // is sent (without waiting for a response, because JSON-RPC
 // notifications do not have responses).
-func (c *Conn) Notify(ctx context.Context, method string, params interface{}) error {
+func (c *Conn) Notify(ctx context.Context, method string, params interface{}, opts ...CallOption) error {
 	req := &Request{Method: method, Notif: true}
 	if err := req.SetParams(params); err != nil {
 		return err
+	}
+	for _, opt := range opts {
+		if err := opt.apply(req); err != nil {
+			return err
+		}
 	}
 	_, err := c.send(ctx, &anyMessage{request: &requestOrRequestBatch{single: req}}, false)
 	return err
