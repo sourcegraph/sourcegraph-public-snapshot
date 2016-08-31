@@ -1,4 +1,4 @@
-package srclib_support
+package srclibsupport
 
 import (
 	"encoding/json"

@@ -1,8 +1,8 @@
-// Package srclib_support imports def formatters.
+// Package srclibsupport imports def formatters.
 //
 // TODO(sqs): We should find a way to not have a Go source dependency on the
 // toolchains.
-package srclib_support
+package srclibsupport
 
 import (
 	_ "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef"
