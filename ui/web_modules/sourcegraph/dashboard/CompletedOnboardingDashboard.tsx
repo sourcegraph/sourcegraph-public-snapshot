@@ -10,7 +10,7 @@ import {Container} from "sourcegraph/Container";
 import {UserStore} from "sourcegraph/user/UserStore";
 import {Store} from "sourcegraph/Store";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {Heading, Table, Panel} from "sourcegraph/components/index";
+import {Heading} from "sourcegraph/components/index";
 import {locationForSearch} from "sourcegraph/search/routes";
 import {GlobalSearchInput} from "sourcegraph/search/GlobalSearchInput";
 import * as classNames from "classnames";
@@ -122,17 +122,17 @@ export class CompletedOnboardingDashboard extends Container<Props, State> {
 									<div  className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>
 										<Link to="github.com/gorilla/mux"><span onClick={this._exampleRepoSelected.bind(this, "mux")}>gorilla / mux</span></Link>
 										<p>A powerful URL router and dispatcher for golang</p>
-									</div>	
+									</div>
 								</div>
 								<div className={classNames(colors.cool_gray_8, base.center)}>
-									<div className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3}>
+									<div className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>
 										<Link to="github.com/sourcegraph/thyme"><span onClick={this._exampleRepoSelected.bind(this, "thyme")}>sourcegraph / thyme</span></Link>
 										<p>Automatically track which applications you use</p>
 									</div>
 									<div  className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>
 										<Link to="github.com/kubernetes/kubernetes"><span onClick={this._exampleRepoSelected.bind(this, "kubernetes")}>kubernetes / kubernetes</span></Link>
 										<p>Production-Grade Container Scheduling and Management</p>
-									</div>								
+									</div>
 								</div>
 							</div>
 						</div>
