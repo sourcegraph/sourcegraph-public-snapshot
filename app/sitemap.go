@@ -35,6 +35,17 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 				LastMod: &lastMod,
 			})
 		}
+
+		// add sitemap of top1k repo landings
+		si.Sitemaps = append(si.Sitemaps, sitemap.Sitemap{
+			Loc:     "https://storage.googleapis.com/static-sitemaps/sitemap_repo_top1k.xml.gz",
+			LastMod: &lastMod,
+		})
+		// add sitemap of top10k def landings
+		si.Sitemaps = append(si.Sitemaps, sitemap.Sitemap{
+			Loc:     "https://storage.googleapis.com/static-sitemaps/sitemap_def_top10k.xml.gz",
+			LastMod: &lastMod,
+		})
 	}
 
 	// Truncate to sitemaps limit.
