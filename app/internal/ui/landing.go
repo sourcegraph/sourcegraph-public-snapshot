@@ -43,7 +43,7 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 			Repos:        []int32{repo.ID},
 			Languages:    []string{"Go"},
 			IncludeRepos: false,
-			ListOptions:  sourcegraph.ListOptions{PerPage: 100},
+			ListOptions:  sourcegraph.ListOptions{PerPage: 20},
 		},
 	})
 	if err != nil {
