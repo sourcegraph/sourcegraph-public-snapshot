@@ -11,7 +11,78 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 )
+
+type defDescr struct {
+	Def       *sourcegraph.Def
+	RefCount  int32
+	LandURL   string
+	SourceURL string
+}
+
+func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
+	cl := handlerutil.Client(r)
+	vars := mux.Vars(r)
+
+	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), vars)
+	if err != nil {
+		return err
+	}
+
+	// terminate early on non-Go repos
+	if repo.Language != "Go" {
+		http.Error(w, "404 - Page not found. (No landing page for non-Go repo.)", http.StatusNotFound)
+		return nil
+	}
+
+	repoURL := approuter.Rel.URLToRepoRev(repo.URI, repoRev.CommitID).String()
+
+	results, err := cl.Search.Search(r.Context(), &sourcegraph.SearchOp{
+		Opt: &sourcegraph.SearchOptions{
+			Repos:        []int32{repo.ID},
+			Languages:    []string{"Go"},
+			NotKinds:     []string{"package"},
+			IncludeRepos: false,
+			ListOptions:  sourcegraph.ListOptions{PerPage: 20},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	var defDescrs []defDescr
+	for _, defResult := range results.DefResults {
+		def := &defResult.Def
+		htmlutil.ComputeDocHTML(def)
+		defDescrs = append(defDescrs, defDescr{
+			Def:       def,
+			RefCount:  defResult.RefCount,
+			LandURL:   approuter.Rel.DefKeyToLandURL(def.DefKey).String(),
+			SourceURL: approuter.Rel.URLToDefKey(def.DefKey).String(),
+		})
+	}
+
+	return tmpl.Exec(r, w, "repolanding.html", http.StatusOK, nil, &struct {
+		tmpl.Common
+		Meta meta
+
+		MetaTitle string
+		MetaDescr string
+		Repo      *sourcegraph.Repo
+		RepoRev   sourcegraph.RepoRevSpec
+		RepoURL   string
+		Defs      []defDescr
+	}{
+		Meta:      meta{SEO: true},
+		MetaTitle: fmt.Sprintf("%s · Sourcegraph", repo.URI),
+		MetaDescr: fmt.Sprintf("Top definitions from %s with type signature, documentation, links to source and usage examples", repo.URI),
+		Repo:      repo,
+		RepoRev:   repoRev,
+		RepoURL:   repoURL,
+		Defs:      defDescrs,
+	})
+}
 
 func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	// TODO: load GlobalNav after the fact?

@@ -71,8 +71,9 @@ func Load() {
 		log.Fatal(err)
 	}
 	if err := parseHTMLTemplates([][]string{
-		{"ui.html", "layout.html", "scripts.html"},
-		{"deflanding.html", "layout.html", "scripts.html"},
+		{"ui.html", "layout.html", "scripts.html", "styles.css"},
+		{"deflanding.html", "layout.html", "scripts.html", "styles.css"},
+		{"repolanding.html", "layout.html", "scripts.html", "styles.css"},
 	}, nil); err != nil {
 		log.Fatal(err)
 	}

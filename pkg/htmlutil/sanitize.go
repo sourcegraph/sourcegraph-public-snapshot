@@ -1,7 +1,11 @@
 package htmlutil
 
 import (
+	"bytes"
+	"go/doc"
+
 	"github.com/microcosm-cc/bluemonday"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -19,4 +23,25 @@ func SanitizeForPB(html string) *pbtypes.HTML {
 	return &pbtypes.HTML{
 		HTML: sanitizePolicy.Sanitize(html),
 	}
+}
+
+// ComputeDocHTML computes the DocHTML field of the Def
+// from its internal Docs field, and sanitizes it.
+func ComputeDocHTML(dc *sourcegraph.Def) {
+	if len(dc.Docs) < 1 {
+		return
+	}
+	defDoc := dc.Docs[0]
+	var docHTML string
+	switch defDoc.Format {
+	case "text/html":
+		docHTML = defDoc.Data
+	// TODO "text/x-markdown"
+	// TODO "text/x-rst"
+	default: // including "text/plain"
+		var buf bytes.Buffer
+		doc.ToHTML(&buf, defDoc.Data, nil)
+		docHTML = buf.String()
+	}
+	dc.DocHTML = SanitizeForPB(docHTML)
 }

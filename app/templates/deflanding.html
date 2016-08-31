@@ -1,201 +1,5 @@
 {{define "Head"}}
 <title>{{with .Meta.Title}}{{.}} · {{end}}Sourcegraph</title>
-<style ignore-csp>
-	body {
-	background-color: rgba(213, 229, 242, 0.2);
-	}
-
-	.dl-container {
-	width: 100%;
-	max-width: 940px;
-	margin-left: auto;
-	margin-right: auto;
-	color: rgba(26, 48, 77, 1);
-	font-family: 'circular-std', -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'Helvetica', Ubuntu, 'segoe ui', arial, sans-serif;
-	}
-
-	.dl-container pre {
-	background-color: rgba(62, 90, 126, 1);
-	color: rgba(213, 229, 242, 1);
-	border-radius: 3px;
-	padding: 1rem;
-	font-size: 15px;
-	}
-
-	.dl-container pre.snippet {
-	background-color: white;
-	color: rgba(26, 48, 77, 1);
-	border: 1px solid rgb(213, 229, 242);
-	}
-
-	.dl-container .highlight {
-	color: rgba(177, 20, 247, 1);
-	}
-
-	.dl-container .highlight-h2 {
-	color: rgba(177, 20, 247, 1);
-	font-size: 28px;
-	}
-
-	.dl-container .plainlink {
-	text-decoration: none;
-	}
-
-	.dl-container .toplink {
-	color: rgb(119, 147, 174);
-	display: inline;
-	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
-	font-size: 14.75px;
-	cursor: pointer;
-	font-weight: regular;
-	text-decoration: none;
-	-webkit-font-smoothing: antialiased;
-	}
-
-	.dl-container .refslist {
-	padding-left: 0;
-	}
-
-	.dl-container .refsheadtext {
-	box-sizing: border-box;
-	color: rgb(119, 147, 174);
-	display: block;
-	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
-	font-size: 12.75px;
-	font-weight: bold;
-	height: 18px;
-	line-height: 18.4875px;
-	margin-bottom: 30px;
-	text-transform: uppercase;
-	width: 880px;
-	-webkit-font-smoothing: antialiased;
-	}
-
-	.dl-container .refsrepolink {
-	color: rgb(0, 146, 214);
-	cursor: pointer;
-	display: inline;
-	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
-	font-size: 15px;
-	font-weight: bold;
-	text-decoration: none;
-	height: auto;
-	line-height: 24px;
-	width: auto;
-	-webkit-font-smoothing: antialiased;
-	}
-
-	.dl-container .refsfilelink {
-	background-color: rgba(0, 0, 0, 0);
-	color: rgb(0, 146, 214);
-	cursor: pointer;
-	display: inline;
-	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
-	font-size: 12.75px;
-	height: auto;
-	line-height: 18.4875px;
-	list-style-type: none;
-	text-align: left;
-	text-decoration: none;
-	width: auto;
-	-webkit-font-smoothing: antialiased;
-	}
-
-	.dl-container .refsfiletext {
-	color: rgb(119, 147, 174);
-	display: list-item;
-	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
-	font-size: 12.75px;
-	height: 21.75px;
-	line-height: 18.4875px;
-	list-style-type: none;
-	margin-bottom: 15px;
-	margin-right: 16px;
-	margin-top: 15px;
-	padding-top: 3.75px;
-	position: relative;
-	text-align: left;
-	width: 858px;
-	-webkit-font-smoothing: antialiased;
-	}
-
-	.dl-container pre.snippet a {
-	text-decoration: none;
-	color: #00a4de;
-	}
-	.dl-container pre.snippet .pln {
-	color: #435c79;
-	}
-	.dl-container pre.snippet .str {
-	color: #f14648;
-	}
-	.dl-container pre.snippet .kwd {
-	color: #00a4de;
-	}
-	.dl-container pre.snippet .com {
-	color: #89a4bc;
-	}
-	.dl-container pre.snippet .typ {
-	color: #8f2dba;
-	}
-	.dl-container pre.snippet .lit {
-	color: #f14648;
-	}
-	.dl-container pre.snippet .pun,
-	.dl-container pre.snippet .opn,
-	.dl-container pre.snippet .clo {
-	color: #435c79;
-	}
-	.dl-container pre.snippet .tag {
-	color: #00a4de;
-	}
-	.dl-container pre.snippet .atn {
-	color: #8f2dba;
-	}
-	.dl-container pre.snippet .atv {
-	color: #15b8ae;
-	}
-	.dl-container pre.snippet .dec,
-	.dl-container pre.snippet .var {
-	color: #15b8ae;
-	}
-	.dl-container pre.snippet .fun {
-	color: #00a4de;
-	}
-
-	.dl-container ul li {
-	color: rgba(0, 146, 214, 1);
-	list-style-type: none;
-	padding-top: 3.75px;
-	}
-
-	.dl-container ul li li {
-	color: rgba(119, 147, 174, 1);
-	list-style-type: circle;
-	}
-
-	.dl-container button {
-	background-color: rgba(177, 20, 247, 1);
-	color: white;
-	cursor: pointer;
-	font-family: 'circular-std', -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'Helvetica', Ubuntu, 'segoe ui', arial, sans-serif;
-	font-size: 15px;
-	line-height: 24px;
-	font-weight: bold;
-	border-radius: 4px;
-	border-color: transparent;
-	padding-top: 0.45rem;
-	padding-bottom: 0.42rem;
-	padding-left: 15px;
-	padding-right: 15px;
-	}
-
-	.dl-container span.nav {
-	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
-	font-size: 14.75px;
-	color: rgb(119, 147, 174);
-	}
-</style>
 {{end}}
 
 {{define "Nav"}}{{end}}
@@ -208,7 +12,7 @@
 	{{with .Def}}
 
 	{{with .FmtStrings}}
-	<h1><tt>{{.DefKeyword}} <span class="highlight">{{.Name.ScopeQualified}}</span>{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</tt></h1>
+	<h1><tt>{{.DefKeyword}} <span class="highlight-h1">{{.Name.ScopeQualified}}</span>{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</tt></h1>
 	{{end}}
 
 	{{end}}{{/* end "with .Def" */}}
@@ -232,7 +36,7 @@
 	<a href="{{.SourceURL}}" class="plainlink"><pre class="snippet">{{renderSnippet .}}</pre></a><br>
 	{{end}}
 
-	<h2><tt><span class="highlight-h2">{{.Def.Name}}</span></tt> is referenced in <span class="highlight">{{.RefLocs.TotalRepos}}</span> {{numberedNoun .RefLocs.TotalRepos "repository"}}</h2>
+	<h2><tt class="highlight-h2">{{.Def.Name}}</tt> is referenced in <span class="highlight">{{.RefLocs.TotalRepos}}</span> {{numberedNoun .RefLocs.TotalRepos "repository"}}</h2>
 	<ul class="refslist">
 		{{range $repo := .RefLocs.RepoRefs}}
 		<li>
