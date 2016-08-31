@@ -97,8 +97,8 @@ export class CompletedOnboardingDashboard extends Container<Props, State> {
 							<FlexContainer className={classNames(base.pv3, base.ph4, base.br2, colors.bg_green, base.center)}>
 								<img width={35} src={`${(this.context as any).siteConfig.assetsRoot}/img/emoji/tada.svg`} style={{flex: "0 0 36px"}}/>
 								<div className={base.pl3}>
-								<h4 className={classNames(base.mv0, colors.white)}>Thanks for joining Sourcegraph!</h4>
-								<span className={classNames(colors.white)}>Get started by searching for usage examples or exploring a public repository.</span>
+									<h4 className={classNames(base.mv0, colors.white)}>Thanks for joining Sourcegraph!</h4>
+									<span className={classNames(colors.white)}>Get started by searching for usage examples or exploring a public repository.</span>
 								</div>
 							</FlexContainer>
 						</div>
