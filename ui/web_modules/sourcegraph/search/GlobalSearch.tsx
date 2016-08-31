@@ -15,7 +15,7 @@ import * as uniq from "lodash/uniq";
 import * as debounce from "lodash/debounce";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
-import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
+import {urlToDef} from "sourcegraph/def/routes";
 import {Icon} from "sourcegraph/components/index";
 import {trimRepo} from "sourcegraph/repo/index";
 import * as styles from "sourcegraph/search/styles/GlobalSearch.css";
@@ -376,7 +376,7 @@ export class GlobalSearch extends Container<Props, State> {
 		}
 
 		const def = this.state.matchingResults.Defs[i - offset];
-		let url = urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def);
+		let url = urlToDef(def);
 		url = url.replace(/GoPackage\/pkg\//, "GoPackage/"); // TEMP HOTFIX
 
 		eventProps.selectedItem = url;
