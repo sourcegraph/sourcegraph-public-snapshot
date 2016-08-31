@@ -3,7 +3,7 @@ import * as BuildActions from "sourcegraph/build/BuildActions";
 import {BuildBackend} from "sourcegraph/build/BuildBackend";
 import {BuildStore} from "sourcegraph/build/BuildStore";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
+import {immediateSyncPromise} from "sourcegraph/util/testutil/immediateSyncPromise";
 
 describe("BuildBackend", () => {
 	it("should handle WantBuild", () => {

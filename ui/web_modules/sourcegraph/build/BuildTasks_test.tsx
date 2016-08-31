@@ -1,7 +1,7 @@
 import * as React from "react";
 import {BuildTasks} from "sourcegraph/build/BuildTasks";
 import testdataInitial from "sourcegraph/build/testdata/BuildTasks-initial.json";
-import {autotest} from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/testutil/autotest";
 
 const sampleTasks = [
 	{

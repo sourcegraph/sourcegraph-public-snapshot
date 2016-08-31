@@ -3,7 +3,7 @@ import * as React from "react";
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import {BuildStore} from "sourcegraph/build/BuildStore";
 import {withRepoBuild} from "sourcegraph/build/withRepoBuild";
-import {render} from "sourcegraph/util/renderTestUtils";
+import {render} from "sourcegraph/util/testutil/renderTestUtils";
 
 const C = withRepoBuild((props) => null);
 

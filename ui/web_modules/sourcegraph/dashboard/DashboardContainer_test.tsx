@@ -2,7 +2,7 @@ import * as React from "react";
 import {withUserContext} from "sourcegraph/app/user";
 import {DashboardContainer} from "sourcegraph/dashboard/DashboardContainer";
 import testdataData from "sourcegraph/dashboard/testdata/DashboardContainer-data.json";
-import {autotest} from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/testutil/autotest";
 
 describe("DashboardContainer", () => {
 	it("should render a dashboard", () => {

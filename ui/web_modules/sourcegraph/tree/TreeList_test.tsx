@@ -4,7 +4,7 @@ import testdataNotFound from "sourcegraph/tree/testdata/TreeList-notFound.json";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {TreeList} from "sourcegraph/tree/TreeList";
 import {TreeStore} from "sourcegraph/tree/TreeStore";
-import {autotest} from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/testutil/autotest";
 
 describe("TreeList", () => {
 	it("should render files", () => {

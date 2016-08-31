@@ -5,7 +5,7 @@ import testdataFetchedLog from "sourcegraph/build/testdata/Step-fetchedLog.json"
 import testdataInitial from "sourcegraph/build/testdata/Step-initial.json";
 import testdataSuccess from "sourcegraph/build/testdata/Step-success.json";
 import testdataWarnings from "sourcegraph/build/testdata/Step-warnings.json";
-import {autotest} from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/testutil/autotest";
 
 const sampleTask = {
 	ID: 456,

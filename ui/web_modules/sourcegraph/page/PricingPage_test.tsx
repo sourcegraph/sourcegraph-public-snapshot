@@ -1,7 +1,7 @@
 import expect from "expect.js";
 import * as React from "react";
 import {PricingPage} from "sourcegraph/page/PricingPage";
-import {renderToString} from "sourcegraph/util/componentTestUtils";
+import {renderToString} from "sourcegraph/util/testutil/componentTestUtils";
 
 const dummyContext = {eventLogger: {logEvent: () => null}};
 

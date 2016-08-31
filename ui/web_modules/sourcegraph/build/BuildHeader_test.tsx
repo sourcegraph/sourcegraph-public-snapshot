@@ -1,7 +1,7 @@
 import * as React from "react";
 import {BuildHeader} from "sourcegraph/build/BuildHeader";
 import testdataInitial from "sourcegraph/build/testdata/BuildHeader-initial.json";
-import {autotest} from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/testutil/autotest";
 
 const sampleBuild = {
 	ID: 123,

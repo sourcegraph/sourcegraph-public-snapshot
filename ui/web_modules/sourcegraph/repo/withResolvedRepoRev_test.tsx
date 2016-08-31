@@ -4,7 +4,7 @@ import * as React from "react";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {RepoStore} from "sourcegraph/repo/RepoStore";
 import {withResolvedRepoRev} from "sourcegraph/repo/withResolvedRepoRev";
-import {render} from "sourcegraph/util/renderTestUtils";
+import {render} from "sourcegraph/util/testutil/renderTestUtils";
 
 const C = withResolvedRepoRev((props) => null, true);
 

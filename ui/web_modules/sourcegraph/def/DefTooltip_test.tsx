@@ -1,7 +1,7 @@
 import * as React from "react";
 import {DefTooltip} from "sourcegraph/def/DefTooltip";
 import testdataData from "sourcegraph/def/testdata/DefTooltip-data.json";
-import {autotest} from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/testutil/autotest";
 
 const fmtStrings = {DefKeyword: "a", NameAndTypeSeparator: "s", Name: {ScopeQualified: "n"}, Type: {ScopeQualified: "t"}};
 

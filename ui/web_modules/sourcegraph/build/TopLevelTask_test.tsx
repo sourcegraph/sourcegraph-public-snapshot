@@ -2,7 +2,7 @@ import * as React from "react";
 import testdataEmpty from "sourcegraph/build/testdata/TopLevelTask-empty.json";
 import testdataSteps from "sourcegraph/build/testdata/TopLevelTask-steps.json";
 import {TopLevelTask} from "sourcegraph/build/TopLevelTask";
-import {autotest} from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/testutil/autotest";
 
 const sampleTask = {
 	ID: 456,

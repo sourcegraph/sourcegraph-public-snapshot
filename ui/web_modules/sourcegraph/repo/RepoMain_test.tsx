@@ -4,8 +4,8 @@ import * as BuildActions from "sourcegraph/build/BuildActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {OriginGitHub} from "sourcegraph/repo/RepoBackend";
 import {RepoMain} from "sourcegraph/repo/RepoMain";
-import {renderToString} from "sourcegraph/util/componentTestUtils";
-import {render} from "sourcegraph/util/renderTestUtils";
+import {renderToString} from "sourcegraph/util/testutil/componentTestUtils";
+import {render} from "sourcegraph/util/testutil/renderTestUtils";
 
 const common = {
 	routes: [],

@@ -3,7 +3,7 @@ import {rel as relPath} from "sourcegraph/app/routePatterns";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {DefStore} from "sourcegraph/def/DefStore";
 import {withDef} from "sourcegraph/def/withDef";
-import {render} from "sourcegraph/util/renderTestUtils";
+import {render} from "sourcegraph/util/testutil/renderTestUtils";
 
 const C = withDef((props) => null);
 

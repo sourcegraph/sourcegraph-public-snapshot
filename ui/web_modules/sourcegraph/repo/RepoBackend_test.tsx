@@ -3,7 +3,7 @@ import expect from "expect.js";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {RepoBackend} from "sourcegraph/repo/RepoBackend";
-import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
+import {immediateSyncPromise} from "sourcegraph/util/testutil/immediateSyncPromise";
 
 describe("RepoBackend", () => {
 	it("should handle WantCreateRepo for mirror repo", () => {

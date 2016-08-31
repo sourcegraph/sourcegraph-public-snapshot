@@ -2,7 +2,7 @@
 
 import * as TestUtils from "react-addons-test-utils";
 
-import {mockTimeout} from "sourcegraph/util/mockTimeout";
+import {mockTimeout} from "sourcegraph/util/testutil/mockTimeout";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 
 import fs from "fs";

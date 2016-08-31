@@ -5,7 +5,7 @@ import {BlobBackend} from "sourcegraph/blob/BlobBackend";
 import {prepareAnnotations} from "sourcegraph/blob/prepareAnnotations";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
-import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
+import {immediateSyncPromise} from "sourcegraph/util/testutil/immediateSyncPromise";
 
 describe("BlobBackend", () => {
 	it("should handle WantFile", () => {

@@ -3,8 +3,8 @@ import * as React from "react";
 import {RefLocationsList} from "sourcegraph/def/RefLocationsList";
 import testdataData from "sourcegraph/def/testdata/RefLocationsList-data.json";
 import testdataEmpty from "sourcegraph/def/testdata/RefLocationsList-empty.json";
-import {autotest} from "sourcegraph/util/autotest";
-import {renderToString} from "sourcegraph/util/componentTestUtils";
+import {autotest} from "sourcegraph/util/testutil/autotest";
+import {renderToString} from "sourcegraph/util/testutil/componentTestUtils";
 
 const ctx = {
 	eventLogger: {},

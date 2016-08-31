@@ -1,5 +1,5 @@
 import * as React from "react";
-import {autotest} from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/testutil/autotest";
 
 // import * as BuildActions from "sourcegraph/build/BuildActions";
 // import {BuildStore} from "sourcegraph/build/BuildStore";

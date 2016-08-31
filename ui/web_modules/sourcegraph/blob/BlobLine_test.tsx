@@ -4,7 +4,7 @@ import testdataContents from "sourcegraph/blob/testdata/BlobLine-contents.json";
 import testdataEmpty from "sourcegraph/blob/testdata/BlobLine-empty.json";
 import testdataLineNumber from "sourcegraph/blob/testdata/BlobLine-lineNumber.json";
 import testdataLineSelection from "sourcegraph/blob/testdata/BlobLine-selection.json";
-import {autotest} from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/testutil/autotest";
 
 const context = {
 	eventLogger: {logEvent: () => null},

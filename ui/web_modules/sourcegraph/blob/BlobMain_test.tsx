@@ -1,7 +1,7 @@
 import expect from "expect.js";
 import * as React from "react";
 import {BlobMain} from "sourcegraph/blob/BlobMain";
-import {renderToString} from "sourcegraph/util/componentTestUtils";
+import {renderToString} from "sourcegraph/util/testutil/componentTestUtils";
 
 describe("BlobMain", () => {
 	it("should show an error page if the blob failed to load", () => {

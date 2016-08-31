@@ -3,7 +3,7 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {TreeBackend} from "sourcegraph/tree/TreeBackend";
-import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
+import {immediateSyncPromise} from "sourcegraph/util/testutil/immediateSyncPromise";
 
 describe("TreeBackend", () => {
 	it("should handle WantCommit", () => {

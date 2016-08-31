@@ -1,5 +1,5 @@
 import * as React from "react";
-import {autotest} from "sourcegraph/util/autotest";
+import {autotest} from "sourcegraph/util/testutil/autotest";
 import {Commit} from "sourcegraph/vcs/Commit";
 import testdataAvailable from "sourcegraph/vcs/testdata/Commit-available.json";
 import testdataInitial from "sourcegraph/vcs/testdata/Commit-initial.json";

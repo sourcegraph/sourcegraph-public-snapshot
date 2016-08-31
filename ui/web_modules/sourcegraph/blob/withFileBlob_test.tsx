@@ -4,7 +4,7 @@ import {rel as relPath} from "sourcegraph/app/routePatterns";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {BlobStore} from "sourcegraph/blob/BlobStore";
 import {withFileBlob} from "sourcegraph/blob/withFileBlob";
-import {render} from "sourcegraph/util/renderTestUtils";
+import {render} from "sourcegraph/util/testutil/renderTestUtils";
 
 const C = withFileBlob((props) => null);
 

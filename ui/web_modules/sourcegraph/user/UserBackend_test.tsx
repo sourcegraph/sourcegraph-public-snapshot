@@ -3,7 +3,7 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 import {AuthInfo, EmailAddr, ExternalToken, User} from "sourcegraph/user/index";
 import * as UserActions from "sourcegraph/user/UserActions";
 import {UserBackend} from "sourcegraph/user/UserBackend";
-import {immediateSyncPromise} from "sourcegraph/util/immediateSyncPromise";
+import {immediateSyncPromise} from "sourcegraph/util/testutil/immediateSyncPromise";
 
 const sampleAuthInfo: AuthInfo = {UID: 1, Login: "u", Write: false, Admin: false, IntercomHash: ""};
 const sampleToken: ExternalToken = {uid: 1, host: "example.com", scope: "s"};
