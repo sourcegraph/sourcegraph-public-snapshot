@@ -60,10 +60,27 @@ func TestSymbolToDef_shouldIndex(t *testing.T) {
 	}
 }
 
-func TestToDBLangCaseInsensitivity(t *testing.T) {
-	res1, err1 := toDBLang("jAvA")
-	res2, err2 := toDBLang("java")
-	if res1 != res2 || err1 != err2 {
-		t.Fatalf(`toDBLang("jAvA") != toDBLang("java"); case insensitivity is broken`)
+func TestToDBLang_shouldBeCaseInsensitive(t *testing.T) {
+	// check with a language that is supported
+	res1, err := toDBLang("jAvA")
+	if err == nil {
+		t.Errorf(`toDBLang("jAvA") should succeed`)
+	}
+	res2, err := toDBLang("java")
+	if err == nil {
+		t.Errorf(`toDBLang("java") should succeed`)
+	}
+	if res1 != res2 {
+		t.Errorf(`toDBLang("jAvA") and toDBLang("java") should return the same dbLang, but they don't (%d != %d)`, res1, res2)
+	}
+
+	// check with a language that isn't supported
+	_, err = toDBLang("unknownlang")
+	if err != nil {
+		t.Fatalf(`toDBLang("unknownlang") should fail`)
+	}
+	_, err = toDBLang("UnknownLang")
+	if err != nil {
+		t.Fatalf(`toDBLang("UnknownLang") should fail`)
 	}
 }
