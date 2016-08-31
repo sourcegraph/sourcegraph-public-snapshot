@@ -4,7 +4,6 @@ import "core-js/shim";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import "sourcegraph/util/actionLogger";
-import "sourcegraph/app/appdash";
 import {Router, browserHistory as history, match, applyRouterMiddleware} from "react-router";
 import {useScroll} from "react-router-scroll";
 import {rootRoute} from "sourcegraph/app/App";

@@ -13,7 +13,6 @@ import {EventLogger, withEventLoggerContext, withViewEventsLogged} from "sourceg
 import {withFeaturesContext} from "sourcegraph/app/features";
 import {withSiteConfigContext} from "sourcegraph/app/siteConfig";
 import {withUserContext} from "sourcegraph/app/user";
-import {withAppdashRouteStateRecording} from "sourcegraph/app/appdash";
 import {withChannelListener} from "sourcegraph/channel/withChannelListener";
 import {desktopContainer} from "sourcegraph/desktop/DesktopContainer";
 
@@ -82,13 +81,11 @@ export const rootRoute: PlainRoute = {
 	path: "/",
 	component: withEventLoggerContext(EventLogger,
 		withViewEventsLogged(
-			withAppdashRouteStateRecording(
-				withChannelListener(
-					withSiteConfigContext(
-						withUserContext(
-							withFeaturesContext(
-								desktopClient ? desktopContainer(App) : App
-							)
+			withChannelListener(
+				withSiteConfigContext(
+					withUserContext(
+						withFeaturesContext(
+							desktopClient ? desktopContainer(App) : App
 						)
 					)
 				)
