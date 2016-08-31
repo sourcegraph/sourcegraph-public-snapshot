@@ -2,6 +2,10 @@ package backend
 
 import (
 	"context"
+	"crypto/md5"
+	"fmt"
+	"io"
+	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -10,8 +14,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/emailaddrs"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gravatar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
@@ -98,7 +100,7 @@ func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsO
 
 	for _, da := range authors {
 		if da.Email != "" {
-			da.AvatarURL = gravatar.URL(da.Email, 48)
+			da.AvatarURL = gravatarURL(da.Email, 48)
 
 			// Remove domain to prevent spammers from being able
 			// to easily scrape emails from us.
@@ -109,12 +111,40 @@ func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsO
 	return &sourcegraph.DefAuthorList{DefAuthors: authors}, nil
 }
 
+// gravatarURL returns the URL to the Gravatar avatar image for email. If size
+// is 0, the default is used.
+func gravatarURL(email string, size uint16) string {
+	if size == 0 {
+		size = 128
+	}
+	email = strings.TrimSpace(email) // Trim leading and trailing whitespace from an email address.
+	email = strings.ToLower(email)   // Force all characters to lower-case.
+	h := md5.New()
+	io.WriteString(h, email) // md5 hash the final string.
+	return fmt.Sprintf("https://secure.gravatar.com/avatar/%x?s=%d&d=mm", h.Sum(nil), size)
+}
+
 func emailUserNoDomain(email string) string {
-	user, _, _ := emailaddrs.Split(email)
+	user, _, _ := emailAddrSplit(email)
 	if user == "" {
 		return "(unknown)"
 	}
 	return user
+}
+
+func emailAddrSplit(email string) (user, domain string, err error) {
+	parts := strings.SplitN(email, "@", 2)
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("email has no '@': %q", email)
+	}
+	user, domain = parts[0], parts[1]
+	if len(user) == 0 {
+		return "", "", fmt.Errorf("email user is empty: %q", email)
+	}
+	if len(domain) == 0 {
+		return "", "", fmt.Errorf("email domain is empty: %q", email)
+	}
+	return
 }
 
 type defAuthorsByBytes []*sourcegraph.DefAuthor

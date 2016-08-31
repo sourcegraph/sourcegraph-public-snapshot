@@ -10,8 +10,8 @@
 	(function(){
 		var sentryTags = {};
 
-		{{if deployedGitCommitID}}
-			sentryTags["Deployed commit"] = "{{deployedGitCommitID}}";
+		{{if buildvar.CommitID}}
+			sentryTags["Deployed commit"] = "{{buildvar.CommitID}}";
 		{{end}}
 		{{if .AuthInfo.UID}}
 			sentryTags["Authed"] = "{{.AuthInfo.Login}}" ? "yes" : "no";
@@ -31,8 +31,8 @@
 	(function(){
 		var splunkTags = {};
 
-		{{if deployedGitCommitID}}
-			splunkTags["Deployed commit"] = "{{deployedGitCommitID}}";
+		{{if buildvar.CommitID}}
+			splunkTags["Deployed commit"] = "{{buildvar.CommitID}}";
 		{{end}}
 		{{if .AuthInfo.UID}}
 			splunkTags["User"] = {

@@ -16,7 +16,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/envutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
@@ -54,8 +53,7 @@ var tmplFuncs = htmpl.FuncMap{
 
 	"googleAnalyticsTrackingID": func() string { return appconf.Flags.GoogleAnalyticsTrackingID },
 
-	"deployedGitCommitID": func() string { return envutil.GitCommitID },
-	"fileSearchDisabled":  func() bool { return appconf.Flags.DisableSearch },
+	"fileSearchDisabled": func() bool { return appconf.Flags.DisableSearch },
 
 	"publicRavenDSN": func() string { return conf.PublicRavenDSN },
 

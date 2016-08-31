@@ -12,7 +12,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
@@ -45,7 +44,7 @@ func TestRepos_Get(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !jsonutil.JSONEqual(t, repo, want[0]) {
+	if !jsonEqual(t, repo, want[0]) {
 		t.Errorf("got %v, want %v", repo, want[0])
 	}
 }
@@ -68,7 +67,7 @@ func TestRepos_Get_origin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !jsonutil.JSONEqual(t, repo, want[0]) {
+	if !jsonEqual(t, repo, want[0]) {
 		t.Errorf("got %v, want %v", repo, want[0])
 	}
 	if !reflect.DeepEqual(repo.Origin, wantOrigin) {
@@ -127,7 +126,7 @@ func TestRepos_List(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !jsonutil.JSONEqual(t, repos, want) {
+	if !jsonEqual(t, repos, want) {
 		t.Errorf("got %v, want %v", repos, want)
 	}
 }

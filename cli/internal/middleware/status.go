@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/envutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 )
 
 // statusEndpoint is the endpoint used by AWS Elastic Load Balancers to check
@@ -26,7 +26,7 @@ var (
 
 func statusHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Hostname:   ", hostname)
-	fmt.Fprintln(w, "Git commit: ", envutil.GitCommitID)
+	fmt.Fprintln(w, "Git commit: ", buildvar.Public.CommitID)
 	fmt.Fprintln(w, "Uptime:     ", time.Since(sgxStarted))
 }
 

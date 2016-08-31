@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/envutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sqs/pbtypes"
@@ -105,8 +105,8 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 	}
 
 	// Add deployment tags.
-	if envutil.GitCommitID != "" {
-		addTag("Deployed commit", envutil.GitCommitID)
+	if buildvar.All.CommitID != "" {
+		addTag("Deployed commit", buildvar.All.CommitID)
 	}
 
 	// Add error information.
