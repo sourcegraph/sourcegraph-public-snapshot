@@ -7,12 +7,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/fileutil"
 )
 
 var (
-	BuildLogDir = GetenvOrDefault("SG_BUILD_LOG_DIR", filepath.Join(fileutil.TempDir(), "sg-log/build"))
+	BuildLogDir = GetenvOrDefault("SG_BUILD_LOG_DIR", filepath.Join(TempDir(), "sg-log/build"))
 )
 
 func MustGetenv(name string) string {
