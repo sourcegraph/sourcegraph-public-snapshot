@@ -29,20 +29,9 @@
 	text-decoration: none;
 	}
 
-	.dl-container .highlight {
-	color: rgba(177, 20, 247, 1);
-	text-decoration: none;
-	}
-
 	.dl-container .highlight-h2 {
 	color: rgba(177, 20, 247, 1);
 	font-size: 28px;
-	}
-
-	.dl-container .highlight-h3 {
-	color: rgba(177, 20, 247, 1);
-	text-decoration: none;
-	font-size: 1.1em;
 	}
 
 	.dl-container .toplink {
@@ -58,54 +47,46 @@
 
 	.dl-container .defslist {
 	padding-left: 0;
+	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
 	}
 
 	.dl-container .defdoctext {
 	color: rgb(26, 48, 77);
-	display: block;
+	font-size: 1em;
 	padding-left: 2em;
-	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
+	line-height: 1.5em;
 	}
 
-	.dl-container .defslandlink {
-	color: rgb(0, 146, 214);
-	cursor: pointer;
-	display: inline;
-	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
-	font-size: 15px;
-	font-weight: bold;
+	.dl-container .deflist {
+	padding-left: 0;
+	}
+
+	.dl-container .defentry {
+	padding-top: 2em;
+	}
+
+	.dl-container .defbody {
+	color: rgba(0, 146, 214, 1);
+	font-size: 1.4em;
+	}
+
+	.dl-container .defhighlight {
+	color: rgba(177, 20, 247, 1);
 	text-decoration: none;
-	height: auto;
-	line-height: 24px;
-	width: auto;
-	-webkit-font-smoothing: antialiased;
+	font-size: 1.5em;
+	}
+
+	.dl-container .defsidenotes {
+	font-size: 0.8em;
 	}
 
 	.dl-container .defssrclink {
-	background-color: rgba(0, 0, 0, 0);
 	color: rgb(0, 146, 214);
+	text-decoration: none;
+	font-size: 1em;
 	cursor: pointer;
 	display: inline;
 	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
-	height: auto;
-	list-style-type: none;
-	text-align: left;
-	text-decoration: none;
-	width: auto;
-	-webkit-font-smoothing: antialiased;
-	}
-
-	.dl-container ul li {
-	color: rgba(0, 146, 214, 1);
-	list-style-type: none;
-	padding-top: 2em;
-	font-size: 15px;
-	}
-
-	.dl-container ul li li {
-	color: rgba(119, 147, 174, 1);
-	list-style-type: circle;
-	font-size: 15px;
 	}
 
 	.dl-container button {
@@ -143,15 +124,17 @@
 
 	<h2>Top definitions in <tt class="highlight-h2">{{.Repo.Name}}</tt></h2>
 
-	<ul class="defslist">
+	<div class="defslist">
 	{{range $def := .Defs}}
 		{{with $def.Def.FmtStrings}}
-		<li><tt>{{.DefKeyword}} <a href="{{$def.LandURL}}" class="highlight-h3">{{.Name.Unqualified}}</a>{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</tt></li>
-		<p><a href="{{$def.SourceURL}}" class="defssrclink">view source</a>{{if $def.RefCount}} | referenced {{$def.RefCount}} {{numberedNoun $def.RefCount "time"}}{{end}}</p>
+		<div class="defentry">
+		<tt><span class="defbody">{{.DefKeyword}}</span> <a href="{{$def.LandURL}}" class="defhighlight">{{.Name.Unqualified}}</a><span class="defbody">{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</span></tt></li>
+		<p class="defsidenotes"><a href="{{$def.SourceURL}}" class="defssrclink">view source</a>{{if $def.RefCount}} · referenced {{$def.RefCount}} {{numberedNoun $def.RefCount "time"}}{{end}}</p>
 		<div class="defdoctext">{{dangerouslySetHTML $def.Def.DocHTML.HTML}}</div>
+		</div>
 		{{end}}
 	{{end}}
-	</ul>
+	</div>
 
 </div>
 {{end}}
