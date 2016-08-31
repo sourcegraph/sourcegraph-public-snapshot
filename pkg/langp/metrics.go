@@ -8,6 +8,7 @@ import (
 	lightstep "github.com/lightstep/lightstep-tracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 )
 
@@ -135,6 +136,7 @@ func observe(ctx context.Context, start, workspaceStart time.Time, repo string, 
 	} else if unresolved {
 		status = "unresolved"
 	}
+	repo = repotrackutil.GetTrackedRepo(repo) // To prevent high cardinality
 	reqAndWorkspaceDuration.WithLabelValues(method, repo, status).Observe(time.Since(workspaceStart).Seconds())
 	reqDuration.WithLabelValues(method, repo, status).Observe(time.Since(start).Seconds())
 }
