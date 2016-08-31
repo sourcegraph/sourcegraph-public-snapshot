@@ -22,6 +22,7 @@ Containers, also called controller-views, connect stores and components. The con
 
 ### Summary
 When displaying a component with data from the server, the following happens:
+
 1. React mounts the component
 2. The component renders with the currently available data, initially none
 3. The component creates a `Want*` action
