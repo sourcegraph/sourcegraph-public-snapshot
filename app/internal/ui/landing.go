@@ -1,9 +1,7 @@
 package ui
 
 import (
-	"bytes"
 	"fmt"
-	"go/doc"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -64,25 +62,7 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 			continue
 		}
 
-		// this can not be moved to svc/local, because HTML sanitation needs to
-		// happen on the local sourcegraph instance, not on an untrusted
-		// server
-		dc := def.Def
-		if len(dc.Docs) > 0 {
-			defDoc := dc.Docs[0]
-			var docHTML string
-			switch defDoc.Format {
-			case "text/html":
-				docHTML = defDoc.Data
-			// TODO "text/x-markdown"
-			// TODO "text/x-rst"
-			default: // including "text/plain"
-				var buf bytes.Buffer
-				doc.ToHTML(&buf, defDoc.Data, nil)
-				docHTML = buf.String()
-			}
-			def.DocHTML = htmlutil.SanitizeForPB(docHTML)
-		}
+		htmlutil.ComputeDocHTML(def)
 
 		defDescrs = append(defDescrs, defDescr{
 			Def:       def,
