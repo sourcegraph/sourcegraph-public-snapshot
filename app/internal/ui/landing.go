@@ -54,13 +54,7 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 	var defDescrs []defDescr
 	for _, defResult := range results.DefResults {
 		def := &defResult.Def
-
-		if !def.Exported {
-			continue
-		}
-
 		htmlutil.ComputeDocHTML(def)
-
 		defDescrs = append(defDescrs, defDescr{
 			Def:       def,
 			RefCount:  defResult.RefCount,
