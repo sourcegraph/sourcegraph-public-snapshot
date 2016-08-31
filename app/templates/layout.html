@@ -23,6 +23,10 @@
 		{{/* Insert this inline script before any resources to allow parallel resource fetches. */}}
 		{{template "Scripts" $}}
 
+		<style ignore-csp>
+		{{template "Styles" $}}
+		</style>
+
 		{{template "Head" $}}
 
 		{{appconf.ExtraHeadHTML}}
