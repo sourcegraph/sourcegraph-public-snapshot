@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/amortize"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
@@ -159,7 +159,7 @@ const passwordResetTokenExpiration = 4 * time.Hour
 func (s *accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.User) (*sourcegraph.PasswordResetToken, error) {
 	// 1 out of every 1000 times is just an initial guess as to how often we
 	// should go through and delete expired password reset requests.
-	if amortize.ShouldAmortize(1, 1000) {
+	if rand.Float64() < 1/1000.0 {
 		s.cleanExpiredResets(ctx)
 	}
 	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Accounts.RequestPasswordReset", user.UID); err != nil {
