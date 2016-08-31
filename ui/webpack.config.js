@@ -2,6 +2,7 @@ const webpack = require("webpack");
 const autoprefixer = require("autoprefixer");
 const url = require("url");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
+const UnusedFilesWebpackPlugin = require("unused-files-webpack-plugin").UnusedFilesWebpackPlugin;
 const ProgressBarPlugin = require("progress-bar-webpack-plugin");
 
 const production = (process.env.NODE_ENV === "production");
@@ -65,6 +66,7 @@ if (process.env.PUBLIC_WEBPACK_DEV_SERVER_URL) {
 }
 
 plugins.push(new CopyWebpackPlugin([{from: `node_modules/monaco-editor/${production ? "min" : "dev"}/vs`, to: "vs"}]));
+plugins.push(new UnusedFilesWebpackPlugin({pattern: "web_modules/**/*.*", globOptions: {ignore: ["**/*.d.ts", "**/*_test.tsx", "**/testutil/**/*.*", "**/testdata/**/*.*", "**/*.md"]}}));
 
 module.exports = {
 	name: "browser",
