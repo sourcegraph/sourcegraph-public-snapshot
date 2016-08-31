@@ -2,7 +2,12 @@
 
 set -ex
 
+TARBALL=go1.7.linux-amd64.tar.gz
+
+cd ~/cache
+[ -f $TARBALL ] || curl -O https://storage.googleapis.com/golang/$TARBALL
+
 cd /usr/local
 sudo rm -rf go
-curl https://storage.googleapis.com/golang/go1.7.linux-amd64.tar.gz | sudo tar -xz
+sudo tar -xzf $HOME/cache/$TARBALL
 sudo chmod -R a+rwx /usr/local/go
