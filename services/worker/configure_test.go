@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/whilp/git-urls"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dockerutil"
 )
 
 func TestGitURLsParse(t *testing.T) {
@@ -62,13 +60,8 @@ func TestDroneRepoLink(t *testing.T) {
 }
 
 func TestContainerAddrForHost(t *testing.T) {
-	dockerutil.ContainerHost = func() (string, error) { return "0.0.0.0", nil } // mock, since CI may not have Docker
-
-	containerHostname, err := dockerutil.ContainerHost()
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	containerHostOverride = "0.0.0.0"
+	containerHostname := "0.0.0.0"
 	tests := map[string]string{
 		"http://example.com/my/repo":             "http://@example.com/my/repo",
 		"user@example.com:my/repo.git":           "ssh://user@example.com/my/repo.git",

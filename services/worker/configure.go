@@ -2,9 +2,11 @@ package worker
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"net/url"
 	"path"
+	"runtime"
 	"strings"
 
 	"context"
@@ -16,7 +18,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dockerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	httpapirouter "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
@@ -300,7 +301,7 @@ func containerAddrForHost(u url.URL) (string, *url.URL, error) {
 	}
 
 	if hostname == "localhost" {
-		containerHostname, err := dockerutil.ContainerHost()
+		containerHostname, err := containerHost()
 		if err != nil {
 			return "", nil, err
 		}
@@ -309,4 +310,34 @@ func containerAddrForHost(u url.URL) (string, *url.URL, error) {
 	}
 
 	return hostname, &u, nil
+}
+
+// containerHostOverride should only be used by tests to avoid depending on
+// docker during `go test`.
+var containerHostOverride string
+
+func containerHost() (string, error) {
+	if containerHostOverride != "" {
+		return containerHostOverride, nil
+	}
+
+	iface := "docker0"
+	if runtime.GOOS == "darwin" {
+		iface = "en0"
+	}
+	if iface, err := net.InterfaceByName(iface); err == nil {
+		addrs, err := iface.Addrs()
+		if err != nil {
+			return "", err
+		}
+		for _, addr := range addrs {
+			if ipn, ok := addr.(*net.IPNet); ok {
+				if ip := ipn.IP.To4(); ip != nil {
+					return ip.String(), nil
+				}
+			}
+		}
+	}
+
+	return "", fmt.Errorf("unable to determine Docker container host address (as seen by containers), using interface %s", iface)
 }
