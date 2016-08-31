@@ -10,7 +10,7 @@ import {Container} from "sourcegraph/Container";
 import {UserStore} from "sourcegraph/user/UserStore";
 import {Store} from "sourcegraph/Store";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {Heading} from "sourcegraph/components/index";
+import {Heading, FlexContainer} from "sourcegraph/components/index";
 import {locationForSearch} from "sourcegraph/search/routes";
 import {GlobalSearchInput} from "sourcegraph/search/GlobalSearchInput";
 import * as classNames from "classnames";
@@ -94,11 +94,13 @@ export class CompletedOnboardingDashboard extends Container<Props, State> {
 				<div className={styles.onboarding_container} style={{maxWidth: "750px"}}>
 					<div className={classNames(base.pb3, base.ph4, base.br2)}>
 						<div className={base.pt4}>
-							<div className={classNames(base.pb3, base.ph4, base.br2, colors.bg_green, base.center)}>
-								<img width={35} style={{marginTop: "22px", float: "left", display: "inline", marginLeft: "-10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/emoji/tada.svg`}></img>
-								<h4 className={classNames(base.mv0, colors.white)} style={{paddingLeft: "40px", paddingTop: "18px"}}>Thanks for joining Sourcegraph!</h4>
-								<span className={classNames(base.mv0, base.pl3, colors.white)}>Get started by searching for usage examples or exploring a public repository.</span>
-							</div>
+							<FlexContainer className={classNames(base.pv3, base.ph4, base.br2, colors.bg_green, base.center)}>
+								<img width={35} src={`${(this.context as any).siteConfig.assetsRoot}/img/emoji/tada.svg`} style={{flex: "0 0 36px"}}/>
+								<div className={base.pl3}>
+								<h4 className={classNames(base.mv0, colors.white)}>Thanks for joining Sourcegraph!</h4>
+								<span className={classNames(colors.white)}>Get started by searching for usage examples or exploring a public repository.</span>
+								</div>
+							</FlexContainer>
 						</div>
 						<Heading className={classNames(base.pt5)} align="center" level="4">
 							Start exploring code
