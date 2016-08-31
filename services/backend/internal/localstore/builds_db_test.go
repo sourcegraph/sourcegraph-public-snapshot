@@ -11,7 +11,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -455,7 +454,7 @@ func TestBuilds_DequeueNext_ordered(t *testing.T) {
 		if build != nil {
 			build.AccessToken = "" // do not compare access token
 		}
-		if !jsonutil.JSONEqual(t, build, wantBuild) {
+		if !jsonEqual(t, build, wantBuild) {
 			t.Errorf("dequeued build #%d\n\nGOT\n%+v\n\nWANT\n%+v", i+1, build, wantBuild)
 		}
 	}
