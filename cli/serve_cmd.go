@@ -446,7 +446,10 @@ func (c *ServeCmd) Execute(args []string) error {
 			return err
 		}
 		l = tcpKeepAliveListener{l.(*net.TCPListener)}
-		serveHTTP(l, &http.Server{}, c.HTTPAddr)
+		serveHTTP(l, &http.Server{
+			ReadTimeout:  75 * time.Second,
+			WriteTimeout: 60 * time.Second,
+		}, c.HTTPAddr)
 	}
 
 	// Start HTTPS server.
@@ -462,7 +465,10 @@ func (c *ServeCmd) Execute(args []string) error {
 			return err
 		}
 
-		var srv http.Server
+		srv := &http.Server{
+			ReadTimeout:  75 * time.Second,
+			WriteTimeout: 60 * time.Second,
+		}
 		config := srv.TLSConfig
 		if config == nil {
 			config = &tls.Config{
@@ -474,7 +480,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		srv.TLSConfig = config
 		l = tls.NewListener(l, srv.TLSConfig)
 
-		serveHTTPS(l, &srv, c.HTTPSAddr)
+		serveHTTPS(l, srv, c.HTTPSAddr)
 	}
 
 	// Connection test
