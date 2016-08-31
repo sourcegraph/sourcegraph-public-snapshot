@@ -104,32 +104,14 @@ display: inline;
 padding-left: 0;
 }
 
-.dl-container .refsheadtext {
-box-sizing: border-box;
-color: rgb(119, 147, 174);
-display: block;
-font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
-font-size: 12.75px;
-font-weight: bold;
-height: 18px;
-line-height: 18.4875px;
-margin-bottom: 30px;
-text-transform: uppercase;
-width: 880px;
--webkit-font-smoothing: antialiased;
-}
-
 .dl-container .refsrepolink {
 color: rgb(0, 146, 214);
 cursor: pointer;
 display: inline;
-font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
-font-size: 15px;
+font-size: 1rem;
 font-weight: bold;
 text-decoration: none;
-height: auto;
-line-height: 24px;
-width: auto;
+line-height: 1.7rem;
 -webkit-font-smoothing: antialiased;
 }
 
@@ -138,32 +120,26 @@ background-color: rgba(0, 0, 0, 0);
 color: rgb(0, 146, 214);
 cursor: pointer;
 display: inline;
-font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
-font-size: 12.75px;
-height: auto;
-line-height: 18.4875px;
+font-size: 0.85rem;
+line-height: 1.2325rem;
 list-style-type: none;
 text-align: left;
 text-decoration: none;
-width: auto;
 -webkit-font-smoothing: antialiased;
 }
 
 .dl-container .refsfiletext {
 color: rgb(119, 147, 174);
 display: list-item;
-font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
-font-size: 12.75px;
-height: 21.75px;
-line-height: 18.4875px;
+font-size: 0.85rem;
+line-height: 1.2325rem;
 list-style-type: none;
-margin-bottom: 15px;
-margin-right: 16px;
-margin-top: 15px;
-padding-top: 3.75px;
+margin-bottom: 1rem;
+margin-right: 1rem;
+margin-top: 1rem;
+padding-top: 0.25rem;
 position: relative;
 text-align: left;
-width: 858px;
 -webkit-font-smoothing: antialiased;
 }
 
