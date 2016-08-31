@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
 import * as base from "sourcegraph/components/styles/_base.css";
+import * as grid from "sourcegraph/components/styles/_grid.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import {Container} from "sourcegraph/Container";
@@ -93,7 +94,7 @@ export class CompletedOnboardingDashboard extends Container<Props, State> {
 				<div className={styles.onboarding_container} style={{maxWidth: "750px"}}>
 					<div className={classNames(base.pb3, base.ph4, base.br2)}>
 						<div className={base.pt4}>
-							<div className={classNames(base.pb3, base.ph4, base.br2, colors.bg_green, base.hidden_s, base.center)}>
+							<div className={classNames(base.pb3, base.ph4, base.br2, colors.bg_green, base.center)}>
 								<img width={35} style={{marginTop: "22px", float: "left", display: "inline", marginLeft: "-10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/emoji/tada.svg`}></img>
 								<h4 className={classNames(base.mv0, colors.white)} style={{paddingLeft: "40px", paddingTop: "18px"}}>Thanks for joining Sourcegraph!</h4>
 								<span className={classNames(base.mv0, base.pl3, colors.white)}>Get started by searching for usage examples or exploring a public repository.</span>
@@ -110,30 +111,30 @@ export class CompletedOnboardingDashboard extends Container<Props, State> {
 							Try these top searches:
 							<a onClick={this._topQuerySelected.bind(this, "new http request")}> new http request</a>, <a onClick={this._topQuerySelected.bind(this, "read file")}>read file</a>, <a onClick={this._topQuerySelected.bind(this, "json encoder")}>json encoder</a>
 						</div>
-						<div className={classNames(styles.user_actions, base.pt5, base.hidden_s)}>
-							<Heading className={base.pb3} level="5">Explore public repositories</Heading>
-							<Table style={{width: "575px", paddingLeft: "60px", margin: "0 auto"}} className={classNames(typography.tl)}>
-								<tbody>
-									<tr className={classNames(base.pt3)}>
-										<td className={base.pr5}><Link to="github.com/sourcegraph/checkup"><span onClick={this._exampleRepoSelected.bind(this, "checkup")}>sourcegraph / checkup</span></Link></td>
-										<td className={base.pr5}><Link to="github.com/gorilla/mux"><span onClick={this._exampleRepoSelected.bind(this, "mux")}>gorilla / mux</span></Link></td>
-									</tr>
-									<tr className={classNames(colors.cool_gray_8)}>
-										<td className={classNames(base.pb4, base.pr4)} style={{width: "200px"}}>Self-hosted health checks and status pages</td>
-										<td className={classNames(base.pb4, base.pr4)} style={{width: "200px"}}>A powerful URL router and dispatcher for golang</td>
-									</tr>
-								</tbody>
-								<tbody>
-									<tr>
-										<td><Link to="github.com/sourcegraph/thyme"><span onClick={this._exampleRepoSelected.bind(this, "thyme")}>sourcegraph / thyme</span></Link></td>
-										<td><Link to="github.com/kubernetes/kubernetes"><span onClick={this._exampleRepoSelected.bind(this, "kubernetes")}>kubernetes / kubernetes</span></Link></td>
-									</tr>
-									<tr className={colors.cool_gray_8}>
-										<td className={classNames(base.pb4, base.pr4)} style={{width: "200px"}}>Automatically track which applications you use</td>
-										<td className={classNames(base.pb4, base.pr4)} style={{width: "200px"}}>Production-Grade Container Scheduling and Management</td>
-									</tr>
-								</tbody>
-							</Table>
+						<div className={classNames(styles.user_actions, base.pt5)}>
+							<Heading className={base.pb4} level="5">Explore public repositories</Heading>
+							<div style={{maxWidth: "675px", paddingLeft: "90px"}} className={classNames(typography.tl, base.center)}>
+								<div className={classNames(colors.cool_gray_8, base.center)}>
+									<div className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>
+										<Link to="github.com/sourcegraph/checkup"><span onClick={this._exampleRepoSelected.bind(this, "checkup")}>sourcegraph / checkup</span></Link>
+										<p>Self-hosted health checks and status pages</p>
+									</div>
+									<div  className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>
+										<Link to="github.com/gorilla/mux"><span onClick={this._exampleRepoSelected.bind(this, "mux")}>gorilla / mux</span></Link>
+										<p>A powerful URL router and dispatcher for golang</p>
+									</div>	
+								</div>
+								<div className={classNames(colors.cool_gray_8, base.center)}>
+									<div className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3}>
+										<Link to="github.com/sourcegraph/thyme"><span onClick={this._exampleRepoSelected.bind(this, "thyme")}>sourcegraph / thyme</span></Link>
+										<p>Automatically track which applications you use</p>
+									</div>
+									<div  className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>
+										<Link to="github.com/kubernetes/kubernetes"><span onClick={this._exampleRepoSelected.bind(this, "kubernetes")}>kubernetes / kubernetes</span></Link>
+										<p>Production-Grade Container Scheduling and Management</p>
+									</div>								
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
