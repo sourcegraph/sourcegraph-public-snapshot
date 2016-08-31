@@ -63,28 +63,24 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		})
 	}
 
-	searchIconSVG := `<svg width="16px" viewBox="0 0 17 17" style="top: 11px; left: 10px; vertical-align: middle;"><path fill="rgb(119, 147, 174)" d="M10.6 0c1.2 0 2.2.3 3.2 1 1 .4 1.8 1.2 2.3 2.2.7 1 1 2 1 3.2 0 1-.3 2.2-1 3.2-.4 1-1.2 1.7-2.2 2.3-1 .5-2 .8-3.2.8-1.2 0-2.4-.4-3.4-1l-4.8 4.8c-.3.3-.6.4-1 .4s-.7 0-1-.4c-.3-.3-.4-.6-.4-1s0-.7.4-1l4.8-4.8c-.6-1-1-2.2-1-3.4 0-1.2.3-2.2 1-3.2.5-1 1.2-1.8 2.2-2.3 1-.7 2-1 3.2-1zm0 10.6c.6 0 1 0 1.7-.3.5-.2 1-.5 1.3-1 .4-.3.7-.8 1-1.3.2-.5.3-1 .3-1.6 0-.6-.2-1-.5-1.7-.2-.5-.5-1-1-1.3-.3-.4-.7-.7-1.2-1-.6-.2-1-.3-1.7-.3-.6 0-1 .2-1.6.5-.5.2-1 .5-1.4 1-.4.3-.7.7-1 1.2l-.2 1.7c0 .6 0 1 .3 1.6.2.5.5 1 1 1.4.3.4.8.7 1.3 1l1.6.2z"></path></svg>`
-
 	return tmpl.Exec(r, w, "repolanding.html", http.StatusOK, nil, &struct {
 		tmpl.Common
 		Meta meta
 
-		MetaTitle     string
-		MetaDescr     string
-		SearchIconSVG string
-		Repo          *sourcegraph.Repo
-		RepoRev       sourcegraph.RepoRevSpec
-		RepoURL       string
-		Defs          []defDescr
+		MetaTitle string
+		MetaDescr string
+		Repo      *sourcegraph.Repo
+		RepoRev   sourcegraph.RepoRevSpec
+		RepoURL   string
+		Defs      []defDescr
 	}{
-		Meta:          meta{SEO: true},
-		MetaTitle:     fmt.Sprintf("%s · Sourcegraph", repo.URI),
-		MetaDescr:     fmt.Sprintf("Top definitions from %s with type signature, documentation, links to source and usage examples", repo.URI),
-		SearchIconSVG: searchIconSVG,
-		Repo:          repo,
-		RepoRev:       repoRev,
-		RepoURL:       repoURL,
-		Defs:          defDescrs,
+		Meta:      meta{SEO: true},
+		MetaTitle: fmt.Sprintf("%s · Sourcegraph", repo.URI),
+		MetaDescr: fmt.Sprintf("Top definitions from %s with type signature, documentation, links to source and usage examples", repo.URI),
+		Repo:      repo,
+		RepoRev:   repoRev,
+		RepoURL:   repoURL,
+		Defs:      defDescrs,
 	})
 }
 
