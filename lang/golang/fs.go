@@ -51,9 +51,17 @@ func (h *Handler) readFile(uri string) ([]byte, error) {
 }
 
 func (h *Handler) goEnv() []string {
+	whitelist := map[string]bool{
+		"PWD":    true,
+		"USER":   true,
+		"TMPDIR": true,
+		"PATH":   true,
+		"HOME":   true,
+		"GOBIN":  true,
+	}
 	env := []string{"GOPATH=" + h.filePath("gopath")}
 	for _, e := range os.Environ() {
-		if !strings.HasPrefix(e, "GOPATH=") {
+		if k := e[:strings.Index(e, "=")]; whitelist[k] {
 			env = append(env, e)
 		}
 	}
