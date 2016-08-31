@@ -17,7 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/router_util"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -190,7 +189,11 @@ func RedirectToNewRepoURI(w http.ResponseWriter, r *http.Request, newRepoURI str
 	origVars := mux.Vars(r)
 	origVars["Repo"] = newRepoURI
 
-	destURL, err := mux.CurrentRoute(r).URLPath(router_util.MapToArray(origVars)...)
+	var pairs []string
+	for k, v := range origVars {
+		pairs = append(pairs, k, v)
+	}
+	destURL, err := mux.CurrentRoute(r).URLPath(pairs...)
 	if err != nil {
 		return err
 	}
