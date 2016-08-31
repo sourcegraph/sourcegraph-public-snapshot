@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	opentracing "github.com/opentracing/opentracing-go"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
@@ -90,7 +92,7 @@ func (t *translator) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*
 
 	// TODO(slimsag): cache symbol information for quicker access
 	var respSymbol []lsp.SymbolInformation
-	err = t.lspDo(rootPath, "workspace/symbol", p, &respSymbol)
+	err = t.lspDo(ctx, rootPath, "workspace/symbol", p, &respSymbol)
 	defer observe(ctx, start, defSpec.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
@@ -145,7 +147,7 @@ func (t *translator) PositionToDefSpec(ctx context.Context, pos *Position) (*Def
 	}
 
 	var respHover lsp.Hover
-	err = t.lspDo(rootPath, "textDocument/hover", p, &respHover)
+	err = t.lspDo(ctx, rootPath, "textDocument/hover", p, &respHover)
 	defer observe(ctx, start, pos.Repo, err, err == nil && len(respHover.Contents) == 0)
 	if err != nil {
 		return nil, err
@@ -198,7 +200,7 @@ func (t *translator) Definition(ctx context.Context, pos *Position) (*Range, err
 
 	// TODO: according to spec this could be lsp.Location OR []lsp.Location
 	var respDef []lsp.Location
-	err = t.lspDo(rootPath, "textDocument/definition", p, &respDef)
+	err = t.lspDo(ctx, rootPath, "textDocument/definition", p, &respDef)
 	defer observe(ctx, start, pos.Repo, err, len(respDef) == 0)
 	if err != nil {
 		return nil, err
@@ -240,7 +242,7 @@ func (t *translator) Hover(ctx context.Context, pos *Position) (*Hover, error) {
 	}
 
 	var respHover lsp.Hover
-	err = t.lspDo(rootPath, "textDocument/hover", p, &respHover)
+	err = t.lspDo(ctx, rootPath, "textDocument/hover", p, &respHover)
 	defer observe(ctx, start, pos.Repo, err, err == nil && len(respHover.Contents) == 0)
 	if err != nil {
 		return nil, err
@@ -264,7 +266,7 @@ func (t *translator) LocalRefs(ctx context.Context, pos *Position) (*RefLocation
 	}
 
 	var resp []lsp.Location
-	err = t.lspDo(rootPath, "textDocument/references", p, &resp)
+	err = t.lspDo(ctx, rootPath, "textDocument/references", p, &resp)
 	defer observe(ctx, start, pos.Repo, err, len(resp) == 0)
 	if err != nil {
 		return nil, err
@@ -305,7 +307,7 @@ func (t *translator) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRef
 	}
 
 	var respSymbol []lsp.SymbolInformation
-	err = t.lspDo(rootPath, "workspace/symbol", p, &respSymbol)
+	err = t.lspDo(ctx, rootPath, "workspace/symbol", p, &respSymbol)
 	defer observe(ctx, start, r.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
@@ -358,7 +360,7 @@ func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLoc
 	}
 
 	var respSymbol []lsp.SymbolInformation
-	err = t.lspDo(rootPath, "defspec-refs-internal", p, &respSymbol)
+	err = t.lspDo(ctx, rootPath, "defspec-refs-internal", p, &respSymbol)
 	defer observe(ctx, start, defSpec.Repo, err, len(respSymbol) == 0)
 	if err != nil {
 		return nil, err
@@ -411,7 +413,7 @@ func (t *translator) ExportedSymbols(ctx context.Context, r *RepoRev) (*Exported
 	// but good enough for now.
 	importPath, _ := ResolveRepoAlias(r.Repo)
 	var respSymbol []lsp.SymbolInformation
-	err = t.lspDo(rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
+	err = t.lspDo(ctx, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
 		Query: "exported " + importPath + "/...",
 	}, &respSymbol)
@@ -451,7 +453,7 @@ func (t *translator) ExportedSymbols(ctx context.Context, r *RepoRev) (*Exported
 	return &ExportedSymbols{Symbols: symbols}, nil
 }
 
-func (t *translator) lspDo(rootPath string, method string, request interface{}, result interface{}) error {
+func (t *translator) lspDo(ctx context.Context, rootPath string, method string, request interface{}, result interface{}) error {
 	// TODO(slimsag): We don't need to create a new JSON RPC 2 connection every
 	// time, but we will need reconnection logic and a non-dumb jsonrpc2.Client
 	// which can handle concurrency (according to Sourcegraph LSP spec we can
@@ -468,14 +470,27 @@ func (t *translator) lspDo(rootPath string, method string, request interface{}, 
 		}
 	}()
 
-	// Make the LSP requests.
-	if err := c.Call(context.Background(), "initialize", lsp.InitializeParams{RootPath: rootPath}, nil); err != nil {
+	// Extract opentracing HTTP headers for propagation across LSP borders.
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		header := make(http.Header)
+		carrier := opentracing.HTTPHeadersCarrier(header)
+		err := span.Tracer().Inject(span.Context(), opentracing.HTTPHeaders, carrier)
+		if err != nil {
+			return err
+		}
+		if len(header) > 0 {
+			ctx = jsonrpc2.WithMeta(ctx, header)
+		}
+	}
+
+	// Initialize.
+	if err := c.Call(ctx, "initialize", lsp.InitializeParams{RootPath: rootPath}, nil); err != nil {
 		return err
 	}
-	if err := c.Call(context.Background(), method, request, result); err != nil {
+	if err := c.Call(ctx, method, request, result); err != nil {
 		return err
 	}
-	if err := c.Call(context.Background(), "shutdown", nil, nil); err != nil {
+	if err := c.Call(ctx, "shutdown", nil, nil); err != nil {
 		return err
 	}
 	return nil
