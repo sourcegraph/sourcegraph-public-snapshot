@@ -17,24 +17,27 @@ import (
 )
 
 var (
+	// HACK(keegancsmith) I have dramatically lowered the size of these
+	// caches to see if it helps our OOM reliability in production.
+
 	// godoc has around 100k repos. __versions is immutable, so only cache
 	// to increase speed of repeated requests
-	versionCache = cache.TTL(cache.Sync(lru.New(100000)), time.Minute)
+	versionCache = cache.TTL(cache.Sync(lru.New(1000)), time.Minute)
 	versionRe    = regexp.MustCompile(`^.*/__versions$`)
 
 	// idx files have the potential of being large, so a slightly
 	// conservative cache size. Also they are _mostly_ immutable, but we
 	// add a large TTL just in case.
-	idxCache = cache.TTL(cache.Sync(lru.New(10000)), time.Hour)
+	idxCache = cache.TTL(cache.Sync(lru.New(100)), time.Hour)
 	idxRe    = regexp.MustCompile(`^.*\.idx$`)
 
 	// def and ref files have similiar characteristics to the idx files,
 	// except there are more of them. However, we use the same settings as
 	// idx files, but keep it as a separate cache to prevent blowing out
 	// the idx cache.
-	defCache = cache.TTL(cache.Sync(lru.New(10000)), time.Hour)
+	defCache = cache.TTL(cache.Sync(lru.New(100)), time.Hour)
 	defRe    = regexp.MustCompile(`^.*def\.dat$`)
-	refCache = cache.TTL(cache.Sync(lru.New(10000)), time.Hour)
+	refCache = cache.TTL(cache.Sync(lru.New(100)), time.Hour)
 	refRe    = regexp.MustCompile(`^.*ref\.dat$`)
 )
 
