@@ -143,7 +143,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 				</Link>
 
 				<div
-					className={classNames(styles.flex_fill, base.b__dotted, base.bn, base.brw2, colors.b__cool_pale_gray)}>
+					className={classNames(styles.flex_fill, base.b__dotted, base.bn, base.brw2, base.pr3, colors.b__cool_pale_gray)}>
 					{showSearchForm && <StyledSearchForm repo={repo} location={location} router={router} showResultsPanel={location.pathname !== `/${rel.search}`} />}
 				</div>
 
