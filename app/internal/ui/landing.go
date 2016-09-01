@@ -63,24 +63,23 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		})
 	}
 
+	m := repoMeta(repo)
+	m.SEO = true
+
 	return tmpl.Exec(r, w, "repolanding.html", http.StatusOK, nil, &struct {
 		tmpl.Common
 		Meta meta
 
-		MetaTitle string
-		MetaDescr string
-		Repo      *sourcegraph.Repo
-		RepoRev   sourcegraph.RepoRevSpec
-		RepoURL   string
-		Defs      []defDescr
+		Repo    *sourcegraph.Repo
+		RepoRev sourcegraph.RepoRevSpec
+		RepoURL string
+		Defs    []defDescr
 	}{
-		Meta:      meta{SEO: true},
-		MetaTitle: fmt.Sprintf("%s · Sourcegraph", repo.URI),
-		MetaDescr: fmt.Sprintf("Top definitions from %s with type signature, documentation, links to source and usage examples", repo.URI),
-		Repo:      repo,
-		RepoRev:   repoRev,
-		RepoURL:   repoURL,
-		Defs:      defDescrs,
+		Meta:    *m,
+		Repo:    repo,
+		RepoRev: repoRev,
+		RepoURL: repoURL,
+		Defs:    defDescrs,
 	})
 }
 
