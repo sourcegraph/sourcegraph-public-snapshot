@@ -32,6 +32,7 @@ func (c *listTop10kDefsCmd) Execute(args []string) error {
 			NotKinds:     []string{"package"},
 			IncludeRepos: false,
 			ListOptions:  sourcegraph.ListOptions{PerPage: 20},
+			AllowEmpty:   true,
 		},
 	})
 	if err != nil {

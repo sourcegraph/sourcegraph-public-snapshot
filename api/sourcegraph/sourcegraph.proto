@@ -2085,6 +2085,11 @@ message SearchOptions {
 	// the cost of missing lower ranked results. If there are no high-ranking results
 	// and Fast is set to true, there may be no results returned at all.
 	bool Fast = 10;
+
+	// AllowEmpty may be used to signal that a query with undefined search parameters is still valid.
+	// It was introduced with the sole purpose of running offline queries against all defs.
+	// Do not use in the product, as it will likely cause a significant performance hit.
+	bool AllowEmpty = 11;
 }
 
 // SearchOp holds the options for global search for a given query.
