@@ -28,12 +28,14 @@
 
 	<h2>How to use</h2>
 
-	<p>
-		Here's an example of how you can use <tt>{{.Def.Name}}</tt>.
-	</p>
+	{{if .RefSnippets}}
+		<p>{{if (gt (len .RefSnippets) 1)}}Here are some examples{{else}}Here's an example{{end}} of how you can use <tt>{{.Def.Name}}</tt>.</p>
 
-	{{range .RefSnippets}}
-	<a href="{{.SourceURL}}" class="plainlink"><pre class="snippet">{{renderSnippet .}}</pre></a><br>
+		{{range .RefSnippets}}
+			<a href="{{.SourceURL}}" class="plainlink">
+				<p><pre class="snippet">{{renderSnippet .}}</pre></p>
+			</a>
+		{{end}}
 	{{end}}
 
 	<h2><tt class="highlight-h2">{{.Def.Name}}</tt> is referenced in <span class="highlight">{{.RefLocs.TotalRepos}}</span> {{numberedNoun .RefLocs.TotalRepos "repository"}}</h2>

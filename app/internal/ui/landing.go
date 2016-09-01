@@ -176,7 +176,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		// fetch example
 		refs, err := cl.Defs.ListRefs(r.Context(), &sourcegraph.DefsListRefsOp{
 			Def: defSpec,
-			Opt: &sourcegraph.DefListRefsOptions{ListOptions: sourcegraph.ListOptions{PerPage: 1}},
+			Opt: &sourcegraph.DefListRefsOptions{ListOptions: sourcegraph.ListOptions{PerPage: 3}},
 		})
 		if err != nil {
 			return err

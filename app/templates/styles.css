@@ -18,6 +18,11 @@ body {
 	border-radius: 3px;
 	padding: 1.3rem;
 	font-size: 1.2em;
+	white-space: pre-wrap;
+	white-space: -moz-pre-wrap;
+	white-space: -pre-wrap;
+	white-space: -o-pre-wrap;
+	word-wrap: break-word;
 }
 
 .dl-container pre.snippet {
