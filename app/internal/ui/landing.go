@@ -230,6 +230,9 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
+	m := defMeta(def, trimRepo(repo.URI), true)
+	m.SEO = true
+
 	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, &struct {
 		tmpl.Common
 		Meta meta
@@ -246,7 +249,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		RefEntries       []*sourcegraph.TreeEntry
 		RefSnippets      []*app.Snippet
 	}{
-		Meta:             meta{SEO: true},
+		Meta:             *m,
 		Repo:             repo,
 		RepoRev:          repoRev,
 		RepoURL:          repoURL,
