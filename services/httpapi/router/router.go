@@ -24,8 +24,6 @@ const (
 	AuthInfo                 = "auth-info"
 	Builds                   = "builds"
 	BuildTaskLog             = "build.task.log"
-	ChannelListen            = "channel.listen"
-	ChannelSend              = "channel.send"
 	Commit                   = "commit"
 	Coverage                 = "coverage"
 	Def                      = "def"
@@ -152,9 +150,6 @@ func New(base *mux.Router) *mux.Router {
 	def.Path("/local-refs").Methods("GET").Name(DefLocalRefLocations)
 	def.Path("/examples").Methods("GET").Name(DefExamples)
 	repoRev.Path(defPath).Methods("GET").Name(Def) // match subroutes first
-
-	base.Path("/channel/{Channel}").Methods("GET").Name(ChannelListen)
-	base.Path("/channel/{Channel}").Methods("POST").Name(ChannelSend)
 
 	base.Path("/resolve-custom-import/info").Methods("GET").Name(ResolveCustomImportsInfo)
 	base.Path("/resolve-custom-import/tree").Methods("GET").Name(ResolveCustomImportsTree)

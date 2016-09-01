@@ -65,8 +65,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.AuthInfo).Handler(httptrace.TraceRoute(handler(serveAuthInfo)))
 	m.Get(apirouter.Builds).Handler(httptrace.TraceRoute(handler(serveBuilds)))
 	m.Get(apirouter.BuildTaskLog).Handler(httptrace.TraceRoute(handler(serveBuildTaskLog)))
-	m.Get(apirouter.ChannelListen).HandlerFunc(serveChannelListen)
-	m.Get(apirouter.ChannelSend).Handler(httptrace.TraceRoute(handler(serveChannelSend)))
 	m.Get(apirouter.Commit).Handler(httptrace.TraceRoute(handler(serveCommit)))
 	m.Get(apirouter.Coverage).Handler(httptrace.TraceRoute(handler(serveCoverage)))
 	m.Get(apirouter.Def).Handler(httptrace.TraceRoute(handler(serveDef)))

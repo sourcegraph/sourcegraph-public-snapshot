@@ -28,7 +28,6 @@ const (
 	_AsyncKey             contextKey = iota
 	_AuthKey              contextKey = iota
 	_BuildsKey            contextKey = iota
-	_ChannelKey           contextKey = iota
 	_DefsKey              contextKey = iota
 	_MetaKey              contextKey = iota
 	_MirrorReposKey       contextKey = iota
@@ -47,7 +46,6 @@ type Services struct {
 	Async             sourcegraph.AsyncServer
 	Auth              sourcegraph.AuthServer
 	Builds            sourcegraph.BuildsServer
-	Channel           sourcegraph.ChannelServer
 	Defs              sourcegraph.DefsServer
 	Meta              sourcegraph.MetaServer
 	MirrorRepos       sourcegraph.MirrorReposServer
@@ -83,10 +81,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.Builds != nil {
 		sourcegraph.RegisterBuildsServer(s, svcs.Builds)
-	}
-
-	if svcs.Channel != nil {
-		sourcegraph.RegisterChannelServer(s, svcs.Channel)
 	}
 
 	if svcs.Defs != nil {
@@ -148,10 +142,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.Builds != nil {
 		ctx = WithBuilds(ctx, s.Builds)
-	}
-
-	if s.Channel != nil {
-		ctx = WithChannel(ctx, s.Channel)
 	}
 
 	if s.Defs != nil {
@@ -321,29 +311,6 @@ func Builds(ctx context.Context) sourcegraph.BuildsServer {
 // BuildsOrNil returns the context's Builds service if present, or else nil.
 func BuildsOrNil(ctx context.Context) sourcegraph.BuildsServer {
 	s, ok := ctx.Value(_BuildsKey).(sourcegraph.BuildsServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithChannel returns a copy of parent that uses the given Channel service.
-func WithChannel(ctx context.Context, s sourcegraph.ChannelServer) context.Context {
-	return context.WithValue(ctx, _ChannelKey, s)
-}
-
-// Channel gets the context's Channel service. If the service is not present, it panics.
-func Channel(ctx context.Context) sourcegraph.ChannelServer {
-	s, ok := ctx.Value(_ChannelKey).(sourcegraph.ChannelServer)
-	if !ok || s == nil {
-		panic("no Channel set in context")
-	}
-	return s
-}
-
-// ChannelOrNil returns the context's Channel service if present, or else nil.
-func ChannelOrNil(ctx context.Context) sourcegraph.ChannelServer {
-	s, ok := ctx.Value(_ChannelKey).(sourcegraph.ChannelServer)
 	if ok {
 		return s
 	}

@@ -23,7 +23,6 @@ var Services = svc.Services{
 	Async:             Async,
 	Auth:              Auth,
 	Builds:            Builds,
-	Channel:           Channel,
 	Defs:              Defs,
 	Meta:              Meta,
 	MirrorRepos:       MirrorRepos,

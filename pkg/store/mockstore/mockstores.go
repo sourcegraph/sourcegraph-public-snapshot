@@ -21,7 +21,6 @@ type Stores struct {
 	Accounts           Accounts
 	BuildLogs          BuildLogs
 	Builds             Builds
-	Channel            Channel
 	DefExamples        DefExamples
 	Defs               Defs
 	Directory          Directory
@@ -43,7 +42,6 @@ func (s *Stores) Stores() store.Stores {
 		Accounts:           &s.Accounts,
 		BuildLogs:          &s.BuildLogs,
 		Builds:             &s.Builds,
-		Channel:            &s.Channel,
 		DefExamples:        &s.DefExamples,
 		Defs:               &s.Defs,
 		Directory:          &s.Directory,

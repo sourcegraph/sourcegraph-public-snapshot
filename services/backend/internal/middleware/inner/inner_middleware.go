@@ -45,8 +45,6 @@ func Services() svc.Services {
 
 		Builds: wrappedBuilds{},
 
-		Channel: wrappedChannel{},
-
 		Defs: wrappedDefs{},
 
 		Meta: wrappedMeta{},
@@ -618,29 +616,6 @@ func (s wrappedBuilds) DequeueNext(ctx context.Context, param *sourcegraph.Build
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
 			err = grpc.Errorf(code, "Builds.DequeueNext failed with internal error.")
-		}
-	}
-	return
-}
-
-type wrappedChannel struct{}
-
-func (s wrappedChannel) Send(ctx context.Context, param *sourcegraph.ChannelSendOp) (res *sourcegraph.ChannelSendResult, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Channel", "Send", param)
-	defer func() {
-		trace.After(ctx, "Channel", "Send", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Channel.Send(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Channel.Send returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Channel.Send failed with internal error.")
 		}
 	}
 	return
