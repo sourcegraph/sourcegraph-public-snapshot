@@ -198,7 +198,7 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 		op.Opt = &sourcegraph.SearchOptions{}
 	}
 
-	if len(op.TokQuery) == 0 && len(op.Opt.Repos) == 0 {
+	if len(op.TokQuery) == 0 && len(op.Opt.Repos) == 0 && !op.Opt.AllowEmpty {
 		return &sourcegraph.SearchResultsList{}, nil
 	}
 
