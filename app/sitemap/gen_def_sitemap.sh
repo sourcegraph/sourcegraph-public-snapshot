@@ -5,8 +5,8 @@ DO NOT RUN THIS SCRIPT unless you really mean to.
 
 # This script is intended to be run from the repo root.
 
-# generates app/sitemap/sitemap_def_top10k.xml.gz
-src list_top_defs --limit=10000 --endpoint="http://localhost:3080" \
+# generates app/sitemap/sitemap_def_top4k.xml.gz
+src list_top_defs --limit=4000 --endpoint="https://grpc.sourcegraph.com" \
 	| go run app/sitemap/make_sitemap.go \
 	| gzip \
-	> app/sitemap/sitemap_def_top10k.xml.gz
+	> app/sitemap/sitemap_def_top4k.xml.gz
