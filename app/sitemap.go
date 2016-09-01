@@ -24,7 +24,7 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 	// TODO: remove these static sitemaps once we have proper sitemap generation! These just cover
 	// def info pages.
 	{
-		lastMod, err := time.Parse(time.UnixDate, "Thu May 19 14:05:56 MST 2016")
+		lastMod, err := time.Parse(time.UnixDate, "Thu Sep 01 10:41:00 PST 2016")
 		if err != nil {
 			panic(err)
 		}
@@ -35,6 +35,12 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 				LastMod: &lastMod,
 			})
 		}
+
+		// include sitemap for top 1k repo landing pages
+		si.Sitemaps = append(si.Sitemaps, sitemap.Sitemap{
+			Loc:     "https://storage.cloud.google.com/static-sitemaps/sitemap_repo_top1k.xml.gz",
+			LastMod: &lastMod,
+		})
 	}
 
 	// Truncate to sitemaps limit.
