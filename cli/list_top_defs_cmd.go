@@ -7,7 +7,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/coverage"
 )
 
 func init() {
@@ -23,9 +22,7 @@ func init() {
 
 type listTopDefsCmd struct {
 	Limit int `long:"limit" description:"max number of defs to list" default:"100"`
-
-	backend coverage.Client
-	cl      *sourcegraph.Client
+	// TODO(mate): add argument to select language
 }
 
 func (c *listTopDefsCmd) Execute(args []string) error {
