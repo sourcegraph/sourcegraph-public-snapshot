@@ -10,28 +10,30 @@ import (
 )
 
 func init() {
-	_, err := cli.CLI.AddCommand("top10k_defs",
-		"list the top10k defs along with their refcounts",
-		"List the top10k Go definitions that are indexed by Sourcegraph; used for sitemap generation",
-		&listTop10kDefsCmd{},
+	_, err := cli.CLI.AddCommand("list_top_defs",
+		"list the top defs along with their refcounts",
+		"List the top Go definitions that are indexed by Sourcegraph. Used for sitemap generation.",
+		&listTopDefsCmd{},
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-type listTop10kDefsCmd struct {
+type listTopDefsCmd struct {
+	Limit int `long:"limit" description:"max number of defs to list" default:"100"`
+
 	backend coverage.Client
 	cl      *sourcegraph.Client
 }
 
-func (c *listTop10kDefsCmd) Execute(args []string) error {
+func (c *listTopDefsCmd) Execute(args []string) error {
 	results, err := cliClient.Search.Search(cliContext, &sourcegraph.SearchOp{
 		Opt: &sourcegraph.SearchOptions{
 			Languages:    []string{"Go"},
 			NotKinds:     []string{"package"},
 			IncludeRepos: false,
-			ListOptions:  sourcegraph.ListOptions{PerPage: 20},
+			ListOptions:  sourcegraph.ListOptions{PerPage: int32(c.Limit)},
 			AllowEmpty:   true,
 		},
 	})
