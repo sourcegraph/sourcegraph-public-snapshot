@@ -166,7 +166,7 @@ function injectModules() {
 window.addEventListener("load", () => {
 	chrome.runtime.sendMessage(null, {type: "get"}, {}, (state) => {
 		const accessToken = state.accessToken;
-		if (accessToken) {
+		if (isGitHubURL()) {
 			store.dispatch(Actions.setAccessToken(accessToken));
 		} else if (isSourcegraphURL()) {
 			const regexp = /accessToken\\":\\"([-A-Za-z0-9_.]+)\\"/;
