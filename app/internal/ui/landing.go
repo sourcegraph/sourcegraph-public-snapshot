@@ -95,7 +95,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	repoURL := approuter.Rel.URLToRepoRev(repo.URI, repoRev.CommitID).String()
+	repoLandURL := approuter.Rel.URLToRepoLanding(repo.URI).String()
 	var fileURL string
 	var def *sourcegraph.Def
 	var refLocs *sourcegraph.RefLocationsList
@@ -236,7 +236,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 
 		Repo             *sourcegraph.Repo
 		RepoRev          sourcegraph.RepoRevSpec
-		RepoURL          string
+		RepoLandingURL   string
 		FileURL          string
 		Def              *sourcegraph.Def
 		DefEntry         *sourcegraph.TreeEntry
@@ -249,7 +249,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		Meta:             meta{SEO: true},
 		Repo:             repo,
 		RepoRev:          repoRev,
-		RepoURL:          repoURL,
+		RepoLandingURL:   repoLandURL,
 		FileURL:          fileURL,
 		Def:              def,
 		DefEntry:         defEntry,
