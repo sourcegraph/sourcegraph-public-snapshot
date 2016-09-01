@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/coverage"
 )
@@ -43,7 +44,8 @@ func (c *listTopDefsCmd) Execute(args []string) error {
 
 	for _, defResult := range results.DefResults {
 		def := &defResult.Def
-		fmt.Printf("%s %d\n", def.Def.Name, defResult.RefCount)
+		def.Def.DefKey.CommitID = ""
+		fmt.Printf("https://sourcegraph.com%s %d\n", approuter.Rel.DefKeyToLandURL(def.Def.DefKey).String(), defResult.RefCount)
 	}
 
 	return nil
