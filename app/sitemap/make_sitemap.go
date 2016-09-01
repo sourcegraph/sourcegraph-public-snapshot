@@ -9,10 +9,7 @@ import (
 )
 
 func main() {
-	lastMod, err := time.Parse(time.UnixDate, "Thu May 19 14:05:56 MST 2016")
-	if err != nil {
-		panic(err)
-	}
+	lastMod := time.Now()
 
 	var minScore, maxScore int
 	var urls []sitemap.URL
