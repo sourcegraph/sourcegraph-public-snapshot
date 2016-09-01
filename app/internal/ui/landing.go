@@ -58,7 +58,7 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		defDescrs = append(defDescrs, defDescr{
 			Def:       def,
 			RefCount:  defResult.RefCount,
-			LandURL:   approuter.Rel.DefKeyToLandURL(def.DefKey).String(),
+			LandURL:   approuter.Rel.URLToDefLanding(def.DefKey).String(),
 			SourceURL: approuter.Rel.URLToDefKey(def.DefKey).String(),
 		})
 	}
