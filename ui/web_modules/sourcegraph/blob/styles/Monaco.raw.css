@@ -15,3 +15,9 @@
 .monaco-editor div {
 	box-sizing: content-box;
 }
+
+.GotoDefHighlight {
+	background: lightblue;
+	width: 5px;
+	left: 3px;
+}

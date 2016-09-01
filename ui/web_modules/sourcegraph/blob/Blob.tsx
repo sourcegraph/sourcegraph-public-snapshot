@@ -36,6 +36,10 @@ export class Blob extends React.Component<Props, null> {
 	_hoverProvided: string[];
 	_toDispose: monaco.IDisposable[];
 	_editor: monaco.editor.IStandaloneCodeEditor;
+
+	// Finding the line from byte requires UTF-8 encoding the entire buffer,
+	// because Sourcegraph uses byte offset and Monaco uses (UTF16) character
+	// offset. We cache it here so we don't have to calculate it too many times.
 	_lineFromByte: (byteOffset: number) => number;
 
 	constructor(props: Props) {
@@ -129,7 +133,7 @@ export class Blob extends React.Component<Props, null> {
 		if ((e as KeyboardEvent).keyCode === FKey && ctrl) {
 			if (this._editor) {
 				e.preventDefault();
-				(document.getElementsByClassName("inputarea")[0] as any).focus(); // HACK
+				(document.getElementsByClassName("inputarea")[0] as any).focus();
 				this._editor.trigger("keyboard", "actions.find", {});
 			}
 		}
@@ -146,6 +150,9 @@ export class Blob extends React.Component<Props, null> {
 			label: "View all references",
 			contextMenuGroupId: "1_goto",
 			run: (e) => this._viewAllReferences(e),
+			enablement: {
+				tokensAtPosition: ["identifier"],
+			},
 		};
 		editor.addAction(action);
 	}
@@ -190,16 +197,16 @@ export class Blob extends React.Component<Props, null> {
 
 	_highlight(editor: monaco.editor.IStandaloneCodeEditor): void {
 		if (this.props.startByte && this.props.endByte) {
-			const model = editor.getModel();
-
 			const startLine = this._lineFromByte(this.props.startByte);
-			const startCol = model.getLineMinColumn(startLine);
-
 			const endLine = this._lineFromByte(this.props.endByte);
-			const endCol = model.getLineMaxColumn(endLine);
 
-			const range = new monaco.Range(startLine, startCol, endLine, endCol);
-			editor.setSelection(range);
+			editor.deltaDecorations([], [{
+				range: new monaco.Range(startLine, 1, endLine, 1),
+				options: {
+					isWholeLine: true,
+					linesDecorationsClassName: "GotoDefHighlight",
+				},
+			}]);
 		}
 	}
 
@@ -212,9 +219,9 @@ export class Blob extends React.Component<Props, null> {
 }
 
 // We have to make a request to the server to find the def at a position because
-// the client does not have srclib annotation data.
-// This involves a ton of string munging because we can't save the data types in a good way.
-// A monaco position is slightly different than a Sourcegraph one.
+// the client does not have srclib annotation data. This involves a ton of
+// string munging because we can't save the data types in a good way. A monaco
+// position is slightly different than a Sourcegraph one.
 const fetch = singleflightFetch(defaultFetch);
 class HoverProvider {
 	static provideHover(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<monaco.languages.Hover> {
@@ -239,7 +246,9 @@ function defAtPosition(model: monaco.editor.IReadOnlyModel, position: monaco.Pos
 		.catch(error => { console.error(error); });
 }
 
-// The hover-info end point returns a full def.
+// The hover-info end point returns a full def. We need to ask the server for
+// information about the symbol at the point, because we don't have enough info
+// on the client.
 function hoverURL(uri: monaco.Uri, position: monaco.Position): string {
 	const line = position.lineNumber - 1;
 	const col = position.column - 1;
