@@ -342,14 +342,32 @@ class EventLoggerClass {
 		if (this._intercom && !this.userAgentIsBot) { this._intercom("trackEvent", eventName, eventProperties); }
 	}
 
+	_dedupedArray(inputArray: Array<string>): Array<string> {
+		return inputArray.filter(function(elem: string, index: number, self: any): any {
+			return index === self.indexOf(elem);
+		});
+	}
+
 	__onDispatch(action: any): void {
 		switch (action.constructor) {
 		case RepoActions.ReposFetched:
 			if (action.data.Repos) {
 				let orgs = {};
+				let languages: Array<string> = [];
+				let privateOrgs: Array<string> = [];
 				for (let repo of action.data.Repos) {
 					orgs[repo.Owner] = true;
+					if (repo["Language"]) {
+						languages.push(repo["Language"]);
+					}
+
+					if (repo.Private) {
+						privateOrgs.push(repo.Owner);
+					}
 				}
+
+				this.setUserProperty("private_orgs", this._dedupedArray(privateOrgs));
+				this.setUserProperty("github_languages", this._dedupedArray(languages));
 				this.setUserProperty("orgs", Object.keys(orgs));
 				this.setUserProperty("num_github_repos", action.data.Repos.length);
 				this.setIntercomProperty("companies", Object.keys(orgs).map(org => ({id: `github_${org}`, name: org})));
