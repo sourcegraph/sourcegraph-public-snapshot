@@ -5,7 +5,7 @@ import * as React from "react";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from  "sourcegraph/def/DefActions";
-import {Props} from "sourcegraph/blob/Blob";
+import {Props} from "sourcegraph/blob/BlobLegacy";
 
 type State = any;
 

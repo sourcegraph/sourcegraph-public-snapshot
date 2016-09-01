@@ -18,6 +18,7 @@ export interface Def {
 	Kind: string;
 	File: string;
 	Error: any;
+	Name: string;
 };
 
 export interface DefKey {

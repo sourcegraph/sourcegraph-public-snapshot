@@ -3,7 +3,6 @@ import * as debounce from "lodash/debounce";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import {annotationsByLine} from "sourcegraph/blob/annotationsByLine";
-import {Props} from "sourcegraph/blob/Blob";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {BlobLine} from "sourcegraph/blob/BlobLine";
 import {BlobLineExpander, Range} from "sourcegraph/blob/BlobLineExpander";
@@ -50,6 +49,60 @@ interface State {
 	annotations: any;
 	contents: any;
 };
+
+export interface Props {
+	startlineCallback?: any;
+	location: Location;
+	contents: string;
+	textSize?: string;
+	annotations?: {
+		Annotations: any[];
+		LineStartBytes: any[];
+	};
+	lineNumbers?: boolean;
+	skipAnns?: boolean;
+	startLine?: number;
+	startCol?: number;
+	startByte?: number;
+	endLine?: number;
+	endCol?: number;
+	endByte?: number;
+	scrollToStartLine?: boolean;
+	highlightedDef: string | null;
+	highlightedDefObj: Def | null;
+
+	// activeDef is the def ID ("UnitType/Unit/-/Path") only of the currently
+	// active def (i.e., the subject of the current DefInfo page). It should
+	// not be the whole def URL path (it should not include the repo and rev).
+	activeDef?: string;
+	activeDefRepo?: string;
+
+	// For linking line numbers to the file they came from (e.g., in
+	// ref snippets).
+	repo: string;
+	rev?: string;
+	commitID?: string;
+	path: string;
+
+	// contentsOffsetLine indicates that the contents string does not
+	// start at line 1 within the file, but rather some other line number.
+	// It must be specified when startLine > 1 but the contents don't begin at
+	// the first line of the file.
+	contentsOffsetLine?: number;
+
+	highlightSelectedLines?: boolean;
+
+	// dispatchSelections is whether this Blob should emit BlobActions.SelectCharRange
+	// actions when the text selection changes. It should be true for the main file view but
+	// not for secondary file views (e.g., usage examples).
+	dispatchSelections?: boolean;
+
+	// display line expanders is whether or not to show only the top line expander,
+	// the bottom line expander, or both
+	displayLineExpanders?: string;
+
+	displayRanges?: any;
+}
 
 // BlobTestOnly should only be used on its own for testing purposes. Normally, 
 // you should be using Blob that's at the bottom of this file. 

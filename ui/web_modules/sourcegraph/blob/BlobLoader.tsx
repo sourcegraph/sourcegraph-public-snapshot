@@ -13,6 +13,7 @@ import {withResolvedRepoRev} from "sourcegraph/repo/withResolvedRepoRev";
 import {withFileBlob} from "sourcegraph/blob/withFileBlob";
 import {withAnnotations} from "sourcegraph/blob/withAnnotations";
 import {BlobMain} from "sourcegraph/blob/BlobMain";
+import {LegacyBlobMain} from "sourcegraph/blob/LegacyBlobMain";
 import * as invariant from "invariant";
 
 export interface Helper {
@@ -136,12 +137,17 @@ function blobLoader(Component) {
 	return BlobLoader;
 }
 
+let Main = LegacyBlobMain;
+if (global.window && localStorage.getItem("monaco") === "true") {
+	Main = BlobMain;
+}
+
 export const BlobLoader = (
 	withResolvedRepoRev(
 		blobLoader(
 			withFileBlob(
 				withAnnotations(
-					BlobMain
+					Main
 				),
 			),
 		),

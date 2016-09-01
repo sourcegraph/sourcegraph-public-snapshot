@@ -7,14 +7,18 @@ import Helmet from "react-helmet";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Store} from "sourcegraph/Store";
-import {Blob} from "sourcegraph/blob/Blob";
+import {BlobLegacy} from "sourcegraph/blob/BlobLegacy";
 import {BlobContentPlaceholder} from "sourcegraph/blob/BlobContentPlaceholder";
-import * as DefActions from  "sourcegraph/def/DefActions";
+import * as BlobActions from "sourcegraph/blob/BlobActions";
+import {BlobToolbar} from "sourcegraph/blob/BlobToolbar";
+import {FileMargin} from "sourcegraph/blob/FileMargin";
+import {DefTooltip} from "sourcegraph/def/DefTooltip";
 import {DefStore} from "sourcegraph/def/DefStore";
 import "sourcegraph/blob/BlobBackend";
 import "sourcegraph/def/DefBackend";
 import "sourcegraph/build/BuildBackend";
 import * as Style from "sourcegraph/blob/styles/Blob.css";
+import {lineCol, lineRange, parseLineRange} from "sourcegraph/blob/lineCol";
 import {urlTo} from "sourcegraph/util/urlTo";
 import {makeRepoRev, trimRepo} from "sourcegraph/repo/index";
 import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
@@ -43,7 +47,7 @@ interface Props {
 
 type State = any;
 
-export class BlobMain extends Container<Props, State> {
+export class LegacyBlobMain extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -85,7 +89,6 @@ export class BlobMain extends Container<Props, State> {
 		state.def = props.def || null;
 		state.defObj = state.def && state.commitID ? DefStore.defs.get(state.repo, state.commitID, state.def) : null;
 		state.children = props.children || null;
-		state.rev = props.rev || "master";
 
 		state.hoverInfos = DefStore.hoverInfos;
 		state.hoverPos = DefStore.hoverPos;
@@ -102,12 +105,16 @@ export class BlobMain extends Container<Props, State> {
 	}
 
 	__onDispatch(action) {
-		if (action instanceof DefActions.JumpDefFetched) {
-			if (action.def.Error) {
-				(this.context as any).router.push("/404");
-			} else {
-				(this.context as any).router.push(action.def.path);
-			}
+		if (action instanceof BlobActions.SelectLine) {
+			this._navigate(action.repo, action.rev, action.path, action.line ? `L${action.line}` : null);
+		} else if (action instanceof BlobActions.SelectLineRange) {
+			let pos = (this.props.location as any).hash ? parseLineRange((this.props.location as any).hash.replace(/^#L/, "")) : null;
+			const startLine = Math.min(pos ? pos.startLine : action.line, action.line);
+			const endLine = Math.max(pos ? (pos.endLine || pos.startLine) : action.line, action.line);
+			this._navigate(action.repo, action.rev, action.path, startLine && endLine ? `L${lineRange(startLine, endLine)}` : null);
+		} else if (action instanceof BlobActions.SelectCharRange) {
+			let hash = action.startLine ? `L${lineRange(lineCol(action.startLine, action.startCol), action.endLine && lineCol(action.endLine, action.endCol))}` : null;
+			this._navigate(action.repo, action.rev, action.path, hash);
 		}
 	}
 
@@ -153,20 +160,54 @@ export class BlobMain extends Container<Props, State> {
 		if (this.state.defObj && !this.state.defObj.Error && defTitleOK(this.state.defObj)) {
 			title = `${defTitle(this.state.defObj)} · ${title}`;
 		}
-		const contents = this.state.blob ? this.state.blob.ContentsString : "";
-		if (!this.state.blob) {
-				return <BlobContentPlaceholder />;
-		}
 		return (
 			<div className={Style.container}>
-				<Helmet title={title} />
-				<Blob
-					repo={this.state.repo}
-					rev={this.state.rev}
-					path={this.state.path}
-					contents={contents}
-					startByte={this.state.startByte}
-					endByte={this.state.endByte} />
+				{title && <Helmet title={title} />}
+				<div className={Style.spacer} />
+				<div className={Style.blobAndToolbar}>
+					<BlobToolbar
+						repo={this.state.repo}
+						rev={this.state.rev}
+						commitID={this.state.commitID}
+						path={this.state.path} />
+					{(!this.state.blob || (this.state.blob && !this.state.blob.Error && !this.state.skipAnns && !this.state.anns)) && <BlobContentPlaceholder />}
+					{this.state.blob && !this.state.blob.Error && typeof this.state.blob.ContentsString !== "undefined" && (this.state.skipAnns || (this.state.anns && !this.state.anns.Error)) &&
+					<BlobLegacy
+						startlineCallback = {node => this.setState({selectionStartLine: node})}
+						location={this.props.location}
+						repo={this.state.repo}
+						rev={this.state.rev}
+						commitID={this.state.commitID}
+						path={this.state.path}
+						contents={this.state.blob.ContentsString}
+						annotations={this.state.anns}
+						skipAnns={this.state.skipAnns}
+						lineNumbers={true}
+						highlightSelectedLines={true}
+						highlightedDef={null}
+						highlightedDefObj={null}
+						activeDef={this.state.def}
+						startLine={this.state.startLine}
+						startCol={this.state.startCol}
+						startByte={this.state.startByte}
+						endLine={this.state.endLine}
+						endCol={this.state.endCol}
+						endByte={this.state.endByte}
+						scrollToStartLine={true}
+						dispatchSelections={true} />}
+					<DefTooltip
+						currentRepo={this.state.repo}
+						hoverPos={this.state.hoverPos}
+						hoverInfos={this.state.hoverInfos} />
+				</div>
+				<FileMargin
+					className={Style.margin}
+					style={(!this.state.blob || !this.state.anns) ? {visibility: "hidden"} : {}}
+					lineFromByte={this.state.lineFromByte}
+					selectionStartLine={this.state.selectionStartLine ? this.state.selectionStartLine : null}
+					startByte={this.state.startByte}>
+					{this.state.children}
+				</FileMargin>
 			</div>
 		);
 	}

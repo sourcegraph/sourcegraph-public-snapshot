@@ -50,4 +50,6 @@ export const line_expander_icon: string;
 export const placeholderWhitespace: string;
 export const lineContentPlaceholder: string;
 export const linesContentPlaceholder: string;
+export const myInlineDecoration: string;
+export const myLineDecoration: string;
 

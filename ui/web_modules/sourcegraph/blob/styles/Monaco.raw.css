@@ -1,0 +1,17 @@
+.monaco-editor .identifier {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.monaco-editor.vs .cursor {
+	visibility: hidden;
+	display: none;
+}
+
+.monaco-editor .cursors-layer.cursor-line-style > .cursor {
+	width: 0px !important;
+}
+
+.monaco-editor div {
+	box-sizing: content-box;
+}
