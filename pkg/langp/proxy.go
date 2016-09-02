@@ -42,16 +42,6 @@ func (p *proxy) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*Posit
 	return p.Client.DefSpecToPosition(ctx, defSpec)
 }
 
-func (p *proxy) PositionToDefSpec(ctx context.Context, pos *Position) (*DefSpec, error) {
-	// Determine the root path for the workspace and prepare it.
-	_, err := p.workspace.Prepare(ctx, pos.Repo, pos.Commit)
-	if err != nil {
-		return nil, err
-	}
-
-	return p.Client.PositionToDefSpec(ctx, pos)
-}
-
 func (p *proxy) Definition(ctx context.Context, pos *Position) (*Range, error) {
 	// Determine the root path for the workspace and prepare it.
 	_, err := p.workspace.Prepare(ctx, pos.Repo, pos.Commit)

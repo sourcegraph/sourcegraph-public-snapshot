@@ -32,16 +32,6 @@ func (c *Client) Prepare(ctx context.Context, r *RepoRev) error {
 	return c.do(ctx, "prepare", r, nil)
 }
 
-// PositionToDefSpec returns the DefSpec for the given position.
-func (c *Client) PositionToDefSpec(ctx context.Context, p *Position) (*DefSpec, error) {
-	var result DefSpec
-	err := c.do(ctx, "position-to-defspec", p, &result)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
 // DefSpecToPosition returns the position of the given DefSpec.
 func (c *Client) DefSpecToPosition(ctx context.Context, k *DefSpec) (*Position, error) {
 	var result Position

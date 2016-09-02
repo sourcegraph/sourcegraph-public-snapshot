@@ -134,57 +134,6 @@ func (t *translator) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*
 	return nil, errors.New("position for def key not found")
 }
 
-func (t *translator) PositionToDefSpec(ctx context.Context, pos *Position) (*DefSpec, error) {
-	// Determine the root path for the workspace and prepare it.
-	workspaceStart := time.Now()
-	rootPath, err := t.workspace.Prepare(ctx, pos.Repo, pos.Commit)
-	if err != nil {
-		return nil, err
-	}
-	start := time.Now()
-
-	p := pos.LSP()
-	if t.FileURI != nil {
-		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
-	}
-
-	var respHover lsp.Hover
-	err = t.lspDo(ctx, rootPath, "textDocument/hover", p, &respHover)
-	defer observe(ctx, start, workspaceStart, pos.Repo, err, err == nil && len(respHover.Contents) == 0)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(respHover.Contents) == 0 {
-		return nil, errors.New("def spec for position not found")
-	}
-
-	var uri, unit, name string
-	for _, m := range respHover.Contents[1:] {
-		switch m.Language {
-		case "text/unit":
-			unit = m.Value
-		case "text/uri":
-			uri = m.Value
-		case "text/name":
-			name = m.Value
-		}
-	}
-
-	f, err := t.resolveFile(pos.Repo, pos.Commit, uri)
-	if err != nil {
-		return nil, err
-	}
-
-	return &DefSpec{
-		Repo:     f.Repo,
-		Commit:   f.Commit,
-		Unit:     unit,
-		UnitType: "GoPackage",
-		Path:     name,
-	}, nil
-}
-
 func (t *translator) Definition(ctx context.Context, pos *Position) (*Range, error) {
 	// Determine the root path for the workspace and prepare it.
 	workspaceStart := time.Now()

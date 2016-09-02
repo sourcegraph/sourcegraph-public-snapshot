@@ -6,7 +6,6 @@ This document contains the specification for the Sourcegraph Language Processor 
 - [Methods](#methods)
   - [POST /prepare](#post-prepare)
   - [POST /defspec-to-position](#post-defspec-to-position)
-  - [POST /position-to-defspec](#post-position-to-defspec)
   - [POST /definition](#post-definition)
   - [POST /hover](#post-hover)
   - [POST /local-refs](#post-local-refs)
@@ -55,15 +54,6 @@ Converts a DefSpec into a Position object.
 - Request:
   - Body: [{DefSpec Object}](#type-defspec)
   - Response: [{Position Object}](#type-position) OR [{Error Object}](#type-error)
-
-## POST /position-to-defspec
-
-Converts a Position into a DefSpec object.
-
-- LSP equivalent: None (Language Processor only)
-- Request: 
-  - Body: [{Position Object}](#type-position)
-  - Response: [{DefSpec Object}](#type-defspec) OR [{Error Object}](#type-error)
 
 ## POST /definition
 
