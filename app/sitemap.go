@@ -38,13 +38,13 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 
 		// include sitemap for top 1k repo landing pages
 		si.Sitemaps = append(si.Sitemaps, sitemap.Sitemap{
-			Loc:     "https://storage.cloud.google.com/static-sitemaps/sitemap_repo_top1k.xml.gz",
+			Loc:     "https://storage.googleapis.com/static-sitemaps/sitemap_repo_top1k.xml.gz",
 			LastMod: &lastMod,
 		})
 
 		// include sitemap for top 4k def landing pages
 		si.Sitemaps = append(si.Sitemaps, sitemap.Sitemap{
-			Loc:     "https://storage.cloud.google.com/static-sitemaps/sitemap_def_top4k.xml.gz",
+			Loc:     "https://storage.googleapis.com/static-sitemaps/sitemap_def_top4k.xml.gz",
 			LastMod: &lastMod,
 		})
 	}
