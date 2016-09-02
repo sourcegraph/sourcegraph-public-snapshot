@@ -25,6 +25,7 @@ import {popularRepos} from "sourcegraph/search/popularRepos";
 import {locationForSearch} from "sourcegraph/search/routes";
 import * as classNames from "classnames";
 import {Store} from "sourcegraph/Store";
+import {urlToRepo} from "sourcegraph/repo/routes";
 
 export const RESULTS_LIMIT = 20;
 
@@ -456,7 +457,7 @@ export class GlobalSearch extends Container<Props, State> {
 				<Link className={classNames(styles.block, selected ? styles.result_selected : styles.result, this.state.resultClassName)}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : undefined}
-					to={repo.URI}
+					to={urlToRepo(repo.URI)}
 					key={repo.URI}
 					onClick={() => this._onSelection(true)}>
 					<div className={classNames(styles.cool_gray, styles.flex_container)}>
