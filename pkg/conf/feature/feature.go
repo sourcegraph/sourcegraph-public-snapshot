@@ -16,6 +16,7 @@ var Features = struct {
 
 	GodocRefs bool // redirect from /-/godoc/refs (links constructed by github.com/sourcegraph/gddo fork) to ref pages
 	Universe  bool // Universe project
+	NoSrclib  bool // Universe project / disable Srclib (Chrome + Desktop app depend on srclib).
 }{
 	Authors: true,
 }

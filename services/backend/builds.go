@@ -66,7 +66,7 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 		return nil, err
 	}
 
-	if feature.Features.Universe && feature.IsUniverseRepo(repo.URI) {
+	if feature.Features.NoSrclib && feature.Features.Universe && feature.IsUniverseRepo(repo.URI) {
 		// Do not start builds for universe repos.
 		log15.Info("skipping build for universe repo", "repo", repo.URI)
 		return &sourcegraph.Build{}, nil
