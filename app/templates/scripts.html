@@ -53,8 +53,16 @@
 <script ignore-csp>
 ;(function(t,r,a,c,k,e,d){if(!t[k]){t.GlobalTelligentNamespace=t.GlobalTelligentNamespace||[];t.GlobalTelligentNamespace.push(k);t[k]=function(){(t[k].q=t[k].q||[]).push(arguments)};t[k].q=t[k].q||[];e=r.createElement(a);d=r.getElementsByTagName(a)[0];e.async=1;e.src=c;d.parentNode.insertBefore(e,d)}}(window,document,"script","https://s3.amazonaws.com/telligent-data/tracker-binaries/js/latest/tel.js","telligent"));
 </script>
-
 {{if not appconf.DisableSupportServices}}
+<!-- Start of Intercom scripts -->
+<script ignore-csp>
+	window.intercomSettings = {
+		app_id: "wd8xxn47",
+	}
+</script>
+
+<script ignore-csp>(function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',intercomSettings);}else{var d=document;var i=function(){i.c(arguments)};i.q=[];i.c=function(args){i.q.push(args)};w.Intercom=i;function l(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/wd8xxn47';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);}if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})()</script>
+<!-- End of Intercom scripts -->
 	<!-- Start of FullStory script -->
 	<script ignore-csp>
 		window["_fs_debug"] = false;
@@ -97,15 +105,5 @@
 	  })();
 	</script>
 	<!-- End of Chart Beat script -->
-
-	<!-- Start of Intercom scripts -->
-	<script ignore-csp>
-		window.intercomSettings = {
-			app_id: "wd8xxn47",
-		}
-	</script>
-
-	<script ignore-csp>(function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',intercomSettings);}else{var d=document;var i=function(){i.c(arguments)};i.q=[];i.c=function(args){i.q.push(args)};w.Intercom=i;function l(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/wd8xxn47';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);}if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})()</script>
-	<!-- End of Intercom scripts -->
 {{end}}
 {{end}}

@@ -59,6 +59,10 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 	}
 	const repoSplat = repoParam(params.splat);
 	const showSearchForm = !dash || desktop;
+	const handleIntercomToggle = function() {
+		global.window.Intercom("show");
+		eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickContactIntercom", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV});
+	};
 	let repo = repoSplat ? repoPath(repoSplat) : null;
 	return (
 		<nav
@@ -169,6 +173,9 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 							<LocationStateToggleLink href="/beta" modalName="menuBeta" role="menu_item" location={location}	onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickJoinBeta", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 								Beta program
 							</LocationStateToggleLink>
+							<a onClick={handleIntercomToggle} role="menu_item">
+								Contact
+							</a>
 							<hr role="divider" className={base.mt3} />
 							<LogoutLink role="menu_item" />
 							<hr role="divider" className={base.mt2} />
