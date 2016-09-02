@@ -49,8 +49,6 @@ func Services() svc.Services {
 
 		Defs: wrappedDefs{},
 
-		Desktop: wrappedDesktop{},
-
 		Meta: wrappedMeta{},
 
 		MirrorRepos: wrappedMirrorRepos{},
@@ -792,29 +790,6 @@ func (s wrappedDefs) RefreshIndex(ctx context.Context, param *sourcegraph.DefsRe
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
 			err = grpc.Errorf(code, "Defs.RefreshIndex failed with internal error.")
-		}
-	}
-	return
-}
-
-type wrappedDesktop struct{}
-
-func (s wrappedDesktop) LatestExists(ctx context.Context, param *sourcegraph.ClientDesktopVersion) (res *sourcegraph.LatestDesktopVersion, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Desktop", "LatestExists", param)
-	defer func() {
-		trace.After(ctx, "Desktop", "LatestExists", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Desktop.LatestExists(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Desktop.LatestExists returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Desktop.LatestExists failed with internal error.")
 		}
 	}
 	return

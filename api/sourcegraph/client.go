@@ -13,7 +13,6 @@ type Client struct {
 	Builds       BuildsClient
 	Channel      ChannelClient
 	Defs         DefsClient
-	Desktop      DesktopClient
 	Meta         MetaClient
 	MirrorRepos  MirrorReposClient
 	RepoStatuses RepoStatusesClient
@@ -40,7 +39,6 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	c.Builds = NewBuildsClient(conn)
 	c.Channel = NewChannelClient(conn)
 	c.Defs = NewDefsClient(conn)
-	c.Desktop = NewDesktopClient(conn)
 	c.Meta = NewMetaClient(conn)
 	c.MirrorRepos = NewMirrorReposClient(conn)
 	c.RepoStatuses = NewRepoStatusesClient(conn)

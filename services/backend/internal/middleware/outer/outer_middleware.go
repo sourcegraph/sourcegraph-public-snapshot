@@ -40,7 +40,6 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 		Builds:            wrappedBuilds{ctxFunc, services},
 		Channel:           wrappedChannel{ctxFunc, services},
 		Defs:              wrappedDefs{ctxFunc, services},
-		Desktop:           wrappedDesktop{ctxFunc, services},
 		Meta:              wrappedMeta{ctxFunc, services},
 		MirrorRepos:       wrappedMirrorRepos{ctxFunc, services},
 		RepoStatuses:      wrappedRepoStatuses{ctxFunc, services},
@@ -1275,46 +1274,6 @@ func (s wrappedDefs) RefreshIndex(ctx context.Context, v1 *sourcegraph.DefsRefre
 	}
 
 	rv, err := innerSvc.RefreshIndex(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-type wrappedDesktop struct {
-	ctxFunc  ContextFunc
-	services svc.Services
-}
-
-func (s wrappedDesktop) LatestExists(ctx context.Context, v1 *sourcegraph.ClientDesktopVersion) (returnedResult *sourcegraph.LatestDesktopVersion, returnedError error) {
-	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
-	span := opentracing.StartSpan("GRPC call: Desktop.LatestExists", opentracing.ChildOf(parentSpanCtx))
-	defer span.Finish()
-	ctx = opentracing.ContextWithSpan(ctx, span)
-
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Desktop.LatestExists: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.DesktopOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Desktop")
-	}
-
-	rv, err := innerSvc.LatestExists(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
