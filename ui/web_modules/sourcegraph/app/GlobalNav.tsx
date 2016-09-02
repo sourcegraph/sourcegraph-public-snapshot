@@ -161,7 +161,6 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 								<Heading level="7" color="cool_mid_gray">Signed in as</Heading>
 							</div>
 							<div>{user.Login}</div>
-							<LogoutLink role="menu_item" />
 							<hr role="divider" className={base.mv3} />
 							<Link to="/settings/repos" role="menu_item">Your repositories</Link>
 							<LocationStateToggleLink href="/integrations" modalName="menuIntegrations" role="menu_item" location={location}	onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickToolsandIntegrations", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
@@ -171,6 +170,8 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 								Beta program
 							</LocationStateToggleLink>
 							<hr role="divider" className={base.mt3} />
+							<LogoutLink role="menu_item" />
+							<hr role="divider" className={base.mt2} />
 							<div className={classNames(styles.cool_mid_gray, base.pv1, base.mb1, typography.tc)}>
 								<Link to="/security" className={classNames(styles.cool_mid_gray, typography.f7, typography.link_subtle, base.pr3)}>Security</Link>
 								<Link to="/-/privacy" className={classNames(styles.cool_mid_gray, typography.f7, typography.link_subtle, base.pr3)}>Privacy</Link>
