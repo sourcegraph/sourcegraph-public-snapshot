@@ -1370,6 +1370,27 @@ func (s wrappedSearch) Search(ctx context.Context, param *sourcegraph.SearchOp) 
 	return
 }
 
+func (s wrappedSearch) SearchRepos(ctx context.Context, param *sourcegraph.SearchReposOp) (res *sourcegraph.SearchReposResultList, err error) {
+	var errActual error
+	start := time.Now()
+	ctx = trace.Before(ctx, "Search", "SearchRepos", param)
+	defer func() {
+		trace.After(ctx, "Search", "SearchRepos", param, errActual, time.Since(start))
+	}()
+	res, errActual = backend.Services.Search.SearchRepos(ctx, param)
+	if res == nil && errActual == nil {
+		errActual = grpc.Errorf(codes.Internal, "Search.SearchRepos returned nil, nil")
+	}
+	err = errActual
+	if err != nil && !DebugMode(ctx) {
+		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
+			// Sanitize, because these errors should not be user visible.
+			err = grpc.Errorf(code, "Search.SearchRepos failed with internal error.")
+		}
+	}
+	return
+}
+
 type wrappedUsers struct{}
 
 func (s wrappedUsers) Get(ctx context.Context, param *sourcegraph.UserSpec) (res *sourcegraph.User, err error) {

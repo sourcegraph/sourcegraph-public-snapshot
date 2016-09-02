@@ -753,21 +753,31 @@ func (s *AnnotationsServer) GetDefAtPos(v0 context.Context, v1 *sourcegraph.Anno
 var _ sourcegraph.AnnotationsServer = (*AnnotationsServer)(nil)
 
 type SearchClient struct {
-	Search_ func(ctx context.Context, in *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
+	Search_      func(ctx context.Context, in *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
+	SearchRepos_ func(ctx context.Context, in *sourcegraph.SearchReposOp) (*sourcegraph.SearchReposResultList, error)
 }
 
 func (s *SearchClient) Search(ctx context.Context, in *sourcegraph.SearchOp, opts ...grpc.CallOption) (*sourcegraph.SearchResultsList, error) {
 	return s.Search_(ctx, in)
 }
 
+func (s *SearchClient) SearchRepos(ctx context.Context, in *sourcegraph.SearchReposOp, opts ...grpc.CallOption) (*sourcegraph.SearchReposResultList, error) {
+	return s.SearchRepos_(ctx, in)
+}
+
 var _ sourcegraph.SearchClient = (*SearchClient)(nil)
 
 type SearchServer struct {
-	Search_ func(v0 context.Context, v1 *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
+	Search_      func(v0 context.Context, v1 *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
+	SearchRepos_ func(v0 context.Context, v1 *sourcegraph.SearchReposOp) (*sourcegraph.SearchReposResultList, error)
 }
 
 func (s *SearchServer) Search(v0 context.Context, v1 *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error) {
 	return s.Search_(v0, v1)
+}
+
+func (s *SearchServer) SearchRepos(v0 context.Context, v1 *sourcegraph.SearchReposOp) (*sourcegraph.SearchReposResultList, error) {
+	return s.SearchRepos_(v0, v1)
 }
 
 var _ sourcegraph.SearchServer = (*SearchServer)(nil)

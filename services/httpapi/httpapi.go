@@ -75,6 +75,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.DefExamples).Handler(httptrace.TraceRoute(handler(serveDefExamples)))
 	m.Get(apirouter.Defs).Handler(httptrace.TraceRoute(handler(serveDefs)))
 	m.Get(apirouter.GlobalSearch).Handler(httptrace.TraceRoute(handler(serveGlobalSearch)))
+	m.Get(apirouter.SearchRepos).Handler(httptrace.TraceRoute(handler(serveSearchRepos)))
 	m.Get(apirouter.Repo).Handler(httptrace.TraceRoute(handler(serveRepo)))
 	m.Get(apirouter.RepoResolve).Handler(httptrace.TraceRoute(handler(serveRepoResolve)))
 	m.Get(apirouter.RepoInventory).Handler(httptrace.TraceRoute(handler(serveRepoInventory)))

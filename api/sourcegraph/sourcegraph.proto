@@ -1640,7 +1640,7 @@ message RepoTreeGetOptions {
 	GetFileOptions GetFileOptions = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 
   	// NoSrclibAnns indicates whether or not srclib annotations should be
-  	// excluded in the (optional) returned list of annotations. 
+  	// excluded in the (optional) returned list of annotations.
   	bool NoSrclibAnns = 6;
 }
 
@@ -2025,7 +2025,7 @@ message AnnotationsListOptions {
 	FileRange Range = 2;
 
   	// NoSrclibAnns indicates whether or not srclib annotations should be
-  	// excluded in the returned list of annotations. 
+  	// excluded in the returned list of annotations.
   	bool NoSrclibAnns = 3;
 }
 
@@ -2107,6 +2107,18 @@ message RepoSearchResult {
 	Repo Repo = 1;
 }
 
+// SearchReposOp holds the options for repos search for a given query.
+message SearchReposOp {
+	// Query is the repo search query.
+	string Query = 1;
+}
+
+// SearchReposResultList holds a result of a repo search.
+message SearchReposResultList {
+	// Repos is the list of repo search results.
+	repeated Repo Repos = 1;
+}
+
 // DefSearchResult holds a result of a global def search.
 message DefSearchResult {
 	// Def is the def matching the search query.
@@ -2133,4 +2145,7 @@ message SearchResultsList {
 service Search {
 	// Search returns a list of defs matching the given query string.
 	rpc Search(SearchOp) returns (SearchResultsList);
+
+	// SearchRepos returns a list of repos matching the given query string.
+	rpc SearchRepos(SearchReposOp) returns (SearchReposResultList);
 }

@@ -35,6 +35,7 @@ const (
 	Defs                     = "defs"
 	DeltaFiles               = "delta.files"
 	GlobalSearch             = "global.search"
+	SearchRepos              = "search.repos"
 	Repo                     = "repo"
 	RepoJumpDef              = "repo.jump-def"
 	RepoResolve              = "repo.resolve"
@@ -96,6 +97,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/webhook/callback").Methods("POST").Name(RepoWebhookCallback)
 
 	base.Path("/global-search").Methods("GET").Name(GlobalSearch)
+	base.Path("/search-repos").Methods("GET").Name(SearchRepos)
 
 	base.Path("/internal/appdash/record-span").Methods("POST").Name(InternalAppdashRecordSpan)
 

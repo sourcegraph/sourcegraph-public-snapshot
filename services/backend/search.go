@@ -135,6 +135,14 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 	return results, nil
 }
 
+func (s *search) SearchRepos(ctx context.Context, op *sourcegraph.SearchReposOp) (*sourcegraph.SearchReposResultList, error) {
+	var results = new(sourcegraph.SearchReposResultList)
+
+	// TODO: Implementation. This endpoint is currently not implemented and always returns empty results.
+
+	return results, nil
+}
+
 var delims = regexp.MustCompile(`[/.:\$\(\)\*\%\#\@\[\]\{\}]+`)
 
 // strippedQuery is the user query after it has been stripped of special filter terms

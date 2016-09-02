@@ -2250,6 +2250,41 @@ func (s wrappedSearch) Search(ctx context.Context, v1 *sourcegraph.SearchOp) (re
 	return rv, nil
 }
 
+func (s wrappedSearch) SearchRepos(ctx context.Context, v1 *sourcegraph.SearchReposOp) (returnedResult *sourcegraph.SearchReposResultList, returnedError error) {
+	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
+	span := opentracing.StartSpan("GRPC call: Search.SearchRepos", opentracing.ChildOf(parentSpanCtx))
+	defer span.Finish()
+	ctx = opentracing.ContextWithSpan(ctx, span)
+
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Search.SearchRepos: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.SearchOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Search")
+	}
+
+	rv, err := innerSvc.SearchRepos(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
 type wrappedUsers struct {
 	ctxFunc  ContextFunc
 	services svc.Services
