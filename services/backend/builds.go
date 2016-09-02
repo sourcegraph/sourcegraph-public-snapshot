@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
@@ -66,7 +67,7 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 		return nil, err
 	}
 
-	if feature.Features.NoSrclib && feature.Features.Universe && feature.IsUniverseRepo(repo.URI) {
+	if feature.Features.NoSrclib && universe.Enabled(ctx, repo.URI) {
 		// Do not start builds for universe repos.
 		log15.Info("skipping build for universe repo", "repo", repo.URI)
 		return &sourcegraph.Build{}, nil

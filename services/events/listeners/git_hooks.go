@@ -8,6 +8,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 )
@@ -73,7 +74,7 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 			log15.Error("postPushHook: failed to create build", "err", err)
 			return
 		}
-		if feature.IsUniverseRepo(repoFull.URI) {
+		if universe.Enabled(ctx, repoFull.URI) {
 			// Ask the Language Processor to prepare the workspace.
 			if err := langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
 				// TODO(slimsag): URI is correct only where the repo URI and clone

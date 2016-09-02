@@ -8,7 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
@@ -32,89 +32,88 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var def *sourcegraph.Def
-	if feature.Features.Universe {
+	repo, err := handlerutil.GetRepo(r.Context(), vars)
+	if err != nil {
+		return err
+	}
+	if universe.Enabled(r.Context(), repo.URI) {
 		// TODO(slimsag): The URLs for this are quite ugly when omitting the
 		// defkey:
 		//
 		//  /.api/repos/github.com/slimsag/mux/-/def/-/-/-/-?File=mux.go&Line=57&Character=17
 		//
 		// We should consider ways of making this cleaner.
-		repo, err := handlerutil.GetRepo(r.Context(), vars)
+
+		// TODO(slimsag): This code does not fill out a number of
+		// sourcegraph.Def fields (in fact, it's easier to list the ones
+		// that it does fill out). We should change this endpoint to return
+		// only data that the frontend actually needs. We only return the
+		// ones that the DefInfo page needs here.
+		def = &sourcegraph.Def{}
+		if opt.Doc {
+			return errors.New("httpapi: serveDef: DefGetOptions.Doc not implemented by universe")
+		}
+		if opt.ComputeLineRange == true {
+			return errors.New("httpapi: serveDef: DefGetOptions.ComputeLineRange not implemented by universe")
+		}
+		def.Def = graph.Def{}
+
+		defSpec := routevar.ToDefAtRev(vars)
+
+		// Determine commit ID based on the request.
+		repoRev := routevar.ToRepoRev(vars)
+		res, err := cl.Repos.ResolveRev(r.Context(), &sourcegraph.ReposResolveRevOp{
+			Repo: repo.ID,
+			Rev:  repoRev.Rev,
+		})
 		if err != nil {
 			return err
 		}
-		if useUniverse(r.Context(), repo.URI) {
-			// TODO(slimsag): This code does not fill out a number of
-			// sourcegraph.Def fields (in fact, it's easier to list the ones
-			// that it does fill out). We should change this endpoint to return
-			// only data that the frontend actually needs. We only return the
-			// ones that the DefInfo page needs here.
-			def = &sourcegraph.Def{}
-			if opt.Doc {
-				return errors.New("httpapi: serveDef: DefGetOptions.Doc not implemented by universe")
-			}
-			if opt.ComputeLineRange == true {
-				return errors.New("httpapi: serveDef: DefGetOptions.ComputeLineRange not implemented by universe")
-			}
-			def.Def = graph.Def{}
 
-			defSpec := routevar.ToDefAtRev(vars)
-
-			// Determine commit ID based on the request.
-			repoRev := routevar.ToRepoRev(vars)
-			res, err := cl.Repos.ResolveRev(r.Context(), &sourcegraph.ReposResolveRevOp{
-				Repo: repo.ID,
-				Rev:  repoRev.Rev,
+		if opt.File == "" {
+			lpDefSpec, err := langp.DefaultClient.DefSpecToPosition(r.Context(), &langp.DefSpec{
+				Repo:     repo.URI,
+				Commit:   res.CommitID,
+				UnitType: defSpec.UnitType,
+				Unit:     defSpec.Unit,
+				Path:     defSpec.Path,
 			})
 			if err != nil {
 				return err
 			}
+			opt.File = lpDefSpec.File
+			opt.Line = lpDefSpec.Line
+			opt.Character = lpDefSpec.Character
+		}
 
-			if opt.File == "" {
-				lpDefSpec, err := langp.DefaultClient.DefSpecToPosition(r.Context(), &langp.DefSpec{
+		hover, err := langp.DefaultClient.Hover(r.Context(), &langp.Position{
+			Repo:      repo.URI,
+			Commit:    res.CommitID,
+			File:      opt.File,
+			Line:      opt.Line,
+			Character: opt.Character,
+		})
+		if err != nil {
+			return err
+		}
+
+		def = &sourcegraph.Def{
+			Def: graph.Def{
+				DefKey: graph.DefKey{
 					Repo:     repo.URI,
-					Commit:   res.CommitID,
+					CommitID: res.CommitID,
 					UnitType: defSpec.UnitType,
 					Unit:     defSpec.Unit,
 					Path:     defSpec.Path,
-				})
-				if err != nil {
-					return err
-				}
-				opt.File = lpDefSpec.File
-				opt.Line = lpDefSpec.Line
-				opt.Character = lpDefSpec.Character
-			}
-
-			hover, err := langp.DefaultClient.Hover(r.Context(), &langp.Position{
-				Repo:      repo.URI,
-				Commit:    res.CommitID,
-				File:      opt.File,
-				Line:      opt.Line,
-				Character: opt.Character,
-			})
-			if err != nil {
-				return err
-			}
-
-			def = &sourcegraph.Def{
-				Def: graph.Def{
-					DefKey: graph.DefKey{
-						Repo:     repo.URI,
-						CommitID: res.CommitID,
-						UnitType: defSpec.UnitType,
-						Unit:     defSpec.Unit,
-						Path:     defSpec.Path,
-					},
-					File: opt.File,
 				},
-				FmtStrings: &graph.DefFormatStrings{
-					Name: graph.QualFormatStrings{
-						ScopeQualified: hover.Title,
-						DepQualified:   hover.Title,
-					},
+				File: opt.File,
+			},
+			FmtStrings: &graph.DefFormatStrings{
+				Name: graph.QualFormatStrings{
+					ScopeQualified: hover.Title,
+					DepQualified:   hover.Title,
 				},
-			}
+			},
 		}
 	}
 

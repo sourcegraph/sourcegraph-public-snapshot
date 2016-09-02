@@ -12,6 +12,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -153,7 +154,7 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 	}
 	log15.Debug("cloneRepo: build created", "repo", repo.URI, "branch", repo.DefaultBranch, "commit", res.CommitID)
 
-	if feature.Features.Universe && feature.IsUniverseRepo(repo.URI) {
+	if feature.Features.Universe && universe.Enabled(ctx, repo.URI) {
 		// Ask the Language Processor to prepare the workspace.
 		err := langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
 			// TODO(slimsag): URI is correct only where the repo URI and clone
