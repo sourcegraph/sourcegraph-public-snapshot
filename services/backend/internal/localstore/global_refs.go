@@ -464,19 +464,15 @@ func lpAllRefs(ctx context.Context, repo, commitID string) ([]*graph.Ref, error)
 		// We handle no refs as having to fall back to srclib
 		return nil, nil
 	}
-	lp, err := langpClient()
-	if err != nil {
-		return nil, err
-	}
 
 	// We want to index external and local exported symbols. So we need to
 	// query both ExternalRefs and ExportedSymbols respectively.
 	rr := &langp.RepoRev{Repo: repo, Commit: commitID}
-	external, err := lp.ExternalRefs(ctx, rr)
+	external, err := langp.DefaultClient.ExternalRefs(ctx, rr)
 	if err != nil {
 		return nil, err
 	}
-	exported, err := lp.ExportedSymbols(ctx, rr)
+	exported, err := langp.DefaultClient.ExportedSymbols(ctx, rr)
 	if err != nil {
 		return nil, err
 	}
@@ -495,7 +491,7 @@ func lpAllRefs(ctx context.Context, repo, commitID string) ([]*graph.Ref, error)
 		if d.Repo == "" || d.Unit == "" || d.UnitType == "" || d.Path == "" {
 			return nil, fmt.Errorf("langp contains invalid def: repo=%s commit=%s def=%+v", repo, commitID, d)
 		}
-		refs, err := lp.DefSpecRefs(ctx, d)
+		refs, err := langp.DefaultClient.DefSpecRefs(ctx, d)
 		if err != nil {
 			return nil, err
 		}

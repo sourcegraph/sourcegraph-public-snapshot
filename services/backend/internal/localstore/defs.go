@@ -428,9 +428,9 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.RefreshIndexO
 	defer totalEnd()
 
 	var defs []*graph.Def
-	if lpClient, _ := langpClient(); lpClient != nil && feature.IsUniverseRepo(repo.URI) {
+	if langp.DefaultClient != nil && feature.IsUniverseRepo(repo.URI) {
 		end := obs.start("langp")
-		r, err := lpClient.ExportedSymbols(ctx, &langp.RepoRev{
+		r, err := langp.DefaultClient.ExportedSymbols(ctx, &langp.RepoRev{
 			Repo:   repo.URI,
 			Commit: op.CommitID,
 		})
