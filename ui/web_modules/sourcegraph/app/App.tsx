@@ -13,14 +13,11 @@ import {EventLogger, withEventLoggerContext, withViewEventsLogged} from "sourceg
 import {withFeaturesContext} from "sourcegraph/app/features";
 import {withSiteConfigContext} from "sourcegraph/app/siteConfig";
 import {withUserContext} from "sourcegraph/app/user";
-import {withChannelListener} from "sourcegraph/channel/withChannelListener";
 import {desktopContainer} from "sourcegraph/desktop/DesktopContainer";
 
 import {routes as homeRoutes} from "sourcegraph/home/index";
 import {routes as pageRoutes} from "sourcegraph/page/index";
 import {routes as styleguideRoutes} from "sourcegraph/styleguide/index";
-import {routes as channelRoutes} from "sourcegraph/channel/index";
-import {route as miscRoute} from "sourcegraph/misc/golang";
 import {routes as adminRoutes} from "sourcegraph/admin/routes";
 import {routes as searchRoutes} from "sourcegraph/search/routes";
 import {routes as userRoutes} from "sourcegraph/user/index";
@@ -81,12 +78,10 @@ export const rootRoute: PlainRoute = {
 	path: "/",
 	component: withEventLoggerContext(EventLogger,
 		withViewEventsLogged(
-			withChannelListener(
-				withSiteConfigContext(
-					withUserContext(
-						withFeaturesContext(
-							desktopClient ? desktopContainer(App) : App
-						)
+			withSiteConfigContext(
+				withUserContext(
+					withFeaturesContext(
+						desktopClient ? desktopContainer(App) : App
 					)
 				)
 			)
@@ -100,8 +95,6 @@ export const rootRoute: PlainRoute = {
 			...pageRoutes,
 			...styleguideRoutes,
 			...homeRoutes,
-			...channelRoutes,
-			miscRoute,
 			...adminRoutes,
 			...searchRoutes,
 			...userRoutes,
