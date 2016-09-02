@@ -45,7 +45,7 @@ func (c *listTopDefsCmd) Execute(args []string) error {
 	for _, defResult := range results.DefResults {
 		def := &defResult.Def
 		def.Def.DefKey.CommitID = ""
-		fmt.Printf("https://sourcegraph.com%s %d\n", approuter.Rel.DefKeyToLandURL(def.Def.DefKey).String(), defResult.RefCount)
+		fmt.Printf("https://sourcegraph.com%s %d\n", approuter.Rel.URLToDefLanding(def.Def.DefKey).String(), defResult.RefCount)
 	}
 
 	return nil

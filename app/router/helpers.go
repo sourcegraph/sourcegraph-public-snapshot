@@ -13,6 +13,10 @@ func (r *Router) URLToRepo(repo string) *url.URL {
 	return &url.URL{Path: fmt.Sprintf("/%s", repo)}
 }
 
+func (r *Router) URLToRepoLanding(repo string) *url.URL {
+	return &url.URL{Path: fmt.Sprintf("/%s/-/land", repo)}
+}
+
 func (r *Router) URLToRepoSitemap(repo string) *url.URL {
 	return &url.URL{Path: fmt.Sprintf("/%s/sitemap.xml", repo)}
 }
@@ -46,7 +50,7 @@ func (r *Router) URLToDefKey(def graph.DefKey) *url.URL {
 	)
 }
 
-func (r *Router) DefKeyToLandURL(def graph.DefKey) *url.URL {
+func (r *Router) URLToDefLanding(def graph.DefKey) *url.URL {
 	return &url.URL{
 		Path: fmt.Sprintf("/%s%s/-/land/%s/%s/-/%s",
 			def.Repo, revStr(def.CommitID), def.UnitType, routevar.DefKeyPathToURLPath(def.Unit), routevar.DefKeyPathToURLPath(def.Path)),
