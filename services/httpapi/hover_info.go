@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
@@ -39,7 +38,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		Def   *sourcegraph.Def `json:"def"`
 	}{}
 
-	if feature.IsUniverseRepo(repo.URI) {
+	if useUniverse(r.Context(), repo.URI) {
 		hover, err := langp.DefaultClient.Hover(r.Context(), &langp.Position{
 			Repo:      repo.URI,
 			Commit:    repoRev.CommitID,

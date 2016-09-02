@@ -5,7 +5,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 )
@@ -87,7 +86,7 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 		opt.CommitID = def.CommitID
 	}
 
-	if feature.IsUniverseRepo(repo.URI) {
+	if useUniverse(r.Context(), repo.URI) {
 		refs, err := langp.DefaultClient.DefSpecRefs(r.Context(), &langp.DefSpec{
 			Repo:     tmp.Repo,
 			Commit:   opt.CommitID,

@@ -43,7 +43,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
-		if feature.IsUniverseRepo(repo.URI) {
+		if useUniverse(r.Context(), repo.URI) {
 			// TODO(slimsag): This code does not fill out a number of
 			// sourcegraph.Def fields (in fact, it's easier to list the ones
 			// that it does fill out). We should change this endpoint to return
