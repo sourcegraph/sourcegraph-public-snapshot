@@ -84,10 +84,20 @@ func (c *Config) args() ([]string, error) {
 }
 
 func (s *Server) allEnvConfig() []string {
-	v := s.serverEnvConfig()
-	v = append(v, s.dbEnvConfig()...)
-	v = append(v, s.srclibEnvConfig()...)
-	return v
+	var env []string
+	for _, v := range os.Environ() {
+		if strings.HasPrefix(v, "SGPATH") || strings.HasPrefix(v, "PG") ||
+			strings.HasPrefix(v, "GITHUB_CLIENT_") || strings.HasPrefix(v, "SRCLIBPATH=") ||
+			strings.HasPrefix(v, "SG_SRCLIB_") || strings.HasPrefix(v, "SG_URL") ||
+			strings.HasPrefix(v, "SRC_CLIENT_") {
+			continue
+		}
+		env = append(env, v)
+	}
+	env = append(env, s.serverEnvConfig()...)
+	env = append(env, s.dbEnvConfig()...)
+	env = append(env, s.srclibEnvConfig()...)
+	return env
 }
 
 func (s *Server) srclibEnvConfig() []string {
@@ -393,7 +403,6 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	s.ServerCmd = exec.Command(srccmd.Path)
 	s.ServerCmd.Stdout = os.Stderr
 	s.ServerCmd.Stderr = os.Stderr
-	s.ServerCmd.Env = append(bareEnvConfig(), s.allEnvConfig()...)
 	//cmd.SysProcA ttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGINT} // kill child when parent dies
 
 	return &s, s.Ctx
@@ -405,11 +414,12 @@ func (s *Server) Start() error {
 	if err != nil {
 		return err
 	}
+	s.ServerCmd.Env = s.allEnvConfig()
 	s.ServerCmd.Args = append(s.ServerCmd.Args, sgxArgs...)
 
 	if *verbose {
 		log.Printf("testapp cmd     = %v", s.ServerCmd.Args)
-		log.Printf("testapp cmd.Env = %v", s.allEnvConfig())
+		log.Printf("testapp cmd.Env = %v", s.ServerCmd.Env)
 	}
 
 	if err := s.ServerCmd.Start(); err != nil {
@@ -447,20 +457,6 @@ func (s *Server) Start() error {
 	s.Client, _ = sourcegraph.NewClientFromContext(s.Ctx)
 
 	return nil
-}
-
-func bareEnvConfig() []string {
-	var env []string
-	for _, v := range os.Environ() {
-		if strings.HasPrefix(v, "SGPATH") || strings.HasPrefix(v, "PG") ||
-			strings.HasPrefix(v, "GITHUB_CLIENT_") || strings.HasPrefix(v, "SRCLIBPATH=") ||
-			strings.HasPrefix(v, "SG_SRCLIB_") || strings.HasPrefix(v, "SG_URL") ||
-			strings.HasPrefix(v, "SRC_CLIENT_") {
-			continue
-		}
-		env = append(env, v)
-	}
-	return env
 }
 
 // SrclibSampleToolchain returns the dir and the SRCLIBPATH for the
