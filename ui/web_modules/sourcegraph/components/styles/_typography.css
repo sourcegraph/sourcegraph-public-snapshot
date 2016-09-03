@@ -13,6 +13,8 @@
 /* Color variables */
 @value c_orange, c_blue_text, c_dark_blue, c_cool_gray_5 from colors;
 
+@value code_font_face from vars;
+
 /*
 	 TYPE SCALE
 */
@@ -104,7 +106,7 @@
 /*
 	 FONT FAMILY GROUPS
 */
-code, .code { font-family: Menlo, Consolas, Monaco, monospace; }
+code, .code { font-family: code_font_face; }
 
 html {
 	font-family: 'circular-std', -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'Helvetica', Ubuntu, 'segoe ui', arial, sans-serif;

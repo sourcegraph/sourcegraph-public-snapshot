@@ -19,3 +19,5 @@
 
 @value code_font_size_1: 1rem;
 @value code_font_size_2: 0.9rem;
+
+@value code_font_face: Menlo, Consolas, Monaco, monospace;

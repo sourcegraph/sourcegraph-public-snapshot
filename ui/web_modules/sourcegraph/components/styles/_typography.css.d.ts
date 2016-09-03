@@ -23,6 +23,7 @@ export const c_orange: string;
 export const c_blue_text: string;
 export const c_dark_blue: string;
 export const c_cool_gray_5: string;
+export const code_font_face: string;
 export const f1: string;
 export const f2: string;
 export const f3: string;

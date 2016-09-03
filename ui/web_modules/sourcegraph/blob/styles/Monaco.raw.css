@@ -3,21 +3,6 @@
 	font-weight: bold;
 }
 
-.monaco-editor.vs .cursor {
-	visibility: hidden;
-	display: none;
-}
-
-.monaco-editor .cursors-layer.cursor-line-style > .cursor {
-	width: 0px !important;
-}
-
 .monaco-editor div {
-	box-sizing: content-box;
-}
-
-.GotoDefHighlight {
-	background: lightblue;
-	width: 5px;
-	left: 3px;
+	box-sizing: auto;
 }

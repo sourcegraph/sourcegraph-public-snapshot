@@ -1,6 +1,5 @@
 import * as React from "react";
 import { createLineFromByteFunc } from "sourcegraph/blob/lineFromByte";
-import { EventListener } from "sourcegraph/Component";
 import * as DefActions from "sourcegraph/def/DefActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 
@@ -11,6 +10,7 @@ import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
 import "sourcegraph/blob/styles/Monaco.raw.css";
+import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 
 interface Props {
 	contents: string;
@@ -36,6 +36,7 @@ export class Blob extends React.Component<Props, null> {
 	_hoverProvided: string[];
 	_toDispose: monaco.IDisposable[];
 	_editor: monaco.editor.IStandaloneCodeEditor;
+	_decorationID: string[];
 
 	// Finding the line from byte requires UTF-8 encoding the entire buffer,
 	// because Sourcegraph uses byte offset and Monaco uses (UTF16) character
@@ -47,6 +48,7 @@ export class Blob extends React.Component<Props, null> {
 		this._findInPage = this._findInPage.bind(this);
 		this._hoverProvided = [];
 		this._toDispose = [];
+		this._decorationID = [];
 	}
 
 	componentDidMount(): void {
@@ -66,11 +68,12 @@ export class Blob extends React.Component<Props, null> {
 		this._toDispose.forEach(disposable => {
 			disposable.dispose();
 		});
+		global.document.removeEventListener("keydown", this._findInPage);
 	}
 
 	componentDidUpdate(): void {
 		if (!this._editor) { return; }
-		this._updateEditor(this._editor);
+		this._updateEditor();
 	}
 
 	_loaderReady(): void {
@@ -84,22 +87,28 @@ export class Blob extends React.Component<Props, null> {
 	}
 
 	_monacoReady(): void {
-		const editor = monaco.editor.create(this.refs["container"] as HTMLDivElement, {
+		this._editor = monaco.editor.create(this.refs["container"] as HTMLDivElement, {
 			automaticLayout: true,
 			value: this.props.contents,
 			readOnly: true,
 			scrollBeyondLastLine: false,
 			wrappingColumn: 0,
-			fontFamily: "Menlo, Consolas", // TODO figure out how to import font family from typography
+			fontFamily: code_font_face,
 			fontSize: 13,
+			cursorStyle: "block",
 		});
-		this._editor = editor;
-		this._updateEditor(editor);
-		this._addReferencesAction(editor);
-		this._toDispose.push(editor);
+		this._toDispose.push(this._editor);
+
+		global.document.addEventListener("keydown", this._findInPage);
+		this._listenSelection();
+		this._addMouseDownListener();
+		this._addReferencesAction();
+		this._overrideNavigationKeys();
+
+		this._updateEditor();
 	}
 
-	_updateEditor(editor: monaco.editor.IStandaloneCodeEditor): void {
+	_updateEditor(): void {
 		const repoSpec = {
 			repo: this.props.repo,
 			file: this.props.path,
@@ -108,29 +117,30 @@ export class Blob extends React.Component<Props, null> {
 		const uri = RepoSpecToURI(repoSpec);
 
 		let model = monaco.editor.getModel(uri);
-		if (!model) {
-			model = monaco.editor.createModel(this.props.contents, "", uri);
-			this._toDispose.push(model);
+		if (model) {
+			// If the model doesn't change, we don't need to update the editor.
+			return;
 		}
-		editor.setModel(model);
+		model = monaco.editor.createModel(this.props.contents, "", uri);
+		this._toDispose.push(model);
+		this._editor.setModel(model);
 
 		const lang = model.getMode().getId();
 		if (this._hoverProvided.indexOf(lang) === -1) {
 			const token = monaco.languages.registerHoverProvider(lang, HoverProvider);
 			this._toDispose.push(token);
+			this._hoverProvided.push(lang);
 		}
 
 		this._lineFromByte = createLineFromByteFunc(this.props.contents);
-		this._scroll(editor);
-		this._highlight(editor);
-		this._addMouseDownListener(editor);
+		this._scroll();
 	}
 
-	_findInPage(e: Event): void {
+	_findInPage(e: KeyboardEvent): void {
 		const mac = navigator.userAgent.indexOf("Macintosh") >= 0;
-		const ctrl = mac ? (e as KeyboardEvent).metaKey : (e as KeyboardEvent).ctrlKey;
+		const ctrl = mac ? e.metaKey : e.ctrlKey;
 		const FKey = 70;
-		if ((e as KeyboardEvent).keyCode === FKey && ctrl) {
+		if (e.keyCode === FKey && ctrl) {
 			if (this._editor) {
 				e.preventDefault();
 				(document.getElementsByClassName("inputarea")[0] as any).focus();
@@ -139,8 +149,8 @@ export class Blob extends React.Component<Props, null> {
 		}
 	}
 
-	_addReferencesAction(editor: monaco.editor.IStandaloneCodeEditor): void {
-		const palette = editor.getAction("editor.action.quickCommand");
+	_addReferencesAction(): void {
+		const palette = this._editor.getAction("editor.action.quickCommand");
 		if (palette) {
 			(palette as any)._shouldShowInContextMenu = false;
 			palette.dispose();
@@ -154,11 +164,11 @@ export class Blob extends React.Component<Props, null> {
 				tokensAtPosition: ["identifier"],
 			},
 		};
-		editor.addAction(action);
+		this._editor.addAction(action);
 	}
 
 	_viewAllReferences(editor: monaco.editor.ICommonCodeEditor): monaco.Promise<void> {
-		const pos = (editor as any).getPosition();
+		const pos = editor.getPosition();
 		const model = editor.getModel();
 
 		return new monaco.Promise<void>(() => {
@@ -169,8 +179,8 @@ export class Blob extends React.Component<Props, null> {
 		});
 	}
 
-	_addMouseDownListener(editor: monaco.editor.IStandaloneCodeEditor): void {
-		editor.onMouseDown(({target, event}) => {
+	_addMouseDownListener(): void {
+		this._editor.onMouseDown(({target, event}) => {
 			if (event.rightButton) {
 				return;
 			}
@@ -188,33 +198,72 @@ export class Blob extends React.Component<Props, null> {
 		});
 	}
 
-	_scroll(editor: monaco.editor.IStandaloneCodeEditor): void {
-		if (this.props.startByte) {
-			const startLine = this._lineFromByte(this.props.startByte);
-			editor.revealLineInCenter(startLine);
+	_scroll(): void {
+		let startLine = -1;
+		const matches = /#(\d+)-(\d+)/.exec(global.window.location.hash);
+		if (matches) {
+			const start = parseInt(matches[1], 10);
+			const end = parseInt(matches[2], 10);
+			this._highlightLines(start, end);
+			startLine = Math.min(start, end);
+		} else if (this.props.startByte) {
+			startLine = this._lineFromByte(this.props.startByte) - 1;
 		}
+		if (startLine === -1) {
+			return;
+		}
+		const linesInViewPort = this._editor.getDomNode().offsetHeight / 20;
+		const middleLine = Math.floor(startLine + (linesInViewPort / 4));
+		this._editor.revealLineInCenter(middleLine);
 	}
 
-	_highlight(editor: monaco.editor.IStandaloneCodeEditor): void {
-		if (this.props.startByte && this.props.endByte) {
-			const startLine = this._lineFromByte(this.props.startByte);
-			const endLine = this._lineFromByte(this.props.endByte);
+	_overrideNavigationKeys(): void {
+		// Monaco overrides the back and forward history commands, so we
+		// implement our own here. AFAICT, there isn't a good way
+		// to unbind a default keybinding.
+		 /* tslint:disable */
+		 // Disable tslint because it doesn't like bitwise operators.
+		this._editor.addCommand(monaco.KeyCode.LeftArrow | monaco.KeyMod.CtrlCmd, () => {
+			global.window.history.back();
+		}, "");
+		this._editor.addCommand(monaco.KeyCode.RightArrow | monaco.KeyMod.CtrlCmd, () => {
+			global.window.history.forward();
+		}, "");
+		 /* tslint:enable */
+		this._editor.addCommand(monaco.KeyCode.Home, () => {
+			this._editor.revealLine(1);
+		}, "");
+		this._editor.addCommand(monaco.KeyCode.End, () => {
+			this._editor.revealLine(
+				this._editor.getModel().getLineCount()
+			);
+		}, "");
+	}
 
-			editor.deltaDecorations([], [{
-				range: new monaco.Range(startLine, 1, endLine, 1),
-				options: {
-					isWholeLine: true,
-					linesDecorationsClassName: "GotoDefHighlight",
-				},
-			}]);
-		}
+	_listenSelection(): void {
+		this._editor.onDidChangeCursorSelection((e) => {
+			const sel = e.viewSelection;
+			if (sel.selectionStartLineNumber === sel.positionLineNumber && sel.selectionStartColumn === sel.positionColumn) {
+				global.window.location.hash = "";
+			} else {
+				const hash = `${sel.selectionStartLineNumber}-${sel.positionLineNumber}`;
+				global.window.location.hash = hash;
+			}
+		});
+	}
+
+	_highlightLines(startLine: number, endLine: number): void {
+		const range = new monaco.Range(
+			startLine,
+			this._editor.getModel().getLineMinColumn(startLine),
+			endLine,
+			this._editor.getModel().getLineMaxColumn(endLine),
+		);
+		this._editor.setSelection(range);
 	}
 
 	render(): JSX.Element {
-		return <div style={{ display: "flex", flex: "auto", width: "100%" }}>
-			<div ref="container" style={{ width: "100%" }} />
-			<EventListener target={global.document} event="keydown" callback={this._findInPage} />
-		</div>;
+		return <div ref="container" style={{ display: "flex", flex: "auto", width: "100%" }} />;
 	}
 }
 
@@ -226,9 +275,17 @@ const fetch = singleflightFetch(defaultFetch);
 class HoverProvider {
 	static provideHover(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<monaco.languages.Hover> {
 		return defAtPosition(model, position).then((def: Def) => {
+			if (!def) {
+				throw new Error("def not found");
+			}
 			const word = model.getWordAtPosition(position);
-			const title = `${def.Name} ${def.FmtStrings.Type.Unqualified}`;
-			const docs = def.Docs ? def.Docs[0].Data : "";
+			const title = `**${def.Name}** ${def.FmtStrings.Type.Unqualified}`;
+			const serverDoc = def.Docs ? def.Docs[0].Data : "";
+			let docs = serverDoc.replace(/\s+/g, " ");
+			if (docs.length > 400) {
+				docs = docs.substring(0, 380);
+				docs = docs + "...";
+			}
 			return {
 				range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
 				contents: [title, docs],

@@ -61,11 +61,13 @@ export class BlobMain extends Container<Props, State> {
 	componentDidMount(): void {
 		super.componentDidMount();
 		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
+		document.body.style.overflowY = "hidden";
 	}
 
 	componentWillUnmount(): void {
 		super.componentWillUnmount();
 		Dispatcher.Stores.unregister(this._dispatcherToken);
+		document.body.style.overflowY = "auto";
 	}
 
 	reconcileState(state: State, props: Props): void {

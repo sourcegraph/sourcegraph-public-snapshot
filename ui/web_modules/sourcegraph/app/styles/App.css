@@ -14,7 +14,7 @@ the entire viewport height.
 	display: flex;
 	flex-direction: column;
 	width: 100%;
-	min-height: 100vh;
+	height: 100vh;
 }
 .main_content {
 	display: flex;
