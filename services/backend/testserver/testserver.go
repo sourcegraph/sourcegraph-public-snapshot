@@ -70,10 +70,11 @@ type Server struct {
 }
 
 type Config struct {
-	Flags      []interface{} // flags to `src`
-	Endpoint   cli.EndpointOpts
-	Serve      cli.ServeCmd
-	ServeFlags []interface{} // flags to `src serve`
+	Flags          []interface{} // flags to `src`
+	Endpoint       cli.EndpointOpts
+	Serve          cli.ServeCmd
+	ServeFlags     []interface{} // flags to `src serve`
+	ExtraEnvConfig []string      // Optional additional environment variables.
 }
 
 func (c *Config) args() ([]string, error) {
@@ -97,6 +98,7 @@ func (s *Server) allEnvConfig() []string {
 	env = append(env, s.serverEnvConfig()...)
 	env = append(env, s.dbEnvConfig()...)
 	env = append(env, s.srclibEnvConfig()...)
+	env = append(env, s.Config.ExtraEnvConfig...)
 	return env
 }
 
