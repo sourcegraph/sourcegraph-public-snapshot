@@ -18,6 +18,7 @@ const (
 	routeRepoLanding = "repo.landing"
 	routeTree        = "tree"
 
+	routeJobs     = "jobs"
 	routeTopLevel = "toplevel" // non-repo top-level routes
 )
 
@@ -56,6 +57,7 @@ func newRouter() *mux.Router {
 		"tools/browser",
 		"tools",
 	}
+	m.Path("/{Path:(?:jobs|careers)}").Methods("GET").Name(routeJobs)
 	m.Path("/{Path:(?:" + strings.Join(topLevel, "|") + ")}").Methods("GET").Name(routeTopLevel)
 
 	// Repo

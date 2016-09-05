@@ -20,6 +20,9 @@ import (
 )
 
 func init() {
+	router.Get(routeJobs).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "https://boards.greenhouse.io/sourcegraph", http.StatusFound)
+	}))
 	router.Get(routeBlob).Handler(httptrace.TraceRoute(handler(serveBlob)))
 	router.Get(routeBuild).Handler(httptrace.TraceRoute(handler(serveBuild)))
 	router.Get(routeDef).Handler(httptrace.TraceRoute(handler(serveDef)))

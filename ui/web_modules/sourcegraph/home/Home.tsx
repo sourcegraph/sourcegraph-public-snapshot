@@ -61,6 +61,10 @@ export class Home extends Container<HomeProps, HomeState> {
 								<Link className={styles.link} to="/pricing">Pricing</Link>
 							</p>
 
+							<p className={base.mr3} style={{margin: "10px"}}>
+								<a className={styles.link} href="/jobs">Jobs</a>
+							</p>
+
 							{!(this.context as any).signedIn &&
 								<LocationStateToggleLink className={styles.link} href="/login" modalName="login" location={this.props.location} style={{margin: "10px"}}>
 									Login

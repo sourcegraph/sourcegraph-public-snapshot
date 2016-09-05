@@ -61,7 +61,7 @@ contact us and receive preapproval. See
 [CONTRIBUTING.md](./CONTRIBUTING.md) for more information.
 
 (Want to contribute full-time?
-[Join our team](https://boards.greenhouse.io/sourcegraph) and work
+[Join our team](https://sourcegraph.com/jobs) and work
 with others who share your passion for software development.)
 
 
