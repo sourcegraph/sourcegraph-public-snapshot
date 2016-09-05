@@ -1,7 +1,7 @@
 import expect from "expect.js";
+import {Def, Ref} from "sourcegraph/api";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {DefBackend} from "sourcegraph/def/DefBackend";
-import {Def, Ref} from "sourcegraph/def/index";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {immediateSyncPromise} from "sourcegraph/util/testutil/immediateSyncPromise";
@@ -28,7 +28,7 @@ describe("DefBackend", () => {
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
 				DefBackend.__onDispatch(new DefActions.WantDef("r", "v", "d"));
-			})).to.eql([new DefActions.DefFetched("r", "v", "d", {Error: true} as Def)]);
+			})).to.eql([new DefActions.DefFetched("r", "v", "d", {Error: true} as any as Def)]);
 		});
 	});
 

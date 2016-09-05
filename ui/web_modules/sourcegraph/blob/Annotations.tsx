@@ -1,15 +1,7 @@
 // tslint:disable: typedef ordered-imports
+import {Annotation} from "sourcegraph/api";
 import * as s from "sourcegraph/blob/styles/Blob.css";
 import * as utf8 from "utf8";
-
-export interface Annotation {
-	StartByte: number;
-	EndByte: number;
-	URL?: string;
-	URLs?: string[];
-	Class?: string;
-	WantInner?: number;
-};
 
 // getAnnLinkStyle returns the classnames (https://www.npmjs.com/package/classnames) 
 // styles object for an annotation if it should have a jump-to-def link. Otherwise, 

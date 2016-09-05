@@ -1,6 +1,7 @@
+import {AuthInfo, EmailAddr, User} from "sourcegraph/api";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Store} from "sourcegraph/Store";
-import {AuthInfo, EmailAddr, ExternalToken, Settings, User} from "sourcegraph/user/index";
+import {ExternalToken, Settings} from "sourcegraph/user/index";
 import * as UserActions from "sourcegraph/user/UserActions";
 import {deepFreeze, mergeAndDeepFreeze} from "sourcegraph/util/deepFreeze";
 

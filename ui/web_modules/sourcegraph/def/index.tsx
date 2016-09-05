@@ -1,48 +1,6 @@
+import {Def} from "sourcegraph/api";
 import {abs, getRouteParams} from "sourcegraph/app/routePatterns";
 import {repoParam, repoPath, repoRev} from "sourcegraph/repo/index";
-
-export interface Options {};
-
-export interface Repo {
-	URI: string;
-	Description: string;
-};
-
-export interface Def {
-	Repo: string;
-	UnitType: string;
-	Unit: string;
-	Path: string;
-	FmtStrings: any;
-	Docs: any;
-	Kind: string;
-	File: string;
-	Error: any;
-	Name: string;
-};
-
-export interface DefKey {
-	Repo: string;
-	CommitID: string;
-	UnitType: string;
-	Unit: string;
-	Path: string; // def path, not file path
-};
-
-export interface AuthorshipInfo {
-	LastCommitDate: string;
-	LastCommitID: string;
-};
-export interface DefAuthorship extends AuthorshipInfo {
-	Bytes: number;
-	BytesProportion: number;
-};
-export interface DefAuthor extends DefAuthorship {
-	Email: string;
-	AvatarURL: string;
-};
-
-export interface Ref {};
 
 export function routeParams(url: string): {repo: string, rev: string | null, def: string, err: string | null} {
 	let v = getRouteParams(abs.def, url);
@@ -74,7 +32,7 @@ export function fastParseDefPath(url: string): string | null {
 }
 
 export function defPath(def: Def): string {
-	return `${def.UnitType}/${maybeTransformUnit(def.Unit)}/-/${encodeDefPath(def.Path)}`;
+	return `${def.UnitType}/${def.Unit && maybeTransformUnit(def.Unit)}/-/${encodeDefPath(def.Path)}`;
 }
 
 // maybeTransformUnit handles if def.Unit is ".". URLs with a

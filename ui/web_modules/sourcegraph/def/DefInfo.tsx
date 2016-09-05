@@ -234,7 +234,7 @@ export class DefInfo extends Container<Props, State> {
 		return {
 			contents: contents,
 			anns: lineAnns,
-			startByte: anns.LineStartBytes[startLine],
+			startByte: anns.LineStartBytes && anns.LineStartBytes[startLine],
 		};
 	}
 
@@ -279,7 +279,7 @@ export class DefInfo extends Container<Props, State> {
 												commitID={defCommitID}
 												path={defObj.Path}
 												showLineNumber={false}
-												startByte={defLine.startByte}
+												startByte={defLine.startByte || 0}
 												contents={defLine.contents}
 												textSize="deftitle"
 												lineContentClassName={blobStyles.defTitleLineContent}

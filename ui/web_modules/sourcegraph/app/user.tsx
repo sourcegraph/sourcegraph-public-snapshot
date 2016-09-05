@@ -7,7 +7,7 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 import {UserStore} from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend";
 import * as UserActions from "sourcegraph/user/UserActions";
-import {User} from "sourcegraph/user/index";
+import {User} from "sourcegraph/api";
 
 type childContext = {user: User | null, authInfo: any, signedIn: boolean, githubToken: any};
 

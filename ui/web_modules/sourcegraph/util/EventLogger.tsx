@@ -1,13 +1,13 @@
 import {Location} from "history";
 import * as React from "react";
 import {Route} from "react-router";
+import {AuthInfo, User} from "sourcegraph/api";
 import {context} from "sourcegraph/app/context";
 import {getRouteParams, getRoutePattern, getViewName} from "sourcegraph/app/routePatterns";
 import {SiteConfig} from "sourcegraph/app/siteConfig";
 import * as DefActions from "sourcegraph/def/DefActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
-import {AuthInfo, User} from "sourcegraph/user/index";
 import * as UserActions from "sourcegraph/user/UserActions";
 import {UserStore} from "sourcegraph/user/UserStore";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -145,7 +145,7 @@ class EventLoggerClass {
 		const user = UserStore.activeUser();
 		const authInfo = UserStore.activeAuthInfo();
 		const emails = user && user.UID ? (UserStore.emails[user.UID] || null) : null;
-		const primaryEmail = emails ? emails.filter(e => e.Primary).map(e => e.Email)[0] : null;
+		const primaryEmail = (emails && emails.filter(e => e.Primary).map(e => e.Email)[0]) || null;
 
 		this._updateUserForAmplitudeCookies();
 

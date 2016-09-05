@@ -4,7 +4,7 @@ import {urlTo} from "sourcegraph/util/urlTo";
 import {urlToTree} from "sourcegraph/tree/routes";
 import {rel} from "sourcegraph/app/routePatterns";
 import {defPath} from "sourcegraph/def/index";
-import {Def} from "sourcegraph/def/index";
+import {Def} from "sourcegraph/api";
 import {DefInfo} from "sourcegraph/def/DefInfo";
 import {DefNavContext} from "sourcegraph/def/DefNavContext";
 import {BlobLoader} from "sourcegraph/blob/BlobLoader";
@@ -60,7 +60,7 @@ export function urlToDef(def: Def, rev?: string | null): string {
 		//
 		// TODO(sqs): Improve handling of this case.
 		let file = def.File === "." ? "" : def.File;
-		return urlToTree(def.Repo, rev || null, file);
+		return urlToTree(def.Repo || "", rev || null, file);
 	}
 	return urlTo("def", defParams(def, rev));
 }
@@ -74,7 +74,7 @@ export function urlToDefInfo(def: Def, rev?: string | null): string {
 		//
 		// TODO(sqs): Improve handling of this case.
 		let file = def.File === "." ? "" : def.File;
-		return urlToTree(def.Repo, rev || null, file);
+		return urlToTree(def.Repo || "", rev || null, file);
 	}
 	return urlTo("defInfo", defParams(def, rev));
 }

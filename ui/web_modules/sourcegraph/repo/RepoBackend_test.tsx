@@ -1,5 +1,5 @@
 import expect from "expect.js";
-
+import {Commit} from "sourcegraph/api";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {RepoBackend} from "sourcegraph/repo/RepoBackend";
@@ -42,6 +42,6 @@ describe("RepoBackend", () => {
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
 			RepoBackend.__onDispatch(new RepoActions.WantCommit("r", "v"));
-		})).to.eql([new RepoActions.FetchedCommit("r", "v", {ID: "c"})]);
+		})).to.eql([new RepoActions.FetchedCommit("r", "v", {ID: "c"} as any as Commit)]);
 	});
 });

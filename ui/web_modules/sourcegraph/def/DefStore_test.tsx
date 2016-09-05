@@ -1,7 +1,7 @@
 import expect from "expect.js";
+import {Def, Ref} from "sourcegraph/api";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {DefStore} from "sourcegraph/def/DefStore";
-import {Def} from "sourcegraph/def/index";
 
 describe("DefStore", () => {
 	it("should handle DefFetched", () => {
@@ -31,7 +31,7 @@ describe("DefStore", () => {
 	});
 
 	it("should handle RefsFetched", () => {
-		DefStore.directDispatch(new DefActions.RefsFetched("r", "v", "d", "rr", "rf", ["someData"]));
-		expect(DefStore.refs.get("r", "v", "d", "rr", "rf")).to.eql(["someData"]);
+		DefStore.directDispatch(new DefActions.RefsFetched("r", "v", "d", "rr", "rf", [{DefPath: "somePath"} as Ref]));
+		expect(DefStore.refs.get("r", "v", "d", "rr", "rf")).to.eql([{DefPath: "somePath"}]);
 	});
 });

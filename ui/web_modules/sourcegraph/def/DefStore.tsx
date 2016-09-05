@@ -1,11 +1,12 @@
 // tslint:disable: typedef ordered-imports
 
+import {Def} from "sourcegraph/api";
 import {Store} from "sourcegraph/Store";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {deepFreeze} from "sourcegraph/util/deepFreeze";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {defPath} from "sourcegraph/def/index";
-import {Def, ExamplesKey, RefLocationsKey} from "sourcegraph/def/index";
+import {ExamplesKey, RefLocationsKey} from "sourcegraph/def/index";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import "sourcegraph/def/DefBackend";
 import {fastParseDefPath} from "sourcegraph/def/index";

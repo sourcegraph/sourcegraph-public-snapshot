@@ -1,4 +1,4 @@
-import {Def} from "sourcegraph/def/index";
+import {Def} from "sourcegraph/api";
 
 export type Action =
 	WantResults |

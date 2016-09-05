@@ -1,6 +1,6 @@
 // tslint:disable: typedef ordered-imports
 
-import {Annotation} from "sourcegraph/blob/Annotations";
+import {Annotation} from "sourcegraph/api";
 import {sortAnns} from "sourcegraph/blob/Annotations";
 import * as cloneDeep from "lodash/cloneDeep";
 

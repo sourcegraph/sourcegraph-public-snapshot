@@ -1,4 +1,4 @@
-import {Branch, Tag} from "sourcegraph/repo/vcs";
+import {Branch, Commit, Repo, RepoList, RepoResolution, Tag} from "sourcegraph/api";
 
 export type Action =
 	WantRepo |
@@ -31,8 +31,6 @@ export class WantRepo {
 	}
 }
 
-export interface Repo {}; // incomplete
-
 export class FetchedRepo {
 	repo: string;
 	repoObj: Repo;
@@ -51,13 +49,11 @@ export class WantRepos {
 	}
 }
 
-export interface Repos {}; // incomplete
-
 export class ReposFetched {
 	querystring: string;
-	data: Repos;
+	data: RepoList;
 
-	constructor(querystring: string, data: Repos) {
+	constructor(querystring: string, data: RepoList) {
 		this.querystring = querystring;
 		this.data = data;
 	}
@@ -96,8 +92,6 @@ export class WantCommit {
 		this.rev = rev;
 	}
 }
-
-export interface Commit {}; // incomplete
 
 export class FetchedCommit {
 	repo: string;
@@ -153,13 +147,11 @@ export class WantResolveRepo {
 	}
 }
 
-export interface Resolution {}; // incomplete
-
 export class RepoResolved {
 	repo: string;
-	resolution: Resolution;
+	resolution: RepoResolution;
 
-	constructor(repo: string, resolution: Resolution) {
+	constructor(repo: string, resolution: RepoResolution) {
 		this.repo = repo;
 		this.resolution = resolution;
 	}

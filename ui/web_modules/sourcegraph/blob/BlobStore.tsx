@@ -1,3 +1,4 @@
+import {AnnotationList, TreeEntry} from "sourcegraph/api";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Store} from "sourcegraph/Store";
@@ -16,8 +17,8 @@ export function keyForAnns(repo: string, commitID: string, path: string, startBy
 }
 
 class BlobStoreClass extends Store<any> {
-	files: {[key: string]: BlobActions.File};
-	annotations: {[key: string]: BlobActions.Annotations};
+	files: {[key: string]: TreeEntry};
+	annotations: {[key: string]: AnnotationList};
 
 	reset(): void {
 		this.files = deepFreeze({});

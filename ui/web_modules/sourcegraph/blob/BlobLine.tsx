@@ -16,7 +16,7 @@ import {fastURLToRepoDef} from "sourcegraph/def/routes";
 import * as s from "sourcegraph/blob/styles/Blob.css";
 import "sourcegraph/components/styles/code.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {Def} from "sourcegraph/def/index";
+import {Def} from "sourcegraph/api";
 
 // simpleContentsString converts [string...] (like ["a", "b", "c"]) to
 // a string by joining the elements (to produce "abc", for example).

@@ -1,6 +1,7 @@
 import expect from "expect.js";
+import {AuthInfo, EmailAddr, User} from "sourcegraph/api";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {AuthInfo, EmailAddr, ExternalToken, User} from "sourcegraph/user/index";
+import {ExternalToken} from "sourcegraph/user/index";
 import * as UserActions from "sourcegraph/user/UserActions";
 import {UserBackend} from "sourcegraph/user/UserBackend";
 import {immediateSyncPromise} from "sourcegraph/util/testutil/immediateSyncPromise";
@@ -33,10 +34,10 @@ describe("UserBackend", () => {
 			expect(Dispatcher.Stores.catchDispatched(() => {
 				UserBackend.__onDispatch(new UserActions.WantAuthInfo("t"));
 			})).to.eql([
-				new UserActions.FetchedUser(sampleUser.UID, sampleUser),
+				new UserActions.FetchedUser(sampleUser.UID as number, sampleUser),
 				new UserActions.FetchedAuthInfo("t", sampleAuthInfo),
-				new UserActions.FetchedEmails(sampleUser.UID, sampleEmails),
-				new UserActions.FetchedGitHubToken(sampleUser.UID, sampleToken),
+				new UserActions.FetchedEmails(sampleUser.UID as number, sampleEmails),
+				new UserActions.FetchedGitHubToken(sampleUser.UID as number, sampleToken),
 			]);
 		});
 		it("with authInfo unexpected error", () => {

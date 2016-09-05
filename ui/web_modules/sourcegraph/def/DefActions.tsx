@@ -1,4 +1,5 @@
-import {Def, ExamplesKey, Ref, RefLocationsKey} from "sourcegraph/def/index";
+import {Def, Ref} from "sourcegraph/api";
+import {ExamplesKey, RefLocationsKey} from "sourcegraph/def";
 
 export type Action =
 	WantDef |

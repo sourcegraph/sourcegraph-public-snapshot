@@ -1,7 +1,7 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import {Def} from "sourcegraph/def/index";
+import {Def} from "sourcegraph/api";
 
 type Qual = "DepQualified" | "ScopeQualified";
 

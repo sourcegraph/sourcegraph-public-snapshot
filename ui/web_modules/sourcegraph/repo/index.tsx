@@ -1,13 +1,3 @@
-export interface RepoRev {
-	Repo: string;
-	Rev: string | null;
-};
-
-export interface RepoRevSpec {
-	Repo: number;
-	CommitID: string | null;
-};
-
 // repoPath returns the path portion of a repo route var match.
 export function repoPath(repoRevRouteVar: string): string {
 	const at = repoRevRouteVar.indexOf("@");

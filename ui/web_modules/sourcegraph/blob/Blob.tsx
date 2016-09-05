@@ -3,7 +3,7 @@ import { createLineFromByteFunc } from "sourcegraph/blob/lineFromByte";
 import * as DefActions from "sourcegraph/def/DefActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 
-import { Def } from "sourcegraph/def";
+import { Def } from "sourcegraph/api";
 import { urlToDefInfo } from "sourcegraph/def/routes";
 
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";

@@ -25,7 +25,7 @@ describe("withResolvedRepoRev", () => {
 	});
 
 	it("should render if the repo does not exist", () => {
-		RepoStore.directDispatch(new RepoActions.FetchedRepo("r", {Error: true}));
+		RepoStore.directDispatch(new RepoActions.FetchedRepo("r", {Error: true} as any));
 		render(<C params={{splat: "r"}}  location={{} as Location}/>);
 	});
 

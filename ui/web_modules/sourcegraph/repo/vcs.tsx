@@ -1,26 +1,4 @@
-export interface Signature {
-	Name: string;
-	Email: string;
-	Date: string;
-};
-
-export interface Commit {
-	Author: Signature;
-	Committer: Signature;
-	Message: string;
-	Parents?: string[];
-};
-
-export interface Branch {
-	Name: string;
-	Head: string;
-	Commit?: Commit;
-};
-
-export interface Tag {
-	Name: string;
-	CommitID: string;
-};
+import {Branch, Tag} from "sourcegraph/api";
 
 export function sortBranches(branches: Branch[]): Branch[] {
 	if (!branches) { return branches; }

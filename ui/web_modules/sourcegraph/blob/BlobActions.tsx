@@ -1,3 +1,5 @@
+import {AnnotationList, TreeEntry} from "sourcegraph/api";
+
 export type Action =
 	WantFile |
 	FileFetched |
@@ -19,18 +21,14 @@ export class WantFile {
 	}
 }
 
-export interface File {
-	ContentsString: string;
-}
-
 export class FileFetched {
 	repo: string;
 	commitID: string | null;
 	path: string;
-	file: File;
+	file: TreeEntry;
 	eventName: string;
 
-	constructor(repo: string, commitID: string | null, path: string, file: File) {
+	constructor(repo: string, commitID: string | null, path: string, file: TreeEntry) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.path = path;
@@ -54,20 +52,15 @@ export class WantAnnotations {
 	}
 }
 
-export interface Annotations {
-	LineStartBytes: any;
-	Annotations: any;
-}
-
 export class AnnotationsFetched {
 	repo: string;
 	commitID: string;
 	path: string;
 	startByte: number | null;
 	endByte: number | null;
-	annotations: Annotations;
+	annotations: AnnotationList;
 
-	constructor(repo: string, commitID: string, path: string, startByte: number | null, endByte: number | null, annotations: Annotations) {
+	constructor(repo: string, commitID: string, path: string, startByte: number | null, endByte: number | null, annotations: AnnotationList) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.path = path;
