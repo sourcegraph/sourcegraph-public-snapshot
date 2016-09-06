@@ -13,6 +13,7 @@ export const action_link: string;
 export const link: string;
 export const video: string;
 export const video_overlay: string;
+export const lang_icon: string;
 export const full_sm: string;
 export const left_sm: string;
 export const wrap_sm: string;
