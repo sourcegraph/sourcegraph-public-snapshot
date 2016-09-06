@@ -45,12 +45,12 @@ export class Home extends Container<HomeProps, HomeState> {
 			<div style={{width: "100%", marginRight: "auto", marginLeft: "auto"}}>
 				{/* section showing icon and links: about, pricing, login, signup */}
 				<div style={{paddingTop: "25px", paddingBottom: "110px", backgroundColor: "rgba(119, 147, 174, 0.1)"}}>
-					<div style={{display: "flex", flowDirection: "row", alignItems: "center", maxWidth: "960px"}} className={classNames(base.mt2, base.mb4, base.center, base.ph3)}>
+					<div style={{display: "flex", flexDirection: "row", alignItems: "center", maxWidth: "960px"}} className={classNames(base.mt2, base.mb4, base.center, base.ph3)}>
 						<Logo width="32"/>
 
 						<div className={typography.tr} style={{flex: "1"}} />
 
-						<div style={{display: "flex", flowDirection: "row", justifyContent: "space-between", alignItems: "center",
+						<div style={{display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center",
 									flexWrap: "wrap"}}>
 
 							<p className={base.mr3} style={{margin: "10px"}}>
@@ -81,7 +81,7 @@ export class Home extends Container<HomeProps, HomeState> {
 					</div>
 
 					{/* section showing welcome message and examples */}
-					<div style={{display: "flex", flowDirection: "row", maxWidth: "960px", flexWrap: "wrap", justifyContent: "space-around", alignItems: "center"}} className={classNames(base.center, base.ph3)}>
+					<div style={{display: "flex", flexDirection: "row", maxWidth: "960px", flexWrap: "wrap", justifyContent: "space-around", alignItems: "center"}} className={classNames(base.center, base.ph3)}>
 
 						{/* column with welcome message, short description, and sign up button */}
 						<div style={{maxWidth: "400px", flex: "1 1 400px"}}>
@@ -126,7 +126,7 @@ export class Home extends Container<HomeProps, HomeState> {
 					</div>
 
 					{/* section showing feature descriptions */}
-					<div style={{display: "flex", flowDirection: "row", justifyContent: "space-around",
+					<div style={{display: "flex", flexDirection: "row", justifyContent: "space-around",
 								marginRight: "auto", marginLeft: "auto", flexWrap: "wrap"}}>
 
 						{/* column describing examples */}
@@ -173,9 +173,12 @@ export class Home extends Container<HomeProps, HomeState> {
 				</div>
 
 				{/* section showing language icons */}
-				<div style={{backgroundColor: "rgba(119, 147, 174, 0.1)", display: "flex", flowDirection: "row", justifyContent: "center",
-							padding: "10px"}}>
-					<div style={{maxWidth: "400px", display: "flex", flowDirection: "row", flexGrow: 1, justifyContent: "space-between"}}>
+				<div style={{backgroundColor: "rgba(119, 147, 174, 0.1)", display: "flex", flexDirection: "column", justifyContent: "center",
+							alignItems: "center", padding: "10px"}}>
+					<Heading level="7">
+						Growing language support
+					</Heading>
+					<div style={{maxWidth: "400px", display: "flex", flexDirection: "row", flexGrow: 1, justifyContent: "space-between"}}>
 						<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/go2.svg`} />
 						<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/java.svg`} />
 						<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/js.svg`} />
@@ -192,7 +195,7 @@ export class Home extends Container<HomeProps, HomeState> {
 						boxShadow: "0 2px 6px 0 rgba(0, 0, 0, 0.11)", maxWidth: "860px"}}>
 						{/* section showing clients */}
 						<div style={{maxWidth: "760px", padding: "50px 10px"}} className={base.center}>
-						<div style={{display: "flex", flowDirection: "row", flexWrap: "wrap"}}>
+						<div style={{display: "flex", flexDirection: "row", flexWrap: "wrap"}}>
 							<Heading align="left" level="4" underline="purple" style={{flex: "0 0 240px"}} className="full_sm">
 								Used by developers everywhere
 							</Heading>
@@ -206,7 +209,7 @@ export class Home extends Container<HomeProps, HomeState> {
 						</div>
 
 						{/* section showing favorable user feedback */}
-						<div style={{display: "flex", flowDirection: "row", flexWrap: "wrap", justifyContent: "space-around"}}>
+						<div style={{display: "flex", flexDirection: "row", flexWrap: "wrap", justifyContent: "space-around"}}>
 							<div className={styles.tweet_container}>
 								<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">Just found out <a href="https://twitter.com/srcgraph">@srcgraph</a> ! HUGE productivity gain. Great work ! Waiting for more language support.</p>&mdash; Dharmesh Kakadia (@dharmeshkakadia) <a href="https://twitter.com/dharmeshkakadia/status/738874411437035520">June 3, 2016</a></blockquote>
 							</div>
