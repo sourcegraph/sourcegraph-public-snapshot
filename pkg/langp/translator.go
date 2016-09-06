@@ -391,6 +391,48 @@ func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLoc
 	return &RefLocations{Refs: refs}, nil
 }
 
+func (t *translator) Symbols(ctx context.Context, r *RepoRev) (*Symbols, error) {
+	// Determine the root path for the workspace and prepare it.
+	workspaceStart := time.Now()
+	rootPath, err := t.workspace.Prepare(ctx, r.Repo, r.Commit)
+	if err != nil {
+		return nil, err
+	}
+	start := time.Now()
+
+	// TODO: should probably check server capabilities before invoking symbol,
+	// but good enough for now.
+	var respSymbol []lsp.SymbolInformation
+	err = t.lspDo(ctx, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{}, &respSymbol)
+	defer observe(ctx, start, workspaceStart, r.Repo, err, len(respSymbol) == 0)
+	if err != nil {
+		return nil, err
+	}
+
+	var symbols []*Symbol
+	for _, s := range respSymbol {
+		f, err := t.resolveFile(r.Repo, r.Commit, s.Location.URI)
+		if err != nil {
+			return nil, err
+		}
+		pkgParts := strings.Split(s.ContainerName, "/")
+		unit := strings.Join(pkgParts, "/")
+		symbols = append(symbols, &Symbol{
+			DefSpec: DefSpec{
+				Repo:     f.Repo,
+				Commit:   f.Commit,
+				UnitType: "PipPackage", // TODO(renfred) Appropriate UnitType per language.
+				Unit:     unit,
+				Path:     s.Name,
+			},
+			Name: s.Name,
+			File: f.Path,
+			Kind: lspKindToSymbol(s.Kind),
+		})
+	}
+	return &Symbols{Symbols: symbols}, nil
+}
+
 func (t *translator) ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error) {
 	// Determine the root path for the workspace and prepare it.
 	workspaceStart := time.Now()
