@@ -27,6 +27,11 @@
 .video:hover .video_overlay { background-color: c_purple_8; }
 .video_overlay { transition: all 0.3s ease-in-out; }
 
+.lang_icon {
+	width: 32px;
+	height: 32px;
+	margin: 20px;
+}
 
 @media only screen and media_sm {
 	.full_sm {
