@@ -46,6 +46,19 @@ func CreateRepo(t *testing.T, ctx context.Context, repoURI string, mirror bool) 
 	return repo, done, nil
 }
 
+// CreateEmptyMirrorRepo creates an empty mirror repo.
+func CreateEmptyMirrorRepo(t *testing.T, ctx context.Context, repoURI string) error {
+	cl, _ := sourcegraph.NewClientFromContext(ctx)
+
+	op := &sourcegraph.ReposCreateOp_NewRepo{
+		URI:      repoURI,
+		CloneURL: "https://" + repoURI,
+		Mirror:   true,
+	}
+	_, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{Op: &sourcegraph.ReposCreateOp_New{New: op}})
+	return err
+}
+
 // CreateAndPushRepo is short-handed for:
 //
 //  CreateAndPushRepoFiles(t, ctx, repoURI, nil)

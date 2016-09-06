@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -9,16 +10,13 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-
+	"github.com/sourcegraph/go-github/github"
 	"gopkg.in/inconshreveable/log15.v2"
-
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-
-	"context"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 var Search sourcegraph.SearchServer = &search{}
@@ -136,9 +134,50 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 }
 
 func (s *search) SearchRepos(ctx context.Context, op *sourcegraph.SearchReposOp) (*sourcegraph.SearchReposResultList, error) {
+	const goalResults = 5 // How many search results we're looking to fill; tap into secondary sources if below this number.
+
 	var results = new(sourcegraph.SearchReposResultList)
 
-	// TODO: Implementation. This endpoint is currently not implemented and always returns empty results.
+	query := op.Query
+
+	repos, err := store.ReposFromContext(ctx).Search(ctx, query)
+	if err != nil {
+		return results, err
+	}
+	for _, r := range repos {
+		results.Repos = append(results.Repos, r.Repo)
+	}
+
+	if wantGHResults := goalResults - len(results.Repos); wantGHResults > 0 {
+		switch e := strings.Split(query, "/"); {
+		case len(e) == 2 && e[0] != "github.com": // "user/repo" case.
+			query = "user:" + e[0] + " " + e[1]
+		case len(e) == 2 && e[0] == "github.com": // "github.com/user" case.
+			query = "user:" + e[1] + " "
+		case len(e) == 3 && e[0] == "github.com": // "github.com/user/repo" case.
+			query = "user:" + e[1] + " " + e[2]
+		}
+
+		query += " in:name" // Filter to search only within names of repositories.
+
+		// TODO: Start by using UnauthedClient. Next step is to move to a per-user
+		//       authed client. We don't have one available in context now, it requires
+		//       adding some plumbing (similar to what ext/github package does, but that's
+		//       for repo access only). This will be done in a future change.
+		gh := githubutil.Default.UnauthedClient()
+		opt := &github.SearchOptions{
+			ListOptions: github.ListOptions{PerPage: wantGHResults},
+		}
+		if ghRepos, resp, err := gh.Search.Repositories(query, opt); err != nil {
+			log15.Info("Search.SearchRepos: skipping GH search results", "rate", resp.Rate, "err", err)
+		} else {
+			for _, r := range ghRepos.Repositories {
+				results.Repos = append(results.Repos, &sourcegraph.Repo{
+					URI: "github.com/" + *r.FullName,
+				})
+			}
+		}
+	}
 
 	return results, nil
 }
