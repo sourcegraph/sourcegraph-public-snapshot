@@ -126,8 +126,7 @@ export class Home extends Container<HomeProps, HomeState> {
 					</div>
 
 					{/* section showing feature descriptions */}
-					<div style={{display: "flex", flexDirection: "row", justifyContent: "space-around",
-								marginRight: "auto", marginLeft: "auto", flexWrap: "wrap"}}>
+					<FlexContainer justify="around" wrap={true} className={base.center}>
 
 						{/* column describing examples */}
 						<div style={{maxWidth: "300px", flex: "1 1 300px"}} className={base.ph3}>
@@ -169,7 +168,7 @@ export class Home extends Container<HomeProps, HomeState> {
 							</p>
 						</div>
 
-					</div>
+					</FlexContainer>
 				</div>
 
 				{/* section showing language icons */}
@@ -195,7 +194,7 @@ export class Home extends Container<HomeProps, HomeState> {
 						boxShadow: "0 2px 6px 0 rgba(0, 0, 0, 0.11)", maxWidth: "860px"}}>
 						{/* section showing clients */}
 						<div style={{maxWidth: "760px", padding: "50px 10px"}} className={base.center}>
-						<div style={{display: "flex", flexDirection: "row", flexWrap: "wrap"}}>
+						<FlexContainer wrap={true}>
 							<Heading align="left" level="4" underline="purple" style={{flex: "0 0 240px"}} className="full_sm">
 								Used by developers everywhere
 							</Heading>
@@ -206,10 +205,10 @@ export class Home extends Container<HomeProps, HomeState> {
 								<img className={base.mr4} style={{marginBottom: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/daily-motion.svg`} />
 								<img className={base.mr4} style={{marginBottom: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/progressly.svg`} />
 							</div>
-						</div>
+						</FlexContainer>
 
 						{/* section showing favorable user feedback */}
-						<div style={{display: "flex", flexDirection: "row", flexWrap: "wrap", justifyContent: "space-around"}}>
+						<FlexContainer justify="around" wrap={true}>
 							<div className={styles.tweet_container}>
 								<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">Just found out <a href="https://twitter.com/srcgraph">@srcgraph</a> ! HUGE productivity gain. Great work ! Waiting for more language support.</p>&mdash; Dharmesh Kakadia (@dharmeshkakadia) <a href="https://twitter.com/dharmeshkakadia/status/738874411437035520">June 3, 2016</a></blockquote>
 							</div>
@@ -222,7 +221,7 @@ export class Home extends Container<HomeProps, HomeState> {
 							<div className={styles.tweet_container}>
 								<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">Sourcegraph is the cross reference to end all cross references</p>&mdash; Erik Hollensbe (@erikhollensbe) <a href="https://twitter.com/erikhollensbe/status/738880970909089793">June 3, 2016</a></blockquote>
 							</div>
-						</div>
+						</FlexContainer>
 						</div>
 					</div>
 				</div>
