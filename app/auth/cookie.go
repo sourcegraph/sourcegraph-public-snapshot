@@ -36,9 +36,9 @@ func OnlySecureCookies(ctx context.Context) bool {
 	return conf.AppURL(ctx).Scheme == "https"
 }
 
-// ReadSessionCookie reads the session from the HTTP request. If there
+// readSessionCookie reads the session from the HTTP request. If there
 // is no session cookie, ErrNoSession is returned.
-func ReadSessionCookie(req *http.Request) (*Session, error) {
+func readSessionCookie(req *http.Request) (*Session, error) {
 	sessionCookie, err := req.Cookie(sessionCookieName)
 	if err == http.ErrNoCookie {
 		return nil, ErrNoSession
@@ -46,22 +46,8 @@ func ReadSessionCookie(req *http.Request) (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	return readSessionCookie(sessionCookie)
-}
 
-// ReadSessionCookieFromResponse reads the session from an HTTP
-// response. If there is no session cookie, ErrNoSession is returned.
-func ReadSessionCookieFromResponse(resp *http.Response) (*Session, error) {
-	for _, c := range resp.Cookies() {
-		if c.Name == sessionCookieName {
-			return readSessionCookie(c)
-		}
-	}
-	return nil, ErrNoSession
-}
-
-func readSessionCookie(c *http.Cookie) (*Session, error) {
-	decoded, err := base64.StdEncoding.DecodeString(c.Value)
+	decoded, err := base64.StdEncoding.DecodeString(sessionCookie.Value)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +104,7 @@ func DeleteSessionCookie(w http.ResponseWriter) {
 // outgoing API requests.
 func CookieMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if sess, err := ReadSessionCookie(r); err == nil {
+		if sess, err := readSessionCookie(r); err == nil {
 			r = r.WithContext(sourcegraph.WithCredentials(r.Context(), oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: sess.AccessToken})))
 
 			// Vary based on Authorization header if the request is

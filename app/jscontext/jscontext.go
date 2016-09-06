@@ -10,8 +10,8 @@ import (
 
 	"context"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
@@ -33,11 +33,6 @@ type JSContext struct {
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
 // request.
 func NewJSContextFromRequest(ctx context.Context, req *http.Request) (JSContext, error) {
-	sess, err := auth.ReadSessionCookie(req)
-	if err != nil && err != auth.ErrNoSession {
-		return JSContext{}, err
-	}
-
 	headers := make(map[string]string)
 
 	if span := opentracing.SpanFromContext(ctx); span != nil {
@@ -63,8 +58,13 @@ func NewJSContextFromRequest(ctx context.Context, req *http.Request) (JSContext,
 		BuildVars:      buildvar.Public,
 		Features:       feature.Features,
 	}
-	if sess != nil {
-		jsctx.AccessToken = sess.AccessToken
+	cred := sourcegraph.CredentialsFromContext(ctx)
+	if cred != nil {
+		tok, err := cred.Token()
+		if err != nil {
+			return JSContext{}, err
+		}
+		jsctx.AccessToken = tok.AccessToken
 	}
 
 	return jsctx, nil

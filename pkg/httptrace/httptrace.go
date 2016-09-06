@@ -44,7 +44,7 @@ func init() {
 }
 
 // Middleware captures and exports metrics to Prometheus, etc.
-func Middleware(next http.Handler, sessionInfo func(*http.Request) (uid, sessionID string)) http.Handler {
+func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		ctx := r.Context()
@@ -92,8 +92,7 @@ func Middleware(next http.Handler, sessionInfo func(*http.Request) (uid, session
 		requestDuration.With(labels).Observe(duration.Seconds())
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
-		uid, sessionID := sessionInfo(r)
-		log15.Debug("TRACE HTTP", "method", r.Method, "URL", r.URL.String(), "routename", routeName, "trace", traceutil.SpanURL(span), "code", code, "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent(), "uid", uid, "session", sessionID, "duration", duration)
+		log15.Debug("TRACE HTTP", "method", r.Method, "URL", r.URL.String(), "routename", routeName, "trace", traceutil.SpanURL(span), "code", code, "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent(), "duration", duration)
 	})
 }
 

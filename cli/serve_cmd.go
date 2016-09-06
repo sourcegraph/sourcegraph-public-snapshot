@@ -37,7 +37,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/loghandlers"
@@ -45,7 +44,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -343,35 +341,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		mw = append(mw, middleware.EnsureHostname)
 	}
 
-	mw = append(mw, func(next http.Handler) http.Handler {
-		sessionInfo := func(r *http.Request) (string, string) {
-			uid := "0"
-			sessionID := "unknown"
-			sess, err := auth.ReadSessionCookie(r)
-			if err == nil {
-				tok := sess.AccessToken
-				ctx := r.Context()
-				if ctx != nil {
-					for _, cookie := range r.Cookies() {
-						// each environment uses a different cookie name, but they all start with 'amplitude'
-						if strings.Contains(cookie.Name, "amplitude") {
-							sessionID = cookie.Value
-						}
-					}
-				}
-				ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok, TokenType: "Bearer"}))
-				actor, err := accesstoken.ParseAndVerify(idkey.FromContext(ctx), tok)
-				if err != nil {
-					log15.Debug("Cookie parse:", "errror", err)
-				} else {
-					uid = strconv.Itoa(actor.UID)
-				}
-			}
-			return uid, sessionID
-		}
-		return httptrace.Middleware(next, sessionInfo)
-	})
-
+	mw = append(mw, httptrace.Middleware)
 	mw = append(mw, middleware.BlackHole)
 	mw = append(mw, middleware.SourcegraphComGoGetHandler)
 	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_GITHUB_CLONE_PROXY")); v {
