@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 )
@@ -49,7 +50,7 @@ func serveDefLocalRefLocations(w http.ResponseWriter, r *http.Request) error {
 		opt.ListOptions.PerPage = 1000
 	}
 
-	if useUniverse(r.Context(), repo.URI) {
+	if universe.Enabled(r.Context(), repo.URI) {
 		repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 		if err != nil {
 			return err

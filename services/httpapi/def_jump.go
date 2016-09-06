@@ -8,6 +8,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -37,7 +38,7 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 		Path string `json:"path"`
 	}{}
 
-	if useUniverse(r.Context(), repo.URI) {
+	if universe.Enabled(r.Context(), repo.URI) {
 		defRange, err := langp.DefaultClient.Definition(r.Context(), &langp.Position{
 			Repo:      repo.URI,
 			Commit:    repoRev.CommitID,

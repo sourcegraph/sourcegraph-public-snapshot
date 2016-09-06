@@ -10,6 +10,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -31,7 +32,7 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 	if err != nil {
 		return nil, err
 	}
-	if feature.Features.NoSrclib && feature.Features.Universe && feature.IsUniverseRepo(repo.URI) {
+	if feature.Features.NoSrclib && universe.Enabled(ctx, repo.URI) {
 		return &sourcegraph.SrclibDataVersion{
 			CommitID:      entry.RepoRev.CommitID,
 			CommitsBehind: 0,

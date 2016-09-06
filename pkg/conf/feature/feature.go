@@ -21,11 +21,6 @@ var Features = struct {
 	Authors: true,
 }
 
-// IsUniverseRepo returns true if the Universe feature has rolled out to repo.
-func IsUniverseRepo(repo string) bool {
-	return repoChecker(Features.Universe, os.Getenv("SG_UNIVERSE_REPO"), repo)
-}
-
 func init() {
 	err := setFeatures(&Features, os.Environ())
 	if err != nil {
@@ -64,41 +59,4 @@ func setFeatures(featureStruct interface{}, environ []string) error {
 		field.SetBool(on)
 	}
 	return nil
-}
-
-func repoChecker(on bool, enabled, repo string) bool {
-	if !on {
-		return false
-	}
-	if enabled == "all" {
-		return true
-	}
-	if enabled == "" {
-		// Go testing repos.
-		enabled = "github.com/sourcegraph/sourcegraph"
-		enabled += ",github.com/slimsag/mux"
-		enabled += ",github.com/slimsag/context"
-		enabled += ",github.com/slimsag/docker"
-		enabled += ",github.com/slimsag/kubernetes"
-		enabled += ",github.com/slimsag/prometheus"
-
-		// Java testing repos.
-		enabled += ",github.com/slimsag/RxJava"
-		enabled += ",github.com/slimsag/guava"
-		enabled += ",github.com/slimsag/joda-time"
-
-		// JavaScript testing repos.
-		enabled += ",github.com/sgtest/javascript-nodejs-sample-0"
-		enabled += ",github.com/sgtest/javascript-nodejs-xrefs-0"
-		enabled += ",github.com/sgtest/minimal_nodejs_stdlib"
-		enabled += ",github.com/sgtest/js-misc"
-		enabled += ",github.com/sgtest/js-misc"
-		enabled += ",github.com/sgtest/javascript-es6-tests"
-	}
-	for _, e := range strings.Split(enabled, ",") {
-		if repo == e {
-			return true
-		}
-	}
-	return false
 }
