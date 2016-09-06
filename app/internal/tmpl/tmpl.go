@@ -7,22 +7,15 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"reflect"
-	"strings"
 	"sync"
 
 	"context"
 
-	"github.com/gorilla/csrf"
-	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
-	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/jscontext"
 	tmpldata "sourcegraph.com/sourcegraph/sourcegraph/app/templates"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
@@ -84,27 +77,13 @@ func Load() {
 type Common struct {
 	AuthInfo *sourcegraph.AuthInfo
 
-	RequestHost string // the request's Host header
-
-	Session   *appauth.Session // the session cookie
-	CSRFToken string
-
 	CurrentRoute string
-	CurrentURI   *url.URL
-	CurrentURL   *url.URL
-	CurrentQuery url.Values
 
 	// TemplateName is the filename of the template being rendered
 	// (e.g., "repo/main.html").
 	TemplateName string
 
-	// AppURL is the conf.AppURL(ctx) value for the current context.
-	AppURL   *url.URL
-	HostName string
-
 	Ctx context.Context
-
-	CurrentRouteVars map[string]string
 
 	// Debug is whether to show debugging info on the rendered page.
 	Debug bool
@@ -113,20 +92,9 @@ type Common struct {
 	// sourcegraph.com and the issue tracker on github.com
 	DisableExternalLinks bool
 
-	// Features is a struct containing feature toggles. See conf/feature
-	Features interface{}
-
 	// ErrorID is a randomly generated string used to identify a specific instance
 	// of app error in the error logs.
 	ErrorID string
-
-	// CacheControl is the HTTP cache-control header value that should be set in all
-	// AJAX requests originating from this page.
-	CacheControl string
-
-	// DeviceID is the correlation id given to user activity from a particular
-	// device, pre- and post- authentication.
-	DeviceID string
 
 	JSCtx jscontext.JSContext
 }
@@ -144,23 +112,8 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 	cl := handlerutil.Client(req)
 
 	if data != nil {
-		sess, err := appauth.ReadSessionCookie(req)
-		if err != nil && err != appauth.ErrNoSession {
-			return err
-		}
-
 		field := reflect.ValueOf(data).Elem().FieldByName("Common")
 		existingCommon := field.Interface().(Common)
-
-		currentURL := conf.AppURL(req.Context()).ResolveReference(req.URL)
-
-		// Propagate Cache-Control no-cache and max-age=0 directives
-		// to the requests made by our client-side JavaScript. This is
-		// not a perfect parser, but it catches the important cases.
-		var cacheControl string
-		if cc := req.Header.Get("cache-control"); strings.Contains(cc, "no-cache") || strings.Contains(cc, "max-age=0") {
-			cacheControl = "no-cache"
-		}
 
 		jsctx, err := jscontext.NewJSContextFromRequest(req.Context(), req)
 		if err != nil {
@@ -173,35 +126,14 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 		}
 
 		field.Set(reflect.ValueOf(Common{
-			AuthInfo: authInfo,
-
-			RequestHost: req.Host,
-
-			Session:   sess,
-			CSRFToken: csrf.Token(req),
-
-			TemplateName: name,
-
-			CurrentRoute: httpctx.RouteName(req),
-			CurrentURI:   req.URL,
-			CurrentURL:   currentURL,
-			CurrentQuery: req.URL.Query(),
-
-			AppURL: conf.AppURL(req.Context()),
-
-			Ctx: req.Context(),
-
-			CurrentRouteVars: mux.Vars(req),
-			Debug:            handlerutil.DebugMode,
-
+			AuthInfo:             authInfo,
+			TemplateName:         name,
+			CurrentRoute:         httpctx.RouteName(req),
+			Ctx:                  req.Context(),
+			Debug:                handlerutil.DebugMode,
 			DisableExternalLinks: appconf.Flags.DisableExternalLinks,
-			Features:             feature.Features,
-
-			ErrorID: existingCommon.ErrorID,
-
-			CacheControl: cacheControl,
-
-			JSCtx: jsctx,
+			ErrorID:              existingCommon.ErrorID,
+			JSCtx:                jsctx,
 		}))
 	}
 
