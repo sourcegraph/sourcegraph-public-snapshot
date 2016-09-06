@@ -59,6 +59,7 @@ func NewHandlerWithCSRFProtection(handler http.Handler) http.Handler {
 		p := csrf.Protect(
 			[]byte("e953612ddddcdd5ec60d74e07d40218c"),
 			csrf.CookieName("csrf_token"),
+			csrf.Path("/"),
 			csrf.Secure(auth.OnlySecureCookies(r.Context())),
 		)
 		p(handler).ServeHTTP(w, r)
