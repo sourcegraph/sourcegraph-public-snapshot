@@ -24,7 +24,7 @@ export function AboutPage(props: {}, {signedIn}) {
 
 				<Heading level="3" underline="blue" className={styles.h5}>What is Sourcegraph?</Heading>
 				<p className={styles.p}>Sourcegraph is a fast, global, semantic code search and cross-reference engine. You can search for any function, type, or package, and see how other developers use it, globally. It's cross-repository and massively scalable, with 2,000,000,000+ nodes in the public code index (and growing).</p>
-				<p className={styles.p}>Sourcegraph Inc. creates and operates Sourcegraph. We're based in <Link to="/contact">San Francisco</Link>, and <a href="https://boards.greenhouse.io/sourcegraph" target="_blank">we're hiring</a>.</p>
+				<p className={styles.p}>Sourcegraph Inc. creates and operates Sourcegraph. We're based in <Link to="/contact">San Francisco</Link>, and <a href="https://sourcegraph.com/jobs" target="_blank">we're hiring</a>.</p>
 				<p className={styles.p}>In the last 24 hours, you almost certainly used a product built by developers who use Sourcegraph.</p>
 
 				{!signedIn && <div className={styles.cta}>
