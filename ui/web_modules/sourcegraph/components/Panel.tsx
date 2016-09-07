@@ -11,6 +11,7 @@ interface Props {
 	inverse?: boolean; // light text on color background
 	hoverLevel?: string; // high, low, (empty)
 	hover?: boolean;
+	style?: object;
 }
 
 type State = any;
@@ -21,9 +22,9 @@ export class Panel extends React.Component<Props, State> {
 	};
 
 	render(): JSX.Element | null {
-		const {children, color, inverse, hover, hoverLevel, className} = this.props;
+		const {children, color, inverse, hover, hoverLevel, className, style} = this.props;
 		return (
-			<div className={classNames(styles.panel, colorClass(color || "", inverse || false), hoverClass(hoverLevel || "", hover || false), className)}>
+			<div className={classNames(styles.panel, colorClass(color || "", inverse || false), hoverClass(hoverLevel || "", hover || false), className)} style={style}>
 				{children}
 			</div>
 		);

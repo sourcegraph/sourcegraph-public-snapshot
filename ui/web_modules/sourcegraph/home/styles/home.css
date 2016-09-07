@@ -48,6 +48,6 @@
 }
 
 .tweet_container {
-    max-width: 360px;
-    width: 100%;
+    flex: 1 1 48%;
+    width: 48%;
 }

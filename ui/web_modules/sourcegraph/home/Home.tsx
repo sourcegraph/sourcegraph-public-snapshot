@@ -12,7 +12,7 @@ import * as styles from "sourcegraph/home/styles/home.css";
 
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal} from "sourcegraph/components/Modal";
-import {Button, Heading, Logo, FlexContainer} from "sourcegraph/components";
+import {Button, Heading, Logo, FlexContainer, Panel} from "sourcegraph/components";
 
 interface HomeProps {
 	location: Object;
@@ -183,44 +183,43 @@ export class Home extends Container<HomeProps, HomeState> {
 							<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/php.svg`} />
 							<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/scala.svg`} />
 						*/}
-					</div>
+					</FlexContainer>
 				</div>
 
 				<div className={colors.bg_purple} style={{paddingTop: "50px", paddingBottom: "50px"}}>
-					<div className={base.center} style={{backgroundColor: "white",
-						boxShadow: "0 2px 6px 0 rgba(0, 0, 0, 0.11)", maxWidth: "860px"}}>
+					<Panel className={base.center} style={{maxWidth: "930px"}}>
 						{/* section showing clients */}
-						<div style={{maxWidth: "760px", padding: "50px 10px"}} className={base.center}>
-						<FlexContainer wrap={true}>
-							<Heading align="left" level="4" underline="purple" style={{flex: "0 0 240px"}} className="full_sm">
-								Used by developers everywhere
-							</Heading>
+						<div className={classNames(base.center, base.pa4)}>
+							<FlexContainer wrap={true}>
+								<Heading align="left" level="4" underline="purple" style={{flex: "0 0 240px"}} className="full_sm">
+									Used by developers everywhere
+								</Heading>
 
-							<div style={{flex: "1 1", display: "flex", flexWrap: "wrap", justifyContent: "flex-end"}}>
-								<img className={base.mr4} style={{marginBottom: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/twitter.svg`} />
-								<img className={base.mr4} style={{marginBottom: "9px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/red-hat.svg`} />
-								<img className={base.mr4} style={{marginBottom: "7px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/daily-motion.svg`} />
-								<img className={base.mr4} style={{marginBottom: "5px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/progressly.svg`} />
-							</div>
-						</FlexContainer>
+								<FlexContainer justify="end" style={{flex: "1 1"}}>
+									<img className={base.mr4} style={{marginBottom: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/twitter.svg`} />
+									<img className={base.mr4} style={{marginBottom: "9px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/red-hat.svg`} />
+									<img className={base.mr4} style={{marginBottom: "7px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/daily-motion.svg`} />
+									<img className={base.mr4} style={{marginBottom: "5px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/progressly.svg`} />
+								</FlexContainer>
+							</FlexContainer>
 
-						{/* section showing favorable user feedback */}
-						<FlexContainer justify="around" wrap={true}>
-							<div className={styles.tweet_container}>
-								<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">Just found out <a href="https://twitter.com/srcgraph">@srcgraph</a> ! HUGE productivity gain. Great work ! Waiting for more language support.</p>&mdash; Dharmesh Kakadia (@dharmeshkakadia) <a href="https://twitter.com/dharmeshkakadia/status/738874411437035520">June 3, 2016</a></blockquote>
-							</div>
-							<div className={styles.tweet_container}>
-								<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">The <a href="https://twitter.com/srcgraph">@srcgraph</a> Chrome extension for GitHub is the best! <a href="https://t.co/CKweAOfbsQ">https://t.co/CKweAOfbsQ</a></p>&mdash; Julius Volz (@juliusvolz) <a href="https://twitter.com/juliusvolz/status/748095329564778496">June 29, 2016</a></blockquote>
-							</div>
-							<div className={styles.tweet_container}>
-								<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">Used <a href="https://twitter.com/srcgraph">@srcgraph</a> jump-to-definition across 3 projects, 2 langs, finally landing deep in Golang src. Took &lt; 10 min to pin down the issue. 💪🏼</p>&mdash; Gabriel Monroy (@gabrtv) <a href="https://twitter.com/gabrtv/status/738861622882508801">June 3, 2016</a></blockquote>
-							</div>
-							<div className={styles.tweet_container}>
-								<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">Sourcegraph is the cross reference to end all cross references</p>&mdash; Erik Hollensbe (@erikhollensbe) <a href="https://twitter.com/erikhollensbe/status/738880970909089793">June 3, 2016</a></blockquote>
-							</div>
-						</FlexContainer>
+							{/* section showing favorable user feedback */}
+							<FlexContainer justify="between" wrap={true}>
+								<div className={classNames(styles.tweet_container, base.pr4, base.mb3)} >
+									<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">Just found out <a href="https://twitter.com/srcgraph">@srcgraph</a> ! HUGE productivity gain. Great work ! Waiting for more language support.</p>&mdash; Dharmesh Kakadia (@dharmeshkakadia) <a href="https://twitter.com/dharmeshkakadia/status/738874411437035520">June 3, 2016</a></blockquote>
+								</div>
+								<div className={classNames(styles.tweet_container, base.mb3)}>
+									<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">The <a href="https://twitter.com/srcgraph">@srcgraph</a> Chrome extension for GitHub is the best! <a href="https://t.co/CKweAOfbsQ">https://t.co/CKweAOfbsQ</a></p>&mdash; Julius Volz (@juliusvolz) <a href="https://twitter.com/juliusvolz/status/748095329564778496">June 29, 2016</a></blockquote>
+								</div>
+								<div className={classNames(styles.tweet_container, base.pr4}>
+									<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">Used <a href="https://twitter.com/srcgraph">@srcgraph</a> jump-to-definition across 3 projects, 2 langs, finally landing deep in Golang src. Took &lt; 10 min to pin down the issue. 💪🏼</p>&mdash; Gabriel Monroy (@gabrtv) <a href="https://twitter.com/gabrtv/status/738861622882508801">June 3, 2016</a></blockquote>
+								</div>
+								<div className={styles.tweet_container}>
+									<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">Sourcegraph is the cross reference to end all cross references</p>&mdash; Erik Hollensbe (@erikhollensbe) <a href="https://twitter.com/erikhollensbe/status/738880970909089793">June 3, 2016</a></blockquote>
+								</div>
+							</FlexContainer>
 						</div>
-					</div>
+					</Panel>
 				</div>
 
 				{/* section showing tagline with a CTA to sign up */}
