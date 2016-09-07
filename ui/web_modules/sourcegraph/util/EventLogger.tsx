@@ -300,9 +300,9 @@ class EventLoggerClass {
 		if (this.userAgentIsBot || !eventLabel) {
 			return;
 		}
-
 		this._telligent("track", eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
 		this._amplitude.logEvent(eventLabel, Object.assign({}, this._decorateEventProperties(eventProperties), {eventCategory: eventCategory, eventAction: eventAction}));
+		this._logToConsole(eventAction, Object.assign(this._decorateEventProperties(eventProperties),  {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
 
 		global.window.ga("send", {
 			hitType: "event",
@@ -310,6 +310,12 @@ class EventLoggerClass {
 			eventAction: eventAction || "",
 			eventLabel: eventLabel,
 		});
+	}
+
+	_logToConsole(eventAction: string, object?: any): void {
+		if (window.localStorage["log_debug"]) {
+			console.debug("%cEVENT %s", "color: #aaa", eventAction, object); // tslint:disable-line
+		}
 	}
 
 	// Tracking call for event level calls that we wish to track, but do not wish to impact bounce rate on our site for Google analytics.

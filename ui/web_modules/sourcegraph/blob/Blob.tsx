@@ -12,6 +12,8 @@ import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 import "sourcegraph/blob/styles/Monaco.raw.css";
 import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+
 interface Props {
 	contents: string;
 	repo: string;
@@ -25,11 +27,13 @@ export class Blob extends React.Component<Props, null> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
+		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	context: {
 		siteConfig: { assetsRoot: string };
 		router: { push: (url: string) => void };
+		eventLogger: { logEventForCategory: (eventCategory: string, eventAction: string, eventLabel: string, eventProperties?: any) => void };
 	};
 
 	_hoverProvided: string[];
@@ -172,6 +176,8 @@ export class Blob extends React.Component<Props, null> {
 	_viewAllReferences(editor: monaco.editor.ICommonCodeEditor): monaco.Promise<void> {
 		const pos = editor.getPosition();
 		const model = editor.getModel();
+
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REFERENCES, AnalyticsConstants.ACTION_CLICK, "ClickedViewReferences", {repo: this.props.repo, path: this.props.path, rev: this.props.rev});
 
 		return new monaco.Promise<void>(() => {
 			defAtPosition(model, pos).then((def) => {
