@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/serialx/hashring"
 )
 
 // Prefix for environment variables referring to language processor configuration
@@ -39,13 +40,24 @@ func init() {
 		return
 	}
 
-	endpoints := make(map[string]string)
+	// Parse environment variables following the prefix, e.g. SG_LANGUAGE_PROCESSOR_<GO|JAVA>
+	endpoints := make(map[string][]string)
 	for _, env := range os.Environ() {
 		parts := strings.SplitN(env, "=", 2)
 		lang := lpEnvLanguage(parts[0])
-		if lang != "" {
-			endpoints[lang] = parts[1]
+		if lang == "" {
+			continue
 		}
+
+		// Parse comma separated endpoint list.
+		var langEndpoints []string
+		for _, e := range strings.Split(parts[1], ",") {
+			e = strings.TrimSpace(e)
+			if e != "" {
+				langEndpoints = append(langEndpoints, e)
+			}
+		}
+		endpoints[lang] = langEndpoints
 	}
 	var err error
 	DefaultClient, err = NewClient(endpoints)
@@ -63,20 +75,30 @@ func lpEnvLanguage(key string) string {
 	return key[len(envLanguageProcessorPrefix):]
 }
 
-// langClient is an HTTP endpoint and client for one single language.
+// langClient is a client for a single language, with multiple LPs which it can
+// talk to (for sharding purposes).
 type langClient struct {
-	// endpoint is the HTTP endpoint of the Language Processor.
-	endpoint *url.URL
+	// endpoints is the HTTP endpoints of the Language Processor, sharded by
+	// repo URI.
+	endpoints *hashring.HashRing
 
 	// client is used for making HTTP requests.
 	client *http.Client
 }
 
-// endpointTo returns a URL based on c.Endpoint with the given path suffixed.
-func (c *langClient) endpointTo(p string) string {
-	cpy := *c.endpoint
-	cpy.Path = path.Join(cpy.Path, p)
-	return cpy.String()
+// endpointTo returns a URL based on c.endpoints (sharded by repoURI) with the
+// given path suffixed.
+func (c *langClient) endpointTo(repoURI, p string) string {
+	endpoint, ok := c.endpoints.GetNode(repoURI)
+	if !ok {
+		panic("never happens: langp.langClient with zero endpoints in hashring")
+	}
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		panic("never happens: endpoints are validated at NewClient time")
+	}
+	u.Path = path.Join(u.Path, p)
+	return u.String()
 }
 
 // Client represents multiple Language Processor REST API clients (i.e. for
@@ -84,7 +106,8 @@ func (c *langClient) endpointTo(p string) string {
 // concurrently.
 //
 // It is responsible for invoking the proper LP (or combining results from
-// multiple LPs) depending on the request / which langauge the source file is.
+// multiple LPs) depending on the request / which language the source file is
+// and also handles sharding via a hashring using the repo URI as the key.
 type Client struct {
 	// clients is a map of languages to their respective clients.
 	clients map[string]*langClient
@@ -97,7 +120,7 @@ type Client struct {
 func (c *Client) Prepare(ctx context.Context, r *RepoRev) error {
 	// Ask each LP to prepare the workspace.
 	for _, lc := range c.clients {
-		if err := c.do(ctx, lc, "prepare", r, nil); err != nil {
+		if err := c.do(ctx, lc, r.Repo, "prepare", r, nil); err != nil {
 			return err
 		}
 	}
@@ -111,7 +134,7 @@ func (c *Client) DefSpecToPosition(ctx context.Context, k *DefSpec) (*Position, 
 		return nil, err
 	}
 	var result Position
-	err = c.do(ctx, cl, "defspec-to-position", k, &result)
+	err = c.do(ctx, cl, k.Repo, "defspec-to-position", k, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +149,7 @@ func (c *Client) Definition(ctx context.Context, p *Position) (*Range, error) {
 		return nil, err
 	}
 	var result Range
-	err = c.do(ctx, cl, "definition", p, &result)
+	err = c.do(ctx, cl, p.Repo, "definition", p, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +164,7 @@ func (c *Client) Hover(ctx context.Context, p *Position) (*Hover, error) {
 		return nil, err
 	}
 	var result Hover
-	err = c.do(ctx, cl, "hover", p, &result)
+	err = c.do(ctx, cl, p.Repo, "hover", p, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +178,7 @@ func (c *Client) LocalRefs(ctx context.Context, p *Position) (*RefLocations, err
 		return nil, err
 	}
 	var result RefLocations
-	err = c.do(ctx, cl, "local-refs", p, &result)
+	err = c.do(ctx, cl, p.Repo, "local-refs", p, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -167,11 +190,11 @@ func (c *Client) DefSpecRefs(ctx context.Context, k *DefSpec) (*RefLocations, er
 	var result RefLocations
 	for _, cl := range c.clients {
 		var v RefLocations
-		err := c.do(ctx, cl, "defspec-refs", k, &v)
+		err := c.do(ctx, cl, k.Repo, "defspec-refs", k, &v)
 		if err != nil {
 			return nil, err
 		}
-		result.Refs = append(result.Refs, r.Refs...)
+		result.Refs = append(result.Refs, v.Refs...)
 	}
 	return &result, nil
 }
@@ -181,7 +204,7 @@ func (c *Client) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, e
 	var result ExternalRefs
 	for _, cl := range c.clients {
 		var v ExternalRefs
-		err := c.do(ctx, cl, "external-refs", r, &v)
+		err := c.do(ctx, cl, r.Repo, "external-refs", r, &v)
 		if err != nil {
 			return nil, err
 		}
@@ -195,7 +218,7 @@ func (c *Client) ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymb
 	var result ExportedSymbols
 	for _, cl := range c.clients {
 		var v ExportedSymbols
-		err := c.do(ctx, cl, "exported-symbols", r, &v)
+		err := c.do(ctx, cl, r.Repo, "exported-symbols", r, &v)
 		if err != nil {
 			return nil, err
 		}
@@ -241,7 +264,7 @@ func (c *Client) clientForUnitType(unitType string) (*langClient, error) {
 	return client, nil
 }
 
-func (c *Client) do(ctx context.Context, cl *langClient, endpoint string, body, results interface{}) error {
+func (c *Client) do(ctx context.Context, cl *langClient, repo, endpoint string, body, results interface{}) error {
 	// TODO: maybe consider retrying upon first request failure to prevent
 	// such errors from ending up on the frontend for reliability purposes.
 	data, err := json.Marshal(body)
@@ -249,14 +272,14 @@ func (c *Client) do(ctx context.Context, cl *langClient, endpoint string, body, 
 		return err
 	}
 
-	req, err := http.NewRequest("POST", cl.endpointTo(endpoint), bytes.NewReader(data))
+	req, err := http.NewRequest("POST", cl.endpointTo(repo, endpoint), bytes.NewReader(data))
 	if err != nil {
 		return fmt.Errorf("%s (body '%s')", err, string(data))
 	}
 
 	req.Header.Add("Content-Type", "application/json")
 
-	operationName := fmt.Sprintf("LP Client: POST %s", cl.endpointTo(endpoint))
+	operationName := fmt.Sprintf("LP Client: POST %s", cl.endpointTo(repo, endpoint))
 	var span opentracing.Span
 	span, ctx = opentracing.StartSpanFromContext(ctx, operationName)
 	span.LogEventWithPayload("request body", body)
@@ -293,26 +316,31 @@ func (c *Client) do(ctx context.Context, cl *langClient, endpoint string, body, 
 }
 
 // NewClient returns a new client with the default options connecting the given
-// languages to their respective Language Processor endpoint.
+// languages to their respective Language Processor endpoints.
 //
 // An error is returned only if parsing one of the endpoint URLs fails.
-func NewClient(endpoints map[string]string) (*Client, error) {
+func NewClient(endpoints map[string][]string) (*Client, error) {
 	c := &Client{
 		clients: make(map[string]*langClient),
 	}
-	for lang, endpoint := range endpoints {
-		u, err := url.Parse(endpoint)
-		if err != nil {
-			return nil, err
+	for lang, endpoints := range endpoints {
+		// Validate endpoints.
+		for _, endpoint := range endpoints {
+			u, err := url.Parse(endpoint)
+			if err != nil {
+				return nil, err
+			}
+			if u.Scheme == "" {
+				return nil, fmt.Errorf("must specify endpoint scheme")
+			}
+			if u.Host == "" {
+				return nil, fmt.Errorf("must specify endpoint host")
+			}
 		}
-		if u.Scheme == "" {
-			return nil, fmt.Errorf("must specify endpoint scheme")
-		}
-		if u.Host == "" {
-			return nil, fmt.Errorf("must specify endpoint host")
-		}
+
+		// Create language client.
 		c.clients[lang] = &langClient{
-			endpoint: u,
+			endpoints: hashring.New(endpoints),
 			client: &http.Client{
 				// TODO(slimsag): Once we have proper async operations we should
 				// lower this timeout to respect those numbers. Until then, some
