@@ -2,7 +2,3 @@
 	cursor: pointer;
 	font-weight: bold;
 }
-
-.monaco-editor div {
-	box-sizing: auto;
-}

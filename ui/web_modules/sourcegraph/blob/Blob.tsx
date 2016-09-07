@@ -19,7 +19,6 @@ interface Props {
 	rev: string;
 
 	startByte?: number;
-	endByte?: number;
 };
 
 export class Blob extends React.Component<Props, null> {
@@ -37,6 +36,7 @@ export class Blob extends React.Component<Props, null> {
 	_toDispose: monaco.IDisposable[];
 	_editor: monaco.editor.IStandaloneCodeEditor;
 	_decorationID: string[];
+	_mouseDownPosition: monaco.editor.IMouseTarget | null;
 
 	// Finding the line from byte requires UTF-8 encoding the entire buffer,
 	// because Sourcegraph uses byte offset and Monaco uses (UTF16) character
@@ -100,8 +100,7 @@ export class Blob extends React.Component<Props, null> {
 		this._toDispose.push(this._editor);
 
 		global.document.addEventListener("keydown", this._findInPage);
-		this._listenSelection();
-		this._addMouseDownListener();
+		this._addClickListener();
 		this._addReferencesAction();
 		this._overrideNavigationKeys();
 
@@ -115,7 +114,12 @@ export class Blob extends React.Component<Props, null> {
 			rev: this.props.rev,
 		};
 		const uri = RepoSpecToURI(repoSpec);
+		this._updateModel(uri);
 
+		this._scroll();
+	}
+
+	_updateModel(uri: monaco.Uri): void {
 		let model = monaco.editor.getModel(uri);
 		if (model) {
 			// If the model doesn't change, we don't need to update the editor.
@@ -131,9 +135,7 @@ export class Blob extends React.Component<Props, null> {
 			this._toDispose.push(token);
 			this._hoverProvided.push(lang);
 		}
-
 		this._lineFromByte = createLineFromByteFunc(this.props.contents);
-		this._scroll();
 	}
 
 	_findInPage(e: KeyboardEvent): void {
@@ -179,13 +181,23 @@ export class Blob extends React.Component<Props, null> {
 		});
 	}
 
-	_addMouseDownListener(): void {
+	_addClickListener(): void {
 		this._editor.onMouseDown(({target, event}) => {
-			if (event.rightButton) {
+			const mac = navigator.userAgent.indexOf("Macintosh") >= 0;
+			if (event.rightButton || (event.ctrlKey && mac)) {
+				this._mouseDownPosition = null;
 				return;
 			}
-			const ident = target.element.className.indexOf("identifier") > 0;
-			if (target.position && ident) {
+			this._mouseDownPosition = target;
+		});
+
+		this._editor.onMouseUp(({target}) => {
+			if (!this._mouseDownPosition || !target.position.equals(this._mouseDownPosition.position)) {
+				return;
+			}
+			const saved = this._mouseDownPosition;
+			const ident = saved.element.className.indexOf("identifier") > 0;
+			if (saved.position && ident) {
 				const pos = {
 					repo: this.props.repo,
 					commit: this.props.rev,
@@ -199,7 +211,7 @@ export class Blob extends React.Component<Props, null> {
 	}
 
 	_scroll(): void {
-		let startLine = -1;
+		let startLine;
 		const matches = /#(\d+)-(\d+)/.exec(global.window.location.hash);
 		if (matches) {
 			const start = parseInt(matches[1], 10);
@@ -208,8 +220,7 @@ export class Blob extends React.Component<Props, null> {
 			startLine = Math.min(start, end);
 		} else if (this.props.startByte) {
 			startLine = this._lineFromByte(this.props.startByte) - 1;
-		}
-		if (startLine === -1) {
+		} else {
 			return;
 		}
 		const linesInViewPort = this._editor.getDomNode().offsetHeight / 20;
@@ -238,18 +249,6 @@ export class Blob extends React.Component<Props, null> {
 				this._editor.getModel().getLineCount()
 			);
 		}, "");
-	}
-
-	_listenSelection(): void {
-		this._editor.onDidChangeCursorSelection((e) => {
-			const sel = e.viewSelection;
-			if (sel.selectionStartLineNumber === sel.positionLineNumber && sel.selectionStartColumn === sel.positionColumn) {
-				global.window.location.hash = "";
-			} else {
-				const hash = `${sel.selectionStartLineNumber}-${sel.positionLineNumber}`;
-				global.window.location.hash = hash;
-			}
-		});
 	}
 
 	_highlightLines(startLine: number, endLine: number): void {
@@ -281,6 +280,7 @@ class HoverProvider {
 			const word = model.getWordAtPosition(position);
 			const title = `**${def.Name}** ${def.FmtStrings.Type.Unqualified}`;
 			const serverDoc = def.Docs ? def.Docs[0].Data : "";
+			const viewRefsSuggestion = "*Right click to view all references.*";
 			let docs = serverDoc.replace(/\s+/g, " ");
 			if (docs.length > 400) {
 				docs = docs.substring(0, 380);
@@ -288,7 +288,7 @@ class HoverProvider {
 			}
 			return {
 				range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
-				contents: [title, docs],
+				contents: [title, docs, viewRefsSuggestion],
 			};
 		});
 	}

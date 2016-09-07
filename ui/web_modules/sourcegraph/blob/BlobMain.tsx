@@ -167,8 +167,7 @@ export class BlobMain extends Container<Props, State> {
 					rev={this.state.rev}
 					path={this.state.path}
 					contents={contents}
-					startByte={this.state.startByte}
-					endByte={this.state.endByte} />
+					startByte={this.state.startByte} />
 			</div>
 		);
 	}
