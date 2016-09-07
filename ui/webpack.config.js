@@ -66,7 +66,20 @@ if (process.env.PUBLIC_WEBPACK_DEV_SERVER_URL) {
 }
 
 plugins.push(new CopyWebpackPlugin([{from: `node_modules/monaco-editor/${production ? "min" : "dev"}/vs`, to: "vs"}]));
-plugins.push(new UnusedFilesWebpackPlugin({pattern: "web_modules/**/*.*", globOptions: {ignore: ["**/*.d.ts", "**/*_test.tsx", "**/testutil/**/*.*", "**/testdata/**/*.*", "**/*.md"]}}));
+plugins.push(new UnusedFilesWebpackPlugin({
+	pattern: "web_modules/**/*.*",
+	globOptions: {
+		ignore: [
+			"**/*.d.ts",
+			"**/*_test.tsx",
+			"**/testutil/**/*.*",
+			"**/testdata/**/*.*",
+			"**/*.md",
+			"**/*.go",
+			"web_modules/sourcegraph/api/index.tsx",
+		],
+	},
+}));
 
 module.exports = {
 	name: "browser",
