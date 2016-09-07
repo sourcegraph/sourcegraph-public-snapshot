@@ -18,7 +18,7 @@
 	"scripts": {
 		"vscode:prepublish": "node ./node_modules/vscode/bin/compile",
 		"compile": "node ./node_modules/vscode/bin/compile -watch -p ./",
-		"postinstall": "patch --binary -N -p1 < vscode-languageserver-pr-83.patch && node ./node_modules/vscode/bin/install",
+		"postinstall": "node ./node_modules/vscode/bin/install",
 		"vscode": "npm run vscode:prepublish && VSCODE=$(which code-insiders || which code || echo echo ERROR: neither the code nor code-insiders vscode executable is installed); USER=dummy-dont-share-vscode-instance $VSCODE --user-data-dir=$PWD/../.vscode-dev/user-data --extensionHomePath=$PWD/.vscode-dev/extensions --extensionDevelopmentPath=$PWD $*"
 	},
 	"devDependencies": {
@@ -26,6 +26,6 @@
 		"vscode": "^0.11.0"
 	},
 	"dependencies": {
-		"vscode-languageclient": "^2.4.2-next.11"
+		"vscode-languageclient": "^2.4.2-next.12"
 	}
 }

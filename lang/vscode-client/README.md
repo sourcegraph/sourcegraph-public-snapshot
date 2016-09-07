@@ -26,8 +26,3 @@ After updating the binary for a language server (during development or after an 
 1. Hit F5 to open a new VSCode instance in a debugger running this extension. (This is equivalent to going to the Debug pane on the left and running the "Launch Extension" task.)
 
 See the [Node.js example language server tutorial](https://code.visualstudio.com/docs/extensions/example-language-server) under "To test the language server" for more information.
-
-
-## Known issues
-
-* To view language server stderr output, we must apply the change from https://github.com/Microsoft/vscode-languageserver-node/pull/83 to the vscode-languageclient dependency. This patch is applied in a npm postinstall script automatically. When that PR is merged, we'll remove this hack.
