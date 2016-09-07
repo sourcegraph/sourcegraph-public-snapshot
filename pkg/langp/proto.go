@@ -187,6 +187,9 @@ type Hover struct {
 	//
 	// Note: You can't assume DocHTML has already been sanitized.
 	DocHTML string
+
+	// DefSpec is optionally set, and is the DefSpec for the hover.
+	DefSpec *DefSpec `json:",omitempty"`
 }
 
 func HoverFromLSP(l *lsp.Hover) *Hover {

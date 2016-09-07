@@ -1,4 +1,4 @@
-import {Def} from "sourcegraph/api";
+import {Def, DefKey} from "sourcegraph/api";
 import {abs, getRouteParams} from "sourcegraph/app/routePatterns";
 import {repoParam, repoPath, repoRev} from "sourcegraph/repo";
 
@@ -32,6 +32,10 @@ export function fastParseDefPath(url: string): string | null {
 }
 
 export function defPath(def: Def): string {
+	return `${def.UnitType}/${def.Unit && maybeTransformUnit(def.Unit)}/-/${encodeDefPath(def.Path)}`;
+}
+
+export function defKeyPath(def: DefKey): string {
 	return `${def.UnitType}/${def.Unit && maybeTransformUnit(def.Unit)}/-/${encodeDefPath(def.Path)}`;
 }
 

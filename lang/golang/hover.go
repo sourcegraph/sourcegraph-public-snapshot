@@ -107,20 +107,25 @@ func (h *Handler) handleHover(ctx context.Context, req *jsonrpc2.Request, params
 	unit := uri[strings.Index(uri, "/src/")+5:]
 	unit = strings.TrimSuffix(unit, "/"+path.Base(unit))
 
-	ms = append(ms,
-		lsp.MarkedString{
-			Language: "text/unit",
-			Value:    unit,
-		},
-		lsp.MarkedString{
-			Language: "text/uri",
-			Value:    uri,
-		},
-		lsp.MarkedString{
-			Language: "text/name",
-			Value:    unitName,
-		},
-	)
+	defInfo := struct {
+		URI      string
+		UnitType string
+		Unit     string
+		Path     string
+	}{
+		URI:      uri,
+		UnitType: "GoPackage",
+		Unit:     unit,
+		Path:     unitName,
+	}
+	defInfoB, err := json.Marshal(defInfo)
+	if err != nil {
+		return nil, err
+	}
+	ms = append(ms, lsp.MarkedString{
+		Language: "text/definfo",
+		Value:    string(defInfoB),
+	})
 
 	return &lsp.Hover{
 		Contents: ms,

@@ -3,8 +3,8 @@
 import {urlTo} from "sourcegraph/util/urlTo";
 import {urlToTree} from "sourcegraph/tree/routes";
 import {rel} from "sourcegraph/app/routePatterns";
-import {defPath} from "sourcegraph/def";
-import {Def} from "sourcegraph/api";
+import {defPath, defKeyPath} from "sourcegraph/def";
+import {Def, DefKey} from "sourcegraph/api";
 import {DefInfo} from "sourcegraph/def/DefInfo";
 import {DefNavContext} from "sourcegraph/def/DefNavContext";
 import {BlobLoader} from "sourcegraph/blob/BlobLoader";
@@ -63,6 +63,13 @@ export function urlToDef(def: Def, rev?: string | null): string {
 		return urlToTree(def.Repo || "", rev || null, file);
 	}
 	return urlTo("def", defParams(def, rev));
+}
+
+// urlToDefInfo returns a URL to the given def's info at the given revision.
+export function urlToDefKeyInfo(defKey: DefKey): string {
+	const revPart = defKey.CommitID ? `@${defKey.CommitID}` : "";
+	const p = {splat: [`${defKey.Repo}${revPart}`, defKeyPath(defKey)]};
+	return urlTo("defInfo", p);
 }
 
 // urlToDefInfo returns a URL to the given def's info at the given revision.

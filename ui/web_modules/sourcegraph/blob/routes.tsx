@@ -5,6 +5,7 @@ import {urlTo} from "sourcegraph/util/urlTo";
 import {makeRepoRev} from "sourcegraph/repo";
 import {lineColBoundToHash} from "sourcegraph/blob/lineColBoundToHash";
 import {withLastSrclibDataVersion} from "sourcegraph/blob/withLastSrclibDataVersion";
+import {withBlobMargin} from "sourcegraph/blob/withBlobMargin";
 import {BlobLoader} from "sourcegraph/blob/BlobLoader";
 import {RepoNavContext} from "sourcegraph/blob/RepoNavContext";
 
@@ -18,7 +19,7 @@ export const routes = [
 				repoNavContext: RepoNavContext,
 			});
 		},
-		blobLoaderHelpers: [lineColBoundToHash, withLastSrclibDataVersion],
+		blobLoaderHelpers: [lineColBoundToHash, withLastSrclibDataVersion, withBlobMargin],
 	},
 ];
 

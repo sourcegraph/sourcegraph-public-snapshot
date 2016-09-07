@@ -50,10 +50,20 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
+		var defKey graph.DefKey
+		if hover.DefSpec != nil {
+			defKey = graph.DefKey{
+				Repo:     hover.DefSpec.Repo,
+				CommitID: hover.DefSpec.Commit,
+				UnitType: hover.DefSpec.UnitType,
+				Unit:     hover.DefSpec.Unit,
+				Path:     hover.DefSpec.Path,
+			}
+		}
 		resp.Title = hover.Title
 		resp.Def = &sourcegraph.Def{
 			Def: graph.Def{
-				DefKey: graph.DefKey{Repo: repo.URI},
+				DefKey: defKey,
 			},
 			DocHTML: htmlutil.SanitizeForPB(hover.DocHTML),
 		}

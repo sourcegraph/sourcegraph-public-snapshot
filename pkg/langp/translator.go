@@ -3,6 +3,7 @@ package langp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log"
 	"net"
@@ -200,7 +201,40 @@ func (t *translator) Hover(ctx context.Context, pos *Position) (*Hover, error) {
 	if err != nil {
 		return nil, err
 	}
-	return HoverFromLSP(&respHover), nil
+
+	// extract DefSpec if we have the data
+	var defSpec *DefSpec
+	var defInfo struct {
+		URI      string
+		UnitType string
+		Unit     string
+		Path     string
+	}
+	for _, m := range respHover.Contents[1:] {
+		if m.Language == "text/definfo" {
+			err := json.Unmarshal([]byte(m.Value), &defInfo)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	if defInfo.URI != "" {
+		f, err := t.resolveFile(pos.Repo, pos.Commit, defInfo.URI)
+		if err != nil {
+			return nil, err
+		}
+		defSpec = &DefSpec{
+			Repo:     f.Repo,
+			Commit:   f.Commit,
+			Unit:     defInfo.Unit,
+			UnitType: defInfo.UnitType,
+			Path:     defInfo.Path,
+		}
+	}
+
+	hover := HoverFromLSP(&respHover)
+	hover.DefSpec = defSpec
+	return hover, nil
 }
 
 func (t *translator) LocalRefs(ctx context.Context, pos *Position) (*RefLocations, error) {

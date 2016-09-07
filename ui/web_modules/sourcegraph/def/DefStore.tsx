@@ -194,6 +194,9 @@ class DefStoreClass extends Store<any> {
 			break;
 
 		case DefActions.HoverInfoFetched:
+			if (action.info.Error) {
+				break;
+			}
 			this.hoverInfos = deepFreeze(Object.assign({}, this.hoverInfos, {
 				content: Object.assign({}, this.hoverInfos.content, {
 					[posKeyFor(action.pos)]: action.info,
