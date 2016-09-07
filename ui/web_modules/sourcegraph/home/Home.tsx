@@ -93,7 +93,8 @@ export class Home extends Container<HomeProps, HomeState> {
 							<p className={base.mt4}>
 								<LocationStateToggleLink href="/join" modalName="join" location={this.props.location}>
 									<Button type="button" color="purple" className={classNames(base.ph3, base.mr3)}>Sign up for free</Button>
-								</LocationStateToggleLink> or <Link className={styles.link} to="/about">Learn more</Link>
+								</LocationStateToggleLink> or
+								<Link className={classNames(base.pl3)} to="/about">Learn more</Link>
 							</p>
 						</div>
 
