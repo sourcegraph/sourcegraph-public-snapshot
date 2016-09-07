@@ -1,8 +1,6 @@
 package e2e
 
 import (
-	"time"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -36,12 +34,11 @@ func testLoginFlow(t *T) error {
 	}
 
 	// Get login page.
-	t.Get(t.Endpoint("/login"))
-
-	// Give the JS time to set element focus, etc.
-	time.Sleep(1 * time.Second)
+	t.Get(t.Endpoint("/"))
+	t.Click(selenium.ByLinkText, "Login")
 
 	// Validate username input field.
+	t.WaitForElement(selenium.ById, "e2etest-login-field")
 	username := t.FindElement(selenium.ById, "e2etest-login-field")
 	if username.TagName() != "input" {
 		t.Fatalf("username TagName should be input, found %s", username.TagName())
