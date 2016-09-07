@@ -45,43 +45,40 @@ export class Home extends Container<HomeProps, HomeState> {
 			<div style={{width: "100%", marginRight: "auto", marginLeft: "auto"}}>
 				{/* section showing icon and links: about, pricing, login, signup */}
 				<div style={{paddingTop: "25px", paddingBottom: "110px", backgroundColor: "rgba(119, 147, 174, 0.1)"}}>
-					<div style={{display: "flex", flexDirection: "row", alignItems: "center", maxWidth: "960px"}} className={classNames(base.mt2, base.mb4, base.center, base.ph3)}>
+					<FlexContainer items="center" wrap={true} style={{maxWidth: "960px"}} className={classNames(base.mt2, base.mb4, base.center, base.ph3)}>
 						<Logo width="32"/>
 
 						<div className={typography.tr} style={{flex: "1"}} />
 
-						<div style={{display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-									flexWrap: "wrap"}}>
+						<FlexContainer items="center" justify="between">
 
-							<p className={base.mr3} style={{margin: "10px"}}>
-								<Link className={styles.link} to="/about">About</Link>
-							</p>
+							<Link className={classNames(styles.link, base.mr2, base.pa2)} to="/about">
+								About
+							</Link>
 
-							<p className={base.mr3} style={{margin: "10px"}}>
-								<Link className={styles.link} to="/pricing">Pricing</Link>
-							</p>
+							<Link className={classNames(styles.link, base.mr2, base.pa2)} to="/pricing">
+								Pricing
+							</Link>
 
-							<p className={base.mr3} style={{margin: "10px"}}>
-								<a className={styles.link} href="/jobs">Jobs</a>
-							</p>
+							<a className={classNames(styles.link, base.mr2, base.pa2)} href="/jobs">Jobs</a>
 
 							{!(this.context as any).signedIn &&
-								<LocationStateToggleLink className={styles.link} href="/login" modalName="login" location={this.props.location} style={{margin: "10px"}}>
+								<LocationStateToggleLink className={classNames(styles.link, base.mr2, base.pa2)} href="/login" modalName="login" location={this.props.location}>
 									Login
 								</LocationStateToggleLink>
 							}
 
 							{!(this.context as any).signedIn &&
-								<LocationStateToggleLink className={styles.link} href="/join" modalName="join" location={this.props.location} style={{margin: "10px"}}>
+								<LocationStateToggleLink className={classNames(styles.link, base.mr0, base.pa2, base.pr0)} href="/join" modalName="join" location={this.props.location}>
 									Sign up
 								</LocationStateToggleLink>
 							}
 
-						</div>
-					</div>
+						</FlexContainer>
+					</FlexContainer>
 
 					{/* section showing welcome message and examples */}
-					<div style={{display: "flex", flexDirection: "row", maxWidth: "960px", flexWrap: "wrap", justifyContent: "space-around", alignItems: "center"}} className={classNames(base.center, base.ph3)}>
+					<FlexContainer justify="between" wrap={true} style={{maxWidth: "960px"}} className={classNames(base.center, base.ph3)}>
 
 						{/* column with welcome message, short description, and sign up button */}
 						<div style={{maxWidth: "400px", flex: "1 1 400px"}}>
@@ -109,7 +106,7 @@ export class Home extends Container<HomeProps, HomeState> {
 							</LocationStateToggleLink>
 						</div>
 
-					</div>
+					</FlexContainer>
 				</div>
 
 				<div className={classNames(base.center, base.ph3)} style={{maxWidth: "960px", paddingTop: "100px", paddingBottom: "100px"}}>
