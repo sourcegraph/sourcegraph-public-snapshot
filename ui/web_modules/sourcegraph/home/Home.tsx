@@ -9,13 +9,14 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import * as styles from "sourcegraph/home/styles/home.css";
+import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
+import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
-import {LocationStateModal} from "sourcegraph/components/Modal";
 import {Button, Heading, Logo, FlexContainer} from "sourcegraph/components";
 
 interface HomeProps {
-	location: Object;
+	location: any;
 }
 
 type HomeState = any;
@@ -38,6 +39,10 @@ export class Home extends Container<HomeProps, HomeState> {
 		script.src = "//platform.twitter.com/widgets.js";
 		script.charset = "utf-8";
 		document.body.appendChild(script);
+	}
+
+	reconcileState(state: HomeState, props: HomeProps): void {
+		Object.assign(state, props);
 	}
 
 	render(): JSX.Element | null {
@@ -174,20 +179,42 @@ export class Home extends Container<HomeProps, HomeState> {
 				{/* section showing language icons */}
 				<div style={{backgroundColor: "rgba(119, 147, 174, 0.1)", display: "flex", flexDirection: "column", justifyContent: "center",
 							alignItems: "center", padding: "40px"}}>
-					<Heading level="7" color="cool_mid_gray">
-						Growing language support
-					</Heading>
-					<div style={{maxWidth: "400px", display: "flex", flexDirection: "row", flexGrow: 1, justifyContent: "space-between"}}>
+
+					<div style={{textAlign: "center"}}>
 						<img title="Go supported" className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/go2.svg`} />
 						<img title="Java supported" className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/java.svg`} />
-						<img title="JavaScript coming soon" className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/js.svg`} />
-						<img title="Python coming soon" className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/python.svg`} />
-						{/*
-							<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/php.svg`} />
-							<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/scala.svg`} />
-						*/}
+						<div style={{display: "inline-block", position: "relative", cursor: "pointer"}} onMouseOver={() => this.setState({langMouseover: true})} onMouseLeave={() => this.setState({langMouseover: false})}>
+							<img title="JavaScript coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/js.svg`} />
+							<img title="Python coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/python.svg`} />
+							<img title="PHP coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/php.svg`} />
+							<img title="Scala coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/scala.svg`} />
+							{this.state.langMouseover &&
+								<LocationStateToggleLink style={{display: "flex", alignItems: "center", justifyContent: "center", position: "absolute", left: 0, right: 0, top: 0, bottom: 0}} href="/beta" modalName="beta" location={this.props.location}>
+									<div>
+										<div className={colors.blue} style={{lineHeight: 1}}>
+											<strong>Notify me</strong>
+										</div>
+										<div className={typography.f7}>
+											when new languages are supported
+										</div>
+									</div>
+								</LocationStateToggleLink>
+							}
+						</div>
 					</div>
 				</div>
+
+				{this.props.location.state && this.props.location.state.modal === "beta" &&
+					<LocationStateModal modalName="beta" location={this.props.location}>
+						<div className={styles.modal}>
+							<h2 className={typography.tc}>Join the Sourcegraph beta</h2>
+							<BetaInterestForm
+								className={styles.modalForm}
+								loginReturnTo="/"
+								onSubmit={dismissModal("beta", this.props.location, (this.context as any).router)} />
+						</div>
+					</LocationStateModal>
+				}
 
 				<div className={colors.bg_purple} style={{paddingTop: "50px", paddingBottom: "50px"}}>
 					<div className={base.center} style={{backgroundColor: "white",
