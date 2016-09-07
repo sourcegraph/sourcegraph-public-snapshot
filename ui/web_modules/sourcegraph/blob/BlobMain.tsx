@@ -16,7 +16,7 @@ import "sourcegraph/def/DefBackend";
 import "sourcegraph/build/BuildBackend";
 import * as Style from "sourcegraph/blob/styles/Blob.css";
 import {urlTo} from "sourcegraph/util/urlTo";
-import {makeRepoRev, trimRepo} from "sourcegraph/repo/index";
+import {makeRepoRev, trimRepo} from "sourcegraph/repo";
 import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
 import {Header} from "sourcegraph/components/Header";
 import {createLineFromByteFunc} from "sourcegraph/blob/lineFromByte";

@@ -4,7 +4,7 @@ import * as React from "react";
 import {Input, Props as InputProps} from "sourcegraph/components/Input";
 import * as styles from "sourcegraph/search/styles/GlobalSearchInput.css";
 import * as invariant from "invariant";
-import {Search} from "sourcegraph/components/symbols/index";
+import {Search} from "sourcegraph/components/symbols";
 import * as classNames from "classnames";
 
 // If the user clicks the magnifying glass icon, the cursor should be

@@ -1,7 +1,7 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import {Hero, Heading, Panel, Button} from "sourcegraph/components/index";
+import {Hero, Heading, Panel, Button} from "sourcegraph/components";
 import * as styles from "sourcegraph/page/Page.css";
 import {Link} from "react-router";
 import * as base from "sourcegraph/components/styles/_base.css";

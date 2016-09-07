@@ -3,9 +3,9 @@
 import * as React from "react";
 import * as styles from "sourcegraph/home/styles/Integrations.css";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {Heading, Button} from "sourcegraph/components/index";
+import {Heading, Button} from "sourcegraph/components";
 import {Component} from "sourcegraph/Component";
-import {inBeta} from "sourcegraph/user/index";
+import {inBeta} from "sourcegraph/user";
 import * as betautil from "sourcegraph/util/betautil.tsx";
 
 class Tool {

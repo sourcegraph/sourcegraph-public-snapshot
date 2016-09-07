@@ -8,7 +8,7 @@ import {Component} from "sourcegraph/Component";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as classNames from "classnames";
 
-import {Collapsible} from "sourcegraph/components/index";
+import {Collapsible} from "sourcegraph/components";
 
 import * as styles from "sourcegraph/build/styles/Build.css";
 

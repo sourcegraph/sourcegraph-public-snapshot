@@ -1,7 +1,7 @@
 // tslint:disable: typedef ordered-imports
 
 import {urlTo} from "sourcegraph/util/urlTo";
-import {makeRepoRev} from "sourcegraph/repo/index";
+import {makeRepoRev} from "sourcegraph/repo";
 import {rel} from "sourcegraph/app/routePatterns";
 import {urlToRepo, urlToRepoRev} from "sourcegraph/repo/routes";
 import {RouterState} from "react-router";

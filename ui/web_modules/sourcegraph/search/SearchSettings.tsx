@@ -4,7 +4,7 @@ import * as React from "react";
 import {Container} from "sourcegraph/Container";
 import * as styles from "sourcegraph/search/styles/SearchSettings.css";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {Button} from "sourcegraph/components/index";
+import {Button} from "sourcegraph/components";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {UserStore} from "sourcegraph/user/UserStore";
@@ -17,7 +17,7 @@ import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggl
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {searchScopes} from "sourcegraph/search/index";
+import {searchScopes} from "sourcegraph/search";
 import * as classNames from "classnames";
 import {Store} from "sourcegraph/Store";
 

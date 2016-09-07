@@ -2,7 +2,7 @@
 
 import {rel} from "sourcegraph/app/routePatterns";
 import {urlTo} from "sourcegraph/util/urlTo";
-import {makeRepoRev} from "sourcegraph/repo/index";
+import {makeRepoRev} from "sourcegraph/repo";
 import {lineColBoundToHash} from "sourcegraph/blob/lineColBoundToHash";
 import {withLastSrclibDataVersion} from "sourcegraph/blob/withLastSrclibDataVersion";
 import {BlobLoader} from "sourcegraph/blob/BlobLoader";

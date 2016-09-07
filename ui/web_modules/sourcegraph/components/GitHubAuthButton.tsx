@@ -4,7 +4,7 @@ import * as React from "react";
 import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 import {GitHubIcon} from "sourcegraph/components/Icons";
 import * as typography from "sourcegraph/components/styles/_typography.css";
-import {Button} from "sourcegraph/components/index";
+import {Button} from "sourcegraph/components";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {

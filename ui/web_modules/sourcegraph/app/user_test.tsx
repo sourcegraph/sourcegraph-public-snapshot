@@ -2,7 +2,7 @@ import expect from "expect.js";
 import * as React from "react";
 import {AuthInfo, User} from "sourcegraph/api";
 import {getChildContext, withUserContext} from "sourcegraph/app/user";
-import {ExternalToken} from "sourcegraph/user/index";
+import {ExternalToken} from "sourcegraph/user";
 import * as UserActions from "sourcegraph/user/UserActions";
 import {UserStore} from "sourcegraph/user/UserStore";
 import {render} from "sourcegraph/util/testutil/renderTestUtils";

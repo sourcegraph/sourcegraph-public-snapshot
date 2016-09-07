@@ -10,7 +10,7 @@ import {Container} from "sourcegraph/Container";
 import {UserStore} from "sourcegraph/user/UserStore";
 import {Store} from "sourcegraph/Store";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {Heading, FlexContainer} from "sourcegraph/components/index";
+import {Heading, FlexContainer} from "sourcegraph/components";
 import {locationForSearch} from "sourcegraph/search/routes";
 import {GlobalSearchInput} from "sourcegraph/search/GlobalSearchInput";
 import * as classNames from "classnames";

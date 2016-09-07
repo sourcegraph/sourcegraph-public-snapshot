@@ -6,7 +6,7 @@ import * as classNames from "classnames";
 
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {Button, Input} from "sourcegraph/components/index";
+import {Button, Input} from "sourcegraph/components";
 
 import * as UserActions from "sourcegraph/user/UserActions";
 import {UserStore} from "sourcegraph/user/UserStore";

@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import {TreeList} from "sourcegraph/tree/TreeList";
-import {treeParam} from "sourcegraph/tree/index";
-import {trimRepo} from "sourcegraph/repo/index";
+import {treeParam} from "sourcegraph/tree";
+import {trimRepo} from "sourcegraph/repo";
 import * as styles from "sourcegraph/tree/styles/Tree.css";
 import Helmet from "react-helmet";
 

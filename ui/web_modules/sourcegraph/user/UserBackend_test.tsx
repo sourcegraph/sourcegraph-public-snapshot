@@ -1,7 +1,7 @@
 import expect from "expect.js";
 import {AuthInfo, EmailAddr, User} from "sourcegraph/api";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {ExternalToken} from "sourcegraph/user/index";
+import {ExternalToken} from "sourcegraph/user";
 import * as UserActions from "sourcegraph/user/UserActions";
 import {UserBackend} from "sourcegraph/user/UserBackend";
 import {immediateSyncPromise} from "sourcegraph/util/testutil/immediateSyncPromise";

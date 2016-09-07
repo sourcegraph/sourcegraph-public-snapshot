@@ -2,7 +2,7 @@
 
 import {rel} from "sourcegraph/app/routePatterns";
 import {urlTo} from "sourcegraph/util/urlTo";
-import {makeRepoRev, repoPath, repoParam} from "sourcegraph/repo/index";
+import {makeRepoRev, repoPath, repoParam} from "sourcegraph/repo";
 import {PlainRoute} from "react-router";
 import {formatPattern} from "react-router/lib/PatternUtils";
 import {withResolvedRepoRev} from "sourcegraph/repo/withResolvedRepoRev";

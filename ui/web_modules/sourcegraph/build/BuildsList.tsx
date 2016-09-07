@@ -11,11 +11,11 @@ import {Store} from "sourcegraph/Store";
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import {BuildStore} from "sourcegraph/build/BuildStore";
 import {buildStatus, buildClass, elapsed} from "sourcegraph/build/Build";
-import {trimRepo} from "sourcegraph/repo/index";
+import {trimRepo} from "sourcegraph/repo";
 import {urlToBuild} from "sourcegraph/build/routes";
 import {urlToRepo} from "sourcegraph/repo/routes";
 
-import {Button} from "sourcegraph/components/index";
+import {Button} from "sourcegraph/components";
 
 import {TimeAgo} from "sourcegraph/util/TimeAgo";
 

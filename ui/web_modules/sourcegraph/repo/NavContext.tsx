@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import {RepoLink} from "sourcegraph/components/RepoLink";
-import {Label} from "sourcegraph/components/index";
+import {Label} from "sourcegraph/components";
 import {RevSwitcherContainer} from "sourcegraph/repo/RevSwitcherContainer";
 import * as styles from "sourcegraph/repo/styles/Repo.css";
 

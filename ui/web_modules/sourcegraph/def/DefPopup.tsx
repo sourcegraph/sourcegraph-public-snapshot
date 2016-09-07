@@ -5,7 +5,7 @@ import {Link} from "react-router";
 import {Container} from "sourcegraph/Container";
 import {DefStore} from "sourcegraph/def/DefStore";
 import * as styles from "sourcegraph/def/styles/Def.css";
-import {defPath} from "sourcegraph/def/index";
+import {defPath} from "sourcegraph/def";
 import * as DefActions from "sourcegraph/def/DefActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Button} from "sourcegraph/components/Button";

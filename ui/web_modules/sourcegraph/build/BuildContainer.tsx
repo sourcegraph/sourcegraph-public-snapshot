@@ -15,9 +15,9 @@ import {BuildTasks} from "sourcegraph/build/BuildTasks";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {TreeStore} from "sourcegraph/tree/TreeStore";
 import {urlToBuilds} from "sourcegraph/build/routes";
-import {trimRepo} from "sourcegraph/repo/index";
+import {trimRepo} from "sourcegraph/repo";
 
-import {Button} from "sourcegraph/components/index";
+import {Button} from "sourcegraph/components";
 
 import * as styles from "sourcegraph/build/styles/Build.css";
 

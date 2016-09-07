@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {Heading} from "sourcegraph/components/index";
+import {Heading} from "sourcegraph/components";
 import {
 	HeadingsComponent,
 	ButtonsComponent,
@@ -16,7 +16,7 @@ import {
 	AffixComponent,
 	FormsComponent,
 	ListComponent,
-} from "sourcegraph/styleguide/componentExamples/index";
+} from "sourcegraph/styleguide/componentExamples";
 
 export class ComponentsContainer extends React.Component<{}, any> {
 	render(): JSX.Element | null {

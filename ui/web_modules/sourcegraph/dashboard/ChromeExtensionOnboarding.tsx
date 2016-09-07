@@ -3,14 +3,14 @@
 import * as React from "react";
 import Helmet from "react-helmet";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
-import {Button, Heading, Panel} from "sourcegraph/components/index";
+import {Button, Heading, Panel} from "sourcegraph/components";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import * as classNames from "classnames";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import {OnboardingExampleRefsContainer} from "sourcegraph/def/OnboardingExampleRefsContainer";
-import {GitHubLogo} from "sourcegraph/components/symbols/index";
+import {GitHubLogo} from "sourcegraph/components/symbols";
 
 interface Props {
 	location?: any;

@@ -5,7 +5,7 @@ import * as classNames from "classnames";
 
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/components/styles/select.css";
-import {DownPointer, Alert} from "sourcegraph/components/symbols/index";
+import {DownPointer, Alert} from "sourcegraph/components/symbols";
 
 interface Props {
 	block?: boolean;

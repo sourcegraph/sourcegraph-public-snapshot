@@ -5,7 +5,7 @@ import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {DefStore} from "sourcegraph/def/DefStore";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {Heading, List, Loader} from "sourcegraph/components/index";
+import {Heading, List, Loader} from "sourcegraph/components";
 import "sourcegraph/blob/BlobBackend";
 import * as styles from "sourcegraph/def/styles/DefInfo.css";
 import * as base from "sourcegraph/components/styles/_base.css";
@@ -15,7 +15,7 @@ import {Store} from "sourcegraph/Store";
 import {Link} from "react-router";
 import "whatwg-fetch";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {Repository} from "sourcegraph/components/symbols/index";
+import {Repository} from "sourcegraph/components/symbols";
 import {urlToRepo} from "sourcegraph/repo/routes";
 import {urlToBlob} from "sourcegraph/blob/routes";
 

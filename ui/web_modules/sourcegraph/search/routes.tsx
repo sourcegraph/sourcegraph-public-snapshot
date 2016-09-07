@@ -2,7 +2,7 @@
 
 import {Location} from "history";
 import {rel} from "sourcegraph/app/routePatterns";
-import {searchScopes} from "sourcegraph/search/index";
+import {searchScopes} from "sourcegraph/search";
 import {GlobalSearchMain} from "sourcegraph/search/GlobalSearchMain";
 
 export const routes: any[] = [

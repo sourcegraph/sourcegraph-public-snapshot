@@ -1,7 +1,7 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import {Panel} from "sourcegraph/components/index";
+import {Panel} from "sourcegraph/components";
 import {SearchSettings} from "sourcegraph/search/SearchSettings";
 import {GlobalSearch} from "sourcegraph/search/GlobalSearch";
 import * as styles from "sourcegraph/search/styles/SearchResultsPanel.css";

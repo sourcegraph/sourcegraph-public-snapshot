@@ -3,7 +3,7 @@
 import * as React from "react";
 import * as styles from "sourcegraph/user/settings/styles/Repos.css";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {Input, Heading, Button, ToggleSwitch} from "sourcegraph/components/index";
+import {Input, Heading, Button, ToggleSwitch} from "sourcegraph/components";
 import {RepoLink} from "sourcegraph/components/RepoLink";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";

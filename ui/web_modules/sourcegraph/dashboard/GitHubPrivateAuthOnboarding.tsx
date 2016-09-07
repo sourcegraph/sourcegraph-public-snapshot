@@ -7,7 +7,7 @@ import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import Helmet from "react-helmet";
-import {Button, Heading, Panel, RepoLink, ToggleSwitch} from "sourcegraph/components/index";
+import {Button, Heading, Panel, RepoLink, ToggleSwitch} from "sourcegraph/components";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import * as Dispatcher from "sourcegraph/Dispatcher";

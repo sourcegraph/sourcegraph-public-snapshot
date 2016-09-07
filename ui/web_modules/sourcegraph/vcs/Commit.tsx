@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import {TimeAgo} from "sourcegraph/util/TimeAgo";
-import {Avatar} from "sourcegraph/components/index";
+import {Avatar} from "sourcegraph/components";
 import * as styles from "sourcegraph/vcs/styles/Commit.css";
 
 function showBothSigs(a, b) {

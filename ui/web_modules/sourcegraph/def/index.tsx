@@ -1,6 +1,6 @@
 import {Def} from "sourcegraph/api";
 import {abs, getRouteParams} from "sourcegraph/app/routePatterns";
-import {repoParam, repoPath, repoRev} from "sourcegraph/repo/index";
+import {repoParam, repoPath, repoRev} from "sourcegraph/repo";
 
 export function routeParams(url: string): {repo: string, rev: string | null, def: string, err: string | null} {
 	let v = getRouteParams(abs.def, url);

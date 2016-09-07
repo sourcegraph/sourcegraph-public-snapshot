@@ -5,7 +5,7 @@ import {Link} from "react-router";
 import {EventListener} from "sourcegraph/Component";
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
-import {Avatar, Popover, Menu, Logo, Heading} from "sourcegraph/components/index";
+import {Avatar, Popover, Menu, Logo, Heading} from "sourcegraph/components";
 import {CloseIcon} from "sourcegraph/components/Icons";
 import {LogoutLink} from "sourcegraph/user/LogoutLink";
 import * as styles from "sourcegraph/app/styles/GlobalNav.css";
@@ -19,15 +19,15 @@ import {LoginForm} from "sourcegraph/user/Login";
 import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
 import {Integrations} from "sourcegraph/home/Integrations";
 import {EllipsisHorizontal, CheckIcon} from "sourcegraph/components/Icons";
-import {DownPointer} from "sourcegraph/components/symbols/index";
+import {DownPointer} from "sourcegraph/components/symbols";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {GlobalSearchInput} from "sourcegraph/search/GlobalSearchInput";
 import {locationForSearch, queryFromStateOrURL, langsFromStateOrURL, scopeFromStateOrURL} from "sourcegraph/search/routes";
 import {SearchResultsPanel} from "sourcegraph/search/SearchResultsPanel";
 import * as invariant from "invariant";
 import {rel, abs} from "sourcegraph/app/routePatterns";
-import {repoPath, repoParam} from "sourcegraph/repo/index";
-import {isPage} from "sourcegraph/page/index";
+import {repoPath, repoParam} from "sourcegraph/repo";
+import {isPage} from "sourcegraph/page";
 import * as debounce from "lodash/debounce";
 
 const hiddenNavRoutes = new Set([

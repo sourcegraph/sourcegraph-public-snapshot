@@ -5,11 +5,11 @@ import {Store} from "sourcegraph/Store";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {deepFreeze} from "sourcegraph/util/deepFreeze";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {defPath} from "sourcegraph/def/index";
-import {ExamplesKey, RefLocationsKey} from "sourcegraph/def/index";
+import {defPath} from "sourcegraph/def";
+import {ExamplesKey, RefLocationsKey} from "sourcegraph/def";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import "sourcegraph/def/DefBackend";
-import {fastParseDefPath} from "sourcegraph/def/index";
+import {fastParseDefPath} from "sourcegraph/def";
 import {toQuery} from "sourcegraph/util/toQuery";
 import {BlobPos} from "sourcegraph/def/DefActions";
 

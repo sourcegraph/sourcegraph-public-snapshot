@@ -21,7 +21,7 @@ import {lineFromByte} from "sourcegraph/blob/lineFromByte";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import {Header} from "sourcegraph/components/Header";
 import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
-import {RepoLink} from "sourcegraph/components/index";
+import {RepoLink} from "sourcegraph/components";
 import {FaAngleDown, FaAngleRight} from "sourcegraph/components/Icons";
 import {breadcrumb} from "sourcegraph/util/breadcrumb";
 import {stripDomain} from "sourcegraph/util/stripDomain";

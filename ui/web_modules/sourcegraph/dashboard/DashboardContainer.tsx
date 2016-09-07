@@ -8,7 +8,7 @@ import {UserStore} from "sourcegraph/user/UserStore";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
 import {locationForSearch} from "sourcegraph/search/routes";
 import {GlobalSearchInput} from "sourcegraph/search/GlobalSearchInput";
-import {Button, Logo} from "sourcegraph/components/index";
+import {Button, Logo} from "sourcegraph/components";
 import {SearchSettings} from "sourcegraph/search/SearchSettings";
 import * as invariant from "invariant";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";

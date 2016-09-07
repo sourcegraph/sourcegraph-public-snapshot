@@ -8,7 +8,7 @@ import {RepoStore} from "sourcegraph/repo/RepoStore";
 import "sourcegraph/repo/RepoBackend";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {repoPath, repoRev, repoParam} from "sourcegraph/repo/index";
+import {repoPath, repoRev, repoParam} from "sourcegraph/repo";
 import * as cloneDeep from "lodash/cloneDeep";
 import {Store} from "sourcegraph/Store";
 

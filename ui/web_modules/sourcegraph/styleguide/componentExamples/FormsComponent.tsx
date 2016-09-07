@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {Heading, Panel, Table, Code, Input, Select} from "sourcegraph/components/index";
+import {Heading, Panel, Table, Code, Input, Select} from "sourcegraph/components";
 import * as classNames from "classnames";
 
 interface State {

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as styles from "sourcegraph/home/styles/BetaInterestForm.css";
-import {Button, Input, CheckboxList} from "sourcegraph/components/index";
+import {Button, Input, CheckboxList} from "sourcegraph/components";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as base from "sourcegraph/components/styles/_base.css";

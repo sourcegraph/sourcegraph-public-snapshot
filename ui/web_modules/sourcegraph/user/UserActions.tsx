@@ -1,5 +1,5 @@
 import {AuthInfo, EmailAddr, User} from "sourcegraph/api";
-import {ExternalToken, Settings} from "sourcegraph/user/index";
+import {ExternalToken, Settings} from "sourcegraph/user";
 
 export type Action =
 	WantAuthInfo |

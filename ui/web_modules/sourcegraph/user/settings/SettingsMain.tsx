@@ -1,5 +1,5 @@
 import * as React from "react";
-import {Panel} from "sourcegraph/components/index";
+import {Panel} from "sourcegraph/components";
 import * as styles from "sourcegraph/user/settings/styles/Settings.css";
 
 interface Props {

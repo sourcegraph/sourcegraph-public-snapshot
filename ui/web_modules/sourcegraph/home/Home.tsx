@@ -12,7 +12,7 @@ import * as styles from "sourcegraph/home/styles/home.css";
 
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal} from "sourcegraph/components/Modal";
-import {Button, Heading, Logo, FlexContainer} from "sourcegraph/components/index";
+import {Button, Heading, Logo, FlexContainer} from "sourcegraph/components";
 
 interface HomeProps {
 	location: Object;

@@ -13,7 +13,7 @@ import * as styles from "sourcegraph/repo/styles/RevSwitcher.css";
 import * as classNames from "classnames";
 
 import {FaChevronDown, CheckIcon} from "sourcegraph/components/Icons";
-import {Input, Menu, Heading} from "sourcegraph/components/index";
+import {Input, Menu, Heading} from "sourcegraph/components";
 import {urlWithRev} from "sourcegraph/repo/routes";
 
 interface Props {

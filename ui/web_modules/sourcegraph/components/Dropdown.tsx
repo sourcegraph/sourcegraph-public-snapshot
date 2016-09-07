@@ -5,7 +5,7 @@ import * as styles from "sourcegraph/components/styles/dropdown.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {EventListener} from "sourcegraph/Component";
 import {CheckIcon} from "sourcegraph/components/Icons";
-import {DownPointer} from "sourcegraph/components/symbols/index";
+import {DownPointer} from "sourcegraph/components/symbols";
 import * as classNames from "classnames";
 
 interface Props {

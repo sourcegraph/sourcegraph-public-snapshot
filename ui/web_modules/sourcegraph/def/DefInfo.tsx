@@ -28,10 +28,10 @@ import {lineFromByte} from "sourcegraph/blob/lineFromByte";
 import {urlToDef} from "sourcegraph/def/routes";
 import {qualifiedNameAndType, defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
-import {trimRepo} from "sourcegraph/repo/index";
+import {trimRepo} from "sourcegraph/repo";
 import {urlToRepo} from "sourcegraph/repo/routes";
-import {EmptyNodeIllo} from "sourcegraph/components/symbols/index";
-import {Header, Heading, FlexContainer, GitHubAuthButton, Loader} from "sourcegraph/components/index";
+import {EmptyNodeIllo} from "sourcegraph/components/symbols";
+import {Header, Heading, FlexContainer, GitHubAuthButton, Loader} from "sourcegraph/components";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {Store} from "sourcegraph/Store";
 

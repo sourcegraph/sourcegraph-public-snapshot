@@ -7,7 +7,7 @@ import "sourcegraph/def/DefBackend";
 import * as DefActions from "sourcegraph/def/DefActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Container} from "sourcegraph/Container";
-import {routeParams as defRouteParams} from "sourcegraph/def/index";
+import {routeParams as defRouteParams} from "sourcegraph/def";
 import {Header} from "sourcegraph/components/Header";
 import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
 import Helmet from "react-helmet";

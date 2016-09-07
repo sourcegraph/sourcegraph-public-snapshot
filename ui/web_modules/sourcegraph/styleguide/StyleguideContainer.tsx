@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import {Link} from "react-router";
-import {Hero, Heading, FlexContainer, Tabs, TabItem, Affix} from "sourcegraph/components/index";
+import {Hero, Heading, FlexContainer, Tabs, TabItem, Affix} from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/styleguide/styles/StyleguideContainer.css";
 import {ComponentsContainer} from "sourcegraph/styleguide/ComponentsContainer";

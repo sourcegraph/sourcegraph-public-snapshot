@@ -7,7 +7,7 @@ import {Link} from "react-router";
 
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {Button, Input, Heading} from "sourcegraph/components/index";
+import {Button, Input, Heading} from "sourcegraph/components";
 
 import * as UserActions from "sourcegraph/user/UserActions";
 import {UserStore} from "sourcegraph/user/UserStore";

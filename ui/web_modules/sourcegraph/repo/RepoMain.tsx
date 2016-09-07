@@ -8,7 +8,7 @@ import * as BuildActions from "sourcegraph/build/BuildActions";
 import "sourcegraph/build/BuildBackend";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
-import {trimRepo} from "sourcegraph/repo/index";
+import {trimRepo} from "sourcegraph/repo";
 import {context} from "sourcegraph/app/context";
 import {guessBranchName} from "sourcegraph/build/Build";
 import {Header} from "sourcegraph/components/Header";

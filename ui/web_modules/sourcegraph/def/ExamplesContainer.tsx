@@ -9,7 +9,7 @@ import "sourcegraph/blob/BlobBackend";
 import * as styles from "sourcegraph/def/styles/DefInfo.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
-import {Panel, Heading, Loader} from "sourcegraph/components/index";
+import {Panel, Heading, Loader} from "sourcegraph/components";
 import "whatwg-fetch";
 import * as classNames from "classnames";
 import {Store} from "sourcegraph/Store";

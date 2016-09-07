@@ -9,8 +9,8 @@ import * as styles from "sourcegraph/desktop/styles/home.css";
 import * as classNames from "classnames";
 
 import {Link} from "react-router";
-import {Heading, List} from "sourcegraph/components/index";
-import {Cone} from "sourcegraph/components/symbols/index";
+import {Heading, List} from "sourcegraph/components";
+import {Cone} from "sourcegraph/components/symbols";
 
 export const NotInBeta = () => (
 	<div className={classNames(layout.containerFixed, base.pv5, base.ph4)} style={{maxWidth: "600px"}}>
