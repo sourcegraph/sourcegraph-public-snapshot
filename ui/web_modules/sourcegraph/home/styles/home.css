@@ -30,7 +30,7 @@
 .lang_icon {
 	width: 32px;
 	height: 32px;
-	margin: 20px;
+	margin: 0 20px;
 }
 
 @media only screen and media_sm {

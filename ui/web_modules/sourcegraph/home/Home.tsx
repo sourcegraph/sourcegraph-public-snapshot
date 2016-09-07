@@ -170,12 +170,11 @@ export class Home extends Container<HomeProps, HomeState> {
 				</div>
 
 				{/* section showing language icons */}
-				<div style={{backgroundColor: "rgba(119, 147, 174, 0.1)", display: "flex", flexDirection: "column", justifyContent: "center",
-							alignItems: "center", padding: "40px"}}>
-					<Heading level="7" color="cool_mid_gray">
+				<div className={classNames(base.pv4, typography.tc, colors.bg_cool_mid_gray_1)}>
+					<Heading level="7" color="cool_mid_gray" className="base.pv3">
 						Growing language support
 					</Heading>
-					<div style={{maxWidth: "400px", display: "flex", flexDirection: "row", flexGrow: 1, justifyContent: "space-between"}}>
+					<FlexContainer justify="between" className={classNames(base.center, base.mt4)} style={{maxWidth: "400px"}}>
 						<img title="Go supported" className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/go2.svg`} />
 						<img title="Java supported" className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/java.svg`} />
 						<img title="JavaScript coming soon" className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/js.svg`} />
