@@ -8,7 +8,6 @@ import {Router, browserHistory as history, match, applyRouterMiddleware} from "r
 import {useScroll} from "react-router-scroll";
 import {rootRoute} from "sourcegraph/app/App";
 import * as context from "sourcegraph/app/context";
-import {resetOnAuthChange} from "sourcegraph/app/resetOnAuthChange";
 import {shouldUpdateScroll, hashLinkScroll} from "sourcegraph/app/routerScrollBehavior";
 import {AppContainer} from "react-hot-loader";
 import Redbox from "redbox-react";
@@ -21,7 +20,6 @@ import "sourcegraph/init/Sentry";
 import "autotrack/lib/plugins/url-change-tracker";
 
 context.reset(global.window.__sourcegraphJSContext);
-resetOnAuthChange();
 global.__webpack_public_path__ = document.head.dataset["webpackPublicPath"]; // eslint-disable-line no-undef
 
 const rootEl = document.getElementById("main") as HTMLElement;

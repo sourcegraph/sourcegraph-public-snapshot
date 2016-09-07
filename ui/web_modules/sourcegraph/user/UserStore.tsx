@@ -60,14 +60,6 @@ class UserStoreClass extends Store<any> {
 		return this.users[authInfo.UID] || null;
 	}
 
-	// _resetAuth causes resetOnAuthChange's listener to be called, which clears
-	// all store data after an auth change (login/signup). This is so that
-	// users don't see data that was fetched with the auth of the previous user signed
-	// into the app in their browser.
-	_resetAuth(): void {
-		this.activeAccessToken = null;
-	}
-
 	__onDispatch(action: UserActions.Action): void {
 		if (action instanceof UserActions.FetchedAuthInfo) {
 			this.authInfos = mergeAndDeepFreeze(this.authInfos, {[action.accessToken]: action.authInfo});
@@ -98,14 +90,10 @@ class UserStoreClass extends Store<any> {
 			this.pendingAuthActions = mergeAndDeepFreeze(this.pendingAuthActions, {reset: true});
 
 		} else if (action instanceof UserActions.SignupCompleted) {
-			this._resetAuth();
-			if (action.resp && action.resp.Success) { this.activeAccessToken = action.resp.AccessToken; }
 			this.pendingAuthActions = mergeAndDeepFreeze(this.pendingAuthActions, {signup: false});
 			this.authResponses = mergeAndDeepFreeze(this.authResponses, {signup: action.resp});
 
 		} else if (action instanceof UserActions.LoginCompleted) {
-			this._resetAuth();
-			if (action.resp && action.resp.Success) { this.activeAccessToken = action.resp.AccessToken; }
 			this.pendingAuthActions = mergeAndDeepFreeze(this.pendingAuthActions, {login: false});
 			this.authResponses = mergeAndDeepFreeze(this.authResponses, {login: action.resp});
 

@@ -70,13 +70,12 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 			role="navigation"
 			style={shouldHide ? {display: "none"} : {}}>
 
-			{location.state && location.state.modal === "login" &&
+			{location.state && location.state.modal === "login" && !signedIn &&
 			// TODO(chexee): Decouple existence of modals and GlobalNav
 				<LocationStateModal modalName="login" location={location} style={{maxWidth: "380px", marginLeft: "auto", marginRight: "auto"}}
 					onDismiss={(v) => eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 					<div className={styles.modal}>
 						<LoginForm
-							onLoginSuccess={dismissModal("login", location, router)}
 							returnTo={location}
 							location={location} />
 					</div>

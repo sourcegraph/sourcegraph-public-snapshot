@@ -135,8 +135,7 @@ class EventLoggerClass {
 		this._amplitude.setOptOut(this.userAgentIsBot);
 	}
 
-	// _updateUser is be called whenever the user changes (after login
-	// or on the initial page load);
+	// _updateUser is be called whenever the user changes (on the initial page load).
 	//
 	// If any events have been buffered, it will flush them immediately.
 	// If you do not call _updateUser or it is run on the server,
