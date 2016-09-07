@@ -12,12 +12,10 @@ export type Action =
 	UpdateSettings |
 	SubmitSignup |
 	SubmitLogin |
-	SubmitLogout |
 	SubmitForgotPassword |
 	SubmitResetPassword |
 	SignupCompleted |
 	LoginCompleted |
-	LogoutCompleted |
 	ForgotPasswordCompleted |
 	ResetPasswordCompleted;
 
@@ -130,18 +128,6 @@ export class LoginCompleted {
 	constructor(resp: any) {
 		this.resp = resp;
 		this.eventName = "LoginCompleted";
-	}
-}
-
-export class SubmitLogout {}
-
-export class LogoutCompleted {
-	resp: any;
-	eventName: string;
-
-	constructor(resp: any) {
-		this.resp = resp;
-		this.eventName = "LogoutCompleted";
 	}
 }
 

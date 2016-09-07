@@ -135,7 +135,7 @@ class EventLoggerClass {
 		this._amplitude.setOptOut(this.userAgentIsBot);
 	}
 
-	// _updateUser is be called whenever the user changes (after login or logout,
+	// _updateUser is be called whenever the user changes (after login
 	// or on the initial page load);
 	//
 	// If any events have been buffered, it will flush them immediately.
@@ -386,7 +386,6 @@ class EventLoggerClass {
 
 		case UserActions.SignupCompleted:
 		case UserActions.LoginCompleted:
-		case UserActions.LogoutCompleted:
 		case UserActions.ForgotPasswordCompleted:
 		case UserActions.ResetPasswordCompleted:
 			if (action.email) {

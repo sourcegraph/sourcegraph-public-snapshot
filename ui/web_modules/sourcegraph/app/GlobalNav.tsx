@@ -7,7 +7,6 @@ import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggl
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import {Avatar, Popover, Menu, Logo, Heading} from "sourcegraph/components";
 import {CloseIcon} from "sourcegraph/components/Icons";
-import {LogoutLink} from "sourcegraph/user/LogoutLink";
 import * as styles from "sourcegraph/app/styles/GlobalNav.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
@@ -177,7 +176,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 								Contact
 							</a>
 							<hr role="divider" className={base.mt3} />
-							<LogoutLink role="menu_item" />
+							<a role="menu_item" href="/-/logout">Sign out</a>
 							<hr role="divider" className={base.mt2} />
 							<div className={classNames(styles.cool_mid_gray, base.pv1, base.mb1, typography.tc)}>
 								<Link to="/security" className={classNames(styles.cool_mid_gray, typography.f7, typography.link_subtle, base.pr3)}>Security</Link>

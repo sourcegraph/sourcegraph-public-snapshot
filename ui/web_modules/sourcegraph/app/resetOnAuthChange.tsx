@@ -5,7 +5,7 @@ import {forEach as forEachStore, reset as resetStores} from "sourcegraph/init/st
 
 // resetOnAuthChange clears the authentication information in UserStore
 // and resets all stores to their initial state (with no data) when
-// the authenticated user changes (after login, signup, or logout).
+// the authenticated user changes (after login or signup).
 export function resetOnAuthChange() {
 	let lastActiveAccessToken = UserStore.activeAccessToken;
 	if (typeof lastActiveAccessToken === "undefined") {

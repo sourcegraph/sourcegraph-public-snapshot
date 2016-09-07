@@ -74,11 +74,6 @@ export function withUserContext(Component) {
 					Dispatcher.Backends.dispatch(new UserActions.WantUser(nextState.authInfo.UID));
 				}
 			}
-
-			// Log out if the user is deleted.
-			if (nextState.user && nextState.user.Error && nextState.user.Error.response && nextState.user.Error.response.status === 404 && nextState.user !== prevState.user) {
-				Dispatcher.Backends.dispatch(new UserActions.SubmitLogout());
-			}
 		}
 
 		getChildContext(): childContext { return getChildContext(this.state); }

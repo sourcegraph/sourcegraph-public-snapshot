@@ -104,23 +104,6 @@ class UserBackendClass {
 				});
 		}
 
-		if (payload instanceof UserActions.SubmitLogout) {
-			this.fetch(`/.api/logout`, {
-				method: "POST",
-				body: JSON.stringify({}),
-			})
-				.then(checkStatus)
-				.then((resp) => resp.json())
-				.catch((err) => ({Error: err}))
-				.then(function(data: any): void {
-					Dispatcher.Stores.dispatch(new UserActions.LogoutCompleted(data));
-					// Redirect on logout.
-					if (data.Success) {
-						window.location.href = "/#loggedout";
-					}
-				});
-		}
-
 		if (payload instanceof UserActions.SubmitForgotPassword) {
 			const action = payload;
 			this.fetch(`/.api/forgot`, {

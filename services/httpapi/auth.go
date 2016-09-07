@@ -139,11 +139,6 @@ func finishLoginOrSignup(ctx context.Context, cl *sourcegraph.Client, w http.Res
 	return writeJSON(w, &authResponse{Success: true, AccessToken: tok.AccessToken})
 }
 
-func serveLogout(w http.ResponseWriter, r *http.Request) error {
-	appauth.DeleteSessionCookie(w)
-	return writeJSON(w, &authResponse{Success: true})
-}
-
 func serveForgotPassword(w http.ResponseWriter, r *http.Request) error {
 	cl := handlerutil.Client(r)
 

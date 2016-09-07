@@ -61,7 +61,7 @@ class UserStoreClass extends Store<any> {
 	}
 
 	// _resetAuth causes resetOnAuthChange's listener to be called, which clears
-	// all store data after an auth change (login/signup/logout). This is so that
+	// all store data after an auth change (login/signup). This is so that
 	// users don't see data that was fetched with the auth of the previous user signed
 	// into the app in their browser.
 	_resetAuth(): void {
@@ -91,10 +91,6 @@ class UserStoreClass extends Store<any> {
 		} else if (action instanceof UserActions.SubmitLogin) {
 			this.pendingAuthActions = mergeAndDeepFreeze(this.pendingAuthActions, {login: true});
 
-		} else if (action instanceof UserActions.SubmitLogout) {
-			this._resetAuth();
-			this.pendingAuthActions = mergeAndDeepFreeze(this.pendingAuthActions, {logout: true});
-
 		} else if (action instanceof UserActions.SubmitForgotPassword) {
 			this.pendingAuthActions = mergeAndDeepFreeze(this.pendingAuthActions, {forgot: true});
 
@@ -112,11 +108,6 @@ class UserStoreClass extends Store<any> {
 			if (action.resp && action.resp.Success) { this.activeAccessToken = action.resp.AccessToken; }
 			this.pendingAuthActions = mergeAndDeepFreeze(this.pendingAuthActions, {login: false});
 			this.authResponses = mergeAndDeepFreeze(this.authResponses, {login: action.resp});
-
-		} else if (action instanceof UserActions.LogoutCompleted) {
-			this._resetAuth();
-			this.pendingAuthActions = mergeAndDeepFreeze(this.pendingAuthActions, {logout: false});
-			this.authResponses = mergeAndDeepFreeze(this.authResponses, {logout: action.resp});
 
 		} else if (action instanceof UserActions.ForgotPasswordCompleted) {
 			this.pendingAuthActions = mergeAndDeepFreeze(this.pendingAuthActions, {forgot: false});
