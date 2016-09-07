@@ -12,13 +12,11 @@ import {Container} from "sourcegraph/Container";
 import {Store} from "sourcegraph/Store";
 import {DefStore} from "sourcegraph/def/DefStore";
 import {DefTooltip} from "sourcegraph/def/DefTooltip";
-import {Link} from "react-router";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import "sourcegraph/blob/BlobBackend";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {lineFromByte} from "sourcegraph/blob/lineFromByte";
-import {urlToBlob} from "sourcegraph/blob/routes";
 import * as styles from "sourcegraph/def/styles/Refs.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
@@ -263,7 +261,7 @@ export class OnboardingExampleRefsContainer extends Container<Props, State> {
 												highlightedDefObj={null}
 												textSize="large" />
 										</div>
-										{this.state.refRepo && <div style={{textAlign: "center"}} className={classNames(colors.bg_light_blue, base.pv2, styles.f7, base.hidden_s)}>From <Link to={`${urlToBlob(this.state.refRepo, this.state.refRev, loc.Path)}${ranges ? `#L${ranges[0][2]}` : ""}`} onClick={this._clickedFromRepo.bind(this)}>{this.state.refRepo}</Link></div>}
+										{this.state.refRepo && <div style={{textAlign: "center"}} className={classNames(colors.bg_light_blue, base.pv2, styles.f7, base.hidden_s)}>From <a style={{pointerEvents: "none"}}>{this.state.refRepo}</a></div>}
 									</div>
 								);
 							})}

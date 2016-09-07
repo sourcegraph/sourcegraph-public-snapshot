@@ -106,7 +106,7 @@ export class CompletedOnboardingDashboard extends Container<Props, State> {
 							Start exploring code
 						</Heading>
 						<p className={classNames(typography.tc, base.mt3, base.mb4, typography.f6, colors.cool_gray_8)} >
-							You've got everything you need to browse code smarter.
+							You've got everything you need to start exploring the code you depend on.
 						</p>
 						{this._renderGlobalSearchForm()}
 						<div className={classNames(styles.user_actions, colors.cool_gray_8)}>
@@ -118,21 +118,21 @@ export class CompletedOnboardingDashboard extends Container<Props, State> {
 							<div style={{maxWidth: "675px", paddingLeft: "90px"}} className={classNames(typography.tl, base.center)}>
 								<div className={classNames(colors.cool_gray_8, base.center)}>
 									<div className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>
-										<Link to="github.com/sourcegraph/checkup"><span onClick={this._exampleRepoSelected.bind(this, "checkup")}>sourcegraph / checkup</span></Link>
+										<Link to="github.com/sourcegraph/checkup/-/blob/checkup.go"><span onClick={this._exampleRepoSelected.bind(this, "checkup")}>sourcegraph / checkup</span></Link>
 										<p>Self-hosted health checks and status pages</p>
 									</div>
 									<div  className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>
-										<Link to="github.com/gorilla/mux"><span onClick={this._exampleRepoSelected.bind(this, "mux")}>gorilla / mux</span></Link>
+										<Link to="github.com/gorilla/mux/-/blob/mux.go"><span onClick={this._exampleRepoSelected.bind(this, "mux")}>gorilla / mux</span></Link>
 										<p>A powerful URL router and dispatcher for golang</p>
 									</div>
 								</div>
 								<div className={classNames(colors.cool_gray_8, base.center)}>
 									<div className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>
-										<Link to="github.com/sourcegraph/thyme"><span onClick={this._exampleRepoSelected.bind(this, "thyme")}>sourcegraph / thyme</span></Link>
+										<Link to="github.com/sourcegraph/thyme/-/blob/cmd/thyme/main.go"><span onClick={this._exampleRepoSelected.bind(this, "thyme")}>sourcegraph / thyme</span></Link>
 										<p>Automatically track which applications you use</p>
 									</div>
 									<div  className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>
-										<Link to="github.com/kubernetes/kubernetes"><span onClick={this._exampleRepoSelected.bind(this, "kubernetes")}>kubernetes / kubernetes</span></Link>
+										<Link to="github.com/kubernetes/kubernetes/-/blob/examples/apiserver/server/main.go"><span onClick={this._exampleRepoSelected.bind(this, "kubernetes")}>kubernetes / kubernetes</span></Link>
 										<p>Production-Grade Container Scheduling and Management</p>
 									</div>
 								</div>

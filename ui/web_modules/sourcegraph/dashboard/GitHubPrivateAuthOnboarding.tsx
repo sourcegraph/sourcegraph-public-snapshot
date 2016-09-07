@@ -7,7 +7,7 @@ import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import Helmet from "react-helmet";
-import {Button, Heading, Panel, RepoLink, ToggleSwitch} from "sourcegraph/components";
+import {Button, Heading, Panel, RepoLink, ToggleSwitch, Loader} from "sourcegraph/components";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import * as Dispatcher from "sourcegraph/Dispatcher";
@@ -33,8 +33,10 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 
 	constructor(props) {
 		super(props);
+
 		this.state = {
 			showAll: false,
+			isLoading: this.props.location.search.includes("CompletedGitHubOAuth2Flow"),
 		};
 	}
 
@@ -53,7 +55,8 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 							</p>
 							<div className={classNames(base.pv5)}>
 								<img width={332} style={{marginBottom: "-95px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Dashboard/OnboardingRepos.png`}></img>
-								<GitHubAuthButton pageName={"GitHubPrivateCodeOnboarding"} scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>
+								{this.state.isLoading && <div><Loader/></div>}
+								{!this.state.isLoading && <GitHubAuthButton pageName={"GitHubPrivateCodeOnboarding"} scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>}
 							</div>
 							<p>
 								<a onClick={this._skipClicked.bind(this)}>Skip</a>
@@ -125,7 +128,7 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 						<div className={classNames(styles.user_actions, base.pt2)} style={{maxWidth: "380px"}}>
 							<span className={styles.list_label_right}>ENABLE</span>
 							<div className={styles.repos_list}>
-								{repos.length > 0 && repos.map((repo, i) =>
+								{(repos && repos.length > 0) && repos.map((repo, i) =>
 									<div className={styles.row} key={i}>
 										<div className={styles.info}>
 											{repo.ID ?

@@ -2,6 +2,7 @@
 
 .loader {
 	display: inline-block;
+	pointer-events:none;
 }
 
 .stretch {
