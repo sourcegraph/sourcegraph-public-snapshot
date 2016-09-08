@@ -20,6 +20,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 import {searchScopes} from "sourcegraph/search";
 import * as classNames from "classnames";
 import {Store} from "sourcegraph/Store";
+import {context} from "sourcegraph/app/context";
 
 interface Props {
 	location: any;
@@ -71,12 +72,6 @@ class SearchSettingsComp extends Container<Props, State> {
 		Object.assign(state, props);
 
 		state.settings = UserStore.settings;
-
-		// Use this instead of context signedIn because of the issues surrounding
-		// propagating context through components that use shouldComponentUpdate.
-		// We're already observing UserStore, so this doesn't add any extra overhead.
-		state.signedIn = Boolean(UserStore.activeAuthInfo());
-		state.user = UserStore.activeUser();
 	}
 
 	onStateTransition(prevState: State, nextState: State): void {
@@ -148,7 +143,7 @@ class SearchSettingsComp extends Container<Props, State> {
 		const langs = this._langs();
 
 		let langOptions = allLangs.slice(0); // clone array
-		if (localStorage.getItem("srclib_lang_support") !== "true" && (this.state.user && this.state.user.Login !== "sourcegraph")) {
+		if (localStorage.getItem("srclib_lang_support") !== "true" && (context.user && context.user.Login !== "sourcegraph")) {
 			let idx = langOptions.indexOf("other");
 			langOptions.splice(idx, 1);
 		}
@@ -218,7 +213,7 @@ class SearchSettingsComp extends Container<Props, State> {
 								}
 							}}
 							outline={this.state.githubToken && !scope.popular}>Popular libraries</Button>
-						{(!this.state.signedIn || !this.props.githubToken) &&
+						{(!context.user || !this.props.githubToken) &&
 							<GitHubAuthButton color="green" size="small" outline={true} className={styles.choice_button} returnTo={this.props.location}>My public projects</GitHubAuthButton>}
 						{this.props.githubToken &&
 							<Button
@@ -228,7 +223,7 @@ class SearchSettingsComp extends Container<Props, State> {
 								onClick={() => this._setScope({public: !scope.public})}
 								outline={!scope.public}>My public projects</Button>
 						}
-						{(!this.state.signedIn || !this._hasPrivateGitHubToken()) &&
+						{(!context.user || !this._hasPrivateGitHubToken()) &&
 							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} className={styles.choice_button} returnTo={this.props.location}>My private projects</GitHubAuthButton>}
 						{this._hasPrivateGitHubToken() &&
 							<Button

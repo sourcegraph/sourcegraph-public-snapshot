@@ -44,22 +44,6 @@ class UserStoreClass extends Store<any> {
 		}
 	}
 
-	// activeAuthInfo returns the AuthInfo object for the active user, if there
-	// is one. Otherwise it returns null.
-	activeAuthInfo(): AuthInfo | null {
-		if (!this.activeAccessToken) { return null; }
-		return this.authInfos[this.activeAccessToken] || null;
-	}
-
-	// activeUser returns the User object for the active user, if there is one
-	// and if the User object is already persisted in the store. Otherwise it
-	// returns null.
-	activeUser(): User | null {
-		const authInfo = this.activeAuthInfo();
-		if (!authInfo || !authInfo.UID) { return null; }
-		return this.users[authInfo.UID] || null;
-	}
-
 	__onDispatch(action: UserActions.Action): void {
 		if (action instanceof UserActions.FetchedAuthInfo) {
 			this.authInfos = mergeAndDeepFreeze(this.authInfos, {[action.accessToken]: action.authInfo});

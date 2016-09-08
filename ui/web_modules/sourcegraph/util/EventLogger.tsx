@@ -140,7 +140,7 @@ class EventLoggerClass {
 	// If you do not call _updateUser or it is run on the server,
 	// any subequent calls to logEvent or setUserProperty will be buffered.
 	_updateUser(): void {
-		const user = UserStore.activeUser();
+		const user = context.user;
 		const emails = user && user.UID ? (UserStore.emails[user.UID] || null) : null;
 		const primaryEmail = (emails && emails.filter(e => e.Primary).map(e => e.Email)[0]) || null;
 
