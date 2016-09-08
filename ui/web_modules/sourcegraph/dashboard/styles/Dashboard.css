@@ -230,3 +230,13 @@
 	overflow: hidden;
 	font-size: 0.9rem;
 }
+
+.repos_left_padding {
+	padding-left: 90px;
+}
+
+@media media_sm {
+	.repos_left_padding {
+		padding-left: 65px;
+	}
+}

@@ -17,8 +17,9 @@ import * as classNames from "classnames";
 import {Link} from "react-router";
 
 interface Props {
-	location?: any;
+	location: any;
 	currentStep?: string;
+	completedBanner?: boolean;
 }
 
 type State = any;
@@ -27,13 +28,15 @@ type OnSelectQueryListener = (ev: React.MouseEvent<HTMLButtonElement>, query: st
 
 const defaultSearchScope =  {popular: true, public: true, private: false, repo: false};
 
-export class CompletedOnboardingDashboard extends Container<Props, State> {
+export class SignedInDashboard extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
 		signedIn: React.PropTypes.bool.isRequired,
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
+
+	_pageName: string = this.props.completedBanner ? "CompletedOnboardingDashboard" : "Dashboard";
 
 	constructor(props) {
 		super(props);
@@ -52,7 +55,7 @@ export class CompletedOnboardingDashboard extends Container<Props, State> {
 			return;
 		}
 		if (ev.currentTarget.value) {
-			(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "OnboardingGlobalSearchInitiated", {page_name: "CompletedOnboardingDashboard"});
+			(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "GlobalSearchInitiated", {page_name: this._pageName});
 			this._goToSearch(ev.currentTarget.value);
 		}
 	}
@@ -66,12 +69,12 @@ export class CompletedOnboardingDashboard extends Container<Props, State> {
 	}
 
 	_topQuerySelected(query: string) {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "TopQuerySelected", {page_name: "CompletedOnboardingDashboard", selected_query: query});
+		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "TopQuerySelected", {page_name: this._pageName, selected_query: query});
 		this._goToSearch(query);
 	}
 
 	_exampleRepoSelected(exampleRepoUrl: string) {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ExampleRepoSelected", {page_name: "CompletedOnboardingDashboard", example_repo: exampleRepoUrl});
+		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ExampleRepoSelected", {page_name: this._pageName, example_repo: exampleRepoUrl});
 	}
 
 	_renderGlobalSearchForm(): JSX.Element | null {
@@ -93,15 +96,17 @@ export class CompletedOnboardingDashboard extends Container<Props, State> {
 			<div>
 				<div className={styles.onboarding_container} style={{maxWidth: "750px"}}>
 					<div className={classNames(base.pb3, base.ph4, base.br2)}>
-						<div className={base.pt4}>
-							<FlexContainer className={classNames(base.pv3, base.ph4, base.br2, colors.bg_green, base.center)}>
-								<img src={`${(this.context as any).siteConfig.assetsRoot}/img/emoji/tada.svg`} style={{flex: "0 0 36px"}}/>
-								<div className={base.pl3}>
-									<h4 className={classNames(base.mv0, colors.white)}>Thanks for joining Sourcegraph!</h4>
-									<span className={classNames(colors.white)}>Get started by searching for usage examples or exploring a public repository.</span>
-								</div>
-							</FlexContainer>
-						</div>
+						{this.props.completedBanner &&
+							<div className={base.pt4}>
+								<FlexContainer className={classNames(base.pv3, base.ph4, base.br2, colors.bg_green, base.center)}>
+									<img src={`${(this.context as any).siteConfig.assetsRoot}/img/emoji/tada.svg`} style={{flex: "0 0 36px"}}/>
+									<div className={base.pl3}>
+										<h4 className={classNames(base.mv0, colors.white)}>Thanks for joining Sourcegraph!</h4>
+										<span className={classNames(colors.white)}>Get started by searching for usage examples or exploring a public repository.</span>
+									</div>
+								</FlexContainer>
+							</div>
+						}
 						<Heading className={classNames(base.pt5)} align="center" level="4">
 							Start exploring code
 						</Heading>
@@ -115,7 +120,7 @@ export class CompletedOnboardingDashboard extends Container<Props, State> {
 						</div>
 						<div className={classNames(styles.user_actions, base.pt5)}>
 							<Heading className={base.pb4} level="5">Explore public repositories</Heading>
-							<div style={{maxWidth: "675px", paddingLeft: "90px"}} className={classNames(typography.tl, base.center)}>
+							<div style={{maxWidth: "675px"}} className={classNames(typography.tl, base.center, styles.repos_left_padding)}>
 								<div className={classNames(colors.cool_gray_8, base.center)}>
 									<div className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>
 										<Link to="github.com/sourcegraph/checkup/-/blob/checkup.go"><span onClick={this._exampleRepoSelected.bind(this, "checkup")}>sourcegraph / checkup</span></Link>

@@ -11,7 +11,7 @@ import {ChromeExtensionOnboarding} from "sourcegraph/dashboard/ChromeExtensionOn
 import {GitHubPrivateAuthOnboarding} from "sourcegraph/dashboard/GitHubPrivateAuthOnboarding";
 import {Store} from "sourcegraph/Store";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {CompletedOnboardingDashboard} from "sourcegraph/dashboard/CompletedOnboardingDashboard";
+import {SignedInDashboard} from "sourcegraph/dashboard/SignedInDashboard";
 
 interface Props {
 	location?: any;
@@ -74,7 +74,7 @@ export class OnboardingContainer extends Container<Props, State> {
 			return <GitHubPrivateAuthOnboarding completeStep={this._completeStep.bind(this)} repos={this.state.repos ? this.state.repos.Repos : []} privateCodeAuthed={this._isPrivateCodeUser()} location={this.props.location}/>;
 		}
 
-		return <CompletedOnboardingDashboard location={this.props.location}/>;
+		return <SignedInDashboard location={this.props.location} completedBanner={true}/>;
 	}
 
 	render(): JSX.Element | null {

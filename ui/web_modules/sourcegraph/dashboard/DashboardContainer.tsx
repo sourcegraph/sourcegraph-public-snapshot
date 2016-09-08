@@ -8,6 +8,7 @@ import {UserStore} from "sourcegraph/user/UserStore";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
 import {locationForSearch} from "sourcegraph/search/routes";
 import {GlobalSearchInput} from "sourcegraph/search/GlobalSearchInput";
+import {SignedInDashboard} from "sourcegraph/dashboard/SignedInDashboard";
 import {Button, Logo} from "sourcegraph/components";
 import {SearchSettings} from "sourcegraph/search/SearchSettings";
 import * as invariant from "invariant";
@@ -197,7 +198,7 @@ export class DashboardContainer extends Container<Props, State> {
 
 	render(): JSX.Element | null {
 		let onboarding = this._shouldStartOnboarding();
-		const conditionalDashboardRender = onboarding ? <OnboardingContainer currentStep={onboarding} location={this.props.location}/> : this._defaultAuthedDashboard();
+		const conditionalDashboardRender = onboarding ? <OnboardingContainer currentStep={onboarding} location={this.props.location}/> : <SignedInDashboard location={this.props.location}/>;
 		return (
 			<div>
 				{conditionalDashboardRender}
