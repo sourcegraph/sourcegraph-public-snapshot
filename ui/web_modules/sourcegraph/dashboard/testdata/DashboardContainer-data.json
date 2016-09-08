@@ -1,9 +1,0 @@
-{
-	"renderOutput": {
-		"type": {
-			"type": "DashboardContainer",
-			"props": {}
-		},
-		"props": {}
-	}
-}

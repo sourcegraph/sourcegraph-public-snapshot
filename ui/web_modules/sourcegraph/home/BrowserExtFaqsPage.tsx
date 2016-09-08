@@ -18,7 +18,6 @@ type State = any;
 
 export class BrowserExtFaqsPage extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
-		signedIn: React.PropTypes.bool.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
@@ -54,7 +53,7 @@ export class BrowserExtFaqsPage extends React.Component<Props, State> {
 						sign up below with GitHub OAuth.</div>
 						<a id="enable"/>
 						<div className={styles.centered_button}>
-							{!(this.context as any).signedIn && <GitHubAuthButton returnTo="/about/browser-ext-faqs#signin"> Sign up or sign in</GitHubAuthButton>}
+							{!context.user && <GitHubAuthButton returnTo="/about/browser-ext-faqs#signin"> Sign up or sign in</GitHubAuthButton>}
 						</div>
 					</div>
 

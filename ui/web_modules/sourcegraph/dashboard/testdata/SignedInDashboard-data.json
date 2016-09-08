@@ -1,0 +1,280 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"style": {
+							"maxWidth": "750px"
+						},
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "",
+									"children": [
+										{
+											"type": "Heading",
+											"props": {
+												"className": "",
+												"align": "center",
+												"level": "4",
+												"children": [
+													"Start exploring code"
+												]
+											}
+										},
+										{
+											"type": "p",
+											"props": {
+												"className": "",
+												"children": [
+													"You've got everything you need to start exploring the code you depend on."
+												]
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"className": "",
+												"children": [
+													{
+														"type": "GlobalSearchInput",
+														"props": {
+															"placeholder": "Search for any function, symbol or package",
+															"name": "q",
+															"showIcon": true,
+															"autoComplete": "off",
+															"query": ""
+														}
+													}
+												]
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"className": "",
+												"children": [
+													"Try these top searches:",
+													{
+														"type": "a",
+														"props": {
+															"children": [
+																" new http request"
+															]
+														}
+													},
+													", ",
+													{
+														"type": "a",
+														"props": {
+															"children": [
+																"read file"
+															]
+														}
+													},
+													", ",
+													{
+														"type": "a",
+														"props": {
+															"children": [
+																"json encoder"
+															]
+														}
+													}
+												]
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"className": "",
+												"children": [
+													{
+														"type": "Heading",
+														"props": {
+															"level": "5",
+															"children": [
+																"Explore public repositories"
+															]
+														}
+													},
+													{
+														"type": "div",
+														"props": {
+															"style": {
+																"maxWidth": "675px"
+															},
+															"className": "",
+															"children": [
+																{
+																	"type": "div",
+																	"props": {
+																		"className": "",
+																		"children": [
+																			{
+																				"type": "div",
+																				"props": {
+																					"className": "",
+																					"children": [
+																						{
+																							"type": "Constructor",
+																							"props": {
+																								"to": "github.com/sourcegraph/checkup/-/blob/checkup.go",
+																								"children": [
+																									{
+																										"type": "span",
+																										"props": {
+																											"children": [
+																												"sourcegraph / checkup"
+																											]
+																										}
+																									}
+																								],
+																								"onlyActiveOnIndex": false,
+																								"style": {}
+																							}
+																						},
+																						{
+																							"type": "p",
+																							"props": {
+																								"children": [
+																									"Self-hosted health checks and status pages"
+																								]
+																							}
+																						}
+																					]
+																				}
+																			},
+																			{
+																				"type": "div",
+																				"props": {
+																					"className": "",
+																					"children": [
+																						{
+																							"type": "Constructor",
+																							"props": {
+																								"to": "github.com/gorilla/mux/-/blob/mux.go",
+																								"children": [
+																									{
+																										"type": "span",
+																										"props": {
+																											"children": [
+																												"gorilla / mux"
+																											]
+																										}
+																									}
+																								],
+																								"onlyActiveOnIndex": false,
+																								"style": {}
+																							}
+																						},
+																						{
+																							"type": "p",
+																							"props": {
+																								"children": [
+																									"A powerful URL router and dispatcher for golang"
+																								]
+																							}
+																						}
+																					]
+																				}
+																			}
+																		]
+																	}
+																},
+																{
+																	"type": "div",
+																	"props": {
+																		"className": "",
+																		"children": [
+																			{
+																				"type": "div",
+																				"props": {
+																					"className": "",
+																					"children": [
+																						{
+																							"type": "Constructor",
+																							"props": {
+																								"to": "github.com/sourcegraph/thyme/-/blob/cmd/thyme/main.go",
+																								"children": [
+																									{
+																										"type": "span",
+																										"props": {
+																											"children": [
+																												"sourcegraph / thyme"
+																											]
+																										}
+																									}
+																								],
+																								"onlyActiveOnIndex": false,
+																								"style": {}
+																							}
+																						},
+																						{
+																							"type": "p",
+																							"props": {
+																								"children": [
+																									"Automatically track which applications you use"
+																								]
+																							}
+																						}
+																					]
+																				}
+																			},
+																			{
+																				"type": "div",
+																				"props": {
+																					"className": "",
+																					"children": [
+																						{
+																							"type": "Constructor",
+																							"props": {
+																								"to": "github.com/kubernetes/kubernetes/-/blob/examples/apiserver/server/main.go",
+																								"children": [
+																									{
+																										"type": "span",
+																										"props": {
+																											"children": [
+																												"kubernetes / kubernetes"
+																											]
+																										}
+																									}
+																								],
+																								"onlyActiveOnIndex": false,
+																								"style": {}
+																							}
+																						},
+																						{
+																							"type": "p",
+																							"props": {
+																								"children": [
+																									"Production-Grade Container Scheduling and Management"
+																								]
+																							}
+																						}
+																					]
+																				}
+																			}
+																		]
+																	}
+																}
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

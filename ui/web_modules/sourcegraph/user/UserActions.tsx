@@ -1,10 +1,6 @@
-import {AuthInfo, User} from "sourcegraph/api";
 import {Settings} from "sourcegraph/user";
 
 export type Action =
-	WantAuthInfo |
-	FetchedAuthInfo |
-	FetchedUser |
 	UpdateSettings |
 	SubmitSignup |
 	SubmitLogin |
@@ -14,34 +10,6 @@ export type Action =
 	LoginCompleted |
 	ForgotPasswordCompleted |
 	ResetPasswordCompleted;
-
-export class WantAuthInfo {
-	accessToken: string;
-
-	constructor(accessToken: string) {
-		this.accessToken = accessToken;
-	}
-}
-
-export class FetchedAuthInfo {
-	accessToken: string;
-	authInfo: AuthInfo | null; // null if unauthenticated
-
-	constructor(accessToken: string, authInfo: AuthInfo | null) {
-		this.accessToken = accessToken;
-		this.authInfo = authInfo;
-	}
-}
-
-export class FetchedUser {
-	uid: number;
-	user: User;
-
-	constructor(uid: number, user: User) {
-		this.uid = uid;
-		this.user = user;
-	}
-}
 
 export class SubmitSignup {
 	login: string;

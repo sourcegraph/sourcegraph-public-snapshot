@@ -7,6 +7,7 @@ import {Heading, Button} from "sourcegraph/components";
 import {Component} from "sourcegraph/Component";
 import {inBeta} from "sourcegraph/user";
 import * as betautil from "sourcegraph/util/betautil.tsx";
+import {context} from "sourcegraph/app/context";
 
 class Tool {
 	name: string;
@@ -43,8 +44,6 @@ export class Integrations extends Component<Props, State> {
 		siteConfig: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
-		signedIn: React.PropTypes.bool.isRequired,
-		user: React.PropTypes.object,
 	};
 
 	reconcileState(state: State, props: Props): void {
@@ -52,7 +51,7 @@ export class Integrations extends Component<Props, State> {
 	}
 
 	render(): JSX.Element | null {
-		if ((this.context as any).user && inBeta((this.context as any).user, betautil.DESKTOP)) {
+		if (context.user && inBeta(context.user, betautil.DESKTOP)) {
 			plugins[0]["url"] = "https://github.com/sourcegraph-beta/sourcegraph-sublime-beta#sourcegraph-for-sublime-text-";
 			plugins[1]["url"] = "https://github.com/sourcegraph-beta/sourcegraph-intellij#sourcegraph-for-intellij-idea";
 			plugins[2]["url"] = "https://github.com/sourcegraph-beta/sourcegraph-vscode#sourcegraph-for-visual-studio-code";

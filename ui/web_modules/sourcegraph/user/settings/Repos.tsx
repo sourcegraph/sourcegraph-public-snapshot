@@ -21,7 +21,6 @@ type State = any;
 
 export class Repos extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
-		signedIn: React.PropTypes.bool.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
@@ -139,7 +138,7 @@ export class Repos extends React.Component<Props, State> {
 						<p className={styles.indicator}>No matching repositories</p>
 					}
 				</div>
-				{this.props.location.query.onboarding &&
+				{this.props.location && this.props.location.query.onboarding &&
 					<footer className={styles.footer}>
 						<a className={styles.footer_link} href="/integrations?onboarding=t">
 							<Button color="green" className={styles.footer_btn}>Continue</Button>

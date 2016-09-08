@@ -7,8 +7,9 @@ import * as styles from "sourcegraph/page/Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import Helmet from "react-helmet";
+import {context} from "sourcegraph/app/context";
 
-export function AboutPage(props: {}, {signedIn}) {
+export function AboutPage(props: {}) {
 	return (
 		<div>
 			<Helmet title="About" />
@@ -27,7 +28,7 @@ export function AboutPage(props: {}, {signedIn}) {
 				<p className={styles.p}>Sourcegraph Inc. creates and operates Sourcegraph. We're based in <Link to="/contact">San Francisco</Link>, and <a href="https://sourcegraph.com/jobs" target="_blank">we're hiring</a>.</p>
 				<p className={styles.p}>In the last 24 hours, you almost certainly used a product built by developers who use Sourcegraph.</p>
 
-				{!signedIn && <div className={styles.cta}>
+				{!context.user && <div className={styles.cta}>
 					<GitHubAuthButton color="purple" className={base.mr3}>
 						<strong>Sign up with GitHub</strong>
 					</GitHubAuthButton>
@@ -50,7 +51,7 @@ export function AboutPage(props: {}, {signedIn}) {
 </ul>
 				<p className={styles.p}><em>Coming soon: JavaScript, Python, C#, PHP, Objective-C, C/C++, Scala, Perl, TypeScript, etc.</em> <a href="mailto:support@sourcegraph.com">Email us</a> to get early beta access to these languages for your team or project.</p>
 
-				{!signedIn && <div className={styles.cta}>
+				{!context.user && <div className={styles.cta}>
 					<GitHubAuthButton color="purple" className={base.mr3}>
 						<strong>Sign up with GitHub</strong>
 					</GitHubAuthButton>
@@ -66,6 +67,3 @@ export function AboutPage(props: {}, {signedIn}) {
 		</div>
 	);
 }
-(AboutPage as any).contextTypes = {
-	signedIn: React.PropTypes.bool,
-};

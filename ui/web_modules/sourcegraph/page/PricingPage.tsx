@@ -8,8 +8,9 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import {CheckIcon} from "sourcegraph/components/Icons";
 import Helmet from "react-helmet";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {context} from "sourcegraph/app/context";
 
-export function PricingPage(props: {}, {signedIn, eventLogger}) {
+export function PricingPage(props: {}, {eventLogger}) {
 	return (
 		<div>
 			<Helmet title="Pricing" />
@@ -28,11 +29,11 @@ export function PricingPage(props: {}, {signedIn, eventLogger}) {
 								<Heading level="1" color="white" align="center"><span className={styles.currency}>$</span><span className={styles.amount}>0</span></Heading>
 								<p style={{minHeight: "3.5em"}}>for individuals and teams, for public and private code</p>
 							</Panel>
-							{!signedIn && <Link to="/join"
+							{!context.user && <Link to="/join"
 								onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "free", page_name: AnalyticsConstants.PAGE_PRICING})}>
 								<Button block={true} className={styles.plan_cta || ""} color="purple">Sign up</Button>
 							</Link>}
-							{signedIn && <Button block={true} outline={true} color="purple" className={styles.plan_cta_noop || ""}><CheckIcon className={styles.icon} /> Your current plan</Button>}
+							{context.user && <Button block={true} outline={true} color="purple" className={styles.plan_cta_noop || ""}><CheckIcon className={styles.icon} /> Your current plan</Button>}
 						</div>
 						<div className={styles.details}>
 							<Heading level="4" color="purple" underline="purple">
@@ -106,6 +107,5 @@ export function PricingPage(props: {}, {signedIn, eventLogger}) {
 	);
 }
 (PricingPage as any).contextTypes = {
-	signedIn: React.PropTypes.bool,
 	eventLogger: React.PropTypes.object.isRequired,
 };

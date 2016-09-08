@@ -28,6 +28,8 @@ import {rel, abs} from "sourcegraph/app/routePatterns";
 import {repoPath, repoParam} from "sourcegraph/repo";
 import {isPage} from "sourcegraph/page";
 import * as debounce from "lodash/debounce";
+import {context} from "sourcegraph/app/context";
+import {InjectedRouter} from "react-router";
 
 const hiddenNavRoutes = new Set([
 	"/",
@@ -46,12 +48,12 @@ interface GlobalNavProps {
 	desktop: boolean;
 }
 
-export function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavProps, {user, signedIn, router, eventLogger, desktop}) {
-	const dash = location.pathname.match(/^\/?$/) && signedIn;
+export function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavProps, {router, eventLogger, desktop}) {
+	const dash = location.pathname.match(/^\/?$/) && context.user;
 	const shouldHide = hiddenNavRoutes.has(location.pathname) && !dash;
 	const isStaticPage = isPage(location.pathname);
 
-	const showLogoMarkOnly = !isStaticPage || user;
+	const showLogoMarkOnly = !isStaticPage || context.user;
 
 	if (location.pathname === "/styleguide") {
 		return <span />;
@@ -70,7 +72,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 			role="navigation"
 			style={shouldHide ? {display: "none"} : {}}>
 
-			{location.state && location.state.modal === "login" && !signedIn &&
+			{location.state && location.state.modal === "login" && !context.user &&
 			// TODO(chexee): Decouple existence of modals and GlobalNav
 				<LocationStateModal modalName="login" location={location} style={{maxWidth: "380px", marginLeft: "auto", marginRight: "auto"}}
 					onDismiss={(v) => eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
@@ -152,17 +154,17 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal className={styles.icon_ellipsis} title="Your editor could not identify the symbol"/>}
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 1 && <CheckIcon className={styles.icon_check} title="Sourcegraph successfully looked up symbol" />}
 
-				{user && <div className={classNames(styles.flex, styles.flex_fixed, base.pv2, base.ph3)}>
+				{context.user && <div className={classNames(styles.flex, styles.flex_fixed, base.pv2, base.ph3)}>
 					<Popover left={true}>
 						<div className={styles.user}>
-							{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <div>{user.Login}</div>}
+							{context.user.AvatarURL ? <Avatar size="small" img={context.user.AvatarURL} /> : <div>{context.user.Login}</div>}
 							<DownPointer width={10} className={classNames(base.ml2, styles.fill_cool_mid_gray)} />
 						</div>
 						<Menu className={base.pa0} style={{width: "220px"}}>
 							<div className={classNames(base.pa0, base.mb2, base.mt3)}>
 								<Heading level="7" color="cool_mid_gray">Signed in as</Heading>
 							</div>
-							<div>{user.Login}</div>
+							<div>{context.user.Login}</div>
 							<hr role="divider" className={base.mv3} />
 							<Link to="/settings/repos" role="menu_item">Your repositories</Link>
 							<LocationStateToggleLink href="/integrations" modalName="menuIntegrations" role="menu_item" location={location}	onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickToolsandIntegrations", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
@@ -186,7 +188,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 					</Popover>
 				</div>}
 
-				{!signedIn &&
+				{!context.user &&
 					<div className={classNames(base.pv2, base.pr3, base.pl3)}>
 						<div>
 							<LocationStateToggleLink href="/login" modalName="login" location={location}
@@ -208,8 +210,6 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 
 (GlobalNav as any).contextTypes = {
 	siteConfig: React.PropTypes.object.isRequired,
-	user: React.PropTypes.object,
-	signedIn: React.PropTypes.bool.isRequired,
 	router: React.PropTypes.object.isRequired,
 	eventLogger: React.PropTypes.object.isRequired,
 };
@@ -219,7 +219,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 interface SearchFormProps {
 	repo: string | null;
 	location: any;
-	router: any;
+	router: InjectedRouter;
 	showResultsPanel: boolean;
 }
 

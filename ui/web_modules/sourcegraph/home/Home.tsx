@@ -13,6 +13,7 @@ import * as styles from "sourcegraph/home/styles/home.css";
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal} from "sourcegraph/components/Modal";
 import {Button, Heading, Logo, FlexContainer} from "sourcegraph/components";
+import {context} from "sourcegraph/app/context";
 
 interface HomeProps {
 	location: Object;
@@ -23,7 +24,6 @@ type HomeState = any;
 export class Home extends Container<HomeProps, HomeState> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
-		signedIn: React.PropTypes.bool.isRequired,
 	};
 
 	constructor(props: HomeProps) {
@@ -65,13 +65,13 @@ export class Home extends Container<HomeProps, HomeState> {
 								<a className={styles.link} href="/jobs">Jobs</a>
 							</p>
 
-							{!(this.context as any).signedIn &&
+							{!context.user &&
 								<LocationStateToggleLink className={styles.link} href="/login" modalName="login" location={this.props.location} style={{margin: "10px"}}>
 									Login
 								</LocationStateToggleLink>
 							}
 
-							{!(this.context as any).signedIn &&
+							{!context.user &&
 								<LocationStateToggleLink className={styles.link} href="/join" modalName="join" location={this.props.location} style={{margin: "10px"}}>
 									Sign up
 								</LocationStateToggleLink>

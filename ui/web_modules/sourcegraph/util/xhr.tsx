@@ -1,7 +1,6 @@
 import "whatwg-fetch";
 
 import {context} from "sourcegraph/app/context";
-import {UserStore} from "sourcegraph/user/UserStore";
 
 // This file provides a common entrypoint to the fetch API.
 
@@ -31,10 +30,6 @@ export function defaultFetch(url: string | Request, init?: RequestInit): Promise
 	if (typeof url !== "string") { throw new Error("url must be a string (complex requests are not yet supported)"); }
 
 	let defaultHeaders = new Headers();
-	if (UserStore.activeAccessToken) {
-		let auth = `x-oauth-basic:${UserStore.activeAccessToken}`;
-		defaultHeaders.set("Authorization", `Basic ${btoa(auth)}`);
-	}
 	Object.keys(context.xhrHeaders).forEach((key) => {
 		defaultHeaders.set(key, context.xhrHeaders[key]);
 	});

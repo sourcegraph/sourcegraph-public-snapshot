@@ -24,10 +24,6 @@ interface Props {
 type State = any;
 
 class ResetPasswordComp extends Container<Props, State> {
-	static contextTypes: React.ValidationMap<any> = {
-		user: React.PropTypes.object,
-	};
-
 	_passwordInput: any;
 	_confirmInput: any;
 

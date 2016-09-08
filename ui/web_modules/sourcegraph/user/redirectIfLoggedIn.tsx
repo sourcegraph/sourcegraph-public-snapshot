@@ -1,6 +1,8 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
+import {InjectedRouter} from "react-router";
+import {context} from "sourcegraph/app/context";
 
 // redirectIfLoggedIn wraps a component and issues a redirect
 // if there is an authenticated user. It is useful for wrapping
@@ -12,24 +14,17 @@ export function redirectIfLoggedIn(url: Location | string, Component) {
 
 	class RedirectIfLoggedIn extends React.Component<Props, State> {
 		static contextTypes: React.ValidationMap<any> = {
-			signedIn: React.PropTypes.bool.isRequired,
 			router: React.PropTypes.object.isRequired,
 		};
 
+		context: {
+			router: InjectedRouter;
+		};
+
 		componentWillMount(): void {
-			if ((this.context as any).signedIn) {
-				this._redirect();
+			if (context.user) {
+				this.context.router.replace(url);
 			}
-		}
-
-		componentWillReceiveProps(nextProps, nextContext?: {signedIn: boolean}) {
-			if (nextContext && nextContext.signedIn) {
-				this._redirect();
-			}
-		}
-
-		_redirect() {
-			(this.context as any).router.replace(url);
 		}
 
 		render(): JSX.Element | null { return <Component {...this.props} />; }

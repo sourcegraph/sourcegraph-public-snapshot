@@ -31,7 +31,6 @@ const defaultSearchScope =  {popular: true, public: true, private: false, repo: 
 export class SignedInDashboard extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
-		signedIn: React.PropTypes.bool.isRequired,
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
@@ -51,12 +50,10 @@ export class SignedInDashboard extends Container<Props, State> {
 	}
 
 	_handleChange(ev: React.KeyboardEvent<HTMLInputElement>) {
-		if (!(ev.currentTarget instanceof HTMLInputElement)) {
-			return;
-		}
-		if (ev.currentTarget.value) {
+		let value = (ev.currentTarget as HTMLInputElement).value;
+		if (value) {
 			(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "GlobalSearchInitiated", {page_name: this._pageName});
-			this._goToSearch(ev.currentTarget.value);
+			this._goToSearch(value);
 		}
 	}
 

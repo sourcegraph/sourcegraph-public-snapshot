@@ -27,12 +27,6 @@ interface Props {
 type State = any;
 
 export class BetaInterestForm extends Container<Props, State> {
-	static contextTypes: React.ValidationMap<any> = {
-		user: React.PropTypes.object,
-		authInfo: React.PropTypes.object,
-		signedIn: React.PropTypes.bool.isRequired,
-	};
-
 	_dispatcherToken: string;
 
 	// TODO(slimsag): these should be 'element' type?
@@ -51,7 +45,7 @@ export class BetaInterestForm extends Container<Props, State> {
 		this._dispatcherToken = Dispatcher.Stores.register(this._onDispatch.bind(this));
 
 		// Trigger _onChange now to save this.props.language if set.
-		if ((this.context as any).signedIn && this.props.language) {
+		if (context.user && this.props.language) {
 			this._onChange();
 		}
 	}
@@ -124,7 +118,7 @@ export class BetaInterestForm extends Container<Props, State> {
 			</span>);
 		}
 
-		if (!(this.context as any).signedIn) {
+		if (!context.user) {
 			return (<div className={styles.cta}>
 				<p className={styles.p}>You must sign in to continue.</p>
 				<GitHubAuthButton returnTo={this.props.loginReturnTo} color="blue" className={base.mr3} onClick={this.props.onSubmit ? this.props.onSubmit : () => { /* empty */ }}>
@@ -134,7 +128,7 @@ export class BetaInterestForm extends Container<Props, State> {
 		}
 
 		let [className, language] = [this.props.className, this.props.language];
-		let betaRegistered = (this.context as any).user && (this.context as any).user.BetaRegistered;
+		let betaRegistered = context.user && context.user.BetaRegistered;
 		let emails = context.emails && context.emails.EmailAddrs;
 
 		let defaultFullName;

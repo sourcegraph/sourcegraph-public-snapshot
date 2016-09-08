@@ -12,7 +12,6 @@ import * as UserActions from "sourcegraph/user/UserActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {allLangs, langName, langIsSupported} from "sourcegraph/Language";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
-import {withUserContext} from "sourcegraph/app/user";
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
@@ -24,14 +23,14 @@ import {context} from "sourcegraph/app/context";
 
 interface Props {
 	location: any;
-	repo?: string;
+	repo?: string | null;
 	className?: string;
 	innerClassName?: string;
 };
 
 type State = any;
 
-class SearchSettingsComp extends Container<Props, State> {
+export class SearchSettings extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
@@ -263,5 +262,3 @@ class SearchSettingsComp extends Container<Props, State> {
 		);
 	}
 }
-
-export const SearchSettings = withUserContext(SearchSettingsComp);

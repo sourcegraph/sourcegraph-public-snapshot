@@ -30,6 +30,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {FaThumbsUp, FaThumbsDown} from "sourcegraph/components/Icons";
+import {context} from "sourcegraph/app/context";
 
 const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above/below a ref
 
@@ -59,7 +60,6 @@ export class RefsContainer extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
-		user: React.PropTypes.object,
 	};
 
 	rangesMemo: any;
@@ -353,7 +353,7 @@ export class RefsContainer extends Container<Props, State> {
 								let voteStyle = this.state.voteDone ? styles.voteDone : styles.vote;
 								return (
 									<div key={i} className={styles.single_ref_container}>
-										{(this.context as any).user && (this.context as any).user.Admin && <div className={classNames(voteStyle, styles.left_align_sm)}>
+										{context.user && context.user.Admin && <div className={classNames(voteStyle, styles.left_align_sm)}>
 											<a className={styles.upvote} onClick={() => this._vote(true, this.state.refRepo, loc.Path)}><FaThumbsUp /></a>
 											<a className={styles.downvote} onClick={() => this._vote(false, this.state.refRepo, loc.Path)}><FaThumbsDown /></a>
 										</div>}

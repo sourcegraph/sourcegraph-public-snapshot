@@ -1,4 +1,3 @@
-import {AuthInfo, User} from "sourcegraph/api";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Store} from "sourcegraph/Store";
 import {Settings} from "sourcegraph/user";
@@ -6,17 +5,11 @@ import * as UserActions from "sourcegraph/user/UserActions";
 import {deepFreeze, mergeAndDeepFreeze} from "sourcegraph/util/deepFreeze";
 
 class UserStoreClass extends Store<any> {
-	activeAccessToken: string | null;
-	authInfos: {[key: string]: AuthInfo | null};
-	users: {[key: string]: User};
 	pendingAuthActions: {[key: string]: boolean};
 	authResponses: {[key: string]: any};
 	settings: Settings;
 
 	reset(): void {
-		this.activeAccessToken = null;
-		this.authInfos = deepFreeze({});
-		this.users = deepFreeze({});
 		this.pendingAuthActions = deepFreeze({});
 		this.authResponses = deepFreeze({});
 
@@ -41,13 +34,7 @@ class UserStoreClass extends Store<any> {
 	}
 
 	__onDispatch(action: UserActions.Action): void {
-		if (action instanceof UserActions.FetchedAuthInfo) {
-			this.authInfos = mergeAndDeepFreeze(this.authInfos, {[action.accessToken]: action.authInfo});
-
-		} else if (action instanceof UserActions.FetchedUser) {
-			this.users = mergeAndDeepFreeze(this.users, {[action.uid]: action.user});
-
-		} else if (action instanceof UserActions.UpdateSettings) {
+		if (action instanceof UserActions.UpdateSettings) {
 			if (global.window) { window.localStorage.setItem("userSettings", JSON.stringify(action.settings)); }
 			this.settings = deepFreeze(Object.assign({}, this.settings, action.settings));
 

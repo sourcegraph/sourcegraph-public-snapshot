@@ -3,6 +3,7 @@ package jscontext
 import (
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"net/http"
 	"os"
@@ -29,17 +30,17 @@ import (
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 type JSContext struct {
-	AppURL         string                     `json:"appURL"`
-	AccessToken    string                     `json:"accessToken"`
-	XHRHeaders     map[string]string          `json:"xhrHeaders"`
-	UserAgentIsBot bool                       `json:"userAgentIsBot"`
-	AssetsRoot     string                     `json:"assetsRoot"`
-	BuildVars      buildvar.Vars              `json:"buildVars"`
-	Features       interface{}                `json:"features"`
-	User           *sourcegraph.User          `json:"user"`
-	Emails         *sourcegraph.EmailAddrList `json:"emails"`
-	GitHubToken    *sourcegraph.ExternalToken `json:"gitHubToken"`
-	IntercomHash   string                     `json:"intercomHash"`
+	AppURL            string                     `json:"appURL"`
+	LegacyAccessToken string                     `json:"accessToken"` // used by Chrome Extension
+	XHRHeaders        map[string]string          `json:"xhrHeaders"`
+	UserAgentIsBot    bool                       `json:"userAgentIsBot"`
+	AssetsRoot        string                     `json:"assetsRoot"`
+	BuildVars         buildvar.Vars              `json:"buildVars"`
+	Features          interface{}                `json:"features"`
+	User              *sourcegraph.User          `json:"user"`
+	Emails            *sourcegraph.EmailAddrList `json:"emails"`
+	GitHubToken       *sourcegraph.ExternalToken `json:"gitHubToken"`
+	IntercomHash      string                     `json:"intercomHash"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -49,6 +50,16 @@ func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User)
 	cl := handlerutil.Client(req)
 
 	headers := make(map[string]string)
+
+	var accessToken string
+	if cred := sourcegraph.CredentialsFromContext(ctx); cred != nil {
+		tok, err := cred.Token()
+		if err != nil {
+			return JSContext{}, err
+		}
+		accessToken = tok.AccessToken
+		headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString([]byte("x-oauth-basic:"+tok.AccessToken))
+	}
 
 	if span := opentracing.SpanFromContext(ctx); span != nil {
 		if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, opentracing.TextMapCarrier(headers)); err != nil {
@@ -90,28 +101,19 @@ func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User)
 		}
 	}
 
-	jsctx := JSContext{
-		AppURL:         conf.AppURL(ctx).String(),
-		XHRHeaders:     headers,
-		UserAgentIsBot: isBot(eventsutil.UserAgentFromContext(ctx)),
-		AssetsRoot:     assets.URL("/").String(),
-		BuildVars:      buildvar.Public,
-		Features:       feature.Features,
-		User:           user,
-		Emails:         emails,
-		GitHubToken:    gitHubToken,
-		IntercomHash:   intercomHMAC(uid),
-	}
-	cred := sourcegraph.CredentialsFromContext(ctx)
-	if cred != nil {
-		tok, err := cred.Token()
-		if err != nil {
-			return JSContext{}, err
-		}
-		jsctx.AccessToken = tok.AccessToken
-	}
-
-	return jsctx, nil
+	return JSContext{
+		AppURL:            conf.AppURL(ctx).String(),
+		LegacyAccessToken: accessToken,
+		XHRHeaders:        headers,
+		UserAgentIsBot:    isBot(eventsutil.UserAgentFromContext(ctx)),
+		AssetsRoot:        assets.URL("/").String(),
+		BuildVars:         buildvar.Public,
+		Features:          feature.Features,
+		User:              user,
+		Emails:            emails,
+		GitHubToken:       gitHubToken,
+		IntercomHash:      intercomHMAC(uid),
+	}, nil
 }
 
 var isBotPat = regexp.MustCompile(`(?i:googlecloudmonitoring|pingdom.com|go .* package http|sourcegraph e2etest|bot|crawl|slurp|spider|feed|rss|camo asset proxy|http-client|sourcegraph-client)`)

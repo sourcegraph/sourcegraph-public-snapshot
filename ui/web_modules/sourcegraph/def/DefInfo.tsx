@@ -34,6 +34,7 @@ import {EmptyNodeIllo} from "sourcegraph/components/symbols";
 import {Header, Heading, FlexContainer, GitHubAuthButton, Loader} from "sourcegraph/components";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {Store} from "sourcegraph/Store";
+import {context} from "sourcegraph/app/context";
 
 // Number of characters of the Docstring to show before showing the "collapse" options.
 const DESCRIPTION_CHAR_CUTOFF = 500;
@@ -54,7 +55,6 @@ export class DefInfo extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
-		signedIn: React.PropTypes.bool.isRequired,
 	};
 
 	constructor(props: Props) {
@@ -376,11 +376,11 @@ export class DefInfo extends Container<Props, State> {
 											</Heading>
 											<p className={styles.cool_mid_gray}>
 												It looks like this node in the graph is missing.
-												{!(this.context as any).signedIn &&
+												{!context.user &&
 													<span> Help us get more nodes in the graph by joining with GitHub.</span>
 												}
 											</p>
-											{!(this.context as any).signedIn &&
+											{!context.user &&
 												<p className={base.mt4}><GitHubAuthButton size="small">Join with GitHub</GitHubAuthButton></p>
 											}
 										</div>

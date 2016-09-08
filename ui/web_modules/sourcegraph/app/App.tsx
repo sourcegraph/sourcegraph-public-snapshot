@@ -12,7 +12,6 @@ import * as styles from "sourcegraph/app/styles/App.css";
 import {EventLogger, withEventLoggerContext, withViewEventsLogged} from "sourcegraph/util/EventLogger";
 import {withFeaturesContext} from "sourcegraph/app/features";
 import {withSiteConfigContext} from "sourcegraph/app/siteConfig";
-import {withUserContext} from "sourcegraph/app/user";
 import {desktopContainer} from "sourcegraph/desktop/DesktopContainer";
 
 import {routes as homeRoutes} from "sourcegraph/home";
@@ -23,6 +22,7 @@ import {routes as searchRoutes} from "sourcegraph/search/routes";
 import {routes as userRoutes} from "sourcegraph/user";
 import {routes as userSettingsRoutes} from "sourcegraph/user/settings/routes";
 import {routes as repoRoutes} from "sourcegraph/repo/routes";
+import {context} from "sourcegraph/app/context";
 
 interface Props {
 	main: JSX.Element;
@@ -37,17 +37,16 @@ type State = any;
 export class App extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
-		signedIn: React.PropTypes.bool.isRequired,
 	};
 
 	state = {
 		className: "",
 	};
 
-	constructor(props: Props, context) {
+	constructor(props: Props) {
 		super(props);
 		let className = styles.main_container;
-		if (!context.signedIn && location.pathname === "/") {
+		if (!context.user && location.pathname === "/") {
 			className = styles.main_container_homepage;
 		}
 		this._handleSourcegraphDesktop = this._handleSourcegraphDesktop.bind(this);
@@ -79,10 +78,8 @@ export const rootRoute: PlainRoute = {
 	component: withEventLoggerContext(EventLogger,
 		withViewEventsLogged(
 			withSiteConfigContext(
-				withUserContext(
-					withFeaturesContext(
-						desktopClient ? desktopContainer(App) : App
-					)
+				withFeaturesContext(
+					desktopClient ? desktopContainer(App) : App
 				)
 			)
 		)

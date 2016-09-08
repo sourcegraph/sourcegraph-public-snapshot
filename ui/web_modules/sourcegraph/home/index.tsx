@@ -5,6 +5,7 @@ import {DashboardContainer} from "sourcegraph/dashboard/DashboardContainer";
 import {Home} from "sourcegraph/home/Home";
 import {DesktopHome} from "sourcegraph/desktop/DesktopHome";
 import {IntegrationsContainer} from "sourcegraph/home/IntegrationsContainer";
+import {context} from "sourcegraph/app/context";
 
 export const routes: any[] = [
 	{
@@ -28,17 +29,12 @@ export const routes: any[] = [
 ];
 
 class HomeRouter extends React.Component<any, null> {
-	static contextTypes: React.ValidationMap<any> = {
-		signedIn: React.PropTypes.bool.isRequired,
-	};
-
-	context: {signedIn: boolean};
 	render() {
 		const desktopClient = navigator.userAgent.includes("Electron");
 		if (desktopClient) {
 			return <DesktopHome />;
 		}
-		if (this.context.signedIn) {
+		if (context.user) {
 			return <DashboardContainer {...this.props}/>;
 		}
 		return <Home {...this.props} />;

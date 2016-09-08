@@ -3,7 +3,7 @@ import {setGlobalFeatures} from "sourcegraph/app/features";
 import {Features} from "sourcegraph/app/features";
 import {setGlobalSiteConfig} from "sourcegraph/app/siteConfig";
 import {ExternalToken} from "sourcegraph/user";
-import {UserStore} from "sourcegraph/user/UserStore";
+import {testOnly} from "sourcegraph/util/testOnly";
 
 class Context {
 	xhrHeaders: {[key: string]: string};
@@ -37,9 +37,6 @@ type ContextInput = typeof context & {
 	assetsRoot?: string;
 	buildVars?: {Version: string};
 	features?: Features;
-
-	// This is now available in UserStore.activeAccessToken.
-	accessToken?: string;
 };
 
 // Sets the values of the context given a JSContext object from the server.
@@ -59,10 +56,17 @@ export function reset(ctx: ContextInput): void {
 	delete ctx.assetsRoot;
 	delete ctx.buildVars;
 
-	if (ctx.accessToken) {
-		UserStore.activeAccessToken = ctx.accessToken;
-	}
-	delete ctx.accessToken;
-
 	Object.assign(context, ctx);
 }
+
+export function mockUser(user: User | null, f: () => void): void {
+	testOnly();
+
+	let prevUser = context.user;
+	context.user = user;
+	try {
+		f();
+	} finally {
+		context.user = prevUser;
+	}
+};

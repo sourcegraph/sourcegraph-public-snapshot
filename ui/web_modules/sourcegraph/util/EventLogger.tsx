@@ -1,6 +1,6 @@
 import {Location} from "history";
 import * as React from "react";
-import {Route} from "react-router";
+import {InjectedRouter, Route} from "react-router";
 import {context} from "sourcegraph/app/context";
 import {getRouteParams, getRoutePattern, getViewName} from "sourcegraph/app/routePatterns";
 import {SiteConfig} from "sourcegraph/app/siteConfig";
@@ -446,7 +446,7 @@ interface WithViewEventsLoggedProps {
 	location: Location;
 }
 
-export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(component: React.ComponentClass<P>): React.ComponentClass<P> {
+export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(component: React.ComponentClass<{}>): React.ComponentClass<{}> {
 	class WithViewEventsLogged extends React.Component<P, {}> { // eslint-disable-line react/no-multi-comp
 		static contextTypes: React.ValidationMap<any> = {
 			router: React.PropTypes.object.isRequired,
@@ -454,7 +454,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 		};
 
 		context: {
-			router: any,
+			router: InjectedRouter,
 			eventLogger: any,
 		};
 

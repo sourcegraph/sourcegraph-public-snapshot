@@ -1,6 +1,5 @@
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as UserActions from "sourcegraph/user/UserActions";
-import {UserStore} from "sourcegraph/user/UserStore";
 import {checkStatus, defaultFetch} from "sourcegraph/util/xhr";
 
 class UserBackendClass {
@@ -11,30 +10,6 @@ class UserBackendClass {
 	}
 
 	__onDispatch(payload: UserActions.Action): void {
-		if (payload instanceof UserActions.WantAuthInfo) {
-			const action = payload;
-			if (!UserStore.authInfos[action.accessToken]) {
-				this.fetch("/.api/auth-info")
-					.then(checkStatus)
-					.then((resp) => resp.json())
-					.then(function(data: any): void {
-						// The user and emails might've been optimistically included in the API response.
-						let user = data.IncludedUser;
-						if (user) { delete data.IncludedUser; }
-						let emails = data.IncludedEmails;
-						if (emails) { delete data.IncludedEmails; }
-						let token = data.GitHubToken;
-						if (token) { delete data.GitHubToken; }
-
-						if (user && data.UID) {
-							Dispatcher.Stores.dispatch(new UserActions.FetchedUser(data.UID, user));
-						}
-
-						Dispatcher.Stores.dispatch(new UserActions.FetchedAuthInfo(action.accessToken, data));
-					}, function(err: any): void { console.error(err); });
-			}
-		}
-
 		if (payload instanceof UserActions.SubmitSignup) {
 			const action = payload;
 			this.fetch(`/.api/join`, {
@@ -50,7 +25,7 @@ class UserBackendClass {
 				.catch((err) => ({Error: err}))
 				.then(function(data: any): void {
 					Dispatcher.Stores.dispatch(new UserActions.SignupCompleted(action.email, data));
-					if (data.Success) { window.location.reload(); }
+					if (data.Success) { window.location.href = "/?ob=chrome"; }
 				});
 		}
 

@@ -1,5 +1,4 @@
 import * as React from "react";
-import {withUserContext} from "sourcegraph/app/user";
 import {Repos} from "sourcegraph/user/settings/Repos";
 import testdataData from "sourcegraph/user/settings/testdata/Repos-data.json";
 import {autotest} from "sourcegraph/util/testutil/autotest";
@@ -14,9 +13,7 @@ describe("Repos", () => {
 			Language: "Go",
 		}];
 		autotest(testdataData, "sourcegraph/user/settings/testdata/Repos-data.json",
-			React.createElement(withUserContext(<Repos
-				repos={repos} />)),
-			{signedIn: false},
+			<Repos repos={repos} />,
 		);
 	});
 });
