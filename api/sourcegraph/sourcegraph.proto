@@ -1395,12 +1395,6 @@ message AuthInfo {
 
 	// Admin is set if the user (if any) has admin access on this server.
 	bool Admin = 6;
-
-	// IntercomHash is a hash of the UID and the Intercom.io secret
-	// key. See
-	// https://docs.intercom.io/configuring-for-your-product-or-site/enable-secure-mode
-	// for more information.
-	string IntercomHash = 7;
 }
 
 // ExternalTokenSpec specifies a request for a stored auth token

@@ -1,14 +1,17 @@
 package jscontext
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
+	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/csrf"
 	opentracing "github.com/opentracing/opentracing-go"
-
-	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
@@ -28,11 +31,14 @@ type JSContext struct {
 	AssetsRoot     string            `json:"assetsRoot"`
 	BuildVars      buildvar.Vars     `json:"buildVars"`
 	Features       interface{}       `json:"features"`
+	IntercomHash   string            `json:"intercomHash"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
 // request.
-func NewJSContextFromRequest(ctx context.Context, req *http.Request) (JSContext, error) {
+func NewJSContextFromRequest(req *http.Request, uid int) (JSContext, error) {
+	ctx := req.Context()
+
 	headers := make(map[string]string)
 
 	if span := opentracing.SpanFromContext(ctx); span != nil {
@@ -57,6 +63,7 @@ func NewJSContextFromRequest(ctx context.Context, req *http.Request) (JSContext,
 		AssetsRoot:     assets.URL("/").String(),
 		BuildVars:      buildvar.Public,
 		Features:       feature.Features,
+		IntercomHash:   intercomHMAC(uid),
 	}
 	cred := sourcegraph.CredentialsFromContext(ctx)
 	if cred != nil {
@@ -74,4 +81,15 @@ var isBotPat = regexp.MustCompile(`(?i:googlecloudmonitoring|pingdom.com|go .* p
 
 func isBot(userAgent string) bool {
 	return isBotPat.MatchString(userAgent)
+}
+
+var intercomSecretKey = os.Getenv("SG_INTERCOM_SECRET_KEY")
+
+func intercomHMAC(uid int) string {
+	if uid == 0 || intercomSecretKey == "" {
+		return ""
+	}
+	mac := hmac.New(sha256.New, []byte(intercomSecretKey))
+	mac.Write([]byte(strconv.Itoa(uid)))
+	return hex.EncodeToString(mac.Sum(nil))
 }

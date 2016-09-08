@@ -6,6 +6,7 @@ import {UserStore} from "sourcegraph/user/UserStore";
 class Context {
 	xhrHeaders: {[key: string]: string};
 	userAgentIsBot: boolean;
+	intercomHash: string;
 
 	// Some fields were migrated to React context from this global context object. These
 	// getters prevent you from accidentally accessing these fields in their old home,

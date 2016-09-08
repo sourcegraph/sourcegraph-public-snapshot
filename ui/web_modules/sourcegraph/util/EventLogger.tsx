@@ -238,9 +238,9 @@ class EventLoggerClass {
 			this.setUserProperty("internal_user_id", authInfo.UID.toString());
 		}
 
-		if (authInfo.IntercomHash) {
-			this.setIntercomProperty("user_hash", authInfo.IntercomHash);
-			this.setUserProperty("user_hash", authInfo.IntercomHash);
+		if (context.intercomHash) {
+			this.setIntercomProperty("user_hash", context.intercomHash);
+			this.setUserProperty("user_hash", context.intercomHash);
 		}
 
 		if (this._fullStory && authInfo.Login) {

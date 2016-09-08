@@ -53,7 +53,6 @@ export interface AuthInfo {
 	Login?: string;
 	Write?: boolean;
 	Admin?: boolean;
-	IntercomHash?: string;
 }
 
 export interface AuthorshipInfo {

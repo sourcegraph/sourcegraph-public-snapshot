@@ -115,12 +115,12 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 		field := reflect.ValueOf(data).Elem().FieldByName("Common")
 		existingCommon := field.Interface().(Common)
 
-		jsctx, err := jscontext.NewJSContextFromRequest(req.Context(), req)
+		authInfo, err := cl.Auth.Identify(req.Context(), &pbtypes.Void{})
 		if err != nil {
 			return err
 		}
 
-		authInfo, err := cl.Auth.Identify(req.Context(), &pbtypes.Void{})
+		jsctx, err := jscontext.NewJSContextFromRequest(req, int(authInfo.UID))
 		if err != nil {
 			return err
 		}

@@ -6,7 +6,7 @@ import * as UserActions from "sourcegraph/user/UserActions";
 import {UserBackend} from "sourcegraph/user/UserBackend";
 import {immediateSyncPromise} from "sourcegraph/util/testutil/immediateSyncPromise";
 
-const sampleAuthInfo: AuthInfo = {UID: 1, Login: "u", Write: false, Admin: false, IntercomHash: ""};
+const sampleAuthInfo: AuthInfo = {UID: 1, Login: "u", Write: false, Admin: false};
 const sampleToken: ExternalToken = {uid: 1, host: "example.com", scope: "s"};
 const sampleUser: User = {UID: 1, Login: "u", Betas: [], BetaRegistered: false} as any;
 const sampleEmails: EmailAddr[] = [{Email: "a@a.com"}] as any;
