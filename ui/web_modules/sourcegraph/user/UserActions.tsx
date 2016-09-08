@@ -1,5 +1,5 @@
 import {AuthInfo, EmailAddr, User} from "sourcegraph/api";
-import {ExternalToken, Settings} from "sourcegraph/user";
+import {Settings} from "sourcegraph/user";
 
 export type Action =
 	WantAuthInfo |
@@ -7,7 +7,6 @@ export type Action =
 	FetchedUser |
 	WantEmails |
 	FetchedEmails |
-	FetchedGitHubToken |
 	UpdateSettings |
 	SubmitSignup |
 	SubmitLogin |
@@ -61,18 +60,6 @@ export class FetchedEmails {
 	constructor(uid: number, emails: EmailAddr[]) {
 		this.uid = uid;
 		this.emails = emails;
-	}
-}
-
-// No WantGitHubToken because it is included in the AuthInfo response.
-
-export class FetchedGitHubToken {
-	uid: number;
-	token: ExternalToken;
-
-	constructor(uid: number, token: ExternalToken) {
-		this.uid = uid;
-		this.token = token;
 	}
 }
 

@@ -10,6 +10,7 @@ import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as debounce from "lodash/debounce";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {privateGitHubOAuthScopes, adminRepoGitHubOAuthScopes} from "sourcegraph/util/urlTo";
+import {context} from "sourcegraph/app/context";
 
 interface Props {
 	repos: any[];
@@ -21,7 +22,6 @@ type State = any;
 export class Repos extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		signedIn: React.PropTypes.bool.isRequired,
-		githubToken: React.PropTypes.object,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
@@ -66,15 +66,15 @@ export class Repos extends React.Component<Props, State> {
 	}
 
 	_hasGithubToken() {
-		return this.context && (this.context as any).githubToken;
+		return Boolean(context.gitHubToken);
 	}
 
 	_hasPrivateGitHubToken() {
-		return (this.context as any).githubToken && (this.context as any).githubToken.scope && (this.context as any).githubToken.scope.includes("repo") && (this.context as any).githubToken.scope.includes("read:org");
+		return context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("repo") && context.gitHubToken.scope.includes("read:org");
 	}
 
 	_hasHookGitHubToken() {
-		return (this.context as any).githubToken && (this.context as any).githubToken.scope && (this.context as any).githubToken.scope.includes("admin:repo_hook");
+		return context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("admin:repo_hook");
 	}
 
 	_toggleRepo(remoteRepo: any) {

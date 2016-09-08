@@ -189,6 +189,9 @@ class EventLoggerClass {
 			}
 		}
 
+		let allowedPrivateAuth = context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("repo") && context.gitHubToken.scope.includes("read:org");
+		this.setUserProperty("is_private_code_user", allowedPrivateAuth ? allowedPrivateAuth.toString() : "false");
+
 		this._user = user;
 		this._primaryEmail = primaryEmail;
 	}
@@ -386,12 +389,6 @@ class EventLoggerClass {
 		case UserActions.BetaSubscriptionCompleted:
 			if (action.eventName) {
 				this.logEventForCategory(AnalyticsConstants.CATEGORY_ENGAGEMENT, AnalyticsConstants.ACTION_SUCCESS, action.eventName);
-			}
-			break;
-		case UserActions.FetchedGitHubToken:
-			if (action.token) {
-				let allowedPrivateAuth = action.token.scope && action.token.scope.includes("repo") && action.token.scope.includes("read:org");
-				this.setUserProperty("is_private_code_user", allowedPrivateAuth ? allowedPrivateAuth.toString() : "false");
 			}
 			break;
 		case DefActions.DefsFetched:

@@ -5,13 +5,13 @@ import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import "sourcegraph/repo/RepoBackend"; // for side effects
 import {RepoStore} from "sourcegraph/repo/RepoStore";
-import {UserStore} from "sourcegraph/user/UserStore";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {ChromeExtensionOnboarding} from "sourcegraph/dashboard/ChromeExtensionOnboarding";
 import {GitHubPrivateAuthOnboarding} from "sourcegraph/dashboard/GitHubPrivateAuthOnboarding";
 import {Store} from "sourcegraph/Store";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {SignedInDashboard} from "sourcegraph/dashboard/SignedInDashboard";
+import {context} from "sourcegraph/app/context";
 
 interface Props {
 	location?: any;
@@ -42,11 +42,11 @@ export class OnboardingContainer extends Container<Props, State> {
 	}
 
 	stores(): Store<any>[] {
-		return [RepoStore, UserStore];
+		return [RepoStore];
 	}
 
 	_isPrivateCodeUser() {
-		return UserStore && UserStore.activeGitHubToken && UserStore.activeGitHubToken.scope && UserStore.activeGitHubToken.scope.includes("repo") && UserStore.activeGitHubToken.scope.includes("read:org");
+		return context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("repo") && context.gitHubToken.scope.includes("read:org");
 	}
 
 	_completeStep() {

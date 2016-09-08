@@ -35,9 +35,6 @@ class UserBackendClass {
 						if (emails && data.UID) {
 							Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(data.UID, emails));
 						}
-						if (token && data.UID) {
-							Dispatcher.Stores.dispatch(new UserActions.FetchedGitHubToken(data.UID, token));
-						}
 					}, function(err: any): void { console.error(err); });
 			}
 		}

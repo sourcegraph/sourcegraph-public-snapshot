@@ -2,12 +2,14 @@ import {User} from "sourcegraph/api";
 import {setGlobalFeatures} from "sourcegraph/app/features";
 import {Features} from "sourcegraph/app/features";
 import {setGlobalSiteConfig} from "sourcegraph/app/siteConfig";
+import {ExternalToken} from "sourcegraph/user";
 import {UserStore} from "sourcegraph/user/UserStore";
 
 class Context {
 	xhrHeaders: {[key: string]: string};
 	userAgentIsBot: boolean;
 	user: User | null;
+	gitHubToken: ExternalToken | null;
 	intercomHash: string;
 
 	// Some fields were migrated to React context from this global context object. These

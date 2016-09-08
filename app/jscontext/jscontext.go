@@ -10,6 +10,10 @@ import (
 	"strconv"
 	"strings"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/gorilla/csrf"
 	opentracing "github.com/opentracing/opentracing-go"
 
@@ -19,26 +23,29 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
 
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 type JSContext struct {
-	AppURL         string            `json:"appURL"`
-	AccessToken    string            `json:"accessToken"`
-	XHRHeaders     map[string]string `json:"xhrHeaders"`
-	UserAgentIsBot bool              `json:"userAgentIsBot"`
-	AssetsRoot     string            `json:"assetsRoot"`
-	BuildVars      buildvar.Vars     `json:"buildVars"`
-	Features       interface{}       `json:"features"`
-	User           *sourcegraph.User `json:"user"`
-	IntercomHash   string            `json:"intercomHash"`
+	AppURL         string                     `json:"appURL"`
+	AccessToken    string                     `json:"accessToken"`
+	XHRHeaders     map[string]string          `json:"xhrHeaders"`
+	UserAgentIsBot bool                       `json:"userAgentIsBot"`
+	AssetsRoot     string                     `json:"assetsRoot"`
+	BuildVars      buildvar.Vars              `json:"buildVars"`
+	Features       interface{}                `json:"features"`
+	User           *sourcegraph.User          `json:"user"`
+	GitHubToken    *sourcegraph.ExternalToken `json:"gitHubToken"`
+	IntercomHash   string                     `json:"intercomHash"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
 // request.
 func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User) (JSContext, error) {
 	ctx := req.Context()
+	cl := handlerutil.Client(req)
 
 	headers := make(map[string]string)
 
@@ -57,6 +64,22 @@ func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User)
 
 	headers["X-Csrf-Token"] = csrf.Token(req)
 
+	var gitHubToken *sourcegraph.ExternalToken
+	if user != nil {
+		tok, err := cl.Auth.GetExternalToken(req.Context(), &sourcegraph.ExternalTokenSpec{
+			UID:      user.UID,
+			Host:     "github.com",
+			ClientID: "", // defaults to GitHub client ID in environment
+		})
+		if err == nil {
+			// No need to include the actual access token.
+			tok.Token = ""
+			gitHubToken = tok
+		} else if grpc.Code(err) != codes.NotFound {
+			log15.Warn("Error getting GitHub token in NewJSContextFromRequest", "uid", user.UID, "err", err)
+		}
+	}
+
 	jsctx := JSContext{
 		AppURL:         conf.AppURL(ctx).String(),
 		XHRHeaders:     headers,
@@ -65,6 +88,7 @@ func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User)
 		BuildVars:      buildvar.Public,
 		Features:       feature.Features,
 		User:           user,
+		GitHubToken:    gitHubToken,
 		IntercomHash:   intercomHMAC(uid),
 	}
 	cred := sourcegraph.CredentialsFromContext(ctx)

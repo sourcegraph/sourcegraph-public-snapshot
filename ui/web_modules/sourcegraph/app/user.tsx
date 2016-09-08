@@ -9,7 +9,7 @@ import "sourcegraph/user/UserBackend";
 import * as UserActions from "sourcegraph/user/UserActions";
 import {User} from "sourcegraph/api";
 
-type childContext = {user: User | null, authInfo: any, signedIn: boolean, githubToken: any};
+type childContext = {user: User | null, authInfo: any, signedIn: boolean};
 
 // getChildContext is exported separately so it can be tested directly. It is
 // hard to test that children get the right context data using React's existing
@@ -23,8 +23,6 @@ export const getChildContext = (state: any): childContext => ({
 	// point, we need to set signedIn to false so that, e.g., the "log out" link appears.
 	// Otherwise the user is unable to log out so they can re-log in to refresh their creds.
 	signedIn: Boolean(state.accessToken && (!state.authInfo || state.authInfo.UID) && (!state.user || state.user.UID)),
-
-	githubToken: state.githubToken || null,
 });
 
 // withUserContext passes user-related context items
@@ -42,9 +40,6 @@ export function withUserContext(Component) {
 			// that only care "is there a logged-in user?" should use signedIn,
 			// not `user !== null`, to check for that.
 			signedIn: React.PropTypes.bool.isRequired,
-
-			// githubToken is the user's ExternalToken for github.com.
-			githubToken: React.PropTypes.object,
 		};
 
 		constructor(props: Props) {
@@ -60,7 +55,6 @@ export function withUserContext(Component) {
 
 			state.accessToken = UserStore.activeAccessToken || null;
 			state.authInfo = state.accessToken ? (UserStore.authInfos[state.accessToken] || null) : null;
-			state.githubToken = UserStore.activeGitHubToken || null;
 			state.user = state.authInfo && !state.authInfo.Error ? (UserStore.users[state.authInfo.UID] || null) : null;
 		}
 

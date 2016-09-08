@@ -46,7 +46,6 @@ interface State {
 	resultClassName: string | null;
 	matchingResults: any;
 	selectionIndex: number;
-	githubToken: any;
 
 	searchSettings: any;
 	location: any;
@@ -82,7 +81,6 @@ export class GlobalSearch extends Container<Props, State> {
 			className: null,
 			resultClassName: null,
 			selectionIndex: 0,
-			githubToken: null,
 			searchSettings: null,
 			location: null,
 			language: null,
@@ -137,7 +135,6 @@ export class GlobalSearch extends Container<Props, State> {
 
 	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
-		state.githubToken = UserStore.activeGitHubToken;
 		state.language = state.searchSettings && state.searchSettings.languages ? state.searchSettings.languages : null;
 		state.className = props.className || "";
 		state.resultClassName = props.resultClassName || "";
@@ -236,8 +233,7 @@ export class GlobalSearch extends Container<Props, State> {
 			(this.context as any).router.replace(locationForSearch(nextState.location, nextState.query, nextState.searchSettings.languages, nextState.searchSettings.scope, false, true));
 		}
 
-		if (prevState.githubToken !== nextState.githubToken ||
-			prevState._queries !== nextState._queries) {
+		if (prevState._queries !== nextState._queries) {
 			if (nextState._queries) {
 				this._debounceForSearch(() => {
 					for (const q of nextState._queries) {

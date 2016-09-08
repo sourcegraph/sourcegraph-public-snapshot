@@ -37,7 +37,6 @@ describe("UserBackend", () => {
 				new UserActions.FetchedUser(sampleUser.UID as number, sampleUser),
 				new UserActions.FetchedAuthInfo("t", sampleAuthInfo),
 				new UserActions.FetchedEmails(sampleUser.UID as number, sampleEmails),
-				new UserActions.FetchedGitHubToken(sampleUser.UID as number, sampleToken),
 			]);
 		});
 		it("with authInfo unexpected error", () => {

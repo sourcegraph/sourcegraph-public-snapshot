@@ -27,7 +27,6 @@ interface Props {
 	repo?: string;
 	className?: string;
 	innerClassName?: string;
-	githubToken: any;
 };
 
 type State = any;
@@ -95,7 +94,7 @@ class SearchSettingsComp extends Container<Props, State> {
 	}
 
 	_hasPrivateGitHubToken() {
-		return this.props.githubToken && this.props.githubToken.scope && this.props.githubToken.scope.includes("repo") && this.props.githubToken.scope.includes("read:org") && this.props.githubToken.scope.includes("user:email");
+		return context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("repo") && context.gitHubToken.scope.includes("read:org") && context.gitHubToken.scope.includes("user:email");
 	}
 
 	_toggleLang(lang: string) {
@@ -204,18 +203,18 @@ class SearchSettingsComp extends Container<Props, State> {
 							onClick={() => this._setScope({repo: !scope.repo})}
 							outline={!scope.repo}>{this.state.repo}</Button>}
 						<Button
-							color={this.state.githubToken && !scope.popular ? "normal" : "blue"}
+							color={context.gitHubToken && !scope.popular ? "normal" : "blue"}
 							size="small"
 							className={styles.choice_button}
 							onClick={() => {
-								if (this.props.githubToken) {
+								if (context.gitHubToken) {
 									this._setScope({popular: !scope.popular});
 								}
 							}}
-							outline={this.state.githubToken && !scope.popular}>Popular libraries</Button>
-						{(!context.user || !this.props.githubToken) &&
+							outline={Boolean(context.gitHubToken) && !scope.popular}>Popular libraries</Button>
+						{(!context.user || !context.gitHubToken) &&
 							<GitHubAuthButton color="green" size="small" outline={true} className={styles.choice_button} returnTo={this.props.location}>My public projects</GitHubAuthButton>}
-						{this.props.githubToken &&
+						{context.gitHubToken &&
 							<Button
 								color={!scope.public ? "normal" : "blue"}
 								size="small"

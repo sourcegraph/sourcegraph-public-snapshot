@@ -44,7 +44,6 @@ export class Integrations extends Component<Props, State> {
 		eventLogger: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
 		signedIn: React.PropTypes.bool.isRequired,
-		githubToken: React.PropTypes.object,
 		user: React.PropTypes.object,
 	};
 

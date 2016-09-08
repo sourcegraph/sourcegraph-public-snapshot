@@ -2,13 +2,11 @@ import expect from "expect.js";
 import * as React from "react";
 import {AuthInfo, User} from "sourcegraph/api";
 import {getChildContext, withUserContext} from "sourcegraph/app/user";
-import {ExternalToken} from "sourcegraph/user";
 import * as UserActions from "sourcegraph/user/UserActions";
 import {UserStore} from "sourcegraph/user/UserStore";
 import {render} from "sourcegraph/util/testutil/renderTestUtils";
 
 const sampleAuthInfo: AuthInfo = {UID: 1, Login: "u"} as AuthInfo;
-const sampleGitHubToken: ExternalToken = {uid: 1, host: "example.com", scope: "s"};
 const sampleUser: User = {UID: 1, Login: "u", Betas: [], BetaRegistered: false} as any as User;
 
 const C = withUserContext((props) => null);
@@ -28,13 +26,13 @@ describe("withUserContext", () => {
 		UserStore.activeAccessToken = null;
 		const res = renderAndGetContext(<C />);
 		expect(res.actions).to.eql([]);
-		expect(res.context).to.eql({authInfo: null, user: null, signedIn: false, githubToken: null});
+		expect(res.context).to.eql({authInfo: null, user: null, signedIn: false});
 	});
 	it("with accessToken, no authInfo yet", () => {
 		UserStore.activeAccessToken = "t";
 		const res = renderAndGetContext(<C />);
 		expect(res.actions).to.eql([new UserActions.WantAuthInfo("t")]);
-		expect(res.context).to.eql({authInfo: null, user: null, signedIn: true, githubToken: null});
+		expect(res.context).to.eql({authInfo: null, user: null, signedIn: true});
 	});
 	it("with accessToken, authInfo, and user", () => {
 		UserStore.activeAccessToken = "t";
@@ -42,7 +40,7 @@ describe("withUserContext", () => {
 		UserStore.directDispatch(new UserActions.FetchedUser(1, sampleUser));
 		const res = renderAndGetContext(<C />);
 		expect(res.actions).to.eql([]);
-		expect(res.context).to.eql({authInfo: {Login: "u", UID: 1}, user: sampleUser, signedIn: true, githubToken: null});
+		expect(res.context).to.eql({authInfo: {Login: "u", UID: 1}, user: sampleUser, signedIn: true});
 	});
 	it("with accessToken but empty authInfo object (indicating no user, expired accessToken, etc.)", () => {
 		UserStore.activeAccessToken = "t";
@@ -50,11 +48,5 @@ describe("withUserContext", () => {
 		const res = renderAndGetContext(<C />);
 		expect(res.actions).to.eql([]);
 		expect(res.context.signedIn).to.be(false);
-	});
-	it("with GitHub token", () => {
-		UserStore.activeGitHubToken = sampleGitHubToken;
-		const res = renderAndGetContext(<C />);
-		expect(res.actions).to.eql([]);
-		expect(res.context).to.eql({authInfo: null, user: null, signedIn: false, githubToken: sampleGitHubToken});
 	});
 });
