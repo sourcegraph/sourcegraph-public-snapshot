@@ -18,8 +18,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 
+	"github.com/golang/groupcache/consistenthash"
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/serialx/hashring"
 )
 
 // Prefix for environment variables referring to language processor configuration
@@ -80,7 +80,7 @@ func lpEnvLanguage(key string) string {
 type langClient struct {
 	// endpoints is the HTTP endpoints of the Language Processor, sharded by
 	// repo URI.
-	endpoints *hashring.HashRing
+	endpoints *consistenthash.Map
 
 	// client is used for making HTTP requests.
 	client *http.Client
@@ -89,10 +89,10 @@ type langClient struct {
 // endpointTo returns a URL based on c.endpoints (sharded by repoURI) with the
 // given path suffixed.
 func (c *langClient) endpointTo(repoURI, p string) string {
-	endpoint, ok := c.endpoints.GetNode(repoURI)
-	if !ok {
+	if c.endpoints.IsEmpty() {
 		panic("never happens: langp.langClient with zero endpoints in hashring")
 	}
+	endpoint := c.endpoints.Get(repoURI)
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		panic("never happens: endpoints are validated at NewClient time")
@@ -338,9 +338,12 @@ func NewClient(endpoints map[string][]string) (*Client, error) {
 			}
 		}
 
+		hash := consistenthash.New(len(endpoints), nil)
+		hash.Add(endpoints...)
+
 		// Create language client.
 		c.clients[lang] = &langClient{
-			endpoints: hashring.New(endpoints),
+			endpoints: hash,
 			client: &http.Client{
 				// TODO(slimsag): Once we have proper async operations we should
 				// lower this timeout to respect those numbers. Until then, some
