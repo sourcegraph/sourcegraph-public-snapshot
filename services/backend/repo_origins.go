@@ -12,6 +12,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 )
 
+// newRepoFromOrigin creates a new repo from origin o. o must not be nil.
 func (s *repos) newRepoFromOrigin(ctx context.Context, o *sourcegraph.Origin) (*sourcegraph.Repo, error) {
 	if err := checkValidOriginAndSetDefaultURL(o); err != nil {
 		return nil, err
@@ -25,13 +26,17 @@ func (s *repos) newRepoFromOrigin(ctx context.Context, o *sourcegraph.Origin) (*
 	}
 }
 
+// newRepoFromGitHubOrigin creates a new repo from a GitHub origin o. o must not be nil.
+// TODO: This helper should be inlined into newRepoFromOrigin, the only place that uses it.
+//       It's not a clean, meaningful abstraction, so having it be a separate func hurts readability
+//       instead of improving it.
 func (s *repos) newRepoFromGitHubOrigin(ctx context.Context, o *sourcegraph.Origin) (*sourcegraph.Repo, error) {
-	gitHubID, err := strconv.Atoi(o.ID)
+	githubID, err := strconv.Atoi(o.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	ghrepo, err := github.ReposFromContext(ctx).GetByID(ctx, gitHubID)
+	ghRepo, err := github.ReposFromContext(ctx).GetByID(ctx, githubID)
 	if err != nil {
 		return nil, err
 	}
@@ -41,13 +46,13 @@ func (s *repos) newRepoFromGitHubOrigin(ctx context.Context, o *sourcegraph.Orig
 	// GitHub is quite easy and (with HTTP caching) performant.
 	ts := pbtypes.NewTimestamp(time.Now())
 	return &sourcegraph.Repo{
-		Owner:        ghrepo.Owner,
-		Name:         ghrepo.Name,
-		URI:          githubutil.RepoURI(ghrepo.Owner, ghrepo.Name),
-		HTTPCloneURL: ghrepo.HTTPCloneURL,
-		Description:  ghrepo.Description,
+		Owner:        ghRepo.Owner,
+		Name:         ghRepo.Name,
+		URI:          githubutil.RepoURI(ghRepo.Owner, ghRepo.Name),
+		HTTPCloneURL: ghRepo.HTTPCloneURL,
+		Description:  ghRepo.Description,
 		Mirror:       true,
-		Fork:         ghrepo.Fork,
+		Fork:         ghRepo.Fork,
 		CreatedAt:    &ts,
 
 		// KLUDGE: set this to be true to avoid accidentally treating
