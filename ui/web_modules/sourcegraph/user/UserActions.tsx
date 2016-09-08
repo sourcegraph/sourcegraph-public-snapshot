@@ -1,12 +1,10 @@
-import {AuthInfo, EmailAddr, User} from "sourcegraph/api";
+import {AuthInfo, User} from "sourcegraph/api";
 import {Settings} from "sourcegraph/user";
 
 export type Action =
 	WantAuthInfo |
 	FetchedAuthInfo |
 	FetchedUser |
-	WantEmails |
-	FetchedEmails |
 	UpdateSettings |
 	SubmitSignup |
 	SubmitLogin |
@@ -42,24 +40,6 @@ export class FetchedUser {
 	constructor(uid: number, user: User) {
 		this.uid = uid;
 		this.user = user;
-	}
-}
-
-export class WantEmails {
-	uid: number;
-
-	constructor(uid: number) {
-		this.uid = uid;
-	}
-}
-
-export class FetchedEmails {
-	uid: number;
-	emails: EmailAddr[];
-
-	constructor(uid: number, emails: EmailAddr[]) {
-		this.uid = uid;
-		this.emails = emails;
 	}
 }
 

@@ -31,22 +31,6 @@ class UserBackendClass {
 						}
 
 						Dispatcher.Stores.dispatch(new UserActions.FetchedAuthInfo(action.accessToken, data));
-
-						if (emails && data.UID) {
-							Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(data.UID, emails));
-						}
-					}, function(err: any): void { console.error(err); });
-			}
-		}
-
-		if (payload instanceof UserActions.WantEmails) {
-			const action = payload;
-			if (!UserStore.emails[action.uid]) {
-				this.fetch(`/.api/users/${action.uid}$/emails`)
-					.then(checkStatus)
-					.then((resp) => resp.json())
-					.then(function(data: any): void {
-						Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(action.uid, data && data.EmailAddrs ? data.EmailAddrs : []));
 					}, function(err: any): void { console.error(err); });
 			}
 		}

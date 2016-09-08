@@ -1,4 +1,4 @@
-import {User} from "sourcegraph/api";
+import {EmailAddrList, User} from "sourcegraph/api";
 import {setGlobalFeatures} from "sourcegraph/app/features";
 import {Features} from "sourcegraph/app/features";
 import {setGlobalSiteConfig} from "sourcegraph/app/siteConfig";
@@ -9,6 +9,7 @@ class Context {
 	xhrHeaders: {[key: string]: string};
 	userAgentIsBot: boolean;
 	user: User | null;
+	emails: EmailAddrList | null;
 	gitHubToken: ExternalToken | null;
 	intercomHash: string;
 

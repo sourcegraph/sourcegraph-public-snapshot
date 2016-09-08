@@ -1,5 +1,5 @@
 import expect from "expect.js";
-import {AuthInfo, EmailAddr, User} from "sourcegraph/api";
+import {AuthInfo, User} from "sourcegraph/api";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {ExternalToken} from "sourcegraph/user";
 import * as UserActions from "sourcegraph/user/UserActions";
@@ -9,7 +9,6 @@ import {immediateSyncPromise} from "sourcegraph/util/testutil/immediateSyncPromi
 const sampleAuthInfo: AuthInfo = {UID: 1, Login: "u", Write: false, Admin: false};
 const sampleToken: ExternalToken = {uid: 1, host: "example.com", scope: "s"};
 const sampleUser: User = {UID: 1, Login: "u", Betas: [], BetaRegistered: false} as any;
-const sampleEmails: EmailAddr[] = [{Email: "a@a.com"}] as any;
 
 describe("UserBackend", () => {
 	describe("should handle WantAuthInfo", () => {
@@ -28,7 +27,6 @@ describe("UserBackend", () => {
 				return immediateSyncPromise({status: 200, json: () => Object.assign({}, sampleAuthInfo, {
 					GitHubToken: sampleToken,
 					IncludedUser: sampleUser,
-					IncludedEmails: sampleEmails,
 				})});
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
@@ -36,7 +34,6 @@ describe("UserBackend", () => {
 			})).to.eql([
 				new UserActions.FetchedUser(sampleUser.UID as number, sampleUser),
 				new UserActions.FetchedAuthInfo("t", sampleAuthInfo),
-				new UserActions.FetchedEmails(sampleUser.UID as number, sampleEmails),
 			]);
 		});
 		it("with authInfo unexpected error", () => {
@@ -46,26 +43,6 @@ describe("UserBackend", () => {
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
 				UserBackend.__onDispatch(new UserActions.WantAuthInfo("t"));
-			})).to.eql([]);
-		});
-	});
-	describe("should handle WantEmails", () => {
-		it("with emails available", () => {
-			UserBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
-				expect(url).to.be("/.api/users/1$/emails");
-				return immediateSyncPromise({status: 200, json: () => ({EmailAddrs: sampleEmails})});
-			};
-			expect(Dispatcher.Stores.catchDispatched(() => {
-				UserBackend.__onDispatch(new UserActions.WantEmails(1));
-			})).to.eql([new UserActions.FetchedEmails(1, sampleEmails)]);
-		});
-		it("with emails not available", () => {
-			UserBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
-				expect(url).to.be("/.api/users/1$/emails");
-				return immediateSyncPromise({status: 404, text: () => immediateSyncPromise("error", true)});
-			};
-			expect(Dispatcher.Stores.catchDispatched(() => {
-				UserBackend.__onDispatch(new UserActions.WantEmails(1));
 			})).to.eql([]);
 		});
 	});

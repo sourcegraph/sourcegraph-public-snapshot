@@ -1,4 +1,4 @@
-import {AuthInfo, EmailAddr, User} from "sourcegraph/api";
+import {AuthInfo, User} from "sourcegraph/api";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Store} from "sourcegraph/Store";
 import {Settings} from "sourcegraph/user";
@@ -9,7 +9,6 @@ class UserStoreClass extends Store<any> {
 	activeAccessToken: string | null;
 	authInfos: {[key: string]: AuthInfo | null};
 	users: {[key: string]: User};
-	emails: {[key: string]: EmailAddr[]};
 	pendingAuthActions: {[key: string]: boolean};
 	authResponses: {[key: string]: any};
 	settings: Settings;
@@ -18,7 +17,6 @@ class UserStoreClass extends Store<any> {
 		this.activeAccessToken = null;
 		this.authInfos = deepFreeze({});
 		this.users = deepFreeze({});
-		this.emails = deepFreeze({});
 		this.pendingAuthActions = deepFreeze({});
 		this.authResponses = deepFreeze({});
 
@@ -48,9 +46,6 @@ class UserStoreClass extends Store<any> {
 
 		} else if (action instanceof UserActions.FetchedUser) {
 			this.users = mergeAndDeepFreeze(this.users, {[action.uid]: action.user});
-
-		} else if (action instanceof UserActions.FetchedEmails) {
-			this.emails = mergeAndDeepFreeze(this.emails, {[action.uid]: action.emails});
 
 		} else if (action instanceof UserActions.UpdateSettings) {
 			if (global.window) { window.localStorage.setItem("userSettings", JSON.stringify(action.settings)); }

@@ -1,7 +1,6 @@
 import {Location} from "history";
 import * as React from "react";
 import {Route} from "react-router";
-import {User} from "sourcegraph/api";
 import {context} from "sourcegraph/app/context";
 import {getRouteParams, getRoutePattern, getViewName} from "sourcegraph/app/routePatterns";
 import {SiteConfig} from "sourcegraph/app/siteConfig";
@@ -25,10 +24,6 @@ class EventLoggerClass {
 	_siteConfig: SiteConfig | null;
 	_currentPlatform: string = "Web";
 	_currentPlatformVersion: string = "";
-
-	// User data from the previous call to _updateUser.
-	_user: User | null;
-	_primaryEmail: string | null;
 
 	constructor() {
 		this._intercomSettings = null;
@@ -141,7 +136,7 @@ class EventLoggerClass {
 	// any subequent calls to logEvent or setUserProperty will be buffered.
 	_updateUser(): void {
 		const user = context.user;
-		const emails = user && user.UID ? (UserStore.emails[user.UID] || null) : null;
+		const emails = context.emails && context.emails.EmailAddrs || null;
 		const primaryEmail = (emails && emails.filter(e => e.Primary).map(e => e.Email)[0]) || null;
 
 		this._updateUserForAmplitudeCookies();
@@ -178,22 +173,17 @@ class EventLoggerClass {
 			if (user.Location) {
 				this.setUserProperty("location", user.Location);
 			}
-
 		}
-		if (this._primaryEmail !== primaryEmail) {
-			if (primaryEmail) {
-				this.setUserProperty("email", primaryEmail);
-				this.setUserProperty("emails", emails);
-				this.setIntercomProperty("email", primaryEmail);
-				if (this._fullStory) { this._fullStory.setUserVars({email: primaryEmail}); }
-			}
+
+		if (primaryEmail) {
+			this.setUserProperty("email", primaryEmail);
+			this.setUserProperty("emails", emails);
+			this.setIntercomProperty("email", primaryEmail);
+			if (this._fullStory) { this._fullStory.setUserVars({email: primaryEmail}); }
 		}
 
 		let allowedPrivateAuth = context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("repo") && context.gitHubToken.scope.includes("read:org");
 		this.setUserProperty("is_private_code_user", allowedPrivateAuth ? allowedPrivateAuth.toString() : "false");
-
-		this._user = user;
-		this._primaryEmail = primaryEmail;
 	}
 
 	logout(): void {
@@ -261,7 +251,7 @@ class EventLoggerClass {
 	}
 
 	_decorateEventProperties(platformProperties: any): any {
-		return Object.assign({}, platformProperties, {Platform: this._currentPlatform, platformVersion: this._currentPlatformVersion, is_authed: this._user ? "true" : "false", path_name: window.location.pathname ? window.location.pathname.slice(1) : ""});
+		return Object.assign({}, platformProperties, {Platform: this._currentPlatform, platformVersion: this._currentPlatformVersion, is_authed: context.user ? "true" : "false", path_name: window.location.pathname ? window.location.pathname.slice(1) : ""});
 	}
 
 	// Use logViewEvent as the default way to log view events for Amplitude and GA

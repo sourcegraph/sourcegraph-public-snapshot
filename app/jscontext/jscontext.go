@@ -37,6 +37,7 @@ type JSContext struct {
 	BuildVars      buildvar.Vars              `json:"buildVars"`
 	Features       interface{}                `json:"features"`
 	User           *sourcegraph.User          `json:"user"`
+	Emails         *sourcegraph.EmailAddrList `json:"emails"`
 	GitHubToken    *sourcegraph.ExternalToken `json:"gitHubToken"`
 	IntercomHash   string                     `json:"intercomHash"`
 }
@@ -64,9 +65,18 @@ func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User)
 
 	headers["X-Csrf-Token"] = csrf.Token(req)
 
+	var emails *sourcegraph.EmailAddrList
+	if user != nil {
+		var err error
+		emails, err = cl.Users.ListEmails(ctx, &sourcegraph.UserSpec{UID: user.UID})
+		if err != nil {
+			log15.Warn("Error including emails in NewJSContextFromRequest", "uid", user.UID, "err", err)
+		}
+	}
+
 	var gitHubToken *sourcegraph.ExternalToken
 	if user != nil {
-		tok, err := cl.Auth.GetExternalToken(req.Context(), &sourcegraph.ExternalTokenSpec{
+		tok, err := cl.Auth.GetExternalToken(ctx, &sourcegraph.ExternalTokenSpec{
 			UID:      user.UID,
 			Host:     "github.com",
 			ClientID: "", // defaults to GitHub client ID in environment
@@ -88,6 +98,7 @@ func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User)
 		BuildVars:      buildvar.Public,
 		Features:       feature.Features,
 		User:           user,
+		Emails:         emails,
 		GitHubToken:    gitHubToken,
 		IntercomHash:   intercomHMAC(uid),
 	}

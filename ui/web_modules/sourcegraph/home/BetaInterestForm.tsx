@@ -13,6 +13,7 @@ import {UserStore} from "sourcegraph/user/UserStore";
 import {Container} from "sourcegraph/Container";
 import * as classNames from "classnames";
 import {Store} from "sourcegraph/Store";
+import {context} from "sourcegraph/app/context";
 
 type OnChangeListener = () => void;
 
@@ -65,16 +66,6 @@ export class BetaInterestForm extends Container<Props, State> {
 
 	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
-
-		if ((this.context as any).authInfo) {
-			state.emails = UserStore.emails[(this.context as any).authInfo.UID] || null;
-		}
-	}
-
-	onStateTransition(prevState: State, nextState: State): void {
-		if (!nextState.emails && (this.context as any).authInfo) {
-			Dispatcher.Backends.dispatch(new UserActions.WantEmails((this.context as any).authInfo.UID));
-		}
 	}
 
 	_onDispatch(action) {
@@ -144,7 +135,7 @@ export class BetaInterestForm extends Container<Props, State> {
 
 		let [className, language] = [this.props.className, this.props.language];
 		let betaRegistered = (this.context as any).user && (this.context as any).user.BetaRegistered;
-		let emails = this.state.emails;
+		let emails = context.emails && context.emails.EmailAddrs;
 
 		let defaultFullName;
 		let defaultEmail;
