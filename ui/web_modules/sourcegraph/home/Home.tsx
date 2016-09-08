@@ -213,7 +213,7 @@ export class Home extends Container<HomeProps, HomeState> {
 								</div>
 							</FlexContainer>
 							<FlexContainer justify="between" wrap={true}>
-								<div className={classNames(styles.tweet_container, base.pr4}>
+								<div className={classNames(styles.tweet_container, base.pr4)}>
 									<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">Used <a href="https://twitter.com/srcgraph">@srcgraph</a> jump-to-definition across 3 projects, 2 langs, finally landing deep in Golang src. Took &lt; 10 min to pin down the issue. 💪🏼</p>&mdash; Gabriel Monroy (@gabrtv) <a href="https://twitter.com/gabrtv/status/738861622882508801">June 3, 2016</a></blockquote>
 								</div>
 								<div className={styles.tweet_container}>
