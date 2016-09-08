@@ -36,13 +36,6 @@ describe("withUserContext", () => {
 		expect(res.actions).to.eql([new UserActions.WantAuthInfo("t")]);
 		expect(res.context).to.eql({authInfo: null, user: null, signedIn: true, githubToken: null});
 	});
-	it("with accessToken and authInfo fetched, no user yet", () => {
-		UserStore.activeAccessToken = "t";
-		UserStore.directDispatch(new UserActions.FetchedAuthInfo("t", sampleAuthInfo));
-		const res = renderAndGetContext(<C />);
-		expect(res.actions).to.eql([new UserActions.WantUser(1)]);
-		expect(res.context).to.eql({authInfo: {Login: "u", UID: 1}, user: null, signedIn: true, githubToken: null});
-	});
 	it("with accessToken, authInfo, and user", () => {
 		UserStore.activeAccessToken = "t";
 		UserStore.directDispatch(new UserActions.FetchedAuthInfo("t", sampleAuthInfo));

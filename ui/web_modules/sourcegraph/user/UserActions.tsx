@@ -4,7 +4,6 @@ import {ExternalToken, Settings} from "sourcegraph/user";
 export type Action =
 	WantAuthInfo |
 	FetchedAuthInfo |
-	WantUser |
 	FetchedUser |
 	WantEmails |
 	FetchedEmails |
@@ -34,14 +33,6 @@ export class FetchedAuthInfo {
 	constructor(accessToken: string, authInfo: AuthInfo | null) {
 		this.accessToken = accessToken;
 		this.authInfo = authInfo;
-	}
-}
-
-export class WantUser {
-	uid: number;
-
-	constructor(uid: number) {
-		this.uid = uid;
 	}
 }
 

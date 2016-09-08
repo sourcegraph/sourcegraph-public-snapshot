@@ -68,12 +68,6 @@ export function withUserContext(Component) {
 			if (nextState.accessToken && !nextState.authInfo && prevState.accessToken !== nextState.accessToken) {
 				Dispatcher.Backends.dispatch(new UserActions.WantAuthInfo(nextState.accessToken));
 			}
-
-			if (prevState.authInfo !== nextState.authInfo) {
-				if (nextState.authInfo && !nextState.user && !nextState.authInfo.Error && nextState.authInfo.UID) {
-					Dispatcher.Backends.dispatch(new UserActions.WantUser(nextState.authInfo.UID));
-				}
-			}
 		}
 
 		getChildContext(): childContext { return getChildContext(this.state); }

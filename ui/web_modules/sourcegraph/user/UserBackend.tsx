@@ -26,9 +26,6 @@ class UserBackendClass {
 						let token = data.GitHubToken;
 						if (token) { delete data.GitHubToken; }
 
-						// Dispatch FetchedUser before FetchedAuthInfo because it's common for components
-						// to dispatch a WantUser when the auth info is received, and dispatching FetchedUser
-						// first means that WantUser will immediately return because the data is already there.
 						if (user && data.UID) {
 							Dispatcher.Stores.dispatch(new UserActions.FetchedUser(data.UID, user));
 						}
@@ -41,18 +38,6 @@ class UserBackendClass {
 						if (token && data.UID) {
 							Dispatcher.Stores.dispatch(new UserActions.FetchedGitHubToken(data.UID, token));
 						}
-					}, function(err: any): void { console.error(err); });
-			}
-		}
-
-		if (payload instanceof UserActions.WantUser) {
-			const action = payload;
-			if (!UserStore.users[action.uid]) {
-				this.fetch(`/.api/users/${action.uid}$`) // trailing "$" indicates UID lookup (not login/username)
-					.then(checkStatus)
-					.then((resp) => resp.json())
-					.then(function(data: any): void {
-						Dispatcher.Stores.dispatch(new UserActions.FetchedUser(action.uid, data));
 					}, function(err: any): void { console.error(err); });
 			}
 		}

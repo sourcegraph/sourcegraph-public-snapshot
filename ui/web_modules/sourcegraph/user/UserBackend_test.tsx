@@ -50,26 +50,6 @@ describe("UserBackend", () => {
 			})).to.eql([]);
 		});
 	});
-	describe("should handle WantUser", () => {
-		it("with user available", () => {
-			UserBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
-				expect(url).to.be("/.api/users/1$");
-				return immediateSyncPromise({status: 200, json: () => sampleUser});
-			};
-			expect(Dispatcher.Stores.catchDispatched(() => {
-				UserBackend.__onDispatch(new UserActions.WantUser(1));
-			})).to.eql([new UserActions.FetchedUser(1, sampleUser)]);
-		});
-		it("with user not available", () => {
-			UserBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
-				expect(url).to.be("/.api/users/1$");
-				return immediateSyncPromise({status: 404, text: () => immediateSyncPromise("error", true)});
-			};
-			expect(Dispatcher.Stores.catchDispatched(() => {
-				UserBackend.__onDispatch(new UserActions.WantUser(1));
-			})).to.eql([]);
-		});
-	});
 	describe("should handle WantEmails", () => {
 		it("with emails available", () => {
 			UserBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
