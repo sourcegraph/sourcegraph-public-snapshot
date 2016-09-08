@@ -213,6 +213,20 @@ func (c *Client) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, e
 	return &result, nil
 }
 
+// Symbols lists all repository-local definitions.
+func (c *Client) Symbols(ctx context.Context, r *RepoRev) (*Symbols, error) {
+	var result Symbols
+	for _, cl := range c.clients {
+		var v Symbols
+		err := c.do(ctx, cl, r.Repo, "symbols", r, &v)
+		if err != nil {
+			return nil, err
+		}
+		result.Symbols = append(result.Symbols, v.Symbols...)
+	}
+	return &result, nil
+}
+
 // ExportedSymbols lists repository-local definitions which are exported.
 func (c *Client) ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error) {
 	var result ExportedSymbols

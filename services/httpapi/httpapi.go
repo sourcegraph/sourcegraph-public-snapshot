@@ -94,6 +94,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.RepoTags).Handler(httptrace.TraceRoute(handler(serveRepoTags)))
 	m.Get(apirouter.RepoHoverInfo).Handler(httptrace.TraceRoute(handler(serveRepoHoverInfo)))
 	m.Get(apirouter.RepoJumpDef).Handler(httptrace.TraceRoute(handler(serveJumpToDef)))
+	m.Get(apirouter.RepoSymbols).Handler(httptrace.TraceRoute(handler(serveSymbols)))
 	m.Get(apirouter.RepoWebhookEnable).Handler(httptrace.TraceRoute(handler(serveRepoWebhookEnable)))
 	m.Get(apirouter.RepoWebhookCallback).Handler(httptrace.TraceRoute(handler(serveRepoWebhookCallback)))
 	m.Get(apirouter.Repos).Handler(httptrace.TraceRoute(handler(serveRepos)))

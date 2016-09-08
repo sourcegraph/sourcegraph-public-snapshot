@@ -100,6 +100,15 @@ Used for listing refs of a definition defined in a repository. If repository in 
   - Body: [{DefSpec Object}](#type-defspec)
   - Response: [{RefLocations Object}](#type-reflocations) OR [{Error Object}](#type-error)
 
+## POST /symbols
+
+Used for listing defs in a repository.
+
+- LSP equivalent: [workspace/symbol](https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#workspace-symbols)
+- Request:
+  - Body: [{RepoRev Object}](#type-reporev)
+  - Response: [{Symbols Object}](#type-symbols) OR [{Error Object}](#type-error)
+
 ## POST /exported-symbols
 
 Used for listing defs in a repository that can be used externally.
@@ -245,9 +254,22 @@ See also: [{HoverContent Object}](#type-hovercontent)
 
 See also: [{DefSpec Object}](#type-defspec)
 
+## Type: Symbols
+
+`{Symbols Object}` is a JSON object containing an array of all definitions defined by a repository.
+
+```
+{
+    Defs: [Array of {DefSpec Object}]
+}
+```
+
+See also: [{DefSpec Object}](#type-defspec)
+
+
 ## Type: ExportedSymbols
 
-`{ExportedSymbols Object}` is a JSON object containing an array of all definitions defined by a repository.
+`{ExportedSymbols Object}` is a JSON object containing an array of all exported definitions defined by a repository.
 
 ```
 {
