@@ -205,6 +205,12 @@
 			"revisionTime": "2016-04-20T02:17:25Z"
 		},
 		{
+			"checksumSHA1": "3KR3qbG0izQxxsSgDon+RNTS0eg=",
+			"path": "github.com/golang/groupcache/consistenthash",
+			"revision": "4eab30f13db9d8b25c752e99d1583628ac2fa422",
+			"revisionTime": "2016-02-11T22:59:07Z"
+		},
+		{
 			"checksumSHA1": "Bra/9XucW0ivjIalL27XqSw2dTk=",
 			"path": "github.com/golang/groupcache/lru",
 			"revision": "02826c3e79038b59d737d3b1c0a1d937f71a4433",
