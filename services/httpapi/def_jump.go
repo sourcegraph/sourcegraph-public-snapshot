@@ -57,6 +57,14 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 			response.Path = router.Rel.URLToBlobRange(defRange.Repo, defRange.Commit, defRange.File, defRange.StartLine+1, defRange.EndLine+1, defRange.StartCharacter+1, defRange.EndCharacter+1).String()
 		}
 		return writeJSON(w, response)
+	} else if universe.Shadow(repo.URI) {
+		go langp.DefaultClient.Definition(r.Context(), &langp.Position{
+			Repo:      repo.URI,
+			Commit:    repoRev.CommitID,
+			File:      file,
+			Line:      line,
+			Character: character,
+		})
 	}
 
 	defSpec, err := cl.Annotations.GetDefAtPos(r.Context(), &sourcegraph.AnnotationsGetDefAtPosOptions{

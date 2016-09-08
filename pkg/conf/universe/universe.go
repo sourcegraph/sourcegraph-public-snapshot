@@ -2,7 +2,11 @@ package universe
 
 import (
 	"context"
+	"hash/crc32"
+	"log"
+	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -47,6 +51,37 @@ func Enabled(ctx context.Context, repo string) bool {
 // repo.
 func EnabledExcludingBeta(repo string) bool {
 	return repoChecker(feature.Features.Universe, os.Getenv("SG_UNIVERSE_REPO"), repo)
+}
+
+var (
+	shadowRepoP = getenvPercentage("SG_UNIVERSE_SHADOW_REPO_P")
+	shadowP     = getenvPercentage("SG_UNIVERSE_SHADOW_P")
+)
+
+// Shadow tells if universe should be sent shadow traffic. If true this means
+// that the request is still served by srclib, but the request is also sent to
+// universe. SG_UNIVERSE_SHADOW_REPO_P% of repos are considered, of that
+// SG_UNIVERSE_SHADOW_P% requests will be shadowed. By default we shadow
+// nothing.
+func Shadow(repo string) bool {
+	h := crc32.ChecksumIEEE([]byte(repo))
+	if h%100 >= shadowRepoP {
+		return false
+	}
+	return rand.Uint32()%100 < shadowP
+}
+
+func getenvPercentage(key string) uint32 {
+	v := os.Getenv(key)
+	if v == "" {
+		return 0
+	}
+	p, err := strconv.Atoi(v)
+	if err != nil || p < 0 || p > 100 {
+		log.Printf("WARNING: env %s needs to be an int in [0, 100], got %s", key, v)
+		return 0
+	}
+	return uint32(p)
 }
 
 func repoChecker(on bool, enabled, repo string) bool {
