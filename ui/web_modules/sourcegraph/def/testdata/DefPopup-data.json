@@ -4,7 +4,7 @@
 		"props": {
 			"children": [
 				{
-					"type": "Constructor",
+					"type": "",
 					"props": {
 						"to": "/r/-/info/undefined/undefined/-/undefined",
 						"children": [
