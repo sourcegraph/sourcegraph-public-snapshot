@@ -41,7 +41,6 @@ func init() {
 }
 
 type coverageCmd struct {
-	LangpAddr    string `long:"addr" description:"Sourcegraph Language Processor server address" default:"http://localhost:4141"`
 	LSPAddr      string `long:"lsp-addr" description:"Sourcegraph LSP server address, only used if -addr is not set"`
 	LSPRootPath  string `long:"lsp-root" description:"Root directory location at which LSP server should read files"`
 	LSPCaps      bool   `long:"lsp-caps" description:"print the capabilities of the LSP server and exit"`
@@ -175,8 +174,8 @@ func (c *coverageCmd) Execute(args []string) error {
 	c.cl = cliClient
 	var err error
 	switch {
-	case c.LangpAddr != "":
-		c.backend, err = coverage.LangpClient(c.LangpAddr)
+	case langp.DefaultClient != nil:
+		c.backend = coverage.LangpClient(langp.DefaultClient)
 	case c.LSPAddr != "":
 		c.backend, err = coverage.LSPClient(c.LSPAddr, c.LSPRootPath, c.LSPCaps)
 	default:
