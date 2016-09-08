@@ -1,7 +1,7 @@
 import {Location} from "history";
 import * as React from "react";
 import {Route} from "react-router";
-import {AuthInfo, User} from "sourcegraph/api";
+import {User} from "sourcegraph/api";
 import {context} from "sourcegraph/app/context";
 import {getRouteParams, getRoutePattern, getViewName} from "sourcegraph/app/routePatterns";
 import {SiteConfig} from "sourcegraph/app/siteConfig";
@@ -28,7 +28,6 @@ class EventLoggerClass {
 
 	// User data from the previous call to _updateUser.
 	_user: User | null;
-	_authInfo: AuthInfo | null;
 	_primaryEmail: string | null;
 
 	constructor() {
@@ -142,33 +141,23 @@ class EventLoggerClass {
 	// any subequent calls to logEvent or setUserProperty will be buffered.
 	_updateUser(): void {
 		const user = UserStore.activeUser();
-		const authInfo = UserStore.activeAuthInfo();
 		const emails = user && user.UID ? (UserStore.emails[user.UID] || null) : null;
 		const primaryEmail = (emails && emails.filter(e => e.Primary).map(e => e.Email)[0]) || null;
 
 		this._updateUserForAmplitudeCookies();
 
-		if (this._authInfo !== authInfo) {
-			if (this._authInfo && this._authInfo.UID && (!authInfo || this._authInfo.UID !== authInfo.UID)) {
-				// The user logged out or another user logged in on the same browser.
-
-				// Distinguish between 2 users who log in from the same browser; see
-				// https://github.com/amplitude/Amplitude-Javascript#logging-out-and-anonymous-users.
-				if (this._amplitude) { this._amplitude.regenerateDeviceId(); }
-
-				// Prevent the next user who logs in (e.g., on a public terminal) from
-				// seeing the previous user's Intercom messages.
-				if (this._intercom) { this._intercom("shutdown"); }
-
-				if (this._fullStory) { this._fullStory.clearUserCookie(); }
-			}
-
-			if (authInfo) {
-				this._setTrackerAuthInfo(authInfo);
-			}
-
-			if (this._intercom) { this._intercom("boot", this._intercomSettings); }
+		if (context.user) {
+			this._setTrackerLoginInfo(context.user.Login);
+			this.setIntercomProperty("user_id", context.user.UID.toString());
+			this.setUserProperty("internal_user_id", context.user.UID.toString());
 		}
+
+		if (context.intercomHash) {
+			this.setIntercomProperty("user_hash", context.intercomHash);
+			this.setUserProperty("user_hash", context.intercomHash);
+		}
+
+		if (this._intercom) { this._intercom("boot", this._intercomSettings); }
 
 		if (user) {
 			if (user.Name) {
@@ -201,8 +190,19 @@ class EventLoggerClass {
 		}
 
 		this._user = user;
-		this._authInfo = authInfo;
 		this._primaryEmail = primaryEmail;
+	}
+
+	logout(): void {
+		// Distinguish between 2 users who log in from the same browser; see
+		// https://github.com/amplitude/Amplitude-Javascript#logging-out-and-anonymous-users.
+		if (this._amplitude) { this._amplitude.regenerateDeviceId(); }
+
+		// Prevent the next user who logs in (e.g., on a public terminal) from
+		// seeing the previous user's Intercom messages.
+		if (this._intercom) { this._intercom("shutdown"); }
+
+		if (this._fullStory) { this._fullStory.clearUserCookie(); }
 	}
 
 	_updateUserForAmplitudeCookies(): void {
@@ -226,25 +226,9 @@ class EventLoggerClass {
 		}
 
 		this.setIntercomProperty("business_user_id", loginInfo);
-	}
 
-	_setTrackerAuthInfo(authInfo: AuthInfo): void {
-		if (authInfo.Login) {
-			this._setTrackerLoginInfo(authInfo.Login);
-		}
-
-		if (authInfo.UID) {
-			this.setIntercomProperty("user_id", authInfo.UID.toString());
-			this.setUserProperty("internal_user_id", authInfo.UID.toString());
-		}
-
-		if (context.intercomHash) {
-			this.setIntercomProperty("user_hash", context.intercomHash);
-			this.setUserProperty("user_hash", context.intercomHash);
-		}
-
-		if (this._fullStory && authInfo.Login) {
-			this._fullStory.identify(authInfo.Login);
+		if (this._fullStory) {
+			this._fullStory.identify(loginInfo);
 		}
 	}
 
@@ -253,8 +237,7 @@ class EventLoggerClass {
 			return null;
 		}
 
-		let info = UserStore.activeAuthInfo();
-		return {detail: {deviceId: this._amplitude.options.deviceId, userId: info ? info.Login : null}};
+		return {detail: {deviceId: this._amplitude.options.deviceId, userId: context.user && context.user.Login}};
 	}
 
 	setAmplitudeDeviceIdForTrackers(value: string): void {

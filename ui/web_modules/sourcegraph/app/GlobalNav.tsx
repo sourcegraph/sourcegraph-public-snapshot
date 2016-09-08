@@ -175,7 +175,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 								Contact
 							</a>
 							<hr role="divider" className={base.mt3} />
-							<a role="menu_item" href="/-/logout">Sign out</a>
+							<a role="menu_item" href="/-/logout" onClick={(e) => { eventLogger.logout(); }}>Sign out</a>
 							<hr role="divider" className={base.mt2} />
 							<div className={classNames(styles.cool_mid_gray, base.pv1, base.mb1, typography.tc)}>
 								<Link to="/security" className={classNames(styles.cool_mid_gray, typography.f7, typography.link_subtle, base.pr3)}>Security</Link>

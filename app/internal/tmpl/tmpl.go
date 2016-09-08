@@ -120,7 +120,16 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			return err
 		}
 
-		jsctx, err := jscontext.NewJSContextFromRequest(req, int(authInfo.UID))
+		var user *sourcegraph.User
+		if authInfo.UID != 0 {
+			var err error
+			user, err = cl.Users.Get(req.Context(), &sourcegraph.UserSpec{UID: authInfo.UID})
+			if err != nil {
+				return err
+			}
+		}
+
+		jsctx, err := jscontext.NewJSContextFromRequest(req, int(authInfo.UID), user)
 		if err != nil {
 			return err
 		}

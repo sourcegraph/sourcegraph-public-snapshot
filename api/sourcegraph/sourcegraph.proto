@@ -994,10 +994,10 @@ message TaskUpdate {
 // User represents a registered user.
 message User {
 	// UID is the numeric primary key for a user.
-	int32 UID = 1;
+	int32 UID = 1 [(gogoproto.jsontag) = "UID"];
 
 	// Login is the user's username.
-	string Login = 2;
+	string Login = 2 [(gogoproto.jsontag) = "Login"];
 
 	// Name is the (possibly empty) full name of the user.
 	string Name = 4;

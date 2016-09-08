@@ -31,12 +31,13 @@ type JSContext struct {
 	AssetsRoot     string            `json:"assetsRoot"`
 	BuildVars      buildvar.Vars     `json:"buildVars"`
 	Features       interface{}       `json:"features"`
+	User           *sourcegraph.User `json:"user"`
 	IntercomHash   string            `json:"intercomHash"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
 // request.
-func NewJSContextFromRequest(req *http.Request, uid int) (JSContext, error) {
+func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User) (JSContext, error) {
 	ctx := req.Context()
 
 	headers := make(map[string]string)
@@ -63,6 +64,7 @@ func NewJSContextFromRequest(req *http.Request, uid int) (JSContext, error) {
 		AssetsRoot:     assets.URL("/").String(),
 		BuildVars:      buildvar.Public,
 		Features:       feature.Features,
+		User:           user,
 		IntercomHash:   intercomHMAC(uid),
 	}
 	cred := sourcegraph.CredentialsFromContext(ctx)

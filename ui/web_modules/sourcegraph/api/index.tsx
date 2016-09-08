@@ -1103,8 +1103,8 @@ export interface UploadPackOp {
 }
 
 export interface User {
-	UID?: number;
-	Login?: string;
+	UID: number;
+	Login: string;
 	Name?: string;
 	IsOrganization?: boolean;
 	AvatarURL?: string;
