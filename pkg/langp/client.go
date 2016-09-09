@@ -216,13 +216,31 @@ func (c *Client) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, e
 // Symbols lists all repository-local definitions.
 func (c *Client) Symbols(ctx context.Context, r *RepoRev) (*Symbols, error) {
 	var result Symbols
-	for _, cl := range c.clients {
+	for lang, cl := range c.clients {
+		if lang == "CTAGS" {
+			// Skip ctags client for now to prevent duplicating symbol results
+			continue
+		}
 		var v Symbols
 		err := c.do(ctx, cl, r.Repo, "symbols", r, &v)
 		if err != nil {
 			return nil, err
 		}
 		result.Symbols = append(result.Symbols, v.Symbols...)
+	}
+	// If there wasn't a language server that provided symbols above, attempt
+	// to fill in the results using the ctags server.
+	//
+	// TODO If there are multiple languages in a repo and a LSP server for one
+	// language but not the other this will not fill in results for the second
+	// language. Fix this case.
+	if cl, ok := c.clients["CTAGS"]; ok && len(result.Symbols) == 0 {
+		var v Symbols
+		err := c.do(ctx, cl, r.Repo, "symbols", r, &v)
+		if err != nil {
+			return nil, err
+		}
+		result.Symbols = v.Symbols
 	}
 	return &result, nil
 }
