@@ -2,9 +2,7 @@
 
 FROM alpine:3.4
 
-RUN apk add --update alpine-sdk
-RUN apk add autoconf
-RUN apk add automake
+RUN apk add --update alpine-sdk autoconf automake ca-certificates
 
 RUN git clone https://github.com/universal-ctags/ctags /ctags
 WORKDIR /ctags
