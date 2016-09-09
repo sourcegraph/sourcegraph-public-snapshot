@@ -20,6 +20,14 @@
           "value": "type Router struct {"
         },
         {
+          "language": "text/html",
+          "value": "\u003cp\u003e\nRouter registers routes to be matched and dispatches a handler.\n\u003c/p\u003e\n\u003cp\u003e\nIt implements the http.Handler interface, so it can be registered to serve\nrequests:\n\u003c/p\u003e\n\u003cpre\u003evar router = mux.NewRouter()\n\nfunc main() {\n    http.Handle(\u0026#34;/\u0026#34;, router)\n}\n\u003c/pre\u003e\n\u003cp\u003e\nOr, for Google App Engine, register it in a init() function:\n\u003c/p\u003e\n\u003cpre\u003efunc init() {\n    http.Handle(\u0026#34;/\u0026#34;, router)\n}\n\u003c/pre\u003e\n\u003cp\u003e\nThis will send all incoming requests to the router.\n\u003c/p\u003e\n"
+        },
+        {
+          "language": "text/plain",
+          "value": "Router registers routes to be matched and dispatches a handler.\n\nIt implements the http.Handler interface, so it can be registered to serve\nrequests:\n\n    var router = mux.NewRouter()\n\n    func main() {\n        http.Handle(\"/\", router)\n    }\n\nOr, for Google App Engine, register it in a init() function:\n\n    func init() {\n        http.Handle(\"/\", router)\n    }\n\nThis will send all incoming requests to the router.\n"
+        },
+        {
           "language": "text/definfo",
           "value": "{\"URI\":\"file:///gopath/src/mux/mux.go\",\"UnitType\":\"GoPackage\",\"Unit\":\"mux\",\"Path\":\"Router\"}"
         }
