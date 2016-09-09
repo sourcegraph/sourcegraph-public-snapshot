@@ -1,0 +1,45 @@
+[
+  {
+    "id": 0,
+    "result": {
+      "capabilities": {
+        "hoverProvider": true,
+        "definitionProvider": true,
+        "referencesProvider": true,
+        "workspaceSymbolProvider": true
+      }
+    },
+    "jsonrpc": "2.0"
+  },
+  {
+    "id": 1,
+    "result": {
+      "contents": [
+        {
+          "language": "go",
+          "value": "type Router struct {"
+        },
+        {
+          "language": "text/definfo",
+          "value": "{\"URI\":\"file:///gopath/src/mux/mux.go\",\"UnitType\":\"GoPackage\",\"Unit\":\"mux\",\"Path\":\"Router\"}"
+        }
+      ],
+      "range": {
+        "start": {
+          "line": 37,
+          "character": 5
+        },
+        "end": {
+          "line": 37,
+          "character": 10
+        }
+      }
+    },
+    "jsonrpc": "2.0"
+  },
+  {
+    "id": 2,
+    "result": null,
+    "jsonrpc": "2.0"
+  }
+]
