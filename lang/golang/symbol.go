@@ -161,7 +161,15 @@ func parseSymbolQuery(q string) (*symbolQuery, error) {
 	}, nil
 }
 
+// Gog is giving us issues in production. Until we resolve them, regress on
+// the functionality it provides by default.
+var gogEnabled = os.Getenv("SG_ENABLE_GOG") == "1"
+
 func runGog(ctx context.Context, cacheDir string, env, pkgs []string) (*gogOutput, error) {
+	if !gogEnabled {
+		return nil, errors.New("gog is disabled")
+	}
+
 	// Coarse lock for this workspace. We don't lock per package to
 	// prevent concurrent memory heavy operations running.
 	unlock := lock(cacheDir)
