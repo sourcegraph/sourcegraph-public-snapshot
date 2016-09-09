@@ -3,13 +3,15 @@ import { createLineFromByteFunc } from "sourcegraph/blob/lineFromByte";
 import * as DefActions from "sourcegraph/def/DefActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 
+import * as debounce from "lodash/debounce";
+
 import { Def } from "sourcegraph/api";
 import { urlToDefInfo } from "sourcegraph/def/routes";
 
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
-import "sourcegraph/blob/styles/Monaco.raw.css";
+import "sourcegraph/blob/styles/Monaco.css";
 import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -20,6 +22,8 @@ interface Props {
 	path: string;
 	rev: string;
 
+	startLine?: number;
+	endLine?: number;
 	startByte?: number;
 };
 
@@ -50,6 +54,7 @@ export class Blob extends React.Component<Props, null> {
 	constructor(props: Props) {
 		super(props);
 		this._findInPage = this._findInPage.bind(this);
+		this._onResize = debounce(this._onResize.bind(this), 300, { leading: true, trailing: true });
 		this._hoverProvided = [];
 		this._toDispose = [];
 		this._decorationID = [];
@@ -66,6 +71,8 @@ export class Blob extends React.Component<Props, null> {
 		script.src = `${this.context.siteConfig.assetsRoot}/vs/loader.js`;
 		script.addEventListener("load", this._loaderReady.bind(this));
 		document.body.appendChild(script);
+
+		global.document.addEventListener("resize", this._onResize);
 	}
 
 	componentWillUnmount(): void {
@@ -73,11 +80,16 @@ export class Blob extends React.Component<Props, null> {
 			disposable.dispose();
 		});
 		global.document.removeEventListener("keydown", this._findInPage);
+		global.document.removeEventListener("resize", this._onResize);
 	}
 
-	componentDidUpdate(): void {
-		if (!this._editor) { return; }
-		this._updateEditor();
+	componentWillReceiveProps(nextProps: Props): void {
+		if (this._editor) {
+			// If Monaco hasn't been loaded yet, these props will be applied when it loads.
+			if (nextProps.contents !== this.props.contents || nextProps.repo !== this.props.repo || nextProps.rev !== this.props.rev || nextProps.path !== this.props.path || nextProps.startLine !== this.props.startLine || nextProps.endLine !== this.props.endLine || nextProps.startByte !== this.props.startByte) {
+				setTimeout(() => this._updateEditor());
+			}
+		}
 	}
 
 	_loaderReady(): void {
@@ -93,13 +105,11 @@ export class Blob extends React.Component<Props, null> {
 	_monacoReady(): void {
 		this._editor = monaco.editor.create(this.refs["container"] as HTMLDivElement, {
 			automaticLayout: true,
-			value: this.props.contents,
 			readOnly: true,
 			scrollBeyondLastLine: false,
 			wrappingColumn: 0,
 			fontFamily: code_font_face,
 			fontSize: 13,
-			cursorStyle: "block",
 		});
 		this._toDispose.push(this._editor);
 
@@ -124,13 +134,14 @@ export class Blob extends React.Component<Props, null> {
 	}
 
 	_updateModel(uri: monaco.Uri): void {
-		let model = monaco.editor.getModel(uri);
-		if (model) {
-			// If the model doesn't change, we don't need to update the editor.
+		if (typeof this.props.contents !== "string") {
 			return;
 		}
-		model = monaco.editor.createModel(this.props.contents, "", uri);
-		this._toDispose.push(model);
+		let model = monaco.editor.getModel(uri);
+		if (!model) {
+			model = monaco.editor.createModel(this.props.contents, "", uri);
+			this._toDispose.push(model);
+		}
 		this._editor.setModel(model);
 
 		const lang = model.getMode().getId();
@@ -177,7 +188,7 @@ export class Blob extends React.Component<Props, null> {
 		const pos = editor.getPosition();
 		const model = editor.getModel();
 
-		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REFERENCES, AnalyticsConstants.ACTION_CLICK, "ClickedViewReferences", {repo: this.props.repo, path: this.props.path, rev: this.props.rev});
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REFERENCES, AnalyticsConstants.ACTION_CLICK, "ClickedViewReferences", { repo: this.props.repo, path: this.props.path, rev: this.props.rev });
 
 		return new monaco.Promise<void>(() => {
 			defAtPosition(model, pos).then((def) => {
@@ -217,36 +228,37 @@ export class Blob extends React.Component<Props, null> {
 	}
 
 	_scroll(): void {
-		let startLine;
-		const matches = /#(\d+)-(\d+)/.exec(global.window.location.hash);
-		if (matches) {
-			const start = parseInt(matches[1], 10);
-			const end = parseInt(matches[2], 10);
-			this._highlightLines(start, end);
-			startLine = Math.min(start, end);
+		let startLine: number;
+		let endLine: number;
+		if (this.props.startLine) {
+			startLine = this.props.startLine;
+			endLine = this.props.endLine || startLine;
 		} else if (this.props.startByte) {
-			startLine = this._lineFromByte(this.props.startByte) - 1;
+			startLine = this._lineFromByte(this.props.startByte);
+			endLine = startLine;
 		} else {
 			return;
 		}
 		const linesInViewPort = this._editor.getDomNode().offsetHeight / 20;
 		const middleLine = Math.floor(startLine + (linesInViewPort / 4));
 		this._editor.revealLineInCenter(middleLine);
+		this._highlightLines(startLine, endLine);
+		this._editor.focus();
 	}
 
 	_overrideNavigationKeys(): void {
 		// Monaco overrides the back and forward history commands, so we
 		// implement our own here. AFAICT, there isn't a good way
 		// to unbind a default keybinding.
-		 /* tslint:disable */
-		 // Disable tslint because it doesn't like bitwise operators.
+		/* tslint:disable */
+		// Disable tslint because it doesn't like bitwise operators.
 		this._editor.addCommand(monaco.KeyCode.LeftArrow | monaco.KeyMod.CtrlCmd, () => {
 			global.window.history.back();
 		}, "");
 		this._editor.addCommand(monaco.KeyCode.RightArrow | monaco.KeyMod.CtrlCmd, () => {
 			global.window.history.forward();
 		}, "");
-		 /* tslint:enable */
+		/* tslint:enable */
 		this._editor.addCommand(monaco.KeyCode.Home, () => {
 			this._editor.revealLine(1);
 		}, "");
@@ -267,6 +279,12 @@ export class Blob extends React.Component<Props, null> {
 		this._editor.setSelection(range);
 	}
 
+	_onResize(e: Event): void {
+		if (this._editor) {
+			this._editor.layout();
+		}
+	}
+
 	render(): JSX.Element {
 		return <div ref="container" style={{ display: "flex", flex: "auto", width: "100%" }} />;
 	}
@@ -284,9 +302,9 @@ class HoverProvider {
 				throw new Error("def not found");
 			}
 			const word = model.getWordAtPosition(position);
-			const title = `**${def.Name}** ${def.FmtStrings.Type.Unqualified}`;
+			const title = `**${def.Name}** ${def.FmtStrings ? def.FmtStrings.Type.Unqualified.trim() : ""}`;
 			const serverDoc = def.Docs ? def.Docs[0].Data : "";
-			const viewRefsSuggestion = "*Right click to view all references.*";
+			const viewRefsSuggestion = "*Right-click to view all references.*";
 			let docs = serverDoc.replace(/\s+/g, " ");
 			if (docs.length > 400) {
 				docs = docs.substring(0, 380);
@@ -326,8 +344,8 @@ interface RepoSpec {
 }
 
 function pathToURI(uri: monaco.Uri): RepoSpec {
-	const matches = /(.*)\/-\/(.*)\/-\/(.*)/.exec(uri.fsPath);
-	if (!matches || matches.length < 4) { throw new Error("invalid argument, model URI probably set incorrectly"); }
+	const matches = /(.*)[\/\\]-[\/\\](.*)[\/\\]-[\/\\](.*)/.exec(uri.fsPath);
+	if (!matches || matches.length < 4) { throw new Error(`invalid argument, model URI (${uri.fsPath}) probably set incorrectly`); }
 	const repo = matches[1];
 	const rev = matches[2];
 	const file = matches[3];

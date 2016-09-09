@@ -1,30 +1,30 @@
 // tslint:disable: typedef ordered-imports
 
-import {Location} from "history";
+import { Location } from "history";
 import * as React from "react";
 import Helmet from "react-helmet";
 
-import {Container} from "sourcegraph/Container";
+import { Container } from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {Store} from "sourcegraph/Store";
-import {BlobLegacy} from "sourcegraph/blob/BlobLegacy";
-import {BlobContentPlaceholder} from "sourcegraph/blob/BlobContentPlaceholder";
+import { Store } from "sourcegraph/Store";
+import { BlobLegacy } from "sourcegraph/blob/BlobLegacy";
+import { BlobContentPlaceholder } from "sourcegraph/blob/BlobContentPlaceholder";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import {BlobToolbar} from "sourcegraph/blob/BlobToolbar";
-import {FileMargin} from "sourcegraph/blob/FileMargin";
-import {DefTooltip} from "sourcegraph/def/DefTooltip";
-import {DefStore} from "sourcegraph/def/DefStore";
+import { BlobToolbar } from "sourcegraph/blob/BlobToolbar";
+import { FileMargin } from "sourcegraph/blob/FileMargin";
+import { DefTooltip } from "sourcegraph/def/DefTooltip";
+import { DefStore } from "sourcegraph/def/DefStore";
 import "sourcegraph/blob/BlobBackend";
 import "sourcegraph/def/DefBackend";
 import "sourcegraph/build/BuildBackend";
 import * as Style from "sourcegraph/blob/styles/Blob.css";
-import {lineCol, lineRange, parseLineRange} from "sourcegraph/blob/lineCol";
-import {urlTo} from "sourcegraph/util/urlTo";
-import {makeRepoRev, trimRepo} from "sourcegraph/repo";
-import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
-import {Header} from "sourcegraph/components/Header";
-import {createLineFromByteFunc} from "sourcegraph/blob/lineFromByte";
-import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
+import { lineCol, lineRange, parseLineRange } from "sourcegraph/blob/lineCol";
+import { urlTo } from "sourcegraph/util/urlTo";
+import { makeRepoRev, trimRepo } from "sourcegraph/repo";
+import { httpStatusCode } from "sourcegraph/util/httpStatusCode";
+import { Header } from "sourcegraph/components/Header";
+import { createLineFromByteFunc } from "sourcegraph/blob/lineFromByte";
+import { defTitle, defTitleOK } from "sourcegraph/def/Formatter";
 
 interface Props {
 	repo: string;
@@ -119,7 +119,7 @@ export class LegacyBlobMain extends Container<Props, State> {
 	}
 
 	_navigate(repo, rev, path, hash) {
-		let url = urlTo("blob", {splat: [makeRepoRev(repo, rev), path]} as any);
+		let url = urlTo("blob", { splat: [makeRepoRev(repo, rev), path] } as any);
 
 		// Replace the URL if we're just changing the hash. If we're changing
 		// more (e.g., from a def URL to a blob URL), then push.
@@ -138,16 +138,21 @@ export class LegacyBlobMain extends Container<Props, State> {
 		if (this.state.blob && this.state.blob.Error) {
 			let msg;
 			switch (this.state.blob.Error.response.status) {
-			case 413:
-				msg = "Sorry, this file is too large to display.";
-				break;
-			default:
-				msg = "File is not available.";
+				case 413:
+					msg = "Sorry, this file is too large to display.";
+					break;
+				default:
+					msg = "File is not available.";
 			}
 			return (
 				<Header
 					title={`${httpStatusCode(this.state.blob.Error)}`}
 					subtitle={msg} />
+			);
+		}
+		if (this.state.blob && this.state.blob.ContentsString && this.state.blob.ContentsString.length > 512 * 1024) {
+			return (
+				<Header title={`File is too large to display`} />
 			);
 		}
 
@@ -172,29 +177,29 @@ export class LegacyBlobMain extends Container<Props, State> {
 						path={this.state.path} />
 					{(!this.state.blob || (this.state.blob && !this.state.blob.Error && !this.state.skipAnns && !this.state.anns)) && <BlobContentPlaceholder />}
 					{this.state.blob && !this.state.blob.Error && typeof this.state.blob.ContentsString !== "undefined" && (this.state.skipAnns || (this.state.anns && !this.state.anns.Error)) &&
-					<BlobLegacy
-						startlineCallback = {node => this.setState({selectionStartLine: node})}
-						location={this.props.location}
-						repo={this.state.repo}
-						rev={this.state.rev}
-						commitID={this.state.commitID}
-						path={this.state.path}
-						contents={this.state.blob.ContentsString}
-						annotations={this.state.anns}
-						skipAnns={this.state.skipAnns}
-						lineNumbers={true}
-						highlightSelectedLines={true}
-						highlightedDef={null}
-						highlightedDefObj={null}
-						activeDef={this.state.def}
-						startLine={this.state.startLine}
-						startCol={this.state.startCol}
-						startByte={this.state.startByte}
-						endLine={this.state.endLine}
-						endCol={this.state.endCol}
-						endByte={this.state.endByte}
-						scrollToStartLine={true}
-						dispatchSelections={true} />}
+						<BlobLegacy
+							startlineCallback={node => this.setState({ selectionStartLine: node })}
+							location={this.props.location}
+							repo={this.state.repo}
+							rev={this.state.rev}
+							commitID={this.state.commitID}
+							path={this.state.path}
+							contents={this.state.blob.ContentsString}
+							annotations={this.state.anns}
+							skipAnns={this.state.skipAnns}
+							lineNumbers={true}
+							highlightSelectedLines={true}
+							highlightedDef={null}
+							highlightedDefObj={null}
+							activeDef={this.state.def}
+							startLine={this.state.startLine}
+							startCol={this.state.startCol}
+							startByte={this.state.startByte}
+							endLine={this.state.endLine}
+							endCol={this.state.endCol}
+							endByte={this.state.endByte}
+							scrollToStartLine={true}
+							dispatchSelections={true} />}
 					<DefTooltip
 						currentRepo={this.state.repo}
 						hoverPos={this.state.hoverPos}
@@ -202,7 +207,7 @@ export class LegacyBlobMain extends Container<Props, State> {
 				</div>
 				<FileMargin
 					className={Style.margin}
-					style={(!this.state.blob || !this.state.anns) ? {visibility: "hidden"} : {}}
+					style={(!this.state.blob || !this.state.anns) ? { visibility: "hidden" } : {}}
 					lineFromByte={this.state.lineFromByte}
 					selectionStartLine={this.state.selectionStartLine ? this.state.selectionStartLine : null}
 					startByte={this.state.startByte}>

@@ -32,6 +32,10 @@
 	align-items: start;
 	flex: auto;
 }
+.container_monaco {
+	composes: container;
+	flex-direction: column;
+}
 .content {
 	flex: 1.5 0 contentWidth;
 	max-width: calc(contentWidth * 1.4);
