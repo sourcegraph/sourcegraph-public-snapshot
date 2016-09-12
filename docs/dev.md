@@ -98,11 +98,11 @@ ulimit -n 10000
 ```
 
 You can also compile and install `src` directly:
+
 ```
 go install ./cmd/src
 src -h
 ```
-
 
 ## Test
 
@@ -149,16 +149,13 @@ Then run:
 make generate
 ```
 
-Note that you should always run this after you run `govendor sync` to
-update dependencies.
-
 Also, sometimes there are erroneous diffs. This occurs for a few
 reasons, none of which are legitimate (i.e., they are tech debt items
 we need to address):
 
-* The codegen tool might emit code that depends on system
-  configuration, such as the system timezone. We need to submit PRs to
-  the tools to eliminate these issues.
+* The codegen tool might emit code that depends on system configuration,
+  such as the system timezone or packages you have in your GOPATH. We
+  need to submit PRs to the tools to eliminate these issues.
 * You might have existing but gitignored files that the codegen tools
   read on your disk that other developers don't have. (This occurs for
   app assets especially.)
