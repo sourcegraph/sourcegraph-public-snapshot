@@ -409,26 +409,14 @@ func (t *translator) Symbols(ctx context.Context, r *RepoRev) (*Symbols, error) 
 		return nil, err
 	}
 
-	var symbols []*Symbol
+	symbols := []*lsp.SymbolInformation{}
 	for _, s := range respSymbol {
 		f, err := t.resolveFile(r.Repo, r.Commit, s.Location.URI)
 		if err != nil {
 			return nil, err
 		}
-		pkgParts := strings.Split(s.ContainerName, "/")
-		unit := strings.Join(pkgParts, "/")
-		symbols = append(symbols, &Symbol{
-			DefSpec: DefSpec{
-				Repo:     f.Repo,
-				Commit:   f.Commit,
-				UnitType: "PipPackage", // TODO(renfred) Appropriate UnitType per language.
-				Unit:     unit,
-				Path:     s.Name,
-			},
-			Name: s.Name,
-			File: f.Path,
-			Kind: lspKindToSymbol(s.Kind),
-		})
+		s.Location.URI = f.Path
+		symbols = append(symbols, &s)
 	}
 	return &Symbols{Symbols: symbols}, nil
 }
