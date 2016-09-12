@@ -16,7 +16,7 @@
 					"props": {
 						"children": [
 							{
-								"type": "",
+								"type": "Constructor",
 								"key": "f:/repo@rev/-/tree/p1",
 								"props": {
 									"className": "",
@@ -29,14 +29,14 @@
 								}
 							},
 							{
-								"type": "",
+								"type": "Constructor",
 								"key": "f:/repo@rev/-/blob/p1/p2/f3",
 								"props": {
 									"className": "",
 									"to": "/repo@rev/-/blob/p1/p2/f3",
 									"children": [
 										{
-											"type": "",
+											"type": "C",
 											"props": {}
 										},
 										"f3"
