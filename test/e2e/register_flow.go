@@ -1,13 +1,6 @@
 package e2e
 
-import (
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-
-	"sourcegraph.com/sourcegraph/go-selenium"
-)
+import "sourcegraph.com/sourcegraph/go-selenium"
 
 func init() {
 	Register(&Test{
@@ -18,19 +11,6 @@ func init() {
 }
 
 func testRegisterFlow(t *T) error {
-	// Create gRPC client connection so we can talk to the server. e2etest uses
-	// the server's ID key for authentication, which means it can do ANYTHING with
-	// no restrictions. Be careful!
-	ctx, c := t.GRPCClient()
-
-	// Delete the test user account.
-	_, err := c.Accounts.Delete(ctx, &sourcegraph.UserSpec{
-		Login: t.TestLogin,
-	})
-	if err != nil && grpc.Code(err) != codes.NotFound {
-		return err
-	}
-
 	// Get join page.
 	t.Get(t.Endpoint("/"))
 	t.Click(selenium.ByLinkText, "Sign up")

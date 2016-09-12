@@ -59,6 +59,15 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 		email = &sourcegraph.EmailAddr{Email: newAcct.Email, Primary: true}
 	}
 
+	// Delete the e2etest user account if it already exists.
+	if strings.HasPrefix(newUser.Login, e2etestuser.Prefix) {
+		if u, err := store.UsersFromContext(ctx).Get(ctx, sourcegraph.UserSpec{Login: newUser.Login}); err == nil {
+			if err := store.AccountsFromContext(ctx).Delete(elevatedActor(ctx), u.UID); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	created, err := store.AccountsFromContext(ctx).Create(elevatedActor(ctx), newUser, email)
 	if err != nil {
 		return nil, err

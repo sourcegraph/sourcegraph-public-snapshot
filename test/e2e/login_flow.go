@@ -1,12 +1,6 @@
 package e2e
 
-import (
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
-	"sourcegraph.com/sourcegraph/go-selenium"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-)
+import "sourcegraph.com/sourcegraph/go-selenium"
 
 func init() {
 	Register(&Test{
@@ -17,22 +11,6 @@ func init() {
 }
 
 func testLoginFlow(t *T) error {
-	// Create gRPC client connection so we can talk to the server. e2etest uses
-	// the server's ID key for authentication, which means it can do ANYTHING with
-	// no restrictions. Be careful!
-	ctx, c := t.GRPCClient()
-
-	// Create the test user account.
-	testPassword := "e2etest"
-	_, err := c.Accounts.Create(ctx, &sourcegraph.NewAccount{
-		Login:    t.TestLogin,
-		Email:    t.TestEmail,
-		Password: testPassword,
-	})
-	if err != nil && grpc.Code(err) != codes.AlreadyExists {
-		return err
-	}
-
 	// Get login page.
 	t.Get(t.Endpoint("/"))
 	t.Click(selenium.ByLinkText, "Login")
@@ -75,7 +53,7 @@ func testLoginFlow(t *T) error {
 	username.Click()
 	username.SendKeys(t.TestLogin)
 	password.Click()
-	password.SendKeys(testPassword)
+	password.SendKeys("e2etest")
 
 	// Click the submit button.
 	t.Click(selenium.ById, "e2etest-login-button")

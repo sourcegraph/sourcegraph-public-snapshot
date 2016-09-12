@@ -38,8 +38,6 @@ First `cd test/e2e`, then:
 TARGET=http://localhost:3080 go test
 ```
 
-To test against sourcegraph.com you will need admin access, [see this document](https://github.com/sourcegraph/infrastructure/tree/master/docker-images/e2etest#testing-sourcegraphcom).
-
 
 ## Additional options
 
