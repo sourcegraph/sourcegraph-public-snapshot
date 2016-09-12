@@ -1,91 +1,15 @@
-import {AuthInfo, EmailAddr, User} from "sourcegraph/api";
-import {ExternalToken, Settings} from "sourcegraph/user";
+import {Settings} from "sourcegraph/user";
 
 export type Action =
-	WantAuthInfo |
-	FetchedAuthInfo |
-	WantUser |
-	FetchedUser |
-	WantEmails |
-	FetchedEmails |
-	FetchedGitHubToken |
 	UpdateSettings |
 	SubmitSignup |
 	SubmitLogin |
-	SubmitLogout |
 	SubmitForgotPassword |
 	SubmitResetPassword |
 	SignupCompleted |
 	LoginCompleted |
-	LogoutCompleted |
 	ForgotPasswordCompleted |
 	ResetPasswordCompleted;
-
-export class WantAuthInfo {
-	accessToken: string;
-
-	constructor(accessToken: string) {
-		this.accessToken = accessToken;
-	}
-}
-
-export class FetchedAuthInfo {
-	accessToken: string;
-	authInfo: AuthInfo | null; // null if unauthenticated
-
-	constructor(accessToken: string, authInfo: AuthInfo | null) {
-		this.accessToken = accessToken;
-		this.authInfo = authInfo;
-	}
-}
-
-export class WantUser {
-	uid: number;
-
-	constructor(uid: number) {
-		this.uid = uid;
-	}
-}
-
-export class FetchedUser {
-	uid: number;
-	user: User;
-
-	constructor(uid: number, user: User) {
-		this.uid = uid;
-		this.user = user;
-	}
-}
-
-export class WantEmails {
-	uid: number;
-
-	constructor(uid: number) {
-		this.uid = uid;
-	}
-}
-
-export class FetchedEmails {
-	uid: number;
-	emails: EmailAddr[];
-
-	constructor(uid: number, emails: EmailAddr[]) {
-		this.uid = uid;
-		this.emails = emails;
-	}
-}
-
-// No WantGitHubToken because it is included in the AuthInfo response.
-
-export class FetchedGitHubToken {
-	uid: number;
-	token: ExternalToken;
-
-	constructor(uid: number, token: ExternalToken) {
-		this.uid = uid;
-		this.token = token;
-	}
-}
 
 export class SubmitSignup {
 	login: string;
@@ -130,18 +54,6 @@ export class LoginCompleted {
 	constructor(resp: any) {
 		this.resp = resp;
 		this.eventName = "LoginCompleted";
-	}
-}
-
-export class SubmitLogout {}
-
-export class LogoutCompleted {
-	resp: any;
-	eventName: string;
-
-	constructor(resp: any) {
-		this.resp = resp;
-		this.eventName = "LogoutCompleted";
 	}
 }
 

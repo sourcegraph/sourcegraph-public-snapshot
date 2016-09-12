@@ -1,7 +1,6 @@
 import {Location} from "history";
 import * as React from "react";
-import {Route} from "react-router";
-import {AuthInfo, User} from "sourcegraph/api";
+import {InjectedRouter, Route} from "react-router";
 import {context} from "sourcegraph/app/context";
 import {getRouteParams, getRoutePattern, getViewName} from "sourcegraph/app/routePatterns";
 import {SiteConfig} from "sourcegraph/app/siteConfig";
@@ -25,11 +24,6 @@ class EventLoggerClass {
 	_siteConfig: SiteConfig | null;
 	_currentPlatform: string = "Web";
 	_currentPlatformVersion: string = "";
-
-	// User data from the previous call to _updateUser.
-	_user: User | null;
-	_authInfo: AuthInfo | null;
-	_primaryEmail: string | null;
 
 	constructor() {
 		this._intercomSettings = null;
@@ -135,41 +129,30 @@ class EventLoggerClass {
 		this._amplitude.setOptOut(this.userAgentIsBot);
 	}
 
-	// _updateUser is be called whenever the user changes (after login or logout,
-	// or on the initial page load);
+	// _updateUser is be called whenever the user changes (on the initial page load).
 	//
 	// If any events have been buffered, it will flush them immediately.
 	// If you do not call _updateUser or it is run on the server,
 	// any subequent calls to logEvent or setUserProperty will be buffered.
 	_updateUser(): void {
-		const user = UserStore.activeUser();
-		const authInfo = UserStore.activeAuthInfo();
-		const emails = user && user.UID ? (UserStore.emails[user.UID] || null) : null;
+		const user = context.user;
+		const emails = context.emails && context.emails.EmailAddrs || null;
 		const primaryEmail = (emails && emails.filter(e => e.Primary).map(e => e.Email)[0]) || null;
 
 		this._updateUserForAmplitudeCookies();
 
-		if (this._authInfo !== authInfo) {
-			if (this._authInfo && this._authInfo.UID && (!authInfo || this._authInfo.UID !== authInfo.UID)) {
-				// The user logged out or another user logged in on the same browser.
-
-				// Distinguish between 2 users who log in from the same browser; see
-				// https://github.com/amplitude/Amplitude-Javascript#logging-out-and-anonymous-users.
-				if (this._amplitude) { this._amplitude.regenerateDeviceId(); }
-
-				// Prevent the next user who logs in (e.g., on a public terminal) from
-				// seeing the previous user's Intercom messages.
-				if (this._intercom) { this._intercom("shutdown"); }
-
-				if (this._fullStory) { this._fullStory.clearUserCookie(); }
-			}
-
-			if (authInfo) {
-				this._setTrackerAuthInfo(authInfo);
-			}
-
-			if (this._intercom) { this._intercom("boot", this._intercomSettings); }
+		if (context.user) {
+			this._setTrackerLoginInfo(context.user.Login);
+			this.setIntercomProperty("user_id", context.user.UID.toString());
+			this.setUserProperty("internal_user_id", context.user.UID.toString());
 		}
+
+		if (context.intercomHash) {
+			this.setIntercomProperty("user_hash", context.intercomHash);
+			this.setUserProperty("user_hash", context.intercomHash);
+		}
+
+		if (this._intercom) { this._intercom("boot", this._intercomSettings); }
 
 		if (user) {
 			if (user.Name) {
@@ -190,20 +173,29 @@ class EventLoggerClass {
 			if (user.Location) {
 				this.setUserProperty("location", user.Location);
 			}
-
-		}
-		if (this._primaryEmail !== primaryEmail) {
-			if (primaryEmail) {
-				this.setUserProperty("email", primaryEmail);
-				this.setUserProperty("emails", emails);
-				this.setIntercomProperty("email", primaryEmail);
-				if (this._fullStory) { this._fullStory.setUserVars({email: primaryEmail}); }
-			}
 		}
 
-		this._user = user;
-		this._authInfo = authInfo;
-		this._primaryEmail = primaryEmail;
+		if (primaryEmail) {
+			this.setUserProperty("email", primaryEmail);
+			this.setUserProperty("emails", emails);
+			this.setIntercomProperty("email", primaryEmail);
+			if (this._fullStory) { this._fullStory.setUserVars({email: primaryEmail}); }
+		}
+
+		let allowedPrivateAuth = context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("repo") && context.gitHubToken.scope.includes("read:org");
+		this.setUserProperty("is_private_code_user", allowedPrivateAuth ? allowedPrivateAuth.toString() : "false");
+	}
+
+	logout(): void {
+		// Distinguish between 2 users who log in from the same browser; see
+		// https://github.com/amplitude/Amplitude-Javascript#logging-out-and-anonymous-users.
+		if (this._amplitude) { this._amplitude.regenerateDeviceId(); }
+
+		// Prevent the next user who logs in (e.g., on a public terminal) from
+		// seeing the previous user's Intercom messages.
+		if (this._intercom) { this._intercom("shutdown"); }
+
+		if (this._fullStory) { this._fullStory.clearUserCookie(); }
 	}
 
 	_updateUserForAmplitudeCookies(): void {
@@ -227,25 +219,9 @@ class EventLoggerClass {
 		}
 
 		this.setIntercomProperty("business_user_id", loginInfo);
-	}
 
-	_setTrackerAuthInfo(authInfo: AuthInfo): void {
-		if (authInfo.Login) {
-			this._setTrackerLoginInfo(authInfo.Login);
-		}
-
-		if (authInfo.UID) {
-			this.setIntercomProperty("user_id", authInfo.UID.toString());
-			this.setUserProperty("internal_user_id", authInfo.UID.toString());
-		}
-
-		if (authInfo.IntercomHash) {
-			this.setIntercomProperty("user_hash", authInfo.IntercomHash);
-			this.setUserProperty("user_hash", authInfo.IntercomHash);
-		}
-
-		if (this._fullStory && authInfo.Login) {
-			this._fullStory.identify(authInfo.Login);
+		if (this._fullStory) {
+			this._fullStory.identify(loginInfo);
 		}
 	}
 
@@ -254,8 +230,7 @@ class EventLoggerClass {
 			return null;
 		}
 
-		let info = UserStore.activeAuthInfo();
-		return {detail: {deviceId: this._amplitude.options.deviceId, userId: info ? info.Login : null}};
+		return {detail: {deviceId: this._amplitude.options.deviceId, userId: context.user && context.user.Login}};
 	}
 
 	setAmplitudeDeviceIdForTrackers(value: string): void {
@@ -276,7 +251,7 @@ class EventLoggerClass {
 	}
 
 	_decorateEventProperties(platformProperties: any): any {
-		return Object.assign({}, platformProperties, {Platform: this._currentPlatform, platformVersion: this._currentPlatformVersion, is_authed: this._user ? "true" : "false", path_name: window.location.pathname ? window.location.pathname.slice(1) : ""});
+		return Object.assign({}, platformProperties, {Platform: this._currentPlatform, platformVersion: this._currentPlatformVersion, is_authed: context.user ? "true" : "false", path_name: window.location.pathname ? window.location.pathname.slice(1) : ""});
 	}
 
 	// Use logViewEvent as the default way to log view events for Amplitude and GA
@@ -300,9 +275,9 @@ class EventLoggerClass {
 		if (this.userAgentIsBot || !eventLabel) {
 			return;
 		}
-
 		this._telligent("track", eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
 		this._amplitude.logEvent(eventLabel, Object.assign({}, this._decorateEventProperties(eventProperties), {eventCategory: eventCategory, eventAction: eventAction}));
+		this._logToConsole(eventAction, Object.assign(this._decorateEventProperties(eventProperties),  {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
 
 		global.window.ga("send", {
 			hitType: "event",
@@ -310,6 +285,12 @@ class EventLoggerClass {
 			eventAction: eventAction || "",
 			eventLabel: eventLabel,
 		});
+	}
+
+	_logToConsole(eventAction: string, object?: any): void {
+		if (window.localStorage["log_debug"]) {
+			console.debug("%cEVENT %s", "color: #aaa", eventAction, object); // tslint:disable-line
+		}
 	}
 
 	// Tracking call for event level calls that we wish to track, but do not wish to impact bounce rate on our site for Google analytics.
@@ -380,7 +361,6 @@ class EventLoggerClass {
 
 		case UserActions.SignupCompleted:
 		case UserActions.LoginCompleted:
-		case UserActions.LogoutCompleted:
 		case UserActions.ForgotPasswordCompleted:
 		case UserActions.ResetPasswordCompleted:
 			if (action.email) {
@@ -399,12 +379,6 @@ class EventLoggerClass {
 		case UserActions.BetaSubscriptionCompleted:
 			if (action.eventName) {
 				this.logEventForCategory(AnalyticsConstants.CATEGORY_ENGAGEMENT, AnalyticsConstants.ACTION_SUCCESS, action.eventName);
-			}
-			break;
-		case UserActions.FetchedGitHubToken:
-			if (action.token) {
-				let allowedPrivateAuth = action.token.scope && action.token.scope.includes("repo") && action.token.scope.includes("read:org");
-				this.setUserProperty("is_private_code_user", allowedPrivateAuth ? allowedPrivateAuth.toString() : "false");
 			}
 			break;
 		case DefActions.DefsFetched:
@@ -472,7 +446,7 @@ interface WithViewEventsLoggedProps {
 	location: Location;
 }
 
-export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(component: React.ComponentClass<P>): React.ComponentClass<P> {
+export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(component: React.ComponentClass<{}>): React.ComponentClass<{}> {
 	class WithViewEventsLogged extends React.Component<P, {}> { // eslint-disable-line react/no-multi-comp
 		static contextTypes: React.ValidationMap<any> = {
 			router: React.PropTypes.object.isRequired,
@@ -480,7 +454,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 		};
 
 		context: {
-			router: any,
+			router: InjectedRouter,
 			eventLogger: any,
 		};
 

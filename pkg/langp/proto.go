@@ -169,6 +169,11 @@ type ExternalRefs struct {
 	Defs []*DefSpec
 }
 
+// ExportedSymbols contains a list of all Defs available within a repository.
+type Symbols struct {
+	Symbols []*Symbol
+}
+
 // ExportedSymbols contains a list of all Defs available for use by other
 // repositories.
 type ExportedSymbols struct {

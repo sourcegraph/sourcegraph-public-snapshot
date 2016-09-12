@@ -4,6 +4,6 @@ import {render} from "sourcegraph/util/testutil/renderTestUtils";
 
 describe("ResetPassword", () => {
 	it("should render initially", () => {
-		render(<ResetPassword />, {signedIn: false});
+		render(<ResetPassword />);
 	});
 });

@@ -9,13 +9,15 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import * as styles from "sourcegraph/home/styles/home.css";
+import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
+import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
-import {LocationStateModal} from "sourcegraph/components/Modal";
 import {Button, Heading, Logo, FlexContainer, Panel} from "sourcegraph/components";
+import {context} from "sourcegraph/app/context";
 
 interface HomeProps {
-	location: Object;
+	location: any;
 }
 
 type HomeState = any;
@@ -23,7 +25,6 @@ type HomeState = any;
 export class Home extends Container<HomeProps, HomeState> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
-		signedIn: React.PropTypes.bool.isRequired,
 	};
 
 	constructor(props: HomeProps) {
@@ -38,6 +39,10 @@ export class Home extends Container<HomeProps, HomeState> {
 		script.src = "//platform.twitter.com/widgets.js";
 		script.charset = "utf-8";
 		document.body.appendChild(script);
+	}
+
+	reconcileState(state: HomeState, props: HomeProps): void {
+		Object.assign(state, props);
 	}
 
 	render(): JSX.Element | null {
@@ -170,21 +175,46 @@ export class Home extends Container<HomeProps, HomeState> {
 				</div>
 
 				{/* section showing language icons */}
-				<div className={classNames(base.pv4, typography.tc, colors.bg_cool_mid_gray_1)}>
+<div className={classNames(base.pv4, typography.tc, colors.bg_cool_mid_gray_1)}>
 					<Heading level="7" color="cool_mid_gray" className="base.pv3">
 						Growing language support
 					</Heading>
+
 					<FlexContainer justify="between" className={classNames(base.center, base.mt4)} style={{maxWidth: "400px"}}>
 						<img title="Go supported" className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/go2.svg`} />
 						<img title="Java supported" className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/java.svg`} />
-						<img title="JavaScript coming soon" className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/js.svg`} />
-						<img title="Python coming soon" className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/python.svg`} />
-						{/*
-							<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/php.svg`} />
-							<img style={{width: "32px", padding: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/scala.svg`} />
-						*/}
-					</FlexContainer>
+						<div style={{display: "inline-block", position: "relative", cursor: "pointer"}} onMouseOver={() => this.setState({langMouseover: true})} onMouseLeave={() => this.setState({langMouseover: false})}>
+							<img title="JavaScript coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/js.svg`} />
+							<img title="Python coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/python.svg`} />
+							<img title="PHP coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/php.svg`} />
+							<img title="Scala coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/scala.svg`} />
+							{this.state.langMouseover &&
+								<LocationStateToggleLink style={{display: "flex", alignItems: "center", justifyContent: "center", position: "absolute", left: 0, right: 0, top: 0, bottom: 0}} href="/beta" modalName="beta" location={this.props.location}>
+									<div>
+										<div className={colors.blue} style={{lineHeight: 1}}>
+											<strong>Notify me</strong>
+										</div>
+										<div className={typography.f7}>
+											when new languages are supported
+										</div>
+									</div>
+								</LocationStateToggleLink>
+							}
+						</FlexContainer>
+					</div>
 				</div>
+
+				{this.props.location.state && this.props.location.state.modal === "beta" &&
+					<LocationStateModal modalName="beta" location={this.props.location}>
+						<div className={styles.modal}>
+							<h2 className={typography.tc}>Join the Sourcegraph beta</h2>
+							<BetaInterestForm
+								className={styles.modalForm}
+								loginReturnTo="/"
+								onSubmit={dismissModal("beta", this.props.location, (this.context as any).router)} />
+						</div>
+					</LocationStateModal>
+				}
 
 				<div className={colors.bg_purple} style={{paddingTop: "50px", paddingBottom: "50px"}}>
 					<Panel className={base.center} style={{maxWidth: "930px"}}>

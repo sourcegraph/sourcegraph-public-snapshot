@@ -52,6 +52,8 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.SitemapIndex).Handler(httptrace.TraceRoute(internal.Handler(serveSitemapIndex)))
 	r.Get(router.RepoSitemap).Handler(httptrace.TraceRoute(internal.Handler(serveRepoSitemap)))
 
+	r.Get(router.Logout).Handler(httptrace.TraceRoute(internal.Handler(serveLogout)))
+
 	// Redirects
 	r.Get(router.OldToolsRedirect).Handler(httptrace.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/beta", 301)
@@ -86,4 +88,10 @@ func tmplReloadMiddleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func serveLogout(w http.ResponseWriter, r *http.Request) error {
+	appauth.DeleteSessionCookie(w)
+	http.Redirect(w, r, "/", http.StatusFound)
+	return nil
 }

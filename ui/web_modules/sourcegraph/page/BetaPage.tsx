@@ -41,6 +41,3 @@ export function BetaPage(props) {
 		</div>
 	);
 }
-(BetaPage as any).contextTypes = {
-	signedIn: React.PropTypes.bool,
-};

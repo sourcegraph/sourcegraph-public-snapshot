@@ -52,14 +52,15 @@ func (h *Handler) readFile(uri string) ([]byte, error) {
 
 func (h *Handler) goEnv() []string {
 	whitelist := map[string]bool{
-		"PWD":    true,
-		"USER":   true,
-		"TMPDIR": true,
-		"PATH":   true,
-		"HOME":   true,
 		"GOBIN":  true,
+		"GOROOT": true,
+		"HOME":   true,
+		"PATH":   true,
+		"PWD":    true,
+		"TMPDIR": true,
+		"USER":   true,
 	}
-	env := []string{"GOPATH=" + h.filePath("gopath")}
+	env := []string{"GOPATH=" + h.filePath("gopath"), "CGO_ENABLED=0"}
 	for _, e := range os.Environ() {
 		if k := e[:strings.Index(e, "=")]; whitelist[k] {
 			env = append(env, e)

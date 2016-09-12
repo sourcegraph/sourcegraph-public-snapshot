@@ -53,7 +53,6 @@ export class OnboardingExampleRefsContainer extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
-		user: React.PropTypes.object,
 	};
 
 	rangesMemo: any;

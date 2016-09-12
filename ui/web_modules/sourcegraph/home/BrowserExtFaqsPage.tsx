@@ -8,6 +8,7 @@ import * as styles from "sourcegraph/page/Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import Helmet from "react-helmet";
+import {context} from "sourcegraph/app/context";
 
 interface Props {
 	location: any;
@@ -17,13 +18,11 @@ type State = any;
 
 export class BrowserExtFaqsPage extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
-		signedIn: React.PropTypes.bool.isRequired,
-		githubToken: React.PropTypes.object,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	_hasPrivateGitHubToken() {
-		return (this.context as any).githubToken && (this.context as any).githubToken.scope && (this.context as any).githubToken.scope.includes("repo") && (this.context as any).githubToken.scope.includes("read:org");
+		return context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("repo") && context.gitHubToken.scope.includes("read:org");
 	}
 
 	render(): JSX.Element | null {
@@ -54,7 +53,7 @@ export class BrowserExtFaqsPage extends React.Component<Props, State> {
 						sign up below with GitHub OAuth.</div>
 						<a id="enable"/>
 						<div className={styles.centered_button}>
-							{!(this.context as any).signedIn && <GitHubAuthButton returnTo="/about/browser-ext-faqs#signin"> Sign up or sign in</GitHubAuthButton>}
+							{!context.user && <GitHubAuthButton returnTo="/about/browser-ext-faqs#signin"> Sign up or sign in</GitHubAuthButton>}
 						</div>
 					</div>
 

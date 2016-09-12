@@ -267,26 +267,75 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *store.
 	return nil
 }
 
-func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo *sourcegraph.Repo, err error) {
+func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
+	var repo *sourcegraph.Repo
 	switch {
-	case op.GetNew() != nil:
-		repo, err = s.newRepo(ctx, op.GetNew())
-		if err != nil {
-			return
-		}
 	case op.GetFromGitHubID() != 0:
+		var err error
 		repo, err = s.newRepoFromOrigin(ctx, &sourcegraph.Origin{
 			Service: sourcegraph.Origin_GitHub,
 			ID:      strconv.Itoa(int(op.GetFromGitHubID())),
 		})
 		if err != nil {
-			return
+			return nil, err
 		}
+
 	case op.GetOrigin() != nil:
+		var err error
 		repo, err = s.newRepoFromOrigin(ctx, op.GetOrigin())
 		if err != nil {
-			return
+			return nil, err
 		}
+
+	// Intercept "github.com/..." repos, create them in the same manner as from GitHub repo ID.
+	case op.GetNew() != nil && strings.HasPrefix(strings.ToLower(op.GetNew().URI), "github.com/"):
+		op := op.GetNew()
+		if !op.Mirror {
+			return nil, grpc.Errorf(codes.InvalidArgument, "github.com/ repos can only be mirrors")
+		}
+		if !(op.CloneURL == fmt.Sprintf("https://%s", op.URI) || op.CloneURL == fmt.Sprintf("https://%s.git", op.URI)) {
+			// Disallow creating GitHub mirrors via repo URI and clone URL unless they match.
+			return nil, grpc.Errorf(codes.InvalidArgument, "github.com/ mirrors repos can only be created if the clone URL matches the repo URI")
+		}
+
+		// TODO: This is gross, but the current sourcegraph.Origin struct does not easily
+		//       permit better (I've tried). It can be improved/simplified, but it's a more
+		//       significant undertaking than what's in scope right now (so I'm purposefully
+		//       choosing a less than ideal solution for now). It's more okay because it only
+		//       happens when creating a GH repo via URI, which may get removed.
+		//
+		// Make a request to GH API simply to resolve the owner and repo into a GitHub repo ID,
+		// discard the rest of the metadata, then use that as origin, which in turn makes
+		// another call to GH API to fetch the same repo metadata.
+		// The goal here is to avoid multiple distinct code paths for GH repo creation, because the
+		// subtle business logic of how we process GH metadata changes, and it's easy for multiple
+		// code paths to diverge.
+		ghRepo, err := github.ReposFromContext(ctx).Get(ctx, op.URI)
+		if err != nil {
+			return nil, err
+		}
+		if ghRepo.Origin == nil {
+			return nil, fmt.Errorf("unexpected nil Origin from our GitHub repo store")
+		}
+		if ghRepo.Origin.Service != sourcegraph.Origin_GitHub {
+			return nil, fmt.Errorf("unexpected Origin.Service from our GitHub repo store: %v", ghRepo.Origin.Service)
+		}
+
+		repo, err = s.newRepoFromOrigin(ctx, &sourcegraph.Origin{
+			Service: sourcegraph.Origin_GitHub,
+			ID:      ghRepo.Origin.ID,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+	case op.GetNew() != nil:
+		var err error
+		repo, err = s.newRepo(ctx, op.GetNew())
+		if err != nil {
+			return nil, err
+		}
+
 	default:
 		return nil, grpc.Errorf(codes.Unimplemented, "repo creation operation not supported")
 	}
@@ -299,13 +348,13 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo
 
 	repo, err = s.Get(ctx, &sourcegraph.RepoSpec{ID: repo.ID})
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	repoMaybeEnqueueUpdate(ctx, repo)
 	sendCreateRepoSlackMsg(ctx, repo.URI, repo.Language, repo.Mirror, repo.Private)
 
-	return
+	return repo, nil
 }
 
 // repoMaybeEnqueueUpdate enqueues an update as the current user if the repo
@@ -331,13 +380,7 @@ func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRe
 		}
 	}
 	if strings.HasPrefix(strings.ToLower(op.URI), "github.com/") {
-		if !op.Mirror {
-			return nil, grpc.Errorf(codes.InvalidArgument, "github.com/ repos can only be mirrors")
-		}
-		if !(op.CloneURL == fmt.Sprintf("https://%s", op.URI) || op.CloneURL == fmt.Sprintf("https://%s.git", op.URI)) {
-			// Disallow creating GitHub mirrors via repo URI and clone URL unless they match.
-			return nil, grpc.Errorf(codes.InvalidArgument, "github.com/ mirrors repos can only be created if the clone URL matches the repo URI")
-		}
+		return nil, grpc.Errorf(codes.InvalidArgument, "newRepo is not allowed to create github.com/ repos")
 	}
 
 	if op.DefaultBranch == "" {

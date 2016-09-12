@@ -11,6 +11,7 @@ export const media_xs: string;
 export const media_sm: string;
 export const media_ns: string;
 export const navbarHeight: string;
+export const navbarZIndex: string;
 export const icon_font_size: string;
 export const c_cool_pale_gray_8: string;
 export const c_cool_mid_gray: string;

@@ -1,23 +1,19 @@
-// tslint:disable: typedef ordered-imports
-
 import {Location} from "history";
 import * as React from "react";
 import Helmet from "react-helmet";
 import {Link} from "react-router";
-
+import {Button, Heading, Input} from "sourcegraph/components";
+import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {Button, Input, Heading} from "sourcegraph/components";
-import * as UserActions from "sourcegraph/user/UserActions";
-import {UserStore} from "sourcegraph/user/UserStore";
-import "sourcegraph/user/UserBackend"; // for side effects
-import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
-import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
-import * as styles from "sourcegraph/user/styles/accountForm.css";
 import {Store} from "sourcegraph/Store";
+import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
+import * as styles from "sourcegraph/user/styles/accountForm.css";
+import * as UserActions from "sourcegraph/user/UserActions";
+import "sourcegraph/user/UserBackend"; // for side effects
+import {UserStore} from "sourcegraph/user/UserStore";
 
 interface Props {
-	onLoginSuccess: () => void;
 	location: any;
 
 	// returnTo is where the user should be redirected after an OAuth login flow,
@@ -48,19 +44,11 @@ export class LoginForm extends Container<Props, State> {
 		state.githubError = (props.location.query && props.location.query["github-login-error"]) || null;
 	}
 
-	onStateTransition(prevState: State, nextState: State): void {
-		if (prevState.authResponse !== nextState.authResponse) {
-			if (nextState.submitted && nextState.authResponse && nextState.authResponse.Success) {
-				setTimeout(() => this.props.onLoginSuccess());
-			}
-		}
-	}
-
 	stores(): Store<any>[] {
 		return [UserStore];
 	}
 
-	_handleSubmit(ev) {
+	_handleSubmit(ev: React.FormEvent<HTMLFormElement>): void {
 		ev.preventDefault();
 		this.setState({submitted: true}, () => {
 			let action = new UserActions.SubmitLogin(
@@ -74,7 +62,7 @@ export class LoginForm extends Container<Props, State> {
 
 	render(): JSX.Element | null {
 		return (
-			<form {...this.props} onSubmit={this._handleSubmit} className={styles.form}>
+			<form onSubmit={this._handleSubmit} className={styles.form}>
 				<Heading level="3" align="center" underline="orange">Sign in to Sourcegraph</Heading>
 				{this.state.githubError && <div className={styles.error}>Sorry, signing in via GitHub didn't work. (Check your organization's GitHub 3rd-party application settings.) Try <Link to="/join?github-error=from-login">creating a separate Sourcegraph account</Link>.</div>}
 				<GitHubAuthButton returnTo={this.state.returnTo} tabIndex={1} block={true}>Continue with GitHub</GitHubAuthButton>
@@ -121,21 +109,15 @@ export class LoginForm extends Container<Props, State> {
 		);
 	}
 }
-let StyledLoginForm = LoginForm;
 
 // Login is the standalone login page.
-function LoginComp(props: any, {router}) {
+function LoginComp(props: {location: any}): JSX.Element | null {
 	return (
 		<div className={styles.full_page}>
 			<Helmet title="Sign In" />
-			<StyledLoginForm {...props}
-				returnTo="/"
-				onLoginSuccess={() => router.replace("/")} />
+			<LoginForm location={props.location} returnTo="/" />
 		</div>
 	);
 }
-(LoginComp as any).contextTypes = {
-	router: React.PropTypes.object.isRequired,
-};
 
 export const Login = redirectIfLoggedIn("/", LoginComp);

@@ -8,6 +8,7 @@ import {UserStore} from "sourcegraph/user/UserStore";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
 import {locationForSearch} from "sourcegraph/search/routes";
 import {GlobalSearchInput} from "sourcegraph/search/GlobalSearchInput";
+import {SignedInDashboard} from "sourcegraph/dashboard/SignedInDashboard";
 import {Button, Logo} from "sourcegraph/components";
 import {SearchSettings} from "sourcegraph/search/SearchSettings";
 import * as invariant from "invariant";
@@ -15,6 +16,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 import * as classNames from "classnames";
 import {OnboardingContainer} from "sourcegraph/dashboard/OnboardingContainer";
 import {Store} from "sourcegraph/Store";
+import {context} from "sourcegraph/app/context";
 
 type OnSelectQueryListener = (ev: React.MouseEvent<HTMLButtonElement>, query: string) => any;
 
@@ -28,7 +30,6 @@ type State = any;
 export class DashboardContainer extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
-		signedIn: React.PropTypes.bool.isRequired,
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
@@ -79,7 +80,6 @@ export class DashboardContainer extends Container<Props, State> {
 		const settings = UserStore.settings;
 		state.langs = settings && settings.search ? settings.search.languages : null;
 		state.scope = settings && settings.search ? settings.search.scope : null;
-		state.signedIn = context && context.signedIn;
 	}
 
 	_shouldStartOnboarding(): string | null {
@@ -101,11 +101,9 @@ export class DashboardContainer extends Container<Props, State> {
 	}
 
 	_handleInput(ev: React.FormEvent<HTMLInputElement>) {
-		if (!(ev.currentTarget instanceof HTMLInputElement)) {
-			return;
-		}
-		if (ev.currentTarget.value) {
-			this._goToSearch(ev.currentTarget.value);
+		let value = (ev.currentTarget as HTMLInputElement).value;
+		if (value) {
+			this._goToSearch(value);
 		}
 	}
 
@@ -167,13 +165,13 @@ export class DashboardContainer extends Container<Props, State> {
 					</h2>
 
 					<div className={styles.user_actions}>
-						{!(this.context as any).signedIn && <LocationStateToggleLink href="/login" modalName="login" location={this.props.location}><Button className={styles.action_link} type="button" color="blue" outline={true}>Sign in</Button></LocationStateToggleLink>}
+						{!context.user && <LocationStateToggleLink href="/login" modalName="login" location={this.props.location}><Button className={styles.action_link} type="button" color="blue" outline={true}>Sign in</Button></LocationStateToggleLink>}
 						{!this.state.chromeExtensionInstalled && <Button onClick={this._installChromeExtensionClicked} className={styles.action_link} type="button" color="blue" outline={true}>Install Chrome extension</Button>}
 					</div>
 
 					<GlobalSearchInput
 						name="q"
-						query={this.props.location.query.q || ""}
+						query={this.props.location && this.props.location.query.q || ""}
 						autoFocus={true}
 						domRef={e => this._input = e}
 						className={styles.search_input}
@@ -197,7 +195,7 @@ export class DashboardContainer extends Container<Props, State> {
 
 	render(): JSX.Element | null {
 		let onboarding = this._shouldStartOnboarding();
-		const conditionalDashboardRender = onboarding ? <OnboardingContainer currentStep={onboarding} location={this.props.location}/> : this._defaultAuthedDashboard();
+		const conditionalDashboardRender = onboarding ? <OnboardingContainer currentStep={onboarding} location={this.props.location}/> : <SignedInDashboard location={this.props.location}/>;
 		return (
 			<div>
 				{conditionalDashboardRender}

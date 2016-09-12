@@ -7,6 +7,7 @@
 
 @value media_xs, media_sm, media_ns from vars;
 @value navbarHeight: 60px;
+@value navbarZIndex: 100;
 @value icon_font_size: 0.8rem;
 
 @value c_cool_pale_gray_8, c_cool_mid_gray from colors;
@@ -29,7 +30,7 @@
 .navbar {
 	composes: bb cf from base;
 	composes: bg_white b__cool_mid_gray_3 from colors;
-	z-index: 100;
+	z-index: navbarZIndex;
 	top: 0;
 	width: 100%;
 	transition: all 0.3s ease-in-out;
@@ -144,8 +145,8 @@
 	background-color: transparent;
 	display: inline-block;
 	vertical-align: middle;
-  	outline: 0;
-  	cursor: pointer;
+	outline: 0;
+	cursor: pointer;
 }
 
 .close_icon {

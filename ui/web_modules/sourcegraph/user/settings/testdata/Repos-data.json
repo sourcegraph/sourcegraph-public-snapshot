@@ -1,19 +1,133 @@
 {
 	"renderOutput": {
-		"type": {
-			"type": "Repos",
-			"props": {
-				"repos": [
-					{
-						"Private": false,
-						"URI": "someURL",
-						"Description": "someDescription",
-						"UpdatedAt": "2016-02-24T10:18:55-08:00",
-						"Language": "Go"
+		"type": "div",
+		"props": {
+			"children": [
+				{
+					"type": "header",
+					"props": {
+						"children": [
+							{
+								"type": "Heading",
+								"props": {
+									"level": "7",
+									"color": "cool_mid_gray",
+									"children": [
+										"Your repositories"
+									]
+								}
+							},
+							{
+								"type": "p",
+								"props": {
+									"children": [
+										"To get jump-to-definition, search, and code examples, enable indexing on your repositories using the toggle. Private code indexed on Sourcegraph is only available to you and those with permissions to the underlying GitHub repository."
+									]
+								}
+							},
+							{
+								"type": "div",
+								"props": {
+									"children": [
+										{
+											"type": "GitHubAuthButton",
+											"props": {
+												"children": [
+													"Add public repositories"
+												],
+												"scopes": "",
+												"color": "blue",
+												"outline": false,
+												"block": false
+											}
+										},
+										{
+											"type": "GitHubAuthButton",
+											"props": {
+												"scopes": "read:org,repo,user:email",
+												"children": [
+													"Add private repositories"
+												],
+												"color": "blue",
+												"outline": false,
+												"block": false
+											}
+										}
+									]
+								}
+							}
+						]
 					}
-				]
-			}
-		},
-		"props": {}
+				},
+				{
+					"type": "div",
+					"props": {
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"children": [
+										{
+											"type": "div",
+											"key": "0",
+											"props": {
+												"children": [
+													{
+														"type": "div",
+														"props": {
+															"children": [
+																"someURL",
+																{
+																	"type": "p",
+																	"props": {
+																		"children": [
+																			"someDescription"
+																		]
+																	}
+																}
+															]
+														}
+													},
+													{
+														"type": "div",
+														"props": {
+															"children": [
+																{
+																	"type": "ToggleSwitch",
+																	"props": {
+																		"defaultChecked": false,
+																		"onChange": {
+																			"dispatchedToStores": [],
+																			"dispatchedToBackends": [
+																				{
+																					"$constructor": "WantCreateRepo",
+																					"repo": "someURL",
+																					"remoteRepo": {
+																						"Private": false,
+																						"URI": "someURL",
+																						"Description": "someDescription",
+																						"UpdatedAt": "2016-02-24T10:18:55-08:00",
+																						"Language": "Go"
+																					},
+																					"refreshVCS": true
+																				}
+																			]
+																		}
+																	}
+																}
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
 	}
 }

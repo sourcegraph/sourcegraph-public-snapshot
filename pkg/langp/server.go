@@ -29,6 +29,7 @@ type Server interface {
 	LocalRefs(ctx context.Context, p *Position) (*RefLocations, error)
 	ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, error)
 	DefSpecRefs(ctx context.Context, d *DefSpec) (*RefLocations, error)
+	Symbols(ctx context.Context, r *RepoRev) (*Symbols, error)
 	ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error)
 }
 
@@ -44,6 +45,7 @@ func NewServer(s Server) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/prepare", handler("/prepare", srv.servePrepare))
 	mux.Handle("/definition", handler("/definition", srv.serveDefinition))
+	mux.Handle("/symbols", handler("/symbols", srv.serveSymbols))
 	mux.Handle("/exported-symbols", handler("/exported-symbols", srv.serveExportedSymbols))
 	mux.Handle("/external-refs", handler("/external-refs", srv.serveExternalRefs))
 	mux.Handle("/defspec-to-position", handler("/defspec-to-position", srv.serveDefSpecToPosition))
@@ -152,6 +154,21 @@ func (s *server) serveDefinition(ctx context.Context, body []byte) (interface{},
 		return nil, fmt.Errorf("File field must be set")
 	}
 	return s.s.Definition(ctx, &p)
+}
+
+func (s *server) serveSymbols(ctx context.Context, body []byte) (interface{}, error) {
+	// Decode the user request and ensure that required fields are specified.
+	var r RepoRev
+	if err := json.Unmarshal(body, &r); err != nil {
+		return nil, err
+	}
+	if r.Repo == "" {
+		return nil, fmt.Errorf("Repo field must be set")
+	}
+	if r.Commit == "" {
+		return nil, fmt.Errorf("Commit field must be set")
+	}
+	return s.s.Symbols(ctx, &r)
 }
 
 func (s *server) serveExportedSymbols(ctx context.Context, body []byte) (interface{}, error) {

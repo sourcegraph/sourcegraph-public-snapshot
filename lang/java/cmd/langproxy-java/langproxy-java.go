@@ -37,7 +37,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	client, err := langp.NewClient(*lpAddr)
+	client, err := langp.NewClient(map[string][]string{"Java": []string{*lpAddr}})
 	if err != nil {
 		log.Fatal(err)
 	}

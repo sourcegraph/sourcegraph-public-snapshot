@@ -124,7 +124,12 @@ func prepareDeps(update bool, workspace, repo, commit string) error {
 		return err
 	}
 
-	return prepareLSPCache(update, workspace, repo)
+	// We don't want prepareLSPCache failing to signal that the workspace
+	// is bad, since it is just for priming the symbol cache + is less
+	// reliable.
+	go prepareLSPCache(update, workspace, repo)
+
+	return nil
 }
 
 func fileURI(repo, commit, file string) string {

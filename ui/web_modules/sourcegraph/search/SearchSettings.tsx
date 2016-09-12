@@ -12,7 +12,6 @@ import * as UserActions from "sourcegraph/user/UserActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {allLangs, langName, langIsSupported} from "sourcegraph/Language";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
-import {withUserContext} from "sourcegraph/app/user";
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
@@ -20,18 +19,18 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 import {searchScopes} from "sourcegraph/search";
 import * as classNames from "classnames";
 import {Store} from "sourcegraph/Store";
+import {context} from "sourcegraph/app/context";
 
 interface Props {
 	location: any;
-	repo?: string;
+	repo?: string | null;
 	className?: string;
 	innerClassName?: string;
-	githubToken: any;
 };
 
 type State = any;
 
-class SearchSettingsComp extends Container<Props, State> {
+export class SearchSettings extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
@@ -71,12 +70,6 @@ class SearchSettingsComp extends Container<Props, State> {
 		Object.assign(state, props);
 
 		state.settings = UserStore.settings;
-
-		// Use this instead of context signedIn because of the issues surrounding
-		// propagating context through components that use shouldComponentUpdate.
-		// We're already observing UserStore, so this doesn't add any extra overhead.
-		state.signedIn = Boolean(UserStore.activeAuthInfo());
-		state.user = UserStore.activeUser();
 	}
 
 	onStateTransition(prevState: State, nextState: State): void {
@@ -100,7 +93,7 @@ class SearchSettingsComp extends Container<Props, State> {
 	}
 
 	_hasPrivateGitHubToken() {
-		return this.props.githubToken && this.props.githubToken.scope && this.props.githubToken.scope.includes("repo") && this.props.githubToken.scope.includes("read:org") && this.props.githubToken.scope.includes("user:email");
+		return context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("repo") && context.gitHubToken.scope.includes("read:org") && context.gitHubToken.scope.includes("user:email");
 	}
 
 	_toggleLang(lang: string) {
@@ -148,7 +141,7 @@ class SearchSettingsComp extends Container<Props, State> {
 		const langs = this._langs();
 
 		let langOptions = allLangs.slice(0); // clone array
-		if (localStorage.getItem("srclib_lang_support") !== "true" && (this.state.user && this.state.user.Login !== "sourcegraph")) {
+		if (localStorage.getItem("srclib_lang_support") !== "true" && (context.user && context.user.Login !== "sourcegraph")) {
 			let idx = langOptions.indexOf("other");
 			langOptions.splice(idx, 1);
 		}
@@ -209,18 +202,18 @@ class SearchSettingsComp extends Container<Props, State> {
 							onClick={() => this._setScope({repo: !scope.repo})}
 							outline={!scope.repo}>{this.state.repo}</Button>}
 						<Button
-							color={this.state.githubToken && !scope.popular ? "normal" : "blue"}
+							color={context.gitHubToken && !scope.popular ? "normal" : "blue"}
 							size="small"
 							className={styles.choice_button}
 							onClick={() => {
-								if (this.props.githubToken) {
+								if (context.gitHubToken) {
 									this._setScope({popular: !scope.popular});
 								}
 							}}
-							outline={this.state.githubToken && !scope.popular}>Popular libraries</Button>
-						{(!this.state.signedIn || !this.props.githubToken) &&
+							outline={Boolean(context.gitHubToken) && !scope.popular}>Popular libraries</Button>
+						{(!context.user || !context.gitHubToken) &&
 							<GitHubAuthButton color="green" size="small" outline={true} className={styles.choice_button} returnTo={this.props.location}>My public projects</GitHubAuthButton>}
-						{this.props.githubToken &&
+						{context.gitHubToken &&
 							<Button
 								color={!scope.public ? "normal" : "blue"}
 								size="small"
@@ -228,7 +221,7 @@ class SearchSettingsComp extends Container<Props, State> {
 								onClick={() => this._setScope({public: !scope.public})}
 								outline={!scope.public}>My public projects</Button>
 						}
-						{(!this.state.signedIn || !this._hasPrivateGitHubToken()) &&
+						{(!context.user || !this._hasPrivateGitHubToken()) &&
 							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} className={styles.choice_button} returnTo={this.props.location}>My private projects</GitHubAuthButton>}
 						{this._hasPrivateGitHubToken() &&
 							<Button
@@ -269,5 +262,3 @@ class SearchSettingsComp extends Container<Props, State> {
 		);
 	}
 }
-
-export const SearchSettings = withUserContext(SearchSettingsComp);

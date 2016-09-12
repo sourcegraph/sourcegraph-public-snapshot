@@ -8,7 +8,6 @@ import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Store} from "sourcegraph/Store";
 import {Blob} from "sourcegraph/blob/Blob";
-import {BlobContentPlaceholder} from "sourcegraph/blob/BlobContentPlaceholder";
 import * as DefActions from  "sourcegraph/def/DefActions";
 import {DefStore} from "sourcegraph/def/DefStore";
 import "sourcegraph/blob/BlobBackend";
@@ -106,14 +105,14 @@ export class BlobMain extends Container<Props, State> {
 	__onDispatch(action) {
 		if (action instanceof DefActions.JumpDefFetched) {
 			if (action.def.Error) {
-				(this.context as any).router.push("/404");
+				console.log("Go-to-definition failed:", action.def.Error); // tslint:disable-line
 			} else {
 				(this.context as any).router.push(action.def.path);
 			}
 		}
 	}
 
-	_navigate(repo, rev, path, hash) {
+	_navigate(repo: string, rev: string, path: string, hash: string): void {
 		let url = urlTo("blob", {splat: [makeRepoRev(repo, rev), path]} as any);
 
 		// Replace the URL if we're just changing the hash. If we're changing
@@ -155,19 +154,17 @@ export class BlobMain extends Container<Props, State> {
 		if (this.state.defObj && !this.state.defObj.Error && defTitleOK(this.state.defObj)) {
 			title = `${defTitle(this.state.defObj)} · ${title}`;
 		}
-		const contents = this.state.blob ? this.state.blob.ContentsString : "";
-		if (!this.state.blob) {
-				return <BlobContentPlaceholder />;
-		}
 		return (
-			<div className={Style.container}>
+			<div className={Style.container_monaco}>
 				<Helmet title={title} />
-				<Blob
+				{this.state.blob && typeof this.state.blob.ContentsString === "string" && <Blob
 					repo={this.state.repo}
 					rev={this.state.rev}
 					path={this.state.path}
-					contents={contents}
-					startByte={this.state.startByte} />
+					contents={this.state.blob.ContentsString}
+					startLine={this.state.startLine}
+					endLine={this.state.endLine}
+					startByte={this.state.startByte} />}
 			</div>
 		);
 	}

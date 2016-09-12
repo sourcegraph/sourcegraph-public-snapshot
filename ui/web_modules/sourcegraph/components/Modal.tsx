@@ -5,6 +5,7 @@ import * as React from "react";
 import * as styles from "sourcegraph/components/styles/modal.css";
 import {renderedOnBody} from "sourcegraph/util/renderedOnBody";
 import {EventListener} from "sourcegraph/Component";
+import {InjectedRouter} from "react-router";
 
 interface ModalProps {
 	onDismiss?: () => void;
@@ -60,7 +61,7 @@ let RenderedModal = renderedOnBody(ModalComp);
 
 // setLocationModalState shows or hides a modal by setting the location.state.modal
 // property to modalName if shown is true and null otherwise.
-export function setLocationModalState(router: any, location: any, modalName: string, visible: boolean) {
+export function setLocationModalState(router: InjectedRouter, location: any, modalName: string, visible: boolean) {
 	if (location.state && location.state.modal && location.state.modal !== modalName) {
 		console.error(`location.state.modal is not ${modalName}, is:`, location.state.modal);
 	}

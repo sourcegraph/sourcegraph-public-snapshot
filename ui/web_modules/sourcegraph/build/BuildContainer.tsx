@@ -18,6 +18,7 @@ import {urlToBuilds} from "sourcegraph/build/routes";
 import {trimRepo} from "sourcegraph/repo";
 
 import {Button} from "sourcegraph/components";
+import {context} from "sourcegraph/app/context";
 
 import * as styles from "sourcegraph/build/styles/Build.css";
 
@@ -30,10 +31,6 @@ interface Props {
 type State = any;
 
 export class BuildContainer extends Container<Props, State> {
-	static contextTypes: React.ValidationMap<any> = {
-		user: React.PropTypes.object,
-	};
-
 	_updateIntervalID: any;
 
 	constructor(props: Props) {
@@ -104,7 +101,7 @@ export class BuildContainer extends Container<Props, State> {
 				<Helmet title={`Build #${this.state.id} | ${trimRepo(this.state.repo)}`} />
 				<div className={styles.actions}>
 					<Link to={urlToBuilds(this.state.repo)}><Button size="large" outline={true}>View All Builds</Button></Link>
-					{(this.context as any).user && (this.context as any).user.Admin && <Button style={{marginLeft: "1.5rem"}} size="small" outline={true} onClick={() => {
+					{context.user && context.user.Admin && <Button style={{marginLeft: "1.5rem"}} size="small" outline={true} onClick={() => {
 						Dispatcher.Backends.dispatch(new BuildActions.CreateBuild(this.state.repo, this.state.build.CommitID, this.state.build.Branch, this.state.build.Tag, true));
 					}}>Rebuild</Button>}
 				</div>

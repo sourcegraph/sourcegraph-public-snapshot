@@ -22,5 +22,6 @@ function startLangServer(command: string, documentSelector: string | string[]): 
 export function activate(context: ExtensionContext) {
 	context.subscriptions.push(startLangServer("sample_server", ["plaintext"]));
 	context.subscriptions.push(startLangServer("langserver-go", ["go"]));
+	context.subscriptions.push(startLangServer("langserver-python", ["python"]));
 }
 

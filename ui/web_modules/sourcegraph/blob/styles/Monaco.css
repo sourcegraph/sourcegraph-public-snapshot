@@ -1,0 +1,17 @@
+@value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
+@value navbarZIndex from GlobalNav;
+
+:global .monaco-editor .identifier {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+/* Make cursor look less like a text insertion cursor. */
+:global .monaco-editor .cursor {
+	opacity: 0.4;
+}
+
+/* Display hover tooltips above global nav. */
+:global .monaco-editor .monaco-editor-hover {
+	z-index: calc(navbarZIndex + 1);
+}

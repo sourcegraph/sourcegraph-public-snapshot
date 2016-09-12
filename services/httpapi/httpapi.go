@@ -57,7 +57,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	// Set handlers for the installed routes.
 	m.Get(apirouter.Signup).Handler(httptrace.TraceRoute(handlerutil.NewHandlerWithCSRFProtection(grpcErrorHandler(serveSignup))))
 	m.Get(apirouter.Login).Handler(httptrace.TraceRoute(handlerutil.NewHandlerWithCSRFProtection(grpcErrorHandler(serveLogin))))
-	m.Get(apirouter.Logout).Handler(httptrace.TraceRoute(handlerutil.NewHandlerWithCSRFProtection(handler(serveLogout))))
 	m.Get(apirouter.ForgotPassword).Handler(httptrace.TraceRoute(handlerutil.NewHandlerWithCSRFProtection(grpcErrorHandler(serveForgotPassword))))
 	m.Get(apirouter.ResetPassword).Handler(httptrace.TraceRoute(handlerutil.NewHandlerWithCSRFProtection(grpcErrorHandler(servePasswordReset))))
 
@@ -94,6 +93,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.RepoTags).Handler(httptrace.TraceRoute(handler(serveRepoTags)))
 	m.Get(apirouter.RepoHoverInfo).Handler(httptrace.TraceRoute(handler(serveRepoHoverInfo)))
 	m.Get(apirouter.RepoJumpDef).Handler(httptrace.TraceRoute(handler(serveJumpToDef)))
+	m.Get(apirouter.RepoSymbols).Handler(httptrace.TraceRoute(handler(serveSymbols)))
 	m.Get(apirouter.RepoWebhookEnable).Handler(httptrace.TraceRoute(handler(serveRepoWebhookEnable)))
 	m.Get(apirouter.RepoWebhookCallback).Handler(httptrace.TraceRoute(handler(serveRepoWebhookCallback)))
 	m.Get(apirouter.Repos).Handler(httptrace.TraceRoute(handler(serveRepos)))

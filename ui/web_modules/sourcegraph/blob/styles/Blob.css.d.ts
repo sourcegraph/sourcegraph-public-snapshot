@@ -24,6 +24,7 @@ export const pathComponent: string;
 export const inactivePathComponent: string;
 export const activePathComponent: string;
 export const container: string;
+export const container_monaco: string;
 export const content: string;
 export const margin: string;
 export const spacer: string;

@@ -28,12 +28,8 @@ func (c *noopCloser) Close() error {
 	return nil
 }
 
-func LangpClient(addr string) (Client, error) {
-	c, err := langp.NewClient(addr)
-	if err != nil {
-		return nil, err
-	}
-	return &noopCloser{Client: c}, nil
+func LangpClient(c *langp.Client) Client {
+	return &noopCloser{Client: c}
 }
 
 func LSPClient(addr, rootPath string, printCaps bool) (Client, error) {

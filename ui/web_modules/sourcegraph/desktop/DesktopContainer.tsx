@@ -9,6 +9,8 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import {Store} from "sourcegraph/Store";
 import {urlToDefInfo} from "sourcegraph/def/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
+import {context} from "sourcegraph/app/context";
+import {InjectedRouter} from "react-router";
 
 type State = any;
 
@@ -16,10 +18,9 @@ export function desktopContainer(Component) {
 	class DesktopContainer extends Container<{}, State> {
 		static contextTypes: React.ValidationMap<any> = {
 			router: React.PropTypes.object.isRequired,
-			signedIn: React.PropTypes.bool.isRequired,
 		};
 
-		context: {router: any, signedIn: Boolean};
+		context: {router: InjectedRouter};
 
 		constructor(props: {}) {
 			super(props);
@@ -63,7 +64,7 @@ export function desktopContainer(Component) {
 		}
 
 		render(): JSX.Element {
-			if (!this.context.signedIn && !allowUnauthed(location.pathname)) {
+			if (!context.user && !allowUnauthed(location.pathname)) {
 				location.pathname = abs.login;
 			}
 			return (

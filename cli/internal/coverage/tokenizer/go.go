@@ -29,7 +29,30 @@ func (s *goTokenizer) Errors() []string {
 	return s.errors
 }
 
+// See https://golang.org/ref/spec#Predeclared_identifiers
+var universeBlock = []string{
+	// Types:
+	"bool", "byte", "complex64", "complex128", "error", "float32", "float64",
+	"int", "int8", "int16", "int32", "int64", "rune", "string",
+	"uint", "uint8", "uint16", "uint32", "uint64", "uintptr",
+
+	// Constants:
+	"true", "false", "iota",
+
+	// Zero value:
+	"nil",
+
+	// Functions:
+	//
+	// These are omitted from exclusion here because we should have
+	// hover / j2d for these from the 'builtin' package.
+	//
+	//"append", "cap", "close", "complex", "copy", "delete", "imag", "len",
+	//"make", "new", "panic", "print", "println", "real", "recover",
+}
+
 func (s *goTokenizer) Next() *Token {
+t:
 	for {
 		pos, tok, lit := s.scanner.Scan()
 		if tok == token.EOF {
@@ -37,6 +60,14 @@ func (s *goTokenizer) Next() *Token {
 		}
 		if tok != token.IDENT {
 			continue
+		}
+		if lit == "_" {
+			continue
+		}
+		for _, ident := range universeBlock {
+			if lit == ident {
+				continue t
+			}
 		}
 		p := s.fset.Position(pos)
 		return &Token{uint32(p.Offset), p.Line, p.Column, lit}

@@ -18,6 +18,8 @@ const (
 	SitemapIndex = "sitemap-index"
 	RepoSitemap  = "repo.sitemap"
 
+	Logout = "logout"
+
 	GitHubOAuth2Initiate = "github-oauth2.initiate"
 	GitHubOAuth2Receive  = "github-oauth2.receive"
 
@@ -50,6 +52,8 @@ func New(base *mux.Router) *Router {
 	base.Path("/favicon.ico").Methods("GET").Name(Favicon)
 
 	base.Path("/sitemap.xml").Methods("GET").Name(SitemapIndex)
+
+	base.Path("/-/logout").Methods("GET").Name(Logout)
 
 	base.Path("/-/github-oauth/initiate").Methods("GET").Name(GitHubOAuth2Initiate)
 	base.Path("/-/github-oauth/receive").Methods("GET", "POST").Name(GitHubOAuth2Receive)

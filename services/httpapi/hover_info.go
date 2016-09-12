@@ -68,6 +68,14 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 			DocHTML: htmlutil.SanitizeForPB(hover.DocHTML),
 		}
 		return writeJSON(w, resp)
+	} else if universe.Shadow(repo.URI) {
+		go langp.DefaultClient.Hover(r.Context(), &langp.Position{
+			Repo:      repo.URI,
+			Commit:    repoRev.CommitID,
+			File:      file,
+			Line:      line,
+			Character: character,
+		})
 	}
 
 	defSpec, err := cl.Annotations.GetDefAtPos(r.Context(), &sourcegraph.AnnotationsGetDefAtPosOptions{

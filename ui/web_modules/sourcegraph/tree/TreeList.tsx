@@ -76,7 +76,6 @@ type State = {
 export class TreeList extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
-		user: React.PropTypes.object,
 	};
 
 	constructor(props: Props) {

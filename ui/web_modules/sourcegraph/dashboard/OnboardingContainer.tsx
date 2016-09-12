@@ -5,13 +5,13 @@ import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import "sourcegraph/repo/RepoBackend"; // for side effects
 import {RepoStore} from "sourcegraph/repo/RepoStore";
-import {UserStore} from "sourcegraph/user/UserStore";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {ChromeExtensionOnboarding} from "sourcegraph/dashboard/ChromeExtensionOnboarding";
 import {GitHubPrivateAuthOnboarding} from "sourcegraph/dashboard/GitHubPrivateAuthOnboarding";
 import {Store} from "sourcegraph/Store";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {CompletedOnboardingDashboard} from "sourcegraph/dashboard/CompletedOnboardingDashboard";
+import {SignedInDashboard} from "sourcegraph/dashboard/SignedInDashboard";
+import {context} from "sourcegraph/app/context";
 
 interface Props {
 	location?: any;
@@ -25,7 +25,6 @@ const reposQuerystring = "RemoteOnly=true";
 export class OnboardingContainer extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
-		signedIn: React.PropTypes.bool.isRequired,
 		router: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
@@ -42,11 +41,11 @@ export class OnboardingContainer extends Container<Props, State> {
 	}
 
 	stores(): Store<any>[] {
-		return [RepoStore, UserStore];
+		return [RepoStore];
 	}
 
 	_isPrivateCodeUser() {
-		return UserStore && UserStore.activeGitHubToken && UserStore.activeGitHubToken.scope && UserStore.activeGitHubToken.scope.includes("repo") && UserStore.activeGitHubToken.scope.includes("read:org");
+		return context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("repo") && context.gitHubToken.scope.includes("read:org");
 	}
 
 	_completeStep() {
@@ -74,7 +73,7 @@ export class OnboardingContainer extends Container<Props, State> {
 			return <GitHubPrivateAuthOnboarding completeStep={this._completeStep.bind(this)} repos={this.state.repos ? this.state.repos.Repos : []} privateCodeAuthed={this._isPrivateCodeUser()} location={this.props.location}/>;
 		}
 
-		return <CompletedOnboardingDashboard location={this.props.location}/>;
+		return <SignedInDashboard location={this.props.location} completedBanner={true}/>;
 	}
 
 	render(): JSX.Element | null {

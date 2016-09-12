@@ -1,11 +1,17 @@
+import {EmailAddrList, User} from "sourcegraph/api";
 import {setGlobalFeatures} from "sourcegraph/app/features";
 import {Features} from "sourcegraph/app/features";
 import {setGlobalSiteConfig} from "sourcegraph/app/siteConfig";
-import {UserStore} from "sourcegraph/user/UserStore";
+import {ExternalToken} from "sourcegraph/user";
+import {testOnly} from "sourcegraph/util/testOnly";
 
 class Context {
 	xhrHeaders: {[key: string]: string};
 	userAgentIsBot: boolean;
+	user: User | null;
+	emails: EmailAddrList | null;
+	gitHubToken: ExternalToken | null;
+	intercomHash: string;
 
 	// Some fields were migrated to React context from this global context object. These
 	// getters prevent you from accidentally accessing these fields in their old home,
@@ -31,9 +37,6 @@ type ContextInput = typeof context & {
 	assetsRoot?: string;
 	buildVars?: {Version: string};
 	features?: Features;
-
-	// This is now available in UserStore.activeAccessToken.
-	accessToken?: string;
 };
 
 // Sets the values of the context given a JSContext object from the server.
@@ -53,10 +56,17 @@ export function reset(ctx: ContextInput): void {
 	delete ctx.assetsRoot;
 	delete ctx.buildVars;
 
-	if (ctx.accessToken) {
-		UserStore.activeAccessToken = ctx.accessToken;
-	}
-	delete ctx.accessToken;
-
 	Object.assign(context, ctx);
 }
+
+export function mockUser(user: User | null, f: () => void): void {
+	testOnly();
+
+	let prevUser = context.user;
+	context.user = user;
+	try {
+		f();
+	} finally {
+		context.user = prevUser;
+	}
+};

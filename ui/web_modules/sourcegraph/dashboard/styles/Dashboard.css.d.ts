@@ -52,4 +52,5 @@ export const row: string;
 export const info: string;
 export const toggle: string;
 export const list_label_right: string;
+export const repos_left_padding: string;
 
