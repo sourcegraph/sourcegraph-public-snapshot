@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"golang.org/x/oauth2"
+
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"context"
@@ -17,14 +19,19 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/sharedsecret"
 )
 
+// a token for the worker that fits to idkey.Default and does not expire
+var defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJTY29wZSI6IndvcmtlcjpidWlsZCJ9.j1SZum6h_RqEclMiQtU9KcLZoqjhyXCa-pOPynBFAUg"
+
 // RunWorker starts the worker loop with the given parameters.
-func RunWorker(ctx context.Context, key *idkey.IDKey, endpoint *url.URL, parallel int, dequeueMsec int) error {
+func RunWorker(ctx context.Context, endpoint *url.URL, parallel int, dequeueMsec int) error {
 	ctx = sourcegraph.WithGRPCEndpoint(ctx, endpoint)
-	ctx = sourcegraph.WithCredentials(ctx, sharedsecret.DefensiveReuseTokenSource(nil, sharedsecret.ShortTokenSource(key, "worker:build")))
+	accessToken := os.Getenv("SRC_ACCESS_TOKEN")
+	if accessToken == "" {
+		accessToken = defaultAccessToken
+	}
+	ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: accessToken}))
 
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {

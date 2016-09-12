@@ -3,12 +3,10 @@ package cli
 import (
 	"errors"
 	"log"
-	"os"
 
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker"
 )
@@ -36,20 +34,11 @@ func (c *WorkCmd) Execute(args []string) error {
 		return errors.New("-p/--parallel must be > 0")
 	}
 
-	idKeyData := os.Getenv("SRC_ID_KEY_DATA")
-	if idKeyData == "" {
-		return errors.New("SRC_ID_KEY_DATA is not available")
-	}
-	key, err := idkey.FromString(idKeyData)
-	if err != nil {
-		return err
-	}
-
 	// If we run src work, we want to hit the endpoint as the AppURL, not
 	// what the endpoint regards as the AppURL. The reason behind this is
 	// in production we want to seperate out the endpoint that works
 	// upload to from what our end users use.
 	ctx := conf.WithURL(context.Background(), endpoint.URLOrDefault())
 
-	return worker.RunWorker(ctx, key, endpoint.URLOrDefault(), c.Parallel, c.DequeueMsec)
+	return worker.RunWorker(ctx, endpoint.URLOrDefault(), c.Parallel, c.DequeueMsec)
 }
