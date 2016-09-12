@@ -127,6 +127,8 @@ class EventLoggerClass {
 
 		// Opt out of Amplitude events if the user agent is a bot.
 		this._amplitude.setOptOut(this.userAgentIsBot);
+
+		this._updateUser();
 	}
 
 	// _updateUser is be called whenever the user changes (on the initial page load).
@@ -173,6 +175,9 @@ class EventLoggerClass {
 			if (user.Location) {
 				this.setUserProperty("location", user.Location);
 			}
+
+			let allowedPrivateAuth = context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("repo") && context.gitHubToken.scope.includes("read:org");
+			this.setUserProperty("is_private_code_user", allowedPrivateAuth ? allowedPrivateAuth.toString() : "false");
 		}
 
 		if (primaryEmail) {
@@ -181,9 +186,6 @@ class EventLoggerClass {
 			this.setIntercomProperty("email", primaryEmail);
 			if (this._fullStory) { this._fullStory.setUserVars({email: primaryEmail}); }
 		}
-
-		let allowedPrivateAuth = context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("repo") && context.gitHubToken.scope.includes("read:org");
-		this.setUserProperty("is_private_code_user", allowedPrivateAuth ? allowedPrivateAuth.toString() : "false");
 	}
 
 	logout(): void {
