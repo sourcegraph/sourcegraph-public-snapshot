@@ -43,8 +43,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
@@ -281,7 +281,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		for _, f := range cli.ClientContext {
 			ctx = f(ctx)
 		}
-		sharedSecretToken := oauth2.ReuseTokenSource(nil, sharedsecret.TokenSource(idKey))
+		sharedSecretToken := oauth2.ReuseTokenSource(nil, &tokenSource{idKey, nil})
 		ctx = sourcegraph.WithCredentials(ctx, sharedSecretToken)
 		return ctx
 	}
@@ -529,7 +529,7 @@ func (c *ServeCmd) Execute(args []string) error {
 // context. This context can only make gRPC calls that are permitted for the given
 // scope. See the accesscontrol package for information about different scopes.
 func (c *ServeCmd) authenticateScopedContext(ctx context.Context, k *idkey.IDKey, scopes []string) (context.Context, error) {
-	src := sharedsecret.TokenSource(k, scopes...)
+	src := &tokenSource{k, scopes}
 	tok, err := src.Token()
 	if err != nil {
 		return nil, err
@@ -675,4 +675,15 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	tc.SetKeepAlive(true)
 	tc.SetKeepAlivePeriod(3 * time.Minute)
 	return tc, nil
+}
+
+type tokenSource struct {
+	k     *idkey.IDKey
+	scope []string
+}
+
+func (ts *tokenSource) Token() (*oauth2.Token, error) {
+	return accesstoken.New(ts.k, &authpkg.Actor{
+		Scope: authpkg.UnmarshalScope(ts.scope),
+	}, nil, 3*time.Hour, true)
 }

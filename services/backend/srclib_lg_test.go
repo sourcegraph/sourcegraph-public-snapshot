@@ -82,13 +82,14 @@ func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegr
 	}
 
 	// Push the repo.
-	cmd, err := a.CmdAs("alice", []string{"push", "--repo", repo.URI})
-	if err != nil {
-		return err
-	}
-	if err := testutil.RunCmd(cmd, repoDir); err != nil {
-		return err
-	}
+	t.Fatal("fixme") // the code below need to be uncommented and fixed if TestSrclibPush ever gets re-enabled
+	// cmd, err := a.CmdAs("alice", []string{"push", "--repo", repo.URI})
+	// if err != nil {
+	// 	return err
+	// }
+	// if err := testutil.RunCmd(cmd, repoDir); err != nil {
+	// 	return err
+	// }
 
 	return nil
 }

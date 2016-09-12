@@ -26,7 +26,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
 	"sourcegraph.com/sourcegraph/srclib/flagutil"
@@ -113,28 +112,6 @@ func (s *Server) serverEnvConfig() []string {
 		"SGPATH=" + s.SGPATH,
 		"DEBUG=t",
 	}
-}
-
-func (s *Server) CmdAs(login string, args []string) (*exec.Cmd, error) {
-	u, err := s.Client.Users.Get(sharedsecret.NewContext(s.Ctx, "tmp"), &sourcegraph.UserSpec{Login: login})
-	if err != nil {
-		return nil, err
-	}
-	k := idkey.FromContext(s.Ctx)
-	token, err := accesstoken.New(k, &auth.Actor{UID: int(u.UID), Write: true}, nil, 10*time.Minute, true)
-	if err != nil {
-		return nil, err
-	}
-	return s.Cmd([]string{"SRC_TOKEN=" + string(token.AccessToken)}, args), nil
-}
-
-func (s *Server) CmdAsSystem(args []string) (*exec.Cmd, error) {
-	src := sharedsecret.TokenSource(idkey.FromContext(s.Ctx), "tmp")
-	tok, err := src.Token()
-	if err != nil {
-		return nil, err
-	}
-	return s.Cmd([]string{"SRC_TOKEN=" + string(tok.AccessToken)}, args), nil
 }
 
 // Cmd returns a command that can be executed to perform client

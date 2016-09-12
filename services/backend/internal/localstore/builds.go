@@ -13,8 +13,8 @@ import (
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sqs/pbtypes"
@@ -536,7 +536,7 @@ RETURNING repo_build.*, COALESCE((SELECT repo.uri FROM repo WHERE repo.id=repo_b
 }
 
 func newBuildJob(ctx context.Context, b *sourcegraph.Build) (*sourcegraph.BuildJob, error) {
-	tok, err := sharedsecret.ShortTokenSource(idkey.FromContext(ctx), fmt.Sprintf("repo:%d", b.Repo)).Token()
+	tok, err := accesstoken.New(idkey.FromContext(ctx), nil, []string{fmt.Sprintf("repo:%d", b.Repo)}, time.Hour, false)
 	if err != nil {
 		return nil, err
 	}
