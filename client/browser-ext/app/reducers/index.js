@@ -14,7 +14,7 @@ const authInfo = function(state = null, action) {
 const accessToken = function(state = null, action) {
 	switch (action.type) {
 	case ActionTypes.SET_ACCESS_TOKEN:
-		return action.token;
+		return action.token ? action.token : null;
 	default:
 		return state;
 	}
