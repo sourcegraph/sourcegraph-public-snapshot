@@ -224,7 +224,13 @@ func (c *Client) Symbols(ctx context.Context, r *RepoRev) (*Symbols, error) {
 		var v Symbols
 		err := c.do(ctx, cl, r.Repo, "symbols", r, &v)
 		if err != nil {
-			return nil, err
+			// We don't want a symbol request to one client for something
+			// harmless like a 404 to fail the entire operation. Log instead of
+			// returning.
+			//
+			// TODO better logging and graceful failure while handling multiple clients.
+			log.Println("Client.Symbols: ", err)
+			continue
 		}
 		result.Symbols = append(result.Symbols, v.Symbols...)
 	}
