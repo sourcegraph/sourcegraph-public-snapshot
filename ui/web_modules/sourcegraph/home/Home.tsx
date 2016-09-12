@@ -180,7 +180,7 @@ export class Home extends Container<HomeProps, HomeState> {
 						Growing language support
 					</Heading>
 
-					<FlexContainer justify="between" className={classNames(base.center, base.mt4)} style={{maxWidth: "400px"}}>
+					<FlexContainer justify="between" className={classNames(base.center, base.mt4)} style={{maxWidth: "440px"}}>
 						<img title="Go supported" className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/go2.svg`} />
 						<img title="Java supported" className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/java.svg`} />
 						<div style={{display: "inline-block", position: "relative", cursor: "pointer"}} onMouseOver={() => this.setState({langMouseover: true})} onMouseLeave={() => this.setState({langMouseover: false})}>
@@ -200,8 +200,8 @@ export class Home extends Container<HomeProps, HomeState> {
 									</div>
 								</LocationStateToggleLink>
 							}
-						</FlexContainer>
-					</div>
+						</div>
+					</FlexContainer>
 				</div>
 
 				{this.props.location.state && this.props.location.state.modal === "beta" &&
