@@ -15,7 +15,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/executil"
 )
 
@@ -76,7 +75,7 @@ func CreateAndPushRepoFiles(t *testing.T, ctx context.Context, repoURI string, f
 		return nil, "", nil, err
 	}
 
-	authedCloneURL, err := authutil.AddSystemAuthToURL(ctx, "internal:write", repo.HTTPCloneURL)
+	authedCloneURL, err := AddSystemAuthToURL(ctx, "internal:write", repo.HTTPCloneURL)
 	if err != nil {
 		return nil, "", nil, err
 	}

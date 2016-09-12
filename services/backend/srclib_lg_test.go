@@ -9,7 +9,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/executil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
@@ -55,7 +54,7 @@ func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegr
 
 	// Add auth to HTTP clone URL so that `git clone`, `git push`,
 	// etc., commands are authenticated.
-	authedCloneURL, err := authutil.AddSystemAuthToURL(a.Ctx, "", repo.HTTPCloneURL)
+	authedCloneURL, err := testutil.AddSystemAuthToURL(a.Ctx, "", repo.HTTPCloneURL)
 	if err != nil {
 		return err
 	}

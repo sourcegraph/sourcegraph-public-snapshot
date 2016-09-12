@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
 )
@@ -114,7 +113,7 @@ func testGitServer(t *testing.T, tests []interface{}) {
 				t.Errorf("Error while updating user permissions: %s", err)
 				continue
 			}
-			authedCloneURL, err := authutil.AddSystemAuthToURL(ctx, "internal:write", repo.HTTPCloneURL)
+			authedCloneURL, err := testutil.AddSystemAuthToURL(ctx, "internal:write", repo.HTTPCloneURL)
 			if err != nil {
 				t.Errorf("Error while creating authed clone URL: %s", err)
 			}
