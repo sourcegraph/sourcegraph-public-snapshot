@@ -7,37 +7,19 @@ import (
 )
 
 func TestToken(t *testing.T) {
-	idkey.SetTestEnvironment(512)
-	k, err := idkey.Generate()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := TokenSource(k, "*").Token(); err != nil {
+	if _, err := TokenSource(idkey.Default, "*").Token(); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestShortToken(t *testing.T) {
-	idkey.SetTestEnvironment(512)
-	k, err := idkey.Generate()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := ShortTokenSource(k, "*").Token(); err != nil {
+	if _, err := ShortTokenSource(idkey.Default, "*").Token(); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestShortTokenLength(t *testing.T) {
-	idkey.SetTestEnvironment(512)
-	k, err := idkey.Generate()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tok, err := ShortTokenSource(k, "*").Token()
+	tok, err := ShortTokenSource(idkey.Default, "*").Token()
 	if err != nil {
 		t.Fatal(err)
 	}

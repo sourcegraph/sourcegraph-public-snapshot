@@ -14,7 +14,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -143,7 +142,6 @@ type ServeCmdPrivate struct {
 	CertFile string `long:"tls-cert" description:"certificate file (for TLS)" env:"SRC_TLS_CERT"`
 	KeyFile  string `long:"tls-key" description:"key file (for TLS)" env:"SRC_TLS_KEY"`
 
-	IDKeyFile string `short:"i" long:"id-key" description:"identity key file" default:"$SGPATH/id.pem" env:"SRC_ID_KEY"`
 	IDKeyData string `long:"id-key-data" description:"identity key file data (overrides -i/--id-key)" env:"SRC_ID_KEY_DATA"`
 }
 
@@ -256,10 +254,17 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	// Server identity keypair
-	idKey, _, err := c.generateOrReadIDKey()
-	if err != nil {
-		return err
+	var idKey *idkey.IDKey
+	if s := c.IDKeyData; s != "" {
+		idKey, err = idkey.FromString(s)
+		if err != nil {
+			return err
+		}
+	} else {
+		idKey = idkey.Default
+		log15.Warn("Using default ID key.")
 	}
+
 	log15.Debug("Sourcegraph server", "ID", idKey.ID)
 	// Uncomment to add ID key prefix to log messages.
 	// log.SetPrefix(bold(idKey.ID[:4] + ": "))
@@ -518,43 +523,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	backend.StartAsyncWorkers(asyncCtx)
 
 	select {}
-}
-
-// generateOrReadIDKey reads the server's ID key (or creates one on-demand).
-func (c *ServeCmd) generateOrReadIDKey() (k *idkey.IDKey, created bool, err error) {
-	if s := c.IDKeyData; s != "" {
-		log15.Debug("Reading ID key from environment (or CLI flag).")
-		k, err = idkey.FromString(s)
-		return k, false, err
-	}
-
-	c.IDKeyFile = os.ExpandEnv(c.IDKeyFile)
-
-	if data, err := ioutil.ReadFile(c.IDKeyFile); err == nil {
-		// File exists.
-		k, err = idkey.New(data)
-		if err != nil {
-			return nil, false, err
-		}
-	} else if os.IsNotExist(err) {
-		log15.Debug("Generating new Sourcegraph ID key", "path", c.IDKeyFile)
-		k, err = idkey.Generate()
-		if err != nil {
-			return nil, false, err
-		}
-		data, err := k.MarshalText()
-		if err != nil {
-			return nil, false, err
-		}
-		if err := os.MkdirAll(filepath.Dir(c.IDKeyFile), 0700); err != nil {
-			return nil, false, err
-		}
-		if err := ioutil.WriteFile(c.IDKeyFile, data, 0600); err != nil {
-			return nil, false, err
-		}
-		created = true
-	}
-	return
 }
 
 // authenticateScopedContext adds a token with the specified scope to the given

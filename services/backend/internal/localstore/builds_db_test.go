@@ -545,10 +545,5 @@ func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
 }
 
 func withTestIDKey(t *testing.T, ctx context.Context) context.Context {
-	idkey.SetTestEnvironment(512)
-	k, err := idkey.Generate()
-	if err != nil {
-		t.Fatal(err)
-	}
-	return idkey.NewContext(ctx, k)
+	return idkey.NewContext(ctx, idkey.Default)
 }

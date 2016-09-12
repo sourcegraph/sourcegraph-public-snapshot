@@ -380,21 +380,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	s.Ctx = conf.WithURL(s.Ctx, parseURL(s.Config.Serve.AppURL))
 
 	// ID key
-	idkey.SetTestEnvironment(1024) // Minimum RSA size for SSH is 1024
-	idKey, err := idkey.Generate()
-	if err != nil {
-		log.Fatal(err)
-	}
-	s.Config.Serve.IDKeyFile = filepath.Join(sgpath, "id.pem")
-	idKeyBytes, err := idKey.MarshalText()
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := ioutil.WriteFile(s.Config.Serve.IDKeyFile, idKeyBytes, 0700); err != nil {
-		log.Fatal(err)
-	}
-	s.Ctx = idkey.NewContext(s.Ctx, idKey)
-
+	s.Ctx = idkey.NewContext(s.Ctx, idkey.Default)
 	s.Ctx = s.AsUIDWithAccess(s.Ctx, 1, false, true)
 
 	if err := s.configDB(); err != nil {
