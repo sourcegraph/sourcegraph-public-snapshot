@@ -14,4 +14,5 @@
 /* Display hover tooltips above global nav. */
 :global .monaco-editor .monaco-editor-hover {
 	z-index: calc(navbarZIndex + 1);
+	box-sizing: content-box;
 }

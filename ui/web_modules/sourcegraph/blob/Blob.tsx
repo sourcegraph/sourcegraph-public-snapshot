@@ -1,4 +1,6 @@
 import * as React from "react";
+import { InjectedRouter } from "react-router";
+
 import { createLineFromByteFunc } from "sourcegraph/blob/lineFromByte";
 import * as DefActions from "sourcegraph/def/DefActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
@@ -36,7 +38,7 @@ export class Blob extends React.Component<Props, null> {
 
 	context: {
 		siteConfig: { assetsRoot: string };
-		router: { push: (url: string) => void };
+		router: InjectedRouter
 		eventLogger: { logEventForCategory: (eventCategory: string, eventAction: string, eventLabel: string, eventProperties?: any) => void };
 	};
 
@@ -58,6 +60,7 @@ export class Blob extends React.Component<Props, null> {
 		this._hoverProvided = [];
 		this._toDispose = [];
 		this._decorationID = [];
+		this._onSelectionChange = debounce(this._onSelectionChange.bind(this), 1000);
 	}
 
 	componentDidMount(): void {
@@ -117,6 +120,7 @@ export class Blob extends React.Component<Props, null> {
 		this._addClickListener();
 		this._addReferencesAction();
 		this._overrideNavigationKeys();
+		this._editor.onDidChangeCursorSelection(this._onSelectionChange);
 
 		this._updateEditor();
 	}
@@ -285,6 +289,15 @@ export class Blob extends React.Component<Props, null> {
 		}
 	}
 
+	_onSelectionChange(e: monaco.editor.ICursorSelectionChangedEvent): void {
+		const start = e.selection.startLineNumber;
+		const end = e.selection.endLineNumber;
+		const hash = end === start ? "" : `L${start}-${end}`;
+		const path = global.document.location.pathname;
+		const pathWithSelection = `${path}#${hash}`;
+		this.context.router.replace(pathWithSelection);
+	}
+
 	render(): JSX.Element {
 		return <div ref="container" style={{ display: "flex", flex: "auto", width: "100%" }} />;
 	}
@@ -344,7 +357,7 @@ interface RepoSpec {
 }
 
 function pathToURI(uri: monaco.Uri): RepoSpec {
-	const matches = /(.*)[\/\\]-[\/\\](.*)[\/\\]-[\/\\](.*)/.exec(uri.fsPath);
+	const matches = /[\/\\](.*)[\/\\]-[\/\\](.*)[\/\\]-[\/\\](.*)/.exec(uri.fsPath);
 	if (!matches || matches.length < 4) { throw new Error(`invalid argument, model URI (${uri.fsPath}) probably set incorrectly`); }
 	const repo = matches[1];
 	const rev = matches[2];
@@ -353,5 +366,5 @@ function pathToURI(uri: monaco.Uri): RepoSpec {
 }
 
 function RepoSpecToURI({repo, file, rev}: RepoSpec): monaco.Uri {
-	return monaco.Uri.file(`${repo}/-/${rev}/-/${file}`);
+	return monaco.Uri.file(`/${repo}/-/${rev}/-/${file}`);
 }
