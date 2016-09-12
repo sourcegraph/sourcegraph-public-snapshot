@@ -28,9 +28,10 @@
 .video_overlay { transition: all 0.3s ease-in-out; }
 
 .lang_icon {
+	display: inline-block;
 	width: 32px;
 	height: 32px;
-	margin: 20px;
+	margin: 12px;
 }
 
 @media only screen and media_sm {
@@ -50,4 +51,17 @@
 .tweet_container {
     max-width: 360px;
     width: 100%;
+}
+
+/* TODO: Abstract this – styles should be contained in their components */
+.modal {
+	composes: modal from "sourcegraph/components/styles/modal.css";
+	composes: col_10 from grid;
+	max-width: 440px;
+	min-width: 320px;
+	max-height: 85%;
+}
+
+.modalForm {
+	width: 100% !important;
 }
