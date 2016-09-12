@@ -13,9 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/user"
 	"path"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -23,7 +21,6 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/go-selenium"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/test/e2e/e2etestuser"
 
 	"github.com/jpillora/backoff"
@@ -294,7 +291,6 @@ type testRunner struct {
 	target   *url.URL
 	tests    []*Test
 	executor string
-	idKey    *idkey.IDKey
 
 	slack                             *slack.Client
 	slackToken                        string
@@ -733,31 +729,6 @@ func parseEnv() error {
 		return errors.New("TARGET must specify scheme (http or https) prefix")
 	}
 
-	// Find server ID key information.
-	if key := os.Getenv("ID_KEY_DATA"); key != "" {
-		tr.idKey, err = idkey.FromString(key)
-		if err != nil {
-			return err
-		}
-	} else {
-		sgpath := os.Getenv("SGPATH")
-		if sgpath == "" {
-			currentUser, err := user.Current()
-			if err != nil {
-				return err
-			}
-			sgpath = filepath.Join(currentUser.HomeDir, ".sourcegraph")
-		}
-		data, err := ioutil.ReadFile(filepath.Join(sgpath, "id.pem"))
-		if err != nil {
-			return err
-		}
-		tr.idKey, err = idkey.New(data)
-		if err != nil {
-			return err
-		}
-	}
-
 	if token := os.Getenv("SLACK_API_TOKEN"); token != "" {
 		tr.slack = slack.New(token)
 		tr.slackToken = token
@@ -836,8 +807,6 @@ Environment:
   WRITE_SCREENSHOTS (optional)
       If specified, screenshots of any failures will be written to the specified directory path
       relative to the test/e2e package directory. Only used by 'go test'.
-  ID_KEY_DATA (optional)
-      If specified, the Base64-encoded string is used in place of '$SGPATH/id.pem' for authenticating
   SLACK_API_TOKEN (optional)
       If specified, send information about tests to Slack.
   SLACK_CHANNEL = "e2etest"
