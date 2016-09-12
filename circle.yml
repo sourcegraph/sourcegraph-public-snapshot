@@ -38,6 +38,7 @@ dependencies:
     - ./dev/ci/install-protobuf.sh
     - ./dev/ci/patch-exec-latency.sh
     - ./dev/ci/versions.sh
+    - ./dev/ci/install-checkup.sh
 
     - git config --global user.email "ci@example.com"
     - git config --global user.name "CI User"

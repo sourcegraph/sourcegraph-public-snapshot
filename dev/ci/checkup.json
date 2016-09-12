@@ -1,0 +1,52 @@
+{
+  "checkers": [
+    {
+      "type": "http",
+      "endpoint_name": "Home",
+      "endpoint_url": "http://localhost:3080",
+      "attempts": 1
+    },
+    {
+      "type": "http",
+      "endpoint_name": "About",
+      "endpoint_url": "http://localhost:3080/about",
+      "attempts": 1
+    },
+    {
+      "type": "http",
+      "endpoint_name": "Pricing",
+      "endpoint_url": "http://localhost:3080/pricing",
+      "attempts": 1
+    },
+    {
+      "type": "http",
+      "endpoint_name": "Join",
+      "endpoint_url": "http://localhost:3080/join",
+      "attempts": 1
+    },
+    {
+      "type": "http",
+      "endpoint_name": "Login",
+      "endpoint_url": "http://localhost:3080/login",
+      "attempts": 1
+    },
+    {
+      "type": "http",
+      "endpoint_name": "Terms of Service",
+      "endpoint_url": "http://localhost:3080/-/terms",
+      "attempts": 1
+    },
+    {
+      "type": "http",
+      "endpoint_name": "Security",
+      "endpoint_url": "http://localhost:3080/security",
+      "attempts": 1
+    },
+    {
+      "type": "http",
+      "endpoint_name": "Privacy",
+      "endpoint_url": "http://localhost:3080/-/privacy",
+      "attempts": 1
+    }
+  ]
+}
