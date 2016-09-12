@@ -22,12 +22,8 @@ import (
 	"testing"
 	"time"
 
-	"context"
-
 	"sourcegraph.com/sourcegraph/go-selenium"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/test/e2e/e2etestuser"
 
 	"github.com/jpillora/backoff"
@@ -106,54 +102,6 @@ func (t *T) Endpoint(e string) string {
 		u = strings.TrimSuffix(u, "/")
 	}
 	return u + e
-}
-
-// TargetGRPC returns the final gRPC target URL, e.g. https://grpc.sourcegraph.com.
-func (t *T) TargetGRPC() *url.URL {
-	cpy := *t.Target
-	endpoint := &cpy
-
-	// HACK: Because there is no gRPC service discovery system set up in
-	//       Sourcegraph, we hard-code gRPC endpoints here so that we don't
-	//       have to specify TARGET_GRPC every single time (one less thing
-	//       to think about).
-	switch endpoint.Host {
-	case "sourcegraph.com":
-		endpoint.Host = "grpc.sourcegraph.com"
-	case "staging.sourcegraph.com":
-		endpoint.Host = "grpc-staging.sourcegraph.com"
-	case "staging2.sourcegraph.com":
-		endpoint.Host = "grpc-staging2.sourcegraph.com"
-	case "staging3.sourcegraph.com":
-		endpoint.Host = "grpc-staging3.sourcegraph.com"
-	case "staging4.sourcegraph.com":
-		endpoint.Host = "grpc-staging4.sourcegraph.com"
-	}
-
-	if grpc := os.Getenv("TARGET_GRPC"); grpc != "" {
-		var err error
-		endpoint, err = url.Parse(grpc)
-		if err != nil {
-			t.Fatalf("could not parse TARGET_GRPC as url: %s", err)
-		}
-	}
-	return endpoint
-}
-
-// GRPCClient returns a new authenticated Sourcegraph gRPC client. It uses the
-// server's ID key, and thus has 100% unrestricted access. Use with caution!
-func (t *T) GRPCClient() (context.Context, *sourcegraph.Client) {
-	// Create context with gRPC endpoint and idKey credentials.
-	ctx := context.Background()
-	ctx = sourcegraph.WithGRPCEndpoint(ctx, t.TargetGRPC())
-	ctx = sourcegraph.WithCredentials(ctx, sharedsecret.TokenSource(t.tr.idKey, "internal:e2etest"))
-
-	// Create client.
-	c, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		t.Fatalf("could not create gRPC client: %v", c)
-	}
-	return ctx, c
 }
 
 // WaitForCondition waits up to d for cond() to be true. After each time cond()
