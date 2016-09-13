@@ -71,10 +71,10 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 	if feature.Features.Universe {
 		repoFull, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repo})
 		if err != nil {
-			log15.Error("postPushHook: failed to create build", "err", err)
+			log15.Error("postPushHook: failed to prepare workspace", "err", err)
 			return
 		}
-		if universe.Enabled(ctx, repoFull.URI) {
+		if universe.Enabled(ctx, repoFull.URI) || universe.Shadow(repoFull.URI) {
 			// Ask the Language Processor to prepare the workspace.
 			if err := langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
 				// TODO(slimsag): URI is correct only where the repo URI and clone
@@ -83,18 +83,9 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 				Repo:   repoFull.URI,
 				Commit: event.Commit,
 			}); err != nil {
-				log15.Error("postPushHook: failed to create build", "err", err)
+				log15.Error("postPushHook: failed to prepare workspace", "err", err)
 				return
 			}
-		} else if universe.Shadow(repoFull.URI) {
-			go func() {
-				if shadowErr := langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
-					Repo:   repoFull.URI,
-					Commit: event.Commit,
-				}); err != nil {
-					log15.Error("postPushHook: failed to create build", "err", shadowErr)
-				}
-			}()
 		}
 	}
 }

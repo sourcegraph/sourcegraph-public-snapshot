@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
@@ -35,7 +36,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if universe.Enabled(r.Context(), repo.URI) {
+	if feature.Features.NoSrclib && universe.Enabled(r.Context(), repo.URI) {
 		def, err = universeDef(opt, r, repo)
 		if err != nil {
 			return err

@@ -11,7 +11,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
@@ -154,27 +153,18 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 	}
 	log15.Debug("cloneRepo: build created", "repo", repo.URI, "branch", repo.DefaultBranch, "commit", res.CommitID)
 
-	if feature.Features.Universe && universe.Enabled(ctx, repo.URI) {
-		// Ask the Language Processor to prepare the workspace.
-		err := langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
-			// TODO(slimsag): URI is correct only where the repo URI and clone
-			// URI are directly equal.. but CloneURI is only correct (for Go)
-			// when it directly matches the package import path.
-			Repo:   repo.URI,
-			Commit: res.CommitID,
-		})
-		if err != nil {
-			log15.Warn("cloneRepo: language processor failed to prepare workspace", "err", err, "repo", repo.URI, "commit", res.CommitID, "branch", repo.DefaultBranch)
-			return nil
-		}
-	} else if universe.Shadow(repo.URI) {
+	if universe.Enabled(ctx, repo.URI) || universe.Shadow(repo.URI) {
 		go func() {
-			shadowErr := langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
+			// Ask the Language Processor to prepare the workspace.
+			err := langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
+				// TODO(slimsag): URI is correct only where the repo URI and clone
+				// URI are directly equal.. but CloneURI is only correct (for Go)
+				// when it directly matches the package import path.
 				Repo:   repo.URI,
 				Commit: res.CommitID,
 			})
-			if shadowErr != nil {
-				log15.Warn("cloneRepo: language processor failed to prepare workspace", "err", shadowErr, "repo", repo.URI, "commit", res.CommitID, "branch", repo.DefaultBranch)
+			if err != nil {
+				log15.Warn("cloneRepo: language processor failed to prepare workspace", "err", err, "repo", repo.URI, "commit", res.CommitID, "branch", repo.DefaultBranch)
 			}
 		}()
 	}

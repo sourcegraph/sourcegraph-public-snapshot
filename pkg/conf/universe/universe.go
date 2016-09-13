@@ -64,6 +64,12 @@ var (
 // SG_UNIVERSE_SHADOW_P% requests will be shadowed. By default we shadow
 // nothing.
 func Shadow(repo string) bool {
+	if !feature.Features.Universe {
+		return false
+	}
+	if EnabledExcludingBeta(repo) {
+		return true
+	}
 	h := crc32.ChecksumIEEE([]byte(repo))
 	if h%100 >= shadowRepoP {
 		return false

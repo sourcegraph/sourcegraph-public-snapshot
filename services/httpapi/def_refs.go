@@ -5,6 +5,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
@@ -88,7 +89,7 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 		opt.CommitID = def.CommitID
 	}
 
-	if universe.Enabled(r.Context(), repo.URI) {
+	if feature.Features.NoSrclib && universe.Enabled(r.Context(), repo.URI) {
 		refLocations, err := universeDefRefs(r, tmp.Repo, opt, def)
 		if err != nil {
 			return err
