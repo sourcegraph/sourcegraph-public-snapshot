@@ -29,7 +29,6 @@ import (
 	lightstep "github.com/lightstep/lightstep-tracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/soheilhy/cmux"
-	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-flags"
@@ -533,7 +532,7 @@ func authenticateScopedContext(ctx context.Context, k *idkey.IDKey, scopes []str
 	if err != nil {
 		return nil, err
 	}
-	return sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(tok)), nil
+	return sourcegraph.WithAccessToken(ctx, tok.AccessToken), nil
 }
 
 // initializeEventListeners creates special scoped contexts and passes them to

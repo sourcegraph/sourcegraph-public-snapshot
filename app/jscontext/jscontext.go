@@ -51,14 +51,9 @@ func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User)
 
 	headers := make(map[string]string)
 
-	var accessToken string
-	if cred := sourcegraph.CredentialsFromContext(ctx); cred != nil {
-		tok, err := cred.Token()
-		if err != nil {
-			return JSContext{}, err
-		}
-		accessToken = tok.AccessToken
-		headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString([]byte("x-oauth-basic:"+tok.AccessToken))
+	accessToken := sourcegraph.AccessTokenFromContext(ctx)
+	if accessToken != "" {
+		headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString([]byte("x-oauth-basic:"+accessToken))
 	}
 
 	if span := opentracing.SpanFromContext(ctx); span != nil {

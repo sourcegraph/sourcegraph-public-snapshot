@@ -11,10 +11,8 @@ import (
 
 	"context"
 
-	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/oauth"
 )
 
 type contextKey int
@@ -22,7 +20,7 @@ type contextKey int
 const (
 	grpcEndpointKey contextKey = iota
 	mockClientKey
-	credentialsKey
+	accessTokenKey
 	clientMetadataKey
 )
 
@@ -60,30 +58,22 @@ func MockClient(ctx context.Context) *Client {
 	return client
 }
 
-// Credentials authenticate gRPC requests made by an API client.
-type Credentials interface {
-	oauth2.TokenSource
-}
-
-// WithCredentials returns a copy of the parent context that uses cred
-// as the credentials for future API clients constructed using this
+// WithAccessToken returns a copy of the parent context that uses token
+// as the access token for future API clients constructed using this
 // context (with NewClientFromContext). It replaces (shadows) any
-// previously set credentials in the context.
-//
-// It can be used to add, e.g., trace/span ID metadata for request
-// tracing.
-func WithCredentials(parent context.Context, cred Credentials) context.Context {
-	return context.WithValue(parent, credentialsKey, cred)
+// previously set token in the context.
+func WithAccessToken(parent context.Context, token string) context.Context {
+	return context.WithValue(parent, accessTokenKey, token)
 }
 
-// CredentialsFromContext returns the credentials (if any) previously
-// set in the context by WithCredentials.
-func CredentialsFromContext(ctx context.Context) Credentials {
-	cred, ok := ctx.Value(credentialsKey).(Credentials)
+// AccessTokenFromContext returns the access token (if any) previously
+// set in the context by WithAccessToken.
+func AccessTokenFromContext(ctx context.Context) string {
+	token, ok := ctx.Value(accessTokenKey).(string)
 	if !ok {
-		return nil
+		return ""
 	}
-	return cred
+	return token
 }
 
 // WithClientMetadata returns a copy of the parent context that merges
@@ -211,28 +201,14 @@ type contextCredentials struct{}
 // interface definition, it may be called by multiple goroutines concurrently.
 func (contextCredentials) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
 	m := clientMetadataFromContext(ctx)
-
-	if cred := CredentialsFromContext(ctx); cred != nil {
-		credMD, err := (oauth.TokenSource{TokenSource: cred}).GetRequestMetadata(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		if m == nil {
-			m = credMD
-		} else {
-			// Copy the map to avoid a data race writing to the map returned by
-			// clientMetaDataFromContext.
-			cpy := make(map[string]string)
-			for k, v := range m {
-				cpy[k] = v
-			}
-			for k, v := range credMD {
-				cpy[k] = v
-			}
-			m = cpy
-		}
+	if m == nil {
+		m = make(map[string]string)
 	}
+
+	if token := AccessTokenFromContext(ctx); token != "" {
+		m["authorization"] = "Bearer " + token
+	}
+
 	return m, nil
 }
 

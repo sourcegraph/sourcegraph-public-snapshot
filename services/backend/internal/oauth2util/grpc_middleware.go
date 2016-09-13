@@ -8,7 +8,6 @@ import (
 
 	"context"
 
-	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -63,7 +62,7 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 	}
 
 	// Make future calls use this access token.
-	ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: tokStr}))
+	ctx = sourcegraph.WithAccessToken(ctx, tokStr)
 
 	// Set actor in context.
 	if actor != nil {

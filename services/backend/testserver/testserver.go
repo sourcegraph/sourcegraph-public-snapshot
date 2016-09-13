@@ -19,7 +19,6 @@ import (
 
 	"context"
 
-	"golang.org/x/oauth2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
@@ -156,7 +155,7 @@ func (s *Server) AsUIDWithAccess(ctx context.Context, uid int, write, admin bool
 	if err != nil {
 		panic(err)
 	}
-	return sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(token))
+	return sourcegraph.WithAccessToken(ctx, token.AccessToken)
 }
 
 func (s *Server) Close() {

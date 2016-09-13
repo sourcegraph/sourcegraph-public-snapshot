@@ -9,8 +9,6 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"golang.org/x/oauth2"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/userauth"
@@ -63,9 +61,7 @@ func getSavedToken(endpointURL *url.URL) string {
 	}
 	accessToken = e.AccessToken
 
-	ctx := sourcegraph.WithCredentials(cliContext,
-		oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: accessToken}),
-	)
+	ctx := sourcegraph.WithAccessToken(cliContext, accessToken)
 	cl, err := sourcegraph.NewClientFromContext(sourcegraph.WithGRPCEndpoint(ctx, endpointURL))
 	if err != nil {
 		log15.Error("Failed to verify saved auth credentials", "endpointURL", endpointURL, "error", err)
@@ -85,7 +81,7 @@ func (c *loginCmd) getAccessToken(endpointURL *url.URL) (string, error) {
 		return savedToken, nil
 	}
 
-	unauthedCtx := sourcegraph.WithCredentials(cliContext, nil)
+	unauthedCtx := sourcegraph.WithAccessToken(cliContext, "")
 	cl, err := sourcegraph.NewClientFromContext(unauthedCtx)
 	if err != nil {
 		return "", err

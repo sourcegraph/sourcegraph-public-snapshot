@@ -5,8 +5,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"golang.org/x/oauth2"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 
@@ -17,13 +15,9 @@ func TestCookieMiddleware(t *testing.T) {
 			called = true
 			ctx := r.Context()
 
-			creds := sourcegraph.CredentialsFromContext(ctx)
-			tok, err := creds.(oauth2.TokenSource).Token()
-			if err != nil {
-				t.Fatal(err)
-			}
-			if want := "mytoken"; tok.AccessToken != want {
-				t.Errorf("got token %q, want %q", tok.AccessToken, want)
+			tok := sourcegraph.AccessTokenFromContext(ctx)
+			if want := "mytoken"; tok != want {
+				t.Errorf("got token %q, want %q", tok, want)
 			}
 		})).ServeHTTP(w, r)
 	}))

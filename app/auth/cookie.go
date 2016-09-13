@@ -10,8 +10,6 @@ import (
 
 	"context"
 
-	"golang.org/x/oauth2"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
@@ -105,7 +103,7 @@ func DeleteSessionCookie(w http.ResponseWriter) {
 func CookieMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if sess, err := readSessionCookie(r); err == nil {
-			r = r.WithContext(sourcegraph.WithCredentials(r.Context(), oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: sess.AccessToken})))
+			r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), sess.AccessToken))
 
 			// Vary based on Authorization header if the request is
 			// operating with any level of authorization, so that the

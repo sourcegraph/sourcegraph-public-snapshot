@@ -8,7 +8,6 @@ import (
 
 	"context"
 
-	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -129,7 +128,7 @@ func finishLoginOrSignup(ctx context.Context, cl *sourcegraph.Client, w http.Res
 	}
 
 	// Authenticate future requests.
-	ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: tok.AccessToken}))
+	ctx = sourcegraph.WithAccessToken(ctx, tok.AccessToken)
 
 	// Authenticate as newly created user.
 	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: tok.AccessToken}, appauth.OnlySecureCookies(ctx)); err != nil {

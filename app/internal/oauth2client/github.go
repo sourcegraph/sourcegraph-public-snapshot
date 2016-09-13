@@ -171,10 +171,7 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	// just-authenticated linked GitHub account. The user must have previously
 	// linked the accounts for the Auth.GetAccessToken call to return this
 	// Sourcegraph UID, so we can do this safely.
-	r = r.WithContext(sourcegraph.WithCredentials(r.Context(), oauth2.StaticTokenSource(&oauth2.Token{
-		AccessToken: tok.AccessToken,
-		TokenType:   "Bearer",
-	})))
+	r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), tok.AccessToken))
 
 	return linkAccountWithGitHub(w, r, cl, tok.UID, ghUser, tok, false, state.ReturnTo)
 }
@@ -214,12 +211,8 @@ func linkAccountWithGitHub(w http.ResponseWriter, r *http.Request, cl *sourcegra
 	}
 
 	// Write cookie.
-	cred := sourcegraph.CredentialsFromContext(r.Context())
-	sgTok, err := cred.Token()
-	if err != nil {
-		return err
-	}
-	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: sgTok.AccessToken}, appauth.OnlySecureCookies(r.Context())); err != nil {
+	token := sourcegraph.AccessTokenFromContext(r.Context())
+	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: token}, appauth.OnlySecureCookies(r.Context())); err != nil {
 		return err
 	}
 
@@ -277,10 +270,7 @@ func createAccountFromGitHub(w http.ResponseWriter, r *http.Request, cl *sourceg
 	}
 	log15.Info("Created Sourcegraph account from GitHub account", "uid", createdAcct.UID, "login", newAcct.Login, "email", newAcct.Email)
 
-	r = r.WithContext(sourcegraph.WithCredentials(r.Context(), oauth2.StaticTokenSource(&oauth2.Token{
-		AccessToken: createdAcct.TemporaryAccessToken,
-		TokenType:   "Bearer",
-	})))
+	r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), createdAcct.TemporaryAccessToken))
 
 	return linkAccountWithGitHub(w, r, cl, createdAcct.UID, ghUser, tok, true, returnTo)
 }

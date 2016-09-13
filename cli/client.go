@@ -9,8 +9,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/userauth"
 
 	"context"
-
-	"golang.org/x/oauth2"
 )
 
 // cliContext and cliClient accesses the configured Sourcegraph endpoint
@@ -75,7 +73,7 @@ func withCLICredentials(ctx context.Context) context.Context {
 		}
 	})
 
-	return sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: credentials.AccessToken}))
+	return sourcegraph.WithAccessToken(ctx, credentials.AccessToken)
 }
 
 // AuthFile returns the path of the file that stores authentications.

@@ -9,8 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"golang.org/x/oauth2"
-
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"context"
@@ -31,7 +29,7 @@ func RunWorker(ctx context.Context, endpoint *url.URL, parallel int, dequeueMsec
 	if accessToken == "" {
 		accessToken = defaultAccessToken
 	}
-	ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: accessToken}))
+	ctx = sourcegraph.WithAccessToken(ctx, accessToken)
 
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {

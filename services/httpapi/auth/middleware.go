@@ -4,8 +4,6 @@ import (
 	"log"
 	"net/http"
 
-	"golang.org/x/oauth2"
-
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -34,7 +32,7 @@ func PasswordMiddleware(next http.Handler) http.Handler {
 				return
 			}
 
-			r = r.WithContext(sourcegraph.WithCredentials(r.Context(), oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok.AccessToken, TokenType: "Bearer"})))
+			r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), tok.AccessToken))
 
 			// Vary based on Authorization header if the request is
 			// operating with any level of authorization, so that the
@@ -50,7 +48,7 @@ func PasswordMiddleware(next http.Handler) http.Handler {
 // Bearer access token from the HTTP request (if any).
 func OAuth2AccessTokenMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tok, tokType, err := readBearerToken(r)
+		tok, err := readBearerToken(r)
 		if err != nil {
 			log.Printf("OAuth2TokenMiddleware: error in readBearerToken: %s.", err)
 			http.Error(w, "error reading access token from HTTP request", http.StatusForbidden)
@@ -62,7 +60,7 @@ func OAuth2AccessTokenMiddleware(next http.Handler) http.Handler {
 		}
 
 		if tok != "" {
-			r = r.WithContext(sourcegraph.WithCredentials(r.Context(), oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok, TokenType: tokType})))
+			r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), tok))
 
 			// Vary based on Authorization header if the request is
 			// operating with any level of authorization, so that the
@@ -74,12 +72,12 @@ func OAuth2AccessTokenMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func readBearerToken(r *http.Request) (token, tokenType string, err error) {
+func readBearerToken(r *http.Request) (token string, err error) {
 	// Allow token to be specified using HTTP Basic auth with username
 	// "x-oauth-basic".
 	username, token, ok := r.BasicAuth()
 	if ok && username == oauthBasicUsername {
-		return token, "Bearer", nil
+		return token, nil
 	}
 
 	for _, v := range r.Header[http.CanonicalHeaderKey("authorization")] {
@@ -88,9 +86,9 @@ func readBearerToken(r *http.Request) (token, tokenType string, err error) {
 			continue
 		}
 		if strings.EqualFold(parts[0], "bearer") {
-			return parts[1], "Bearer", nil
+			return parts[1], nil
 		}
 	}
 
-	return "", "", nil
+	return "", nil
 }
