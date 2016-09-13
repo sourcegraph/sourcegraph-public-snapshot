@@ -48,9 +48,12 @@ func New(k *idkey.IDKey, actor *auth.Actor, scopes []string, expiryDuration time
 
 	tok.Claims["Scope"] = strings.Join(scopes, " ")
 
-	expiry := time.Now().Add(expiryDuration)
-	tok.Claims["exp"] = expiry.Add(time.Minute).Unix()
-	tok.Claims["nbf"] = time.Now().Add(-5 * time.Minute).Unix()
+	var expiry time.Time
+	if expiryDuration != 0 {
+		expiry = time.Now().Add(expiryDuration)
+		tok.Claims["exp"] = expiry.Add(time.Minute).Unix()
+		tok.Claims["nbf"] = time.Now().Add(-5 * time.Minute).Unix()
+	}
 
 	s, err := tok.SignedString(key)
 	if err != nil {

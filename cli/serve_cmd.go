@@ -281,8 +281,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		for _, f := range cli.ClientContext {
 			ctx = f(ctx)
 		}
-		sharedSecretToken := oauth2.ReuseTokenSource(nil, &tokenSource{idKey, nil})
-		ctx = sourcegraph.WithCredentials(ctx, sharedSecretToken)
 		return ctx
 	}
 	serverCtxFunc := func(ctx context.Context) context.Context {
@@ -456,7 +454,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
 
 	// Start background repo updater worker.
-	repoUpdaterCtx, err := c.authenticateScopedContext(clientCtx, idKey, []string{"internal:repoupdater"})
+	repoUpdaterCtx, err := authenticateScopedContext(clientCtx, idKey, []string{"internal:repoupdater"})
 	if err != nil {
 		return err
 	}
@@ -473,7 +471,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	// Occasionally compute instance usage stats
-	usageStatsCtx, err := c.authenticateScopedContext(clientCtx, idKey, []string{"internal:usagestats"})
+	usageStatsCtx, err := authenticateScopedContext(clientCtx, idKey, []string{"internal:usagestats"})
 	if err != nil {
 		return err
 	}
@@ -507,7 +505,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		ctx = svc.WithServices(ctx, server.Config(serverCtxFunc))
 		scope := "internal:" + name
 		ctx = authpkg.WithActor(ctx, authpkg.Actor{Scope: map[string]bool{scope: true}})
-		ctx, err = c.authenticateScopedContext(ctx, idKey, []string{scope})
+		ctx, err = authenticateScopedContext(ctx, idKey, []string{scope})
 		if err != nil {
 			return nil, err
 		}
@@ -528,15 +526,14 @@ func (c *ServeCmd) Execute(args []string) error {
 // authenticateScopedContext adds a token with the specified scope to the given
 // context. This context can only make gRPC calls that are permitted for the given
 // scope. See the accesscontrol package for information about different scopes.
-func (c *ServeCmd) authenticateScopedContext(ctx context.Context, k *idkey.IDKey, scopes []string) (context.Context, error) {
-	src := &tokenSource{k, scopes}
-	tok, err := src.Token()
+func authenticateScopedContext(ctx context.Context, k *idkey.IDKey, scopes []string) (context.Context, error) {
+	tok, err := accesstoken.New(k, &authpkg.Actor{
+		Scope: authpkg.UnmarshalScope(scopes),
+	}, nil, 0, true)
 	if err != nil {
 		return nil, err
 	}
-
-	ctx = sourcegraph.WithCredentials(ctx, oauth2.ReuseTokenSource(tok, src))
-	return ctx, nil
+	return sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(tok)), nil
 }
 
 // initializeEventListeners creates special scoped contexts and passes them to
@@ -548,7 +545,7 @@ func (c *ServeCmd) initializeEventListeners(parent context.Context, k *idkey.IDK
 	ctx = idkey.NewContext(ctx, nil)
 
 	for _, l := range events.GetRegisteredListeners() {
-		listenerCtx, err := c.authenticateScopedContext(ctx, k, l.Scopes())
+		listenerCtx, err := authenticateScopedContext(ctx, k, l.Scopes())
 		if err != nil {
 			log.Fatalf("Could not initialize listener context: %v", err)
 		} else {
@@ -675,15 +672,4 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	tc.SetKeepAlive(true)
 	tc.SetKeepAlivePeriod(3 * time.Minute)
 	return tc, nil
-}
-
-type tokenSource struct {
-	k     *idkey.IDKey
-	scope []string
-}
-
-func (ts *tokenSource) Token() (*oauth2.Token, error) {
-	return accesstoken.New(ts.k, &authpkg.Actor{
-		Scope: authpkg.UnmarshalScope(ts.scope),
-	}, nil, 3*time.Hour, true)
 }
