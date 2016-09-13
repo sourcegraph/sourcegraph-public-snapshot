@@ -155,7 +155,7 @@ func (s *Server) AsUIDWithAccess(ctx context.Context, uid int, write, admin bool
 	if err != nil {
 		panic(err)
 	}
-	return sourcegraph.WithAccessToken(ctx, token.AccessToken)
+	return sourcegraph.WithAccessToken(ctx, token)
 }
 
 func (s *Server) Close() {

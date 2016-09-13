@@ -83,7 +83,9 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 		return nil, err
 	}
 
-	return accessTokenToTokenResponse(tok), nil
+	return &sourcegraph.AccessTokenResponse{
+		AccessToken: tok,
+	}, nil
 }
 
 func (s *auth) authenticateGitHubAuthCode(ctx context.Context, authCode *sourcegraph.GitHubAuthCode) (*sourcegraph.AccessTokenResponse, error) {
@@ -134,8 +136,10 @@ func (s *auth) authenticateGitHubAuthCode(ctx context.Context, authCode *sourceg
 		if err != nil {
 			return nil, err
 		}
-		resp = accessTokenToTokenResponse(tok)
-		resp.UID = uid
+		resp = &sourcegraph.AccessTokenResponse{
+			AccessToken: tok,
+			UID:         uid,
+		}
 	} else if grpc.Code(err) == codes.NotFound {
 		// Do nothing.
 	} else if err != nil {
@@ -172,19 +176,6 @@ func (s *auth) authenticateGitHubAuthCode(ctx context.Context, authCode *sourceg
 	}
 
 	return resp, nil
-}
-
-func accessTokenToTokenResponse(t *oauth2.Token) *sourcegraph.AccessTokenResponse {
-	if t.AccessToken == "" {
-		panic("empty AccessToken")
-	}
-	if t.TokenType == "" {
-		panic("empty TokenType")
-	}
-	r := &sourcegraph.AccessTokenResponse{
-		AccessToken: t.AccessToken,
-	}
-	return r
 }
 
 func (s *auth) Identify(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.AuthInfo, error) {

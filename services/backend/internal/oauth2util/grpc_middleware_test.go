@@ -20,7 +20,7 @@ func TestGRPCMiddlewareExpiredToken(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = accesstoken.ParseAndVerify(idkey.Default, tok.AccessToken)
+	_, err = accesstoken.ParseAndVerify(idkey.Default, tok)
 	if err == nil {
 		t.Fatal("ParseAndVerify: error expected")
 	}
@@ -34,7 +34,7 @@ func TestGRPCMiddlewareExpiredToken(t *testing.T) {
 
 	ctx := context.Background()
 	ctx = idkey.NewContext(ctx, idkey.Default)
-	ctx = metadata.NewContext(ctx, metadata.MD{"authorization": []string{"bearer " + tok.AccessToken}})
+	ctx = metadata.NewContext(ctx, metadata.MD{"authorization": []string{"bearer " + tok}})
 	if _, err := GRPCMiddleware(ctx); err != nil {
 		t.Errorf("expected no error, got: %s", err)
 	}

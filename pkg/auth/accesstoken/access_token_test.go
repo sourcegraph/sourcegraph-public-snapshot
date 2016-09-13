@@ -20,7 +20,7 @@ func testToken(t *testing.T, useAsymmetricEnc bool) {
 		t.Fatal(err)
 	}
 
-	if _, err := ParseAndVerify(idkey.Default, tok.AccessToken); err != nil {
+	if _, err := ParseAndVerify(idkey.Default, tok); err != nil {
 		t.Fatal(err)
 	}
 
@@ -55,7 +55,7 @@ qz8eIQKBgGmrEOZVTbLN4gLBkXJ6Ji+GAcguBuouJvxpzD9wAMTKwxLAIAIIuWf/
 		t.Fatal(err)
 	}
 
-	if _, err := ParseAndVerify(k2, tok.AccessToken); err == nil {
+	if _, err := ParseAndVerify(k2, tok); err == nil {
 		t.Fatal("error expected")
 	}
 }

@@ -26,6 +26,6 @@ func AddSystemAuthToURL(ctx context.Context, scope, urlStr string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	u.User = url.UserPassword("x-oauth-basic", string(tok.AccessToken))
+	u.User = url.UserPassword("x-oauth-basic", string(tok))
 	return u.String(), nil
 }

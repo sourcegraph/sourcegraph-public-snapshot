@@ -93,7 +93,7 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 	}
 
 	sendAccountCreateSlackMsg(ctx, newAcct.Login, newAcct.Email)
-	return &sourcegraph.CreatedAccount{UID: userSpec.UID, TemporaryAccessToken: tok.AccessToken}, nil
+	return &sourcegraph.CreatedAccount{UID: userSpec.UID, TemporaryAccessToken: tok}, nil
 }
 
 func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error) {

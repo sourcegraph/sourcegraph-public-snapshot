@@ -545,7 +545,7 @@ func newBuildJob(ctx context.Context, b *sourcegraph.Build) (*sourcegraph.BuildJ
 		CommitID:    b.CommitID,
 		Branch:      b.Branch,
 		Tag:         b.Tag,
-		AccessToken: tok.AccessToken,
+		AccessToken: tok,
 	}, nil
 }
 

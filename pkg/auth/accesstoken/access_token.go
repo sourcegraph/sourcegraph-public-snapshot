@@ -11,7 +11,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
-	"golang.org/x/oauth2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 )
@@ -25,7 +24,7 @@ import (
 // situations with a restricted token length, e.g. authentication
 // for git via basic auth. The retuned token is assumed to be
 // public and must not include any secret data.
-func New(k *idkey.IDKey, actor *auth.Actor, scopes []string, expiryDuration time.Duration, useAsymmetricEnc bool) (*oauth2.Token, error) {
+func New(k *idkey.IDKey, actor *auth.Actor, scopes []string, expiryDuration time.Duration, useAsymmetricEnc bool) (string, error) {
 	method := jwt.SigningMethod(jwt.SigningMethodHS256)
 	key := interface{}(getSymmetricKey(k))
 	if useAsymmetricEnc {
@@ -48,23 +47,18 @@ func New(k *idkey.IDKey, actor *auth.Actor, scopes []string, expiryDuration time
 
 	tok.Claims["Scope"] = strings.Join(scopes, " ")
 
-	var expiry time.Time
 	if expiryDuration != 0 {
-		expiry = time.Now().Add(expiryDuration)
+		expiry := time.Now().Add(expiryDuration)
 		tok.Claims["exp"] = expiry.Add(time.Minute).Unix()
 		tok.Claims["nbf"] = time.Now().Add(-5 * time.Minute).Unix()
 	}
 
 	s, err := tok.SignedString(key)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return &oauth2.Token{
-		AccessToken: s,
-		TokenType:   "Bearer",
-		Expiry:      expiry,
-	}, nil
+	return s, nil
 }
 
 // ParseAndVerify parses the access token and verifies that it is signed correctly.

@@ -532,7 +532,7 @@ func authenticateScopedContext(ctx context.Context, k *idkey.IDKey, scopes []str
 	if err != nil {
 		return nil, err
 	}
-	return sourcegraph.WithAccessToken(ctx, tok.AccessToken), nil
+	return sourcegraph.WithAccessToken(ctx, tok), nil
 }
 
 // initializeEventListeners creates special scoped contexts and passes them to
