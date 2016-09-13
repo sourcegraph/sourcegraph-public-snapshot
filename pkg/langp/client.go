@@ -376,7 +376,7 @@ func NewClient(endpoints map[string][]string) (*Client, error) {
 			}
 		}
 
-		hash := consistenthash.New(len(endpoints), nil)
+		hash := consistenthash.New(50, nil)
 		hash.Add(endpoints...)
 
 		// Create language client.
