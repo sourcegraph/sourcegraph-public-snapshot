@@ -34,9 +34,10 @@ func TestRepos_Get(t *testing.T) {
 
 	t.Parallel()
 
-	var s repos
 	ctx, _, done := testContext()
 	defer done()
+
+	s := repos{}
 
 	want := s.mustCreate(ctx, t, &sourcegraph.Repo{URI: "r"})
 
@@ -56,9 +57,10 @@ func TestRepos_Get_origin(t *testing.T) {
 
 	t.Parallel()
 
-	var s repos
 	ctx, _, done := testContext()
 	defer done()
+
+	s := repos{}
 
 	wantOrigin := &sourcegraph.Origin{ID: "id", Service: sourcegraph.Origin_GitHub, APIBaseURL: "u"}
 	want := s.mustCreate(ctx, t, &sourcegraph.Repo{URI: "r", Origin: wantOrigin})
@@ -88,10 +90,10 @@ func TestRepos_Get_migration_setGitHubOriginRepoID(t *testing.T) {
 
 	t.Parallel()
 
-	var s repos
 	ctx, mock, done := testContext()
 	defer done()
-	ctx = store.WithRepos(ctx, &repos{})
+
+	s := repos{}
 
 	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{Origin: &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub}})
 
@@ -114,11 +116,12 @@ func TestRepos_List(t *testing.T) {
 
 	t.Parallel()
 
-	var s repos
 	ctx, _, done := testContext()
 	defer done()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
+
+	s := repos{}
 
 	want := s.mustCreate(ctx, t, &sourcegraph.Repo{URI: "r"})
 
@@ -141,11 +144,12 @@ func TestRepos_List_type(t *testing.T) {
 	r1 := &sourcegraph.Repo{URI: "r1", Private: true}
 	r2 := &sourcegraph.Repo{URI: "r2"}
 
-	var s repos
 	ctx, _, done := testContext()
 	defer done()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
+
+	s := repos{}
 
 	s.mustCreate(ctx, t, r1, r2)
 
@@ -185,12 +189,14 @@ func TestRepos_List_query(t *testing.T) {
 	}
 
 	t.Parallel()
+
 	ctx, _, done := testContext()
 	defer done()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
 
-	s := &repos{}
+	s := repos{}
+
 	// Add some repos.
 	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "abc/def", Name: "def", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
@@ -230,12 +236,14 @@ func TestRepos_List_URIs(t *testing.T) {
 	}
 
 	t.Parallel()
+
 	ctx, _, done := testContext()
 	defer done()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
 
-	s := &repos{}
+	s := repos{}
+
 	// Add some repos.
 	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
@@ -277,7 +285,7 @@ func TestRepos_List_GitHub_Authenticated(t *testing.T) {
 	})
 	ctx = github.WithMockHasAuthedUser(ctx, true)
 
-	s := &repos{}
+	s := repos{}
 
 	createRepos := []*sourcegraph.Repo{
 		&sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"},
@@ -312,10 +320,10 @@ func TestRepos_List_GitHub_Authenticated_NoReposAccessible(t *testing.T) {
 	ctx, mock, done := testContext()
 	defer done()
 
+	s := repos{}
+
 	calledListAccessible := mock.githubRepos.MockListAccessible(ctx, nil)
 	ctx = github.WithMockHasAuthedUser(ctx, true)
-
-	s := &repos{}
 
 	createRepos := []*sourcegraph.Repo{
 		&sourcegraph.Repo{URI: "github.com/not/accessible", DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "456"}},
@@ -350,7 +358,7 @@ func TestRepos_List_GitHub_Unauthenticated(t *testing.T) {
 	calledListAccessible := mock.githubRepos.MockListAccessible(ctx, nil)
 	ctx = github.WithMockHasAuthedUser(ctx, false)
 
-	s := &repos{}
+	s := repos{}
 
 	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/private", DefaultBranch: "master", Mirror: true}); err != nil {
 		t.Fatal(err)
@@ -383,7 +391,7 @@ func TestRepos_List_remoteOnly(t *testing.T) {
 	})
 	ctx = github.WithMockHasAuthedUser(ctx, true)
 
-	s := &repos{}
+	s := repos{}
 
 	createRepos := []*sourcegraph.Repo{
 		&sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"},
@@ -419,9 +427,11 @@ func TestRepos_Search(t *testing.T) {
 	}
 
 	ctx, mock, done := testContext()
-	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 	defer done()
-	ctx = store.WithRepos(ctx, &repos{})
+
+	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
+
+	s := repos{}
 
 	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{})
 
@@ -431,7 +441,6 @@ func TestRepos_Search(t *testing.T) {
 		{URI: "github.com/someone/srclib", Owner: "someone", Name: "srclib", Fork: true, Mirror: true},
 	}
 
-	s := repos{}
 	// Add some repos.
 	for _, r := range testRepos {
 		if _, err := s.Create(ctx, r); err != nil {
@@ -468,15 +477,17 @@ func TestRepos_Search(t *testing.T) {
 	}
 }
 
-func TestRepos_Search_PrivateRepo(t *testing.T) {
+func TestRepos_Search_privateRepo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	ctx, mock, done := testContext()
 	defer done()
+
 	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
-	ctx = store.WithRepos(ctx, &repos{})
+
+	s := repos{}
 
 	var calledGetGitHubRepo bool
 	mock.githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
@@ -484,10 +495,10 @@ func TestRepos_Search_PrivateRepo(t *testing.T) {
 		return nil, grpc.Errorf(codes.NotFound, "")
 	}
 
-	s := repos{}
 	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/sourcegraph/private-test", Owner: "sourcegraph", Name: "private-test", Mirror: true}); err != nil {
 		t.Fatal(err)
 	}
+
 	tests := []struct {
 		query string
 		want  []string
@@ -521,10 +532,12 @@ func TestRepos_Create(t *testing.T) {
 	}
 
 	t.Parallel()
+
 	ctx, _, done := testContext()
 	defer done()
 
-	s := &repos{}
+	s := repos{}
+
 	tm := time.Now().Round(time.Second)
 	ts := pbtypes.NewTimestamp(tm)
 
@@ -551,10 +564,12 @@ func TestRepos_Create_dupe(t *testing.T) {
 	}
 
 	t.Parallel()
+
 	ctx, _, done := testContext()
 	defer done()
 
-	s := &repos{}
+	s := repos{}
+
 	tm := time.Now().Round(time.Second)
 	ts := pbtypes.NewTimestamp(tm)
 
@@ -577,10 +592,12 @@ func TestRepos_Update_Description(t *testing.T) {
 	}
 
 	t.Parallel()
+
 	ctx, _, done := testContext()
 	defer done()
 
-	s := &repos{}
+	s := repos{}
+
 	// Add a repo.
 	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
@@ -613,10 +630,12 @@ func TestRepos_Update_UpdatedAt(t *testing.T) {
 	}
 
 	t.Parallel()
+
 	ctx, _, done := testContext()
 	defer done()
 
-	s := &repos{}
+	s := repos{}
+
 	// Add a repo.
 	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
@@ -654,10 +673,12 @@ func TestRepos_Update_PushedAt(t *testing.T) {
 	}
 
 	t.Parallel()
+
 	ctx, _, done := testContext()
 	defer done()
 
-	s := &repos{}
+	s := repos{}
+
 	// Add a repo.
 	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)

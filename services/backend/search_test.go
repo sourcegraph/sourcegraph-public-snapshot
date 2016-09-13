@@ -22,8 +22,9 @@ func TestSearch(t *testing.T) {
 		repoID  = 1
 	)
 
-	var s search
 	ctx, mock := testContext()
+
+	s := search{}
 
 	// Mock data
 	wantDefsKeys := []graph.DefKey{
