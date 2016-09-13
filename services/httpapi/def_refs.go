@@ -117,6 +117,7 @@ func universeDefRefs(r *http.Request, tmpRepo string, opt sourcegraph.DefListRef
 		UnitType: def.UnitType,
 		Path:     def.Path,
 	})
+	universeObserve("DefSpecRefs", err)
 	if err != nil {
 		return nil, err
 	}

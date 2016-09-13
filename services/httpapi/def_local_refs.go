@@ -104,6 +104,7 @@ func universeDefLocalRefLocations(r *http.Request) (*LocalRefLocationsList, erro
 		Line:      line,
 		Character: character,
 	})
+	universeObserve("LocalRefs", err)
 	if err != nil {
 		return nil, err
 	}

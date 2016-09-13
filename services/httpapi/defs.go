@@ -97,6 +97,7 @@ func universeDef(opt serveDefOpt, r *http.Request, repo *sourcegraph.Repo) (*sou
 			Unit:     defSpec.Unit,
 			Path:     defSpec.Path,
 		})
+		universeObserve("DefSpecToPosition", err)
 		if err != nil {
 			return nil, err
 		}
@@ -112,6 +113,7 @@ func universeDef(opt serveDefOpt, r *http.Request, repo *sourcegraph.Repo) (*sou
 		Line:      opt.Line,
 		Character: opt.Character,
 	})
+	universeObserve("DefHover", err)
 	if err != nil {
 		return nil, err
 	}

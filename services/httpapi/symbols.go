@@ -18,6 +18,7 @@ func serveSymbols(w http.ResponseWriter, r *http.Request) error {
 		Repo:   repo.URI,
 		Commit: repoRev.CommitID,
 	})
+	universeObserve("Symbols", err)
 	if err != nil {
 		return err
 	}
