@@ -23,8 +23,6 @@ func LogBuildCompleted(ctx context.Context, success bool) {
 }
 
 func LogEvent(ctx context.Context, event string, eventProperties map[string]string) {
-	deviceID := sourcegraphClientID
-
 	if eventProperties == nil {
 		eventProperties = make(map[string]string)
 	}
@@ -36,7 +34,6 @@ func LogEvent(ctx context.Context, event string, eventProperties map[string]stri
 
 	Log(&sourcegraph.Event{
 		Type:            fmt.Sprintf("Server%s", event),
-		DeviceID:        deviceID,
 		EventProperties: eventProperties,
 	})
 }

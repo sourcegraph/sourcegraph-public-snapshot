@@ -19,7 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 
-// a token for the worker that fits to idkey.Default and does not expire
+// a token for the worker that fits to the default id key and does not expire
 var defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJTY29wZSI6IndvcmtlcjpidWlsZCJ9.j1SZum6h_RqEclMiQtU9KcLZoqjhyXCa-pOPynBFAUg"
 
 // RunWorker starts the worker loop with the given parameters.

@@ -10,7 +10,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -400,8 +399,6 @@ func TestBuilds_DequeueNext(t *testing.T) {
 	ctx, _, done := testContext()
 	defer done()
 
-	ctx = withTestIDKey(t, ctx)
-
 	s := &builds{}
 	repos := (&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "x/x"})
 	want := &sourcegraph.Build{ID: 5, Repo: repos[0].ID, CommitID: strings.Repeat("a", 40), Host: "localhost", BuildConfig: sourcegraph.BuildConfig{Queue: true}}
@@ -424,8 +421,6 @@ func TestBuilds_DequeueNext_ordered(t *testing.T) {
 
 	ctx, _, done := testContext()
 	defer done()
-
-	ctx = withTestIDKey(t, ctx)
 
 	s := &builds{}
 	t1 := pbtypes.NewTimestamp(time.Unix(100000, 0))
@@ -482,8 +477,6 @@ func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
 
 	ctx, _, done := testContext()
 	defer done()
-
-	ctx = withTestIDKey(t, ctx)
 
 	s := &builds{}
 	const (
@@ -542,8 +535,4 @@ func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
 			t.Errorf("build %d was never dequeued", b.ID)
 		}
 	}
-}
-
-func withTestIDKey(t *testing.T, ctx context.Context) context.Context {
-	return idkey.NewContext(ctx, idkey.Default)
 }

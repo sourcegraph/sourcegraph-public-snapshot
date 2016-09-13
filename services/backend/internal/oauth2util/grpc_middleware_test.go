@@ -10,17 +10,15 @@ import (
 
 	"google.golang.org/grpc/metadata"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 )
 
 func TestGRPCMiddlewareExpiredToken(t *testing.T) {
-	tok, err := accesstoken.New(idkey.Default, &auth.Actor{}, nil, -time.Hour, true)
+	tok, err := auth.NewAccessToken(&auth.Actor{}, nil, -time.Hour, true)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = accesstoken.ParseAndVerify(idkey.Default, tok)
+	_, err = auth.ParseAndVerify(tok)
 	if err == nil {
 		t.Fatal("ParseAndVerify: error expected")
 	}
@@ -33,7 +31,6 @@ func TestGRPCMiddlewareExpiredToken(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx = idkey.NewContext(ctx, idkey.Default)
 	ctx = metadata.NewContext(ctx, metadata.MD{"authorization": []string{"bearer " + tok}})
 	if _, err := GRPCMiddleware(ctx); err != nil {
 		t.Errorf("expected no error, got: %s", err)

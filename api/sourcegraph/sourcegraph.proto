@@ -1878,9 +1878,6 @@ message ServerConfig {
 	// AppURL is the base URL of the user-facing web application
 	// (e.g., "https://sourcegraph.com").
 	string AppURL = 2;
-
-	// IDKey is the server's identity key (ID key).
-	string IDKey = 7;
 }
 
 // UserEvent encodes any user initiated event on the local instance.
@@ -1888,8 +1885,6 @@ message UserEvent {
 	string Type = 1;
 
 	int32 UID = 2;
-
-	string ClientID = 3;
 
 	string Service = 4;
 
@@ -1923,9 +1918,6 @@ message Event {
 	// DeviceID is the unique identifier of an anonymous user on a Sourcegraph
 	// instance.
 	string DeviceID = 3;
-
-	// ClientID is this Sourcegraph instance's public key fingerprint.
-	string ClientID = 4;
 
 	// Timestamp records the instant when this event was logged.
 	pbtypes.Timestamp Timestamp = 5;

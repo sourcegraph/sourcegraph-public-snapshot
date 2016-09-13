@@ -12,8 +12,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
@@ -77,7 +75,7 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 	a.Write = user.Write
 	a.Admin = user.Admin
 
-	tok, err := accesstoken.New(idkey.FromContext(ctx), &a, nil, 7*24*time.Hour, true)
+	tok, err := authpkg.NewAccessToken(&a, nil, 7*24*time.Hour, true)
 
 	if err != nil {
 		return nil, err
@@ -132,7 +130,7 @@ func (s *auth) authenticateGitHubAuthCode(ctx context.Context, authCode *sourceg
 		a.Login = user.Login
 		a.Write = user.Write
 		a.Admin = user.Admin
-		tok, err := accesstoken.New(idkey.FromContext(ctx), &a, nil, 7*24*time.Hour, true)
+		tok, err := authpkg.NewAccessToken(&a, nil, 7*24*time.Hour, true)
 		if err != nil {
 			return nil, err
 		}

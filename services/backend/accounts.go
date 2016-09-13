@@ -15,8 +15,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/betautil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/mailchimp"
@@ -87,7 +85,7 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 	}
 
 	// Return a temporary access token.
-	tok, err := accesstoken.New(idkey.FromContext(ctx), &actor, nil, 7*24*time.Hour, true)
+	tok, err := authpkg.NewAccessToken(&actor, nil, 7*24*time.Hour, true)
 	if err != nil {
 		return nil, err
 	}

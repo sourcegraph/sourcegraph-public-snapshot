@@ -1,18 +1,12 @@
-// Package accesstoken generates and signs OAuth2 access tokens using
-// an ID key.
-package accesstoken
+package auth
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 )
 
 // New creates and signs a new OAuth2 access token that grants the
@@ -24,12 +18,12 @@ import (
 // situations with a restricted token length, e.g. authentication
 // for git via basic auth. The retuned token is assumed to be
 // public and must not include any secret data.
-func New(k *idkey.IDKey, actor *auth.Actor, scopes []string, expiryDuration time.Duration, useAsymmetricEnc bool) (string, error) {
+func NewAccessToken(actor *Actor, scopes []string, expiryDuration time.Duration, useAsymmetricEnc bool) (string, error) {
 	method := jwt.SigningMethod(jwt.SigningMethodHS256)
-	key := interface{}(getSymmetricKey(k))
+	key := interface{}(ActiveIDKey.hmacKey)
 	if useAsymmetricEnc {
 		method = jwt.SigningMethodRS256
-		key = k.Private()
+		key = ActiveIDKey.rsaKey
 	}
 	tok := jwt.New(method)
 
@@ -42,7 +36,7 @@ func New(k *idkey.IDKey, actor *auth.Actor, scopes []string, expiryDuration time
 		}
 		tok.Claims["Write"] = actor.Write
 		tok.Claims["Admin"] = actor.Admin
-		scopes = append(scopes, auth.MarshalScope(actor.Scope)...)
+		scopes = append(scopes, marshalScope(actor.Scope)...)
 	}
 
 	tok.Claims["Scope"] = strings.Join(scopes, " ")
@@ -62,14 +56,14 @@ func New(k *idkey.IDKey, actor *auth.Actor, scopes []string, expiryDuration time
 }
 
 // ParseAndVerify parses the access token and verifies that it is signed correctly.
-func ParseAndVerify(k *idkey.IDKey, accessToken string) (*auth.Actor, error) {
+func ParseAndVerify(accessToken string) (*Actor, error) {
 	// parse and verify JWT
 	tok, err := jwt.Parse(accessToken, func(tok *jwt.Token) (interface{}, error) {
 		switch tok.Method.(type) {
 		case *jwt.SigningMethodRSA:
-			return k.Public(), nil
+			return ActiveIDKey.rsaKey.Public(), nil
 		case *jwt.SigningMethodHMAC:
-			return getSymmetricKey(k), nil
+			return ActiveIDKey.hmacKey, nil
 		default:
 			return nil, fmt.Errorf("unexpected signing method: %v", tok.Header["alg"])
 		}
@@ -79,7 +73,7 @@ func ParseAndVerify(k *idkey.IDKey, accessToken string) (*auth.Actor, error) {
 	}
 
 	// unmarshal actor
-	var a auth.Actor
+	var a Actor
 
 	if uidStr, _ := tok.Claims["UID"].(string); uidStr != "" {
 		var err error
@@ -95,17 +89,26 @@ func ParseAndVerify(k *idkey.IDKey, accessToken string) (*auth.Actor, error) {
 
 	scopeStr, _ := tok.Claims["Scope"].(string)
 	scopes := strings.Fields(scopeStr)
-	a.Scope = auth.UnmarshalScope(scopes)
+	a.Scope = unmarshalScope(scopes)
 
 	return &a, nil
 }
 
-// getSymmetricKey derives a symmetric key from the private ID key.
-func getSymmetricKey(k *idkey.IDKey) []byte {
-	kb, err := k.MarshalText()
-	if err != nil {
-		panic("unreachable")
+func unmarshalScope(scope []string) map[string]bool {
+	scopeMap := make(map[string]bool)
+	for _, s := range scope {
+		scopeMap[s] = true
 	}
-	sk := sha256.Sum256(kb)
-	return sk[:]
+	return scopeMap
+}
+
+func marshalScope(scopeMap map[string]bool) []string {
+	scope := make([]string, 0)
+	for s, ok := range scopeMap {
+		if !ok {
+			continue
+		}
+		scope = append(scope, s)
+	}
+	return scope
 }

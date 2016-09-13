@@ -16,7 +16,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -24,15 +23,12 @@ import (
 const AnalyticsAPIEndpoint = "https://analytics.sgdev.org/events"
 const MaxRetries = 5
 
-var sourcegraphClientID string
-
 type Worker struct {
 	Buffer   []*sourcegraph.Event
 	Position int
 
-	Channel  chan *sourcegraph.Event
-	AppURL   *url.URL
-	ClientID string
+	Channel chan *sourcegraph.Event
+	AppURL  *url.URL
 
 	retryCounter int
 }
@@ -90,7 +86,6 @@ func (w *Worker) Flush() error {
 }
 
 type PostData struct {
-	ClientID     string                `json:"client_id,omitempty"`
 	ClientSecret string                `json:"client_secret,omitempty"`
 	Events       sourcegraph.EventList `json:"event_data,omitempty"`
 }
@@ -99,7 +94,6 @@ type PostData struct {
 // HTTP POST request.
 func (w *Worker) sendEvents(srcEvents *sourcegraph.EventList) error {
 	eventData := &PostData{
-		ClientID:     w.ClientID,
 		ClientSecret: os.Getenv("SG_ANALYTICS_SECRET"),
 		Events:       *srcEvents,
 	}
@@ -166,19 +160,15 @@ var ActiveLogger *Logger
 // dropped when the channel is full.
 // Each worker pulls events off the channel and pushes to it's buffer. workerBufferSize is the
 // maximum number of buffered events after which the worker will flush the buffer upstream.
-func StartEventLogger(ctx context.Context, clientID string, channelCapacity, workerBufferSize int, flushInterval time.Duration) {
-	// Save this server's client ID for use in all Log calls.
-	sourcegraphClientID = clientID
-
+func StartEventLogger(ctx context.Context, channelCapacity, workerBufferSize int, flushInterval time.Duration) {
 	ActiveLogger = &Logger{
 		Channel: make(chan *sourcegraph.Event, channelCapacity),
 	}
 
 	ActiveLogger.Worker = &Worker{
-		Buffer:   make([]*sourcegraph.Event, workerBufferSize),
-		Channel:  ActiveLogger.Channel,
-		AppURL:   conf.AppURL(ctx),
-		ClientID: idkey.FromContext(ctx).ID,
+		Buffer:  make([]*sourcegraph.Event, workerBufferSize),
+		Channel: ActiveLogger.Channel,
+		AppURL:  conf.AppURL(ctx),
 	}
 
 	go ActiveLogger.Worker.Work()
@@ -191,9 +181,6 @@ func StartEventLogger(ctx context.Context, clientID string, channelCapacity, wor
 func Log(event *sourcegraph.Event) {
 	if ActiveLogger == nil {
 		return
-	}
-	if event.ClientID == "" {
-		event.ClientID = sourcegraphClientID
 	}
 	if event.Timestamp == nil {
 		ts := pbtypes.NewTimestamp(time.Now().UTC())

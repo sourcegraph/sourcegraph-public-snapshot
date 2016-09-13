@@ -531,7 +531,6 @@ export interface Event {
 	Type?: string;
 	UserID?: string;
 	DeviceID?: string;
-	ClientID?: string;
 	Timestamp?: any;
 	UserProperties?: any;
 	EventProperties?: any;
@@ -1027,7 +1026,6 @@ export interface SearchResultsList {
 export interface ServerConfig {
 	Version?: string;
 	AppURL?: string;
-	IDKey?: string;
 }
 
 export interface Signature {
@@ -1119,7 +1117,6 @@ export interface User {
 export interface UserEvent {
 	Type?: string;
 	UID?: number;
-	ClientID?: string;
 	Service?: string;
 	Method?: string;
 	Result?: string;

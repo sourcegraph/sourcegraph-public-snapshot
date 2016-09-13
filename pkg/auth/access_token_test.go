@@ -1,9 +1,7 @@
-package accesstoken
+package auth
 
 import (
 	"testing"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 )
 
 func TestAsymmetricToken(t *testing.T) {
@@ -15,16 +13,20 @@ func TestSymmetricToken(t *testing.T) {
 }
 
 func testToken(t *testing.T, useAsymmetricEnc bool) {
-	tok, err := New(idkey.Default, nil, nil, 0, useAsymmetricEnc)
+	tok, err := NewAccessToken(nil, nil, 0, useAsymmetricEnc)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := ParseAndVerify(idkey.Default, tok); err != nil {
+	if _, err := ParseAndVerify(tok); err != nil {
 		t.Fatal(err)
 	}
 
-	k2, err := idkey.New([]byte(`-----BEGIN RSA PRIVATE KEY-----
+	defaultKey := ActiveIDKey
+	defer func() {
+		ActiveIDKey = defaultKey
+	}()
+	ActiveIDKey, err = NewIDKey([]byte(`-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEAp0CJyHipPd63h/+kI1aLcg6EzERUuACLDmpj7JfZVLEz2rkp
 gGJO+iA1mDLrv485rsYVhoGgsqdGOc8PNU4D9IcHJ4VXU6ZNTlx/uR7HUpwkGITH
 C4fIsTJvHEgc2w3pNfWKOVimubR2V6E6qh+pRnqGzVzM/Rp5guuKm3DJyeBia3mv
@@ -55,7 +57,7 @@ qz8eIQKBgGmrEOZVTbLN4gLBkXJ6Ji+GAcguBuouJvxpzD9wAMTKwxLAIAIIuWf/
 		t.Fatal(err)
 	}
 
-	if _, err := ParseAndVerify(k2, tok); err == nil {
+	if _, err := ParseAndVerify(tok); err == nil {
 		t.Fatal("error expected")
 	}
 }

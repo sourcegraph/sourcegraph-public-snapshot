@@ -41,9 +41,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/metrics"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
@@ -253,24 +251,17 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	// Server identity keypair
-	var idKey *idkey.IDKey
 	if s := c.IDKeyData; s != "" {
-		idKey, err = idkey.FromString(s)
+		auth.ActiveIDKey, err = auth.FromString(s)
 		if err != nil {
 			return err
 		}
 	} else {
-		idKey = idkey.Default
 		log15.Warn("Using default ID key.")
 	}
 
-	log15.Debug("Sourcegraph server", "ID", idKey.ID)
-	// Uncomment to add ID key prefix to log messages.
-	// log.SetPrefix(bold(idKey.ID[:4] + ": "))
-
 	// Shared context setup between client and server.
 	sharedCtxFunc := func(ctx context.Context) context.Context {
-		ctx = idkey.NewContext(ctx, idKey)
 		ctx = conf.WithURL(ctx, appURL)
 		ctx = sourcegraph.WithGRPCEndpoint(ctx, endpoint.URLOrDefault())
 		return ctx
@@ -294,7 +285,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	clientCtx := clientCtxFunc(context.Background())
 
 	// Listen for events and periodically push them to analytics gateway.
-	eventsutil.StartEventLogger(clientCtx, idKey.ID, 10*4096, 256, 10*time.Minute)
+	eventsutil.StartEventLogger(clientCtx, 10*4096, 256, 10*time.Minute)
 
 	c.runGitServer()
 
@@ -360,7 +351,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	//
 	//
 	// Start event listeners.
-	c.initializeEventListeners(clientCtx, idKey, appURL)
+	c.initializeEventListeners(clientCtx, appURL)
 
 	serveHTTPS := func(l net.Listener, srv *http.Server, addr string) {
 		grpcSrv := server.New(server.Config(serverCtxFunc))
@@ -453,7 +444,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
 
 	// Start background repo updater worker.
-	repoUpdaterCtx, err := authenticateScopedContext(clientCtx, idKey, []string{"internal:repoupdater"})
+	repoUpdaterCtx, err := authenticateScopedContext(clientCtx, []string{"internal:repoupdater"})
 	if err != nil {
 		return err
 	}
@@ -470,7 +461,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	// Occasionally compute instance usage stats
-	usageStatsCtx, err := authenticateScopedContext(clientCtx, idKey, []string{"internal:usagestats"})
+	usageStatsCtx, err := authenticateScopedContext(clientCtx, []string{"internal:usagestats"})
 	if err != nil {
 		return err
 	}
@@ -503,8 +494,8 @@ func (c *ServeCmd) Execute(args []string) error {
 		}
 		ctx = svc.WithServices(ctx, server.Config(serverCtxFunc))
 		scope := "internal:" + name
-		ctx = authpkg.WithActor(ctx, authpkg.Actor{Scope: map[string]bool{scope: true}})
-		ctx, err = authenticateScopedContext(ctx, idKey, []string{scope})
+		ctx = auth.WithActor(ctx, auth.Actor{Scope: map[string]bool{scope: true}})
+		ctx, err = authenticateScopedContext(ctx, []string{scope})
 		if err != nil {
 			return nil, err
 		}
@@ -525,9 +516,13 @@ func (c *ServeCmd) Execute(args []string) error {
 // authenticateScopedContext adds a token with the specified scope to the given
 // context. This context can only make gRPC calls that are permitted for the given
 // scope. See the accesscontrol package for information about different scopes.
-func authenticateScopedContext(ctx context.Context, k *idkey.IDKey, scopes []string) (context.Context, error) {
-	tok, err := accesstoken.New(k, &authpkg.Actor{
-		Scope: authpkg.UnmarshalScope(scopes),
+func authenticateScopedContext(ctx context.Context, scopes []string) (context.Context, error) {
+	scopeMap := make(map[string]bool)
+	for _, s := range scopes {
+		scopeMap[s] = true
+	}
+	tok, err := auth.NewAccessToken(&auth.Actor{
+		Scope: scopeMap,
 	}, nil, 0, true)
 	if err != nil {
 		return nil, err
@@ -537,14 +532,11 @@ func authenticateScopedContext(ctx context.Context, k *idkey.IDKey, scopes []str
 
 // initializeEventListeners creates special scoped contexts and passes them to
 // event listeners.
-func (c *ServeCmd) initializeEventListeners(parent context.Context, k *idkey.IDKey, appURL *url.URL) {
+func (c *ServeCmd) initializeEventListeners(parent context.Context, appURL *url.URL) {
 	ctx := conf.WithURL(parent, appURL)
-	ctx = authpkg.WithActor(ctx, authpkg.Actor{})
-	// Mask out the server's private key from the context passed to the listener
-	ctx = idkey.NewContext(ctx, nil)
-
+	ctx = auth.WithActor(ctx, auth.Actor{})
 	for _, l := range events.GetRegisteredListeners() {
-		listenerCtx, err := authenticateScopedContext(ctx, k, l.Scopes())
+		listenerCtx, err := authenticateScopedContext(ctx, l.Scopes())
 		if err != nil {
 			log.Fatalf("Could not initialize listener context: %v", err)
 		} else {

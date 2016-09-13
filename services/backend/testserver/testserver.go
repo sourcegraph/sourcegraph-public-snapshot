@@ -23,8 +23,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
 	"sourcegraph.com/sourcegraph/srclib/flagutil"
@@ -150,8 +148,7 @@ func (s *Server) AsUser(ctx context.Context, login string) (context.Context, err
 }
 
 func (s *Server) AsUIDWithAccess(ctx context.Context, uid int, write, admin bool) context.Context {
-	k := idkey.FromContext(s.Ctx)
-	token, err := accesstoken.New(k, &auth.Actor{UID: uid, Write: write, Admin: admin}, nil, 10*time.Minute, true)
+	token, err := auth.NewAccessToken(&auth.Actor{UID: uid, Write: write, Admin: admin}, nil, 10*time.Minute, true)
 	if err != nil {
 		panic(err)
 	}
@@ -356,7 +353,6 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	s.Ctx = conf.WithURL(s.Ctx, parseURL(s.Config.Serve.AppURL))
 
 	// ID key
-	s.Ctx = idkey.NewContext(s.Ctx, idkey.Default)
 	s.Ctx = s.AsUIDWithAccess(s.Ctx, 1, false, true)
 
 	if err := s.configDB(); err != nil {

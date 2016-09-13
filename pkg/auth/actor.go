@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -64,21 +65,17 @@ func (a Actor) UserSpec() sourcegraph.UserSpec {
 	}
 }
 
-func UnmarshalScope(scope []string) map[string]bool {
-	scopeMap := make(map[string]bool)
-	for _, s := range scope {
-		scopeMap[s] = true
-	}
-	return scopeMap
+type key int
+
+const (
+	actorKey key = iota
+)
+
+func ActorFromContext(ctx context.Context) Actor {
+	a, _ := ctx.Value(actorKey).(Actor)
+	return a
 }
 
-func MarshalScope(scopeMap map[string]bool) []string {
-	scope := make([]string, 0)
-	for s, ok := range scopeMap {
-		if !ok {
-			continue
-		}
-		scope = append(scope, s)
-	}
-	return scope
+func WithActor(ctx context.Context, a Actor) context.Context {
+	return context.WithValue(ctx, actorKey, a)
 }

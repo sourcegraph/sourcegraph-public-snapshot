@@ -13,8 +13,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 )
 
 // GRPCMiddleware reads the OAuth2 access token from the gRPC call's
@@ -52,7 +50,7 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 		return ctx, nil
 	}
 
-	actor, err := accesstoken.ParseAndVerify(idkey.FromContext(ctx), tokStr)
+	actor, err := auth.ParseAndVerify(tokStr)
 	if err != nil {
 		if vErr, ok := err.(*jwt.ValidationError); ok && vErr.Errors&jwt.ValidationErrorExpired != 0 {
 			return ctx, nil
