@@ -10,12 +10,17 @@ var universeSuccessCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Name:      "universe_success",
 	Help:      "Counts success of universe from user operations.",
 }, []string{"method"})
-var universeErrorCounter = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+var universeErrorCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Namespace: "src",
 	Subsystem: "httpapi",
 	Name:      "universe_error",
 	Help:      "Counts errors of universe from user operations",
 }, []string{"method"})
+
+func init() {
+	prometheus.MustRegister(universeSuccessCounter)
+	prometheus.MustRegister(universeErrorCounter)
+}
 
 func universeObserve(method string, err error) {
 	if err == nil {
