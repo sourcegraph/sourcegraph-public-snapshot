@@ -11,8 +11,10 @@ import (
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
@@ -81,6 +83,25 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	if clientCached, err := writeCacheHeaders(w, r, time.Time{}, defaultCacheMaxAge); clientCached || err != nil {
 		return err
 	}
+
+	repo, err := handlerutil.GetRepo(r.Context(), mux.Vars(r))
+	if err != nil {
+		return err
+	}
+	if universe.Shadow(repo.URI) {
+		// Make an async request for the LSP symbols of this repo for monitoring
+		// purposes only. Results are discarded.
+		go func() {
+			_, shadowErr := langp.DefaultClient.Symbols(r.Context(), &langp.RepoRev{
+				Repo:   repo.URI,
+				Commit: repoRev.CommitID,
+			})
+			if shadowErr != nil {
+				log15.Debug("serveRepoTree: shadowed symbols request failed", "err", shadowErr)
+			}
+		}()
+	}
+
 	return writeJSON(w, res)
 }
 

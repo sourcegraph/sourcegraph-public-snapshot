@@ -23,6 +23,7 @@ func TestRepoTree_file(t *testing.T) {
 	calledGet := mock.RepoTree.MockGet_Return_NoCheck(t, want)
 	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
 	calledAnnotationsList := mock.Annotations.MockList(t, nil)
+	mock.Repos.MockGet_Return(t, &sourcegraph.Repo{ID: 1})
 
 	var entry *sourcegraph.TreeEntry
 	if err := c.GetJSON("/repos/r/-/tree/f", &entry); err != nil {
@@ -61,6 +62,7 @@ func TestRepoTree_dir(t *testing.T) {
 	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
 	calledGet := mock.RepoTree.MockGet_Return_NoCheck(t, want)
 	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
+	mock.Repos.MockGet_Return(t, &sourcegraph.Repo{ID: 1})
 
 	var entry *sourcegraph.TreeEntry
 	if err := c.GetJSON("/repos/r/-/tree/f", &entry); err != nil {
