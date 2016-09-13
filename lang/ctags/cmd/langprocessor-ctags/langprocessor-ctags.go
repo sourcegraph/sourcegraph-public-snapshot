@@ -75,7 +75,7 @@ func main() {
 	if *profbind != "" {
 		go debugserver.Start(*profbind)
 	}
-	langp.InitMetrics("go")
+	langp.InitMetrics("ctags")
 
 	lang.PrepareKeys()
 

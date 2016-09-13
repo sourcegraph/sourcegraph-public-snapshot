@@ -110,6 +110,7 @@ const (
 // parameter should be one of the prepStatus constants.
 func observePrepareRepo(ctx context.Context, start time.Time, repo, status string) {
 	method := ctx.Value(methodNameKey).(string)
+	repo = repotrackutil.GetTrackedRepo(repo) // To prevent high cardinality
 	prepDuration.WithLabelValues("repo", method, repo, status).Observe(time.Since(start).Seconds())
 	prepHeartbeat.WithLabelValues(method, repo, status).Set(float64(time.Now().Unix()))
 }
@@ -118,6 +119,7 @@ func observePrepareRepo(ctx context.Context, start time.Time, repo, status strin
 // start time (and finished now) for the given repository.
 func observePrepareDeps(ctx context.Context, start time.Time, repo, status string) {
 	method := ctx.Value(methodNameKey).(string)
+	repo = repotrackutil.GetTrackedRepo(repo) // To prevent high cardinality
 	prepDuration.WithLabelValues("deps", method, repo, status).Observe(time.Since(start).Seconds())
 }
 
