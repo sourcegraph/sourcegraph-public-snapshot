@@ -8,6 +8,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
+	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 // RefLocation represents location in file of a reference to a definition.
@@ -88,30 +89,13 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if universe.Enabled(r.Context(), repo.URI) {
-		refs, err := langp.DefaultClient.DefSpecRefs(r.Context(), &langp.DefSpec{
-			Repo:     tmp.Repo,
-			Commit:   opt.CommitID,
-			Unit:     def.Unit,
-			UnitType: def.UnitType,
-			Path:     def.Path,
-		})
+		refLocations, err := universeDefRefs(r, tmp.Repo, opt, def)
 		if err != nil {
 			return err
 		}
-
-		refLocations := make([]*RefLocation, 0, len(refs.Refs))
-		for _, ref := range refs.Refs {
-			// TODO: investigate whether or not we can remove Def* fields,
-			// they seems not been used in frontend.
-			refLocations = append(refLocations, &RefLocation{
-				Repo:      ref.Repo,
-				CommitID:  ref.Commit,
-				File:      ref.File,
-				StartLine: ref.StartLine,
-				EndLine:   ref.EndLine,
-			})
-		}
 		return writeJSON(w, refLocations)
+	} else if universe.Shadow(repo.URI) {
+		go universeDefRefs(r, tmp.Repo, opt, def)
 	}
 
 	refs, err := cl.Defs.ListRefs(r.Context(), &sourcegraph.DefsListRefsOp{
@@ -123,6 +107,33 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return writeJSON(w, refs.Refs)
+}
+
+func universeDefRefs(r *http.Request, tmpRepo string, opt sourcegraph.DefListRefsOptions, def graph.Def) ([]*RefLocation, error) {
+	refs, err := langp.DefaultClient.DefSpecRefs(r.Context(), &langp.DefSpec{
+		Repo:     tmpRepo,
+		Commit:   opt.CommitID,
+		Unit:     def.Unit,
+		UnitType: def.UnitType,
+		Path:     def.Path,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	refLocations := make([]*RefLocation, 0, len(refs.Refs))
+	for _, ref := range refs.Refs {
+		// TODO: investigate whether or not we can remove Def* fields,
+		// they seems not been used in frontend.
+		refLocations = append(refLocations, &RefLocation{
+			Repo:      ref.Repo,
+			CommitID:  ref.Commit,
+			File:      ref.File,
+			StartLine: ref.StartLine,
+			EndLine:   ref.EndLine,
+		})
+	}
+	return refLocations, nil
 }
 
 func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {

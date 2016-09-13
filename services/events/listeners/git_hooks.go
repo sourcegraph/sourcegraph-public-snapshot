@@ -86,6 +86,15 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 				log15.Error("postPushHook: failed to create build", "err", err)
 				return
 			}
+		} else if universe.Shadow(repoFull.URI) {
+			go func() {
+				if shadowErr := langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
+					Repo:   repoFull.URI,
+					Commit: event.Commit,
+				}); err != nil {
+					log15.Error("postPushHook: failed to create build", "err", shadowErr)
+				}
+			}()
 		}
 	}
 }

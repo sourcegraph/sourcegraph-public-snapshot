@@ -51,60 +51,13 @@ func serveDefLocalRefLocations(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if universe.Enabled(r.Context(), repo.URI) {
-		repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
+		localRefLocationsList, err := universeDefLocalRefLocations(r)
 		if err != nil {
 			return err
 		}
-
-		file := r.URL.Query().Get("file")
-
-		line, err := strconv.Atoi(r.URL.Query().Get("line"))
-		if err != nil {
-			return err
-		}
-
-		character, err := strconv.Atoi(r.URL.Query().Get("character"))
-		if err != nil {
-			return err
-		}
-
-		localRefs, err := langp.DefaultClient.LocalRefs(r.Context(), &langp.Position{
-			Repo:      repo.URI,
-			Commit:    repoRev.CommitID,
-			File:      file,
-			Line:      line,
-			Character: character,
-		})
-		if err != nil {
-			return err
-		}
-
-		// TODO: we currently only show files not specific location of references,
-		// so need to redesign the response type struct and adjust following code logic.
-		fileSet := make(map[string]int32)
-		for _, ref := range localRefs.Refs {
-			if _, ok := fileSet[ref.File]; ok {
-				fileSet[ref.File]++
-			} else {
-				fileSet[ref.File] = 1
-			}
-		}
-
-		localRefLocationsList := &LocalRefLocationsList{
-			TotalFiles: len(fileSet),
-			Files:      make([]*sourcegraph.DefFileRef, 0, len(fileSet)),
-		}
-
-		for name, count := range fileSet {
-			localRefLocationsList.Files = append(localRefLocationsList.Files, &sourcegraph.DefFileRef{
-				Path:  name,
-				Count: count,
-			})
-		}
-
-		sort.Sort(DefFileRefs(localRefLocationsList.Files))
-
 		return writeJSON(w, &localRefLocationsList)
+	} else if universe.Shadow(repo.URI) {
+		go universeDefLocalRefLocations(r)
 	}
 
 	def := dc.Def
@@ -124,4 +77,60 @@ func serveDefLocalRefLocations(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return writeJSON(w, refLocations)
+}
+
+func universeDefLocalRefLocations(r *http.Request) (*LocalRefLocationsList, error) {
+	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
+	if err != nil {
+		return nil, err
+	}
+
+	file := r.URL.Query().Get("file")
+
+	line, err := strconv.Atoi(r.URL.Query().Get("line"))
+	if err != nil {
+		return nil, err
+	}
+
+	character, err := strconv.Atoi(r.URL.Query().Get("character"))
+	if err != nil {
+		return nil, err
+	}
+
+	localRefs, err := langp.DefaultClient.LocalRefs(r.Context(), &langp.Position{
+		Repo:      repo.URI,
+		Commit:    repoRev.CommitID,
+		File:      file,
+		Line:      line,
+		Character: character,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: we currently only show files not specific location of references,
+	// so need to redesign the response type struct and adjust following code logic.
+	fileSet := make(map[string]int32)
+	for _, ref := range localRefs.Refs {
+		if _, ok := fileSet[ref.File]; ok {
+			fileSet[ref.File]++
+		} else {
+			fileSet[ref.File] = 1
+		}
+	}
+
+	localRefLocationsList := &LocalRefLocationsList{
+		TotalFiles: len(fileSet),
+		Files:      make([]*sourcegraph.DefFileRef, 0, len(fileSet)),
+	}
+
+	for name, count := range fileSet {
+		localRefLocationsList.Files = append(localRefLocationsList.Files, &sourcegraph.DefFileRef{
+			Path:  name,
+			Count: count,
+		})
+	}
+
+	sort.Sort(DefFileRefs(localRefLocationsList.Files))
+	return localRefLocationsList, nil
 }

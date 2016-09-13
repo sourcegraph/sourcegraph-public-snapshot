@@ -167,6 +167,16 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 			log15.Warn("cloneRepo: language processor failed to prepare workspace", "err", err, "repo", repo.URI, "commit", res.CommitID, "branch", repo.DefaultBranch)
 			return nil
 		}
+	} else if universe.Shadow(repo.URI) {
+		go func() {
+			shadowErr := langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
+				Repo:   repo.URI,
+				Commit: res.CommitID,
+			})
+			if shadowErr != nil {
+				log15.Warn("cloneRepo: language processor failed to prepare workspace", "err", shadowErr, "repo", repo.URI, "commit", res.CommitID, "branch", repo.DefaultBranch)
+			}
+		}()
 	}
 	return nil
 }

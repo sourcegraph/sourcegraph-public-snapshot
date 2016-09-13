@@ -442,11 +442,25 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.RefreshIndexO
 			log15.Debug("universe defs.Update failed", "repo", repo.URI, "commitID", op.CommitID, "err", err)
 		} else {
 			log15.Debug("universe defs.Update success", "repo", repo.URI, "commitID", op.CommitID, "count", len(r.Symbols))
-			defs = make([]*graph.Def, len(r.Symbols))
+			defs = make([]*graph.Def, 0, len(r.Symbols))
 			for _, s := range r.Symbols {
 				defs = append(defs, symbolToDef(s))
 			}
 		}
+	} else if universe.Shadow(repo.URI) {
+		go func() {
+			shadowEnd := obs.start("langp")
+			shadowR, shadowErr := langp.DefaultClient.ExportedSymbols(ctx, &langp.RepoRev{
+				Repo:   repo.URI,
+				Commit: op.CommitID,
+			})
+			shadowEnd()
+			if shadowErr != nil {
+				log15.Debug("universe defs.Update failed", "repo", repo.URI, "commitID", op.CommitID, "err", shadowErr)
+				return
+			}
+			log15.Debug("universe defs.Update success", "repo", repo.URI, "commitID", op.CommitID, "count", len(shadowR.Symbols))
+		}()
 	}
 
 	if len(defs) == 0 {
