@@ -10,6 +10,7 @@ func init() {
 			Func: func(t *T) error {
 				return runSearchFlow(t, q)
 			},
+			Quarantined: true,
 		})
 	}
 
