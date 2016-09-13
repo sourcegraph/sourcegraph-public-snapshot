@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"math"
 	"os"
 	"strings"
 	"time"
@@ -184,14 +183,6 @@ func accessTokenToTokenResponse(t *oauth2.Token) *sourcegraph.AccessTokenRespons
 	}
 	r := &sourcegraph.AccessTokenResponse{
 		AccessToken: t.AccessToken,
-		TokenType:   t.TokenType,
-	}
-	if !t.Expiry.IsZero() {
-		sec := t.Expiry.Sub(time.Now()) / time.Second
-		if sec > math.MaxInt32 {
-			sec = math.MaxInt32
-		}
-		r.ExpiresInSec = int32(sec)
 	}
 	return r
 }

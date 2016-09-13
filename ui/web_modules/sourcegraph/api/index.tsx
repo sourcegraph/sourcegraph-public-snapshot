@@ -6,9 +6,6 @@ export interface AccessTokenRequest {
 
 export interface AccessTokenResponse {
 	AccessToken?: string;
-	TokenType?: string;
-	ExpiresInSec?: number;
-	RefreshToken?: string;
 	Scope?: string[];
 	UID?: number;
 	GitHubAccessToken?: string;

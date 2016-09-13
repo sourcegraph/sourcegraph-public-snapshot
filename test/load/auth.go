@@ -3,7 +3,6 @@ package load
 import (
 	"net/http"
 	"net/url"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -21,8 +20,6 @@ const testPassword = "e2etest"
 type authedCookie struct {
 	// HeaderValue is the cookie serialized for the Cookie header
 	HeaderValue string
-	// Expires is when the cookie will expire
-	Expires time.Duration
 }
 
 func getAuthedCookie(endpoint *url.URL, username, password string) (*authedCookie, error) {
@@ -51,11 +48,8 @@ func getAuthedCookie(endpoint *url.URL, username, password string) (*authedCooki
 	// serialization of the cookie for use in a Cookie header.
 	cookie = &http.Cookie{Name: cookie.Name, Value: cookie.Value}
 
-	// Say the token expires 5 minutes earlier so we have time to refresh it
-	expires := (time.Duration(tok.ExpiresInSec) * time.Second) - (5 * time.Minute)
 	return &authedCookie{
 		HeaderValue: cookie.String(),
-		Expires:     expires,
 	}, nil
 }
 

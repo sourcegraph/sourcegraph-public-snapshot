@@ -34,7 +34,6 @@ type LoadTest struct {
 
 // Run runs the load test until the auth token expires
 func (t *LoadTest) Run(ctx context.Context) error {
-	var testDuration time.Duration
 	hdr := http.Header{}
 	hdr.Set("User-Agent", e2etestuser.UserAgent)
 
@@ -43,7 +42,6 @@ func (t *LoadTest) Run(ctx context.Context) error {
 		return err
 	} else if cookie != nil {
 		hdr.Set("Cookie", cookie.HeaderValue)
-		testDuration = cookie.Expires
 	}
 
 	atk := vegeta.NewAttacker(t.AttackerOpts...)
@@ -53,7 +51,7 @@ func (t *LoadTest) Run(ctx context.Context) error {
 	}
 
 	log.Printf("Starting %v", t)
-	res := atk.Attack(tr, t.Rate, testDuration)
+	res := atk.Attack(tr, t.Rate, time.Hour)
 	defer atk.Stop()
 
 	mAll := &vegeta.Metrics{}

@@ -1359,9 +1359,6 @@ message AccessTokenRequest {
 // information.
 message AccessTokenResponse {
 	string AccessToken = 1;
-	string TokenType = 2;
-	int32 ExpiresInSec = 3; // optional
-	string RefreshToken = 4; // optional
 	repeated string Scope = 5; // optional if equal to the requested scope
 
 	// Extra fields only used by Sourcegraph.
