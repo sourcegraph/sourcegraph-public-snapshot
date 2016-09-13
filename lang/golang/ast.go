@@ -87,16 +87,18 @@ func docAtPosition(p lsp.Position, contents []byte) (string, error) {
 			doc = n.Doc
 		case *ast.FuncDecl:
 			doc = n.Doc
+		case *ast.GenDecl:
+			doc = n.Doc
 		case *ast.ImportSpec:
 			doc = n.Doc
 		case *ast.TypeSpec:
 			doc = n.Doc
 		case *ast.ValueSpec:
 			doc = n.Doc
-		default:
-			continue
 		}
-		break
+		if doc != nil {
+			break
+		}
 	}
 	if doc == nil {
 		return "", nil
