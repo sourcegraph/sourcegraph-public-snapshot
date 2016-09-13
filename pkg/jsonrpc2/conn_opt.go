@@ -42,9 +42,9 @@ func LogMessages(log *log.Logger) ConnOpt {
 
 				params, _ := json.Marshal(req.Params)
 				if req.Notif {
-					log.Printf(">>> notif: %s: %s", req.Method, params)
+					log.Printf("--> notif: %s: %s", req.Method, params)
 				} else {
-					log.Printf(">>> request #%d: %s: %s", req.ID, req.Method, params)
+					log.Printf("--> request #%d: %s: %s", req.ID, req.Method, params)
 				}
 
 			case resp != nil:
@@ -57,10 +57,10 @@ func LogMessages(log *log.Logger) ConnOpt {
 				switch {
 				case resp.Result != nil:
 					result, _ := json.Marshal(resp.Result)
-					log.Printf(">>> result #%d: %s: %s", resp.ID, method, result)
+					log.Printf("--> result #%d: %s: %s", resp.ID, method, result)
 				case resp.Error != nil:
 					err, _ := json.Marshal(resp.Error)
-					log.Printf(">>> error #%d: %s: %s", resp.ID, method, err)
+					log.Printf("--> error #%d: %s: %s", resp.ID, method, err)
 				}
 			}
 		})(c)
@@ -69,9 +69,9 @@ func LogMessages(log *log.Logger) ConnOpt {
 			case req != nil:
 				params, _ := json.Marshal(req.Params)
 				if req.Notif {
-					log.Printf("<<< notif: %s: %s", req.Method, params)
+					log.Printf("<-- notif: %s: %s", req.Method, params)
 				} else {
-					log.Printf("<<< request #%d: %s: %s", req.ID, req.Method, params)
+					log.Printf("<-- request #%d: %s: %s", req.ID, req.Method, params)
 				}
 
 			case resp != nil:
@@ -85,10 +85,10 @@ func LogMessages(log *log.Logger) ConnOpt {
 
 				if resp.Result != nil {
 					result, _ := json.Marshal(resp.Result)
-					log.Printf("<<< result #%d: %s: %s", resp.ID, method, result)
+					log.Printf("<-- result #%d: %s: %s", resp.ID, method, result)
 				} else {
 					err, _ := json.Marshal(resp.Error)
-					log.Printf("<<< error #%d: %s: %s", resp.ID, method, err)
+					log.Printf("<-- error #%d: %s: %s", resp.ID, method, err)
 				}
 			}
 		})(c)
