@@ -1,14 +1,17 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/neelance/parallel"
+	"github.com/olekukonko/tablewriter"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -54,27 +57,15 @@ type coverageCmd struct {
 	TokenRate    int    `long:"rate" description:"rate at which tokens are concurrently calculated" default:"1"`
 	Debug        bool   `long:"debug" description:"trace requests which result in an error"`
 	AbortOnError int    `long:"abort-on-error" description:"abort on nth request error" default:"-1"`
+	BenchRates   string `long:"bench-rates" description:"(enables concurrency benchmarking mode) comma-separated list of rates at which tokens are concurrently calculated" default:""`
 
 	backend coverage.Client
 	cl      *sourcegraph.Client
 }
 
-// langCoverage contains the coverage data for an entire language.
-type langCoverage struct {
-	Language   string                   // The actual language name, like "Go" or "Java".
-	Start, End time.Time                // When coverage calculations began and ended.
-	Repos      map[string]*repoCoverage // Coverage data for all repos of this language.
-}
-
-// repoCoverage contains the coverage data of a single repository.
-type repoCoverage struct {
-	RepoURI    string                   // The actual repository URI.
-	Start, End time.Time                // When coverage calculations began and ended.
-	Files      map[string]*fileCoverage // Coverage data for all files in the repository.
-
-	// Tokens is the total number of tokens across all files.
-	Tokens int
-
+// aggregatedCoverage represents coverage data that has been aggregated, e.g.
+// for all files in a repo, or even for all files in all repos in a language.
+type aggregatedCoverage struct {
 	// Number of go-to-defs and hover responses, the sum of these variables
 	// will always equal len(Tokens) when 100% coverage is achieved.
 	Defs, Hovers           int
@@ -87,6 +78,44 @@ type repoCoverage struct {
 
 	// API request durations.
 	DefDurations, HoverDurations []time.Duration
+}
+
+// langCoverage contains the coverage data for an entire language.
+type langCoverage struct {
+	Language   string                   // The actual language name, like "Go" or "Java".
+	Start, End time.Time                // When coverage calculations began and ended.
+	Repos      map[string]*repoCoverage // Coverage data for all repos of this language.
+
+	// Tokens is the total number of tokens across all files and all repos.
+	Tokens int
+
+	aggregatedCoverage
+}
+
+func (c *langCoverage) calcSummary(methods string) {
+	for _, r := range c.Repos {
+		r.calcSummary(methods)
+		c.Tokens += r.Tokens
+		c.Defs += r.Defs
+		c.Hovers += r.Hovers
+		c.DefErrors += r.DefErrors
+		c.HoverErrors += r.HoverErrors
+		c.DefDists = append(c.DefDists, r.DefDists...)
+		c.DefDurations = append(c.DefDurations, r.DefDurations...)
+		c.HoverDurations = append(c.HoverDurations, r.HoverDurations...)
+	}
+}
+
+// repoCoverage contains the coverage data of a single repository.
+type repoCoverage struct {
+	RepoURI    string                   // The actual repository URI.
+	Start, End time.Time                // When coverage calculations began and ended.
+	Files      map[string]*fileCoverage // Coverage data for all files in the repository.
+
+	// Tokens is the total number of tokens across all files.
+	Tokens int
+
+	aggregatedCoverage
 }
 
 func (c *repoCoverage) calcSummary(methods string) {
@@ -109,18 +138,7 @@ type fileCoverage struct {
 	Start, End time.Time // When coverage calculations began and ended.
 	Tokens     []tokCoverage
 
-	// Number of go-to-defs and hover responses, the sum of these variables
-	// will always equal len(Tokens) when 100% coverage is achieved.
-	Defs, Hovers           int
-	DefErrors, HoverErrors int
-
-	// Distance between token ranges in the file (a measure of accuracy, where
-	// zero is perfect, one implies a potential off-by-one error, etc). The
-	// larger the number, the worse the result is.
-	DefDists []int
-
-	// API request durations.
-	DefDurations, HoverDurations []time.Duration
+	aggregatedCoverage
 }
 
 func (c *fileCoverage) calcSummary(methods string) {
@@ -190,6 +208,10 @@ func (c *coverageCmd) Execute(args []string) error {
 		}
 	}()
 
+	if c.BenchRates != "" {
+		return c.benchRatesMode()
+	}
+
 	c.logf("Running coverage for %s", c.Lang)
 	langCov, err := c.calcLangCoverage(cliContext, c.Lang)
 	if err != nil {
@@ -197,8 +219,8 @@ func (c *coverageCmd) Execute(args []string) error {
 	}
 	c.logf("Completed coverage for %s (duration: %s)", langCov.Language, langCov.End.Sub(langCov.Start))
 
+	langCov.calcSummary(c.Methods)
 	for _, repo := range langCov.Repos {
-		repo.calcSummary(c.Methods)
 		c.logf("")
 		c.logf("%s finished in %s", repo.RepoURI, repo.End.Sub(repo.Start))
 		c.logf("\t%v files", len(repo.Files))
@@ -238,6 +260,72 @@ func (c *coverageCmd) Execute(args []string) error {
 		}
 	}
 	return err
+}
+
+func (c *coverageCmd) benchRatesMode() error {
+	// Parse bench rates (to fail early in case of typos).
+	var benchRates []int
+	for _, rate := range strings.Split(c.BenchRates, ",") {
+		if rate == "" {
+			return errors.New("parsing bench rate: no spaces between commas allowed")
+		}
+		rate, err := strconv.Atoi(rate)
+		if err != nil {
+			return fmt.Errorf("parsing bench rate: %v", err)
+		}
+		benchRates = append(benchRates, rate)
+	}
+
+	// Calculate language coverage for each rate.
+	var coverages []*langCoverage
+	for _, rate := range benchRates {
+		c.TokenRate = rate
+		c.logf("[rate: %d] Running coverage for %s", rate, c.Lang)
+		langCov, err := c.calcLangCoverage(cliContext, c.Lang)
+		if err != nil {
+			return err
+		}
+		c.logf("[rate: %d] Completed coverage for %s (duration: %s)", rate, langCov.Language, langCov.End.Sub(langCov.Start))
+		langCov.calcSummary(c.Methods)
+		coverages = append(coverages, langCov)
+	}
+
+	writeTable := func(header []string, data [][]string) {
+		fmt.Println("")
+		table := tablewriter.NewWriter(os.Stdout)
+		table.SetHeader(header)
+		table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
+		table.SetCenterSeparator("|")
+		table.AppendBulk(data)
+		table.Render()
+	}
+
+	// Write Definition Markdown table.
+	var data [][]string
+	for i, c := range coverages {
+		data = append(data, []string{
+			fmt.Sprint(benchRates[i]),
+			fmt.Sprint(coverage.Percentile(25, c.DefDurations)),
+			fmt.Sprint(coverage.Percentile(50, c.DefDurations)),
+			fmt.Sprint(coverage.Percentile(75, c.DefDurations)),
+			fmt.Sprint(coverage.Percentile(95, c.DefDurations)),
+		})
+	}
+	writeTable([]string{"Definition concurrency rate", "P25", "P50", "P75", "P95"}, data)
+
+	// Write Hover Markdown table.
+	data = nil
+	for i, c := range coverages {
+		data = append(data, []string{
+			fmt.Sprint(benchRates[i]),
+			fmt.Sprint(coverage.Percentile(25, c.HoverDurations)),
+			fmt.Sprint(coverage.Percentile(50, c.HoverDurations)),
+			fmt.Sprint(coverage.Percentile(75, c.HoverDurations)),
+			fmt.Sprint(coverage.Percentile(95, c.HoverDurations)),
+		})
+	}
+	writeTable([]string{"Hover concurrency rate", "P25", "P50", "P75", "P95"}, data)
+	return nil
 }
 
 func (c *coverageCmd) logf(fmtStr string, args ...interface{}) {
