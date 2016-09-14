@@ -207,6 +207,13 @@ func runGog(ctx context.Context, cacheDir string, env, pkgs []string) (*gogOutpu
 }
 
 func expandPackages(ctx context.Context, env, pkgs []string) ([]string, error) {
+	if len(pkgs) == 1 && pkgs[0] == "github.com/golang/go/..." {
+		b, err := cmdOutput(ctx, env, exec.Command("go", "list", "-e", "-f", "{{if .Standard}}{{.ImportPath}}{{end}}", "..."))
+		if err != nil {
+			return nil, err
+		}
+		return strings.Fields(string(b)), nil
+	}
 	args := append([]string{"list"}, pkgs...)
 	b, err := cmdOutput(ctx, env, exec.Command("go", args...))
 	if err != nil {

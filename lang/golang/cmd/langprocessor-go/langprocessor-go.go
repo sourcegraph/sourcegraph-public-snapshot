@@ -61,6 +61,9 @@ func prepareRepo(update bool, workspace, repo, commit string) error {
 // 	fatal: Not possible to fast-forward, aborting.
 //
 func goGetDependencies(repoDir string, env []string, repoURI string) error {
+	if repoURI == "github.com/golang/go" {
+		return nil // updating dependencies for stdlib does not make sense.
+	}
 	c := exec.Command("go", "list", "./...")
 	c.Dir = repoDir
 	c.Env = env
