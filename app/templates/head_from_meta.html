@@ -1,0 +1,39 @@
+{{define "HeadFromMeta"}}
+<title>{{with .Meta.Title}}{{.}} · {{end}}Sourcegraph</title>
+
+{{/* Common to all pages */}}
+<meta name="twitter:site" content="@srcgraph">
+<meta name="twitter:image" content="{{absAssetURL .Ctx "/img/sourcegraph-mark.png"}}">
+<meta name="og:site_name" content="Sourcegraph">
+<meta property="og:image" content="{{absAssetURL .Ctx "/img/sourcegraph-mark.png"}}">
+<meta property="og:image:url" content="{{absAssetURL .Ctx "/img/sourcegraph-mark.png"}}">
+<meta property="og:image:height" content="90">
+<meta property="og:image:width" content="90">
+
+{{if .Meta.Title}}
+	<meta property="og:type" content="object">
+	<meta name="twitter:card" content="summary">
+	<meta property="og:title" content="{{.Meta.ShortTitle}}">
+	<meta name="twitter:title" content="{{.Meta.ShortTitle}}">
+	<meta name="twitter:description" content="{{.Meta.Description}}">
+	<meta property="og:description" content="{{.Meta.Description}}">
+	<meta name="description" content="{{.Meta.Description}}">
+{{else}}
+	{{/* Site-wide */}}
+	<meta property="og:type" content="website">
+	<meta name="twitter:card" content="summary_large_image">
+	<meta property="og:title" content="Sourcegraph">
+	<meta name="twitter:title" content="Sourcegraph">
+	{{$description := "How developers discover and understand code. Sourcegraph is a fast, global, semantic code search and cross-reference engine."}}
+	<meta name="twitter:description" content="{{$description}}">
+	<meta property="og:description" content="{{$description}}">
+	<meta name="description" content="{{$description}}">
+{{end}}
+
+{{with .Meta.CanonicalURL}}
+	<link rel="canonical" href="{{.}}">
+	<meta property="og:url" content="{{.}}">
+{{end}}
+
+<meta name="robots" content="{{.Meta.RobotsMetaContent}}">
+{{end}}

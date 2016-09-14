@@ -15,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui/toprepos"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
@@ -291,8 +292,20 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	m := defMeta(def, trimRepo(repo.URI), true)
+	m := defMeta(def, trimRepo(repo.URI), false)
 	m.SEO = true
+	// Don't noindex pages with a canonical URL. See
+	// https://www.seroundtable.com/archives/020151.html.
+	m.CanonicalURL = canonicalRepoURL(
+		conf.AppURL(r.Context()),
+		getRouteName(r),
+		mux.Vars(r),
+		r.URL.Query(),
+		repo.DefaultBranch,
+		def.CommitID,
+	)
+	canonRev := isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
+	m.Index = allowRobots(repo) && shouldIndexDef(def) && canonRev
 
 	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, &struct {
 		tmpl.Common
