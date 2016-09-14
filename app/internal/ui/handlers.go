@@ -28,7 +28,7 @@ func init() {
 	router.Get(routeBlob).Handler(httptrace.TraceRoute(handler(serveBlob)))
 	router.Get(routeBuild).Handler(httptrace.TraceRoute(handler(serveBuild)))
 	router.Get(routeDef).Handler(httptrace.TraceRoute(handler(serveDef)))
-	router.Get(routeDefInfo).Handler(httptrace.TraceRoute(handler(serveDefInfo)))
+	router.Get(routeDefRefs).Handler(httptrace.TraceRoute(handler(serveDefRefs)))
 	router.Get(routeDefLanding).Handler(httptrace.TraceRoute(internal.Handler(serveDefLanding)))
 	router.Get(routeRepo).Handler(httptrace.TraceRoute(handler(serveRepo)))
 	router.Get(routeRepoBuilds).Handler(httptrace.TraceRoute(handler(serveRepoBuilds)))
@@ -115,52 +115,29 @@ func serveBuild(w http.ResponseWriter, r *http.Request) (*meta, error) {
 }
 
 func serveDef(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	return serveDefCommon(w, r, false)
+	return serveDefCommon(w, r)
 }
 
-func serveDefInfo(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	return serveDefCommon(w, r, true)
+func serveDefRefs(w http.ResponseWriter, r *http.Request) (*meta, error) {
+	return serveDefCommon(w, r)
 }
 
-func serveDefCommon(w http.ResponseWriter, r *http.Request, isDefInfo bool) (*meta, error) {
+func serveDefCommon(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	def, repo, err := handlerutil.GetDefCommon(r.Context(), mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
 		return nil, err
 	}
-	m := defMeta(def, repo.URI, !isDefInfo)
+	m := defMeta(def, repo.URI, true)
 
-	if isDefInfo {
-		// DefInfo canonical URL is DefInfo.
-		m.CanonicalURL = canonicalRepoURL(
-			conf.AppURL(r.Context()),
-			getRouteName(r),
-			mux.Vars(r),
-			r.URL.Query(),
-			repo.DefaultBranch,
-			def.CommitID,
-		)
-	} else {
-		// Def canonical URL is the blob page. We don't want Googlebot
-		// thinking we have tons of repetitive pages (each local var
-		// on a blob page, for example), so let's tell it that all Def
-		// pages are actually canonically the blob.
-		m.CanonicalURL = canonicalRepoURL(
-			conf.AppURL(r.Context()),
-			routeBlob,
-			routevar.TreeEntryRouteVars(routevar.TreeEntry{
-				RepoRev: routevar.ToRepoRev(mux.Vars(r)),
-				Path:    "/" + def.File,
-			}),
-			r.URL.Query(),
-			repo.DefaultBranch,
-			def.CommitID,
-		)
-	}
-
-	// Don't noindex pages with a canonical URL. See
-	// https://www.seroundtable.com/archives/020151.html.
-	canonRev := isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
-	m.Index = allowRobots(repo) && shouldIndexDef(def) && canonRev && isDefInfo // DefInfo is a better landing page than Def.
+	// Def canonical URL is def landing.
+	m.CanonicalURL = canonicalRepoURL(
+		conf.AppURL(r.Context()),
+		routeDefLanding,
+		mux.Vars(r),
+		r.URL.Query(),
+		repo.DefaultBranch,
+		def.CommitID,
+	)
 
 	return m, nil
 }

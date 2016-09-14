@@ -14,7 +14,7 @@ const (
 	routeBlob        = "blob"
 	routeBuild       = "build"
 	routeDef         = "def"
-	routeDefInfo     = "def.info"
+	routeDefRefs     = "def.refs"
 	routeDefLanding  = "def.landing"
 	routeRepo        = "repo"
 	routeRepoBuilds  = "repo.builds"
@@ -81,7 +81,7 @@ func newRouter() *mux.Router {
 
 	// Def
 	repoRev.Path("/def/" + routevar.Def).Methods("GET").Name(routeDef)
-	repoRev.Path("/refs/" + routevar.Def).Methods("GET").Name(routeDefInfo)
+	repoRev.Path("/refs/" + routevar.Def).Methods("GET").Name(routeDefRefs)
 	repoRev.Path("/info/" + routevar.Def).Methods("GET").Name(routeDefLanding)
 
 	return m

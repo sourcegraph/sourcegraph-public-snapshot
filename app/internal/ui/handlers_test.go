@@ -404,19 +404,19 @@ func TestDef_OK(t *testing.T) {
 
 	tests := []struct {
 		rev       string
-		defOrInfo string // "def" (for Def route) or "info" (for DefInfo route)
+		defOrRefs string // "def" (for def route) or "refs" (for refs route)
 
 		wantCanonURL    string
 		wantTitlePrefix string
 		wantIndex       bool
 		wantFollow      bool
 	}{
-		{"@v", "def", "/r@c/-/blob/f", "imp.scope.name · f", false, false},
-		{"@v", "refs", "/r@c/-/refs/t/u/-/p", "imp.scope.name", false, false},
-		{"@b", "def", "/r/-/blob/f", "imp.scope.name · f", false, false},
-		{"@b", "refs", "/r/-/refs/t/u/-/p", "imp.scope.name", true, false},
-		{"", "def", "/r/-/blob/f", "imp.scope.name · f", false, false},
-		{"", "refs", "/r/-/refs/t/u/-/p", "imp.scope.name", true, false},
+		{"@v", "def", "/r@c/-/info/t/u/-/p", "imp.scope.name · f", false, false},
+		{"@v", "refs", "/r@c/-/info/t/u/-/p", "imp.scope.name · f", false, false},
+		{"@b", "def", "/r/-/info/t/u/-/p", "imp.scope.name · f", false, false},
+		{"@b", "refs", "/r/-/info/t/u/-/p", "imp.scope.name · f", false, false},
+		{"", "def", "/r/-/info/t/u/-/p", "imp.scope.name · f", false, false},
+		{"", "refs", "/r/-/info/t/u/-/p", "imp.scope.name · f", false, false},
 	}
 
 	for _, test := range tests {
@@ -459,7 +459,7 @@ func TestDef_OK(t *testing.T) {
 			Follow:       test.wantFollow,
 		}
 
-		if m, err := getForTest(c, fmt.Sprintf("/r%s/-/%s/t/u/-/p", test.rev, test.defOrInfo), http.StatusOK); err != nil {
+		if m, err := getForTest(c, fmt.Sprintf("/r%s/-/%s/t/u/-/p", test.rev, test.defOrRefs), http.StatusOK); err != nil {
 			t.Errorf("%#v: %s", test, err)
 			continue
 		} else if !reflect.DeepEqual(m, wantMeta) {
