@@ -195,8 +195,8 @@ export class Blob extends React.Component<Props, null> {
 		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REFERENCES, AnalyticsConstants.ACTION_CLICK, "ClickedViewReferences", { repo: this.props.repo, path: this.props.path, rev: this.props.rev });
 
 		return new monaco.Promise<void>(() => {
-			defAtPosition(model, pos).then((def) => {
-				const url = urlToDefInfo(def);
+			defAtPosition(model, pos).then((resp) => {
+				const url = urlToDefInfo(resp.def);
 				this.context.router.push(url);
 			});
 		});
@@ -310,33 +310,47 @@ export class Blob extends React.Component<Props, null> {
 const fetch = singleflightFetch(defaultFetch);
 class HoverProvider {
 	static provideHover(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<monaco.languages.Hover> {
-		return defAtPosition(model, position).then((def: Def) => {
+		return defAtPosition(model, position).then((resp: DefResponse) => {
+			const def = resp.def;
 			if (!def) {
 				throw new Error("def not found");
 			}
 			const word = model.getWordAtPosition(position);
-			const title = `**${def.Name}** ${def.FmtStrings ? def.FmtStrings.Type.Unqualified.trim() : ""}`;
-			const serverDoc = def.Docs ? def.Docs[0].Data : "";
-			const viewRefsSuggestion = "*Right-click to view all references.*";
-			let docs = serverDoc.replace(/\s+/g, " ");
-			if (docs.length > 400) {
-				docs = docs.substring(0, 380);
-				docs = docs + "...";
+			let contents: monaco.MarkedString[] = [];
+			if (resp.Title) {
+				contents.push(resp.Title);
+			} else {
+				contents.push(`**${def.Name}** ${def.FmtStrings ? def.FmtStrings.Type.Unqualified.trim() : ""}`);
+				const serverDoc = def.Docs ? def.Docs[0].Data : "";
+				let docs = serverDoc.replace(/\s+/g, " ");
+				if (docs.length > 400) {
+					docs = docs.substring(0, 380);
+					docs = docs + "...";
+				}
+				if (docs) {
+					contents.push(docs);
+				}
 			}
+			contents.push("*Right-click to view all references.*");
 			return {
 				range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
-				contents: [title, docs, viewRefsSuggestion],
+				contents: contents,
 			};
 		});
 	}
 }
 
-function defAtPosition(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<Def> {
+interface DefResponse {
+	def: Def;
+	Title?: string;
+}
+
+function defAtPosition(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<DefResponse> {
 	const url = hoverURL(model.uri, position);
 	return fetch(url)
 		.then(checkStatus)
 		.then(response => response.json())
-		.then(data => data.def)
+		.then(data => data)
 		.catch(error => { console.error(error); });
 }
 
