@@ -65,3 +65,16 @@
 .modalForm {
 	width: 100% !important;
 }
+
+.footer {
+    margin-bottom: 0;
+    line-height: 5em;
+    text-align: center;
+    background-color: rgba(119, 147, 174, 0.0980392);
+}
+
+.footer a {
+    color: rgba(26, 48, 77, 1);
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+}

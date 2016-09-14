@@ -105,7 +105,7 @@ func TestRouter(t *testing.T) {
 		},
 		{
 			path:          "/r@v/-/info/t/u/-/p",
-			wantRouteName: routeDefInfo,
+			wantRouteName: routeDefLanding,
 			wantVars:      map[string]string{"Repo": "r", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "@v"},
 		},
 	}

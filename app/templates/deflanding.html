@@ -8,45 +8,53 @@
 {{define "Body"}}
 <div class="dl-container">
 
-	<span class="nav"><a href="{{.RepoLandingURL}}" class="toplink">{{.Repo.URI}}</a>&nbsp;·&nbsp;<a href="{{.FileURL}}" class="toplink">{{.Def.Def.File}}</a></span>
+	<div class="nav"><a href="{{.RepoLandingURL}}" class="toplink gray">{{.Repo.URI}}</a>&nbsp;·&nbsp;<a href="{{.FileURL}}" class="toplink">{{.Def.Def.File}}</a></div>
 
-	{{with .Def}}
 
-	{{with .FmtStrings}}
-	<h1><tt>{{.DefKeyword}} <span class="highlight-h1">{{.Name.ScopeQualified}}</span>{{.NameAndTypeSeparator}}{{.Type.ScopeQualified}}</tt></h1>
-	{{end}}
-
-	{{end}}{{/* end "with .Def" */}}
+	<h1>
+		{{with .Def.FmtStrings}}<tt>{{.DefKeyword}} <span class="highlight-h1">{{.Name.ScopeQualified}}</span></tt>{{end}}
+		{{if (and .RefSnippets .Def.DocHTML.HTML)}}
+		examples and docs
+		{{else if .RefSnippets}}
+		examples
+		{{else if .Def.DocHTML.HTML}}
+		docs
+		{{else}}
+		quick reference
+		{{end}}
+	</h1>
 
 	<a href="{{.DefSnippet.SourceURL}}"><button>View source</button></a>
 
 	{{with .Def}}
 
+	{{if .DocHTML.HTML}}
 	<h2>Documentation</h2>
 	<p>{{dangerouslySetHTML .DocHTML.HTML}}</p>
+	{{end}}
 
 	{{end}}{{/* end "with .Def" */}}
 
+	{{if .RefSnippets}}
 	<h2>How to use</h2>
 
-	{{if .RefSnippets}}
-		<p>{{if (gt (len .RefSnippets) 1)}}Here are some examples{{else}}Here's an example{{end}} of how you can use <tt>{{.Def.Name}}</tt>.</p>
+	<p>{{if (gt (len .RefSnippets) 1)}}Here are some examples{{else}}Here's an example{{end}} of how you can use <tt>{{.Def.Name}}</tt>.</p>
 
-		{{range .RefSnippets}}
-			<a href="{{.SourceURL}}" class="plainlink">
-				<p><pre class="snippet">{{renderSnippet .}}</pre></p>
-			</a>
-		{{end}}
+	{{range .RefSnippets}}
+	<a href="{{.SourceURL}}" class="plainlink">
+		<p><pre class="snippet">{{renderSnippet .}}</pre></p>
+	</a>
+	{{end}}
 	{{end}}
 
 	<h2><tt class="highlight-h2">{{.Def.Name}}</tt> is referenced in <span class="highlight">{{.RefLocs.TotalRepos}}</span> {{numberedNoun .RefLocs.TotalRepos "repository"}}</h2>
 	<ul class="refslist">
 		{{range $repo := .RefLocs.RepoRefs}}
 		<li>
-			<a href="{{repoToURL $repo.Repo}}" class="refsrepolink">{{$repo.Repo}}</a>
+			<a href="{{urlToRepo $repo.Repo}}" class="refsrepolink">{{$repo.Repo}}</a>
 			<ul>
 				{{range $file := $repo.Files}}
-				<li class="refsfiletext">{{$file.Count}} {{numberedNoun $file.Count "reference"}} in <a href="{{repoPathToBlobURL $repo.Repo $file.Path}}" class="refsfilelink">{{$file.Path}}</a></li>
+				<li class="refsfiletext gray">{{$file.Count}} {{numberedNoun $file.Count "reference"}} in <a href="{{urlToBlob $repo.Repo $file.Path}}" class="refsfilelink">{{$file.Path}}</a></li>
 				{{end}}
 			</ul>
 		</li>
@@ -56,7 +64,7 @@
 		{{end}}
 	</ul>
 
-	<h2>Definition</h2>
+	<h2><a href="{{.DefSnippet.SourceURL}}">Definition</a></h2>
 
 	<a href="{{.DefSnippet.SourceURL}}" class="plainlink"><pre class="snippet">{{renderSnippet .DefSnippet}}</pre></a>
 

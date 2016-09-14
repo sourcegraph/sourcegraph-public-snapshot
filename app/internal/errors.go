@@ -104,11 +104,13 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 
 	errHeader := http.Header{"cache-control": []string{"no-cache"}}
 	err2 := tmpl.Exec(req, resp, "error/error.html", status, errHeader, &struct {
+		Meta       map[string]interface{} // placeholder, to make tmpl.Exec() happy
 		StatusCode int
 		Status     string
 		Err        error
 		tmpl.Common
 	}{
+		Meta:       make(map[string]interface{}),
 		StatusCode: status,
 		Status:     http.StatusText(status),
 		Err:        err,

@@ -20,4 +20,5 @@ export const wrap_sm: string;
 export const tweet_container: string;
 export const modal: string;
 export const modalForm: string;
+export const footer: string;
 

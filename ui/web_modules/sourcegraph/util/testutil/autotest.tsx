@@ -18,7 +18,7 @@ export function autotest(expected, filename, component, context?) {
 	if (fs.readFileSync) {
 		let expectedOnDisk = fs.readFileSync(filename, {encoding: "utf-8"});
 		if (JSON.stringify(expected, null, "\t") !== expectedOnDisk) {
-			throw new Error(`autotest 'expected' argument doesn't match contents of ${filename} file, are you sure the first 2 arguments are correct?`);
+			throw new Error(`autotest 'expected' argument doesn't match contents of ${filename} file, are you sure the first 2 arguments are correct? (Note: this may be because you modified the expected test file manually and your editor added a newline at the end.)`);
 		}
 	}
 

@@ -229,6 +229,12 @@
 			"revisionTime": "2016-03-11T01:20:12Z"
 		},
 		{
+			"checksumSHA1": "iIUYZyoanCQQTUaWsu8b+iOSPt4=",
+			"path": "github.com/gorilla/context",
+			"revision": "aed02d124ae4a0e94fea4541c8effd05bf0c8296",
+			"revisionTime": "2016-05-25T20:33:19Z"
+		},
+		{
 			"checksumSHA1": "FX4ZImLeSWQ3++PZf79l2FUj9Aw=",
 			"path": "github.com/gorilla/csrf",
 			"revision": "a9c30aea0c8079c6d335982cbe07d7bafe0b57b7",
@@ -274,6 +280,12 @@
 			"path": "github.com/howeyc/gopass",
 			"revision": "66487b23f2880ba32e185121d2cd51a338ea069a",
 			"revisionTime": "2016-03-03T14:01:16-06:00"
+		},
+		{
+			"checksumSHA1": "e3FU8NY7df0sFeFGKhb9fBPSRXE=",
+			"path": "github.com/jaytaylor/html2text",
+			"revision": "52d9b785554a1918cb09909b89a1509a98b853fd",
+			"revisionTime": "2016-05-28T17:22:51Z"
 		},
 		{
 			"checksumSHA1": "oGaGPSUL5y9XlpafEzXEZDh5IPM=",
@@ -787,6 +799,12 @@
 			"path": "golang.org/x/sys/unix",
 			"revision": "d4feaf1a7e61e1d9e79e6c4e76c6349e9cab0a03",
 			"revisionTime": "2016-05-16T12:31:02Z"
+		},
+		{
+			"checksumSHA1": "2z2tykPbLAgH0OMGlDS03BwmhLA=",
+			"path": "golang.org/x/tools/cmd/guru/serial",
+			"revision": "f2932db7c0155d2ea19373270a3fa937349ac375",
+			"revisionTime": "2016-07-18T13:54:51Z"
 		},
 		{
 			"checksumSHA1": "8QUPOpsU35L0haBAhsFzsV4gPDs=",

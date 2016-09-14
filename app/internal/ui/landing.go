@@ -3,13 +3,19 @@ package ui
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/microcosm-cc/bluemonday"
+	"github.com/russross/blackfriday"
 
+	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui/toprepos"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 )
@@ -21,13 +27,56 @@ type defDescr struct {
 	SourceURL string
 }
 
+func serveRepoIndex(w http.ResponseWriter, r *http.Request) error {
+	lang := mux.Vars(r)["Lang"]
+	var langDispName string
+	var repos []toprepos.Repo
+	switch strings.ToLower(lang) {
+	case "go":
+		repos = toprepos.GoRepos
+		langDispName = "Go"
+	case "java":
+		repos = toprepos.JavaRepos
+		langDispName = "Java"
+	case "":
+	default:
+		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: fmt.Errorf("language %q is not supported", lang)}
+	}
+
+	m := &meta{
+		Title:       "Repositories",
+		ShortTitle:  "Indexed repositories",
+		Description: fmt.Sprintf("%s repositories indexed by Sourcegraph", langDispName),
+		SEO:         true,
+		Index:       true,
+		Follow:      true,
+	}
+
+	return tmpl.Exec(r, w, "repoindex.html", http.StatusOK, nil, &struct {
+		tmpl.Common
+		Meta meta
+
+		Lang         string
+		LangDispName string
+		Langs        []string
+		Repos        []toprepos.Repo
+	}{
+		Meta: *m,
+
+		Lang:         lang,
+		LangDispName: langDispName,
+		Langs:        []string{"Go", "Java"},
+		Repos:        repos,
+	})
+}
+
 func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 	cl := handlerutil.Client(r)
 	vars := mux.Vars(r)
 
 	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), vars)
 	if err != nil {
-		return err
+		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
 	}
 
 	// terminate early on non-Go repos
@@ -36,7 +85,7 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	repoURL := approuter.Rel.URLToRepoRev(repo.URI, repoRev.CommitID).String()
+	repoURL := approuter.Rel.URLToRepo(repo.URI).String()
 
 	results, err := cl.Search.Search(r.Context(), &sourcegraph.SearchOp{
 		Opt: &sourcegraph.SearchOptions{
@@ -49,6 +98,19 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 	})
 	if err != nil {
 		return err
+	}
+
+	var sanitizedREADME []byte
+	readmeEntry, err := cl.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{
+		Entry: sourcegraph.TreeEntrySpec{
+			RepoRev: repoRev,
+			Path:    "README.md",
+		},
+	})
+	if err != nil && errcode.GRPC(err) != codes.NotFound {
+		return err
+	} else if err == nil {
+		sanitizedREADME = bluemonday.UGCPolicy().SanitizeBytes(blackfriday.MarkdownCommon(readmeEntry.Contents))
 	}
 
 	var defDescrs []defDescr
@@ -70,22 +132,22 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		tmpl.Common
 		Meta meta
 
-		Repo    *sourcegraph.Repo
-		RepoRev sourcegraph.RepoRevSpec
-		RepoURL string
-		Defs    []defDescr
+		SanitizedREADME string
+		Repo            *sourcegraph.Repo
+		RepoRev         sourcegraph.RepoRevSpec
+		RepoURL         string
+		Defs            []defDescr
 	}{
-		Meta:    *m,
-		Repo:    repo,
-		RepoRev: repoRev,
-		RepoURL: repoURL,
-		Defs:    defDescrs,
+		Meta:            *m,
+		SanitizedREADME: string(sanitizedREADME),
+		Repo:            repo,
+		RepoRev:         repoRev,
+		RepoURL:         repoURL,
+		Defs:            defDescrs,
 	})
 }
 
 func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
-	// TODO: load GlobalNav after the fact?
-
 	cl := handlerutil.Client(r)
 	vars := mux.Vars(r)
 

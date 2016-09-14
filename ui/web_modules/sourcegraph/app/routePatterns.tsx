@@ -55,7 +55,7 @@ export const rel = {
 	admin: "-/",
 	commit: "commit",
 	def: "def/*",
-	defInfo: "info/*",
+	defInfo: "refs/*",
 	repo: "*", // matches both "repo" and "repo@rev"
 	tree: "tree/*",
 	blob: "blob/*",

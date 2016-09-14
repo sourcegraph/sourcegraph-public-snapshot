@@ -48,14 +48,8 @@ func add(name string, tmpl *htmpl.Template) {
 // commonTemplates returns all common templates such as user pages,
 // etc., if successful.
 func commonTemplates() error {
-	return parseHTMLTemplates([][]string{
-		{"error/error.html"},
-	}, []string{
-		"layout.html",
-		"nav.html",
-		"footer.html",
-		"scripts.html",
-	})
+	return parseHTMLTemplates([][]string{{"error/error.html"}},
+		[]string{"layout.html", "nav.html", "footer.html", "scripts.html", "styles.css"})
 }
 
 // Load loads (or re-loads) all template files from disk.
@@ -67,6 +61,7 @@ func Load() {
 		{"ui.html", "layout.html", "scripts.html", "styles.css"},
 		{"deflanding.html", "layout.html", "scripts.html", "styles.css"},
 		{"repolanding.html", "layout.html", "scripts.html", "styles.css"},
+		{"repoindex.html", "layout.html", "scripts.html", "styles.css"},
 	}, nil); err != nil {
 		log.Fatal(err)
 	}

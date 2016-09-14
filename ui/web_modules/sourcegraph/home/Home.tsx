@@ -153,7 +153,7 @@ export class Home extends Container<HomeProps, HomeState> {
 							</p>
 
 							<p>
-								Find exactly the function you're looking for.
+								Find exactly the function you&rsquo;re looking for.
 								Search your private code and thousands of open-source repositories.
 							</p>
 						</div>
@@ -264,6 +264,19 @@ export class Home extends Container<HomeProps, HomeState> {
 						<Button type="button" color="purple" className={base.ph4}>Sign up for free</Button>
 					</LocationStateToggleLink>
 				</div>
+
+
+			<div className={classNames(base.center, base.mv5, base.ph3, styles.footer)}>
+				<a href="/about">About</a>
+				<a href="https://text.sourcegraph.com">Blog</a>
+				<a href="/jobs">Careers</a>
+				<a href="/contact">Contact</a>
+				<a href="/pricing">Pricing</a>
+				<a href="/-/privacy">Privacy</a>
+				<a href="/security">Security</a>
+				<a href="/sitemap">Sitemap</a>
+				<a href="/-/terms">Terms</a>
+			</div>
 
 			</div>
 		);

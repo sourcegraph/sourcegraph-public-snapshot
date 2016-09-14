@@ -1,4 +1,8 @@
 {{define "Styles"}}
+/*
+ * This stylesheet define styles for the {def,repo}-landing pages.
+ */
+
 body {
 	background-color: rgba(213, 229, 242, 0.2);
 	font-family: circular-std, -apple-system, BlinkMacSystemFont, ".SFNSText-Regular", "San Francisco", "SFNS Display", Roboto, "Lucida Grande", "avenir next", avenir, Helvetica, Ubuntu, "segoe ui", arial, sans-serif;
@@ -10,6 +14,42 @@ body {
 	margin-left: auto;
 	margin-right: auto;
 	color: rgba(26, 48, 77, 1);
+}
+
+/*
+ * Colors
+ */
+.dl-container .gray {
+	color: rgb(119, 147, 174);
+}
+
+.dl-container .gray-links a {
+	color: rgb(119, 147, 174);
+}
+
+.dl-container .purple {
+	color: rgb(177, 20, 247);
+}
+
+/*
+ * Semantic elements
+ */
+.dl-container a {
+	color: rgb(0, 146, 214);
+	text-decoration: none;
+}
+
+.dl-container .readme {
+	padding-top: 1em;
+	margin-top: 1em;
+	border-top: 6px solid rgb(231, 231, 231);
+	line-height: 1.5em;
+}
+
+.dl-container .readme hr {
+	background-color: rgb(231, 231, 231);
+	height: 6px;
+	border: 0;
 }
 
 .dl-container pre {
@@ -37,6 +77,16 @@ body {
 	text-decoration: none;
 }
 
+.dl-container .link-h1 .repo-uri {
+	cursor: pointer;
+	text-decoration: none;
+}
+
+.dl-container .repo-uri .sep {
+	padding-left: 0.15em;
+	padding-right: 0.15em;
+}
+
 .dl-container .highlight {
 	color: rgba(177, 20, 247, 1);
 }
@@ -48,15 +98,23 @@ body {
 
 .dl-container .highlight-h2 {
 	color: rgba(177, 20, 247, 1);
-	font-size: 2.1rem;
+}
+
+.dl-container h2 a {
+	color: rgba(26, 48, 77, 1);
 }
 
 .dl-container .plainlink {
 	text-decoration: none;
 }
 
+.dl-container .msg {
+	background-color: rgba(119, 147, 174, 0.1);
+	padding: 1em;
+	border-radius: 3px;
+}
+
 .dl-container .toplink {
-	color: rgb(119, 147, 174);
 	display: inline;
 	font-size: 0.95rem;
 	cursor: pointer;
@@ -68,6 +126,32 @@ body {
 	padding-left: 0;
 }
 
+.dl-container .repo-index-item {
+	text-indent: -2em;
+	padding-left: 2em;
+	line-height: 1.5em;
+}
+
+.dl-container .repo-index-item .repo-description {
+	margin-left: 0.25em;
+}
+
+.dl-container .index-links {
+	margin-top: 2em;
+	line-height: 1.5em;
+}
+
+.dl-container .index-links .header {
+	line-height: 2em;
+}
+
+.dl-container .index-links a {
+	display: inline-block;
+	padding-left: 0.5em;
+	padding-right: 0.5em;
+	font-family: monospace;
+}
+
 .dl-container .defdoctext {
 	color: rgb(26, 48, 77);
 	font-size: 1rem;
@@ -75,23 +159,17 @@ body {
 	line-height: 1.5rem;
 }
 
-.dl-container .deflist {
-	padding-left: 0;
-}
-
 .dl-container .defentry {
-	padding-top: 2rem;
+	line-height: 1.5em;
 }
 
 .dl-container .defbody {
 	color: rgba(0, 146, 214, 1);
-	font-size: 1.2rem;
 }
 
 .dl-container .defhighlight {
 	color: rgba(177, 20, 247, 1);
 	text-decoration: none;
-	font-size: 1.3rem;
 }
 
 .dl-container .defsidenotes {
@@ -135,7 +213,6 @@ body {
 }
 
 .dl-container .refsfiletext {
-	color: rgb(119, 147, 174);
 	display: list-item;
 	font-size: 0.85rem;
 	line-height: 1.2325rem;
@@ -220,19 +297,21 @@ body {
 	color: #00a4de;
 }
 
-.dl-container ul li {
+.dl-container ul.refslist li {
 	color: rgba(0, 146, 214, 1);
 	list-style-type: none;
 	padding-top: 3.75px;
 }
 
-.dl-container ul li li {
+.dl-container ul.refslist li li {
 	color: rgba(119, 147, 174, 1);
 	list-style-type: circle;
 }
 
-.dl-container span.nav {
+.dl-container div.nav {
+	padding-top: 0.5em;
 	font-size: 1rem;
 	color: rgb(119, 147, 174);
 }
+
 {{end}}

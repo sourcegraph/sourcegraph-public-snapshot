@@ -1,0 +1,40 @@
+{{define "Head"}}
+
+{{end}}
+
+{{define "Nav"}}{{end}}
+
+{{define "Body"}}
+<div class="dl-container">
+
+	<div class="nav"><a href="/" class="toplink gray">Home</a></div>
+
+	{{if .Lang}}
+	<h1>{{.Lang}} repository index</h1>
+	{{else}}
+	<h1>Language index</h1>
+	{{end}}
+
+	<div class="index-links">
+		<span class="header">
+			Explore repositories by language:
+		</span>
+		<span>
+			{{range .Langs}}
+			<span><a href="{{urlToSitemap .}}">{{.}}</a></span>
+			{{end}}
+		</span>
+	</div>
+
+	{{range .Repos}}
+	<p class="repo-index-item">
+		<a href="{{urlToRepoLanding .URI}}">{{repoDisplayHTML .URI}}</a>
+		<span class="repo-description">{{.Description}}</span>
+	</p>
+	{{end}}
+
+</div>
+{{end}}
+
+{{define "Footer"}}
+{{end}}

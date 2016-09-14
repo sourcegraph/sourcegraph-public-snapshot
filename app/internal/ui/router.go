@@ -8,6 +8,9 @@ import (
 )
 
 const (
+	routeLangsIndex = "index.langs"
+	routeReposIndex = "index.repos"
+
 	routeBlob        = "blob"
 	routeBuild       = "build"
 	routeDef         = "def"
@@ -57,6 +60,8 @@ func newRouter() *mux.Router {
 		"tools/browser",
 		"tools",
 	}
+	m.Path("/sitemap").Methods("GET").Name(routeLangsIndex)
+	m.Path("/sitemap/{Lang:.*}").Methods("GET").Name(routeReposIndex)
 	m.Path("/{Path:(?:jobs|careers)}").Methods("GET").Name(routeJobs)
 	m.Path("/{Path:(?:" + strings.Join(topLevel, "|") + ")}").Methods("GET").Name(routeTopLevel)
 
@@ -65,6 +70,7 @@ func newRouter() *mux.Router {
 	repo := m.PathPrefix(repoPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repo.Path("/builds").Methods("GET").Name(routeRepoBuilds)
 	repo.Path(`/builds/{Build:\d+}`).Methods("GET").Name(routeBuild)
+	repo.Path("/info").Methods("GET").Name(routeRepoLanding)
 
 	// RepoRev
 	repoRevPath := repoPath + routevar.RepoRevSuffix
@@ -75,9 +81,8 @@ func newRouter() *mux.Router {
 
 	// Def
 	repoRev.Path("/def/" + routevar.Def).Methods("GET").Name(routeDef)
-	repoRev.Path("/info/" + routevar.Def).Methods("GET").Name(routeDefInfo)
-	repoRev.Path("/land/" + routevar.Def).Methods("GET").Name(routeDefLanding)
-	repoRev.Path("/land").Methods("GET").Name(routeRepoLanding)
+	repoRev.Path("/refs/" + routevar.Def).Methods("GET").Name(routeDefInfo)
+	repoRev.Path("/info/" + routevar.Def).Methods("GET").Name(routeDefLanding)
 
 	return m
 }
