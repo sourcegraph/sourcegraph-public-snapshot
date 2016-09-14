@@ -2,7 +2,6 @@ package backend
 
 import (
 	"errors"
-	"net/url"
 	"reflect"
 	"testing"
 
@@ -10,7 +9,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
 
 	"context"
@@ -42,7 +40,6 @@ func TestCreate(t *testing.T) {
 func TestRequestPasswordReset(t *testing.T) {
 	notif.MustBeDisabled()
 	ctx, mock := testContext()
-	ctx = conf.WithURL(ctx, &url.URL{})
 	var sendEmailCalled bool
 	sendEmail = func(template string, name string, email string, subject string, templateContent []gochimp.Var, mergeVars []gochimp.Var) ([]gochimp.SendResponse, error) {
 		sendEmailCalled = true
@@ -110,7 +107,7 @@ func TestRequestPasswordReset(t *testing.T) {
 		t.Errorf("verifyAdminCalled wasn't called")
 	}
 	want := &sourcegraph.PendingPasswordReset{
-		Link:      "/reset?token=secrettoken",
+		Link:      "http://example.com/reset?token=secrettoken",
 		Token:     &sourcegraph.PasswordResetToken{Token: "secrettoken"},
 		Login:     "user1",
 		EmailSent: true,

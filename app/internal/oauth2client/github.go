@@ -94,7 +94,7 @@ func githubOAuth2Config(ctx context.Context, scopes []string) *oauth2.Config {
 		ClientID:     githubClientID,
 		ClientSecret: githubClientSecret,
 		Endpoint:     github.Endpoint,
-		RedirectURL:  conf.AppURL(ctx).ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String(),
+		RedirectURL:  conf.AppURL.ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String(),
 		Scopes:       scopes,
 	}
 }
@@ -212,7 +212,7 @@ func linkAccountWithGitHub(w http.ResponseWriter, r *http.Request, cl *sourcegra
 
 	// Write cookie.
 	token := sourcegraph.AccessTokenFromContext(r.Context())
-	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: token}, appauth.OnlySecureCookies(r.Context())); err != nil {
+	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: token}, conf.AppURL.Scheme == "https"); err != nil {
 		return err
 	}
 

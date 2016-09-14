@@ -90,7 +90,7 @@ func serveBlob(w http.ResponseWriter, r *http.Request) (*meta, error) {
 
 	m := treeOrBlobMeta(entry.Name, repo)
 	m.CanonicalURL = canonicalRepoURL(
-		conf.AppURL(r.Context()),
+		conf.AppURL,
 		getRouteName(r),
 		mux.Vars(r),
 		r.URL.Query(),
@@ -147,7 +147,7 @@ func serveDefCommon(w http.ResponseWriter, r *http.Request) (*meta, error) {
 
 	// Def canonical URL is def landing.
 	m.CanonicalURL = canonicalRepoURL(
-		conf.AppURL(r.Context()),
+		conf.AppURL,
 		routeDefLanding,
 		mux.Vars(r),
 		r.URL.Query(),
@@ -172,7 +172,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) (*meta, error) {
 		}
 		m := repoMeta(repo)
 		m.CanonicalURL = canonicalRepoURL(
-			conf.AppURL(r.Context()),
+			conf.AppURL,
 			getRouteName(r),
 			mux.Vars(r),
 			r.URL.Query(),
@@ -189,7 +189,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) (*meta, error) {
 
 	m := repoMeta(repo)
 	m.CanonicalURL = canonicalRepoURL(
-		conf.AppURL(r.Context()),
+		conf.AppURL,
 		getRouteName(r),
 		mux.Vars(r),
 		r.URL.Query(),
@@ -218,7 +218,7 @@ func serveTree(w http.ResponseWriter, r *http.Request) (*meta, error) {
 
 	m := treeOrBlobMeta(entry.Name, repo)
 	m.CanonicalURL = canonicalRepoURL(
-		conf.AppURL(r.Context()),
+		conf.AppURL,
 		getRouteName(r),
 		mux.Vars(r),
 		r.URL.Query(),

@@ -3,7 +3,6 @@ package middleware_test
 import (
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"reflect"
 	"strings"
 	"testing"
@@ -15,7 +14,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
 )
 
@@ -39,7 +37,6 @@ func TestGoImportPath(t *testing.T) {
 			return nil, grpc.Errorf(codes.NotFound, "repo not found: %d", repo.ID)
 		}
 	}
-	mock.Ctx = conf.WithURL(mock.Ctx, &url.URL{Scheme: "https", Host: "sourcegraph.com", Path: "/"})
 
 	tests := []struct {
 		path       string
@@ -49,27 +46,27 @@ func TestGoImportPath(t *testing.T) {
 		{
 			path:       "/sourcegraph/sourcegraph/usercontent",
 			wantStatus: http.StatusOK,
-			wantBody:   `<meta name="go-import" content="sourcegraph.com/sourcegraph/sourcegraph git https://sourcegraph.com/sourcegraph/sourcegraph">`,
+			wantBody:   `<meta name="go-import" content="example.com/sourcegraph/sourcegraph git http://example.com/sourcegraph/sourcegraph">`,
 		},
 		{
 			path:       "/sourcegraph/srclib/ann",
 			wantStatus: http.StatusOK,
-			wantBody:   `<meta name="go-import" content="sourcegraph.com/sourcegraph/srclib git https://github.com/sourcegraph/srclib">`,
+			wantBody:   `<meta name="go-import" content="example.com/sourcegraph/srclib git https://github.com/sourcegraph/srclib">`,
 		},
 		{
 			path:       "/sourcegraph/srclib-go",
 			wantStatus: http.StatusOK,
-			wantBody:   `<meta name="go-import" content="sourcegraph.com/sourcegraph/srclib-go git https://github.com/sourcegraph/srclib-go">`,
+			wantBody:   `<meta name="go-import" content="example.com/sourcegraph/srclib-go git https://github.com/sourcegraph/srclib-go">`,
 		},
 		{
 			path:       "/sourcegraph/doesntexist/foobar",
 			wantStatus: http.StatusOK,
-			wantBody:   `<meta name="go-import" content="sourcegraph.com/sourcegraph/doesntexist git https://github.com/sourcegraph/doesntexist">`,
+			wantBody:   `<meta name="go-import" content="example.com/sourcegraph/doesntexist git https://github.com/sourcegraph/doesntexist">`,
 		},
 		{
 			path:       "/sqs/pbtypes",
 			wantStatus: http.StatusOK,
-			wantBody:   `<meta name="go-import" content="sourcegraph.com/sqs/pbtypes git https://github.com/sqs/pbtypes">`,
+			wantBody:   `<meta name="go-import" content="example.com/sqs/pbtypes git https://github.com/sqs/pbtypes">`,
 		},
 		{
 			path:       "/gorilla/mux",

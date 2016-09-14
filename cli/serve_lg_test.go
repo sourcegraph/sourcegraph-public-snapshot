@@ -17,7 +17,6 @@ import (
 
 	"sync"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -48,7 +47,7 @@ func TestServerTLS(t *testing.T) {
 	defer a.Close()
 
 	// Test that HTTP redirects to HTTPS.
-	httpsURL := conf.AppURL(ctx).ResolveReference(&url.URL{Path: "/foo/bar"}).String()
+	httpsURL := a.Config.Serve.AppURL + "/foo/bar"
 	httpURL := strings.Replace(httpsURL, "https://", "http://", 1)
 	httpURL = strings.Replace(httpURL, a.Config.Serve.HTTPSAddr, a.Config.Serve.HTTPAddr, 1)
 	httpClient := &httptestutil.Client{}
@@ -151,7 +150,7 @@ func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 	}
 
 	// Test app server.
-	resp3, err := http.Get(conf.AppURL(ctx).ResolveReference(&url.URL{Path: "/_/status"}).String())
+	resp3, err := http.Get(serverConfig.AppURL + "/_/status")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,11 +159,6 @@ func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 	}
 	if want := http.StatusOK; resp3.StatusCode != want {
 		t.Errorf("got HTTP status %d, want %d", resp3.StatusCode, want)
-	}
-
-	// Check config.
-	if want := conf.AppURL(ctx).String(); serverConfig.AppURL != want {
-		t.Errorf("got AppURL %q, want %q", serverConfig.AppURL, want)
 	}
 
 	if err := a.Cmd(nil, []string{"meta", "config"}).Run(); err != nil {

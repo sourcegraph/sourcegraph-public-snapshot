@@ -1,12 +1,9 @@
 package localstore
 
 import (
-	"net/url"
-
 	"context"
 
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testdb"
@@ -26,7 +23,6 @@ func init() {
 func testContext() (ctx context.Context, mock *mocks, done func()) {
 	ctx = context.Background()
 
-	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"})
 	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 1, Login: "test", Admin: true})
 	ctx = accesscontrol.WithInsecureSkip(ctx, true)
 

@@ -10,6 +10,7 @@ import (
 )
 
 var (
+	AppURL      = &url.URL{Scheme: "http", Host: "example.com"}
 	BuildLogDir = GetenvOrDefault("SG_BUILD_LOG_DIR", filepath.Join(TempDir(), "sg-log/build"))
 )
 

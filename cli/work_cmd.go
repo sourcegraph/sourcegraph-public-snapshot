@@ -38,7 +38,7 @@ func (c *WorkCmd) Execute(args []string) error {
 	// what the endpoint regards as the AppURL. The reason behind this is
 	// in production we want to seperate out the endpoint that works
 	// upload to from what our end users use.
-	ctx := conf.WithURL(context.Background(), endpoint.URLOrDefault())
+	conf.AppURL = endpoint.URLOrDefault()
 
-	return worker.RunWorker(ctx, endpoint.URLOrDefault(), c.Parallel, c.DequeueMsec)
+	return worker.RunWorker(context.Background(), endpoint.URLOrDefault(), c.Parallel, c.DequeueMsec)
 }

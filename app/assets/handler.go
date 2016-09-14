@@ -34,8 +34,8 @@ func URL(p string) *url.URL {
 func AbsURL(ctx context.Context, p string) *url.URL {
 	u := URL(p)
 	if !u.IsAbs() {
-		u.Scheme = conf.AppURL(ctx).Scheme
-		u.Host = conf.AppURL(ctx).Host
+		u.Scheme = conf.AppURL.Scheme
+		u.Host = conf.AppURL.Host
 	}
 	return u
 }

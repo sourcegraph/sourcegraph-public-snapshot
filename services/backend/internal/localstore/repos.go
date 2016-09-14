@@ -240,7 +240,7 @@ func verifyAccessAndSetAllFields(ctx context.Context, repo *sourcegraph.Repo) (*
 	// The clone field is not set in the DB since it would become stale if
 	// the AppURL configuration changed.
 	if !repo.Mirror {
-		repo.HTTPCloneURL = conf.AppURL(ctx).ResolveReference(approuter.Rel.URLToRepo(repo.URI)).String()
+		repo.HTTPCloneURL = conf.AppURL.ResolveReference(approuter.Rel.URLToRepo(repo.URI)).String()
 	}
 
 	return repo, nil

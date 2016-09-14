@@ -297,7 +297,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	// Don't noindex pages with a canonical URL. See
 	// https://www.seroundtable.com/archives/020151.html.
 	m.CanonicalURL = canonicalRepoURL(
-		conf.AppURL(r.Context()),
+		conf.AppURL,
 		getRouteName(r),
 		mux.Vars(r),
 		r.URL.Query(),

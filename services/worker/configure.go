@@ -206,9 +206,8 @@ func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.
 // getContainerAppURL gets the Sourcegraph server's app URL from the
 // POV of the Docker containers.
 func getAppURL(ctx context.Context) (*url.URL, error) {
-	u := conf.AppURLOrNil(ctx)
-	if u != nil {
-		return u, nil
+	if conf.AppURL != nil {
+		return conf.AppURL, nil
 	}
 
 	cl, err := sourcegraph.NewClientFromContext(ctx)

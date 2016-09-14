@@ -103,7 +103,7 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 
 			// Repo found. Serve a go-import meta tag.
 
-			appURL := conf.AppURL(ctx)
+			appURL := conf.AppURL
 			scheme := appURL.Scheme
 			host := appURL.Host
 
@@ -121,7 +121,7 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 		// Handle "go get sourcegraph.com/{sourcegraph,sqs}/*" for all non-hosted repositories.
 		// It's a vanity import path that maps to "github.com/{sourcegraph,sqs}/*" clone URLs.
 		if len(pathElements) >= 2 && (pathElements[0] == "sourcegraph" || pathElements[0] == "sqs") {
-			host := conf.AppURL(ctx).Host
+			host := conf.AppURL.Host
 
 			user := pathElements[0]
 			repo := pathElements[1]

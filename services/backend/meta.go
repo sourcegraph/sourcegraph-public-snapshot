@@ -18,7 +18,7 @@ var _ sourcegraph.MetaServer = (*meta)(nil)
 func (s *meta) Config(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.ServerConfig, error) {
 	c := &sourcegraph.ServerConfig{
 		Version: buildvar.Version,
-		AppURL:  conf.AppURL(ctx).String(),
+		AppURL:  conf.AppURL.String(),
 	}
 
 	return c, nil

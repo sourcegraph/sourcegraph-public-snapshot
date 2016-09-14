@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/gorilla/csrf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/auth"
+	"github.com/gorilla/csrf"
 )
 
 type Middleware func(next http.Handler) http.Handler
@@ -39,7 +39,7 @@ func NewHandlerWithCSRFProtection(handler http.Handler) http.Handler {
 			[]byte("e953612ddddcdd5ec60d74e07d40218c"),
 			csrf.CookieName("csrf_token"),
 			csrf.Path("/"),
-			csrf.Secure(auth.OnlySecureCookies(r.Context())),
+			csrf.Secure(conf.AppURL.Scheme == "https"),
 		)
 		p(handler).ServeHTTP(w, r)
 	})

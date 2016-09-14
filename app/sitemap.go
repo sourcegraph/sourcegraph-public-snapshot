@@ -95,7 +95,7 @@ func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 
 	// Add repo main page.
 	sm.URLs = append(sm.URLs, sitemap.URL{
-		Loc:        conf.AppURL(r.Context()).ResolveReference(router.Rel.URLToRepo(rc.Repo.URI)).String(),
+		Loc:        conf.AppURL.ResolveReference(router.Rel.URLToRepo(rc.Repo.URI)).String(),
 		ChangeFreq: chgFreq,
 		Priority:   repoPriority,
 	})
@@ -137,7 +137,7 @@ func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 				pri = defHiPriority
 			}
 
-			url := conf.AppURL(r.Context()).ResolveReference(router.Rel.URLToDefKey(def.DefKey)).String()
+			url := conf.AppURL.ResolveReference(router.Rel.URLToDefKey(def.DefKey)).String()
 			if len(url) > 1000 {
 				// Google rejects long URLs >2000 chars, but let's limit
 				// them to 1000 just to be safe/sane.

@@ -245,7 +245,7 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	app.Init()
 
-	appURL, err := c.configureAppURL()
+	conf.AppURL, err = c.configureAppURL()
 	if err != nil {
 		return err
 	}
@@ -262,7 +262,6 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	// Shared context setup between client and server.
 	sharedCtxFunc := func(ctx context.Context) context.Context {
-		ctx = conf.WithURL(ctx, appURL)
 		ctx = sourcegraph.WithGRPCEndpoint(ctx, endpoint.URLOrDefault())
 		return ctx
 	}
@@ -314,12 +313,12 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 	useTLS := c.CertFile != "" || c.KeyFile != ""
 
-	if useTLS && appURL.Scheme == "http" {
-		log15.Warn("TLS is enabled but app url scheme is http", "appURL", appURL)
+	if useTLS && conf.AppURL.Scheme == "http" {
+		log15.Warn("TLS is enabled but app url scheme is http", "appURL", conf.AppURL)
 	}
 
-	if !useTLS && appURL.Scheme == "https" {
-		log15.Warn("TLS is disabled but app url scheme is https", "appURL", appURL)
+	if !useTLS && conf.AppURL.Scheme == "https" {
+		log15.Warn("TLS is disabled but app url scheme is https", "appURL", conf.AppURL)
 	}
 
 	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), middleware.HealthCheck, middleware.RealIP, middleware.NoCacheByDefault}
@@ -351,7 +350,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	//
 	//
 	// Start event listeners.
-	c.initializeEventListeners(clientCtx, appURL)
+	c.initializeEventListeners(clientCtx)
 
 	serveHTTPS := func(l net.Listener, srv *http.Server, addr string) {
 		grpcSrv := server.New(server.Config(serverCtxFunc))
@@ -532,11 +531,9 @@ func authenticateScopedContext(ctx context.Context, scopes []string) (context.Co
 
 // initializeEventListeners creates special scoped contexts and passes them to
 // event listeners.
-func (c *ServeCmd) initializeEventListeners(parent context.Context, appURL *url.URL) {
-	ctx := conf.WithURL(parent, appURL)
-	ctx = auth.WithActor(ctx, auth.Actor{})
+func (c *ServeCmd) initializeEventListeners(parent context.Context) {
 	for _, l := range events.GetRegisteredListeners() {
-		listenerCtx, err := authenticateScopedContext(ctx, l.Scopes())
+		listenerCtx, err := authenticateScopedContext(auth.WithActor(parent, auth.Actor{}), l.Scopes())
 		if err != nil {
 			log.Fatalf("Could not initialize listener context: %v", err)
 		} else {

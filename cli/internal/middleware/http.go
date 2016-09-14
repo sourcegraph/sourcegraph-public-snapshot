@@ -81,9 +81,7 @@ func NoCacheByDefault(next http.Handler) http.Handler {
 // EnsureHostname ensures that the URL hostname is whatever is in SG_URL.
 func EnsureHostname(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		wantHost := conf.AppURL(ctx).Host
+		wantHost := conf.AppURL.Host
 		if strings.Split(wantHost, ":")[0] == "localhost" {
 			// if localhost, don't enforce redirect, so the site is easier to share with others
 			next.ServeHTTP(w, r)
@@ -99,7 +97,7 @@ func EnsureHostname(next http.Handler) http.Handler {
 		newURL := *r.URL
 		newURL.User = nil
 		newURL.Host = wantHost
-		newURL.Scheme = conf.AppURL(ctx).Scheme
+		newURL.Scheme = conf.AppURL.Scheme
 		log.Printf("ensureHostnameHandler: Permanently redirecting from requested host %q to %q.", r.Host, newURL.String())
 		http.Redirect(w, r, newURL.String(), http.StatusMovedPermanently)
 	})

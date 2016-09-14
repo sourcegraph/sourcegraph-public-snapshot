@@ -13,10 +13,8 @@ import (
 )
 
 func robotsTxt(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
 	w.Header().Set("Content-Type", "text/plain")
-	robotsTxtHelper(w, os.Getenv("ROBOTS_TXT_ALLOW") != "", conf.AppURL(ctx).ResolveReference(router.Rel.URLTo(router.SitemapIndex)).String())
+	robotsTxtHelper(w, os.Getenv("ROBOTS_TXT_ALLOW") != "", conf.AppURL.ResolveReference(router.Rel.URLTo(router.SitemapIndex)).String())
 }
 
 func robotsTxtHelper(w io.Writer, allowRobots bool, sitemapUrl string) {

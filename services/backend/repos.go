@@ -160,7 +160,7 @@ func (s *repos) ListDeps(ctx context.Context, repos *sourcegraph.URIList) (*sour
 
 func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
 	var updateWithDataFromRemote *store.RepoUpdate
-	repo.HTMLURL = conf.AppURL(ctx).ResolveReference(app_router.Rel.URLToRepo(repo.URI)).String()
+	repo.HTMLURL = conf.AppURL.ResolveReference(app_router.Rel.URLToRepo(repo.URI)).String()
 	// Fetch latest metadata from GitHub (we don't even try to keep
 	// our cache up to date).
 	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
@@ -542,7 +542,7 @@ func (s *repos) EnableWebhook(ctx context.Context, op *sourcegraph.RepoWebhookOp
 		Name:   gogithub.String("web"),
 		Events: []string{"push", "pull_request"},
 		Config: map[string]interface{}{
-			"url":          conf.AppURL(ctx).String() + "/.api/webhook/callback",
+			"url":          conf.AppURL.String() + "/.api/webhook/callback",
 			"content_type": "json",
 		},
 		Active: gogithub.Bool(true),

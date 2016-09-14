@@ -93,7 +93,7 @@ func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User)
 	}
 
 	return JSContext{
-		AppURL:            conf.AppURL(ctx).String(),
+		AppURL:            conf.AppURL.String(),
 		LegacyAccessToken: sourcegraph.AccessTokenFromContext(ctx),
 		XHRHeaders:        headers,
 		UserAgentIsBot:    isBot(eventsutil.UserAgentFromContext(ctx)),

@@ -168,7 +168,7 @@ func StartEventLogger(ctx context.Context, channelCapacity, workerBufferSize int
 	ActiveLogger.Worker = &Worker{
 		Buffer:  make([]*sourcegraph.Event, workerBufferSize),
 		Channel: ActiveLogger.Channel,
-		AppURL:  conf.AppURL(ctx),
+		AppURL:  conf.AppURL,
 	}
 
 	go ActiveLogger.Worker.Work()

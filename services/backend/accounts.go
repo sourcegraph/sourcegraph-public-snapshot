@@ -204,7 +204,7 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, op *sourcegraph.Req
 		return nil, err
 	}
 
-	u := conf.AppURL(ctx).ResolveReference(&url.URL{Path: "/reset"})
+	u := conf.AppURL.ResolveReference(&url.URL{Path: "/reset"})
 	v := url.Values{}
 	v.Set("token", token.Token)
 	u.RawQuery = v.Encode()

@@ -23,7 +23,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
 	"sourcegraph.com/sourcegraph/srclib/flagutil"
 )
@@ -350,7 +349,6 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 
 	s.Ctx = context.Background()
 	s.Ctx = sourcegraph.WithGRPCEndpoint(s.Ctx, s.Config.Endpoint.URLOrDefault())
-	s.Ctx = conf.WithURL(s.Ctx, parseURL(s.Config.Serve.AppURL))
 
 	// ID key
 	s.Ctx = s.AsUIDWithAccess(s.Ctx, 1, false, true)

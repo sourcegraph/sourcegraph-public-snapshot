@@ -13,6 +13,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -131,7 +132,7 @@ func finishLoginOrSignup(ctx context.Context, cl *sourcegraph.Client, w http.Res
 	ctx = sourcegraph.WithAccessToken(ctx, tok.AccessToken)
 
 	// Authenticate as newly created user.
-	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: tok.AccessToken}, appauth.OnlySecureCookies(ctx)); err != nil {
+	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: tok.AccessToken}, conf.AppURL.Scheme == "https"); err != nil {
 		return err
 	}
 

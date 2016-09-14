@@ -8,10 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"context"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 // Session is the information stored in a session cookie.
@@ -27,12 +24,6 @@ const sessionCookieName = "session-oauth2-token"
 // ErrNoSession indicates that there is no session cookie sent in the
 // HTTP request.
 var ErrNoSession = errors.New("no session cookie")
-
-// OnlySecureCookies indicates whether or not the
-// secure flag should be set for all issued cookies.
-func OnlySecureCookies(ctx context.Context) bool {
-	return conf.AppURL(ctx).Scheme == "https"
-}
 
 // readSessionCookie reads the session from the HTTP request. If there
 // is no session cookie, ErrNoSession is returned.
