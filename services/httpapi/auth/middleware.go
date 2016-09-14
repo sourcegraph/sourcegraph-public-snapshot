@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"context"
+	"encoding/base64"
 	"log"
 	"net/http"
 
@@ -91,4 +93,12 @@ func readBearerToken(r *http.Request) (token string, err error) {
 	}
 
 	return "", nil
+}
+
+func AuthorizationHeader(ctx context.Context) string {
+	accessToken := sourcegraph.AccessTokenFromContext(ctx)
+	if accessToken == "" {
+		return ""
+	}
+	return "Basic " + base64.StdEncoding.EncodeToString([]byte("x-oauth-basic:"+accessToken))
 }

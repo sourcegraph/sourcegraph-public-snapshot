@@ -18,6 +18,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 
 	"github.com/golang/groupcache/consistenthash"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -298,6 +299,7 @@ func (c *Client) do(ctx context.Context, cl *langClient, repo, endpoint string, 
 	}
 
 	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", auth.AuthorizationHeader(ctx))
 
 	operationName := fmt.Sprintf("LP Client: POST %s", cl.endpointTo(repo, endpoint))
 	var span opentracing.Span

@@ -3,7 +3,6 @@ package jscontext
 import (
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"net/http"
 	"os"
@@ -25,6 +24,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 )
 
 // JSContext is made available to JavaScript code via the
@@ -50,11 +50,7 @@ func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User)
 	cl := handlerutil.Client(req)
 
 	headers := make(map[string]string)
-
-	accessToken := sourcegraph.AccessTokenFromContext(ctx)
-	if accessToken != "" {
-		headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString([]byte("x-oauth-basic:"+accessToken))
-	}
+	headers["Authorization"] = auth.AuthorizationHeader(ctx)
 
 	if span := opentracing.SpanFromContext(ctx); span != nil {
 		if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, opentracing.TextMapCarrier(headers)); err != nil {
@@ -98,7 +94,7 @@ func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User)
 
 	return JSContext{
 		AppURL:            conf.AppURL(ctx).String(),
-		LegacyAccessToken: accessToken,
+		LegacyAccessToken: sourcegraph.AccessTokenFromContext(ctx),
 		XHRHeaders:        headers,
 		UserAgentIsBot:    isBot(eventsutil.UserAgentFromContext(ctx)),
 		AssetsRoot:        assets.URL("/").String(),
