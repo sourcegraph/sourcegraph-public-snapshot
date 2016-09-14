@@ -15,7 +15,7 @@ import (
 func AddSystemAuthToURL(ctx context.Context, scope, urlStr string) (string, error) {
 	tok, err := auth.NewAccessToken(&auth.Actor{
 		Scope: map[string]bool{scope: true},
-	}, nil, 3*time.Hour, true)
+	}, nil, 3*time.Hour)
 	if err != nil {
 		return "", err
 	}

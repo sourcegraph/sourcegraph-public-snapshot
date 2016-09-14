@@ -11,21 +11,10 @@ import (
 
 // New creates and signs a new OAuth2 access token that grants the
 // actor's access to the holder of the token. The given scopes are
-// applied as well.
-// If useAsymmetricEnc is set, then the token can be verified
-// externally via the public key, but the token length increases.
-// The shorter length of the symmetric version is useful for
-// situations with a restricted token length, e.g. authentication
-// for git via basic auth. The retuned token is assumed to be
+// applied as well. The retuned token is assumed to be
 // public and must not include any secret data.
-func NewAccessToken(actor *Actor, scopes []string, expiryDuration time.Duration, useAsymmetricEnc bool) (string, error) {
-	method := jwt.SigningMethod(jwt.SigningMethodHS256)
-	key := interface{}(ActiveIDKey.hmacKey)
-	if useAsymmetricEnc {
-		method = jwt.SigningMethodRS256
-		key = ActiveIDKey.rsaKey
-	}
-	tok := jwt.New(method)
+func NewAccessToken(actor *Actor, scopes []string, expiryDuration time.Duration) (string, error) {
+	tok := jwt.New(jwt.SigningMethod(jwt.SigningMethodHS256))
 
 	if actor != nil {
 		if actor.UID != 0 {
@@ -47,7 +36,7 @@ func NewAccessToken(actor *Actor, scopes []string, expiryDuration time.Duration,
 		tok.Claims["nbf"] = time.Now().Add(-5 * time.Minute).Unix()
 	}
 
-	s, err := tok.SignedString(key)
+	s, err := tok.SignedString(ActiveIDKey.hmacKey)
 	if err != nil {
 		return "", err
 	}
@@ -60,7 +49,7 @@ func ParseAndVerify(accessToken string) (*Actor, error) {
 	// parse and verify JWT
 	tok, err := jwt.Parse(accessToken, func(tok *jwt.Token) (interface{}, error) {
 		switch tok.Method.(type) {
-		case *jwt.SigningMethodRSA:
+		case *jwt.SigningMethodRSA: // legacy
 			return ActiveIDKey.rsaKey.Public(), nil
 		case *jwt.SigningMethodHMAC:
 			return ActiveIDKey.hmacKey, nil

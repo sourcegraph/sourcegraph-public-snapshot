@@ -4,16 +4,8 @@ import (
 	"testing"
 )
 
-func TestAsymmetricToken(t *testing.T) {
-	testToken(t, true)
-}
-
-func TestSymmetricToken(t *testing.T) {
-	testToken(t, false)
-}
-
-func testToken(t *testing.T, useAsymmetricEnc bool) {
-	tok, err := NewAccessToken(nil, nil, 0, useAsymmetricEnc)
+func TestToken(t *testing.T) {
+	tok, err := NewAccessToken(nil, nil, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

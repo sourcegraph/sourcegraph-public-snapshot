@@ -13,7 +13,7 @@ import (
 )
 
 func TestGRPCMiddlewareExpiredToken(t *testing.T) {
-	tok, err := auth.NewAccessToken(&auth.Actor{}, nil, -time.Hour, true)
+	tok, err := auth.NewAccessToken(&auth.Actor{}, nil, -time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -148,7 +148,7 @@ func (s *Server) AsUser(ctx context.Context, login string) (context.Context, err
 }
 
 func (s *Server) AsUIDWithAccess(ctx context.Context, uid int, write, admin bool) context.Context {
-	token, err := auth.NewAccessToken(&auth.Actor{UID: uid, Write: write, Admin: admin}, nil, 10*time.Minute, true)
+	token, err := auth.NewAccessToken(&auth.Actor{UID: uid, Write: write, Admin: admin}, nil, 10*time.Minute)
 	if err != nil {
 		panic(err)
 	}

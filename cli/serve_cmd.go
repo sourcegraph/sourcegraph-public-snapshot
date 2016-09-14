@@ -523,7 +523,7 @@ func authenticateScopedContext(ctx context.Context, scopes []string) (context.Co
 	}
 	tok, err := auth.NewAccessToken(&auth.Actor{
 		Scope: scopeMap,
-	}, nil, 0, true)
+	}, nil, 0)
 	if err != nil {
 		return nil, err
 	}

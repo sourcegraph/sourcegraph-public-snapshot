@@ -85,7 +85,7 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 	}
 
 	// Return a temporary access token.
-	tok, err := authpkg.NewAccessToken(&actor, nil, 7*24*time.Hour, true)
+	tok, err := authpkg.NewAccessToken(&actor, nil, 7*24*time.Hour)
 	if err != nil {
 		return nil, err
 	}

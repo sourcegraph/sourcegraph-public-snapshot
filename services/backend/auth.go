@@ -75,7 +75,7 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 	a.Write = user.Write
 	a.Admin = user.Admin
 
-	tok, err := authpkg.NewAccessToken(&a, nil, 7*24*time.Hour, true)
+	tok, err := authpkg.NewAccessToken(&a, nil, 7*24*time.Hour)
 
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func (s *auth) authenticateGitHubAuthCode(ctx context.Context, authCode *sourceg
 		a.Login = user.Login
 		a.Write = user.Write
 		a.Admin = user.Admin
-		tok, err := authpkg.NewAccessToken(&a, nil, 7*24*time.Hour, true)
+		tok, err := authpkg.NewAccessToken(&a, nil, 7*24*time.Hour)
 		if err != nil {
 			return nil, err
 		}

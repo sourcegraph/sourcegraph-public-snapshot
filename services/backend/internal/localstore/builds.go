@@ -535,7 +535,7 @@ RETURNING repo_build.*, COALESCE((SELECT repo.uri FROM repo WHERE repo.id=repo_b
 }
 
 func newBuildJob(ctx context.Context, b *sourcegraph.Build) (*sourcegraph.BuildJob, error) {
-	tok, err := auth.NewAccessToken(nil, []string{fmt.Sprintf("repo:%d", b.Repo)}, time.Hour, false)
+	tok, err := auth.NewAccessToken(nil, []string{fmt.Sprintf("repo:%d", b.Repo)}, time.Hour)
 	if err != nil {
 		return nil, err
 	}
