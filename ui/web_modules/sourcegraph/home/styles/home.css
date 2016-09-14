@@ -4,12 +4,8 @@
 @value grid "sourcegraph/components/styles/_grid.css";
 @value vars "sourcegraph/components/styles/_vars.css";
 
-@value c_purple_8 from colors;
+@value c_purple_8, c_dark_purple from colors;
 @value media_sm from vars;
-
-.grey-bg {
-	background-color: rgba(119, 147, 174, 0.1);
-}
 
 .action_button {
 	composes: mh2 ph2 mb2 from base;
@@ -51,6 +47,14 @@
 .tweet_container {
     flex: 1 1 48%;
     width: 48%;
+}
+
+.hover_no_border:hover {
+	border-color: transparent;
+}
+
+.hover_dark_purple:hover {
+	color: c_dark_purple;
 }
 
 /* TODO: Abstract this – styles should be contained in their components */

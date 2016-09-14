@@ -49,33 +49,33 @@ export class Home extends Container<HomeProps, HomeState> {
 		return (
 			<div style={{width: "100%", marginRight: "auto", marginLeft: "auto"}}>
 				{/* section showing icon and links: about, pricing, login, signup */}
-				<div style={{paddingTop: "25px", paddingBottom: "110px", backgroundColor: "rgba(119, 147, 174, 0.1)"}}>
-					<FlexContainer items="center" wrap={true} style={{maxWidth: "960px"}} className={classNames(base.mt2, base.mb4, base.center, base.ph3)}>
+				<div className={classNames(base.pt4, base.pb5, colors.bg_cool_mid_gray_1)}>
+					<FlexContainer items="center" wrap={true} style={{maxWidth: "960px"}} className={classNames(base.mt2, base.mb5, base.center, base.ph3)}>
 						<Logo width="32"/>
 
 						<div className={typography.tr} style={{flex: "1"}} />
 
 						<FlexContainer items="center" justify="between">
 
-							<Link className={classNames(styles.link, base.mr2, base.pa2)} to="/about">
+							<Link className={classNames(styles.link, base.mr2, base.ph2, base.pv1)} to="/about">
 								About
 							</Link>
 
-							<Link className={classNames(styles.link, base.mr2, base.pa2)} to="/pricing">
+							<Link className={classNames(styles.link, base.mr2, base.ph2, base.pv1)} to="/pricing">
 								Pricing
 							</Link>
 
-							<a className={classNames(styles.link, base.mr2, base.pa2)} href="/jobs">Jobs</a>
+							<a className={classNames(styles.link, base.mr2, base.ph2, base.pv1)} href="/jobs">Jobs</a>
 
 							{!(this.context as any).signedIn &&
-								<LocationStateToggleLink className={classNames(styles.link, base.mr2, base.pa2)} href="/login" modalName="login" location={this.props.location}>
+								<LocationStateToggleLink className={classNames(styles.link, base.mr2, base.ph2, base.pv1)} href="/login" modalName="login" location={this.props.location}>
 									Login
 								</LocationStateToggleLink>
 							}
 
 							{!(this.context as any).signedIn &&
-								<LocationStateToggleLink className={classNames(styles.link, base.mr0, base.pa2, base.pr0)} href="/join" modalName="join" location={this.props.location}>
-									Sign up
+								<LocationStateToggleLink className={classNames(base.mr0, base.ml2, base.pv1, base.bb, base.bbw2, colors.purple, styles.hover_no_border, styles.hover_dark_purple)} href="/join" modalName="join" location={this.props.location}>
+									<strong>Sign up</strong>
 								</LocationStateToggleLink>
 							}
 
@@ -99,7 +99,7 @@ export class Home extends Container<HomeProps, HomeState> {
 								<LocationStateToggleLink href="/join" modalName="join" location={this.props.location}>
 									<Button type="button" color="purple" className={classNames(base.ph3, base.mr3)}>Sign up for free</Button>
 								</LocationStateToggleLink> or
-								<Link className={classNames(base.pl3)} to="/about">Learn more</Link>
+								<Link className={classNames(base.ml3, base.bb, base.bbw2, base.pv2, styles.hover_no_border)} to="/about"><strong>Learn more</strong></Link>
 							</p>
 						</div>
 
@@ -115,29 +115,29 @@ export class Home extends Container<HomeProps, HomeState> {
 					</FlexContainer>
 				</div>
 
-				<div className={classNames(base.center, base.ph3)} style={{maxWidth: "960px", paddingTop: "100px", paddingBottom: "100px"}}>
+				<div className={classNames(base.center, base.ph3, base.pv5)} style={{maxWidth: "990px"}}>
 					{/* section showing questions */}
-					<div style={{maxWidth: "600px", marginRight: "auto", marginLeft: "auto"}}>
-						<Heading className="hook-title" align="center" level="4" underline="blue">
+					<div className={base.center} style={{maxWidth: "600px"}}>
+						<Heading align="center" level="4" underline="blue">
 							How do I use this function? Who can I ask about this code? <em>What does this code even do?</em>
 						</Heading>
 
-						<p className={classNames(typography.tc, base.mt0, base.mb5)} >
+						<p className={classNames(typography.tc, base.mt0, base.mb4)} >
 							These questions require you to constantly context-switch between your editor, terminal, and browser.
 							Sourcegraph can help you stop losing focus and wasting time.
 						</p>
 					</div>
 
 					{/* section showing feature descriptions */}
-					<FlexContainer justify="around" wrap={true} className={base.center}>
+					<FlexContainer justify="between" wrap={true} className={base.center}>
 
 						{/* column describing examples */}
-						<div style={{maxWidth: "300px", flex: "1 1 300px"}} className={base.ph3}>
+						<div style={{maxWidth: "300px", flex: "1 1 300px"}} className={classNames(base.ph3, base.mt4)}>
 							<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/illo-docs.svg`} width="100%" />
 
-							<p style={{fontWeight: "bold"}}>
+							<Heading level="5" className={base.mt3}>
 								Usage examples and instant documentation
-							</p>
+							</Heading>
 
 							<p>
 								Quickly understand new libraries instead of reinventing the wheel.
@@ -145,12 +145,12 @@ export class Home extends Container<HomeProps, HomeState> {
 						</div>
 
 						{/* column describing search */}
-						<div style={{maxWidth: "300px", flex: "1 1 300px"}} className={base.ph3}>
+						<div style={{maxWidth: "300px", flex: "1 1 300px"}} className={classNames(base.ph3, base.mt4)}>
 							<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/illo-search.svg`} width="100%" />
 
-							<p style={{fontWeight: "bold"}}>
+							<Heading level="5" className={base.mt3}>
 								Global search by function, package, or symbol name
-							</p>
+							</Heading>
 
 							<p>
 								Find exactly the function you&rsquo;re looking for.
@@ -159,12 +159,12 @@ export class Home extends Container<HomeProps, HomeState> {
 						</div>
 
 						{/* column describing team features */}
-						<div style={{maxWidth: "300px", flex: "1 1 300px"}} className={base.ph3}>
+						<div style={{maxWidth: "300px", flex: "1 1 300px"}} className={classNames(base.ph3, base.mt4)}>
 							<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/illo-team.svg`} width="100%" />
 
-							<p style={{fontWeight: "bold"}}>
+							<Heading level="5" className={base.mt3}>
 								Designed with teams in mind
-							</p>
+							</Heading>
 
 							<p>
 								Jump to definition in a code review and instantly see who you should ask about a piece of code.

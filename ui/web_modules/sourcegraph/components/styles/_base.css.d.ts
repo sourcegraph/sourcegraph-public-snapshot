@@ -26,6 +26,7 @@ export const bw2: string;
 export const bw3: string;
 export const bw4: string;
 export const brw2: string;
+export const bbw2: string;
 export const br0: string;
 export const br1: string;
 export const br2: string;
