@@ -6,9 +6,6 @@ import testdataLineNumber from "sourcegraph/blob/testdata/BlobLine-lineNumber.js
 import testdataLineSelection from "sourcegraph/blob/testdata/BlobLine-selection.json";
 import {autotest} from "sourcegraph/util/testutil/autotest";
 
-const context = {
-	eventLogger: {logEvent: () => null},
-};
 const common = {
 	location: {
 			hash: "",
@@ -29,28 +26,28 @@ describe("BlobLine", () => {
 	it("should render", () => {
 		autotest(testdataContents, "sourcegraph/blob/testdata/BlobLine-contents.json",
 			<BlobLine {...common} contents={"hello\nworld"} highlightedDef="secondURL" />,
-			context
+			{}
 		);
 	});
 
 	it("should render empty", () => {
 		autotest(testdataEmpty, "sourcegraph/blob/testdata/BlobLine-empty.json",
 			<BlobLine {...common} contents={"hello\nworld"} highlightedDef={null} />,
-			context
+			{}
 		);
 	});
 
 	it("should render line number", () => {
 		autotest(testdataLineNumber, "sourcegraph/blob/testdata/BlobLine-lineNumber.json",
 			<BlobLine {...common} lineNumber={42} repo="r" rev="v" path="p" contents={"hello\nworld"} highlightedDef={null} />,
-			context
+			{}
 		);
 	});
 
 	it("should render selection", () => {
 		autotest(testdataLineSelection, "sourcegraph/blob/testdata/BlobLine-selection.json",
 			<BlobLine {...common} contents={"hello\nworld"} selected={true} highlightedDef={null} />,
-			context
+			{}
 		);
 	});
 });

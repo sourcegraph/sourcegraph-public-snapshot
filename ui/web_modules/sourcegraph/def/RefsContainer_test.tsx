@@ -3,7 +3,6 @@ import {RefsContainer} from "sourcegraph/def/RefsContainer";
 import {render} from "sourcegraph/util/testutil/renderTestUtils";
 
 const context = {
-	eventLogger: {logEvent: () => null},
 	user: null,
 };
 

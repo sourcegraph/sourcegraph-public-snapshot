@@ -21,6 +21,7 @@ import * as styles from "sourcegraph/def/styles/Refs.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above/below a ref
 
@@ -52,7 +53,6 @@ type State = any;
 export class OnboardingExampleRefsContainer extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
-		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	rangesMemo: any;
@@ -196,7 +196,7 @@ export class OnboardingExampleRefsContainer extends Container<Props, State> {
 	}
 
 	_clickedFromRepo() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "FromRepoClicked", {repo: this.state.repo, def: this.state.def, ref_repo: this.state.refRepo});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "FromRepoClicked", {repo: this.state.repo, def: this.state.def, ref_repo: this.state.refRepo});
 	}
 
 	render(): JSX.Element | null {

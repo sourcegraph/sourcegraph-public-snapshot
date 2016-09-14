@@ -35,6 +35,7 @@ import {Header, Heading, FlexContainer, GitHubAuthButton, Loader} from "sourcegr
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {Store} from "sourcegraph/Store";
 import {context} from "sourcegraph/app/context";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 // Number of characters of the Docstring to show before showing the "collapse" options.
 const DESCRIPTION_CHAR_CUTOFF = 500;
@@ -54,7 +55,6 @@ type State = any;
 export class DefInfo extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
-		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props: Props) {
@@ -135,12 +135,12 @@ export class DefInfo extends Container<Props, State> {
 	}
 
 	_onViewMore() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedViewMoreDescription", {repo: this.state.repo, def: this.state.def, num_examples: this.state.examples["RepoRefs"].length});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedViewMoreDescription", {repo: this.state.repo, def: this.state.def, num_examples: this.state.examples["RepoRefs"].length});
 		this.setState({defDescrHidden: false});
 	}
 
 	_onViewLess() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedViewLessDescription", {repo: this.state.repo, def: this.state.def});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedViewLessDescription", {repo: this.state.repo, def: this.state.def});
 		this.setState({defDescrHidden: true});
 	}
 
@@ -239,11 +239,11 @@ export class DefInfo extends Container<Props, State> {
 	}
 
 	_viewDefinitionClicked() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedViewDefinition", {repo: this.state.repo, def: this.state.def, num_examples: this.state.examples["RepoRefs"].length});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedViewDefinition", {repo: this.state.repo, def: this.state.def, num_examples: this.state.examples["RepoRefs"].length});
 	}
 
 	_viewRepoClicked() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedRepoAboveExamples", {repo: this.state.repo, def: this.state.def, num_examples: this.state.examples["RepoRefs"].length});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedRepoAboveExamples", {repo: this.state.repo, def: this.state.def, num_examples: this.state.examples["RepoRefs"].length});
 	}
 
 	render(): JSX.Element | null {

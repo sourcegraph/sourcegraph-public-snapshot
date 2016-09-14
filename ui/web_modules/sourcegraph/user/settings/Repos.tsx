@@ -21,7 +21,6 @@ type State = any;
 
 export class Repos extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
-		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	_filterInput: any;

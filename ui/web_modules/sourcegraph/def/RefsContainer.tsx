@@ -31,6 +31,7 @@ import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {FaThumbsUp, FaThumbsDown} from "sourcegraph/components/Icons";
 import {context} from "sourcegraph/app/context";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above/below a ref
 
@@ -59,7 +60,6 @@ type State = any;
 export class RefsContainer extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
-		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	rangesMemo: any;
@@ -251,13 +251,13 @@ export class RefsContainer extends Container<Props, State> {
 			newOpenFiles.delete(path);
 		} else {
 			newOpenFiles.add(path);
-			(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REFERENCES, AnalyticsConstants.ACTION_TOGGLE, "RefsFileExpanded", {repo: this.props.repo, def: this.props.def});
+			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REFERENCES, AnalyticsConstants.ACTION_TOGGLE, "RefsFileExpanded", {repo: this.props.repo, def: this.props.def});
 		}
 		this.setState({shownFiles: newOpenFiles});
 	}
 
 	_vote(upvote, repo, path) {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_INTERNAL, AnalyticsConstants.ACTION_CLICK, "UsageExampleVote", {
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_INTERNAL, AnalyticsConstants.ACTION_CLICK, "UsageExampleVote", {
 			page: window.location.href,
 			upvote: upvote,
 			repo: repo,
@@ -268,7 +268,7 @@ export class RefsContainer extends Container<Props, State> {
 	}
 
 	_clickedFromRepo() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "FromRepoClicked", {repo: this.state.repo, def: this.state.def, ref_repo: this.state.refRepo});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "FromRepoClicked", {repo: this.state.repo, def: this.state.def, ref_repo: this.state.refRepo});
 	}
 
 	render(): JSX.Element | null {

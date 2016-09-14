@@ -12,6 +12,7 @@ import {Store} from "sourcegraph/Store";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {SignedInDashboard} from "sourcegraph/dashboard/SignedInDashboard";
 import {context} from "sourcegraph/app/context";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	location?: any;
@@ -26,7 +27,6 @@ export class OnboardingContainer extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
-		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	reconcileState(state: State, props: Props, context: any): void {
@@ -52,11 +52,11 @@ export class OnboardingContainer extends Container<Props, State> {
 		let nextStep = {};
 
 		if (this.props.currentStep === "chrome") {
-			(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionStepCompleted", {page_name: "ChromeExtensionOnboarding"});
+			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionStepCompleted", {page_name: "ChromeExtensionOnboarding"});
 			nextStep = {ob: "github"};
 		} else if (this.props.currentStep === "github") {
 			nextStep = {ob: "search"};
-			(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "GitHubStepCompleted", {page_name: "GitHubPrivateCodeOnboarding"});
+			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "GitHubStepCompleted", {page_name: "GitHubPrivateCodeOnboarding"});
 		}
 
 		// Grab the current location and figure out where to go next.

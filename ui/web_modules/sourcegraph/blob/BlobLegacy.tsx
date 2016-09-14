@@ -13,6 +13,7 @@ import {withJumpToDefRedirect} from "sourcegraph/blob/withJumpToDefRedirect";
 import {Component, EventListener} from "sourcegraph/Component";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 import {fileLines} from "sourcegraph/util/fileLines";
 
 interface State {
@@ -110,7 +111,6 @@ export class BlobLegacyTestOnly extends Component<Props, State> {
 
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
-		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	_isMounted: boolean;
@@ -294,7 +294,7 @@ export class BlobLegacyTestOnly extends Component<Props, State> {
 	}
 
 	_expandRange(range: Range): void {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "BlobLineExpanderClicked", {repo: this.state.repo, active_def: this.state.activeDef, path: this.state.path});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "BlobLineExpanderClicked", {repo: this.state.repo, active_def: this.state.activeDef, path: this.state.path});
 		this.setState({
 			expandedRanges: this.state.expandedRanges.concat([range]),
 		} as State);

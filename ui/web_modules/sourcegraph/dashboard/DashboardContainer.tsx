@@ -17,6 +17,7 @@ import * as classNames from "classnames";
 import {OnboardingContainer} from "sourcegraph/dashboard/OnboardingContainer";
 import {Store} from "sourcegraph/Store";
 import {context} from "sourcegraph/app/context";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 type OnSelectQueryListener = (ev: React.MouseEvent<HTMLButtonElement>, query: string) => any;
 
@@ -31,7 +32,6 @@ export class DashboardContainer extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
-		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	_input: any;
@@ -108,7 +108,7 @@ export class DashboardContainer extends Container<Props, State> {
 	}
 
 	_onSelectQuery(ev: React.MouseEvent<HTMLButtonElement>, query: string) {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "ExistingQueryClicked", {query: query, languages: this.state.langs, page_name: AnalyticsConstants.PAGE_DASHBOARD});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "ExistingQueryClicked", {query: query, languages: this.state.langs, page_name: AnalyticsConstants.PAGE_DASHBOARD});
 
 		invariant(this._input, "no input field");
 
@@ -133,20 +133,20 @@ export class DashboardContainer extends Container<Props, State> {
 	}
 
 	_successHandler() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DASHBOARD, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionInstalled", {page_name: AnalyticsConstants.PAGE_DASHBOARD});
-		(this.context as any).eventLogger.setUserProperty("installed_chrome_extension", "true");
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DASHBOARD, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionInstalled", {page_name: AnalyticsConstants.PAGE_DASHBOARD});
+		EventLogger.setUserProperty("installed_chrome_extension", "true");
 		this.setState({showChromeExtensionCTA: false, onboarding: null});
-		setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", (this.context as any).eventLogger.getAmplitudeIdentificationProps())), 10);
+		setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", EventLogger.getAmplitudeIdentificationProps())), 10);
 	}
 
 	_failHandler(msg) {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DASHBOARD, AnalyticsConstants.ACTION_ERROR, "ChromeExtensionInstallFailed", {page_name: AnalyticsConstants.PAGE_DASHBOARD});
-		(this.context as any).eventLogger.setUserProperty("installed_chrome_extension", "false");
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DASHBOARD, AnalyticsConstants.ACTION_ERROR, "ChromeExtensionInstallFailed", {page_name: AnalyticsConstants.PAGE_DASHBOARD});
+		EventLogger.setUserProperty("installed_chrome_extension", "false");
 		this.setState({showChromeExtensionCTA: true, onboarding: null});
 	}
 
 	_installChromeExtensionClicked() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DASHBOARD, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionCTAClicked", {page_name: AnalyticsConstants.PAGE_DASHBOARD});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DASHBOARD, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionCTAClicked", {page_name: AnalyticsConstants.PAGE_DASHBOARD});
 		if (global.chrome) {
 			global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", this._successHandler.bind(this), this._failHandler.bind(this));
 		}

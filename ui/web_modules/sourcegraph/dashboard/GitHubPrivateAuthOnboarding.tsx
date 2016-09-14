@@ -13,6 +13,7 @@ import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	location?: any;
@@ -27,7 +28,6 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
-		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props) {
@@ -85,17 +85,17 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 	}
 
 	_toggleRepo(remoteRepo: any): void {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_TOGGLE, "BuildRepoToggleClicked", {page_name: "GitHubPrivateCodeOnboarding"});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_TOGGLE, "BuildRepoToggleClicked", {page_name: "GitHubPrivateCodeOnboarding"});
 		Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(remoteRepo.URI, remoteRepo, true));
 	}
 
 	_skipClicked() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "SkipGitHubPrivateAuth", {page_name: "GitHubPrivateCodeOnboarding"});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "SkipGitHubPrivateAuth", {page_name: "GitHubPrivateCodeOnboarding"});
 		this.props.completeStep();
 	}
 
 	_showAllReposClicked() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ShowAllGitHubRepositories", {page_name: "GitHubPrivateCodeOnboarding"});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ShowAllGitHubRepositories", {page_name: "GitHubPrivateCodeOnboarding"});
 		this.setState({
 			showAll: true,
 		});

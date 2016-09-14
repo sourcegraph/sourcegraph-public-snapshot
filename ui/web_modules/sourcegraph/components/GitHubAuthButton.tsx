@@ -6,6 +6,7 @@ import {GitHubIcon} from "sourcegraph/components/Icons";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import {Button} from "sourcegraph/components";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	scopes?: string;
@@ -24,9 +25,6 @@ interface Props {
 type State = any;
 
 export class GitHubAuthButton extends React.Component<Props, State> {
-	static contextTypes: React.ValidationMap<any> = {
-		eventLogger: React.PropTypes.object.isRequired,
-	};
 	static defaultProps: Props = {
 		scopes: "",
 		returnTo: null,
@@ -41,7 +39,7 @@ export class GitHubAuthButton extends React.Component<Props, State> {
 		return (
 			<a href={url}
 				onClick={() => {
-					(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow", {page_name: pageName});
+					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow", {page_name: pageName});
 					if (onClick) {
 						onClick();
 					}

@@ -18,6 +18,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 import {Repository} from "sourcegraph/components/symbols";
 import {urlToRepo} from "sourcegraph/repo/routes";
 import {urlToBlob} from "sourcegraph/blob/routes";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	repo?: string;
@@ -33,7 +34,6 @@ type State = any;
 
 export class RepoRefsContainer extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
-		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props: Props) {
@@ -65,11 +65,11 @@ export class RepoRefsContainer extends Container<Props, State> {
 	}
 
 	_clickedReferencedRepo() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ReferencedInRepoClicked", {repo: this.state.repo, def: this.state.def});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ReferencedInRepoClicked", {repo: this.state.repo, def: this.state.def});
 	}
 
 	_clickedReferencedBlob() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ReferencedInBlobClicked", {repo: this.state.repo, def: this.state.def});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ReferencedInBlobClicked", {repo: this.state.repo, def: this.state.def});
 	}
 
 	render(): JSX.Element | null {

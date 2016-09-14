@@ -13,6 +13,7 @@ import {context} from "sourcegraph/app/context";
 import {guessBranchName} from "sourcegraph/build/Build";
 import {Header} from "sourcegraph/components/Header";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 function repoPageTitle(repo: any): string {
 	let title = trimRepo(repo.URI);
@@ -43,7 +44,6 @@ type State = any;
 export class RepoMain extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
-		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props: Props) {
@@ -109,10 +109,10 @@ export class RepoMain extends React.Component<Props, State> {
 		if (err) {
 			let msg;
 			if (err.response && err.response.status === 401) {
-				(this.context as any).eventLogger.logNonInteractionEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_ERROR, "ViewRepoMainError", {repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "401"});
+				EventLogger.logNonInteractionEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_ERROR, "ViewRepoMainError", {repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "401"});
 				msg = `Sign in to add repositories.`;
 			} else if (err.response && err.response.status === 404) {
-				(this.context as any).eventLogger.logNonInteractionEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_ERROR, "ViewRepoMainError", {repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404"});
+				EventLogger.logNonInteractionEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_ERROR, "ViewRepoMainError", {repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404"});
 				msg = `Repository not found.`;
 			} else {
 				msg = `Repository is not available.`;

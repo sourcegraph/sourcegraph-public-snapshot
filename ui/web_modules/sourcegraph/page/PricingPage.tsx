@@ -9,8 +9,9 @@ import {CheckIcon} from "sourcegraph/components/Icons";
 import Helmet from "react-helmet";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {context} from "sourcegraph/app/context";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
-export function PricingPage(props: {}, {eventLogger}) {
+export function PricingPage(props: {}) {
 	return (
 		<div>
 			<Helmet title="Pricing" />
@@ -30,7 +31,7 @@ export function PricingPage(props: {}, {eventLogger}) {
 								<p style={{minHeight: "3.5em"}}>for individuals and teams, for public and private code</p>
 							</Panel>
 							{!context.user && <Link to="/join"
-								onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "free", page_name: AnalyticsConstants.PAGE_PRICING})}>
+								onClick={(v) => EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "free", page_name: AnalyticsConstants.PAGE_PRICING})}>
 								<Button block={true} className={styles.plan_cta || ""} color="purple">Sign up</Button>
 							</Link>}
 							{context.user && <Button block={true} outline={true} color="purple" className={styles.plan_cta_noop || ""}><CheckIcon className={styles.icon} /> Your current plan</Button>}
@@ -58,7 +59,7 @@ export function PricingPage(props: {}, {eventLogger}) {
 								<p style={{minHeight: "3.5em"}}>per&nbsp;user per&nbsp;month</p>
 							</Panel>
 							<Link to="/contact"
-								onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "standard", page_name: AnalyticsConstants.PAGE_PRICING})}>
+								onClick={(v) => EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "standard", page_name: AnalyticsConstants.PAGE_PRICING})}>
 								<Button block={true} className={styles.plan_cta || ""} color="green">Contact us</Button>
 							</Link>
 						</div>
@@ -83,7 +84,7 @@ export function PricingPage(props: {}, {eventLogger}) {
 								<p style={{minHeight: "3.5em"}}>per&nbsp;user per&nbsp;month</p>
 							</Panel>
 							<Link to="/contact"
-								onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "free", page_name: AnalyticsConstants.PAGE_PRICING})}>
+								onClick={(v) => EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "free", page_name: AnalyticsConstants.PAGE_PRICING})}>
 								<Button block={true} className={styles.plan_cta || ""} color="blue">Contact us</Button>
 							</Link>
 						</div>
@@ -106,6 +107,3 @@ export function PricingPage(props: {}, {eventLogger}) {
 		</div>
 	);
 }
-(PricingPage as any).contextTypes = {
-	eventLogger: React.PropTypes.object.isRequired,
-};

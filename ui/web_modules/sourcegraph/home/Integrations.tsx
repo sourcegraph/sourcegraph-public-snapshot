@@ -42,7 +42,6 @@ type State = any;
 export class Integrations extends Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
-		eventLogger: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
 	};
 

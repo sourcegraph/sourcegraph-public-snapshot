@@ -10,7 +10,6 @@ describe("SignedInDashboard", () => {
 			{
 				siteConfig: {},
 				router: {push: () => { /* ignore */ }},
-				eventLogger: {logEvent: () => { /* ignore */ }, logEventForCategory: () => { /* ignore */ }},
 			},
 		);
 	});

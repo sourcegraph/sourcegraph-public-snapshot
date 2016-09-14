@@ -20,6 +20,7 @@ import {searchScopes} from "sourcegraph/search";
 import * as classNames from "classnames";
 import {Store} from "sourcegraph/Store";
 import {context} from "sourcegraph/app/context";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	location: any;
@@ -33,7 +34,6 @@ type State = any;
 export class SearchSettings extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
-		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props: Props) {
@@ -115,11 +115,11 @@ export class SearchSettings extends Container<Props, State> {
 
 		Dispatcher.Stores.dispatch(new UserActions.UpdateSettings(newSettings));
 
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_TOGGLE, "SearchLanguageToggled", {language: lang, enabled: !enabled, languages: langs});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_TOGGLE, "SearchLanguageToggled", {language: lang, enabled: !enabled, languages: langs});
 	}
 
 	_setScope(scope: any) {
-		(this.context as any).eventLogger.logEventForCategory(
+		EventLogger.logEventForCategory(
 			AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK,
 			"SearchScopeChanged",
 			{

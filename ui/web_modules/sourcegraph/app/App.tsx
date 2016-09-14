@@ -10,7 +10,7 @@ import "sourcegraph/components/styles/_normalize.css";
 import * as styles from "sourcegraph/app/styles/App.css";
 import { SearchModal } from "sourcegraph/search/modal/SearchModal";
 
-import {EventLogger, withEventLoggerContext, withViewEventsLogged} from "sourcegraph/util/EventLogger";
+import {withViewEventsLogged} from "sourcegraph/util/EventLogger";
 import {withFeaturesContext} from "sourcegraph/app/features";
 import {withSiteConfigContext} from "sourcegraph/app/siteConfig";
 import {desktopContainer} from "sourcegraph/desktop/DesktopContainer";
@@ -79,12 +79,10 @@ export class App extends React.Component<Props, State> {
 const desktopClient = global.document && navigator.userAgent.includes("Electron");
 export const rootRoute: PlainRoute = {
 	path: "/",
-	component: withEventLoggerContext(EventLogger,
-		withViewEventsLogged(
-			withSiteConfigContext(
-				withFeaturesContext(
-					desktopClient ? desktopContainer(App) : App
-				)
+	component: withViewEventsLogged(
+		withSiteConfigContext(
+			withFeaturesContext(
+				desktopClient ? desktopContainer(App) : App
 			)
 		)
 	),

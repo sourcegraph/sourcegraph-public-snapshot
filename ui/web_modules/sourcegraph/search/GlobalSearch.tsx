@@ -26,6 +26,7 @@ import {locationForSearch} from "sourcegraph/search/routes";
 import * as classNames from "classnames";
 import {Store} from "sourcegraph/Store";
 import {urlToRepo} from "sourcegraph/repo/routes";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 export const RESULTS_LIMIT = 20;
 
@@ -62,7 +63,6 @@ interface State {
 export class GlobalSearch extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
-		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	_selectedItem: any;
@@ -251,7 +251,7 @@ export class GlobalSearch extends Container<Props, State> {
 			eventProps["page name"] = this._pageName();
 			eventProps["languages"] = this.state.searchSettings ? this.state.searchSettings.languages : null;
 			eventProps["repo_scope"] = this._scopeProperties();
-			(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_SUCCESS, "GlobalSearchInitiated", eventProps);
+			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_SUCCESS, "GlobalSearchInitiated", eventProps);
 		}
 	}
 
@@ -362,7 +362,7 @@ export class GlobalSearch extends Container<Props, State> {
 			if (i < this.state.matchingResults.Repos.length) {
 				const url = `/${this.state.matchingResults.Repos[i].URI}`;
 				eventProps.selectedItem = url;
-				(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", eventProps);
+				EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", eventProps);
 				if (!trackOnly) {
 					this._navigateTo(url);
 				}
@@ -382,7 +382,7 @@ export class GlobalSearch extends Container<Props, State> {
 			eventProps = Object.assign({}, eventProps, {languageSelected: def.FmtStrings.Language, kindSelected: def.FmtStrings.Kind, repoSelected: def.Repo});
 		}
 
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", eventProps);
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", eventProps);
 
 		if (!trackOnly) {
 			this._navigateTo(url);

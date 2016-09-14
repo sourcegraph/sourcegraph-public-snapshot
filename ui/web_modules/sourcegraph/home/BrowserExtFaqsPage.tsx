@@ -17,9 +17,6 @@ interface Props {
 type State = any;
 
 export class BrowserExtFaqsPage extends React.Component<Props, State> {
-	static contextTypes: React.ValidationMap<any> = {
-		eventLogger: React.PropTypes.object.isRequired,
-	};
 
 	_hasPrivateGitHubToken() {
 		return context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("repo") && context.gitHubToken.scope.includes("read:org");

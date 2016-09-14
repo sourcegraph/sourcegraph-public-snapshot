@@ -11,6 +11,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import {OnboardingExampleRefsContainer} from "sourcegraph/def/OnboardingExampleRefsContainer";
 import {GitHubLogo} from "sourcegraph/components/symbols";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	location?: any;
@@ -23,7 +24,6 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
-		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props: Props) {
@@ -32,31 +32,31 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 	}
 
 	_successHandler() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionInstalled", {page_name: "ChromeExtensionOnboarding"});
-		(this.context as any).eventLogger.setUserProperty("installed_chrome_extension", "true");
-		setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", (this.context as any).eventLogger.getAmplitudeIdentificationProps())), 10);
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionInstalled", {page_name: "ChromeExtensionOnboarding"});
+		EventLogger.setUserProperty("installed_chrome_extension", "true");
+		setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", EventLogger.getAmplitudeIdentificationProps())), 10);
 		this._continueOnboarding();
 	}
 
 	_failHandler(msg) {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_ERROR, "ChromeExtensionInstallFailed", {page_name: "ChromeExtensionOnboarding"});
-		(this.context as any).eventLogger.setUserProperty("installed_chrome_extension", "false");
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_ERROR, "ChromeExtensionInstallFailed", {page_name: "ChromeExtensionOnboarding"});
+		EventLogger.setUserProperty("installed_chrome_extension", "false");
 	}
 
 	_installChromeExtensionClicked() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionCTAClicked", {page_name: "ChromeExtensionOnboarding"});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionCTAClicked", {page_name: "ChromeExtensionOnboarding"});
 
 		if (!!global.chrome) {
-			(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionInstallStarted", {page_name: "ChromeExtensionOnboarding"});
+			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionInstallStarted", {page_name: "ChromeExtensionOnboarding"});
 			global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", this._successHandler.bind(this), this._failHandler.bind(this));
 		} else {
-			(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionStoreRedirect", {page_name: "ChromeExtensionOnboarding"});
+			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionStoreRedirect", {page_name: "ChromeExtensionOnboarding"});
 			window.open("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", "_newtab");
 		}
 	}
 
 	_skipClicked() {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "SkipChromeExtensionCTAClicked", {page_name: "ChromeExtensionOnboarding"});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "SkipChromeExtensionCTAClicked", {page_name: "ChromeExtensionOnboarding"});
 		this._continueOnboarding();
 	}
 

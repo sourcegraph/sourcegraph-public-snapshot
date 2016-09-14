@@ -10,6 +10,7 @@ import * as classNames from "classnames";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/components/styles/breadcrumb.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	repo: string;
@@ -21,9 +22,6 @@ interface Props {
 type State = any;
 
 export class RepoLink extends React.Component<Props, State> {
-	static contextTypes: React.ValidationMap<any> = {
-		eventLogger: React.PropTypes.object.isRequired,
-	};
 
 	render(): JSX.Element | null {
 		let trimmedPath = stripDomain(this.props.repo);
@@ -36,7 +34,7 @@ export class RepoLink extends React.Component<Props, State> {
 						title={trimmedPath}
 						key={i}
 						className={isLast ? styles.active : styles.inactive}
-						onClick={() => (this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_CLICK, "RepoClicked", {repoName: trimmedPath})}>
+						onClick={() => EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_CLICK, "RepoClicked", {repoName: trimmedPath})}>
 						{component}
 					</Link> :
 					<span key={i}>{component}</span>

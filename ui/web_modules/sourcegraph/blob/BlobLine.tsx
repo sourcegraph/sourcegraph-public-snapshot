@@ -17,6 +17,7 @@ import * as s from "sourcegraph/blob/styles/Blob.css";
 import "sourcegraph/components/styles/code.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {Def} from "sourcegraph/api";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 // simpleContentsString converts [string...] (like ["a", "b", "c"]) to
 // a string by joining the elements (to produce "abc", for example).
@@ -79,7 +80,6 @@ type State = any;
 
 export class BlobLine extends Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
-		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	componentDidMount(): void {
@@ -171,7 +171,7 @@ export class BlobLine extends Component<Props, State> {
 						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.Hovering(annotationPos))}
 						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.Hovering(null))}
 						onClick={(ev) => {
-							(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, this.state.clickEventLabel, {repo: this.state.repo, path: this.state.path, active_def_url: this.state.activeDefURL});
+							EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, this.state.clickEventLabel, {repo: this.state.repo, path: this.state.path, active_def_url: this.state.activeDefURL});
 							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) {
 								return;
 							}

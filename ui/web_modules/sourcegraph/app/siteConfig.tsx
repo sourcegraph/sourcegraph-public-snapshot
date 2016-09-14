@@ -25,7 +25,7 @@ export function setGlobalSiteConfig(siteConfig: SiteConfig): void {
 
 	// HACK: Set this info in other places that need it but that
 	// aren't React components (which could access it via this.context.siteConfig).
-	EventLogger.setSiteConfig(siteConfig);
+	EventLogger.init(siteConfig);
 }
 
 // withStatusContext passes a "siteConfig" context item

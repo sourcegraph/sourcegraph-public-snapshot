@@ -15,6 +15,7 @@ import {locationForSearch} from "sourcegraph/search/routes";
 import {GlobalSearchInput} from "sourcegraph/search/GlobalSearchInput";
 import * as classNames from "classnames";
 import {Link} from "react-router";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	location: any;
@@ -32,7 +33,6 @@ export class SignedInDashboard extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
-		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	_pageName: string = this.props.completedBanner ? "CompletedOnboardingDashboard" : "Dashboard";
@@ -52,7 +52,7 @@ export class SignedInDashboard extends Container<Props, State> {
 	_handleChange(ev: React.KeyboardEvent<HTMLInputElement>) {
 		let value = (ev.currentTarget as HTMLInputElement).value;
 		if (value) {
-			(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "GlobalSearchInitiated", {page_name: this._pageName});
+			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "GlobalSearchInitiated", {page_name: this._pageName});
 			this._goToSearch(value);
 		}
 	}
@@ -66,12 +66,12 @@ export class SignedInDashboard extends Container<Props, State> {
 	}
 
 	_topQuerySelected(query: string) {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "TopQuerySelected", {page_name: this._pageName, selected_query: query});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "TopQuerySelected", {page_name: this._pageName, selected_query: query});
 		this._goToSearch(query);
 	}
 
 	_exampleRepoSelected(exampleRepoUrl: string) {
-		(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ExampleRepoSelected", {page_name: this._pageName, example_repo: exampleRepoUrl});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ExampleRepoSelected", {page_name: this._pageName, example_repo: exampleRepoUrl});
 	}
 
 	_renderGlobalSearchForm(): JSX.Element | null {

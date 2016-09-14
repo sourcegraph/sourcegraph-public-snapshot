@@ -20,7 +20,6 @@ type State = any;
 export class UserSettingsReposMain extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
-		eventLogger: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
 	};
 

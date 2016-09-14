@@ -21,7 +21,6 @@ class EventLoggerClass {
 	_intercomSettings: any;
 	userAgentIsBot: boolean;
 	_dispatcherToken: any;
-	_siteConfig: SiteConfig | null;
 	_currentPlatform: string = "Web";
 	_currentPlatformVersion: string = "";
 
@@ -60,27 +59,23 @@ class EventLoggerClass {
 		}
 	}
 
-	setSiteConfig(siteConfig: SiteConfig): void {
-		this._siteConfig = siteConfig;
-	}
-
 	// init initializes Amplitude and Intercom.
-	init(): void {
+	init(siteConfig: SiteConfig): void {
 		if (global.window && !this._amplitude) {
 			this._amplitude = require("amplitude-js");
 
 			this._telligent = global.window.telligent;
 
-			if (!this._siteConfig) {
+			if (!siteConfig) {
 				throw new Error("EventLogger requires SiteConfig to be previously set using EventLogger.setSiteConfig before EventLogger can be initialized.");
 			}
 
 			let apiKey = "608f75cce80d583063837b8f5b18be54";
 			let env = "development";
-			if (this._siteConfig.buildVars.Version === "dev") {
+			if (siteConfig.buildVars.Version === "dev") {
 				apiKey = "2b4b1117d1faf3960c81899a4422a222";
 			} else {
-				switch (this._siteConfig.appURL) {
+				switch (siteConfig.appURL) {
 				case "https://sourcegraph.com":
 					apiKey = "e3c885c30d2c0c8bf33b1497b17806ba";
 					env = "production";
@@ -253,7 +248,7 @@ class EventLoggerClass {
 	}
 
 	_decorateEventProperties(platformProperties: any): any {
-		return Object.assign({}, platformProperties, {Platform: this._currentPlatform, platformVersion: this._currentPlatformVersion, is_authed: context.user ? "true" : "false", path_name: window.location.pathname ? window.location.pathname.slice(1) : ""});
+		return Object.assign({}, platformProperties, {Platform: this._currentPlatform, platformVersion: this._currentPlatformVersion, is_authed: context.user ? "true" : "false", path_name: global.window && global.window.location && global.window.location.pathname ? global.window.location.pathname.slice(1) : ""});
 	}
 
 	// Use logViewEvent as the default way to log view events for Amplitude and GA
@@ -262,8 +257,9 @@ class EventLoggerClass {
 		if (this.userAgentIsBot || !page) {
 			return;
 		}
-
-		this._telligent("track", "view", Object.assign({}, eventProperties, {platform: this._currentPlatform, page_name: page, page_title: title}));
+		if (this._telligent) {
+			this._telligent("track", "view", Object.assign({}, eventProperties, {platform: this._currentPlatform, page_name: page, page_title: title}));
+		}
 
 		// Log Amplitude "View" event
 		this._amplitude.logEvent(title, Object.assign({}, eventProperties, {Platform: this._currentPlatform}));
@@ -277,20 +273,26 @@ class EventLoggerClass {
 		if (this.userAgentIsBot || !eventLabel) {
 			return;
 		}
-		this._telligent("track", eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
-		this._amplitude.logEvent(eventLabel, Object.assign({}, this._decorateEventProperties(eventProperties), {eventCategory: eventCategory, eventAction: eventAction}));
+		if (this._telligent) {
+			this._telligent("track", eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
+		}
+		if (this._amplitude) {
+			this._amplitude.logEvent(eventLabel, Object.assign({}, this._decorateEventProperties(eventProperties), {eventCategory: eventCategory, eventAction: eventAction}));
+		}
 		this._logToConsole(eventAction, Object.assign(this._decorateEventProperties(eventProperties),  {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
 
-		global.window.ga("send", {
-			hitType: "event",
-			eventCategory: eventCategory || "",
-			eventAction: eventAction || "",
-			eventLabel: eventLabel,
-		});
+		if (global && global.window) {
+			global.window.ga("send", {
+				hitType: "event",
+				eventCategory: eventCategory || "",
+				eventAction: eventAction || "",
+				eventLabel: eventLabel,
+			});
+		}
 	}
 
 	_logToConsole(eventAction: string, object?: any): void {
-		if (window.localStorage["log_debug"]) {
+		if (global.window && global.window.localStorage && global.window.localStorage["log_debug"]) {
 			console.debug("%cEVENT %s", "color: #aaa", eventAction, object); // tslint:disable-line
 		}
 	}
@@ -303,8 +305,12 @@ class EventLoggerClass {
 			return;
 		}
 
-		this._telligent("track", eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
-		this._amplitude.logEvent(eventLabel, Object.assign({}, this._decorateEventProperties(eventProperties), {eventCategory: eventCategory, eventAction: eventAction}));
+		if (this._telligent) {
+			this._telligent("track", eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
+		}
+		if (this._amplitude) {
+			this._amplitude.logEvent(eventLabel, Object.assign({}, this._decorateEventProperties(eventProperties), {eventCategory: eventCategory, eventAction: eventAction}));
+		}
 
 		global.window.ga("send", {
 			hitType: "event",
@@ -417,30 +423,6 @@ class EventLoggerClass {
 
 export const EventLogger = new EventLoggerClass();
 
-// withEventLoggerContext makes eventLogger accessible as (this.context as any).eventLogger
-// in the component's context.
-export function withEventLoggerContext<P>(eventLogger: EventLoggerClass, component: React.ComponentClass<P>): React.ComponentClass<P> {
-	class WithEventLogger extends React.Component<P, {}> {
-		static childContextTypes: React.ValidationMap<any> = {
-			eventLogger: React.PropTypes.object,
-		};
-
-		constructor(props: P) {
-			super(props);
-			eventLogger.init();
-		}
-
-		getChildContext(): {eventLogger: EventLoggerClass} {
-			return {eventLogger};
-		}
-
-		render(): JSX.Element | null {
-			return React.createElement(component, this.props);
-		}
-	}
-	return WithEventLogger;
-}
-
 // withViewEventsLogged calls (this.context as any).eventLogger.logEvent when the
 // location's pathname changes.
 interface WithViewEventsLoggedProps {
@@ -452,12 +434,10 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 	class WithViewEventsLogged extends React.Component<P, {}> { // eslint-disable-line react/no-multi-comp
 		static contextTypes: React.ValidationMap<any> = {
 			router: React.PropTypes.object.isRequired,
-			eventLogger: React.PropTypes.object.isRequired,
 		};
 
 		context: {
 			router: InjectedRouter,
-			eventLogger: any,
 		};
 
 		componentDidMount(): void {
@@ -475,7 +455,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 			if (this.props.location.pathname !== nextProps.location.pathname) {
 				this._logView(nextProps.routes, nextProps.location);
 				// Set the identity of the chrome extension only after it is mounted.
-				setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", (this.context as any).eventLogger.getAmplitudeIdentificationProps())), 50);
+				setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", EventLogger.getAmplitudeIdentificationProps())), 50);
 			}
 
 			this._checkEventQuery();
@@ -504,10 +484,10 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				}
 
 				if (this.props.location.query["_githubAuthed"]) {
-					(this.context as any).eventLogger.setUserProperty("github_authed", this.props.location.query["_githubAuthed"]);
-					(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SIGNUP, this.props.location.query["_event"], eventProperties);
+					EventLogger.setUserProperty("github_authed", this.props.location.query["_githubAuthed"]);
+					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SIGNUP, this.props.location.query["_event"], eventProperties);
 				} else {
-					(this.context as any).eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_EXTERNAL, AnalyticsConstants.ACTION_REDIRECT, this.props.location.query["_event"], eventProperties);
+					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_EXTERNAL, AnalyticsConstants.ACTION_REDIRECT, this.props.location.query["_event"], eventProperties);
 				}
 
 				// Won't take effect until we call replace below, but prevents this
@@ -582,9 +562,9 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 					if (lang) { eventProps.language = lang; }
 				}
 
-				(this.context as any).eventLogger.logViewEvent(viewName, location.pathname, Object.assign({}, eventProps, {pattern: getRoutePattern(routes)}));
+				EventLogger.logViewEvent(viewName, location.pathname, Object.assign({}, eventProps, {pattern: getRoutePattern(routes)}));
 			} else {
-				(this.context as any).eventLogger.logViewEvent("UnmatchedRoute", location.pathname, Object.assign({}, eventProps, {pattern: getRoutePattern(routes)}));
+				EventLogger.logViewEvent("UnmatchedRoute", location.pathname, Object.assign({}, eventProps, {pattern: getRoutePattern(routes)}));
 			}
 		}
 

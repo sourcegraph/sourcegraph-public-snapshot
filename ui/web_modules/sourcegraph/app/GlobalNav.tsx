@@ -30,6 +30,7 @@ import {isPage} from "sourcegraph/page";
 import * as debounce from "lodash/debounce";
 import {context} from "sourcegraph/app/context";
 import {InjectedRouter} from "react-router";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 const hiddenNavRoutes = new Set([
 	"/",
@@ -48,7 +49,7 @@ interface GlobalNavProps {
 	desktop: boolean;
 }
 
-export function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavProps, {router, eventLogger, desktop}) {
+export function GlobalNav({navContext, location, params, channelStatusCode}: GlobalNavProps, {router, desktop}) {
 	const dash = location.pathname.match(/^\/?$/) && context.user;
 	const shouldHide = hiddenNavRoutes.has(location.pathname) && !dash;
 	const isStaticPage = isPage(location.pathname);
@@ -62,7 +63,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 	const showSearchForm = !dash || desktop;
 	const handleIntercomToggle = function() {
 		global.window.Intercom("show");
-		eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickContactIntercom", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickContactIntercom", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV});
 	};
 	let repo = repoSplat ? repoPath(repoSplat) : null;
 	return (
@@ -75,7 +76,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 			{location.state && location.state.modal === "login" && !context.user &&
 			// TODO(chexee): Decouple existence of modals and GlobalNav
 				<LocationStateModal modalName="login" location={location} style={{maxWidth: "380px", marginLeft: "auto", marginRight: "auto"}}
-					onDismiss={(v) => eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
+					onDismiss={(v) => EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 					<div className={styles.modal}>
 						<LoginForm
 							returnTo={location}
@@ -86,7 +87,7 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 
 			{location.state && location.state.modal === "join" &&
 				<LocationStateModal modalName="join" location={location} style={{maxWidth: "380px", marginLeft: "auto", marginRight: "auto"}}
-					onDismiss={(v) => eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissJoinModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
+					onDismiss={(v) => EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissJoinModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 					<div className={styles.modal}>
 						<SignupForm
 							onSignupSuccess={dismissModal("join", location, router)}
@@ -167,17 +168,17 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 							<div>{context.user.Login}</div>
 							<hr role="divider" className={base.mv3} />
 							<Link to="/settings/repos" role="menu_item">Your repositories</Link>
-							<LocationStateToggleLink href="/integrations" modalName="menuIntegrations" role="menu_item" location={location}	onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickToolsandIntegrations", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
+							<LocationStateToggleLink href="/integrations" modalName="menuIntegrations" role="menu_item" location={location}	onToggle={(v) => v && EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickToolsandIntegrations", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 								Tools and integrations
 							</LocationStateToggleLink>
-							<LocationStateToggleLink href="/beta" modalName="menuBeta" role="menu_item" location={location}	onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickJoinBeta", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
+							<LocationStateToggleLink href="/beta" modalName="menuBeta" role="menu_item" location={location}	onToggle={(v) => v && EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickJoinBeta", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 								Beta program
 							</LocationStateToggleLink>
 							<a onClick={handleIntercomToggle} role="menu_item">
 								Contact
 							</a>
 							<hr role="divider" className={base.mt3} />
-							<a role="menu_item" href="/-/logout" onClick={(e) => { eventLogger.logout(); }}>Sign out</a>
+							<a role="menu_item" href="/-/logout" onClick={(e) => { EventLogger.logout(); }}>Sign out</a>
 							<hr role="divider" className={base.mt2} />
 							<div className={classNames(styles.cool_mid_gray, base.pv1, base.mb1, typography.tc)}>
 								<Link to="/security" className={classNames(styles.cool_mid_gray, typography.f7, typography.link_subtle, base.pr3)}>Security</Link>
@@ -192,12 +193,12 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 					<div className={classNames(base.pv2, base.pr3, base.pl3)}>
 						<div>
 							<LocationStateToggleLink href="/login" modalName="login" location={location}
-								onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ShowLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
+								onToggle={(v) => v && EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ShowLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 								Log in
 							</LocationStateToggleLink>
 							<span className={base.mh1}> or </span>
 							<LocationStateToggleLink href="/join" modalName="join" location={location}
-								onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ShowSignUpModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
+								onToggle={(v) => v && EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ShowSignUpModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 								Sign up
 							</LocationStateToggleLink>
 						</div>
@@ -211,7 +212,6 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 (GlobalNav as any).contextTypes = {
 	siteConfig: React.PropTypes.object.isRequired,
 	router: React.PropTypes.object.isRequired,
-	eventLogger: React.PropTypes.object.isRequired,
 };
 
 // TODO(chexee): Move all these components to their own directory.

@@ -18,6 +18,8 @@ import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
+import {EventLogger} from "sourcegraph/util/EventLogger";
+
 interface Props {
 	contents: string;
 	repo: string;
@@ -33,13 +35,11 @@ export class Blob extends React.Component<Props, null> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
-		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	context: {
 		siteConfig: { assetsRoot: string };
 		router: InjectedRouter
-		eventLogger: { logEventForCategory: (eventCategory: string, eventAction: string, eventLabel: string, eventProperties?: any) => void };
 	};
 
 	_hoverProvided: string[];
@@ -192,7 +192,7 @@ export class Blob extends React.Component<Props, null> {
 		const pos = editor.getPosition();
 		const model = editor.getModel();
 
-		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REFERENCES, AnalyticsConstants.ACTION_CLICK, "ClickedViewReferences", { repo: this.props.repo, path: this.props.path, rev: this.props.rev });
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REFERENCES, AnalyticsConstants.ACTION_CLICK, "ClickedViewReferences", { repo: this.props.repo, path: this.props.path, rev: this.props.rev });
 
 		return new monaco.Promise<void>(() => {
 			defAtPosition(model, pos).then((resp) => {
