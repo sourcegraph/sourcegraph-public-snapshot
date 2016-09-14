@@ -370,6 +370,12 @@
 			"revisionTime": "2015-08-14T09:26:29+09:00"
 		},
 		{
+			"checksumSHA1": "DdH3xAkzAWJ4B/LGYJyCeRsly2I=",
+			"path": "github.com/mattn/go-runewidth",
+			"revision": "d6bea18f789704b5f83375793155289da36a3c7f",
+			"revisionTime": "2016-03-15T04:07:12Z"
+		},
+		{
 			"path": "github.com/matttproud/golang_protobuf_extensions/pbutil",
 			"revision": "d0c3fe89de86839aecf2e0579c40ba3bb336a453",
 			"revisionTime": "2015-10-11T12:25:29+02:00"
@@ -414,6 +420,12 @@
 			"path": "github.com/nlopes/slack",
 			"revision": "e337a7316d3fe9aa55b7063035d6d32f3dbcaeb9",
 			"revisionTime": "2016-04-30T16:04:49Z"
+		},
+		{
+			"checksumSHA1": "HB6MvfJv0flQn+viiwDzUGKj5gw=",
+			"path": "github.com/olekukonko/tablewriter",
+			"revision": "daf2955e742cf123959884fdff4685aa79b63135",
+			"revisionTime": "2016-06-21T09:30:29Z"
 		},
 		{
 			"checksumSHA1": "s6AzF29Kzi7yM3dJAk5XiQpSwUY=",
