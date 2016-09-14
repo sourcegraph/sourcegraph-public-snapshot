@@ -44,20 +44,21 @@ func init() {
 }
 
 type coverageCmd struct {
-	LSPAddr      string `long:"lsp-addr" description:"Sourcegraph LSP server address, only used if -addr is not set"`
-	LSPRootPath  string `long:"lsp-root" description:"Root directory location at which LSP server should read files"`
-	LSPCaps      bool   `long:"lsp-caps" description:"print the capabilities of the LSP server and exit"`
-	Methods      string `long:"methods" description:"API methods to test (definition,hover)" default:"definition,hover"`
-	Repo         string `long:"repo" description:"specific repo URI to use"`
-	Lang         string `long:"lang" description:"specific coverage language"`
-	File         string `long:"file" description:"specific repository filename"`
-	Limit        int    `long:"limit" description:"max number of repos to run coverage for"`
-	RepoRate     int    `long:"repo-rate" description:"rate at which repositories are concurrently calculated" default:"1"`
-	FileRate     int    `long:"file-rate" description:"rate at which files are concurrently calculated" default:"1"`
-	TokenRate    int    `long:"rate" description:"rate at which tokens are concurrently calculated" default:"1"`
-	Debug        bool   `long:"debug" description:"trace requests which result in an error"`
-	AbortOnError int    `long:"abort-on-error" description:"abort on nth request error" default:"-1"`
-	BenchRates   string `long:"bench-rates" description:"(enables concurrency benchmarking mode) comma-separated list of rates at which tokens are concurrently calculated" default:""`
+	LSPAddr       string `long:"lsp-addr" description:"Sourcegraph LSP server address, only used if -addr is not set"`
+	LSPRootPath   string `long:"lsp-root" description:"Root directory location at which LSP server should read files"`
+	LSPCaps       bool   `long:"lsp-caps" description:"print the capabilities of the LSP server and exit"`
+	Methods       string `long:"methods" description:"API methods to test (definition,hover)" default:"definition,hover"`
+	Repo          string `long:"repo" description:"specific repo URI to use"`
+	Lang          string `long:"lang" description:"specific coverage language"`
+	File          string `long:"file" description:"specific repository filename"`
+	Limit         int    `long:"limit" description:"max number of repos to run coverage for"`
+	RepoRate      int    `long:"repo-rate" description:"rate at which repositories are concurrently calculated" default:"1"`
+	FileRate      int    `long:"file-rate" description:"rate at which files are concurrently calculated" default:"1"`
+	TokenRate     int    `long:"rate" description:"rate at which tokens are concurrently calculated" default:"1"`
+	Debug         bool   `long:"debug" description:"trace requests which result in an error"`
+	AbortOnError  int    `long:"abort-on-error" description:"abort on nth request error" default:"-1"`
+	BenchRates    string `long:"bench-rates" description:"(enables concurrency benchmarking mode) comma-separated list of rates at which tokens are concurrently calculated" default:""`
+	MaxFileTokens int    `long:"max-file-tokens" description:"maximum number of tokens to consider in a file (speeds up coverage runs when low, but may skew results)" default:"-1"`
 
 	backend coverage.Client
 	cl      *sourcegraph.Client
@@ -486,9 +487,14 @@ func (c *coverageCmd) calcFileCoverage(ctx context.Context, lang, repoURI string
 
 	// TODO: concurrency rate here
 	p := parallel.NewRun(c.TokenRate)
+	count := 0
 	for {
 		tok := t.Next()
 		if tok == nil {
+			break
+		}
+		count++
+		if c.MaxFileTokens > 0 && count > c.MaxFileTokens {
 			break
 		}
 
