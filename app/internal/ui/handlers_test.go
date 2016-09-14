@@ -463,7 +463,7 @@ func TestDef_OK(t *testing.T) {
 			t.Errorf("%#v: %s", test, err)
 			continue
 		} else if !reflect.DeepEqual(m, wantMeta) {
-			t.Fatalf("%#v: meta mismatch:\n%s", test, metaDiff(m, wantMeta))
+			t.Errorf("%#v: meta mismatch:\n%s", test, metaDiff(m, wantMeta))
 		}
 		if !*calledReposResolve {
 			t.Errorf("%#v: !calledReposResolve", test)
