@@ -181,3 +181,27 @@ func servePasswordReset(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, &authResponse{Success: true})
 }
+
+func serveGitHubToken(w http.ResponseWriter, r *http.Request) error {
+	cl := handlerutil.Client(r)
+
+	info, err := cl.Auth.Identify(r.Context(), &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+
+	if info.UID == 0 {
+		return grpc.Errorf(codes.Unauthenticated, "not logged in")
+	}
+
+	tok, err := cl.Auth.GetExternalToken(r.Context(), &sourcegraph.ExternalTokenSpec{
+		UID:      info.UID,
+		Host:     "github.com",
+		ClientID: "", // defaults to GitHub client ID in environment
+	})
+	if err != nil {
+		return err
+	}
+
+	return writeJSON(w, tok)
+}

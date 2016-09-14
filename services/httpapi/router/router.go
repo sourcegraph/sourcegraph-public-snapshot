@@ -34,6 +34,7 @@ const (
 	DefAuthors               = "def.authors"
 	Defs                     = "defs"
 	DeltaFiles               = "delta.files"
+	GitHubToken              = "github-token"
 	GlobalSearch             = "global.search"
 	SearchRepos              = "search.repos"
 	Repo                     = "repo"
@@ -103,6 +104,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/internal/appdash/record-span").Methods("POST").Name(InternalAppdashRecordSpan)
 
 	base.Path("/auth-info").Methods("GET").Name(AuthInfo)
+	base.Path("/github-token").Methods("GET").Name(GitHubToken)
 	userPath := "/users/" + routevar.User
 	base.Path(userPath).Methods("GET").Name(User)
 	user := base.PathPrefix(userPath + "/").Subrouter()

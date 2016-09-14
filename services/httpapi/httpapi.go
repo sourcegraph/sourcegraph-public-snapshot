@@ -62,6 +62,7 @@ func NewHandler(m *mux.Router) http.Handler {
 
 	m.Get(apirouter.Annotations).Handler(httptrace.TraceRoute(handler(serveAnnotations)))
 	m.Get(apirouter.AuthInfo).Handler(httptrace.TraceRoute(handler(serveAuthInfo)))
+	m.Get(apirouter.GitHubToken).Handler(httptrace.TraceRoute(handler(serveGitHubToken)))
 	m.Get(apirouter.Builds).Handler(httptrace.TraceRoute(handler(serveBuilds)))
 	m.Get(apirouter.BuildTaskLog).Handler(httptrace.TraceRoute(handler(serveBuildTaskLog)))
 	m.Get(apirouter.Commit).Handler(httptrace.TraceRoute(handler(serveCommit)))
