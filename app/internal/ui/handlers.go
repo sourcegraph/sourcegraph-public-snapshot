@@ -4,6 +4,8 @@ import (
 	"errors"
 	"net/http"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"context"
 
 	"github.com/gorilla/mux"
@@ -27,8 +29,7 @@ func init() {
 	router.Get(routeLangsIndex).Handler(httptrace.TraceRoute(internal.Handler(serveRepoIndex)))
 	router.Get(routeBlob).Handler(httptrace.TraceRoute(handler(serveBlob)))
 	router.Get(routeBuild).Handler(httptrace.TraceRoute(handler(serveBuild)))
-	router.Get(routeDef).Handler(httptrace.TraceRoute(handler(serveDef)))
-	router.Get(routeDefRefs).Handler(httptrace.TraceRoute(handler(serveDefRefs)))
+	router.Get(routeDefRedirectToDefLanding).Handler(httptrace.TraceRoute(http.HandlerFunc(serveDefRedirectToDefLanding)))
 	router.Get(routeDefLanding).Handler(httptrace.TraceRoute(internal.Handler(serveDefLanding)))
 	router.Get(routeRepo).Handler(httptrace.TraceRoute(handler(serveRepo)))
 	router.Get(routeRepoBuilds).Handler(httptrace.TraceRoute(handler(serveRepoBuilds)))
@@ -114,12 +115,27 @@ func serveBuild(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	return nil, nil
 }
 
-func serveDef(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	return serveDefCommon(w, r)
-}
-
-func serveDefRefs(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	return serveDefCommon(w, r)
+// serveDefRedirectToDefLanding redirects from /REPO/refs/... and
+// /REPO/def/... URLs to the def landing page. Those URLs used to
+// point to JavaScript-backed pages in the UI for a refs list and code
+// view, respectively, but now def URLs are only for SEO (and thus
+// those URLs are only handled by this package).
+func serveDefRedirectToDefLanding(w http.ResponseWriter, r *http.Request) {
+	routeVars := mux.Vars(r)
+	pairs := make([]string, 0, len(routeVars)*2)
+	for k, v := range routeVars {
+		if k == "dummy" { // only used for matching string "def" or "refs"
+			continue
+		}
+		pairs = append(pairs, k, v)
+	}
+	u, err := router.Get(routeDefLanding).URL(pairs...)
+	if err != nil {
+		log15.Error("Def redirect URL construction failed.", "url", r.URL.String(), "routeVars", routeVars, "err", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+	http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
 }
 
 func serveDefCommon(w http.ResponseWriter, r *http.Request) (*meta, error) {

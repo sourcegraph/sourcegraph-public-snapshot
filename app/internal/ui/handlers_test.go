@@ -396,132 +396,27 @@ func TestBlob_Error(t *testing.T) {
 	}
 }
 
-func TestDef_OK(t *testing.T) {
+func TestDefRedirect_OK(t *testing.T) {
 	c, mock := newTest()
 	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
 		return &sourcegraph.AuthInfo{}, nil
 	}
 
-	tests := []struct {
-		rev       string
-		defOrRefs string // "def" (for def route) or "refs" (for refs route)
-
-		wantCanonURL    string
-		wantTitlePrefix string
-		wantIndex       bool
-		wantFollow      bool
-	}{
-		{"@v", "def", "/r@c/-/info/t/u/-/p", "imp.scope.name · f", false, false},
-		{"@v", "refs", "/r@c/-/info/t/u/-/p", "imp.scope.name · f", false, false},
-		{"@b", "def", "/r/-/info/t/u/-/p", "imp.scope.name · f", false, false},
-		{"@b", "refs", "/r/-/info/t/u/-/p", "imp.scope.name · f", false, false},
-		{"", "def", "/r/-/info/t/u/-/p", "imp.scope.name · f", false, false},
-		{"", "refs", "/r/-/info/t/u/-/p", "imp.scope.name · f", false, false},
+	tests := map[string]string{
+		"/r/-/refs/t/u/-/p": "/r/-/info/t/u/-/p",
+		"/r/-/def/t/u/-/p":  "/r/-/info/t/u/-/p",
 	}
-
-	for _, test := range tests {
-		calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
-		var calledGet bool
-		mock.Repos.Get_ = func(ctx context.Context, op *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
-			calledGet = true
-			return &sourcegraph.Repo{
-				ID:            1,
-				URI:           "r",
-				Description:   "desc",
-				DefaultBranch: "b",
-			}, nil
-		}
-		calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
-		calledReposGetSrclibDataVersionForPath := mock.Repos.MockGetSrclibDataVersionForPath_Current(t)
-		calledDefsGet := mock.Defs.MockGet_Return(t, &sourcegraph.Def{
-			Def: graph.Def{
-				Name: "aaa",
-				DefKey: graph.DefKey{
-					Repo:     "r",
-					CommitID: "c",
-					UnitType: "t",
-					Unit:     "u",
-					Path:     "p",
-				},
-				Exported: true,
-				Kind:     "func",
-				File:     "f",
-			},
-			DocHTML: &pbtypes.HTML{HTML: "<p><b>hello</b> world!</p>"},
-		})
-
-		wantMeta := meta{
-			Title:        test.wantTitlePrefix + " · r · Sourcegraph",
-			ShortTitle:   test.wantTitlePrefix,
-			Description:  "lang usage examples and docs for imp.scope.name_imp.scope.typeName — hello world!",
-			CanonicalURL: "http://example.com" + test.wantCanonURL,
-			Index:        test.wantIndex,
-			Follow:       test.wantFollow,
-		}
-
-		if m, err := getForTest(c, fmt.Sprintf("/r%s/-/%s/t/u/-/p", test.rev, test.defOrRefs), http.StatusOK); err != nil {
-			t.Errorf("%#v: %s", test, err)
-			continue
-		} else if !reflect.DeepEqual(m, wantMeta) {
-			t.Errorf("%#v: meta mismatch:\n%s", test, metaDiff(m, wantMeta))
-		}
-		if !*calledReposResolve {
-			t.Errorf("%#v: !calledReposResolve", test)
-		}
-		if !calledGet {
-			t.Errorf("%#v: !calledGet", test)
-		}
-		if !*calledReposResolveRev {
-			t.Errorf("%#v: !calledReposResolveRev", test)
-		}
-		if !*calledReposGetSrclibDataVersionForPath {
-			t.Errorf("%#v: !calledReposGetSrclibDataVersionForPath", test)
-		}
-		if !*calledDefsGet {
-			t.Errorf("%#v: !calledDefsGet", test)
-		}
-	}
-}
-
-func TestDef_Error(t *testing.T) {
-	c, mock := newTest()
-	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
-		return &sourcegraph.AuthInfo{}, nil
-	}
-
-	for url, req := range urls {
-		if req.repo == "" || req.rev == "" || req.defUnitType == "" || req.defUnit == "" || req.defPath == "" {
+	for origURL, wantURL := range tests {
+		resp, err := c.GetNoFollowRedirects(origURL)
+		if err != nil {
+			t.Errorf("%s: Get: %s", origURL, err)
 			continue
 		}
-
-		calledReposResolve := mock.Repos.MockResolve_Local(t, req.repo, 1)
-		calledGet := mock.Repos.MockGet(t, 1)
-		calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
-		calledReposGetSrclibDataVersionForPath := mock.Repos.MockGetSrclibDataVersionForPath_Current(t)
-		var calledDefsGet bool
-		mock.Defs.Get_ = func(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
-			calledDefsGet = true
-			return nil, grpc.Errorf(codes.NotFound, "")
+		if want := http.StatusMovedPermanently; resp.StatusCode != want {
+			t.Errorf("%s: got HTTP status code %d, want %d", origURL, resp.StatusCode, want)
 		}
-
-		if _, err := getForTest(c, url, http.StatusNotFound); err != nil {
-			t.Errorf("%s: %s", url, err)
-			continue
-		}
-		if !*calledReposResolve {
-			t.Errorf("%s: !calledReposResolve", url)
-		}
-		if !*calledGet {
-			t.Errorf("%s: !calledGet", url)
-		}
-		if !*calledReposResolveRev {
-			t.Errorf("%s: !calledReposResolveRev", url)
-		}
-		if !*calledReposGetSrclibDataVersionForPath {
-			t.Errorf("%s: !calledReposGetSrclibDataVersionForPath", url)
-		}
-		if !calledDefsGet {
-			t.Errorf("%s: !calledDefsGet", url)
+		if got := resp.Header.Get("location"); got != wantURL {
+			t.Errorf("%s: got redirected to %q, want %q", origURL, got, wantURL)
 		}
 	}
 }

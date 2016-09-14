@@ -11,7 +11,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
@@ -91,12 +90,11 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 				UnitType: defSpec.UnitType,
 				Unit:     defSpec.Unit,
 				Path:     defSpec.Path},
-			Opt: nil})
+			Opt: &sourcegraph.DefGetOptions{ComputeLineRange: true}})
 	if err != nil {
 		return err
 	}
 
-	graphKey := graph.DefKey{Repo: def.Repo, CommitID: def.CommitID, UnitType: def.UnitType, Unit: def.Unit, Path: def.Path}
-	response.Path = router.Rel.URLToDefKey(graphKey).String()
+	response.Path = router.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine)).String()
 	return writeJSON(w, response)
 }

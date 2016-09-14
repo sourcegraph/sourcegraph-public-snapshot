@@ -2,10 +2,10 @@
 
 import * as isEqual from "lodash/isEqual";
 import * as React from "react";
-import {Container} from "sourcegraph/Container";
+import { Container } from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import * as DefActions from  "sourcegraph/def/DefActions";
-import {Props} from "sourcegraph/blob/BlobLegacy";
+import * as DefActions from "sourcegraph/def/DefActions";
+import { Props } from "sourcegraph/blob/BlobLegacy";
 
 type State = any;
 
@@ -32,22 +32,22 @@ export function withJumpToDefRedirect(Blob) {
 		reconcileState(state: State, props: Props): void {
 			Object.assign(state, props);
 			if (props.location && props.location.query) {
-					let line = props.location.query["line"];
-					let character = props.location.query["character"];
-					let file = props.location.query["file"];
-					let commit = props.location.query["commit"];
-					let repo = props.location.query["repo"];
-					if ([line, character, file, repo].every(Boolean)) { // Commit is allowed to be null / undefined.
-						if (this.state.path === file && this.state.commitID === commit && this.state.repo === repo) {
-							state.soughtJumpDef = {
-								line: line,
-								character: character,
-								file: file,
-								commit: commit,
-								repo: repo,
-							};
-						}
+				let line = props.location.query["line"];
+				let character = props.location.query["character"];
+				let file = props.location.query["file"];
+				let commit = props.location.query["commit"];
+				let repo = props.location.query["repo"];
+				if ([line, character, file, repo].every(Boolean)) { // Commit is allowed to be null / undefined.
+					if (props.path === file && props.repo === repo) {
+						state.soughtJumpDef = {
+							line: line,
+							character: character,
+							file: file,
+							commit: commit,
+							repo: repo,
+						};
 					}
+				}
 			} else {
 				state.soughtJumpDef = null;
 			}

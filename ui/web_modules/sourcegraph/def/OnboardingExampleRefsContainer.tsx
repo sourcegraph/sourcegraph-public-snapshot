@@ -1,22 +1,22 @@
 // tslint:disable: typedef ordered-imports
 
-import {Location} from "history";
+import { Location } from "history";
 import * as React from "react";
 import * as classNames from "classnames";
 
-import {BlobLegacy} from "sourcegraph/blob/BlobLegacy";
+import { BlobLegacy } from "sourcegraph/blob/BlobLegacy";
 
-import {BlobStore, keyForFile, keyForAnns} from "sourcegraph/blob/BlobStore";
-import {BlobContentPlaceholder} from "sourcegraph/blob/BlobContentPlaceholder";
-import {Container} from "sourcegraph/Container";
-import {Store} from "sourcegraph/Store";
-import {DefStore} from "sourcegraph/def/DefStore";
-import {DefTooltip} from "sourcegraph/def/DefTooltip";
+import { BlobStore, keyForFile, keyForAnns } from "sourcegraph/blob/BlobStore";
+import { BlobContentPlaceholder } from "sourcegraph/blob/BlobContentPlaceholder";
+import { Container } from "sourcegraph/Container";
+import { Store } from "sourcegraph/Store";
+import { DefStore } from "sourcegraph/def/DefStore";
+import { DefTooltip } from "sourcegraph/def/DefTooltip";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import "sourcegraph/blob/BlobBackend";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {lineFromByte} from "sourcegraph/blob/lineFromByte";
+import { lineFromByte } from "sourcegraph/blob/lineFromByte";
 import * as styles from "sourcegraph/def/styles/Refs.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
@@ -205,10 +205,10 @@ export class OnboardingExampleRefsContainer extends Container<Props, State> {
 				<div className={styles.container}
 					onMouseEnter={() => {
 						if (!this.state.mouseover) {
-							this.setState({mouseover: true, mouseout: false});
+							this.setState({ mouseover: true, mouseout: false });
 						}
-					}}
-					onMouseLeave={() => this.setState({mouseover: false, mouseout: true})}
+					} }
+					onMouseLeave={() => this.setState({ mouseover: false, mouseout: true })}
 					onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.Hovering(null))}>
 					{/* mouseover state is for optimization which will only re-render the moused-over blob when a def is highlighted */}
 					{/* this is important since there may be many ref containers on the page */}
@@ -219,11 +219,11 @@ export class OnboardingExampleRefsContainer extends Container<Props, State> {
 								let file = this.filesByName ? this.filesByName[loc.Path] : null;
 								if (file && file.Error) {
 									switch (file.Error.response.status) {
-									case 413:
-										err = "Sorry, this file is too large to display.";
-										break;
-									default:
-										err = "File is not available.";
+										case 413:
+											err = "Sorry, this file is too large to display.";
+											break;
+										default:
+											err = "File is not available.";
 									}
 								}
 								if (this.state.refs && this.state.refs.Error) {
@@ -252,15 +252,13 @@ export class OnboardingExampleRefsContainer extends Container<Props, State> {
 												contents={file.ContentsString}
 												annotations={this.anns[loc.Path] || null}
 												skipAnns={file.ContentsString && file.ContentsString.length >= 40 * 2500}
-												activeDefRepo={this.state.repo}
-												activeDef={this.state.def}
 												lineNumbers={false}
 												displayRanges={ranges || null}
 												highlightedDef={null}
 												highlightedDefObj={null}
 												textSize="large" />
 										</div>
-										{this.state.refRepo && <div style={{textAlign: "center"}} className={classNames(colors.bg_light_blue, base.pv2, styles.f7, base.hidden_s)}>From <a style={{pointerEvents: "none"}}>{this.state.refRepo}</a></div>}
+										{this.state.refRepo && <div style={{ textAlign: "center" }} className={classNames(colors.bg_light_blue, base.pv2, styles.f7, base.hidden_s)}>From <a style={{ pointerEvents: "none" }}>{this.state.refRepo}</a></div>}
 									</div>
 								);
 							})}

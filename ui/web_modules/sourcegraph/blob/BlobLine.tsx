@@ -1,22 +1,21 @@
 // tslint:disable: typedef ordered-imports
 
-import {Location} from "history";
+import { Location } from "history";
 import * as React from "react";
-import {Link} from "react-router";
+import { Link } from "react-router";
 import * as utf8 from "utf8";
 
-import {annotate, getAnnLinkStyle} from "sourcegraph/blob/Annotations";
+import { annotate, getAnnLinkStyle } from "sourcegraph/blob/Annotations";
 import * as classNames from "classnames";
-import {Component} from "sourcegraph/Component";
+import { Component } from "sourcegraph/Component";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {urlToBlob} from "sourcegraph/blob/routes";
+import { urlToBlob } from "sourcegraph/blob/routes";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {fastURLToRepoDef} from "sourcegraph/def/routes";
 import * as s from "sourcegraph/blob/styles/Blob.css";
 import "sourcegraph/components/styles/code.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {Def} from "sourcegraph/api";
+import { Def } from "sourcegraph/api";
 import {EventLogger} from "sourcegraph/util/EventLogger";
 
 // simpleContentsString converts [string...] (like ["a", "b", "c"]) to
@@ -57,9 +56,6 @@ interface Props {
 	rev?: string;
 	commitID?: string;
 	path?: string;
-
-	activeDef: string | null; // the def that the page is about
-	activeDefRepo: string | null;
 
 	// startByte is the byte position of the first byte of contents. It is
 	// required if annotations are specified, so that the annotations can
@@ -118,9 +114,6 @@ export class BlobLine extends Component<Props, State> {
 		// Filter to improve perf.
 		state.highlightedDef = (props.highlightedDef && state.ownAnnURLs && state.ownAnnURLs[props.highlightedDef]) ? props.highlightedDef : null;
 		state.highlightedDefObj = state.highlightedDef ? props.highlightedDefObj : null;
-		const activeDefURL = props.activeDef && fastURLToRepoDef(props.activeDefRepo || state.repo, null, props.activeDef);
-		state.activeDefURL = activeDefURL && state.ownAnnURLs && state.ownAnnURLs[activeDefURL] ? activeDefURL : null;
-
 		state.lineNumber = props.lineNumber || null;
 		state.showLineNumber = props.showLineNumber || false;
 		state.startByte = props.startByte;
@@ -171,7 +164,7 @@ export class BlobLine extends Component<Props, State> {
 						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.Hovering(annotationPos))}
 						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.Hovering(null))}
 						onClick={(ev) => {
-							EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, this.state.clickEventLabel, {repo: this.state.repo, path: this.state.path, active_def_url: this.state.activeDefURL});
+							EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, this.state.clickEventLabel, {repo: this.state.repo, path: this.state.path});
 							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) {
 								return;
 							}
@@ -184,7 +177,7 @@ export class BlobLine extends Component<Props, State> {
 							// Clear the def tooltip on click, or else it might be stuck
 							// to the cursor if no corresponding Hovering(null) is dispatched.
 							Dispatcher.Stores.dispatch(new DefActions.Hovering(null));
-						}}
+						} }
 						key={i}>{fromUtf8(content)}</Link>
 				);
 			}
@@ -214,7 +207,7 @@ export class BlobLine extends Component<Props, State> {
 							Dispatcher.Stores.dispatch(new BlobActions.SelectLineRange(this.state.repo, this.state.rev, this.state.path, this.state.lineNumber));
 							return;
 						}
-					}}>
+					} }>
 						<Link className={this.state.selected ? s.selectedLineNumber : s.lineNumber}
 							to={`${urlToBlob(this.state.repo, this.state.rev, this.state.path)}#L${this.state.lineNumber}`} data-line={this.state.lineNumber} />
 					</td>}

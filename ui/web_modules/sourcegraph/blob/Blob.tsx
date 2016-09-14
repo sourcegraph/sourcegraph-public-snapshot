@@ -196,8 +196,7 @@ export class Blob extends React.Component<Props, null> {
 
 		return new monaco.Promise<void>(() => {
 			defAtPosition(model, pos).then((resp) => {
-				const url = urlToDefInfo(resp.def);
-				this.context.router.push(url);
+				window.location.href = urlToDefInfo(resp.def);
 			});
 		});
 	}

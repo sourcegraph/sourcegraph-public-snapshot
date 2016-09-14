@@ -191,7 +191,6 @@ export class LegacyBlobMain extends Container<Props, State> {
 							highlightSelectedLines={true}
 							highlightedDef={null}
 							highlightedDefObj={null}
-							activeDef={this.state.def}
 							startLine={this.state.startLine}
 							startCol={this.state.startCol}
 							startByte={this.state.startByte}

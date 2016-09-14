@@ -1,11 +1,11 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import {Component, EventListener} from "sourcegraph/Component";
+import { Component, EventListener } from "sourcegraph/Component";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as s from "sourcegraph/def/styles/Def.css";
-import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
-import {BlobPos} from "sourcegraph/def/DefActions";
+import { qualifiedNameAndType } from "sourcegraph/def/Formatter";
+import { BlobPos } from "sourcegraph/def/DefActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 
 // These variables are needed to intialize the tooltips position to the current
@@ -78,7 +78,7 @@ export class DefTooltip extends Component<Props, State> {
 
 		let def = info.def;
 		return (
-			<div ref={(e) => { this._elem = e; this._updatePosition({clientY: cursorY, clientX: cursorX}); }} className={s.tooltip}>
+			<div ref={(e) => { this._elem = e; this._updatePosition({ clientY: cursorY, clientX: cursorX }); } } className={s.tooltip}>
 				<div key="title" className={s.tooltipTitle}>{info.Title || qualifiedNameAndType(def)}</div>
 				<div key="content" className={s.content}>
 					{def && def.DocHTML && <div className={s.doc} dangerouslySetInnerHTML={def && def.DocHTML}></div>}

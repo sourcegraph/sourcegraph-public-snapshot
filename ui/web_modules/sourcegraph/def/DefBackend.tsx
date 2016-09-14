@@ -1,12 +1,12 @@
 import * as get from "lodash/get";
-import {encodeDefPath} from "sourcegraph/def";
+import { encodeDefPath } from "sourcegraph/def";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {DefStore} from "sourcegraph/def/DefStore";
+import { DefStore } from "sourcegraph/def/DefStore";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {updateRepoCloning} from "sourcegraph/repo/cloning";
-import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
-import {toQuery} from "sourcegraph/util/toQuery";
-import {checkStatus, defaultFetch} from "sourcegraph/util/xhr";
+import { updateRepoCloning } from "sourcegraph/repo/cloning";
+import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
+import { toQuery } from "sourcegraph/util/toQuery";
+import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
 export const DefBackend = {
 	fetch: singleflightFetch(defaultFetch),
@@ -20,7 +20,7 @@ export const DefBackend = {
 					.then(updateRepoCloning(action.repo))
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
+					.catch((err) => ({ Error: err }))
 					.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefFetched(action.repo, action.rev, action.def, data)));
 			}
 		}
@@ -30,13 +30,13 @@ export const DefBackend = {
 			let authors = DefStore.authors.get(action.repo, action.commitID, action.def);
 			if (authors === null) {
 				DefBackend.fetch(`/.api/repos/${action.repo}${action.commitID ? `@${action.commitID}` : ""}/-/def/${action.def}/-/authors`)
-						.then(checkStatus)
-						.then((resp) => resp.json())
-						.catch((err) => {
-							console.error(err);
-							return {Error: true};
-						})
-						.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefAuthorsFetched(action.repo, action.commitID, action.def, data)));
+					.then(checkStatus)
+					.then((resp) => resp.json())
+					.catch((err) => {
+						console.error(err);
+						return { Error: true };
+					})
+					.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefAuthorsFetched(action.repo, action.commitID, action.def, data)));
 			}
 		}
 
@@ -47,7 +47,7 @@ export const DefBackend = {
 				DefBackend.fetch(`/.api/defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.commitID)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}&FilePathPrefix=${action.filePathPrefix ? encodeURIComponent(action.filePathPrefix) : ""}`)
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
+					.catch((err) => ({ Error: err }))
 					.then((data) => {
 						Dispatcher.Stores.dispatch(new DefActions.DefsFetched(action.repo, action.commitID, action.query, action.filePathPrefix, data, action.overlay));
 					});
@@ -67,7 +67,7 @@ export const DefBackend = {
 				DefBackend.fetch(`/.api/repos/${action.resource.repo}${action.resource.commitID ? `@${action.resource.commitID}` : ""}/-/def/${action.resource.def}/-/ref-locations${q}`)
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
+					.catch((err) => ({ Error: err }))
 					.then((data) => {
 						if (!data || !data.Error) {
 							Dispatcher.Stores.dispatch(new DefActions.RefLocationsFetched(action, data));
@@ -89,7 +89,7 @@ export const DefBackend = {
 				DefBackend.fetch(`/.api/repos/${action.resource.repo}${action.resource.commitID ? `@${action.resource.commitID}` : ""}/-/def/${action.resource.def}/-/local-refs?file=${action.pos.file}&line=${action.pos.line}&character=${action.pos.character}${q}`)
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
+					.catch((err) => ({ Error: err }))
 					.then((data) => {
 						if (!data || !data.Error) {
 							Dispatcher.Stores.dispatch(new DefActions.LocalRefLocationsFetched(action, data));
@@ -107,7 +107,7 @@ export const DefBackend = {
 				DefBackend.fetch(url)
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
+					.catch((err) => ({ Error: err }))
 					.then(convNotFound)
 					.then((data) => {
 						if (!data || !data.Error) {
@@ -128,7 +128,7 @@ export const DefBackend = {
 				DefBackend.fetch(url)
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
+					.catch((err) => ({ Error: err }))
 					.then((data) => {
 						if (get(data, "Error.response.status") === 404) {
 							data = [];
@@ -147,7 +147,7 @@ export const DefBackend = {
 				DefBackend.fetch(url)
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
+					.catch((err) => ({ Error: err }))
 					.then((data) => {
 						if (get(data, "Error.response.status") === 404) {
 							return; // TODO we may want to indicate error in the UI
@@ -164,7 +164,7 @@ export const DefBackend = {
 			DefBackend.fetch(url)
 				.then(checkStatus)
 				.then((resp) => resp.json())
-				.catch((err) => ({Error: err}))
+				.catch((err) => ({ Error: err }))
 				.then((data) => {
 					Dispatcher.Stores.dispatch(new DefActions.JumpDefFetched(action.pos, data));
 				});

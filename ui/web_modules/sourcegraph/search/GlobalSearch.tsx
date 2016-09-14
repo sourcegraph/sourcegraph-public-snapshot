@@ -2,27 +2,27 @@
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import {Link} from "react-router";
-import {rel} from "sourcegraph/app/routePatterns";
-import {Container} from "sourcegraph/Container";
-import {EventListener} from "sourcegraph/Component";
+import { Link } from "react-router";
+import { rel } from "sourcegraph/app/routePatterns";
+import { Container } from "sourcegraph/Container";
+import { EventListener } from "sourcegraph/Component";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {SearchStore} from "sourcegraph/search/SearchStore";
-import {RepoStore} from "sourcegraph/repo/RepoStore";
+import { SearchStore } from "sourcegraph/search/SearchStore";
+import { RepoStore } from "sourcegraph/repo/RepoStore";
 import "sourcegraph/search/SearchBackend";
-import {UserStore} from "sourcegraph/user/UserStore";
+import { UserStore } from "sourcegraph/user/UserStore";
 import * as uniq from "lodash/uniq";
 import * as debounce from "lodash/debounce";
 import * as SearchActions from "sourcegraph/search/SearchActions";
-import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
-import {urlToDef} from "sourcegraph/def/routes";
-import {Icon} from "sourcegraph/components";
-import {trimRepo} from "sourcegraph/repo";
+import { qualifiedNameAndType } from "sourcegraph/def/Formatter";
+import { urlToDefInfo } from "sourcegraph/def/routes";
+import { Icon } from "sourcegraph/components";
+import { trimRepo } from "sourcegraph/repo";
 import * as styles from "sourcegraph/search/styles/GlobalSearch.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {popularRepos} from "sourcegraph/search/popularRepos";
-import {locationForSearch} from "sourcegraph/search/routes";
+import { popularRepos } from "sourcegraph/search/popularRepos";
+import { locationForSearch } from "sourcegraph/search/routes";
 import * as classNames from "classnames";
 import {Store} from "sourcegraph/Store";
 import {urlToRepo} from "sourcegraph/repo/routes";
@@ -69,7 +69,7 @@ export class GlobalSearch extends Container<Props, State> {
 	_ignoreMouseSelection: any;
 	_debouncedUnignoreMouseSelection: any;
 	_dispatcherToken: string;
-	_debounceForSearch = debounce((f: Function) => f(), 200, {leading: false, trailing: true});
+	_debounceForSearch = debounce((f: Function) => f(), 200, { leading: false, trailing: true });
 
 	constructor(props: Props) {
 		super(props);
@@ -77,7 +77,7 @@ export class GlobalSearch extends Container<Props, State> {
 		this.state = {
 			query: "",
 			repo: null,
-			matchingResults: {Repos: [], Defs: [], Options: [], outstandingFetches: 0},
+			matchingResults: { Repos: [], Defs: [], Options: [], outstandingFetches: 0 },
 			className: null,
 			resultClassName: null,
 			selectionIndex: 0,
@@ -93,7 +93,7 @@ export class GlobalSearch extends Container<Props, State> {
 		this._handleKeyDown = this._handleKeyDown.bind(this);
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
-		this._onSelection = debounce(this._onSelection.bind(this), 200, {leading: false, trailing: true});
+		this._onSelection = debounce(this._onSelection.bind(this), 200, { leading: false, trailing: true });
 	}
 
 	componentDidMount(): void {
@@ -221,7 +221,7 @@ export class GlobalSearch extends Container<Props, State> {
 						}
 					}
 					return memo;
-				}, {Repos: [], Defs: [], Options: [], outstandingFetches: state._queries.length});
+				}, { Repos: [], Defs: [], Options: [], outstandingFetches: state._queries.length });
 			} else {
 				state.matchingResults = null;
 			}
@@ -263,50 +263,50 @@ export class GlobalSearch extends Container<Props, State> {
 		let idx;
 		let max;
 		switch (e.keyCode) {
-		case 40: // ArrowDown
-			idx = this._normalizedSelectionIndex();
-			max = this._numResults();
+			case 40: // ArrowDown
+				idx = this._normalizedSelectionIndex();
+				max = this._numResults();
 
-			this.setState({
-				selectionIndex: idx + 1 >= max ? 0 : idx + 1,
-			} as State, this._scrollToVisibleSelection);
+				this.setState({
+					selectionIndex: idx + 1 >= max ? 0 : idx + 1,
+				} as State, this._scrollToVisibleSelection);
 
-			this._temporarilyIgnoreMouseSelection();
-			e.preventDefault();
-			break;
+				this._temporarilyIgnoreMouseSelection();
+				e.preventDefault();
+				break;
 
-		case 38: // ArrowUp
-			idx = this._normalizedSelectionIndex();
-			max = this._numResults();
+			case 38: // ArrowUp
+				idx = this._normalizedSelectionIndex();
+				max = this._numResults();
 
-			this.setState({
-				selectionIndex: idx <= 0 ? max - 1 : idx - 1,
-			} as State, this._scrollToVisibleSelection);
+				this.setState({
+					selectionIndex: idx <= 0 ? max - 1 : idx - 1,
+				} as State, this._scrollToVisibleSelection);
 
-			this._temporarilyIgnoreMouseSelection();
-			e.preventDefault();
-			break;
+				this._temporarilyIgnoreMouseSelection();
+				e.preventDefault();
+				break;
 
-		case 37: // ArrowLeft
-			this._temporarilyIgnoreMouseSelection();
+			case 37: // ArrowLeft
+				this._temporarilyIgnoreMouseSelection();
 
-			// Allow default (cursor movement in <input>)
-			break;
+				// Allow default (cursor movement in <input>)
+				break;
 
-		case 39: // ArrowRight
-			this._temporarilyIgnoreMouseSelection();
+			case 39: // ArrowRight
+				this._temporarilyIgnoreMouseSelection();
 
-			// Allow default (cursor movement in <input>)
-			break;
+				// Allow default (cursor movement in <input>)
+				break;
 
-		case 13: // Enter
-			this._onSelection(false);
-			this._temporarilyIgnoreMouseSelection();
-			e.preventDefault();
-			break;
-		default:
-			// Changes to the input value are handled by the parent component.
-			break;
+			case 13: // Enter
+				this._onSelection(false);
+				this._temporarilyIgnoreMouseSelection();
+				e.preventDefault();
+				break;
+			default:
+				// Changes to the input value are handled by the parent component.
+				break;
 		}
 	}
 
@@ -323,8 +323,8 @@ export class GlobalSearch extends Container<Props, State> {
 	_numResults(): number {
 		if (!this.state.matchingResults ||
 			(!this.state.matchingResults.Defs && !this.state.matchingResults.Repos)) {
-				return 0;
-			}
+			return 0;
+		}
 
 		let count = 0;
 		if (this.state.matchingResults.Defs) {
@@ -373,13 +373,13 @@ export class GlobalSearch extends Container<Props, State> {
 		}
 
 		const def = this.state.matchingResults.Defs[i - offset];
-		let url = urlToDef(def);
+		let url = urlToDefInfo(def);
 		url = url.replace(/GoPackage\/pkg\//, "GoPackage/"); // TEMP HOTFIX
 
 		eventProps.selectedItem = url;
 		eventProps.totalResults = this.state.matchingResults.Defs.length;
 		if (def.FmtStrings && def.FmtStrings.Kind && def.FmtStrings.Language && def.Repo) {
-			eventProps = Object.assign({}, eventProps, {languageSelected: def.FmtStrings.Language, kindSelected: def.FmtStrings.Kind, repoSelected: def.Repo});
+			eventProps = Object.assign({}, eventProps, { languageSelected: def.FmtStrings.Language, kindSelected: def.FmtStrings.Kind, repoSelected: def.Repo });
 		}
 
 		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", eventProps);
@@ -413,7 +413,7 @@ export class GlobalSearch extends Container<Props, State> {
 		if (!this._debouncedUnignoreMouseSelection) {
 			this._debouncedUnignoreMouseSelection = debounce(() => {
 				this._ignoreMouseSelection = false;
-			}, 200, {leading: false, trailing: true});
+			}, 200, { leading: false, trailing: true });
 		}
 		this._debouncedUnignoreMouseSelection();
 		this._ignoreMouseSelection = true;
@@ -474,7 +474,7 @@ export class GlobalSearch extends Container<Props, State> {
 
 		for (let i = numRepos; i < numRepos + numDefs; i++) {
 			let def = this.state.matchingResults.Defs[i - numRepos];
-			let defURL = urlToDef(def);
+			let defURL = urlToDefInfo(def);
 
 			const selected = this._normalizedSelectionIndex() === i;
 
@@ -488,7 +488,7 @@ export class GlobalSearch extends Container<Props, State> {
 			}
 
 			const firstLineDocString = docstring;
-			const name = qualifiedNameAndType(def, {namequal: "depqualified"});
+			const name = qualifiedNameAndType(def, { namequal: "depqualified" });
 			// KLUDGE: Specical case for testing.
 			if (this.state.repo === "github.com/electerious/Lychee") {
 				let n = name[0];
@@ -502,6 +502,7 @@ export class GlobalSearch extends Container<Props, State> {
 					ref={selected ? this._setSelectedItem : undefined}
 					to={defURL.replace(/GoPackage\/pkg\//, "GoPackage/")}
 					key={defURL}
+					target="_self"
 					onClick={() => this._onSelection(true)}>
 					<div className={classNames(styles.cool_gray, styles.flex_container, base.pt3)}>
 						<div className={classNames(styles.flex, styles.w100)}>

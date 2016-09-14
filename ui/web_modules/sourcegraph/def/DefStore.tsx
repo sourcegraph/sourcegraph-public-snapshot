@@ -1,17 +1,16 @@
 // tslint:disable: typedef ordered-imports
 
-import {Def} from "sourcegraph/api";
-import {Store} from "sourcegraph/Store";
+import { Def } from "sourcegraph/api";
+import { Store } from "sourcegraph/Store";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {deepFreeze} from "sourcegraph/util/deepFreeze";
+import { deepFreeze } from "sourcegraph/util/deepFreeze";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {defPath} from "sourcegraph/def";
-import {ExamplesKey, RefLocationsKey} from "sourcegraph/def";
+import { defPath } from "sourcegraph/def";
+import { ExamplesKey, RefLocationsKey } from "sourcegraph/def";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import "sourcegraph/def/DefBackend";
-import {fastParseDefPath} from "sourcegraph/def";
-import {toQuery} from "sourcegraph/util/toQuery";
-import {BlobPos} from "sourcegraph/def/DefActions";
+import { toQuery } from "sourcegraph/util/toQuery";
+import { BlobPos } from "sourcegraph/def/DefActions";
 
 function defKey(repo: string, rev: string | null, def: string): string {
 	return `${repo}#${rev || ""}#${def}`;
@@ -26,7 +25,7 @@ function refsKeyFor(repo: string, rev: string | null, def: string, refRepo: stri
 }
 
 function refLocationsKeyFor(r: RefLocationsKey): string {
-	let opts: {Repos?: string[], Page?: number, PerPage?: number, Sorting?: string} = {
+	let opts: { Repos?: string[], Page?: number, PerPage?: number, Sorting?: string } = {
 		Repos: r.repos,
 	};
 	let q = toQuery(opts);
@@ -117,121 +116,104 @@ class DefStoreClass extends Store<any> {
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case DefActions.DefFetched:
-			this.defs = deepFreeze(Object.assign({}, this.defs, {
-				content: Object.assign({}, this.defs.content, {
-					[defKey(action.repo, action.rev, action.def)]: action.defObj,
-				}),
-			}));
-			break;
-
-		case DefActions.DefAuthorsFetched:
-			this.authors = deepFreeze(Object.assign({}, this.authors, {
-				content: Object.assign({}, this.authors.content, {
-					[defKey(action.repo, action.commitID, action.def)]: action.authors,
-				}),
-			}));
-			break;
-
-		case DefActions.DefsFetched:
-			{
-				// Store the list of defs AND each def individually so we can
-				// perform more operations quickly.
-				let data = {
-					[defsListKeyFor(action.repo, action.commitID, action.query, action.filePathPrefix)]: action.defs,
-				};
-				if (action.defs && action.defs.Defs) {
-					action.defs.Defs.forEach((d) => {
-						data[defKey(d.Repo, action.commitID, defPath(d))] = d;
-					});
-				}
+			case DefActions.DefFetched:
 				this.defs = deepFreeze(Object.assign({}, this.defs, {
-					content: Object.assign({}, this.defs.content, data),
+					content: Object.assign({}, this.defs.content, {
+						[defKey(action.repo, action.rev, action.def)]: action.defObj,
+					}),
 				}));
 				break;
-			}
 
-		case BlobActions.AnnotationsFetched:
-			{
-				// For any ref annotations with Def=true, we know their defs are in
-				// this file, so we can record that for faster within-same-file jump-to-def.
-				if (action.annotations && action.annotations.Annotations) {
-					// Needn't complete synchronously since this is an optimization,
-					// and deepFreezing so much data actually can take ~1s on a ~1000
-					// line file in dev mode, so run this in setTimeout.
-					const defPos: {[key: string]: DefPos} = {};
-					action.annotations.Annotations.forEach((ann) => {
-						if (ann.Def && ann.URL) {
-							// All of these defs must be defined in the current repo
-							// and commitID (since that's what Def means), so we don't need to
-							// call the slower def/index.js routeParams to parse out the
-							// def path.
-							const def = fastParseDefPath(ann.URL);
-							if (def) {
-								defPos[defKey(action.repo, action.commitID, def)] = {
-									File: action.path,
-									// This is just the range for the def's name, not the whole
-									// def, but it's better than nothing. The whole def range
-									// will be available when the full def loads. In the meantime
-									// this lets BlobMain, for example, scroll to the def's name
-									// in the file (which is better than not scrolling at all until
-									// the full def loads).
-									DefStart: ann.StartByte,
-									DefEnd: ann.EndByte,
-								};
-							}
-						}
-					});
+			case DefActions.DefAuthorsFetched:
+				this.authors = deepFreeze(Object.assign({}, this.authors, {
+					content: Object.assign({}, this.authors.content, {
+						[defKey(action.repo, action.commitID, action.def)]: action.authors,
+					}),
+				}));
+				break;
+
+			case DefActions.DefsFetched:
+				{
+					// Store the list of defs AND each def individually so we can
+					// perform more operations quickly.
+					let data = {
+						[defsListKeyFor(action.repo, action.commitID, action.query, action.filePathPrefix)]: action.defs,
+					};
+					if (action.defs && action.defs.Defs) {
+						action.defs.Defs.forEach((d) => {
+							data[defKey(d.Repo, action.commitID, defPath(d))] = d;
+						});
+					}
 					this.defs = deepFreeze(Object.assign({}, this.defs, {
-						pos: Object.assign({}, this.defs.pos, defPos),
+						content: Object.assign({}, this.defs.content, data),
 					}));
+					break;
 				}
+
+			case BlobActions.AnnotationsFetched:
+				{
+					// For any ref annotations with Def=true, we know their defs are in
+					// this file, so we can record that for faster within-same-file jump-to-def.
+					if (action.annotations && action.annotations.Annotations) {
+						// Needn't complete synchronously since this is an optimization,
+						// and deepFreezing so much data actually can take ~1s on a ~1000
+						// line file in dev mode, so run this in setTimeout.
+						const defPos: { [key: string]: DefPos } = {};
+						action.annotations.Annotations.forEach((ann) => {
+							if (ann.Def && ann.URL) {
+								// No-op; we no longer support annotations.
+							}
+						});
+						this.defs = deepFreeze(Object.assign({}, this.defs, {
+							pos: Object.assign({}, this.defs.pos, defPos),
+						}));
+					}
+					break;
+				}
+
+			case DefActions.Hovering:
+				this.hoverPos = action.pos;
 				break;
-			}
 
-		case DefActions.Hovering:
-			this.hoverPos = action.pos;
-			break;
-
-		case DefActions.HoverInfoFetched:
-			if (action.info.Error) {
+			case DefActions.HoverInfoFetched:
+				if (action.info.Error) {
+					break;
+				}
+				this.hoverInfos = deepFreeze(Object.assign({}, this.hoverInfos, {
+					content: Object.assign({}, this.hoverInfos.content, {
+						[posKeyFor(action.pos)]: action.info,
+					}),
+				}));
 				break;
-			}
-			this.hoverInfos = deepFreeze(Object.assign({}, this.hoverInfos, {
-				content: Object.assign({}, this.hoverInfos.content, {
-					[posKeyFor(action.pos)]: action.info,
-				}),
-			}));
-			break;
 
-		case DefActions.ExamplesFetched:
-			this._examples = deepFreeze(Object.assign({}, this._examples, {
-				[examplesKeyFor(action.request.resource)]: action.locations,
-			}));
-			break;
-
-		case DefActions.LocalRefLocationsFetched:
-		case DefActions.RefLocationsFetched:
-			{
-				let a = (action as DefActions.RefLocationsFetched);
-				let r = a.request.resource;
-				let updatedContent = {};
-				updatedContent[refLocationsKeyFor(r)] = a.locations;
-
-				this._refLocations = deepFreeze(Object.assign({}, this._refLocations, updatedContent));
+			case DefActions.ExamplesFetched:
+				this._examples = deepFreeze(Object.assign({}, this._examples, {
+					[examplesKeyFor(action.request.resource)]: action.locations,
+				}));
 				break;
-			}
 
-		case DefActions.RefsFetched:
-			this.refs = deepFreeze(Object.assign({}, this.refs, {
-				content: Object.assign({}, this.refs.content, {
-					[refsKeyFor(action.repo, action.commitID, action.def, action.refRepo, action.refFile)]: action.refs,
-				}),
-			}));
-			break;
+			case DefActions.LocalRefLocationsFetched:
+			case DefActions.RefLocationsFetched:
+				{
+					let a = (action as DefActions.RefLocationsFetched);
+					let r = a.request.resource;
+					let updatedContent = {};
+					updatedContent[refLocationsKeyFor(r)] = a.locations;
 
-		default:
-			return; // don't emit change
+					this._refLocations = deepFreeze(Object.assign({}, this._refLocations, updatedContent));
+					break;
+				}
+
+			case DefActions.RefsFetched:
+				this.refs = deepFreeze(Object.assign({}, this.refs, {
+					content: Object.assign({}, this.refs.content, {
+						[refsKeyFor(action.repo, action.commitID, action.def, action.refRepo, action.refFile)]: action.refs,
+					}),
+				}));
+				break;
+
+			default:
+				return; // don't emit change
 		}
 
 		this.__emitChange();

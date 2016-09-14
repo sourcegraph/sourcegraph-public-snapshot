@@ -1,16 +1,16 @@
 // tslint:disable typedef ordered-imports
 import * as React from "react";
-import {abs} from "sourcegraph/app/routePatterns";
-import {Container} from "sourcegraph/Container";
+import { abs } from "sourcegraph/app/routePatterns";
+import { Container } from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {EventListener} from "sourcegraph/Component";
-import {DefStore} from "sourcegraph/def/DefStore";
+import { EventListener } from "sourcegraph/Component";
+import { DefStore } from "sourcegraph/def/DefStore";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {Store} from "sourcegraph/Store";
-import {urlToDefInfo} from "sourcegraph/def/routes";
-import {urlToTree} from "sourcegraph/tree/routes";
-import {context} from "sourcegraph/app/context";
-import {InjectedRouter} from "react-router";
+import { Store } from "sourcegraph/Store";
+import { urlToDefInfo } from "sourcegraph/def/routes";
+import { urlToTree } from "sourcegraph/tree/routes";
+import { context } from "sourcegraph/app/context";
+import { InjectedRouter } from "react-router";
 
 type State = any;
 
@@ -20,7 +20,7 @@ export function desktopContainer(Component) {
 			router: React.PropTypes.object.isRequired,
 		};
 
-		context: {router: InjectedRouter};
+		context: { router: InjectedRouter };
 
 		constructor(props: {}) {
 			super(props);
@@ -45,8 +45,7 @@ export function desktopContainer(Component) {
 			if (def.Error) {
 				messageDesktop(def.Error);
 			} else {
-				const url = urlToDefInfo(def);
-				(this.context as any).router.push(url);
+				window.location.href = urlToDefInfo(def);
 			}
 			newState.defSpec = {};
 		}
@@ -59,7 +58,7 @@ export function desktopContainer(Component) {
 				return;
 			}
 			info.def = infoToDef(info);
-			this.setState({defSpec: {repo: info.repo, def: info.def}});
+			this.setState({ defSpec: { repo: info.repo, def: info.def } });
 			Dispatcher.Backends.dispatch(new DefActions.WantDef(info.repo, null, info.def));
 		}
 
@@ -69,7 +68,7 @@ export function desktopContainer(Component) {
 			}
 			return (
 				<div>
-					<Component {...this.props}/>
+					<Component {...this.props} />
 					<EventListener target={global.document} event="sourcegraph:desktop:navToSym" callback={this.desktopNavigation} />
 				</div>
 			);

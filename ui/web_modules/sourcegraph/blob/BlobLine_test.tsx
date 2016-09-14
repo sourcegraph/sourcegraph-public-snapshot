@@ -1,25 +1,23 @@
 import * as React from "react";
-import {BlobLine} from "sourcegraph/blob/BlobLine";
+import { BlobLine } from "sourcegraph/blob/BlobLine";
 import testdataContents from "sourcegraph/blob/testdata/BlobLine-contents.json";
 import testdataEmpty from "sourcegraph/blob/testdata/BlobLine-empty.json";
 import testdataLineNumber from "sourcegraph/blob/testdata/BlobLine-lineNumber.json";
 import testdataLineSelection from "sourcegraph/blob/testdata/BlobLine-selection.json";
-import {autotest} from "sourcegraph/util/testutil/autotest";
+import { autotest } from "sourcegraph/util/testutil/autotest";
 
 const common = {
 	location: {
-			hash: "",
-			key: "",
-			pathname: "",
-			search: "",
-			action: "",
-			query: {},
-			state: {},
-		},
+		hash: "",
+		key: "",
+		pathname: "",
+		search: "",
+		action: "",
+		query: {},
+		state: {},
+	},
 	startByte: 0,
 	highlightedDefObj: null,
-	activeDef: null,
-	activeDefRepo: null,
 };
 
 describe("BlobLine", () => {

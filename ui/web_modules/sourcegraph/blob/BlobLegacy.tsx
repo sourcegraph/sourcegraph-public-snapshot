@@ -1,20 +1,20 @@
-import {Location} from "history";
+import { Location } from "history";
 import * as debounce from "lodash/debounce";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import {Def} from "sourcegraph/api";
-import {annotationsByLine} from "sourcegraph/blob/annotationsByLine";
+import { Def } from "sourcegraph/api";
+import { annotationsByLine } from "sourcegraph/blob/annotationsByLine";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import {BlobLine} from "sourcegraph/blob/BlobLine";
-import {BlobLineExpander, Range} from "sourcegraph/blob/BlobLineExpander";
-import {computeLineStartBytes, lineFromByte} from "sourcegraph/blob/lineFromByte";
+import { BlobLine } from "sourcegraph/blob/BlobLine";
+import { BlobLineExpander, Range } from "sourcegraph/blob/BlobLineExpander";
+import { computeLineStartBytes, lineFromByte } from "sourcegraph/blob/lineFromByte";
 import * as s from "sourcegraph/blob/styles/Blob.css";
-import {withJumpToDefRedirect} from "sourcegraph/blob/withJumpToDefRedirect";
-import {Component, EventListener} from "sourcegraph/Component";
+import { withJumpToDefRedirect } from "sourcegraph/blob/withJumpToDefRedirect";
+import { Component, EventListener } from "sourcegraph/Component";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { fileLines } from "sourcegraph/util/fileLines";
 import {EventLogger} from "sourcegraph/util/EventLogger";
-import {fileLines} from "sourcegraph/util/fileLines";
 
 interface State {
 	startlineCallback: any;
@@ -35,8 +35,6 @@ interface State {
 	endByte: number | null;
 	lineStartBytes: any;
 	lineNumbers: boolean;
-	activeDef: string | null;
-	activeDefRepo: string | null;
 	contentsOffsetLine: number;
 	expandedRanges: Range[];
 	displayLineExpanders: string | null;
@@ -71,12 +69,6 @@ export interface Props {
 	scrollToStartLine?: boolean;
 	highlightedDef: string | null;
 	highlightedDefObj: Def | null;
-
-	// activeDef is the def ID ("UnitType/Unit/-/Path") only of the currently
-	// active def (i.e., the subject of the current DefInfo page). It should
-	// not be the whole def URL path (it should not include the repo and rev).
-	activeDef?: string;
-	activeDefRepo?: string;
 
 	// For linking line numbers to the file they came from (e.g., in
 	// ref snippets).
@@ -129,8 +121,6 @@ export class BlobLegacyTestOnly extends Component<Props, State> {
 		rev: "",
 		commitID: "",
 		path: "",
-		activeDef: null,
-		activeDefRepo: null,
 		highlightSelectedLines: false,
 		highlightedDef: null,
 		highlightedDefObj: null,
@@ -199,8 +189,6 @@ export class BlobLegacyTestOnly extends Component<Props, State> {
 		state.lineNumbers = Boolean(props.lineNumbers);
 		state.highlightedDef = props.highlightedDef || null;
 		state.highlightedDefObj = props.highlightedDefObj || null;
-		state.activeDef = props.activeDef || null;
-		state.activeDefRepo = props.activeDefRepo || null;
 		state.highlightSelectedLines = Boolean(props.highlightSelectedLines);
 		state.dispatchSelections = Boolean(props.dispatchSelections);
 		state.displayRanges = props.displayRanges ? this._consolidateRanges(props.displayRanges.concat(state.expandedRanges)) : null;
@@ -294,7 +282,7 @@ export class BlobLegacyTestOnly extends Component<Props, State> {
 	}
 
 	_expandRange(range: Range): void {
-		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "BlobLineExpanderClicked", {repo: this.state.repo, active_def: this.state.activeDef, path: this.state.path});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "BlobLineExpanderClicked", {repo: this.state.repo, path: this.state.path});
 		this.setState({
 			expandedRanges: this.state.expandedRanges.concat([range]),
 		} as State);
@@ -468,8 +456,6 @@ export class BlobLegacyTestOnly extends Component<Props, State> {
 					selected={this.state.highlightSelectedLines && this.state.startLine !== null && this.state.endLine !== null && this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
 					highlightedDef={this.state.highlightedDef}
 					highlightedDefObj={this.state.highlightedDefObj}
-					activeDef={this.state.activeDef}
-					activeDefRepo={this.state.activeDefRepo}
 					key={i} />
 			);
 			renderedLines += 1;
@@ -479,7 +465,7 @@ export class BlobLegacyTestOnly extends Component<Props, State> {
 				<BlobLineExpander key={`expand-${this.state.lines.length}`}
 					expandRange={[lastDisplayedLine, lastDisplayedLine + 30]}
 					onExpand={this._expandRange}
-					direction={"down"}/>
+					direction={"down"} />
 			);
 		}
 		return (
@@ -496,4 +482,4 @@ export class BlobLegacyTestOnly extends Component<Props, State> {
 }
 
 let blob = withJumpToDefRedirect(BlobLegacyTestOnly);
-export {blob as BlobLegacy};
+export { blob as BlobLegacy };

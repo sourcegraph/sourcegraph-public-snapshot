@@ -9,8 +9,6 @@ export type RouteName = "styleguide" |
 	"settings" |
 	"settingsRepos" |
 	"commit" |
-	"def" |
-	"defInfo" |
 	"repo" |
 	"tree" |
 	"blob" |
@@ -54,8 +52,6 @@ export const rel = {
 	reset: "reset",
 	admin: "-/",
 	commit: "commit",
-	def: "def/*",
-	defInfo: "refs/*",
 	repo: "*", // matches both "repo" and "repo@rev"
 	tree: "tree/*",
 	blob: "blob/*",
@@ -84,8 +80,6 @@ export const abs = {
 	admin: rel.admin,
 	adminBuilds: `${rel.admin}${rel.builds}`,
 	commit: `${rel.repo}/-/${rel.commit}`,
-	def: `${rel.repo}/-/${rel.def}`,
-	defInfo: `${rel.repo}/-/${rel.defInfo}`,
 	repo: rel.repo,
 	tree: `${rel.repo}/-/${rel.tree}`,
 	blob: `${rel.repo}/-/${rel.blob}`,
@@ -93,7 +87,7 @@ export const abs = {
 	builds: `${rel.repo}/-/${rel.builds}`,
 };
 
-const routeNamesByPattern: {[key: string]: RouteName} = {};
+const routeNamesByPattern: { [key: string]: RouteName } = {};
 for (let name of Object.keys(abs)) {
 	routeNamesByPattern[abs[name]] = name as RouteName;
 }
