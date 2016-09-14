@@ -65,7 +65,7 @@ func serveRepoIndex(w http.ResponseWriter, r *http.Request) error {
 
 		Lang:         lang,
 		LangDispName: langDispName,
-		Langs:        []string{"Go", "Java"},
+		Langs:        []string{"Go"},
 		Repos:        repos,
 	})
 }
