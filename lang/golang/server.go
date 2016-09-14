@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"os/exec"
 	"runtime"
@@ -21,30 +20,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
-
-var listenAddrOnce sync.Once
-var listenAddr string
-
-// ListenAddr allows the services/langserver pkg connect to this langserver.
-// TODO(keegancsmith) services/langserver is a hack and should not be coupled
-// to this package
-func ListenAddr() string {
-	listenAddrOnce.Do(func() {
-		lis, err := net.Listen("tcp", ":0")
-		if err != nil {
-			log.Fatal("lang/golang: Listen:", err)
-		}
-		listenAddr = lis.Addr().String()
-		log.Println("Go language server listening on", listenAddr)
-		go func() {
-			h := &Handler{}
-			if err := jsonrpc2.Serve(context.Background(), lis, jsonrpc2.HandlerWithError(h.Handle)); err != nil {
-				log.Fatal("lang/golang: Serve:", err)
-			}
-		}()
-	})
-	return listenAddr
-}
 
 // cmdOutput is a helper around c.Output which logs the command, how long it
 // took to run, and a nice error in the event of failure.
