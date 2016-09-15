@@ -2,6 +2,8 @@ package e2e
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"sourcegraph.com/sourcegraph/go-selenium"
@@ -48,19 +50,15 @@ func testRepoFlow(t *T) error {
 
 	t.WaitForRedirect(t.Endpoint("/github.com/gorilla/mux/-/blob/mux.go"), "wait for mux.go code file to load")
 
-	// Wait for the "Router" ref link to appear.
-	routerLink := t.WaitForElement(selenium.ByLinkText, "Router")
-	// TODO(poler) test the hover-over
-
-	// Perform a 2s sleep because the ref needs time to be linkified.
+	// Perform a sleep because the editor needs to load.
+	time.Sleep(3 * time.Second)
+	editor := t.FindElement(selenium.ByCSSSelector, "div[data-mode-id=\"go\"]")
 	time.Sleep(2 * time.Second)
-	routerLink.MoveTo(0, 0) // Hover over element.
-	routerLink.Click()      // Click the element.
+	if got, want := editor.Text(), "func NewRouter()"; !strings.Contains(got, want) {
+		return fmt.Errorf("editor does not contain %q", want)
+	}
 
-	t.WaitForRedirectSuffix(
-		"/-/def/GoPackage/github.com/gorilla/mux/-/Router",
-		"wait for Router def to load",
-	)
+	// TODO(monaco): add tests for go-to-def
+
 	return nil
-
 }

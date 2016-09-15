@@ -1,6 +1,10 @@
 package e2e
 
-import "sourcegraph.com/sourcegraph/go-selenium"
+import (
+	"time"
+
+	"sourcegraph.com/sourcegraph/go-selenium"
+)
 
 func init() {
 	registerTest := func(name, q string) {
@@ -31,12 +35,13 @@ func runSearchFlow(t *T, query string) error {
 
 	searchInput := t.WaitForElement(selenium.ById, "e2etest-search-input")
 	searchInput.SendKeys(query)
+	time.Sleep(3 * time.Second)
 
 	// Since the search results are listed in `code` tags,
 	// this will find the first search result (so it can be clicked)
 	t.Click(selenium.ByTagName, "code")
 
-	// The usage examples are in `table` elements
-	t.WaitForElement(selenium.ByTagName, "table")
+	// The usage examples are in these elements.
+	t.WaitForElement(selenium.ByCSSSelector, "pre.snippet")
 	return nil
 }
