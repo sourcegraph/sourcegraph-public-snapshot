@@ -1,8 +1,8 @@
+// tslint:disable typedef ordered-imports
 import * as React from "react";
 import { InjectedRouter } from "react-router";
+import * as invariant from "invariant";
 
-import { createLineFromByteFunc } from "sourcegraph/blob/lineFromByte";
-import * as DefActions from "sourcegraph/def/DefActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 
 import * as debounce from "lodash/debounce";
@@ -12,7 +12,7 @@ import { lineRange } from "sourcegraph/blob/lineCol";
 import { Def } from "sourcegraph/api";
 import { urlToDefInfo } from "sourcegraph/def/routes";
 import { makeRepoRev } from "sourcegraph/repo";
-import { urlTo } from "sourcegraph/util/urlTo";
+import { urlToBlob, parseBlobURL } from "sourcegraph/blob/routes";
 
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
@@ -24,19 +24,20 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 
 import {EventLogger} from "sourcegraph/util/EventLogger";
 
+const fetch = singleflightFetch(defaultFetch);
+
 interface Props {
-	contents: string;
 	repo: string;
 	path: string;
-	rev: string;
+	rev: string | null;
+	contents: string | null;
 
 	startLine?: number;
 	endLine?: number;
-	startByte?: number;
 };
 
 interface State {
-	userManuallyScrolledToLineViaSelection?: number;
+	userManuallyScrolledToLineViaSelection?: number | null;
 }
 
 export class Blob extends React.Component<Props, State> {
@@ -56,16 +57,14 @@ export class Blob extends React.Component<Props, State> {
 	_toDispose: monaco.IDisposable[];
 	_editor: monaco.editor.IStandaloneCodeEditor;
 	_decorationID: string[];
-	_mouseDownPosition: monaco.editor.IMouseTarget | null;
 
-	// Finding the line from byte requires UTF-8 encoding the entire buffer,
-	// because Sourcegraph uses byte offset and Monaco uses (UTF16) character
-	// offset. We cache it here so we don't have to calculate it too many times.
-	_lineFromByte: (byteOffset: number) => number;
+	private _mouseDownPosition: monaco.editor.IMouseTarget | null = null;
+	private _mouseDownOnIdent: boolean = false;
+	private _mouseDownIsRightButton: boolean = false;
 
 	constructor(props: Props) {
 		super(props);
-		this._findInPage = this._findInPage.bind(this);
+		this._onKeyDownForFindInPage = this._onKeyDownForFindInPage.bind(this);
 		this._onResize = debounce(this._onResize.bind(this), 300, { leading: true, trailing: true });
 		this._hoverProvided = [];
 		this._toDispose = [];
@@ -74,50 +73,50 @@ export class Blob extends React.Component<Props, State> {
 	}
 
 	componentDidMount(): void {
+		global.document.addEventListener("keydown", this._onKeyDownForFindInPage);
 		global.document.addEventListener("resize", this._onResize);
+
 		if ((global as any).require) {
 			this._loaderReady();
-			return;
 		} else {
 			let script = document.createElement("script");
 			script.type = "text/javascript";
 			script.src = `${this.context.siteConfig.assetsRoot}/vs/loader.js`;
-			script.addEventListener("load", this._loaderReady.bind(this));
+			script.addEventListener("load", () => this._loaderReady());
 			document.body.appendChild(script);
 		}
 	}
 
 	componentWillUnmount(): void {
+		global.document.removeEventListener("keydown", this._onKeyDownForFindInPage);
+		global.document.removeEventListener("resize", this._onResize);
+
 		this._toDispose.forEach(disposable => {
 			disposable.dispose();
 		});
-		global.document.removeEventListener("keydown", this._findInPage);
-		global.document.removeEventListener("resize", this._onResize);
 	}
 
 	componentWillReceiveProps(nextProps: Props): void {
 		if (this._editor) {
-			// If Monaco hasn't been loaded yet, these props will be applied when it loads.
-			if (nextProps.contents !== this.props.contents || nextProps.repo !== this.props.repo || nextProps.rev !== this.props.rev || nextProps.path !== this.props.path || nextProps.startLine !== this.props.startLine || nextProps.endLine !== this.props.endLine || nextProps.startByte !== this.props.startByte) {
-				setTimeout(() => this._updateEditor());
-			}
+			this._editorPropsChanged(this.props, nextProps);
 		}
 	}
 
 	_loaderReady(): void {
 		if ((global as any).monaco) {
 			this._monacoReady();
-			return;
+		} else {
+			(global as any).require.config({ paths: { "vs": `${this.context.siteConfig.assetsRoot}/vs` } });
+			(global as any).require(["vs/editor/editor.main"], () => this._monacoReady());
 		}
-
-		(global as any).require.config({ paths: { "vs": `${this.context.siteConfig.assetsRoot}/vs` } });
-		(global as any).require(["vs/editor/editor.main"], this._monacoReady.bind(this));
 	}
 
 	_monacoReady(): void {
+		invariant(!this._editor, "editor is already initialized");
+
 		this._editor = monaco.editor.create(this.refs["container"] as HTMLDivElement, {
-			automaticLayout: true,
 			readOnly: true,
+			automaticLayout: true,
 			scrollBeyondLastLine: false,
 			wrappingColumn: 0,
 			fontFamily: code_font_face,
@@ -125,47 +124,86 @@ export class Blob extends React.Component<Props, State> {
 		});
 		this._toDispose.push(this._editor);
 
-		global.document.addEventListener("keydown", this._findInPage);
-		this._addClickListener();
-		this._addReferencesAction();
-		this._overrideNavigationKeys();
+		this._editorPropsChanged(null, this.props);
 
-		this._updateEditor();
-		this._scroll();
 		this._editor.onDidChangeCursorSelection(this._onSelectionChange);
-	}
 
-	_updateEditor(): void {
-		const repoSpec = {
-			repo: this.props.repo,
-			file: this.props.path,
-			rev: this.props.rev,
-		};
-		const uri = RepoSpecToURI(repoSpec);
-		this._updateModel(uri);
-	}
+		this._addClickHandler();
 
-	_updateModel(uri: monaco.Uri): void {
-		if (typeof this.props.contents !== "string") {
-			return;
+		// Remove the "Command Palette" item from the context menu.
+		const palette = this._editor.getAction("editor.action.quickCommand");
+		if (palette) {
+			(palette as any)._shouldShowInContextMenu = false;
+			palette.dispose();
 		}
+
+		// Add the "View All References" item to the context menu.
+		this._editor.addAction({
+			id: "viewAllReferences",
+			label: "View All References",
+			contextMenuGroupId: "1_goto",
+			run: (e) => this._viewAllReferences(e),
+		});
+
+		// Monaco overrides the back and forward history commands, so
+		// we implement our own here. There currently isn't a way to
+		// unbind a default keybinding.
+		/* tslint:disable no-bitwise */
+		this._editor.addCommand(monaco.KeyCode.LeftArrow | monaco.KeyMod.CtrlCmd, () => {
+			global.window.history.back();
+		}, "");
+		this._editor.addCommand(monaco.KeyCode.RightArrow | monaco.KeyMod.CtrlCmd, () => {
+			global.window.history.forward();
+		}, "");
+		/* tslint:enable no-bitwise */
+		this._editor.addCommand(monaco.KeyCode.Home, () => {
+			this._editor.revealLine(1);
+		}, "");
+		this._editor.addCommand(monaco.KeyCode.End, () => {
+			this._editor.revealLine(
+				this._editor.getModel().getLineCount()
+			);
+		}, "");
+	}
+
+	_editorPropsChanged(prev: Props | null, next: Props): void {
+		if (!prev || prev.repo !== next.repo || prev.rev !== next.rev || prev.path !== next.path || prev.contents !== next.contents) {
+			this._updateModel(next.repo, next.rev, next.path, next.contents);
+		}
+		if (!prev || next.startLine !== this.props.startLine || next.endLine !== this.props.endLine) {
+			if (typeof next.startLine === "number") {
+				if (next.startLine !== this.state.userManuallyScrolledToLineViaSelection) {
+					this._editor.revealLineInCenterIfOutsideViewport(next.startLine);
+					this._highlightLines(next.startLine, next.endLine);
+					this._editor.focus();
+				}
+			}
+		}
+	}
+
+	_updateModel(repo: string, rev: string | null, path: string, contents: string | null): void {
+		const uri = uriForTreeEntry(repo, rev, path);
 		let model = monaco.editor.getModel(uri);
 		if (!model) {
-			model = monaco.editor.createModel(this.props.contents, "", uri);
+			model = monaco.editor.createModel(contents || "Loading...", "", uri);
 			this._toDispose.push(model);
 		}
-		this._editor.setModel(model);
+		if (contents && model.getValue() !== contents) {
+			model.setValue(contents);
+		}
+		if (this._editor.getModel().id !== model.id) {
+			this._editor.setModel(model);
+		}
 
 		const lang = model.getMode().getId();
 		if (this._hoverProvided.indexOf(lang) === -1) {
-			const token = monaco.languages.registerHoverProvider(lang, HoverProvider);
+			const token = monaco.languages.registerHoverProvider(lang, this);
 			this._toDispose.push(token);
 			this._hoverProvided.push(lang);
 		}
-		this._lineFromByte = createLineFromByteFunc(this.props.contents);
 	}
 
-	_findInPage(e: KeyboardEvent): void {
+	_onKeyDownForFindInPage(e: KeyboardEvent): void {
 		const mac = navigator.userAgent.indexOf("Macintosh") >= 0;
 		const ctrl = mac ? e.metaKey : e.ctrlKey;
 		const FKey = 70;
@@ -178,49 +216,52 @@ export class Blob extends React.Component<Props, State> {
 		}
 	}
 
-	_addReferencesAction(): void {
-		const palette = this._editor.getAction("editor.action.quickCommand");
-		if (palette) {
-			(palette as any)._shouldShowInContextMenu = false;
-			palette.dispose();
-		}
-		const action = {
-			id: "viewAllReferences",
-			label: "View all references",
-			contextMenuGroupId: "1_goto",
-			run: (e) => this._viewAllReferences(e),
-			enablement: {
-				tokensAtPosition: ["identifier"],
-			},
-		};
-		this._editor.addAction(action);
-	}
-
 	_viewAllReferences(editor: monaco.editor.ICommonCodeEditor): monaco.Promise<void> {
-		const pos = editor.getPosition();
+		// HACK: Handle the case where we've selected the line
+		// (because we just jumped to a def on the line) and we
+		// right-click and choose "View All References". The cursor
+		// will be at the end of the line, but we want to act on the
+		// token we right-clicked on.
+		let pos: monaco.Position;
+		if (this._mouseDownPosition && this._mouseDownIsRightButton && !editor.getSelection().isEmpty()) {
+			pos = this._mouseDownPosition.position;
+		} else {
+			pos = editor.getPosition();
+		}
 		const model = editor.getModel();
 
 		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REFERENCES, AnalyticsConstants.ACTION_CLICK, "ClickedViewReferences", { repo: this.props.repo, path: this.props.path, rev: this.props.rev });
 
 		return new monaco.Promise<void>(() => {
 			defAtPosition(model, pos).then((resp) => {
-				window.location.href = urlToDefInfo(resp.def);
+				if (resp) {
+					window.location.href = urlToDefInfo(resp.def);
+				}
 			});
 		});
 	}
 
-	_addClickListener(): void {
+	_addClickHandler(): void {
 		this._editor.onMouseDown(({target, event}) => {
-			const mac = navigator.userAgent.indexOf("Macintosh") >= 0;
-			if (event.rightButton || (event.ctrlKey && mac)) {
+			if (event.ctrlKey) {
 				this._mouseDownPosition = null;
+				this._mouseDownIsRightButton = false;
 				return;
 			}
+			if (target.type === monaco.editor.MouseTargetType.UNKNOWN) {
+				return;
+			}
+
 			this._mouseDownPosition = target;
+			this._mouseDownIsRightButton = event.rightButton;
+
+			// Record if this is a click starting on a clickable thing,
+			// so we know in the onSelectionChange handler to ignore it.
+			this._mouseDownOnIdent = target.element.className.indexOf("identifier") !== -1;
 		});
 
 		this._editor.onMouseUp(({target}) => {
-			if (!this._mouseDownPosition || !target.position.equals(this._mouseDownPosition.position)) {
+			if (!this._mouseDownPosition || !target.position || !target.position.equals(this._mouseDownPosition.position) || this._mouseDownIsRightButton) {
 				return;
 			}
 			const saved = this._mouseDownPosition;
@@ -233,57 +274,77 @@ export class Blob extends React.Component<Props, State> {
 					line: target.position.lineNumber - 1,
 					character: target.position.column - 1,
 				};
-				Dispatcher.Backends.dispatch(new DefActions.WantJumpDef(pos));
+
+				EventLogger.logEventForCategory(
+					AnalyticsConstants.CATEGORY_DEF,
+					AnalyticsConstants.ACTION_CLICK,
+					"BlobTokenClicked",
+					{
+						srcRepo: this.props.repo,
+						srcRev: this.props.rev || "",
+						srcPath: this.props.path,
+						language: this._editor.getModel().getModeId(),
+					}
+				);
+
+				fetchJumpToDef(this._editor.getModel(), target.position).then((resp: JumpToDefResponse) => {
+					if (!resp) {
+						return;
+					}
+
+					// TODO(monaco): If you have selected a line and then click on something that causes
+					// you to jump to that line, it deselects the line because the Blob props do not change
+					// (because the URL #L123 is unchanged). It should reselect and rescroll to the line.
+					this.context.router.push(resp.Path);
+				});
 			}
 		});
 	}
 
-	_scroll(): void {
-		let startLine: number;
-		let endLine: number;
-		if (this.props.startLine) {
-			startLine = this.props.startLine;
-			endLine = this.props.endLine || startLine;
-		} else if (this.props.startByte) {
-			startLine = this._lineFromByte(this.props.startByte);
-			endLine = startLine;
-		} else {
-			return;
-		}
-		if (startLine === this.state.userManuallyScrolledToLineViaSelection) {
-			return;
-		}
-		const linesInViewPort = this._editor.getDomNode().offsetHeight / 20;
-		const middleLine = Math.floor(startLine + (linesInViewPort / 4));
-		this._editor.revealLineInCenter(middleLine);
-		this._highlightLines(startLine, endLine);
-		this._editor.focus();
+	provideHover(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<monaco.languages.Hover> {
+		return defAtPosition(model, position).then((resp: HoverInfoResponse) => {
+			let contents: monaco.MarkedString[] = [];
+			if (resp) {
+				const def = resp.def;
+				if (resp.Title) {
+					contents.push(resp.Title);
+				} else {
+					contents.push(`**${def.Name}** ${def.FmtStrings ? def.FmtStrings.Type.Unqualified.trim() : ""}`);
+					const serverDoc = def.Docs ? def.Docs[0].Data : "";
+					let docs = serverDoc.replace(/\s+/g, " ");
+					if (docs.length > 400) {
+						docs = docs.substring(0, 380);
+						docs = docs + "...";
+					}
+					if (docs) {
+						contents.push(docs);
+					}
+				}
+				contents.push("*Right-click to view all references.*");
+
+				EventLogger.logEventForCategory(
+					AnalyticsConstants.CATEGORY_DEF,
+					AnalyticsConstants.ACTION_HOVER,
+					"Hovering",
+					{
+						repo: this.props.repo,
+						rev: this.props.rev || "",
+						path: this.props.path,
+						language: model.getModeId(),
+					}
+				);
+			}
+
+			const word = model.getWordAtPosition(position) || new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column);
+			return {
+				range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
+				contents: contents,
+			};
+		});
 	}
 
-	_overrideNavigationKeys(): void {
-		// Monaco overrides the back and forward history commands, so we
-		// implement our own here. AFAICT, there isn't a good way
-		// to unbind a default keybinding.
-		/* tslint:disable */
-		// Disable tslint because it doesn't like bitwise operators.
-		this._editor.addCommand(monaco.KeyCode.LeftArrow | monaco.KeyMod.CtrlCmd, () => {
-			global.window.history.back();
-		}, "");
-		this._editor.addCommand(monaco.KeyCode.RightArrow | monaco.KeyMod.CtrlCmd, () => {
-			global.window.history.forward();
-		}, "");
-		/* tslint:enable */
-		this._editor.addCommand(monaco.KeyCode.Home, () => {
-			this._editor.revealLine(1);
-		}, "");
-		this._editor.addCommand(monaco.KeyCode.End, () => {
-			this._editor.revealLine(
-				this._editor.getModel().getLineCount()
-			);
-		}, "");
-	}
-
-	_highlightLines(startLine: number, endLine: number): void {
+	_highlightLines(startLine: number, endLine?: number): void {
+		endLine = typeof endLine === "number" ? endLine : startLine;
 		const range = new monaco.Range(
 			startLine,
 			this._editor.getModel().getLineMinColumn(startLine),
@@ -310,24 +371,25 @@ export class Blob extends React.Component<Props, State> {
 		if (e.selection.endColumn === 1 && end === start + 1) {
 			end -= 1; // if the cursor on the last line doesn't highlight anything, ignore line
 		}
-		const hash = `L${lineRange(start, end)}`;
-		let rev = this.props.rev;
-		if (window.location.href.indexOf("@") < 0) {
-			rev = "";
-		}
-		const path = urlTo("blob", { splat: [makeRepoRev(this.props.repo, rev), this.props.path] } as any);
-		const pathWithSelection = `${path}#${hash}`;
+		const path = urlToBlob(this.props.repo, this.props.rev, this.props.path);
 
-		// Remove the line number if there is no selection.
-		if (e.selection.getStartPosition().equals(e.selection.getEndPosition())) {
-			this.context.router.replace(path);
+		if (e.selection.isEmpty()) {
+			if (this._mouseDownOnIdent) {
+				// Click handler will trigger jump-to-def.
+				return;
+			}
+			this.setState({ userManuallyScrolledToLineViaSelection: null}, () => {
+				this.context.router.replace(path);
+			});
 			return;
 		}
 
 		// Record that the user manually scrolled to this line so that the props change
 		// (due to changing the URL hash) doesn't trigger a jerky duplicate scroll to
 		// the same line.
-		this.setState({ userManuallyScrolledToLineViaSelection: start }, () => this.context.router.replace(pathWithSelection));
+		this.setState({ userManuallyScrolledToLineViaSelection: start }, () => {
+			this.context.router.replace(`${path}#L${lineRange(start, end)}`);
+		});
 	}
 
 	render(): JSX.Element {
@@ -335,82 +397,43 @@ export class Blob extends React.Component<Props, State> {
 	}
 }
 
-// We have to make a request to the server to find the def at a position because
-// the client does not have srclib annotation data. This involves a ton of
-// string munging because we can't save the data types in a good way. A monaco
-// position is slightly different than a Sourcegraph one.
-const fetch = singleflightFetch(defaultFetch);
-class HoverProvider {
-	static provideHover(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<monaco.languages.Hover> {
-		return defAtPosition(model, position).then((resp: DefResponse) => {
-			const def = resp.def;
-			if (!def) {
-				throw new Error("def not found");
-			}
-			const word = model.getWordAtPosition(position);
-			let contents: monaco.MarkedString[] = [];
-			if (resp.Title) {
-				contents.push(resp.Title);
-			} else {
-				contents.push(`**${def.Name}** ${def.FmtStrings ? def.FmtStrings.Type.Unqualified.trim() : ""}`);
-				const serverDoc = def.Docs ? def.Docs[0].Data : "";
-				let docs = serverDoc.replace(/\s+/g, " ");
-				if (docs.length > 400) {
-					docs = docs.substring(0, 380);
-					docs = docs + "...";
-				}
-				if (docs) {
-					contents.push(docs);
-				}
-			}
-			contents.push("*Right-click to view all references.*");
-			return {
-				range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
-				contents: contents,
-			};
-		});
-	}
-}
-
-interface DefResponse {
+interface HoverInfoResponse {
 	def: Def;
 	Title?: string;
 }
 
-function defAtPosition(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<DefResponse> {
-	const url = hoverURL(model.uri, position);
-	return fetch(url)
-		.then(checkStatus)
-		.then(response => response.json())
-		.then(data => data)
-		.catch(error => { console.error(error); });
-}
-
-// The hover-info end point returns a full def. We need to ask the server for
-// information about the symbol at the point, because we don't have enough info
-// on the client.
-function hoverURL(uri: monaco.Uri, position: monaco.Position): string {
+function defAtPosition(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<HoverInfoResponse> {
 	const line = position.lineNumber - 1;
 	const col = position.column - 1;
-	const {repo: repo, file: file, rev: rev} = pathToURI(uri);
-	return `/.api/repos/${repo}@${rev}/-/hover-info?file=${file}&line=${line}&character=${col}`;
+	const {repo, rev, path} = treeEntryFromUri(model.uri);
+	return fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/hover-info?file=${path}&line=${line}&character=${col}`)
+		.then(checkStatus)
+		.then(resp => resp.json())
+		.catch(err => null);
 }
 
-interface RepoSpec {
-	repo: string;
-	file: string;
-	rev: string;
+interface JumpToDefResponse {
+	Path: string;
 }
 
-function pathToURI(uri: monaco.Uri): RepoSpec {
-	const matches = /[\/\\](.*)[\/\\]-[\/\\](.*)[\/\\]-[\/\\](.*)/.exec(uri.fsPath);
-	if (!matches || matches.length < 4) { throw new Error(`invalid argument, model URI (${uri.fsPath}) probably set incorrectly`); }
-	const repo = matches[1];
-	const rev = matches[2];
-	const file = matches[3];
-	return { repo: repo, rev: rev, file: file };
+function fetchJumpToDef(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<JumpToDefResponse> {
+	const line = position.lineNumber - 1;
+	const col = position.column - 1;
+	const {repo, rev, path} = treeEntryFromUri(model.uri);
+	return fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/jump-def?file=${path}&line=${line}&character=${col}`)
+		.then(checkStatus)
+		.then(resp => resp.json())
+		.catch(err => null);
 }
 
-function RepoSpecToURI({repo, file, rev}: RepoSpec): monaco.Uri {
-	return monaco.Uri.file(`/${repo}/-/${rev}/-/${file}`);
+function uriForTreeEntry(repo: string, rev: string | null, path: string): monaco.Uri {
+	return monaco.Uri.from({
+		scheme: "sourcegraph",
+		path: urlToBlob(repo, rev, path),
+	});
+}
+
+function treeEntryFromUri(uri: monaco.Uri): {repo: string, rev: string | null, path: string} {
+	invariant(uri.scheme === "sourcegraph", `unexpected uri scheme: ${uri}`);
+	return parseBlobURL(uri.path);
 }

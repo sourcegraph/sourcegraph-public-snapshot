@@ -2,27 +2,26 @@
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { Link } from "react-router";
-import { rel } from "sourcegraph/app/routePatterns";
-import { Container } from "sourcegraph/Container";
-import { EventListener } from "sourcegraph/Component";
+import {Link} from "react-router";
+import {rel} from "sourcegraph/app/routePatterns";
+import {Container} from "sourcegraph/Container";
+import {EventListener} from "sourcegraph/Component";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import { SearchStore } from "sourcegraph/search/SearchStore";
-import { RepoStore } from "sourcegraph/repo/RepoStore";
+import {SearchStore} from "sourcegraph/search/SearchStore";
+import {RepoStore} from "sourcegraph/repo/RepoStore";
 import "sourcegraph/search/SearchBackend";
-import { UserStore } from "sourcegraph/user/UserStore";
+import {UserStore} from "sourcegraph/user/UserStore";
 import * as uniq from "lodash/uniq";
 import * as debounce from "lodash/debounce";
 import * as SearchActions from "sourcegraph/search/SearchActions";
-import { qualifiedNameAndType } from "sourcegraph/def/Formatter";
-import { urlToDefInfo } from "sourcegraph/def/routes";
-import { Icon } from "sourcegraph/components";
-import { trimRepo } from "sourcegraph/repo";
+import {urlToDefInfo} from "sourcegraph/def/routes";
+import {Icon} from "sourcegraph/components";
+import {trimRepo} from "sourcegraph/repo";
 import * as styles from "sourcegraph/search/styles/GlobalSearch.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { popularRepos } from "sourcegraph/search/popularRepos";
-import { locationForSearch } from "sourcegraph/search/routes";
+import {popularRepos} from "sourcegraph/search/popularRepos";
+import {locationForSearch} from "sourcegraph/search/routes";
 import * as classNames from "classnames";
 import {Store} from "sourcegraph/Store";
 import {urlToRepo} from "sourcegraph/repo/routes";
@@ -526,4 +525,34 @@ export class GlobalSearch extends Container<Props, State> {
 			<EventListener target={global.document} event="keydown" callback={this._handleKeyDown} />
 		</div>);
 	}
+}
+
+type Qual = "DepQualified" | "ScopeQualified";
+
+function qualifiedNameAndType(def, opts?: any): any {
+	if (!def) {
+		throw new Error("def is null");
+	}
+	if (!def.FmtStrings) {
+		return "(unknown def)";
+	}
+	const qual: Qual = opts && opts.nameQual ? opts.nameQual : "ScopeQualified";
+	const f = def.FmtStrings;
+
+	let name = f.Name[qual];
+	if (f.Name.Unqualified && name) {
+		let parts = name.split(f.Name.Unqualified);
+		name = [
+			parts.slice(0, parts.length - 1).join(f.Name.Unqualified),
+			<span key="unqualified" className={opts && opts.unqualifiedNameClass}>{f.Name.Unqualified}</span>,
+		];
+	}
+
+	return [
+		f.DefKeyword,
+		f.DefKeyword ? " " : "",
+		<span key="name" className={opts && opts.nameClass} style={opts && opts.nameClass ? {} : { fontWeight: "bold" }}>{name}</span>, // give default bold styling if not provided
+		f.NameAndTypeSeparator,
+		f.Type.ScopeQualified,
+	];
 }

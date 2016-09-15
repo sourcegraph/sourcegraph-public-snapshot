@@ -1,16 +1,15 @@
-import {Location} from "history";
+import { Location } from "history";
 import * as React from "react";
-import {InjectedRouter, Route} from "react-router";
-import {context} from "sourcegraph/app/context";
-import {getRouteParams, getRoutePattern, getViewName} from "sourcegraph/app/routePatterns";
-import {SiteConfig} from "sourcegraph/app/siteConfig";
-import * as DefActions from "sourcegraph/def/DefActions";
+import { InjectedRouter, Route } from "react-router";
+import { context } from "sourcegraph/app/context";
+import { getRouteParams, getRoutePattern, getViewName } from "sourcegraph/app/routePatterns";
+import { SiteConfig } from "sourcegraph/app/siteConfig";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as UserActions from "sourcegraph/user/UserActions";
-import {UserStore} from "sourcegraph/user/UserStore";
+import { UserStore } from "sourcegraph/user/UserStore";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {defPathToLanguage, getLanguageExtensionForPath} from "sourcegraph/util/inventory";
+import { defPathToLanguage, getLanguageExtensionForPath } from "sourcegraph/util/inventory";
 
 class EventLoggerClass {
 	_amplitude: any = null;
@@ -76,18 +75,18 @@ class EventLoggerClass {
 				apiKey = "2b4b1117d1faf3960c81899a4422a222";
 			} else {
 				switch (siteConfig.appURL) {
-				case "https://sourcegraph.com":
-					apiKey = "e3c885c30d2c0c8bf33b1497b17806ba";
-					env = "production";
-					break;
-				case "https://staging.sourcegraph.com":
-				case "https://staging2.sourcegraph.com":
-				case "https://staging3.sourcegraph.com":
-				case "https://staging4.sourcegraph.com":
-					apiKey = "903f9390c3eefd5651853cf8dbd9d363";
-					break;
-				default:
-					break;
+					case "https://sourcegraph.com":
+						apiKey = "e3c885c30d2c0c8bf33b1497b17806ba";
+						env = "production";
+						break;
+					case "https://staging.sourcegraph.com":
+					case "https://staging2.sourcegraph.com":
+					case "https://staging3.sourcegraph.com":
+					case "https://staging4.sourcegraph.com":
+						apiKey = "903f9390c3eefd5651853cf8dbd9d363";
+						break;
+					default:
+						break;
 				}
 			}
 
@@ -179,7 +178,7 @@ class EventLoggerClass {
 			this.setUserProperty("email", primaryEmail);
 			this.setUserProperty("emails", emails);
 			this.setIntercomProperty("email", primaryEmail);
-			if (this._fullStory) { this._fullStory.setUserVars({email: primaryEmail}); }
+			if (this._fullStory) { this._fullStory.setUserVars({ email: primaryEmail }); }
 		}
 	}
 
@@ -227,12 +226,12 @@ class EventLoggerClass {
 			return null;
 		}
 
-		return {detail: {deviceId: this._amplitude.options.deviceId, userId: context.user && context.user.Login}};
+		return { detail: { deviceId: this._amplitude.options.deviceId, userId: context.user && context.user.Login } };
 	}
 
 	setAmplitudeDeviceIdForTrackers(value: string): void {
 		if (this._telligent) {
-			this._telligent("addStaticMetadataObject", {deviceInfo: {AmplitudeDeviceId: value}});
+			this._telligent("addStaticMetadataObject", { deviceInfo: { AmplitudeDeviceId: value } });
 		}
 	}
 
@@ -262,7 +261,7 @@ class EventLoggerClass {
 		}
 
 		// Log Amplitude "View" event
-		this._amplitude.logEvent(title, Object.assign({}, eventProperties, {Platform: this._currentPlatform}));
+		this._amplitude.logEvent(title, Object.assign({}, eventProperties, { Platform: this._currentPlatform }));
 	}
 
 	// Default tracking call to all of our analytics servies.
@@ -332,91 +331,71 @@ class EventLoggerClass {
 	}
 
 	_dedupedArray(inputArray: Array<string>): Array<string> {
-		return inputArray.filter(function(elem: string, index: number, self: any): any {
+		return inputArray.filter(function (elem: string, index: number, self: any): any {
 			return index === self.indexOf(elem);
 		});
 	}
 
 	__onDispatch(action: any): void {
 		switch (action.constructor) {
-		case RepoActions.ReposFetched:
-			if (action.data.Repos) {
-				let orgs = {};
-				let languages: Array<string> = [];
-				let privateOrgs: Array<string> = [];
-				for (let repo of action.data.Repos) {
-					orgs[repo.Owner] = true;
-					if (repo["Language"]) {
-						languages.push(repo["Language"]);
+			case RepoActions.ReposFetched:
+				if (action.data.Repos) {
+					let orgs = {};
+					let languages: Array<string> = [];
+					let privateOrgs: Array<string> = [];
+					for (let repo of action.data.Repos) {
+						orgs[repo.Owner] = true;
+						if (repo["Language"]) {
+							languages.push(repo["Language"]);
+						}
+
+						if (repo.Private) {
+							privateOrgs.push(repo.Owner);
+						}
 					}
 
-					if (repo.Private) {
-						privateOrgs.push(repo.Owner);
+					this.setUserProperty("private_orgs", this._dedupedArray(privateOrgs));
+					this.setUserProperty("github_languages", this._dedupedArray(languages));
+					this.setUserProperty("orgs", Object.keys(orgs));
+					this.setUserProperty("num_github_repos", action.data.Repos.length);
+					this.setIntercomProperty("companies", Object.keys(orgs).map(org => ({ id: `github_${org}`, name: org })));
+					this.setUserProperty("companies", Object.keys(orgs).map(org => ({ id: `github_${org}`, name: org })));
+					if (orgs["sourcegraph"]) {
+						this.setUserProperty("is_sg_employee", "true");
 					}
 				}
+				break;
 
-				this.setUserProperty("private_orgs", this._dedupedArray(privateOrgs));
-				this.setUserProperty("github_languages", this._dedupedArray(languages));
-				this.setUserProperty("orgs", Object.keys(orgs));
-				this.setUserProperty("num_github_repos", action.data.Repos.length);
-				this.setIntercomProperty("companies", Object.keys(orgs).map(org => ({id: `github_${org}`, name: org})));
-				this.setUserProperty("companies", Object.keys(orgs).map(org => ({id: `github_${org}`, name: org})));
-				if (orgs["sourcegraph"]) {
-					this.setUserProperty("is_sg_employee", "true");
+			case UserActions.SignupCompleted:
+			case UserActions.LoginCompleted:
+			case UserActions.ForgotPasswordCompleted:
+			case UserActions.ResetPasswordCompleted:
+				if (action.email) {
+					this.setUserProperty("email", action.email);
 				}
-			}
-			break;
 
-		case UserActions.SignupCompleted:
-		case UserActions.LoginCompleted:
-		case UserActions.ForgotPasswordCompleted:
-		case UserActions.ResetPasswordCompleted:
-			if (action.email) {
-				this.setUserProperty("email", action.email);
-			}
-
-			if (action.eventName) {
-				if (action.signupChannel) {
-					this.setUserProperty("signup_channel", action.signupChannel);
-					this.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SIGNUP, action.eventName, {error: Boolean(action.resp.Error), signup_channel: action.signupChannel});
-				} else {
-					this.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SUCCESS, action.eventName, {error: Boolean(action.resp.Error)});
+				if (action.eventName) {
+					if (action.signupChannel) {
+						this.setUserProperty("signup_channel", action.signupChannel);
+						this.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SIGNUP, action.eventName, { error: Boolean(action.resp.Error), signup_channel: action.signupChannel });
+					} else {
+						this.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SUCCESS, action.eventName, { error: Boolean(action.resp.Error) });
+					}
 				}
-			}
-			break;
-		case UserActions.BetaSubscriptionCompleted:
-			if (action.eventName) {
-				this.logEventForCategory(AnalyticsConstants.CATEGORY_ENGAGEMENT, AnalyticsConstants.ACTION_SUCCESS, action.eventName);
-			}
-			break;
-		case DefActions.DefsFetched:
-			if (action.eventName) {
-				let eventProps = {
-					query: action.query,
-					overlay: action.overlay,
-				};
-				this.logEventForCategory(AnalyticsConstants.CATEGORY_DEF, AnalyticsConstants.ACTION_FETCH, action.eventName, eventProps);
-			}
-			break;
-		case DefActions.Hovering:
-			{
-				if (action.pos === null) {
-					break;
+				break;
+			case UserActions.BetaSubscriptionCompleted:
+				if (action.eventName) {
+					this.logEventForCategory(AnalyticsConstants.CATEGORY_ENGAGEMENT, AnalyticsConstants.ACTION_SUCCESS, action.eventName);
 				}
-				let eventProps = {
-					language: getLanguageExtensionForPath(action.pos.file),
-				};
-				this.logEventForCategory(AnalyticsConstants.CATEGORY_DEF, AnalyticsConstants.ACTION_HOVER, "Hovering", eventProps);
-			}
-			break;
+				break;
 
-		default:
-			// All dispatched actions to stores will automatically be tracked by the eventName
-			// of the action (if set). Override this behavior by including another case above.
-			if (action.eventName) {
-				this.logEventForCategory(AnalyticsConstants.CATEGORY_UNKNOWN, AnalyticsConstants.ACTION_FETCH, action.eventName);
-			}
-			break;
+			default:
+				// All dispatched actions to stores will automatically be tracked by the eventName
+				// of the action (if set). Override this behavior by including another case above.
+				if (action.eventName) {
+					this.logEventForCategory(AnalyticsConstants.CATEGORY_UNKNOWN, AnalyticsConstants.ACTION_FETCH, action.eventName);
+				}
+				break;
 		}
 	}
 }
@@ -498,8 +477,8 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				// Remove _event from the URL to canonicalize the URL and make it
 				// less ugly.
 				const locWithoutEvent = Object.assign({}, this.props.location, {
-					query: Object.assign({}, this.props.location.query, {_event: undefined, _signupChannel: undefined, _onboarding: undefined, _githubAuthed: undefined}), // eslint-disable-line no-undefined
-					state: Object.assign({}, this.props.location.state, {_onboarding: this.props.location.query["_onboarding"]}),
+					query: Object.assign({}, this.props.location.query, { _event: undefined, _signupChannel: undefined, _onboarding: undefined, _githubAuthed: undefined }), // eslint-disable-line no-undefined
+					state: Object.assign({}, this.props.location.state, { _onboarding: this.props.location.query["_onboarding"] }),
 				});
 
 				delete this.props.location.query["_signupChannel"];

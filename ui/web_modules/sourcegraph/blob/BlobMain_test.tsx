@@ -6,7 +6,7 @@ import {renderToString} from "sourcegraph/util/testutil/componentTestUtils";
 describe("BlobMain", () => {
 	it("should show an error page if the blob failed to load", () => {
 		let o = renderToString(<BlobMain location={{key: "", pathname: "", search: "", action: "", query: {}, state: {}}}
-			repo="r" blob={{Error: {response: {status: 500}}}} />, {router: {}});
+			repo="r" rev={null} path="f" blob={{Error: {response: {status: 500}}}} />, {router: {}});
 		expect(o).to.contain("is not available");
 	});
 });

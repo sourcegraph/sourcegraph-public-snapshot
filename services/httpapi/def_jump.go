@@ -11,6 +11,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
@@ -93,6 +94,14 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	response.Path = router.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine)).String()
+	// Don't add an ugly commit ID to the URL in the address bar if
+	// the user is on a named branch or default branch. Also, never
+	// add a rev if the jump is cross-repo.
+	var rev string
+	if v := routevar.ToRepoRev(mux.Vars(r)); def.Repo == v.Repo {
+		rev = v.Rev
+	}
+
+	response.Path = router.Rel.URLToBlob(def.Repo, rev, def.File, int(def.StartLine)).String()
 	return writeJSON(w, response)
 }

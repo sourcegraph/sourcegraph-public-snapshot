@@ -18,10 +18,10 @@ import {urlToTree} from "sourcegraph/tree/routes";
 export function withFileBlob(Component) {
 	interface Props {
 		repo: string;
-		rev?: string;
+		rev: string | null;
 		commitID?: string;
 		params: any;
-		path?: string;
+		path: string;
 	}
 
 	type State = any;
