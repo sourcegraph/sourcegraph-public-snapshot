@@ -1,4 +1,5 @@
 import * as React from "react";
+import {InjectedRouter} from "react-router";
 
 import {SearchComponent} from "sourcegraph/search/modal/SearchComponent";
 import {RepoRev} from "sourcegraph/search/modal/SearchModal";
@@ -20,8 +21,11 @@ export const categoryNames = new Map([
 export interface Result {
 	title: string;
 	description: string;
-	index: number;  // Index of the matched segment. Optional.
-	length: number; // Length of the matched segment. Optional.
+	index?: number;  // Index of the matched segment.
+	length?: number; // Length of the matched segment.
+
+	// The URL to the result.
+	URLPath: string;
 };
 
 interface Props {
@@ -51,10 +55,13 @@ interface State {
 };
 
 export interface SearchActions {
-	updateInput: (event: KeyboardEvent) => void;
+	// updateInput: number;
+	updateInput: (event: React.FormEvent<HTMLInputElement>) => void;
 	dismiss: () => void;
 	viewCategory: (category: Category) => void;
 	bindSearchInput: (node: HTMLElement) => void;
+	activateResult: (URLPath: string) => void;
+	activateTag: (category: Category) => void;
 }
 
 // Find the total number of results in all categories
@@ -66,11 +73,27 @@ export function deepLength(categories: Map<Category, Result[]>): number {
 	return acc;
 }
 
+// NOTE: this is global. Bad idea?
+export let actions: SearchActions = {
+	updateInput: (event: React.FormEvent<HTMLInputElement>) => null,
+	dismiss: () => null,
+	viewCategory: (category: Category) => null,
+	bindSearchInput: (node: HTMLElement) => null,
+	activateResult: (URLPath: string) => null,
+	activateTag: (category: Category) => null,
+};
+
 // SearchContainer contains the logic that deals with navigation and data
 // fetching.
 export class SearchContainer extends React.Component<Props & RepoRev, State> {
 
-	actions: SearchActions;
+	static contextTypes: any = {
+		router: React.PropTypes.object.isRequired,
+	};
+
+	context: {
+		router: InjectedRouter,
+	};
 
 	constructor({start, dismissModal}: Props) {
 		super();
@@ -79,16 +102,17 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 			input: "",
 			results: new Map(),
 			tag: start,
-			selected: start === null ? 1 : 0,
+			selected: 0, //start === null ? 1 : 0,
 			tab: null,
 			searchInput: null,
 		};
-		setTimeout(() => this.fakeResults(), 0);
-		this.actions = {
+		actions = {
 			updateInput: this.updateInput.bind(this),
 			dismiss: dismissModal,
 			viewCategory: this.viewCategory.bind(this),
 			bindSearchInput: this.bindSearchInput.bind(this),
+			activateResult: this.activateResult.bind(this),
+			activateTag: this.activateTag.bind(this),
 		};
 	}
 
@@ -100,16 +124,16 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 		document.body.removeEventListener("keydown", this.navigationKeys);
 	}
 
-	componentDidUpdate(_: Props, prevState: State): void {
-		if (this.props.start !== null && this.state.tag  === null) {
-			const state = Object.assign(this.state, {
-				tag: this.props.start,
+	componentWillReceiveProps(nextProps: Props): void {
+		if (this.props.start === null && nextProps.start !== null) {
+			this.setState(Object.assign({}, this.state, {
+				tag: nextProps.start,
 				selected: 0,
-			});
-			this.focusSearchBar();
-			this.setState(state);
+			}));
 		}
+	}
 
+	componentDidUpdate(_: Props, prevState: State): void {
 		if (prevState.selected !== 0 && this.state.selected === 0) {
 			this.focusSearchBar();
 		}
@@ -139,7 +163,7 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 			const state = Object.assign({}, this.state, {selected: this.state.selected + 1});
 			this.setState(state);
 		} else if (event.key === "Enter") {
-			this.activateResult(this.state.selected);
+			this.activateResult("FIXME");
 		}
 	}
 
@@ -159,30 +183,19 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 		this.setState(state);
 	}
 
-	fakeResults(): void {
-		let results = new Array();
-		for (let i = 0; i < 20; i++ ) {
-			results.push({title: "webpack config", description: "ui/utils some information there hello, only one line though please, thanks"});
-		}
-		let m = this.state.results;
-		m.set(Category.file, results);
-		m.set(Category.definition, results);
-		m.set(Category.repository, results);
-		const state = Object.assign({}, this.state, {results: m});
-		this.setState(state);
-	}
-
-	activateResult(selected: number): void {
+	activateTag(category: Category): void {
 		if (this.state.tag === null && this.state.input === "") {
 			this.setState(Object.assign({}, this.state, {
-				tag: selected,
+				tag: category,
 				selected: 0,
 			}));
 			return;
 		}
-		const URL = "the location of this selection";
-		console.error(`navigating to ${URL}`);
-		// router.push(URL)
+	}
+
+	activateResult(URLPath: string): void {
+		this.context.router.push(URLPath);
+		this.props.dismissModal();
 	}
 
 	viewCategory(category: Category): void {
@@ -193,6 +206,9 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 	bindSearchInput(node: HTMLElement): void {
 		const state = Object.assign({}, this.state, {searchInput: node});
 		this.setState(state);
+		if (this.state.selected === 0 && node) {
+			node.focus();
+		}
 	}
 
 	focusSearchBar(): void {
@@ -223,8 +239,6 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 			recentItems: this.state.results,
 		};
 
-		return <SearchComponent
-			data={data}
-			actions={this.actions} />;
+		return <SearchComponent data={data} />;
 	}
 }

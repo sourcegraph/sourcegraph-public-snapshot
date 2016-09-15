@@ -34,7 +34,7 @@ export class SearchModal extends React.Component<RepoRev, State> {
 		this.searchModalShortcuts = this.searchModalShortcuts.bind(this);
 		this.dismissModal = this.dismissModal.bind(this);
 		this.state = {
-			showModal: true,
+			showModal: false,
 			start: null,
 		};
 	}

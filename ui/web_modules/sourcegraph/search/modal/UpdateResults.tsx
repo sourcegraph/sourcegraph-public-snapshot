@@ -1,3 +1,4 @@
+import {urlToBlob} from "sourcegraph/blob/routes";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {defaultFetch} from "sourcegraph/util/xhr";
 
@@ -14,10 +15,9 @@ export function updateCategory(category: Category, repo: string, commitID: strin
 		updateRepos(query, callback);
 		return;
 	} else if (category === Category.file) {
-		callback(fileSearch(query));
+		callback(fileSearch(repo, commitID, query));
 	} else if (category === Category.definition) {
-		const repository = "github.com/golang/go";
-		updateDefs(repository, query, callback);
+		// updateDefs(repo, callback);
 		return;
 	}
 }
@@ -27,40 +27,33 @@ function updateRepos(query: string, callback: (results: Result[]) => void): void
 	fetch(url)
 	.then(resp => resp.json())
 	.then(data => data.Repos === undefined ? [] :
-		data.Repos.map(({URI}) => ({title: URI})))
+		data.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`})))
 	.then(callback)
 	.catch(error => console.error(error));
 }
 
-function updateDefs(repository: string, query: string, callback: (results: Result[]) => void): void {
-	const url = `/.api/repos/${repository}/-/symbols?Query=${query}`;
-	fetch(url)
-	.then(resp => resp.json())
-	.then(data => data.Repos === undefined ? [] :
-		data.Repos.map(({URI}) => ({title: URI})))
-	.then(callback)
-	.catch(error => console.error(error));
-}
-
-function fileSearch(query: string): Result[] {
+function fileSearch(repo: string, commit: string, query: string): Result[] {
 	let lowerQuery = query.toLowerCase();
 
 	let results = new Array();
 	if (lowerQuery === "") {
 		return results;
 	}
-	// TODO: TreeStore.fileLists.get(this.props.repo, this.props.commitID);
-	//       Need to pass the repo and commitID properties into this component, yeah?
-	let fileList = TreeStore.fileLists.get("github.com/gorilla/mux", "0a192a193177452756c362c20087ddafcf6829c4");
+	let fileList = TreeStore.fileLists.get(repo, commit);
 	if (fileList === null) {
 		return results;
 	}
-	for (let i = 0; i < fileList.Files.length; i++) {
-		let index = fileList.Files[i].toLowerCase().indexOf(lowerQuery);
+	fileList.Files.forEach((file, n) => {
+		let index = file.toLowerCase().indexOf(lowerQuery);
 		if (index === -1) {
-			continue;
+			return;
 		}
-		results.push({title: fileList.Files[i], index: index, length: lowerQuery.length});
-	}
+		results.push({
+			title: file,
+			index: index,
+			length: lowerQuery.length,
+			URLPath: urlToBlob(repo, null, file),
+		});
+	});
 	return results;
 }
