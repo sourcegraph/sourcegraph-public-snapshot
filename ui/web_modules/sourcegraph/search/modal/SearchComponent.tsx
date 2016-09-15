@@ -24,6 +24,7 @@ const modalStyle = {
 	flexDirection: "column",
 	zIndex: 1,
 	maxHeight: "90vh",
+	fontSize: 15,
 };
 
 const Bubble = (props) => <span style={{

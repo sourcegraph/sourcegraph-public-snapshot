@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import {SearchComponent} from "sourcegraph/search/modal/SearchComponent";
+import {RepoRev} from "sourcegraph/search/modal/SearchModal";
 import {updateCategory} from "sourcegraph/search/modal/UpdateResults";
 
 const CategoryCount = 3;
@@ -67,7 +68,7 @@ export function deepLength(categories: Map<Category, Result[]>): number {
 
 // SearchContainer contains the logic that deals with navigation and data
 // fetching.
-export class SearchContainer extends React.Component<Props, State> {
+export class SearchContainer extends React.Component<Props & RepoRev, State> {
 
 	actions: SearchActions;
 
@@ -122,7 +123,7 @@ export class SearchContainer extends React.Component<Props, State> {
 
 	updateResults(): void {
 		for (let i: Category = 0; i < CategoryCount; i++) {
-			updateCategory(i, this.state.input, resultList => {
+			updateCategory(i, this.props.repo, this.props.commitID, this.state.input, resultList => {
 				const results = this.state.results;
 				results.set(i, resultList);
 				this.setState(Object.assign({}, this.state, {results: results}));

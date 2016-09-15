@@ -8,7 +8,6 @@ import {EventListener} from "sourcegraph/Component";
 import {GlobalNav} from "sourcegraph/app/GlobalNav";
 import "sourcegraph/components/styles/_normalize.css";
 import * as styles from "sourcegraph/app/styles/App.css";
-import { SearchModal } from "sourcegraph/search/modal/SearchModal";
 
 import {withViewEventsLogged} from "sourcegraph/util/EventLogger";
 import {withFeaturesContext} from "sourcegraph/app/features";
@@ -34,8 +33,6 @@ interface Props {
 }
 
 type State = any;
-
-const enableModalSearch = global.window && global.window.localStorage.getItem("modalSearch") === "true";
 
 export class App extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
@@ -67,7 +64,6 @@ export class App extends React.Component<Props, State> {
 			<div className={this.state.className}>
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
 				<GlobalNav desktop={desktopClient} params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
-				{enableModalSearch ? <SearchModal /> : null}
 				{this.props.navContext && <div className={styles.breadcrumb}>{this.props.navContext}</div>}
 				{this.props.main}
 				<EventListener target={global.document} event="sourcegraph:desktop" callback={this._handleSourcegraphDesktop} />

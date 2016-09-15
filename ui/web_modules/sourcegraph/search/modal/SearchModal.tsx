@@ -22,8 +22,13 @@ interface Node {
 	};
 };
 
+export type RepoRev = {
+	repo: string,
+	commitID: string,
+}
+
 // SearchModal controls when and how to show the search modal.
-export class SearchModal extends React.Component<null, State> {
+export class SearchModal extends React.Component<RepoRev, State> {
 	constructor() {
 		super();
 		this.searchModalShortcuts = this.searchModalShortcuts.bind(this);
@@ -70,7 +75,11 @@ export class SearchModal extends React.Component<null, State> {
 			return <div />;
 		}
 		return <ModalComp onDismiss={this.dismissModal}>
-			<SearchContainer start={this.state.start} dismissModal={this.dismissModal} />
+			<SearchContainer
+				repo={this.props.repo}
+				commitID={this.props.commitID}
+				start={this.state.start}
+				dismissModal={this.dismissModal} />
 		</ModalComp>;
 	}
 }

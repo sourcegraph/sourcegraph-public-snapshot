@@ -9,7 +9,7 @@ const fetch = singleflightFetch(defaultFetch);
 
 // Update category finds the results for a category and calls the given callback
 // with the results.
-export function updateCategory(category: Category, query: string, callback: (results: Result[]) => void): void {
+export function updateCategory(category: Category, repo: string, commitID: string, query: string, callback: (results: Result[]) => void): void {
 	if (category === Category.repository) {
 		updateRepos(query, callback);
 		return;
