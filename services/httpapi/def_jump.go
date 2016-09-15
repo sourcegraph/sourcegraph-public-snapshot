@@ -11,6 +11,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
+	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
@@ -33,9 +34,7 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	var response = &struct {
-		Path string `json:"path"`
-	}{}
+	var response graph.DefKey
 
 	if universe.Enabled(r.Context(), repo.URI) {
 		defRange, err := langp.DefaultClient.Definition(r.Context(), &langp.Position{
@@ -81,7 +80,6 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	// We still need the string name (not the UID) of the repository to send back.
 	def, err := cl.Defs.Get(r.Context(),
 		&sourcegraph.DefsGetOp{
 			Def: sourcegraph.DefSpec{

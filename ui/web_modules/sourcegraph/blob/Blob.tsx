@@ -7,8 +7,12 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 
 import * as debounce from "lodash/debounce";
 
+import { lineRange } from "sourcegraph/blob/lineCol";
+
 import { Def } from "sourcegraph/api";
 import { urlToDefInfo } from "sourcegraph/def/routes";
+import { makeRepoRev } from "sourcegraph/repo";
+import { urlTo } from "sourcegraph/util/urlTo";
 
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
@@ -31,11 +35,17 @@ interface Props {
 	startByte?: number;
 };
 
-export class Blob extends React.Component<Props, null> {
+interface State {
+	userManuallyScrolledToLineViaSelection?: number;
+}
+
+export class Blob extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
 	};
+
+	state: State = {};
 
 	context: {
 		siteConfig: { assetsRoot: string };
@@ -60,22 +70,21 @@ export class Blob extends React.Component<Props, null> {
 		this._hoverProvided = [];
 		this._toDispose = [];
 		this._decorationID = [];
-		this._onSelectionChange = debounce(this._onSelectionChange.bind(this), 1000);
+		this._onSelectionChange = debounce(this._onSelectionChange.bind(this), 100);
 	}
 
 	componentDidMount(): void {
+		global.document.addEventListener("resize", this._onResize);
 		if ((global as any).require) {
 			this._loaderReady();
 			return;
+		} else {
+			let script = document.createElement("script");
+			script.type = "text/javascript";
+			script.src = `${this.context.siteConfig.assetsRoot}/vs/loader.js`;
+			script.addEventListener("load", this._loaderReady.bind(this));
+			document.body.appendChild(script);
 		}
-
-		let script = document.createElement("script");
-		script.type = "text/javascript";
-		script.src = `${this.context.siteConfig.assetsRoot}/vs/loader.js`;
-		script.addEventListener("load", this._loaderReady.bind(this));
-		document.body.appendChild(script);
-
-		global.document.addEventListener("resize", this._onResize);
 	}
 
 	componentWillUnmount(): void {
@@ -120,9 +129,10 @@ export class Blob extends React.Component<Props, null> {
 		this._addClickListener();
 		this._addReferencesAction();
 		this._overrideNavigationKeys();
-		this._editor.onDidChangeCursorSelection(this._onSelectionChange);
 
 		this._updateEditor();
+		this._scroll();
+		this._editor.onDidChangeCursorSelection(this._onSelectionChange);
 	}
 
 	_updateEditor(): void {
@@ -133,8 +143,6 @@ export class Blob extends React.Component<Props, null> {
 		};
 		const uri = RepoSpecToURI(repoSpec);
 		this._updateModel(uri);
-
-		this._scroll();
 	}
 
 	_updateModel(uri: monaco.Uri): void {
@@ -242,6 +250,9 @@ export class Blob extends React.Component<Props, null> {
 		} else {
 			return;
 		}
+		if (startLine === this.state.userManuallyScrolledToLineViaSelection) {
+			return;
+		}
 		const linesInViewPort = this._editor.getDomNode().offsetHeight / 20;
 		const middleLine = Math.floor(startLine + (linesInViewPort / 4));
 		this._editor.revealLineInCenter(middleLine);
@@ -289,12 +300,34 @@ export class Blob extends React.Component<Props, null> {
 	}
 
 	_onSelectionChange(e: monaco.editor.ICursorSelectionChangedEvent): void {
+		// this is here because the api calls are coming from the find command or something else we don't want to capture
+		if (e.source === "api") {
+			return;
+		}
+
 		const start = e.selection.startLineNumber;
-		const end = e.selection.endLineNumber;
-		const hash = end === start ? "" : `L${start}-${end}`;
-		const path = global.document.location.pathname;
+		let end = e.selection.endLineNumber;
+		if (e.selection.endColumn === 1 && end === start + 1) {
+			end -= 1; // if the cursor on the last line doesn't highlight anything, ignore line
+		}
+		const hash = `L${lineRange(start, end)}`;
+		let rev = this.props.rev;
+		if (window.location.href.indexOf("@") < 0) {
+			rev = "";
+		}
+		const path = urlTo("blob", { splat: [makeRepoRev(this.props.repo, rev), this.props.path] } as any);
 		const pathWithSelection = `${path}#${hash}`;
-		this.context.router.replace(pathWithSelection);
+
+		// Remove the line number if there is no selection.
+		if (e.selection.getStartPosition().equals(e.selection.getEndPosition())) {
+			this.context.router.replace(path);
+			return;
+		}
+
+		// Record that the user manually scrolled to this line so that the props change
+		// (due to changing the URL hash) doesn't trigger a jerky duplicate scroll to
+		// the same line.
+		this.setState({ userManuallyScrolledToLineViaSelection: start }, () => this.context.router.replace(pathWithSelection));
 	}
 
 	render(): JSX.Element {

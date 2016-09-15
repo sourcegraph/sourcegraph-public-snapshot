@@ -54,7 +54,6 @@ export class BlobMain extends Container<Props, State> {
 		this.state = {
 			selectionStartLine: null,
 		};
-
 	}
 
 	componentDidMount(): void {
@@ -107,7 +106,9 @@ export class BlobMain extends Container<Props, State> {
 			if (action.def.Error) {
 				console.log("Go-to-definition failed:", action.def.Error); // tslint:disable-line
 			} else {
-				(this.context as any).router.push(action.def.path);
+				const rev = this.props.rev ? action.commitID : "";
+				const url = urlToDef(action.def, rev);
+				(this.context as any).router.push(url);
 			}
 		}
 	}
