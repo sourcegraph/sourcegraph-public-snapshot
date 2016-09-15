@@ -27,7 +27,9 @@ interface Props {
 	contents: string | null;
 
 	startLine?: number;
+	startCol?: number;
 	endLine?: number;
+	endCol?: number;
 
 	editorRef?: (editor: monaco.editor.IStandaloneCodeEditor | null) => void;
 };
@@ -167,7 +169,7 @@ export class Editor extends React.Component<Props, State> {
 			if (typeof next.startLine === "number") {
 				if (next.startLine !== this.state.userManuallyScrolledToLineViaSelection) {
 					this._editor.revealLineInCenterIfOutsideViewport(next.startLine);
-					this._highlightLines(next.startLine, next.endLine);
+					this._highlight(next.startLine, next.startCol, next.endLine, next.endCol);
 					this._editor.focus();
 				}
 			}
@@ -196,15 +198,11 @@ export class Editor extends React.Component<Props, State> {
 		}
 	}
 
-	_highlightLines(startLine: number, endLine?: number): void {
+	_highlight(startLine: number, startCol?: number, endLine?: number, endCol?: number): void {
+		startCol = typeof startCol === "number" ? startCol : this._editor.getModel().getLineMinColumn(startLine);
 		endLine = typeof endLine === "number" ? endLine : startLine;
-		const range = new monaco.Range(
-			startLine,
-			this._editor.getModel().getLineMinColumn(startLine),
-			endLine,
-			this._editor.getModel().getLineMaxColumn(endLine),
-		);
-		this._editor.setSelection(range);
+		endCol = typeof endCol === "number" ? endCol : this._editor.getModel().getLineMaxColumn(endLine);
+		this._editor.setSelection(new monaco.Range(startLine, startCol, endLine, endCol));
 	}
 
 	_viewAllReferences(editor: monaco.editor.ICommonCodeEditor): monaco.Promise<void> {
@@ -213,6 +211,12 @@ export class Editor extends React.Component<Props, State> {
 		// right-click and choose "View All References". The cursor
 		// will be at the end of the line, but we want to act on the
 		// token we right-clicked on.
+		//
+		// NOTE: We can remove this when Universe is enabled for all
+		// repos, since Universe will return the name range (not just
+		// the starting line) for jump-to-def, and right-clicking a
+		// selection consisting solely of the name will work as
+		// expected without this hack.
 		let pos: monaco.Position;
 		if (this._mouseDownPosition && this._mouseDownIsRightButton && !editor.getSelection().isEmpty()) {
 			pos = this._mouseDownPosition.position;

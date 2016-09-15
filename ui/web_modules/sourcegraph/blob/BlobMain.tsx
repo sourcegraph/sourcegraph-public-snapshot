@@ -155,7 +155,9 @@ export class BlobMain extends React.Component<Props, State> {
 					editorRef={this._setEditor}
 					ref={(c) => this._editorComponent = c}
 					startLine={this.props.startLine}
-					endLine={this.props.endLine} />}
+					endLine={this.props.endLine}
+					startCol={this.props.startCol}
+					endCol={this.props.endCol} />}
 			</div>
 		);
 	}
