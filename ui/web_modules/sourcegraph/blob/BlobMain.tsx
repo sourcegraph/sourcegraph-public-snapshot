@@ -1,170 +1,161 @@
 // tslint:disable: typedef ordered-imports
 
-import {Location} from "history";
+import { Location } from "history";
 import * as React from "react";
+import { InjectedRouter } from "react-router";
 import Helmet from "react-helmet";
-
-import {Container} from "sourcegraph/Container";
-import * as Dispatcher from "sourcegraph/Dispatcher";
-import {Store} from "sourcegraph/Store";
-import {Blob} from "sourcegraph/blob/Blob";
-import * as DefActions from  "sourcegraph/def/DefActions";
-import {DefStore} from "sourcegraph/def/DefStore";
+import * as debounce from "lodash/debounce";
+import { Editor } from "sourcegraph/editor/Editor";
 import "sourcegraph/blob/BlobBackend";
-import "sourcegraph/def/DefBackend";
-import "sourcegraph/build/BuildBackend";
+import { lineRange } from "sourcegraph/blob/lineCol";
 import * as Style from "sourcegraph/blob/styles/Blob.css";
-import {urlTo} from "sourcegraph/util/urlTo";
-import {makeRepoRev, trimRepo} from "sourcegraph/repo";
-import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
-import {Header} from "sourcegraph/components/Header";
-import {createLineFromByteFunc} from "sourcegraph/blob/lineFromByte";
-import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
+import { trimRepo } from "sourcegraph/repo";
+import { httpStatusCode } from "sourcegraph/util/httpStatusCode";
+import { Header } from "sourcegraph/components/Header";
+import { urlToBlob } from "sourcegraph/blob/routes";
 
 interface Props {
 	repo: string;
-	rev?: string;
+	rev: string | null;
 	commitID?: string;
-	path?: string;
+	path: string;
 	blob?: any;
-	anns?: any;
-	def?: any;
-	skipAnns?: boolean;
 	startLine?: number;
 	startCol?: number;
-	startByte?: number;
 	endLine?: number;
 	endCol?: number;
-	endByte?: number;
 	location: Location;
-	children?: React.ReactNode;
 }
 
 type State = any;
 
-export class BlobMain extends Container<Props, State> {
+// BlobMain wraps the Editor component for the primary code view.
+export class BlobMain extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
 
-	_dispatcherToken: string;
+	context: {
+		router: InjectedRouter,
+	};
+
+	private _editor: monaco.editor.IStandaloneCodeEditor | null = null;
+	private _editorComponent: Editor | null;
 
 	constructor(props: Props) {
 		super(props);
-		this.state = {
-			selectionStartLine: null,
-		};
-
+		this._setEditor = this._setEditor.bind(this);
+		this._onKeyDownForFindInPage = this._onKeyDownForFindInPage.bind(this);
+		this._onResize = debounce(this._onResize.bind(this), 300, { leading: true, trailing: true });
+		this._onSelectionChange = debounce(this._onSelectionChange.bind(this), 100);
 	}
 
 	componentDidMount(): void {
-		super.componentDidMount();
-		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
-		document.body.style.overflowY = "hidden";
+		global.document.addEventListener("keydown", this._onKeyDownForFindInPage);
+		global.document.addEventListener("resize", this._onResize);
+
+		global.document.body.style.overflowY = "hidden";
 	}
 
 	componentWillUnmount(): void {
-		super.componentWillUnmount();
-		Dispatcher.Stores.unregister(this._dispatcherToken);
-		document.body.style.overflowY = "auto";
+		global.document.removeEventListener("keydown", this._onKeyDownForFindInPage);
+		global.document.removeEventListener("resize", this._onResize);
+
+		global.document.body.style.overflowY = "auto";
 	}
 
-	reconcileState(state: State, props: Props): void {
-		state.repo = props.repo;
-		state.rev = props.rev || null;
-		state.commitID = props.commitID || null;
-		state.path = props.path || null;
-		state.blob = props.blob || null;
-		state.anns = props.anns || null;
-		state.skipAnns = props.skipAnns || false;
-		state.startLine = props.startLine || null;
-		state.startCol = props.startCol || null;
-		state.startByte = props.startByte || null;
-		state.endLine = props.endLine || null;
-		state.endCol = props.endCol || null;
-		state.endByte = props.endByte || null;
-		state.def = props.def || null;
-		state.defObj = state.def && state.commitID ? DefStore.defs.get(state.repo, state.commitID, state.def) : null;
-		state.children = props.children || null;
-		state.rev = props.rev || "master";
-
-		state.hoverInfos = DefStore.hoverInfos;
-		state.hoverPos = DefStore.hoverPos;
-	}
-
-	onStateTransition(prevState: State, nextState: State): void {
-		if (prevState.blob !== nextState.blob) {
-			nextState.lineFromByte = nextState.blob && typeof nextState.blob.ContentsString !== "undefined" ? createLineFromByteFunc(nextState.blob.ContentsString) : null;
+	_setEditor(editor: monaco.editor.IStandaloneCodeEditor | null): void {
+		this._editor = editor;
+		if (this._editor) {
+			this._editor.onDidChangeCursorSelection(this._onSelectionChange);
 		}
 	}
 
-	stores(): Store<any>[] {
-		return [DefStore];
-	}
-
-	__onDispatch(action) {
-		if (action instanceof DefActions.JumpDefFetched) {
-			if (action.def.Error) {
-				console.log("Go-to-definition failed:", action.def.Error); // tslint:disable-line
-			} else {
-				(this.context as any).router.push(action.def.path);
+	_onKeyDownForFindInPage(e: KeyboardEvent): void {
+		const mac = navigator.userAgent.indexOf("Macintosh") >= 0;
+		const ctrl = mac ? e.metaKey : e.ctrlKey;
+		const FKey = 70;
+		if (e.keyCode === FKey && ctrl) {
+			if (this._editor) {
+				e.preventDefault();
+				(document.getElementsByClassName("inputarea")[0] as any).focus();
+				this._editor.trigger("keyboard", "actions.find", {});
 			}
 		}
 	}
 
-	_navigate(repo: string, rev: string, path: string, hash: string): void {
-		let url = urlTo("blob", {splat: [makeRepoRev(repo, rev), path]} as any);
+	_onResize(e: Event): void {
+		if (this._editor) {
+			this._editor.layout();
+		}
+	}
 
-		// Replace the URL if we're just changing the hash. If we're changing
-		// more (e.g., from a def URL to a blob URL), then push.
-		const replace = (this.props.location as any).pathname === url;
-		if (hash) {
-			url = `${url}#${hash}`;
+	_onSelectionChange(e: monaco.editor.ICursorSelectionChangedEvent): void {
+		// this is here because the api calls are coming from the find command or something else we don't want to capture
+		if (e.source === "api") {
+			return;
 		}
-		if (replace) {
-			(this.context as any).router.replace(url);
-		} else {
-			(this.context as any).router.push(url);
+
+		const start = e.selection.startLineNumber;
+		let end = e.selection.endLineNumber;
+		if (e.selection.endColumn === 1 && end === start + 1) {
+			end -= 1; // if the cursor on the last line doesn't highlight anything, ignore line
 		}
+		const path = urlToBlob(this.props.repo, this.props.rev, this.props.path);
+
+		if (e.selection.isEmpty()) {
+			if (this._editorComponent && this._editorComponent._mouseDownOnIdent) {
+				// Click handler will trigger jump-to-def.
+				return;
+			}
+			this.setState({ userManuallyScrolledToLineViaSelection: null}, () => {
+				this.context.router.replace(path);
+			});
+			return;
+		}
+
+		// Record that the user manually scrolled to this line so that the props change
+		// (due to changing the URL hash) doesn't trigger a jerky duplicate scroll to
+		// the same line.
+		this.setState({ userManuallyScrolledToLineViaSelection: start }, () => {
+			this.context.router.replace(`${path}#L${lineRange(start, end)}`);
+		});
 	}
 
 	render(): JSX.Element | null {
-		if (this.state.blob && this.state.blob.Error) {
+		if (this.props.blob && this.props.blob.Error) {
 			let msg;
-			switch (this.state.blob.Error.response.status) {
-			case 413:
-				msg = "Sorry, this file is too large to display.";
-				break;
-			default:
-				msg = "File is not available.";
+			switch (this.props.blob.Error.response.status) {
+				case 413:
+					msg = "Sorry, this file is too large to display.";
+					break;
+				default:
+					msg = "File is not available.";
 			}
 			return (
 				<Header
-					title={`${httpStatusCode(this.state.blob.Error)}`}
+					title={`${httpStatusCode(this.props.blob.Error)}`}
 					subtitle={msg} />
 			);
 		}
 
-		// NOTE: Title should be kept in sync with app/internal/ui in Go.
-		let title = trimRepo(this.state.repo);
-		const pathParts = this.state.path ? this.state.path.split("/") : null;
+		let title = trimRepo(this.props.repo);
+		const pathParts = this.props.path ? this.props.path.split("/") : null;
 		if (pathParts) {
 			title = `${pathParts[pathParts.length - 1]} · ${title}`;
 		}
-		if (this.state.defObj && !this.state.defObj.Error && defTitleOK(this.state.defObj)) {
-			title = `${defTitle(this.state.defObj)} · ${title}`;
-		}
 		return (
-			<div className={Style.container_monaco}>
+			<div className={Style.container}>
 				<Helmet title={title} />
-				{this.state.blob && typeof this.state.blob.ContentsString === "string" && <Blob
-					repo={this.state.repo}
-					rev={this.state.rev}
-					path={this.state.path}
-					contents={this.state.blob.ContentsString}
-					startLine={this.state.startLine}
-					endLine={this.state.endLine}
-					startByte={this.state.startByte} />}
+				{this.props.blob && typeof this.props.blob.ContentsString === "string" && <Editor
+					repo={this.props.repo}
+					rev={this.props.rev}
+					path={this.props.path}
+					contents={this.props.blob.ContentsString}
+					editorRef={this._setEditor}
+					ref={(c) => this._editorComponent = c}
+					startLine={this.props.startLine}
+					endLine={this.props.endLine} />}
 			</div>
 		);
 	}

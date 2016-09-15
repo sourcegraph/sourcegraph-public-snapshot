@@ -1,19 +1,18 @@
 // tslint:disable: typedef ordered-imports
 
-import {rel} from "sourcegraph/app/routePatterns";
-import {urlTo} from "sourcegraph/util/urlTo";
-import {makeRepoRev, repoPath, repoParam} from "sourcegraph/repo";
-import {PlainRoute} from "react-router";
-import {formatPattern} from "react-router/lib/PatternUtils";
-import {withResolvedRepoRev} from "sourcegraph/repo/withResolvedRepoRev";
-import {withRepoBuild} from "sourcegraph/build/withRepoBuild";
-import {NavContext} from "sourcegraph/repo/NavContext";
-import {RepoMain} from "sourcegraph/repo/RepoMain";
+import { rel } from "sourcegraph/app/routePatterns";
+import { urlTo } from "sourcegraph/util/urlTo";
+import { makeRepoRev, repoPath, repoParam } from "sourcegraph/repo";
+import { PlainRoute } from "react-router";
+import { formatPattern } from "react-router/lib/PatternUtils";
+import { withResolvedRepoRev } from "sourcegraph/repo/withResolvedRepoRev";
+import { withRepoBuild } from "sourcegraph/build/withRepoBuild";
+import { NavContext } from "sourcegraph/repo/NavContext";
+import { RepoMain } from "sourcegraph/repo/RepoMain";
 
-import {routes as blobRoutes} from "sourcegraph/blob/routes";
-import {routes as buildRoutes} from "sourcegraph/build/routes";
-import {routes as defRoutes} from "sourcegraph/def/routes";
-import {routes as treeRoutes} from "sourcegraph/tree/routes";
+import { routes as blobRoutes } from "sourcegraph/blob/routes";
+import { routes as buildRoutes } from "sourcegraph/build/routes";
+import { routes as treeRoutes } from "sourcegraph/tree/routes";
 
 let _components;
 
@@ -43,7 +42,6 @@ export const routes: any[] = [
 			callback(null, [
 				...blobRoutes,
 				...buildRoutes,
-				...defRoutes,
 				...treeRoutes,
 			]);
 		},
@@ -61,11 +59,11 @@ export const routes: any[] = [
 ];
 
 export function urlToRepo(repo: string): string {
-	return urlTo("repo", {splat: repo});
+	return urlTo("repo", { splat: repo });
 }
 
 export function urlToRepoRev(repo: string, rev: string | null): string {
-	return urlTo("repo", {splat: makeRepoRev(repo, rev)});
+	return urlTo("repo", { splat: makeRepoRev(repo, rev) });
 }
 
 // urlWithRev constructs a URL that is equivalent to the current URL (whose

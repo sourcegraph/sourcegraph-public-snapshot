@@ -8,8 +8,6 @@ import (
 
 // Prepare should be called on annotations intended for the client to
 // prepare them in ways described below for presentation in the UI.
-//
-// NOTE: This logic must be kept in sync with prepareAnnotations.js.
 func Prepare(anns []*sourcegraph.Annotation) []*sourcegraph.Annotation {
 	if len(anns) == 0 {
 		return anns

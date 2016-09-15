@@ -1,5 +1,5 @@
 import expect from "expect.js";
-import {abs as absRoutes, getRouteParams} from "sourcegraph/app/routePatterns";
+import { abs as absRoutes, getRouteParams } from "sourcegraph/app/routePatterns";
 
 describe("routePatterns", () => {
 	let tests = {
@@ -7,20 +7,15 @@ describe("routePatterns", () => {
 			"": {},
 		},
 		repo: {
-			"r": {splat: "r"},
-			"r/r": {splat: "r/r"},
-			"r/r@c": {splat: "r/r@c"},
-			"r/r@c/c": {splat: "r/r@c/c"},
-		},
-		def: {
-			"r/-/def/d": {splat: ["r", "d"]},
-			"r/r/-/def/d/d": {splat: ["r/r", "d/d"]},
-			"r/r@c/-/def/d/d/-/d": {splat: ["r/r@c", "d/d/-/d"]},
+			"r": { splat: "r" },
+			"r/r": { splat: "r/r" },
+			"r/r@c": { splat: "r/r@c" },
+			"r/r@c/c": { splat: "r/r@c/c" },
 		},
 		blob: {
-			"r/-/blob/b": {splat: ["r", "b"]},
-			"r/r/-/blob/b/b": {splat: ["r/r", "b/b"]},
-			"r/r@c/-/blob/b/b": {splat: ["r/r@c", "b/b"]},
+			"r/-/blob/b": { splat: ["r", "b"] },
+			"r/r/-/blob/b/b": { splat: ["r/r", "b/b"] },
+			"r/r@c/-/blob/b/b": { splat: ["r/r@c", "b/b"] },
 		},
 	};
 

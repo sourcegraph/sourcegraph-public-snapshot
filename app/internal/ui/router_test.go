@@ -99,14 +99,21 @@ func TestRouter(t *testing.T) {
 
 		// Def
 		{
-			path:          "/r@v/-/def/t/u/-/p",
-			wantRouteName: routeDef,
-			wantVars:      map[string]string{"Repo": "r", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "@v"},
-		},
-		{
 			path:          "/r@v/-/info/t/u/-/p",
 			wantRouteName: routeDefLanding,
 			wantVars:      map[string]string{"Repo": "r", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "@v"},
+		},
+
+		// Def redirects
+		{
+			path:          "/r@v/-/def/t/u/-/p",
+			wantRouteName: routeDefRedirectToDefLanding,
+			wantVars:      map[string]string{"dummy": "def", "Repo": "r", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "@v"},
+		},
+		{
+			path:          "/r@v/-/refs/t/u/-/p",
+			wantRouteName: routeDefRedirectToDefLanding,
+			wantVars:      map[string]string{"dummy": "refs", "Repo": "r", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "@v"},
 		},
 	}
 	for _, test := range tests {

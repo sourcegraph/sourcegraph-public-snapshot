@@ -11,6 +11,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
@@ -34,9 +35,7 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	var response = &struct {
-		Path string `json:"path"`
-	}{}
+	var response graph.DefKey
 
 	if universe.Enabled(r.Context(), repo.URI) {
 		defRange, err := langp.DefaultClient.Definition(r.Context(), &langp.Position{
@@ -57,6 +56,7 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 			// We increment the line number by 1 because the blob view is not zero-indexed.
 			response.Path = router.Rel.URLToBlobRange(defRange.Repo, defRange.Commit, defRange.File, defRange.StartLine+1, defRange.EndLine+1, defRange.StartCharacter+1, defRange.EndCharacter+1).String()
 		}
+		w.Header().Set("cache-control", "private, max-age=60")
 		return writeJSON(w, response)
 	} else if universe.Shadow(repo.URI) {
 		go func() {
@@ -82,7 +82,6 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	// We still need the string name (not the UID) of the repository to send back.
 	def, err := cl.Defs.Get(r.Context(),
 		&sourcegraph.DefsGetOp{
 			Def: sourcegraph.DefSpec{
@@ -91,12 +90,20 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 				UnitType: defSpec.UnitType,
 				Unit:     defSpec.Unit,
 				Path:     defSpec.Path},
-			Opt: nil})
+			Opt: &sourcegraph.DefGetOptions{ComputeLineRange: true}})
 	if err != nil {
 		return err
 	}
 
-	graphKey := graph.DefKey{Repo: def.Repo, CommitID: def.CommitID, UnitType: def.UnitType, Unit: def.Unit, Path: def.Path}
-	response.Path = router.Rel.URLToDefKey(graphKey).String()
+	// Don't add an ugly commit ID to the URL in the address bar if
+	// the user is on a named branch or default branch. Also, never
+	// add a rev if the jump is cross-repo.
+	var rev string
+	if v := routevar.ToRepoRev(mux.Vars(r)); def.Repo == v.Repo {
+		rev = v.Rev
+	}
+
+	response.Path = router.Rel.URLToBlob(def.Repo, rev, def.File, int(def.StartLine)).String()
+	w.Header().Set("cache-control", "private, max-age=60")
 	return writeJSON(w, response)
 }

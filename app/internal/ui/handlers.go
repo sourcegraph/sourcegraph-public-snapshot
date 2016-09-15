@@ -4,6 +4,8 @@ import (
 	"errors"
 	"net/http"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"context"
 
 	"github.com/gorilla/mux"
@@ -27,8 +29,7 @@ func init() {
 	router.Get(routeLangsIndex).Handler(httptrace.TraceRoute(internal.Handler(serveRepoIndex)))
 	router.Get(routeBlob).Handler(httptrace.TraceRoute(handler(serveBlob)))
 	router.Get(routeBuild).Handler(httptrace.TraceRoute(handler(serveBuild)))
-	router.Get(routeDef).Handler(httptrace.TraceRoute(handler(serveDef)))
-	router.Get(routeDefInfo).Handler(httptrace.TraceRoute(handler(serveDefInfo)))
+	router.Get(routeDefRedirectToDefLanding).Handler(httptrace.TraceRoute(http.HandlerFunc(serveDefRedirectToDefLanding)))
 	router.Get(routeDefLanding).Handler(httptrace.TraceRoute(internal.Handler(serveDefLanding)))
 	router.Get(routeRepo).Handler(httptrace.TraceRoute(handler(serveRepo)))
 	router.Get(routeRepoBuilds).Handler(httptrace.TraceRoute(handler(serveRepoBuilds)))
@@ -114,53 +115,45 @@ func serveBuild(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	return nil, nil
 }
 
-func serveDef(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	return serveDefCommon(w, r, false)
+// serveDefRedirectToDefLanding redirects from /REPO/refs/... and
+// /REPO/def/... URLs to the def landing page. Those URLs used to
+// point to JavaScript-backed pages in the UI for a refs list and code
+// view, respectively, but now def URLs are only for SEO (and thus
+// those URLs are only handled by this package).
+func serveDefRedirectToDefLanding(w http.ResponseWriter, r *http.Request) {
+	routeVars := mux.Vars(r)
+	pairs := make([]string, 0, len(routeVars)*2)
+	for k, v := range routeVars {
+		if k == "dummy" { // only used for matching string "def" or "refs"
+			continue
+		}
+		pairs = append(pairs, k, v)
+	}
+	u, err := router.Get(routeDefLanding).URL(pairs...)
+	if err != nil {
+		log15.Error("Def redirect URL construction failed.", "url", r.URL.String(), "routeVars", routeVars, "err", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+	http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
 }
 
-func serveDefInfo(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	return serveDefCommon(w, r, true)
-}
-
-func serveDefCommon(w http.ResponseWriter, r *http.Request, isDefInfo bool) (*meta, error) {
+func serveDefCommon(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	def, repo, err := handlerutil.GetDefCommon(r.Context(), mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
 		return nil, err
 	}
-	m := defMeta(def, repo.URI, !isDefInfo)
+	m := defMeta(def, repo.URI, true)
 
-	if isDefInfo {
-		// DefInfo canonical URL is DefInfo.
-		m.CanonicalURL = canonicalRepoURL(
-			conf.AppURL(r.Context()),
-			getRouteName(r),
-			mux.Vars(r),
-			r.URL.Query(),
-			repo.DefaultBranch,
-			def.CommitID,
-		)
-	} else {
-		// Def canonical URL is the blob page. We don't want Googlebot
-		// thinking we have tons of repetitive pages (each local var
-		// on a blob page, for example), so let's tell it that all Def
-		// pages are actually canonically the blob.
-		m.CanonicalURL = canonicalRepoURL(
-			conf.AppURL(r.Context()),
-			routeBlob,
-			routevar.TreeEntryRouteVars(routevar.TreeEntry{
-				RepoRev: routevar.ToRepoRev(mux.Vars(r)),
-				Path:    "/" + def.File,
-			}),
-			r.URL.Query(),
-			repo.DefaultBranch,
-			def.CommitID,
-		)
-	}
-
-	// Don't noindex pages with a canonical URL. See
-	// https://www.seroundtable.com/archives/020151.html.
-	canonRev := isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
-	m.Index = allowRobots(repo) && shouldIndexDef(def) && canonRev && isDefInfo // DefInfo is a better landing page than Def.
+	// Def canonical URL is def landing.
+	m.CanonicalURL = canonicalRepoURL(
+		conf.AppURL(r.Context()),
+		routeDefLanding,
+		mux.Vars(r),
+		r.URL.Query(),
+		repo.DefaultBranch,
+		def.CommitID,
+	)
 
 	return m, nil
 }

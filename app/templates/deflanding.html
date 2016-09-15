@@ -1,7 +1,4 @@
-{{define "Head"}}
-<title>{{with .Meta.Title}}{{.}} · {{end}}Sourcegraph</title>
-<meta name="description" content="{{.Meta.Description}}">
-{{end}}
+{{define "Head"}}{{template "HeadFromMeta" $}}{{end}}
 
 {{define "Nav"}}{{end}}
 
