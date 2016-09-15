@@ -38,6 +38,12 @@ First `cd test/e2e`, then:
 TARGET=http://localhost:3080 go test
 ```
 
+## Common problems
+
+* If the tests are flaky and you are seeing messages like `Exception:
+  chrome not reachable` in the Selenium logs, run with the `go test
+  -parallel 1` flag.
+
 
 ## Additional options
 
