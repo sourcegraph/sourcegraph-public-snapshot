@@ -255,7 +255,13 @@ export class GlobalSearch extends Container<Props, State> {
 	}
 
 	_navigateTo(url: string) {
-		(this.context as any).router.push(url);
+		if (url.indexOf("/info/") !== -1) {
+			// The def landing page is rendered on the server and we
+			// must initiate a full refresh to display it.
+			window.location.href = url;
+		} else {
+			(this.context as any).router.push(url);
+		}
 	}
 
 	_handleKeyDown(e: KeyboardEvent) {
