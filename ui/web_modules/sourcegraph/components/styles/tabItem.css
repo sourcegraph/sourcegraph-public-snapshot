@@ -41,7 +41,8 @@
 .active.purple a { color: c_purple; }
 .purple:hover, .purple a:hover { color: c_dark_purple; }
 
-.small { composes: f5 from typography; }
+.small { composes: f7 from typography; }
+.normal { font-size: inherit; }
 .large { composes: f3 from typography; }
 
 .icon {

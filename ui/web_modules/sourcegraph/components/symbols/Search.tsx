@@ -1,24 +1,11 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
+import {Symbol} from "sourcegraph/components/symbols/Symbol";
 
 interface Props {
 	className?: string;
-	height?: number;
-	width?: number;
-	style?: any;
+	width?: number; // appended by "px"
+	style?: Object;
+	color?: any;
 }
 
-type State = any;
-
-export class Search extends React.Component<Props, State> {
-	static defaultProps = {
-		width: 16,
-	};
-
-	render(): JSX.Element | null {
-		let style = this.props.style || {};
-		style.verticalAlign = "middle";
-		return <svg className={this.props.className} width={`${this.props.width}px`} style={style} viewBox="0 0 17 17"><path d="M10.6 0c1.2 0 2.2.3 3.2 1 1 .4 1.8 1.2 2.3 2.2.7 1 1 2 1 3.2 0 1-.3 2.2-1 3.2-.4 1-1.2 1.7-2.2 2.3-1 .5-2 .8-3.2.8-1.2 0-2.4-.4-3.4-1l-4.8 4.8c-.3.3-.6.4-1 .4s-.7 0-1-.4c-.3-.3-.4-.6-.4-1s0-.7.4-1l4.8-4.8c-.6-1-1-2.2-1-3.4 0-1.2.3-2.2 1-3.2.5-1 1.2-1.8 2.2-2.3 1-.7 2-1 3.2-1zm0 10.6c.6 0 1 0 1.7-.3.5-.2 1-.5 1.3-1 .4-.3.7-.8 1-1.3.2-.5.3-1 .3-1.6 0-.6-.2-1-.5-1.7-.2-.5-.5-1-1-1.3-.3-.4-.7-.7-1.2-1-.6-.2-1-.3-1.7-.3-.6 0-1 .2-1.6.5-.5.2-1 .5-1.4 1-.4.3-.7.7-1 1.2l-.2 1.7c0 .6 0 1 .3 1.6.2.5.5 1 1 1.4.3.4.8.7 1.3 1l1.6.2z"/></svg>;
-	}
-}
+export const Search = (props: Props) => <Symbol {...props} viewBox="16 14 15 15"><path d="M30.438 27.362l-2.608-2.608c.815-1.093 1.296-2.447 1.296-3.91 0-3.62-2.944-6.564-6.563-6.564-3.62 0-6.563 2.944-6.563 6.563 0 3.62 2.944 6.563 6.563 6.563 1.464 0 2.818-.48 3.91-1.296l2.61 2.608c.186.188.43.282.677.282.246 0 .49-.094.678-.282.376-.374.376-.982 0-1.356zm-7.875-1.876c-2.56 0-4.643-2.083-4.643-4.643 0-2.56 2.083-4.643 4.643-4.643 2.56 0 4.643 2.083 4.643 4.643 0 2.56-2.083 4.643-4.643 4.643z"  fillRule="even-odd"/></Symbol>;

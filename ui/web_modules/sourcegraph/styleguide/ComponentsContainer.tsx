@@ -16,6 +16,7 @@ import {
 	AffixComponent,
 	FormsComponent,
 	ListComponent,
+	Symbols,
 } from "sourcegraph/styleguide/componentExamples";
 
 export class ComponentsContainer extends React.Component<{}, any> {
@@ -74,6 +75,10 @@ export class ComponentsContainer extends React.Component<{}, any> {
 				<div className={base.mv5}>
 					<a id="components-headings"></a>
 					<HeadingsComponent />
+				</div>
+				<div className={base.mv5}>
+					<a id="components-symbols"></a>
+					<Symbols />
 				</div>
 				<div className={base.mv5}>
 					<a id="components-buttons"></a>

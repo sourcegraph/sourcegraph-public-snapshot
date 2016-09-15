@@ -3,7 +3,8 @@
 import * as React from "react";
 import Helmet from "react-helmet";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
-import { Button, Heading, Panel } from "sourcegraph/components";
+import {Button, Heading, Panel} from "sourcegraph/components";
+import {colors as jsColors} from "sourcegraph/components/jsStyles/colors";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import * as classNames from "classnames";
 import * as typography from "sourcegraph/components/styles/_typography.css";
@@ -84,13 +85,13 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 						</div>
 						{this._exampleProps()}
 						<div className={classNames(styles.user_actions)}>
-							<div className={classNames(styles.inline_actions, base.pt3)} style={{ verticalAlign: "top" }}>
-								<GitHubLogo width={70} className={classNames(base.hidden_s)} style={{ marginRight: "-20px" }} />
-								<img width={70} className={classNames(base.hidden_s)} src={`${(this.context as any).siteConfig.assetsRoot}/img/sourcegraph-mark.svg`}></img>
-							</div>
-							<div className={classNames(styles.inline_actions, base.pt2, base.pl3)} style={{ maxWidth: "340px" }}>
-								<Heading align="left" level="6">
-									Want code intelligence while browsing GitHub?
+						<div className={classNames(styles.inline_actions, base.pt3)} style={{verticalAlign: "top"}}>
+							<GitHubLogo width={70} color={jsColors.coolGray3()} className={classNames(base.hidden_s)} style={{marginRight: "-20px", verticalAlign: "top"}}/>
+							<img width={70} className={classNames(base.hidden_s)} src={`${(this.context as any).siteConfig.assetsRoot}/img/sourcegraph-mark.svg`}></img>
+						</div>
+						<div className={classNames(styles.inline_actions, base.pt2, base.pl3)} style={{maxWidth: "340px"}}>
+							<Heading align="left" level="6">
+								Want code intelligence while browsing GitHub?
 							</Heading>
 								<p className={classNames(typography.tl, base.mt3, typography.f6)}>
 									Browse GitHub with instant documentation, jump to definition, and intelligent code search with the Sourcegraph for GitHub browser extension.

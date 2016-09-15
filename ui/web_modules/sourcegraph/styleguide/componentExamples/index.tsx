@@ -12,3 +12,4 @@ export {FlexContainerComponent} from "sourcegraph/styleguide/componentExamples/F
 export {AffixComponent} from "sourcegraph/styleguide/componentExamples/AffixComponent";
 export {FormsComponent} from "sourcegraph/styleguide/componentExamples/FormsComponent";
 export {ListComponent} from "sourcegraph/styleguide/componentExamples/ListComponent";
+export {Symbols} from "sourcegraph/styleguide/componentExamples/Symbols";

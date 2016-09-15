@@ -7,3 +7,4 @@ export {Search} from "sourcegraph/components/symbols/Search";
 export {EmptyNodeIllo} from "sourcegraph/components/symbols/EmptyNodeIllo";
 export {Cone} from "sourcegraph/components/symbols/Cone";
 export {GitHubLogo} from "sourcegraph/components/symbols/GitHubLogo";
+export {Dismiss} from "sourcegraph/components/symbols/Dismiss";

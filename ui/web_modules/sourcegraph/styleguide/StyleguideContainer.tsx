@@ -54,13 +54,16 @@ export class StyleguideContainer extends React.Component<{}, any> {
 								<Link to={{pathname: "styleguide", search: "#components-headings"}}>Headings</Link>
 							</TabItem>
 							<TabItem>
+								<Link to={{pathname: "styleguide", search: "#components-symbols"}}>Symbols</Link>
+							</TabItem>
+							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#components-forms"}}>Forms</Link>
 							</TabItem>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#components-buttons"}}>Buttons</Link>
 							</TabItem>
 							<TabItem>
-								<Link to={{pathname: "styleguide", search: "components-tabs"}}>Tabs</Link>
+								<Link to={{pathname: "styleguide", search: "#components-tabs"}}>Tabs</Link>
 							</TabItem>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#components-panels"}}>Panels</Link>

@@ -19,6 +19,7 @@ export const active: string;
 export const blue: string;
 export const purple: string;
 export const small: string;
+export const normal: string;
 export const large: string;
 export const icon: string;
 export const component_icon: string;

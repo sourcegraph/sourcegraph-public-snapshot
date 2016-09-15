@@ -1,21 +1,11 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
+import {Symbol} from "sourcegraph/components/symbols/Symbol";
 
 interface Props {
 	className?: string;
 	width?: number; // appended by "px"
-	style?: any;
+	style?: Object;
+	color?: any;
 }
 
-type State = any;
-
-export class Cone extends React.Component<Props, State> {
-	static defaultProps = {
-		width: 16,
-	};
-
-	render(): JSX.Element | null {
-		return <svg viewBox="32 992 16 17" className={this.props.className} width={`${this.props.width}px`} style={this.props.style}><path d="M32 1007.5c0 .5.4.8 1 .8h14c.6 0 1-.3 1-.8s-.4-1-1-1h-1.7l-4.5-14c0-.3-.4-.5-.8-.5s-.7.2-.8.6l-4.5 14H33c-.6 0-1 .4-1 1zm5-2.6l.7-2.4h4.6l.8 2.3h-6zm1.6-5.5l.8-2.7h1.2l.8 2.7h-2.8z" fill-rule="evenodd"/></svg>;
-	}
-}
+export const Cone = (props: Props) => <Symbol {...props} viewBox="32 992 16 17"><path d="M32 1007.488c0 .47.38.852.85.852h14.3c.47 0 .85-.382.85-.852s-.38-.85-.85-.85h-1.873l-4.474-14.07c-.12-.333-.432-.568-.803-.568-.37 0-.684.235-.804.565l-4.473 14.073H32.85c-.47 0-.85.382-.85.85zm4.936-2.552l.715-2.383h4.7l.714 2.383h-6.128zm1.634-5.447l.817-2.724h1.226l.817 2.723h-2.86z" fillRule="evenodd"/></Symbol>;

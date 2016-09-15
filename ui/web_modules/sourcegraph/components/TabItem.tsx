@@ -31,7 +31,7 @@ export class TabItem extends React.Component<Props, State> {
 		const {size, children, hideMobile, active, color, icon, direction} = this.props;
 		return (
 			<span
-				className={classNames(sizeClasses[size || "small"], hideMobile && styles.hidden_s, active ? styles.active : styles.inactive, colorClasses[color || "blue"] || styles.blue, direction === "vertical" ? styles.vertical : styles.horizontal)}>
+				className={classNames(sizeClasses[size || "normal"], hideMobile && styles.hidden_s, active ? styles.active : styles.inactive, colorClasses[color || "blue"] || styles.blue, direction === "vertical" ? styles.vertical : styles.horizontal)}>
 				{icon && typeof icon === "string" && <Icon icon={`${icon}-blue`} height="14px" width="auto" className={classNames(styles.icon, !active && styles.hide)}/>}
 				{icon && typeof icon === "string" && <Icon icon={`${icon}-gray`} height="14px" width="auto" className={classNames(styles.icon, active && styles.hide)}/>}
 				{icon && typeof icon !== "string" && React.cloneElement(icon, {className: active ? `${styles.component_icon} ${styles.active} ${colorClasses[color || "blue"]}` : `${styles.component_icon} ${styles.inactive}`})}
@@ -43,6 +43,7 @@ export class TabItem extends React.Component<Props, State> {
 
 const sizeClasses = {
 	"small": styles.small,
+	"normal": styles.normal,
 	"large": styles.large,
 };
 
