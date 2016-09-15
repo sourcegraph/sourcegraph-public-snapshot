@@ -589,6 +589,618 @@
           }
         },
         "containerName": "mux"
+      },
+      {
+        "name": "Route",
+        "kind": 5,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 16,
+              "character": 5
+            },
+            "end": {
+              "line": 16,
+              "character": 10
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/SkipClean",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 43,
+              "character": 16
+            },
+            "end": {
+              "line": 43,
+              "character": 25
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/Match",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 48,
+              "character": 16
+            },
+            "end": {
+              "line": 48,
+              "character": 21
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/GetError",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 80,
+              "character": 16
+            },
+            "end": {
+              "line": 80,
+              "character": 24
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/BuildOnly",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 85,
+              "character": 16
+            },
+            "end": {
+              "line": 85,
+              "character": 25
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/Handler",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 93,
+              "character": 16
+            },
+            "end": {
+              "line": 93,
+              "character": 23
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/HandlerFunc",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 101,
+              "character": 16
+            },
+            "end": {
+              "line": 101,
+              "character": 27
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/GetHandler",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 106,
+              "character": 16
+            },
+            "end": {
+              "line": 106,
+              "character": 26
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/Name",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 114,
+              "character": 16
+            },
+            "end": {
+              "line": 114,
+              "character": 20
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/GetName",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 127,
+              "character": 16
+            },
+            "end": {
+              "line": 127,
+              "character": 23
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "matcher/Match",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 137,
+              "character": 1
+            },
+            "end": {
+              "line": 137,
+              "character": 6
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "headerMatcher/Match",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 199,
+              "character": 23
+            },
+            "end": {
+              "line": 199,
+              "character": 28
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/Headers",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 212,
+              "character": 16
+            },
+            "end": {
+              "line": 212,
+              "character": 23
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "headerRegexMatcher/Match",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 224,
+              "character": 28
+            },
+            "end": {
+              "line": 224,
+              "character": 33
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/HeadersRegexp",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 237,
+              "character": 16
+            },
+            "end": {
+              "line": 237,
+              "character": 29
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/Host",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 265,
+              "character": 16
+            },
+            "end": {
+              "line": 265,
+              "character": 20
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "MatcherFunc",
+        "kind": 5,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 273,
+              "character": 5
+            },
+            "end": {
+              "line": 273,
+              "character": 16
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "MatcherFunc/Match",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 276,
+              "character": 21
+            },
+            "end": {
+              "line": 276,
+              "character": 26
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/MatcherFunc",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 281,
+              "character": 16
+            },
+            "end": {
+              "line": 281,
+              "character": 27
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "methodMatcher/Match",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 290,
+              "character": 23
+            },
+            "end": {
+              "line": 290,
+              "character": 28
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/Methods",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 297,
+              "character": 16
+            },
+            "end": {
+              "line": 297,
+              "character": 23
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/Path",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 325,
+              "character": 16
+            },
+            "end": {
+              "line": 325,
+              "character": 20
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/PathPrefix",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 341,
+              "character": 16
+            },
+            "end": {
+              "line": 341,
+              "character": 26
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/Queries",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 365,
+              "character": 16
+            },
+            "end": {
+              "line": 365,
+              "character": 23
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "schemeMatcher/Match",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 386,
+              "character": 23
+            },
+            "end": {
+              "line": 386,
+              "character": 28
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/Schemes",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 392,
+              "character": 16
+            },
+            "end": {
+              "line": 392,
+              "character": 23
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "BuildVarsFunc",
+        "kind": 5,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 403,
+              "character": 5
+            },
+            "end": {
+              "line": 403,
+              "character": 18
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/BuildVarsFunc",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 407,
+              "character": 16
+            },
+            "end": {
+              "line": 407,
+              "character": 29
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/Subrouter",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 426,
+              "character": 16
+            },
+            "end": {
+              "line": 426,
+              "character": 25
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/URL",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 467,
+              "character": 16
+            },
+            "end": {
+              "line": 467,
+              "character": 19
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/URLHost",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 501,
+              "character": 16
+            },
+            "end": {
+              "line": 501,
+              "character": 23
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/URLPath",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 525,
+              "character": 16
+            },
+            "end": {
+              "line": 525,
+              "character": 23
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/GetPathTemplate",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 550,
+              "character": 16
+            },
+            "end": {
+              "line": 550,
+              "character": 31
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Route/GetHostTemplate",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 565,
+              "character": 16
+            },
+            "end": {
+              "line": 565,
+              "character": 31
+            }
+          }
+        },
+        "containerName": "mux"
       }
     ],
     "jsonrpc": "2.0"

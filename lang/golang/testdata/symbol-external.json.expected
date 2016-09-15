@@ -159,6 +159,24 @@
         "containerName": "net/http"
       },
       {
+        "name": "HandlerFunc",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
         "name": "Header/Set",
         "kind": 0,
         "location": {
@@ -196,6 +214,42 @@
       },
       {
         "name": "Request",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "Request/Header",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/http"
+      },
+      {
+        "name": "Request/Method",
         "kind": 0,
         "location": {
           "uri": "",
@@ -303,7 +357,79 @@
         "containerName": "net/http"
       },
       {
+        "name": "",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/url"
+      },
+      {
+        "name": "Host",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/url"
+      },
+      {
+        "name": "URL",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/url"
+      },
+      {
         "name": "URL/Path",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "net/url"
+      },
+      {
+        "name": "URL/Scheme",
         "kind": 0,
         "location": {
           "uri": "",
@@ -445,6 +571,78 @@
           }
         },
         "containerName": "regexp"
+      },
+      {
+        "name": "",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "strings"
+      },
+      {
+        "name": "ToLower",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "strings"
+      },
+      {
+        "name": "ToUpper",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "strings"
+      },
+      {
+        "name": "TrimRight",
+        "kind": 0,
+        "location": {
+          "uri": "",
+          "range": {
+            "start": {
+              "line": 0,
+              "character": 0
+            },
+            "end": {
+              "line": 0,
+              "character": 0
+            }
+          }
+        },
+        "containerName": "strings"
       }
     ],
     "jsonrpc": "2.0"

@@ -1,0 +1,31 @@
+[
+  {
+    "id": 0,
+    "jsonrpc": "2.0",
+    "method": "initialize",
+    "params": {
+      "rootPath": "testdata",
+      "capabilities": {}
+    }
+  },
+  {
+    "id": 1,
+    "jsonrpc": "2.0",
+    "method": "textDocument/hover",
+    "params": {
+      "textDocument": {
+        "uri": "gopath/src/mux/route.go"
+      },
+      "position": {
+        "line": 199,
+        "character": 27
+      }
+    }
+  },
+  {
+    "id": 2,
+    "jsonrpc": "2.0",
+    "method": "shutdown",
+    "params": null
+  }
+]

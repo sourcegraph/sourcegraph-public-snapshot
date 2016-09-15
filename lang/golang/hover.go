@@ -65,7 +65,11 @@ func (h *Handler) handleHover(ctx context.Context, req *jsonrpc2.Request, params
 		return nil, err
 	}
 
-	ms := []lsp.MarkedString{{Language: "go", Value: def.Type.Decl}}
+	title := def.Type.Decl
+	if title == "" {
+		title = def.Type.Name
+	}
+	ms := []lsp.MarkedString{{Language: "go", Value: title}}
 	if docstring != "" {
 		var htmlBuf bytes.Buffer
 		doc.ToHTML(&htmlBuf, docstring, nil)
