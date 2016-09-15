@@ -234,11 +234,6 @@ export class Editor extends React.Component<Props, State> {
 
 	_addClickHandler(): void {
 		this._editor.onMouseDown(({target, event}) => {
-			if (event.ctrlKey) {
-				this._mouseDownPosition = null;
-				this._mouseDownIsRightButton = false;
-				return;
-			}
 			if (target.type === monaco.editor.MouseTargetType.UNKNOWN) {
 				return;
 			}
@@ -251,7 +246,7 @@ export class Editor extends React.Component<Props, State> {
 			this._mouseDownOnIdent = target.element.className.indexOf("identifier") !== -1;
 		});
 
-		this._editor.onMouseUp(({target}) => {
+		this._editor.onMouseUp(({event, target}) => {
 			if (!this._mouseDownPosition || !target.position || !target.position.equals(this._mouseDownPosition.position) || this._mouseDownIsRightButton) {
 				return;
 			}
@@ -275,10 +270,14 @@ export class Editor extends React.Component<Props, State> {
 						return;
 					}
 
-					// TODO(monaco): If you have selected a line and then click on something that causes
-					// you to jump to that line, it deselects the line because the Blob props do not change
-					// (because the URL #L123 is unchanged). It should reselect and rescroll to the line.
-					this.context.router.push(resp.Path);
+					if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey || !event.leftButton) {
+						global.window.open(resp.Path, "_blank");
+					} else {
+						// TODO(monaco): If you have selected a line and then click on something that causes
+						// you to jump to that line, it deselects the line because the Blob props do not change
+						// (because the URL #L123 is unchanged). It should reselect and rescroll to the line.
+						this.context.router.push(resp.Path);
+					}
 				});
 			}
 		});
