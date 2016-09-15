@@ -148,38 +148,51 @@ func (s *search) SearchRepos(ctx context.Context, op *sourcegraph.SearchReposOp)
 		results.Repos = append(results.Repos, r.Repo)
 	}
 
-	if wantGHResults := goalResults - len(results.Repos); wantGHResults > 0 {
-		switch e := strings.Split(query, "/"); {
-		case len(e) == 2 && e[0] != "github.com": // "user/repo" case.
-			query = "user:" + e[0] + " " + e[1]
-		case len(e) == 2 && e[0] == "github.com": // "github.com/user" case.
-			query = "user:" + e[1] + " "
-		case len(e) == 3 && e[0] == "github.com": // "github.com/user/repo" case.
-			query = "user:" + e[1] + " " + e[2]
-		}
-
-		query += " in:name" // Filter to search only within names of repositories.
-
-		// TODO: Start by using UnauthedClient. Next step is to move to a per-user
-		//       authed client. We don't have one available in context now, it requires
-		//       adding some plumbing (similar to what ext/github package does, but that's
-		//       for repo access only). This will be done in a future change.
-		gh := githubutil.Default.UnauthedClient()
-		opt := &github.SearchOptions{
-			ListOptions: github.ListOptions{PerPage: wantGHResults},
-		}
-		if ghRepos, resp, err := gh.Search.Repositories(query, opt); err != nil {
-			log15.Info("Search.SearchRepos: skipping GH search results", "rate", resp.Rate, "err", err)
-		} else {
-			for _, r := range ghRepos.Repositories {
-				results.Repos = append(results.Repos, &sourcegraph.Repo{
-					URI: "github.com/" + *r.FullName,
-				})
-			}
-		}
-	}
+	wantGHResults := goalResults - len(results.Repos)
+	results.Repos = append(results.Repos, searchReposOnGitHub(ctx, query, wantGHResults)...)
 
 	return results, nil
+}
+
+// searchReposOnGitHub tries to return wantResults from GitHub repositories search API.
+// It uses an unauthed GitHub client for now, but that'll change in next commit.
+func searchReposOnGitHub(ctx context.Context, query string, wantResults int) []*sourcegraph.Repo {
+	if wantResults <= 0 {
+		// Easy.
+		return nil
+	}
+
+	// TODO: Start by using UnauthedClient. Next step is to move to a per-user
+	//       authed client. We don't have one available in context now, it requires
+	//       adding some plumbing (similar to what ext/github package does, but that's
+	//       for repo access only). This will be done in a future change.
+	gh := githubutil.Default.UnauthedClient()
+
+	switch e := strings.Split(query, "/"); {
+	case len(e) == 2 && e[0] != "github.com": // "user/repo" case.
+		query = "user:" + e[0] + " " + e[1]
+	case len(e) == 2 && e[0] == "github.com": // "github.com/user" case.
+		query = "user:" + e[1] + " "
+	case len(e) == 3 && e[0] == "github.com": // "github.com/user/repo" case.
+		query = "user:" + e[1] + " " + e[2]
+	}
+
+	query += " in:name" // Filter to search only within names of repositories.
+
+	var results []*sourcegraph.Repo
+	opt := &github.SearchOptions{
+		ListOptions: github.ListOptions{PerPage: wantResults},
+	}
+	if ghRepos, resp, err := gh.Search.Repositories(query, opt); err != nil {
+		log15.Info("searchReposOnGitHub: skipping GH search results", "rate", resp.Rate, "err", err)
+	} else {
+		for _, r := range ghRepos.Repositories {
+			results = append(results, &sourcegraph.Repo{
+				URI: "github.com/" + *r.FullName,
+			})
+		}
+	}
+	return results
 }
 
 var delims = regexp.MustCompile(`[/.:\$\(\)\*\%\#\@\[\]\{\}]+`)
