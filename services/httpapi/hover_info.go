@@ -68,6 +68,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 			},
 			DocHTML: htmlutil.SanitizeForPB(hover.DocHTML),
 		}
+		w.Header().Set("cache-control", "private, max-age=60")
 		return writeJSON(w, resp)
 	} else if universe.Shadow(repo.URI) {
 		go func() {
@@ -104,5 +105,6 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	w.Header().Set("cache-control", "private, max-age=60")
 	return writeJSON(w, resp)
 }
