@@ -14,6 +14,13 @@ import (
 
 const oauthBasicUsername = "x-oauth-basic"
 
+func VaryHeader(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Vary", "Accept, Authorization, Cookie")
+		next.ServeHTTP(w, r)
+	})
+}
+
 // PasswordMiddleware configures API calls to use an access token
 // based on the HTTP Basic credentials in the request (if any).
 func PasswordMiddleware(next http.Handler) http.Handler {
@@ -35,12 +42,6 @@ func PasswordMiddleware(next http.Handler) http.Handler {
 			}
 
 			r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), tok.AccessToken))
-
-			// Vary based on Authorization header if the request is
-			// operating with any level of authorization, so that the
-			// response can't be cached and mixed in with unauthorized
-			// responses in an HTTP cache.
-			w.Header().Add("vary", "Authorization")
 		}
 		next.ServeHTTP(w, r)
 	})
@@ -63,12 +64,6 @@ func OAuth2AccessTokenMiddleware(next http.Handler) http.Handler {
 
 		if tok != "" {
 			r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), tok))
-
-			// Vary based on Authorization header if the request is
-			// operating with any level of authorization, so that the
-			// response can't be cached and mixed in with unauthorized
-			// responses in an HTTP cache.
-			w.Header().Add("vary", "Authorization")
 		}
 		next.ServeHTTP(w, r)
 	})

@@ -104,12 +104,6 @@ func CookieMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if sess, err := readSessionCookie(r); err == nil {
 			r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), sess.AccessToken))
-
-			// Vary based on Authorization header if the request is
-			// operating with any level of authorization, so that the
-			// response can't be cached and mixed in with unauthorized
-			// responses in an HTTP cache.
-			w.Header().Add("vary", "Authorization")
 		} else if err != ErrNoSession {
 			log.Printf("%s %s: Error checking request auth info: %s (will delete session cookie).", r.Method, r.URL.RequestURI(), err)
 			DeleteSessionCookie(w)
