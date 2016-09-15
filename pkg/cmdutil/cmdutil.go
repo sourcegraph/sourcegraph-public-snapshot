@@ -20,6 +20,17 @@ import (
 	"strings"
 )
 
+// ExitError is a wrapper around exec.ExitError, but also records the command
+// run.
+type ExitError struct {
+	*exec.ExitError
+	Args []string
+}
+
+func (e *ExitError) Error() string {
+	return fmt.Sprintf("%v (running '%s'): stderr: %q", e.ExitError, strings.Join(e.Args, " "), string(e.ExitError.Stderr))
+}
+
 // Output is functionally the same as invoking c.Output except it attaches
 // stderr to a buffer and returns nice errors (see package description) in the
 // event of an error.
@@ -27,7 +38,10 @@ func Output(c *exec.Cmd) ([]byte, error) {
 	output, err := c.Output()
 	if err != nil {
 		if e, ok := err.(*exec.ExitError); ok {
-			return nil, fmt.Errorf("%v (running '%s'): stderr: %q", err, strings.Join(c.Args, " "), string(e.Stderr))
+			return nil, &ExitError{
+				ExitError: e,
+				Args:      c.Args,
+			}
 		}
 		return nil, fmt.Errorf("%v (running '%s')", err, strings.Join(c.Args, " "))
 	}

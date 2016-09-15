@@ -35,8 +35,9 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var resp = &struct {
-		Title string
-		Def   *sourcegraph.Def `json:"def"`
+		Title      string
+		Def        *sourcegraph.Def `json:"def"`
+		Unresolved bool
 	}{}
 
 	if universe.Enabled(r.Context(), repo.URI) {
@@ -51,6 +52,13 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
+
+		if hover.Unresolved {
+			resp.Unresolved = true
+			w.Header().Set("cache-control", "private, max-age=60")
+			return writeJSON(w, resp)
+		}
+
 		var defKey graph.DefKey
 		if hover.DefSpec != nil {
 			defKey = graph.DefKey{

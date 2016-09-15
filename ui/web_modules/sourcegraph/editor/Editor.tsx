@@ -276,6 +276,10 @@ export class Editor extends React.Component<Props, State> {
 
 					if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey || !event.leftButton) {
 						global.window.open(resp.Path, "_blank");
+					} else if (resp.Path === "") {
+						// TODO(monaco): Indicate to the user that the action failed, but gracefully. ie we
+						// allowed you to click on something which can't take you anywhere.
+						// https://github.com/sourcegraph/sourcegraph/issues/1111
 					} else {
 						// TODO(monaco): If you have selected a line and then click on something that causes
 						// you to jump to that line, it deselects the line because the Blob props do not change
@@ -290,7 +294,7 @@ export class Editor extends React.Component<Props, State> {
 	provideHover(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<monaco.languages.Hover> {
 		return defAtPosition(model, position).then((resp: HoverInfoResponse) => {
 			let contents: monaco.MarkedString[] = [];
-			if (resp) {
+			if (resp && !resp.Unresolved) {
 				const def = resp.def;
 				if (resp.Title) {
 					contents.push(resp.Title);
@@ -337,6 +341,7 @@ export class Editor extends React.Component<Props, State> {
 interface HoverInfoResponse {
 	def: Def;
 	Title?: string;
+	Unresolved?: boolean;
 }
 
 function defAtPosition(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<HoverInfoResponse> {

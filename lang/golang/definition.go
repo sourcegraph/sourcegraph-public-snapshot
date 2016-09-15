@@ -24,6 +24,12 @@ func (h *Handler) handleDefinition(ctx context.Context, req *jsonrpc2.Request, p
 		return nil, err
 	}
 
+	// No position information, but we didn't fail. Assume this is a valid
+	// place to click, but we are looking at a string literal/comment/etc.
+	if def.Position.Path == "" {
+		return []lsp.Location{}, nil
+	}
+
 	uri, err := h.fileURI(def.Position.Path)
 	if err != nil {
 		return nil, err

@@ -49,7 +49,9 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
-		if defRange.File == "." {
+		if defRange.Empty() {
+			response.Path = ""
+		} else if defRange.File == "." {
 			// Special case the top level directory
 			response.Path = router.Rel.URLToRepoTreeEntry(defRange.Repo, defRange.Commit, "").String()
 		} else {

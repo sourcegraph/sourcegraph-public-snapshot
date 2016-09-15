@@ -1,0 +1,35 @@
+[
+  {
+    "id": 0,
+    "result": {
+      "capabilities": {
+        "hoverProvider": true,
+        "definitionProvider": true,
+        "referencesProvider": true,
+        "workspaceSymbolProvider": true
+      }
+    },
+    "jsonrpc": "2.0"
+  },
+  {
+    "id": 1,
+    "result": {
+      "range": {
+        "start": {
+          "line": 0,
+          "character": 0
+        },
+        "end": {
+          "line": 0,
+          "character": 0
+        }
+      }
+    },
+    "jsonrpc": "2.0"
+  },
+  {
+    "id": 2,
+    "result": null,
+    "jsonrpc": "2.0"
+  }
+]

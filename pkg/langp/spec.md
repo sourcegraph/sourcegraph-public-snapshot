@@ -211,20 +211,22 @@ See also: [{Range Object}](#type-range)
 
 ```
 {
-    Contents: [Array of {HoverContent Object}]
-}
-```
+	// Title is a human-readable string of the
+	// definition. Typically this is the type/function signature.
+	Title: "type Router struct",
 
-See also: [{HoverContent Object}](#type-hovercontent)
+	// DocHTML is the docstring for the definition, in the format
+	// 'text/html'.
+	//
+	// Note: You can't assume DocHTML has already been sanitized.
+	DocHTML: string,
 
-## Type: HoverContent
+	// DefSpec is optionally set, and is the DefSpec for the hover.
+	DefSpec: [DefSpec Object],
 
-`{HoverContent Object}` represents a subset of the content for when a user “hovers” over a definition. For example, one HoverContent object may represent the comments of a function, while the another HoverContent object may represent the function signature. In the future we may abuse this field to carry more data, and thus we use “type” instead of “language” like in LSP. In practice at this point, it always maps to a language (Go, Java, etc).
-
-```
-{
-    Type: "Go",
-    Value: "func NewRequest() *Request",
+	// Unresolved is optionally set, and if true indicates that there is
+	// no hover content for this position (eg a comment)
+	Unresolved: false,
 }
 ```
 

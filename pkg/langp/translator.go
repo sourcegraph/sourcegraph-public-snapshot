@@ -202,6 +202,13 @@ func (t *translator) Hover(ctx context.Context, pos *Position) (*Hover, error) {
 		return nil, err
 	}
 
+	// Unresolved
+	if len(respHover.Contents) == 0 {
+		return &Hover{
+			Unresolved: true,
+		}, nil
+	}
+
 	// extract DefSpec if we have the data
 	var defSpec *DefSpec
 	var defInfo struct {

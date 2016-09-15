@@ -10,9 +10,11 @@ import (
 	"io/ioutil"
 	"os/exec"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cmdutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
@@ -36,6 +38,12 @@ func (h *Handler) handleHover(ctx context.Context, req *jsonrpc2.Request, params
 	def, err := godef(ctx, h.goEnv(), h.filePath(params.TextDocument.URI), int(ofs))
 	if err != nil {
 		return nil, err
+	}
+
+	// No position information, but we didn't fail. Assume this is a valid
+	// place to click, but we are looking at a string literal/comment/etc.
+	if def.Position.Path == "" {
+		return &lsp.Hover{}, nil
 	}
 
 	// using def position, find its docs.
@@ -152,10 +160,21 @@ type godefResult struct {
 	} `json:"type"`
 }
 
+// some godef errors are fine:
+// * no identifier found - string literal/comments/etc
+// * no declaration found - struct literal fields. not supporting for now. https://github.com/sourcegraph/sourcegraph/issues/1104
+var godefExpectedStderr = regexp.MustCompile(`(godef: no identifier found|godef: no declaration found for \S+)\n`)
+
 // TODO(unknwon): parse JSON output from godef to have better handling.
 func godef(ctx context.Context, env []string, path string, offset int) (*godefResult, error) {
 	b, err := cmdOutput(ctx, env, exec.Command("godef", "-json", "-t", "-f", path, "-o", strconv.Itoa(offset)))
 	if err != nil {
+		if e, ok := err.(*cmdutil.ExitError); ok && godefExpectedStderr.Match(e.ExitError.Stderr) {
+			// There is nothing to jump to which we expect (eg string
+			// literals, comments). LSP expects us to return an empty
+			// position.
+			return &godefResult{}, nil
+		}
 		return nil, fmt.Errorf("%v: %v", err, string(b))
 	}
 

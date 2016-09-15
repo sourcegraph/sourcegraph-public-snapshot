@@ -92,6 +92,11 @@ func (r Range) LSP() lsp.Range {
 	}
 }
 
+// Empty returns true if the range has no fields set.
+func (r Range) Empty() bool {
+	return r == Range{}
+}
+
 // RepoRev represents a repository at a specific commit.
 type RepoRev struct {
 	// Repo is the repository URI.
@@ -195,6 +200,10 @@ type Hover struct {
 
 	// DefSpec is optionally set, and is the DefSpec for the hover.
 	DefSpec *DefSpec `json:",omitempty"`
+
+	// Unresolved is optionally set, and if true indicates that there is
+	// no hover content for this position (eg a comment)
+	Unresolved bool
 }
 
 func HoverFromLSP(l *lsp.Hover) *Hover {
