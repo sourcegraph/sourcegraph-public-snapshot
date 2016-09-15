@@ -3,12 +3,6 @@ import * as React from "react";
 import { InjectedRouter } from "react-router";
 import * as invariant from "invariant";
 
-import * as Dispatcher from "sourcegraph/Dispatcher";
-
-import * as debounce from "lodash/debounce";
-
-import { lineRange } from "sourcegraph/blob/lineCol";
-
 import { Def } from "sourcegraph/api";
 import { urlToDefInfo } from "sourcegraph/def/routes";
 import { makeRepoRev } from "sourcegraph/repo";
@@ -34,13 +28,16 @@ interface Props {
 
 	startLine?: number;
 	endLine?: number;
+
+	editorRef?: (editor: monaco.editor.IStandaloneCodeEditor | null) => void;
 };
 
 interface State {
 	userManuallyScrolledToLineViaSelection?: number | null;
 }
 
-export class Blob extends React.Component<Props, State> {
+// Editor wraps the Monaco code editor.
+export class Editor extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		siteConfig: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
@@ -58,24 +55,18 @@ export class Blob extends React.Component<Props, State> {
 	_editor: monaco.editor.IStandaloneCodeEditor;
 	_decorationID: string[];
 
+	public _mouseDownOnIdent: boolean = false;
 	private _mouseDownPosition: monaco.editor.IMouseTarget | null = null;
-	private _mouseDownOnIdent: boolean = false;
 	private _mouseDownIsRightButton: boolean = false;
 
 	constructor(props: Props) {
 		super(props);
-		this._onKeyDownForFindInPage = this._onKeyDownForFindInPage.bind(this);
-		this._onResize = debounce(this._onResize.bind(this), 300, { leading: true, trailing: true });
 		this._hoverProvided = [];
 		this._toDispose = [];
 		this._decorationID = [];
-		this._onSelectionChange = debounce(this._onSelectionChange.bind(this), 100);
 	}
 
 	componentDidMount(): void {
-		global.document.addEventListener("keydown", this._onKeyDownForFindInPage);
-		global.document.addEventListener("resize", this._onResize);
-
 		if ((global as any).require) {
 			this._loaderReady();
 		} else {
@@ -88,12 +79,12 @@ export class Blob extends React.Component<Props, State> {
 	}
 
 	componentWillUnmount(): void {
-		global.document.removeEventListener("keydown", this._onKeyDownForFindInPage);
-		global.document.removeEventListener("resize", this._onResize);
-
 		this._toDispose.forEach(disposable => {
 			disposable.dispose();
 		});
+		if (this.props.editorRef) {
+			this.props.editorRef(null);
+		}
 	}
 
 	componentWillReceiveProps(nextProps: Props): void {
@@ -126,7 +117,9 @@ export class Blob extends React.Component<Props, State> {
 
 		this._editorPropsChanged(null, this.props);
 
-		this._editor.onDidChangeCursorSelection(this._onSelectionChange);
+		if (this.props.editorRef) {
+			this.props.editorRef(this._editor);
+		}
 
 		this._addClickHandler();
 
@@ -203,17 +196,15 @@ export class Blob extends React.Component<Props, State> {
 		}
 	}
 
-	_onKeyDownForFindInPage(e: KeyboardEvent): void {
-		const mac = navigator.userAgent.indexOf("Macintosh") >= 0;
-		const ctrl = mac ? e.metaKey : e.ctrlKey;
-		const FKey = 70;
-		if (e.keyCode === FKey && ctrl) {
-			if (this._editor) {
-				e.preventDefault();
-				(document.getElementsByClassName("inputarea")[0] as any).focus();
-				this._editor.trigger("keyboard", "actions.find", {});
-			}
-		}
+	_highlightLines(startLine: number, endLine?: number): void {
+		endLine = typeof endLine === "number" ? endLine : startLine;
+		const range = new monaco.Range(
+			startLine,
+			this._editor.getModel().getLineMinColumn(startLine),
+			endLine,
+			this._editor.getModel().getLineMaxColumn(endLine),
+		);
+		this._editor.setSelection(range);
 	}
 
 	_viewAllReferences(editor: monaco.editor.ICommonCodeEditor): monaco.Promise<void> {
@@ -267,14 +258,6 @@ export class Blob extends React.Component<Props, State> {
 			const saved = this._mouseDownPosition;
 			const ident = saved.element.className.indexOf("identifier") > 0;
 			if (saved.position && ident) {
-				const pos = {
-					repo: this.props.repo,
-					commit: this.props.rev,
-					file: this.props.path,
-					line: target.position.lineNumber - 1,
-					character: target.position.column - 1,
-				};
-
 				EventLogger.logEventForCategory(
 					AnalyticsConstants.CATEGORY_DEF,
 					AnalyticsConstants.ACTION_CLICK,
@@ -340,55 +323,6 @@ export class Blob extends React.Component<Props, State> {
 				range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
 				contents: contents,
 			};
-		});
-	}
-
-	_highlightLines(startLine: number, endLine?: number): void {
-		endLine = typeof endLine === "number" ? endLine : startLine;
-		const range = new monaco.Range(
-			startLine,
-			this._editor.getModel().getLineMinColumn(startLine),
-			endLine,
-			this._editor.getModel().getLineMaxColumn(endLine),
-		);
-		this._editor.setSelection(range);
-	}
-
-	_onResize(e: Event): void {
-		if (this._editor) {
-			this._editor.layout();
-		}
-	}
-
-	_onSelectionChange(e: monaco.editor.ICursorSelectionChangedEvent): void {
-		// this is here because the api calls are coming from the find command or something else we don't want to capture
-		if (e.source === "api") {
-			return;
-		}
-
-		const start = e.selection.startLineNumber;
-		let end = e.selection.endLineNumber;
-		if (e.selection.endColumn === 1 && end === start + 1) {
-			end -= 1; // if the cursor on the last line doesn't highlight anything, ignore line
-		}
-		const path = urlToBlob(this.props.repo, this.props.rev, this.props.path);
-
-		if (e.selection.isEmpty()) {
-			if (this._mouseDownOnIdent) {
-				// Click handler will trigger jump-to-def.
-				return;
-			}
-			this.setState({ userManuallyScrolledToLineViaSelection: null}, () => {
-				this.context.router.replace(path);
-			});
-			return;
-		}
-
-		// Record that the user manually scrolled to this line so that the props change
-		// (due to changing the URL hash) doesn't trigger a jerky duplicate scroll to
-		// the same line.
-		this.setState({ userManuallyScrolledToLineViaSelection: start }, () => {
-			this.context.router.replace(`${path}#L${lineRange(start, end)}`);
 		});
 	}
 

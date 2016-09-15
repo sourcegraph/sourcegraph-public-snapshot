@@ -11,6 +11,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import {GitHubLogo} from "sourcegraph/components/symbols";
 import {EventLogger} from "sourcegraph/util/EventLogger";
+import {EditorDemo} from "sourcegraph/dashboard/EditorDemo";
 
 interface Props {
 	location?: any;
@@ -64,8 +65,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 	}
 
 	_exampleProps(): JSX.Element | null {
-		// TODO(monaco): show interactive code sample
-		return null;
+		return <EditorDemo repo="github.com/gorilla/mux" rev="master" path="mux.go" startLine={211} />;
 	}
 
 	render(): JSX.Element | null {
