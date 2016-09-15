@@ -10,7 +10,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 
-	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -33,15 +32,6 @@ func init() {
 		log.Fatal(err)
 	}
 	identifyC.Aliases = []string{"id"}
-
-	_, err = authGroup.AddCommand("cookie",
-		"generate an app cookie for a user",
-		"Generate a user's app session cookie for debugging purposes.",
-		&authCookieCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	_, err = authGroup.AddCommand("jwt",
 		"decode a JWT",
@@ -70,27 +60,6 @@ func (c *authIdentifyCmd) Execute(args []string) error {
 		fmt.Printf("%s (%d)\n", authInfo.Login, authInfo.UID)
 	}
 
-	return nil
-}
-
-type authCookieCmd struct {
-	AccessToken string `short:"t" long:"access-token" description:"access token (OAuth2)"`
-}
-
-func (c *authCookieCmd) Execute(args []string) error {
-	fmt.Fprintln(os.Stderr, "// Auth cookie for the given OAuth2 access token:")
-	fmt.Fprintln(os.Stderr)
-
-	// Since there is no context object to derive the isSecure flag from, isSecure
-	// is arbitrarilly set to false. This is of no consequence since this field isn't used
-	// anyway.
-	sess, err := appauth.NewSessionCookie(appauth.Session{AccessToken: c.AccessToken}, false)
-	if err != nil {
-		return err
-	}
-	fmt.Println("// Execute the following in a JavaScript console on the host's web app:")
-	fmt.Fprintln(os.Stderr)
-	fmt.Printf("document.cookie = '%s=%s; path=%s';\n", sess.Name, sess.Value, sess.Path)
 	return nil
 }
 
