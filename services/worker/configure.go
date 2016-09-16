@@ -22,7 +22,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	httpapirouter "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker/builder"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.Builder, error) {
@@ -206,22 +205,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.
 // getContainerAppURL gets the Sourcegraph server's app URL from the
 // POV of the Docker containers.
 func getAppURL(ctx context.Context) (*url.URL, error) {
-	if conf.AppURL != nil {
-		return conf.AppURL, nil
-	}
-
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get the app URL from the POV of the Docker containers.
-	serverConf, err := cl.Meta.Config(ctx, &pbtypes.Void{})
-	if err != nil {
-		return nil, err
-	}
-
-	return url.Parse(serverConf.AppURL)
+	return conf.AppURL, nil
 }
 
 // getSrclibImportURL constructs the srclib import URL to POST srclib

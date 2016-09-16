@@ -299,7 +299,7 @@ func (c *Client) do(ctx context.Context, cl *langClient, repo, endpoint string, 
 	}
 
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", auth.AuthorizationHeader(ctx))
+	req.Header.Add("Authorization", auth.AuthorizationHeaderWithAccessToken(ctx))
 
 	operationName := fmt.Sprintf("LP Client: POST %s", cl.endpointTo(repo, endpoint))
 	var span opentracing.Span

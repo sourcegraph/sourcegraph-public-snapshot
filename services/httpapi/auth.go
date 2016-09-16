@@ -12,8 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -95,7 +94,7 @@ func serveLogin(w http.ResponseWriter, r *http.Request) error {
 	}
 	defer r.Body.Close()
 
-	return finishLoginOrSignup(r.Context(), cl, w, loginForm.Login, loginForm.Password)
+	return finishLoginOrSignup(r.Context(), cl, w, r, loginForm.Login, loginForm.Password)
 }
 
 func serveSignup(w http.ResponseWriter, r *http.Request) error {
@@ -114,10 +113,10 @@ func serveSignup(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return finishLoginOrSignup(r.Context(), cl, w, signupForm.Login, signupForm.Password)
+	return finishLoginOrSignup(r.Context(), cl, w, r, signupForm.Login, signupForm.Password)
 }
 
-func finishLoginOrSignup(ctx context.Context, cl *sourcegraph.Client, w http.ResponseWriter, login, password string) error {
+func finishLoginOrSignup(ctx context.Context, cl *sourcegraph.Client, w http.ResponseWriter, r *http.Request, login, password string) error {
 	// Get the newly created user's API key to authenticate future requests.
 	tok, err := cl.Auth.GetAccessToken(ctx, &sourcegraph.AccessTokenRequest{
 		AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
@@ -128,11 +127,13 @@ func finishLoginOrSignup(ctx context.Context, cl *sourcegraph.Client, w http.Res
 		return err
 	}
 
-	// Authenticate future requests.
-	ctx = sourcegraph.WithAccessToken(ctx, tok.AccessToken)
+	authInfo, err := cl.Auth.Identify(sourcegraph.WithAccessToken(ctx, tok.AccessToken), &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
 
 	// Authenticate as newly created user.
-	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: tok.AccessToken}, conf.AppURL.Scheme == "https"); err != nil {
+	if err := auth.StartNewSession(w, r, authInfo.UID); err != nil {
 		return err
 	}
 

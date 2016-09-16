@@ -18,12 +18,12 @@ import (
 	"golang.org/x/oauth2/github"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/canonicalurl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/returnto"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/schemautil"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
@@ -211,8 +211,7 @@ func linkAccountWithGitHub(w http.ResponseWriter, r *http.Request, cl *sourcegra
 	}
 
 	// Write cookie.
-	token := sourcegraph.AccessTokenFromContext(r.Context())
-	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: token}, conf.AppURL.Scheme == "https"); err != nil {
+	if err := auth.StartNewSession(w, r, sgUID); err != nil {
 		return err
 	}
 

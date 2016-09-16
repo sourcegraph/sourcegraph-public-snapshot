@@ -20,18 +20,19 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
+	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 )
 
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 type JSContext struct {
 	AppURL            string                     `json:"appURL"`
-	LegacyAccessToken string                     `json:"accessToken"` // used by Chrome Extension
+	LegacyAccessToken string                     `json:"accessToken"` // Legacy support for Chrome extension.
 	XHRHeaders        map[string]string          `json:"xhrHeaders"`
 	UserAgentIsBot    bool                       `json:"userAgentIsBot"`
 	AssetsRoot        string                     `json:"assetsRoot"`
@@ -50,7 +51,10 @@ func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User)
 	cl := handlerutil.Client(req)
 
 	headers := make(map[string]string)
-	headers["Authorization"] = auth.AuthorizationHeader(ctx)
+	sessionCookie := auth.SessionCookie(req)
+	if sessionCookie != "" {
+		headers["Authorization"] = httpapiauth.AuthorizationHeaderWithSessionCookie(sessionCookie)
+	}
 
 	if span := opentracing.SpanFromContext(ctx); span != nil {
 		if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, opentracing.TextMapCarrier(headers)); err != nil {
@@ -94,7 +98,7 @@ func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User)
 
 	return JSContext{
 		AppURL:            conf.AppURL.String(),
-		LegacyAccessToken: sourcegraph.AccessTokenFromContext(ctx),
+		LegacyAccessToken: sessionCookie, // Legacy support for Chrome extension.
 		XHRHeaders:        headers,
 		UserAgentIsBot:    isBot(eventsutil.UserAgentFromContext(ctx)),
 		AssetsRoot:        assets.URL("/").String(),

@@ -6,11 +6,11 @@ import (
 	"net/http"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
-	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
@@ -29,8 +29,10 @@ func NewHandler(r *router.Router) http.Handler {
 		r = router.New(nil)
 	}
 
+	auth.InitSessionStore(conf.AppURL.Scheme == "https")
+
 	var mw []handlerutil.Middleware
-	mw = append(mw, httpapiauth.AuthorizationMiddleware, appauth.CookieMiddleware)
+	mw = append(mw, httpapiauth.AuthorizationMiddleware, auth.CookieMiddleware)
 	mw = append(mw, eventsutil.AgentMiddleware)
 	mw = append(mw, internal.Middleware...)
 
@@ -91,7 +93,7 @@ func tmplReloadMiddleware(next http.Handler) http.Handler {
 }
 
 func serveLogout(w http.ResponseWriter, r *http.Request) error {
-	appauth.DeleteSessionCookie(w)
+	auth.DeleteSession(w, r)
 	http.Redirect(w, r, "/", http.StatusFound)
 	return nil
 }
