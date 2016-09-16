@@ -133,6 +133,7 @@ class EventLoggerClass {
 	_updateUser(): void {
 		const user = context.user;
 		const emails = context.emails && context.emails.EmailAddrs || null;
+
 		const primaryEmail = (emails && emails.filter(e => e.Primary).map(e => e.Email)[0]) || null;
 
 		this._updateUserForAmplitudeCookies();
@@ -253,7 +254,7 @@ class EventLoggerClass {
 	// Use logViewEvent as the default way to log view events for Amplitude and GA
 	// location is the URL, page is the path.
 	logViewEvent(title: string, page: string, eventProperties: any): void {
-		if (this.userAgentIsBot || !page) {
+		if (context.userAgentIsBot || !page) {
 			return;
 		}
 		if (this._telligent) {
@@ -269,7 +270,7 @@ class EventLoggerClass {
 	// Optional fields: eventProperties
 	// Example Call: logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SUCCESS, "SignupCompletion", AnalyticsConstants.PAGE_HOME, {signup_channel: GitHub})
 	logEventForCategory(eventCategory: string, eventAction: string, eventLabel: string, eventProperties?: any): void {
-		if (this.userAgentIsBot || !eventLabel) {
+		if (context.userAgentIsBot || !eventLabel) {
 			return;
 		}
 		if (this._telligent) {
@@ -300,7 +301,7 @@ class EventLoggerClass {
 	// An example of this would be the event that gets fired following a view event on a Repo that 404s. We fire a view event and then a 404 event.
 	// By adding a non-interactive flag to the 404 event the page will correctly calculate bounce rate even with the additional event fired.
 	logNonInteractionEventForCategory(eventCategory: string, eventAction: string, eventLabel: string, eventProperties?: any): void {
-		if (this.userAgentIsBot || !eventLabel) {
+		if (context.userAgentIsBot || !eventLabel) {
 			return;
 		}
 
@@ -397,6 +398,8 @@ class EventLoggerClass {
 				}
 				break;
 		}
+
+		this._updateUser();
 	}
 }
 
