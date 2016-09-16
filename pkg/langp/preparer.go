@@ -2,6 +2,7 @@ package langp
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -68,16 +69,26 @@ func NewPreparer(opts *PreparerOpts) *Preparer {
 		panic("NewPreparer: SrcEndpoint is not set!")
 	}
 
+	// Disable TLS certification verification because https://sourcegraph-frontend
+	// is not valid for our *.sourcegraph.com certificate, and we strictly enforce
+	// HTTPS via a redirect.
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 	return &Preparer{
 		PreparerOpts:   opts,
 		preparingRepos: newPending(),
 		preparingDeps:  newPending(),
+		srcClient: &http.Client{
+			Transport: tr,
+		},
 	}
 }
 
 type Preparer struct {
 	*PreparerOpts
 	preparingRepos, preparingDeps *pending
+	srcClient                     *http.Client
 }
 
 // pathToWorkspace returns an absolute path to the workspace for the given
@@ -247,7 +258,7 @@ func (p *Preparer) checkAccess(ctx context.Context, repo string) (err error) {
 		return fmt.Errorf("checkAccess: %v", err)
 	}
 	req.Header.Set("Authorization", auth)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := p.srcClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("checkAccess: %v", err)
 	}
