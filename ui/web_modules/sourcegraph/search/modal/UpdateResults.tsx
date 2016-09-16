@@ -16,8 +16,6 @@ export function updateCategory(category: Category, repo: string, commitID: strin
 		return;
 	} else if (category === Category.file) {
 		callback(fileSearch(repo, commitID, query));
-	} else if (category === Category.definition) {
-		// updateDefs(repo, callback);
 		return;
 	}
 }

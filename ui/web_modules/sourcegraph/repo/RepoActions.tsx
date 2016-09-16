@@ -12,6 +12,7 @@ export type Action =
 	WantRepos | ReposFetched |
 	WantResolveRepo | RepoResolved |
 	WantResolveRev | ResolvedRev |
+	WantSymbols | FetchedSymbols |
 	WantTags | FetchedTags;
 
 export class WantRepo {
@@ -195,6 +196,40 @@ export class FetchedBranches {
 	constructor(repo: string, branches: Branch[]) {
 		this.repo = repo;
 		this.branches = branches;
+	}
+}
+
+export interface SymbolInfo { // TODO(beyang): move this sourcegraph.proto and auto-gen
+	Name: string;
+	Kind: number;
+	Location: {URI: string, Range: { Start: { Line: number, Character: number }, End: { Line: number, Character: number} } },
+	ContainerName: string;
+}
+
+export class WantSymbols {
+	repo: string;
+	rev: string;
+	query: string;
+
+	constructor(repo: string, rev: string, query: string) {
+		this.repo = repo;
+		this.rev = rev;
+		this.query = query;
+	}
+}
+
+export class FetchedSymbols {
+	repo: string;
+	rev: string;
+	query: string;
+
+	symbols: SymbolInfo[];
+
+	constructor(repo: string, rev: string, query: string, symbols: SymbolInfo[]) {
+		this.repo = repo;
+		this.rev = rev;
+		this.query = query;
+		this.symbols = symbols;
 	}
 }
 

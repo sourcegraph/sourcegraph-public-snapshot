@@ -1,9 +1,13 @@
 import * as React from "react";
 import {InjectedRouter} from "react-router";
 
+import {urlToBlobLine} from "sourcegraph/blob/routes";
 import {SearchComponent} from "sourcegraph/search/modal/SearchComponent";
 import {RepoRev} from "sourcegraph/search/modal/SearchModal";
 import {updateCategory} from "sourcegraph/search/modal/UpdateResults";
+import {RepoStore} from "sourcegraph/repo/RepoStore";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
 
 const CategoryCount = 3;
 export const enum Category {
@@ -116,6 +120,10 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 		};
 	}
 
+	stores(): Store<any>[] {
+		return [RepoStore];
+	}
+
 	componentWillMount(): void {
 		document.body.addEventListener("keydown", this.navigationKeys);
 	}
@@ -146,6 +154,8 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 	}
 
 	updateResults(): void {
+		Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.repo, this.props.commitID, this.state.input));
+
 		for (let i: Category = 0; i < CategoryCount; i++) {
 			updateCategory(i, this.props.repo, this.props.commitID, this.state.input, resultList => {
 				const results = this.state.results;
@@ -230,6 +240,24 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 	}
 
 	render(): JSX.Element {
+		const symbols = RepoStore.symbols.list(this.props.repo, this.props.commitID, this.state.input);
+		if (symbols && this.state.results) {
+			let symbolResults = [];
+			for (let i = 0; i < symbols.length; i++) {
+				const path = symbols[i].location.uri;
+				const line = symbols[i].location.range.start.line;
+				const idx = symbols[i].name.toLowerCase().indexOf(this.state.input.toLowerCase());
+				symbolResults.push({
+					title: symbols[i].name,
+					description: "",
+					index: idx,
+					length: this.state.input.length,
+					URLPath: urlToBlobLine(this.props.repo, this.props.commitID, path, line+1),
+				});
+			}
+			this.state.results.set(Category.definition, symbolResults);
+		}
+
 		const data = {
 			input: this.state.input,
 			results: this.state.results,
