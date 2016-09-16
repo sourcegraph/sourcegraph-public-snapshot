@@ -205,9 +205,12 @@ func (p *Preparer) PrepareTimeout(ctx context.Context, repo, commit string, time
 		return "", err
 	}
 
-	ctx, err = p.fetchGitHubToken(ctx, repo)
-	if err != nil {
-		return "", err
+	if ctx2, err := p.fetchGitHubToken(ctx, repo); err != nil {
+		// Ignore errors, rather be hopeful and just let it fail at
+		// the actual clone stage.
+		log.Println("WARNING: fetchGitHubToken failed: ", err)
+	} else {
+		ctx = ctx2
 	}
 
 	var span opentracing.Span
@@ -311,7 +314,18 @@ func (p *Preparer) fetchGitHubToken(ctx context.Context, repo string) (newCtx co
 	if err != nil {
 		return nil, fmt.Errorf("fetchGitHubToken: %v", err)
 	}
-	if resp.StatusCode != 200 {
+	switch resp.StatusCode {
+	case 200:
+		break
+	case 401, 404:
+		// These are expected non 200 cases. We don't treat as error
+		// to keep LightStep tagged errors high signal.
+		//
+		// * 401 happens for unauthed users
+		// * 404 happens for users who have not logged into github
+		span.LogEvent(resp.Status)
+		return ctx, nil
+	default:
 		if len(body) > 1024 {
 			body = body[:1024]
 		}
