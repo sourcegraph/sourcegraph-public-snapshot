@@ -7,7 +7,7 @@ import Helmet from "react-helmet";
 import * as debounce from "lodash/debounce";
 import { Editor } from "sourcegraph/editor/Editor";
 import "sourcegraph/blob/BlobBackend";
-import { lineRange } from "sourcegraph/blob/lineCol";
+import { lineRange, lineCol } from "sourcegraph/blob/lineCol";
 import * as Style from "sourcegraph/blob/styles/Blob.css";
 import { trimRepo } from "sourcegraph/repo";
 import { httpStatusCode } from "sourcegraph/util/httpStatusCode";
@@ -27,10 +27,8 @@ interface Props {
 	location: Location;
 }
 
-type State = any;
-
 // BlobMain wraps the Editor component for the primary code view.
-export class BlobMain extends React.Component<Props, State> {
+export class BlobMain extends React.Component<Props, any> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -47,7 +45,7 @@ export class BlobMain extends React.Component<Props, State> {
 		this._setEditor = this._setEditor.bind(this);
 		this._onKeyDownForFindInPage = this._onKeyDownForFindInPage.bind(this);
 		this._onResize = debounce(this._onResize.bind(this), 300, { leading: true, trailing: true });
-		this._onSelectionChange = debounce(this._onSelectionChange.bind(this), 100);
+		this._onSelectionChange = debounce(this._onSelectionChange.bind(this), 200, {leading: false, trailing: true});
 	}
 
 	componentDidMount(): void {
@@ -91,35 +89,38 @@ export class BlobMain extends React.Component<Props, State> {
 	}
 
 	_onSelectionChange(e: monaco.editor.ICursorSelectionChangedEvent): void {
-		// this is here because the api calls are coming from the find command or something else we don't want to capture
+		// Ignore if coming from "Find in file".
 		if (e.source === "api") {
 			return;
 		}
-
-		const start = e.selection.startLineNumber;
-		let end = e.selection.endLineNumber;
-		if (e.selection.endColumn === 1 && end === start + 1) {
-			end -= 1; // if the cursor on the last line doesn't highlight anything, ignore line
+		if (!this._editor) {
+			return;
 		}
-		const path = urlToBlob(this.props.repo, this.props.rev, this.props.path);
-
-		if (e.selection.isEmpty()) {
-			if (this._editorComponent && this._editorComponent._mouseDownOnIdent) {
-				// Click handler will trigger jump-to-def.
-				return;
-			}
-			this.setState({ userManuallyScrolledToLineViaSelection: null}, () => {
-				this.context.router.replace(path);
-			});
+		if (this._editorComponent && this._editorComponent._mouseDownOnIdent) {
+			// Let jump-to-def handle the navigation.
 			return;
 		}
 
-		// Record that the user manually scrolled to this line so that the props change
-		// (due to changing the URL hash) doesn't trigger a jerky duplicate scroll to
-		// the same line.
-		this.setState({ userManuallyScrolledToLineViaSelection: start }, () => {
-			this.context.router.replace(`${path}#L${lineRange(start, end)}`);
-		});
+		const startLine = e.selection.startLineNumber;
+		let startCol: number | undefined = e.selection.startColumn;
+		const endLine = e.selection.endLineNumber;
+		let endCol: number | undefined = e.selection.endColumn;
+
+		const m = this._editor.getModel();
+		if (m.getLineMinColumn(startLine) === startCol) {
+			startCol = undefined;
+		}
+		if (m.getLineMaxColumn(endLine) === endCol) {
+			endCol = undefined;
+		}
+
+		let path = urlToBlob(this.props.repo, this.props.rev, this.props.path);
+		if (e.selection.isEmpty() || (startLine === 0 && endLine === 0)) {
+			this.context.router.replace(path);
+		} else if (this.props.startLine !== startLine || this.props.startCol !== startCol || this.props.endLine !== endLine || this.props.endCol !== endCol) {
+			path = `${path}#L${lineRange(lineCol(startLine, startCol), lineCol(endLine, endCol))}`;
+			this.context.router.replace(path);
+		}
 	}
 
 	render(): JSX.Element | null {

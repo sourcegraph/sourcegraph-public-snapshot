@@ -7,6 +7,7 @@ import { Def } from "sourcegraph/api";
 import { urlToDefInfo } from "sourcegraph/def/routes";
 import { makeRepoRev } from "sourcegraph/repo";
 import { urlToBlob, parseBlobURL } from "sourcegraph/blob/routes";
+import {parseLineRange, lineRange, lineCol} from "sourcegraph/blob/lineCol";
 
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
@@ -34,9 +35,7 @@ interface Props {
 	editorRef?: (editor: monaco.editor.IStandaloneCodeEditor | null) => void;
 };
 
-interface State {
-	userManuallyScrolledToLineViaSelection?: number | null;
-}
+type State = any;
 
 // Editor wraps the Monaco code editor.
 export class Editor extends React.Component<Props, State> {
@@ -57,7 +56,7 @@ export class Editor extends React.Component<Props, State> {
 	_editor: monaco.editor.IStandaloneCodeEditor;
 	_decorationID: string[];
 
-	public _mouseDownOnIdent: boolean = false;
+	_mouseDownOnIdent: boolean = false;
 	private _mouseDownPosition: monaco.editor.IMouseTarget | null = null;
 	private _mouseDownIsRightButton: boolean = false;
 
@@ -164,14 +163,20 @@ export class Editor extends React.Component<Props, State> {
 	_editorPropsChanged(prev: Props | null, next: Props): void {
 		if (!prev || prev.repo !== next.repo || prev.rev !== next.rev || prev.path !== next.path || prev.contents !== next.contents) {
 			this._updateModel(next.repo, next.rev, next.path, next.contents);
+			if (typeof next.startLine === "number") {
+				this._editor.revealLineInCenterIfOutsideViewport(next.startLine);
+				this._highlight(next.startLine, next.startCol, next.endLine, next.endCol);
+				this._editor.focus();
+			}
 		}
 		if (!prev || next.startLine !== this.props.startLine || next.endLine !== this.props.endLine) {
-			if (typeof next.startLine === "number") {
-				if (next.startLine !== this.state.userManuallyScrolledToLineViaSelection) {
+			const sel = this._editor.getSelection();
+			if (next.startLine !== sel.startLineNumber && next.startLine !== sel.endLineNumber) {
+				if (typeof next.startLine === "number") {
 					this._editor.revealLineInCenterIfOutsideViewport(next.startLine);
 					this._highlight(next.startLine, next.startCol, next.endLine, next.endCol);
-					this._editor.focus();
 				}
+				this._editor.focus();
 			}
 		}
 	}
@@ -244,13 +249,11 @@ export class Editor extends React.Component<Props, State> {
 
 			this._mouseDownPosition = target;
 			this._mouseDownIsRightButton = event.rightButton;
-
-			// Record if this is a click starting on a clickable thing,
-			// so we know in the onSelectionChange handler to ignore it.
-			this._mouseDownOnIdent = target.element.className.indexOf("identifier") !== -1;
+			this._mouseDownOnIdent = target.element.className.indexOf("identifier") > 0;
 		});
 
 		this._editor.onMouseUp(({event, target}) => {
+			this._mouseDownOnIdent = false;
 			if (!this._mouseDownPosition || !target.position || !target.position.equals(this._mouseDownPosition.position) || this._mouseDownIsRightButton) {
 				return;
 			}
@@ -284,7 +287,22 @@ export class Editor extends React.Component<Props, State> {
 						// TODO(monaco): If you have selected a line and then click on something that causes
 						// you to jump to that line, it deselects the line because the Blob props do not change
 						// (because the URL #L123 is unchanged). It should reselect and rescroll to the line.
-						this.context.router.push(resp.Path);
+						const e = treeEntryFromUri(monaco.Uri.parse(`sourcegraph://${resp.Path}`));
+						const sameFile = e.repo === this.props.repo && e.rev === this.props.rev && e.path === this.props.path;
+
+						if (sameFile && e.range) {
+							// Same file, so just scroll internally. Auto-scroll to new props only occurs
+							// when the repo/rev/path change.
+							this._editor.revealLineInCenterIfOutsideViewport(e.range.startLineNumber);
+							this._highlight(e.range.startLineNumber, e.range.startColumn, e.range.endLineNumber, e.range.endColumn || undefined);
+						}
+						if ((!e.range && this.props.startLine !== undefined) || (e.range && this.props.startLine === undefined) || (e.range && (e.range.startLineNumber !== this.props.startLine || e.range.startColumn !== this.props.startCol || e.range.endLineNumber !== this.props.endLine || e.range.endColumn !== this.props.endCol))) {
+							if (sameFile && !e.range) {
+								this.context.router.replace(resp.Path);
+							} else {
+								this.context.router.push(resp.Path);
+							}
+						}
 					}
 				});
 			}
@@ -368,14 +386,30 @@ function fetchJumpToDef(model: monaco.editor.IReadOnlyModel, position: monaco.Po
 		.catch(err => null);
 }
 
-function uriForTreeEntry(repo: string, rev: string | null, path: string): monaco.Uri {
+function uriForTreeEntry(repo: string, rev: string | null, path: string, range?: monaco.Range): monaco.Uri {
 	return monaco.Uri.from({
 		scheme: "sourcegraph",
 		path: urlToBlob(repo, rev, path),
+		fragment: range ? lineRange(lineCol(range.startLineNumber, range.startColumn), lineCol(range.endLineNumber, range.endColumn)) : undefined,
 	});
 }
 
-function treeEntryFromUri(uri: monaco.Uri): {repo: string, rev: string | null, path: string} {
+function treeEntryFromUri(uri: monaco.Uri): {repo: string, rev: string | null, path: string, range?: monaco.Range} {
 	invariant(uri.scheme === "sourcegraph", `unexpected uri scheme: ${uri}`);
-	return parseBlobURL(uri.path);
+	const u = parseBlobURL(`${uri.path}${uri.fragment ? `#${uri.fragment}` : ""}`);
+
+	let range: monaco.Range | undefined;
+	if (u.hash) {
+		const r = parseLineRange(u.hash);
+		if (r) {
+			range = new monaco.Range(r.startLine, r.startCol || 0, r.endLine, r.endCol || 0);
+		}
+	}
+
+	return {
+		repo: u.repo,
+		rev: u.rev,
+		path: u.path,
+		range,
+	};
 }

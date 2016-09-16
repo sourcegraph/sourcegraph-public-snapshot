@@ -15,6 +15,7 @@ export function lineRange(startLineCol: string | number, endLineCol?: string | n
 }
 
 export function parseLineRange(range: string): {startLine: number, startCol?: number, endLine: number, endCol?: number} | null {
+	range = range.replace(/^(#?L)?/, "");
 	let lineMatch = range.match(/^(\d+)(?:-(\d+))?$/);
 	if (lineMatch) {
 		return {
@@ -22,7 +23,7 @@ export function parseLineRange(range: string): {startLine: number, startCol?: nu
 			endLine: parseInt(lineMatch[2] || lineMatch[1], 10),
 		};
 	}
-	let lineColMatch = range.match(/^(\d+):(\d+)-(\d+):(\d+)$/);
+	let lineColMatch = range.match(/^(\d+)(?::(\d+))?-(\d+)(?::(\d+))?$/);
 	if (lineColMatch) {
 		return {
 			startLine: parseInt(lineColMatch[1], 10),
