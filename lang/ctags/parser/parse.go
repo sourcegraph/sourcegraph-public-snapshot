@@ -173,6 +173,10 @@ func findCmdToDefLinePrefix(findCmd string) string {
 var ignoreFiles = []string{".srclib-cache", "node_modules", "vendor", "dist"}
 
 func Parse(ctx context.Context, rootDir string, files []string) (*TagsParser, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "parse ctags file")
+	span.SetTag("rootDir", rootDir)
+	defer span.Finish()
+
 	tagsFilename := path.Join(rootDir, "tags")
 
 	// Reuse an existing ctags file if we have it, otherwise generate one.
@@ -205,6 +209,10 @@ func Parse(ctx context.Context, rootDir string, files []string) (*TagsParser, er
 	if err != nil {
 		return nil, err
 	}
+	fileInfo, err := tagsFile.Stat()
+	if err != nil {
+		return nil, err
+	}
 	defer tagsFile.Close()
 
 	r := bufio.NewReader(tagsFile)
@@ -212,6 +220,7 @@ func Parse(ctx context.Context, rootDir string, files []string) (*TagsParser, er
 	if err != nil {
 		return nil, err
 	}
+	span.SetTag("ctags file size", fileInfo.Size())
 	if err := p.Parse(r); err != nil {
 		return nil, err
 	}

@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 type Lang struct {
@@ -26,8 +27,13 @@ type Config struct {
 }
 
 var ctagsMappings string
+var initMapOnce sync.Once
 
 func init() {
+	initMapOnce.Do(initMappings)
+}
+
+func initMappings() {
 	out, err := exec.Command("ctags", "--list-maps").CombinedOutput()
 	if err != nil {
 		log.Fatal("error initializing ctags mappings: ", err)
