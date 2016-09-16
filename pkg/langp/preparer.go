@@ -2,10 +2,15 @@ package langp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -13,6 +18,10 @@ import (
 )
 
 type PreparerOpts struct {
+	// SrcEndpoint is the host endpoint of the Sourcegraph API, with or without
+	// trailing slash.
+	SrcEndpoint string
+
 	// WorkDir is where workspaces are created by cloning repositories and
 	// dependencies.
 	WorkDir string
@@ -27,7 +36,7 @@ type PreparerOpts struct {
 	//
 	// If an error is returned, it is returned directly to the person who made
 	// the API request which triggered the preperation of the workspace.
-	PrepareRepo func(update bool, workspace, repo, commit string) error
+	PrepareRepo func(ctx context.Context, update bool, workspace, repo, commit string) error
 
 	// PrepareDeps is called when the language processor should prepare the
 	// dependencies for the given workspace/repo/commit.
@@ -42,7 +51,7 @@ type PreparerOpts struct {
 	//
 	// If an error is returned, it is returned directly to the person who made
 	// the API request which triggered the preperation of the workspace.
-	PrepareDeps func(update bool, workspace, repo, commit string) error
+	PrepareDeps func(ctx context.Context, update bool, workspace, repo, commit string) error
 }
 
 // NewPreparer returns a new preparer with the internal fields initialized.
@@ -162,10 +171,15 @@ func (p *Preparer) createWorkspace(repo, commit string) (update bool, err error)
 
 var errTimeout = errors.New("request timed out")
 
+var ErrRepoNotFound = errors.New("repo not found")
+
 // Prepare prepares a new workspace for the given repository and revision.
 //
 // method must be the language processor REST API method which triggered
 // the request (e.g. "prepare" or "external-symbols"). It is used for metrics.
+//
+// Additionally, Prepare returns ErrRepoNotFound if access to the repository is
+// forbidden (based on the authorization present in the context).
 func (p *Preparer) Prepare(ctx context.Context, repo, commit string) (workspace string, err error) {
 	// TODO(slimsag): use a smaller timeout by default and ensure the timeout
 	// error is properly handled by the frontend.
@@ -174,6 +188,16 @@ func (p *Preparer) Prepare(ctx context.Context, repo, commit string) (workspace 
 
 // PrepareTimeout is just like Prepare except it uses a custom timeout.
 func (p *Preparer) PrepareTimeout(ctx context.Context, repo, commit string, timeout time.Duration) (workspace string, err error) {
+	// Check access to the repository.
+	if err := p.checkAccess(ctx, repo); err != nil {
+		return "", err
+	}
+
+	ctx, err = p.fetchGitHubToken(ctx, repo)
+	if err != nil {
+		return "", err
+	}
+
 	var span opentracing.Span
 	span, ctx = opentracing.StartSpanFromContext(ctx, "prepare workspace repo")
 	defer span.Finish()
@@ -189,6 +213,99 @@ func (p *Preparer) PrepareTimeout(ctx context.Context, repo, commit string, time
 		ext.Error.Set(span, true)
 	}
 	return workspace, err
+}
+
+func (p *Preparer) checkAccess(ctx context.Context, repo string) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "checkAccess")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+	}()
+	defer span.Finish()
+	span.SetTag("repo", repo)
+
+	auth := ctx.Value(authorizationKey).(string)
+	if auth == "" {
+		span.SetTag("authorization", "none")
+		return nil
+	}
+
+	target := fmt.Sprintf(p.srcEndpoint()+"/.api/repos/%s", repo)
+	req, err := http.NewRequest("GET", target, nil)
+	if err != nil {
+		return fmt.Errorf("checkAccess: %v", err)
+	}
+	req.Header.Set("Authorization", auth)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("checkAccess: GET %s: %v", target, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		if len(body) > 1024 {
+			body = body[:1024]
+		}
+		span.SetTag("authorization", "forbidden")
+		msg := fmt.Sprintf("access to %q forbidden - GET %s: %v - body %q", repo, target, resp.Status, string(body))
+		span.LogEvent(msg)
+		log.Println("checkAccess:", msg)
+		return ErrRepoNotFound
+	}
+	return nil
+}
+
+func (p *Preparer) fetchGitHubToken(ctx context.Context, repo string) (newCtx context.Context, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "fetchGitHubToken")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+	}()
+	defer span.Finish()
+	span.SetTag("repo", repo)
+
+	auth := ctx.Value(authorizationKey).(string)
+	if auth == "" {
+		span.SetTag("authorization", "none")
+		return ctx, nil
+	}
+
+	target := p.srcEndpoint() + "/.api/github-token"
+	req, err := http.NewRequest("GET", target, nil)
+	if err != nil {
+		return nil, fmt.Errorf("fetchGitHubToken: %v", err)
+	}
+	req.Header.Set("Authorization", auth)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("fetchGitHubToken: %v", err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("fetchGitHubToken: GET %s: %v", target, err)
+	}
+	if resp.StatusCode != 200 {
+		if len(body) > 1024 {
+			body = body[:1024]
+		}
+		return nil, fmt.Errorf("fetchGitHubToken: GET %s: %v - body %q", target, resp.Status, string(body))
+	}
+	var tmp = struct {
+		Token string
+	}{}
+	err = json.Unmarshal(body, &tmp)
+	if err != nil {
+		return nil, fmt.Errorf("Parsing GitHub token: %v", err)
+	}
+	if tmp.Token == "" {
+		return nil, fmt.Errorf("Parsing GitHub token: empty 'token' field")
+	}
+	return context.WithValue(ctx, GitHubTokenKey, tmp.Token), nil
 }
 
 // prepareRepo should not be called outside of Preparer itself.
@@ -291,11 +408,15 @@ func (p *Preparer) prepareDeps(ctx context.Context, update bool, repo, commit st
 func (p *Preparer) tracedPrepareRepo(ctx context.Context, update bool, workspace, repo, commit string) error {
 	span, _ := opentracing.StartSpanFromContext(ctx, "PreparerOpts.PrepareRepo")
 	defer span.Finish()
-	return p.PreparerOpts.PrepareRepo(update, workspace, repo, commit)
+	return p.PreparerOpts.PrepareRepo(ctx, update, workspace, repo, commit)
 }
 
 func (p *Preparer) tracedPrepareDeps(ctx context.Context, update bool, workspace, repo, commit string) error {
 	span, _ := opentracing.StartSpanFromContext(ctx, "PreparerOpts.PrepareDeps")
 	defer span.Finish()
-	return p.PreparerOpts.PrepareDeps(update, workspace, repo, commit)
+	return p.PreparerOpts.PrepareDeps(ctx, update, workspace, repo, commit)
+}
+
+func (p *Preparer) srcEndpoint() string {
+	return strings.TrimSuffix(p.SrcEndpoint, "/")
 }

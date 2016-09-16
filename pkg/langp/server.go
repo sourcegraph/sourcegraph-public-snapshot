@@ -16,7 +16,9 @@ import (
 type contextKey int
 
 const (
-	methodNameKey contextKey = 1
+	methodNameKey    contextKey = 1
+	authorizationKey contextKey = 2
+	GitHubTokenKey   contextKey = 3
 )
 
 // Server represents all of the Language Processor REST API methods that must
@@ -93,6 +95,7 @@ func handler(path string, m handlerFunc) http.Handler {
 			writeResponse(w, http.StatusBadRequest, resp, path, body)
 			return
 		}
+		r = r.WithContext(context.WithValue(r.Context(), authorizationKey, r.Header.Get("Authorization")))
 		r = r.WithContext(opentracing.ContextWithSpan(r.Context(), span))
 		r = r.WithContext(context.WithValue(r.Context(), methodNameKey, path))
 		resp, err := m(r.Context(), body)

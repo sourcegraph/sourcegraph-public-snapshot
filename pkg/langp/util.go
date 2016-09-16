@@ -1,6 +1,8 @@
 package langp
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -95,15 +97,27 @@ func ExpandSGPath(s string) (string, error) {
 	return strings.Replace(s, "$SGPATH", sgpath, -1), nil
 }
 
-// ResolveRepoAlias returns import path and clone URI of given repository URI,
-// it takes special care to sourcegraph main repository.
-func ResolveRepoAlias(repo string) (importPath, cloneURI string) {
+// RepoCloneURL returns a repo clone URL with authentication in it.
+func RepoCloneURL(ctx context.Context, repo string) (cloneURI string) {
+	token := ctx.Value(GitHubTokenKey)
 	// TODO(slimsag): find a way to pass this information from the app instead
 	// of hard-coding it here.
 	if repo == "github.com/sourcegraph/sourcegraph" {
-		return "sourcegraph.com/sourcegraph/sourcegraph", "git@github.com:sourcegraph/sourcegraph"
+		return fmt.Sprintf("https://x-oauth-token:%s@github.com/sourcegraph/sourcegraph", token)
 	}
-	return repo, "https://" + repo
+	if token != "" && strings.HasPrefix(repo, "github.com/") {
+		return fmt.Sprintf("https://x-oauth-token:%s@%s", token, repo)
+	}
+	return "https://" + repo
+}
+
+// ResolveRepoAlias returns import path of the given repository URI, it takes
+// special care to sourcegraph main repository.
+func ResolveRepoAlias(repo string) (importPath string) {
+	if repo == "github.com/sourcegraph/sourcegraph" {
+		return "sourcegraph.com/sourcegraph/sourcegraph"
+	}
+	return repo
 }
 
 // UnresolveRepoAlias performs the opposite action of ResolveRepoAlias.

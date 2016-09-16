@@ -86,7 +86,7 @@ func (t *translator) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*
 
 	// TODO: should probably check server capabilities before invoking symbol,
 	// but good enough for now.
-	importPath, _ := ResolveRepoAlias(defSpec.Repo)
+	importPath := ResolveRepoAlias(defSpec.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
 		Query: "exported " + importPath + "/...",
@@ -296,7 +296,7 @@ func (t *translator) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRef
 
 	// TODO: should probably check server capabilities before invoking symbol,
 	// but good enough for now.
-	importPath, _ := ResolveRepoAlias(r.Repo)
+	importPath := ResolveRepoAlias(r.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
 		Query: "external " + importPath + "/...",
@@ -350,7 +350,7 @@ func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLoc
 	if strings.HasPrefix(defSpec.Unit, defSpec.Repo) {
 		queryType = "defspec-refs-internal"
 	}
-	importPath, _ := ResolveRepoAlias(defSpec.Repo)
+	importPath := ResolveRepoAlias(defSpec.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
 		Query: queryType + " " + importPath + "/...",
@@ -440,7 +440,7 @@ func (t *translator) ExportedSymbols(ctx context.Context, r *RepoRev) (*Exported
 
 	// TODO: should probably check server capabilities before invoking symbol,
 	// but good enough for now.
-	importPath, _ := ResolveRepoAlias(r.Repo)
+	importPath := ResolveRepoAlias(r.Repo)
 	var respSymbol []lsp.SymbolInformation
 	err = t.lspDo(ctx, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific

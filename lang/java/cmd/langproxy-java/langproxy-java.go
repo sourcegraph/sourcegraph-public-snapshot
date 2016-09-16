@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
@@ -17,8 +18,9 @@ var (
 	workDir  = flag.String("workspace", "$SGPATH/workspace/java", "where to create workspace directories")
 )
 
-func prepareRepo(update bool, workspace, repo, commit string) error {
-	_, cloneURI := langp.ResolveRepoAlias(repo)
+func prepareRepo(ctx context.Context, update bool, workspace, repo, commit string) error {
+	cloneURI := langp.RepoCloneURL(ctx, repo)
+	repo = langp.ResolveRepoAlias(repo)
 
 	// Clone the repository.
 	return langp.Clone(update, cloneURI, workspace, commit)
@@ -42,11 +44,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	srcEndpoint := os.Getenv("SRC_ENDPOINT")
+	if srcEndpoint == "" {
+		srcEndpoint = "http://localhost:3080"
+	}
+
 	handler, err := langp.NewProxy(client,
 		langp.NewPreparer(&langp.PreparerOpts{
+			SrcEndpoint: srcEndpoint,
 			WorkDir:     workDir,
 			PrepareRepo: prepareRepo,
-			PrepareDeps: func(update bool, workspace, repo, commit string) error {
+			PrepareDeps: func(ctx context.Context, update bool, workspace, repo, commit string) error {
 				return client.Prepare(context.Background(), &langp.RepoRev{
 					Repo:   repo,
 					Commit: commit,

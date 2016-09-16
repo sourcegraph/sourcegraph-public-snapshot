@@ -2,6 +2,7 @@ package langp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -36,8 +37,8 @@ func TestTranslator(t *testing.T) {
 		Addr: lspMock.Addr,
 		Preparer: NewPreparer(&PreparerOpts{
 			WorkDir:     workDir,
-			PrepareRepo: func(update bool, workspace, repo, commit string) error { return nil },
-			PrepareDeps: func(update bool, workspace, repo, commit string) error { return nil },
+			PrepareRepo: func(ctx context.Context, update bool, workspace, repo, commit string) error { return nil },
+			PrepareDeps: func(ctx context.Context, update bool, workspace, repo, commit string) error { return nil },
 		}),
 		ResolveFile: func(workspace, repo, commit, uri string) (*File, error) {
 			if !strings.HasPrefix(uri, "file:///") {

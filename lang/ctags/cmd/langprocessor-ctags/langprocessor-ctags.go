@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -8,8 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/lang"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
@@ -22,7 +21,7 @@ var (
 	workDir  = flag.String("workspace", "$SGPATH/workspace/ctags", "where to create workspace directories")
 )
 
-func prepareRepo(update bool, workspace, repo, commit string) error {
+func prepareRepo(ctx context.Context, update bool, workspace, repo, commit string) error {
 	// We check if there is an existing cache directory. Our LSP server
 	// does not incrementally change that, so we need to delete it to
 	// prevent it serving old data.
@@ -34,18 +33,20 @@ func prepareRepo(update bool, workspace, repo, commit string) error {
 		}
 	}
 
-	repo, cloneURI := langp.ResolveRepoAlias(repo)
+	cloneURI := langp.RepoCloneURL(ctx, repo)
+	repo = langp.ResolveRepoAlias(repo)
+
 	repoDir := filepath.Join(workspace, repo)
 	// Clone the repository.
 	return langp.Clone(update, cloneURI, repoDir, commit)
 }
 
-func prepareDeps(update bool, workspace, repo, commit string) error {
+func prepareDeps(ctx context.Context, update bool, workspace, repo, commit string) error {
 	return nil
 }
 
 func fileURI(repo, commit, file string) string {
-	repo, _ = langp.ResolveRepoAlias(repo)
+	repo = langp.ResolveRepoAlias(repo)
 	return "file:///" + filepath.Join(repo, file)
 }
 
@@ -77,17 +78,21 @@ func main() {
 	}
 	langp.InitMetrics("ctags")
 
-	lang.PrepareKeys()
-
 	workDir, err := langp.ExpandSGPath(*workDir)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	srcEndpoint := os.Getenv("SRC_ENDPOINT")
+	if srcEndpoint == "" {
+		srcEndpoint = "http://localhost:3080"
 	}
 
 	log.Println("Translating HTTP", *httpAddr, "to LSP", *lspAddr)
 	http.Handle("/", langp.New(&langp.Translator{
 		Addr: *lspAddr,
 		Preparer: langp.NewPreparer(&langp.PreparerOpts{
+			SrcEndpoint: srcEndpoint,
 			WorkDir:     workDir,
 			PrepareRepo: prepareRepo,
 			PrepareDeps: prepareDeps,
