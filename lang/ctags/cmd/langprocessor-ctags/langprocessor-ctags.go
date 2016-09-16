@@ -99,5 +99,5 @@ func main() {
 		}),
 		ResolveFile: resolveFile,
 	}))
-	http.ListenAndServe(*httpAddr, nil)
+	log.Fatal(http.ListenAndServe(*httpAddr, nil))
 }

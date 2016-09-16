@@ -68,5 +68,5 @@ func main() {
 
 	log.Println("Translating HTTP", *httpAddr, "to Java LP", *lpAddr)
 	http.Handle("/", handler)
-	http.ListenAndServe(*httpAddr, nil)
+	log.Fatal(http.ListenAndServe(*httpAddr, nil))
 }

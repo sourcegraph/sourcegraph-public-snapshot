@@ -263,5 +263,5 @@ func main() {
 		ResolveFile: resolveFile,
 		FileURI:     fileURI,
 	}))
-	http.ListenAndServe(*httpAddr, nil)
+	log.Fatal(http.ListenAndServe(*httpAddr, nil))
 }
