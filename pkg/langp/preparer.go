@@ -240,7 +240,7 @@ func (p *Preparer) checkAccess(ctx context.Context, repo string) (err error) {
 	req.Header.Set("Authorization", auth)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("checkAccess: GET %s: %v", target, err)
+		return fmt.Errorf("checkAccess: %v", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
@@ -249,7 +249,7 @@ func (p *Preparer) checkAccess(ctx context.Context, repo string) (err error) {
 			body = body[:1024]
 		}
 		span.SetTag("authorization", "forbidden")
-		msg := fmt.Sprintf("access to %q forbidden - GET %s: %v - body %q", repo, target, resp.Status, string(body))
+		msg := fmt.Sprintf("access to %q forbidden - %v - body %q", repo, resp.Status, string(body))
 		span.LogEvent(msg)
 		log.Println("checkAccess:", msg)
 		return ErrRepoNotFound
@@ -287,13 +287,13 @@ func (p *Preparer) fetchGitHubToken(ctx context.Context, repo string) (newCtx co
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("fetchGitHubToken: GET %s: %v", target, err)
+		return nil, fmt.Errorf("fetchGitHubToken: %v", err)
 	}
 	if resp.StatusCode != 200 {
 		if len(body) > 1024 {
 			body = body[:1024]
 		}
-		return nil, fmt.Errorf("fetchGitHubToken: GET %s: %v - body %q", target, resp.Status, string(body))
+		return nil, fmt.Errorf("fetchGitHubToken: %v - body %q", resp.Status, string(body))
 	}
 	var tmp = struct {
 		Token string
