@@ -163,7 +163,7 @@ func fileURI(repo, commit, file string) string {
 	return "file:///" + filepath.Join("gopath", "src", repo, file)
 }
 
-func resolveFile(workspace, _, _, uri string) (*langp.File, error) {
+func resolveFile(workspace, mainRepo, mainRepoCommit, uri string) (*langp.File, error) {
 	if strings.HasPrefix(uri, "stdlib://") {
 		// We don't have stdlib checked out as a dep, so LSP returns a
 		// special URI for them.
@@ -190,18 +190,30 @@ func resolveFile(workspace, _, _, uri string) (*langp.File, error) {
 	if fi, err := os.Stat(fullPath); err != nil || !fi.IsDir() {
 		dir = filepath.Dir(dir)
 	}
-	cmd := exec.Command("git", "rev-parse", "--show-toplevel", "HEAD")
-	cmd.Dir = dir
-	out, err := langp.CmdOutput(cmd)
-	if err != nil {
-		return nil, err
+	mainRepoDir := filepath.Join(workspace, "gopath/src", mainRepo)
+	var repoPath, commit string
+	if dir == mainRepoDir {
+		// We already have the information we need (this is the repo that the
+		// user is browsing), so no need to consult git.
+		repoPath = mainRepoDir
+		commit = mainRepoCommit
+	} else {
+		// This is a dependency that we have cloned via 'go get', so consult
+		// git in order to find the repository (which is not always identical
+		// to import path).
+		cmd := exec.Command("git", "rev-parse", "--show-toplevel", "HEAD")
+		cmd.Dir = dir
+		out, err := langp.CmdOutput(cmd)
+		if err != nil {
+			return nil, err
+		}
+		lines := strings.Fields(string(out))
+		if len(lines) != 2 {
+			return nil, errors.New("unexpected number of lines from git rev-parse")
+		}
+		repoPath = lines[0]
+		commit = lines[1]
 	}
-	lines := strings.Fields(string(out))
-	if len(lines) != 2 {
-		return nil, errors.New("unexpected number of lines from git rev-parse")
-	}
-	repoPath := lines[0]
-	commit := lines[1]
 
 	// Repo is repoPath relative to our GOPATH/src
 	repo, err := filepath.Rel(filepath.Join(workspace, "gopath", "src"), repoPath)
