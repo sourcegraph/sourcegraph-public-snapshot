@@ -37,7 +37,7 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 
 	var response graph.DefKey
 
-	if universe.Enabled(r.Context(), repo.URI) {
+	if universe.EnabledFile(file) {
 		defRange, err := langp.DefaultClient.Definition(r.Context(), &langp.Position{
 			Repo:      repo.URI,
 			Commit:    repoRev.CommitID,

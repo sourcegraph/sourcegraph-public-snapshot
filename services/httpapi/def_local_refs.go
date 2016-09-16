@@ -51,7 +51,7 @@ func serveDefLocalRefLocations(w http.ResponseWriter, r *http.Request) error {
 		opt.ListOptions.PerPage = 1000
 	}
 
-	if feature.Features.NoSrclib && universe.Enabled(r.Context(), repo.URI) {
+	if feature.Features.NoSrclib && universe.EnabledFile(dc.Def.Path) {
 		localRefLocationsList, err := universeDefLocalRefLocations(r)
 		if err != nil {
 			return err

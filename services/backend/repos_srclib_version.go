@@ -32,7 +32,7 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 	if err != nil {
 		return nil, err
 	}
-	if feature.Features.NoSrclib && universe.Enabled(ctx, repo.URI) {
+	if feature.Features.NoSrclib && universe.EnabledFile(entry.Path) {
 		return &sourcegraph.SrclibDataVersion{
 			CommitID:      entry.RepoRev.CommitID,
 			CommitsBehind: 0,

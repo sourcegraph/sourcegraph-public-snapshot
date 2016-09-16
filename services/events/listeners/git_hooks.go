@@ -74,7 +74,7 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 			log15.Error("postPushHook: failed to prepare workspace", "err", err)
 			return
 		}
-		if universe.Enabled(ctx, repoFull.URI) || universe.Shadow(repoFull.URI) {
+		if universe.EnabledRepo(repoFull) || universe.Shadow(repoFull.URI) {
 			// Ask the Language Processor to prepare the workspace.
 			if err := langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
 				// TODO(slimsag): URI is correct only where the repo URI and clone

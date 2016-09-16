@@ -36,7 +36,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if feature.Features.NoSrclib && universe.Enabled(r.Context(), repo.URI) {
+	if feature.Features.NoSrclib && universe.EnabledRepo(repo) {
 		def, err = universeDef(opt, r, repo)
 		if err != nil {
 			return err
