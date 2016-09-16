@@ -101,7 +101,7 @@ func ExpandSGPath(s string) (string, error) {
 
 // RepoCloneURL returns a repo clone URL with authentication in it.
 func RepoCloneURL(ctx context.Context, repo string) (cloneURI string) {
-	token := ctx.Value(GitHubTokenKey)
+	token, _ := ctx.Value(GitHubTokenKey).(string)
 	if token != "" && strings.HasPrefix(repo, "github.com/") {
 		return fmt.Sprintf("https://x-oauth-token:%s@%s", token, repo)
 	}
