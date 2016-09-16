@@ -31,16 +31,11 @@ func AddHandlers(r *mux.Router) {
 
 // handler is a wrapper func for API handlers.
 func handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
-	mw := []handlerutil.Middleware{
-		httpapiauth.VaryHeader,
-		httpapiauth.PasswordMiddleware,
-		httpapiauth.OAuth2AccessTokenMiddleware,
-	}
 	hh := handlerutil.HandlerWithErrorReturn{
 		Handler: h,
 		Error:   handleError,
 	}
-	return handlerutil.WithMiddleware(hh, mw...)
+	return handlerutil.WithMiddleware(hh, httpapiauth.AuthorizationMiddleware)
 }
 
 func handleError(w http.ResponseWriter, r *http.Request, status int, err error) {

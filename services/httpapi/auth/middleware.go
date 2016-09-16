@@ -14,80 +14,45 @@ import (
 
 const oauthBasicUsername = "x-oauth-basic"
 
-func VaryHeader(next http.Handler) http.Handler {
+// AuthorizationMiddleware authenticates the user based on the "Authorization" header.
+func AuthorizationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Accept, Authorization, Cookie")
-		next.ServeHTTP(w, r)
-	})
-}
 
-// PasswordMiddleware configures API calls to use an access token
-// based on the HTTP Basic credentials in the request (if any).
-func PasswordMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		username, password, ok := r.BasicAuth()
-		if ok && username != oauthBasicUsername {
-			cl := handlerutil.Client(r)
+		if username, password, ok := r.BasicAuth(); ok {
+			switch username {
+			case "x-oauth-basic":
+				// Allow token to be specified using HTTP Basic auth with username "x-oauth-basic".
+				if len(password) == 255 {
+					log.Println("WARNING: The server received an OAuth2 access token that is exactly 255 characters long. This may indicate that the client's version of libcurl is older than 7.33.0 and does not support longer passwords in HTTP Basic auth. Sourcegraph's access tokens may exceed 255 characters, in which case libcurl will truncate them and auth will fail. If you notice auth failing, try upgrading both the OpenSSL and GnuTLS flavours of libcurl to a version 7.33.0 or greater. If that doesn't solve the issue, please report it.")
+				}
+				r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), password))
 
-			// Request access token based on username and password.
-			tok, err := cl.Auth.GetAccessToken(r.Context(), &sourcegraph.AccessTokenRequest{
-				AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
-					ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: username, Password: password},
-				},
-			})
-			if err != nil {
-				log.Printf("PasswordMiddleware: error getting resource owner password access token for user %q: %s.", username, err)
-				http.Error(w, "error getting access token for username/password", http.StatusForbidden)
-				return
+			default:
+				cl := handlerutil.Client(r)
+				// Request access token based on username and password.
+				tok, err := cl.Auth.GetAccessToken(r.Context(), &sourcegraph.AccessTokenRequest{
+					AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
+						ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: username, Password: password},
+					},
+				})
+				if err != nil {
+					log.Printf("PasswordMiddleware: error getting resource owner password access token for user %q: %s.", username, err)
+					http.Error(w, "error getting access token for username/password", http.StatusForbidden)
+					return
+				}
+				r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), tok.AccessToken))
 			}
-
-			r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), tok.AccessToken))
 		}
+
+		for _, h := range r.Header["Authorization"] {
+			if len(h) > 7 && strings.EqualFold(h[:7], "bearer ") {
+				r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), h[7:]))
+			}
+		}
+
 		next.ServeHTTP(w, r)
 	})
-}
-
-// OAuth2AccessTokenMiddleware configures API calls to use an OAuth2
-// Bearer access token from the HTTP request (if any).
-func OAuth2AccessTokenMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tok, err := readBearerToken(r)
-		if err != nil {
-			log.Printf("OAuth2TokenMiddleware: error in readBearerToken: %s.", err)
-			http.Error(w, "error reading access token from HTTP request", http.StatusForbidden)
-			return
-		}
-
-		if len(tok) == 255 {
-			log.Println("WARNING: The server received an OAuth2 access token that is exactly 255 characters long. This may indicate that the client's version of libcurl is older than 7.33.0 and does not support longer passwords in HTTP Basic auth. Sourcegraph's access tokens may exceed 255 characters, in which case libcurl will truncate them and auth will fail. If you notice auth failing, try upgrading both the OpenSSL and GnuTLS flavours of libcurl to a version 7.33.0 or greater. If that doesn't solve the issue, please report it.")
-		}
-
-		if tok != "" {
-			r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), tok))
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
-func readBearerToken(r *http.Request) (token string, err error) {
-	// Allow token to be specified using HTTP Basic auth with username
-	// "x-oauth-basic".
-	username, token, ok := r.BasicAuth()
-	if ok && username == oauthBasicUsername {
-		return token, nil
-	}
-
-	for _, v := range r.Header[http.CanonicalHeaderKey("authorization")] {
-		parts := strings.SplitN(v, " ", 2)
-		if len(parts) != 2 {
-			continue
-		}
-		if strings.EqualFold(parts[0], "bearer") {
-			return parts[1], nil
-		}
-	}
-
-	return "", nil
 }
 
 func AuthorizationHeader(ctx context.Context) string {

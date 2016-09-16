@@ -37,7 +37,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	// authentication. Doing so would open it up to CSRF
 	// attacks.
 	var mw []handlerutil.Middleware
-	mw = append(mw, httpapiauth.VaryHeader, httpapiauth.PasswordMiddleware, httpapiauth.OAuth2AccessTokenMiddleware)
+	mw = append(mw, httpapiauth.AuthorizationMiddleware)
 	mw = append(mw, eventsutil.AgentMiddleware)
 
 	if conf.GetenvBool("SG_USE_CSP") {
