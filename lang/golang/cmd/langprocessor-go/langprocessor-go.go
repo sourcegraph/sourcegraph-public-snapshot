@@ -49,6 +49,22 @@ func prepareRepo(update bool, workspace, repo, commit string) error {
 	return langp.Clone(update, cloneURI, repoDir, commit)
 }
 
+var goStdlibPackages = make(map[string]struct{})
+
+func init() {
+	// Just so that we don't have to hard-code a list of stdlib packages.
+	out, err := langp.CmdOutput(exec.Command("go", "list", "std"))
+	if err != nil {
+		// Not fatal because this list is not 100% important.
+		log.Println("WARNING:", err)
+	}
+	for _, line := range strings.Split(string(out), "\n") {
+		if line != "" {
+			goStdlibPackages[line] = struct{}{}
+		}
+	}
+}
+
 // goGetDependencies gets all Go dependencies in the repository. It is the
 // same as:
 //
@@ -64,7 +80,7 @@ func goGetDependencies(repoDir string, env []string, repoURI string) error {
 	if repoURI == "github.com/golang/go" {
 		return nil // updating dependencies for stdlib does not make sense.
 	}
-	c := exec.Command("go", "list", "./...")
+	c := exec.Command("go", "list", "-f", `{{join .Deps "\n"}}`, "./...")
 	c.Dir = repoDir
 	c.Env = env
 	out, err := langp.CmdOutput(c)
@@ -73,11 +89,16 @@ func goGetDependencies(repoDir string, env []string, repoURI string) error {
 	}
 	var pkgs []string
 	for _, line := range strings.Split(string(out), "\n") {
+		// We remove stdlib packages from the list, `go get -u` would be no-op
+		// on them, but it would pollute logs and hurt their readability /
+		// debuggability.
+		_, stdlib := goStdlibPackages[line]
+
 		// TODO(slimsag): prefix isn't 100% correct because in strange cases
 		// you can have a package under the repo URI in a different repository
 		// (e.g. azul3d.org did this for a while). Generally unlikely for most
 		// packages though.
-		if line != "" && !strings.HasPrefix(line, repoURI) {
+		if line != "" && !strings.HasPrefix(line, repoURI) && !stdlib {
 			pkgs = append(pkgs, line)
 		}
 	}
@@ -85,7 +106,9 @@ func goGetDependencies(repoDir string, env []string, repoURI string) error {
 		return nil
 	}
 	args := append([]string{"get", "-u", "-d"}, pkgs...)
-	return langp.CmdRun(exec.Command("go", args...))
+	c = exec.Command("go", args...)
+	c.Env = env
+	return langp.CmdRun(c)
 }
 
 // prepareLSPCache sends a workspace/symbols request. The underlying LSP
