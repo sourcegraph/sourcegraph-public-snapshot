@@ -66,7 +66,7 @@ func NewPreparer(opts *PreparerOpts) *Preparer {
 		opts.SrcEndpoint = os.Getenv("SRC_ENDPOINT")
 	}
 	if opts.SrcEndpoint == "" {
-		panic("NewPreparer: SrcEndpoint is not set!")
+		panic("NewPreparer: SrcEndpoint is not set! Maybe use SRC_ENDPOINT='dev'?")
 	}
 
 	// Disable TLS certification verification because https://sourcegraph-frontend
