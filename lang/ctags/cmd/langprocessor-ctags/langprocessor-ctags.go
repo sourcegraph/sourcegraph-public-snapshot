@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/lang"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 )
@@ -76,8 +74,6 @@ func main() {
 		go debugserver.Start(*profbind)
 	}
 	langp.InitMetrics("ctags")
-
-	lang.PrepareKeys()
 
 	workDir, err := langp.ExpandSGPath(*workDir)
 	if err != nil {
