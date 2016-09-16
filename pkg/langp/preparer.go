@@ -81,6 +81,7 @@ func NewPreparer(opts *PreparerOpts) *Preparer {
 		preparingDeps:  newPending(),
 		srcClient: &http.Client{
 			Transport: tr,
+			Timeout:   5 * time.Second,
 		},
 	}
 }
