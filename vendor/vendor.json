@@ -46,6 +46,12 @@
 			"revisionTime": "2014-04-22T10:41:19-07:00"
 		},
 		{
+			"checksumSHA1": "mXuhmsoWRrMxD3j836MtLNirGiM=",
+			"path": "github.com/boj/redistore",
+			"revision": "fc113767cd6b051980f260d6dbe84b2740c46ab0",
+			"revisionTime": "2016-01-28T11:33:10Z"
+		},
+		{
 			"checksumSHA1": "ulHAt7P7SYMC2g3ThlXNzVN9Z/k=",
 			"path": "github.com/chris-ramon/douceur/css",
 			"revision": "8fb95984c34738e277513d254dfa4e6bfc39f29a",
@@ -263,6 +269,12 @@
 			"path": "github.com/gorilla/securecookie",
 			"revision": "c13558c2b1c44da35e0eb043053609a5ba3a1f19",
 			"revisionTime": "2016-08-16T22:23:38Z"
+		},
+		{
+			"checksumSHA1": "/bme7EZUgPHRcE433mhhCywTY0Y=",
+			"path": "github.com/gorilla/sessions",
+			"revision": "7ab2742f1e374be6675e9a4eca54fe529221ae3a",
+			"revisionTime": "2016-09-01T06:18:54Z"
 		},
 		{
 			"checksumSHA1": "je7UCb5T2ncPtX3RlEev0T1Smqs=",
