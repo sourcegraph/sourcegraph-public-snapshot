@@ -1,27 +1,18 @@
 import {Branch, Commit, Repo, RepoList, RepoResolution, Tag} from "sourcegraph/api";
 
 export type Action =
-	WantRepo |
-	FetchedRepo |
-	WantRepos |
-	ReposFetched |
-	WantResolveRev |
-	ResolvedRev |
-	WantCommit |
-	FetchedCommit |
-	WantInventory |
-	FetchedInventory |
 	RepoCloning |
-	WantResolveRepo |
-	RepoResolved |
-	WantCreateRepo |
-	RepoCreated |
+	RefreshVCS
+	WantBranches | FetchedBranches |
 	WantCreateRepoHook |
-	WantBranches |
-	FetchedBranches |
-	WantTags |
-	FetchedTags |
-	RefreshVCS;
+	WantCreateRepo | RepoCreated |
+	WantCommit | FetchedCommit |
+	WantInventory | FetchedInventory |
+	WantRepo | FetchedRepo |
+	WantRepos | ReposFetched |
+	WantResolveRepo | RepoResolved |
+	WantResolveRev | ResolvedRev |
+	WantTags | FetchedTags;
 
 export class WantRepo {
 	repo: string;
