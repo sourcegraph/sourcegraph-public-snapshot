@@ -213,20 +213,9 @@ func (p *Preparer) PrepareTimeout(ctx context.Context, repo, commit string, time
 		ctx = ctx2
 	}
 
-	var span opentracing.Span
-	span, ctx = opentracing.StartSpanFromContext(ctx, "prepare workspace repo")
-	defer span.Finish()
-	span.SetTag("repo", repo)
-	span.SetTag("commit", commit)
-	span.SetTag("timeout", timeout)
-
 	start := time.Now()
 	workspace, status, err := p.prepareRepo(ctx, repo, commit, timeout)
 	observePrepareRepo(ctx, start, repo, status)
-	span.SetTag("status", status)
-	if status == prepStatusError {
-		ext.Error.Set(span, true)
-	}
 	return workspace, err
 }
 
@@ -346,6 +335,19 @@ func (p *Preparer) fetchGitHubToken(ctx context.Context, repo string) (newCtx co
 
 // prepareRepo should not be called outside of Preparer itself.
 func (p *Preparer) prepareRepo(ctx context.Context, repo, commit string, timeout time.Duration) (workspace, status string, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "prepare workspace repo")
+	defer func() {
+		span.SetTag("status", status)
+		if status == prepStatusError {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+		span.Finish()
+	}()
+	span.SetTag("repo", repo)
+	span.SetTag("commit", commit)
+	span.SetTag("timeout", timeout)
+
 	// Acquire ownership of repository preparation. Essentially this is a
 	// sync.Mutex unique to the workspace.
 	workspace = p.pathToWorkspace(repo, commit)
