@@ -405,6 +405,19 @@ func (p *Preparer) prepareRepo(ctx context.Context, repo, commit string, timeout
 
 // prepareDeps should not be called outside of Preparer itself.
 func (p *Preparer) prepareDeps(ctx context.Context, update bool, repo, commit string) (status string, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "prepare workspace deps")
+	defer func() {
+		span.SetTag("status", status)
+		if status == prepStatusError {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+		span.Finish()
+	}()
+	span.SetTag("update", update)
+	span.SetTag("repo", repo)
+	span.SetTag("commit", commit)
+
 	// Acquire ownership of dependency preparation.
 	workspace := p.pathToWorkspace(repo, commit)
 	didTimeout, handled, done := p.preparingDeps.acquire(workspace, 0*time.Second)
