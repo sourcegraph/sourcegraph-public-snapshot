@@ -249,11 +249,44 @@ export interface Change {
 export interface Client {
 }
 
+export interface ClientCapabilities {
+}
+
+export interface CodeActionContext {
+	diagnostics: any[];
+}
+
+export interface CodeActionParams {
+	textDocument: any;
+	range: any;
+	context: any;
+}
+
+export interface CodeLens {
+	range: any;
+	command?: any;
+	data?: any;
+}
+
+export interface CodeLensOptions {
+	resolveProvider?: boolean;
+}
+
+export interface CodeLensParams {
+	textDocument: any;
+}
+
 export interface CombinedStatus {
 	Rev?: string;
 	CommitID?: string;
 	State?: string;
 	Statuses?: RepoStatus[];
+}
+
+export interface Command {
+	title: string;
+	command: string;
+	arguments: any[];
 }
 
 export interface Commit {
@@ -284,6 +317,28 @@ export interface CommitterList {
 }
 
 export interface CommittersOptions {
+}
+
+export interface CompletionItem {
+	label: string;
+	kind?: number;
+	detail?: string;
+	documentation?: string;
+	sortText?: string;
+	filterText?: string;
+	insertText?: string;
+	textEdit?: any;
+	data?: any;
+}
+
+export interface CompletionList {
+	isIncomplete: boolean;
+	items: any[];
+}
+
+export interface CompletionOptions {
+	resolveProvider?: boolean;
+	triggerCharacters?: string[];
 }
 
 export interface CreatedAccount {
@@ -487,6 +542,39 @@ export interface DefsRefreshIndexOp {
 	Force?: boolean;
 }
 
+export interface Diagnostic {
+	range: any;
+	severity: number;
+	code: string;
+	source: string;
+	message: string;
+}
+
+export interface DidChangeConfigurationParams {
+	settings: any;
+}
+
+export interface DidChangeTextDocumentParams {
+	textDocument: any;
+	contentChanges: any[];
+}
+
+export interface DidChangeWatchedFilesParams {
+	changes: any[];
+}
+
+export interface DidCloseTextDocumentParams {
+	textDocument: any;
+}
+
+export interface DidOpenTextDocumentParams {
+	textDocument: any;
+}
+
+export interface DidSaveTextDocumentParams {
+	textDocument: any;
+}
+
 export interface Diff {
 }
 
@@ -513,6 +601,38 @@ export interface DocKey {
 	UnitType?: string;
 	Unit?: string;
 	Path: string;
+}
+
+export interface DocumentFormattingParams {
+	textDocument: any;
+	options: any;
+}
+
+export interface DocumentHighlight {
+	range: any;
+	kind?: number;
+}
+
+export interface DocumentOnTypeFormattingOptions {
+	firstTriggerCharacter: string;
+	moreTriggerCharacter?: string[];
+}
+
+export interface DocumentOnTypeFormattingParams {
+	textDocument: any;
+	position: any;
+	ch: string;
+	formattingOptions: any;
+}
+
+export interface DocumentRangeFormattingParams {
+	textDocument: any;
+	range: any;
+	options: any;
+}
+
+export interface DocumentSymbolParams {
+	textDocument: any;
 }
 
 export interface EmailAddr {
@@ -560,6 +680,11 @@ export interface ExternalTokenSpec {
 export interface FileData {
 }
 
+export interface FileEvent {
+	uri: string;
+	type: number;
+}
+
 export interface FileRange {
 	StartLine?: number;
 	EndLine?: number;
@@ -572,6 +697,12 @@ export interface FileWithRange {
 	EndLine?: number;
 	StartByte?: number;
 	EndByte?: number;
+}
+
+export interface FormattingOptions {
+	tabSize: number;
+	insertSpaces: boolean;
+	key: string;
 }
 
 export interface GRPCCodec {
@@ -607,7 +738,26 @@ export interface GitHubUser {
 export interface HTTPSConfig {
 }
 
+export interface Hover {
+	contents?: any[];
+	range: any;
+}
+
 export interface Hunk {
+}
+
+export interface InitializeError {
+	retry: boolean;
+}
+
+export interface InitializeParams {
+	processId: number;
+	rootPath: string;
+	capabilities: any;
+}
+
+export interface InitializeResult {
+	capabilities: any;
 }
 
 export interface ListOptions {
@@ -619,14 +769,33 @@ export interface ListResponse {
 	Total?: number;
 }
 
+export interface Location {
+	uri: string;
+	range: any;
+}
+
 export interface LogEntries {
 	MaxID?: string;
 	Entries?: string[];
 }
 
+export interface LogMessageParams {
+	type: number;
+	message: string;
+}
+
 export interface LoginCredentials {
 	Login?: string;
 	Password?: string;
+}
+
+export interface MarkedString {
+	language: string;
+	value: string;
+}
+
+export interface MessageActionItem {
+	title: string;
 }
 
 export interface MirrorReposRefreshVCSOp {
@@ -646,6 +815,9 @@ export interface NewPassword {
 	Token?: PasswordResetToken;
 }
 
+export interface None {
+}
+
 export interface Origin {
 	ID?: string;
 	APIBaseURL?: string;
@@ -662,6 +834,11 @@ export interface Packet {
 	data?: number[];
 }
 
+export interface ParameterInformation {
+	label: string;
+	documentation?: string;
+}
+
 export interface PasswordResetToken {
 	Token?: string;
 }
@@ -673,7 +850,17 @@ export interface PendingPasswordReset {
 	Login?: string;
 }
 
+export interface Position {
+	line: number;
+	character: number;
+}
+
 export interface Propagate {
+}
+
+export interface PublishDiagnosticsParams {
+	uri: string;
+	diagnostics: any[];
 }
 
 export interface QualFormatStrings {
@@ -732,6 +919,16 @@ export interface RefLocationsList {
 export interface RefSet {
 }
 
+export interface ReferenceContext {
+	IncludeDeclaration: boolean;
+}
+
+export interface ReferenceParams {
+	textDocument: any;
+	position: any;
+	context: any;
+}
+
 export interface RemoteOpts {
 }
 
@@ -752,6 +949,12 @@ export interface RemoteRepo {
 	Mirror?: boolean;
 	Stars?: number;
 	Permissions?: RepoPermissions;
+}
+
+export interface RenameParams {
+	textDocument: any;
+	position: any;
+	newName: string;
 }
 
 export interface Repo {
@@ -978,6 +1181,9 @@ export interface ResolvedRev {
 	CommitID?: string;
 }
 
+export interface ResponseError {
+}
+
 export interface SSHConfig {
 }
 
@@ -1023,15 +1229,60 @@ export interface SearchResultsList {
 	SearchQueryOptions?: SearchOptions[];
 }
 
+export interface ServerCapabilities {
+	textDocumentSync?: number;
+	hoverProvider?: boolean;
+	completionProvider?: any;
+	signatureHelpProvider?: any;
+	definitionProvider?: boolean;
+	referencesProvider?: boolean;
+	documentHighlightProvider?: boolean;
+	documentSymbolProvider?: boolean;
+	workspaceSymbolProvider?: boolean;
+	codeActionProvider?: boolean;
+	codeLensProvider?: any;
+	documentFormattingProvider?: boolean;
+	documentRangeFormattingProvider?: boolean;
+	documentOnTypeFormattingProvider?: any;
+	renameProvider?: boolean;
+}
+
 export interface ServerConfig {
 	Version?: string;
 	AppURL?: string;
+}
+
+export interface ShowMessageParams {
+	type: number;
+	message: string;
+}
+
+export interface ShowMessageRequestParams {
+	type: number;
+	message: string;
+	actions: any[];
 }
 
 export interface Signature {
 	Name?: string;
 	Email?: string;
 	Date: any;
+}
+
+export interface SignatureHelp {
+	signatures: any[];
+	activeSignature?: number;
+	activeParameter?: number;
+}
+
+export interface SignatureHelpOptions {
+	triggerCharacters?: string[];
+}
+
+export interface SignatureInformation {
+	label: string;
+	documentation?: string;
+	paramaters?: any[];
 }
 
 export interface SrclibDataVersion {
@@ -1044,6 +1295,13 @@ export interface StreamResponse {
 }
 
 export interface SubmoduleInfo {
+}
+
+export interface SymbolInformation {
+	name: string;
+	kind: any;
+	location: any;
+	containerName?: string;
 }
 
 export interface Tag {
@@ -1068,6 +1326,33 @@ export interface TaskUpdate {
 	Failure?: boolean;
 	Skipped?: boolean;
 	Warnings?: boolean;
+}
+
+export interface TextDocumentContentChangeEvent {
+	range: any;
+	rangeLength: number;
+	text: string;
+}
+
+export interface TextDocumentIdentifier {
+	uri: string;
+}
+
+export interface TextDocumentItem {
+	uri: string;
+	languageId: string;
+	version: number;
+	text: string;
+}
+
+export interface TextDocumentPositionParams {
+	textDocument: any;
+	position: any;
+}
+
+export interface TextEdit {
+	range: any;
+	newText: string;
 }
 
 export interface TreeEntry {
@@ -1154,4 +1439,17 @@ export interface VCSCredentials {
 export interface VCSSearchResultList {
 	SearchResults?: any[];
 	Total?: number;
+}
+
+export interface VersionedTextDocumentIdentifier {
+	uri: string;
+	version: number;
+}
+
+export interface WorkspaceEdit {
+	changes: any;
+}
+
+export interface WorkspaceSymbolParams {
+	query: string;
 }
