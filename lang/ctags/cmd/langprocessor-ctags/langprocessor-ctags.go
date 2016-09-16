@@ -38,19 +38,19 @@ func prepareRepo(ctx context.Context, update bool, workspace, repo, commit strin
 
 	repoDir := filepath.Join(workspace, repo)
 	// Clone the repository.
-	return langp.Clone(update, cloneURI, repoDir, commit)
+	return langp.Clone(ctx, update, cloneURI, repoDir, commit)
 }
 
 func prepareDeps(ctx context.Context, update bool, workspace, repo, commit string) error {
 	return nil
 }
 
-func fileURI(repo, commit, file string) string {
+func fileURI(ctx context.Context, repo, commit, file string) string {
 	repo = langp.ResolveRepoAlias(repo)
 	return "file:///" + filepath.Join(repo, file)
 }
 
-func resolveFile(workspace, repo, commit, uri string) (*langp.File, error) {
+func resolveFile(ctx context.Context, workspace, repo, commit, uri string) (*langp.File, error) {
 	if !strings.HasPrefix(uri, "file:///") {
 		return nil, fmt.Errorf("uri does not start with file:/// : %s", uri)
 	}

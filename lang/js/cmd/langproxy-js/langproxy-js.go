@@ -23,7 +23,7 @@ func prepareRepo(ctx context.Context, update bool, workspace, repo, commit strin
 	repo = langp.ResolveRepoAlias(repo)
 
 	// Clone the repository.
-	return langp.Clone(update, cloneURI, workspace, commit)
+	return langp.Clone(ctx, update, cloneURI, workspace, commit)
 }
 
 func main() {

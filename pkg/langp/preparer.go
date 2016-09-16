@@ -100,7 +100,7 @@ func (p *Preparer) pathToLatest(repo string) string {
 // directory as needed.
 //
 // This method should only ever be called when preparingRepos is acquired.
-func (p *Preparer) createWorkspace(repo, commit string) (update bool, err error) {
+func (p *Preparer) createWorkspace(ctx context.Context, repo, commit string) (update bool, err error) {
 	workspace := p.pathToWorkspace(repo, commit)
 	subvolume := p.pathToSubvolume(repo, commit)
 
@@ -151,7 +151,7 @@ func (p *Preparer) createWorkspace(repo, commit string) (update bool, err error)
 		if err != nil {
 			return false, err
 		}
-		if err := btrfsSubvolumeSnapshot(latestSubvolume, subvolume); err != nil {
+		if err := btrfsSubvolumeSnapshot(ctx, latestSubvolume, subvolume); err != nil {
 			return false, err
 		}
 		return true, nil
@@ -159,7 +159,7 @@ func (p *Preparer) createWorkspace(repo, commit string) (update bool, err error)
 
 	// We don't have a recently prepared workspace (we will be the
 	// first successful one), so create a new subvolume.
-	if err := btrfsSubvolumeCreate(subvolume); err != nil {
+	if err := btrfsSubvolumeCreate(ctx, subvolume); err != nil {
 		return false, err
 	}
 	// Create the workspace subdirectory.
@@ -334,7 +334,7 @@ func (p *Preparer) prepareRepo(ctx context.Context, repo, commit string, timeout
 	}
 
 	// Create the workspace directory.
-	update, err := p.createWorkspace(repo, commit)
+	update, err := p.createWorkspace(ctx, repo, commit)
 	if err != nil {
 		return "", prepStatusError, err
 	}

@@ -45,14 +45,14 @@ func prepareRepo(ctx context.Context, update bool, workspace, repo, commit strin
 
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
-	return langp.Clone(update, cloneURI, repoDir, commit)
+	return langp.Clone(ctx, update, cloneURI, repoDir, commit)
 }
 
 var goStdlibPackages = make(map[string]struct{})
 
 func init() {
 	// Just so that we don't have to hard-code a list of stdlib packages.
-	out, err := langp.CmdOutput(exec.Command("go", "list", "std"))
+	out, err := langp.CmdOutput(context.Background(), exec.Command("go", "list", "std"))
 	if err != nil {
 		// Not fatal because this list is not 100% important.
 		log.Println("WARNING:", err)
@@ -75,14 +75,14 @@ func init() {
 //
 // 	fatal: Not possible to fast-forward, aborting.
 //
-func goGetDependencies(repoDir string, env []string, repoURI string) error {
+func goGetDependencies(ctx context.Context, repoDir string, env []string, repoURI string) error {
 	if repoURI == "github.com/golang/go" {
 		return nil // updating dependencies for stdlib does not make sense.
 	}
 	c := exec.Command("go", "list", "-f", `{{join .Deps "\n"}}`, "./...")
 	c.Dir = repoDir
 	c.Env = env
-	out, err := langp.CmdOutput(c)
+	out, err := langp.CmdOutput(ctx, c)
 	if err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func goGetDependencies(repoDir string, env []string, repoURI string) error {
 	args := append([]string{"get", "-u", "-d"}, pkgs...)
 	c = exec.Command("go", args...)
 	c.Env = env
-	return langp.CmdRun(c)
+	return langp.CmdRun(ctx, c)
 }
 
 // prepareLSPCache sends a workspace/symbols request. The underlying LSP
@@ -144,7 +144,7 @@ func prepareDeps(ctx context.Context, update bool, workspace, repo, commit strin
 	repo = langp.ResolveRepoAlias(repo)
 	repoDir := filepath.Join(gopath, "src", repo)
 	env := []string{"PATH=" + os.Getenv("PATH"), "GOPATH=" + gopath}
-	err := goGetDependencies(repoDir, env, repo)
+	err := goGetDependencies(ctx, repoDir, env, repo)
 	if err != nil {
 		return err
 	}
@@ -157,12 +157,12 @@ func prepareDeps(ctx context.Context, update bool, workspace, repo, commit strin
 	return nil
 }
 
-func fileURI(repo, commit, file string) string {
+func fileURI(ctx context.Context, repo, commit, file string) string {
 	repo = langp.ResolveRepoAlias(repo)
 	return "file:///" + filepath.Join("gopath", "src", repo, file)
 }
 
-func resolveFile(workspace, mainRepo, mainRepoCommit, uri string) (*langp.File, error) {
+func resolveFile(ctx context.Context, workspace, mainRepo, mainRepoCommit, uri string) (*langp.File, error) {
 	if strings.HasPrefix(uri, "stdlib://") {
 		// We don't have stdlib checked out as a dep, so LSP returns a
 		// special URI for them.
@@ -202,7 +202,7 @@ func resolveFile(workspace, mainRepo, mainRepoCommit, uri string) (*langp.File, 
 		// to import path).
 		cmd := exec.Command("git", "rev-parse", "--show-toplevel", "HEAD")
 		cmd.Dir = dir
-		out, err := langp.CmdOutput(cmd)
+		out, err := langp.CmdOutput(ctx, cmd)
 		if err != nil {
 			return nil, err
 		}
