@@ -69,7 +69,7 @@ func NewPreparer(opts *PreparerOpts) *Preparer {
 		panic("NewPreparer: SrcEndpoint is not set! Maybe use SRC_ENDPOINT='dev'?")
 	}
 
-	// Disable TLS certification verification because https://sourcegraph-frontend
+	// Disable TLS certificate verification because https://sourcegraph-frontend
 	// is not valid for our *.sourcegraph.com certificate, and we strictly enforce
 	// HTTPS via a redirect.
 	tr := &http.Transport{
