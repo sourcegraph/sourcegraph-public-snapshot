@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
@@ -48,20 +49,26 @@ func prepareRepo(ctx context.Context, update bool, workspace, repo, commit strin
 	return langp.Clone(ctx, update, cloneURI, repoDir, commit)
 }
 
-var goStdlibPackages = make(map[string]struct{})
+var (
+	goStdlibPackages = make(map[string]struct{})
+	listGoStdlibOnce sync.Once
+)
 
-func init() {
-	// Just so that we don't have to hard-code a list of stdlib packages.
-	out, err := langp.CmdOutput(context.Background(), exec.Command("go", "list", "std"))
-	if err != nil {
-		// Not fatal because this list is not 100% important.
-		log.Println("WARNING:", err)
-	}
-	for _, line := range strings.Split(string(out), "\n") {
-		if line != "" {
-			goStdlibPackages[line] = struct{}{}
+func listGoStdlibPackages(ctx context.Context) map[string]struct{} {
+	listGoStdlibOnce.Do(func() {
+		// Just so that we don't have to hard-code a list of stdlib packages.
+		out, err := langp.CmdOutput(ctx, exec.Command("go", "list", "std"))
+		if err != nil {
+			// Not fatal because this list is not 100% important.
+			log.Println("WARNING:", err)
 		}
-	}
+		for _, line := range strings.Split(string(out), "\n") {
+			if line != "" {
+				goStdlibPackages[line] = struct{}{}
+			}
+		}
+	})
+	return goStdlibPackages
 }
 
 // goGetDependencies gets all Go dependencies in the repository. It is the
@@ -79,6 +86,7 @@ func goGetDependencies(ctx context.Context, repoDir string, env []string, repoUR
 	if repoURI == "github.com/golang/go" {
 		return nil // updating dependencies for stdlib does not make sense.
 	}
+
 	c := exec.Command("go", "list", "-f", `{{join .Deps "\n"}}`, "./...")
 	c.Dir = repoDir
 	c.Env = env
@@ -87,17 +95,18 @@ func goGetDependencies(ctx context.Context, repoDir string, env []string, repoUR
 		return err
 	}
 	var pkgs []string
+	stdlib := listGoStdlibPackages(ctx)
 	for _, line := range strings.Split(string(out), "\n") {
 		// We remove stdlib packages from the list, `go get -u` would be no-op
 		// on them, but it would pollute logs and hurt their readability /
 		// debuggability.
-		_, stdlib := goStdlibPackages[line]
+		_, inStdlib := stdlib[line]
 
 		// TODO(slimsag): prefix isn't 100% correct because in strange cases
 		// you can have a package under the repo URI in a different repository
 		// (e.g. azul3d.org did this for a while). Generally unlikely for most
 		// packages though.
-		if line != "" && !strings.HasPrefix(line, repoURI) && !stdlib {
+		if line != "" && !strings.HasPrefix(line, repoURI) && !inStdlib {
 			pkgs = append(pkgs, line)
 		}
 	}
