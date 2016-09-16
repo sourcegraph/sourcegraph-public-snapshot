@@ -132,7 +132,7 @@ const ResultCategories = ({resultCategories, limit}) => {
 	resultCategories.forEach((results, category) => {
 		sections.push(<ResultCategory key={category} category={category} limit={categoryLimit} results={results} />);
 	});
-	return <div style={{overflow: "scroll"}}>
+	return <div style={{overflow: "auto"}}>
 		{sections}
 	</div>;
 };
