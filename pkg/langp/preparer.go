@@ -237,8 +237,8 @@ func (p *Preparer) checkAccess(ctx context.Context, repo string) (err error) {
 			ext.Error.Set(span, true)
 			span.LogEvent(fmt.Sprintf("error: %v", err))
 		}
+		span.Finish()
 	}()
-	defer span.Finish()
 	span.SetTag("repo", repo)
 
 	if p.SrcEndpoint == "dev" {
@@ -284,8 +284,8 @@ func (p *Preparer) fetchGitHubToken(ctx context.Context, repo string) (newCtx co
 			ext.Error.Set(span, true)
 			span.LogEvent(fmt.Sprintf("error: %v", err))
 		}
+		span.Finish()
 	}()
-	defer span.Finish()
 	span.SetTag("repo", repo)
 
 	if p.SrcEndpoint == "dev" {
