@@ -1,4 +1,4 @@
-import {Branch, Commit, Repo, RepoList, RepoResolution, Tag} from "sourcegraph/api";
+import {Branch, Commit, Repo, RepoList, RepoResolution, Tag, SymbolInformation} from "sourcegraph/api";
 
 export type Action =
 	RepoCloning |
@@ -199,13 +199,6 @@ export class FetchedBranches {
 	}
 }
 
-export interface SymbolInfo { // TODO(beyang): move this sourcegraph.proto and auto-gen
-	Name: string;
-	Kind: number;
-	Location: {URI: string, Range: { Start: { Line: number, Character: number }, End: { Line: number, Character: number} } },
-	ContainerName: string;
-}
-
 export class WantSymbols {
 	repo: string;
 	rev: string;
@@ -223,9 +216,9 @@ export class FetchedSymbols {
 	rev: string;
 	query: string;
 
-	symbols: SymbolInfo[];
+	symbols: SymbolInformation[];
 
-	constructor(repo: string, rev: string, query: string, symbols: SymbolInfo[]) {
+	constructor(repo: string, rev: string, query: string, symbols: SymbolInformation[]) {
 		this.repo = repo;
 		this.rev = rev;
 		this.query = query;
