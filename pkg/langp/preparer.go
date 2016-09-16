@@ -306,7 +306,7 @@ func (p *Preparer) fetchGitHubToken(ctx context.Context, repo string) (newCtx co
 		return nil, fmt.Errorf("fetchGitHubToken: %v", err)
 	}
 	req.Header.Set("Authorization", auth)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := p.srcClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("fetchGitHubToken: %v", err)
 	}
