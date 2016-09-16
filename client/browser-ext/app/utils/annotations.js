@@ -91,7 +91,7 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 			} else {
 				cell.innerHTML = result;
 			}
-			addPopover(cell, path, repoRevSpec);
+			addEventListeners(cell, path, repoRevSpec, line, startBytesByLine[line]);
 		});
 	}
 }
@@ -163,7 +163,7 @@ export function annGenerator(annsByStartByte, byte, repoRevSpec) {
 	const url = defIsOnGitHub ? urlToDef(match.URL) : `https://sourcegraph.com${match.URL}`;
 
 	return {annLen, annGen: function(innerHTML) {
-		return `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-src="https://sourcegraph.com${annURL}" class=${styles.sgdef}>${innerHTML}</a>`;
+		return `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-byteoffset=${byte + 1} data-src="https://sourcegraph.com${annURL}" class=${styles.sgdef}>${innerHTML}</a>`;
 	}};
 }
 
@@ -327,9 +327,29 @@ export function convertQuotedStringNode(node, annsByStartByte, offset, repoRevSp
 // stuff we don't need synchonized to browser local storage.
 
 let popoverCache = {};
+let jumptodefcache = {};
 export const defCache = {};
-function addPopover(el, path, repoRevSpec) {
+
+function addEventListeners(el, path, repoRevSpec, line, lineStartByte) {
 	let activeTarget, popover;
+
+	el.addEventListener("onClick", (e) => {
+		//  https://sourcegraph.com/.api/repos/github.com/gorilla/mux@master/-/jump-def?file=mux.go&line=60&character=11
+
+		let t = getTarget(e.target);
+		if (!t) return;
+		let arg = utils.parseURL(); // TODO: Pass to addEventListeners to avoid re-eval?
+		let col = t.dataset.byteoffset - lineStartByte;
+		let url = `https://sourcegraph.com/.api/repos/${arg.repoURI}/-/jump-def?file=${arg.path}&line=${line - 1}&character=${col}`;
+
+		fetchJumpURL(url, function(jumptarget) {
+			if (jumptarget) {
+				jumptarget = jumptarget.slice(1);
+				window.location.href = jumptarget;
+			}
+		});
+		// TODO: return false/true to cancel event (propogation)?
+	});
 
 	el.addEventListener("mouseout", (e) => {
 		hidePopover();
@@ -341,8 +361,11 @@ function addPopover(el, path, repoRevSpec) {
 		if (!t) return;
 		if (activeTarget !== t) {
 			activeTarget = t;
-			let url = activeTarget.dataset.src.split("https://sourcegraph.com")[1];
-			url = `https://sourcegraph.com/.api/repos${url}?ComputeLineRange=true&Doc=true`;
+
+			let arg = utils.parseURL();
+			let col = activeTarget.dataset.byteoffset - lineStartByte;
+			let url = `https://sourcegraph.com/.api/repos/${arg.repoURI}/-/hover-info?file=${arg.path}&line=${line - 1}&character=${col}`;
+
 			fetchPopoverData(url, function(html, data) {
 				if (activeTarget && html) showPopover(html, e.pageX, e.pageY);
 			});
@@ -380,10 +403,23 @@ function addPopover(el, path, repoRevSpec) {
 		}
 	}
 
+	function fetchJumpURL(url, cb) {
+		if (jumptodefcache[url]) return cb(jumptodefcache[url]);
+		
+		fetch(url)
+			.then((json) => {
+				jumptodefcache[url] = json.Path;
+
+				cb(jumptodefcache[url]);
+			})
+			.catch((err) => console.log("Error getting jump target info.") && cb(null));
+	}
+
 	function fetchPopoverData(url, cb) {
 		if (popoverCache[url]) return cb(popoverCache[url], defCache[url]);
 		fetch(url)
 			.then((json) => {
+				json = json.def; /* HACKY! */
 				defCache[url] = json;
 				let html;
 				if (json.Data) {
