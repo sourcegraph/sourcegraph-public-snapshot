@@ -246,16 +246,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	srcEndpoint := os.Getenv("SRC_ENDPOINT")
-	if srcEndpoint == "" {
-		srcEndpoint = "http://localhost:3080"
-	}
-
 	log.Println("Translating HTTP", *httpAddr, "to LSP", *lspAddr)
 	http.Handle("/", langp.New(&langp.Translator{
 		Addr: *lspAddr,
 		Preparer: langp.NewPreparer(&langp.PreparerOpts{
-			SrcEndpoint: srcEndpoint,
 			WorkDir:     workDir,
 			PrepareRepo: prepareRepo,
 			PrepareDeps: prepareDeps,

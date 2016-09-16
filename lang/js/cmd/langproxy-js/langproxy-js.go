@@ -5,7 +5,6 @@ import (
 	"flag"
 	"log"
 	"net/http"
-	"os"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
@@ -44,14 +43,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	srcEndpoint := os.Getenv("SRC_ENDPOINT")
-	if srcEndpoint == "" {
-		srcEndpoint = "http://localhost:3080"
-	}
-
 	handler, err := langp.NewProxy(client,
 		langp.NewPreparer(&langp.PreparerOpts{
-			SrcEndpoint: srcEndpoint,
 			WorkDir:     workDir,
 			PrepareRepo: prepareRepo,
 			PrepareDeps: func(ctx context.Context, update bool, workspace, repo, commit string) error {

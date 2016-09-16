@@ -19,7 +19,9 @@ import (
 
 type PreparerOpts struct {
 	// SrcEndpoint is the host endpoint of the Sourcegraph API, with or without
-	// trailing slash.
+	// trailing slash. If empty, it defaults to $SRC_ENDPOINT. The special
+	// value of "dev" disables contacting this endpoint (and inherently
+	// disables private repo cloning + access control checks).
 	SrcEndpoint string
 
 	// WorkDir is where workspaces are created by cloning repositories and
@@ -56,6 +58,16 @@ type PreparerOpts struct {
 
 // NewPreparer returns a new preparer with the internal fields initialized.
 func NewPreparer(opts *PreparerOpts) *Preparer {
+	optsCpy := *opts
+	opts = &optsCpy
+
+	if opts.SrcEndpoint == "" {
+		opts.SrcEndpoint = os.Getenv("SRC_ENDPOINT")
+	}
+	if opts.SrcEndpoint == "" {
+		panic("NewPreparer: SrcEndpoint is not set!")
+	}
+
 	return &Preparer{
 		PreparerOpts:   opts,
 		preparingRepos: newPending(),
@@ -226,6 +238,11 @@ func (p *Preparer) checkAccess(ctx context.Context, repo string) (err error) {
 	defer span.Finish()
 	span.SetTag("repo", repo)
 
+	if p.SrcEndpoint == "dev" {
+		// Access control disabled.
+		return nil
+	}
+
 	auth := ctx.Value(authorizationKey).(string)
 	if auth == "" {
 		span.SetTag("authorization", "none")
@@ -267,6 +284,11 @@ func (p *Preparer) fetchGitHubToken(ctx context.Context, repo string) (newCtx co
 	}()
 	defer span.Finish()
 	span.SetTag("repo", repo)
+
+	if p.SrcEndpoint == "dev" {
+		// Private repo cloning disabled.
+		return ctx, nil
+	}
 
 	auth := ctx.Value(authorizationKey).(string)
 	if auth == "" {
