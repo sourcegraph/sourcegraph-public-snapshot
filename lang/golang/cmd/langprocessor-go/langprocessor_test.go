@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -59,7 +60,7 @@ func TestResolveFile(t *testing.T) {
 		URI: "stdlib://deadbeef/src/strings/strings.go",
 	})
 	for _, c := range cases {
-		got, err := resolveFile(workspace, cases[0].Repo, cases[0].Commit, c.URI)
+		got, err := resolveFile(context.TODO(), workspace, cases[0].Repo, cases[0].Commit, c.URI)
 		if err != nil {
 			t.Fatalf("%+#v: %s", c, err)
 		}

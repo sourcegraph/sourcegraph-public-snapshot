@@ -36,6 +36,7 @@ func TestTranslator(t *testing.T) {
 	ts := httptest.NewServer(New(&Translator{
 		Addr: lspMock.Addr,
 		Preparer: NewPreparer(&PreparerOpts{
+			SrcEndpoint: "dev",
 			WorkDir:     workDir,
 			PrepareRepo: func(ctx context.Context, update bool, workspace, repo, commit string) error { return nil },
 			PrepareDeps: func(ctx context.Context, update bool, workspace, repo, commit string) error { return nil },
