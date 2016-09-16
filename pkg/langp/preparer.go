@@ -2,6 +2,7 @@ package langp
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -65,19 +66,30 @@ func NewPreparer(opts *PreparerOpts) *Preparer {
 		opts.SrcEndpoint = os.Getenv("SRC_ENDPOINT")
 	}
 	if opts.SrcEndpoint == "" {
-		panic("NewPreparer: SrcEndpoint is not set!")
+		panic("NewPreparer: SrcEndpoint is not set! Maybe use SRC_ENDPOINT='dev'?")
 	}
 
+	// Disable TLS certification verification because https://sourcegraph-frontend
+	// is not valid for our *.sourcegraph.com certificate, and we strictly enforce
+	// HTTPS via a redirect.
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 	return &Preparer{
 		PreparerOpts:   opts,
 		preparingRepos: newPending(),
 		preparingDeps:  newPending(),
+		srcClient: &http.Client{
+			Transport: tr,
+			Timeout:   5 * time.Second,
+		},
 	}
 }
 
 type Preparer struct {
 	*PreparerOpts
 	preparingRepos, preparingDeps *pending
+	srcClient                     *http.Client
 }
 
 // pathToWorkspace returns an absolute path to the workspace for the given
@@ -213,20 +225,9 @@ func (p *Preparer) PrepareTimeout(ctx context.Context, repo, commit string, time
 		ctx = ctx2
 	}
 
-	var span opentracing.Span
-	span, ctx = opentracing.StartSpanFromContext(ctx, "prepare workspace repo")
-	defer span.Finish()
-	span.SetTag("repo", repo)
-	span.SetTag("commit", commit)
-	span.SetTag("timeout", timeout)
-
 	start := time.Now()
 	workspace, status, err := p.prepareRepo(ctx, repo, commit, timeout)
 	observePrepareRepo(ctx, start, repo, status)
-	span.SetTag("status", status)
-	if status == prepStatusError {
-		ext.Error.Set(span, true)
-	}
 	return workspace, err
 }
 
@@ -237,8 +238,8 @@ func (p *Preparer) checkAccess(ctx context.Context, repo string) (err error) {
 			ext.Error.Set(span, true)
 			span.LogEvent(fmt.Sprintf("error: %v", err))
 		}
+		span.Finish()
 	}()
-	defer span.Finish()
 	span.SetTag("repo", repo)
 
 	if p.SrcEndpoint == "dev" {
@@ -258,7 +259,7 @@ func (p *Preparer) checkAccess(ctx context.Context, repo string) (err error) {
 		return fmt.Errorf("checkAccess: %v", err)
 	}
 	req.Header.Set("Authorization", auth)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := p.srcClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("checkAccess: %v", err)
 	}
@@ -284,8 +285,8 @@ func (p *Preparer) fetchGitHubToken(ctx context.Context, repo string) (newCtx co
 			ext.Error.Set(span, true)
 			span.LogEvent(fmt.Sprintf("error: %v", err))
 		}
+		span.Finish()
 	}()
-	defer span.Finish()
 	span.SetTag("repo", repo)
 
 	if p.SrcEndpoint == "dev" {
@@ -346,6 +347,19 @@ func (p *Preparer) fetchGitHubToken(ctx context.Context, repo string) (newCtx co
 
 // prepareRepo should not be called outside of Preparer itself.
 func (p *Preparer) prepareRepo(ctx context.Context, repo, commit string, timeout time.Duration) (workspace, status string, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "prepare workspace repo")
+	defer func() {
+		span.SetTag("status", status)
+		if status == prepStatusError {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+		span.Finish()
+	}()
+	span.SetTag("repo", repo)
+	span.SetTag("commit", commit)
+	span.SetTag("timeout", timeout)
+
 	// Acquire ownership of repository preparation. Essentially this is a
 	// sync.Mutex unique to the workspace.
 	workspace = p.pathToWorkspace(repo, commit)
@@ -403,6 +417,19 @@ func (p *Preparer) prepareRepo(ctx context.Context, repo, commit string, timeout
 
 // prepareDeps should not be called outside of Preparer itself.
 func (p *Preparer) prepareDeps(ctx context.Context, update bool, repo, commit string) (status string, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "prepare workspace deps")
+	defer func() {
+		span.SetTag("status", status)
+		if status == prepStatusError {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+		span.Finish()
+	}()
+	span.SetTag("update", update)
+	span.SetTag("repo", repo)
+	span.SetTag("commit", commit)
+
 	// Acquire ownership of dependency preparation.
 	workspace := p.pathToWorkspace(repo, commit)
 	didTimeout, handled, done := p.preparingDeps.acquire(workspace, 0*time.Second)
