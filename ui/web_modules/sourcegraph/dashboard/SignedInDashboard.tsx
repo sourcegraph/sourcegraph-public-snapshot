@@ -134,8 +134,8 @@ export class SignedInDashboard extends Container<Props, State> {
 										<p>Automatically track which applications you use</p>
 									</div>
 									<div  className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>
-										<Link to="github.com/kubernetes/kubernetes/-/blob/examples/apiserver/server/main.go"><span onClick={this._exampleRepoSelected.bind(this, "kubernetes")}>kubernetes / kubernetes</span></Link>
-										<p>Production-Grade Container Scheduling and Management</p>
+										<Link to="https://sourcegraph.com/github.com/golang/go/-/blob/src/net/http/request.go"><span onClick={this._exampleRepoSelected.bind(this, "golang")}>golang / go</span></Link>
+										<p>The Go programming language</p>
 									</div>
 								</div>
 							</div>
