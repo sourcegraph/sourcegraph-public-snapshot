@@ -54,6 +54,9 @@ func NewServer(s Server) http.Handler {
 	mux.Handle("/defspec-refs", handler("/defspec-refs", srv.serveDefSpecRefs))
 	mux.Handle("/hover", handler("/hover", srv.serveHover))
 	mux.Handle("/local-refs", handler("/local-refs", srv.serveLocalRefs))
+	mux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte("ok\n"))
+	}))
 	return mux
 }
 
