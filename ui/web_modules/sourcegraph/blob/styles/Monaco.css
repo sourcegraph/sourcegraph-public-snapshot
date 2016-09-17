@@ -2,7 +2,6 @@
 @value navbarZIndex from GlobalNav;
 
 :global .monaco-editor .identifier {
-	cursor: pointer;
 	font-weight: bold;
 }
 

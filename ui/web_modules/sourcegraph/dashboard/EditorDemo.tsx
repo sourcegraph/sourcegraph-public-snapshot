@@ -7,6 +7,8 @@ import {Store} from "sourcegraph/Store";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import "sourcegraph/blob/BlobBackend";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import {uriForTreeEntry} from "sourcegraph/editor/FileModel";
+import { EditorComponent } from "sourcegraph/editor/EditorComponent";
 
 type Props = {
 	repo: string;
@@ -24,6 +26,11 @@ type State = Props & {
 // except that css styles and eventlisteners / additional fetches for
 // information are removed.
 export class EditorDemo extends Container<Props, State> {
+	constructor(props: Props) {
+		super(props);
+		this._setEditor = this._setEditor.bind(this);
+	}
+
 	stores(): Store<any>[] {
 		return [BlobStore];
 	}
@@ -40,14 +47,17 @@ export class EditorDemo extends Container<Props, State> {
 		}
 	}
 
+	private _setEditor(editor: Editor) {
+		if (editor) {
+			const range = new monaco.Range(this.props.startLine, 1, this.props.startLine, 1);
+			const uri = uriForTreeEntry(this.props.repo, this.props.rev, this.props.path, range);
+			editor.setInput(uri, range);
+		}
+	}
+
 	render(): JSX.Element | null {
-		return <div style={{display: "flex", flexDirection: "column", height:"250px", border: "solid 1px #efefef"}}>
-			<Editor
-		repo={this.state.repo}
-		rev={this.state.rev}
-		path={this.state.path}
-		contents={this.state.contents}
-		startLine={this.state.startLine} />
-			</div>;
+		return (
+			<EditorComponent editorRef={this._setEditor} style={{display: "flex", flexDirection: "column", height:"225px", border: "solid 1px #efefef"}} />
+		);
 	}
 }

@@ -6,6 +6,7 @@
 		"interface-name": [false],
 		"max-line-length": [false],
 		"member-access": false,
+		"member-ordering": false,
 		"no-default-export": true,
 		"no-string-literal": false,
 		"object-literal-key-quotes": false,
