@@ -49,14 +49,23 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
+
+		// Don't add an ugly commit ID to the URL in the address bar if
+		// the user is on a named branch or default branch. Also, never
+		// add a rev if the jump is cross-repo.
+		var rev string
+		if v := routevar.ToRepoRev(mux.Vars(r)); defRange.Repo == v.Repo {
+			rev = v.Rev
+		}
+
 		if defRange.Empty() {
 			response.Path = ""
 		} else if defRange.File == "." {
 			// Special case the top level directory
-			response.Path = router.Rel.URLToRepoTreeEntry(defRange.Repo, defRange.Commit, "").String()
+			response.Path = router.Rel.URLToRepoTreeEntry(defRange.Repo, rev, "").String()
 		} else {
 			// We increment the line number by 1 because the blob view is not zero-indexed.
-			response.Path = router.Rel.URLToBlobRange(defRange.Repo, defRange.Commit, defRange.File, defRange.StartLine+1, defRange.EndLine+1, defRange.StartCharacter+1, defRange.EndCharacter+2).String()
+			response.Path = router.Rel.URLToBlobRange(defRange.Repo, rev, defRange.File, defRange.StartLine+1, defRange.EndLine+1, defRange.StartCharacter+1, defRange.EndCharacter+2).String()
 		}
 		w.Header().Set("cache-control", "private, max-age=60")
 		return writeJSON(w, response)
