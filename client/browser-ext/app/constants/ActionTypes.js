@@ -12,7 +12,3 @@ export const WANT_DEFS = "WANT_DEFS";
 export const FETCHED_DEFS = "FETCHED_DEFS";
 
 export const FETCHED_ANNOTATIONS = "FETCHED_ANNOTATIONS";
-
-export const FETCHED_BUILD = "FETCHED_BUILD";
-
-export const CREATED_BUILD = "CREATED_BUILD";

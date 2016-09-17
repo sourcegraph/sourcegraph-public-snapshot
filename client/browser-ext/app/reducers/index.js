@@ -37,22 +37,6 @@ const resolvedRev = function(state = {content: {}}, action) {
 	}
 }
 
-const build = function(state = {content: {}}, action) {
-	switch (action.type) {
-	case ActionTypes.FETCHED_BUILD:
-	case ActionTypes.CREATED_BUILD:
-		return {
-			...state,
-			content: {
-				...state.content,
-				[keyFor(action.repo, action.commitID)]: action.json ? action.json : null,
-			}
-		};
-	default:
-		return state;
-	}
-}
-
 const srclibDataVersion = function(state = {content: {}, fetches: {}}, action) {
 	switch (action.type) {
 	case ActionTypes.FETCHED_SRCLIB_DATA_VERSION:
@@ -134,4 +118,4 @@ const annotations = function(state = {content: {}}, action) {
 	}
 }
 
-export default combineReducers({authInfo, accessToken, resolvedRev, srclibDataVersion, build, def, defs, annotations});
+export default combineReducers({authInfo, accessToken, resolvedRev, srclibDataVersion, def, defs, annotations});
