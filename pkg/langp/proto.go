@@ -174,7 +174,7 @@ type ExternalRefs struct {
 	Defs []*DefSpec
 }
 
-// ExportedSymbols contains a list of all Defs available within a repository.
+// Symbols contains a list of Defs available within a repository.
 type Symbols struct {
 	Symbols []*lsp.SymbolInformation
 }
@@ -183,6 +183,14 @@ type Symbols struct {
 // repositories.
 type ExportedSymbols struct {
 	Symbols []*Symbol
+}
+
+// SymbolsQuery is a request for a set of symbols within a repo.
+type SymbolsQuery struct {
+	RepoRev
+
+	// Query specifies the desired options for filtering the available symbols.
+	Query string
 }
 
 // Hover represents a message for when a user "hovers" over a definition. It is
