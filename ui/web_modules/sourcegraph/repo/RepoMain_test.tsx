@@ -1,6 +1,5 @@
 import expect from "expect.js";
 import * as React from "react";
-import * as BuildActions from "sourcegraph/build/BuildActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {OriginGitHub} from "sourcegraph/repo/RepoBackend";
 import {RepoMain} from "sourcegraph/repo/RepoMain";
@@ -27,13 +26,6 @@ describe("RepoMain", () => {
 		it("should trigger WantCreateRepo for just-resolved remote repos", () => {
 			const res = render(<RepoMain repo="r" repoResolution={{RemoteRepo: {Origin: {ID: "123", Service: OriginGitHub}}}} location={{pathname: "/r", state: {}}} {...common} />);
 			expect(res.actions).to.eql([new RepoActions.WantCreateRepo("r", {Origin: {ID: "123", Service: OriginGitHub}})]);
-		});
-	});
-
-	describe("build creation", () => {
-		it("should trigger CreateBuild when there is no build", () => {
-			const res = render(<RepoMain repo="r" commitID="c" rev="v" build={{Error: {response: {status: 404}}}} location={{pathname: "/r", state: {}}} {...common} />);
-			expect(res.actions).to.eql([new BuildActions.CreateBuild("r", "c", "v", null)]);
 		});
 	});
 });

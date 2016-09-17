@@ -11,8 +11,6 @@ export type RouteName = "styleguide" |
 	"repo" |
 	"tree" |
 	"blob" |
-	"build" |
-	"builds" |
 	"login" |
 	"signup" |
 	"forgot" |
@@ -24,8 +22,6 @@ export type RouteName = "styleguide" |
 	"pricing" |
 	"terms" |
 	"privacy" |
-	"admin" |
-	"adminBuilds" |
 	"browserExtFaqs";
 
 export const rel = {
@@ -50,14 +46,10 @@ export const rel = {
 
 	home: "",
 
-	admin: "-/",
-
 	repo: "*", // matches both "repo" and "repo@rev"
 	commit: "commit",
 	tree: "tree/*",
 	blob: "blob/*",
-	build: "builds/:id",
-	builds: "builds",
 };
 
 export const abs = {
@@ -78,15 +70,10 @@ export const abs = {
 	forgot: rel.forgot,
 	reset: rel.reset,
 
-	admin: rel.admin,
-	adminBuilds: `${rel.admin}${rel.builds}`,
-
 	repo: rel.repo,
 	commit: `${rel.repo}/-/${rel.commit}`,
 	tree: `${rel.repo}/-/${rel.tree}`,
 	blob: `${rel.repo}/-/${rel.blob}`,
-	build: `${rel.repo}/-/${rel.build}`,
-	builds: `${rel.repo}/-/${rel.builds}`,
 };
 
 const routeNamesByPattern: { [key: string]: RouteName } = {};

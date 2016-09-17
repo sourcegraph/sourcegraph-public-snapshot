@@ -17,7 +17,6 @@ import {desktopContainer} from "sourcegraph/desktop/DesktopContainer";
 import {routes as homeRoutes} from "sourcegraph/home";
 import {routes as pageRoutes} from "sourcegraph/page";
 import {routes as styleguideRoutes} from "sourcegraph/styleguide";
-import {routes as adminRoutes} from "sourcegraph/admin/routes";
 import {routes as searchRoutes} from "sourcegraph/search/routes";
 import {routes as userRoutes} from "sourcegraph/user";
 import {routes as userSettingsRoutes} from "sourcegraph/user/settings/routes";
@@ -90,7 +89,6 @@ export const rootRoute: PlainRoute = {
 			...pageRoutes,
 			...styleguideRoutes,
 			...homeRoutes,
-			...adminRoutes,
 			...searchRoutes,
 			...userRoutes,
 			...userSettingsRoutes,

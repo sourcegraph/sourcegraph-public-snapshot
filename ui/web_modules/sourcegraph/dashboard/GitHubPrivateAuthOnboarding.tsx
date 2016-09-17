@@ -85,7 +85,7 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 	}
 
 	_toggleRepo(remoteRepo: any): void {
-		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_TOGGLE, "BuildRepoToggleClicked", {page_name: "GitHubPrivateCodeOnboarding"});
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_TOGGLE, "IndexRepoToggleClicked", {page_name: "GitHubPrivateCodeOnboarding"});
 		Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(remoteRepo.URI, remoteRepo, true));
 	}
 
@@ -101,7 +101,7 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 		});
 	}
 
-	_renderRepoBuildCTA(): JSX.Element | null {
+	_renderIndexRepoCTA(): JSX.Element | null {
 		let repos: any[] = [];
 		if (this.props.repos) {
 			if (this.state.showAll) {
@@ -160,7 +160,7 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 	}
 
 	render(): JSX.Element | null {
-		let conditionalRender = this.props.privateCodeAuthed ? this._renderRepoBuildCTA() : this._renderPrivateAuthCTA();
+		let conditionalRender = this.props.privateCodeAuthed ? this._renderIndexRepoCTA() : this._renderPrivateAuthCTA();
 		return (<div>
 			{conditionalRender}
 		</div>);

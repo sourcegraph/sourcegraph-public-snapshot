@@ -4,13 +4,10 @@ import * as React from "react";
 import Helmet from "react-helmet";
 import * as styles from "sourcegraph/repo/styles/Repo.css";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
-import * as BuildActions from "sourcegraph/build/BuildActions";
-import "sourcegraph/build/BuildBackend";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
 import {trimRepo} from "sourcegraph/repo";
 import {context} from "sourcegraph/app/context";
-import {guessBranchName} from "sourcegraph/build/Build";
 import {Header} from "sourcegraph/components/Header";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
@@ -31,7 +28,6 @@ interface Props {
 	resolvedRev?: any;
 	repoNavContext?: any;
 	repoResolution?: any;
-	build?: any;
 	repoObj?: any;
 	main?: JSX.Element;
 	isCloning?: boolean;
@@ -50,7 +46,6 @@ export class RepoMain extends React.Component<Props, State> {
 		super(props);
 
 		this._repoResolutionUpdated(this.props.repo, this.props.repoResolution);
-		this._buildUpdated(this.props.repo, this.props.build);
 	}
 
 	componentDidMount(): void {
@@ -70,12 +65,6 @@ export class RepoMain extends React.Component<Props, State> {
 		if (this.props.repoResolution !== nextProps.repoResolution) {
 			this._repoResolutionUpdated(nextProps.repo, nextProps.repoResolution);
 		}
-
-		if (this.props.build !== nextProps.build && !this.props.build) {
-			// Check for !this.props.build to avoid a loop where
-			// after we create a build, this gets triggered again.
-			this._buildUpdated(nextProps.repo, nextProps.build);
-		}
 	}
 
 	_repoResolutionUpdated(repo: string, resolution: any) {
@@ -89,18 +78,6 @@ export class RepoMain extends React.Component<Props, State> {
 			}
 
 			Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(repo, resolution.RemoteRepo));
-		}
-	}
-
-	_buildUpdated(repo: string, build: any) {
-		// Don't trigger the build if user agent is bot.
-		if (context.userAgentIsBot) {
-			return;
-		}
-
-		if (build && build.Error && build.Error.response && build.Error.response.status === 404) {
-			// No build exists, so create one.
-			Dispatcher.Backends.dispatch(new BuildActions.CreateBuild(repo, this.props.commitID, guessBranchName(this.props.rev), null));
 		}
 	}
 
