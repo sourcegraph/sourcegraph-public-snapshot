@@ -279,6 +279,8 @@ See also: [{DefSpec Object}](#type-defspec)
 }
 ```
 
+See also: [{DefSpec Object}](#type-defspec)
+
 ## Type: SymbolsQuery
 
 `{SymbolsQuery Object}` is a JSON object representing a request for a set of symbols within a repository.
@@ -291,8 +293,6 @@ See also: [{DefSpec Object}](#type-defspec)
     Query: string,
 }
 ```
-
-See also: [{DefSpec Object}](#type-defspec)
 
 See also: [{DefSpec Object}](#type-defspec)
 
