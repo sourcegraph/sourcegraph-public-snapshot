@@ -22,6 +22,7 @@ This document contains the specification for the Sourcegraph Language Processor 
   - [RepoRev](#type-reporev)
   - [ExternalRefs](#type-externalrefs)
   - [ExportedSymbols](#type-exportedsymbols)
+  - [SymbolsQuery](#type-symbolsquery)
   - [DefSpec](#type-defspec)
   - [Symbol](#type-symbol)
 
