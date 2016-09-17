@@ -215,7 +215,7 @@ func (c *Client) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, e
 	return &result, nil
 }
 
-// Symbols lists all repository-local definitions, optially filtered by a query.
+// Symbols lists all repository-local definitions, optionally filtered by a query.
 func (c *Client) Symbols(ctx context.Context, q *SymbolsQuery) (*Symbols, error) {
 	var result Symbols
 	// Only use the ctags server (if available) for symbol requests.
