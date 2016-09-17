@@ -1,13 +1,31 @@
 import * as React from "react";
 import {InjectedRouter} from "react-router";
 
+import {colors} from "sourcegraph/components/jsStyles/colors";
 import {urlToBlobLine} from "sourcegraph/blob/routes";
-import {SearchComponent} from "sourcegraph/search/modal/SearchComponent";
+import {CategorySelector, Hint, ResultCategories, SingleCategoryResults, TabbedResults, SearchInput} from "sourcegraph/search/modal/SearchComponent";
 import {RepoRev} from "sourcegraph/search/modal/SearchModal";
 import {updateCategory} from "sourcegraph/search/modal/UpdateResults";
 import {RepoStore} from "sourcegraph/repo/RepoStore";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
+
+const modalStyle = {
+	position: "fixed",
+	top: 60,
+	right: 0,
+	left: 0,
+	maxWidth: 800,
+	margin: "0 auto",
+	borderRadius: "0 0 8px 8px",
+	backgroundColor: colors.coolGray2(),
+	padding: 16,
+	display: "flex",
+	flexDirection: "column",
+	zIndex: 1,
+	maxHeight: "90vh",
+	fontSize: 15,
+};
 
 const CategoryCount = 3;
 export const enum Category {
@@ -59,7 +77,6 @@ interface State {
 };
 
 export interface SearchActions {
-	// updateInput: number;
 	updateInput: (event: React.FormEvent<HTMLInputElement>) => void;
 	dismiss: () => void;
 	viewCategory: (category: Category) => void;
@@ -267,6 +284,25 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 			recentItems: this.state.results,
 		};
 
-		return <SearchComponent data={data} />;
+
+		let content;
+		let showHint = true;
+		if (data.input === "" && data.tag === null) {
+			content = <CategorySelector sel={data.selected} />;
+		} else if (data.tag !== null) {
+			content = <SingleCategoryResults data={data} category={data.tag} />;
+		} else if (data.tab !== null) {
+			content = <TabbedResults tab={data.tab} results={data.results} />;
+			showHint = false;
+		} else {
+			content = <ResultCategories resultCategories={data.results} limit={15} />;
+		}
+		return (
+			<div style={modalStyle}>
+				<SearchInput tag={data.tag} input={data.input} />
+				{showHint && <Hint tag={data.tag} />}
+				{content}
+			</div>
+		);
 	}
 }

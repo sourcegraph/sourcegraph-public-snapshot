@@ -9,23 +9,6 @@ import {shortcuts} from "sourcegraph/search/modal/SearchModal";
 
 const smallFont = 12.75;
 
-const modalStyle = {
-	position: "fixed",
-	top: 60,
-	right: 0,
-	left: 0,
-	maxWidth: 515,
-	margin: "0 auto",
-	borderRadius: "0 0 8px 8px",
-	backgroundColor: colors.coolGray2(),
-	padding: 16,
-	display: "flex",
-	flexDirection: "column",
-	zIndex: 1,
-	maxHeight: "90vh",
-	fontSize: 15,
-};
-
 const Bubble = (props) => <span style={{
 	backgroundColor: colors.coolGray1(),
 	borderRadius: 3,
@@ -34,7 +17,7 @@ const Bubble = (props) => <span style={{
 	<b>{props.children}</b>
 </span>;
 
-const Hint = ({tag}) => {
+export const Hint = ({tag}) => {
 	let keycode;
 	switch (tag) {
 		case Category.definition:
@@ -123,7 +106,7 @@ const ResultCategory = ({category, results, limit= Infinity}) => {
 	</div>;
 };
 
-const ResultCategories = ({resultCategories, limit}) => {
+export const ResultCategories = ({resultCategories, limit}) => {
 	let categoryLimit = Infinity;
 	if (deepLength(resultCategories) > limit) {
 		categoryLimit = 5;
@@ -158,7 +141,7 @@ const Tag = ({tag}) => {
 	</div>;
 };
 
-const SearchInput = ({tag, input}) => <div style={{
+export const SearchInput = ({tag, input}) => <div style={{
 	backgroundColor: colors.white(),
 	borderRadius: 3,
 	width: "100%",
@@ -204,7 +187,7 @@ style={{
 	</span>
 </a>;
 
-const CategorySelector = ({sel}: {sel: number}) => <div>
+export const CategorySelector = ({sel}: {sel: number}) => <div>
 	<span style={{color: colors.coolGray3(), fontSize: smallFont}}>JUMP TO ...</span>
 	<CategorySelection title={"file"} content={"filename in this repo"} shortcut={shortcuts.file} selected={sel === 1} activate={() => actions.activateTag(Category.file)} />
 	<CategorySelection title={"def"} content={"definition in this repo"} shortcut={shortcuts.def} selected={sel === 2} activate={() => actions.activateTag(Category.definition)} />
@@ -259,7 +242,7 @@ const ResultList = ({results}) => <div style={{
 	{results.map(Result)}
 </div>;
 
-const TabbedResults = ({tab, results}) => <div style={{
+export const TabbedResults = ({tab, results}) => <div style={{
 	display: "flex",
 	flexDirection: "column",
 }}>
@@ -275,31 +258,10 @@ interface ComponentData {
 	results: Map<Category, Result[]>;
 }
 
-const SingleCategoryResults = ({data, category}) => {
+export const SingleCategoryResults = ({data, category}) => {
 	const maybeResults = data.results.get(category);
 	const results = maybeResults ? maybeResults : [];
 	return <div style={{overflow: "scroll"}}>
 		<ResultCategory category={category} results={results} />
-	</div>;
-};
-
-// SearchComponent contains the the view logic.
-export const SearchComponent = ({data}: {data: ComponentData}) => {
-	let content;
-	let showHint = true;
-	if (data.input === "" && data.tag === null) {
-		content = <CategorySelector sel={data.selected} />;
-	} else if (data.tag !== null) {
-		content = <SingleCategoryResults data={data} category={data.tag} />;
-	} else if (data.tab !== null) {
-		content = <TabbedResults tab={data.tab} results={data.results} />;
-		showHint = false;
-	} else {
-		content = <ResultCategories resultCategories={data.results} limit={15} />;
-	}
-	return <div style={modalStyle}>
-		<SearchInput tag={data.tag} input={data.input} />
-		{showHint && <Hint tag={data.tag} />}
-		{content}
 	</div>;
 };
