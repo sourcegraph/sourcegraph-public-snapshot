@@ -59,6 +59,27 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 	tags := p.Tags()
 	span.SetTag("tags count", len(tags))
 	vslog("Definitions found: ", strconv.Itoa(len(tags)))
+
+	if params.Query != "" {
+		span, _ := opentracing.StartSpanFromContext(ctx, "filter tags")
+
+		q := strings.ToLower(params.Query)
+		exact, prefix, contains := []parser.Tag{}, []parser.Tag{}, []parser.Tag{}
+		for _, t := range tags {
+			name := strings.ToLower(t.Name)
+			if name == q {
+				exact = append(exact, t)
+			} else if strings.HasPrefix(name, q) {
+				prefix = append(prefix, t)
+			} else if strings.Contains(name, q) {
+				contains = append(contains, t)
+			}
+		}
+		tags = append(append(exact, prefix...), contains...) // Basic ranking
+
+		span.Finish()
+	}
+
 	symbols = make([]lsp.SymbolInformation, 0, len(tags))
 	for _, tag := range tags {
 		nameIdx := strings.Index(tag.DefLinePrefix, tag.Name)
@@ -81,6 +102,14 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 				},
 			},
 		})
+	}
+
+	// Limit the amount of symbols we serve to the client. Allowing an
+	// excessively large amount to be returned will generate a huge response
+	// object, which slows down the performance of the pipeline significantly.
+	const limit = 100
+	if len(symbols) > limit {
+		symbols = symbols[:limit]
 	}
 
 	return symbols, nil
