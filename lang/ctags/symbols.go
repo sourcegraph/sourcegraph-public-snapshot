@@ -2,8 +2,12 @@ package ctags
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
+
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/lang/ctags/parser"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
@@ -31,7 +35,20 @@ var nameToSymbolKind = map[string]lsp.SymbolKind{
 	"array":       lsp.SKArray,
 }
 
-func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
+func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) (symbols []lsp.SymbolInformation, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "ctags.handleSymbol")
+	if params.Query != "" {
+		span.SetTag("query", params.Query)
+	}
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+		span.SetTag("returned symbols count", len(symbols))
+		span.Finish()
+	}()
+
 	rootDir := h.init.RootPath
 	vslog("Requesting workspace symbols for ", rootDir)
 	p, err := parser.Parse(ctx, rootDir, nil)
@@ -40,8 +57,9 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 	}
 
 	tags := p.Tags()
+	span.SetTag("tags count", len(tags))
 	vslog("Definitions found: ", strconv.Itoa(len(tags)))
-	symbols := make([]lsp.SymbolInformation, 0, len(tags))
+	symbols = make([]lsp.SymbolInformation, 0, len(tags))
 	for _, tag := range tags {
 		nameIdx := strings.Index(tag.DefLinePrefix, tag.Name)
 		if nameIdx < 0 {

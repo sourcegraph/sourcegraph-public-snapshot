@@ -6,10 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"runtime"
 	"strings"
 	"sync"
+
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
@@ -31,6 +35,25 @@ func (h *Handler) reset(init *lsp.InitializeParams) {
 }
 
 func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (_ interface{}, err error) {
+	operationName := "LS Serve: " + req.Method
+	var span opentracing.Span
+	if req.Meta != nil {
+		var header http.Header
+		if err := json.Unmarshal(*req.Meta, &header); err != nil {
+			return nil, err
+		}
+		carrier := opentracing.HTTPHeadersCarrier(header)
+		clientContext, err := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, carrier)
+		if err != nil {
+			return nil, err
+		}
+		span = opentracing.GlobalTracer().StartSpan(operationName, ext.RPCServerOption(clientContext))
+		ctx = opentracing.ContextWithSpan(ctx, span)
+	} else {
+		span, ctx = opentracing.StartSpanFromContext(ctx, operationName)
+	}
+	defer span.Finish()
+
 	// Coarse lock (for now) to protect h's internal state.
 	h.mu.Lock()
 	defer h.mu.Unlock()

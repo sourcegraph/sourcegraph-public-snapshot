@@ -8,6 +8,9 @@ import (
 	"net"
 	"os"
 
+	lightstep "github.com/lightstep/lightstep-tracer-go"
+	opentracing "github.com/opentracing/opentracing-go"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/lang/ctags"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
@@ -47,7 +50,15 @@ func run() error {
 		go debugserver.Start(*profbind)
 	}
 
-	h := jsonrpc2.HandlerWithError((&ctags.Handler{}).Handle)
+	if t := os.Getenv("LIGHTSTEP_ACCESS_TOKEN"); t != "" {
+		opentracing.InitGlobalTracer(lightstep.NewTracer(lightstep.Options{
+			AccessToken: t,
+		}))
+	}
+
+	newHandler := func() jsonrpc2.Handler {
+		return jsonrpc2.HandlerWithError((&ctags.Handler{}).Handle)
+	}
 
 	switch *mode {
 	case "tcp":
@@ -57,11 +68,18 @@ func run() error {
 		}
 		defer lis.Close()
 		log.Println("listening on", *addr)
-		return jsonrpc2.Serve(context.Background(), lis, h)
+		// We do not use jsonrpc2.Serve since we want to store state per connection
+		for {
+			conn, err := lis.Accept()
+			if err != nil {
+				return err
+			}
+			jsonrpc2.NewConn(context.Background(), conn, newHandler())
+		}
 
 	case "stdio":
 		log.Println("reading on stdin, writing on stdout")
-		<-jsonrpc2.NewConn(context.Background(), stdrwc{}, h, jsonrpc2.LogMessages(l)).DisconnectNotify()
+		<-jsonrpc2.NewConn(context.Background(), stdrwc{}, newHandler(), jsonrpc2.LogMessages(l)).DisconnectNotify()
 		log.Println("connection closed")
 		return nil
 
