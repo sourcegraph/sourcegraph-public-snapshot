@@ -2,13 +2,16 @@ import * as React from "react";
 import {InjectedRouter} from "react-router";
 
 import {colors} from "sourcegraph/components/jsStyles/colors";
-import {urlToBlobLine} from "sourcegraph/blob/routes";
-import {CategorySelector, Hint, ResultCategories, SingleCategoryResults, TabbedResults, SearchInput} from "sourcegraph/search/modal/SearchComponent";
+import {urlToBlobLine, urlToBlob} from "sourcegraph/blob/routes";
+import {CategorySelector, Hint, ResultCategories, SearchInput, SingleCategoryResults, TabbedResults, Tag} from "sourcegraph/search/modal/SearchComponent";
 import {RepoRev} from "sourcegraph/search/modal/SearchModal";
-import {updateCategory} from "sourcegraph/search/modal/UpdateResults";
 import {RepoStore} from "sourcegraph/repo/RepoStore";
+import {TreeStore} from "sourcegraph/tree/TreeStore";
+import * as TreeActions from "sourcegraph/tree/TreeActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
+import {Search as SearchIcon} from "sourcegraph/components/symbols";
+import {input as inputStyle} from "sourcegraph/components/styles/input.css";
 
 const modalStyle = {
 	position: "fixed",
@@ -59,6 +62,12 @@ interface State {
 	// The search string in the input box.
 	input: string;
 
+	results2: Category[];
+
+
+
+
+	
 	// The results of the search.
 	results: Map<Category, Result[]>;
 
@@ -94,15 +103,10 @@ export function deepLength(categories: Map<Category, Result[]>): number {
 	return acc;
 }
 
-// NOTE: this is global. Bad idea?
-export let actions: SearchActions = {
-	updateInput: (event: React.FormEvent<HTMLInputElement>) => null,
-	dismiss: () => null,
-	viewCategory: (category: Category) => null,
-	bindSearchInput: (node: HTMLElement) => null,
-	activateResult: (URLPath: string) => null,
-	activateTag: (category: Category) => null,
-};
+export interface Category2 {
+	Title: string;
+	Results: Result[];
+}
 
 // SearchContainer contains the logic that deals with navigation and data
 // fetching.
@@ -121,17 +125,18 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 		this.navigationKeys = this.navigationKeys.bind(this);
 		this.state = {
 			input: "",
-			results: new Map(),
+			results: new Map(),	// TODO(bl): remove
+			results2: [],
 			tag: start,
 			selected2: [0, 0],
-			selected: 0, //start === null ? 1 : 0,
-			tab: null,
-			searchInput: null,
+			selected: 0, //start === null ? 1 : 0, // TODO(bl): remove
+			tab: null,	 // TODO(bl): remove
+			searchInput: null,	// TODO(bl): remove
 		};
-		actions = {
+		this.actions = {
 			updateInput: this.updateInput.bind(this),
 			dismiss: dismissModal,
-			viewCategory: this.viewCategory.bind(this),
+			viewCategory: this.viewCategory.bind(this), // TODO(bl): remove
 			bindSearchInput: this.bindSearchInput.bind(this),
 			activateResult: this.activateResult.bind(this),
 			activateTag: this.activateTag.bind(this),
@@ -159,30 +164,20 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 		}
 	}
 
-	componentDidUpdate(_: Props, prevState: State): void {
-		if (prevState.selected !== 0 && this.state.selected === 0) {
-			this.focusSearchBar();
-		}
-		if (prevState.selected === 0 && this.state.selected > 0) {
-			this.blurSearchBar();
-		}
-		if (this.state.input !== prevState.input) {
-			this.updateResults();
-		}
+	componentDidUpdate(_: Props, prevState: State): void {}
+
+	query(): string {
+		return this.state.input.toLowerCase();
 	}
 
 	updateResults(): void {
-		Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.repo, this.props.commitID, this.state.input));
-
-		for (let i: Category = 0; i < CategoryCount; i++) {
-			updateCategory(i, this.props.repo, this.props.commitID, this.state.input, resultList => {
-				const results = this.state.results;
-				results.set(i, resultList);
-				this.setState(Object.assign({}, this.state, {results: results}));
-			});
-		}
+		Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.repo, this.props.commitID, this.query()));
+		Dispatcher.Backends.dispatch(new RepoActions.WantRepos(this.query()));
+		Dispatcher.Backends.dispatch(new TreeActions.WantFileList(this.props.repo, this.props.commitID));
 	}
 
+	/////////////////// bl-cursor
+	
 	navigationKeys(event: KeyboardEvent): void {
 		if (event.key === "ArrowUp") {
 			let selected = this.state.selected2.slice();
@@ -225,12 +220,10 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 		} else if (event.key === "Enter") {
 			this.activateResult("FIXME");
 		}
-
-		console.log("# selected", selected);
 	}
 
 	visibleResults(): number {
-		if (this.state.input === "" && this.state.tag === null) {
+		if (this.query() === "" && this.state.tag === null) {
 			return CategoryCount;
 		}
 		return deepLength(this.state.results);
@@ -243,10 +236,11 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 			selected: 0,
 		});
 		this.setState(state);
+		this.updateResults();
 	}
 
 	activateTag(category: Category): void {
-		if (this.state.tag === null && this.state.input === "") {
+		if (this.state.tag === null && this.query() === "") {
 			this.setState(Object.assign({}, this.state, {
 				tag: category,
 				selected: 0,
@@ -292,32 +286,53 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 	}
 
 	render(): JSX.Element {
-		const symbols = RepoStore.symbols.list(this.props.repo, this.props.commitID, this.state.input);
+		let results: Map<Category, Result[]> = new Map();
+		let query = this.query();
+
+		const symbols = RepoStore.symbols.list(this.props.repo, this.props.commitID, query);
 		if (symbols && this.state.results) {
 			let symbolResults = [];
 			for (let i = 0; i < symbols.length; i++) {
 				const path = symbols[i].location.uri;
 				const line = symbols[i].location.range.start.line;
-				const idx = symbols[i].name.toLowerCase().indexOf(this.state.input.toLowerCase());
+				const idx = symbols[i].name.toLowerCase().indexOf(query.toLowerCase());
 				symbolResults.push({
 					title: symbols[i].name,
 					description: "",
 					index: idx,
-					length: this.state.input.length,
+					length: query.length,
 					URLPath: urlToBlobLine(this.props.repo, this.props.commitID, path, line+1),
 				});
 			}
-			this.state.results.set(Category.definition, symbolResults);
+
+			results.set(Category.definition, symbolResults);
+		}
+
+		const repos = RepoStore.repos.list(query);
+		if (repos) {
+			const repoResults = repos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
+			results.set(Category.repository, repoResults);
+		}
+
+		const files = TreeStore.fileLists.get(this.props.repo, this.props.commitID);
+		if (files) {
+			let fileResults = [];
+			files.Files.forEach((file, i) => {
+				let index = file.toLowerCase().indexOf(query.toLowerCase());
+				if (index === -1) { return }
+				fileResults.push({ title: file, index: index, length: query.length, URLPath: urlToBlob(this.props.repo, null, file) });
+			});
+			results.set(Category.file, fileResults);
 		}
 
 		const data = {
-			input: this.state.input,
-			results: this.state.results,
+			input: query,
+			results: results,
 			tab: this.state.tab,
 			tag: this.state.tag,
 			selected: this.state.selected,
 			selected2: this.state.selected2,
-			recentItems: this.state.results,
+			recentItems: results,
 		};
 
 
@@ -335,7 +350,27 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 		}
 		return (
 			<div style={modalStyle}>
-				<SearchInput tag={data.tag} input={data.input} />
+				<div style={{
+					backgroundColor: colors.white(),
+					borderRadius: 3,
+					width: "100%",
+					padding: "3px 10px",
+					flex: "0 0 auto",
+					height: 45,
+					display: "flex",
+					alignItems: "center",
+					flexDirection: "row",
+				}}>
+				<SearchIcon style={{fill: colors.coolGray2()}} />
+				<Tag tag={data.tag} />
+				<input className={inputStyle}
+					style={{boxSizing: "border-box", border: "none", flex: "1 0 auto"}}
+					placeholder="new http request"
+					value={data.input}
+					ref={this.actions.bindSearchInput}
+					onChange={this.actions.updateInput} />
+				<button onClick={this.actions.dismiss} style={{display: "inline"}}>x</button>
+				</div>
 				{showHint && <Hint tag={data.tag} />}
 				{content}
 			</div>

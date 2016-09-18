@@ -22,7 +22,9 @@ export const RepoBackend = {
 					.then(checkStatus)
 					.then((resp) => resp.json())
 					.catch((err) => ({Error: err}))
-					.then((data) => Dispatcher.Stores.dispatch(new RepoActions.ReposFetched(action.querystring, data)));
+					.then((data) => {
+						Dispatcher.Stores.dispatch(new RepoActions.ReposFetched(action.querystring, data));
+					});
 			}
 		}
 

@@ -4,7 +4,7 @@ import {colors} from "sourcegraph/components/jsStyles/colors";
 import {input as inputStyle} from "sourcegraph/components/styles/input.css";
 import {Search as SearchIcon} from "sourcegraph/components/symbols";
 
-import {Category, SearchActions, actions, categoryNames, deepLength} from "sourcegraph/search/modal/SearchContainer";
+import {Category, SearchActions, categoryNames, deepLength} from "sourcegraph/search/modal/SearchContainer";
 import {shortcuts} from "sourcegraph/search/modal/SearchModal";
 
 const smallFont = 12.75;
@@ -54,7 +54,7 @@ const ResultRow = ({title, description, index, length, URLPath}, key, selected) 
 			backgroundColor: backgroundColor,
 			display: "block",
 		}}
-		onClick={() => actions.activateResult(URLPath)}>
+		onClick={() => console.log("actions.activateResult(URLPath)")}>
 			{length ?
 				<div>
 				 <span style={{color: titleColor}}>{title.substr(0, index)}</span>
@@ -109,7 +109,7 @@ const ResultCategory = ({category, results, selected=-1, limit=Infinity}) => {
 			let isSelected = (index === selected);
 			return ResultRow(result, index, isSelected);
 		});
-		items.push(<ViewAll key={limit} noun={noun} viewCategory={() => actions.viewCategory(category)} />);
+		items.push(<ViewAll key={limit} noun={noun} viewCategory={() => console.log("replace this call: actions.viewCategory(category)")} />);
 	} else {
 		items = results.map((result, index) => {
 			let isSelected = (index === selected);
@@ -141,7 +141,7 @@ export const ResultCategories = ({resultCategories, limit, selection}) => {
 	</div>;
 };
 
-const Tag = ({tag}) => {
+export const Tag = ({tag}) => {
 	if (tag === null) {
 		return <div></div>;
 	}
@@ -161,29 +161,6 @@ const Tag = ({tag}) => {
 		{content}:
 	</div>;
 };
-
-export const SearchInput = ({tag, input}) => <div style={{
-	backgroundColor: colors.white(),
-	borderRadius: 3,
-	width: "100%",
-	padding: "3px 10px",
-	flex: "0 0 auto",
-	height: 45,
-	display: "flex",
-	alignItems: "center",
-	flexDirection: "row",
-}}>
-	<SearchIcon style={{fill: colors.coolGray2()}}/>
-	<Tag tag={tag} />
-	<input
-		className={inputStyle}
-		style={{boxSizing: "border-box", border: "none", flex: "1 0 auto"}}
-		placeholder="new http request"
-		value={input}
-		ref={actions.bindSearchInput}
-		onChange={actions.updateInput} />
-	<button onClick={actions.dismiss} style={{display: "inline"}}>x</button>
-</div>;
 
 interface CategoryProps {
 	title: string;
@@ -210,9 +187,9 @@ style={{
 
 export const CategorySelector = ({sel}: {sel: number}) => <div>
 	<span style={{color: colors.coolGray3(), fontSize: smallFont}}>JUMP TO ...</span>
-	<CategorySelection title={"file"} content={"filename in this repo"} shortcut={shortcuts.file} selected={sel === 1} activate={() => actions.activateTag(Category.file)} />
-	<CategorySelection title={"def"} content={"definition in this repo"} shortcut={shortcuts.def} selected={sel === 2} activate={() => actions.activateTag(Category.definition)} />
-	<CategorySelection title={"repo"} content={"repository name"} shortcut={shortcuts.repo} selected={sel === 3} activate={() => actions.activateTag(Category.repository)} />
+	<CategorySelection title={"file"} content={"filename in this repo"} shortcut={shortcuts.file} selected={sel === 1} activate={() => console.log("replace this call: actions.activateTag(Category.file)")} />
+	<CategorySelection title={"def"} content={"definition in this repo"} shortcut={shortcuts.def} selected={sel === 2} activate={() => console.log("replace this call: actions.activateTag(Category.definition)")} />
+	<CategorySelection title={"repo"} content={"repository name"} shortcut={shortcuts.repo} selected={sel === 3} activate={() => console.log("replace this call: actions.activateTag(Category.repository)")} />
 </div>;
 
 const Tab = ({category, count, selected, actions}: {category: Category, count: number, selected: boolean, actions: SearchActions}) => {
@@ -235,7 +212,7 @@ const Tab = ({category, count, selected, actions}: {category: Category, count: n
 			padding: 8,
 			display: "inline-block",
 		}}
-		onClick={() => actions.viewCategory(category)}>
+		onClick={() => console.log("replace this call: actions.viewCategory(category)")}>
 			{count} {catName}
 		</a>;
 	}
