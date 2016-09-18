@@ -31,7 +31,7 @@ type Server interface {
 	LocalRefs(ctx context.Context, p *Position) (*RefLocations, error)
 	ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, error)
 	DefSpecRefs(ctx context.Context, d *DefSpec) (*RefLocations, error)
-	Symbols(ctx context.Context, r *RepoRev) (*Symbols, error)
+	Symbols(ctx context.Context, p *SymbolsParams) (*Symbols, error)
 	ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error)
 }
 
@@ -164,17 +164,17 @@ func (s *server) serveDefinition(ctx context.Context, body []byte) (interface{},
 
 func (s *server) serveSymbols(ctx context.Context, body []byte) (interface{}, error) {
 	// Decode the user request and ensure that required fields are specified.
-	var r RepoRev
-	if err := json.Unmarshal(body, &r); err != nil {
+	var q SymbolsParams
+	if err := json.Unmarshal(body, &q); err != nil {
 		return nil, err
 	}
-	if r.Repo == "" {
+	if q.RepoRev.Repo == "" {
 		return nil, fmt.Errorf("Repo field must be set")
 	}
-	if r.Commit == "" {
+	if q.RepoRev.Commit == "" {
 		return nil, fmt.Errorf("Commit field must be set")
 	}
-	return s.s.Symbols(ctx, &r)
+	return s.s.Symbols(ctx, &q)
 }
 
 func (s *server) serveExportedSymbols(ctx context.Context, body []byte) (interface{}, error) {

@@ -22,6 +22,7 @@ This document contains the specification for the Sourcegraph Language Processor 
   - [RepoRev](#type-reporev)
   - [ExternalRefs](#type-externalrefs)
   - [ExportedSymbols](#type-exportedsymbols)
+  - [SymbolsQuery](#type-symbolsquery)
   - [DefSpec](#type-defspec)
   - [Symbol](#type-symbol)
 
@@ -106,7 +107,7 @@ Used for listing defs in a repository.
 
 - LSP equivalent: [workspace/symbol](https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#workspace-symbols)
 - Request:
-  - Body: [{RepoRev Object}](#type-reporev)
+  - Body: [{SymbolsQuery Object}](#type-reporev)
   - Response: [{Symbols Object}](#type-symbols) OR [{Error Object}](#type-error)
 
 ## POST /exported-symbols
@@ -276,6 +277,21 @@ See also: [{DefSpec Object}](#type-defspec)
 ```
 {
     Defs: [Array of {DefSpec Object}]
+}
+```
+
+See also: [{DefSpec Object}](#type-defspec)
+
+## Type: SymbolsQuery
+
+`{SymbolsQuery Object}` is a JSON object representing a request for a set of symbols within a repository.
+
+```
+{
+    RepoRev
+    
+    // Query specifies the desired options for filtering the available symbols.
+    Query: string,
 }
 ```
 
