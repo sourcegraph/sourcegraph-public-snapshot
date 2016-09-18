@@ -31,7 +31,7 @@ type Server interface {
 	LocalRefs(ctx context.Context, p *Position) (*RefLocations, error)
 	ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, error)
 	DefSpecRefs(ctx context.Context, d *DefSpec) (*RefLocations, error)
-	Symbols(ctx context.Context, p *SymbolsQuery) (*Symbols, error)
+	Symbols(ctx context.Context, p *SymbolsParams) (*Symbols, error)
 	ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error)
 }
 
@@ -164,7 +164,7 @@ func (s *server) serveDefinition(ctx context.Context, body []byte) (interface{},
 
 func (s *server) serveSymbols(ctx context.Context, body []byte) (interface{}, error) {
 	// Decode the user request and ensure that required fields are specified.
-	var q SymbolsQuery
+	var q SymbolsParams
 	if err := json.Unmarshal(body, &q); err != nil {
 		return nil, err
 	}

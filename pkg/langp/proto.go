@@ -186,7 +186,7 @@ type ExportedSymbols struct {
 }
 
 // SymbolsQuery is a request for a set of symbols within a repo.
-type SymbolsQuery struct {
+type SymbolsParams struct {
 	RepoRev
 
 	// Query specifies the desired options for filtering the available symbols.

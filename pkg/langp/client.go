@@ -216,7 +216,7 @@ func (c *Client) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, e
 }
 
 // Symbols lists all repository-local definitions, optionally filtered by a query.
-func (c *Client) Symbols(ctx context.Context, q *SymbolsQuery) (*Symbols, error) {
+func (c *Client) Symbols(ctx context.Context, q *SymbolsParams) (*Symbols, error) {
 	var result Symbols
 	// Only use the ctags server (if available) for symbol requests.
 	cl, ok := c.clients["CTAGS"]
