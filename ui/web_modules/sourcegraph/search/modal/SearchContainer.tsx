@@ -316,6 +316,7 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 			tab: this.state.tab,
 			tag: this.state.tag,
 			selected: this.state.selected,
+			selected2: this.state.selected2,
 			recentItems: this.state.results,
 		};
 
@@ -330,7 +331,7 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 			content = <TabbedResults tab={data.tab} results={data.results} />;
 			showHint = false;
 		} else {
-			content = <ResultCategories resultCategories={data.results} limit={15} />;
+			content = <ResultCategories resultCategories={data.results} limit={15} selection={data.selected2} />;
 		}
 		return (
 			<div style={modalStyle}>

@@ -4,7 +4,7 @@ import {colors} from "sourcegraph/components/jsStyles/colors";
 import {input as inputStyle} from "sourcegraph/components/styles/input.css";
 import {Search as SearchIcon} from "sourcegraph/components/symbols";
 
-import {Category, Result, SearchActions, actions, categoryNames, deepLength} from "sourcegraph/search/modal/SearchContainer";
+import {Category, SearchActions, actions, categoryNames, deepLength} from "sourcegraph/search/modal/SearchContainer";
 import {shortcuts} from "sourcegraph/search/modal/SearchModal";
 
 const smallFont = 12.75;
@@ -38,27 +38,39 @@ export const Hint = ({tag}) => {
 	</div>;
 };
 
-const Result = ({title, description, index, length, URLPath}, key) => <a key={key} style={{
-	borderRadius: 3,
-	padding: 16,
-	margin: "0 8px 8px 8px",
-	backgroundColor: colors.coolGray1(.5),
-	display: "block",
-}}
-	onClick={() => actions.activateResult(URLPath)}>
-	{length ? <div>
-			<span style={{color: colors.coolGray3()}}>{title.substr(0, index)}</span>
-			<span style={{color: colors.white(), fontWeight: "bold"}}>{title.substr(index, length)}</span>
-			<span style={{color: colors.coolGray3()}}>{title.substr(index + length)}</span>
-		</div> :
-		<div style={{color: colors.white()}}>
-			{title}
-		</div>
+const ResultRow = ({title, description, index, length, URLPath}, key, selected) => {
+	let titleColor = colors.coolGray3();
+	let backgroundColor = colors.coolGray1(.5);
+	if (selected) {
+		titleColor = colors.coolGray1();
+		backgroundColor = "red";
 	}
-	<div style={{fontSize: smallFont, color: colors.coolGray3()}}>
-		{description}
-	</div>
-</a>;
+
+	return (
+		<a key={key} style={{
+			borderRadius: 3,
+			padding: 16,
+			margin: "0 8px 8px 8px",
+			backgroundColor: backgroundColor,
+			display: "block",
+		}}
+		onClick={() => actions.activateResult(URLPath)}>
+			{length ?
+				<div>
+				 <span style={{color: titleColor}}>{title.substr(0, index)}</span>
+				 <span style={{color: colors.white(), fontWeight: "bold"}}>{title.substr(index, length)}</span>
+				 <span style={{color: colors.coolGray3()}}>{title.substr(index + length)}</span>
+				 </div> :
+				 <div style={{color: colors.white()}}>
+				 {title}
+				 </div>
+			}
+			<div style={{fontSize: smallFont, color: colors.coolGray3()}}>
+				{description}
+			</div>
+		</a>
+	);
+};
 
 const ViewAll = ({noun, viewCategory}) => <div style={{
 	color: colors.blueText(),
@@ -69,7 +81,7 @@ const ViewAll = ({noun, viewCategory}) => <div style={{
 	<b><a onClick={viewCategory}>view all {noun}</a></b>
 </div>;
 
-const ResultCategory = ({category, results, limit= Infinity}) => {
+const ResultCategory = ({category, results, selected=-1, limit=Infinity}) => {
 	if (results.length === 0) {
 		return <div></div>;
 	}
@@ -93,27 +105,36 @@ const ResultCategory = ({category, results, limit= Infinity}) => {
 	let items;
 	if (results.length > limit) {
 		results = results.slice(0, limit);
-		items = results.map(Result);
+		items = results.map((result, index) => {
+			let isSelected = (index === selected);
+			return ResultRow(result, index, isSelected);
+		});
 		items.push(<ViewAll key={limit} noun={noun} viewCategory={() => actions.viewCategory(category)} />);
 	} else {
 		items = results.map((result, index) => {
-			return Result(result, index);
+			let isSelected = (index === selected);
+			return ResultRow(result, index, isSelected);
 		});
 	}
+
 	return <div key={category} style={{padding: "14px 0"}}>
 		<span style={{color: colors.coolGray3()}}>{title}</span>
 		{items}
 	</div>;
 };
 
-export const ResultCategories = ({resultCategories, limit}) => {
+export const ResultCategories = ({resultCategories, limit, selection}) => {
 	let categoryLimit = Infinity;
 	if (deepLength(resultCategories) > limit) {
 		categoryLimit = 5;
 	}
 	let sections = new Array();
 	resultCategories.forEach((results, category) => {
-		sections.push(<ResultCategory key={category} category={category} limit={categoryLimit} results={results} />);
+		let selected = -1;
+		if (category === selection[0]) {
+			selected = selection[1];
+		}
+		sections.push(<ResultCategory key={category} category={category} selected={selected} limit={categoryLimit} results={results} />);
 	});
 	return <div style={{overflow: "auto"}}>
 		{sections}
