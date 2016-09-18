@@ -61,7 +61,7 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 	vslog("Definitions found: ", strconv.Itoa(len(tags)))
 
 	if params.Query != "" {
-		span, _ := opentracing.StartSpanFromContext(ctx, "filter tags")
+		filterSpan, _ := opentracing.StartSpanFromContext(ctx, "filter tags")
 
 		q := strings.ToLower(params.Query)
 		exact, prefix, contains := []parser.Tag{}, []parser.Tag{}, []parser.Tag{}
@@ -77,7 +77,8 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 		}
 		tags = append(append(exact, prefix...), contains...) // Basic ranking
 
-		span.Finish()
+		span.SetTag("filtered tags count", len(tags))
+		filterSpan.Finish()
 	}
 
 	symbols = make([]lsp.SymbolInformation, 0, len(tags))
