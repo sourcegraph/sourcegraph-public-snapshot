@@ -123,6 +123,7 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 			input: "",
 			results: new Map(),
 			tag: start,
+			selected2: [0, 0],
 			selected: 0, //start === null ? 1 : 0,
 			tab: null,
 			searchInput: null,
@@ -183,15 +184,49 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 	}
 
 	navigationKeys(event: KeyboardEvent): void {
-		if (event.key === "ArrowUp" && this.state.selected > 0) {
-			const state = Object.assign({}, this.state, {selected: this.state.selected - 1});
-			this.setState(state);
+		if (event.key === "ArrowUp") {
+			let selected = this.state.selected2.slice();
+			selected[1]--;
+			let category = selected[0];
+			let elements = this.state.results.get(category);
+			if (elements) {
+				if (selected[1] < 0) {
+					if (category == 0) {
+						selected[1]++; // don't go down any further if at min
+					} else {
+						selected[0]--; // go to previous category
+						selected[1] = this.state.results.get(category-1).length - 1;
+					}
+				}
+				let state = Object.assign({}, this.state);
+				state.selected2 = selected;
+
+				this.setState(state);
+			}
 		} else if (event.key === "ArrowDown" && this.state.selected < this.visibleResults()) {
-			const state = Object.assign({}, this.state, {selected: this.state.selected + 1});
-			this.setState(state);
+			let selected = this.state.selected2.slice();
+			selected[1]++;
+			let category = selected[0];
+			let elements = this.state.results.get(category);
+			if (elements) {
+				if (selected[1] >= elements.length) {
+					if (category == this.state.results.length - 1) {
+						selected[1]--; // don't go down any further if at max
+					} else {
+						selected[0]++; // advance to next category
+						selected[1] = 0;
+					}
+				}
+				let state = Object.assign({}, this.state);
+				state.selected2 = selected;
+
+				this.setState(state);
+			}
 		} else if (event.key === "Enter") {
 			this.activateResult("FIXME");
 		}
+
+		console.log("# selected", selected);
 	}
 
 	visibleResults(): number {
