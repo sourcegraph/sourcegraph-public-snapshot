@@ -9,41 +9,12 @@ import {shortcuts} from "sourcegraph/search/modal/SearchModal";
 
 const smallFont = 12.75;
 
-const Bubble = (props) => <span style={{
-	backgroundColor: colors.coolGray1(),
-	borderRadius: 3,
-	padding: "2px 5px",
-	textTransform: "uppercase"}}>
-	<b>{props.children}</b>
-</span>;
-
-export const Hint = ({tag}) => {
-	let keycode;
-	switch (tag) {
-		case Category.definition:
-			keycode = <Bubble>{shortcuts.def}</Bubble>;
-			break;
-		case Category.repository:
-			keycode = <Bubble>{shortcuts.repo}</Bubble>;
-			break;
-		case Category.file:
-			keycode = <Bubble>{shortcuts.file}</Bubble>;
-			break;
-		case null:
-			keycode = <Bubble>{shortcuts.search}</Bubble>;
-			break;
-	}
-	return <div style={{color: colors.coolGray3(), margin: "8px auto", fontSize: smallFont}}>
-		Hit {keycode} to bring this up from anywhere
-	</div>;
-};
-
 const ResultRow = ({title, description, index, length, URLPath}, key, selected) => {
 	let titleColor = colors.coolGray3();
 	let backgroundColor = colors.coolGray1(.5);
 	if (selected) {
 		titleColor = colors.coolGray1();
-		backgroundColor = "red";
+		backgroundColor = colors.coolGray3();
 	}
 
 	return (
@@ -72,194 +43,37 @@ const ResultRow = ({title, description, index, length, URLPath}, key, selected) 
 	);
 };
 
-const ViewAll = ({noun, viewCategory}) => <div style={{
-	color: colors.blueText(),
-	textAlign: "center",
-	fontSize: smallFont,
-	textTransform: "uppercase",
-}}>
-	<b><a onClick={viewCategory}>view all {noun}</a></b>
-</div>;
-
-const ResultCategory = ({category, results, selected=-1, limit=Infinity}) => {
+const ResultCategory = ({title, results, selected=-1}) => {
 	if (results.length === 0) {
 		return <div></div>;
 	}
-	let title;
-	let noun;
-	const plural = results.length > 1;
-	switch (category) {
-		case Category.definition:
-			noun = plural ? "definitions" : "definition";
-			title = `${results.length} ${noun} in this repository`;
-			break;
-		case Category.repository:
-			noun = plural ? "repositories" : "repositories";
-			title = `${results.length} ${noun}`;
-			break;
-		case Category.file:
-			noun = plural ? "files" : "file";
-			title = `${results.length} ${noun} in this repository`;
-			break;
-	}
-	let items;
-	if (results.length > limit) {
-		results = results.slice(0, limit);
-		items = results.map((result, index) => {
-			let isSelected = (index === selected);
-			return ResultRow(result, index, isSelected);
-		});
-		items.push(<ViewAll key={limit} noun={noun} viewCategory={() => console.log("replace this call: actions.viewCategory(category)")} />);
-	} else {
-		items = results.map((result, index) => {
-			let isSelected = (index === selected);
-			return ResultRow(result, index, isSelected);
-		});
-	}
 
-	return <div key={category} style={{padding: "14px 0"}}>
+	const items = results.map((result, index) => {
+		let isSelected = (index === selected);
+		return ResultRow(result, index, isSelected);
+	});
+
+	return <div style={{padding: "14px 0"}}>
 		<span style={{color: colors.coolGray3()}}>{title}</span>
-		{items}
+		{
+			results.map((result, index) => {
+				return ResultRow(result, index, (index === selected));
+			})
+		}
 	</div>;
-};
+}
 
-export const ResultCategories = ({resultCategories, limit, selection}) => {
-	let categoryLimit = Infinity;
-	if (deepLength(resultCategories) > limit) {
-		categoryLimit = 5;
-	}
-	let sections = new Array();
-	resultCategories.forEach((results, category) => {
+export const ResultCategories = ({categories, limit, selection}) => {
+	let sections = [];
+	categories.forEach((category, i) => {
+		let results = category.Results;
 		let selected = -1;
-		if (category === selection[0]) {
+		if (i === selection[0]) {
 			selected = selection[1];
 		}
-		sections.push(<ResultCategory key={category} category={category} selected={selected} limit={categoryLimit} results={results} />);
+		sections.push(<ResultCategory key={category.Title} title={category.Title} selected={selected} results={results} />);
 	});
 	return <div style={{overflow: "auto"}}>
 		{sections}
-	</div>;
-};
-
-export const Tag = ({tag}) => {
-	if (tag === null) {
-		return <div></div>;
-	}
-	let content;
-	switch (tag) {
-			case Category.definition:
-			content = "def";
-		break;
-			case Category.repository:
-			content = "repo";
-		break;
-		case Category.file:
-			content = "file";
-			break;
-	}
-	return <div style={{backgroundColor: colors.coolGray4(), margin: "0 5px", padding: "0 5px", borderRadius: 3}}>
-		{content}:
-	</div>;
-};
-
-interface CategoryProps {
-	title: string;
-	content: string;
-	shortcut: string;
-	selected: boolean;
-	activate: () => void;
-}
-const CategorySelection = ({title, content, shortcut, selected, activate}: CategoryProps) => <a
-onClick={activate}
-style={{
-	padding: 5,
-	color: colors.coolGray3(),
-	backgroundColor: selected ? colors.blue2() : "transparent",
-	borderRadius: 3,
-	display: "block",
-}}>
-	<b style={{color: colors.white(), marginRight: 8}}>{title}:</b>
-	<span style={{color: selected ? colors.white() : colors.coolGray3()}}>{content}</span>
-	<span style={{color: colors.white(), float: "right"}}>
-		<Bubble>{shortcut}</Bubble>
-	</span>
-</a>;
-
-export const CategorySelector = ({sel}: {sel: number}) => <div>
-	<span style={{color: colors.coolGray3(), fontSize: smallFont}}>JUMP TO ...</span>
-	<CategorySelection title={"file"} content={"filename in this repo"} shortcut={shortcuts.file} selected={sel === 1} activate={() => console.log("replace this call: actions.activateTag(Category.file)")} />
-	<CategorySelection title={"def"} content={"definition in this repo"} shortcut={shortcuts.def} selected={sel === 2} activate={() => console.log("replace this call: actions.activateTag(Category.definition)")} />
-	<CategorySelection title={"repo"} content={"repository name"} shortcut={shortcuts.repo} selected={sel === 3} activate={() => console.log("replace this call: actions.activateTag(Category.repository)")} />
-</div>;
-
-const Tab = ({category, count, selected, actions}: {category: Category, count: number, selected: boolean, actions: SearchActions}) => {
-	const catNames = categoryNames.get(category);
-	if (!catNames) { throw new Error("category names not set"); }
-	const catName = count > 1 ? catNames[1] : catNames[0];
-	if (selected) {
-		return <span style={{
-			color: colors.blue3(),
-			padding: 8,
-			display: "inline-block",
-			borderBottomStyle: "solid",
-			borderBottomWidth: 3,
-		}}>
-			{count} {catName}
-		</span>;
-	} else {
-		return <a style={{
-			color: colors.coolGray3(),
-			padding: 8,
-			display: "inline-block",
-		}}
-		onClick={() => console.log("replace this call: actions.viewCategory(category)")}>
-			{count} {catName}
-		</a>;
-	}
-};
-
-const Tabs = ({actions, tab, categories}) => {
-	let tabs = new Array();
-	categories.forEach((results, category) => {
-		let selected = false;
-		if (category === tab) {
-			selected = true;
-		}
-		if (results.length > 0) {
-			tabs.push(<Tab key={category} category={category} count={results.length} selected={selected} actions={actions}/>);
-		}
-	});
-	return <div style={{textAlign: "center"}}>
-		{tabs}
-	</div>;
-};
-
-const ResultList = ({results}) => <div style={{
-	overflow: "scroll",
-}}>
-	{results.map(Result)}
-</div>;
-
-export const TabbedResults = ({tab, results}) => <div style={{
-	display: "flex",
-	flexDirection: "column",
-}}>
-	<Tabs actions={actions} tab={tab} categories={results}/>
-	<ResultList results={results.get(tab)} />
-</div>;
-
-interface ComponentData {
-	tag: Category | null;
-	tab: Category | null;
-	input: string;
-	selected: number;
-	results: Map<Category, Result[]>;
-}
-
-export const SingleCategoryResults = ({data, category}) => {
-	const maybeResults = data.results.get(category);
-	const results = maybeResults ? maybeResults : [];
-	return <div style={{overflow: "scroll"}}>
-		<ResultCategory category={category} results={results} />
 	</div>;
 };

@@ -1,9 +1,10 @@
 import * as React from "react";
 import {InjectedRouter} from "react-router";
 
+import {Container} from "sourcegraph/Container";
 import {colors} from "sourcegraph/components/jsStyles/colors";
 import {urlToBlobLine, urlToBlob} from "sourcegraph/blob/routes";
-import {CategorySelector, Hint, ResultCategories, SearchInput, SingleCategoryResults, TabbedResults, Tag} from "sourcegraph/search/modal/SearchComponent";
+import {CategorySelector, ResultCategories, SearchInput, SingleCategoryResults, TabbedResults, Tag} from "sourcegraph/search/modal/SearchComponent";
 import {RepoRev} from "sourcegraph/search/modal/SearchModal";
 import {RepoStore} from "sourcegraph/repo/RepoStore";
 import {TreeStore} from "sourcegraph/tree/TreeStore";
@@ -37,12 +38,6 @@ export const enum Category {
 	repository,
 }
 
-export const categoryNames = new Map([
-	[Category.file, ["file", "files"]],
-	[Category.definition, ["definition", "definitions"]],
-	[Category.repository, ["repository", "repositories"]],
-]);
-
 export interface Result {
 	title: string;
 	description: string;
@@ -62,14 +57,8 @@ interface State {
 	// The search string in the input box.
 	input: string;
 
-	results2: Category[];
-
-
-
-
-	
-	// The results of the search.
-	results: Map<Category, Result[]>;
+	// The results of the search
+	results: any;
 
 	// The category that a user wants to limit their search to.
 	tag: Category | null;
@@ -91,7 +80,6 @@ export interface SearchActions {
 	viewCategory: (category: Category) => void;
 	bindSearchInput: (node: HTMLElement) => void;
 	activateResult: (URLPath: string) => void;
-	activateTag: (category: Category) => void;
 }
 
 // Find the total number of results in all categories
@@ -110,7 +98,7 @@ export interface Category2 {
 
 // SearchContainer contains the logic that deals with navigation and data
 // fetching.
-export class SearchContainer extends React.Component<Props & RepoRev, State> {
+export class SearchContainer extends Container<Props & RepoRev, State> {
 
 	static contextTypes: any = {
 		router: React.PropTypes.object.isRequired,
@@ -122,16 +110,11 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 
 	constructor({start, dismissModal}: Props) {
 		super();
-		this.navigationKeys = this.navigationKeys.bind(this);
+		this.keyListener = this.keyListener.bind(this);
 		this.state = {
 			input: "",
-			results: new Map(),	// TODO(bl): remove
-			results2: [],
-			tag: start,
-			selected2: [0, 0],
-			selected: 0, //start === null ? 1 : 0, // TODO(bl): remove
-			tab: null,	 // TODO(bl): remove
-			searchInput: null,	// TODO(bl): remove
+			results: [],
+			selected: [0, 0],
 		};
 		this.actions = {
 			updateInput: this.updateInput.bind(this),
@@ -139,7 +122,6 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 			viewCategory: this.viewCategory.bind(this), // TODO(bl): remove
 			bindSearchInput: this.bindSearchInput.bind(this),
 			activateResult: this.activateResult.bind(this),
-			activateTag: this.activateTag.bind(this),
 		};
 	}
 
@@ -147,106 +129,91 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 		return [RepoStore];
 	}
 
+	reconcileState(state: State, props: Props): void {
+		state.results = this.results();
+	}
+
 	componentWillMount(): void {
-		document.body.addEventListener("keydown", this.navigationKeys);
+		super.componentWillMount();
+		document.body.addEventListener("keydown", this.keyListener);
+	}
+
+	componentDidMount(): void {
+		super.componentDidMount();
+		this.fetchResults("");
 	}
 
 	componentWillUnmount(): void {
-		document.body.removeEventListener("keydown", this.navigationKeys);
+		super.componentWillUnmount();
+		document.body.removeEventListener("keydown", this.keyListener);
 	}
 
 	componentWillReceiveProps(nextProps: Props): void {
 		if (this.props.start === null && nextProps.start !== null) {
 			this.setState(Object.assign({}, this.state, {
-				tag: nextProps.start,
-				selected: 0,
+				selected: [0, 0],
 			}));
 		}
 	}
 
-	componentDidUpdate(_: Props, prevState: State): void {}
+	onStateTransition(prevState: State, nextState: State): void {}
 
 	query(): string {
 		return this.state.input.toLowerCase();
 	}
 
-	updateResults(): void {
-		Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.repo, this.props.commitID, this.query()));
-		Dispatcher.Backends.dispatch(new RepoActions.WantRepos(this.query()));
-		Dispatcher.Backends.dispatch(new TreeActions.WantFileList(this.props.repo, this.props.commitID));
-	}
-
-	/////////////////// bl-cursor
-	
-	navigationKeys(event: KeyboardEvent): void {
+	keyListener(event: KeyboardEvent): void {
+		let results = this.results();
+		let categorySizes = results.map((r) => r.Results.length);
 		if (event.key === "ArrowUp") {
-			let selected = this.state.selected2.slice();
+			let selected = this.state.selected.slice();
 			selected[1]--;
-			let category = selected[0];
-			let elements = this.state.results.get(category);
-			if (elements) {
-				if (selected[1] < 0) {
-					if (category == 0) {
-						selected[1]++; // don't go down any further if at min
-					} else {
-						selected[0]--; // go to previous category
-						selected[1] = this.state.results.get(category-1).length - 1;
-					}
+			let c = selected[0];
+			if (selected[1] < 0) {
+				if (c == 0) {
+					selected[1]++; // don't go down any further if at min
+				} else {
+					selected[0]--; // go to previous category
+					selected[1] = categorySizes[c-1] - 1;
 				}
-				let state = Object.assign({}, this.state);
-				state.selected2 = selected;
-
-				this.setState(state);
 			}
-		} else if (event.key === "ArrowDown" && this.state.selected < this.visibleResults()) {
-			let selected = this.state.selected2.slice();
+			let state = Object.assign({}, this.state);
+			state.selected = selected;
+			this.setState(state);
+		} else if (event.key === "ArrowDown") {
+			let selected = this.state.selected.slice();
 			selected[1]++;
-			let category = selected[0];
-			let elements = this.state.results.get(category);
-			if (elements) {
-				if (selected[1] >= elements.length) {
-					if (category == this.state.results.length - 1) {
-						selected[1]--; // don't go down any further if at max
-					} else {
-						selected[0]++; // advance to next category
-						selected[1] = 0;
-					}
+			let c = selected[0];
+			let c_n = categorySizes[c];
+			if (selected[1] >= c_n) {
+				if (c == categorySizes.length - 1) {
+					selected[1]--; // don't go down any further if at max
+				} else {
+					selected[0]++; // advance to next category
+					selected[1] = 0;
 				}
-				let state = Object.assign({}, this.state);
-				state.selected2 = selected;
-
-				this.setState(state);
 			}
+			let state = Object.assign({}, this.state);
+			state.selected = selected;
+			this.setState(state);
 		} else if (event.key === "Enter") {
 			this.activateResult("FIXME");
 		}
 	}
 
-	visibleResults(): number {
-		if (this.query() === "" && this.state.tag === null) {
-			return CategoryCount;
-		}
-		return deepLength(this.state.results);
+	fetchResults(query: string): void {
+		Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.repo, this.props.commitID, query));
+		Dispatcher.Backends.dispatch(new RepoActions.WantRepos(query));
+		Dispatcher.Backends.dispatch(new TreeActions.WantFileList(this.props.repo, this.props.commitID));
 	}
 
 	updateInput(event: {target: {value: string}}): void {
 		const input = event.target.value;
 		const state = Object.assign({}, this.state, {
 			input: input,
-			selected: 0,
 		});
 		this.setState(state);
-		this.updateResults();
-	}
-
-	activateTag(category: Category): void {
-		if (this.state.tag === null && this.query() === "") {
-			this.setState(Object.assign({}, this.state, {
-				tag: category,
-				selected: 0,
-			}));
-			return;
-		}
+		this.fetchResults(input.toLowerCase());
 	}
 
 	activateResult(URLPath: string): void {
@@ -262,9 +229,9 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 	bindSearchInput(node: HTMLElement): void {
 		const state = Object.assign({}, this.state, {searchInput: node});
 		this.setState(state);
-		if (this.state.selected === 0 && node) {
-			node.focus();
-		}
+		// if (this.state.selected === 0 && node) {
+		// 	node.focus();
+		// }
 	}
 
 	focusSearchBar(): void {
@@ -279,18 +246,12 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 		}
 	}
 
-	componentDidMount(): void {
-		if (this.state.selected === 0) {
-			this.focusSearchBar();
-		}
-	}
-
-	render(): JSX.Element {
-		let results: Map<Category, Result[]> = new Map();
+	results(): Category2[] {
 		let query = this.query();
+		let results: Category2[] = [];
 
 		const symbols = RepoStore.symbols.list(this.props.repo, this.props.commitID, query);
-		if (symbols && this.state.results) {
+		if (symbols) {
 			let symbolResults = [];
 			for (let i = 0; i < symbols.length; i++) {
 				const path = symbols[i].location.uri;
@@ -304,14 +265,13 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 					URLPath: urlToBlobLine(this.props.repo, this.props.commitID, path, line+1),
 				});
 			}
-
-			results.set(Category.definition, symbolResults);
+			results.push({ Title: "definitions", Results: symbolResults });
 		}
 
 		const repos = RepoStore.repos.list(query);
 		if (repos) {
 			const repoResults = repos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
-			results.set(Category.repository, repoResults);
+			results.push({ Title: "repositories", Results: repoResults });
 		}
 
 		const files = TreeStore.fileLists.get(this.props.repo, this.props.commitID);
@@ -322,32 +282,16 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 				if (index === -1) { return }
 				fileResults.push({ title: file, index: index, length: query.length, URLPath: urlToBlob(this.props.repo, null, file) });
 			});
-			results.set(Category.file, fileResults);
+			results.push({ Title: "files", Results: fileResults });
 		}
 
-		const data = {
-			input: query,
-			results: results,
-			tab: this.state.tab,
-			tag: this.state.tag,
-			selected: this.state.selected,
-			selected2: this.state.selected2,
-			recentItems: results,
-		};
+		return results;
+	}
 
-
-		let content;
-		let showHint = true;
-		if (data.input === "" && data.tag === null) {
-			content = <CategorySelector sel={data.selected} />;
-		} else if (data.tag !== null) {
-			content = <SingleCategoryResults data={data} category={data.tag} />;
-		} else if (data.tab !== null) {
-			content = <TabbedResults tab={data.tab} results={data.results} />;
-			showHint = false;
-		} else {
-			content = <ResultCategories resultCategories={data.results} limit={15} selection={data.selected2} />;
-		}
+	render(): JSX.Element {
+		let categories = this.results();
+		let query = this.query();
+		let content = <ResultCategories categories={categories} limit={15} selection={this.state.selected} />;
 		return (
 			<div style={modalStyle}>
 				<div style={{
@@ -362,16 +306,13 @@ export class SearchContainer extends React.Component<Props & RepoRev, State> {
 					flexDirection: "row",
 				}}>
 				<SearchIcon style={{fill: colors.coolGray2()}} />
-				<Tag tag={data.tag} />
 				<input className={inputStyle}
 					style={{boxSizing: "border-box", border: "none", flex: "1 0 auto"}}
 					placeholder="new http request"
-					value={data.input}
+					value={this.state.input}
 					ref={this.actions.bindSearchInput}
 					onChange={this.actions.updateInput} />
-				<button onClick={this.actions.dismiss} style={{display: "inline"}}>x</button>
 				</div>
-				{showHint && <Hint tag={data.tag} />}
 				{content}
 			</div>
 		);
