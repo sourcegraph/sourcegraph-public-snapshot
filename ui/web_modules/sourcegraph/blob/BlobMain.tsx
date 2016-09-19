@@ -13,6 +13,7 @@ import { trimRepo } from "sourcegraph/repo";
 import { httpStatusCode } from "sourcegraph/util/httpStatusCode";
 import { Header } from "sourcegraph/components/Header";
 import { urlToBlob } from "sourcegraph/blob/routes";
+import { SearchModal } from "sourcegraph/search/modal/SearchModal";
 
 interface Props {
 	repo: string;
@@ -144,8 +145,10 @@ export class BlobMain extends React.Component<Props, State> {
 		if (pathParts) {
 			title = `${pathParts[pathParts.length - 1]} · ${title}`;
 		}
+
 		return (
 			<div className={Style.container}>
+				<SearchModal repo={this.props.repo} commitID={this.props.commitID || this.props.rev} />
 				<Helmet title={title} />
 				{this.props.blob && typeof this.props.blob.ContentsString === "string" && <Editor
 					repo={this.props.repo}
