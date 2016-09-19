@@ -21,13 +21,14 @@ func serveSymbols(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	symbols, err := langp.DefaultClient.Symbols(r.Context(), &langp.SymbolsParams{
-		Query: params.Query,
+	opt := &langp.SymbolsOpt{
 		RepoRev: langp.RepoRev{
 			Repo:   repo.URI,
 			Commit: repoRev.CommitID,
 		},
-	})
+		Query: params.Query,
+	}
+	symbols, err := langp.DefaultClient.Symbols(r.Context(), opt)
 	universeObserve("Symbols", err)
 	if err != nil {
 		return err

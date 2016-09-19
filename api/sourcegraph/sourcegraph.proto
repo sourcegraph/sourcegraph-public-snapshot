@@ -223,6 +223,10 @@ message RepoListOptions {
 	// repositories that the currently authenticated user has access
 	// to, and return only those.
 	bool RemoteOnly = 12 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// LocalOnly is whether to restrict listed repositories to ones that
+	// already exist locally (on Sourcegraph).
+	bool LocalOnly = 13 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 // RepoWebhookOptions is used for enable repository webhook.

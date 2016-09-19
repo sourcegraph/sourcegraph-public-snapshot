@@ -18,11 +18,14 @@ export const RepoBackend = {
 			const action = payload;
 			const repos = RepoStore.repos.list(action.querystring);
 			if (repos === null) {
-				RepoBackend.fetch(`/.api/repos?${action.querystring}`)
+				const url = `/.api/repos?${action.querystring}`;
+				RepoBackend.fetch(url)
 					.then(checkStatus)
 					.then((resp) => resp.json())
 					.catch((err) => ({Error: err}))
-					.then((data) => Dispatcher.Stores.dispatch(new RepoActions.ReposFetched(action.querystring, data)));
+					.then((data) => {
+						Dispatcher.Stores.dispatch(new RepoActions.ReposFetched(action.querystring, data));
+					});
 			}
 		}
 
@@ -184,6 +187,25 @@ export const RepoBackend = {
 			const action = payload;
 			RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, {method: "POST"})
 				.then(checkStatus);
+		}
+
+		if (payload instanceof RepoActions.WantSymbols) {
+			const action = payload;
+			const repos = RepoStore.symbols.list(action.repo, action.rev, action.query);
+			if (repos === null) {
+				const url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/symbols${action.query ? `?Query=` + encodeURIComponent(action.query) : ""}`;
+				RepoBackend.fetch(url)
+					.then(checkStatus)
+					.then((resp) => resp.json())
+					.catch((err) => {
+						Dispatcher.Stores.dispatch(new RepoActions.FetchedSymbols(action.repo, action.rev, action.query, []));
+					})
+					.then((data) => {
+						Dispatcher.Stores.dispatch(
+							new RepoActions.FetchedSymbols(action.repo, action.rev, action.query, data.Symbols)
+						);
+					});
+			}
 		}
 	},
 };

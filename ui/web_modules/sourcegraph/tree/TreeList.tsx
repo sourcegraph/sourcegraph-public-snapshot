@@ -75,8 +75,6 @@ type State = {
 	fileTree?: any;
 }
 
-const enableModalSearch = global.window && global.window.localStorage.getItem("modalSearch") === "true";
-
 export class TreeList extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
@@ -204,7 +202,7 @@ export class TreeList extends Container<Props, State> {
 		let listItems = this._listItems() || [];
 		return (
 			<div className={styles.tree_common}>
-				{enableModalSearch ? <SearchModal repo={this.props.repo} commitID={this.props.commitID} /> : null}
+				<SearchModal repo={this.props.repo} commitID={this.props.commitID} />
 				<div className={styles.list_header}>
 					Files
 				</div>

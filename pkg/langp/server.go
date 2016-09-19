@@ -21,6 +21,11 @@ const (
 	GitHubTokenKey   contextKey = 3
 )
 
+type SymbolsOpt struct {
+	RepoRev
+	Query string
+}
+
 // Server represents all of the Language Processor REST API methods that must
 // be implemented by a language processor.
 type Server interface {
@@ -31,7 +36,7 @@ type Server interface {
 	LocalRefs(ctx context.Context, p *Position) (*RefLocations, error)
 	ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, error)
 	DefSpecRefs(ctx context.Context, d *DefSpec) (*RefLocations, error)
-	Symbols(ctx context.Context, p *SymbolsParams) (*Symbols, error)
+	Symbols(ctx context.Context, opt *SymbolsOpt) (*Symbols, error)
 	ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error)
 }
 
@@ -124,9 +129,6 @@ func writeResponse(w http.ResponseWriter, status int, v interface{}, path string
 		// TODO: configurable logging
 		log.Println(err)
 	}
-
-	// TODO: configurable logging
-	log.Printf("POST %s -> %d %s\n\tBody:     %s\n\tResponse: %s\n", path, status, http.StatusText(status), string(body), string(respBody))
 }
 
 func (s *server) servePrepare(ctx context.Context, body []byte) (interface{}, error) {
@@ -164,17 +166,17 @@ func (s *server) serveDefinition(ctx context.Context, body []byte) (interface{},
 
 func (s *server) serveSymbols(ctx context.Context, body []byte) (interface{}, error) {
 	// Decode the user request and ensure that required fields are specified.
-	var q SymbolsParams
-	if err := json.Unmarshal(body, &q); err != nil {
+	var opt SymbolsOpt
+	if err := json.Unmarshal(body, &opt); err != nil {
 		return nil, err
 	}
-	if q.RepoRev.Repo == "" {
+	if opt.Repo == "" {
 		return nil, fmt.Errorf("Repo field must be set")
 	}
-	if q.RepoRev.Commit == "" {
+	if opt.Commit == "" {
 		return nil, fmt.Errorf("Commit field must be set")
 	}
-	return s.s.Symbols(ctx, &q)
+	return s.s.Symbols(ctx, &opt)
 }
 
 func (s *server) serveExportedSymbols(ctx context.Context, body []byte) (interface{}, error) {

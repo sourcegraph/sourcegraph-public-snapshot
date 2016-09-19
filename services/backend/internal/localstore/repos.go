@@ -7,6 +7,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"context"
@@ -282,19 +283,14 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	// repos in the result, and we pass these IDs to listFromDB
 	// because it otherwise has no way of knowing (at the PostgreSQL
 	// level) what repos the user can see.
-	var accessibleGitHubRepoIDs []string
 	ghRepos, err := s.listAllAccessibleGitHubRepos(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
-	accessibleGitHubRepoIDs = make([]string, len(ghRepos))
-	for i, r := range ghRepos {
-		accessibleGitHubRepoIDs[i] = r.Origin.ID
-	}
 
 	// Fetch repos from the DB that are accessible to the user.
 	// This will include all local repos that are not from "github.com".
-	dbRepos, err := s.listFromDB(ctx, opt, accessibleGitHubRepoIDs)
+	dbRepos_, err := s.listFromDB(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -303,14 +299,20 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	//
 	// No need to do access checks for ghRepos, since we JUST fetched
 	// them from GitHub.
+	var (
+		dbRepos   []*sourcegraph.Repo
+		dbReposMu sync.Mutex
+	)
 	par := parallel.NewRun(30)
-	for _, repo := range dbRepos {
+	for _, repo := range dbRepos_ {
 		repo := repo
 		par.Acquire()
 		go func() {
 			defer par.Release()
-			if _, err := verifyAccessAndSetAllFields(ctx, repo); err != nil {
-				par.Error(err)
+			if _, err := verifyAccessAndSetAllFields(ctx, repo); err == nil {
+				dbReposMu.Lock()
+				dbRepos = append(dbRepos, repo)
+				dbReposMu.Unlock()
 			}
 		}()
 	}
@@ -326,7 +328,10 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	}
 
 	var repos []*sourcegraph.Repo
-	if !opt.RemoteOnly {
+	if opt.RemoteOnly && opt.LocalOnly {
+		return nil, fmt.Errorf("only one of RemoteOnly and LocalOnly should be set")
+	}
+	if !opt.RemoteOnly && !opt.LocalOnly {
 		// Combine results from GitHub (repos accessible to the current
 		// user) and the DB (extra metadata, such as the repo's
 		// Sourcegraph ID).
@@ -340,7 +345,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 				repos = append(repos, ghRepo)
 			}
 		}
-	} else {
+	} else if opt.RemoteOnly {
 		// If opt.RemoteOnly is set, only return repos that are "accessible"
 		// according to the remote, but augment them with extra metadata from DB.
 		for _, ghRepo := range ghRepos {
@@ -350,6 +355,8 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 			}
 			repos = append(repos, ghRepo)
 		}
+	} else if opt.LocalOnly {
+		repos = dbRepos
 	}
 
 	return repos, nil
@@ -382,8 +389,8 @@ func (s *repos) listAllAccessibleGitHubRepos(ctx context.Context, opt *sourcegra
 	return allRepos, nil
 }
 
-func (s *repos) listFromDB(ctx context.Context, opt *sourcegraph.RepoListOptions, allowGitHubRepoIDs []string) ([]*sourcegraph.Repo, error) {
-	sql, args, err := s.listSQL(opt, allowGitHubRepoIDs)
+func (s *repos) listFromDB(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
+	sql, args, err := s.listSQL(opt)
 	if err != nil {
 		if err == errOptionsSpecifyEmptyResult {
 			err = nil
@@ -527,7 +534,7 @@ func (s *repos) Search(ctx context.Context, query string) ([]*sourcegraph.RepoSe
 
 var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty result set")
 
-func (s *repos) listSQL(opt *sourcegraph.RepoListOptions, allowGitHubRepoIDs []string) (string, []interface{}, error) {
+func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}, error) {
 	var selectSQL, fromSQL, whereSQL, orderBySQL string
 
 	var args []interface{}
@@ -584,23 +591,6 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions, allowGitHubRepoIDs []s
 		}
 		if opt.Owner != "" {
 			return "", nil, errOptionsSpecifyEmptyResult
-		}
-
-		{
-			// Only allow List to return GitHub mirrors that have been
-			// explicitly determined to be accessible. Our DB doesn't
-			// cache the GitHub metadata, so we have no way of filtering
-			// appropriately on any columns (including even just returning
-			// public repos--what if they aren't public anymore?).
-			cond := "uri NOT LIKE 'github.com/%'"
-			if len(allowGitHubRepoIDs) > 0 {
-				bvs := make([]string, len(allowGitHubRepoIDs))
-				for i, v := range allowGitHubRepoIDs {
-					bvs[i] = arg(v)
-				}
-				cond = "(" + cond + " OR (origin_service=" + arg(sourcegraph.Origin_GitHub) + " AND origin_repo_id IN (" + strings.Join(bvs, ",") + ")))"
-			}
-			conds = append(conds, cond)
 		}
 
 		if conds != nil {

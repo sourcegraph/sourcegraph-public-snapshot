@@ -1,6 +1,7 @@
 package localstore
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 	"testing"
@@ -279,10 +280,17 @@ func TestRepos_List_GitHub_Authenticated(t *testing.T) {
 
 	ctx, mock, done := testContext()
 	defer done()
+	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 
 	calledListAccessible := mock.githubRepos.MockListAccessible(ctx, []*sourcegraph.Repo{
 		&sourcegraph.Repo{URI: "github.com/is/accessible", DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}},
 	})
+	mock.githubRepos.Get_ = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+		if uri == "github.com/is/accessible" {
+			return &sourcegraph.Repo{URI: "github.com/is/accessible", DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}}, nil
+		}
+		return nil, fmt.Errorf("unauthorized")
+	}
 	ctx = github.WithMockHasAuthedUser(ctx, true)
 
 	s := repos{}
@@ -319,14 +327,19 @@ func TestRepos_List_GitHub_Authenticated_NoReposAccessible(t *testing.T) {
 
 	ctx, mock, done := testContext()
 	defer done()
+	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 
 	s := repos{}
 
 	calledListAccessible := mock.githubRepos.MockListAccessible(ctx, nil)
+	mock.githubRepos.Get_ = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+		return nil, fmt.Errorf("unauthorized")
+	}
+
 	ctx = github.WithMockHasAuthedUser(ctx, true)
 
 	createRepos := []*sourcegraph.Repo{
-		&sourcegraph.Repo{URI: "github.com/not/accessible", DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "456"}},
+		&sourcegraph.Repo{URI: "github.com/not/accessible", DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "456"}, Private: true},
 	}
 	for _, repo := range createRepos {
 		if _, err := s.Create(ctx, repo); err != nil {
@@ -354,9 +367,13 @@ func TestRepos_List_GitHub_Unauthenticated(t *testing.T) {
 
 	ctx, mock, done := testContext()
 	defer done()
+	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 
 	calledListAccessible := mock.githubRepos.MockListAccessible(ctx, nil)
 	ctx = github.WithMockHasAuthedUser(ctx, false)
+	mock.githubRepos.Get_ = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+		return nil, fmt.Errorf("unauthorized")
+	}
 
 	s := repos{}
 

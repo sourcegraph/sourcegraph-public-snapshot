@@ -13,6 +13,7 @@ import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import * as Style from "sourcegraph/blob/styles/Blob.css";
 import { trimRepo } from "sourcegraph/repo";
 import { urlToBlob } from "sourcegraph/blob/routes";
+import { SearchModal } from "sourcegraph/search/modal/SearchModal";
 import {uriForTreeEntry} from "sourcegraph/editor/FileModel";
 import {IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
 
@@ -165,8 +166,10 @@ export class BlobMain extends React.Component<Props, any> {
 		if (pathParts) {
 			title = `${pathParts[pathParts.length - 1]} · ${title}`;
 		}
+
 		return (
 			<div className={Style.container}>
+				<SearchModal repo={this.props.repo} commitID={this.props.commitID || this.props.rev || ""} />
 				<Helmet title={title} />
 				<EditorComponent editorRef={this._setEditor} style={{ display: "flex", flex: "auto", width: "100%" }} />
 			</div>

@@ -1,27 +1,19 @@
-import {Branch, Commit, Repo, RepoList, RepoResolution, Tag} from "sourcegraph/api";
+import {Branch, Commit, Repo, RepoList, RepoResolution, SymbolInformation, Tag} from "sourcegraph/api";
 
 export type Action =
-	WantRepo |
-	FetchedRepo |
-	WantRepos |
-	ReposFetched |
-	WantResolveRev |
-	ResolvedRev |
-	WantCommit |
-	FetchedCommit |
-	WantInventory |
-	FetchedInventory |
 	RepoCloning |
-	WantResolveRepo |
-	RepoResolved |
-	WantCreateRepo |
-	RepoCreated |
+	RefreshVCS |
+	WantBranches | FetchedBranches |
 	WantCreateRepoHook |
-	WantBranches |
-	FetchedBranches |
-	WantTags |
-	FetchedTags |
-	RefreshVCS;
+	WantCreateRepo | RepoCreated |
+	WantCommit | FetchedCommit |
+	WantInventory | FetchedInventory |
+	WantRepo | FetchedRepo |
+	WantRepos | ReposFetched |
+	WantResolveRepo | RepoResolved |
+	WantResolveRev | ResolvedRev |
+	WantSymbols | FetchedSymbols |
+	WantTags | FetchedTags;
 
 export class WantRepo {
 	repo: string;
@@ -204,6 +196,33 @@ export class FetchedBranches {
 	constructor(repo: string, branches: Branch[]) {
 		this.repo = repo;
 		this.branches = branches;
+	}
+}
+
+export class WantSymbols {
+	repo: string;
+	rev: string;
+	query: string;
+
+	constructor(repo: string, rev: string, query: string) {
+		this.repo = repo;
+		this.rev = rev;
+		this.query = query;
+	}
+}
+
+export class FetchedSymbols {
+	repo: string;
+	rev: string;
+	query: string;
+
+	symbols: SymbolInformation[];
+
+	constructor(repo: string, rev: string, query: string, symbols: SymbolInformation[]) {
+		this.repo = repo;
+		this.rev = rev;
+		this.query = query;
+		this.symbols = symbols;
 	}
 }
 

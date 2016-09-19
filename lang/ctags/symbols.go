@@ -50,15 +50,16 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 	}()
 
 	rootDir := h.init.RootPath
-	vslog("Requesting workspace symbols for ", rootDir)
+	vslog("Requesting workspace symbols for ", rootDir, " with params ", fmt.Sprintf("%q", params))
 	p, err := parser.Parse(ctx, rootDir, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	tags := p.Tags()
+
 	span.SetTag("tags count", len(tags))
-	vslog("Definitions found: ", strconv.Itoa(len(tags)))
+	vslog("Total definitions found: ", strconv.Itoa(len(tags)))
 
 	if params.Query != "" {
 		filterSpan, _ := opentracing.StartSpanFromContext(ctx, "filter tags")
@@ -75,7 +76,7 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 				contains = append(contains, t)
 			}
 		}
-		tags = append(append(exact, prefix...), contains...) // Basic ranking
+		tags = append(append(exact, prefix...), contains...) // replace tags with filtered, ranked tags
 
 		span.SetTag("filtered tags count", len(tags))
 		filterSpan.Finish()
@@ -86,25 +87,29 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 		nameIdx := strings.Index(tag.DefLinePrefix, tag.Name)
 		if nameIdx < 0 {
 			// Drop this tag if we couldn't find the name in the def line prefix.
+			// TODO(beyang): warn or error here?
 			continue
 		}
 		kind := nameToSymbolKind[tag.Kind]
 		if kind == 0 {
 			kind = lsp.SKVariable
 		}
-		symbols = append(symbols, lsp.SymbolInformation{
-			Name: tag.Name,
-			Kind: kind,
-			Location: lsp.Location{
-				URI: "file://" + rootDir + "/" + tag.File,
-				Range: lsp.Range{
-					Start: lsp.Position{Line: tag.Line - 1, Character: nameIdx},
-					End:   lsp.Position{Line: tag.Line - 1, Character: nameIdx + len(tag.Name)},
+		if params.Query == "" || strings.HasPrefix(strings.ToLower(tag.Name), strings.ToLower(params.Query)) {
+			symbols = append(symbols, lsp.SymbolInformation{
+				Name: tag.Name,
+				Kind: kind,
+				Location: lsp.Location{
+					URI: "file://" + rootDir + "/" + tag.File,
+					Range: lsp.Range{
+						Start: lsp.Position{Line: tag.Line - 1, Character: nameIdx},
+						End:   lsp.Position{Line: tag.Line - 1, Character: nameIdx + len(tag.Name)},
+					},
 				},
-			},
-		})
+			})
+		}
 	}
 
+	vslog("Returning definitions: ", strconv.Itoa(len(symbols)))
 	// Limit the amount of symbols we serve to the client. Allowing an
 	// excessively large amount to be returned will generate a huge response
 	// object, which slows down the performance of the pipeline significantly.
