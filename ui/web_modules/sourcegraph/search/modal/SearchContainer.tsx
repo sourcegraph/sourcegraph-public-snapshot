@@ -222,12 +222,14 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 					URLPath: urlToBlobLine(this.props.repo, this.props.commitID, path, line+1),
 				});
 			}
+			symbolResults = symbolResults.slice(0, 3);
 			results.push({ Title: "Definitions", Results: symbolResults });
 		}
 
 		const repos = RepoStore.repos.list(query);
 		if (repos) {
-			const repoResults = repos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
+			let repoResults = repos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
+			repoResults = repoResults.slice(0, 3);
 			results.push({ Title: "Repositories", Results: repoResults });
 		}
 
@@ -239,6 +241,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 				if (index === -1) { return }
 				fileResults.push({ title: file, index: index, length: query.length, URLPath: urlToBlob(this.props.repo, null, file) });
 			});
+			fileResults = fileResults.slice(0, 3);
 			results.push({ Title: "Files", Results: fileResults });
 		}
 
