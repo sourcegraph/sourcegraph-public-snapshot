@@ -273,20 +273,6 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 
 	render(): JSX.Element {
 		let categories = this.results();
-		let loadingOrFound = false;
-		for (let i = 0; i < categories.length; i++) {
-			let results = categories[i].Results;
-			if (categories[i].IsLoading || (results && results.length)) {
-				loadingOrFound = true;
-				break;
-			}
-		}
-		let content;
-		if (loadingOrFound) {
-			content = <ResultCategories categories={categories} limit={15} selection={this.state.selected} delegate={this.delegate} />;
-		} else {
-			content = <div style={{padding: "14px 0", color: colors.white(), textAlign: "center"}}>No results found</div>;
-		}
 		return (
 			<div style={modalStyle}>
 				<div style={{
@@ -308,7 +294,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 					ref={this.bindSearchInput}
 					onChange={this.updateInput} />
 				</div>
-				{content}
+				<ResultCategories categories={categories} selection={this.state.selected} delegate={this.delegate} />
 			</div>
 		);
 	}

@@ -61,7 +61,19 @@ const ResultCategory = ({title, results, isLoading, selected = -1, delegate, cat
 	</div>;
 };
 
-export const ResultCategories = ({categories, limit, selection, delegate}) => {
+export const ResultCategories = ({categories, selection, delegate}) => {
+	let loadingOrFound = false;
+	for (let i = 0; i < categories.length; i++) {
+		let results = categories[i].Results;
+		if (categories[i].IsLoading || (results && results.length)) {
+			loadingOrFound = true;
+			break;
+		}
+	}
+	if (!loadingOrFound) {
+		return <div style={{padding: "14px 0", color: colors.white(), textAlign: "center"}}>No results found</div>;
+	}
+
 	let sections: JSX.Element[] = [];
 	categories.forEach((category, i) => {
 		let results = category.Results;

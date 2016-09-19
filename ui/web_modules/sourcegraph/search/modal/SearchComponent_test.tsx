@@ -1,20 +1,31 @@
 import expect from "expect.js";
 import * as React from "react";
 
-import {SearchComponent} from "sourcegraph/search/modal/SearchComponent";
+import {ResultCategories} from "sourcegraph/search/modal/SearchComponent";
 import {renderToString} from "sourcegraph/util/testutil/componentTestUtils";
 
 const data = {
-	tag: null,
-	tab: null,
-	input: "",
-	selected: 0,
-	results: new Map(),
+	categories: [{
+		Title: "Category 1",
+		Results: [{
+			title: "Result 1",
+			description: "this is result 1",
+		}],
+	}],
+	selected: [0, 0],
+	delegate: null,
 };
 
-describe("SearchComponent", () => {
-	it("should show category selector", () => {
-		const o = renderToString(<SearchComponent data={data}/>);
-		expect(o).to.contain("JUMP TO");
+describe("ResultCategories", () => {
+	it("should show categories", () => {
+		const o = renderToString(<ResultCategories categories={data.categories} selection={data.selected} delegate={data.delegate} />);
+		let shouldContain = [
+			"this is result 1",
+			"Result 1",
+			"floalsdkfj",
+		];
+		shouldContain.forEach((s: string) => {
+			expect(o).to.contain(s);
+		});
 	});
 });
