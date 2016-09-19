@@ -1,27 +1,29 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
 import {InjectedRouter} from "react-router";
-import {Container} from "sourcegraph/Container";
-import {colors} from "sourcegraph/components/jsStyles/colors";
+
 import {urlToBlob, urlToBlobLine} from "sourcegraph/blob/routes";
-import {ResultCategories} from "sourcegraph/search/modal/SearchComponent";
-import {RepoRev} from "sourcegraph/search/modal/SearchModal";
+
+import {Input} from "sourcegraph/components/Input";
+import {colors} from "sourcegraph/components/jsStyles/colors";
+import {Search as SearchIcon} from "sourcegraph/components/symbols";
+import {Container} from "sourcegraph/Container";
 import {RepoStore} from "sourcegraph/repo/RepoStore";
 import {Store} from "sourcegraph/Store";
 import {TreeStore} from "sourcegraph/tree/TreeStore";
-import * as TreeActions from "sourcegraph/tree/TreeActions";
+
+import {ResultCategories} from "sourcegraph/search/modal/SearchComponent";
+import {RepoRev} from "sourcegraph/search/modal/SearchModal";
+
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
-import {Search as SearchIcon} from "sourcegraph/components/symbols";
-import {input as inputStyle} from "sourcegraph/components/styles/input.css";
+import * as TreeActions from "sourcegraph/tree/TreeActions";
 
 const modalStyle = {
 	position: "fixed",
 	top: 60,
 	right: 0,
 	left: 0,
-	maxWidth: 800,
+	maxWidth: 515,
 	margin: "0 auto",
 	borderRadius: "0 0 8px 8px",
 	backgroundColor: colors.coolGray2(),
@@ -162,7 +164,10 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 			this.setState(state);
 		} else if (event.key === "Enter") {
 			this.select(this.state.selected[0], this.state.selected[1]);
+		} else {
+			return;
 		}
+		event.preventDefault();
 	}
 
 	fetchResults(query: string): void {
@@ -287,11 +292,11 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 					flexDirection: "row",
 				}}>
 				<SearchIcon style={{fill: colors.coolGray2()}} />
-				<input className={inputStyle}
+				<Input
 					style={{boxSizing: "border-box", border: "none", flex: "1 0 auto"}}
 					placeholder="jump to def, file, or repository"
 					value={this.state.input}
-					ref={this.bindSearchInput}
+					domRef={this.bindSearchInput}
 					onChange={this.updateInput} />
 				</div>
 				<ResultCategories categories={categories} selection={this.state.selected} delegate={this.delegate} />

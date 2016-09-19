@@ -1,10 +1,8 @@
-// tslint:disable: typedef ordered-imports
-
 import expect from "expect.js";
 import * as React from "react";
 
-import {Category, SearchDelegate} from "sourcegraph/search/modal/SearchContainer";
 import {ResultCategories} from "sourcegraph/search/modal/SearchComponent";
+import {Category, SearchDelegate} from "sourcegraph/search/modal/SearchContainer";
 import {renderToString} from "sourcegraph/util/testutil/componentTestUtils";
 
 interface Case {

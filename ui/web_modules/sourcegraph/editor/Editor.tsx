@@ -81,17 +81,8 @@ export class Editor implements monaco.IDisposable {
 		this._editor.addCommand(monaco.KeyCode.LeftArrow | monaco.KeyMod.CtrlCmd, () => {
 			global.window.history.back();
 		}, "");
-		this._editor.addCommand(monaco.KeyCode.Backspace, () => {
-			global.window.history.back();
-		}, "");
 		this._editor.addCommand(monaco.KeyCode.RightArrow | monaco.KeyMod.CtrlCmd, () => {
 			global.window.history.forward();
-		}, "");
-		this._editor.addCommand(monaco.KeyCode.KEY_S, () => {
-			document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "s" }));
-		}, "");
-		this._editor.addCommand(monaco.KeyCode.KEY_P | monaco.KeyMod.Shift | monaco.KeyMod.CtrlCmd, () => {
-			document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "s" }));
 		}, "");
 		/* tslint:enable no-bitwise */
 		this._editor.addCommand(monaco.KeyCode.Home, () => {

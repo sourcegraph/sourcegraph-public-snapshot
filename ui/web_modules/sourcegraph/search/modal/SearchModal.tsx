@@ -3,14 +3,6 @@ import * as React from "react";
 import {ModalComp} from "sourcegraph/components/Modal";
 import {SearchContainer} from "sourcegraph/search/modal/SearchContainer";
 
-// Keyboard shortcuts
-export const shortcuts = {
-	repo: "r",
-	file: "t",
-	def: "f",
-	search: "s",
-};
-
 interface State {
 	showModal: boolean;
 }
@@ -52,7 +44,7 @@ export class SearchModal extends React.Component<RepoRev, State> {
 		if (event.target.nodeName === "INPUT" || event.metaKey || event.ctrlKey) {
 			return;
 		}
-		if (event.key === shortcuts.search) {
+		if (event.key === "s") {
 			this.setState({showModal: !this.state.showModal});
 		}
 		event.preventDefault();

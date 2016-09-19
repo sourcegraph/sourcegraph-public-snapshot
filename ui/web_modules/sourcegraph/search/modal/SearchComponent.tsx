@@ -5,35 +5,26 @@ import {colors} from "sourcegraph/components/jsStyles/colors";
 const smallFont = 12.75;
 
 const ResultRow = ({title, description, index, length}, categoryIndex, itemIndex, selected, delegate) => {
-	let titleColor = colors.coolGray3();
-	let backgroundColor = colors.coolGray1(.5);
-	let descriptionColor = colors.coolGray3();
-	if (selected) {
-		titleColor = colors.coolGray1();
-		backgroundColor = colors.coolGray3();
-		descriptionColor = colors.coolGray1();
-	}
-
 	return (
 		<a key={itemIndex} style={{
 			borderRadius: 3,
 			padding: 16,
 			margin: "0 8px 8px 8px",
-			backgroundColor: backgroundColor,
+			backgroundColor: selected ? colors.blue2() : colors.coolGray1(.5),
 			display: "block",
+			color: colors.white(),
 		}}
-		ref={(node) => { if (selected && node) { node.scrollIntoView(false); } }}
 		onClick={() => delegate.select(categoryIndex, itemIndex)}>
 		{length ? <div>
-			<span style={{color: titleColor}}>{title.substr(0, index)}</span>
-			<span style={{color: colors.white(), fontWeight: "bold"}}>{title.substr(index, length)}</span>
-			<span style={{color: titleColor}}>{title.substr(index + length)}</span>
+			<span>{title.substr(0, index)}</span>
+			<span style={{fontWeight: "bold"}}>{title.substr(index, length)}</span>
+			<span>{title.substr(index + length)}</span>
 		</div> :
 		<div style={{color: colors.white()}}>
 			{title}
 		</div>
 		}
-		<div style={{fontSize: smallFont, color: descriptionColor}}>
+		<div style={{fontSize: smallFont, color: selected ? colors.white() : colors.coolGray3()}}>
 			{description}
 		</div>
 		</a>
