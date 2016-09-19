@@ -1,3 +1,5 @@
+// tslint:disable: typedef ordered-imports
+
 import expect from "expect.js";
 import * as React from "react";
 
@@ -13,8 +15,8 @@ interface Case {
 }
 
 const testDelegate = {
-	dismiss: function() {},
-	select: function(category: number, row: number): void {},
+	dismiss: function(): void {/* do nothing */},
+	select: function(category: number, row: number): void {/* do nothing */},
 };
 
 describe("ResultCategories", () => {
