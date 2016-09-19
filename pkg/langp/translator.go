@@ -398,7 +398,7 @@ func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLoc
 	return &RefLocations{Refs: refs}, nil
 }
 
-func (t *translator) Symbols(ctx context.Context, opt *SymbolsOpt) (*Symbols, error) {
+func (t *translator) Symbols(ctx context.Context, opt *SymbolsQuery) (*Symbols, error) {
 	// Determine the root path for the workspace and prepare it.
 	workspaceStart := time.Now()
 	rootPath, err := t.workspace.Prepare(ctx, opt.Repo, opt.Commit)

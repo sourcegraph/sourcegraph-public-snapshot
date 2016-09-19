@@ -92,7 +92,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 		// Make an async request for the LSP symbols of this repo for monitoring
 		// purposes only. Results are discarded.
 		go func() {
-			_, shadowErr := langp.DefaultClient.Symbols(r.Context(), &langp.SymbolsOpt{
+			_, shadowErr := langp.DefaultClient.Symbols(r.Context(), &langp.SymbolsQuery{
 				RepoRev: langp.RepoRev{
 					Repo:   repo.URI,
 					Commit: repoRev.CommitID,

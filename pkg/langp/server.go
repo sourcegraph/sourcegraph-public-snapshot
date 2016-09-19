@@ -21,11 +21,6 @@ const (
 	GitHubTokenKey   contextKey = 3
 )
 
-type SymbolsOpt struct {
-	RepoRev
-	Query string
-}
-
 // Server represents all of the Language Processor REST API methods that must
 // be implemented by a language processor.
 type Server interface {
@@ -36,7 +31,7 @@ type Server interface {
 	LocalRefs(ctx context.Context, p *Position) (*RefLocations, error)
 	ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, error)
 	DefSpecRefs(ctx context.Context, d *DefSpec) (*RefLocations, error)
-	Symbols(ctx context.Context, opt *SymbolsOpt) (*Symbols, error)
+	Symbols(ctx context.Context, opt *SymbolsQuery) (*Symbols, error)
 	ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error)
 }
 
@@ -166,7 +161,7 @@ func (s *server) serveDefinition(ctx context.Context, body []byte) (interface{},
 
 func (s *server) serveSymbols(ctx context.Context, body []byte) (interface{}, error) {
 	// Decode the user request and ensure that required fields are specified.
-	var opt SymbolsOpt
+	var opt SymbolsQuery
 	if err := json.Unmarshal(body, &opt); err != nil {
 		return nil, err
 	}

@@ -21,7 +21,7 @@ func serveSymbols(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	opt := &langp.SymbolsOpt{
+	opt := &langp.SymbolsQuery{
 		RepoRev: langp.RepoRev{
 			Repo:   repo.URI,
 			Commit: repoRev.CommitID,
