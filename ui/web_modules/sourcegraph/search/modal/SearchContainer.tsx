@@ -64,7 +64,7 @@ export interface Category {
 	IsLoading: boolean;
 }
 
-interface SearchDelegate {
+export interface SearchDelegate {
 	dismiss: any;
 	select: (category: number, row: number) => void;
 }
