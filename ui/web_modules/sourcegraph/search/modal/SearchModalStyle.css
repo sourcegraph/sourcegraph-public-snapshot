@@ -1,0 +1,11 @@
+@value colors "sourcegraph/components/styles/_colors.css";
+
+@value c_blue_text from colors;
+
+.modal_result:hover {
+	border: 2px solid c_blue_text;
+}
+
+.modal_result {
+	border: 2px solid transparent;
+}

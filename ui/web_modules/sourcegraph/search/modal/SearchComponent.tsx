@@ -1,12 +1,13 @@
 import * as React from "react";
 
 import {colors} from "sourcegraph/components/jsStyles/colors";
+import {modal_result} from "sourcegraph/search/modal/SearchModalStyle.css";
 
 const smallFont = 12.75;
 
 const ResultRow = ({title, description, index, length}, categoryIndex, itemIndex, selected, delegate) => {
 	return (
-		<a key={itemIndex} style={{
+		<a key={itemIndex} className={modal_result} style={{
 			borderRadius: 3,
 			padding: 16,
 			margin: "0 8px 8px 8px",
@@ -31,7 +32,7 @@ const ResultRow = ({title, description, index, length}, categoryIndex, itemIndex
 	);
 };
 
-const ResultCategory = ({title, results, isLoading, selected = -1, delegate, categoryIndex}) => {
+const ResultCategory = ({title, results, isLoading, selected, delegate, categoryIndex}) => {
 	if (isLoading) {
 		return (
 			<div style={{padding: "14px 0"}}>
@@ -64,15 +65,13 @@ export const ResultCategories = ({categories, selection, delegate}) => {
 	if (!loadingOrFound) {
 		return <div style={{padding: "14px 0", color: colors.white(), textAlign: "center"}}>No results found</div>;
 	}
-
 	let sections: JSX.Element[] = [];
 	categories.forEach((category, i) => {
-		let results = category.Results;
 		let selected = -1;
-		if (i === selection[0]) {
-			selected = selection[1];
+		if (i === selection.category) {
+			selected = selection.row;
 		}
-		sections.push(<ResultCategory key={category.Title} isLoading={category.IsLoading} categoryIndex={i} title={category.Title} selected={selected} results={results} delegate={delegate} />);
+		sections.push(<ResultCategory key={category.Title} isLoading={category.IsLoading} categoryIndex={i} title={category.Title} selected={selected} results={category.Results} delegate={delegate} />);
 	});
 	return <div style={{overflow: "auto"}}>
 		{sections}

@@ -81,8 +81,6 @@ class RepoStoreClass extends Store<any> {
 		});
 		this.symbols = deepFreeze({
 			content: {},
-			errors: {},
-			error(repo) { return this.errors[keyFor(repo)] || null; },
 			list(repo, rev, query) {
 				return this.content[keyForSymbols(repo, rev, query)] || null;
 			},
@@ -204,9 +202,6 @@ class RepoStoreClass extends Store<any> {
 			this.symbols = deepFreeze(Object.assign({}, this.symbols, {
 				content: Object.assign({}, this.symbols.content, {
 					[keyForSymbols(action.repo, action.rev, action.query)]: action.symbols,
-				}),
-				errors: Object.assign({}, this.symbols.errors, {
-					[keyForSymbols(action.repo, action.rev, action.query)]: action.err,
 				}),
 			}));
 			break;

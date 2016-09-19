@@ -2,21 +2,19 @@ import * as React from "react";
 import {InjectedRouter} from "react-router";
 
 import {urlToBlob, urlToBlobLine} from "sourcegraph/blob/routes";
-
 import {Input} from "sourcegraph/components/Input";
 import {colors} from "sourcegraph/components/jsStyles/colors";
 import {Search as SearchIcon} from "sourcegraph/components/symbols";
 import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {RepoStore} from "sourcegraph/repo/RepoStore";
 import {Store} from "sourcegraph/Store";
+import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {TreeStore} from "sourcegraph/tree/TreeStore";
 
 import {ResultCategories} from "sourcegraph/search/modal/SearchComponent";
 import {RepoRev} from "sourcegraph/search/modal/SearchModal";
-
-import * as Dispatcher from "sourcegraph/Dispatcher";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
-import * as TreeActions from "sourcegraph/tree/TreeActions";
 
 const modalStyle = {
 	position: "fixed",
@@ -56,8 +54,10 @@ interface State {
 	// The results of the search
 	results: any;
 
-	// The [category, row] of the currently selected item
-	selected: number[];
+	selected: {
+		category: number;
+		row: number;
+	};
 };
 
 export interface Category {
@@ -91,7 +91,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		this.state = {
 			input: "",
 			results: [],
-			selected: [0, 0],
+			selected: {category: 0, row: 0},
 		};
 		this.delegate = {
 			dismiss: props.dismissModal,
@@ -129,44 +129,40 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 
 	keyListener(event: KeyboardEvent): void {
 		let results = this.results();
+		let category = this.state.selected.category;
+		let row = this.state.selected.row;
 		let categorySizes = results.map((r) => r.Results ? r.Results.length : 0);
 		if (event.key === "ArrowUp") {
-			let selected = this.state.selected.slice();
-			selected[1]--;
-			let c = selected[0];
-			if (selected[1] < 0) {
-				if (c === 0) {
-					selected[1]++; // don't go down any further if at min
-				} else {
-					selected[0]--; // go to previous category
-					selected[1] = categorySizes[c - 1] - 1;
+			if (row === 0 && category === 0) {
+				// noop
+			} else if (row === 0) {
+				category--;
+				if (categorySizes[category] === 0) {
+					category--;
 				}
+				row = categorySizes[category] - 1;
+			} else {
+				row--;
 			}
-			let state = Object.assign({}, this.state);
-			state.selected = selected;
-			this.setState(state);
 		} else if (event.key === "ArrowDown") {
-			let selected = this.state.selected.slice();
-			selected[1]++;
-			let c = selected[0];
-			let cN = categorySizes[c];
-			if (selected[1] >= cN) {
-				if (c === categorySizes.length - 1) {
-					selected[1]--; // don't go down any further if at max
-				} else {
-					selected[0]++; // advance to next category
-					selected[1] = 0;
+			if (row === categorySizes[category] - 1 && category === 2) {
+				// noop
+			} else if (row === categorySizes[category] - 1) {
+				category++;
+				if (categorySizes[category] === 0) {
+					category++;
 				}
+				row = 0;
+			} else {
+				row++;
 			}
-
-			let state = Object.assign({}, this.state);
-			state.selected = selected;
-			this.setState(state);
 		} else if (event.key === "Enter") {
-			this.select(this.state.selected[0], this.state.selected[1]);
+			this.select(this.state.selected.category, this.state.selected.row);
 		} else {
 			return;
 		}
+		let state = Object.assign(this.state, {selected: {category: category, row: row}});
+		this.setState(state);
 		event.preventDefault();
 	}
 
@@ -294,8 +290,9 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 				<SearchIcon style={{fill: colors.coolGray2()}} />
 				<Input
 					style={{boxSizing: "border-box", border: "none", flex: "1 0 auto"}}
-					placeholder="jump to def, file, or repository"
+					placeholder="new http request"
 					value={this.state.input}
+					block={true}
 					domRef={this.bindSearchInput}
 					onChange={this.updateInput} />
 				</div>
