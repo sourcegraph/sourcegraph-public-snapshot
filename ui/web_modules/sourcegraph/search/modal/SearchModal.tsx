@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import {ModalComp} from "sourcegraph/components/Modal";
-import { Category, SearchContainer } from "sourcegraph/search/modal/SearchContainer";
+import {SearchContainer} from "sourcegraph/search/modal/SearchContainer";
 
 // Keyboard shortcuts
 export const shortcuts = {
@@ -53,15 +53,6 @@ export class SearchModal extends React.Component<RepoRev, State> {
 		}
 		if (event.key === shortcuts.search) {
 			this.setState({showModal: !this.state.showModal, start: null});
-		}
-		if (event.key === shortcuts.file) {
-			this.setState({showModal: true, start: Category.file});
-		}
-		if (event.key === shortcuts.repo) {
-			this.setState({showModal: true, start: Category.repository});
-		}
-		if (event.key === shortcuts.def) {
-			this.setState({showModal: true, start: Category.definition});
 		}
 		event.preventDefault();
 	}

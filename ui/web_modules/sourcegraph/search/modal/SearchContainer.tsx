@@ -31,13 +31,6 @@ const modalStyle = {
 	fontSize: 15,
 };
 
-const CategoryCount = 3;
-export const enum Category {
-	file,
-	definition,
-	repository,
-}
-
 export interface Result {
 	title: string;
 	description: string;
@@ -50,7 +43,6 @@ export interface Result {
 
 interface Props {
 	dismissModal: () => void;
-	start: Category | null;
 };
 
 interface State {
@@ -60,30 +52,15 @@ interface State {
 	// The results of the search
 	results: any;
 
-	// The category that a user wants to limit their search to.
-	tag: Category | null;
-
 	// The index of the row that a user has navigated to using arrow keys and
 	// may activate by pressing enter. Zero is the search form.
 	selected: number;
-
-	// The category tab that a user has navigated to.
-	tab: Category | null;
 
 	// Save the search input element so we can focus/blur it.
 	searchInput: HTMLElement | null;
 };
 
-// Find the total number of results in all categories
-export function deepLength(categories: Map<Category, Result[]>): number {
-	let acc = 0;
-	categories.forEach(results => {
-		acc = acc + results.length;
-	});
-	return acc;
-}
-
-export interface Category2 {
+export interface Category {
 	Title: string;
 	Results: Result[];
 }
@@ -143,14 +120,6 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 	componentWillUnmount(): void {
 		super.componentWillUnmount();
 		document.body.removeEventListener("keydown", this.keyListener);
-	}
-
-	componentWillReceiveProps(nextProps: Props): void {
-		if (this.props.start === null && nextProps.start !== null) {
-			this.setState(Object.assign({}, this.state, {
-				selected: [0, 0],
-			}));
-		}
 	}
 
 	onStateTransition(prevState: State, nextState: State): void {}
@@ -220,11 +189,6 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		this.context.router.push(url);
 	}
 
-	viewCategory(category: Category): void {
-		const state = Object.assign({}, this.state, {tab: category});
-		this.setState(state);
-	}
-
 	bindSearchInput(node: HTMLElement): void { this.searchInput = node; }
 
 	focusSearchBar(): void {
@@ -239,9 +203,9 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		}
 	}
 
-	results(): Category2[] {
+	results(): Category[] {
 		let query = this.query();
-		let results: Category2[] = [];
+		let results: Category[] = [];
 
 		const symbols = RepoStore.symbols.list(this.props.repo, this.props.commitID, query);
 		if (symbols) {

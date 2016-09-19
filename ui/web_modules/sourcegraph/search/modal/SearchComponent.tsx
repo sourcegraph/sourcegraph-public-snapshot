@@ -3,8 +3,6 @@ import * as React from "react";
 import {colors} from "sourcegraph/components/jsStyles/colors";
 import {input as inputStyle} from "sourcegraph/components/styles/input.css";
 import {Search as SearchIcon} from "sourcegraph/components/symbols";
-
-import {Category, SearchActions, categoryNames, deepLength} from "sourcegraph/search/modal/SearchContainer";
 import {shortcuts} from "sourcegraph/search/modal/SearchModal";
 
 const smallFont = 12.75;
