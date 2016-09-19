@@ -212,11 +212,16 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		if (symbols) {
 			let symbolResults = [];
 			for (let i = 0; i < symbols.length; i++) {
+				let title = symbols[i].name;
+				let kind = symbolKindName(symbols[i].kind);
+				if (kind) {
+					title = `${kind} ${title}`;
+				}
 				const path = symbols[i].location.uri;
 				const line = symbols[i].location.range.start.line;
-				const idx = symbols[i].name.toLowerCase().indexOf(query.toLowerCase());
+				const idx = title.toLowerCase().indexOf(query.toLowerCase());
 				symbolResults.push({
-					title: symbols[i].name,
+					title: title,
 					description: symbols[i].location.uri,
 					index: idx,
 					length: query.length,
@@ -301,5 +306,70 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 				{content}
 			</div>
 		);
+	}
+}
+
+// symbolKindName takes in the value of a SymbolInformation.Kind and
+// returns the corresponding name for the kind. This is translated
+// over from the values of the SymbolKind constants in
+// pkg/lsp/service.go.
+function symbolKindName(kind: number): string {
+	switch (kind) {
+	case 1:
+        return "file";
+		break;
+	case 2:
+		return "module";
+		break;
+	case 3:
+		return "namespace";
+		break;
+	case 4:
+		return "package";
+		break;
+	case 5:
+		return "class";
+		break;
+	case 6:
+		return "method";
+		break;
+	case 7:
+		return "property";
+		break;
+	case 8:
+		return "field";
+		break;
+	case 9:
+		return "constructor";
+		break;
+	case 10:
+		return "enum";
+		break;
+	case 11:
+		return "interface";
+		break;
+	case 12:
+		return "func";
+		break;
+	case 13:
+		return "var";
+		break;
+	case 14:
+		return "const";
+		break;
+	case 15:
+		return "string";
+		break;
+	case 16:
+		return "number";
+		break;
+	case 17:
+		return "boolean";
+		break;
+	case 18:
+		return "array";
+		break;
+	default:
+		return "";
 	}
 }
