@@ -1021,6 +1021,7 @@ export interface RepoListOptions {
 	Type?: string;
 	Owner?: string;
 	RemoteOnly?: boolean;
+	LocalOnly?: boolean;
 }
 
 export interface RepoListTagsOptions {

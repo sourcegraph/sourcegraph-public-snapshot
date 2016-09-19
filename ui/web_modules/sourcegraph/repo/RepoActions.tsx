@@ -35,18 +35,22 @@ export class FetchedRepo {
 
 export class WantRepos {
 	querystring: string;
+	type: string; // "private" or "public"
 
-	constructor(querystring: string) {
+	constructor(querystring: string, type: string) {
 		this.querystring = querystring;
+		this.type = type;
 	}
 }
 
 export class ReposFetched {
 	querystring: string;
+	type: string; // "private" or "public"
 	data: RepoList;
 
-	constructor(querystring: string, data: RepoList) {
+	constructor(querystring: string, type: string, data: RepoList) {
 		this.querystring = querystring;
+		this.type = type;
 		this.data = data;
 	}
 }

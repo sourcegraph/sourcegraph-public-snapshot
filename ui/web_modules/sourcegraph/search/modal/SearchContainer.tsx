@@ -170,7 +170,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 
 	fetchResults(query: string): void {
 		Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.repo, this.props.commitID, query));
-		Dispatcher.Backends.dispatch(new RepoActions.WantRepos(query));
+		Dispatcher.Backends.dispatch(new RepoActions.WantRepos(query, "public"));
 		Dispatcher.Backends.dispatch(new TreeActions.WantFileList(this.props.repo, this.props.commitID));
 	}
 
@@ -229,11 +229,15 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 			results.push({ Title: "Definitions", IsLoading: true });
 		}
 
-		const repos = RepoStore.repos.list(query);
+		const repos = RepoStore.repos.list(query, "public");
 		if (repos) {
-			let repoResults = repos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
-			repoResults = repoResults.slice(0, 3);
-			results.push({ Title: "Repositories", Results: repoResults });
+			if (repos.Repos) {
+				let repoResults = repos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
+				repoResults = repoResults.slice(0, 3);
+				results.push({ Title: "Repositories", Results: repoResults });
+			} else {
+				results.push({ Title: "Repositories", Results: [] });
+			}
 		} else {
 			results.push({ Title: "Repositories", IsLoading: true });
 		}
@@ -258,7 +262,21 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 	render(): JSX.Element {
 		let categories = this.results();
 		let query = this.query();
-		let content = <ResultCategories categories={categories} limit={15} selection={this.state.selected} delegate={this.delegate} />;
+
+
+		let loadingOrFound = false;
+		for (let i = 0; i < categories.length; i++) {
+			if (categories[i].IsLoading || (categories[i].Results && categories[i].Results.length)) {
+				loadingOrFound = true;
+				break;
+			}
+		}
+		let content;
+		if (loadingOrFound) {
+			content = <ResultCategories categories={categories} limit={15} selection={this.state.selected} delegate={this.delegate} />;
+		} else {
+			content = <div style={{padding: "14px 0", color: colors.white(), textAlign: "center"}}>No results found</div>;
+		}
 		return (
 			<div style={modalStyle}>
 				<div style={{
