@@ -136,7 +136,7 @@ export function annGenerator(annsByStartByte, byte, repoRevSpec) {
 	if (annLen <= 0) return null; // sometimes, there will be an "empty" annotation, e.g. for CommonJS modules
 
 	return {annLen, annGen: function(innerHTML) {
-				return `<span data-byteoffset=${byte + 1} class=${styles.sgdef} style="cursor:pointer;">${innerHTML}</span>`;
+		return `<span data-byteoffset=${byte + 1} class=${styles.sgdef} style="cursor:pointer;">${innerHTML}</span>`;
 	}};
 }
 
