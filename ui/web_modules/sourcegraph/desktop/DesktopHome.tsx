@@ -50,7 +50,7 @@ export class DesktopHome extends React.Component<{}, any> {
 				<div className={base.mv4}>
 					<Heading level="5">Powerful search for your private code</Heading>
 					<p>
-						To enable semantic search and usage examples for your private code, <Link to="/settings/repos">authorize Sourcegraph</Link> to access your private repositories.
+						To enable semantic search and usage examples for your private code, <Link to="/settings">authorize Sourcegraph</Link> to access your private repositories.
 					</p>
 				</div>
 				<div className={classNames(base.mt5, typography.f7)}>

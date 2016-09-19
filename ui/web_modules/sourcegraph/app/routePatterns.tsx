@@ -7,7 +7,6 @@ export type RouteName = "styleguide" |
 	"integrations" |
 	"tool" |
 	"settings" |
-	"settingsRepos" |
 	"commit" |
 	"repo" |
 	"tree" |
@@ -29,9 +28,9 @@ export type RouteName = "styleguide" |
 	"adminBuilds" |
 	"browserExtFaqs";
 
-// NOTE: If you add a top-level route (e.g., "/about"), add it to the
-// topLevel list in app/internal/ui/router.go.
 export const rel = {
+	// NOTE: If you add a top-level route (e.g., "/about"), add it to the
+	// topLevel list in app/internal/ui/router.go.
 	search: "search",
 	about: "about",
 	beta: "beta",
@@ -39,20 +38,22 @@ export const rel = {
 	contact: "contact",
 	security: "security",
 	pricing: "pricing",
-	terms: "-/terms",
-	privacy: "-/privacy",
+	terms: "terms",
+	privacy: "privacy",
 	styleguide: "styleguide",
-	home: "",
 	integrations: "integrations",
-	settings: "settings/",
-	settingsRepos: "repos",
+	settings: "settings",
 	login: "login",
 	signup: "join",
 	forgot: "forgot",
 	reset: "reset",
+
+	home: "",
+
 	admin: "-/",
-	commit: "commit",
+
 	repo: "*", // matches both "repo" and "repo@rev"
+	commit: "commit",
 	tree: "tree/*",
 	blob: "blob/*",
 	build: "builds/:id",
@@ -72,15 +73,16 @@ export const abs = {
 	home: rel.home,
 	integrations: rel.integrations,
 	settings: rel.settings,
-	settingsRepos: `${rel.settings}/${rel.settingsRepos}`,
 	login: rel.login,
 	signup: rel.signup,
 	forgot: rel.forgot,
 	reset: rel.reset,
+
 	admin: rel.admin,
 	adminBuilds: `${rel.admin}${rel.builds}`,
-	commit: `${rel.repo}/-/${rel.commit}`,
+
 	repo: rel.repo,
+	commit: `${rel.repo}/-/${rel.commit}`,
 	tree: `${rel.repo}/-/${rel.tree}`,
 	blob: `${rel.repo}/-/${rel.blob}`,
 	build: `${rel.repo}/-/${rel.build}`,

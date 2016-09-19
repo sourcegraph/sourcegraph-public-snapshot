@@ -24,7 +24,7 @@ export function TermsPage(props: {}, {}) {
 
 				<p>These Terms of Service constitute a legal contract between you and your company, organization, or entity (“<b>you</b>” or, collectively with other users, “<b>Users</b>”), on the one hand, and Sourcegraph on the other regarding your and your company, organization, or entity’s use of the Software. Sourcegraph may have different roles with respect to different types of Users, and “you” as used in these Terms will apply to the appropriate type of User under the circumstances (e.g., an individual User and/or a Subscribing Organization). If you are using or opening an account with Sourcegraph on behalf of a company, entity, or organization (collectively, the “<b>Subscribing Organization</b>”) then you represent and warrant that you: (i) are an authorized representative of that entity with the authority to bind such entity to these Terms; (ii) have read these Terms; (iii) understand these Terms, and (iv) agree to these Terms on behalf of such Subscribing Organization.</p>
 
-				<p>Please read carefully the following terms and conditions. By registering for and/or using or subscribing to the Software, or by clicking “I Agree,” or otherwise affirmatively manifesting your intent to be bound by these Terms of Service, you signify that you have read, understood, and agree to be bound by the following terms, including any additional guidelines and any future modifications (collectively, the “Terms”), and to the collection and use of your personal information as set forth in the <a href="https://sourcegraph.com/-/privacy">Sourcegraph Privacy Policy</a>.</p>
+				<p>Please read carefully the following terms and conditions. By registering for and/or using or subscribing to the Software, or by clicking “I Agree,” or otherwise affirmatively manifesting your intent to be bound by these Terms of Service, you signify that you have read, understood, and agree to be bound by the following terms, including any additional guidelines and any future modifications (collectively, the “Terms”), and to the collection and use of your personal information as set forth in the <a href="https://sourcegraph.com/privacy">Sourcegraph Privacy Policy</a>.</p>
 
 				<p>Please read these Terms carefully to ensure that you understand each provision. This Agreement contains a mandatory individual arbitration and class action/jury trial waiver provision that requires the use of arbitration on an individual basis to resolve disputes, rather than jury trials or class actions.</p>
 
@@ -38,7 +38,7 @@ export function TermsPage(props: {}, {}) {
 
 				<h4>Privacy</h4>
 
-				<p>User privacy is important to us. Please read our <a href="https://sourcegraph.com/-/privacy">Privacy Policy</a> carefully for details relating to the collection, use, and disclosure of your personal information.</p>
+				<p>User privacy is important to us. Please read our <a href="https://sourcegraph.com/privacy">Privacy Policy</a> carefully for details relating to the collection, use, and disclosure of your personal information.</p>
 
 				<h4>Additional Terms</h4>
 

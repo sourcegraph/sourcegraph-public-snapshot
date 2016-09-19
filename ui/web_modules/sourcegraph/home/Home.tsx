@@ -272,10 +272,10 @@ export class Home extends Container<HomeProps, HomeState> {
 				<a href="/jobs">Careers</a>
 				<a href="/contact">Contact</a>
 				<a href="/pricing">Pricing</a>
-				<a href="/-/privacy">Privacy</a>
+				<a href="/privacy">Privacy</a>
 				<a href="/security">Security</a>
 				<a href="/sitemap">Sitemap</a>
-				<a href="/-/terms">Terms</a>
+				<a href="/terms">Terms</a>
 			</div>
 
 			</div>

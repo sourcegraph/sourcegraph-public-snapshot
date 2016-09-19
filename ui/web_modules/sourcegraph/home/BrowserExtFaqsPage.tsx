@@ -56,7 +56,7 @@ export class BrowserExtFaqsPage extends React.Component<Props, State> {
 
 					<div className={hash === "#enable" ? styles.faqs_div_selected : styles.faqs_div}>
 						<Heading level="3" underline="blue">How do I use the browser extension with private repositories?</Heading>
-						<p className={styles.p}> Sourcegraph indexes repositories that you have enabled. <Link to="https://sourcegraph.com/settings/repos">
+						<p className={styles.p}> Sourcegraph indexes repositories that you have enabled. <Link to="https://sourcegraph.com/settings">
 						Check your repository settings</Link> if you have not enabled below.</p>
 						<div className={styles.centered_button}>
 							{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo="/about/browser-ext-faqs#enable"> Enable private repositories</GitHubAuthButton>}

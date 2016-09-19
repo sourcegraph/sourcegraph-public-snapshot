@@ -16,9 +16,9 @@ export function PrivacyPage(props: {}, {}) {
 				</div>
 			</Hero>
 			<div className={styles.content}>
-				<p>Sourcegraph, Inc. (“<b>Sourcegraph</b>,” “<b>we</b>,” “<b>our</b>,” or “<b>us</b>”) understands that privacy is important to our online visitors to our website and users of our online services (collectively, for the purposes of this Privacy Policy, our “<b>Service</b>”). This Privacy Policy explains how we collect, use, share and protect your personal information that we collect through our Service. By using our Service, you agree to the terms of this Privacy Policy and our <a href="https://sourcegraph.com/-/terms">Terms of Service</a>.</p>
+				<p>Sourcegraph, Inc. (“<b>Sourcegraph</b>,” “<b>we</b>,” “<b>our</b>,” or “<b>us</b>”) understands that privacy is important to our online visitors to our website and users of our online services (collectively, for the purposes of this Privacy Policy, our “<b>Service</b>”). This Privacy Policy explains how we collect, use, share and protect your personal information that we collect through our Service. By using our Service, you agree to the terms of this Privacy Policy and our <a href="https://sourcegraph.com/terms">Terms of Service</a>.</p>
 
-				<p>Capitalized terms that are not defined in this Privacy Policy have the meaning given them in our <a href="https://sourcegraph.com/-/terms">Terms of Service</a>.</p>
+				<p>Capitalized terms that are not defined in this Privacy Policy have the meaning given them in our <a href="https://sourcegraph.com/terms">Terms of Service</a>.</p>
 
 				<h4>WHAT INFORMATION DO WE COLLECT AND FOR WHAT PURPOSE</h4>
 
@@ -66,7 +66,7 @@ export function PrivacyPage(props: {}, {}) {
 						Other parties in connection with a company transaction, such as a merger, sale of company assets or shares, reorganization, financing, change of control or acquisition of all or a portion of our business by another company or third party or in the event of a bankruptcy or related or similar proceedings; and
 					</li>
 					<li>
-						Third parties as required by law or subpoena or to if we reasonably believe that such action is necessary to (a) comply with the law and the reasonable requests of law enforcement; (b) to enforce our <a href="https://sourcegraph.com/-/terms">Terms of Service</a> or to protect the security or integrity of our Service; and/or (c) to exercise or protect the rights, property, or personal safety of Sourcegraph, our Users, or others.
+						Third parties as required by law or subpoena or to if we reasonably believe that such action is necessary to (a) comply with the law and the reasonable requests of law enforcement; (b) to enforce our <a href="https://sourcegraph.com/terms">Terms of Service</a> or to protect the security or integrity of our Service; and/or (c) to exercise or protect the rights, property, or personal safety of Sourcegraph, our Users, or others.
 					</li>
 				</ul>
 
@@ -88,7 +88,7 @@ export function PrivacyPage(props: {}, {}) {
 
 				<h4>USER DATA</h4>
 
-				<p>Sourcegraph’s collection, storage, and use of User Data, and our responsibilities with respect to such User Data, are set forth in our <a href="https://sourcegraph.com/-/terms">Terms of Service</a> and are not covered by this Privacy Policy.</p>
+				<p>Sourcegraph’s collection, storage, and use of User Data, and our responsibilities with respect to such User Data, are set forth in our <a href="https://sourcegraph.com/terms">Terms of Service</a> and are not covered by this Privacy Policy.</p>
 
 				<h4>CHILDREN’S PRIVACY</h4>
 

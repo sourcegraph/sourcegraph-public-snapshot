@@ -13,7 +13,7 @@ export const routes: PlainRoute[] = [
 		childRoutes: [
 			/* HOTFIX: Disable this route to prevent repos rate-limiting
 			{
-				path: rel.settingsRepos,
+				path: rel.settings,
 				getComponent: (location, callback) => {
 					callback(null, {navContext: null, main: UserSettingsReposMain} as any);
 				},

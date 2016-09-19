@@ -33,7 +33,7 @@
     {
       "type": "http",
       "endpoint_name": "Terms of Service",
-      "endpoint_url": "http://localhost:3080/-/terms",
+      "endpoint_url": "http://localhost:3080/terms",
       "attempts": 1
     },
     {
@@ -45,7 +45,7 @@
     {
       "type": "http",
       "endpoint_name": "Privacy",
-      "endpoint_url": "http://localhost:3080/-/privacy",
+      "endpoint_url": "http://localhost:3080/privacy",
       "attempts": 1
     }
   ]

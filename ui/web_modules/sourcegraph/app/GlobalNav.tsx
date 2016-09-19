@@ -181,8 +181,8 @@ export function GlobalNav({navContext, location, params, channelStatusCode}: Glo
 							<hr role="divider" className={base.mt2} />
 							<div className={classNames(styles.cool_mid_gray, base.pv1, base.mb1, typography.tc)}>
 								<Link to="/security" className={classNames(styles.cool_mid_gray, typography.f7, typography.link_subtle, base.pr3)}>Security</Link>
-								<Link to="/-/privacy" className={classNames(styles.cool_mid_gray, typography.f7, typography.link_subtle, base.pr3)}>Privacy</Link>
-								<Link to="/-/terms" className={classNames(typography.f7, typography.link_subtle)}>Terms</Link>
+								<Link to="/privacy" className={classNames(styles.cool_mid_gray, typography.f7, typography.link_subtle, base.pr3)}>Privacy</Link>
+								<Link to="/terms" className={classNames(typography.f7, typography.link_subtle)}>Terms</Link>
 							</div>
 						</Menu>
 					</Popover>

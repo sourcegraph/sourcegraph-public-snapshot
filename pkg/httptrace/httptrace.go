@@ -99,7 +99,9 @@ func Middleware(next http.Handler) http.Handler {
 func TraceRoute(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		if p, ok := r.Context().Value(routeNameKey).(*string); ok {
-			*p = mux.CurrentRoute(r).GetName()
+			if routeName := mux.CurrentRoute(r).GetName(); routeName != "" {
+				*p = routeName
+			}
 		}
 		next.ServeHTTP(rw, r)
 	})

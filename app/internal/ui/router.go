@@ -22,8 +22,8 @@ const (
 	routeJobs     = "jobs"
 	routeTopLevel = "toplevel" // non-repo top-level routes
 
-	routeDefRedirectToDefLanding     = "def"
-	routeDefInfoRedirectToDefLanding = "def.info"
+	routeDefRedirectToDefLanding     = "def.redirect"
+	routeDefInfoRedirectToDefLanding = "def.info.redirect"
 )
 
 var router = newRouter()
@@ -50,7 +50,7 @@ func newRouter() *mux.Router {
 		"login",
 		"pricing",
 		"privacy",
-		"settings/repos",
+		"settings",
 		"reset",
 		"search",
 		"security",
