@@ -238,7 +238,7 @@ func (s *repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOp
 
 	var repos []*sourcegraph.Repo
 	for _, ghRepo := range ghRepos {
-		repos = append(repos, toRepo(&ghRepo))
+		repos = append(repos, toRepo(ghRepo))
 	}
 	return repos, nil
 }

@@ -123,8 +123,9 @@ type GollumEvent struct {
 	Sender *User       `json:"sender,omitempty"`
 }
 
-// DEPRECATED: IssueActivityEvent represents the payload delivered by Issue webhook
-// Use IssuesEvent instead.
+// IssueActivityEvent represents the payload delivered by Issue webhook.
+//
+// Deprecated: Use IssuesEvent instead.
 type IssueActivityEvent struct {
 	Action *string `json:"action,omitempty"`
 	Issue  *Issue  `json:"issue,omitempty"`
@@ -316,12 +317,19 @@ func (p PushEvent) String() string {
 
 // PushEventCommit represents a git commit in a GitHub PushEvent.
 type PushEventCommit struct {
-	SHA       *string       `json:"sha,omitempty"`
-	Message   *string       `json:"message,omitempty"`
-	Author    *CommitAuthor `json:"author,omitempty"`
+	Message  *string       `json:"message,omitempty"`
+	Author   *CommitAuthor `json:"author,omitempty"`
+	URL      *string       `json:"url,omitempty"`
+	Distinct *bool         `json:"distinct,omitempty"`
+
+	// The following fields are only populated by Events API.
+	SHA *string `json:"sha,omitempty"`
+
+	// The following fields are only populated by Webhook events.
+	ID        *string       `json:"id,omitempty"`
+	TreeID    *string       `json:"tree_id,omitempty"`
+	Timestamp *Timestamp    `json:"timestamp,omitempty"`
 	Committer *CommitAuthor `json:"committer,omitempty"`
-	URL       *string       `json:"url,omitempty"`
-	Distinct  *bool         `json:"distinct,omitempty"`
 	Added     []string      `json:"added,omitempty"`
 	Removed   []string      `json:"removed,omitempty"`
 	Modified  []string      `json:"modified,omitempty"`

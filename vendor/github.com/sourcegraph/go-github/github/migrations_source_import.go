@@ -163,7 +163,7 @@ func (s *MigrationService) StartImport(owner, repo string, in *Import) (*Import,
 	return out, resp, err
 }
 
-// QueryImport queries for the status and progress of an ongoing repository import.
+// ImportProgress queries for the status and progress of an ongoing repository import.
 //
 // GitHub API docs: https://developer.github.com/v3/migration/source_imports/#get-import-progress
 func (s *MigrationService) ImportProgress(owner, repo string) (*Import, *Response, error) {
@@ -220,7 +220,7 @@ func (s *MigrationService) UpdateImport(owner, repo string, in *Import) (*Import
 // information.
 //
 // GitHub API docs: https://developer.github.com/v3/migration/source_imports/#get-commit-authors
-func (s *MigrationService) CommitAuthors(owner, repo string) ([]SourceImportAuthor, *Response, error) {
+func (s *MigrationService) CommitAuthors(owner, repo string) ([]*SourceImportAuthor, *Response, error) {
 	u := fmt.Sprintf("repos/%v/%v/import/authors", owner, repo)
 	req, err := s.client.NewRequest("GET", u, nil)
 	if err != nil {
@@ -230,7 +230,7 @@ func (s *MigrationService) CommitAuthors(owner, repo string) ([]SourceImportAuth
 	// TODO: remove custom Accept header when this API fully launches
 	req.Header.Set("Accept", mediaTypeImportPreview)
 
-	authors := new([]SourceImportAuthor)
+	authors := new([]*SourceImportAuthor)
 	resp, err := s.client.Do(req, authors)
 	if err != nil {
 		return nil, resp, err
@@ -290,7 +290,7 @@ func (s *MigrationService) SetLFSPreference(owner, repo string, in *Import) (*Im
 // LargeFiles lists files larger than 100MB found during the import.
 //
 // GitHub API docs: https://developer.github.com/v3/migration/source_imports/#get-large-files
-func (s *MigrationService) LargeFiles(owner, repo string) ([]LargeFile, *Response, error) {
+func (s *MigrationService) LargeFiles(owner, repo string) ([]*LargeFile, *Response, error) {
 	u := fmt.Sprintf("repos/%v/%v/import/large_files", owner, repo)
 	req, err := s.client.NewRequest("GET", u, nil)
 	if err != nil {
@@ -300,7 +300,7 @@ func (s *MigrationService) LargeFiles(owner, repo string) ([]LargeFile, *Respons
 	// TODO: remove custom Accept header when this API fully launches
 	req.Header.Set("Accept", mediaTypeImportPreview)
 
-	files := new([]LargeFile)
+	files := new([]*LargeFile)
 	resp, err := s.client.Do(req, files)
 	if err != nil {
 		return nil, resp, err

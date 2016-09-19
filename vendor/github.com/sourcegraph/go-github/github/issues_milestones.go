@@ -47,12 +47,14 @@ type MilestoneListOptions struct {
 	// Direction in which to sort milestones. Possible values are: asc, desc.
 	// Default is "asc".
 	Direction string `url:"direction,omitempty"`
+
+	ListOptions
 }
 
 // ListMilestones lists all milestones for a repository.
 //
 // GitHub API docs: https://developer.github.com/v3/issues/milestones/#list-milestones-for-a-repository
-func (s *IssuesService) ListMilestones(owner string, repo string, opt *MilestoneListOptions) ([]Milestone, *Response, error) {
+func (s *IssuesService) ListMilestones(owner string, repo string, opt *MilestoneListOptions) ([]*Milestone, *Response, error) {
 	u := fmt.Sprintf("repos/%v/%v/milestones", owner, repo)
 	u, err := addOptions(u, opt)
 	if err != nil {
@@ -64,7 +66,7 @@ func (s *IssuesService) ListMilestones(owner string, repo string, opt *Milestone
 		return nil, nil, err
 	}
 
-	milestones := new([]Milestone)
+	milestones := new([]*Milestone)
 	resp, err := s.client.Do(req, milestones)
 	if err != nil {
 		return nil, resp, err
