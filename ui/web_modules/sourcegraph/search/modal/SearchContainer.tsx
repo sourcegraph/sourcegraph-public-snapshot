@@ -74,14 +74,6 @@ interface State {
 	searchInput: HTMLElement | null;
 };
 
-export interface SearchActions {
-	updateInput: (event: React.FormEvent<HTMLInputElement>) => void;
-	dismiss: () => void;
-	viewCategory: (category: Category) => void;
-	bindSearchInput: (node: HTMLElement) => void;
-	activateResult: (URLPath: string) => void;
-}
-
 // Find the total number of results in all categories
 export function deepLength(categories: Map<Category, Result[]>): number {
 	let acc = 0;
@@ -94,6 +86,11 @@ export function deepLength(categories: Map<Category, Result[]>): number {
 export interface Category2 {
 	Title: string;
 	Results: Result[];
+}
+
+interface SearchDelegate {
+	dismiss: any;
+	select: (category: number, row: number) => void;
 }
 
 // SearchContainer contains the logic that deals with navigation and data
@@ -111,18 +108,17 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 	constructor({start, dismissModal}: Props) {
 		super();
 		this.keyListener = this.keyListener.bind(this);
+		this.bindSearchInput = this.bindSearchInput.bind(this);
+		this.updateInput = this.updateInput.bind(this);
 		this.state = {
 			input: "",
 			results: [],
 			selected: [0, 0],
 		};
-		this.actions = {
-			updateInput: this.updateInput.bind(this),
+		this.delegate = {
 			dismiss: dismissModal,
-			viewCategory: this.viewCategory.bind(this), // TODO(bl): remove
-			bindSearchInput: this.bindSearchInput.bind(this),
-			activateResult: this.activateResult.bind(this),
-		};
+			select: this.select.bind(this),
+		}
 	}
 
 	stores(): Store<any>[] {
@@ -141,6 +137,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 	componentDidMount(): void {
 		super.componentDidMount();
 		this.fetchResults("");
+		this.focusSearchBar();
 	}
 
 	componentWillUnmount(): void {
@@ -197,7 +194,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 			state.selected = selected;
 			this.setState(state);
 		} else if (event.key === "Enter") {
-			this.activateResult("FIXME");
+			this.select(this.state.selected[0], this.state.selected[1]);
 		}
 	}
 
@@ -216,9 +213,11 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		this.fetchResults(input.toLowerCase());
 	}
 
-	activateResult(URLPath: string): void {
-		this.context.router.push(URLPath);
+	select(c: number, r: number): void {
+		let categories = this.results();
+		let url = categories[c].Results[r].URLPath;
 		this.props.dismissModal();
+		this.context.router.push(url);
 	}
 
 	viewCategory(category: Category): void {
@@ -226,23 +225,17 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		this.setState(state);
 	}
 
-	bindSearchInput(node: HTMLElement): void {
-		const state = Object.assign({}, this.state, {searchInput: node});
-		this.setState(state);
-		// if (this.state.selected === 0 && node) {
-		// 	node.focus();
-		// }
-	}
+	bindSearchInput(node: HTMLElement): void { this.searchInput = node; }
 
 	focusSearchBar(): void {
-		if (this.state.searchInput) {
-			this.state.searchInput.focus();
+		if (this.searchInput) {
+			this.searchInput.focus();
 		}
 	}
 
 	blurSearchBar(): void {
-		if (this.state.searchInput) {
-			this.state.searchInput.blur();
+		if (this.searchInput) {
+			this.searchInput.blur();
 		}
 	}
 
@@ -291,7 +284,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 	render(): JSX.Element {
 		let categories = this.results();
 		let query = this.query();
-		let content = <ResultCategories categories={categories} limit={15} selection={this.state.selected} />;
+		let content = <ResultCategories categories={categories} limit={15} selection={this.state.selected} delegate={this.delegate} />;
 		return (
 			<div style={modalStyle}>
 				<div style={{
@@ -310,8 +303,8 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 					style={{boxSizing: "border-box", border: "none", flex: "1 0 auto"}}
 					placeholder="new http request"
 					value={this.state.input}
-					ref={this.actions.bindSearchInput}
-					onChange={this.actions.updateInput} />
+					ref={this.bindSearchInput}
+					onChange={this.updateInput} />
 				</div>
 				{content}
 			</div>
