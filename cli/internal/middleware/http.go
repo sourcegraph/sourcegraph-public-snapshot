@@ -41,20 +41,6 @@ func SetTLS(next http.Handler) http.Handler {
 	})
 }
 
-func RedirectToHTTPS(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		isHTTPS := r.TLS != nil || r.Header.Get("x-forwarded-proto") == "https"
-		if !isHTTPS {
-			url := *r.URL
-			url.Scheme = "https"
-			url.Host = r.Host
-			http.Redirect(w, r, url.String(), http.StatusMovedPermanently)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
 func StrictTransportSecurity(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("strict-transport-security", "max-age=8640000")

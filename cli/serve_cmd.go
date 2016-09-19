@@ -152,8 +152,6 @@ type ServeCmd struct {
 
 	AppURL string `long:"app-url" default:"http://<http-addr>" description:"publicly accessible URL to web app (e.g., what you type into your browser)" env:"SRC_APP_URL"`
 
-	RedirectToHTTPS bool `long:"app.redirect-to-https" description:"redirect HTTP requests to the equivalent HTTPS URL" env:"SG_FORCE_HTTPS"`
-
 	NoWorker bool `long:"no-worker" description:"do not start background worker" env:"SRC_NO_WORKER"`
 
 	// Flags containing sensitive information must be added to this struct.
@@ -322,9 +320,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), middleware.HealthCheck, middleware.RealIP, middleware.NoCacheByDefault}
-	if c.RedirectToHTTPS {
-		mw = append(mw, middleware.RedirectToHTTPS)
-	}
 	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_HSTS")); v {
 		mw = append(mw, middleware.StrictTransportSecurity)
 	}

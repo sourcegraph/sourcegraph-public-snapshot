@@ -10,9 +10,6 @@ import (
 
 	"context"
 
-	"strings"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
 
 	"sync"
@@ -41,28 +38,19 @@ func TestServerTLS(t *testing.T) {
 	}()
 
 	a, ctx := testserver.NewUnstartedServerTLS()
-	a.Config.Serve.RedirectToHTTPS = true
 
 	doTestServer(t, a, ctx)
 	defer a.Close()
 
-	// Test that HTTP redirects to HTTPS.
-	httpsURL := a.Config.Serve.AppURL + "/foo/bar"
-	httpURL := strings.Replace(httpsURL, "https://", "http://", 1)
-	httpURL = strings.Replace(httpURL, a.Config.Serve.HTTPSAddr, a.Config.Serve.HTTPAddr, 1)
-	httpClient := &httptestutil.Client{}
-	resp, err := httpClient.GetNoFollowRedirects(httpURL)
+	resp, err := http.Get(a.Config.Serve.AppURL)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := resp.Body.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if want := http.StatusMovedPermanently; resp.StatusCode != want {
+	if want := http.StatusOK; resp.StatusCode != want {
 		t.Errorf("got HTTP status %d, want %d", resp.StatusCode, want)
-	}
-	if got, want := resp.Header.Get("location"), strings.Replace(httpURL, "http://", "https://", 1); got != want {
-		t.Errorf("got HTTP Location redirect to %q, want %q", got, want)
 	}
 }
 
