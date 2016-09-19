@@ -44,12 +44,19 @@ const ResultRow = ({title, description, index, length, URLPath}, categoryIndex, 
 	);
 };
 
-const ResultCategory = ({title, results, selected=-1, delegate, categoryIndex}) => {
+const ResultCategory = ({title, results, isLoading, selected=-1, delegate, categoryIndex}) => {
+	if (isLoading) {
+		return (
+			<div style={{padding: "14px 0"}}>
+				<span style={{color: colors.coolGray3()}}>{title} (loading...)</span>
+			</div>
+		);
+	}
 	if (results.length === 0) {
 		return <div></div>;
 	}
 	return <div style={{padding: "14px 0"}}>
-		<span style={{color: colors.coolGray3()}}>{title}</span>
+		<div style={{paddingBottom: "0.5em", color: colors.coolGray3()}}>{title}</div>
 		{
 			results.map((result, index) => {
 				return ResultRow(result, categoryIndex, index, (index === selected), delegate);
@@ -66,7 +73,7 @@ export const ResultCategories = ({categories, limit, selection, delegate}) => {
 		if (i === selection[0]) {
 			selected = selection[1];
 		}
-		sections.push(<ResultCategory key={category.Title} categoryIndex={i} title={category.Title} selected={selected} results={results} delegate={delegate} />);
+		sections.push(<ResultCategory key={category.Title} isLoading={category.IsLoading} categoryIndex={i} title={category.Title} selected={selected} results={results} delegate={delegate} />);
 	});
 	return <div style={{overflow: "auto"}}>
 		{sections}

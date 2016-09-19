@@ -63,6 +63,7 @@ interface State {
 export interface Category {
 	Title: string;
 	Results: Result[];
+	IsLoading: bool;
 }
 
 interface SearchDelegate {
@@ -130,7 +131,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 
 	keyListener(event: KeyboardEvent): void {
 		let results = this.results();
-		let categorySizes = results.map((r) => r.Results.length);
+		let categorySizes = results.map((r) => r.Results ? r.Results.length : 0);
 		if (event.key === "ArrowUp") {
 			let selected = this.state.selected.slice();
 			selected[1]--;
@@ -224,6 +225,8 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 			}
 			symbolResults = symbolResults.slice(0, 3);
 			results.push({ Title: "Definitions", Results: symbolResults });
+		} else {
+			results.push({ Title: "Definitions", IsLoading: true });
 		}
 
 		const repos = RepoStore.repos.list(query);
@@ -231,6 +234,8 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 			let repoResults = repos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
 			repoResults = repoResults.slice(0, 3);
 			results.push({ Title: "Repositories", Results: repoResults });
+		} else {
+			results.push({ Title: "Repositories", IsLoading: true });
 		}
 
 		const files = TreeStore.fileLists.get(this.props.repo, this.props.commitID);
@@ -243,6 +248,8 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 			});
 			fileResults = fileResults.slice(0, 3);
 			results.push({ Title: "Files", Results: fileResults });
+		} else {
+			results.push({ Title: "Files", IsLoading: true });
 		}
 
 		return results;
