@@ -14,20 +14,16 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cmdutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
 var btrfsPresent bool
 
 func init() {
-	if !feature.Features.Universe {
-		return
-	}
 	_, err := exec.LookPath("btrfs")
 	if err == nil {
 		btrfsPresent = true
-	} else {
+	} else if os.Args[0] != "src" {
 		log.Println("btrfs command not available, assuming filesystem is not btrfs")
 	}
 }
