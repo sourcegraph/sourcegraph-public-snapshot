@@ -1,12 +1,8 @@
 package middleware
 
 import (
-	"log"
 	"net"
 	"net/http"
-	"strings"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 // RealIP sets req.RemoteAddr from the X-Real-Ip header if it exists.
@@ -61,30 +57,5 @@ func NoCacheByDefault(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("cache-control", "no-cache, max-age=0")
 		next.ServeHTTP(w, r)
-	})
-}
-
-// EnsureHostname ensures that the URL hostname is whatever is in SG_URL.
-func EnsureHostname(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		wantHost := conf.AppURL.Host
-		if strings.Split(wantHost, ":")[0] == "localhost" {
-			// if localhost, don't enforce redirect, so the site is easier to share with others
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		if r.Host == wantHost || r.Host == "" || r.URL.Path == statusEndpoint {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		// redirect to desired host
-		newURL := *r.URL
-		newURL.User = nil
-		newURL.Host = wantHost
-		newURL.Scheme = conf.AppURL.Scheme
-		log.Printf("ensureHostnameHandler: Permanently redirecting from requested host %q to %q.", r.Host, newURL.String())
-		http.Redirect(w, r, newURL.String(), http.StatusMovedPermanently)
 	})
 }

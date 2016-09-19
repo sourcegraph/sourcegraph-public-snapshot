@@ -324,9 +324,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		mw = append(mw, middleware.StrictTransportSecurity)
 	}
 	mw = append(mw, middleware.SecureHeader)
-	if v, _ := strconv.ParseBool(os.Getenv("SG_STRICT_HOSTNAME")); v {
-		mw = append(mw, middleware.EnsureHostname)
-	}
 
 	mw = append(mw, httptrace.Middleware)
 	mw = append(mw, middleware.BlackHole)
