@@ -37,9 +37,16 @@ export class SearchModal extends React.Component<RepoRev, State> {
 		};
 	}
 
-	componentWillMount(): void {
+	componentDidMount(): void {
 		this.setState({showModal: true});
+	}
+
+	componentWillMount(): void {
 		document.body.addEventListener("keydown", this.searchModalShortcuts);
+	}
+
+	componentWillUnmount(): void {
+		document.body.removeEventListener("keydown", this.searchModalShortcuts);
 	}
 
 	searchModalShortcuts(event: KeyboardEvent & Node): void {
