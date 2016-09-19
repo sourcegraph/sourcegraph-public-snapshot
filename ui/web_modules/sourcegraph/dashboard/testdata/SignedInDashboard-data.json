@@ -121,7 +121,7 @@
 																					"className": "",
 																					"children": [
 																						{
-																							"type": "",
+																							"type": "Constructor",
 																							"props": {
 																								"to": "github.com/sourcegraph/checkup/-/blob/checkup.go",
 																								"children": [
@@ -155,7 +155,7 @@
 																					"className": "",
 																					"children": [
 																						{
-																							"type": "",
+																							"type": "Constructor",
 																							"props": {
 																								"to": "github.com/gorilla/mux/-/blob/mux.go",
 																								"children": [
@@ -197,7 +197,7 @@
 																					"className": "",
 																					"children": [
 																						{
-																							"type": "",
+																							"type": "Constructor",
 																							"props": {
 																								"to": "github.com/sourcegraph/thyme/-/blob/cmd/thyme/main.go",
 																								"children": [
@@ -231,7 +231,7 @@
 																					"className": "",
 																					"children": [
 																						{
-																							"type": "",
+																							"type": "Constructor",
 																							"props": {
 																								"to": "https://sourcegraph.com/github.com/golang/go/-/blob/src/net/http/request.go",
 																								"children": [
