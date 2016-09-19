@@ -7,6 +7,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"context"
@@ -289,7 +290,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 
 	// Fetch repos from the DB that are accessible to the user.
 	// This will include all local repos that are not from "github.com".
-	dbRepos, err := s.listFromDB(ctx, opt)
+	dbRepos_, err := s.listFromDB(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -298,14 +299,20 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	//
 	// No need to do access checks for ghRepos, since we JUST fetched
 	// them from GitHub.
+	var (
+		dbRepos   []*sourcegraph.Repo
+		dbReposMu sync.Mutex
+	)
 	par := parallel.NewRun(30)
-	for _, repo := range dbRepos {
+	for _, repo := range dbRepos_ {
 		repo := repo
 		par.Acquire()
 		go func() {
 			defer par.Release()
-			if _, err := verifyAccessAndSetAllFields(ctx, repo); err != nil {
-				par.Error(err)
+			if _, err := verifyAccessAndSetAllFields(ctx, repo); err == nil {
+				dbReposMu.Lock()
+				dbRepos = append(dbRepos, repo)
+				dbReposMu.Unlock()
 			}
 		}()
 	}
