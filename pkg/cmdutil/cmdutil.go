@@ -38,12 +38,12 @@ func Output(c *exec.Cmd) ([]byte, error) {
 	output, err := c.Output()
 	if err != nil {
 		if e, ok := err.(*exec.ExitError); ok {
-			return nil, &ExitError{
+			return output, &ExitError{
 				ExitError: e,
 				Args:      c.Args,
 			}
 		}
-		return nil, fmt.Errorf("%v (running '%s')", err, strings.Join(c.Args, " "))
+		return output, fmt.Errorf("%v (running '%s')", err, strings.Join(c.Args, " "))
 	}
 	return output, nil
 }

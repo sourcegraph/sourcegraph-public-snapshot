@@ -140,7 +140,7 @@ func CmdOutput(ctx context.Context, c *exec.Cmd) ([]byte, error) {
 	log.Printf("TIME: %v '%s'\n", time.Since(start), strings.Join(c.Args, " "))
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return stdout, err
 	}
 	return stdout, nil
 }
