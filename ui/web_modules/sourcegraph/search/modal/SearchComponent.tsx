@@ -23,20 +23,21 @@ const ResultRow = ({title, description, index, length, URLPath}, categoryIndex, 
 			backgroundColor: backgroundColor,
 			display: "block",
 		}}
+		ref={(node) => { if (selected && node) { node.scrollIntoView(false); } }}
 		onClick={() => delegate.select(categoryIndex, itemIndex)}>
-			{length ?
-				<div>
-				 <span style={{color: titleColor}}>{title.substr(0, index)}</span>
-				 <span style={{color: colors.white(), fontWeight: "bold"}}>{title.substr(index, length)}</span>
-				 <span style={{color: colors.coolGray3()}}>{title.substr(index + length)}</span>
-				 </div> :
-				 <div style={{color: colors.white()}}>
-				 {title}
-				 </div>
-			}
-			<div style={{fontSize: smallFont, color: colors.coolGray3()}}>
-				{description}
-			</div>
+		{length ?
+		 <div>
+			 <span style={{color: titleColor}}>{title.substr(0, index)}</span>
+			 <span style={{color: colors.white(), fontWeight: "bold"}}>{title.substr(index, length)}</span>
+			 <span style={{color: colors.coolGray3()}}>{title.substr(index + length)}</span>
+			 </div> :
+			 <div style={{color: colors.white()}}>
+			 {title}
+		 </div>
+		}
+		<div style={{fontSize: smallFont, color: colors.coolGray3()}}>
+			{description}
+		</div>
 		</a>
 	);
 };
