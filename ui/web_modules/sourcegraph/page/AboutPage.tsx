@@ -38,16 +38,15 @@ export function AboutPage(props: {}) {
 				<p className={styles.p}>Try it:</p>
 				<ul>
 					<li><Link to="/search?q=http.NewRequest">Instantly jump to any function/type/package in any repository</Link> — global, semantic code search</li>
-					<li><Link to="/github.com/golang/go/-/info/GoPackage/net/http/-/NewRequest">See where/how a function/type/package is used, across all repositories</Link> — live usage examples &amp; global cross-refs</li>
-					<li><Link to="/github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest">Navigate and jump around code like an IDE</Link></li>
+					<li><a href="/github.com/golang/go/-/info/GoPackage/net/http/-/NewRequest">See where/how a function/type/package is used, across all repositories</a> — live usage examples &amp; global cross-refs</li>
 				</ul>
 				<p className={styles.p}>No installation or signup required. <em>It just works</em>, for both open-source code and your private projects (unless you do crazy stuff with your build tooling).</p>
 <p className={styles.p}>Sourcegraph is free for public and private projects. <Link to="/pricing">Paid plans</Link> are available.</p>
 
 				<Heading level="5">Supported languages</Heading>
 <ul>
-<li>Go &mdash; <Link to="/github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest">try it</Link></li>
-<li>Java &mdash; <Link to="/github.com/square/okhttp/-/def/JavaArtifact/com.squareup.okhttp3/okhttp/-/okhttp3/Request:type/Builder:type/method:java.lang.String:okhttp3.RequestBody">try it</Link></li>
+<li>Go &mdash; <a href="/github.com/golang/go/-/info/GoPackage/net/http/-/NewRequest">try it</a></li>
+<li>Java &mdash; <a href="/github.com/square/okhttp/-/info/JavaArtifact/com.squareup.okhttp3/okhttp/-/okhttp3/Request:type/Builder:type/method:java.lang.String:okhttp3.RequestBody">try it</a></li>
 </ul>
 				<p className={styles.p}><em>Coming soon: JavaScript, Python, C#, PHP, Objective-C, C/C++, Scala, Perl, TypeScript, etc.</em> <a href="mailto:support@sourcegraph.com">Email us</a> to get early beta access to these languages for your team or project.</p>
 
