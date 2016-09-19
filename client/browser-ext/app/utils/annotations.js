@@ -420,7 +420,7 @@ function addEventListeners(el, path, repoRevSpec, line, lineStartByte) {
 			.then((json) => {
 				if (json.Title == "" && json.def == null) return;
 				defCache[url] = json.def;
-                popoverCache[url] = `<div><div class=${styles.popoverTitle}>${json.Title || ""}</div><div>${json.def ? json.def.DocHTML.__html || "" : ""}</div><div class=${styles.popoverRepo}>${json.def ? json.def.Repo || "" : ""}</div></div>`;
+				popoverCache[url] = `<div><div class=${styles.popoverTitle}>${json.Title || ""}</div><div>${json.def ? json.def.DocHTML.__html || "" : ""}</div><div class=${styles.popoverRepo}>${json.def ? json.def.Repo || "" : ""}</div></div>`;
 				cb(popoverCache[url], json.def);
 			})
 			.catch((err) => console.log("Error getting definition info.") && cb(null, null));
