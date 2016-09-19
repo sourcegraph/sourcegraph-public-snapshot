@@ -233,13 +233,13 @@
 																						{
 																							"type": "Constructor",
 																							"props": {
-																								"to": "github.com/kubernetes/kubernetes/-/blob/examples/apiserver/server/main.go",
+																								"to": "https://sourcegraph.com/github.com/golang/go/-/blob/src/net/http/request.go",
 																								"children": [
 																									{
 																										"type": "span",
 																										"props": {
 																											"children": [
-																												"kubernetes / kubernetes"
+																												"golang / go"
 																											]
 																										}
 																									}
@@ -252,7 +252,7 @@
 																							"type": "p",
 																							"props": {
 																								"children": [
-																									"Production-Grade Container Scheduling and Management"
+																									"The Go programming language"
 																								]
 																							}
 																						}

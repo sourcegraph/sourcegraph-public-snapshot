@@ -37,7 +37,7 @@ type Translator struct {
 	// workspace, repo, commit are the same as passed to PrepareDeps and
 	// PrepareRepo. uri is the uri that requires resolving. It is usually
 	// a file:/// relative to the workspace.
-	ResolveFile func(workspace, repo, commit, uri string) (*File, error)
+	ResolveFile func(ctx context.Context, workspace, repo, commit, uri string) (*File, error)
 
 	// FileURI, if non-nil, is called to form the file URI which is sent to a
 	// language server. Provided is the repo and commit, and a file URI which
@@ -45,7 +45,7 @@ type Translator struct {
 	//
 	// FileURI should return a file URI which is relative to the previously
 	// prepared workspace directory.
-	FileURI func(repo, commit, file string) string
+	FileURI func(ctx context.Context, repo, commit, file string) string
 }
 
 // New creates a new HTTP handler which translates from the Language Processor
@@ -86,7 +86,7 @@ func (t *translator) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*
 
 	// TODO: should probably check server capabilities before invoking symbol,
 	// but good enough for now.
-	importPath, _ := ResolveRepoAlias(defSpec.Repo)
+	importPath := ResolveRepoAlias(defSpec.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
 		Query: "exported " + importPath + "/...",
@@ -113,7 +113,7 @@ func (t *translator) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*
 		//
 		// Right now we assume the first one is right, but this is likely to fail
 		// in some cases? Maybe we should have a count/index as part of the key.
-		f, err := t.resolveFile(defSpec.Repo, defSpec.Commit, s.Location.URI)
+		f, err := t.resolveFile(ctx, defSpec.Repo, defSpec.Commit, s.Location.URI)
 
 		// Collect out refs only from unit.
 		if f.Repo != defSpec.Unit {
@@ -148,7 +148,7 @@ func (t *translator) Definition(ctx context.Context, pos *Position) (*Range, err
 	// but good enough for now.
 	p := pos.LSP()
 	if t.FileURI != nil {
-		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
+		p.TextDocument.URI = t.FileURI(ctx, pos.Repo, pos.Commit, pos.File)
 	}
 
 	// TODO: according to spec this could be lsp.Location OR []lsp.Location
@@ -162,7 +162,7 @@ func (t *translator) Definition(ctx context.Context, pos *Position) (*Range, err
 	// TODO: standardize our response when there are no results.
 	var r Range
 	if len(respDef) > 0 {
-		f, err := t.resolveFile(pos.Repo, pos.Commit, respDef[0].URI)
+		f, err := t.resolveFile(ctx, pos.Repo, pos.Commit, respDef[0].URI)
 		if err != nil {
 			return nil, err
 		}
@@ -192,7 +192,7 @@ func (t *translator) Hover(ctx context.Context, pos *Position) (*Hover, error) {
 	// but good enough for now.
 	p := pos.LSP()
 	if t.FileURI != nil {
-		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
+		p.TextDocument.URI = t.FileURI(ctx, pos.Repo, pos.Commit, pos.File)
 	}
 
 	var respHover lsp.Hover
@@ -226,7 +226,7 @@ func (t *translator) Hover(ctx context.Context, pos *Position) (*Hover, error) {
 		}
 	}
 	if defInfo.URI != "" {
-		f, err := t.resolveFile(pos.Repo, pos.Commit, defInfo.URI)
+		f, err := t.resolveFile(ctx, pos.Repo, pos.Commit, defInfo.URI)
 		if err != nil {
 			return nil, err
 		}
@@ -257,7 +257,7 @@ func (t *translator) LocalRefs(ctx context.Context, pos *Position) (*RefLocation
 	// but good enough for now.
 	p := pos.LSP()
 	if t.FileURI != nil {
-		p.TextDocument.URI = t.FileURI(pos.Repo, pos.Commit, pos.File)
+		p.TextDocument.URI = t.FileURI(ctx, pos.Repo, pos.Commit, pos.File)
 	}
 
 	var resp []lsp.Location
@@ -268,7 +268,7 @@ func (t *translator) LocalRefs(ctx context.Context, pos *Position) (*RefLocation
 	}
 	refs := make([]*Range, 0, len(resp))
 	for _, r := range resp {
-		f, err := t.resolveFile(pos.Repo, pos.Commit, r.URI)
+		f, err := t.resolveFile(ctx, pos.Repo, pos.Commit, r.URI)
 		if err != nil {
 			return nil, err
 		}
@@ -296,7 +296,7 @@ func (t *translator) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRef
 
 	// TODO: should probably check server capabilities before invoking symbol,
 	// but good enough for now.
-	importPath, _ := ResolveRepoAlias(r.Repo)
+	importPath := ResolveRepoAlias(r.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
 		Query: "external " + importPath + "/...",
@@ -350,7 +350,7 @@ func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLoc
 	if strings.HasPrefix(defSpec.Unit, defSpec.Repo) {
 		queryType = "defspec-refs-internal"
 	}
-	importPath, _ := ResolveRepoAlias(defSpec.Repo)
+	importPath := ResolveRepoAlias(defSpec.Repo)
 	p := lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
 		Query: queryType + " " + importPath + "/...",
@@ -379,7 +379,7 @@ func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLoc
 			continue
 		}
 
-		f, err := t.resolveFile(defSpec.Repo, defSpec.Commit, s.Location.URI)
+		f, err := t.resolveFile(ctx, defSpec.Repo, defSpec.Commit, s.Location.URI)
 		if err != nil {
 			return nil, err
 		}
@@ -440,7 +440,7 @@ func (t *translator) ExportedSymbols(ctx context.Context, r *RepoRev) (*Exported
 
 	// TODO: should probably check server capabilities before invoking symbol,
 	// but good enough for now.
-	importPath, _ := ResolveRepoAlias(r.Repo)
+	importPath := ResolveRepoAlias(r.Repo)
 	var respSymbol []lsp.SymbolInformation
 	err = t.lspDo(ctx, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
 		// TODO(keegancsmith) this is go specific
@@ -454,7 +454,7 @@ func (t *translator) ExportedSymbols(ctx context.Context, r *RepoRev) (*Exported
 	var symbols []*Symbol
 	// TODO(keegancsmith) go specific
 	for _, s := range respSymbol {
-		f, err := t.resolveFile(r.Repo, r.Commit, s.Location.URI)
+		f, err := t.resolveFile(ctx, r.Repo, r.Commit, s.Location.URI)
 		if err != nil {
 			return nil, err
 		}
@@ -526,7 +526,7 @@ func (t *translator) lspDo(ctx context.Context, rootPath string, method string, 
 	return nil
 }
 
-func (t *translator) resolveFile(repo, commit, uri string) (*File, error) {
+func (t *translator) resolveFile(ctx context.Context, repo, commit, uri string) (*File, error) {
 	workspace := t.workspace.pathToWorkspace(repo, commit)
-	return t.ResolveFile(workspace, repo, commit, uri)
+	return t.ResolveFile(ctx, workspace, repo, commit, uri)
 }

@@ -6,6 +6,9 @@ import (
 	"strconv"
 	"strings"
 
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/lang/ctags/parser"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
@@ -32,7 +35,20 @@ var nameToSymbolKind = map[string]lsp.SymbolKind{
 	"array":       lsp.SKArray,
 }
 
-func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
+func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) (symbols []lsp.SymbolInformation, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "ctags.handleSymbol")
+	if params.Query != "" {
+		span.SetTag("query", params.Query)
+	}
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+		span.SetTag("returned symbols count", len(symbols))
+		span.Finish()
+	}()
+
 	rootDir := h.init.RootPath
 	vslog("Requesting workspace symbols for ", rootDir, " with params ", fmt.Sprintf("%q", params))
 	p, err := parser.Parse(ctx, rootDir, nil)
@@ -42,14 +58,31 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 
 	tags := p.Tags()
 
+	span.SetTag("tags count", len(tags))
 	vslog("Total definitions found: ", strconv.Itoa(len(tags)))
 
-	var symbols []lsp.SymbolInformation
-	if params.Query == "" {
-		symbols = make([]lsp.SymbolInformation, 0, len(tags))
-	} else {
-		symbols = make([]lsp.SymbolInformation, 0)
+	if params.Query != "" {
+		filterSpan, _ := opentracing.StartSpanFromContext(ctx, "filter tags")
+
+		q := strings.ToLower(params.Query)
+		exact, prefix, contains := []parser.Tag{}, []parser.Tag{}, []parser.Tag{}
+		for _, t := range tags {
+			name := strings.ToLower(t.Name)
+			if name == q {
+				exact = append(exact, t)
+			} else if strings.HasPrefix(name, q) {
+				prefix = append(prefix, t)
+			} else if strings.Contains(name, q) {
+				contains = append(contains, t)
+			}
+		}
+		tags = append(append(exact, prefix...), contains...) // replace tags with filtered, ranked tags
+
+		span.SetTag("filtered tags count", len(tags))
+		filterSpan.Finish()
 	}
+
+	symbols = make([]lsp.SymbolInformation, 0, len(tags))
 	for _, tag := range tags {
 		nameIdx := strings.Index(tag.DefLinePrefix, tag.Name)
 		if nameIdx < 0 {
@@ -77,6 +110,13 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 	}
 
 	vslog("Returning definitions: ", strconv.Itoa(len(symbols)))
+	// Limit the amount of symbols we serve to the client. Allowing an
+	// excessively large amount to be returned will generate a huge response
+	// object, which slows down the performance of the pipeline significantly.
+	const limit = 100
+	if len(symbols) > limit {
+		symbols = symbols[:limit]
+	}
 
 	return symbols, nil
 }

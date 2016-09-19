@@ -48,7 +48,13 @@ export function urlToBlobLine(repo: string, rev: string | null, path: string, li
 	return `${urlToBlob(repo, rev, path)}#L${line}`;
 }
 
-export function parseBlobURL(urlPathname: string): {repo: string, rev: string | null, path: string} {
+export function parseBlobURL(urlPathname: string): {repo: string, rev: string | null, path: string, hash?: string} {
+	let hash: string | undefined;
+	if (urlPathname.indexOf("#") !== -1) {
+		const idx = urlPathname.indexOf("#");
+		hash = urlPathname.slice(idx + 1);
+		urlPathname = urlPathname.slice(0, idx);
+	}
 	if (urlPathname.startsWith("/")) {
 		urlPathname = urlPathname.slice(1);
 	}
@@ -60,5 +66,6 @@ export function parseBlobURL(urlPathname: string): {repo: string, rev: string | 
 		repo: repoPath(params.splat[0]),
 		rev: repoRev(params.splat[0]),
 		path: params.splat[1],
+		hash,
 	};
 }

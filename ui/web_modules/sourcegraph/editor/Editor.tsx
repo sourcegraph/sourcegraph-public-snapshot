@@ -1,129 +1,58 @@
 // tslint:disable typedef ordered-imports
-import * as React from "react";
-import { InjectedRouter } from "react-router";
-import * as invariant from "invariant";
+import {uriForTreeEntry, treeEntryFromUri} from "sourcegraph/editor/FileModel";
+import {EditorService, IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
 
 import { Def } from "sourcegraph/api";
-import { urlToDefInfo } from "sourcegraph/def/routes";
 import { makeRepoRev } from "sourcegraph/repo";
-import { urlToBlob, parseBlobURL } from "sourcegraph/blob/routes";
+import {urlToDefInfo} from "sourcegraph/def/routes";
+import {EventLogger} from "sourcegraph/util/EventLogger";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+
+import {RangeOrPosition} from "sourcegraph/core/rangeOrPosition";
 
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
-import "sourcegraph/blob/styles/Monaco.css";
 import { code_font_face } from "sourcegraph/components/styles/_vars.css";
-
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-
-import {EventLogger} from "sourcegraph/util/EventLogger";
+import {GotoDefinitionWithClickEditorContribution} from "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
 
 const fetch = singleflightFetch(defaultFetch);
 
-interface Props {
-	repo: string;
-	path: string;
-	rev: string | null;
-	contents: string | null;
-
-	startLine?: number;
-	startCol?: number;
-	endLine?: number;
-	endCol?: number;
-
-	editorRef?: (editor: monaco.editor.IStandaloneCodeEditor | null) => void;
-};
-
-interface State {
-	userManuallyScrolledToLineViaSelection?: number | null;
-}
-
 // Editor wraps the Monaco code editor.
-export class Editor extends React.Component<Props, State> {
-	static contextTypes: React.ValidationMap<any> = {
-		siteConfig: React.PropTypes.object.isRequired,
-		router: React.PropTypes.object.isRequired,
-	};
+export class Editor implements monaco.IDisposable {
+	private _editor: monaco.editor.IStandaloneCodeEditor;
+	private _editorService: EditorService;
+	private _toDispose: monaco.IDisposable[] = [];
+	private _initializedModes: Set<string> = new Set();
 
-	state: State = {};
+	constructor(elem: HTMLElement) {
+		// Register services for modes (languages) when new models are added.
+		this._toDispose.push(monaco.editor.onDidCreateModel(model => {
+			const mode = model.getMode().getId();
+			if (!this._initializedModes.has(mode)) {
+				this._toDispose.push(monaco.languages.registerHoverProvider(mode, this));
+				this._toDispose.push(monaco.languages.registerDefinitionProvider(mode, this));
+				if ((window as any).localStorage.monacoReferences) {
+					this._toDispose.push(monaco.languages.registerReferenceProvider(mode, this));
+				}
+				this._initializedModes.add(mode);
+			}
+		}));
 
-	context: {
-		siteConfig: { assetsRoot: string };
-		router: InjectedRouter
-	};
+		this._editorService = new EditorService();
 
-	_hoverProvided: string[];
-	_toDispose: monaco.IDisposable[];
-	_editor: monaco.editor.IStandaloneCodeEditor;
-	_decorationID: string[];
+		GotoDefinitionWithClickEditorContribution.register(this._editorService);
 
-	public _mouseDownOnIdent: boolean = false;
-	private _mouseDownPosition: monaco.editor.IMouseTarget | null = null;
-	private _mouseDownIsRightButton: boolean = false;
-
-	constructor(props: Props) {
-		super(props);
-		this._hoverProvided = [];
-		this._toDispose = [];
-		this._decorationID = [];
-	}
-
-	componentDidMount(): void {
-		if ((global as any).require) {
-			this._loaderReady();
-		} else {
-			let script = document.createElement("script");
-			script.type = "text/javascript";
-			script.src = `${this.context.siteConfig.assetsRoot}/vs/loader.js`;
-			script.addEventListener("load", () => this._loaderReady());
-			document.body.appendChild(script);
-		}
-	}
-
-	componentWillUnmount(): void {
-		this._toDispose.forEach(disposable => {
-			disposable.dispose();
-		});
-		if (this.props.editorRef) {
-			this.props.editorRef(null);
-		}
-	}
-
-	componentWillReceiveProps(nextProps: Props): void {
-		if (this._editor) {
-			this._editorPropsChanged(this.props, nextProps);
-		}
-	}
-
-	_loaderReady(): void {
-		if ((global as any).monaco) {
-			this._monacoReady();
-		} else {
-			(global as any).require.config({ paths: { "vs": `${this.context.siteConfig.assetsRoot}/vs` } });
-			(global as any).require(["vs/editor/editor.main"], () => this._monacoReady());
-		}
-	}
-
-	_monacoReady(): void {
-		invariant(!this._editor, "editor is already initialized");
-
-		this._editor = monaco.editor.create(this.refs["container"] as HTMLDivElement, {
+		this._editor = monaco.editor.create(elem, {
 			readOnly: true,
 			automaticLayout: true,
 			scrollBeyondLastLine: false,
 			wrappingColumn: 0,
 			fontFamily: code_font_face,
 			fontSize: 13,
-		});
-		this._toDispose.push(this._editor);
+		}, {editorService: this._editorService});
 
-		this._editorPropsChanged(null, this.props);
-
-		if (this.props.editorRef) {
-			this.props.editorRef(this._editor);
-		}
-
-		this._addClickHandler();
+		this._editorService.setEditor(this._editor);
 
 		// Remove the "Command Palette" item from the context menu.
 		const palette = this._editor.getAction("editor.action.quickCommand");
@@ -132,12 +61,17 @@ export class Editor extends React.Component<Props, State> {
 			palette.dispose();
 		}
 
-		// Add the "View All References" item to the context menu.
+		// Add the "Find External References" item to the context menu.
 		this._editor.addAction({
-			id: "viewAllReferences",
-			label: "View All References",
+			id: "findExternalReferences",
+			label: "Find External References",
 			contextMenuGroupId: "1_goto",
-			run: (e) => this._viewAllReferences(e),
+			run: (e) => this._findExternalReferences(e),
+		});
+
+		// Rename the "Find All References" action to "Find Local References".
+		Object.assign((this._editor.getAction("editor.action.referenceSearch.trigger") || {}) as any, {
+			_label: "Find Local References",
 		});
 
 		// Monaco overrides the back and forward history commands, so
@@ -170,41 +104,13 @@ export class Editor extends React.Component<Props, State> {
 		}, "");
 	}
 
-	_editorPropsChanged(prev: Props | null, next: Props): void {
-		if (!prev || prev.repo !== next.repo || prev.rev !== next.rev || prev.path !== next.path || prev.contents !== next.contents) {
-			this._updateModel(next.repo, next.rev, next.path, next.contents);
-		}
-		if (!prev || next.startLine !== this.props.startLine || next.endLine !== this.props.endLine) {
-			if (typeof next.startLine === "number") {
-				if (next.startLine !== this.state.userManuallyScrolledToLineViaSelection) {
-					this._editor.revealLineInCenterIfOutsideViewport(next.startLine);
-					this._highlight(next.startLine, next.startCol, next.endLine, next.endCol);
-					this._editor.focus();
-				}
-			}
-		}
-	}
-
-	_updateModel(repo: string, rev: string | null, path: string, contents: string | null): void {
-		const uri = uriForTreeEntry(repo, rev, path);
-		let model = monaco.editor.getModel(uri);
-		if (!model) {
-			model = monaco.editor.createModel(contents || "Loading...", "", uri);
-			this._toDispose.push(model);
-		}
-		if (contents && model.getValue() !== contents) {
-			model.setValue(contents);
-		}
-		if (this._editor.getModel().id !== model.id) {
-			this._editor.setModel(model);
-		}
-
-		const lang = model.getMode().getId();
-		if (this._hoverProvided.indexOf(lang) === -1) {
-			const token = monaco.languages.registerHoverProvider(lang, this);
-			this._toDispose.push(token);
-			this._hoverProvided.push(lang);
-		}
+	setInput(uri: monaco.Uri, range?: monaco.IRange): Promise<void> {
+		return new Promise((resolve, reject) => {
+			this._editorService.openEditor({
+				resource: uri,
+				options: range ? {selection: range} : undefined,
+			}).done(resolve);
+		});
 	}
 
 	_highlight(startLine: number, startCol?: number, endLine?: number, endCol?: number): void {
@@ -214,27 +120,107 @@ export class Editor extends React.Component<Props, State> {
 		this._editor.setSelection(new monaco.Range(startLine, startCol, endLine, endCol));
 	}
 
-	_viewAllReferences(editor: monaco.editor.ICommonCodeEditor): monaco.Promise<void> {
-		// HACK: Handle the case where we've selected the line
-		// (because we just jumped to a def on the line) and we
-		// right-click and choose "View All References". The cursor
-		// will be at the end of the line, but we want to act on the
-		// token we right-clicked on.
-		//
-		// NOTE: We can remove this when Universe is enabled for all
-		// repos, since Universe will return the name range (not just
-		// the starting line) for jump-to-def, and right-clicking a
-		// selection consisting solely of the name will work as
-		// expected without this hack.
-		let pos: monaco.Position;
-		if (this._mouseDownPosition && this._mouseDownIsRightButton && !editor.getSelection().isEmpty()) {
-			pos = this._mouseDownPosition.position;
-		} else {
-			pos = editor.getPosition();
-		}
-		const model = editor.getModel();
+	public trigger(source: string, handlerId: string, payload: any): void {
+		this._editor.trigger(source, handlerId, payload);
+	}
 
-		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REFERENCES, AnalyticsConstants.ACTION_CLICK, "ClickedViewReferences", { repo: this.props.repo, path: this.props.path, rev: this.props.rev });
+	// An event emitted when the editor jumps to a new model or position therein.
+	public onDidOpenEditor(listener: (e: IEditorOpenedEvent) => void): monaco.IDisposable {
+		return this._editorService.onDidOpenEditor(listener);
+	}
+
+	provideDefinition(model: monaco.editor.IReadOnlyModel, position: monaco.Position, token: monaco.CancellationToken): monaco.languages.Definition | monaco.Thenable<monaco.languages.Definition> {
+		return fetchJumpToDef(model, position).then((resp: JumpToDefResponse) => {
+			if (!resp || !resp.Path) {
+				return (null as any);
+			}
+
+			const uri = monaco.Uri.parse(`sourcegraph://${resp.Path}`);
+			if (!uri.fragment) {
+				throw new Error(`no uri fragment in uri ${uri.toString()}`);
+			}
+
+			const r = RangeOrPosition.parse(uri.fragment.replace(/^L/, ""));
+			if (!r) {
+				throw new Error(`failed to parse uri fragment ${uri.fragment}`);
+			}
+
+			return {
+				uri: monaco.Uri.from({scheme: uri.scheme, path: uri.path}),
+				range: r.toMonacoRange(),
+			};
+		});
+	}
+
+	provideHover(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<monaco.languages.Hover> {
+		return defAtPosition(model, position).then((resp: HoverInfoResponse) => {
+			let contents: monaco.MarkedString[] = [];
+			if (resp && !resp.Unresolved) {
+				if (resp.Title) {
+					contents.push(resp.Title);
+				}
+				contents.push("*Right-click to view all references.*");
+			}
+
+			const {repo, rev, path} = treeEntryFromUri(model.uri);
+			EventLogger.logEventForCategory(
+				AnalyticsConstants.CATEGORY_DEF,
+				AnalyticsConstants.ACTION_HOVER,
+				"Hovering",
+				{
+					repo: repo,
+					rev: rev || "",
+					path: path,
+					language: model.getModeId(),
+				}
+			);
+
+			const word = model.getWordAtPosition(position) || new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column);
+			return {
+				range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
+				contents: contents,
+			};
+		});
+	}
+
+	provideReferences(model: monaco.editor.IReadOnlyModel, position: monaco.Position, context: monaco.languages.ReferenceContext, token: monaco.CancellationToken): monaco.languages.Location[] | monaco.Thenable<monaco.languages.Location[]> {
+		return refsAtPosition(model, position).then((resp: ReferencesResponse) => {
+			const {repo, rev, path} = treeEntryFromUri(model.uri);
+			if (!resp) {
+				return;
+			}
+
+			EventLogger.logEventForCategory(
+				AnalyticsConstants.CATEGORY_REFERENCES,
+				AnalyticsConstants.ACTION_CLICK,
+				"ClickedViewReferences",
+				{ repo, rev: rev || "", path }
+			);
+
+			const locs: monaco.languages.Location[] = [];
+			Object.keys(resp.Locs).forEach((file) => {
+				for (let [sl, sc, el, ec] of resp.Locs[file]) {
+				locs.push({
+					uri: uriForTreeEntry(repo, rev, file),
+					range: new monaco.Range(sl + 1, sc + 1, el + 1, ec + 2),
+				});
+				}
+			});
+			return locs;
+		});
+	}
+
+	private	_findExternalReferences(editor: monaco.editor.ICommonCodeEditor): monaco.Promise<void> {
+		const model = editor.getModel();
+		const pos = editor.getPosition();
+
+		const {repo, rev, path} = treeEntryFromUri(model.uri);
+		EventLogger.logEventForCategory(
+			AnalyticsConstants.CATEGORY_REFERENCES,
+			AnalyticsConstants.ACTION_CLICK,
+			"ClickedViewReferences",
+			{ repo, rev: rev || "", path }
+		);
 
 		return new monaco.Promise<void>(() => {
 			defAtPosition(model, pos).then((resp) => {
@@ -245,105 +231,15 @@ export class Editor extends React.Component<Props, State> {
 		});
 	}
 
-	_addClickHandler(): void {
-		this._editor.onMouseDown(({target, event}) => {
-			if (target.type === monaco.editor.MouseTargetType.UNKNOWN) {
-				return;
-			}
-
-			this._mouseDownPosition = target;
-			this._mouseDownIsRightButton = event.rightButton;
-
-			// Record if this is a click starting on a clickable thing,
-			// so we know in the onSelectionChange handler to ignore it.
-			this._mouseDownOnIdent = target.element.className.indexOf("identifier") !== -1;
-		});
-
-		this._editor.onMouseUp(({event, target}) => {
-			if (!this._mouseDownPosition || !target.position || !target.position.equals(this._mouseDownPosition.position) || this._mouseDownIsRightButton) {
-				return;
-			}
-			const saved = this._mouseDownPosition;
-			const ident = saved.element.className.indexOf("identifier") > 0;
-			if (saved.position && ident) {
-				EventLogger.logEventForCategory(
-					AnalyticsConstants.CATEGORY_DEF,
-					AnalyticsConstants.ACTION_CLICK,
-					"BlobTokenClicked",
-					{
-						srcRepo: this.props.repo,
-						srcRev: this.props.rev || "",
-						srcPath: this.props.path,
-						language: this._editor.getModel().getModeId(),
-					}
-				);
-
-				fetchJumpToDef(this._editor.getModel(), target.position).then((resp: JumpToDefResponse) => {
-					if (!resp) {
-						return;
-					}
-
-					if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey || !event.leftButton) {
-						global.window.open(resp.Path, "_blank");
-					} else if (resp.Path === "") {
-						// TODO(monaco): Indicate to the user that the action failed, but gracefully. ie we
-						// allowed you to click on something which can't take you anywhere.
-						// https://github.com/sourcegraph/sourcegraph/issues/1111
-					} else {
-						// TODO(monaco): If you have selected a line and then click on something that causes
-						// you to jump to that line, it deselects the line because the Blob props do not change
-						// (because the URL #L123 is unchanged). It should reselect and rescroll to the line.
-						this.context.router.push(resp.Path);
-					}
-				});
-			}
-		});
+	public layout(): void {
+		this._editor.layout();
 	}
 
-	provideHover(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<monaco.languages.Hover> {
-		return defAtPosition(model, position).then((resp: HoverInfoResponse) => {
-			let contents: monaco.MarkedString[] = [];
-			if (resp && !resp.Unresolved) {
-				const def = resp.def;
-				if (resp.Title) {
-					contents.push(resp.Title);
-				} else {
-					contents.push(`**${def.Name}** ${def.FmtStrings ? def.FmtStrings.Type.Unqualified.trim() : ""}`);
-					const serverDoc = def.Docs ? def.Docs[0].Data : "";
-					let docs = serverDoc.replace(/\s+/g, " ");
-					if (docs.length > 400) {
-						docs = docs.substring(0, 380);
-						docs = docs + "...";
-					}
-					if (docs) {
-						contents.push(docs);
-					}
-				}
-				contents.push("*Right-click to view all references.*");
-
-				EventLogger.logEventForCategory(
-					AnalyticsConstants.CATEGORY_DEF,
-					AnalyticsConstants.ACTION_HOVER,
-					"Hovering",
-					{
-						repo: this.props.repo,
-						rev: this.props.rev || "",
-						path: this.props.path,
-						language: model.getModeId(),
-					}
-				);
-			}
-
-			const word = model.getWordAtPosition(position) || new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column);
-			return {
-				range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
-				contents: contents,
-			};
+	public dispose(): void {
+		this._editor.dispose();
+		this._toDispose.forEach(disposable => {
+			disposable.dispose();
 		});
-	}
-
-	render(): JSX.Element {
-		return <div ref="container" style={{ display: "flex", flex: "auto", width: "100%" }} />;
 	}
 }
 
@@ -377,14 +273,16 @@ function fetchJumpToDef(model: monaco.editor.IReadOnlyModel, position: monaco.Po
 		.catch(err => null);
 }
 
-function uriForTreeEntry(repo: string, rev: string | null, path: string): monaco.Uri {
-	return monaco.Uri.from({
-		scheme: "sourcegraph",
-		path: urlToBlob(repo, rev, path),
-	});
-}
+type ReferencesResponse = {
+	Locs: {[key: string]: number[][]};
+};
 
-function treeEntryFromUri(uri: monaco.Uri): {repo: string, rev: string | null, path: string} {
-	invariant(uri.scheme === "sourcegraph", `unexpected uri scheme: ${uri}`);
-	return parseBlobURL(uri.path);
+function refsAtPosition(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<ReferencesResponse> {
+	const line = position.lineNumber - 1;
+	const col = position.column - 1;
+	const {repo, rev, path} = treeEntryFromUri(model.uri);
+	return fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/def/dummy/dummy/-/dummy/-/local-refs?file=${path}&line=${line}&character=${col}`)
+		.then(checkStatus)
+		.then(resp => resp.json())
+		.catch(err => null);
 }

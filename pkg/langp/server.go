@@ -16,7 +16,9 @@ import (
 type contextKey int
 
 const (
-	methodNameKey contextKey = 1
+	methodNameKey    contextKey = 1
+	authorizationKey contextKey = 2
+	GitHubTokenKey   contextKey = 3
 )
 
 type SymbolsOpt struct {
@@ -57,6 +59,9 @@ func NewServer(s Server) http.Handler {
 	mux.Handle("/defspec-refs", handler("/defspec-refs", srv.serveDefSpecRefs))
 	mux.Handle("/hover", handler("/hover", srv.serveHover))
 	mux.Handle("/local-refs", handler("/local-refs", srv.serveLocalRefs))
+	mux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte("ok\n"))
+	}))
 	return mux
 }
 
@@ -98,6 +103,7 @@ func handler(path string, m handlerFunc) http.Handler {
 			writeResponse(w, http.StatusBadRequest, resp, path, body)
 			return
 		}
+		r = r.WithContext(context.WithValue(r.Context(), authorizationKey, r.Header.Get("Authorization")))
 		r = r.WithContext(opentracing.ContextWithSpan(r.Context(), span))
 		r = r.WithContext(context.WithValue(r.Context(), methodNameKey, path))
 		resp, err := m(r.Context(), body)

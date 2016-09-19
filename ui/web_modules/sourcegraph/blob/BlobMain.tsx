@@ -6,32 +6,35 @@ import { InjectedRouter } from "react-router";
 import Helmet from "react-helmet";
 import * as debounce from "lodash/debounce";
 import { Editor } from "sourcegraph/editor/Editor";
+import {treeEntryFromUri} from "sourcegraph/editor/FileModel";
+import { EditorComponent } from "sourcegraph/editor/EditorComponent";
 import "sourcegraph/blob/BlobBackend";
-import { lineRange } from "sourcegraph/blob/lineCol";
+import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import * as Style from "sourcegraph/blob/styles/Blob.css";
 import { trimRepo } from "sourcegraph/repo";
-import { httpStatusCode } from "sourcegraph/util/httpStatusCode";
-import { Header } from "sourcegraph/components/Header";
 import { urlToBlob } from "sourcegraph/blob/routes";
 import { SearchModal } from "sourcegraph/search/modal/SearchModal";
+import {uriForTreeEntry} from "sourcegraph/editor/FileModel";
+import {IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
 
-interface Props {
+type Props = {
 	repo: string;
 	rev: string | null;
 	commitID?: string;
 	path: string;
-	blob?: any;
 	startLine?: number;
 	startCol?: number;
 	endLine?: number;
 	endCol?: number;
 	location: Location;
+
+	// TODO(sqs): now that BlobMain no longer uses the blob directly
+	// (the EditorService fetches it), we can save on a network RTT by
+	// eliminating the WantFile dispatch.
 }
 
-type State = any;
-
 // BlobMain wraps the Editor component for the primary code view.
-export class BlobMain extends React.Component<Props, State> {
+export class BlobMain extends React.Component<Props, any> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -40,15 +43,14 @@ export class BlobMain extends React.Component<Props, State> {
 		router: InjectedRouter,
 	};
 
-	private _editor: monaco.editor.IStandaloneCodeEditor | null = null;
-	private _editorComponent: Editor | null;
+	private _editor?: Editor;
+	private _suppressNavigationOnEditorOpened: boolean = false;
 
 	constructor(props: Props) {
 		super(props);
 		this._setEditor = this._setEditor.bind(this);
 		this._onKeyDownForFindInPage = this._onKeyDownForFindInPage.bind(this);
 		this._onResize = debounce(this._onResize.bind(this), 300, { leading: true, trailing: true });
-		this._onSelectionChange = debounce(this._onSelectionChange.bind(this), 100);
 	}
 
 	componentDidMount(): void {
@@ -65,14 +67,44 @@ export class BlobMain extends React.Component<Props, State> {
 		global.document.body.style.overflowY = "auto";
 	}
 
-	_setEditor(editor: monaco.editor.IStandaloneCodeEditor | null): void {
-		this._editor = editor;
+	componentWillReceiveProps(nextProps: Props): void {
 		if (this._editor) {
-			this._editor.onDidChangeCursorSelection(this._onSelectionChange);
+			this._editorPropsChanged(this.props, nextProps);
+		}
+	}
+
+	_setEditor(editor: Editor | null): void {
+		this._editor = editor || undefined;
+		if (this._editor) {
+			this._editorPropsChanged(null, this.props);
+			this._editor.onDidOpenEditor(e => this._onEditorOpened(e));
+		}
+	}
+
+	_editorPropsChanged(prevProps: Props | null, nextProps: Props): void {
+		if (!this._editor) {
+			throw new Error("editor is not ready");
+		}
+		if (!prevProps || (prevProps.repo !== nextProps.repo || prevProps.rev !== nextProps.rev || prevProps.path !== nextProps.path || prevProps.startLine !== nextProps.startLine || prevProps.startCol !== nextProps.startCol || prevProps.endLine !== nextProps.endLine || prevProps.endCol !== nextProps.endCol)) {
+			const uri = uriForTreeEntry(nextProps.repo, nextProps.rev, nextProps.path);
+
+			let range: monaco.IRange | undefined;
+			if (typeof nextProps.startLine === "number") {
+				const rop = RangeOrPosition.fromOneIndexed(nextProps.startLine, nextProps.startCol, nextProps.endLine, nextProps.endCol);
+				if (rop) {
+					range = rop.toMonacoRangeAllowEmpty();
+				}
+			}
+
+			this._suppressNavigationOnEditorOpened = Boolean(prevProps && prevProps.location !== nextProps.location && nextProps.location.action === "POP" && !(prevProps.repo === nextProps.repo && prevProps.rev === nextProps.rev && prevProps.path === nextProps.path));
+			this._editor.setInput(uri, this._suppressNavigationOnEditorOpened ? undefined : range).then(() => {
+				this._suppressNavigationOnEditorOpened = false;
+			});
 		}
 	}
 
 	_onKeyDownForFindInPage(e: KeyboardEvent): void {
+		// TODO(sqs): can make this unnecessary?
 		const mac = navigator.userAgent.indexOf("Macintosh") >= 0;
 		const ctrl = mac ? e.metaKey : e.ctrlKey;
 		const FKey = 70;
@@ -91,55 +123,44 @@ export class BlobMain extends React.Component<Props, State> {
 		}
 	}
 
-	_onSelectionChange(e: monaco.editor.ICursorSelectionChangedEvent): void {
-		// this is here because the api calls are coming from the find command or something else we don't want to capture
-		if (e.source === "api") {
+	_onEditorOpened(e: IEditorOpenedEvent): void {
+		if (this._suppressNavigationOnEditorOpened) {
 			return;
 		}
 
-		const start = e.selection.startLineNumber;
-		let end = e.selection.endLineNumber;
-		if (e.selection.endColumn === 1 && end === start + 1) {
-			end -= 1; // if the cursor on the last line doesn't highlight anything, ignore line
-		}
-		const path = urlToBlob(this.props.repo, this.props.rev, this.props.path);
+		let treeEntry = treeEntryFromUri(e.model.uri);
+		let path = urlToBlob(treeEntry.repo, treeEntry.rev, treeEntry.path);
 
-		if (e.selection.isEmpty()) {
-			if (this._editorComponent && this._editorComponent._mouseDownOnIdent) {
-				// Click handler will trigger jump-to-def.
-				return;
+		const sel = e.editor.getSelection();
+		if (!sel.isEmpty() || sel.startLineNumber !== 1) {
+			let startCol: number | undefined = sel.startColumn;
+			let endCol: number | undefined = sel.endColumn;
+			if (e.model.getLineMinColumn(sel.startLineNumber) === startCol) {
+				startCol = undefined;
 			}
-			this.setState({ userManuallyScrolledToLineViaSelection: null}, () => {
-				this.context.router.replace(path);
-			});
-			return;
+			if (e.model.getLineMaxColumn(sel.endLineNumber) === endCol) {
+				endCol = undefined;
+			}
+
+			// HACK
+			if (endCol <= 1 && !startCol) {
+				endCol = undefined;
+			}
+
+			const r = RangeOrPosition.fromOneIndexed(sel.startLineNumber, startCol, sel.endLineNumber, endCol);
+			path = `${path}#L${r.toString()}`;
 		}
 
-		// Record that the user manually scrolled to this line so that the props change
-		// (due to changing the URL hash) doesn't trigger a jerky duplicate scroll to
-		// the same line.
-		this.setState({ userManuallyScrolledToLineViaSelection: start }, () => {
-			this.context.router.replace(`${path}#L${lineRange(start, end)}`);
-		});
+		// TODO(sqs): There is still some glitchiness with
+		// back/forward. For example, if you are in a file and jump to
+		// another def in the file and then go back, you don't go back
+		// to the "mark" (the point from which you jumped to the def);
+		// you go back to the previous def you had jumped to.
+
+		this.context.router.push(path);
 	}
 
 	render(): JSX.Element | null {
-		if (this.props.blob && this.props.blob.Error) {
-			let msg;
-			switch (this.props.blob.Error.response.status) {
-				case 413:
-					msg = "Sorry, this file is too large to display.";
-					break;
-				default:
-					msg = "File is not available.";
-			}
-			return (
-				<Header
-					title={`${httpStatusCode(this.props.blob.Error)}`}
-					subtitle={msg} />
-			);
-		}
-
 		let title = trimRepo(this.props.repo);
 		const pathParts = this.props.path ? this.props.path.split("/") : null;
 		if (pathParts) {
@@ -150,17 +171,7 @@ export class BlobMain extends React.Component<Props, State> {
 			<div className={Style.container}>
 				<SearchModal repo={this.props.repo} commitID={this.props.commitID || this.props.rev || ""} />
 				<Helmet title={title} />
-				{this.props.blob && typeof this.props.blob.ContentsString === "string" && <Editor
-					repo={this.props.repo}
-					rev={this.props.rev}
-					path={this.props.path}
-					contents={this.props.blob.ContentsString}
-					editorRef={this._setEditor}
-					ref={(c) => this._editorComponent = c}
-					startLine={this.props.startLine}
-					endLine={this.props.endLine}
-					startCol={this.props.startCol}
-					endCol={this.props.endCol} />}
+				<EditorComponent editorRef={this._setEditor} style={{ display: "flex", flex: "auto", width: "100%" }} />
 			</div>
 		);
 	}

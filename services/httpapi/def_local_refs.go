@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"errors"
 	"net/http"
 	"sort"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 )
@@ -18,6 +20,7 @@ import (
 type LocalRefLocationsList struct {
 	TotalFiles int
 	Files      []*sourcegraph.DefFileRef
+	Locs       map[string][][4]int
 }
 
 type DefFileRefs []*sourcegraph.DefFileRef
@@ -42,8 +45,11 @@ func serveDefLocalRefLocations(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	wantUniverseResults := r.URL.Query().Get("file") != "" && r.URL.Query().Get("line") != "" && r.URL.Query().Get("character") != ""
+
 	dc, repo, err := handlerutil.GetDefCommon(r.Context(), mux.Vars(r), nil)
-	if err != nil {
+	if err != nil && !wantUniverseResults {
+		// If we want Universe results, we don't need the srclib def to exist.
 		return err
 	}
 
@@ -51,7 +57,7 @@ func serveDefLocalRefLocations(w http.ResponseWriter, r *http.Request) error {
 		opt.ListOptions.PerPage = 1000
 	}
 
-	if feature.Features.NoSrclib && universe.Enabled(r.Context(), repo.URI) {
+	if (wantUniverseResults && feature.Features.NoSrclib) || (wantUniverseResults && (dc == nil || universe.EnabledFile(dc.Def.Path))) {
 		localRefLocationsList, err := universeDefLocalRefLocations(r)
 		if err != nil {
 			return err
@@ -59,6 +65,9 @@ func serveDefLocalRefLocations(w http.ResponseWriter, r *http.Request) error {
 		return writeJSON(w, &localRefLocationsList)
 	} else if universe.Shadow(repo.URI) {
 		go universeDefLocalRefLocations(r)
+	}
+	if wantUniverseResults {
+		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("def not universe-enabled")}
 	}
 
 	def := dc.Def
@@ -112,6 +121,7 @@ func universeDefLocalRefLocations(r *http.Request) (*LocalRefLocationsList, erro
 
 	// TODO: we currently only show files not specific location of references,
 	// so need to redesign the response type struct and adjust following code logic.
+	locs := make(map[string][][4]int)
 	fileSet := make(map[string]int32)
 	for _, ref := range localRefs.Refs {
 		if _, ok := fileSet[ref.File]; ok {
@@ -119,11 +129,13 @@ func universeDefLocalRefLocations(r *http.Request) (*LocalRefLocationsList, erro
 		} else {
 			fileSet[ref.File] = 1
 		}
+		locs[ref.File] = append(locs[ref.File], [4]int{ref.StartLine, ref.StartCharacter, ref.EndLine, ref.EndCharacter})
 	}
 
 	localRefLocationsList := &LocalRefLocationsList{
 		TotalFiles: len(fileSet),
 		Files:      make([]*sourcegraph.DefFileRef, 0, len(fileSet)),
+		Locs:       locs,
 	}
 
 	for name, count := range fileSet {

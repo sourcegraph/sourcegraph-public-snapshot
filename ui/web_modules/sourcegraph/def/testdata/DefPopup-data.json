@@ -1,0 +1,36 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"children": [
+				{
+					"type": "",
+					"props": {
+						"to": "/r/-/info/undefined/undefined/-/undefined",
+						"children": [
+							{
+								"type": "Button",
+								"props": {
+									"color": "blue",
+									"children": [
+										"View all references"
+									]
+								}
+							}
+						],
+						"onlyActiveOnIndex": false,
+						"style": {}
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantDefAuthors",
+			"repo": "r",
+			"commitID": "c",
+			"def": "undefined/undefined/-/undefined"
+		}
+	]
+}

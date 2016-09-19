@@ -89,7 +89,7 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 		opt.CommitID = def.CommitID
 	}
 
-	if feature.Features.NoSrclib && universe.Enabled(r.Context(), repo.URI) {
+	if feature.Features.NoSrclib && universe.EnabledFile(repo.URI) {
 		refLocations, err := universeDefRefs(r, tmp.Repo, opt, def)
 		if err != nil {
 			return err

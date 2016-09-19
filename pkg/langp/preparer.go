@@ -2,10 +2,16 @@ package langp
 
 import (
 	"context"
+	"crypto/tls"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -13,6 +19,12 @@ import (
 )
 
 type PreparerOpts struct {
+	// SrcEndpoint is the host endpoint of the Sourcegraph API, with or without
+	// trailing slash. If empty, it defaults to $SRC_ENDPOINT. The special
+	// value of "dev" disables contacting this endpoint (and inherently
+	// disables private repo cloning + access control checks).
+	SrcEndpoint string
+
 	// WorkDir is where workspaces are created by cloning repositories and
 	// dependencies.
 	WorkDir string
@@ -27,7 +39,7 @@ type PreparerOpts struct {
 	//
 	// If an error is returned, it is returned directly to the person who made
 	// the API request which triggered the preperation of the workspace.
-	PrepareRepo func(update bool, workspace, repo, commit string) error
+	PrepareRepo func(ctx context.Context, update bool, workspace, repo, commit string) error
 
 	// PrepareDeps is called when the language processor should prepare the
 	// dependencies for the given workspace/repo/commit.
@@ -42,21 +54,42 @@ type PreparerOpts struct {
 	//
 	// If an error is returned, it is returned directly to the person who made
 	// the API request which triggered the preperation of the workspace.
-	PrepareDeps func(update bool, workspace, repo, commit string) error
+	PrepareDeps func(ctx context.Context, update bool, workspace, repo, commit string) error
 }
 
 // NewPreparer returns a new preparer with the internal fields initialized.
 func NewPreparer(opts *PreparerOpts) *Preparer {
+	optsCpy := *opts
+	opts = &optsCpy
+
+	if opts.SrcEndpoint == "" {
+		opts.SrcEndpoint = os.Getenv("SRC_ENDPOINT")
+	}
+	if opts.SrcEndpoint == "" {
+		panic("NewPreparer: SrcEndpoint is not set! Try using SRC_ENDPOINT='dev' if running in dev")
+	}
+
+	// Disable TLS certificate verification because https://sourcegraph-frontend
+	// is not valid for our *.sourcegraph.com certificate, and we strictly enforce
+	// HTTPS via a redirect.
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 	return &Preparer{
 		PreparerOpts:   opts,
 		preparingRepos: newPending(),
 		preparingDeps:  newPending(),
+		srcClient: &http.Client{
+			Transport: tr,
+			Timeout:   5 * time.Second,
+		},
 	}
 }
 
 type Preparer struct {
 	*PreparerOpts
 	preparingRepos, preparingDeps *pending
+	srcClient                     *http.Client
 }
 
 // pathToWorkspace returns an absolute path to the workspace for the given
@@ -91,7 +124,7 @@ func (p *Preparer) pathToLatest(repo string) string {
 // directory as needed.
 //
 // This method should only ever be called when preparingRepos is acquired.
-func (p *Preparer) createWorkspace(repo, commit string) (update bool, err error) {
+func (p *Preparer) createWorkspace(ctx context.Context, repo, commit string) (update bool, err error) {
 	workspace := p.pathToWorkspace(repo, commit)
 	subvolume := p.pathToSubvolume(repo, commit)
 
@@ -142,7 +175,7 @@ func (p *Preparer) createWorkspace(repo, commit string) (update bool, err error)
 		if err != nil {
 			return false, err
 		}
-		if err := btrfsSubvolumeSnapshot(latestSubvolume, subvolume); err != nil {
+		if err := btrfsSubvolumeSnapshot(ctx, latestSubvolume, subvolume); err != nil {
 			return false, err
 		}
 		return true, nil
@@ -150,7 +183,7 @@ func (p *Preparer) createWorkspace(repo, commit string) (update bool, err error)
 
 	// We don't have a recently prepared workspace (we will be the
 	// first successful one), so create a new subvolume.
-	if err := btrfsSubvolumeCreate(subvolume); err != nil {
+	if err := btrfsSubvolumeCreate(ctx, subvolume); err != nil {
 		return false, err
 	}
 	// Create the workspace subdirectory.
@@ -162,10 +195,15 @@ func (p *Preparer) createWorkspace(repo, commit string) (update bool, err error)
 
 var errTimeout = errors.New("request timed out")
 
+var ErrRepoNotFound = errors.New("repo not found")
+
 // Prepare prepares a new workspace for the given repository and revision.
 //
 // method must be the language processor REST API method which triggered
 // the request (e.g. "prepare" or "external-symbols"). It is used for metrics.
+//
+// Additionally, Prepare returns ErrRepoNotFound if access to the repository is
+// forbidden (based on the authorization present in the context).
 func (p *Preparer) Prepare(ctx context.Context, repo, commit string) (workspace string, err error) {
 	// TODO(slimsag): use a smaller timeout by default and ensure the timeout
 	// error is properly handled by the frontend.
@@ -174,25 +212,154 @@ func (p *Preparer) Prepare(ctx context.Context, repo, commit string) (workspace 
 
 // PrepareTimeout is just like Prepare except it uses a custom timeout.
 func (p *Preparer) PrepareTimeout(ctx context.Context, repo, commit string, timeout time.Duration) (workspace string, err error) {
-	var span opentracing.Span
-	span, ctx = opentracing.StartSpanFromContext(ctx, "prepare workspace repo")
-	defer span.Finish()
-	span.SetTag("repo", repo)
-	span.SetTag("commit", commit)
-	span.SetTag("timeout", timeout)
+	// Check access to the repository.
+	if err := p.checkAccess(ctx, repo); err != nil {
+		return "", err
+	}
+
+	if ctx2, err := p.fetchGitHubToken(ctx, repo); err != nil {
+		// Ignore errors, rather be hopeful and just let it fail at
+		// the actual clone stage.
+		log.Println("WARNING: fetchGitHubToken failed: ", err)
+	} else {
+		ctx = ctx2
+	}
 
 	start := time.Now()
 	workspace, status, err := p.prepareRepo(ctx, repo, commit, timeout)
 	observePrepareRepo(ctx, start, repo, status)
-	span.SetTag("status", status)
-	if status == prepStatusError {
-		ext.Error.Set(span, true)
-	}
 	return workspace, err
+}
+
+func (p *Preparer) checkAccess(ctx context.Context, repo string) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "checkAccess")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+		span.Finish()
+	}()
+	span.SetTag("repo", repo)
+
+	if p.SrcEndpoint == "dev" {
+		// Access control disabled.
+		return nil
+	}
+
+	auth := ctx.Value(authorizationKey).(string)
+	if auth == "" {
+		span.SetTag("authorization", "none")
+		return nil
+	}
+
+	target := fmt.Sprintf(p.srcEndpoint()+"/.api/repos/%s", repo)
+	req, err := http.NewRequest("GET", target, nil)
+	if err != nil {
+		return fmt.Errorf("checkAccess: %v", err)
+	}
+	req.Header.Set("Authorization", auth)
+	resp, err := p.srcClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("checkAccess: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		if len(body) > 1024 {
+			body = body[:1024]
+		}
+		span.SetTag("authorization", "forbidden")
+		msg := fmt.Sprintf("access to %q forbidden - %v - body %q", repo, resp.Status, string(body))
+		span.LogEvent(msg)
+		log.Println("checkAccess:", msg)
+		return ErrRepoNotFound
+	}
+	return nil
+}
+
+func (p *Preparer) fetchGitHubToken(ctx context.Context, repo string) (newCtx context.Context, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "fetchGitHubToken")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+		span.Finish()
+	}()
+	span.SetTag("repo", repo)
+
+	if p.SrcEndpoint == "dev" {
+		// Private repo cloning disabled.
+		return ctx, nil
+	}
+
+	auth := ctx.Value(authorizationKey).(string)
+	if auth == "" {
+		span.SetTag("authorization", "none")
+		return ctx, nil
+	}
+
+	target := p.srcEndpoint() + "/.api/github-token"
+	req, err := http.NewRequest("GET", target, nil)
+	if err != nil {
+		return nil, fmt.Errorf("fetchGitHubToken: %v", err)
+	}
+	req.Header.Set("Authorization", auth)
+	resp, err := p.srcClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("fetchGitHubToken: %v", err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("fetchGitHubToken: %v", err)
+	}
+	switch resp.StatusCode {
+	case 200:
+		break
+	case 401, 404:
+		// These are expected non 200 cases. We don't treat as error
+		// to keep LightStep tagged errors high signal.
+		//
+		// * 401 happens for unauthed users
+		// * 404 happens for users who have not logged into github
+		span.LogEvent(resp.Status)
+		return ctx, nil
+	default:
+		if len(body) > 1024 {
+			body = body[:1024]
+		}
+		return nil, fmt.Errorf("fetchGitHubToken: %v - body %q", resp.Status, string(body))
+	}
+	var tmp = struct {
+		Token string
+	}{}
+	err = json.Unmarshal(body, &tmp)
+	if err != nil {
+		return nil, fmt.Errorf("Parsing GitHub token: %v", err)
+	}
+	if tmp.Token == "" {
+		return nil, fmt.Errorf("Parsing GitHub token: empty 'token' field")
+	}
+	return context.WithValue(ctx, GitHubTokenKey, tmp.Token), nil
 }
 
 // prepareRepo should not be called outside of Preparer itself.
 func (p *Preparer) prepareRepo(ctx context.Context, repo, commit string, timeout time.Duration) (workspace, status string, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "prepare workspace repo")
+	defer func() {
+		span.SetTag("status", status)
+		if status == prepStatusError {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+		span.Finish()
+	}()
+	span.SetTag("repo", repo)
+	span.SetTag("commit", commit)
+	span.SetTag("timeout", timeout)
+
 	// Acquire ownership of repository preparation. Essentially this is a
 	// sync.Mutex unique to the workspace.
 	workspace = p.pathToWorkspace(repo, commit)
@@ -217,7 +384,7 @@ func (p *Preparer) prepareRepo(ctx context.Context, repo, commit string, timeout
 	}
 
 	// Create the workspace directory.
-	update, err := p.createWorkspace(repo, commit)
+	update, err := p.createWorkspace(ctx, repo, commit)
 	if err != nil {
 		return "", prepStatusError, err
 	}
@@ -250,6 +417,19 @@ func (p *Preparer) prepareRepo(ctx context.Context, repo, commit string, timeout
 
 // prepareDeps should not be called outside of Preparer itself.
 func (p *Preparer) prepareDeps(ctx context.Context, update bool, repo, commit string) (status string, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "prepare workspace deps")
+	defer func() {
+		span.SetTag("status", status)
+		if status == prepStatusError {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+		span.Finish()
+	}()
+	span.SetTag("update", update)
+	span.SetTag("repo", repo)
+	span.SetTag("commit", commit)
+
 	// Acquire ownership of dependency preparation.
 	workspace := p.pathToWorkspace(repo, commit)
 	didTimeout, handled, done := p.preparingDeps.acquire(workspace, 0*time.Second)
@@ -291,11 +471,15 @@ func (p *Preparer) prepareDeps(ctx context.Context, update bool, repo, commit st
 func (p *Preparer) tracedPrepareRepo(ctx context.Context, update bool, workspace, repo, commit string) error {
 	span, _ := opentracing.StartSpanFromContext(ctx, "PreparerOpts.PrepareRepo")
 	defer span.Finish()
-	return p.PreparerOpts.PrepareRepo(update, workspace, repo, commit)
+	return p.PreparerOpts.PrepareRepo(ctx, update, workspace, repo, commit)
 }
 
 func (p *Preparer) tracedPrepareDeps(ctx context.Context, update bool, workspace, repo, commit string) error {
 	span, _ := opentracing.StartSpanFromContext(ctx, "PreparerOpts.PrepareDeps")
 	defer span.Finish()
-	return p.PreparerOpts.PrepareDeps(update, workspace, repo, commit)
+	return p.PreparerOpts.PrepareDeps(ctx, update, workspace, repo, commit)
+}
+
+func (p *Preparer) srcEndpoint() string {
+	return strings.TrimSuffix(p.SrcEndpoint, "/")
 }

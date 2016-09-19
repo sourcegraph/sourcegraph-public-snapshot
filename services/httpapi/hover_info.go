@@ -40,7 +40,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		Unresolved bool
 	}{}
 
-	if universe.Enabled(r.Context(), repo.URI) {
+	if universe.EnabledFile(file) {
 		hover, err := langp.DefaultClient.Hover(r.Context(), &langp.Position{
 			Repo:      repo.URI,
 			Commit:    repoRev.CommitID,

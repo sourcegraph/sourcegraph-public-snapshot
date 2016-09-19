@@ -8,17 +8,17 @@ func TestRepoChecker(t *testing.T) {
 		Repo    string
 		Want    bool
 	}{
-		// Test that sourcegraph is default
+		// Test that RxJava is default
 		{"", "foo", false},
-		{"", "github.com/sourcegraph/sourcegraph", true},
+		{"", "github.com/slimsag/RxJava", true},
 
 		// Test all
 		{"all", "foo", true},
-		{"all", "github.com/sourcegraph/sourcegraph", true},
+		{"all", "github.com/slimsag/RxJava", true},
 
 		// Test specified
 		{"foo", "foo", true},
-		{"foo", "github.com/sourcegraph/sourcegraph", false},
+		{"foo", "github.com/slimsag/RxJava", false},
 	}
 	for _, c := range cases {
 		if repoChecker(false, c.Enabled, c.Repo) {

@@ -2,9 +2,11 @@ package parser
 
 import (
 	"context"
+	"log"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 type Lang struct {
@@ -24,17 +26,25 @@ type Config struct {
 	fileToLang map[string]string
 }
 
-func getConfig(ctx context.Context) (*Config, error) {
+var ctagsMappings string
+var initMapOnce sync.Once
 
-	cmd := exec.Command("ctags", "--list-maps")
-	out, err := cmdOutput(ctx, nil, cmd)
+func init() {
+	initMapOnce.Do(initMappings)
+}
+
+func initMappings() {
+	out, err := exec.Command("ctags", "--list-maps").CombinedOutput()
 	if err != nil {
-		return nil, err
+		log.Fatal("error initializing ctags mappings: ", err)
 	}
+	ctagsMappings = string(out)
+}
 
+func getConfig(ctx context.Context) (*Config, error) {
 	// Parse languages from ctags output
 	var config Config
-	lines := strings.Split(string(out), "\n")
+	lines := strings.Split(ctagsMappings, "\n")
 	for _, line := range lines {
 		line := strings.TrimSpace(line)
 		if len(line) == 0 || line == "CTagsSelfTest" {

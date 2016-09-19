@@ -2,6 +2,7 @@ package langp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -35,11 +36,12 @@ func TestTranslator(t *testing.T) {
 	ts := httptest.NewServer(New(&Translator{
 		Addr: lspMock.Addr,
 		Preparer: NewPreparer(&PreparerOpts{
+			SrcEndpoint: "dev",
 			WorkDir:     workDir,
-			PrepareRepo: func(update bool, workspace, repo, commit string) error { return nil },
-			PrepareDeps: func(update bool, workspace, repo, commit string) error { return nil },
+			PrepareRepo: func(ctx context.Context, update bool, workspace, repo, commit string) error { return nil },
+			PrepareDeps: func(ctx context.Context, update bool, workspace, repo, commit string) error { return nil },
 		}),
-		ResolveFile: func(workspace, repo, commit, uri string) (*File, error) {
+		ResolveFile: func(ctx context.Context, workspace, repo, commit, uri string) (*File, error) {
 			if !strings.HasPrefix(uri, "file:///") {
 				return nil, fmt.Errorf("uri does not start with file:/// : %s", uri)
 			}
@@ -60,7 +62,9 @@ func TestTranslator(t *testing.T) {
 			}
 			return &File{Repo: repo, Commit: commit, Path: path}, nil
 		},
-		FileURI: func(repo, commit, file string) string { return "file:///" + filepath.Join(repo, file) },
+		FileURI: func(ctx context.Context, repo, commit, file string) string {
+			return "file:///" + filepath.Join(repo, file)
+		},
 	}))
 	defer ts.Close()
 

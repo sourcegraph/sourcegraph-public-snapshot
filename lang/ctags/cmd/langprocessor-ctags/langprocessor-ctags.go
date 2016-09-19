@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -20,7 +21,7 @@ var (
 	workDir  = flag.String("workspace", "$SGPATH/workspace/ctags", "where to create workspace directories")
 )
 
-func prepareRepo(update bool, workspace, repo, commit string) error {
+func prepareRepo(ctx context.Context, update bool, workspace, repo, commit string) error {
 	// We check if there is an existing cache directory. Our LSP server
 	// does not incrementally change that, so we need to delete it to
 	// prevent it serving old data.
@@ -32,22 +33,24 @@ func prepareRepo(update bool, workspace, repo, commit string) error {
 		}
 	}
 
-	repo, cloneURI := langp.ResolveRepoAlias(repo)
+	cloneURI := langp.RepoCloneURL(ctx, repo)
+	repo = langp.ResolveRepoAlias(repo)
+
 	repoDir := filepath.Join(workspace, repo)
 	// Clone the repository.
-	return langp.Clone(update, cloneURI, repoDir, commit)
+	return langp.Clone(ctx, update, cloneURI, repoDir, commit)
 }
 
-func prepareDeps(update bool, workspace, repo, commit string) error {
+func prepareDeps(ctx context.Context, update bool, workspace, repo, commit string) error {
 	return nil
 }
 
-func fileURI(repo, commit, file string) string {
-	repo, _ = langp.ResolveRepoAlias(repo)
+func fileURI(ctx context.Context, repo, commit, file string) string {
+	repo = langp.ResolveRepoAlias(repo)
 	return "file:///" + filepath.Join(repo, file)
 }
 
-func resolveFile(workspace, repo, commit, uri string) (*langp.File, error) {
+func resolveFile(ctx context.Context, workspace, repo, commit, uri string) (*langp.File, error) {
 	if !strings.HasPrefix(uri, "file:///") {
 		return nil, fmt.Errorf("uri does not start with file:/// : %s", uri)
 	}
@@ -90,5 +93,5 @@ func main() {
 		}),
 		ResolveFile: resolveFile,
 	}))
-	http.ListenAndServe(*httpAddr, nil)
+	log.Fatal(http.ListenAndServe(*httpAddr, nil))
 }

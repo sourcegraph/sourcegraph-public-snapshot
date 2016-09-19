@@ -153,7 +153,7 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 	}
 	log15.Debug("cloneRepo: build created", "repo", repo.URI, "branch", repo.DefaultBranch, "commit", res.CommitID)
 
-	if universe.Enabled(ctx, repo.URI) || universe.Shadow(repo.URI) {
+	if universe.EnabledRepo(repo) || universe.Shadow(repo.URI) {
 		go func() {
 			// Ask the Language Processor to prepare the workspace.
 			err := langp.DefaultClient.Prepare(ctx, &langp.RepoRev{

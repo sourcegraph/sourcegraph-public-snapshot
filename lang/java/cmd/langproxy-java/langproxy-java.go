@@ -17,11 +17,12 @@ var (
 	workDir  = flag.String("workspace", "$SGPATH/workspace/java", "where to create workspace directories")
 )
 
-func prepareRepo(update bool, workspace, repo, commit string) error {
-	_, cloneURI := langp.ResolveRepoAlias(repo)
+func prepareRepo(ctx context.Context, update bool, workspace, repo, commit string) error {
+	cloneURI := langp.RepoCloneURL(ctx, repo)
+	repo = langp.ResolveRepoAlias(repo)
 
 	// Clone the repository.
-	return langp.Clone(update, cloneURI, workspace, commit)
+	return langp.Clone(ctx, update, cloneURI, workspace, commit)
 }
 
 func main() {
@@ -46,7 +47,7 @@ func main() {
 		langp.NewPreparer(&langp.PreparerOpts{
 			WorkDir:     workDir,
 			PrepareRepo: prepareRepo,
-			PrepareDeps: func(update bool, workspace, repo, commit string) error {
+			PrepareDeps: func(ctx context.Context, update bool, workspace, repo, commit string) error {
 				return client.Prepare(context.Background(), &langp.RepoRev{
 					Repo:   repo,
 					Commit: commit,
@@ -60,5 +61,5 @@ func main() {
 
 	log.Println("Translating HTTP", *httpAddr, "to Java LP", *lpAddr)
 	http.Handle("/", handler)
-	http.ListenAndServe(*httpAddr, nil)
+	log.Fatal(http.ListenAndServe(*httpAddr, nil))
 }

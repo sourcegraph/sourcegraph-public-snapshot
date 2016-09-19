@@ -1,7 +1,6 @@
 package universe
 
 import (
-	"context"
 	"hash/crc32"
 	"log"
 	"math/rand"
@@ -10,38 +9,17 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/betautil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
-// Enabled tells if universe should be used because repo is a universe enabled
-// repository (see isUniverseRepo below) OR because the user in the context is
-// part of the universe beta. It also performs feature flag checking, such that
-// this function is all you need to do for checking universe.
-func Enabled(ctx context.Context, repo string) bool {
-	if !feature.Features.Universe {
-		return false
-	}
-	if EnabledExcludingBeta(repo) {
-		return true
-	}
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return false
-	}
-	info, err := cl.Auth.Identify(ctx, &pbtypes.Void{})
-	if err != nil {
-		return false
-	}
-	if info.UID == 0 {
-		return false
-	}
-	user, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: info.UID})
-	if err != nil {
-		return false
-	}
-	return user.InBeta(betautil.Universe)
+// EnabledFile tells if universe should be used because file should use a universe backend.
+func EnabledFile(file string) bool {
+	return strings.HasSuffix(file, ".go")
+}
+
+// EnabledRepo tells if universe should be used because repo's language should use a universe backend.
+func EnabledRepo(repo *sourcegraph.Repo) bool {
+	return repo.Language == "Go"
 }
 
 // EnabledExcludingBeta is just like Enabled except it excludes users who are
@@ -98,16 +76,8 @@ func repoChecker(on bool, enabled, repo string) bool {
 		return true
 	}
 	if enabled == "" {
-		// Go testing repos.
-		enabled = "github.com/sourcegraph/sourcegraph"
-		enabled += ",github.com/slimsag/mux"
-		enabled += ",github.com/slimsag/context"
-		enabled += ",github.com/slimsag/docker"
-		enabled += ",github.com/slimsag/kubernetes"
-		enabled += ",github.com/slimsag/prometheus"
-
 		// Java testing repos.
-		enabled += ",github.com/slimsag/RxJava"
+		enabled += "github.com/slimsag/RxJava"
 		enabled += ",github.com/slimsag/guava"
 		enabled += ",github.com/slimsag/joda-time"
 
