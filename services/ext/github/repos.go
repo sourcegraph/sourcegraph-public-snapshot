@@ -58,8 +58,8 @@ type cachedRepo struct {
 }
 
 // Bound the number of parallel requests to github. This is a hotfix to avoid
-// triggering github abuse. Default is higher than needs be.
-var sem = make(chan bool, conf.GetenvIntOrDefault("SG_GITHUB_CONCURRENT", 1000))
+// triggering github abuse. Default is really low to try to recover from abuse detection.
+var sem = make(chan bool, conf.GetenvIntOrDefault("SG_GITHUB_CONCURRENT", 1))
 
 func lock() {
 	reposGithubConcurrent.Inc()
