@@ -29,7 +29,7 @@ const ResultRow = ({title, description, index, length, URLPath}, categoryIndex, 
 		 <div>
 			 <span style={{color: titleColor}}>{title.substr(0, index)}</span>
 			 <span style={{color: colors.white(), fontWeight: "bold"}}>{title.substr(index, length)}</span>
-			 <span style={{color: colors.coolGray3()}}>{title.substr(index + length)}</span>
+			 <span style={{color: titleColor}}>{title.substr(index + length)}</span>
 			 </div> :
 			 <div style={{color: colors.white()}}>
 			 {title}

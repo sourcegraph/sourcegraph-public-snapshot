@@ -190,7 +190,6 @@ export const RepoBackend = {
 
 		if (payload instanceof RepoActions.WantSymbols) {
 			const action = payload;
-
 			const repos = RepoStore.symbols.list(action.repo, action.rev, action.query);
 			if (repos === null) {
 				const url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/symbols${action.query ? `?Query=`+encodeURIComponent(action.query) : ""}`;
