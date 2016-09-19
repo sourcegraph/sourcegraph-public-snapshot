@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"sync"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -50,9 +51,14 @@ type cachedRepo struct {
 	PublicNotFound bool
 }
 
+var mu sync.Mutex
+
 var _ Repos = (*repos)(nil)
 
 func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
 	// This function is called a lot, especially on popular public
 	// repos. For public repos we have the same result for everyone, so it
 	// is cacheable. (Permissions can change, but we no longer store that.) But
@@ -105,6 +111,8 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 }
 
 func (s *repos) GetByID(ctx context.Context, id int) (*sourcegraph.Repo, error) {
+	mu.Lock()
+	defer mu.Unlock()
 	ghrepo, resp, err := client(ctx).repos.GetByID(id)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.GetByID #%d", id))
@@ -203,6 +211,8 @@ func toRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 // See https://developer.github.com/v3/repos/#list-your-repositories
 // for more information.
 func (s *repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
+	mu.Lock()
+	defer mu.Unlock()
 	ghRepos, resp, err := client(ctx).repos.List("", opt)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, "github.Repos.ListAccessible")
@@ -220,6 +230,8 @@ func (s *repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOp
 // See http://developer.github.com/v3/repos/hooks/#create-a-hook
 // for more information.
 func (s *repos) CreateHook(ctx context.Context, repo string, hook *github.Hook) error {
+	mu.Lock()
+	defer mu.Unlock()
 	owner, repoName, err := githubutil.SplitRepoURI(repo)
 	if err != nil {
 		return grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
