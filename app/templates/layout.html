@@ -9,10 +9,6 @@
 		>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-		<meta name="theme-color" content="#0fb6f2">
-
-		{{/* This makes it so that the top fixed navbar slides down as you scroll down on iOS, which we need to fix. But overall it is better to have the text appear at a legible size. */}}
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
 
 		<link rel="alternate" type="application/rss+xml" title="RSS" href="https://text.sourcegraph.com/feed">
 
@@ -24,6 +20,7 @@
 		{{template "Scripts" $}}
 
 		{{if .Meta.SEO}}
+			<link ignore-csp rel="stylesheet" href="https://npmcdn.com/basscss@8.0.2/css/basscss.min.css">
 			<style ignore-csp>
 				{{template "Styles" $}}
 			</style>
@@ -35,7 +32,7 @@
 
 	</head>
 
-	<body
+	<body class="bg-gray m0"
 		{{if fileSearchDisabled}}
 			data-file-search-disabled="true"
 		{{end}}>
@@ -66,7 +63,7 @@
 		{{if not .Meta.SEO}}
 			<script src="{{assetURL "/main.browser.js"}}"></script>
 		{{end}}
-		
+
 		{{appconf.ExtraBodyHTML}}
 	</body>
 </html>

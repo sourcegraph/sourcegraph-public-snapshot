@@ -1,42 +1,57 @@
 {{define "Head"}}{{template "HeadFromMeta" $}}{{end}}
 
-{{define "Nav"}}{{end}}
+{{define "Nav"}}
+	<div class="bg-white border-bottom border-cool-gray-3-2 shadow py2 px2 lh0">
+		<a href="/"><img class="spin" src="{{absAssetURL .Ctx "/img/sourcegraph-mark.svg"}}" width="20" /></a>
+	</div>
+{{end}}
 
 {{define "Body"}}
-<div class="dl-container">
+<div ignore-csp style="max-width: 680px" class="mx-auto mx2 my3">
 
-	<div class="nav"><a href="{{urlToSitemap .Repo.Language}}" class="toplink gray">Explore more repositories</a></div>
+	<a href="{{urlToSitemap .Repo.Language}}">
+		&larr; Explore more repositories
+	</a>
 
-	<h1 class="gray-links"><a href="{{.RepoURL}}" class="link-h1">{{repoDisplayHTML .Repo.URI}}</a> quick reference</h1>
+	<h1>
+		<a href="{{.RepoURL}}" class="link-h1">{{repoDisplayHTML .Repo.URI}}</a> quick reference
+	</h1>
 
-	<span class="blue"><a href="#topsymbols">Most used</a>{{if .SanitizedREADME}} | <a href="#readme">README</a>{{end}} | <a href="{{.RepoURL}}">Symbol search</a></span>
+	<div>
+		<a href="#topsymbols">Most used</a>{{if .SanitizedREADME}} |
+		<a href="#readme">README</a>{{end}} |
+		<a href="{{.RepoURL}}">Symbol search</a>
+	</span>
 
 	{{if .Defs}}
-	<h2 id="topsymbols">The most popular functions, methods, and types in <tt class="highlight-h2">{{.Repo.Name}}</tt></h2>
-	<div class="defslist">
+	<h2 id="topsymbols">
+		The most popular functions, methods, and types in <span class="code">{{.Repo.Name}}</span>
+	</h2>
+	<div class="my3">
 	{{range $def := .Defs}}
 		{{with $def.Def.FmtStrings}}
-		<div class="defentry">
-			<tt>
-				<a href="{{$def.LandURL}}" class="defhighlight">
-					<span class="defbody">{{.DefKeyword}}</span> {{.Name.ScopeQualified}}<span class="defbody">{{.NameAndTypeSeparator}}{{.Type.Unqualified}}</span>
+		<div class="bg-white border rounded border-cool-gray-3-2 my2 p3">
+			<h3 class="mt0">
+				<a href="{{$def.LandURL}}" class="code">
+					{{.DefKeyword}} {{.Name.ScopeQualified}} {{.NameAndTypeSeparator}}{{.Type.Unqualified}}
 				</a>
-			</tt>
-			<span>
-				{{if $def.RefCount}}
-				<a class="gray" href="{{$def.SourceURL}}" class="defssrclink">[{{$def.RefCount}} {{numberedNoun $def.RefCount "ref"}}, view source]</a>
-				{{else}}
-				<a class="gray" href="{{$def.SourceURL}}" class="defssrclink">[view source]</a>
-				{{end}}
-			</span>
-			<div class="defdoctext">{{shortDoc (defDocText $def.Def)}}</div>
+				<span>
+					{{if $def.RefCount}}
+						<a href="{{$def.SourceURL}}" class="defssrclink">[{{$def.RefCount}} {{numberedNoun $def.RefCount "ref"}}, view source]</a>
+					{{else}}
+						<a href="{{$def.SourceURL}}">[view source]</a>
+					{{end}}
+				</span>
+			</h3>
+
+			<p class="mb0">{{shortDoc (defDocText $def.Def)}}</p>
 		</div>
 		{{end}}
 	{{end}}
 	</div>
 	{{end}}
 
-	<div id="readme" class="readme">
+	<div id="readme">
 		{{dangerouslySetHTML .SanitizedREADME}}
 	</div>
 

@@ -1,11 +1,13 @@
 {{define "Head"}}{{template "HeadFromMeta" $}}{{end}}
 
-{{define "Nav"}}{{end}}
+{{define "Nav"}}
+	<div class="bg-white border-bottom border-cool-gray-3-2 shadow py2 px2 lh0">
+		<a href="/"><img class="spin" src="{{absAssetURL .Ctx "/img/sourcegraph-mark.svg"}}" width="20" /></a>
+	</div>
+{{end}}
 
 {{define "Body"}}
-<div class="dl-container">
-
-	<div class="nav"><a href="/" class="toplink gray">Home</a></div>
+<div ignore-csp style="max-width: 860px" class="mx-auto mx2 my3">
 
 	{{if .Lang}}
 	<h1>{{.Lang}} repository index</h1>
@@ -13,23 +15,35 @@
 	<h1>Language index</h1>
 	{{end}}
 
-	<div class="index-links">
-		<span class="header">
-			Explore repositories by language:
-		</span>
-		<span>
-			{{range .Langs}}
-			<span><a href="{{urlToSitemap .}}">{{.}}</a></span>
-			{{end}}
-		</span>
+	<div class="flex">
+
+		<div ignore-csp class="order-last" style="min-width: 235px">
+			<h4 class="mt0">
+				Explore repositories by language:
+			</h4>
+			<ul>
+				{{range .Langs}}
+				<li><a href="{{urlToSitemap .}}">{{.}}</a></li>
+				{{end}}
+			</ul>
+		</div>
+
+		{{if .Repos}}
+			<div class="pr3">
+				{{range .Repos}}
+				<div class="mb3 bg-white border border-cool-gray-3-2 p3 rounded">
+					<h3 class="my0">
+						<a href="{{urlToRepoLanding .URI}}">
+							{{repoDisplayHTML .URI}}
+						</a>
+					</h3>
+					<p class="mb0">{{.Description}}</p>
+				</div>
+				{{end}}
+			</div>
+		{{end}}
 	</div>
 
-	{{range .Repos}}
-	<p class="repo-index-item">
-		<a href="{{urlToRepoLanding .URI}}">{{repoDisplayHTML .URI}}</a>
-		<span class="repo-description">{{.Description}}</span>
-	</p>
-	{{end}}
 
 </div>
 {{end}}

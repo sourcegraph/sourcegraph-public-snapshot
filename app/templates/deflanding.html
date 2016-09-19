@@ -1,69 +1,86 @@
-{{define "Head"}}{{template "HeadFromMeta" $}}{{end}}
+{{define "Head"}}
+	{{template "HeadFromMeta" $}}
+{{end}}
 
-{{define "Nav"}}{{end}}
+{{define "Nav"}}
+
+	<div class="bg-white border-bottom border-cool-gray-3-2 shadow py2 px2 lh0">
+		<a href="/"><img class="spin" src="{{absAssetURL .Ctx "/img/sourcegraph-mark.svg"}}" width="20" /></a>
+	</div>
+
+{{end}}
 
 {{define "Body"}}
-<div class="dl-container">
 
-	<div class="nav"><a href="{{.RepoLandingURL}}" class="toplink gray">{{.Repo.URI}}</a>&nbsp;·&nbsp;<a href="{{.FileURL}}" class="toplink">{{.Def.Def.File}}</a></div>
+<div ignore-csp style="max-width: 680px" class="mx-auto mx2">
 
+	<div class="mb3">
+		<a href="{{.DefSnippet.SourceURL}}" class="btn btn-blue right mt2">View definition</a>
+		<h1 class="mb0">
+			{{with .Def.FmtStrings}}
+				<span class="code">
+					{{.DefKeyword}}
+					{{.Name.ScopeQualified}}
+				</span>
+			{{end}}
+		</h1>
 
-	<h1>
-		{{with .Def.FmtStrings}}<tt>{{.DefKeyword}} <span class="highlight-h1">{{.Name.ScopeQualified}}</span></tt>{{end}}
-		{{if (and .RefSnippets .Def.DocHTML.HTML)}}
-		examples and docs
-		{{else if .RefSnippets}}
-		examples
-		{{else if .Def.DocHTML.HTML}}
-		docs
-		{{else}}
-		quick reference
-		{{end}}
-	</h1>
-
-	<a href="{{.DefSnippet.SourceURL}}"><button>View source</button></a>
+		<p>
+			Defined in <a href="{{.FileURL}}">{{.Repo.URI}}/{{.Def.Def.File}}</a>
+		</p>
+	</div>
 
 	{{with .Def}}
 
 	{{if .DocHTML.HTML}}
-	<h2>Documentation</h2>
-	<p>{{dangerouslySetHTML .DocHTML.HTML}}</p>
+	<div class="mt3 mb4">
+		<h2>Description</h2>
+		<p>{{dangerouslySetHTML .DocHTML.HTML}}</p>
+	</div>
 	{{end}}
 
 	{{end}}{{/* end "with .Def" */}}
 
 	{{if .RefSnippets}}
-	<h2>How to use</h2>
+		<div class="my4">
 
-	<p>{{if (gt (len .RefSnippets) 1)}}Here are some examples{{else}}Here's an example{{end}} of how you can use <tt>{{.Def.Name}}</tt>.</p>
+			<h2>Examples</h2>
 
-	{{range .RefSnippets}}
-	<a href="{{.SourceURL}}" class="plainlink">
-		<p><pre class="snippet">{{renderSnippet .}}</pre></p>
-	</a>
+			{{range .RefSnippets}}
+				<a href="{{.SourceURL}}" class="plainlink">
+					<p><pre class="snippet rounded">{{renderSnippet .}}</pre></p>
+				</a>
+			{{end}}
+		</div>
 	{{end}}
-	{{end}}
 
-	<h2><tt class="highlight-h2">{{.Def.Name}}</tt> is referenced in <span class="highlight">{{.RefLocs.TotalRepos}}</span> {{numberedNoun .RefLocs.TotalRepos "repository"}}</h2>
-	<ul class="refslist">
+	<div class="my4">
+		<h2>
+			<span class="code">{{.Def.Name}}</span> is referenced in {{.RefLocs.TotalRepos}} {{numberedNoun .RefLocs.TotalRepos "repository"}}
+		</h2>
+
 		{{range $repo := .RefLocs.RepoRefs}}
-		<li>
-			<a href="{{urlToRepo $repo.Repo}}" class="refsrepolink">{{$repo.Repo}}</a>
+			<a href="{{urlToRepo $repo.Repo}}">
+				<strong>{{$repo.Repo}}</strong>
+			</a>
 			<ul>
 				{{range $file := $repo.Files}}
-				<li class="refsfiletext gray">{{$file.Count}} {{numberedNoun $file.Count "reference"}} in <a href="{{urlToBlob $repo.Repo $file.Path}}" class="refsfilelink">{{$file.Path}}</a></li>
+				<li>{{$file.Count}} {{numberedNoun $file.Count "reference"}} in <a href="{{urlToBlob $repo.Repo $file.Path}}">{{$file.Path}}</a></li>
 				{{end}}
 			</ul>
-		</li>
 		{{end}}
+
 		{{if .TruncatedRefLocs}}
-		<li>...</li>
+			<p>...</p>
 		{{end}}
-	</ul>
+	</div>
 
-	<h2><a href="{{.DefSnippet.SourceURL}}">Definition</a></h2>
-
-	<a href="{{.DefSnippet.SourceURL}}" class="plainlink"><pre class="snippet">{{renderSnippet .DefSnippet}}</pre></a>
+	<div class="my3">
+		<h2>Definition</h2>
+		<a href="{{.DefSnippet.SourceURL}}" class="plainlink">
+			<pre class="bg-white code border rounded border-cool-gray-4 p2 snippet">{{renderSnippet .DefSnippet}}</pre>
+		</a>
+	</div>
 
 </div>
 {{end}}
