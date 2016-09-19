@@ -342,7 +342,7 @@ function addEventListeners(el, path, repoRevSpec, line, lineStartByte) {
 				}
 
 				// If target is within the same repo/file, open in current frame otherwise new tab
-				if (repo == arg.repoURI && jumpdef.indexOf(arg.path)) {
+				if (repo == arg.repoURI && jumpdef.indexOf(arg.path) >= 0) {
 					window.location.href = jumpdef;
 				} else {
 					window.open(jumpdef);
