@@ -102,7 +102,10 @@ export function indexAnnotations(anns) {
 	let annsByStartByte = {};
 	let annsByEndByte = {};
 	for (let i = 0; i < anns.length; i++) {
-		if (anns[i].URL) { // without a URL, it is a syntax highlighting annotation
+		// From pkg/syntaxhighlight/html_annotator.go
+		if (anns[i].Class !== "com" || // comments
+			anns[i].Class !== "lit" || // literals
+			anns[i].Class !== "pun") { // punctuations and operators
 			let ann = anns[i];
 			annsByStartByte[ann.StartByte] = ann;
 			annsByEndByte[ann.EndByte] = ann;
@@ -132,38 +135,8 @@ export function annGenerator(annsByStartByte, byte, repoRevSpec) {
 	const annLen = match.EndByte - match.StartByte;
 	if (annLen <= 0) return null; // sometimes, there will be an "empty" annotation, e.g. for CommonJS modules
 
-	let rev;
-	if (match.URL.indexOf(repoRevSpec.repoURI) !== -1) {
-		rev = repoRevSpec.rev;
-	} else {
-		rev = "master"; // assume external links are to default branch "master"
-	}
-	const annURL = utils.addRevToAnnURL(match.URL, rev);
-
-	function urlToDef(matchURL) {
-		if (!matchURL) return null;
-
-		if (matchURL.startsWith("/")) {
-			matchURL = matchURL.substring(1); // remove leading slash
-		}
-
-		const parts = matchURL.split("/-/");
-		if (parts.length < 2) return null;
-
-		const repo = parts[0];
-		const def = parts.slice(1).join("/-/").replace("def/", "");
-
-		if (repo.startsWith("github.com/")) {
-			return `https://${repo}#sourcegraph&def=${def}&rev=${rev}`;
-		}
-		return `https://github.com/#sourcegraph&repo=${repo}&def=${def}&rev=${rev}`;
-	}
-
-	const defIsOnGitHub = match.URL && match.URL.includes("github.com/");
-	const url = defIsOnGitHub ? urlToDef(match.URL) : `https://sourcegraph.com${match.URL}`;
-
 	return {annLen, annGen: function(innerHTML) {
-		return `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-byteoffset=${byte + 1} data-src="https://sourcegraph.com${annURL}" class=${styles.sgdef}>${innerHTML}</a>`;
+				return `<span data-byteoffset=${byte + 1} class=${styles.sgdef} style="cursor:pointer;">${innerHTML}</span>`;
 	}};
 }
 
@@ -333,22 +306,49 @@ export const defCache = {};
 function addEventListeners(el, path, repoRevSpec, line, lineStartByte) {
 	let activeTarget, popover;
 
-	el.addEventListener("onClick", (e) => {
-		//  https://sourcegraph.com/.api/repos/github.com/gorilla/mux@master/-/jump-def?file=mux.go&line=60&character=11
-
+	el.addEventListener("click", (e) => {
 		let t = getTarget(e.target);
 		if (!t) return;
-		let arg = utils.parseURL(); // TODO: Pass to addEventListeners to avoid re-eval?
+		let arg = utils.parseURL();
 		let col = t.dataset.byteoffset - lineStartByte;
 		let url = `https://sourcegraph.com/.api/repos/${arg.repoURI}/-/jump-def?file=${arg.path}&line=${line - 1}&character=${col}`;
 
 		fetchJumpURL(url, function(jumptarget) {
-			if (jumptarget) {
-				jumptarget = jumptarget.slice(1);
-				window.location.href = jumptarget;
+			if (jumptarget && jumptarget !== "") {
+				let rev;
+				let jumpdef;
+
+				if (jumptarget.indexOf(repoRevSpec.repoURI) !== -1) {
+					rev = repoRevSpec.rev;
+				} else {
+					rev = "master"; // assume external links are to default branch "master"
+				}
+
+				if (jumptarget.startsWith("/")) {
+					jumptarget = jumptarget.substring(1); // remove leading slash
+				}
+
+				const parts = jumptarget.split("/-/blob/");
+				if (parts.length < 2) return null;
+
+				const repo = parts[0];
+				if (repo.startsWith("github.com/")) {
+					// TODO: Fix /blob/ to /tree/ on back-end; Github returns 301 moved permanently
+					const def = parts.slice(1).join("");
+					jumpdef = `https://${repo}/tree/${rev}/${def}#sourcegraph&def=${def}&rev=${rev}`;
+				} else {
+					const def = parts.slice(1).join("/-/blob/").replace("def/", "");
+					jumpdef = `https://github.com/#sourcegraph&repo=${repo}&def=${def}&rev=${rev}`;
+				}
+
+				// If target is within the same repo/file, open in current frame otherwise new tab
+				if (repo == arg.repoURI && jumpdef.indexOf(arg.path)) {
+					window.location.href = jumpdef;
+				} else {
+					window.open(jumpdef);
+				}
 			}
 		});
-		// TODO: return false/true to cancel event (propogation)?
 	});
 
 	el.addEventListener("mouseout", (e) => {
@@ -373,8 +373,8 @@ function addEventListeners(el, path, repoRevSpec, line, lineStartByte) {
 	});
 
 	function getTarget(t) {
-		while (t && t.tagName === "SPAN") {t = t.parentNode;}
-		if (t && t.tagName === "A" && t.classList.contains(styles.sgdef)) return t;
+		while (t && t.tagName !== "TD" && !t.dataset && !t.dataset.byteoffset) {t = t.parentNode;}
+		if (t && t.tagName === "SPAN" && t.dataset && t.dataset.byteoffset) return t;
 	}
 
 	function showPopover(html, x, y) {
@@ -409,7 +409,6 @@ function addEventListeners(el, path, repoRevSpec, line, lineStartByte) {
 		fetch(url)
 			.then((json) => {
 				jumptodefcache[url] = json.Path;
-
 				cb(jumptodefcache[url]);
 			})
 			.catch((err) => console.log("Error getting jump target info.") && cb(null));
@@ -419,16 +418,10 @@ function addEventListeners(el, path, repoRevSpec, line, lineStartByte) {
 		if (popoverCache[url]) return cb(popoverCache[url], defCache[url]);
 		fetch(url)
 			.then((json) => {
-				json = json.def; /* HACKY! */
-				defCache[url] = json;
-				let html;
-				if (json.Data) {
-					const f = json.FmtStrings;
-					const doc = json.DocHTML ? `<div>${json.DocHTML.__html}</div>` : "";
-					html = `<div><div class=${styles.popoverTitle}>${f.DefKeyword || ""}${f.DefKeyword ? " " : ""}<b style="color:#4078C0">${f.Name.Unqualified}</b>${f.NameAndTypeSeparator || ""}${f.Type.ScopeQualified === f.DefKeyword ? "" : f.Type.ScopeQualified || ""}</div>${doc}<div class=${styles.popoverRepo}>${json.Repo}</div></div>`;
-				}
-				popoverCache[url] = html;
-				cb(html, json);
+				if (json.Title == "" && json.def == null) return;
+				defCache[url] = json.def;
+                popoverCache[url] = `<div><div class=${styles.popoverTitle}>${json.Title || ""}</div><div>${json.def ? json.def.DocHTML.__html || "" : ""}</div><div class=${styles.popoverRepo}>${json.def ? json.def.Repo || "" : ""}</div></div>`;
+				cb(popoverCache[url], json.def);
 			})
 			.catch((err) => console.log("Error getting definition info.") && cb(null, null));
 	}
