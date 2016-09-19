@@ -16,15 +16,15 @@ export const RepoBackend = {
 	__onDispatch(payload: RepoActions.Action): void {
 		if (payload instanceof RepoActions.WantRepos) {
 			const action = payload;
-			const repos = RepoStore.repos.list(action.querystring, action.type);
+			const repos = RepoStore.repos.list(action.querystring);
 			if (repos === null) {
-				const url = `/.api/repos?Query=${action.querystring}&Type=${action.type}&LocalOnly=true`;
+				const url = `/.api/repos?${action.querystring}`;
 				RepoBackend.fetch(url)
 					.then(checkStatus)
 					.then((resp) => resp.json())
 					.catch((err) => ({Error: err}))
 					.then((data) => {
-						Dispatcher.Stores.dispatch(new RepoActions.ReposFetched(action.querystring, action.type, data));
+						Dispatcher.Stores.dispatch(new RepoActions.ReposFetched(action.querystring, data));
 					});
 			}
 		}

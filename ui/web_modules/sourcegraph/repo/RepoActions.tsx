@@ -2,7 +2,7 @@ import {Branch, Commit, Repo, RepoList, RepoResolution, Tag, SymbolInformation} 
 
 export type Action =
 	RepoCloning |
-	RefreshVCS
+	RefreshVCS |
 	WantBranches | FetchedBranches |
 	WantCreateRepoHook |
 	WantCreateRepo | RepoCreated |
@@ -35,22 +35,18 @@ export class FetchedRepo {
 
 export class WantRepos {
 	querystring: string;
-	type: string; // "private" or "public"
 
-	constructor(querystring: string, type: string) {
+	constructor(querystring: string) {
 		this.querystring = querystring;
-		this.type = type;
 	}
 }
 
 export class ReposFetched {
 	querystring: string;
-	type: string; // "private" or "public"
 	data: RepoList;
 
-	constructor(querystring: string, type: string, data: RepoList) {
+	constructor(querystring: string, data: RepoList) {
 		this.querystring = querystring;
-		this.type = type;
 		this.data = data;
 	}
 }

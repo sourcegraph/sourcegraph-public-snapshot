@@ -14,10 +14,6 @@ function keyForSymbols(repo, rev?, query?) {
 	return `${repo}@${rev || ""}${query ? "?"+query : ""}`;
 }
 
-function keyForReposList(query: string, type: string): string {
-	return `query=${query}&type=${type}`;
-}
-
 class RepoStoreClass extends Store<any> {
 	repos: any;
 	resolvedRevs: any;
@@ -35,8 +31,8 @@ class RepoStoreClass extends Store<any> {
 				return this.content[keyFor(repo)] || null;
 			},
 			listContent: {},
-			list(querystring: string, type: string) {
-				return this.listContent[keyForReposList(querystring, type)] || null;
+			list(querystring: string) {
+				return this.listContent[querystring] || null;
 			},
 			cloning: {},
 			isCloning(repo) {
@@ -110,7 +106,7 @@ class RepoStoreClass extends Store<any> {
 		if (action instanceof RepoActions.ReposFetched) {
 			this.repos = deepFreeze(Object.assign({}, this.repos, {
 				listContent: Object.assign({}, this.repos.listContent, {
-					[keyForReposList(action.querystring, action.type)]: action.data,
+					[action.querystring]: action.data,
 				}),
 			}));
 			this.__emitChange();

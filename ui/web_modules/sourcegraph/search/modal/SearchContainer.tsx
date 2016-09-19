@@ -170,8 +170,12 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 
 	fetchResults(query: string): void {
 		Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.repo, this.props.commitID, query));
-		Dispatcher.Backends.dispatch(new RepoActions.WantRepos(query, "public"));
+		Dispatcher.Backends.dispatch(new RepoActions.WantRepos(this.repoListQueryString(query)));
 		Dispatcher.Backends.dispatch(new TreeActions.WantFileList(this.props.repo, this.props.commitID));
+	}
+
+	repoListQueryString(query: string): string {
+		return `Query=${encodeURIComponent(query)}&Type=public&LocalOnly=true`;
 	}
 
 	updateInput(event: {target: {value: string}}): void {
@@ -234,7 +238,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 			results.push({ Title: "Definitions", IsLoading: true });
 		}
 
-		const repos = RepoStore.repos.list(query, "public");
+		const repos = RepoStore.repos.list(this.repoListQueryString(query));
 		if (repos) {
 			if (repos.Repos) {
 				let repoResults = repos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
