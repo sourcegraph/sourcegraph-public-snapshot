@@ -222,13 +222,13 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 					URLPath: urlToBlobLine(this.props.repo, this.props.commitID, path, line+1),
 				});
 			}
-			results.push({ Title: "definitions", Results: symbolResults });
+			results.push({ Title: "Definitions", Results: symbolResults });
 		}
 
 		const repos = RepoStore.repos.list(query);
 		if (repos) {
 			const repoResults = repos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
-			results.push({ Title: "repositories", Results: repoResults });
+			results.push({ Title: "Repositories", Results: repoResults });
 		}
 
 		const files = TreeStore.fileLists.get(this.props.repo, this.props.commitID);
@@ -239,7 +239,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 				if (index === -1) { return }
 				fileResults.push({ title: file, index: index, length: query.length, URLPath: urlToBlob(this.props.repo, null, file) });
 			});
-			results.push({ Title: "files", Results: fileResults });
+			results.push({ Title: "Files", Results: fileResults });
 		}
 
 		return results;
