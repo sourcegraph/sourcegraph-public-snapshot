@@ -10,9 +10,11 @@ const smallFont = 12.75;
 const ResultRow = ({title, description, index, length, URLPath}, categoryIndex, itemIndex, selected, delegate) => {
 	let titleColor = colors.coolGray3();
 	let backgroundColor = colors.coolGray1(.5);
+	let descriptionColor = colors.coolGray3();
 	if (selected) {
 		titleColor = colors.coolGray1();
 		backgroundColor = colors.coolGray3();
+		descriptionColor = colors.coolGray1();
 	}
 
 	return (
@@ -35,7 +37,7 @@ const ResultRow = ({title, description, index, length, URLPath}, categoryIndex, 
 			 {title}
 		 </div>
 		}
-		<div style={{fontSize: smallFont, color: colors.coolGray3()}}>
+		<div style={{fontSize: smallFont, color: descriptionColor}}>
 			{description}
 		</div>
 		</a>

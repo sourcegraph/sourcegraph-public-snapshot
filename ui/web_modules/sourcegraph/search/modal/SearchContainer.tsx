@@ -216,7 +216,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 				const idx = symbols[i].name.toLowerCase().indexOf(query.toLowerCase());
 				symbolResults.push({
 					title: symbols[i].name,
-					description: "",
+					description: symbols[i].location.uri,
 					index: idx,
 					length: query.length,
 					URLPath: urlToBlobLine(this.props.repo, this.props.commitID, path, line+1),
