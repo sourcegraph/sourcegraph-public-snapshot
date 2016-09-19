@@ -298,7 +298,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 				<SearchIcon style={{fill: colors.coolGray2()}} />
 				<input className={inputStyle}
 					style={{boxSizing: "border-box", border: "none", flex: "1 0 auto"}}
-					placeholder="new http request"
+					placeholder="jump to def, file, or repository"
 					value={this.state.input}
 					ref={this.bindSearchInput}
 					onChange={this.updateInput} />
