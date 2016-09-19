@@ -419,7 +419,7 @@ func (t *translator) Symbols(ctx context.Context, opt *SymbolsOpt) (*Symbols, er
 	symbols := []*lsp.SymbolInformation{}
 	for i, _ := range respSymbol {
 		s := respSymbol[i]
-		f, err := t.resolveFile(opt.Repo, opt.Commit, s.Location.URI)
+		f, err := t.resolveFile(ctx, opt.Repo, opt.Commit, s.Location.URI)
 		if err != nil {
 			return nil, err
 		}
