@@ -8,22 +8,22 @@ import (
 )
 
 const (
-	routeLangsIndex = "index.langs"
-	routeReposIndex = "index.repos"
+	routeLangsIndex = "internal.index.langs"
+	routeReposIndex = "internal.index.repos"
 
-	routeBlob        = "blob"
-	routeBuild       = "build"
-	routeDefLanding  = "def.landing"
-	routeRepo        = "repo"
-	routeRepoBuilds  = "repo.builds"
-	routeRepoLanding = "repo.landing"
-	routeTree        = "tree"
+	routeBlob        = "internal.blob"
+	routeBuild       = "internal.build"
+	routeDefLanding  = "internal.def.landing"
+	routeRepo        = "internal.repo"
+	routeRepoBuilds  = "internal.repo.builds"
+	routeRepoLanding = "internal.repo.landing"
+	routeTree        = "internal.tree"
 
-	routeJobs     = "jobs"
-	routeTopLevel = "toplevel" // non-repo top-level routes
+	routeJobs     = "internal.jobs"
+	routeTopLevel = "internal.toplevel" // non-repo top-level routes
 
-	routeDefRedirectToDefLanding     = "def.redirect"
-	routeDefInfoRedirectToDefLanding = "def.info.redirect"
+	routeDefRedirectToDefLanding     = "internal.def.redirect"
+	routeDefInfoRedirectToDefLanding = "internal.def.info.redirect"
 )
 
 var router = newRouter()
