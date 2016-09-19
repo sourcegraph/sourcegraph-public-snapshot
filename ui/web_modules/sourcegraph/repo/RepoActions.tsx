@@ -1,4 +1,4 @@
-import {Branch, Commit, Repo, RepoList, RepoResolution, Tag, SymbolInformation} from "sourcegraph/api";
+import {Branch, Commit, Repo, RepoList, RepoResolution, SymbolInformation, Tag} from "sourcegraph/api";
 
 export type Action =
 	RepoCloning |

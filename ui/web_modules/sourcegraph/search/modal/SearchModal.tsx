@@ -13,7 +13,6 @@ export const shortcuts = {
 
 interface State {
 	showModal: boolean;
-	start: Category | null;
 }
 
 interface Node {
@@ -35,7 +34,6 @@ export class SearchModal extends React.Component<RepoRev, State> {
 		this.dismissModal = this.dismissModal.bind(this);
 		this.state = {
 			showModal: false,
-			start: null,
 		};
 	}
 
@@ -46,13 +44,13 @@ export class SearchModal extends React.Component<RepoRev, State> {
 
 	searchModalShortcuts(event: KeyboardEvent & Node): void {
 		if (event.key === "Escape") {
-			this.setState({showModal: false, start: null});
+			this.setState({showModal: false});
 		}
 		if (event.target.nodeName === "INPUT" || event.metaKey || event.ctrlKey) {
 			return;
 		}
 		if (event.key === shortcuts.search) {
-			this.setState({showModal: !this.state.showModal, start: null});
+			this.setState({showModal: !this.state.showModal});
 		}
 		event.preventDefault();
 	}
@@ -70,7 +68,6 @@ export class SearchModal extends React.Component<RepoRev, State> {
 			<SearchContainer
 				repo={this.props.repo}
 				commitID={this.props.commitID}
-				start={this.state.start}
 				dismissModal={this.dismissModal} />
 		</ModalComp>;
 	}

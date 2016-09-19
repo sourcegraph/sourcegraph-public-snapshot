@@ -193,7 +193,7 @@ export const RepoBackend = {
 			const action = payload;
 			const repos = RepoStore.symbols.list(action.repo, action.rev, action.query);
 			if (repos === null) {
-				const url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/symbols${action.query ? `?Query=`+encodeURIComponent(action.query) : ""}`;
+				const url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/symbols${action.query ? `?Query=` + encodeURIComponent(action.query) : ""}`;
 				RepoBackend.fetch(url)
 					.then(checkStatus)
 					.then((resp) => resp.json())

@@ -1,13 +1,10 @@
 import * as React from "react";
 
 import {colors} from "sourcegraph/components/jsStyles/colors";
-import {input as inputStyle} from "sourcegraph/components/styles/input.css";
-import {Search as SearchIcon} from "sourcegraph/components/symbols";
-import {shortcuts} from "sourcegraph/search/modal/SearchModal";
 
 const smallFont = 12.75;
 
-const ResultRow = ({title, description, index, length, URLPath}, categoryIndex, itemIndex, selected, delegate) => {
+const ResultRow = ({title, description, index, length}, categoryIndex, itemIndex, selected, delegate) => {
 	let titleColor = colors.coolGray3();
 	let backgroundColor = colors.coolGray1(.5);
 	let descriptionColor = colors.coolGray3();
@@ -27,15 +24,14 @@ const ResultRow = ({title, description, index, length, URLPath}, categoryIndex, 
 		}}
 		ref={(node) => { if (selected && node) { node.scrollIntoView(false); } }}
 		onClick={() => delegate.select(categoryIndex, itemIndex)}>
-		{length ?
-		 <div>
-			 <span style={{color: titleColor}}>{title.substr(0, index)}</span>
-			 <span style={{color: colors.white(), fontWeight: "bold"}}>{title.substr(index, length)}</span>
-			 <span style={{color: titleColor}}>{title.substr(index + length)}</span>
-			 </div> :
-			 <div style={{color: colors.white()}}>
-			 {title}
-		 </div>
+		{length ? <div>
+			<span style={{color: titleColor}}>{title.substr(0, index)}</span>
+			<span style={{color: colors.white(), fontWeight: "bold"}}>{title.substr(index, length)}</span>
+			<span style={{color: titleColor}}>{title.substr(index + length)}</span>
+		</div> :
+		<div style={{color: colors.white()}}>
+			{title}
+		</div>
 		}
 		<div style={{fontSize: smallFont, color: descriptionColor}}>
 			{description}
@@ -44,7 +40,7 @@ const ResultRow = ({title, description, index, length, URLPath}, categoryIndex, 
 	);
 };
 
-const ResultCategory = ({title, results, isLoading, selected=-1, delegate, categoryIndex}) => {
+const ResultCategory = ({title, results, isLoading, selected = -1, delegate, categoryIndex}) => {
 	if (isLoading) {
 		return (
 			<div style={{padding: "14px 0"}}>
@@ -63,10 +59,10 @@ const ResultCategory = ({title, results, isLoading, selected=-1, delegate, categ
 			})
 		}
 	</div>;
-}
+};
 
 export const ResultCategories = ({categories, limit, selection, delegate}) => {
-	let sections = [];
+	let sections: JSX.Element[] = [];
 	categories.forEach((category, i) => {
 		let results = category.Results;
 		let selected = -1;

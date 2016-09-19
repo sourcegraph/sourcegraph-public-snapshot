@@ -11,7 +11,7 @@ function keyFor(repo, rev?) {
 }
 
 function keyForSymbols(repo, rev?, query?) {
-	return `${repo}@${rev || ""}${query ? "?"+query : ""}`;
+	return `${repo}@${rev || ""}${query ? "?" + query : ""}`;
 }
 
 class RepoStoreClass extends Store<any> {
@@ -80,7 +80,6 @@ class RepoStoreClass extends Store<any> {
 			},
 		});
 		this.symbols = deepFreeze({
-			content: {},
 			content: {},
 			errors: {},
 			error(repo) { return this.errors[keyFor(repo)] || null; },

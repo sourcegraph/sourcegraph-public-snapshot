@@ -1,12 +1,14 @@
+// tslint:disable: typedef ordered-imports
+
 import * as React from "react";
 import {InjectedRouter} from "react-router";
-
 import {Container} from "sourcegraph/Container";
 import {colors} from "sourcegraph/components/jsStyles/colors";
-import {urlToBlobLine, urlToBlob} from "sourcegraph/blob/routes";
-import {CategorySelector, ResultCategories, SearchInput, SingleCategoryResults, TabbedResults, Tag} from "sourcegraph/search/modal/SearchComponent";
+import {urlToBlob, urlToBlobLine} from "sourcegraph/blob/routes";
+import {ResultCategories} from "sourcegraph/search/modal/SearchComponent";
 import {RepoRev} from "sourcegraph/search/modal/SearchModal";
 import {RepoStore} from "sourcegraph/repo/RepoStore";
+import {Store} from "sourcegraph/Store";
 import {TreeStore} from "sourcegraph/tree/TreeStore";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
@@ -52,18 +54,14 @@ interface State {
 	// The results of the search
 	results: any;
 
-	// The index of the row that a user has navigated to using arrow keys and
-	// may activate by pressing enter. Zero is the search form.
-	selected: number;
-
-	// Save the search input element so we can focus/blur it.
-	searchInput: HTMLElement | null;
+	// The [category, row] of the currently selected item
+	selected: number[];
 };
 
 export interface Category {
 	Title: string;
-	Results: Result[];
-	IsLoading: bool;
+	Results?: Result[];
+	IsLoading: boolean;
 }
 
 interface SearchDelegate {
@@ -79,12 +77,12 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		router: React.PropTypes.object.isRequired,
 	};
 
-	context: {
-		router: InjectedRouter,
-	};
+	context: { router: InjectedRouter };
+	searchInput: HTMLElement;
+	delegate: SearchDelegate;
 
-	constructor({start, dismissModal}: Props) {
-		super();
+	constructor(props: Props & RepoRev) {
+		super(props);
 		this.keyListener = this.keyListener.bind(this);
 		this.bindSearchInput = this.bindSearchInput.bind(this);
 		this.updateInput = this.updateInput.bind(this);
@@ -94,9 +92,9 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 			selected: [0, 0],
 		};
 		this.delegate = {
-			dismiss: dismissModal,
+			dismiss: props.dismissModal,
 			select: this.select.bind(this),
-		}
+		};
 	}
 
 	stores(): Store<any>[] {
@@ -123,8 +121,6 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		document.body.removeEventListener("keydown", this.keyListener);
 	}
 
-	onStateTransition(prevState: State, nextState: State): void {}
-
 	query(): string {
 		return this.state.input.toLowerCase();
 	}
@@ -137,11 +133,11 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 			selected[1]--;
 			let c = selected[0];
 			if (selected[1] < 0) {
-				if (c == 0) {
+				if (c === 0) {
 					selected[1]++; // don't go down any further if at min
 				} else {
 					selected[0]--; // go to previous category
-					selected[1] = categorySizes[c-1] - 1;
+					selected[1] = categorySizes[c - 1] - 1;
 				}
 			}
 			let state = Object.assign({}, this.state);
@@ -151,15 +147,16 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 			let selected = this.state.selected.slice();
 			selected[1]++;
 			let c = selected[0];
-			let c_n = categorySizes[c];
-			if (selected[1] >= c_n) {
-				if (c == categorySizes.length - 1) {
+			let cN = categorySizes[c];
+			if (selected[1] >= cN) {
+				if (c === categorySizes.length - 1) {
 					selected[1]--; // don't go down any further if at max
 				} else {
 					selected[0]++; // advance to next category
 					selected[1] = 0;
 				}
 			}
+
 			let state = Object.assign({}, this.state);
 			state.selected = selected;
 			this.setState(state);
@@ -178,8 +175,8 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		return `Query=${encodeURIComponent(query)}&Type=public&LocalOnly=true`;
 	}
 
-	updateInput(event: {target: {value: string}}): void {
-		const input = event.target.value;
+	updateInput(event: React.FormEvent<HTMLInputElement>): void {
+		const input = (event.target as any).value;
 		const state = Object.assign({}, this.state, {
 			input: input,
 		});
@@ -189,9 +186,12 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 
 	select(c: number, r: number): void {
 		let categories = this.results();
-		let url = categories[c].Results[r].URLPath;
-		this.props.dismissModal();
-		this.context.router.push(url);
+		let results = categories[c].Results;
+		if (results) {
+			let url = results[r].URLPath;
+			this.props.dismissModal();
+			this.context.router.push(url);
+		}
 	}
 
 	bindSearchInput(node: HTMLElement): void { this.searchInput = node; }
@@ -214,7 +214,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 
 		const symbols = RepoStore.symbols.list(this.props.repo, this.props.commitID, query);
 		if (symbols) {
-			let symbolResults = [];
+			let symbolResults: Result[] = [];
 			for (let i = 0; i < symbols.length; i++) {
 				let title = symbols[i].name;
 				let kind = symbolKindName(symbols[i].kind);
@@ -229,11 +229,12 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 					description: symbols[i].location.uri,
 					index: idx,
 					length: query.length,
-					URLPath: urlToBlobLine(this.props.repo, this.props.commitID, path, line+1),
+					URLPath: urlToBlobLine(this.props.repo, this.props.commitID, path, line + 1),
 				});
 			}
+
 			symbolResults = symbolResults.slice(0, 3);
-			results.push({ Title: "Definitions", Results: symbolResults });
+			results.push({ Title: "Definitions", IsLoading: false, Results: symbolResults });
 		} else {
 			results.push({ Title: "Definitions", IsLoading: true });
 		}
@@ -243,9 +244,9 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 			if (repos.Repos) {
 				let repoResults = repos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
 				repoResults = repoResults.slice(0, 3);
-				results.push({ Title: "Repositories", Results: repoResults });
+				results.push({ Title: "Repositories", IsLoading: false, Results: repoResults });
 			} else {
-				results.push({ Title: "Repositories", Results: [] });
+				results.push({ Title: "Repositories", IsLoading: false, Results: [] });
 			}
 		} else {
 			results.push({ Title: "Repositories", IsLoading: true });
@@ -253,14 +254,16 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 
 		const files = TreeStore.fileLists.get(this.props.repo, this.props.commitID);
 		if (files) {
-			let fileResults = [];
+			let fileResults: Result[] = [];
 			files.Files.forEach((file, i) => {
 				let index = file.toLowerCase().indexOf(query.toLowerCase());
-				if (index === -1) { return }
-				fileResults.push({ title: file, index: index, length: query.length, URLPath: urlToBlob(this.props.repo, null, file) });
+				if (index === -1) {
+					return;
+				}
+				fileResults.push({ title: file, description: "", index: index, length: query.length, URLPath: urlToBlob(this.props.repo, null, file) });
 			});
 			fileResults = fileResults.slice(0, 3);
-			results.push({ Title: "Files", Results: fileResults });
+			results.push({ Title: "Files", IsLoading: false, Results: fileResults });
 		} else {
 			results.push({ Title: "Files", IsLoading: true });
 		}
@@ -270,12 +273,10 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 
 	render(): JSX.Element {
 		let categories = this.results();
-		let query = this.query();
-
-
 		let loadingOrFound = false;
 		for (let i = 0; i < categories.length; i++) {
-			if (categories[i].IsLoading || (categories[i].Results && categories[i].Results.length)) {
+			let results = categories[i].Results;
+			if (categories[i].IsLoading || (results && results.length)) {
 				loadingOrFound = true;
 				break;
 			}
@@ -320,59 +321,41 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 function symbolKindName(kind: number): string {
 	switch (kind) {
 	case 1:
-        return "file";
-		break;
+		return "file";
 	case 2:
 		return "module";
-		break;
 	case 3:
 		return "namespace";
-		break;
 	case 4:
 		return "package";
-		break;
 	case 5:
 		return "class";
-		break;
 	case 6:
 		return "method";
-		break;
 	case 7:
 		return "property";
-		break;
 	case 8:
 		return "field";
-		break;
 	case 9:
 		return "constructor";
-		break;
 	case 10:
 		return "enum";
-		break;
 	case 11:
 		return "interface";
-		break;
 	case 12:
 		return "func";
-		break;
 	case 13:
 		return "var";
-		break;
 	case 14:
 		return "const";
-		break;
 	case 15:
 		return "string";
-		break;
 	case 16:
 		return "number";
-		break;
 	case 17:
 		return "boolean";
-		break;
 	case 18:
 		return "array";
-		break;
 	default:
 		return "";
 	}
