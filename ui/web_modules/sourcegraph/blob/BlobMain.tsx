@@ -148,7 +148,7 @@ export class BlobMain extends React.Component<Props, State> {
 
 		return (
 			<div className={Style.container}>
-				<SearchModal repo={this.props.repo} commitID={this.props.commitID || this.props.rev} />
+				<SearchModal repo={this.props.repo} commitID={this.props.commitID || this.props.rev || ""} />
 				<Helmet title={title} />
 				{this.props.blob && typeof this.props.blob.ContentsString === "string" && <Editor
 					repo={this.props.repo}
