@@ -27,10 +27,17 @@ var (
 		Name:      "github_cache_hit",
 		Help:      "Counts cache hits and misses for public github repo metadata.",
 	}, []string{"type"})
+	reposGithubConcurrent = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "github",
+		Name:      "repo_concurrent",
+		Help:      "Number of concurrent calls to GitHub's Repo API.",
+	})
 )
 
 func init() {
 	prometheus.MustRegister(reposGithubPublicCacheCounter)
+	prometheus.MustRegister(reposGithubConcurrent)
 }
 
 type Repos interface {
@@ -51,15 +58,17 @@ type cachedRepo struct {
 }
 
 // Bound the number of parallel requests to github. This is a hotfix to avoid
-// triggering github abuse.
-var sem = make(chan bool, conf.GetenvIntOrDefault("SG_GITHUB_CONCURRENT", 3))
+// triggering github abuse. Default is higher than needs be.
+var sem = make(chan bool, conf.GetenvIntOrDefault("SG_GITHUB_CONCURRENT", 1000))
 
 func lock() {
+	reposGithubConcurrent.Inc()
 	sem <- true
 }
 
 func unlock() {
 	<-sem
+	reposGithubConcurrent.Dec()
 }
 
 var _ Repos = (*repos)(nil)
