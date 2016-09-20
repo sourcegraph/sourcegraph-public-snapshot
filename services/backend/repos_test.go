@@ -13,6 +13,7 @@ import (
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
 func TestReposService_Get(t *testing.T) {
@@ -20,13 +21,16 @@ func TestReposService_Get(t *testing.T) {
 	ctx, mock := testContext()
 
 	wantRepo := &sourcegraph.Repo{
-		ID:      1,
-		URI:     "github.com/u/r",
-		HTMLURL: "http://github.com/u/r",
-		Mirror:  true,
+		ID:     1,
+		URI:    "github.com/u/r",
+		Mirror: true,
+	}
+	ghrepo := &sourcegraph.Repo{
+		URI:    "github.com/u/r",
+		Mirror: true,
 	}
 
-	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{})
+	mock.githubRepos.MockGet_Return(ctx, ghrepo)
 
 	calledGet := mock.stores.Repos.MockGet_Return(t, wantRepo)
 	calledUpdate := mock.stores.Repos.MockUpdate(t, 1)
@@ -52,10 +56,9 @@ func TestReposService_Get_UpdateMeta(t *testing.T) {
 	ctx, mock := testContext()
 
 	wantRepo := &sourcegraph.Repo{
-		ID:      1,
-		URI:     "github.com/u/r",
-		HTMLURL: "http://github.com/u/r",
-		Mirror:  true,
+		ID:     1,
+		URI:    "github.com/u/r",
+		Mirror: true,
 	}
 
 	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{
@@ -89,10 +92,9 @@ func TestReposService_Get_UnauthedUpdateMeta(t *testing.T) {
 	ctx = accesscontrol.WithInsecureSkip(ctx, false)
 
 	wantRepo := &sourcegraph.Repo{
-		ID:      1,
-		URI:     "github.com/u/r",
-		HTMLURL: "http://github.com/u/r",
-		Mirror:  true,
+		ID:     1,
+		URI:    "github.com/u/r",
+		Mirror: true,
 	}
 
 	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{
@@ -135,7 +137,6 @@ func TestReposService_Get_NonGitHub(t *testing.T) {
 	wantRepo := &sourcegraph.Repo{
 		ID:          1,
 		URI:         "r",
-		HTMLURL:     "http://example.com/r",
 		Mirror:      true,
 		Permissions: &sourcegraph.RepoPermissions{Pull: true, Push: true},
 	}
@@ -165,10 +166,9 @@ func TestRepos_Create_New(t *testing.T) {
 	ctx, mock := testContext()
 
 	wantRepo := &sourcegraph.Repo{
-		ID:      1,
-		URI:     "r",
-		Name:    "r",
-		HTMLURL: "http://example.com/r",
+		ID:   1,
+		URI:  "r",
+		Name: "r",
 	}
 
 	calledCreate := false
@@ -199,9 +199,8 @@ func TestRepos_Create_Origin(t *testing.T) {
 	ctx, mock := testContext()
 
 	wantRepo := &sourcegraph.Repo{
-		ID:      1,
-		URI:     "github.com/a/b",
-		HTMLURL: "http://example.com/github.com/a/b",
+		ID:  1,
+		URI: "github.com/a/b",
 		Origin: &sourcegraph.Origin{
 			ID:         "123",
 			Service:    sourcegraph.Origin_GitHub,
@@ -248,8 +247,8 @@ func TestReposService_List(t *testing.T) {
 
 	wantRepos := &sourcegraph.RepoList{
 		Repos: []*sourcegraph.Repo{
-			{URI: "r1", HTMLURL: "http://example.com/r1"},
-			{URI: "r2", HTMLURL: "http://example.com/r2"},
+			{URI: "r1"},
+			{URI: "r2"},
 		},
 	}
 
@@ -264,6 +263,33 @@ func TestReposService_List(t *testing.T) {
 	}
 	if !reflect.DeepEqual(repos, wantRepos) {
 		t.Errorf("got %+v, want %+v", repos, wantRepos)
+	}
+}
+
+func TestRepos_List_remoteOnly(t *testing.T) {
+	var s repos
+	ctx, mock := testContext()
+
+	calledListAccessible := mock.githubRepos.MockListAccessible(ctx, []*sourcegraph.Repo{
+		&sourcegraph.Repo{URI: "github.com/is/accessible"},
+	})
+	calledReposStoreList := mock.stores.Repos.MockList(t, "a/b", "github.com/is/accessible", "github.com/not/accessible")
+	ctx = github.WithMockHasAuthedUser(ctx, true)
+
+	repoList, err := s.List(ctx, &sourcegraph.RepoListOptions{RemoteOnly: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := &sourcegraph.RepoList{Repos: []*sourcegraph.Repo{{URI: "github.com/is/accessible"}}}
+	if !reflect.DeepEqual(repoList, want) {
+		t.Fatalf("got repos %q, want %q", repoList, want)
+	}
+	if !*calledListAccessible {
+		t.Error("!calledListAccessible")
+	}
+	if *calledReposStoreList {
+		t.Error("calledReposStoreList (should not hit the repos store if RemoteOnly is true)")
 	}
 }
 

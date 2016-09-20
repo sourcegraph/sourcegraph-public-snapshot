@@ -7,27 +7,22 @@ import (
 	"path"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"context"
 
 	"github.com/lib/pq"
-	"github.com/neelance/parallel"
 	gogithub "github.com/sourcegraph/go-github/github"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -178,72 +173,37 @@ type repos struct{}
 
 var _ store.Repos = (*repos)(nil)
 
+// Get returns metadata for the request repository ID. It fetches data
+// only from the database and NOT from any external sources. If the
+// caller is concerned the copy of the data in the database might be
+// stale, the caller is responsible for fetching data from any
+// external services.
 func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 	repo, err := s.getBySQL(ctx, "id=$1", id)
 	if err != nil {
 		return nil, err
 	}
-	return verifyAccessAndSetAllFields(ctx, repo)
+	// Check permissions against GitHub. The reason this does not call `VerifyUserHasReadAccess` is because
+	// VerifyUserHasReadAccess --calls-> getRepo --calls-> repos.Get
+	if err := accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.ID, repo.URI); err != nil {
+		return nil, err
+	}
+	return repo, nil
 }
 
+// GetByURI returns metadata for the request repository URI. See the
+// documentation for repos.Get for the contract on the freshness of
+// the data returned.
 func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 	repo, err := s.getByURI(ctx, uri)
 	if err != nil {
 		return nil, err
 	}
-	return verifyAccessAndSetAllFields(ctx, repo)
-}
-
-// verifyAccessAndSetAllFields checks permissions and fills in additional fields on
-// repo. It MUST be called after fetching a repo from the DB before
-// returning the repo.
-//
-// NOTE: The repo returned is the same as the repo passed in. Provided as a
-// convenience.
-func verifyAccessAndSetAllFields(ctx context.Context, repo *sourcegraph.Repo) (*sourcegraph.Repo, error) {
-	// Avoid an infinite loop (since
-	// accesscontrol.VerifyUserHasReadAccess calls (*repos).Get).
-	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
-		if err := accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.ID, repo.URI); err != nil {
-			return nil, err
-		}
-
-		// Automatically migrate repos that don't have their origin fields set.
-		//
-		// NOTE: This can be removed when all repos in the DB have their
-		// origin fields set.
-		if repo.Origin == nil && repo.ID != 0 {
-			ghRepo, err := github.ReposFromContext(ctx).Get(ctx, repo.URI)
-			if err != nil {
-				// Highly unlikely to fail since the
-				// VerifyActorHasGitHubRepoAccess would make this same
-				// call, so let's treat it as fatal to catch any
-				// possible rare edge cases.
-				return nil, grpc.Errorf(codes.Internal, "while auto-migrating repo to add origin fields: %s", err)
-			}
-			if ghRepo.Origin != nil {
-				if _, err := appDBH(ctx).Exec(`UPDATE repo SET origin_repo_id=$1, origin_service=$2, origin_api_base_url=$3 WHERE id=$4;`, ghRepo.Origin.ID, ghRepo.Origin.Service, "https://api.github.com", repo.ID); err != nil {
-					return nil, err
-				}
-			}
-		}
-	} else {
-		// All hosted repos or alternate URI repos are publicly viewable.
+	// Check permissions against GitHub. The reason this does not call `VerifyUserHasReadAccess` is because
+	// VerifyUserHasReadAccess --calls-> getRepo --calls-> repos.GetByURI
+	if err := accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.ID, repo.URI); err != nil {
+		return nil, err
 	}
-
-	// TODO(keegancsmith) remove once we are storing all github metadata
-	// in table https://app.asana.com/0/37478073567611/138332225969208
-	if repo.DefaultBranch == "" {
-		log15.Debug("Repo missing DefaultBranch", "repo", repo.URI)
-		repo.DefaultBranch = "master"
-	}
-
-	// The clone field is not set in the DB since it would become stale if
-	// the AppURL configuration changed.
-	if !repo.Mirror {
-		repo.HTTPCloneURL = conf.AppURL.ResolveReference(approuter.Rel.URLToRepo(repo.URI)).String()
-	}
-
 	return repo, nil
 }
 
@@ -271,133 +231,29 @@ func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{})
 	return repo.toRepo(), nil
 }
 
-func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
+func (s *repos) List(ctx context.Context, opt *store.RepoListOp) ([]*sourcegraph.Repo, error) {
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.List", nil); err != nil {
 		return nil, err
 	}
 	if opt == nil {
-		opt = &sourcegraph.RepoListOptions{}
+		opt = &store.RepoListOp{}
 	}
 
-	// Fetch GitHub repos that the user can access. We include these
-	// repos in the result, and we pass these IDs to listFromDB
-	// because it otherwise has no way of knowing (at the PostgreSQL
-	// level) what repos the user can see.
-	ghRepos, err := s.listAllAccessibleGitHubRepos(ctx, opt)
+	sql, args, err := reposListSQL(opt)
+	if err != nil {
+		return nil, err
+	}
+	rawRepos, err := s.query(ctx, sql, args...)
 	if err != nil {
 		return nil, err
 	}
 
-	// Fetch repos from the DB that are accessible to the user.
-	// This will include all local repos that are not from "github.com".
-	dbRepos_, err := s.listFromDB(ctx, opt)
+	repos, err := accesscontrol.VerifyUserHasReadAccessAll(ctx, "Repos.List", rawRepos)
 	if err != nil {
 		return nil, err
-	}
-
-	// Do access checks in parallel since it may do remote calls
-	//
-	// No need to do access checks for ghRepos, since we JUST fetched
-	// them from GitHub.
-	var (
-		dbRepos   []*sourcegraph.Repo
-		dbReposMu sync.Mutex
-	)
-	par := parallel.NewRun(30)
-	for _, repo := range dbRepos_ {
-		repo := repo
-		par.Acquire()
-		go func() {
-			defer par.Release()
-			if _, err := verifyAccessAndSetAllFields(ctx, repo); err == nil {
-				dbReposMu.Lock()
-				dbRepos = append(dbRepos, repo)
-				dbReposMu.Unlock()
-			}
-		}()
-	}
-	if err := par.Wait(); err != nil {
-		return nil, err
-	}
-
-	dbReposOnGH := make(map[string]*sourcegraph.Repo, len(dbRepos)) // GitHub ID -> *sourcegraph.Repo in dbRepos.
-	for _, dbRepo := range dbRepos {
-		if o := dbRepo.Origin; o != nil && o.Service == sourcegraph.Origin_GitHub {
-			dbReposOnGH[o.ID] = dbRepo
-		}
-	}
-
-	var repos []*sourcegraph.Repo
-	if opt.RemoteOnly && opt.LocalOnly {
-		return nil, fmt.Errorf("only one of RemoteOnly and LocalOnly should be set")
-	}
-	if !opt.RemoteOnly && !opt.LocalOnly {
-		// Combine results from GitHub (repos accessible to the current
-		// user) and the DB (extra metadata, such as the repo's
-		// Sourcegraph ID).
-
-		// Include all accessible repos that are in DB.
-		repos = dbRepos
-
-		// Add GitHub repos that aren't already present in DB.
-		for _, ghRepo := range ghRepos {
-			if _, ok := dbReposOnGH[ghRepo.Origin.ID]; !ok {
-				repos = append(repos, ghRepo)
-			}
-		}
-	} else if opt.RemoteOnly {
-		// If opt.RemoteOnly is set, only return repos that are "accessible"
-		// according to the remote, but augment them with extra metadata from DB.
-		for _, ghRepo := range ghRepos {
-			if db, ok := dbReposOnGH[ghRepo.Origin.ID]; ok {
-				// Populate the Sourcegraph repo ID (from the database).
-				ghRepo.ID = db.ID
-			}
-			repos = append(repos, ghRepo)
-		}
-	} else if opt.LocalOnly {
-		repos = dbRepos
 	}
 
 	return repos, nil
-}
-
-func (s *repos) listAllAccessibleGitHubRepos(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
-	// Only users have "accessible" repos.
-	if !github.HasAuthedUser(ctx) {
-		return nil, nil
-	}
-
-	var allRepos []*sourcegraph.Repo
-	for page := 1; ; page++ {
-		const perPage = 100
-		repos, err := github.ReposFromContext(ctx).ListAccessible(ctx, &gogithub.RepositoryListOptions{
-			Type: opt.Type,
-			ListOptions: gogithub.ListOptions{
-				PerPage: perPage,
-				Page:    page,
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
-		allRepos = append(allRepos, repos...)
-		if len(repos) < perPage {
-			break
-		}
-	}
-	return allRepos, nil
-}
-
-func (s *repos) listFromDB(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
-	sql, args, err := s.listSQL(opt)
-	if err != nil {
-		if err == errOptionsSpecifyEmptyResult {
-			err = nil
-		}
-		return nil, err
-	}
-	return s.query(ctx, sql, args...)
 }
 
 type priorityRepo struct {
@@ -421,6 +277,7 @@ func (repos *priorityRepoList) Less(i, j int) bool {
 	return repos.repos[i].priority > repos.repos[j].priority
 }
 
+// DEPRECATED
 func (s *repos) Search(ctx context.Context, query string) ([]*sourcegraph.RepoSearchResult, error) {
 	query = strings.TrimSpace(query)
 
@@ -521,7 +378,7 @@ func (s *repos) Search(ctx context.Context, query string) ([]*sourcegraph.RepoSe
 	// Critical permissions check. DO NOT REMOVE.
 	var results []*sourcegraph.RepoSearchResult
 	for _, prepo := range priorityRepos {
-		if _, err := verifyAccessAndSetAllFields(ctx, prepo.Repo); err != nil {
+		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Search", prepo.Repo.ID); err != nil {
 			continue
 		}
 		results = append(results, &sourcegraph.RepoSearchResult{
@@ -534,7 +391,9 @@ func (s *repos) Search(ctx context.Context, query string) ([]*sourcegraph.RepoSe
 
 var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty result set")
 
-func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}, error) {
+// reposListSQL translates the options struct to the SQL for querying
+// PosgreSQL.
+func reposListSQL(opt *store.RepoListOp) (string, []interface{}, error) {
 	var selectSQL, fromSQL, whereSQL, orderBySQL string
 
 	var args []interface{}
@@ -590,7 +449,7 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 			return "", nil, grpc.Errorf(codes.InvalidArgument, "invalid state")
 		}
 		if opt.Owner != "" {
-			return "", nil, errOptionsSpecifyEmptyResult
+			conds = append(conds, `lower(owner)=`+arg(strings.ToLower(opt.Owner)))
 		}
 
 		if conds != nil {
@@ -684,48 +543,71 @@ func (s *repos) Update(ctx context.Context, op store.RepoUpdate) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo); err != nil {
 		return err
 	}
-	if op.Description != "" {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "description"=$1 WHERE id=$2`, strings.TrimSpace(op.Description), op.Repo)
-		if err != nil {
-			return err
-		}
-	}
-	if op.Language != "" {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "language"=$1 WHERE id=$2`, strings.TrimSpace(op.Language), op.Repo)
-		if err != nil {
-			return err
-		}
-	}
-	if op.DefaultBranch != "" {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "default_branch"=$1 WHERE id=$2`, strings.TrimSpace(op.DefaultBranch), op.Repo)
-		if err != nil {
-			return err
-		}
-	}
-	if op.Fork != sourcegraph.ReposUpdateOp_NONE {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "fork"=$1 WHERE id=$2`, op.Fork == sourcegraph.ReposUpdateOp_TRUE, op.Repo)
-		if err != nil {
-			return err
-		}
-	}
-	if op.Private != sourcegraph.ReposUpdateOp_NONE {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "private"=$1 WHERE id=$2`, op.Private == sourcegraph.ReposUpdateOp_TRUE, op.Repo)
-		if err != nil {
-			return err
-		}
+
+	var args []interface{}
+	arg := func(a interface{}) string {
+		v := gorp.PostgresDialect{}.BindVar(len(args))
+		args = append(args, a)
+		return v
 	}
 
+	var updates []string
+	if op.URI != "" {
+		updates = append(updates, `"uri"=`+arg(op.URI))
+	}
+	if op.Owner != "" {
+		updates = append(updates, `"owner"=`+arg(op.Owner))
+	}
+	if op.Name != "" {
+		updates = append(updates, `"name"=`+arg(op.Name))
+	}
+	if op.Description != "" {
+		updates = append(updates, `"description"=`+arg(op.Description))
+	}
+	if op.HTTPCloneURL != "" {
+		updates = append(updates, `"http_clone_url"=`+arg(op.HTTPCloneURL))
+	}
+	if op.SSHCloneURL != "" {
+		updates = append(updates, `"ssh_clone_url"=`+arg(op.SSHCloneURL))
+	}
+	if op.HomepageURL != "" {
+		updates = append(updates, `"homepage_url"=`+arg(op.HomepageURL))
+	}
+	if op.DefaultBranch != "" {
+		updates = append(updates, `"default_branch"=`+arg(op.DefaultBranch))
+	}
+	if op.Language != "" {
+		updates = append(updates, `"language"=`+arg(op.Language))
+	}
+	if op.Blocked != sourcegraph.ReposUpdateOp_NONE {
+		updates = append(updates, `"blocked"=`+arg(op.Blocked == sourcegraph.ReposUpdateOp_TRUE))
+	}
+	if op.Deprecated != sourcegraph.ReposUpdateOp_NONE {
+		updates = append(updates, `"deprecated"=`+arg(op.Deprecated == sourcegraph.ReposUpdateOp_TRUE))
+	}
+	if op.Fork != sourcegraph.ReposUpdateOp_NONE {
+		updates = append(updates, `"fork"=`+arg(op.Fork == sourcegraph.ReposUpdateOp_TRUE))
+	}
+	if op.Mirror != sourcegraph.ReposUpdateOp_NONE {
+		updates = append(updates, `"mirror"=`+arg(op.Mirror == sourcegraph.ReposUpdateOp_TRUE))
+	}
+	if op.Private != sourcegraph.ReposUpdateOp_NONE {
+		updates = append(updates, `"private"=`+arg(op.Private == sourcegraph.ReposUpdateOp_TRUE))
+	}
 	if op.UpdatedAt != nil {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "updated_at"=$1 WHERE id=$2`, op.UpdatedAt, op.Repo)
-		if err != nil {
-			return err
-		}
+		updates = append(updates, `"updated_at"=`+arg(op.UpdatedAt))
 	}
 	if op.PushedAt != nil {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "pushed_at"=$1 WHERE id=$2`, op.PushedAt, op.Repo)
-		if err != nil {
-			return err
-		}
+		updates = append(updates, `"pushed_at"=`+arg(op.PushedAt))
+	}
+	if op.Origin != nil {
+		updates = append(updates, `"origin_repo_id"=`+arg(op.Origin.ID), `"origin_service"=`+arg(op.Origin.Service), `"origin_api_base_url"=`+arg(op.Origin.APIBaseURL))
+	}
+
+	if len(updates) > 0 {
+		sql := `UPDATE repo SET ` + strings.Join(updates, ", ") + ` WHERE id=` + arg(op.Repo)
+		_, err := appDBH(ctx).Exec(sql, args...)
+		return err
 	}
 	return nil
 }

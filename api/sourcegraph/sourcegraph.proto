@@ -128,10 +128,6 @@ message Repo {
 	// HomepageURL is the URL to the repository's homepage, if any.
 	string HomepageURL = 7;
 
-	// HTMLURL is the URL to the repository's main page on the
-	// Sourcegraph server.
-	string HTMLURL = 22;
-
 	// DefaultBranch is the default git branch used (typically "master").
 	string DefaultBranch = 8;
 
@@ -155,7 +151,11 @@ message Repo {
 	// metadata (such as GitHub), the Origin field should be set.
 	bool Mirror = 13;
 
-	// Private is whether this repository is private.
+	// Private is whether this repository is private. Note: this field
+	// is currently only used when the repository is hosted on GitHub.
+	// All locally hosted repositories should be public. If Private is
+	// true for a locally hosted repository, the repository might never
+	// be returned.
 	bool Private = 14;
 
 	// CreatedAt is when this repository was created. If it represents an externally
@@ -201,15 +201,23 @@ message RepoPermissions {
 }
 
 message RepoListOptions {
+	// Name filters the repository list by name.
 	string Name = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	// Specifies a search query for repositories. If specified, then the Sort and
+	// Query specifies a search query for repositories. If specified, then the Sort and
 	// Direction options are ignored
 	string Query = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 
+	// URIs specifies a set of repository URIs to list.
 	repeated string URIs = 3 [(gogoproto.moretags) = "url:\",comma,omitempty\""];
+
+	// Sort determines how the returned list of repositories is sorted.
 	string Sort = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// Direction determines the sort direction.
 	string Direction = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// NoFork excludes forks from the list of returned repositories.
 	bool NoFork = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// Type of repositories to list. Possible values are currently
@@ -217,16 +225,18 @@ message RepoListOptions {
 	// public, private, member. Default is "all".
 	string Type = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
 
+	// Owner filters the list of repositories to those with the
+	// specified owner.
 	string Owner = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	// RemoteOnly is whether to fetch remote (e.g., GitHub)
-	// repositories that the currently authenticated user has access
-	// to, and return only those.
+	// RemoteOnly makes the endpoint return repositories hosted on
+	// GitHub that the currently authenticated user has access to.
+	//
+	// When RemoteOnly is true, the only other option field that is
+	// obeyed is Type, and returned repositories do not have valid IDs.
+	// If you want to get the ID of a repository, fetch it
+	// individually.
 	bool RemoteOnly = 12 [(gogoproto.moretags) = "url:\",omitempty\""];
-
-	// LocalOnly is whether to restrict listed repositories to ones that
-	// already exist locally (on Sourcegraph).
-	bool LocalOnly = 13 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 // RepoWebhookOptions is used for enable repository webhook.
@@ -506,16 +516,35 @@ message ReposUpdateOp {
 	// Repo is the repository to update.
 	int32 Repo = 1;
 
-	// Description is the new description of the repository. If empty,
-	// the description is not changed.
-	string Description = 2;
+	// URI, if non-empty, is the updated value of the URI
+	string URI = 2;
 
-	// Language is the new primary programming language of the
-	// repository. If empty, the language is not changed.
-	string Language = 3;
+	// Owner, if non-empty, is the updated value of the owner.
+	string Owner = 3;
 
-	// DefaultBranch is the repo's new default branch.
-	string DefaultBranch = 6;
+	// Name, if non-empty, is the updated value of the name.
+	string Name = 4;
+
+	// Description, if non-empty, is the updated value of the description.
+	string Description = 5;
+
+	// HTTPCloneURL, if non-empty, is the updated value of the HTTP clone URL.
+	string HTTPCloneURL = 6;
+
+	// SSHCloneURL, if non-empty, is the updated value of the SSH clone URL.
+	string SSHCloneURL = 7;
+
+	// HomepageURL, if non-empty, is the updated value of the homepage URL.
+	string HomepageURL = 8;
+
+	// DefaultBranch, if non-empty, is the updated value of the default branch.
+	string DefaultBranch = 10;
+
+	// Language, if non-empty, is the updated value of the language.
+	string Language = 11;
+
+	// Origin is data about the repository origin (e.g., GitHub).
+	Origin Origin = 19;
 
 	enum BoolType {
 		NONE = 0;
@@ -523,11 +552,20 @@ message ReposUpdateOp {
 		FALSE = 2;
 	}
 
-	// Fork is whether this repository is a fork.
-	BoolType Fork = 7;
+	// Blocked, if non-empty, updates whether this repository is blocked.
+	BoolType Blocked = 12;
 
-	// Private is whether this repository is private.
-	BoolType Private = 8;
+	// Deprecated, if non-empty, updates whether this repository is deprecated.
+	BoolType Deprecated = 13;
+
+	// Fork, if non-empty, updates whether this repository is a fork.
+	BoolType Fork = 14;
+
+	// Mirror, if non-empty, updates whether this repository is a mirror.
+	BoolType Mirror = 15;
+
+	// Private, if non-empty, updates whether this repository is private.
+	BoolType Private = 16;
 };
 
 message ReposListCommitsOp {
@@ -1769,5 +1807,7 @@ service Search {
 	rpc Search(SearchOp) returns (SearchResultsList);
 
 	// SearchRepos returns a list of repos matching the given query string.
+	//
+	// DEPRECATED
 	rpc SearchRepos(SearchReposOp) returns (SearchReposResultList);
 }

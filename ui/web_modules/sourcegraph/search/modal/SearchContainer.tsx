@@ -192,7 +192,7 @@ export class SearchContainer extends Container<Props & RepoSpec, State> {
 	}
 
 	repoListQueryString(query: string): string {
-		return `Query=${encodeURIComponent(query)}&Type=public&LocalOnly=true`;
+		return `Query=${encodeURIComponent(query)}&Type=public`;
 	}
 
 	updateInput(event: React.FormEvent<HTMLInputElement>): void {

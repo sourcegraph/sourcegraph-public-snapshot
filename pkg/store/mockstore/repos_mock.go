@@ -14,7 +14,7 @@ import (
 type Repos struct {
 	Get_            func(ctx context.Context, repo int32) (*sourcegraph.Repo, error)
 	GetByURI_       func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
-	List_           func(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
+	List_           func(v0 context.Context, v1 *store.RepoListOp) ([]*sourcegraph.Repo, error)
 	Search_         func(v0 context.Context, v1 string) ([]*sourcegraph.RepoSearchResult, error)
 	Create_         func(v0 context.Context, v1 *sourcegraph.Repo) (int32, error)
 	Update_         func(v0 context.Context, v1 store.RepoUpdate) error
@@ -30,7 +30,7 @@ func (s *Repos) GetByURI(ctx context.Context, repo string) (*sourcegraph.Repo, e
 	return s.GetByURI_(ctx, repo)
 }
 
-func (s *Repos) List(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
+func (s *Repos) List(v0 context.Context, v1 *store.RepoListOp) ([]*sourcegraph.Repo, error) {
 	return s.List_(v0, v1)
 }
 

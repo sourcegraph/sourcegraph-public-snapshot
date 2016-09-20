@@ -19,10 +19,14 @@ type Repos interface {
 	// GetByURI a repository by its URI.
 	GetByURI(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 
-	// List repositories.
-	List(context.Context, *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
+	// List repositories in the Sourcegraph repository store. Note:
+	// this will not return any repositories from external services
+	// that are not present in the Sourcegraph repository store.
+	List(context.Context, *RepoListOp) ([]*sourcegraph.Repo, error)
 
 	// Search repositories.
+	//
+	// DEPRECATED
 	Search(context.Context, string) ([]*sourcegraph.RepoSearchResult, error)
 
 	// Create a repository and return its ID.
@@ -49,6 +53,36 @@ type RepoUpdate struct {
 
 	UpdatedAt *time.Time
 	PushedAt  *time.Time
+}
+
+type RepoListOp struct {
+	// Name filters the repository list by name.
+	Name string
+
+	// Query specifies a search query for repositories. If specified, then the Sort and
+	// Direction options are ignored
+	Query string
+
+	// URIs specifies a set of repository URIs to list.
+	URIs []string
+
+	// Sort determines how the returned list of repositories is sorted.
+	Sort string
+
+	// Direction determines the sort direction.
+	Direction string
+
+	// NoFork excludes forks from the list of returned repositories.
+	NoFork bool
+
+	// Type of repositories to list. Possible values are currently
+	// ones supported by the GitHub API, including: all, owner,
+	// public, private, member. Default is "all".
+	Type string
+
+	// Owner filters the list of repositories to those with the
+	// specified owner.
+	Owner string
 }
 
 // InternalRepoUpdate is an update of repo fields that are used by

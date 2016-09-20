@@ -78,7 +78,7 @@ func (s *Repos) MockGetByURI(t *testing.T, wantURI string, repoID int32) (called
 
 func (s *Repos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 	called = new(bool)
-	s.List_ = func(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
+	s.List_ = func(ctx context.Context, opt *store.RepoListOp) ([]*sourcegraph.Repo, error) {
 		*called = true
 		repos := make([]*sourcegraph.Repo, len(wantRepos))
 		for i, repo := range wantRepos {
