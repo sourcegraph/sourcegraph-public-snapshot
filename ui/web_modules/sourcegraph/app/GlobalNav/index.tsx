@@ -107,10 +107,7 @@ export function GlobalNav(
 				{showSearchForm && <SearchForm repo={repo} location={location} router={router} showResultsPanel={location.pathname !== `/${rel.search}`} style={{flex: "1 1 100%", margin: "0 8px"}} />}
 
 				{context.user
-					? <div>
-							blah blah
-							<UserMenu user={context.user} location={location} />
-						</div>
+					? <UserMenu user={context.user} location={location} />
 					: <SignupOrLogin user={context.user} location={location} />
 				}
 			</FlexContainer>
