@@ -145,7 +145,7 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 										</div>
 									</div>
 								)}
-								{(!this.state.showAll && this.props.repos.length > 5) && <div className={classNames(styles.info, base.pt2)}>
+								{(!this.state.showAll && repos.length > 5) && <div className={classNames(styles.info, base.pt2)}>
 									<a onClick={this._showAllReposClicked.bind(this)}>Show more</a>
 								</div>}
 							</div>
