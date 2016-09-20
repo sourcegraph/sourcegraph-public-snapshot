@@ -230,7 +230,8 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	}
 }
 
-// TestRepos_Get_authednocache tests authed users do not use the cache.
+// TestRepos_Get_authednocache tests authed users do add public repos to the cache
+// (with repo permissions cleared when added to cache).
 func TestRepos_Get_authednocache(t *testing.T) {
 	githubcli.Config.GitHubHost = "github.com"
 	resetCache(t)
@@ -265,31 +266,38 @@ func TestRepos_Get_authednocache(t *testing.T) {
 	authedGet := func() bool {
 		calledGet = false
 		mock.isAuthedUser = true
-		_, err := s.Get(ctx, repo)
+		r, err := s.Get(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if calledGet {
+			if !r.Permissions.Push {
+				// It's okay to have lower than real permissions for now since we're not using them.
+				t.Fatal("authed should have repo with Push Permissions if from cache")
+			}
+		} else {
+			if r.Permissions.Push {
+				t.Fatal("authed should have repo without Push Permissions if from API")
+			}
 		}
 		return calledGet
 	}
 	unauthedGet := func() bool {
 		calledGet = false
 		mock.isAuthedUser = false
-		_, err := s.Get(ctx, repo)
+		r, err := s.Get(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if r.Permissions.Push {
+			t.Fatal("unauthed should always have repo without Push Permissions")
 		}
 		return calledGet
 	}
 
-	// An authed user should not get or populate the cache. We do this
-	// first to ensure we don't populate the cache later.
+	// An authed user will populate the empty cache
 	if !authedGet() {
-		t.Fatal("authed should not hit empty cache")
-	}
-
-	// An unauthed user will populate the empty cache
-	if !unauthedGet() {
-		t.Fatal("unauthed should populate empty cache")
+		t.Fatal("authed should populate empty cache")
 	}
 
 	// An unauthed user should now get from cache
@@ -297,8 +305,8 @@ func TestRepos_Get_authednocache(t *testing.T) {
 		t.Fatal("unauthed should get from cache")
 	}
 
-	// The unauthed user should still not be able to get from the cache
-	if !authedGet() {
+	// The authed user should also be able to get public repo from the cache
+	if authedGet() {
 		t.Fatal("authed should not get from cache")
 	}
 }

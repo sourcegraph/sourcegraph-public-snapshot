@@ -52,9 +52,9 @@ type repos struct{}
 type cachedRepo struct {
 	sourcegraph.Repo
 
-	// PublicNotFound indicates that the GitHub API returned a 404 when
-	// using an Unauthed request (repo may be exist privately).
-	PublicNotFound bool
+	// NotFound indicates that the GitHub API returned a 404 when
+	// using an Unauthed or Authed request (repo may be exist privately for another authed user).
+	NotFound bool
 }
 
 // Bound the number of parallel requests to github. This is a hotfix to avoid
@@ -88,18 +88,17 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 		return nil, grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
 	}
 
-	// Don't use cache for authed users, since the repos' Permissions
-	// fields will differ among the different users.
-	if client(ctx).isAuthedUser {
-		reposGithubPublicCacheCounter.WithLabelValues("authed").Inc()
-		lock()
-		defer unlock()
-		return getFromAPI(ctx, owner, repoName)
-	}
-
-	if cached := getFromCache(ctx, repo); cached != nil {
+	if cached := getFromPublicCache(ctx, repo); cached != nil {
 		reposGithubPublicCacheCounter.WithLabelValues("hit").Inc()
-		if cached.PublicNotFound {
+		if cached.NotFound {
+			// The repo is in the cache but not available. If the user is authenticated,
+			// request the repo from the GitHub API (but do not add it to the cache).
+			if client(ctx).isAuthedUser {
+				reposGithubPublicCacheCounter.WithLabelValues("authed").Inc()
+				lock()
+				defer unlock()
+				return getFromAPI(ctx, owner, repoName)
+			}
 			return nil, grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
 		}
 		return &cached.Repo, nil
@@ -111,7 +110,7 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 	if grpc.Code(err) == codes.NotFound {
 		// Before we do anything, ensure we cache NotFound responses.
 		// Do this if client is unauthed or authed, it's okay since we're only caching not found responses here.
-		addToCache(repo, &cachedRepo{PublicNotFound: true})
+		addToPublicCache(repo, &cachedRepo{NotFound: true})
 		reposGithubPublicCacheCounter.WithLabelValues("public-notfound").Inc()
 	}
 	if err != nil {
@@ -119,9 +118,15 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 		return nil, err
 	}
 
-	// We are allowed to cache public repos
+	// We are only allowed to cache public repos.
 	if !remoteRepo.Private {
-		addToCache(repo, &cachedRepo{Repo: *remoteRepo})
+		remoteRepoCopy := *remoteRepo
+		if client(ctx).isAuthedUser {
+			// Repos' Permissions fields may differ for the different authed users.
+			// When adding to public cache, reset them to defaults.
+			remoteRepoCopy.Permissions = &sourcegraph.RepoPermissions{Pull: true, Push: false, Admin: false}
+		}
+		addToPublicCache(repo, &cachedRepo{Repo: remoteRepoCopy})
 		reposGithubPublicCacheCounter.WithLabelValues("miss").Inc()
 	} else {
 		reposGithubPublicCacheCounter.WithLabelValues("private").Inc()
@@ -139,9 +144,9 @@ func (s *repos) GetByID(ctx context.Context, id int) (*sourcegraph.Repo, error) 
 	return toRepo(ghrepo), nil
 }
 
-// getFromCache attempts to get a response from the redis cache.
+// getFromPublicCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
-func getFromCache(ctx context.Context, repo string) *cachedRepo {
+func getFromPublicCache(ctx context.Context, repo string) *cachedRepo {
 	b, ok := reposGithubPublicCache.Get(repo)
 	if !ok {
 		return nil
@@ -155,8 +160,8 @@ func getFromCache(ctx context.Context, repo string) *cachedRepo {
 	return &cached
 }
 
-// addToCache will cache the value for repo.
-func addToCache(repo string, c *cachedRepo) {
+// addToPublicCache will cache the value for repo.
+func addToPublicCache(repo string, c *cachedRepo) {
 	b, err := json.Marshal(c)
 	if err != nil {
 		return
