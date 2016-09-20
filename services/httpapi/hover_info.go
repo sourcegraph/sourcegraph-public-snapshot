@@ -78,17 +78,6 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		}
 		w.Header().Set("cache-control", "private, max-age=60")
 		return writeJSON(w, resp)
-	} else if universe.Shadow(repo.URI) {
-		go func() {
-			_, err := langp.DefaultClient.Hover(r.Context(), &langp.Position{
-				Repo:      repo.URI,
-				Commit:    repoRev.CommitID,
-				File:      file,
-				Line:      line,
-				Character: character,
-			})
-			universeObserve("Hover", err)
-		}()
 	}
 
 	defSpec, err := cl.Annotations.GetDefAtPos(r.Context(), &sourcegraph.AnnotationsGetDefAtPosOptions{
