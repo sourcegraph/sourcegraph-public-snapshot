@@ -307,7 +307,7 @@ function addEventListeners(el, arg, repoRevSpec, line) {
 			if (!defUrl) return;
 			// If target is within the same repo/file, open in current frame otherwise new tab
 			if (defCurPage) {
-				window.location.href = defUrl;
+				location.hash = defUrl.slice(defUrl.indexOf('#'));
 			} else {
 				window.open(defUrl);
 			}
