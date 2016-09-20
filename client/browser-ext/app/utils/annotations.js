@@ -269,15 +269,37 @@ export function convertElementNode(node, annsByStartByte, offset, repoRevSpec, i
 // but the total # of bytes consumed would automatically count the rest of the fmt".
 // This guarantees the annotation consumes the entire set of childNodes.
 export function isQuotedStringNode(node) {
-	return node.childNodes.length === 3 && node.querySelectorAll(".pl-pds").length === 2 &&
-		node.innerText.startsWith("\"") && node.innerText.endsWith("\"");
+	return node.querySelectorAll(".pl-pds").length === 2 && node.innerText.startsWith("\"") && node.innerText.endsWith("\"");
 }
 
 // convertQuotedStringNode takes a DOM node which should pass the isQuotedStringNode predicate
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
 export function convertQuotedStringNode(node, annsByStartByte, offset, repoRevSpec) {
-	const text = `"${utf8.encode(_.unescape(node.childNodes[1].wholeText))}"`; // put quotes around the sanitized inner text
+
+	function getChildNodeText(pNode) {
+		if (pNode.nodeType == Node.ELEMENT_NODE) {
+			let cText = "";
+
+			for (let idx = 0; idx < pNode.childNodes.length; idx++) {
+				cText += getChildNodeText(pNode.childNodes[idx]);
+			}
+
+			return cText;
+		} else if (pNode.nodeType === Node.TEXT_NODE) {
+			return utf8.encode(_.unescape(pNode.wholeText));
+		} else {
+			throw new Error(`unexpected node type(${pNode.nodeType})`);
+		}
+	}
+
+	let text = `"`;
+	for (let cidx = 1; cidx < node.childNodes.length - 1; cidx++) {
+		text += getChildNodeText(node.childNodes[cidx]);
+	}
+	text += `"`;
+
+
 	const match = annGenerator(annsByStartByte, offset, repoRevSpec);
 
 	// NOTE:
