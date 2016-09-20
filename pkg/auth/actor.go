@@ -60,8 +60,7 @@ func (a Actor) HasAdminAccess() bool {
 
 func (a Actor) UserSpec() sourcegraph.UserSpec {
 	return sourcegraph.UserSpec{
-		UID:   int32(a.UID),
-		Login: a.Login,
+		UID: int32(a.UID),
 	}
 }
 

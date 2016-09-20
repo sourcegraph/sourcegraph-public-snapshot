@@ -160,7 +160,7 @@ func (ru *repoUpdater) run(ctx context.Context) {
 			}
 
 			if updateOp.AsUser != nil {
-				log15.Debug("repoUpdater: RefreshVCS:", "repo", updateOp.Repo, "asUser", updateOp.AsUser.Login)
+				log15.Debug("repoUpdater: RefreshVCS:", "repo", updateOp.Repo, "asUser", updateOp.AsUser.UID)
 			} else {
 				log15.Debug("repoUpdater: RefreshVCS:", "repo", updateOp.Repo)
 			}

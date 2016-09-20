@@ -56,7 +56,7 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 
 	// don't want to leak existence of usernames
 	genericErr := grpc.Errorf(codes.PermissionDenied, "either incorrect login or password")
-	user, err := usersStore.Get(elevatedActor(ctx), sourcegraph.UserSpec{Login: cred.Login})
+	user, err := usersStore.GetWithLogin(elevatedActor(ctx), cred.Login)
 	if err != nil {
 		return nil, genericErr
 	}

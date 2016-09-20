@@ -11,15 +11,15 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
-func (s *Users) MockGet(t *testing.T, wantUser string) (called *bool) {
+func (s *Users) MockGet(t *testing.T, wantUser int32) (called *bool) {
 	called = new(bool)
 	s.Get_ = func(ctx context.Context, user sourcegraph.UserSpec) (*sourcegraph.User, error) {
 		*called = true
-		if user.Login != wantUser {
-			t.Errorf("got user %q, want %q", user, wantUser)
-			return nil, grpc.Errorf(codes.NotFound, "user %v not found", wantUser)
+		if user.UID != wantUser {
+			t.Errorf("got user %d, want %d", user, wantUser)
+			return nil, grpc.Errorf(codes.NotFound, "user %d not found", wantUser)
 		}
-		return &sourcegraph.User{Login: user.Login}, nil
+		return &sourcegraph.User{UID: user.UID}, nil
 	}
 	return
 }
@@ -28,9 +28,9 @@ func (s *Users) MockGet_Return(t *testing.T, returns *sourcegraph.User) (called 
 	called = new(bool)
 	s.Get_ = func(ctx context.Context, user sourcegraph.UserSpec) (*sourcegraph.User, error) {
 		*called = true
-		if user.Login != returns.Login {
-			t.Errorf("got user %q, want %q", user.Login, returns.Login)
-			return nil, grpc.Errorf(codes.NotFound, "user %v not found", returns.Login)
+		if user.UID != returns.UID {
+			t.Errorf("got user %d, want %d", user.UID, returns.UID)
+			return nil, grpc.Errorf(codes.NotFound, "user %d not found", returns.UID)
 		}
 		return returns, nil
 	}

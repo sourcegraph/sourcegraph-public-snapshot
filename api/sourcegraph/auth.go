@@ -6,5 +6,5 @@ func (a AuthInfo) UserSpec() *UserSpec {
 	if a.UID == 0 {
 		return nil
 	}
-	return &UserSpec{UID: a.UID, Login: a.Login}
+	return &UserSpec{UID: a.UID}
 }

@@ -1057,9 +1057,6 @@ message User {
 // UserSpec specifies a user. At least one of Login and UID must be
 // nonempty.
 message UserSpec {
-	// Login is a user's login.
-	string Login = 1;
-
 	// UID is a user's UID.
 	int32 UID = 2;
 }

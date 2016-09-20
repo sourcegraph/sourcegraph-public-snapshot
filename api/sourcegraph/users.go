@@ -1,7 +1,7 @@
 package sourcegraph
 
 func (u *User) Spec() UserSpec {
-	return UserSpec{Login: u.Login, UID: u.UID}
+	return UserSpec{UID: u.UID}
 }
 
 // InBeta tells whether or not the given user is in the given beta.

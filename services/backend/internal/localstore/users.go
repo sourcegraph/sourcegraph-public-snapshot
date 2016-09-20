@@ -105,21 +105,17 @@ func (s *users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*source
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Users.Get", nil); err != nil {
 		return nil, err
 	}
-	var user *sourcegraph.User
-	var err error
-	if userSpec.UID != 0 && userSpec.Login != "" {
-		user, err = s.getBySQL(ctx, "uid=$1 AND login=$2", userSpec.UID, userSpec.Login)
-		if err == sql.ErrNoRows {
-			err = &store.UserNotFoundError{UID: int(userSpec.UID), Login: userSpec.Login}
-		}
-	} else if userSpec.UID != 0 {
-		user, err = s.getByUID(ctx, int(userSpec.UID))
-	} else if userSpec.Login != "" {
-		user, err = s.getByLogin(ctx, userSpec.Login)
-	} else {
+	if userSpec.UID == 0 {
 		return nil, &store.UserNotFoundError{}
 	}
-	return user, err
+	return s.getByUID(ctx, int(userSpec.UID))
+}
+
+func (s *users) GetWithLogin(ctx context.Context, login string) (*sourcegraph.User, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Users.GetWithLogin", nil); err != nil {
+		return nil, err
+	}
+	return s.getByLogin(ctx, login)
 }
 
 // getByUID returns the user with the given uid, if such a user

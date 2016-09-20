@@ -15,7 +15,7 @@ func TestUsersService_Get(t *testing.T) {
 
 	calledGet := mock.stores.Users.MockGet_Return(t, wantUser)
 
-	user, err := s.Get(ctx, &sourcegraph.UserSpec{UID: 1, Login: "u"})
+	user, err := s.Get(ctx, &sourcegraph.UserSpec{UID: 1})
 	if err != nil {
 		t.Fatal(err)
 	}

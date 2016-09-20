@@ -138,14 +138,6 @@ func (s *Server) Cmd(env []string, args []string) *exec.Cmd {
 	return cmd
 }
 
-func (s *Server) AsUser(ctx context.Context, login string) (context.Context, error) {
-	u, err := s.Client.Users.Get(ctx, &sourcegraph.UserSpec{Login: login})
-	if err != nil {
-		return nil, err
-	}
-	return s.AsUIDWithAccess(ctx, int(u.UID), true, false), nil
-}
-
 func (s *Server) AsUIDWithAccess(ctx context.Context, uid int, write, admin bool) context.Context {
 	token, err := auth.NewAccessToken(&auth.Actor{UID: uid, Write: write, Admin: admin}, nil, 10*time.Minute)
 	if err != nil {

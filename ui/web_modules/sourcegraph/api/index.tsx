@@ -1417,7 +1417,6 @@ export interface UserList {
 }
 
 export interface UserSpec {
-	Login?: string;
 	UID?: number;
 }
 

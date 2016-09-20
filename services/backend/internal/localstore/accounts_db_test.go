@@ -2,7 +2,6 @@ package localstore
 
 import (
 	"database/sql"
-	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -26,9 +25,6 @@ func TestAccounts_Create_ok(t *testing.T) {
 	defer done()
 
 	s := &accounts{}
-	getAccount := func(user sourcegraph.UserSpec) (*sourcegraph.User, error) {
-		return (&users{}).Get(ctx, user)
-	}
 
 	want := sourcegraph.User{Login: "u", Name: "n"}
 	email := &sourcegraph.EmailAddr{Email: "email@email.email"}
@@ -43,15 +39,6 @@ func TestAccounts_Create_ok(t *testing.T) {
 	}
 	if created.Name != want.Name {
 		t.Errorf("got Name == %q, want %q", created.Name, want.Name)
-	}
-
-	got, err := getAccount(sourcegraph.UserSpec{Login: "u"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !reflect.DeepEqual(got, created) {
-		t.Errorf("Create: got %+v, want %+v", got, created)
 	}
 }
 

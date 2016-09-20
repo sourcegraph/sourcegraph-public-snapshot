@@ -59,7 +59,7 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 
 	// Delete the e2etest user account if it already exists.
 	if strings.HasPrefix(newUser.Login, e2etestuser.Prefix) {
-		if u, err := store.UsersFromContext(ctx).Get(ctx, sourcegraph.UserSpec{Login: newUser.Login}); err == nil {
+		if u, err := store.UsersFromContext(ctx).GetWithLogin(ctx, newUser.Login); err == nil {
 			if err := store.AccountsFromContext(ctx).Delete(elevatedActor(ctx), u.UID); err != nil {
 				return nil, err
 			}
@@ -73,8 +73,7 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 
 	userSpec := created.Spec()
 	actor := authpkg.Actor{
-		UID:   int(userSpec.UID),
-		Login: userSpec.Login,
+		UID: int(userSpec.UID),
 	}
 	ctx = authpkg.WithActor(ctx, actor)
 
@@ -246,23 +245,13 @@ func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPa
 }
 
 func (s *accounts) Delete(ctx context.Context, user *sourcegraph.UserSpec) (*pbtypes.Void, error) {
-	usersStore := store.UsersFromContext(ctx)
 	accountsStore := store.AccountsFromContext(ctx)
 
-	var uid int32
-	if user.UID != 0 {
-		uid = user.UID
-	} else if user.Login != "" {
-		user, err := usersStore.Get(ctx, sourcegraph.UserSpec{Login: user.Login})
-		if err != nil {
-			return nil, err
-		}
-		uid = user.UID
-	} else {
-		return nil, grpc.Errorf(codes.InvalidArgument, "need to specify UID or login of the user account")
+	if user.UID == 0 {
+		return nil, grpc.Errorf(codes.InvalidArgument, "need to specify UID of the user account")
 	}
 
-	err := accountsStore.Delete(ctx, uid)
+	err := accountsStore.Delete(ctx, user.UID)
 	if err != nil {
 		return nil, err
 	}

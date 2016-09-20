@@ -13,6 +13,7 @@ import (
 // external services (GitHub, etc.).
 type Users interface {
 	Get(ctx context.Context, user sourcegraph.UserSpec) (*sourcegraph.User, error)
+	GetWithLogin(ctx context.Context, login string) (*sourcegraph.User, error)
 	GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error)
 	List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error)
 	ListEmails(context.Context, sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error)
