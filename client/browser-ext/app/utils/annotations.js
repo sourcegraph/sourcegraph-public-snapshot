@@ -278,7 +278,7 @@ export function convertQuotedStringNode(node, annsByStartByte, offset, repoRevSp
 
 	function getChildNodeText(node) {
 		if (node.nodeType == Node.ELEMENT_NODE) {
-			return node.childNodes.map(getChildNodeText).join("");
+			return [].map.call(node.childNodes, getChildNodeText).join("");
 		} else if (node.nodeType === Node.TEXT_NODE) {
 			return utf8.encode(_.unescape(node.wholeText));
 		} else {
@@ -286,7 +286,7 @@ export function convertQuotedStringNode(node, annsByStartByte, offset, repoRevSp
 		}
 	}
 
-	const text = `"${node.childNodes.slice(1, node.childNodes.length - 1).map(getChildNodeText).join("")}"`;
+	const text = `"${[].slice.call(node.childNodes, 1, node.childNodes.length - 1).map(getChildNodeText).join("")}"`;
 	const match = annGenerator(annsByStartByte, offset, repoRevSpec);
 
 	// NOTE:
