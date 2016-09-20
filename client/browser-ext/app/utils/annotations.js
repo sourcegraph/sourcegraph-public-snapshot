@@ -402,7 +402,7 @@ function addEventListeners(el, arg, repoRevSpec, line) {
 					cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
 				}
 			})
-			.catch((err) => console.log("Error getting jump target info.", err) && cb(null));
+			.catch((err) => console.log("Error getting jump target info.") && cb(null));
 	}
 
 	function fetchPopoverData(url, cb) {
