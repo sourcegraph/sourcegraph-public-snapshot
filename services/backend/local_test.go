@@ -23,7 +23,7 @@ func testContext() (context.Context, *mocks) {
 	ctx = store.WithStores(ctx, m.stores.Stores())
 	ctx = svc.WithServices(ctx, m.servers.servers())
 	ctx = github.WithRepos(ctx, &m.githubRepos)
-	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 1, Login: "test"})
+	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: 1, Login: "test"})
 	ctx = accesscontrol.WithInsecureSkip(ctx, true)
 	_, ctx = opentracing.StartSpanFromContext(ctx, "dummy")
 	return ctx, &m
@@ -36,22 +36,17 @@ type mocks struct {
 }
 
 type mockServers struct {
-	Accounts     mock.AccountsServer
 	Async        mock.AsyncServer
-	Auth         mock.AuthServer
 	Defs         mock.DefsServer
 	MirrorRepos  mock.MirrorReposServer
 	RepoStatuses mock.RepoStatusesServer
 	RepoTree     mock.RepoTreeServer
 	Repos        mock.ReposServer
 	Search       mock.SearchServer
-	Users        mock.UsersServer
 }
 
 func (s *mockServers) servers() svc.Services {
 	return svc.Services{
-		Accounts:     &s.Accounts,
-		Auth:         &s.Auth,
 		Async:        &s.Async,
 		Defs:         &s.Defs,
 		MirrorRepos:  &s.MirrorRepos,
@@ -59,6 +54,5 @@ func (s *mockServers) servers() svc.Services {
 		RepoTree:     &s.RepoTree,
 		Repos:        &s.Repos,
 		Search:       &s.Search,
-		Users:        &s.Users,
 	}
 }

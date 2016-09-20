@@ -16,10 +16,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/jscontext"
 	tmpldata "sourcegraph.com/sourcegraph/sourcegraph/app/templates"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 var (
@@ -104,33 +104,17 @@ func executeTemplateBase(w http.ResponseWriter, templateName string, data interf
 
 // Exec executes the template (named by `name`) using the template data.
 func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, header http.Header, data interface{}) error {
-	cl := handlerutil.Client(req)
-
 	if data != nil {
 		field := reflect.ValueOf(data).Elem().FieldByName("Common")
 		existingCommon := field.Interface().(Common)
 
-		authInfo, err := cl.Auth.Identify(req.Context(), &pbtypes.Void{})
-		if err != nil {
-			return err
-		}
-
-		var user *sourcegraph.User
-		if authInfo.UID != 0 {
-			var err error
-			user, err = cl.Users.Get(req.Context(), &sourcegraph.UserSpec{UID: authInfo.UID})
-			if err != nil {
-				return err
-			}
-		}
-
-		jsctx, err := jscontext.NewJSContextFromRequest(req, int(authInfo.UID), user)
+		jsctx, err := jscontext.NewJSContextFromRequest(req)
 		if err != nil {
 			return err
 		}
 
 		field.Set(reflect.ValueOf(Common{
-			AuthInfo:             authInfo,
+			AuthInfo:             auth.ActorFromContext(req.Context()).AuthInfo(),
 			TemplateName:         name,
 			CurrentRoute:         httpctx.RouteName(req),
 			Ctx:                  req.Context(),

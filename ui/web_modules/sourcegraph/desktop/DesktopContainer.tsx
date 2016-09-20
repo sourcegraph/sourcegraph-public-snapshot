@@ -62,7 +62,6 @@ export function desktopContainer(Component) {
 const unauthedRoutes = new Set([
 	abs.login,
 	abs.signup,
-	abs.forgot,
 ]);
 function allowUnauthed(location: string) {
 	location = location[0] === "/" ?

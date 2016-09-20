@@ -4,39 +4,28 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
-
-	"gopkg.in/inconshreveable/log15.v2"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"context"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/github"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/canonicalurl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/returnto"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/schemautil"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
-	"sourcegraph.com/sqs/pbtypes"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 )
 
-var (
-	githubNonceCookiePath = router.Rel.URLTo(router.GitHubOAuth2Receive).Path
-
-	githubClientID     = os.Getenv("GITHUB_CLIENT_ID")
-	githubClientSecret = os.Getenv("GITHUB_CLIENT_SECRET")
-)
+var githubNonceCookiePath = router.Rel.URLTo(router.GitHubOAuth2Receive).Path
 
 func init() {
 	internal.Handlers[router.GitHubOAuth2Initiate] = internal.Handler(serveGitHubOAuth2Initiate)
@@ -57,10 +46,13 @@ func serveGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 	// JS so we centralize usage analytics there.
 	returnTo = canonicalurl.FromURL(returnTo)
 
-	nonce, err := writeNonceCookie(w, r, githubNonceCookiePath)
-	if err != nil {
-		return err
-	}
+	nonce := randstring.NewLen(32)
+	http.SetCookie(w, &http.Cookie{
+		Name:    "nonce",
+		Value:   nonce,
+		Path:    "",
+		Expires: time.Now().Add(10 * time.Minute),
+	})
 
 	var scopes []string
 	if s := r.URL.Query().Get("scopes"); s == "" {
@@ -71,32 +63,11 @@ func serveGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 		scopes = strings.Split(s, ",")
 	}
 
-	destURL, err := githubOAuthLoginURL(r, oauthAuthorizeClientState{Nonce: nonce, ReturnTo: returnTo.String()}, scopes)
-	if err != nil {
-		return err
-	}
-
-	http.Redirect(w, r, destURL.String(), http.StatusSeeOther)
+	http.Redirect(w, r, githubutil.Default.OAuth.AuthCodeURL(nonce+":"+returnTo.String(),
+		oauth2.SetAuthURLParam("scope", strings.Join(scopes, " ")),
+		oauth2.SetAuthURLParam("redirect_uri", conf.AppURL.ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String()),
+	), http.StatusSeeOther)
 	return nil
-}
-
-func githubOAuthLoginURL(r *http.Request, state oauthAuthorizeClientState, scopes []string) (*url.URL, error) {
-	stateText, err := state.MarshalText()
-	if err != nil {
-		return nil, err
-	}
-
-	return url.Parse(githubOAuth2Config(r.Context(), scopes).AuthCodeURL(string(stateText)))
-}
-
-func githubOAuth2Config(ctx context.Context, scopes []string) *oauth2.Config {
-	return &oauth2.Config{
-		ClientID:     githubClientID,
-		ClientSecret: githubClientSecret,
-		Endpoint:     github.Endpoint,
-		RedirectURL:  conf.AppURL.ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String(),
-		Scopes:       scopes,
-	}
 }
 
 func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error) {
@@ -110,108 +81,60 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		}
 	}()
 
-	cl := handlerutil.Client(r)
-	authInfo, err := cl.Auth.Identify(r.Context(), &pbtypes.Void{})
+	parts := strings.SplitN(r.URL.Query().Get("state"), ":", 2)
+	if len(parts) != 2 {
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("invalid OAuth2 authorize client state")}
+	}
+
+	nonceCookie, err := r.Cookie("nonce")
 	if err != nil {
 		return err
 	}
-
-	var opt oauthReceiveParams
-	if err := schemautil.Decode(&opt, r.URL.Query()); err != nil {
-		return err
-	}
-
-	// Check the state nonce against what's stored in the cookie (to
-	// prevent CSRF).
-	var state oauthAuthorizeClientState
-	if err := state.UnmarshalText([]byte(opt.State)); err != nil {
-		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
-	}
-	nonce, present := nonceFromCookie(r)
-	deleteNonceCookie(w, githubNonceCookiePath) // prevent reuse of nonce
-	if !present || nonce != state.Nonce || nonce == "" {
-		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("invalid state nonce from OAuth2 provider")}
-	}
-
-	// Don't allow usage of the state's ReturnTo field until now that
-	// we've checked the state against the nonce (which we do right
-	// above).
-	returnTo = state.ReturnTo
-
-	tok, err := cl.Auth.GetAccessToken(r.Context(), &sourcegraph.AccessTokenRequest{
-		AuthorizationGrant: &sourcegraph.AccessTokenRequest_GitHubAuthCode{
-			GitHubAuthCode: &sourcegraph.GitHubAuthCode{
-				Code: opt.Code,
-				Host: "github.com",
-			},
-		},
+	http.SetCookie(w, &http.Cookie{
+		Name:   "nonce",
+		Path:   "/",
+		MaxAge: -1,
 	})
+	if len(parts) != 2 || nonceCookie.Value == "" || parts[0] != nonceCookie.Value {
+		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("invalid state")}
+	}
+	returnTo = parts[1]
+
+	// Exchange the code for a GitHub access token.
+	ghToken, err := githubutil.Default.OAuth.Exchange(r.Context(), r.URL.Query().Get("code"))
+	if err != nil {
+		return err
+	}
+	if !ghToken.Valid() {
+		return grpc.Errorf(codes.PermissionDenied, "exchanging auth code yielded invalid GitHub OAuth2 token")
+	}
+
+	// Get the current user.
+	ghUser, ghResp, err := githubutil.Default.AuthedClient(ghToken.AccessToken).Users.Get("")
 	if err != nil {
 		return err
 	}
 
-	ghUser := tok.GitHubUser
+	firstTime := false
 
-	// If this GitHub user is already authed with us, then continue
-	// logging in. Otherwise continue to create an account.
-	if tok.UID == 0 {
-		if authInfo.UID != 0 {
-			// Logged in as a Sourcegraph user, has not yet linked GitHub.
-			return linkAccountWithGitHub(w, r, cl, authInfo.UID, ghUser, tok, true, state.ReturnTo)
-		}
-
-		// Not logged in as a Sourcegraph user, has not ever linked
-		// this GitHub account to Sourcegraph.
-		return createAccountFromGitHub(w, r, cl, ghUser, tok, state.ReturnTo)
-	}
-
-	// Logged in as a Sourcegraph user, has already linked GitHub.
-	//
-	// Elevate the credentials to the Sourcegraph user identified by the
-	// just-authenticated linked GitHub account. The user must have previously
-	// linked the accounts for the Auth.GetAccessToken call to return this
-	// Sourcegraph UID, so we can do this safely.
-	r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), tok.AccessToken))
-
-	return linkAccountWithGitHub(w, r, cl, tok.UID, ghUser, tok, false, state.ReturnTo)
-}
-
-func linkAccountWithGitHub(w http.ResponseWriter, r *http.Request, cl *sourcegraph.Client, sgUID int32, ghUser *sourcegraph.GitHubUser, tok *sourcegraph.AccessTokenResponse, firstTime bool, returnTo string) (err error) {
 	defer func() {
 		if err != nil {
-			log15.Error("Error during GitHub account linking or login flow (suppressing HTTP 500 and returning redirect to non-GitHub login form).", "err", err, "sourcegraph-uid", sgUID, "github-login", ghUser.Login, "first-time", firstTime)
+			log15.Error("Error during GitHub account linking or login flow (suppressing HTTP 500 and returning redirect to non-GitHub login form).", "err", err, "sourcegraph-uid", *ghUser.ID, "first-time", firstTime)
 			http.Redirect(w, r, "/login?github-login-error=unknown&_event=FailedGitHubOAuth2Flow&return-to="+url.QueryEscape(returnTo), http.StatusSeeOther)
 			err = nil
 		}
 	}()
 
-	sgUser, err := cl.Users.Get(r.Context(), &sourcegraph.UserSpec{UID: sgUID})
-	if err != nil {
-		return err
-	}
-
-	_, err = cl.Auth.SetExternalToken(r.Context(), &sourcegraph.ExternalToken{
-		UID:      sgUID,
-		Host:     githubcli.Config.Host(),
-		Token:    tok.GitHubAccessToken,
-		Scope:    strings.Join(tok.Scope, ","),
-		ClientID: githubClientID,
-		ExtUID:   ghUser.ID,
-	})
-	if err != nil {
-		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
-	}
-
-	sgUser.Name = ghUser.Name
-	sgUser.Location = ghUser.Location
-	sgUser.Company = ghUser.Company
-	sgUser.AvatarURL = ghUser.AvatarURL
-	if _, err := cl.Accounts.Update(r.Context(), sgUser); err != nil {
-		return err
-	}
-
 	// Write cookie.
-	if err := auth.StartNewSession(w, r, sgUID); err != nil {
+	if err := auth.StartNewSession(w, r, &auth.Actor{
+		UID:             *ghUser.ID,
+		Login:           *ghUser.Login,
+		Email:           *ghUser.Email,
+		AvatarURL:       *ghUser.AvatarURL,
+		GitHubConnected: true,
+		GitHubScopes:    ghResp.Header["X-Oauth-Scopes"],
+		GitHubToken:     ghToken.AccessToken,
+	}); err != nil {
 		return err
 	}
 
@@ -222,6 +145,7 @@ func linkAccountWithGitHub(w http.ResponseWriter, r *http.Request, cl *sourcegra
 	}
 	q := returnToURL.Query()
 	if firstTime {
+		q.Set("ob", "chrome")
 		q.Set("_event", "SignupCompleted")
 		q.Set("_signupChannel", "GitHubOAuth")
 		q.Set("_githubAuthed", "true")
@@ -238,38 +162,4 @@ func linkAccountWithGitHub(w http.ResponseWriter, r *http.Request, cl *sourcegra
 
 	http.Redirect(w, r, returnToURL.String(), http.StatusSeeOther)
 	return nil
-}
-
-func createAccountFromGitHub(w http.ResponseWriter, r *http.Request, cl *sourcegraph.Client, ghUser *sourcegraph.GitHubUser, tok *sourcegraph.AccessTokenResponse, returnTo string) (err error) {
-	defer func() {
-		if err != nil {
-			log15.Error("Error during GitHub account creation (suppressing HTTP 500 and returning redirect to non-GitHub signup form).", "err", err, "github-login", ghUser.Login)
-			http.Redirect(w, r, "/join?github-signup-error=unknown&_event=FailedGitHubOAuth2Flow&return-to="+url.QueryEscape(returnTo), http.StatusSeeOther)
-			err = nil
-		}
-	}()
-
-	var newAcct sourcegraph.NewAccount
-	newAcct.Login = ghUser.Login
-	if !strings.HasSuffix(ghUser.Email, "@users.noreply.github.com") {
-		newAcct.Email = ghUser.Email
-	}
-
-	createdAcct, err := cl.Accounts.Create(r.Context(), &newAcct)
-	if grpc.Code(err) == codes.AlreadyExists {
-		// There is already a Sourcegraph user whose username is this
-		// user's GitHub username. Redirect to the app and tell the
-		// user they need to create a unique Sourcegraph account
-		// first, and then they can *link* their GitHub account to
-		// their newly created Sourcegraph account.
-		http.Redirect(w, r, "/join?github-signup-error=username-or-email-taken&login="+url.QueryEscape(newAcct.Login)+"&email="+url.QueryEscape(newAcct.Email)+"&_event=FailedGitHubOAuth2Flow&return-to="+url.QueryEscape(returnTo), http.StatusSeeOther)
-		return nil
-	} else if err != nil {
-		return err
-	}
-	log15.Info("Created Sourcegraph account from GitHub account", "uid", createdAcct.UID, "login", newAcct.Login, "email", newAcct.Email)
-
-	r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), createdAcct.TemporaryAccessToken))
-
-	return linkAccountWithGitHub(w, r, cl, createdAcct.UID, ghUser, tok, true, returnTo)
 }

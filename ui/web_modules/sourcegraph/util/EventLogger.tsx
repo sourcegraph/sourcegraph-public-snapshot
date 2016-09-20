@@ -367,23 +367,6 @@ class EventLoggerClass {
 				}
 				break;
 
-			case UserActions.SignupCompleted:
-			case UserActions.LoginCompleted:
-			case UserActions.ForgotPasswordCompleted:
-			case UserActions.ResetPasswordCompleted:
-				if (action.email) {
-					this.setUserProperty("email", action.email);
-				}
-
-				if (action.eventName) {
-					if (action.signupChannel) {
-						this.setUserProperty("signup_channel", action.signupChannel);
-						this.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SIGNUP, action.eventName, { error: Boolean(action.resp.Error), signup_channel: action.signupChannel });
-					} else {
-						this.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SUCCESS, action.eventName, { error: Boolean(action.resp.Error) });
-					}
-				}
-				break;
 			case UserActions.BetaSubscriptionCompleted:
 				if (action.eventName) {
 					this.logEventForCategory(AnalyticsConstants.CATEGORY_ENGAGEMENT, AnalyticsConstants.ACTION_SUCCESS, action.eventName);

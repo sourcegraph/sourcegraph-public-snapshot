@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"os"
 	"time"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/boj/redistore"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 var sessionStore *redistore.RediStore
@@ -32,14 +32,18 @@ func InitSessionStore(secureCookie bool) {
 }
 
 // StartNewSession starts a new session with authentication for the given uid.
-func StartNewSession(w http.ResponseWriter, r *http.Request, uid int32) error {
+func StartNewSession(w http.ResponseWriter, r *http.Request, actor *Actor) error {
 	DeleteSession(w, r)
 
 	session, err := sessionStore.New(&http.Request{}, "sg-session") // workaround: not passing the request forces a new session
 	if err != nil {
 		log15.Error("error creating session", "error", err)
 	}
-	session.Values["uid"] = uid
+	actorJSON, err := json.Marshal(actor)
+	if err != nil {
+		return err
+	}
+	session.Values["actor"] = actorJSON
 	if err = session.Save(r, w); err != nil {
 		log15.Error("error saving session", "error", err)
 	}
@@ -89,48 +93,21 @@ func authenticateByCookie(r *http.Request) context.Context {
 		return r.Context()
 	}
 
-	if uid, ok := session.Values["uid"]; ok {
-		return authenticateByUID(r.Context(), uid.(int32))
+	if actorJSON, ok := session.Values["actor"]; ok {
+		var actor Actor
+		if err := json.Unmarshal(actorJSON.([]byte), &actor); err != nil {
+			log15.Error("error unmarshalling actor", "error", err)
+			return r.Context()
+		}
+
+		token, err := NewAccessToken(&actor, nil, 7*24*time.Hour)
+		if err != nil {
+			log15.Error("error creating access token", "error", err)
+			return r.Context()
+		}
+
+		return WithActor(sourcegraph.WithAccessToken(r.Context(), token), &actor)
 	}
 
 	return r.Context()
-}
-
-func authenticateByUID(ctx context.Context, uid int32) context.Context {
-	// This function is a quite ugly hack. The cookie middleware is located at the app layer,
-	// whereas authentication is usually only done on the service layer. This implementation
-	// ignores the layers.
-	// This will hopefully get better after getting rid of GRPC and then moving authentication
-	// into its own microservice.
-
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		log15.Error("error getting client", "error", err)
-		return ctx
-	}
-
-	tempTok, err := NewAccessToken(&Actor{UID: int(uid)}, nil, time.Minute)
-	if err != nil {
-		log15.Error("error creating access token", "error", err)
-		return ctx
-	}
-
-	authInfo, err := cl.Auth.Identify(sourcegraph.WithAccessToken(ctx, tempTok), &pbtypes.Void{})
-	if err != nil {
-		log15.Error("error Auth.Identify", "error", err)
-		return ctx
-	}
-
-	realTok, err := NewAccessToken(&Actor{
-		UID:   int(uid),
-		Login: authInfo.Login,
-		Write: authInfo.Write,
-		Admin: authInfo.Admin,
-	}, nil, 7*24*time.Hour)
-	if err != nil {
-		log15.Error("error creating access token", "error", err)
-		return ctx
-	}
-
-	return sourcegraph.WithAccessToken(ctx, realTok)
 }

@@ -128,7 +128,7 @@ export class BetaInterestForm extends Container<Props, State> {
 		}
 
 		let [className, language] = [this.props.className, this.props.language];
-		let betaRegistered = context.user && context.user.BetaRegistered;
+		let betaRegistered = false; // TODO
 		let emails = context.emails && context.emails.EmailAddrs;
 
 		let defaultFullName;

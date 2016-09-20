@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/go-github/github"
 	"github.com/sourcegraph/httpcache"
 	"golang.org/x/oauth2"
+	githuboauth "golang.org/x/oauth2/github"
 )
 
 func init() {
@@ -231,11 +232,7 @@ var Default = &Config{
 	OAuth: oauth2.Config{
 		ClientID:     os.Getenv("GITHUB_CLIENT_ID"),
 		ClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://github.com/login/oauth/authorize",
-			TokenURL: "https://github.com/login/oauth/access_token",
-			// RedirectURL is not known at init time, so it's not set here.
-		},
+		Endpoint:     githuboauth.Endpoint,
 	},
 	Cache:            httputil.Cache,
 	UnauthedThrottle: newGaugedMutex(githubUnauthedConcurrent),

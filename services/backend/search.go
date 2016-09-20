@@ -213,18 +213,12 @@ func authedGitHubClient(ctx context.Context) (*github.Client, error) {
 	if !a.IsAuthenticated() {
 		return nil, nil
 	}
-	extTokensStore := store.ExternalAuthTokensFromContext(ctx)
-	host := strings.TrimPrefix(githubutil.Default.BaseURL.Host, "api.") // api.github.com -> github.com
-	tok, err := extTokensStore.GetUserToken(ctx, a.UID, host, githubutil.Default.OAuth.ClientID)
-	switch {
-	case err == store.ErrNoExternalAuthToken || err == store.ErrExternalAuthTokenDisabled:
+	if a.GitHubToken == "" {
 		return nil, nil
-	case err != nil:
-		return nil, err
 	}
 	ghConf := *githubutil.Default
 	ghConf.Context = ctx
-	return ghConf.AuthedClient(tok.Token), nil
+	return ghConf.AuthedClient(a.GitHubToken), nil
 }
 
 var delims = regexp.MustCompile(`[/.:\$\(\)\*\%\#\@\[\]\{\}]+`)

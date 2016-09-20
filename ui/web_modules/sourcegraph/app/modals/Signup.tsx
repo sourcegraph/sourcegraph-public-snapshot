@@ -6,7 +6,7 @@ import {InjectedRouter} from "react-router";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
 
-import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
+import {LocationStateModal} from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
 
 import {SignupForm} from "sourcegraph/user/Signup";
@@ -29,7 +29,6 @@ export const Signup = (props: Props): JSX.Element => {
 			onDismiss={(v) => EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissJoinModal", {page_name: props.location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 			<div className={styles.modal} style={sx}>
 				<SignupForm
-					onSignupSuccess={dismissModal("join", props.location, props.router)}
 					returnTo={props.shouldHide ? "/?ob=chrome" : props.location}
 					location={props.location} />
 			</div>

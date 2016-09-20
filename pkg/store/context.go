@@ -19,59 +19,40 @@ import (
 
 // Stores has a field for each store interface.
 type Stores struct {
-	Accounts           Accounts
-	DefExamples        DefExamples
-	Defs               Defs
-	Directory          Directory
-	ExternalAuthTokens ExternalAuthTokens
-	GlobalDeps         GlobalDeps
-	GlobalRefs         GlobalRefs
-	Graph              srcstore.MultiRepoStoreImporterIndexer
-	Password           Password
-	Queue              Queue
-	RepoConfigs        RepoConfigs
-	RepoStatuses       RepoStatuses
-	RepoVCS            RepoVCS
-	Repos              Repos
-	Users              Users
+	DefExamples  DefExamples
+	Defs         Defs
+	GlobalDeps   GlobalDeps
+	GlobalRefs   GlobalRefs
+	Graph        srcstore.MultiRepoStoreImporterIndexer
+	Queue        Queue
+	RepoConfigs  RepoConfigs
+	RepoStatuses RepoStatuses
+	RepoVCS      RepoVCS
+	Repos        Repos
 }
 
 type contextKey int
 
 const (
-	_AccountsKey contextKey = iota
-	_DefExamplesKey
+	_DefExamplesKey contextKey = iota
 	_DefsKey
-	_DirectoryKey
-	_ExternalAuthTokensKey
 	_GlobalDepsKey
 	_GlobalRefsKey
 	_GraphKey
-	_PasswordKey
 	_QueueKey
 	_RepoConfigsKey
 	_RepoStatusesKey
 	_RepoVCSKey
 	_ReposKey
-	_UsersKey
 )
 
 // WithStores returns a copy of parent with the given stores. If a store's field value is nil, its previous value is inherited from parent in the new context.
 func WithStores(ctx context.Context, s Stores) context.Context {
-	if s.Accounts != nil {
-		ctx = WithAccounts(ctx, s.Accounts)
-	}
 	if s.DefExamples != nil {
 		ctx = WithDefExamples(ctx, s.DefExamples)
 	}
 	if s.Defs != nil {
 		ctx = WithDefs(ctx, s.Defs)
-	}
-	if s.Directory != nil {
-		ctx = WithDirectory(ctx, s.Directory)
-	}
-	if s.ExternalAuthTokens != nil {
-		ctx = WithExternalAuthTokens(ctx, s.ExternalAuthTokens)
 	}
 	if s.GlobalDeps != nil {
 		ctx = WithGlobalDeps(ctx, s.GlobalDeps)
@@ -81,9 +62,6 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.Graph != nil {
 		ctx = WithGraph(ctx, s.Graph)
-	}
-	if s.Password != nil {
-		ctx = WithPassword(ctx, s.Password)
 	}
 	if s.Queue != nil {
 		ctx = WithQueue(ctx, s.Queue)
@@ -100,24 +78,7 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	if s.Repos != nil {
 		ctx = WithRepos(ctx, s.Repos)
 	}
-	if s.Users != nil {
-		ctx = WithUsers(ctx, s.Users)
-	}
 	return ctx
-}
-
-// WithAccounts returns a copy of parent with the given Accounts store.
-func WithAccounts(parent context.Context, s Accounts) context.Context {
-	return context.WithValue(parent, _AccountsKey, s)
-}
-
-// AccountsFromContext gets the context's Accounts store. If the store is not present, it panics.
-func AccountsFromContext(ctx context.Context) Accounts {
-	s, ok := ctx.Value(_AccountsKey).(Accounts)
-	if !ok || s == nil {
-		panic("no Accounts set in context")
-	}
-	return s
 }
 
 // WithDefExamples returns a copy of parent with the given DefExamples store.
@@ -144,34 +105,6 @@ func DefsFromContext(ctx context.Context) Defs {
 	s, ok := ctx.Value(_DefsKey).(Defs)
 	if !ok || s == nil {
 		panic("no Defs set in context")
-	}
-	return s
-}
-
-// WithDirectory returns a copy of parent with the given Directory store.
-func WithDirectory(parent context.Context, s Directory) context.Context {
-	return context.WithValue(parent, _DirectoryKey, s)
-}
-
-// DirectoryFromContext gets the context's Directory store. If the store is not present, it panics.
-func DirectoryFromContext(ctx context.Context) Directory {
-	s, ok := ctx.Value(_DirectoryKey).(Directory)
-	if !ok || s == nil {
-		panic("no Directory set in context")
-	}
-	return s
-}
-
-// WithExternalAuthTokens returns a copy of parent with the given ExternalAuthTokens store.
-func WithExternalAuthTokens(parent context.Context, s ExternalAuthTokens) context.Context {
-	return context.WithValue(parent, _ExternalAuthTokensKey, s)
-}
-
-// ExternalAuthTokensFromContext gets the context's ExternalAuthTokens store. If the store is not present, it panics.
-func ExternalAuthTokensFromContext(ctx context.Context) ExternalAuthTokens {
-	s, ok := ctx.Value(_ExternalAuthTokensKey).(ExternalAuthTokens)
-	if !ok || s == nil {
-		panic("no ExternalAuthTokens set in context")
 	}
 	return s
 }
@@ -214,20 +147,6 @@ func GraphFromContext(ctx context.Context) srcstore.MultiRepoStoreImporterIndexe
 	s, ok := ctx.Value(_GraphKey).(srcstore.MultiRepoStoreImporterIndexer)
 	if !ok || s == nil {
 		panic("no Graph set in context")
-	}
-	return s
-}
-
-// WithPassword returns a copy of parent with the given Password store.
-func WithPassword(parent context.Context, s Password) context.Context {
-	return context.WithValue(parent, _PasswordKey, s)
-}
-
-// PasswordFromContext gets the context's Password store. If the store is not present, it panics.
-func PasswordFromContext(ctx context.Context) Password {
-	s, ok := ctx.Value(_PasswordKey).(Password)
-	if !ok || s == nil {
-		panic("no Password set in context")
 	}
 	return s
 }
@@ -298,20 +217,6 @@ func ReposFromContext(ctx context.Context) Repos {
 	s, ok := ctx.Value(_ReposKey).(Repos)
 	if !ok || s == nil {
 		panic("no Repos set in context")
-	}
-	return s
-}
-
-// WithUsers returns a copy of parent with the given Users store.
-func WithUsers(parent context.Context, s Users) context.Context {
-	return context.WithValue(parent, _UsersKey, s)
-}
-
-// UsersFromContext gets the context's Users store. If the store is not present, it panics.
-func UsersFromContext(ctx context.Context) Users {
-	s, ok := ctx.Value(_UsersKey).(Users)
-	if !ok || s == nil {
-		panic("no Users set in context")
 	}
 	return s
 }

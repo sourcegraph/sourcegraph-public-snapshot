@@ -62,12 +62,6 @@ export class DashboardContainer extends Container<Props, State> {
 			return true;
 		});
 
-		// Immediately after sign up update the query params to start the onboarding flow at the chrome extension.
-		if (UserStore.authResponses["signup"]) {
-			const newLoc = Object.assign({}, this.props.location, {query: {ob: "chrome"}});
-			(this.context as any).router.replace(newLoc);
-		}
-
 		setTimeout(() => this.setState({
 			chromeExtensionInstalled: document.getElementById("sourcegraph-app-bootstrap"),
 		}), 10);

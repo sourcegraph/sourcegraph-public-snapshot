@@ -644,12 +644,6 @@ message MirrorReposRefreshVCSOp {
 	UserSpec AsUser = 3;
 }
 
-// VCSCredentials for authentication during communication with VCS remotes.
-message VCSCredentials {
-	// Pass is the password provided to the VCS.
-	string Pass = 1;
-}
-
 // RemoteRepo is a repo canonically stored on an external host, and
 // possibly mirrored on the local instance.
 message RemoteRepo {
@@ -781,15 +775,6 @@ message User {
 	// Only admin users may set this field.
 	repeated string Betas = 14;
 
-	// BetaRegistered is whether or not the user has registered for beta access.
-	//
-	// If a user has registered for beta access, this field will always be true
-	// even if they are participating in a beta (len(User.Betas) > 0).
-	//
-	// Users should not set this field directly, instead use the Users.RegisterBeta
-	// method (which sets this field to true, among other things).
-	bool BetaRegistered = 15;
-
 	// Write is whether the user has write access for the site.
 	bool Write = 13;
 
@@ -817,101 +802,6 @@ message UpdateEmailsOp {
 
 	// Add is a list of email addresses to add, if they do not already exist.
 	EmailAddrList Add = 2;
-}
-
-// Accounts communicates with the account-related endpoints in the
-// Sourcegraph API.
-//
-// For each account, there is also a corresponding user, but there is
-// not an account for every user. This is because users may represent
-// accounts on external services that Sourcegraph doesn't manage (and
-// can't create/update information about).
-service Accounts {
-	// Create creates a new user account.
-	rpc Create(NewAccount) returns (CreatedAccount);
-
-	// RequestPasswordReset stores a password reset token in the database, to
-	// later verify the authenticity of a user using CheckResetToken
-	rpc RequestPasswordReset(RequestPasswordResetOp) returns (PendingPasswordReset);
-
-	// CheckResetToken verifies a password reset token is authentic and valid
-	rpc ResetPassword(NewPassword) returns (pbtypes.Void);
-
-	// Update profile of existing account.
-	rpc Update(User) returns (pbtypes.Void);
-
-	// UpdateEmails updates the email addresses of an existing account.
-	rpc UpdateEmails(UpdateEmailsOp) returns (pbtypes.Void);
-
-	// Delete deletes a user account from this server.
-	rpc Delete(UserSpec) returns (pbtypes.Void);
-}
-
-message RequestPasswordResetOp {
-	string Email = 1;
-}
-
-// CreatedAccount is a newly created account.
-message CreatedAccount {
-	int32 UID = 1;
-
-	// TemporaryAccessToken is a temporary access token that grants
-	// full access to this account. It can be used by the caller of
-	// Accounts.Create to perform any immediate setup necessary on the
-	// account (e.g., linking GitHub tokens) without needing to
-	// create/generate a password for the account (which otherwise
-	// would be the only way, via the resource owner password grant
-	// type, to get an access token).
-	string TemporaryAccessToken = 2;
-}
-
-message PasswordResetToken {
-	// token is the hard to guess token that allows a user to set a new password.
-	string Token = 1;
-}
-
-message PendingPasswordReset {
-	// Link is the URL for resetting password using this token.
-	// It is set in the response only if the request was made
-	// by an admin user.
-	string Link = 1;
-
-	// Token is the hard to guess token that allows a user to
-	// set a new password.
-	// It is set in the response only if the request was made
-	// by an admin user.
-	PasswordResetToken Token = 2;
-
-	// EmailSent is set if the password reset link was emailed to
-	// the user.
-	bool EmailSent = 3;
-
-	// Login is the login name of user for whom this request is created.
-	string Login = 4;
-}
-
-message NewPassword {
-	// password is the new password for the user who requested the password reset
-	// token.
-	string Password = 1;
-
-	PasswordResetToken Token = 2;
-}
-
-message NewAccount {
-	// Login is the desired login for the new user account.
-	string Login = 1;
-
-	// Email is the primary email address for the new user account.
-	string Email = 2;
-
-	// Password is the password for the new user account. If empty,
-	// the user can only log into the account via GitHub or some other
-	// external auth provider (until they reset the password).
-	string Password = 3;
-
-	// UID is the desired UID for the new user account.
-	int32 UID = 4;
 }
 
 // BetaRegistration represents the user information needed to register for the
@@ -945,119 +835,6 @@ message BetaResponse {
 	string EmailAddress = 1;
 }
 
-// UsersService communicates with the users-related endpoints in the Sourcegraph
-// API.
-service Users {
-	// Get fetches a user.
-	rpc Get(UserSpec) returns (User);
-
-	// GetWithEmail fetches a user by their primary email.
-	rpc GetWithEmail(EmailAddr) returns (User);
-
-	// ListEmails returns a list of a user's email addresses.
-	rpc ListEmails(UserSpec) returns (EmailAddrList);
-
-	// RegisterBeta registers the currently authenticated user for beta program
-	// access (to be granted at the discretion of an admin user in the future).
-	rpc RegisterBeta(BetaRegistration) returns (BetaResponse);
-}
-
-// Auth manages authentication and authorization (via OAuth2).
-service Auth {
-	// GetAccessToken requests the server to issue an access token
-	// using the credentials provided in the AccessTokenRequest.
-	//
-	// If this call is requesting an access token for a
-	// client_credentials grant (i.e., the access token would identify
-	// the client, not any specific user), then the request must not
-	// be authenticated. If the call is requesting an access token to
-	// identify a user, the request must be authenticated using the
-	// client's credentials.
-	//
-	// If the credentials are invalid, grpc.PermissionDenied is
-	// returned.
-	rpc GetAccessToken(AccessTokenRequest) returns (AccessTokenResponse);
-
-	// Identify describes the currently authenticated user and/or
-	// client (if any). It is akin to "whoami".
-	rpc Identify(pbtypes.Void) returns (AuthInfo);
-
-	// GetExternalToken returns a stored token that authorizes this server
-	// to an external service on behalf of the user.
-	rpc GetExternalToken(ExternalTokenSpec) returns (ExternalToken);
-
-	// SetExternalToken stores a token that authorizes this server
-	// to an external service on behalf of the user.
-	rpc SetExternalToken(ExternalToken) returns (pbtypes.Void);
-
-	// DeleteAndRevokeExternalToken deletes the specified token from
-	// Sourcegraph and revokes/disables the token on the external host
-	// (e.g., for GitHub, it hits the "revoke an authorizations for an
-	// application" API endpoint).
-	rpc DeleteAndRevokeExternalToken(ExternalTokenSpec) returns (pbtypes.Void);
-}
-
-// LoginCredentials is the information a user submits to log in.
-message LoginCredentials {
-	// Login is the user's claimed login.
-	string Login = 1;
-
-	// Password is the password (possibly) corresponding to the login.
-	string Password = 2;
-}
-
-// GitHubAuthCode is a custom authorization grant type we support.
-// It lets you log into Sourcegraph by presenting a valid GitHub
-// authorization code for the same user.
-message GitHubAuthCode {
-	// Code is the GitHub OAuth2 authorization code returned from
-	// GitHub.
-	string Code = 1;
-
-	// Host is always "github.com" for now, but can be used in the
-	// future to support GitHub Enterprises located at different URLs.
-	string Host = 2;
-}
-
-// AccessTokenRequest contains the information necessary to
-// request an OAuth2 access token. It supports a subset of
-// authorization grant types specified in
-// http://tools.ietf.org/html/rfc6749#section-4.
-message AccessTokenRequest {
-	// See http://tools.ietf.org/html/rfc6749#section-1.3 for more
-	// information on OAuth2 authorization grant types.
-	oneof authorization_grant {
-		LoginCredentials ResourceOwnerPassword = 2;
-		GitHubAuthCode GitHubAuthCode = 3;
-	}
-
-	repeated string Scope = 17;
-}
-
-// AccessTokenResponse is a successful access token response. See
-// http://tools.ietf.org/html/rfc6749#section-5.1 for more
-// information.
-message AccessTokenResponse {
-	string AccessToken = 1;
-	repeated string Scope = 5; // optional if equal to the requested scope
-
-	// Extra fields only used by Sourcegraph.
-	int32 UID = 6; // the Sourcegraph UID of the user corresponding to the auth'd GitHubAuthCode's user
-	string GitHubAccessToken = 7; // the GitHub access token obtained by exchanging the GitHubAuthCode
-	GitHubUser GitHubUser = 8; // the authenticated GitHub user for the GitHubAuthCode
-}
-
-// GitHubUser represents a GitHub user.
-message GitHubUser {
-	int32 ID = 1; // user ID
-	string Login = 2;
-	string Name = 3;
-	string Email = 4;
-	string Location = 5;
-	string Company = 6;
-	string AvatarURL = 7;
-}
-
 // AuthInfo describes the currently authenticated client and/or user
 // (if any).
 message AuthInfo {
@@ -1074,21 +851,6 @@ message AuthInfo {
 	bool Admin = 6;
 }
 
-// ExternalTokenSpec specifies a request for a stored auth token
-// of a user for an external host.
-message ExternalTokenSpec {
-	// UID is the UID of the user whose token is requested.
-	int32 uid = 1 [(gogoproto.customname) = "UID"];
-
-	// Host is the external service whose token is requested.
-	string host = 2;
-
-	// ClientID is the application client ID this token was granted
-	// to. The same client ID must be used when using this access
-	// token.
-	string client_id = 3 [(gogoproto.customname) = "ClientID"];
-}
-
 // ExternalToken specifies an auth token of a user for an external host.
 message ExternalToken {
 	// UID is the UID of the user authorized by the token.
@@ -1102,15 +864,6 @@ message ExternalToken {
 
 	// Scope lists the permissions the token is entitled to.
 	string scope = 4;
-
-	// ClientID is the application client ID this token was granted
-	// to. The same client ID must be used when using this access
-	// token.
-	string client_id = 5 [(gogoproto.customname) = "ClientID"];
-
-	// ExtUID is the UID on the external service of the user corresponding
-	// to this token.
-	int32 ext_uid = 6 [(gogoproto.customname) = "ExtUID"];
 }
 
 // Def is a code def returned by the Sourcegraph API.

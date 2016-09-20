@@ -11,7 +11,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
 
 const oauthBasicUsername = "x-oauth-basic"
@@ -55,20 +54,6 @@ func AuthorizationMiddleware(next http.Handler) http.Handler {
 				} else {
 					r = r.WithContext(auth.AuthenticateBySession(r.Context(), password))
 				}
-
-			default: // Plain username and password.
-				cl := handlerutil.Client(r)
-				tok, err := cl.Auth.GetAccessToken(r.Context(), &sourcegraph.AccessTokenRequest{
-					AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
-						ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: username, Password: password},
-					},
-				})
-				if err != nil {
-					log.Printf("PasswordMiddleware: error getting resource owner password access token for user %q: %s.", username, err)
-					http.Error(w, "error getting access token for username/password", http.StatusForbidden)
-					return
-				}
-				r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), tok.AccessToken))
 			}
 
 		case "token", "bearer":

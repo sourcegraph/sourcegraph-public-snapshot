@@ -1,14 +1,11 @@
 package github
 
 import (
-	"strings"
-
 	"context"
 
 	"github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 )
 
@@ -59,19 +56,10 @@ func NewContextWithAuthedClient(ctx context.Context) (context.Context, error) {
 	a := auth.ActorFromContext(ctx)
 	var userClient *github.Client
 
-	isAuthedUser := false
-	if a.IsAuthenticated() {
-		host := strings.TrimPrefix(githubutil.Default.BaseURL.Host, "api.") // api.github.com -> github.com
-		tok, err := store.ExternalAuthTokensFromContext(ctx).GetUserToken(ctx, a.UID, host, githubutil.Default.OAuth.ClientID)
-		if err == nil {
-			userClient = ghConf.AuthedClient(tok.Token)
-			isAuthedUser = true
-		}
-		if err != nil && err != store.ErrNoExternalAuthToken && err != store.ErrExternalAuthTokenDisabled {
-			return nil, err
-		}
-	}
-	if userClient == nil {
+	isAuthedUser := a.IsAuthenticated() && a.GitHubToken != ""
+	if isAuthedUser {
+		userClient = ghConf.AuthedClient(a.GitHubToken)
+	} else {
 		userClient = ghConf.UnauthedClient()
 	}
 	return NewContextWithClient(ctx, isAuthedUser, userClient, ghConf.ApplicationAuthedClient()), nil

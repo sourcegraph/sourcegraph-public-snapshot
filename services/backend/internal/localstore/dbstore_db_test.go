@@ -23,7 +23,7 @@ func init() {
 func testContext() (ctx context.Context, mock *mocks, done func()) {
 	ctx = context.Background()
 
-	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 1, Login: "test", Admin: true})
+	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: 1, Login: "test"})
 	ctx = accesscontrol.WithInsecureSkip(ctx, true)
 
 	appDBH, appDBDone := testdb.NewHandle("app", &AppSchema)

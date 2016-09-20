@@ -23,10 +23,8 @@ type contextKey int
 
 const (
 	_MultiRepoImporterKey contextKey = iota
-	_AccountsKey          contextKey = iota
 	_AnnotationsKey       contextKey = iota
 	_AsyncKey             contextKey = iota
-	_AuthKey              contextKey = iota
 	_DefsKey              contextKey = iota
 	_MetaKey              contextKey = iota
 	_MirrorReposKey       contextKey = iota
@@ -34,16 +32,13 @@ const (
 	_RepoTreeKey          contextKey = iota
 	_ReposKey             contextKey = iota
 	_SearchKey            contextKey = iota
-	_UsersKey             contextKey = iota
 )
 
 // Services contains fields for all existing services.
 type Services struct {
 	MultiRepoImporter pb.MultiRepoImporterServer
-	Accounts          sourcegraph.AccountsServer
 	Annotations       sourcegraph.AnnotationsServer
 	Async             sourcegraph.AsyncServer
-	Auth              sourcegraph.AuthServer
 	Defs              sourcegraph.DefsServer
 	Meta              sourcegraph.MetaServer
 	MirrorRepos       sourcegraph.MirrorReposServer
@@ -51,7 +46,6 @@ type Services struct {
 	RepoTree          sourcegraph.RepoTreeServer
 	Repos             sourcegraph.ReposServer
 	Search            sourcegraph.SearchServer
-	Users             sourcegraph.UsersServer
 }
 
 // RegisterAll calls all of the the RegisterXxxServer funcs.
@@ -61,20 +55,12 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 		pb.RegisterMultiRepoImporterServer(s, svcs.MultiRepoImporter)
 	}
 
-	if svcs.Accounts != nil {
-		sourcegraph.RegisterAccountsServer(s, svcs.Accounts)
-	}
-
 	if svcs.Annotations != nil {
 		sourcegraph.RegisterAnnotationsServer(s, svcs.Annotations)
 	}
 
 	if svcs.Async != nil {
 		sourcegraph.RegisterAsyncServer(s, svcs.Async)
-	}
-
-	if svcs.Auth != nil {
-		sourcegraph.RegisterAuthServer(s, svcs.Auth)
 	}
 
 	if svcs.Defs != nil {
@@ -105,10 +91,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 		sourcegraph.RegisterSearchServer(s, svcs.Search)
 	}
 
-	if svcs.Users != nil {
-		sourcegraph.RegisterUsersServer(s, svcs.Users)
-	}
-
 }
 
 // WithServices returns a copy of parent with the given services. If a service's field value is nil, its previous value is inherited from parent in the new context.
@@ -118,20 +100,12 @@ func WithServices(ctx context.Context, s Services) context.Context {
 		ctx = WithMultiRepoImporter(ctx, s.MultiRepoImporter)
 	}
 
-	if s.Accounts != nil {
-		ctx = WithAccounts(ctx, s.Accounts)
-	}
-
 	if s.Annotations != nil {
 		ctx = WithAnnotations(ctx, s.Annotations)
 	}
 
 	if s.Async != nil {
 		ctx = WithAsync(ctx, s.Async)
-	}
-
-	if s.Auth != nil {
-		ctx = WithAuth(ctx, s.Auth)
 	}
 
 	if s.Defs != nil {
@@ -162,10 +136,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 		ctx = WithSearch(ctx, s.Search)
 	}
 
-	if s.Users != nil {
-		ctx = WithUsers(ctx, s.Users)
-	}
-
 	return ctx
 }
 
@@ -186,29 +156,6 @@ func MultiRepoImporter(ctx context.Context) pb.MultiRepoImporterServer {
 // MultiRepoImporterOrNil returns the context's MultiRepoImporter service if present, or else nil.
 func MultiRepoImporterOrNil(ctx context.Context) pb.MultiRepoImporterServer {
 	s, ok := ctx.Value(_MultiRepoImporterKey).(pb.MultiRepoImporterServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithAccounts returns a copy of parent that uses the given Accounts service.
-func WithAccounts(ctx context.Context, s sourcegraph.AccountsServer) context.Context {
-	return context.WithValue(ctx, _AccountsKey, s)
-}
-
-// Accounts gets the context's Accounts service. If the service is not present, it panics.
-func Accounts(ctx context.Context) sourcegraph.AccountsServer {
-	s, ok := ctx.Value(_AccountsKey).(sourcegraph.AccountsServer)
-	if !ok || s == nil {
-		panic("no Accounts set in context")
-	}
-	return s
-}
-
-// AccountsOrNil returns the context's Accounts service if present, or else nil.
-func AccountsOrNil(ctx context.Context) sourcegraph.AccountsServer {
-	s, ok := ctx.Value(_AccountsKey).(sourcegraph.AccountsServer)
 	if ok {
 		return s
 	}
@@ -255,29 +202,6 @@ func Async(ctx context.Context) sourcegraph.AsyncServer {
 // AsyncOrNil returns the context's Async service if present, or else nil.
 func AsyncOrNil(ctx context.Context) sourcegraph.AsyncServer {
 	s, ok := ctx.Value(_AsyncKey).(sourcegraph.AsyncServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithAuth returns a copy of parent that uses the given Auth service.
-func WithAuth(ctx context.Context, s sourcegraph.AuthServer) context.Context {
-	return context.WithValue(ctx, _AuthKey, s)
-}
-
-// Auth gets the context's Auth service. If the service is not present, it panics.
-func Auth(ctx context.Context) sourcegraph.AuthServer {
-	s, ok := ctx.Value(_AuthKey).(sourcegraph.AuthServer)
-	if !ok || s == nil {
-		panic("no Auth set in context")
-	}
-	return s
-}
-
-// AuthOrNil returns the context's Auth service if present, or else nil.
-func AuthOrNil(ctx context.Context) sourcegraph.AuthServer {
-	s, ok := ctx.Value(_AuthKey).(sourcegraph.AuthServer)
 	if ok {
 		return s
 	}
@@ -439,29 +363,6 @@ func Search(ctx context.Context) sourcegraph.SearchServer {
 // SearchOrNil returns the context's Search service if present, or else nil.
 func SearchOrNil(ctx context.Context) sourcegraph.SearchServer {
 	s, ok := ctx.Value(_SearchKey).(sourcegraph.SearchServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithUsers returns a copy of parent that uses the given Users service.
-func WithUsers(ctx context.Context, s sourcegraph.UsersServer) context.Context {
-	return context.WithValue(ctx, _UsersKey, s)
-}
-
-// Users gets the context's Users service. If the service is not present, it panics.
-func Users(ctx context.Context) sourcegraph.UsersServer {
-	s, ok := ctx.Value(_UsersKey).(sourcegraph.UsersServer)
-	if !ok || s == nil {
-		panic("no Users set in context")
-	}
-	return s
-}
-
-// UsersOrNil returns the context's Users service if present, or else nil.
-func UsersOrNil(ctx context.Context) sourcegraph.UsersServer {
-	s, ok := ctx.Value(_UsersKey).(sourcegraph.UsersServer)
 	if ok {
 		return s
 	}

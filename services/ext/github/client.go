@@ -1,8 +1,6 @@
 package github
 
 import (
-	"net/http"
-
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"context"
@@ -11,10 +9,7 @@ import (
 	"github.com/sourcegraph/go-github/github"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
 var rateLimitRemainingGauge = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -78,17 +73,8 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 		log15.Debug("exceeded github rate limit", "error", err, "op", op)
 		return grpc.Errorf(codes.ResourceExhausted, "exceeded GitHub API rate limit: %s: %v", op, err)
 	}
-	if uid := auth.ActorFromContext(ctx).UID; resp.StatusCode == http.StatusUnauthorized && uid != 0 {
-		// Token possibly revoked, so delete it from DB.
-		_, err = svc.Auth(ctx).DeleteAndRevokeExternalToken(ctx, &sourcegraph.ExternalTokenSpec{
-			UID: int32(uid),
-		})
-		if err != nil {
-			log15.Error("could not delete external token", "error", err, "uid", uid)
-		}
-	} else {
-		log15.Debug("unexpected error from github", "error", err, "statusCode", resp.StatusCode, "op", op)
-	}
+
+	log15.Debug("unexpected error from github", "error", err, "statusCode", resp.StatusCode, "op", op)
 
 	statusCode := errcode.HTTPToGRPC(resp.StatusCode)
 

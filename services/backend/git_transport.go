@@ -61,7 +61,7 @@ func (s *repos) ReceivePack(ctx context.Context, op *sourcegraph.ReceivePackOp) 
 	}
 	gitEvents = collapseDuplicateEvents(gitEvents)
 	payload := events.GitPayload{
-		Actor: authpkg.ActorFromContext(ctx).UserSpec(),
+		Actor: *authpkg.ActorFromContext(ctx).UserSpec(),
 		Repo:  op.Repo,
 	}
 	for _, e := range gitEvents {

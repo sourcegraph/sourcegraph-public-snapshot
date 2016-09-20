@@ -14,20 +14,15 @@ import (
 
 func init() {
 	stores := store.Stores{
-		Accounts:           &accounts{},
-		DefExamples:        &examples{},
-		Directory:          &directory{},
-		ExternalAuthTokens: &externalAuthTokens{},
-		Defs:               &defs{},
-		GlobalDeps:         &globalDeps{},
-		GlobalRefs:         &globalRefs{},
-		Password:           newPassword(),
-		Queue:              &middleware.InstrumentedQueue{Queue: &queue{}},
-		RepoConfigs:        &repoConfigs{},
-		RepoStatuses:       &repoStatuses{},
-		RepoVCS:            &repoVCS{},
-		Repos:              &repos{},
-		Users:              &users{},
+		DefExamples:  &examples{},
+		Defs:         &defs{},
+		GlobalDeps:   &globalDeps{},
+		GlobalRefs:   &globalRefs{},
+		Queue:        &middleware.InstrumentedQueue{Queue: &queue{}},
+		RepoConfigs:  &repoConfigs{},
+		RepoStatuses: &repoStatuses{},
+		RepoVCS:      &repoVCS{},
+		Repos:        &repos{},
 	}
 
 	once := sync.Once{}

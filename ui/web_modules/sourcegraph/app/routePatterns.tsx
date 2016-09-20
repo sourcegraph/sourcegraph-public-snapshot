@@ -40,8 +40,6 @@ export const rel = {
 	settings: "settings",
 	login: "login",
 	signup: "join",
-	forgot: "forgot",
-	reset: "reset",
 
 	home: "",
 
@@ -65,8 +63,6 @@ export const abs = {
 	settings: rel.settings,
 	login: rel.login,
 	signup: rel.signup,
-	forgot: rel.forgot,
-	reset: rel.reset,
 
 	repo: rel.repo,
 	commit: `${rel.repo}/-/${rel.commit}`,

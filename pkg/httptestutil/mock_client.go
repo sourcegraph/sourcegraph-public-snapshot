@@ -14,9 +14,7 @@ type MockClients struct {
 	Ctx context.Context
 
 	Annotations  mock.AnnotationsClient
-	Accounts     mock.AccountsClient
 	Async        mock.AsyncClient
-	Auth         mock.AuthClient
 	Defs         mock.DefsClient
 	Meta         mock.MetaClient
 	MirrorRepos  mock.MirrorReposClient
@@ -24,15 +22,12 @@ type MockClients struct {
 	RepoTree     mock.RepoTreeClient
 	Repos        mock.ReposClient
 	Search       mock.SearchClient
-	Users        mock.UsersClient
 }
 
 func (c *MockClients) Client() *sourcegraph.Client {
 	return &sourcegraph.Client{
 		Annotations:  &c.Annotations,
-		Accounts:     &c.Accounts,
 		Async:        &c.Async,
-		Auth:         &c.Auth,
 		Defs:         &c.Defs,
 		Meta:         &c.Meta,
 		MirrorRepos:  &c.MirrorRepos,
@@ -40,6 +35,5 @@ func (c *MockClients) Client() *sourcegraph.Client {
 		RepoTree:     &c.RepoTree,
 		Repos:        &c.Repos,
 		Search:       &c.Search,
-		Users:        &c.Users,
 	}
 }

@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"errors"
 	"testing"
 
 	"context"
@@ -26,9 +25,6 @@ func TestRefreshVCS(t *testing.T) {
 			return &vcs.UpdateResult{Changes: []vcs.Change{}}, nil
 		},
 	})
-	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error) {
-		return nil, errors.New("mock")
-	}
 	calledInternalUpdate := mock.stores.Repos.MockInternalUpdate(t)
 
 	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
@@ -56,9 +52,6 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 	mock.stores.RepoVCS.Clone_ = func(_ context.Context, _ int32, _ *store.CloneInfo) error {
 		cloned = true
 		return nil
-	}
-	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error) {
-		return nil, errors.New("mock")
 	}
 	mock.servers.Async.RefreshIndexes_ = func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
 		return &pbtypes.Void{}, nil
@@ -88,9 +81,6 @@ func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 	})
 	mock.stores.RepoVCS.Clone_ = func(_ context.Context, _ int32, _ *store.CloneInfo) error {
 		return vcs.ErrRepoExist
-	}
-	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error) {
-		return nil, errors.New("mock")
 	}
 	mock.servers.Async.RefreshIndexes_ = func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
 		return &pbtypes.Void{}, nil

@@ -10,10 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/gorilla/csrf"
 	opentracing "github.com/opentracing/opentracing-go"
 
@@ -24,7 +20,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 )
 
@@ -46,9 +41,8 @@ type JSContext struct {
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
 // request.
-func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User) (JSContext, error) {
-	ctx := req.Context()
-	cl := handlerutil.Client(req)
+func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
+	actor := auth.ActorFromContext(req.Context())
 
 	headers := make(map[string]string)
 	sessionCookie := auth.SessionCookie(req)
@@ -56,7 +50,7 @@ func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User)
 		headers["Authorization"] = httpapiauth.AuthorizationHeaderWithSessionCookie(sessionCookie)
 	}
 
-	if span := opentracing.SpanFromContext(ctx); span != nil {
+	if span := opentracing.SpanFromContext(req.Context()); span != nil {
 		if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, opentracing.TextMapCarrier(headers)); err != nil {
 			return JSContext{}, err
 		}
@@ -71,28 +65,10 @@ func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User)
 
 	headers["X-Csrf-Token"] = csrf.Token(req)
 
-	var emails *sourcegraph.EmailAddrList
-	if user != nil {
-		var err error
-		emails, err = cl.Users.ListEmails(ctx, &sourcegraph.UserSpec{UID: user.UID})
-		if err != nil {
-			log15.Warn("Error including emails in NewJSContextFromRequest", "uid", user.UID, "err", err)
-		}
-	}
-
 	var gitHubToken *sourcegraph.ExternalToken
-	if user != nil {
-		tok, err := cl.Auth.GetExternalToken(ctx, &sourcegraph.ExternalTokenSpec{
-			UID:      user.UID,
-			Host:     "github.com",
-			ClientID: "", // defaults to GitHub client ID in environment
-		})
-		if err == nil {
-			// No need to include the actual access token.
-			tok.Token = ""
-			gitHubToken = tok
-		} else if grpc.Code(err) != codes.NotFound {
-			log15.Warn("Error getting GitHub token in NewJSContextFromRequest", "uid", user.UID, "err", err)
+	if actor.GitHubConnected {
+		gitHubToken = &sourcegraph.ExternalToken{
+			Scope: strings.Join(actor.GitHubScopes, ","), // the UI only cares about the scope
 		}
 	}
 
@@ -100,14 +76,16 @@ func NewJSContextFromRequest(req *http.Request, uid int, user *sourcegraph.User)
 		AppURL:            conf.AppURL.String(),
 		LegacyAccessToken: sessionCookie, // Legacy support for Chrome extension.
 		XHRHeaders:        headers,
-		UserAgentIsBot:    isBot(eventsutil.UserAgentFromContext(ctx)),
+		UserAgentIsBot:    isBot(eventsutil.UserAgentFromContext(req.Context())),
 		AssetsRoot:        assets.URL("/").String(),
 		BuildVars:         buildvar.Public,
 		Features:          feature.Features,
-		User:              user,
-		Emails:            emails,
-		GitHubToken:       gitHubToken,
-		IntercomHash:      intercomHMAC(uid),
+		User:              actor.User(),
+		Emails: &sourcegraph.EmailAddrList{
+			EmailAddrs: []*sourcegraph.EmailAddr{{Email: actor.Email, Primary: true}},
+		},
+		GitHubToken:  gitHubToken,
+		IntercomHash: intercomHMAC(actor.UID),
 	}, nil
 }
 

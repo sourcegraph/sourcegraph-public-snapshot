@@ -6,10 +6,10 @@ import (
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 func serveRepoResolveRev(w http.ResponseWriter, r *http.Request) error {
@@ -83,8 +83,6 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	var opt sourcegraph.MirrorReposRefreshVCSOp
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
 	if err != nil {
@@ -96,12 +94,8 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	authInfo, err := cl.Auth.Identify(r.Context(), &pbtypes.Void{})
-	if err != nil {
-		return err
-	}
-
-	repoupdater.Enqueue(repo, authInfo.UserSpec())
+	actor := auth.ActorFromContext(r.Context())
+	repoupdater.Enqueue(repo, actor.UserSpec())
 	w.WriteHeader(http.StatusAccepted)
 	return nil
 }

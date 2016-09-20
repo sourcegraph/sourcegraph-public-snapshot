@@ -9,7 +9,7 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
 	"github.com/gorilla/schema"
@@ -32,7 +32,7 @@ func HTTP(err error) int {
 	switch err {
 	case vcs.ErrRevisionNotFound:
 		return http.StatusNotFound
-	case store.ErrNoExternalAuthToken:
+	case auth.ErrNoExternalAuthToken:
 		return http.StatusUnauthorized
 	case context.DeadlineExceeded:
 		return http.StatusRequestTimeout
@@ -57,8 +57,6 @@ func HTTP(err error) int {
 		return http.StatusBadRequest
 	case schema.MultiError:
 		return http.StatusBadRequest
-	case *store.UserNotFoundError:
-		return http.StatusNotFound
 	}
 
 	if os.IsNotExist(err) {

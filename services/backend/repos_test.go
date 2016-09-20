@@ -88,7 +88,7 @@ func TestReposService_Get_UnauthedUpdateMeta(t *testing.T) {
 	ctx, mock := testContext()
 
 	// Remove auth from testContext
-	ctx = authpkg.WithActor(ctx, authpkg.Actor{})
+	ctx = authpkg.WithActor(ctx, &authpkg.Actor{})
 	ctx = accesscontrol.WithInsecureSkip(ctx, false)
 
 	wantRepo := &sourcegraph.Repo{

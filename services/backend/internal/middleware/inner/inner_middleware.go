@@ -35,13 +35,9 @@ func Services() svc.Services {
 
 		MultiRepoImporter: wrappedMultiRepoImporter{},
 
-		Accounts: wrappedAccounts{},
-
 		Annotations: wrappedAnnotations{},
 
 		Async: wrappedAsync{},
-
-		Auth: wrappedAuth{},
 
 		Defs: wrappedDefs{},
 
@@ -56,8 +52,6 @@ func Services() svc.Services {
 		Repos: wrappedRepos{},
 
 		Search: wrappedSearch{},
-
-		Users: wrappedUsers{},
 	}
 }
 
@@ -126,134 +120,6 @@ func (s wrappedMultiRepoImporter) Index(ctx context.Context, param *pb.IndexOp) 
 	return
 }
 
-type wrappedAccounts struct{}
-
-func (s wrappedAccounts) Create(ctx context.Context, param *sourcegraph.NewAccount) (res *sourcegraph.CreatedAccount, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Accounts", "Create", param)
-	defer func() {
-		trace.After(ctx, "Accounts", "Create", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Accounts.Create(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Accounts.Create returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Accounts.Create failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *sourcegraph.RequestPasswordResetOp) (res *sourcegraph.PendingPasswordReset, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Accounts", "RequestPasswordReset", param)
-	defer func() {
-		trace.After(ctx, "Accounts", "RequestPasswordReset", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Accounts.RequestPasswordReset(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Accounts.RequestPasswordReset returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Accounts.RequestPasswordReset failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedAccounts) ResetPassword(ctx context.Context, param *sourcegraph.NewPassword) (res *pbtypes.Void, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Accounts", "ResetPassword", param)
-	defer func() {
-		trace.After(ctx, "Accounts", "ResetPassword", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Accounts.ResetPassword(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Accounts.ResetPassword returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Accounts.ResetPassword failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedAccounts) Update(ctx context.Context, param *sourcegraph.User) (res *pbtypes.Void, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Accounts", "Update", param)
-	defer func() {
-		trace.After(ctx, "Accounts", "Update", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Accounts.Update(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Accounts.Update returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Accounts.Update failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedAccounts) UpdateEmails(ctx context.Context, param *sourcegraph.UpdateEmailsOp) (res *pbtypes.Void, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Accounts", "UpdateEmails", param)
-	defer func() {
-		trace.After(ctx, "Accounts", "UpdateEmails", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Accounts.UpdateEmails(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Accounts.UpdateEmails returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Accounts.UpdateEmails failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.UserSpec) (res *pbtypes.Void, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Accounts", "Delete", param)
-	defer func() {
-		trace.After(ctx, "Accounts", "Delete", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Accounts.Delete(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Accounts.Delete returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Accounts.Delete failed with internal error.")
-		}
-	}
-	return
-}
-
 type wrappedAnnotations struct{}
 
 func (s wrappedAnnotations) List(ctx context.Context, param *sourcegraph.AnnotationsListOptions) (res *sourcegraph.AnnotationList, err error) {
@@ -316,113 +182,6 @@ func (s wrappedAsync) RefreshIndexes(ctx context.Context, param *sourcegraph.Asy
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
 			err = grpc.Errorf(code, "Async.RefreshIndexes failed with internal error.")
-		}
-	}
-	return
-}
-
-type wrappedAuth struct{}
-
-func (s wrappedAuth) GetAccessToken(ctx context.Context, param *sourcegraph.AccessTokenRequest) (res *sourcegraph.AccessTokenResponse, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Auth", "GetAccessToken", param)
-	defer func() {
-		trace.After(ctx, "Auth", "GetAccessToken", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Auth.GetAccessToken(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Auth.GetAccessToken returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Auth.GetAccessToken failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedAuth) Identify(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.AuthInfo, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Auth", "Identify", param)
-	defer func() {
-		trace.After(ctx, "Auth", "Identify", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Auth.Identify(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Auth.Identify returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Auth.Identify failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedAuth) GetExternalToken(ctx context.Context, param *sourcegraph.ExternalTokenSpec) (res *sourcegraph.ExternalToken, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Auth", "GetExternalToken", param)
-	defer func() {
-		trace.After(ctx, "Auth", "GetExternalToken", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Auth.GetExternalToken(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Auth.GetExternalToken returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Auth.GetExternalToken failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedAuth) SetExternalToken(ctx context.Context, param *sourcegraph.ExternalToken) (res *pbtypes.Void, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Auth", "SetExternalToken", param)
-	defer func() {
-		trace.After(ctx, "Auth", "SetExternalToken", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Auth.SetExternalToken(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Auth.SetExternalToken returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Auth.SetExternalToken failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedAuth) DeleteAndRevokeExternalToken(ctx context.Context, param *sourcegraph.ExternalTokenSpec) (res *pbtypes.Void, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Auth", "DeleteAndRevokeExternalToken", param)
-	defer func() {
-		trace.After(ctx, "Auth", "DeleteAndRevokeExternalToken", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Auth.DeleteAndRevokeExternalToken(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Auth.DeleteAndRevokeExternalToken returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Auth.DeleteAndRevokeExternalToken failed with internal error.")
 		}
 	}
 	return
@@ -1193,92 +952,6 @@ func (s wrappedSearch) SearchRepos(ctx context.Context, param *sourcegraph.Searc
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
 			err = grpc.Errorf(code, "Search.SearchRepos failed with internal error.")
-		}
-	}
-	return
-}
-
-type wrappedUsers struct{}
-
-func (s wrappedUsers) Get(ctx context.Context, param *sourcegraph.UserSpec) (res *sourcegraph.User, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Users", "Get", param)
-	defer func() {
-		trace.After(ctx, "Users", "Get", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Users.Get(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Users.Get returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Users.Get failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedUsers) GetWithEmail(ctx context.Context, param *sourcegraph.EmailAddr) (res *sourcegraph.User, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Users", "GetWithEmail", param)
-	defer func() {
-		trace.After(ctx, "Users", "GetWithEmail", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Users.GetWithEmail(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Users.GetWithEmail returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Users.GetWithEmail failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedUsers) ListEmails(ctx context.Context, param *sourcegraph.UserSpec) (res *sourcegraph.EmailAddrList, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Users", "ListEmails", param)
-	defer func() {
-		trace.After(ctx, "Users", "ListEmails", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Users.ListEmails(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Users.ListEmails returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Users.ListEmails failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedUsers) RegisterBeta(ctx context.Context, param *sourcegraph.BetaRegistration) (res *sourcegraph.BetaResponse, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Users", "RegisterBeta", param)
-	defer func() {
-		trace.After(ctx, "Users", "RegisterBeta", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Users.RegisterBeta(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Users.RegisterBeta returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Users.RegisterBeta failed with internal error.")
 		}
 	}
 	return

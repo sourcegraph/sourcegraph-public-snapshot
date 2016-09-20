@@ -356,7 +356,6 @@ func TestRepos_List_GitHub_Authenticated(t *testing.T) {
 
 	ctx, mock, done := testContext()
 	defer done()
-	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 
 	calledListAccessible := mock.githubRepos.MockListAccessible(ctx, []*sourcegraph.Repo{
 		&sourcegraph.Repo{URI: "github.com/is/privateButAccessible", Private: true, DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}},
@@ -385,6 +384,8 @@ func TestRepos_List_GitHub_Authenticated(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+
+	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 
 	repoList, err := s.List(ctx, &store.RepoListOp{})
 	if err != nil {

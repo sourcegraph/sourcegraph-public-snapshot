@@ -1,17 +1,5 @@
 // GENERATED CODE - DO NOT EDIT!
 
-export interface AccessTokenRequest {
-	Scope?: string[];
-}
-
-export interface AccessTokenResponse {
-	AccessToken?: string;
-	Scope?: string[];
-	UID?: number;
-	GitHubAccessToken?: string;
-	GitHubUser?: GitHubUser;
-}
-
 export interface Annotation {
 	URL?: string;
 	StartByte: number;
@@ -201,11 +189,6 @@ export interface CompletionList {
 export interface CompletionOptions {
 	resolveProvider?: boolean;
 	triggerCharacters?: string[];
-}
-
-export interface CreatedAccount {
-	UID?: number;
-	TemporaryAccessToken?: string;
 }
 
 export interface Def {
@@ -529,14 +512,6 @@ export interface ExternalToken {
 	host?: string;
 	token?: string;
 	scope?: string;
-	client_id?: string;
-	ext_uid?: number;
-}
-
-export interface ExternalTokenSpec {
-	uid?: number;
-	host?: string;
-	client_id?: string;
 }
 
 export interface FileData {
@@ -580,21 +555,6 @@ export interface GetFileOptions {
 	FullLines?: boolean;
 	Recursive?: boolean;
 	RecurseSingleSubfolderLimit?: number;
-}
-
-export interface GitHubAuthCode {
-	Code?: string;
-	Host?: string;
-}
-
-export interface GitHubUser {
-	ID?: number;
-	Login?: string;
-	Name?: string;
-	Email?: string;
-	Location?: string;
-	Company?: string;
-	AvatarURL?: string;
 }
 
 export interface HTTPSConfig {
@@ -641,11 +601,6 @@ export interface LogMessageParams {
 	message: string;
 }
 
-export interface LoginCredentials {
-	Login?: string;
-	Password?: string;
-}
-
 export interface MarkedString {
 	language: string;
 	value: string;
@@ -658,18 +613,6 @@ export interface MessageActionItem {
 export interface MirrorReposRefreshVCSOp {
 	Repo?: number;
 	AsUser?: UserSpec;
-}
-
-export interface NewAccount {
-	Login?: string;
-	Email?: string;
-	Password?: string;
-	UID?: number;
-}
-
-export interface NewPassword {
-	Password?: string;
-	Token?: PasswordResetToken;
 }
 
 export interface None {
@@ -694,17 +637,6 @@ export interface Packet {
 export interface ParameterInformation {
 	label: string;
 	documentation?: string;
-}
-
-export interface PasswordResetToken {
-	Token?: string;
-}
-
-export interface PendingPasswordReset {
-	Link?: string;
-	Token?: PasswordResetToken;
-	EmailSent?: boolean;
-	Login?: string;
 }
 
 export interface Position {
@@ -1041,10 +973,6 @@ export interface ReposUpdateOp {
 export interface RepositoryListingDef {
 }
 
-export interface RequestPasswordResetOp {
-	Email?: string;
-}
-
 export interface ResolvedRev {
 	CommitID?: string;
 }
@@ -1248,7 +1176,6 @@ export interface User {
 	Disabled?: boolean;
 	Admin?: boolean;
 	Betas?: string[];
-	BetaRegistered?: boolean;
 	Write?: boolean;
 	RegisteredAt?: any;
 }
@@ -1271,10 +1198,6 @@ export interface UserList {
 
 export interface UserSpec {
 	UID?: number;
-}
-
-export interface VCSCredentials {
-	Pass?: string;
 }
 
 export interface VCSSearchResultList {

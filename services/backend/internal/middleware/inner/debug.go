@@ -4,8 +4,6 @@ import (
 	"os"
 	"strconv"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-
 	"context"
 )
 
@@ -19,11 +17,5 @@ func init() {
 // information such as error messages visible to clients of the gRPC service.
 // DebugMode should NEVER return true in production.
 func DebugMode(ctx context.Context) bool {
-	if debug {
-		return true
-	}
-	if auth.ActorFromContext(ctx).Admin {
-		return true
-	}
-	return false
+	return debug
 }

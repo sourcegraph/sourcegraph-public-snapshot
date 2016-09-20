@@ -18,39 +18,29 @@ import (
 
 // Stores has a field for each store interface with the concrete mock type (to obviate the need for tedious type assertions in test code).
 type Stores struct {
-	Accounts           Accounts
-	DefExamples        DefExamples
-	Defs               Defs
-	Directory          Directory
-	ExternalAuthTokens ExternalAuthTokens
-	GlobalDeps         GlobalDeps
-	GlobalRefs         GlobalRefs
-	Graph              srcstore.MockMultiRepoStore
-	Password           Password
-	Queue              Queue
-	RepoConfigs        RepoConfigs
-	RepoStatuses       RepoStatuses
-	RepoVCS            RepoVCS
-	Repos              Repos
-	Users              Users
+	DefExamples  DefExamples
+	Defs         Defs
+	GlobalDeps   GlobalDeps
+	GlobalRefs   GlobalRefs
+	Graph        srcstore.MockMultiRepoStore
+	Queue        Queue
+	RepoConfigs  RepoConfigs
+	RepoStatuses RepoStatuses
+	RepoVCS      RepoVCS
+	Repos        Repos
 }
 
 func (s *Stores) Stores() store.Stores {
 	return store.Stores{
-		Accounts:           &s.Accounts,
-		DefExamples:        &s.DefExamples,
-		Defs:               &s.Defs,
-		Directory:          &s.Directory,
-		ExternalAuthTokens: &s.ExternalAuthTokens,
-		GlobalDeps:         &s.GlobalDeps,
-		GlobalRefs:         &s.GlobalRefs,
-		Graph:              &s.Graph,
-		Password:           &s.Password,
-		Queue:              &s.Queue,
-		RepoConfigs:        &s.RepoConfigs,
-		RepoStatuses:       &s.RepoStatuses,
-		RepoVCS:            &s.RepoVCS,
-		Repos:              &s.Repos,
-		Users:              &s.Users,
+		DefExamples:  &s.DefExamples,
+		Defs:         &s.Defs,
+		GlobalDeps:   &s.GlobalDeps,
+		GlobalRefs:   &s.GlobalRefs,
+		Graph:        &s.Graph,
+		Queue:        &s.Queue,
+		RepoConfigs:  &s.RepoConfigs,
+		RepoStatuses: &s.RepoStatuses,
+		RepoVCS:      &s.RepoVCS,
+		Repos:        &s.Repos,
 	}
 }

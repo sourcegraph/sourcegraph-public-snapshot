@@ -459,7 +459,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		}
 		ctx = svc.WithServices(ctx, server.Config(serverCtxFunc))
 		scope := "internal:" + name
-		ctx = auth.WithActor(ctx, auth.Actor{Scope: map[string]bool{scope: true}})
+		ctx = auth.WithActor(ctx, &auth.Actor{Scope: map[string]bool{scope: true}})
 		ctx, err = authenticateScopedContext(ctx, []string{scope})
 		if err != nil {
 			return nil, err
@@ -499,7 +499,7 @@ func authenticateScopedContext(ctx context.Context, scopes []string) (context.Co
 // event listeners.
 func (c *ServeCmd) initializeEventListeners(parent context.Context) {
 	for _, l := range events.GetRegisteredListeners() {
-		listenerCtx, err := authenticateScopedContext(auth.WithActor(parent, auth.Actor{}), l.Scopes())
+		listenerCtx, err := authenticateScopedContext(auth.WithActor(parent, &auth.Actor{}), l.Scopes())
 		if err != nil {
 			log.Fatalf("Could not initialize listener context: %v", err)
 		} else {

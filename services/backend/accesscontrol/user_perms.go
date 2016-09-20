@@ -79,7 +79,7 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 // TODO: move to a security model that is more robust, readable, has
 // better separation when dealing with multiple configurations, actor
 // types, resource types and actions.
-func VerifyActorHasGitHubRepoAccess(ctx context.Context, actor auth.Actor, method string, repo int32, repoURI string) error {
+func VerifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, method string, repo int32, repoURI string) error {
 	if skip(ctx) {
 		return nil
 	}
@@ -134,7 +134,7 @@ func getRepo(ctx context.Context, repoIDOrURI interface{}) (repoID int32, repoUR
 // all other cases, VerifyUserHasWriteAccess or
 // VerifyUserHasAdminAccess should be used to authorize a user for
 // gRPC operations.
-func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method string, repo interface{}) error {
+func VerifyActorHasReadAccess(ctx context.Context, actor *auth.Actor, method string, repo interface{}) error {
 	if skip(ctx) {
 		return nil
 	}
@@ -211,7 +211,7 @@ func VerifyUserHasReadAccessAll(ctx context.Context, method string, repos []*sou
 // outside the scope of gRPC requests to verify user permissions. For
 // all other cases, VerifyUserHasWriteAccess should be used to
 // authorize a user for gRPC operations.
-func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method string, repo interface{}) error {
+func VerifyActorHasWriteAccess(ctx context.Context, actor *auth.Actor, method string, repo interface{}) error {
 	if skip(ctx) {
 		return nil
 	}
@@ -231,14 +231,7 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method str
 		return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: not authenticated", method)
 	}
 
-	var hasWrite bool
-	if inAuthenticatedWriteWhitelist(method) {
-		hasWrite = true
-	} else {
-		hasWrite = actor.HasWriteAccess()
-	}
-
-	if !hasWrite {
+	if !inAuthenticatedWriteWhitelist(method) {
 		return grpc.Errorf(codes.PermissionDenied, "write operation (%s) denied: user does not have write access", method)
 	}
 
@@ -259,7 +252,7 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method str
 // outside the scope of gRPC requests to verify user permissions. For
 // all other cases, VerifyUserHasAdminAccess should be used to
 // authorize a user for gRPC operations.
-func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method string) error {
+func VerifyActorHasAdminAccess(ctx context.Context, actor *auth.Actor, method string) error {
 	if skip(ctx) {
 		return nil
 	}
@@ -271,10 +264,7 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method str
 		return grpc.Errorf(codes.Unauthenticated, "admin operation (%s) denied: not authenticated", method)
 	}
 
-	if !actor.HasAdminAccess() {
-		return grpc.Errorf(codes.PermissionDenied, "admin operation (%s) denied: not authorized", method)
-	}
-	return nil
+	return grpc.Errorf(codes.PermissionDenied, "admin operation (%s) denied: not authorized", method)
 }
 
 // Check if the actor is authorized with an access token

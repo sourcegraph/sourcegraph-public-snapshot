@@ -18,10 +18,8 @@ import (
 
 // Services contains all services implemented in this package.
 var Services = svc.Services{
-	Accounts:          Accounts,
 	Annotations:       Annotations,
 	Async:             Async,
-	Auth:              Auth,
 	Defs:              Defs,
 	Meta:              Meta,
 	MirrorRepos:       MirrorRepos,
@@ -30,5 +28,4 @@ var Services = svc.Services{
 	RepoTree:          RepoTree,
 	Repos:             Repos,
 	Search:            Search,
-	Users:             Users,
 }

@@ -13,5 +13,5 @@ import (
 // creating an account when a user signs up. DO NOT USE this actor
 // to complete requests that will return store data in the response.
 func elevatedActor(ctx context.Context) context.Context {
-	return authpkg.WithActor(ctx, authpkg.Actor{Scope: map[string]bool{"internal:elevated": true}})
+	return authpkg.WithActor(ctx, &authpkg.Actor{Scope: map[string]bool{"internal:elevated": true}})
 }

@@ -13,13 +13,6 @@ import (
 )
 
 const (
-	Signup = "signup"
-	Login  = "login"
-	Logout = "logout"
-
-	ForgotPassword = "forgot"
-	ResetPassword  = "reset"
-
 	Annotations              = "annotations"
 	AuthInfo                 = "auth-info"
 	Commit                   = "commit"
@@ -71,12 +64,6 @@ func New(base *mux.Router) *mux.Router {
 	}
 
 	base.StrictSlash(true)
-
-	base.Path("/join").Methods("POST").Name(Signup)
-	base.Path("/login").Methods("POST").Name(Login)
-	base.Path("/logout").Methods("POST").Name(Logout)
-	base.Path("/forgot").Methods("POST").Name(ForgotPassword)
-	base.Path("/reset").Methods("POST").Name(ResetPassword)
 
 	base.Path("/beta-subscription").Methods("POST").Name(BetaSubscription)
 

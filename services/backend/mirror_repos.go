@@ -30,25 +30,20 @@ var _ sourcegraph.MirrorReposServer = (*mirrorRepos)(nil)
 func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
 	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "RefreshVCS")
 	actor := authpkg.ActorFromContext(ctx)
-	asUserUID := int32(actor.UID)
+	asUserUID := actor.UID
 
 	// Only admin users and the repo updater are allowed to perform this operation
 	// as a different user.
-	canImpersonateUser := actor.HasAdminAccess() || actor.HasScope("internal:repoupdater")
+	canImpersonateUser := actor.HasScope("internal:repoupdater")
 	if op.AsUser != nil && canImpersonateUser {
-		var err error
-		asUserUID, err = getUIDFromUserSpec(ctx, op.AsUser)
-		if err != nil {
-			log15.Error("RefreshVCS: getUIDFromUserSpec", "error", err)
-			return nil, err
-		}
+		asUserUID = int(op.AsUser.UID)
 	}
 
 	// Use the auth token for asUserUID if it can be successfully looked up (it may fail if that user doesn't have one),
 	// otherwise proceed without their credentials. It will work for public repos.
 	remoteOpts := vcs.RemoteOpts{}
 	if asUserUID != 0 {
-		extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenSpec{UID: asUserUID})
+		extToken, err := authpkg.FetchGitHubToken(ctx, asUserUID)
 		if err == nil {
 			// Set the auth token to be used in repo VCS operations.
 			remoteOpts.HTTPS = &vcs.HTTPSConfig{
@@ -56,7 +51,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 			}
 
 			// Set a GitHub client authed as the user in the context, to be used to make GitHub API calls.
-			ctx, err = github.NewContextWithAuthedClient(authpkg.WithActor(ctx, authpkg.Actor{UID: int(asUserUID)}))
+			ctx, err = github.NewContextWithAuthedClient(authpkg.WithActor(ctx, &authpkg.Actor{UID: asUserUID}))
 			if err != nil {
 				log15.Error("RefreshVCS: failed github authentication for user", "error", err, "uid", asUserUID)
 				return nil, err
@@ -92,7 +87,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 
 	{
 		now := time.Now()
-		ctx2 := authpkg.WithActor(ctx, authpkg.Actor{Scope: map[string]bool{"internal:repo-internal-update": true}})
+		ctx2 := authpkg.WithActor(ctx, &authpkg.Actor{Scope: map[string]bool{"internal:repo-internal-update": true}})
 		if err := store.ReposFromContext(ctx).InternalUpdate(ctx2, repo.ID, store.InternalRepoUpdate{VCSSyncedAt: &now}); err != nil {
 			log15.Info("RefreshVCS: updating repo internal VCSSyncedAt failed", "err", err, "repo", repo.URI)
 			return nil, err
@@ -100,17 +95,6 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	}
 
 	return &pbtypes.Void{}, nil
-}
-
-func getUIDFromUserSpec(ctx context.Context, userSpec *sourcegraph.UserSpec) (int32, error) {
-	if userSpec.UID != 0 {
-		return userSpec.UID, nil
-	}
-	user, err := svc.Users(ctx).Get(ctx, userSpec)
-	if err != nil {
-		return int32(0), err
-	}
-	return user.UID, nil
 }
 
 func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, remoteOpts vcs.RemoteOpts) error {
@@ -214,7 +198,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 			// Publish the event.
 			// TODO: what about GitPayload.ContentEncoding field?
 			events.Publish(eventType, events.GitPayload{
-				Actor: authpkg.ActorFromContext(ctx).UserSpec(),
+				Actor: *authpkg.ActorFromContext(ctx).UserSpec(),
 				Repo:  repo.ID,
 				Event: githttp.Event{
 					Type:   gitEventType,
@@ -240,7 +224,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 			// Branch was deleted.
 			// TODO: what about GitPayload.ContentEncoding field?
 			events.Publish(events.GitDeleteBranchEvent, events.GitPayload{
-				Actor: authpkg.ActorFromContext(ctx).UserSpec(),
+				Actor: *authpkg.ActorFromContext(ctx).UserSpec(),
 				Repo:  repo.ID,
 				Event: githttp.Event{
 					Type:   githttp.PUSH,
@@ -260,7 +244,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 		// Publish an event for the new commits pushed.
 		// TODO: what about GitPayload.ContentEncoding field?
 		events.Publish(events.GitPushEvent, events.GitPayload{
-			Actor: authpkg.ActorFromContext(ctx).UserSpec(),
+			Actor: *authpkg.ActorFromContext(ctx).UserSpec(),
 			Repo:  repo.ID,
 			Event: githttp.Event{
 				Type:   githttp.PUSH,

@@ -16,9 +16,6 @@ import (
 
 func TestDefLanding_OK(t *testing.T) {
 	c, mock := newTest()
-	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
-		return &sourcegraph.AuthInfo{}, nil
-	}
 
 	tests := []struct {
 		rev string
@@ -125,9 +122,6 @@ func TestDefLanding_OK(t *testing.T) {
 
 func TestDefLanding_Error(t *testing.T) {
 	c, mock := newTest()
-	mock.Auth.Identify_ = func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
-		return &sourcegraph.AuthInfo{}, nil
-	}
 
 	for url, req := range urls {
 		if req.repo == "" || req.rev == "" || req.defUnitType == "" || req.defUnit == "" || req.defPath == "" {

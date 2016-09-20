@@ -64,7 +64,7 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 
 	// Set actor in context.
 	if actor != nil {
-		ctx = auth.WithActor(ctx, *actor)
+		ctx = auth.WithActor(ctx, actor)
 	}
 
 	return ctx, nil

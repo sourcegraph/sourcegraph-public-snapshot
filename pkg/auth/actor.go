@@ -25,42 +25,61 @@ type Actor struct {
 	// access to on the given server.
 	Scope map[string]bool `json:",omitempty"`
 
-	// Write indicates if the actor has global write access.
-	Write bool
+	// Email is the primary email address of the user.
+	Email string
 
-	// Admin indicates if the actor has global write access.
-	Admin bool
+	// AvatarURL is the URL to an avatar image for the user.
+	AvatarURL string
+
+	// GitHubConnected indicates if the actor has a GitHub account connected.
+	GitHubConnected bool
+
+	// GitHubScopes is the list of allowed GitHub API scopes we currently have for the actor.
+	GitHubScopes []string
+
+	// GitHubToken is the token for the GitHub API for this actor.
+	// FIXME: It is not nice to store this here, but currently our codebase expects it to be quickly
+	// avaialble everywhere.
+	GitHubToken string
 }
 
-func (a Actor) String() string {
+func (a *Actor) String() string {
 	return fmt.Sprintf("Actor UID %d (scope=%v)", a.UID, a.Scope)
 }
 
 // IsAuthenticated returns true if the Actor is derived from an authenticated user.
-func (a Actor) IsAuthenticated() bool {
+func (a *Actor) IsAuthenticated() bool {
 	return a.UID != 0
 }
 
 // HasScope returns a boolean indicating whether this actor has the
 // given scope.
-func (a Actor) HasScope(s string) bool {
+func (a *Actor) HasScope(s string) bool {
 	hasScope, ok := a.Scope[s]
 	return ok && hasScope
 }
 
-// HasWriteAccess checks if the actor has write or admin access.
-func (a Actor) HasWriteAccess() bool {
-	return a.IsAuthenticated() && (a.Write || a.Admin)
-}
-
-// HasAdminAccess checks if the actor has admin access.
-func (a Actor) HasAdminAccess() bool {
-	return a.IsAuthenticated() && (a.Admin)
-}
-
-func (a Actor) UserSpec() sourcegraph.UserSpec {
-	return sourcegraph.UserSpec{
+func (a *Actor) UserSpec() *sourcegraph.UserSpec {
+	return &sourcegraph.UserSpec{
 		UID: int32(a.UID),
+	}
+}
+
+func (a *Actor) User() *sourcegraph.User {
+	if a.UID == 0 {
+		return nil
+	}
+	return &sourcegraph.User{
+		UID:       int32(a.UID),
+		Login:     a.Login,
+		AvatarURL: a.AvatarURL,
+	}
+}
+
+func (a *Actor) AuthInfo() *sourcegraph.AuthInfo {
+	return &sourcegraph.AuthInfo{
+		UID:   int32(a.UID),
+		Login: a.Login,
 	}
 }
 
@@ -70,11 +89,14 @@ const (
 	actorKey key = iota
 )
 
-func ActorFromContext(ctx context.Context) Actor {
-	a, _ := ctx.Value(actorKey).(Actor)
+func ActorFromContext(ctx context.Context) *Actor {
+	a, ok := ctx.Value(actorKey).(*Actor)
+	if !ok {
+		return &Actor{}
+	}
 	return a
 }
 
-func WithActor(ctx context.Context, a Actor) context.Context {
+func WithActor(ctx context.Context, a *Actor) context.Context {
 	return context.WithValue(ctx, actorKey, a)
 }

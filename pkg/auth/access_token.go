@@ -23,8 +23,9 @@ func NewAccessToken(actor *Actor, scopes []string, expiryDuration time.Duration)
 		if actor.Login != "" {
 			tok.Claims["Login"] = actor.Login
 		}
-		tok.Claims["Write"] = actor.Write
-		tok.Claims["Admin"] = actor.Admin
+		tok.Claims["GitHubConnected"] = actor.GitHubConnected
+		tok.Claims["GitHubScopes"] = strings.Join(actor.GitHubScopes, ",")
+		tok.Claims["GitHubToken"] = actor.GitHubToken // FIXME: It is not nice to store this here, but currently our codebase expects it to be quickly avaialble everywhere.
 		scopes = append(scopes, marshalScope(actor.Scope)...)
 	}
 
@@ -73,8 +74,11 @@ func ParseAndVerify(accessToken string) (*Actor, error) {
 	}
 
 	a.Login, _ = tok.Claims["Login"].(string)
-	a.Write, _ = tok.Claims["Write"].(bool)
-	a.Admin, _ = tok.Claims["Admin"].(bool)
+	a.GitHubConnected, _ = tok.Claims["GitHubConnected"].(bool)
+	if ghScope, ok := tok.Claims["GitHubScopes"].(string); ok {
+		a.GitHubScopes = strings.Split(ghScope, ",")
+	}
+	a.GitHubToken, _ = tok.Claims["GitHubToken"].(string)
 
 	scopeStr, _ := tok.Claims["Scope"].(string)
 	scopes := strings.Fields(scopeStr)
