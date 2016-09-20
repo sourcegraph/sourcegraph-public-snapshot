@@ -32,3 +32,6 @@ export {Code} from "sourcegraph/components/Code";
 export {List} from "sourcegraph/components/List";
 export {Select} from "sourcegraph/components/Select";
 export {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
+export {Base} from "sourcegraph/components/Base";
+export {GridCol} from "sourcegraph/components/GridCol";
+export {GridRow} from "sourcegraph/components/GridRow";

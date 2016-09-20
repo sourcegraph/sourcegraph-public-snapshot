@@ -9,7 +9,6 @@
 .container {
 	composes: center pv4 ph4 from base;
 	composes: bg_white from colors;
-	min-height: 100vh;
 	width: 100%;
 }
 

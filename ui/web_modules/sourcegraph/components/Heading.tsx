@@ -1,69 +1,86 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
-import * as styles from "sourcegraph/components/styles/heading.css";
-import * as classNames from "classnames";
+
+import {Base} from "sourcegraph/components/Base";
+import {colors, typography, whitespace} from "sourcegraph/components/utils/index";
 
 interface Props {
-	className?: string;
+	m?: number;
+	mt?: number;
+	mb?: number;
+	ml?: number;
+	mr?: number;
+	my?: number;
+	mx?: number;
+	p?: number;
+	pt?: number;
+	pb?: number;
+	pl?: number;
+	pr?: number;
+	py?: number;
+	px?: number;
 	children?: any;
-	level?: string; //  1 is the largest
-	underline?: string; // blue, purple, white, orange, green
-	color?: string; // purple, blue, green, orange, cool_mid_gray
-	align?: string; // left, right, center
-	style?: any;
+	level?: number; //  1 is the largest
+	underline?: Color;
+	color: Color;
+	align?: "left" | "right" | "center"; // left, right, center
+	style?: Object;
 }
 
-type State = any;
+enum Color {
+	"blue",
+	"purple",
+	"white",
+	"orange",
+	"green",
+	"gray"
+}
 
-export class Heading extends React.Component<Props, State> {
-	static defaultProps = {
-		level: "3", //  1 is the largest
-		underline: null,
-		color: null,
-		align: null,
+export const Heading = (props: Props): any => {
+	const headingColors = {
+		blue: colors.blue(),
+		purple: colors.purple(),
+		white: colors.white(),
+		orange: colors.orange(),
+		green: colors.green(),
+		gray: colors.coolGray3(),
 	};
 
-	render(): JSX.Element | null {
-		const {className, children, level, color, underline, align, style} = this.props;
+	const sx = Object.assign({},
+		typography.size[props.level ? props.level : 3],
+		{
+			color: headingColors[props.color],
+			fontWeight: typography.weight[2],
+			textTransform: props.level === 7 ? "uppercase" : "auto",
+			textAlign: props.align,
+		},
+	);
 
-		return (
-			<div className={classNames(levelClasses[level || "3"] || styles.h3, colorClasses[color || ""], alignClasses[align || ""], className)} style={style}>
-				{children}<br />
-				{underline && <hr className={classNames(styles.line, underlineClasses[underline])} />}
-			</div>
-		);
-	}
-}
+	const underlineSx = {
+		borderColor: headingColors[props.underline ? props.underline : "white"],
+		borderWidth: "4px",
+		display: "inline-block",
+		width: "6rem",
+		marginBottom: whitespace[3],
+		marginTop: whitespace[3],
+	};
 
-const levelClasses = {
-	"1": styles.h1,
-	"2": styles.h2,
-	"3": styles.h3,
-	"4": styles.h4,
-	"5": styles.h5,
-	"6": styles.h6,
-	"7": styles.h7,
-};
-
-const colorClasses = {
-	"purple": styles.purple,
-	"blue": styles.blue,
-	"green": styles.green,
-	"orange": styles.orange,
-	"cool_mid_gray": styles.cool_mid_gray,
-};
-
-const alignClasses = {
-	"left": styles.left,
-	"right": styles.right,
-	"center": styles.center,
-};
-
-const underlineClasses = {
-	"blue": styles.l_blue,
-	"purple": styles.l_purple,
-	"white": styles.l_white,
-	"orange": styles.l_orange,
-	"green": styles.l_green,
+	return <Base
+		m={props.m}
+		mt={props.mt}
+		mb={props.mb ? props.mb : 2}
+		ml={props.ml}
+		mr={props.mr}
+		my={props.my}
+		mx={props.mx}
+		p={props.p}
+		pt={props.pt}
+		pb={props.pb}
+		pl={props.pl}
+		pr={props.pr}
+		py={props.py}
+		px={props.px}
+		style={sx}>
+		{props.children} <br />
+		{props.underline && <hr style={underlineSx} />}
+	</Base>;
 };

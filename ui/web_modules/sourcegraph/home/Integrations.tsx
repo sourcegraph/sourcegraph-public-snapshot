@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import * as styles from "sourcegraph/home/styles/Integrations.css";
-import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading, Button} from "sourcegraph/components";
 import {Component} from "sourcegraph/Component";
 import {inBeta} from "sourcegraph/user";
@@ -61,7 +60,7 @@ export class Integrations extends Component<Props, State> {
 		return (
 			<div className={this.props.location.state && this.props.location.state.modal === "integrations" ? "" : styles.container}>
 				<div className={styles.menu}>
-					<Heading level="7" color="cool_mid_gray">Install an editor plugin</Heading>
+					<Heading level={7} color="gray">Install an editor plugin</Heading>
 					<p>Choose your editor to download the right plugin and get instructions on installation.</p>
 					<div className={styles.tool_list}>
 						{plugins.map((tool, i) => (
@@ -71,7 +70,7 @@ export class Integrations extends Component<Props, State> {
 							</a>
 						))}
 					</div>
-					<Heading level="7" color="cool_mid_gray" className={base.pb3}>Other tools</Heading>
+					<Heading level={7} color="gray">Other tools</Heading>
 					<div className={styles.tool_list}>
 						{otherTools.map((tool, i) => (
 							<a key={i} href={tool.url} target="_blank" className={styles.tool}>

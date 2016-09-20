@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import {colors} from "sourcegraph/components/jsStyles/colors";
+import {colors} from "sourcegraph/components/utils/colors";
 import {modal_result} from "sourcegraph/search/modal/SearchModalStyle.css";
 
 const smallFont = 12.75;

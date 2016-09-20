@@ -7,7 +7,7 @@ import * as classNames from "classnames";
 interface Props {
 	direction?: string; // vertical, horizontal
 	color?: string; // blue, purple
-	size?: string; // small, large
+	size?: string; // small, large, default
 	children?: any;
 	className?: string;
 	style?: any;
@@ -17,6 +17,7 @@ type State = any;
 
 export class Tabs extends React.Component<Props, State> {
 	static defaultProps = {
+		size: "default",
 		direction: "horizontal",
 		color: "blue",
 	};

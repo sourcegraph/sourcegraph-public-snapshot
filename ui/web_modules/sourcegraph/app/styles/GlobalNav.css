@@ -2,74 +2,15 @@
 @value vars "sourcegraph/components/styles/_vars.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 @value typography "sourcegraph/components/styles/_typography.css";
-@value grid "sourcegraph/components/styles/_grid.css";
-@value layout "sourcegraph/components/styles/_layout.css";
 
 @value media_xs, media_sm, media_ns from vars;
 @value navbarHeight: 60px;
 @value navbarZIndex: 100;
-@value icon_font_size: 0.8rem;
 
-@value c_cool_pale_gray_8, c_cool_mid_gray from colors;
-
-.tl { composes: tl from typography; }
-.tr {	composes: tr from typography; }
-.flex { display: flex; }
-.flex_fill { flex: 1 0; }
-.flex_item_auto { flex: 1 1 auto; }
-.flex_fixed { flex: 0 0 auto; }
-.flex_center { align-items: center; }
-.flex_end { justify-content: flex-end; }
-.flex_start { justify-content: flex-start; }
-.block { display: block; }
-.hidden_s { composes: hidden_s from base; }
-.cool_mid_gray { composes: cool_mid_gray from colors; }
-.fill_cool_mid_gray { fill: c_cool_mid_gray; }
-
-
-.navbar {
-	composes: bb cf from base;
-	composes: bg_white b__cool_mid_gray_3 from colors;
-	z-index: navbarZIndex;
-	top: 0;
-	width: 100%;
-	transition: all 0.3s ease-in-out;
-}
-
-@value logo_height 21.508px;
-.logo_link {
-	padding: calc((navbarHeight - logo_height)/2);
-}
-.logo {
-	display: block;
-}
 .logomark:hover {
 	animation: spin 0.5s ease-in-out 1;
 }
 @keyframes spin { 50% { transform: rotate(180deg) scale(1.2) } 100% { transform: rotate(180deg) scale(1)} }
-
-/* TODO: Abstract this – styles should be contained in their components */
-.modal {
-	composes: modal from "sourcegraph/components/styles/modal.css";
-	composes: col_10 from grid;
-	max-width: 400px;
-	min-width: 320px;
-}
-
-.modal_dismiss {
-	composes: cool_mid_gray_5 from colors;
-	position: relative;
-	float: right;
-	top: -2rem;
-	right: -1.3rem;
-}
-
-.video_modal {
-	composes: modal from "sourcegraph/components/styles/modal.css";
-	composes: col_10 from grid;
-	max-width: 860px;
-	min-width: 430px;
-}
 
 .channel {
 	display: inline-block;
@@ -124,43 +65,4 @@
 	.small_only {
 		display: none;
 	}
-}
-
-.user {
-	display: flex;
-	align-items: center;
-}
-.user_menu_icon {
-	composes: cool_mid_gray from colors;
-	font-size: icon_font_size;
-	margin-left: 6px;
-}
-.current_user {
-	color: cool_mid_gray;
-}
-
-.close_button {
-	composes: hidden_ns from base;
-	border:1px solid transparent;
-	background-color: transparent;
-	display: inline-block;
-	vertical-align: middle;
-	outline: 0;
-	cursor: pointer;
-}
-
-.close_icon {
-	width: 20px;
-	height: 20px;
-	color: white;
-	background-color: #EEEEEE;
-	z-index:1;
-	right: 35px;
-	top: 0;
-	bottom: 0;
-	margin: auto;
-	padding: 2px;
-	border-radius: 50%;
-	cursor: pointer;
-	justify-content: center;
 }

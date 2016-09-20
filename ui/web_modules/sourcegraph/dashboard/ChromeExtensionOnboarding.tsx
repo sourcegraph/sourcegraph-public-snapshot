@@ -4,7 +4,7 @@ import * as React from "react";
 import Helmet from "react-helmet";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
 import {Button, Heading, Panel} from "sourcegraph/components";
-import {colors as jsColors} from "sourcegraph/components/jsStyles/colors";
+import {colors as jsColors} from "sourcegraph/components/utils/colors";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import * as classNames from "classnames";
 import * as typography from "sourcegraph/components/styles/_typography.css";

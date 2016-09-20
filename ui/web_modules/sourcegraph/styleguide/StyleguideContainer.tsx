@@ -25,7 +25,7 @@ export class StyleguideContainer extends React.Component<{}, any> {
 								<Link to={{pathname: "styleguide", search: "#principles"}}>Principles</Link>
 							</TabItem>
 
-							<Heading level="6" className={base.mt4}>Brand</Heading>
+							<Heading level="6" mt={4} ml={3}>Brand</Heading>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#brand-voice"}}>Voice</Link>
 							</TabItem>
@@ -35,13 +35,13 @@ export class StyleguideContainer extends React.Component<{}, any> {
 							{/* <TabItem>Colors</TabItem>
 							<TabItem>Typography</TabItem>}
 
-							{/*  <Heading level="6" className={base.mt4}>Utilities</Heading>
+							{/*  <Heading level="6" mt={4} ml={3}>Utilities</Heading>
 							<TabItem>Padding</TabItem>
 							<TabItem>Margin</TabItem>
 							<TabItem>Colors</TabItem>
 							<TabItem>Layout</TabItem>*/}
 
-							<Heading level="6" className={base.mt4}>Layout Components</Heading>
+							<Heading level="6" mt={4} ml={3}>Layout Components</Heading>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#layout-flexcontainer"}}>FlexContainer</Link>
 							</TabItem>
@@ -49,7 +49,7 @@ export class StyleguideContainer extends React.Component<{}, any> {
 								<Link to={{pathname: "styleguide", search: "#layout-affix"}}>Affix</Link>
 							</TabItem>
 
-							<Heading level="6" className={base.mt4}>UI Components</Heading>
+							<Heading level="6" mt={4} ml={3}>UI Components</Heading>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#components-headings"}}>Headings</Link>
 							</TabItem>

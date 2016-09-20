@@ -52,6 +52,7 @@
     "autotrack": "1.0.1",
     "classnames": "2.2.5",
     "core-js": "2.4.1",
+    "glamor": "^2.15.5",
     "isomorphic-fetch": "2.2.1",
     "lodash": "4.15.0",
     "monaco-editor": "0.5.3",

@@ -80,7 +80,7 @@ export class SignupForm extends Container<SignupFormProps, SignupFormState> {
 
 	render(): JSX.Element | null {
 		return (
-			<form {...this.props} onSubmit={this._handleSubmit} className={styles.form}>
+			<form onSubmit={this._handleSubmit} className={styles.form}>
 				<Heading level="3" align="center" underline="orange">Sign up for Sourcegraph</Heading>
 				{!this.state.githubError && [
 					<GitHubAuthButton returnTo={this.state.returnTo} tabIndex={1} key="1" block={true}>Continue with GitHub</GitHubAuthButton>,

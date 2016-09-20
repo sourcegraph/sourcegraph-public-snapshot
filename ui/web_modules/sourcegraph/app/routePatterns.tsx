@@ -1,3 +1,4 @@
+import {Location} from "history";
 import {PlainRoute} from "react-router";
 import {matchPattern} from "react-router/lib/PatternUtils";
 
@@ -113,3 +114,7 @@ export function getRouteParams(pattern: string, pathname: string): any {
 
 	return null;
 }
+
+export function isRootRoute(location: Location): boolean {
+	return rel.home === location.pathname.slice(1);
+};

@@ -26,6 +26,14 @@
 	overflow-y: auto;
 }
 
+.modal_dismiss {
+	composes: cool_mid_gray_5 from colors;
+	position: relative;
+	float: right;
+	top: -2rem;
+	right: -1.3rem;
+}
+
 @media screen and (max-width: 40em) {
 	.modal {
 		width: 100vw;

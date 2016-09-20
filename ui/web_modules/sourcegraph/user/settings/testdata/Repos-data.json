@@ -10,8 +10,8 @@
 							{
 								"type": "Heading",
 								"props": {
-									"level": "7",
-									"color": "cool_mid_gray",
+									"level": 7,
+									"color": "gray",
 									"children": [
 										"Your repositories"
 									]

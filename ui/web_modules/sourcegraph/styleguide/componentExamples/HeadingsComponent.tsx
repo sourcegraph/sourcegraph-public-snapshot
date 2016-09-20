@@ -17,7 +17,7 @@ export class HeadingsComponent extends React.Component<{}, State> {
 	render(): JSX.Element | null {
 		return (
 			<div className={base.mv4}>
-				<Heading level="3" className={base.mb2}>Headings</Heading>
+				<Heading level={3} className={base.mb2}>Headings</Heading>
 
 				<Tabs color="purple">
 					<TabItem
@@ -62,26 +62,26 @@ export class HeadingsComponent extends React.Component<{}, State> {
 					<TabPanels active={this.state.activeExample}>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="1" className={base.mb3}>Heading 1</Heading>
-								<Heading level="2" className={base.mb3}>Heading 2</Heading>
-								<Heading level="3" className={base.mb3}>Heading 3</Heading>
-								<Heading level="4" className={base.mb3}>Heading 4</Heading>
-								<Heading level="5" className={base.mb3}>Heading 5</Heading>
-								<Heading level="6" className={base.mb3}>Heading 6</Heading>
-								<Heading level="7" className={base.mb3}>Heading 7</Heading>
+								<Heading level={1} className={base.mb3}>Heading 1</Heading>
+								<Heading level={2} className={base.mb3}>Heading 2</Heading>
+								<Heading level={3} className={base.mb3}>Heading 3</Heading>
+								<Heading level={4} className={base.mb3}>Heading 4</Heading>
+								<Heading level={5} className={base.mb3}>Heading 5</Heading>
+								<Heading level={6} className={base.mb3}>Heading 6</Heading>
+								<Heading level={7} className={base.mb3}>Heading 7</Heading>
 							</div>
 							<hr />
 							<code>
 								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
 {
 	`
-<Heading level="1">Heading 1</Heading>
-<Heading level="2">Heading 2</Heading>
-<Heading level="3">Heading 3</Heading>
-<Heading level="4">Heading 4</Heading>
-<Heading level="5">Heading 5</Heading>
-<Heading level="6">Heading 6</Heading>
-<Heading level="7">Heading 7</Heading>
+<Heading level={1}>Heading 1</Heading>
+<Heading level={2}>Heading 2</Heading>
+<Heading level={3}>Heading 3</Heading>
+<Heading level={4}>Heading 4</Heading>
+<Heading level={5}>Heading 5</Heading>
+<Heading level={6}>Heading 6</Heading>
+<Heading level={7}>Heading 7</Heading>
 	`
 }
 								</pre>
@@ -89,23 +89,23 @@ export class HeadingsComponent extends React.Component<{}, State> {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="7" className={base.mb3} color="cool_mid_gray">Headings with color</Heading>
-								<Heading level="4" className={base.mb3} color="blue">Blue fourth level heading</Heading>
-								<Heading level="4" className={base.mb3} color="purple">Purple fourth level heading</Heading>
-								<Heading level="4" className={base.mb3} color="green">Green fourth level heading</Heading>
-								<Heading level="4" className={base.mb3} color="orange">Orange fourth level heading</Heading>
-								<Heading level="4" className={base.mb3} color="cool_mid_gray">Mid-gray fourth level heading</Heading>
+								<Heading level={7} className={base.mb3} color="gray">Headings with color</Heading>
+								<Heading level={4} className={base.mb3} color="blue">Blue fourth level heading</Heading>
+								<Heading level={4} className={base.mb3} color="purple">Purple fourth level heading</Heading>
+								<Heading level={4} className={base.mb3} color="green">Green fourth level heading</Heading>
+								<Heading level={4} className={base.mb3} color="orange">Orange fourth level heading</Heading>
+								<Heading level={4} className={base.mb3} color="gray">Mid-gray fourth level heading</Heading>
 							</div>
 							<hr />
 							<code>
 								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
 {
 	`
-<Heading level="4" color="blue">Blue fourth level heading</Heading>
-<Heading level="4" color="purple">Purple fourth level heading</Heading>
-<Heading level="4" color="green">Green fourth level heading</Heading>
-<Heading level="4" color="orange">Orange fourth level heading</Heading>
-<Heading level="4" color="cool_mid_gray">Mid-gray fourth level heading</Heading>
+<Heading level={4} color="blue">Blue fourth level heading</Heading>
+<Heading level={4} color="purple">Purple fourth level heading</Heading>
+<Heading level={4} color="green">Green fourth level heading</Heading>
+<Heading level={4} color="orange">Orange fourth level heading</Heading>
+<Heading level={4} color="gray">Mid-gray fourth level heading</Heading>
 	`
 }
 								</pre>
@@ -113,23 +113,23 @@ export class HeadingsComponent extends React.Component<{}, State> {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="7" className={base.mb3} color="cool_mid_gray">Headings with underline</Heading>
-								<Heading level="4" className={base.mb3} underline="blue">Fourth level heading with blue underline</Heading>
-								<Heading level="4" className={base.mb3} underline="purple">Fourth level heading with purple underline</Heading>
-								<Heading level="4" className={base.mb3} underline="orange">Fourth level heading with orange underline</Heading>
-								<Heading level="4" className={base.mb3} underline="green">Fourth level heading with green underline</Heading>
-								<Heading level="4" className={base.mb3} underline="white">Fourth level heading with white underline</Heading>
+								<Heading level={7} className={base.mb3} color="gray">Headings with underline</Heading>
+								<Heading level={4} className={base.mb3} underline="blue">Fourth level heading with blue underline</Heading>
+								<Heading level={4} className={base.mb3} underline="purple">Fourth level heading with purple underline</Heading>
+								<Heading level={4} className={base.mb3} underline="orange">Fourth level heading with orange underline</Heading>
+								<Heading level={4} className={base.mb3} underline="green">Fourth level heading with green underline</Heading>
+								<Heading level={4} className={base.mb3} underline="white">Fourth level heading with white underline</Heading>
 							</div>
 							<hr />
 							<code>
 								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
 {
 	`
-<Heading level="4" underline="blue">Fourth level heading with blue underline</Heading>
-<Heading level="4" underline="purple">Fourth level heading with purple underline</Heading>
-<Heading level="4" underline="orange">Fourth level heading with orange underline</Heading>
-<Heading level="4" underline="green">Fourth level heading with green underline</Heading>
-<Heading level="4" underline="white">Fourth level heading with white underline</Heading>
+<Heading level={4} underline="blue">Fourth level heading with blue underline</Heading>
+<Heading level={4} underline="purple">Fourth level heading with purple underline</Heading>
+<Heading level={4} underline="orange">Fourth level heading with orange underline</Heading>
+<Heading level={4} underline="green">Fourth level heading with green underline</Heading>
+<Heading level={4} underline="white">Fourth level heading with white underline</Heading>
 	`
 }
 								</pre>
@@ -137,19 +137,19 @@ export class HeadingsComponent extends React.Component<{}, State> {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="7" className={base.mb3} color="cool_mid_gray">Heading alignment</Heading>
-								<Heading level="4" className={base.mb3} align="left">Left aligned</Heading>
-								<Heading level="4" className={base.mb3} align="center">Center aligned</Heading>
-								<Heading level="4" className={base.mb3} align="right">Right aligned</Heading>
+								<Heading level={7} className={base.mb3} color="gray">Heading alignment</Heading>
+								<Heading level={4} className={base.mb3} align="left">Left aligned</Heading>
+								<Heading level={4} className={base.mb3} align="center">Center aligned</Heading>
+								<Heading level={4} className={base.mb3} align="right">Right aligned</Heading>
 							</div>
 							<hr />
 							<code>
 								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
 {
 	`
-<Heading level="4" align="left">Left aligned</Heading>
-<Heading level="4" align="center">Center aligned</Heading>
-<Heading level="4" align="right">Right aligned</Heading>
+<Heading level={4} align="left">Left aligned</Heading>
+<Heading level={4} align="center">Center aligned</Heading>
+<Heading level={4} align="right">Right aligned</Heading>
 	`
 }
 								</pre>
@@ -157,7 +157,7 @@ export class HeadingsComponent extends React.Component<{}, State> {
 						</TabPanel>
 					</TabPanels>
 				</Panel>
-				<Heading level="4" className={classNames(base.mt5, base.mb3)}>Properties</Heading>
+				<Heading level={4} className={classNames(base.mt5, base.mb3)}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{width: "100%"}}>
 						<thead>
@@ -179,7 +179,7 @@ export class HeadingsComponent extends React.Component<{}, State> {
 								<td><Code>color</Code></td>
 								<td><Code>null</Code></td>
 								<td>
-									<Code>purple</Code>, <Code>blue</Code>, <Code>green</Code>, <Code>orange</Code>, <Code>cool_mid_gray</Code>
+									<Code>purple</Code>, <Code>blue</Code>, <Code>green</Code>, <Code>orange</Code>, <Code>coolGray3</Code>
 								</td>
 							</tr>
 							<tr>

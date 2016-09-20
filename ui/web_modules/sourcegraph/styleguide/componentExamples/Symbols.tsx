@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {colors, whitespace} from "sourcegraph/components/jsStyles/index";
+import {colors, whitespace} from "sourcegraph/components/utils/index";
 import {Heading, Panel, Table, Code} from "sourcegraph/components";
 import {Alert, Cone, Dismiss, DownPointer, GitHubLogo, Search} from "sourcegraph/components/symbols";
 

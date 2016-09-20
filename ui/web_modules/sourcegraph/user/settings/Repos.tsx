@@ -89,7 +89,7 @@ export class Repos extends React.Component<Props, State> {
 		return (
 			<div className={base.pb6}>
 				<header className={styles.header}>
-					<Heading level="7" color="cool_mid_gray">Your repositories</Heading>
+					<Heading level={7} color="gray">Your repositories</Heading>
 					<p>To get jump-to-definition, search, and code examples, enable indexing on your repositories using the toggle. Private code indexed on Sourcegraph is only available to you and those with permissions to the underlying GitHub repository.</p>
 					<div className={styles.input_bar}>
 						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} className={styles.github_button}>Add public repositories</GitHubAuthButton>}

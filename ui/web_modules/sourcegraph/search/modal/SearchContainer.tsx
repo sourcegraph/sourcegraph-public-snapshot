@@ -3,8 +3,8 @@ import {InjectedRouter} from "react-router";
 
 import {urlToBlob, urlToBlobLine} from "sourcegraph/blob/routes";
 import {Input} from "sourcegraph/components/Input";
-import {colors} from "sourcegraph/components/jsStyles/colors";
 import {Search as SearchIcon} from "sourcegraph/components/symbols";
+import {colors} from "sourcegraph/components/utils/index";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";

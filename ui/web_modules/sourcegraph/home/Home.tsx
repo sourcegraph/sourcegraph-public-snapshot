@@ -48,6 +48,7 @@ export class Home extends Container<HomeProps, HomeState> {
 	render(): JSX.Element | null {
 		return (
 			<div style={{width: "100%", marginRight: "auto", marginLeft: "auto"}}>
+
 				{/* section showing icon and links: about, pricing, login, signup */}
 				<div className={classNames(base.pt4, base.pb5, colors.bg_cool_mid_gray_1)}>
 					<FlexContainer items="center" wrap={true} style={{maxWidth: "960px"}} className={classNames(base.mt2, base.mb5, base.center, base.ph3)}>
@@ -175,8 +176,8 @@ export class Home extends Container<HomeProps, HomeState> {
 				</div>
 
 				{/* section showing language icons */}
-<div className={classNames(base.pv4, typography.tc, colors.bg_cool_mid_gray_1)}>
-					<Heading level="7" color="cool_mid_gray" className="base.pv3">
+				<div className={classNames(base.pv4, typography.tc, colors.bg_cool_mid_gray_1)}>
+					<Heading level={7} color="gray" pv={3}>
 						Growing language support
 					</Heading>
 
