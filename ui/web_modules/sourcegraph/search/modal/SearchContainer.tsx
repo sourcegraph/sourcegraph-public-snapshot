@@ -16,6 +16,9 @@ import {TreeStore} from "sourcegraph/tree/TreeStore";
 import {ResultCategories} from "sourcegraph/search/modal/SearchComponent";
 import {RepoRev} from "sourcegraph/search/modal/SearchModal";
 
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {EventLogger} from "sourcegraph/util/EventLogger";
+
 const modalStyle = {
 	position: "fixed",
 	top: 60,
@@ -50,14 +53,18 @@ interface Props {
 interface State {
 	// The search string in the input box.
 	input: string;
-
-	// The results of the search
-	results: any;
-
+	// The row and category that a user has navigated to using a keyboard.
 	selected: {
 		category: number;
 		row: number;
 	};
+	// Number of results to show in each category.
+	limitForCategory: number[];
+	// The results of the search.
+	results: Category[];
+	// Whether or not to allow scrolling. Used to prevent jumping when expanding
+	// a category.
+	allowScroll: boolean;
 };
 
 export interface Category {
@@ -69,6 +76,7 @@ export interface Category {
 export interface SearchDelegate {
 	dismiss: any;
 	select: (category: number, row: number) => void;
+	expand: (category: number) => void;
 }
 
 // SearchContainer contains the logic that deals with navigation and data
@@ -90,21 +98,31 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		this.updateInput = this.updateInput.bind(this);
 		this.state = {
 			input: "",
-			results: [],
 			selected: {category: 0, row: 0},
+			limitForCategory: [3, 3, 3],
+			results: [],
+			allowScroll: true,
 		};
 		this.delegate = {
 			dismiss: props.dismissModal,
 			select: this.select.bind(this),
+			expand: this.expand.bind(this),
 		};
 	}
 
 	stores(): Store<any>[] {
-		return [RepoStore];
+		return [RepoStore, TreeStore];
 	}
 
 	reconcileState(state: State, props: Props): void {
 		state.results = this.results();
+	}
+
+	componentWillUpdate(_: Props, nextState: State): void {
+		if (nextState.input !== this.state.input) {
+			nextState.limitForCategory = [3, 3, 3];
+			nextState.selected = {category: 0, row: 0};
+		}
 	}
 
 	componentWillMount(): void {
@@ -128,30 +146,34 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 	}
 
 	keyListener(event: KeyboardEvent): void {
-		let results = this.results();
+		const results = this.results();
+		const visibleRowsInCategory = results.map((r, i) => r.Results ? Math.min(r.Results.length, this.state.limitForCategory[i]) : 0);
 		let category = this.state.selected.category;
 		let row = this.state.selected.row;
-		let categorySizes = results.map((r) => r.Results ? r.Results.length : 0);
+		const nextVisibleRow = direction => {
+			let next = category;
+			for (let i = 0; i < results.length; i++) {
+				next += direction;
+				if (visibleRowsInCategory[next] > 0) {
+					return next;
+				}
+			}
+			return category;
+		};
 		if (event.key === "ArrowUp") {
 			if (row === 0 && category === 0) {
 				// noop
-			} else if (row === 0) {
-				category--;
-				if (categorySizes[category] === 0) {
-					category--;
-				}
-				row = categorySizes[category] - 1;
+			} else if (row <= 0) {
+				category = nextVisibleRow(-1);
+				row = visibleRowsInCategory[category] - 1;
 			} else {
 				row--;
 			}
 		} else if (event.key === "ArrowDown") {
-			if (row === categorySizes[category] - 1 && category === 2) {
+			if (row === visibleRowsInCategory[category] - 1 && category === results.length - 1) {
 				// noop
-			} else if (row === categorySizes[category] - 1) {
-				category++;
-				if (categorySizes[category] === 0) {
-					category++;
-				}
+			} else if (row >= visibleRowsInCategory[category] - 1) {
+				category = nextVisibleRow(1);
 				row = 0;
 			} else {
 				row++;
@@ -161,7 +183,10 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		} else {
 			return;
 		}
-		let state = Object.assign(this.state, {selected: {category: category, row: row}});
+		let state = Object.assign(this.state, {
+			selected: {category: category, row: row},
+			allowScroll: true,
+		});
 		this.setState(state);
 		event.preventDefault();
 	}
@@ -186,10 +211,18 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 	}
 
 	select(c: number, r: number): void {
-		let categories = this.results();
-		let results = categories[c].Results;
+		const categories = this.results();
+		const results = categories[c].Results;
 		if (results) {
-			let url = results[r].URLPath;
+			const result = results[r];
+			const resultInfo = {
+				result: result,
+				category: c,
+				rankInCategory: r,
+				query: this.state.input,
+			};
+			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_JUMP_TO, AnalyticsConstants.ACTION_CLICK, "JumpToItemSelected", resultInfo);
+			const url = result.URLPath;
 			this.props.dismissModal();
 			this.context.router.push(url);
 		}
@@ -216,25 +249,24 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		const symbols = RepoStore.symbols.list(this.props.repo, this.props.commitID, query);
 		if (symbols) {
 			let symbolResults: Result[] = [];
-			for (let i = 0; i < symbols.length; i++) {
-				let title = symbols[i].name;
-				let kind = symbolKindName(symbols[i].kind);
+			symbols.forEach(sym => {
+				let title = sym.name;
+				let kind = symbolKindName(sym.kind);
 				if (kind) {
 					title = `${kind} ${title}`;
 				}
-				const path = symbols[i].location.uri;
-				const line = symbols[i].location.range.start.line;
+				const path = sym.location.uri;
+				const line = sym.location.range.start.line;
 				const idx = title.toLowerCase().indexOf(query.toLowerCase());
 				symbolResults.push({
 					title: title,
-					description: symbols[i].location.uri,
+					description: sym.location.uri,
 					index: idx,
 					length: query.length,
 					URLPath: urlToBlobLine(this.props.repo, this.props.commitID, path, line + 1),
 				});
-			}
+			});
 
-			symbolResults = symbolResults.slice(0, 3);
 			results.push({ Title: "Definitions", IsLoading: false, Results: symbolResults });
 		} else {
 			results.push({ Title: "Definitions", IsLoading: true });
@@ -244,7 +276,6 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		if (repos) {
 			if (repos.Repos) {
 				let repoResults = repos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
-				repoResults = repoResults.slice(0, 3);
 				results.push({ Title: "Repositories", IsLoading: false, Results: repoResults });
 			} else {
 				results.push({ Title: "Repositories", IsLoading: false, Results: [] });
@@ -263,13 +294,21 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 				}
 				fileResults.push({ title: file, description: "", index: index, length: query.length, URLPath: urlToBlob(this.props.repo, null, file) });
 			});
-			fileResults = fileResults.slice(0, 3);
 			results.push({ Title: "Files", IsLoading: false, Results: fileResults });
 		} else {
 			results.push({ Title: "Files", IsLoading: true });
 		}
 
 		return results;
+	}
+
+	expand(category: number): () => void {
+		return () => {
+			const state = Object.assign({}, this.state);
+			state.limitForCategory[category] += 12;
+			state.allowScroll = false;
+			this.setState(state);
+		};
 	}
 
 	render(): JSX.Element {
@@ -296,7 +335,11 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 					domRef={this.bindSearchInput}
 					onChange={this.updateInput} />
 				</div>
-				<ResultCategories categories={categories} selection={this.state.selected} delegate={this.delegate} />
+				<ResultCategories categories={categories}
+					selection={this.state.selected}
+					delegate={this.delegate}
+					scrollIntoView={this.state.allowScroll}
+					limits={this.state.limitForCategory} />
 			</div>
 		);
 	}

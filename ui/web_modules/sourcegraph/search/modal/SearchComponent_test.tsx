@@ -13,8 +13,9 @@ interface Case {
 }
 
 const testDelegate = {
-	dismiss: function(): void {/* do nothing */},
-	select: function(category: number, row: number): void {/* do nothing */},
+	dismiss: () => null,
+	select: () => null,
+	expand: () => null,
 };
 
 describe("ResultCategories", () => {
@@ -68,7 +69,7 @@ describe("ResultCategories", () => {
 			],
 		}];
 		cases.forEach((t) => {
-			const o = renderToString(<ResultCategories categories={t.categories} selection={t.selected} delegate={t.delegate} />);
+			const o = renderToString(<ResultCategories categories={t.categories} selection={t.selected} delegate={t.delegate} limits={[3,3,3]} scrollIntoView={true} />);
 			t.shouldContain.forEach((s: string) => {
 				expect(o).to.contain(s);
 			});
