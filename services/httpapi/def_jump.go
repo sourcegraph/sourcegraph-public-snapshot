@@ -69,17 +69,6 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 		}
 		w.Header().Set("cache-control", "private, max-age=60")
 		return writeJSON(w, response)
-	} else if universe.Shadow(repo.URI) {
-		go func() {
-			_, err := langp.DefaultClient.Definition(r.Context(), &langp.Position{
-				Repo:      repo.URI,
-				Commit:    repoRev.CommitID,
-				File:      file,
-				Line:      line,
-				Character: character,
-			})
-			universeObserve("Definition", err)
-		}()
 	}
 
 	defSpec, err := cl.Annotations.GetDefAtPos(r.Context(), &sourcegraph.AnnotationsGetDefAtPosOptions{
