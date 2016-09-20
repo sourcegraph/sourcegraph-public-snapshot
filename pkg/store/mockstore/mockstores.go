@@ -19,8 +19,6 @@ import (
 // Stores has a field for each store interface with the concrete mock type (to obviate the need for tedious type assertions in test code).
 type Stores struct {
 	Accounts           Accounts
-	BuildLogs          BuildLogs
-	Builds             Builds
 	DefExamples        DefExamples
 	Defs               Defs
 	Directory          Directory
@@ -40,8 +38,6 @@ type Stores struct {
 func (s *Stores) Stores() store.Stores {
 	return store.Stores{
 		Accounts:           &s.Accounts,
-		BuildLogs:          &s.BuildLogs,
-		Builds:             &s.Builds,
 		DefExamples:        &s.DefExamples,
 		Defs:               &s.Defs,
 		Directory:          &s.Directory,

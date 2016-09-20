@@ -12,10 +12,8 @@ const (
 	routeReposIndex = "page.index.repos"
 
 	routeBlob        = "page.blob"
-	routeBuild       = "page.build"
 	routeDefLanding  = "page.def.landing"
 	routeRepo        = "page.repo"
-	routeRepoBuilds  = "page.repo.builds"
 	routeRepoLanding = "page.repo.landing"
 	routeTree        = "page.tree"
 
@@ -68,8 +66,6 @@ func newRouter() *mux.Router {
 	// Repo
 	repoPath := "/" + routevar.Repo
 	repo := m.PathPrefix(repoPath + "/" + routevar.RepoPathDelim).Subrouter()
-	repo.Path("/builds").Methods("GET").Name(routeRepoBuilds)
-	repo.Path(`/builds/{Build:\d+}`).Methods("GET").Name(routeBuild)
 	repo.Path("/info").Methods("GET").Name(routeRepoLanding)
 
 	// RepoRev

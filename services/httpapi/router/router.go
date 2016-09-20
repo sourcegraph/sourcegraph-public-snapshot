@@ -22,8 +22,6 @@ const (
 
 	Annotations              = "annotations"
 	AuthInfo                 = "auth-info"
-	Builds                   = "builds"
-	BuildTaskLog             = "build.task.log"
 	Commit                   = "commit"
 	Coverage                 = "coverage"
 	Def                      = "def"
@@ -45,11 +43,7 @@ const (
 	RepoRefresh              = "repo.refresh"
 	RepoInventory            = "repo.inventory"
 	RepoBranches             = "repo.branches"
-	RepoBuild                = "repo.build"
 	RepoTree                 = "repo.tree"
-	RepoBuilds               = "repo.builds"
-	RepoBuildTasks           = "build.tasks"
-	RepoBuildsCreate         = "repo.builds.create"
 	RepoCommits              = "repo.commits"
 	RepoResolveRev           = "repo.resolve-rev"
 	RepoTags                 = "repo.tags"
@@ -88,7 +82,6 @@ func New(base *mux.Router) *mux.Router {
 
 	base.Path("/annotations").Methods("GET").Name(Annotations)
 
-	base.Path("/builds").Methods("GET").Name(Builds)
 	base.Path("/coverage").Methods("GET").Name(Coverage)
 
 	base.Path("/repos").Methods("GET").Name(Repos)
@@ -128,14 +121,6 @@ func New(base *mux.Router) *mux.Router {
 	repoRev.Path("/jump-def").Methods("GET").Name(RepoJumpDef)
 	repoRev.Path("/symbols").Methods("GET").Name(RepoSymbols)
 	repo.Path("/tags").Methods("GET").Name(RepoTags)
-
-	repo.Path("/builds").Methods("GET").Name(RepoBuilds)
-	repo.Path("/builds").Methods("POST").Name(RepoBuildsCreate)
-	buildPath := `/builds/{Build:\d+}`
-	repo.Path(buildPath).Methods("GET").Name(RepoBuild)
-	build := repo.PathPrefix(buildPath).Subrouter()
-	build.Path("/tasks").Methods("GET").Name(RepoBuildTasks)
-	build.Path(`/tasks/{Task:\d+}/log`).Methods("GET").Name(BuildTaskLog)
 
 	base.Path("/defs").Methods("GET").Name(Defs)
 

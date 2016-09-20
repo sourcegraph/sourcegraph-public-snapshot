@@ -38,7 +38,6 @@ import (
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/loghandlers"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/metrics"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
@@ -432,13 +431,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		return err
 	}
 	repoupdater.RepoUpdater.Start(repoUpdaterCtx)
-
-	// Occasionally compute instance usage stats
-	usageStatsCtx, err := authenticateScopedContext(clientCtx, []string{"internal:usagestats"})
-	if err != nil {
-		return err
-	}
-	go metrics.ComputeUsageStats(usageStatsCtx, 10*time.Minute)
 
 	// HACK(sjl) The Golang garbage collector is a bit conservative with memory that should
 	// be returned to host.  On larger nodes, this can get to be 10 gigabytes or

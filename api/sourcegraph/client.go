@@ -10,7 +10,6 @@ type Client struct {
 	Annotations  AnnotationsClient
 	Async        AsyncClient
 	Auth         AuthClient
-	Builds       BuildsClient
 	Defs         DefsClient
 	Meta         MetaClient
 	MirrorRepos  MirrorReposClient
@@ -35,7 +34,6 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	c.Annotations = NewAnnotationsClient(conn)
 	c.Async = NewAsyncClient(conn)
 	c.Auth = NewAuthClient(conn)
-	c.Builds = NewBuildsClient(conn)
 	c.Defs = NewDefsClient(conn)
 	c.Meta = NewMetaClient(conn)
 	c.MirrorRepos = NewMirrorReposClient(conn)

@@ -66,4 +66,4 @@ func NotNoisey(r *log15.Record) bool {
 	return true
 }
 
-var noiseyRPC = []string{"Builds.DequeueNext", "MirrorRepos.RefreshVCS"}
+var noiseyRPC = []string{"MirrorRepos.RefreshVCS"}

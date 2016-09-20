@@ -5,39 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-querystring/query"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
-
-func TestSchemaMatches(t *testing.T) {
-	tests := []struct {
-		a, b      interface{}
-		wantMatch bool
-	}{
-		{
-			sourcegraph.BuildListOptions{Queued: true},
-			sourcegraph.BuildListOptions{Queued: false},
-			false,
-		},
-		{
-			sourcegraph.BuildListOptions{Queued: true},
-			sourcegraph.BuildListOptions{Queued: true},
-			true,
-		},
-		{
-			sourcegraph.BuildListOptions{Queued: true, ListOptions: sourcegraph.ListOptions{Page: 5}},
-			sourcegraph.BuildListOptions{Queued: true, ListOptions: sourcegraph.ListOptions{Page: 10}},
-			false,
-		},
-	}
-	for _, test := range tests {
-		match := schemaMatches(test.a, test.b)
-		if match != test.wantMatch {
-			t.Errorf("got match == %v (want %v) for schemas %+v and %+v", match, test.wantMatch, test.a, test.b)
-			continue
-		}
-	}
-}
 
 func TestSchemaMatchesExceptListAndSortOptions(t *testing.T) {
 	type schemaWithNoListOptions struct{ Foo string }
@@ -46,21 +14,6 @@ func TestSchemaMatchesExceptListAndSortOptions(t *testing.T) {
 		a, b      interface{}
 		wantMatch bool
 	}{
-		{
-			sourcegraph.BuildListOptions{Queued: true},
-			sourcegraph.BuildListOptions{Queued: false},
-			false,
-		},
-		{
-			&sourcegraph.BuildListOptions{Queued: true},
-			&sourcegraph.BuildListOptions{Queued: true},
-			true,
-		},
-		{
-			sourcegraph.BuildListOptions{Queued: true, ListOptions: sourcegraph.ListOptions{Page: 5}},
-			sourcegraph.BuildListOptions{Queued: true, ListOptions: sourcegraph.ListOptions{Page: 10}},
-			true,
-		},
 		{
 			schemaWithNoListOptions{Foo: "x"},
 			schemaWithNoListOptions{Foo: "x"},

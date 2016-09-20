@@ -124,7 +124,7 @@ func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	apiURL := httpURL.ResolveReference(&url.URL{Path: "/.api/defs", RawQuery: "Query=Mux"}).String()
+	apiURL := httpURL.ResolveReference(&url.URL{Path: "/.api/repos"}).String()
 	resp, err := http.Get(apiURL)
 
 	if err != nil {

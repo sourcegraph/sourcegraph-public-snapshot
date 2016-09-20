@@ -333,12 +333,6 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	// Graphstore
 	s.Config.Serve.GraphStoreOpts.Root = reposDir
 
-	// Worker
-	s.Config.Serve.WorkCmd = cli.WorkCmd{
-		DequeueMsec: 100,
-		Parallel:    2,
-	}
-
 	s.Ctx = context.Background()
 	s.Ctx = sourcegraph.WithGRPCEndpoint(s.Ctx, s.Config.Endpoint.URLOrDefault())
 

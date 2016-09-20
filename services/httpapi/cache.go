@@ -7,7 +7,6 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
@@ -66,25 +65,4 @@ func writeCacheHeaders(w http.ResponseWriter, r *http.Request, lastMod time.Time
 	}
 
 	return false, nil
-}
-
-// getLastModForRepoRevs gets the most recent last build end time for
-// any repo/commit pair in repoRevs (which is a list of strings of the
-// form "uri[@rev]", like "repohost.com/foo@master" or just
-// "repohost.com/foo").
-func getLastModForRepoRevs(r *http.Request, repoRevs []string) (time.Time, error) {
-	if len(repoRevs) == 1 {
-		repoPath, commitID := sourcegraph.ParseRepoAndCommitID(repoRevs[0])
-		if commitID != "" {
-			// TODO(sqs): perf can be improved by adding cache headers in
-			// the case where multiple repo paths are specified (currently
-			// this logic is only if 1 repo is specified).
-			lastMod, err := getRepoLastBuildTime(r, repoPath, commitID)
-			if err != nil {
-				return time.Time{}, err
-			}
-			return lastMod, nil
-		}
-	}
-	return time.Time{}, nil
 }

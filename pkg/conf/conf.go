@@ -4,15 +4,11 @@ import (
 	"log"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 )
 
-var (
-	AppURL      = &url.URL{Scheme: "http", Host: "example.com"}
-	BuildLogDir = GetenvOrDefault("SG_BUILD_LOG_DIR", filepath.Join(TempDir(), "sg-log/build"))
-)
+var AppURL = &url.URL{Scheme: "http", Host: "example.com"}
 
 func MustGetenv(name string) string {
 	if v := os.Getenv(name); v != "" {
