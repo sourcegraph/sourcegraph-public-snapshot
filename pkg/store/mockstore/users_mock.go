@@ -13,7 +13,6 @@ type Users struct {
 	Get_              func(ctx context.Context, user sourcegraph.UserSpec) (*sourcegraph.User, error)
 	GetWithLogin_     func(ctx context.Context, login string) (*sourcegraph.User, error)
 	GetWithEmail_     func(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error)
-	List_             func(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error)
 	ListEmails_       func(v0 context.Context, v1 sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error)
 	GetUIDByGitHubID_ func(ctx context.Context, githubUID int) (int32, error)
 }
@@ -28,10 +27,6 @@ func (s *Users) GetWithLogin(ctx context.Context, login string) (*sourcegraph.Us
 
 func (s *Users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 	return s.GetWithEmail_(ctx, emailAddr)
-}
-
-func (s *Users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error) {
-	return s.List_(ctx, opt)
 }
 
 func (s *Users) ListEmails(v0 context.Context, v1 sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {

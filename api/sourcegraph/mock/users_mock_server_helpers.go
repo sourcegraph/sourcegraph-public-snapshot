@@ -36,19 +36,6 @@ func (s *UsersServer) MockGet_Return(t *testing.T, returns *sourcegraph.User) (c
 	return
 }
 
-func (s *UsersServer) MockList(t *testing.T, wantUsers ...string) (called *bool) {
-	called = new(bool)
-	s.List_ = func(ctx context.Context, opt *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error) {
-		*called = true
-		users := make([]*sourcegraph.User, len(wantUsers))
-		for i, user := range wantUsers {
-			users[i] = &sourcegraph.User{Login: user}
-		}
-		return &sourcegraph.UserList{Users: users}, nil
-	}
-	return
-}
-
 func (s *UsersServer) MockListEmails(t *testing.T, wantEmails ...string) (called *bool) {
 	called = new(bool)
 	s.ListEmails_ = func(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error) {

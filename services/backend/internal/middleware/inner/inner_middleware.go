@@ -1456,27 +1456,6 @@ func (s wrappedUsers) ListEmails(ctx context.Context, param *sourcegraph.UserSpe
 	return
 }
 
-func (s wrappedUsers) List(ctx context.Context, param *sourcegraph.UsersListOptions) (res *sourcegraph.UserList, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Users", "List", param)
-	defer func() {
-		trace.After(ctx, "Users", "List", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Users.List(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Users.List returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Users.List failed with internal error.")
-		}
-	}
-	return
-}
-
 func (s wrappedUsers) RegisterBeta(ctx context.Context, param *sourcegraph.BetaRegistration) (res *sourcegraph.BetaResponse, err error) {
 	var errActual error
 	start := time.Now()

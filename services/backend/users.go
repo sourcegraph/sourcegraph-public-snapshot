@@ -54,14 +54,6 @@ func (s *users) ListEmails(ctx context.Context, user *sourcegraph.UserSpec) (*so
 	return &sourcegraph.EmailAddrList{EmailAddrs: emails}, nil
 }
 
-func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error) {
-	users, err := store.UsersFromContext(ctx).List(ctx, opt)
-	if err != nil {
-		return nil, err
-	}
-	return &sourcegraph.UserList{Users: users}, nil
-}
-
 func (s *users) RegisterBeta(ctx context.Context, opt *sourcegraph.BetaRegistration) (*sourcegraph.BetaResponse, error) {
 	actor := authpkg.ActorFromContext(ctx)
 

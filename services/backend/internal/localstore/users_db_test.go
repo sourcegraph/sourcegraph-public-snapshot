@@ -1,7 +1,6 @@
 package localstore
 
 import (
-	"reflect"
 	"sort"
 	"testing"
 
@@ -161,81 +160,5 @@ func TestUsers_Get_nonexistentUID(t *testing.T) {
 	}
 	if user != nil {
 		t.Error("user != nil")
-	}
-}
-
-// TestUsers_List_ok tests the behavior of Users.List.
-func TestUsers_List_ok(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	ctx, _, done := testContext()
-	defer done()
-
-	s := &users{}
-	createUser := newCreateUserFunc(ctx)
-	if _, err := createUser(sourcegraph.User{Login: "u0"}, sourcegraph.EmailAddr{Email: "email0@email.email"}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := createUser(sourcegraph.User{Login: "u1"}, sourcegraph.EmailAddr{Email: "email1@email.email"}); err != nil {
-		t.Fatal(err)
-	}
-
-	users, err := s.List(ctx, &sourcegraph.UsersListOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := 2; len(users) != want {
-		t.Errorf("got len(users) == %d, want %d", len(users), want)
-	}
-	logins := userLogins(users)
-	if want := []string{"u0", "u1"}; !reflect.DeepEqual(logins, want) {
-		t.Errorf("got logins == %v, want %v", logins, want)
-	}
-}
-
-// TestUsers_List_query tests the behavior of Users.List when called with
-// a query.
-func TestUsers_List_query(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	ctx, _, done := testContext()
-	defer done()
-
-	s := &users{}
-	createUser := newCreateUserFunc(ctx)
-	if _, err := createUser(sourcegraph.User{Login: "u0"}, sourcegraph.EmailAddr{Email: "email0@email.email"}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := createUser(sourcegraph.User{Login: "u1"}, sourcegraph.EmailAddr{Email: "email1@email.email"}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := createUser(sourcegraph.User{Login: "u12"}, sourcegraph.EmailAddr{Email: "email2@email.email"}); err != nil {
-		t.Fatal(err)
-	}
-
-	tests := []struct {
-		query string
-		want  []string
-	}{
-		{"u", []string{"u0", "u1", "u12"}},
-		{"u1", []string{"u1", "u12"}},
-		{"u12", []string{"u12"}},
-		{"u9", nil},
-		{"U1", []string{"u1", "u12"}},
-	}
-	for _, test := range tests {
-		users, err := s.List(ctx, &sourcegraph.UsersListOptions{Query: test.query})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got := userLogins(users); !reflect.DeepEqual(got, test.want) {
-			t.Errorf("%q: got users %v, want %v", test.query, got, test.want)
-		}
 	}
 }

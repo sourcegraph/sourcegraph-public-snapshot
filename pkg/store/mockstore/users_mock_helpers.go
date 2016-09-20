@@ -37,19 +37,6 @@ func (s *Users) MockGet_Return(t *testing.T, returns *sourcegraph.User) (called 
 	return
 }
 
-func (s *Users) MockList(t *testing.T, wantUsers ...string) (called *bool) {
-	called = new(bool)
-	s.List_ = func(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error) {
-		*called = true
-		users := make([]*sourcegraph.User, len(wantUsers))
-		for i, user := range wantUsers {
-			users[i] = &sourcegraph.User{UID: int32(i + 1), Login: user}
-		}
-		return users, nil
-	}
-	return
-}
-
 func (s *ExternalAuthTokens) MockGetUserToken(t *testing.T) (called *bool) {
 	called = new(bool)
 	s.GetUserToken_ = func(ctx context.Context, user int, host, clientID string) (*store.ExternalAuthToken, error) {

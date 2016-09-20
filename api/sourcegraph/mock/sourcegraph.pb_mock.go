@@ -446,7 +446,6 @@ type UsersClient struct {
 	Get_          func(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.User, error)
 	GetWithEmail_ func(ctx context.Context, in *sourcegraph.EmailAddr) (*sourcegraph.User, error)
 	ListEmails_   func(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error)
-	List_         func(ctx context.Context, in *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error)
 	RegisterBeta_ func(ctx context.Context, in *sourcegraph.BetaRegistration) (*sourcegraph.BetaResponse, error)
 }
 
@@ -462,10 +461,6 @@ func (s *UsersClient) ListEmails(ctx context.Context, in *sourcegraph.UserSpec, 
 	return s.ListEmails_(ctx, in)
 }
 
-func (s *UsersClient) List(ctx context.Context, in *sourcegraph.UsersListOptions, opts ...grpc.CallOption) (*sourcegraph.UserList, error) {
-	return s.List_(ctx, in)
-}
-
 func (s *UsersClient) RegisterBeta(ctx context.Context, in *sourcegraph.BetaRegistration, opts ...grpc.CallOption) (*sourcegraph.BetaResponse, error) {
 	return s.RegisterBeta_(ctx, in)
 }
@@ -476,7 +471,6 @@ type UsersServer struct {
 	Get_          func(v0 context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.User, error)
 	GetWithEmail_ func(v0 context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.User, error)
 	ListEmails_   func(v0 context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error)
-	List_         func(v0 context.Context, v1 *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error)
 	RegisterBeta_ func(v0 context.Context, v1 *sourcegraph.BetaRegistration) (*sourcegraph.BetaResponse, error)
 }
 
@@ -490,10 +484,6 @@ func (s *UsersServer) GetWithEmail(v0 context.Context, v1 *sourcegraph.EmailAddr
 
 func (s *UsersServer) ListEmails(v0 context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error) {
 	return s.ListEmails_(v0, v1)
-}
-
-func (s *UsersServer) List(v0 context.Context, v1 *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error) {
-	return s.List_(v0, v1)
 }
 
 func (s *UsersServer) RegisterBeta(v0 context.Context, v1 *sourcegraph.BetaRegistration) (*sourcegraph.BetaResponse, error) {

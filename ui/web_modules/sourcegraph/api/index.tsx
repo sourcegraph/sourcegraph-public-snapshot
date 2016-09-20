@@ -1420,18 +1420,6 @@ export interface UserSpec {
 	UID?: number;
 }
 
-export interface UsersListOptions {
-	Query?: string;
-	Sort?: string;
-	Direction?: string;
-	PerPage?: number;
-	Page?: number;
-	UIDs?: number[];
-	AllBetas?: string[];
-	RegisteredBeta?: boolean;
-	HaveBeta?: boolean;
-}
-
 export interface VCSCredentials {
 	Pass?: string;
 }

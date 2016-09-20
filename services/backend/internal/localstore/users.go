@@ -2,15 +2,12 @@ package localstore
 
 import (
 	"database/sql"
-	"fmt"
-	"strings"
 	"time"
 
 	"context"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"gopkg.in/gorp.v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
@@ -146,80 +143,6 @@ func (s *users) getBySQL(ctx context.Context, query string, args ...interface{})
 		return nil, err
 	}
 	return user.toUser(), nil
-}
-
-var okUsersSorts = map[string]struct{}{
-	"login":        struct{}{},
-	"lower(login)": struct{}{},
-	"uid":          struct{}{},
-}
-
-func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Users.List", nil); err != nil {
-		return nil, err
-	}
-	var args []interface{}
-	arg := func(a interface{}) string {
-		v := gorp.PostgresDialect{}.BindVar(len(args))
-		args = append(args, a)
-		return v
-	}
-	sql := fmt.Sprintf(`FROM users WHERE NOT disabled`)
-	if opt.Query != "" {
-		sql += " AND (LOWER(login)=" + arg(strings.ToLower(opt.Query)) + " OR LOWER(login) LIKE " + arg(strings.ToLower(opt.Query)+"%") + ")"
-	}
-
-	if opt.UIDs != nil && len(opt.UIDs) > 0 {
-		uidBindVars := make([]string, len(opt.UIDs))
-		for i, uid := range opt.UIDs {
-			uidBindVars[i] = arg(uid)
-		}
-		sql += " AND uid in (" + strings.Join(uidBindVars, ",") + ")"
-	}
-
-	for _, beta := range opt.AllBetas {
-		bindVar := arg(beta)
-		sql += " AND " + bindVar + " = ANY(betas)"
-	}
-	if opt.RegisteredBeta {
-		// Filter by users who have registered for beta access.
-		sql += " AND beta_registered=true "
-	}
-	if opt.HaveBeta && len(opt.AllBetas) == 0 {
-		// Filter by users who have access to at least one beta. Note that
-		// len(opt.AllBetas) > 0 fulfils this requirement.
-		sql += " AND array_length(betas, 1) > 0 "
-	}
-
-	sort := opt.Sort
-	direction := opt.Direction
-	if sort == "" {
-		sort = "lower(login)"
-	}
-	if _, ok := okUsersSorts[sort]; !ok {
-		return nil, grpc.Errorf(codes.InvalidArgument, "invalid sort: "+sort)
-	}
-
-	if direction == "" {
-		if sort == "uid" || sort == "lower(login)" {
-			direction = "asc"
-		} else {
-			direction = "desc"
-		}
-	}
-	if direction != "asc" && direction != "desc" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "invalid direction: "+direction)
-	}
-
-	sql += fmt.Sprintf(" ORDER BY %s %s", sort, strings.ToUpper(direction))
-	sql += fmt.Sprintf(" LIMIT %s OFFSET %s", arg(opt.PerPageOrDefault()), arg(opt.Offset()))
-
-	sql = "SELECT * " + sql
-	var users []*dbUser
-	if _, err := appDBH(ctx).Select(&users, sql, args...); err != nil {
-		return nil, err
-	}
-	return toUsers(users), nil
 }
 
 func (s *users) GetUIDByGitHubID(ctx context.Context, githubUID int) (int32, error) {

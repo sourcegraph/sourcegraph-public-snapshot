@@ -2395,41 +2395,6 @@ func (s wrappedUsers) ListEmails(ctx context.Context, v1 *sourcegraph.UserSpec) 
 	return rv, nil
 }
 
-func (s wrappedUsers) List(ctx context.Context, v1 *sourcegraph.UsersListOptions) (returnedResult *sourcegraph.UserList, returnedError error) {
-	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
-	span := opentracing.StartSpan("GRPC call: Users.List", opentracing.ChildOf(parentSpanCtx))
-	defer span.Finish()
-	ctx = opentracing.ContextWithSpan(ctx, span)
-
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Users.List: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.UsersOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Users")
-	}
-
-	rv, err := innerSvc.List(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
 func (s wrappedUsers) RegisterBeta(ctx context.Context, v1 *sourcegraph.BetaRegistration) (returnedResult *sourcegraph.BetaResponse, returnedError error) {
 	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
 	span := opentracing.StartSpan("GRPC call: Users.RegisterBeta", opentracing.ChildOf(parentSpanCtx))

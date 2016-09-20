@@ -1061,33 +1061,6 @@ message UserSpec {
 	int32 UID = 2;
 }
 
-// UsersListOptions specifies options for the UsersService.List method.
-message UsersListOptions {
-	// Query filters the results to only those whose logins match. The search algorithm
-	// is an implementation detail (currently it is a prefix match).
-	string Query = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
-
-	string Sort = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string Direction = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
-	ListOptions ListOptions = 4 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-
-	// UIDs filters the resulting list to only contain users
-	// with one of these UIDs.
-	repeated int32 UIDs = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
-
-	// AllBetas filters the resulting list to only contain users who are part of
-	// all the given betas. There is no equivilent OR operator yet.
-	repeated string AllBetas = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
-
-	// RegisteredBeta filters the resulting list to only users who have
-	// registered for beta access.
-	bool RegisteredBeta = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
-
-	// HaveBeta filters the resulting list to only users who have access to at
-	// least one beta.
-	bool HaveBeta = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
-}
-
 message EmailAddrList {
 	repeated EmailAddr EmailAddrs = 1;
 }
@@ -1274,9 +1247,6 @@ service Users {
 
 	// ListEmails returns a list of a user's email addresses.
 	rpc ListEmails(UserSpec) returns (EmailAddrList);
-
-	// List users.
-	rpc List(UsersListOptions) returns (UserList);
 
 	// RegisterBeta registers the currently authenticated user for beta program
 	// access (to be granted at the discretion of an admin user in the future).
