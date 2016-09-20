@@ -105,144 +105,6 @@ export interface BranchesOptions {
 	ContainsCommit?: string;
 }
 
-export interface Build {
-	Repo?: number;
-	ID?: number;
-	CommitID?: string;
-	Branch?: string;
-	Tag?: string;
-	CreatedAt: any;
-	StartedAt?: any;
-	EndedAt?: any;
-	HeartbeatAt?: any;
-	Success?: boolean;
-	Failure?: boolean;
-	Killed?: boolean;
-	Host?: string;
-	Purged?: boolean;
-	Queue?: boolean;
-	Priority?: number;
-	BuilderConfig?: string;
-}
-
-export interface BuildConfig {
-	Queue?: boolean;
-	Priority?: number;
-	BuilderConfig?: string;
-}
-
-export interface BuildGetLogOptions {
-	MinID?: string;
-}
-
-export interface BuildJob {
-	Spec: BuildSpec;
-	CommitID?: string;
-	Branch?: string;
-	Tag?: string;
-	AccessToken?: string;
-}
-
-export interface BuildList {
-	Builds?: Build[];
-	HasMore?: boolean;
-}
-
-export interface BuildListOptions {
-	Queued?: boolean;
-	Active?: boolean;
-	Ended?: boolean;
-	Succeeded?: boolean;
-	Failed?: boolean;
-	Purged?: boolean;
-	Repo?: number;
-	CommitID?: string;
-	Sort?: string;
-	Direction?: string;
-	PerPage?: number;
-	Page?: number;
-}
-
-export interface BuildSpec {
-	Repo?: number;
-	ID?: number;
-}
-
-export interface BuildTask {
-	ID?: number;
-	Build: BuildSpec;
-	ParentID?: number;
-	Label?: string;
-	CreatedAt: any;
-	StartedAt?: any;
-	EndedAt?: any;
-	Success?: boolean;
-	Failure?: boolean;
-	Skipped?: boolean;
-	Warnings?: boolean;
-}
-
-export interface BuildTaskList {
-	BuildTasks?: BuildTask[];
-}
-
-export interface BuildTaskListOptions {
-	PerPage?: number;
-	Page?: number;
-}
-
-export interface BuildUpdate {
-	StartedAt?: any;
-	EndedAt?: any;
-	HeartbeatAt?: any;
-	Host?: string;
-	Success?: boolean;
-	Purged?: boolean;
-	Failure?: boolean;
-	Killed?: boolean;
-	Priority?: number;
-	BuilderConfig?: string;
-	FileScore?: number;
-	RefScore?: number;
-	TokDensity?: number;
-}
-
-export interface BuildsCreateOp {
-	Repo?: number;
-	CommitID?: string;
-	Branch?: string;
-	Tag?: string;
-	Config: BuildConfig;
-}
-
-export interface BuildsCreateTasksOp {
-	Build: BuildSpec;
-	Tasks?: BuildTask[];
-}
-
-export interface BuildsDequeueNextOp {
-}
-
-export interface BuildsGetTaskLogOp {
-	Task: TaskSpec;
-	Opt?: BuildGetLogOptions;
-}
-
-export interface BuildsListBuildTasksOp {
-	Build: BuildSpec;
-	Opt?: BuildTaskListOptions;
-}
-
-export interface BuildsUpdateOp {
-	Build: BuildSpec;
-	Info: BuildUpdate;
-}
-
-export interface BuildsUpdateTaskOp {
-	Task: TaskSpec;
-	Info: TaskUpdate;
-}
-
 export interface Change {
 }
 
@@ -772,11 +634,6 @@ export interface ListResponse {
 export interface Location {
 	uri: string;
 	range: any;
-}
-
-export interface LogEntries {
-	MaxID?: string;
-	Entries?: string[];
 }
 
 export interface LogMessageParams {
@@ -1313,20 +1170,6 @@ export interface Tag {
 export interface TagList {
 	Tags?: any[];
 	HasMore?: boolean;
-}
-
-export interface TaskSpec {
-	Build: BuildSpec;
-	ID?: number;
-}
-
-export interface TaskUpdate {
-	StartedAt?: any;
-	EndedAt?: any;
-	Success?: boolean;
-	Failure?: boolean;
-	Skipped?: boolean;
-	Warnings?: boolean;
 }
 
 export interface TextDocumentContentChangeEvent {

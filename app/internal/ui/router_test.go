@@ -50,20 +50,6 @@ func TestRouter(t *testing.T) {
 
 		// Repo sub-routes
 		{
-			path:          "/r/-/builds",
-			wantRouteName: routeRepoBuilds,
-			wantVars:      map[string]string{"Repo": "r"},
-		},
-		{
-			path:          "/r/-/builds/123",
-			wantRouteName: routeBuild,
-			wantVars:      map[string]string{"Repo": "r", "Build": "123"},
-		},
-		{
-			path:        "/r@v/-/builds",
-			wantNoMatch: true,
-		},
-		{
 			path:        "/r@v/-/builds/123",
 			wantNoMatch: true,
 		},

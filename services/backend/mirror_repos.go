@@ -138,21 +138,6 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 		return err
 	}
 
-	_, err = svc.Builds(ctx).Create(elevatedActor(ctx), &sourcegraph.BuildsCreateOp{
-		Repo:     repo.ID,
-		CommitID: res.CommitID,
-		Branch:   repo.DefaultBranch,
-		Config: sourcegraph.BuildConfig{
-			Queue:    true,
-			Priority: -50,
-		},
-	})
-	if err != nil {
-		log15.Warn("cloneRepo: failed to create build", "err", err, "repo", repo.URI, "commit", res.CommitID, "branch", repo.DefaultBranch)
-		return nil
-	}
-	log15.Debug("cloneRepo: build created", "repo", repo.URI, "branch", repo.DefaultBranch, "commit", res.CommitID)
-
 	if universe.EnabledRepo(repo) || universe.Shadow(repo.URI) {
 		go func() {
 			// Ask the Language Processor to prepare the workspace.
@@ -222,9 +207,8 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 			// Publish the event.
 			// TODO: what about GitPayload.ContentEncoding field?
 			events.Publish(eventType, events.GitPayload{
-				Actor:       authpkg.ActorFromContext(ctx).UserSpec(),
-				Repo:        repo.ID,
-				IgnoreBuild: change.Branch != repo.DefaultBranch,
+				Actor: authpkg.ActorFromContext(ctx).UserSpec(),
+				Repo:  repo.ID,
 				Event: githttp.Event{
 					Type:   gitEventType,
 					Commit: string(head),

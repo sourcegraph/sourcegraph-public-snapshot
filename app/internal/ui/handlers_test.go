@@ -87,8 +87,6 @@ var urls = map[string]struct {
 	"/r@v/-/blob/f":       {repo: "r", rev: "v", blob: "f"},
 	"/r@v/-/def/t/u/-/p":  {repo: "r", rev: "v", defUnitType: "t", defUnit: "u", defPath: "p"},
 	"/r@v/-/info/t/u/-/p": {repo: "r", rev: "v", defUnitType: "t", defUnit: "u", defPath: "p"},
-	"/r/-/builds":         {repo: "r"},
-	"/r/-/builds/2":       {repo: "r"},
 }
 
 func metaDiff(a, b meta) string { return strings.Join(pretty.Diff(a, b), "\n") }

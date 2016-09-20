@@ -43,9 +43,6 @@ func TestCanonicalRepoURL(t *testing.T) {
 		"/r@v/-/def/t/u/-/p": "/r@c/-/def/t/u/-/p",
 		"/r@b/-/def/t/u/-/p": "/r/-/def/t/u/-/p",
 		"/r@c/-/def/t/u/-/p": "/r@c/-/def/t/u/-/p",
-
-		"/r/-/builds":   "/r/-/builds",
-		"/r/-/builds/1": "/r/-/builds/1",
 	}
 	for orig, want := range tests {
 		origURL, err := url.Parse(orig)

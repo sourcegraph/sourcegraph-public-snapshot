@@ -4,14 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
-	"strings"
 
-	"github.com/neelance/parallel"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/textutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/timeutil"
 )
 
@@ -90,29 +86,6 @@ func init() {
 		log.Fatal(err)
 	}
 	deleteC.Aliases = []string{"rm"}
-
-	_, err = reposGroup.AddCommand("sync",
-		"syncs repos and triggers builds for recent commits",
-		`The 'sgx repo sync' command syncs repos and triggers builds for recent commits.
-
-If multiple REPO-URIs are provided, the syncs are performed concurrently.
-
-
-TIPS
-
-Sync all of a person/org's repos:
-
-	sgx repo sync `+"`"+`sgx repo list --owner USER`+"`"+`
-
-Same as above, but for a deployed site:
-
-	sgx env exec sgx repo sync `+"`"+`sgx env exec sgx repo list --owner USER`+"`"+`
-`,
-		&repoSyncCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	_, err = reposGroup.AddCommand("refresh-vcs",
 		"refresh repo VCS data",
@@ -337,108 +310,6 @@ func (c *repoDeleteCmd) Execute(args []string) error {
 		}
 		log.Printf("# deleted: %s", uri)
 	}
-	return nil
-}
-
-type repoSyncCmd struct {
-	Force bool   `long:"force" short:"f" description:"force rebuild even if build exists for the latest commit"`
-	Rev   string `long:"revision" short:"r" description:"sync the specified branch or commit ID"`
-
-	// buildPriority is used to control the priority of the build. Private
-	// since we don't want to expose it to the user.
-	buildPriority int32
-
-	Args struct {
-		URIs []string `name:"REPO-URI" description:"repository URIs (e.g., host.com/myrepo)"`
-	} `positional-args:"yes" required:"yes"`
-}
-
-func (c *repoSyncCmd) Execute(args []string) error {
-	par := parallel.NewRun(30)
-	for _, repo_ := range c.Args.URIs {
-		repo := repo_
-		par.Acquire()
-		go func() {
-			defer par.Release()
-			if err := c.sync(repo); err != nil {
-				par.Error(fmt.Errorf(red("%s:")+" %s", repo, err))
-				return
-			}
-		}()
-	}
-	if err := par.Wait(); err != nil {
-		if errs, ok := err.(parallel.Errors); ok {
-			for _, err := range errs {
-				log.Println(err)
-			}
-			return fmt.Errorf("encountered %d errors (see above)", len(errs))
-		}
-		return err
-	}
-	return nil
-}
-
-func (c *repoSyncCmd) sync(repoURI string) error {
-	log := log.New(os.Stderr, cyan(strings.TrimPrefix(strings.TrimPrefix(repoURI+": ", "github.com/"), "sourcegraph.com/")), 0)
-
-	cl := cliClient
-
-	res, err := cl.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: repoURI})
-	if err != nil {
-		return err
-	}
-	repoSpec := sourcegraph.RepoSpec{ID: res.Repo}
-
-	rev := c.Rev
-	if rev == "" {
-		repo, err := cl.Repos.Get(cliContext, &repoSpec)
-		if err != nil {
-			return err
-		}
-		rev = repo.DefaultBranch
-	}
-	resRev, err := cl.Repos.ResolveRev(cliContext, &sourcegraph.ReposResolveRevOp{
-		Repo: res.Repo,
-		Rev:  rev,
-	})
-	if err != nil {
-		return err
-	}
-	repoRevSpec := sourcegraph.RepoRevSpec{Repo: res.Repo, CommitID: resRev.CommitID}
-
-	commit, err := cl.Repos.GetCommit(cliContext, &repoRevSpec)
-	if err != nil {
-		return err
-	}
-	log.Printf("Got latest commit %s (%s): %s (%s %s).", commit.ID[:8], rev, textutil.Truncate(50, commit.Message), commit.Author.Email, timeutil.TimeAgo(commit.Author.Date))
-
-	builds, err := cl.Builds.List(cliContext, &sourcegraph.BuildListOptions{
-		Repo:      repoRevSpec.Repo,
-		CommitID:  repoRevSpec.CommitID,
-		Succeeded: true,
-	})
-	if err != nil {
-		return err
-	}
-	if c.Force || len(builds.Builds) == 0 {
-		b, err := cl.Builds.Create(cliContext, &sourcegraph.BuildsCreateOp{
-			Repo:     repoRevSpec.Repo,
-			CommitID: repoRevSpec.CommitID,
-			Config: sourcegraph.BuildConfig{
-				Queue:    true,
-				Priority: c.buildPriority,
-			},
-		})
-		if err != nil {
-			return err
-		}
-		log.Printf("Created build #%s for commit %s.", b.Spec().IDString(), commit.ID[:8])
-	} else if err != nil {
-		return err
-	} else {
-		log.Printf("Latest commit is already built.")
-	}
-
 	return nil
 }
 

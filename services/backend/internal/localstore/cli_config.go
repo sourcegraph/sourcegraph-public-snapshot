@@ -15,8 +15,6 @@ import (
 func init() {
 	stores := store.Stores{
 		Accounts:           &accounts{},
-		BuildLogs:          &buildLogs{},
-		Builds:             &builds{},
 		DefExamples:        &examples{},
 		Directory:          &directory{},
 		ExternalAuthTokens: &externalAuthTokens{},

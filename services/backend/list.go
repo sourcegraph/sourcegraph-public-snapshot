@@ -22,7 +22,6 @@ var Services = svc.Services{
 	Annotations:       Annotations,
 	Async:             Async,
 	Auth:              Auth,
-	Builds:            Builds,
 	Defs:              Defs,
 	Meta:              Meta,
 	MirrorRepos:       MirrorRepos,

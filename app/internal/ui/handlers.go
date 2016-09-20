@@ -28,11 +28,9 @@ func init() {
 	router.Get(routeReposIndex).Handler(httptrace.TraceRoute(internal.Handler(serveRepoIndex)))
 	router.Get(routeLangsIndex).Handler(httptrace.TraceRoute(internal.Handler(serveRepoIndex)))
 	router.Get(routeBlob).Handler(httptrace.TraceRoute(handler(serveBlob)))
-	router.Get(routeBuild).Handler(httptrace.TraceRoute(handler(serveBuild)))
 	router.Get(routeDefRedirectToDefLanding).Handler(httptrace.TraceRoute(http.HandlerFunc(serveDefRedirectToDefLanding)))
 	router.Get(routeDefLanding).Handler(httptrace.TraceRoute(internal.Handler(serveDefLanding)))
 	router.Get(routeRepo).Handler(httptrace.TraceRoute(handler(serveRepo)))
-	router.Get(routeRepoBuilds).Handler(httptrace.TraceRoute(handler(serveRepoBuilds)))
 	router.Get(routeRepoLanding).Handler(httptrace.TraceRoute(internal.Handler(serveRepoLanding)))
 	router.Get(routeTree).Handler(httptrace.TraceRoute(handler(serveTree)))
 	router.Get(routeTopLevel).Handler(httptrace.TraceRoute(internal.Handler(serveAny)))
@@ -98,21 +96,6 @@ func serveBlob(w http.ResponseWriter, r *http.Request) (*meta, error) {
 		repoRev.CommitID,
 	)
 	return m, nil
-}
-
-func serveBuild(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	_, err := handlerutil.GetRepo(r.Context(), mux.Vars(r))
-	if err != nil {
-		return nil, err
-	}
-
-	// NOTE: We don't actually try to fetch the build here, but that's
-	// OK. The frontend JS will notice and display the error if the
-	// build doesn't exist or is inaccessible. It's not super
-	// important to return proper 404s for builds, relative to other
-	// URLs that are linked more often.
-
-	return nil, nil
 }
 
 // serveDefRedirectToDefLanding redirects from /REPO/refs/... and
@@ -197,14 +180,6 @@ func serveRepo(w http.ResponseWriter, r *http.Request) (*meta, error) {
 		repoRev.CommitID,
 	)
 	return m, nil
-}
-
-func serveRepoBuilds(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	_, err := handlerutil.GetRepo(r.Context(), mux.Vars(r))
-	if err != nil {
-		return nil, err
-	}
-	return nil, nil
 }
 
 func serveTree(w http.ResponseWriter, r *http.Request) (*meta, error) {

@@ -44,7 +44,7 @@ func TestRefreshVCS(t *testing.T) {
 
 func TestRefreshVCS_cloneRepo(t *testing.T) {
 	ctx, mock := testContext()
-	var cloned, built bool
+	var cloned bool
 	mock.servers.Repos.MockGet(t, 1)
 	mock.servers.Repos.MockResolveRev_NoCheck(t, "deadbeef")
 	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
@@ -56,10 +56,6 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 		cloned = true
 		return nil
 	}
-	mock.servers.Builds.Create_ = func(_ context.Context, _ *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {
-		built = true
-		return &sourcegraph.Build{}, nil
-	}
 	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error) {
 		return nil, errors.New("mock")
 	}
@@ -68,9 +64,6 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
 	if !cloned {
 		t.Error("RefreshVCS did not clone missing repo")
-	}
-	if !built {
-		t.Error("RefreshVCS did not build repo")
 	}
 	if err != nil {
 		t.Fatalf("RefreshVCS call failed: %s", err)
@@ -82,7 +75,6 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 
 func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 	ctx, mock := testContext()
-	var built bool
 	mock.servers.Repos.MockGet(t, 1)
 	mock.servers.Repos.MockResolveRev_NoCheck(t, "deadbeef")
 	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
@@ -93,19 +85,12 @@ func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 	mock.stores.RepoVCS.Clone_ = func(_ context.Context, _ int32, _ *store.CloneInfo) error {
 		return vcs.ErrRepoExist
 	}
-	mock.servers.Builds.Create_ = func(_ context.Context, _ *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {
-		built = true
-		return &sourcegraph.Build{}, nil
-	}
 	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error) {
 		return nil, errors.New("mock")
 	}
 	calledInternalUpdate := mock.stores.Repos.MockInternalUpdate(t)
 
 	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
-	if !built {
-		t.Error("RefreshVCS did not build repo")
-	}
 	if err != nil {
 		t.Fatalf("RefreshVCS call failed: %s", err)
 	}

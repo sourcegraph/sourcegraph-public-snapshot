@@ -38,7 +38,6 @@ import (
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/loghandlers"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/metrics"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
@@ -57,7 +56,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/worker"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -74,7 +72,6 @@ Starts an HTTP server serving the app and API.
           --prof-http=BIND-ADDR                  net/http/pprof http bind address (:6060)
           --app-url=                             publicly accessible URL to web app (e.g., what you type into your browser) (http://<http-addr>)
           --reload                               reload templates, etc. on each request (dev mode)
-          --no-worker                            do not start background worker
           --tls-cert=                            certificate file (for TLS)
           --tls-key=                             key file (for TLS)
       -i, --id-key=                              identity key file
@@ -152,12 +149,10 @@ type ServeCmd struct {
 
 	AppURL string `long:"app-url" default:"http://<http-addr>" description:"publicly accessible URL to web app (e.g., what you type into your browser)" env:"SRC_APP_URL"`
 
-	NoWorker bool `long:"no-worker" description:"do not start background worker" env:"SRC_NO_WORKER"`
+	NoWorker bool `long:"no-worker" description:"deprecated"`
 
 	// Flags containing sensitive information must be added to this struct.
 	ServeCmdPrivate
-
-	WorkCmd
 
 	GraphStoreOpts `group:"Graph data storage (defs, refs, etc.)" namespace:"graphstore"`
 
@@ -436,23 +431,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		return err
 	}
 	repoupdater.RepoUpdater.Start(repoUpdaterCtx)
-
-	if c.NoWorker || c.IDKeyData != "" {
-		log15.Info("Skip starting worker process.")
-	} else {
-		go func() {
-			if err := worker.RunWorker(context.Background(), endpoint.URLOrDefault(), c.WorkCmd.Parallel, c.WorkCmd.DequeueMsec); err != nil {
-				log.Fatal("Worker exited with error:", err)
-			}
-		}()
-	}
-
-	// Occasionally compute instance usage stats
-	usageStatsCtx, err := authenticateScopedContext(clientCtx, []string{"internal:usagestats"})
-	if err != nil {
-		return err
-	}
-	go metrics.ComputeUsageStats(usageStatsCtx, 10*time.Minute)
 
 	// HACK(sjl) The Golang garbage collector is a bit conservative with memory that should
 	// be returned to host.  On larger nodes, this can get to be 10 gigabytes or

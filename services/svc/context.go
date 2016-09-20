@@ -27,7 +27,6 @@ const (
 	_AnnotationsKey       contextKey = iota
 	_AsyncKey             contextKey = iota
 	_AuthKey              contextKey = iota
-	_BuildsKey            contextKey = iota
 	_DefsKey              contextKey = iota
 	_MetaKey              contextKey = iota
 	_MirrorReposKey       contextKey = iota
@@ -45,7 +44,6 @@ type Services struct {
 	Annotations       sourcegraph.AnnotationsServer
 	Async             sourcegraph.AsyncServer
 	Auth              sourcegraph.AuthServer
-	Builds            sourcegraph.BuildsServer
 	Defs              sourcegraph.DefsServer
 	Meta              sourcegraph.MetaServer
 	MirrorRepos       sourcegraph.MirrorReposServer
@@ -77,10 +75,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.Auth != nil {
 		sourcegraph.RegisterAuthServer(s, svcs.Auth)
-	}
-
-	if svcs.Builds != nil {
-		sourcegraph.RegisterBuildsServer(s, svcs.Builds)
 	}
 
 	if svcs.Defs != nil {
@@ -138,10 +132,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.Auth != nil {
 		ctx = WithAuth(ctx, s.Auth)
-	}
-
-	if s.Builds != nil {
-		ctx = WithBuilds(ctx, s.Builds)
 	}
 
 	if s.Defs != nil {
@@ -288,29 +278,6 @@ func Auth(ctx context.Context) sourcegraph.AuthServer {
 // AuthOrNil returns the context's Auth service if present, or else nil.
 func AuthOrNil(ctx context.Context) sourcegraph.AuthServer {
 	s, ok := ctx.Value(_AuthKey).(sourcegraph.AuthServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithBuilds returns a copy of parent that uses the given Builds service.
-func WithBuilds(ctx context.Context, s sourcegraph.BuildsServer) context.Context {
-	return context.WithValue(ctx, _BuildsKey, s)
-}
-
-// Builds gets the context's Builds service. If the service is not present, it panics.
-func Builds(ctx context.Context) sourcegraph.BuildsServer {
-	s, ok := ctx.Value(_BuildsKey).(sourcegraph.BuildsServer)
-	if !ok || s == nil {
-		panic("no Builds set in context")
-	}
-	return s
-}
-
-// BuildsOrNil returns the context's Builds service if present, or else nil.
-func BuildsOrNil(ctx context.Context) sourcegraph.BuildsServer {
-	s, ok := ctx.Value(_BuildsKey).(sourcegraph.BuildsServer)
 	if ok {
 		return s
 	}

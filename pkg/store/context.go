@@ -20,8 +20,6 @@ import (
 // Stores has a field for each store interface.
 type Stores struct {
 	Accounts           Accounts
-	BuildLogs          BuildLogs
-	Builds             Builds
 	DefExamples        DefExamples
 	Defs               Defs
 	Directory          Directory
@@ -42,8 +40,6 @@ type contextKey int
 
 const (
 	_AccountsKey contextKey = iota
-	_BuildLogsKey
-	_BuildsKey
 	_DefExamplesKey
 	_DefsKey
 	_DirectoryKey
@@ -64,12 +60,6 @@ const (
 func WithStores(ctx context.Context, s Stores) context.Context {
 	if s.Accounts != nil {
 		ctx = WithAccounts(ctx, s.Accounts)
-	}
-	if s.BuildLogs != nil {
-		ctx = WithBuildLogs(ctx, s.BuildLogs)
-	}
-	if s.Builds != nil {
-		ctx = WithBuilds(ctx, s.Builds)
 	}
 	if s.DefExamples != nil {
 		ctx = WithDefExamples(ctx, s.DefExamples)
@@ -126,34 +116,6 @@ func AccountsFromContext(ctx context.Context) Accounts {
 	s, ok := ctx.Value(_AccountsKey).(Accounts)
 	if !ok || s == nil {
 		panic("no Accounts set in context")
-	}
-	return s
-}
-
-// WithBuildLogs returns a copy of parent with the given BuildLogs store.
-func WithBuildLogs(parent context.Context, s BuildLogs) context.Context {
-	return context.WithValue(parent, _BuildLogsKey, s)
-}
-
-// BuildLogsFromContext gets the context's BuildLogs store. If the store is not present, it panics.
-func BuildLogsFromContext(ctx context.Context) BuildLogs {
-	s, ok := ctx.Value(_BuildLogsKey).(BuildLogs)
-	if !ok || s == nil {
-		panic("no BuildLogs set in context")
-	}
-	return s
-}
-
-// WithBuilds returns a copy of parent with the given Builds store.
-func WithBuilds(parent context.Context, s Builds) context.Context {
-	return context.WithValue(parent, _BuildsKey, s)
-}
-
-// BuildsFromContext gets the context's Builds store. If the store is not present, it panics.
-func BuildsFromContext(ctx context.Context) Builds {
-	s, ok := ctx.Value(_BuildsKey).(Builds)
-	if !ok || s == nil {
-		panic("no Builds set in context")
 	}
 	return s
 }

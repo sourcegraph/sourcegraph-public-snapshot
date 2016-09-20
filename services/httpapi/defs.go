@@ -139,32 +139,6 @@ func universeDef(opt serveDefOpt, r *http.Request, repo *sourcegraph.Repo) (*sou
 	}, nil
 }
 
-// DEPRECATED
-func serveDefs(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
-	var opt sourcegraph.DefListOptions
-	err := schemaDecoder.Decode(&opt, r.URL.Query())
-	if err != nil {
-		return err
-	}
-
-	// Caching
-	lastMod, err := getLastModForRepoRevs(r, opt.RepoRevs)
-	if err != nil {
-		return err
-	}
-	if clientCached, err := writeCacheHeaders(w, r, lastMod, defaultCacheMaxAge); clientCached || err != nil {
-		return err
-	}
-
-	defs, err := cl.Defs.List(r.Context(), &opt)
-	if err != nil {
-		return err
-	}
-	return writeJSON(w, defs)
-}
-
 func resolveDef(ctx context.Context, def routevar.DefAtRev) (*sourcegraph.DefSpec, error) {
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {

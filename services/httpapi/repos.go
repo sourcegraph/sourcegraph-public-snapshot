@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"reflect"
@@ -142,41 +141,6 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	return writeJSON(w, &repo)
-}
-
-// getRepoLastBuildTime returns the time of the newest build for the
-// specified repository and commitID. For performance reasons, commitID is
-// assumed to be canonical (and is not resolved); if not 40 characters, an error is
-// returned.
-func getRepoLastBuildTime(r *http.Request, repoPath string, commitID string) (time.Time, error) {
-	if len(commitID) != 40 {
-		return time.Time{}, errors.New("refusing (for performance reasons) to get the last build time for non-canonical repository commit ID")
-	}
-
-	cl := handlerutil.Client(r)
-
-	res, err := cl.Repos.Resolve(r.Context(), &sourcegraph.RepoResolveOp{Path: repoPath})
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	builds, err := cl.Builds.List(r.Context(), &sourcegraph.BuildListOptions{
-		Repo:        res.Repo,
-		CommitID:    commitID,
-		Ended:       true,
-		Succeeded:   true,
-		ListOptions: sourcegraph.ListOptions{Page: 1, PerPage: 1},
-	})
-	if err != nil {
-		return time.Time{}, err
-	}
-	if len(builds.Builds) == 1 {
-		build := builds.Builds[0]
-		if build.EndedAt != nil {
-			return build.EndedAt.Time(), nil
-		}
-	}
-	return time.Time{}, nil
 }
 
 func resolveLocalRepo(ctx context.Context, repoPath string) (int32, error) {

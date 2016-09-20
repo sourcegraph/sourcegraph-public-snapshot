@@ -12,16 +12,6 @@ func LogGitPush(ctx context.Context) {
 	LogEvent(ctx, "GitPush", nil)
 }
 
-func LogBuildCompleted(ctx context.Context, success bool) {
-	m := make(map[string]string)
-	if success {
-		m["result"] = "success"
-	} else {
-		m["result"] = "failure"
-	}
-	LogEvent(ctx, "BuildCompleted", m)
-}
-
 func LogEvent(ctx context.Context, event string, eventProperties map[string]string) {
 	if eventProperties == nil {
 		eventProperties = make(map[string]string)
