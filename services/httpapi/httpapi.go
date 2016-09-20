@@ -103,8 +103,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.SrclibImport).Handler(httptrace.TraceRoute(handler(serveSrclibImport)))
 	m.Get(apirouter.SrclibDataVer).Handler(httptrace.TraceRoute(handler(serveSrclibDataVersion)))
 	m.Get(apirouter.SourcegraphDesktop).Handler(httptrace.TraceRoute(handler(serveSourcegraphDesktopUpdateURL)))
-	m.Get(apirouter.User).Handler(httptrace.TraceRoute(handler(serveUser)))
-	m.Get(apirouter.UserEmails).Handler(httptrace.TraceRoute(handler(serveUserEmails)))
 
 	m.Get(apirouter.BetaSubscription).Handler(httptrace.TraceRoute(handler(serveBetaSubscription)))
 

@@ -62,8 +62,6 @@ const (
 	SourcegraphDesktop       = "sourcegraph-desktop"
 	SrclibImport             = "srclib.import"
 	SrclibDataVer            = "srclib.data-version"
-	User                     = "user"
-	UserEmails               = "user.emails"
 	ResolveCustomImportsInfo = "resolve-custom-import.info"
 	ResolveCustomImportsTree = "resolve-custom-import.tree"
 
@@ -105,10 +103,6 @@ func New(base *mux.Router) *mux.Router {
 
 	base.Path("/auth-info").Methods("GET").Name(AuthInfo)
 	base.Path("/github-token").Methods("GET").Name(GitHubToken)
-	userPath := "/users/" + routevar.User
-	base.Path(userPath).Methods("GET").Name(User)
-	user := base.PathPrefix(userPath + "/").Subrouter()
-	user.Path("/emails").Methods("GET").Name(UserEmails)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
