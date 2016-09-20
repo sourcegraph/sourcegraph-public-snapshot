@@ -5,10 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -76,63 +76,7 @@ func (t *translator) Prepare(ctx context.Context, r *RepoRev) error {
 }
 
 func (t *translator) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*Position, error) {
-	// Determine the root path for the workspace and prepare it.
-	workspaceStart := time.Now()
-	rootPath, err := t.workspace.Prepare(ctx, defSpec.Repo, defSpec.Commit)
-	if err != nil {
-		return nil, err
-	}
-	start := time.Now()
-
-	// TODO: should probably check server capabilities before invoking symbol,
-	// but good enough for now.
-	importPath := ResolveRepoAlias(defSpec.Repo)
-	p := lsp.WorkspaceSymbolParams{
-		// TODO(keegancsmith) this is go specific
-		Query: "exported " + importPath + "/...",
-	}
-
-	// TODO(slimsag): cache symbol information for quicker access
-	var respSymbol []lsp.SymbolInformation
-	err = t.lspDo(ctx, rootPath, "workspace/symbol", p, &respSymbol)
-	defer observe(ctx, start, workspaceStart, defSpec.Repo, err, len(respSymbol) == 0)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, s := range respSymbol {
-		// Collect out refs only from name.
-		if s.Name != defSpec.Path {
-			continue
-		}
-
-		// TODO(slimsag): how do we handle def keys that map to multiple identical
-		// positions? e.g. see the results for:
-		//
-		// 	curl -s -H "Content-Type: application/json" -X POST -d '{"Repo":"github.com/slimsag/mux","Commit":"780415097119f6f61c55475fe59b66f3c3e9ea53","Def":"GoPackage/github.com/slimsag/mux/-/Router/Match"}' http://localhost:4141/defspec-to-position
-		//
-		// Right now we assume the first one is right, but this is likely to fail
-		// in some cases? Maybe we should have a count/index as part of the key.
-		f, err := t.resolveFile(ctx, defSpec.Repo, defSpec.Commit, s.Location.URI)
-
-		// Collect out refs only from unit.
-		if f.Repo != defSpec.Unit {
-			continue
-		}
-
-		if err != nil {
-			return nil, err
-		}
-		return &Position{
-			Repo:      f.Repo,
-			Commit:    f.Commit,
-			File:      f.Path,
-			Line:      s.Location.Range.Start.Line,
-			Character: s.Location.Range.Start.Character,
-		}, nil
-	}
-	// TODO: formalize not-found errors
-	return nil, errors.New("position for def key not found")
+	return nil, fmt.Errorf("DefSpecToPosition is not supported yet")
 }
 
 func (t *translator) Definition(ctx context.Context, pos *Position) (*Range, error) {
@@ -286,116 +230,11 @@ func (t *translator) LocalRefs(ctx context.Context, pos *Position) (*RefLocation
 }
 
 func (t *translator) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, error) {
-	// Determine the root path for the workspace and prepare it.
-	workspaceStart := time.Now()
-	rootPath, err := t.workspace.Prepare(ctx, r.Repo, r.Commit)
-	if err != nil {
-		return nil, err
-	}
-	start := time.Now()
-
-	// TODO: should probably check server capabilities before invoking symbol,
-	// but good enough for now.
-	importPath := ResolveRepoAlias(r.Repo)
-	p := lsp.WorkspaceSymbolParams{
-		// TODO(keegancsmith) this is go specific
-		Query: "external " + importPath + "/...",
-	}
-
-	var respSymbol []lsp.SymbolInformation
-	err = t.lspDo(ctx, rootPath, "workspace/symbol", p, &respSymbol)
-	defer observe(ctx, start, workspaceStart, r.Repo, err, len(respSymbol) == 0)
-	if err != nil {
-		return nil, err
-	}
-
-	var defs []*DefSpec
-	// TODO(keegancsmith) go specific
-	for _, s := range respSymbol {
-		// TODO(keegancsmith) we should inspect the workspace to find
-		// out the repo of the dependency
-		commit := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-		pkgParts := strings.Split(s.ContainerName, "/")
-		var repo, unit string
-		if len(pkgParts) < 3 {
-			// Hack for stdlib
-			repo = "github.com/golang/go"
-			unit = s.ContainerName
-		} else {
-			repo = strings.Join(pkgParts[:3], "/")
-			unit = strings.Join(pkgParts, "/")
-		}
-		defs = append(defs, &DefSpec{
-			Repo:     repo,
-			Commit:   commit,
-			UnitType: "GoPackage",
-			Unit:     unit,
-			Path:     s.Name,
-		})
-	}
-	return &ExternalRefs{Defs: defs}, nil
+	return nil, errors.New("ExternalRefs is not supported yet")
 }
 
 func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLocations, error) {
-	// Determine the root path for the workspace and prepare it.
-	workspaceStart := time.Now()
-	rootPath, err := t.workspace.Prepare(ctx, defSpec.Repo, defSpec.Commit)
-	if err != nil {
-		return nil, err
-	}
-	start := time.Now()
-
-	// Unit belongs to Repo indicates query local references.
-	queryType := "defspec-refs-external"
-	if strings.HasPrefix(defSpec.Unit, defSpec.Repo) {
-		queryType = "defspec-refs-internal"
-	}
-	importPath := ResolveRepoAlias(defSpec.Repo)
-	p := lsp.WorkspaceSymbolParams{
-		// TODO(keegancsmith) this is go specific
-		Query: queryType + " " + importPath + "/...",
-	}
-
-	var respSymbol []lsp.SymbolInformation
-	err = t.lspDo(ctx, rootPath, "defspec-refs-internal", p, &respSymbol)
-	defer observe(ctx, start, workspaceStart, defSpec.Repo, err, len(respSymbol) == 0)
-	if err != nil {
-		return nil, err
-	}
-
-	var refs []*Range
-	// TODO(keegancsmith) go specific
-	for _, s := range respSymbol {
-		pkgParts := strings.Split(s.ContainerName, "/")
-		var unit string
-		if len(pkgParts) < 3 {
-			unit = s.ContainerName
-		} else {
-			unit = strings.Join(pkgParts, "/")
-		}
-
-		// Collect out refs only from def unit and name.
-		if unit != defSpec.Unit || s.Name != defSpec.Path {
-			continue
-		}
-
-		f, err := t.resolveFile(ctx, defSpec.Repo, defSpec.Commit, s.Location.URI)
-		if err != nil {
-			return nil, err
-		}
-
-		refs = append(refs, &Range{
-			Repo:           f.Repo,
-			Commit:         f.Commit,
-			File:           f.Path,
-			StartLine:      s.Location.Range.Start.Line,
-			EndLine:        s.Location.Range.End.Line,
-			StartCharacter: s.Location.Range.Start.Character,
-			EndCharacter:   s.Location.Range.End.Character,
-		})
-	}
-
-	return &RefLocations{Refs: refs}, nil
+	return nil, errors.New("DefSpecRefs is not supported yet")
 }
 
 func (t *translator) Symbols(ctx context.Context, opt *SymbolsQuery) (*Symbols, error) {
@@ -430,56 +269,7 @@ func (t *translator) Symbols(ctx context.Context, opt *SymbolsQuery) (*Symbols, 
 }
 
 func (t *translator) ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error) {
-	// Determine the root path for the workspace and prepare it.
-	workspaceStart := time.Now()
-	rootPath, err := t.workspace.Prepare(ctx, r.Repo, r.Commit)
-	if err != nil {
-		return nil, err
-	}
-	start := time.Now()
-
-	// TODO: should probably check server capabilities before invoking symbol,
-	// but good enough for now.
-	importPath := ResolveRepoAlias(r.Repo)
-	var respSymbol []lsp.SymbolInformation
-	err = t.lspDo(ctx, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
-		// TODO(keegancsmith) this is go specific
-		Query: "exported " + importPath + "/...",
-	}, &respSymbol)
-	defer observe(ctx, start, workspaceStart, r.Repo, err, len(respSymbol) == 0)
-	if err != nil {
-		return nil, err
-	}
-
-	var symbols []*Symbol
-	// TODO(keegancsmith) go specific
-	for _, s := range respSymbol {
-		f, err := t.resolveFile(ctx, r.Repo, r.Commit, s.Location.URI)
-		if err != nil {
-			return nil, err
-		}
-		pkgParts := strings.Split(s.ContainerName, "/")
-		var unit string
-		if len(pkgParts) < 3 {
-			// Hack for stdlib
-			unit = s.ContainerName
-		} else {
-			unit = strings.Join(pkgParts, "/")
-		}
-		symbols = append(symbols, &Symbol{
-			DefSpec: DefSpec{
-				Repo:     f.Repo,
-				Commit:   f.Commit,
-				UnitType: "GoPackage",
-				Unit:     unit,
-				Path:     s.Name,
-			},
-			Name: s.Name,
-			File: f.Path,
-			Kind: lspKindToSymbol(s.Kind),
-		})
-	}
-	return &ExportedSymbols{Symbols: symbols}, nil
+	return nil, errors.New("ExportedSymbols is not supported yet")
 }
 
 func (t *translator) lspDo(ctx context.Context, rootPath string, method string, request interface{}, result interface{}) error {

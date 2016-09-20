@@ -176,99 +176,102 @@ func TestTranslator(t *testing.T) {
 			Got: &Hover{},
 		},
 
-		// ServeExternalRefs
-		{
-			Path: "/external-refs",
-			Request: &RepoRev{
-				Repo:   "github.com/foo/bar",
-				Commit: "deadbeef",
-			},
-			WantLSPMethod: "workspace/symbol",
-			WantLSPParam: &lsp.WorkspaceSymbolParams{
-				Query: "external github.com/foo/bar/...",
-			},
-
-			LSPResponseResult: []lsp.SymbolInformation{{
-				Name:          "NewRouter",
-				Kind:          12,
-				Location:      lsp.Location{}, // Ignored
-				ContainerName: "github.com/gorilla/mux",
-			}, {
-				Name:          "Printf",
-				Kind:          12,
-				Location:      lsp.Location{}, // Ignored
-				ContainerName: "fmt",
-			}},
-			WantResponse: &ExternalRefs{Defs: []*DefSpec{{
-				Repo:     "github.com/gorilla/mux",
-				Commit:   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-				UnitType: "GoPackage",
-				Unit:     "github.com/gorilla/mux",
-				Path:     "NewRouter",
-			}, {
-				Repo:     "github.com/golang/go",
-				Commit:   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-				UnitType: "GoPackage",
-				Unit:     "fmt",
-				Path:     "Printf",
-			}}},
-			Got: &ExternalRefs{},
-		},
-
-		// ServeExportedSymbols
-		{
-			Path: "/exported-symbols",
-			Request: &RepoRev{
-				Repo:   "github.com/foo/bar",
-				Commit: "deadbeef",
-			},
-			WantLSPMethod: "workspace/symbol",
-			WantLSPParam: &lsp.WorkspaceSymbolParams{
-				Query: "exported github.com/foo/bar/...",
-			},
-
-			LSPResponseResult: []lsp.SymbolInformation{{
-				Name: "Baz",
-				Kind: 12,
-				Location: lsp.Location{
-					URI: "file:///github.com/foo/bar/baz.go",
-					// Range ignored
+		// Disable temporarily, until we have a replacemnt for exported/external
+		/*
+			// ServeExternalRefs
+			{
+				Path: "/external-refs",
+				Request: &RepoRev{
+					Repo:   "github.com/foo/bar",
+					Commit: "deadbeef",
 				},
-				ContainerName: "github.com/foo/bar",
-			}, {
-				Name: "New",
-				Kind: 12,
-				Location: lsp.Location{
-					URI: "file:///github.com/foo/bar/baz.go",
-					// Range ignored
+				WantLSPMethod: "workspace/symbol",
+				WantLSPParam: &lsp.WorkspaceSymbolParams{
+					Query: "external github.com/foo/bar/...",
 				},
-				ContainerName: "github.com/foo/bar",
-			}},
-			WantResponse: &ExportedSymbols{Symbols: []*Symbol{{
-				DefSpec: DefSpec{
-					Repo:     "github.com/foo/bar",
-					Commit:   "deadbeef",
+
+				LSPResponseResult: []lsp.SymbolInformation{{
+					Name:          "NewRouter",
+					Kind:          12,
+					Location:      lsp.Location{}, // Ignored
+					ContainerName: "github.com/gorilla/mux",
+				}, {
+					Name:          "Printf",
+					Kind:          12,
+					Location:      lsp.Location{}, // Ignored
+					ContainerName: "fmt",
+				}},
+				WantResponse: &ExternalRefs{Defs: []*DefSpec{{
+					Repo:     "github.com/gorilla/mux",
+					Commit:   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 					UnitType: "GoPackage",
-					Unit:     "github.com/foo/bar",
-					Path:     "Baz",
-				},
-				Name: "Baz",
-				Kind: "func",
-				File: "baz.go",
-			}, {
-				DefSpec: DefSpec{
-					Repo:     "github.com/foo/bar",
-					Commit:   "deadbeef",
+					Unit:     "github.com/gorilla/mux",
+					Path:     "NewRouter",
+				}, {
+					Repo:     "github.com/golang/go",
+					Commit:   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 					UnitType: "GoPackage",
-					Unit:     "github.com/foo/bar",
-					Path:     "New",
+					Unit:     "fmt",
+					Path:     "Printf",
+				}}},
+				Got: &ExternalRefs{},
+			},
+
+			// ServeExportedSymbols
+			{
+				Path: "/exported-symbols",
+				Request: &RepoRev{
+					Repo:   "github.com/foo/bar",
+					Commit: "deadbeef",
 				},
-				Name: "New",
-				Kind: "func",
-				File: "baz.go",
-			}}},
-			Got: &ExportedSymbols{},
-		},
+				WantLSPMethod: "workspace/symbol",
+				WantLSPParam: &lsp.WorkspaceSymbolParams{
+					Query: "exported github.com/foo/bar/...",
+				},
+
+				LSPResponseResult: []lsp.SymbolInformation{{
+					Name: "Baz",
+					Kind: 12,
+					Location: lsp.Location{
+						URI: "file:///github.com/foo/bar/baz.go",
+						// Range ignored
+					},
+					ContainerName: "github.com/foo/bar",
+				}, {
+					Name: "New",
+					Kind: 12,
+					Location: lsp.Location{
+						URI: "file:///github.com/foo/bar/baz.go",
+						// Range ignored
+					},
+					ContainerName: "github.com/foo/bar",
+				}},
+				WantResponse: &ExportedSymbols{Symbols: []*Symbol{{
+					DefSpec: DefSpec{
+						Repo:     "github.com/foo/bar",
+						Commit:   "deadbeef",
+						UnitType: "GoPackage",
+						Unit:     "github.com/foo/bar",
+						Path:     "Baz",
+					},
+					Name: "Baz",
+					Kind: "func",
+					File: "baz.go",
+				}, {
+					DefSpec: DefSpec{
+						Repo:     "github.com/foo/bar",
+						Commit:   "deadbeef",
+						UnitType: "GoPackage",
+						Unit:     "github.com/foo/bar",
+						Path:     "New",
+					},
+					Name: "New",
+					Kind: "func",
+					File: "baz.go",
+				}}},
+				Got: &ExportedSymbols{},
+			},
+		*/
 
 		// ServeLocalRefs
 		{
