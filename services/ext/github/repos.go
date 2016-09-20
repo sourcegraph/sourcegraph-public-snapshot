@@ -74,9 +74,6 @@ func unlock() {
 var _ Repos = (*repos)(nil)
 
 func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
-	lock()
-	defer unlock()
-
 	// This function is called a lot, especially on popular public
 	// repos. For public repos we have the same result for everyone, so it
 	// is cacheable. (Permissions can change, but we no longer store that.) But
@@ -95,6 +92,8 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 	// fields will differ among the different users.
 	if client(ctx).isAuthedUser {
 		reposGithubPublicCacheCounter.WithLabelValues("authed").Inc()
+		lock()
+		defer unlock()
 		return getFromAPI(ctx, owner, repoName)
 	}
 
@@ -106,6 +105,8 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 		return &cached.Repo, nil
 	}
 
+	lock()
+	defer unlock()
 	remoteRepo, err := getFromAPI(ctx, owner, repoName)
 	if grpc.Code(err) == codes.NotFound {
 		// Before we do anything, ensure we cache NotFound responses.
