@@ -103,9 +103,8 @@ export function indexAnnotations(anns) {
 	let annsByEndByte = {};
 	for (let i = 0; i < anns.length; i++) {
 		// From pkg/syntaxhighlight/html_annotator.go
-		if (anns[i].Class !== "com" || // comments
-			anns[i].Class !== "lit" || // literals
-			anns[i].Class !== "pun") { // punctuations and operators
+		const annType = anns[i].Class;
+		if (annType !== "com" || annType !== "lit" || annType !== "pun") {
 			let ann = anns[i];
 			annsByStartByte[ann.StartByte] = ann;
 			annsByEndByte[ann.EndByte] = ann;
@@ -277,29 +276,17 @@ export function isQuotedStringNode(node) {
 //  maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
 export function convertQuotedStringNode(node, annsByStartByte, offset, repoRevSpec) {
 
-	function getChildNodeText(pNode) {
-		if (pNode.nodeType == Node.ELEMENT_NODE) {
-			let cText = "";
-
-			for (let idx = 0; idx < pNode.childNodes.length; idx++) {
-				cText += getChildNodeText(pNode.childNodes[idx]);
-			}
-
-			return cText;
-		} else if (pNode.nodeType === Node.TEXT_NODE) {
-			return utf8.encode(_.unescape(pNode.wholeText));
+	function getChildNodeText(node) {
+		if (node.nodeType == Node.ELEMENT_NODE) {
+			return node.childNodes.map(getChildNodeText).join("");
+		} else if (node.nodeType === Node.TEXT_NODE) {
+			return utf8.encode(_.unescape(node.wholeText));
 		} else {
-			throw new Error(`unexpected node type(${pNode.nodeType})`);
+			throw new Error(`unexpected node type(${node.nodeType})`);
 		}
 	}
 
-	let text = `"`;
-	for (let cidx = 1; cidx < node.childNodes.length - 1; cidx++) {
-		text += getChildNodeText(node.childNodes[cidx]);
-	}
-	text += `"`;
-
-
+	const text = `"${node.childNodes.slice(1, node.childNodes.length - 1).map(getChildNodeText).join("")}"`;
 	const match = annGenerator(annsByStartByte, offset, repoRevSpec);
 
 	// NOTE:
@@ -336,9 +323,8 @@ function addEventListeners(el, path, repoRevSpec, line, lineStartByte) {
 		let url = `https://sourcegraph.com/.api/repos/${arg.repoURI}/-/jump-def?file=${arg.path}&line=${line - 1}&character=${col}`;
 
 		fetchJumpURL(url, function(jumptarget) {
-			if (jumptarget && jumptarget !== "") {
-				let rev;
-				let jumpdef;
+			if (jumptarget) {
+				let rev, jumpdef;
 
 				if (jumptarget.indexOf(repoRevSpec.repoURI) !== -1) {
 					rev = repoRevSpec.rev;
