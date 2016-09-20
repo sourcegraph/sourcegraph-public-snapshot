@@ -329,7 +329,7 @@ function addEventListeners(el, arg, repoRevSpec, line) {
 			let url = `https://sourcegraph.com/.api/repos/${arg.repoURI}/-/hover-info?file=${arg.path}&line=${line - 1}&character=${col}`;
 
 			fetchPopoverData(url, function(html, data) {
-				if (activeTarget && html && data) showPopover(html, e.pageX, e.pageY);
+				if (activeTarget && html) showPopover(html, e.pageX, e.pageY);
 			});
 		}
 	});
@@ -412,7 +412,7 @@ function addEventListeners(el, arg, repoRevSpec, line) {
 			.then((json) => {
 				defCache[url] = json.def;
 				if (json.Title === "" && json.def == null) {
-					popoverCache[url] = `""`;
+					popoverCache[url] = ``;
 				} else {
 					popoverCache[url] = `<div><div class=${styles.popoverTitle}>${json.Title || ""}</div><div>${json.def ? json.def.DocHTML.__html || "" : ""}</div><div class=${styles.popoverRepo}>${json.def ? json.def.Repo || "" : ""}</div></div>`;
 				}
