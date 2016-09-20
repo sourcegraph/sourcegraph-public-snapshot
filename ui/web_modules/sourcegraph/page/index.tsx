@@ -9,7 +9,6 @@ import {SecurityPage} from "sourcegraph/page/SecurityPage";
 import {PricingPage} from "sourcegraph/page/PricingPage";
 import {TermsPage} from "sourcegraph/page/TermsPage";
 import {PrivacyPage} from "sourcegraph/page/PrivacyPage";
-import {BrowserExtFaqsPage} from "sourcegraph/home/BrowserExtFaqsPage";
 
 // isPage returns whether the location path refers to one of these
 // static pages.
@@ -83,14 +82,6 @@ export const routes: any[] = [
 			callback(null, {
 				navContext: null,
 				main: PrivacyPage,
-			});
-		},
-	},
-	{
-		path: rel.browserExtFaqs,
-		getComponents: (location, callback) => {
-			callback(null, {
-				main: BrowserExtFaqsPage,
 			});
 		},
 	},

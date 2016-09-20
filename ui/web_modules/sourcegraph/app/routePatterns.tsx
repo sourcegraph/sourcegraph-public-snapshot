@@ -21,8 +21,7 @@ export type RouteName = "styleguide" |
 	"security" |
 	"pricing" |
 	"terms" |
-	"privacy" |
-	"browserExtFaqs";
+	"privacy";
 
 export const rel = {
 	// NOTE: If you add a top-level route (e.g., "/about"), add it to the
@@ -30,7 +29,6 @@ export const rel = {
 	search: "search",
 	about: "about",
 	beta: "beta",
-	browserExtFaqs: "about/browser-ext-faqs",
 	contact: "contact",
 	security: "security",
 	pricing: "pricing",
@@ -57,7 +55,6 @@ export const abs = {
 	about: rel.about,
 	contact: rel.contact,
 	security: rel.security,
-	browserExtFaqs: rel.browserExtFaqs,
 	pricing: rel.pricing,
 	terms: rel.terms,
 	privacy: rel.privacy,
