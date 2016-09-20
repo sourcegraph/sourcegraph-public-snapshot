@@ -2,208 +2,170 @@ package golang
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
+	"go/build"
+	"go/doc"
+	"go/parser"
+	"go/token"
+	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"sort"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
-	"sourcegraph.com/sourcegraph/srclib-go/gog/definfo"
 )
 
 func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
-	q, err := parseSymbolQuery(params.Query)
-	if err != nil {
-		return nil, err
-	}
-	defFilter := func(_ *gogDef) bool { return false }
-	refFilter := func(_ *gogRef) bool { return false }
-	collectAllRefs := false
-	requireRefLocation := false
-	switch q.Type {
-	case "external":
-		refFilter = func(r *gogRef) bool {
-			local := r.Unit == r.Def.PackageImportPath
-			builtin := r.Def.PackageImportPath == "builtin"
-			return !local && !builtin
-		}
-	case "exported":
-		defFilter = func(d *gogDef) bool { return d.DefInfo.Exported }
-	case "defspec-refs-external":
-		refFilter = func(r *gogRef) bool {
-			local := r.Unit == r.Def.PackageImportPath
-			builtin := r.Def.PackageImportPath == "builtin"
-			return !local && !builtin
-		}
-		collectAllRefs = true
-		requireRefLocation = true
-	case "defspec-refs-internal":
-		refFilter = func(r *gogRef) bool {
-			local := r.Unit == r.Def.PackageImportPath
-			return local
-		}
-		collectAllRefs = true
-		requireRefLocation = true
-	default:
-		return nil, fmt.Errorf("unrecognized symbol query type %s", q.Type)
-	}
-	pkgs, err := expandPackages(ctx, h.goEnv(), q.Packages)
-	if err != nil {
-		return nil, err
-	}
-	o, err := runGog(ctx, h.cacheDir(), h.goEnv(), pkgs)
+	pkgs, err := expandPackages(ctx, h.goEnv(), []string{params.Query})
 	if err != nil {
 		return nil, err
 	}
 
 	var symbols []lsp.SymbolInformation
-	for _, d := range o.Defs {
-		if !defFilter(d) {
-			continue
+	var failed int
+	emit := func(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos token.Pos) {
+		if pos == 0 {
+			symbols = append(symbols, lsp.SymbolInformation{
+				Name: name,
+				Kind: kind,
+				// TODO Location.URI
+				ContainerName: container,
+			})
+			return
 		}
-		uri, err := h.fileURI(d.File)
+		start := fs.Position(pos)
+		end := fs.Position(pos + token.Pos(len(name)) - 1)
+		uri, err := h.fileURI(start.Filename)
 		if err != nil {
-			return nil, err
+			failed++
+			return
 		}
-		// TODO(keegancsmith) duplicated IO + ignoring error for
-		// convenience of packages
-		var content []byte
-		content, _ = ioutil.ReadFile(d.File)
-		s := lsp.SymbolInformation{
-			Name: strings.Join(d.Path, "/"),
-			Kind: gogKindToLSP(d.DefInfo.Kind),
+		symbols = append(symbols, lsp.SymbolInformation{
+			Name: name,
+			Kind: kind,
 			Location: lsp.Location{
 				URI: uri,
 				Range: lsp.Range{
-					Start: offsetToPosition(content, int(d.IdentSpan[0])),
-					End:   offsetToPosition(content, int(d.IdentSpan[1])),
+					Start: lsp.Position{Line: start.Line - 1, Character: start.Column - 1},
+					End:   lsp.Position{Line: end.Line - 1, Character: end.Column - 1},
 				},
 			},
-			ContainerName: d.PackageImportPath,
-		}
-		symbols = append(symbols, s)
+			ContainerName: container,
+		})
 	}
-	seenRef := map[string]bool{}
-	for _, r := range o.Refs {
-		if !refFilter(r) {
-			continue
-		}
-		k := r.Def.PackageImportPath + "/-/" + strings.Join(r.Def.Path, "/")
-		if !collectAllRefs {
-			if seenRef[k] {
-				continue
-			}
-			seenRef[k] = true
-		}
-
-		s := lsp.SymbolInformation{
-			Name:          strings.Join(r.Def.Path, "/"),
-			ContainerName: r.Def.PackageImportPath,
-		}
-		if requireRefLocation {
-			uri, err := h.fileURI(r.File)
-			if err != nil {
-				return nil, err
-			}
-			// TODO(keegancsmith) duplicated IO + ignoring error for
-			// convenience of packages
-			var content []byte
-			content, _ = ioutil.ReadFile(r.File)
-			s.Location = lsp.Location{
-				URI: uri,
-				Range: lsp.Range{
-					Start: offsetToPosition(content, int(r.Span[0])),
-					End:   offsetToPosition(content, int(r.Span[1])),
-				},
-			}
-		}
-		symbols = append(symbols, s)
-	}
-	sort.Sort(sortableSymbolInformation(symbols))
-	return symbols, nil
-}
-
-type sortableSymbolInformation []lsp.SymbolInformation
-
-func (v sortableSymbolInformation) Len() int { return len(v) }
-func (v sortableSymbolInformation) Less(i, j int) bool {
-	li, lj := v[i].Location, v[j].Location
-	if li.URI == "" && lj.URI == "" {
-		return v[i].ContainerName+":"+v[i].Name < v[j].ContainerName+":"+v[j].Name
-	}
-	return li.URI < lj.URI || (li.URI == lj.URI && li.Range.Start.Line < lj.Range.End.Line)
-}
-func (v sortableSymbolInformation) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
-
-type symbolQuery struct {
-	// Type is the type of symbol query we are performing.
-	Type string
-
-	// Packages is which go packages to inspect. A empty slice indicates
-	// all packages.
-	Packages []string
-}
-
-func parseSymbolQuery(q string) (*symbolQuery, error) {
-	parts := strings.Fields(q)
-	if len(parts) < 1 {
-		return nil, errors.New("empty symbol query")
-	}
-	return &symbolQuery{
-		Type:     parts[0],
-		Packages: parts[1:],
-	}, nil
-}
-
-// Gog is giving us issues in production. Until we resolve them, regress on
-// the functionality it provides by default.
-var gogEnabled = os.Getenv("SG_ENABLE_GOG") == "1"
-
-func runGog(ctx context.Context, cacheDir string, env, pkgs []string) (*gogOutput, error) {
-	if !gogEnabled {
-		return nil, errors.New("gog is disabled")
-	}
-
-	// Coarse lock for this workspace. We don't lock per package to
-	// prevent concurrent memory heavy operations running.
-	unlock := lock(cacheDir)
-	defer unlock()
-
-	normalize := strings.NewReplacer(".", "-", "/", "-")
-
-	var combined gogOutput
+	buildCtx := build.Default
+	buildCtx.GOPATH = h.filePath("gopath")
+	buildCtx.CgoEnabled = false
 	for _, pkg := range pkgs {
-		cache := filepath.Join(cacheDir, "gog", normalize.Replace(pkg)) + ".json"
-		b, err := ioutil.ReadFile(cache)
-		if err != nil {
-			b, err = cmdOutput(ctx, env, exec.Command("gog", pkg))
-			if err != nil {
-				return nil, err
-			}
-			err = os.MkdirAll(filepath.Dir(cache), 0700)
-			if err != nil {
-				return nil, err
-			}
-			err = ioutil.WriteFile(cache, b, 0600)
-			if err != nil {
-				return nil, err
-			}
-		}
-		var o gogOutput
-		err = json.Unmarshal(b, &o)
+		err := symbolDo(buildCtx, pkg, emit)
 		if err != nil {
 			return nil, err
 		}
-		combined.Defs = append(combined.Defs, o.Defs...)
-		combined.Refs = append(combined.Refs, o.Refs...)
 	}
-	return &combined, nil
+	if failed > 0 {
+		log.Printf("WARNING: failed to create %d symbols", failed)
+	}
+	return symbols, nil
+}
+
+type emitFunc func(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos token.Pos)
+
+func symbolDo(buildCtx build.Context, pkgPath string, emit emitFunc) error {
+	// Package must be importable.
+	bpkg, err := buildCtx.Import(pkgPath, "", 0)
+	if err != nil {
+		return err
+	}
+	pkg, err := parsePackage(bpkg)
+	if err != nil {
+		return err
+	}
+
+	// TODO
+	// * go/doc doesn't parse out Fields of structs
+	// * v.Decl.TokPos is not correct
+	emit(pkg.build.ImportPath, "", lsp.SKPackage, pkg.fs, 0)
+	for _, t := range pkg.doc.Types {
+		for _, v := range t.Funcs {
+			emit(v.Name, pkg.build.ImportPath, lsp.SKFunction, pkg.fs, v.Decl.Name.NamePos)
+		}
+		for _, v := range t.Methods {
+			emit(v.Name, pkg.build.ImportPath+"."+t.Name, lsp.SKMethod, pkg.fs, v.Decl.Name.NamePos)
+		}
+		for _, v := range t.Consts {
+			for _, name := range v.Names {
+				emit(name, pkg.build.ImportPath, lsp.SKConstant, pkg.fs, v.Decl.TokPos)
+			}
+		}
+		for _, v := range t.Vars {
+			for _, name := range v.Names {
+				emit(name, pkg.build.ImportPath, lsp.SKVariable, pkg.fs, v.Decl.TokPos)
+			}
+		}
+	}
+	for _, v := range pkg.doc.Consts {
+		for _, name := range v.Names {
+			emit(name, pkg.build.ImportPath, lsp.SKConstant, pkg.fs, v.Decl.TokPos)
+		}
+	}
+	for _, v := range pkg.doc.Vars {
+		for _, name := range v.Names {
+			emit(name, pkg.build.ImportPath, lsp.SKVariable, pkg.fs, v.Decl.TokPos)
+		}
+	}
+	for _, v := range pkg.doc.Funcs {
+		emit(v.Name, pkg.build.ImportPath, lsp.SKFunction, pkg.fs, v.Decl.Name.NamePos)
+	}
+
+	return nil
+}
+
+type parsedPackage struct {
+	name  string // Package name, json for encoding/json.
+	doc   *doc.Package
+	build *build.Package
+	fs    *token.FileSet // Needed for printing.
+}
+
+// parsePackage turns the build package we found into a parsed package
+// we can then use to generate documentation.
+func parsePackage(pkg *build.Package) (*parsedPackage, error) {
+	fs := token.NewFileSet()
+	// include tells parser.ParseDir which files to include.
+	// That means the file must be in the build package's GoFiles or CgoFiles
+	// list only (no tag-ignored files, tests, swig or other non-Go files).
+	include := func(info os.FileInfo) bool {
+		for _, name := range pkg.GoFiles {
+			if name == info.Name() {
+				return true
+			}
+		}
+		for _, name := range pkg.CgoFiles {
+			if name == info.Name() {
+				return true
+			}
+		}
+		return false
+	}
+	pkgs, err := parser.ParseDir(fs, pkg.Dir, include, 0)
+	if err != nil {
+		return nil, err
+	}
+	astPkg, ok := pkgs[pkg.Name]
+	if !ok {
+		// Should not happen, but protect against it just in case
+		return nil, fmt.Errorf("could not find pkg %s in %s", pkg.Name, pkg.Dir)
+	}
+
+	docPkg := doc.New(astPkg, pkg.ImportPath, doc.AllDecls)
+
+	return &parsedPackage{
+		name:  pkg.Name,
+		doc:   docPkg,
+		build: pkg,
+		fs:    fs,
+	}, nil
 }
 
 func expandPackages(ctx context.Context, env, pkgs []string) ([]string, error) {
@@ -220,78 +182,4 @@ func expandPackages(ctx context.Context, env, pkgs []string) ([]string, error) {
 		return nil, err
 	}
 	return strings.Fields(string(b)), nil
-}
-
-func gogKindToLSP(kind string) lsp.SymbolKind {
-	switch kind {
-	case definfo.Package:
-		return lsp.SKPackage
-	case definfo.Field:
-		return lsp.SKField
-	case definfo.Func:
-		return lsp.SKFunction
-	case definfo.Method:
-		return lsp.SKMethod
-	case definfo.Var:
-		return lsp.SKVariable
-	case definfo.Type:
-		return lsp.SKClass
-	case definfo.Interface:
-		return lsp.SKInterface
-	case definfo.Const:
-		return lsp.SKConstant
-	default:
-		// This should not happen
-		return -1
-	}
-}
-
-func offsetToPosition(content []byte, offset int) lsp.Position {
-	var p lsp.Position
-	for i, b := range content {
-		if i == offset {
-			break
-		}
-		if b == '\n' {
-			p.Line++
-			p.Character = 0
-		} else {
-			p.Character++
-		}
-	}
-	return p
-}
-
-// TODO(keegancsmith) move gog.Output, etc to gog/definfo. Types copy pasted
-// to avoid vendoring in the whole of gog.
-type gogOutput struct {
-	Defs []*gogDef
-	Refs []*gogRef
-}
-
-type gogDef struct {
-	Name string
-	*gogDefKey
-
-	File      string
-	IdentSpan [2]uint32
-	DeclSpan  [2]uint32
-
-	definfo.DefInfo
-}
-
-type gogDefKey struct {
-	PackageImportPath string
-	Path              []string
-}
-
-type gogRef struct {
-	Unit string
-	File string
-	Span [2]uint32
-	Def  *gogDefKey
-
-	// IsDef is true if ref is to the definition of Def, and false if it's to a
-	// use of Def.
-	IsDef bool
 }

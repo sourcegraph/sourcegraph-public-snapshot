@@ -21,10 +21,6 @@ func TestFixtures(t *testing.T) {
 	checkExecDeps(t)
 	defer os.RemoveAll("testdata/cache")
 
-	// enable gog for tests, even though disabled by default. This is to
-	// prevent regressions in case we do want to use it.
-	gogEnabled = true
-
 	cases, err := filepath.Glob("testdata/*.json")
 	if err != nil {
 		t.Fatal(err)
