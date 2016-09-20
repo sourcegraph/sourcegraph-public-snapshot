@@ -13,7 +13,7 @@
     "jsonrpc": "2.0",
     "method": "workspace/symbol",
     "params": {
-      "query": "exported mux"
+      "query": "mux"
     }
   },
   {
