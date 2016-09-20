@@ -102,6 +102,9 @@ func serveRepoInventory(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepos(w http.ResponseWriter, r *http.Request) error {
+	return writeJSON(w, sourcegraph.RepoList{})
+
+	/* HOTFIX for GitHub API rate-limiting. Disable all calls to serve repos.
 	cl := handlerutil.Client(r)
 
 	var opt sourcegraph.RepoListOptions
@@ -120,6 +123,7 @@ func serveRepos(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return writeJSON(w, repos)
+	*/
 }
 
 func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
