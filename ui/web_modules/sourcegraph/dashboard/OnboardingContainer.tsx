@@ -35,7 +35,7 @@ export class OnboardingContainer extends Container<Props, State> {
 	}
 
 	onStateTransition(prevState: State, nextState: State): void {
-		if (nextState.repos !== prevState.repos) {
+		if (nextState.repos !== prevState.repos && this.props.currentStep === "github") {
 			Dispatcher.Backends.dispatch(new RepoActions.WantRepos(reposQuerystring));
 		}
 	}

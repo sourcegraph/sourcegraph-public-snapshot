@@ -62,10 +62,6 @@ let RenderedModal = renderedOnBody(ModalComp);
 // setLocationModalState shows or hides a modal by setting the location.state.modal
 // property to modalName if shown is true and null otherwise.
 export function setLocationModalState(router: InjectedRouter, location: any, modalName: string, visible: boolean) {
-	if (location.state && location.state.modal && location.state.modal !== modalName) {
-		console.error(`location.state.modal is not ${modalName}, is:`, location.state.modal);
-	}
-
 	router.replace(Object.assign({}, location, {state: Object.assign({}, location.state, {modal: visible ? modalName : null})}));
 }
 

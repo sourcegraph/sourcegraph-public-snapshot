@@ -16,6 +16,8 @@ import { urlToBlob } from "sourcegraph/blob/routes";
 import { SearchModal } from "sourcegraph/search/modal/SearchModal";
 import {uriForTreeEntry} from "sourcegraph/editor/FileModel";
 import {IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
+import {ChromeExtensionToast} from "sourcegraph/components/ChromeExtensionToast";
+import {OnboardingModals} from "sourcegraph/components/OnboardingModals";
 
 type Props = {
 	repo: string;
@@ -171,6 +173,8 @@ export class BlobMain extends React.Component<Props, any> {
 			<div className={Style.container}>
 				<SearchModal repo={this.props.repo} commitID={this.props.commitID || this.props.rev || ""} />
 				<Helmet title={title} />
+				<ChromeExtensionToast location={this.props.location}/>
+				<OnboardingModals location={this.props.location}/>
 				<EditorComponent editorRef={this._setEditor} style={{ display: "flex", flex: "auto", width: "100%" }} />
 			</div>
 		);

@@ -19,6 +19,7 @@ export const CATEGORY_GLOBAL_SEARCH = "GlobalSearch";
 export const CATEGORY_EXTERNAL = "External";
 export const CATEGORY_INTERNAL = "Internal";
 export const CATEGORY_ENGAGEMENT = "ReEngagement";
+export const CATEGORY_TOAST = "Toast";
 export const CATEGORY_UNKNOWN = "Unknown";
 
 // Action constants

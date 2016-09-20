@@ -257,8 +257,11 @@ class EventLoggerClass {
 		if (context.userAgentIsBot || !page) {
 			return;
 		}
+
+		this._logToConsole(title, Object.assign({}, this._decorateEventProperties(eventProperties), {page_name: page, page_title: title}));
+
 		if (this._telligent) {
-			this._telligent("track", "view", Object.assign({}, eventProperties, {platform: this._currentPlatform, page_name: page, page_title: title}));
+			this._telligent("track", "view", Object.assign({}, this._decorateEventProperties(eventProperties), {page_name: page, page_title: title}));
 		}
 
 		// Log Amplitude "View" event
@@ -304,6 +307,8 @@ class EventLoggerClass {
 		if (context.userAgentIsBot || !eventLabel) {
 			return;
 		}
+
+		this._logToConsole(eventAction, Object.assign(this._decorateEventProperties(eventProperties),  {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction, nonInteraction: true}));
 
 		if (this._telligent) {
 			this._telligent("track", eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
