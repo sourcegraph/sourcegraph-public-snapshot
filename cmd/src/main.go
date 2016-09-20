@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/worker"
 
 	// App
 	_ "sourcegraph.com/sourcegraph/sourcegraph/app/cmd"
@@ -27,7 +26,6 @@ import (
 
 func main() {
 	err := cli.Main()
-	worker.CloseLogs()
 	if err != nil {
 		os.Exit(1)
 	}

@@ -9,7 +9,6 @@ import (
 	"github.com/kr/text"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/worker"
 
 	"context"
 )
@@ -26,10 +25,6 @@ func skippedSysReqs() []string {
 // system requirements. If any are missing, it prints a message to
 // w and returns a non-nil error.
 func checkSysReqs(ctx context.Context, w io.Writer) error {
-	if !serveCmdInst.NoWorker {
-		worker.AddSysReqCheck()
-	}
-
 	wrap := func(s string) string {
 		const indent = "\t\t"
 		return strings.TrimPrefix(text.Indent(text.Wrap(s, 72), "\t\t"), indent)
