@@ -5,7 +5,8 @@
 
 @value media_xs, media_sm, media_ns from vars;
 @value navbarHeight: 60px;
-@value navbarZIndex: 100;
+@value navbarZIndex: 2;
+@value icon_font_size: 0.8rem;
 
 .logomark:hover {
 	animation: spin 0.5s ease-in-out 1;

@@ -1,10 +1,12 @@
 import * as React from "react";
 import {InjectedRouter} from "react-router";
 
-import {urlToBlob, urlToBlobLine} from "sourcegraph/blob/routes";
+import {EventListener} from "sourcegraph/Component";
 import {Input} from "sourcegraph/components/Input";
 import {Search as SearchIcon} from "sourcegraph/components/symbols";
 import {colors} from "sourcegraph/components/utils/index";
+
+import {urlToBlob, urlToBlobLine} from "sourcegraph/blob/routes";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
@@ -13,8 +15,9 @@ import {Store} from "sourcegraph/Store";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {TreeStore} from "sourcegraph/tree/TreeStore";
 
-import {ResultCategories} from "sourcegraph/search/modal/SearchComponent";
-import {RepoRev} from "sourcegraph/search/modal/SearchModal";
+import {fuzzyRankResults} from "sourcegraph/search/modal/FuzzyMatch";
+import {Hint, ResultCategories} from "sourcegraph/search/modal/SearchComponent";
+import {RepoSpec} from "sourcegraph/search/modal/SearchModal";
 
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
@@ -26,14 +29,15 @@ const modalStyle = {
 	left: 0,
 	maxWidth: 515,
 	margin: "0 auto",
-	borderRadius: "0 0 8px 8px",
+	borderRadius: "0 0 3px 3px",
 	backgroundColor: colors.coolGray2(),
 	padding: 16,
 	display: "flex",
 	flexDirection: "column",
-	zIndex: 1,
+	zIndex: 2,
 	maxHeight: "90vh",
-	fontSize: 15,
+	fontSize: "1rem",
+	boxShadow: `0 2px 4px 0 ${colors.black(0.05)}`,
 };
 
 export interface Result {
@@ -81,7 +85,7 @@ export interface SearchDelegate {
 
 // SearchContainer contains the logic that deals with navigation and data
 // fetching.
-export class SearchContainer extends Container<Props & RepoRev, State> {
+export class SearchContainer extends Container<Props & RepoSpec, State> {
 
 	static contextTypes: any = {
 		router: React.PropTypes.object.isRequired,
@@ -91,7 +95,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 	searchInput: HTMLElement;
 	delegate: SearchDelegate;
 
-	constructor(props: Props & RepoRev) {
+	constructor(props: Props & RepoSpec) {
 		super(props);
 		this.keyListener = this.keyListener.bind(this);
 		this.bindSearchInput = this.bindSearchInput.bind(this);
@@ -125,20 +129,9 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		}
 	}
 
-	componentWillMount(): void {
-		super.componentWillMount();
-		document.body.addEventListener("keydown", this.keyListener);
-	}
-
 	componentDidMount(): void {
 		super.componentDidMount();
 		this.fetchResults("");
-		this.focusSearchBar();
-	}
-
-	componentWillUnmount(): void {
-		super.componentWillUnmount();
-		document.body.removeEventListener("keydown", this.keyListener);
 	}
 
 	query(): string {
@@ -192,9 +185,10 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 	}
 
 	fetchResults(query: string): void {
-		Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.repo, this.props.commitID, query));
+		const c = this.props.commitID ? this.props.commitID : "";
+		Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.repo, c, query));
 		Dispatcher.Backends.dispatch(new RepoActions.WantRepos(this.repoListQueryString(query)));
-		Dispatcher.Backends.dispatch(new TreeActions.WantFileList(this.props.repo, this.props.commitID));
+		Dispatcher.Backends.dispatch(new TreeActions.WantFileList(this.props.repo, c));
 	}
 
 	repoListQueryString(query: string): string {
@@ -230,18 +224,6 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 
 	bindSearchInput(node: HTMLElement): void { this.searchInput = node; }
 
-	focusSearchBar(): void {
-		if (this.searchInput) {
-			this.searchInput.focus();
-		}
-	}
-
-	blurSearchBar(): void {
-		if (this.searchInput) {
-			this.searchInput.blur();
-		}
-	}
-
 	results(): Category[] {
 		let query = this.query();
 		let results: Category[] = [];
@@ -263,7 +245,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 					description: sym.location.uri,
 					index: idx,
 					length: query.length,
-					URLPath: urlToBlobLine(this.props.repo, this.props.commitID, path, line + 1),
+					URLPath: urlToBlobLine(this.props.repo, this.props.rev, path, line + 1),
 				});
 			});
 
@@ -275,7 +257,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		const repos = RepoStore.repos.list(this.repoListQueryString(query));
 		if (repos) {
 			if (repos.Repos) {
-				let repoResults = repos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
+				const repoResults = repos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
 				results.push({ Title: "Repositories", IsLoading: false, Results: repoResults });
 			} else {
 				results.push({ Title: "Repositories", IsLoading: false, Results: [] });
@@ -288,12 +270,11 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		if (files) {
 			let fileResults: Result[] = [];
 			files.Files.forEach((file, i) => {
-				let index = file.toLowerCase().indexOf(query.toLowerCase());
-				if (index === -1) {
-					return;
-				}
-				fileResults.push({ title: file, description: "", index: index, length: query.length, URLPath: urlToBlob(this.props.repo, null, file) });
+				const index = file.toLowerCase().indexOf(query.toLowerCase());
+				const l = index >= 0 ? query.length : undefined;
+				fileResults.push({ title: file, description: "", index: index, length: l, URLPath: urlToBlob(this.props.repo, this.props.rev, file) });
 			});
+			fileResults = fuzzyRankResults(this.query(), fileResults);
 			results.push({ Title: "Files", IsLoading: false, Results: fileResults });
 		} else {
 			results.push({ Title: "Files", IsLoading: true });
@@ -308,6 +289,9 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 			state.limitForCategory[category] += 12;
 			state.allowScroll = false;
 			this.setState(state);
+			if (this.searchInput) {
+				this.searchInput.focus();
+			}
 		};
 	}
 
@@ -315,6 +299,7 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 		let categories = this.results();
 		return (
 			<div style={modalStyle}>
+				<EventListener target={document.body} event={"keydown"} callback={this.keyListener} />
 				<div style={{
 					backgroundColor: colors.white(),
 					borderRadius: 3,
@@ -326,15 +311,17 @@ export class SearchContainer extends Container<Props & RepoRev, State> {
 					alignItems: "center",
 					flexDirection: "row",
 				}}>
-				<SearchIcon style={{fill: colors.coolGray2()}} />
-				<Input
-					style={{boxSizing: "border-box", border: "none", flex: "1 0 auto"}}
-					placeholder="new http request"
-					value={this.state.input}
-					block={true}
-					domRef={this.bindSearchInput}
-					onChange={this.updateInput} />
+					<SearchIcon style={{fill: colors.coolGray2()}} />
+					<Input
+						style={{boxSizing: "border-box", border: "none", flex: "1 0 auto"}}
+						placeholder="Search for repositories, files or definitions"
+						value={this.state.input}
+						block={true}
+						autoFocus={true}
+						domRef={this.bindSearchInput}
+						onChange={this.updateInput} />
 				</div>
+				<Hint />
 				<ResultCategories categories={categories}
 					selection={this.state.selected}
 					delegate={this.delegate}

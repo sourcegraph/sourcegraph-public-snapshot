@@ -13,13 +13,14 @@ interface Node {
 	};
 };
 
-export type RepoRev = {
+export type RepoSpec = {
 	repo: string,
-	commitID: string,
+	commitID?: string,
+	rev: string | null,
 }
 
 // SearchModal controls when and how to show the search modal.
-export class SearchModal extends React.Component<RepoRev, State> {
+export class SearchModal extends React.Component<RepoSpec, State> {
 	constructor() {
 		super();
 		this.searchModalShortcuts = this.searchModalShortcuts.bind(this);
@@ -44,7 +45,7 @@ export class SearchModal extends React.Component<RepoRev, State> {
 		if (event.target.nodeName === "INPUT" || event.metaKey || event.ctrlKey) {
 			return;
 		}
-		if (event.key === "s") {
+		if (event.key === "/") {
 			this.setState({showModal: !this.state.showModal});
 		}
 		event.preventDefault();
@@ -61,8 +62,7 @@ export class SearchModal extends React.Component<RepoRev, State> {
 		}
 		return <ModalComp onDismiss={this.dismissModal}>
 			<SearchContainer
-				repo={this.props.repo}
-				commitID={this.props.commitID}
+				{...this.props}
 				dismissModal={this.dismissModal} />
 		</ModalComp>;
 	}

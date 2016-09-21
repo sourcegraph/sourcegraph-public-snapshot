@@ -171,7 +171,7 @@ export class BlobMain extends React.Component<Props, any> {
 
 		return (
 			<div className={Style.container}>
-				<SearchModal repo={this.props.repo} commitID={this.props.commitID || this.props.rev || ""} />
+				<SearchModal repo={this.props.repo} commitID={this.props.commitID} rev={this.props.rev}/>
 				<Helmet title={title} />
 				<ChromeExtensionToast location={this.props.location}/>
 				<OnboardingModals location={this.props.location}/>

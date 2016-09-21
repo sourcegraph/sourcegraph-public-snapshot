@@ -10,6 +10,7 @@ interface Case {
 	selected: number[];
 	delegate: SearchDelegate;
 	shouldContain: string[]; // strings the rendered element is expected to contain
+	limits: number[];
 }
 
 const testDelegate = {
@@ -33,6 +34,7 @@ describe("ResultCategories", () => {
 			selected: [0, 0],
 			delegate: testDelegate,
 			shouldContain: ["this is result 1", "Result 1"],
+			limits: [3, 3, 3],
 		}, {
 			categories: [{
 				Title: "Category 1",
@@ -58,6 +60,7 @@ describe("ResultCategories", () => {
 				Title: "Category 3",
 				IsLoading: true,
 			}],
+			limits: [3, 3, 3],
 			selected: [1, 1],
 			delegate: testDelegate,
 			shouldContain: [
@@ -67,9 +70,23 @@ describe("ResultCategories", () => {
 				"this is result 2-b",
 				"loading...",
 			],
+		}, {
+			categories: [{
+				Title: "Category 1",
+				Results: [{
+					title: "Result 1",
+					description: "this is result 1",
+					URLPath: "",
+				}],
+				IsLoading: false,
+			}],
+			selected: [0, 0],
+			delegate: testDelegate,
+			shouldContain: ["View more Category 1"],
+			limits: [0, 0, 0],
 		}];
 		cases.forEach((t) => {
-			const o = renderToString(<ResultCategories categories={t.categories} selection={t.selected} delegate={t.delegate} limits={[3,3,3]} scrollIntoView={true} />);
+			const o = renderToString(<ResultCategories categories={t.categories} selection={t.selected} delegate={t.delegate} limits={t.limits} scrollIntoView={true} />);
 			t.shouldContain.forEach((s: string) => {
 				expect(o).to.contain(s);
 			});

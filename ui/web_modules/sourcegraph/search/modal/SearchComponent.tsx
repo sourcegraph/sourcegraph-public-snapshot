@@ -1,9 +1,10 @@
 import * as React from "react";
 
+import  {Heading} from "sourcegraph/components/Heading";
 import {colors} from "sourcegraph/components/utils/colors";
 import {modal_result} from "sourcegraph/search/modal/SearchModalStyle.css";
 
-const smallFont = 12.75;
+const smallFont = ".85rem";
 
 const ViewMore = ({expandCategory, type}) => <a style={{
 		textTransform: "uppercase",
@@ -12,6 +13,7 @@ const ViewMore = ({expandCategory, type}) => <a style={{
 		display: "block",
 		textAlign: "center",
 		color: colors.blue3(),
+		marginTop: 16,
 	}} onClick={expandCategory}>
 	View more {type}
 </a>;
@@ -25,11 +27,11 @@ const ResultRow = ({title, description, index, length}, categoryIndex, itemIndex
 		}}}
 		style={{
 			borderRadius: 3,
-			padding: "8px 16px",
-			margin: "0 8px 8px 8px",
+			padding: "8px 20px",
 			backgroundColor: selected ? colors.blue2() : colors.coolGray1(.5),
 			display: "block",
-			color: colors.white(),
+			color:selected ? colors.white() : colors.coolGray4(),
+			marginBottom: 8,
 		}}
 		onClick={() => delegate.select(categoryIndex, itemIndex)}>
 		{length ? <div>
@@ -37,11 +39,10 @@ const ResultRow = ({title, description, index, length}, categoryIndex, itemIndex
 			<span style={{fontWeight: "bold"}}>{title.substr(index, length)}</span>
 			<span>{title.substr(index + length)}</span>
 		</div> :
-		<div style={{color: colors.white()}}>
+		<div>
 			{title}
-		</div>
-		}
-		<div style={{fontSize: smallFont, color: selected ? colors.white() : colors.coolGray3()}}>
+		</div>}
+		<div style={{fontSize: smallFont, color: selected ? colors.white(.7) : colors.coolGray3()}}>
 			{description}
 		</div>
 		</a>
@@ -61,13 +62,11 @@ const ResultCategory = ({title, results, isLoading, selected, delegate, category
 	}
 	const total = results.length;
 	results = results.slice(0, limit);
-	return <div style={{padding: "14px 0"}}>
-		<div style={{
-			paddingBottom: "0.5em",
-			color: colors.coolGray3(),
-		}}>
+	return <div>
+		<Heading color={"gray"}
+		level={"7"}>
 			{title}
-		</div>
+		</Heading>
 		{results.map((result, index) =>
 			ResultRow(result, categoryIndex, index, (index === selected), delegate, scrollIntoView)
 		)}
@@ -107,3 +106,11 @@ export const ResultCategories = ({categories, selection, delegate, limits, scrol
 		{sections}
 	</div>;
 };
+
+export const Hint = () => <div style={{color: colors.coolGray3(), margin: "8px auto", fontSize: smallFont}}>
+	Press <span style={{
+		backgroundColor: colors.coolGray1(.5),
+		borderRadius: 3,
+		padding: "2px 5px",
+	}}>/</span> to open search from anywhere
+</div>;

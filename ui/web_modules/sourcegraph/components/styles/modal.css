@@ -3,10 +3,12 @@
 
 @value c_black_30 from colors;
 
+@value zIndex 1; /* TODO: extract z-index into module */
+
 .container {
-	composes: bg_black_70 from colors;
+	composes: bg_black_40 from colors;
 	composes: center from base;
-	z-index: 100; /* TODO: extract z-index into module */
+	z-index: zIndex;
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -22,7 +24,7 @@
 	max-width: 80vw;
 	min-width: 320px;
 	max-height: 80vw;
-	z-index: 101; /* TODO: extract z-index into module */
+	z-index: zIndex;
 	overflow-y: auto;
 }
 

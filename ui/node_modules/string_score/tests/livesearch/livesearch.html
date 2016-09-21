@@ -1,0 +1,75 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
+<head> 
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/> 
+	<title>Live Search with Quicksilver Style</title> 
+	<link rel="stylesheet" href="common.css" type="text/css" media="screen" /> 
+	<script type="text/javascript" src="../qunit/jquery-1.5.min.js"></script> 
+	<script type="text/javascript" src="../../string_score.js"></script> 
+	<script type="text/javascript" src="string_score_mod1.js"></script> 
+	<script type="text/javascript" src="string_score_mod2.js"></script>
+	<script type="text/javascript" src="jquery.livesearch.js"></script> 
+	<script type="text/javascript" src="jquery.livesearchmod1.js"></script> 
+	<script type="text/javascript" src="jquery.livesearchmod2.js"></script> 
+	<script type="text/javascript" charset="utf-8"> 
+		jQuery(document).ready(function() {
+			jQuery('#q').liveUpdate('ul.list1').focus();
+			jQuery('#q').liveUpdatemod1('ul.list2').focus();
+			jQuery('#q').liveUpdatemod2('ul.list3').focus();
+		});
+	</script> 
+
+</head> 
+<body> 
+ 
+<div id="wrapper"> 
+	<p>Based on <a href="http://orderedlist.com/articles/live-search-with-quicksilver-style/">Prototype Live Search with Quicksilver Style</a> using a modified version of <a href="https://github.com/joshaven/string_score">Joshaven's string_score</a>...</p> 
+	
+	<h1>Live Search Expriment</h1> 
+	
+	<p>Type very slowly and watch what happens. Try typing "<b>alpha xyz xyy</b>" one letter at a time. I think the attractiveness of List 2 is that it does not "bounce" as much as the others. The result set, while still fuzzy, tends to just narrow. There is still some "bounce" (expanding of the result set) with a search like "<b>mary xyz</b>", but this method does not seem bouncier than the others, at least. One thing I don't understand is the very different result for "<b>mark</b>" and "<b>mary</b>" when each is just one letter off the full list. In any case, most attractive to me with List 2 is that you can't type an exact substring like "<b>alpha</b>" and miss potential hits. Both other methods miss that one.</p>
+
+	
+	<form method="get">
+		<div>
+			<input type="text" value="" name="q" id="q" autocomplete="off" />
+		</div> 
+	</form>
+<br />
+<table><tr valign="top">
+<th>List 1</th>
+<th>List 2</th>
+<th>List 3</th>
+
+</tr><tr valign="top">
+<td><small>using old <a href="../../string_score.js">string_score.js</a> with efc substring match override showing <a href="jquery.livesearch.js">score > 0.5</a></small></td>
+<td><small>using old <a href="string_score_mod1.js">string_score_mod1.js</a> and showing <a href="jquery.livesearchmod1.js">score > 0.5</a></small></td>
+<td><small>using new <a href="string_score_mod2.js">string_score_mod2.js</a> with <a href="jquery.livesearchmod2.js">fuzzines of 0.2 and showing score > 0.5</a></small></td>
+</tr>
+<tr valign="top">
+<td width='33%'>
+<ul class="list list1">
+<li>Mary Alpha xyz xyz xyz</li>
+<li>Mary Beta xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz</li>
+<li>Mark Alpha xyz xyz xyz</li>
+<li>Mark Beta xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz</li>
+</td><td width='33%'>
+<ul class="list list2">
+<li>Mary Alpha xyz xyz xyz</li>
+<li>Mary Beta xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz</li>
+
+<li>Mark Alpha xyz xyz xyz</li>
+<li>Mark Beta xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz</li>
+</td><td width='33%'>
+<ul class="list list3">
+<li>Mary Alpha xyz xyz xyz</li>
+<li>Mary Beta xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz</li>
+<li>Mark Alpha xyz xyz xyz</li>
+<li>Mark Beta xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz</li>
+</td></tr></ul>
+</table>
+</div> 
+ 
+
+</body> 
+</html>

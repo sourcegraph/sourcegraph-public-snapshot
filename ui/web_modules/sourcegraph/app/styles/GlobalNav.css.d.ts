@@ -10,6 +10,7 @@ export const media_sm: string;
 export const media_ns: string;
 export const navbarHeight: string;
 export const navbarZIndex: string;
+export const icon_font_size: string;
 export const logomark: string;
 export const spin: string;
 export const channel: string;
