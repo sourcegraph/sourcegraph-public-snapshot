@@ -33,6 +33,12 @@ var (
 		Name:      "repo_concurrent",
 		Help:      "Number of concurrent calls to GitHub's Repo API.",
 	})
+	reposGitHubRequestsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "repos",
+		Name:      "github_unauthed_api_requests",
+		Help:      "Counts uncached requests to the GitHub API, and information on their origin if available.",
+	}, []string{"source"})
 )
 
 func init() {
@@ -175,6 +181,14 @@ func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 	ghrepo, resp, err := client(ctx).repos.Get(owner, repoName)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.Get %q", githubutil.RepoURI(owner, repoName)))
+	}
+	// Temporary: Track where anonymous requests are coming from that don't hit the cache.
+	if _, ok := resp.Header["X-From-Cache"]; !client(ctx).isAuthedUser && !ok {
+		src, ok := ctx.Value("GitHubTrackingSource").(string)
+		if !ok {
+			src = "unknown"
+		}
+		reposGitHubRequestsCounter.WithLabelValues(src).Inc()
 	}
 	return toRepo(ghrepo), nil
 }

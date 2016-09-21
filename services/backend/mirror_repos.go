@@ -29,6 +29,7 @@ type mirrorRepos struct{}
 var _ sourcegraph.MirrorReposServer = (*mirrorRepos)(nil)
 
 func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
+	ctx = context.WithValue(ctx, "GitHubTrackingSource", "RefreshVCS")
 	actor := authpkg.ActorFromContext(ctx)
 	asUserUID := int32(actor.UID)
 
