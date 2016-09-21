@@ -12,6 +12,7 @@ import (
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cmdutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
@@ -172,14 +173,20 @@ func UnresolveRepoAlias(repo string) string {
 
 // CmdOutput is a helper around c.Output which logs the command, how long it
 // took to run, and a nice error in the event of failure.
-func CmdOutput(ctx context.Context, c *exec.Cmd) ([]byte, error) {
+func CmdOutput(ctx context.Context, c *exec.Cmd) (stdout []byte, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, c.Args[0])
-	defer span.Finish()
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+		span.Finish()
+	}()
 	span.SetTag("command", strings.Join(c.Args, " "))
 	span.SetTag("env", strings.Join(c.Env, "; "))
 
 	start := time.Now()
-	stdout, err := cmdutil.Output(c)
+	stdout, err = cmdutil.Output(c)
 	log.Printf("TIME: %v '%s'\n", time.Since(start), strings.Join(c.Args, " "))
 	if err != nil {
 		log.Println(err)
@@ -190,14 +197,20 @@ func CmdOutput(ctx context.Context, c *exec.Cmd) ([]byte, error) {
 
 // CmdRun is a helper around c.Run which logs the command, how long it took to
 // run, and a nice error in the event of failure.
-func CmdRun(ctx context.Context, c *exec.Cmd) error {
+func CmdRun(ctx context.Context, c *exec.Cmd) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, c.Args[0])
-	defer span.Finish()
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+		span.Finish()
+	}()
 	span.SetTag("command", strings.Join(c.Args, " "))
 	span.SetTag("env", strings.Join(c.Env, "; "))
 
 	start := time.Now()
-	err := cmdutil.Run(c)
+	err = cmdutil.Run(c)
 	log.Printf("TIME: %v '%s'\n", time.Since(start), strings.Join(c.Args, " "))
 	if err != nil {
 		log.Println(err)
