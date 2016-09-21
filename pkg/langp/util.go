@@ -133,8 +133,8 @@ var repoAliases = []struct {
 		NewPrefix: "golang.org/x/",
 	},
 	{
-		OldPrefix: "github.com/kubernetes",
-		NewPrefix: "k8s.io/kubernetes",
+		OldPrefix: "github.com/kubernetes/",
+		NewPrefix: "k8s.io/",
 	},
 	{
 		OldPrefix: "github.com/grpc/grpc-go",
