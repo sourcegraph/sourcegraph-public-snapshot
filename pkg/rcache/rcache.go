@@ -51,6 +51,10 @@ var reposGitHubHTTPCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpt
 	Help:      "Counts cache hits and misses for the github API HTTP cache.",
 }, []string{"type"})
 
+func init() {
+	prometheus.MustRegister(reposGitHubHTTPCacheCounter)
+}
+
 // Get implements httpcache.Cache.Get
 func (r *Cache) Get(key string) ([]byte, bool) {
 	c := pool.Get()
@@ -63,13 +67,11 @@ func (r *Cache) Get(key string) ([]byte, bool) {
 
 	// TODO remove this tracking or move it to a more appropriate place.
 	if strings.Contains(key, githubAPIHost) {
-		go func() {
-			if err == nil {
-				reposGitHubHTTPCacheCounter.WithLabelValues("hit").Inc()
-			} else {
-				reposGitHubHTTPCacheCounter.WithLabelValues("miss").Inc()
-			}
-		}()
+		if err == nil {
+			reposGitHubHTTPCacheCounter.WithLabelValues("hit").Inc()
+		} else {
+			reposGitHubHTTPCacheCounter.WithLabelValues("miss").Inc()
+		}
 	}
 
 	return b, err == nil
