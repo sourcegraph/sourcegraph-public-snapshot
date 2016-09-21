@@ -374,22 +374,23 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 				} else {
 					let rev, jumptarget = json.Path;
 
-					if (jumptarget.indexOf(repoRevSpec.repoURI) !== -1) {
-						rev = repoRevSpec.rev;
-					} else {
-						rev = "master"; // assume external links are to default branch "master"
-					}
-
 					if (jumptarget.startsWith("/")) {
 						jumptarget = jumptarget.substring(1); // remove leading slash
 					}
 
-					const parts = jumptarget.split("/-/blob/");
-					if (parts.length < 2) return null;
+					console.log(jumptarget);
+					const part = jumptarget.split("/-/blob/");
+					if (part.length < 2) return null;
+					const rprv = part[0].split("@");
+					const repo = rprv[0];
+					if (rprv.length < 2) {
+						rev = repoRevSpec.rev;
+					} else {
+						rev = rprv[1];
+					}
 
-					const repo = parts[0];
 					// TODO: Fix /blob/ to /tree/ on back-end; Github returns 301 moved permanently
-					const def = parts.slice(1).join("");
+					const def = part.slice(1).join("");
 					const jmp = `https://${repo}/tree/${rev}/${def}`;
 
 					jumptodefcache[url] = {defUrl: jmp, defCurPage : repo === arg.repoURI && jmp.indexOf(path) >= 0};
