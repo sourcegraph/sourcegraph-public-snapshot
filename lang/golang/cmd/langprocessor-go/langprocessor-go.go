@@ -14,6 +14,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/golang/groupcache/lru"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cmdutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
@@ -190,6 +193,8 @@ func fileURI(ctx context.Context, repo, commit, file string) string {
 	return "file:///" + filepath.Join("gopath", "src", repo, file)
 }
 
+var gitRevParseCache = cache.Sync(lru.New(2000))
+
 func resolveFile(ctx context.Context, workspace, mainRepo, mainRepoCommit, uri string) (*langp.File, error) {
 	if strings.HasPrefix(uri, "stdlib://") {
 		// We don't have stdlib checked out as a dep, so LSP returns a
@@ -217,17 +222,17 @@ func resolveFile(ctx context.Context, workspace, mainRepo, mainRepoCommit, uri s
 	if fi, err := os.Stat(fullPath); err != nil || !fi.IsDir() {
 		dir = filepath.Dir(dir)
 	}
-	mainRepoDir := filepath.Join(workspace, "gopath/src", mainRepo)
 	var repoPath, commit string
-	if dir == mainRepoDir {
-		// We already have the information we need (this is the repo that the
-		// user is browsing), so no need to consult git.
-		repoPath = mainRepoDir
-		commit = mainRepoCommit
+	if v, found := gitRevParseCache.Get(dir); found {
+		// This is cache to avoid running git rev-parse in the next block
+		lines := v.([]string)
+		repoPath = lines[0]
+		commit = lines[1]
 	} else {
 		// This is a dependency that we have cloned via 'go get', so consult
 		// git in order to find the repository (which is not always identical
 		// to import path).
+
 		cmd := exec.Command("git", "rev-parse", "--show-toplevel", "HEAD")
 		cmd.Dir = dir
 		out, err := langp.CmdOutput(ctx, cmd)
@@ -238,6 +243,7 @@ func resolveFile(ctx context.Context, workspace, mainRepo, mainRepoCommit, uri s
 		if len(lines) != 2 {
 			return nil, errors.New("unexpected number of lines from git rev-parse")
 		}
+		gitRevParseCache.Add(dir, lines)
 		repoPath = lines[0]
 		commit = lines[1]
 	}
@@ -261,6 +267,77 @@ func resolveFile(ctx context.Context, workspace, mainRepo, mainRepoCommit, uri s
 	}, nil
 }
 
+func exportedSymbolsQuery(r *langp.RepoRev) string {
+	importPath := langp.ResolveRepoAlias(r.Repo)
+	return "is:exported " + importPath + "/..."
+}
+
+func exportedSymbol(r *langp.RepoRev, f *langp.File, s *lsp.SymbolInformation) *langp.Symbol {
+	pkgParts := strings.Split(s.ContainerName, "/")
+	var unit string
+	if len(pkgParts) < 3 {
+		// Hack for stdlib
+		unit = s.ContainerName
+	} else {
+		unit = strings.Join(pkgParts, "/")
+	}
+	path := s.Name
+	if pkg, typ := parseContainerName(unit); typ != "" {
+		unit = pkg
+		path = typ + "/" + path
+	}
+	// containerName may contain a type which we want as part of the path
+	return &langp.Symbol{
+		DefSpec: langp.DefSpec{
+			Repo:     f.Repo,
+			Commit:   f.Commit,
+			UnitType: "GoPackage",
+			Unit:     unit,
+			Path:     path,
+		},
+		Name: s.Name,
+		File: f.Path,
+		Kind: lspKindToSymbol(s.Kind),
+	}
+}
+
+func parseContainerName(containerName string) (pkg string, typ string) {
+	for i := len(containerName) - 1; i >= 0; i-- {
+		switch containerName[i] {
+		case '/':
+			// We are no longer looking at the last part of the
+			// container name
+			return containerName, ""
+		case '.':
+			return containerName[:i], containerName[i+1:]
+		}
+	}
+	return containerName, ""
+}
+
+func lspKindToSymbol(kind lsp.SymbolKind) string {
+	switch kind {
+	case lsp.SKPackage:
+		return "package"
+	case lsp.SKField:
+		return "field"
+	case lsp.SKFunction:
+		return "func"
+	case lsp.SKMethod:
+		return "method"
+	case lsp.SKVariable:
+		return "var"
+	case lsp.SKClass:
+		return "type"
+	case lsp.SKInterface:
+		return "interface"
+	case lsp.SKConstant:
+		return "const"
+	default:
+		return "unknown"
+	}
+}
+
 func main() {
 	flag.Parse()
 
@@ -282,6 +359,10 @@ func main() {
 			PrepareRepo: prepareRepo,
 			PrepareDeps: prepareDeps,
 		}),
+		SymbolsTranslator: &langp.SymbolsTranslator{
+			ExportedSymbolsQuery: exportedSymbolsQuery,
+			ExportedSymbol:       exportedSymbol,
+		},
 		ResolveFile: resolveFile,
 		FileURI:     fileURI,
 	}))

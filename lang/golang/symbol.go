@@ -2,7 +2,7 @@ package golang
 
 import (
 	"context"
-	"fmt"
+	"go/ast"
 	"go/build"
 	"go/doc"
 	"go/parser"
@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
@@ -17,7 +18,8 @@ import (
 )
 
 func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
-	pkgs, err := expandPackages(ctx, h.goEnv(), []string{params.Query})
+	q := parseSymbolQuery(params.Query)
+	pkgs, err := expandPackages(ctx, h.goEnv(), q.Tokens)
 	if err != nil {
 		return nil, err
 	}
@@ -25,13 +27,7 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 	var symbols []lsp.SymbolInformation
 	var failed int
 	emit := func(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos token.Pos) {
-		if pos == 0 {
-			symbols = append(symbols, lsp.SymbolInformation{
-				Name: name,
-				Kind: kind,
-				// TODO Location.URI
-				ContainerName: container,
-			})
+		if q.Type == queryTypeExported && !isExported(name, container) {
 			return
 		}
 		start := fs.Position(pos)
@@ -58,7 +54,33 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 	buildCtx.GOPATH = h.filePath("gopath")
 	buildCtx.CgoEnabled = false
 	for _, pkg := range pkgs {
-		err := symbolDo(buildCtx, pkg, emit)
+		// Exclude vendored in code from symbols
+		if strings.Contains(pkg, "/vendor/") || strings.Contains(pkg, "/Godeps/") {
+			continue
+		}
+		emitForPkg := func(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos token.Pos) {
+			if pos != 0 {
+				emit(name, container, kind, fs, pos)
+				return
+			}
+			// We have to special case the pkg symbol since it
+			// doesn't have a parsed position
+			uri, err := h.fileURI(filepath.Join(buildCtx.GOPATH, "src", pkg))
+			if err != nil {
+				failed++
+				return
+			}
+			symbols = append(symbols, lsp.SymbolInformation{
+				Name: name,
+				Kind: kind,
+				Location: lsp.Location{
+					URI: uri,
+				},
+				ContainerName: container,
+			})
+		}
+		includeTests := q.Type != queryTypeExported
+		err := symbolDo(buildCtx, pkg, includeTests, emitForPkg)
 		if err != nil {
 			return nil, err
 		}
@@ -71,14 +93,14 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 
 type emitFunc func(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos token.Pos)
 
-func symbolDo(buildCtx build.Context, pkgPath string, emit emitFunc) error {
+func symbolDo(buildCtx build.Context, pkgPath string, includeTests bool, emit emitFunc) error {
 	// Package must be importable.
 	bpkg, err := buildCtx.Import(pkgPath, "", 0)
 	if err != nil {
 		return err
 	}
-	pkg, err := parsePackage(bpkg)
-	if err != nil {
+	pkg, err := parsePackage(bpkg, includeTests)
+	if pkg == nil || err != nil {
 		return err
 	}
 
@@ -130,7 +152,7 @@ type parsedPackage struct {
 
 // parsePackage turns the build package we found into a parsed package
 // we can then use to generate documentation.
-func parsePackage(pkg *build.Package) (*parsedPackage, error) {
+func parsePackage(pkg *build.Package, includeTests bool) (*parsedPackage, error) {
 	fs := token.NewFileSet()
 	// include tells parser.ParseDir which files to include.
 	// That means the file must be in the build package's GoFiles or CgoFiles
@@ -141,7 +163,15 @@ func parsePackage(pkg *build.Package) (*parsedPackage, error) {
 				return true
 			}
 		}
-		for _, name := range pkg.CgoFiles {
+		if !includeTests {
+			return false
+		}
+		for _, name := range pkg.TestGoFiles {
+			if name == info.Name() {
+				return true
+			}
+		}
+		for _, name := range pkg.XTestGoFiles {
 			if name == info.Name() {
 				return true
 			}
@@ -154,8 +184,8 @@ func parsePackage(pkg *build.Package) (*parsedPackage, error) {
 	}
 	astPkg, ok := pkgs[pkg.Name]
 	if !ok {
-		// Should not happen, but protect against it just in case
-		return nil, fmt.Errorf("could not find pkg %s in %s", pkg.Name, pkg.Dir)
+		// This happens in the case of pkgs which only include tests
+		return nil, nil
 	}
 
 	docPkg := doc.New(astPkg, pkg.ImportPath, doc.AllDecls)
@@ -168,6 +198,28 @@ func parsePackage(pkg *build.Package) (*parsedPackage, error) {
 	}, nil
 }
 
+// isExporter checks that the underlying symbol for (name, containerName) is
+// exported in Go. The reason we can't just check name is we need to ensure
+// that if it is part of a type, that the type is exported as well.
+func isExported(name, containerName string) bool {
+	if !ast.IsExported(name) {
+		return false
+	}
+	// Ensure if we are part of a type, that the type is also exported
+	for i := len(containerName) - 1; i >= 0; i-- {
+		switch containerName[i] {
+		case '/':
+			// We are no longer looking at the last part of the
+			// container name
+			return true
+		case '.':
+			typeName := containerName[i+1:]
+			return ast.IsExported(typeName)
+		}
+	}
+	return true
+}
+
 func expandPackages(ctx context.Context, env, pkgs []string) ([]string, error) {
 	if len(pkgs) == 1 && pkgs[0] == "github.com/golang/go/..." {
 		b, err := cmdOutput(ctx, env, exec.Command("go", "list", "-e", "-f", "{{if .Standard}}{{.ImportPath}}{{end}}", "..."))
@@ -176,10 +228,45 @@ func expandPackages(ctx context.Context, env, pkgs []string) ([]string, error) {
 		}
 		return strings.Fields(string(b)), nil
 	}
-	args := append([]string{"list"}, pkgs...)
+	args := append([]string{"list", "-e"}, pkgs...)
 	b, err := cmdOutput(ctx, env, exec.Command("go", args...))
 	if err != nil {
 		return nil, err
 	}
 	return strings.Fields(string(b)), nil
+}
+
+type queryType int
+
+const (
+	queryTypeAll queryType = iota
+	queryTypeExported
+)
+
+type symbolQuery struct {
+	// Type is the type of symbol query we are performing.
+	Type queryType
+
+	// Tokens is tokens which make up the query, in order they appear.
+	Tokens []string
+}
+
+func parseSymbolQuery(q string) *symbolQuery {
+	types := map[string]queryType{
+		"is:all":      queryTypeAll,
+		"is:exported": queryTypeExported,
+	}
+	tokens := strings.Fields(q)
+	sq := &symbolQuery{
+		Type:   queryTypeAll,
+		Tokens: make([]string, 0, len(tokens)),
+	}
+	for _, tok := range tokens {
+		if t, ok := types[tok]; ok {
+			sq.Type = t
+		} else {
+			sq.Tokens = append(sq.Tokens, tok)
+		}
+	}
+	return sq
 }

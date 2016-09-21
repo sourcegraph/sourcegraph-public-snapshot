@@ -27,6 +27,9 @@ type Translator struct {
 	// Preparer is the workspace preparer that will be used.
 	Preparer *Preparer
 
+	// SymbolsTranslator is an optional SymbolsTranslator to use.
+	SymbolsTranslator *SymbolsTranslator
+
 	// ResolveFile is used to convert file URIs returned by LSP into
 	// repo specific paths that Sourcegraph can use.
 	//
@@ -57,6 +60,13 @@ func New(opts *Translator) http.Handler {
 		workspace:  opts.Preparer,
 	}
 	return NewServer(t)
+}
+
+// SymbolsTranslator is a translator around our various uses of
+// workspace/symbols.
+type SymbolsTranslator struct {
+	ExportedSymbolsQuery func(*RepoRev) string
+	ExportedSymbol       func(*RepoRev, *File, *lsp.SymbolInformation) *Symbol
 }
 
 type translator struct {
@@ -269,7 +279,38 @@ func (t *translator) Symbols(ctx context.Context, opt *SymbolsQuery) (*Symbols, 
 }
 
 func (t *translator) ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error) {
-	return nil, errors.New("ExportedSymbols is not supported yet")
+	if t.SymbolsTranslator == nil || t.SymbolsTranslator.ExportedSymbolsQuery == nil || t.SymbolsTranslator.ExportedSymbol == nil {
+		return nil, errors.New("ExportedSymbols is not supported")
+	}
+
+	// Determine the root path for the workspace and prepare it.
+	workspaceStart := time.Now()
+	rootPath, err := t.workspace.Prepare(ctx, r.Repo, r.Commit)
+	if err != nil {
+		return nil, err
+	}
+	start := time.Now()
+
+	// TODO: should probably check server capabilities before invoking symbol,
+	// but good enough for now.
+	var respSymbol []lsp.SymbolInformation
+	err = t.lspDo(ctx, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
+		Query: t.SymbolsTranslator.ExportedSymbolsQuery(r),
+	}, &respSymbol)
+	defer observe(ctx, start, workspaceStart, r.Repo, err, len(respSymbol) == 0)
+	if err != nil {
+		return nil, err
+	}
+
+	symbols := make([]*Symbol, 0, len(respSymbol))
+	for _, s := range respSymbol {
+		f, err := t.resolveFile(ctx, r.Repo, r.Commit, s.Location.URI)
+		if err != nil {
+			return nil, err
+		}
+		symbols = append(symbols, t.SymbolsTranslator.ExportedSymbol(r, f, &s))
+	}
+	return &ExportedSymbols{Symbols: symbols}, nil
 }
 
 func (t *translator) lspDo(ctx context.Context, rootPath string, method string, request interface{}, result interface{}) error {
