@@ -44,6 +44,7 @@ var (
 func init() {
 	prometheus.MustRegister(reposGithubPublicCacheCounter)
 	prometheus.MustRegister(reposGithubConcurrent)
+	prometheus.MustRegister(reposGitHubRequestsCounter)
 }
 
 type Repos interface {
@@ -175,6 +176,8 @@ func addToPublicCache(repo string, c *cachedRepo) {
 	reposGithubPublicCache.Set(repo, b)
 }
 
+var GitHubTrackingContextKey = &struct{ name string }{"GitHubTrackingSource"}
+
 // getFromAPI attempts to get a response from the GitHub API without use of
 // the redis cache.
 func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
@@ -184,7 +187,7 @@ func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 	}
 	// Temporary: Track where anonymous requests are coming from that don't hit the cache.
 	if _, ok := resp.Header["X-From-Cache"]; !client(ctx).isAuthedUser && !ok {
-		src, ok := ctx.Value("GitHubTrackingSource").(string)
+		src, ok := ctx.Value(GitHubTrackingContextKey).(string)
 		if !ok {
 			src = "unknown"
 		}

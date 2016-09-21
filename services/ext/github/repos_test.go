@@ -46,6 +46,11 @@ func testRepos_Get(t *testing.T, private bool) {
 		repos: mockGitHubRepos{
 			Get_: func(owner, repo string) (*github.Repository, *github.Response, error) {
 				calledGet = true
+				resp := &github.Response{
+					Response: &http.Response{
+						Header: make(map[string][]string),
+					},
+				}
 				return &github.Repository{
 					ID:       github.Int(123),
 					Name:     github.String("repo"),
@@ -58,7 +63,7 @@ func testRepos_Get(t *testing.T, private bool) {
 						"push":  true,
 						"admin": false,
 					},
-				}, nil, nil
+				}, resp, nil
 			},
 		},
 	})
@@ -152,6 +157,11 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	}
 	mockGetPrivate := mockGitHubRepos{
 		Get_: func(owner, repo string) (*github.Repository, *github.Response, error) {
+			resp := &github.Response{
+				Response: &http.Response{
+					Header: make(map[string][]string),
+				},
+			}
 			return &github.Repository{
 				ID:       github.Int(123),
 				Name:     github.String("repo"),
@@ -159,7 +169,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 				Owner:    &github.User{ID: github.Int(1)},
 				CloneURL: github.String("https://github.com/owner/repo.git"),
 				Private:  github.Bool(true),
-			}, nil, nil
+			}, resp, nil
 		},
 	}
 
@@ -240,6 +250,11 @@ func TestRepos_Get_authednocache(t *testing.T) {
 	mockGet := mockGitHubRepos{
 		Get_: func(owner, repo string) (*github.Repository, *github.Response, error) {
 			calledGet = true
+			resp := &github.Response{
+				Response: &http.Response{
+					Header: make(map[string][]string),
+				},
+			}
 			return &github.Repository{
 				ID:       github.Int(123),
 				Name:     github.String("repo"),
@@ -252,7 +267,7 @@ func TestRepos_Get_authednocache(t *testing.T) {
 					"push":  true,
 					"admin": false,
 				},
-			}, nil, nil
+			}, resp, nil
 		},
 	}
 
@@ -352,6 +367,7 @@ func TestRepos_GetByID_nonexistent(t *testing.T) {
 					StatusCode: http.StatusNotFound,
 					Body:       ioutil.NopCloser(bytes.NewReader(nil)),
 					Request:    &http.Request{},
+					Header:     make(map[string][]string),
 				}
 				return nil, &github.Response{Response: resp}, github.CheckResponse(resp)
 			},
