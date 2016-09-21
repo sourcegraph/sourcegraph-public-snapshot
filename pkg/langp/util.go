@@ -129,6 +129,13 @@ var repoAliases = []struct {
 		NewPrefix: "sourcegraph.com/sourcegraph/sourcegraph",
 	},
 	{
+		// This special case needs to appear before the golang.org/x
+		// since it is more specific. We further special case
+		// github.com/golang/go so we want to preserve it.
+		OldPrefix: "github.com/golang/go",
+		NewPrefix: "github.com/golang/go",
+	},
+	{
 		OldPrefix: "github.com/golang/",
 		NewPrefix: "golang.org/x/",
 	},

@@ -29,6 +29,14 @@ func TestResolveRepoAlias(t *testing.T) {
 			"github.com/kubernetes/kops/upup/pkg/api",
 			"k8s.io/kops/upup/pkg/api",
 		},
+		{
+			"github.com/golang/go",
+			"github.com/golang/go",
+		},
+		{
+			"github.com/golang/crypto",
+			"golang.org/x/crypto",
+		},
 	}
 	for _, c := range cases {
 		check(c.old, c.new)
