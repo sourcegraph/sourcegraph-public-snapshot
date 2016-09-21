@@ -17,18 +17,10 @@ export function setAccessToken(token) {
 	return {type: types.SET_ACCESS_TOKEN, token};
 }
 
-// Utility method to fetch the absolute commit id for a branch, usually prior to hitting
-// another API (e.g. fetching srclib data versino requires resolving rev first).
+// Utility method to fetch the absolute commit id for a branch
 function _resolveRev(dispatch, state, repo, rev) {
 	const resolvedRev = state.resolvedRev.content[keyFor(repo, rev)];
 	if (resolvedRev) return Promise.resolve(resolvedRev);
-
-	const permalinkShortcut = document.querySelector(".js-permalink-shortcut");
-	if (permalinkShortcut) {
-		const json = {CommitID: permalinkShortcut.href.split("/")[6]};
-		dispatch({type: types.RESOLVED_REV, repo, rev, json});
-		return Promise.resolve(json);
-	}
 
 	return fetch(`https://sourcegraph.com/.api/repos/${repo}${rev ? `@${rev}` : ""}/-/rev`)
 		.then((json) => { dispatch({type: types.RESOLVED_REV, repo, rev, json}); return json; })

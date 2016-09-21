@@ -92,7 +92,7 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 			} else {
 				cell.innerHTML = result;
 			}
-			addEventListeners(cell, arg, repoRevSpec, line);
+			addEventListeners(cell, arg, path, repoRevSpec, line);
 		});
 	}
 }
@@ -293,14 +293,14 @@ export function convertStringNode(node, annsByStartByte, offset, lineStart) {
 let popoverCache = {};
 let jumptodefcache = {};
 
-function addEventListeners(el, arg, repoRevSpec, line) {
+function addEventListeners(el, arg, path, repoRevSpec, line) {
 	let activeTarget, popover;
 
 	el.addEventListener("click", (e) => {
 		let t = getTarget(e.target);
 		if (!t) return;
 		let col = t.dataset.byteoffset;
-		let url = `https://sourcegraph.com/.api/repos/${arg.repoURI}/-/jump-def?file=${arg.path}&line=${line - 1}&character=${col}`;
+		let url = `https://sourcegraph.com/.api/repos/${arg.repoURI}@${repoRevSpec.rev}/-/jump-def?file=${path}&line=${line - 1}&character=${col}`;
 
 		fetchJumpURL(url, function(defUrl, defCurPage) {
 			if (!defUrl) return;
@@ -325,7 +325,7 @@ function addEventListeners(el, arg, repoRevSpec, line) {
 			activeTarget = t;
 
 			let col = activeTarget.dataset.byteoffset;
-			let url = `https://sourcegraph.com/.api/repos/${arg.repoURI}/-/hover-info?file=${arg.path}&line=${line - 1}&character=${col}`;
+			let url = `https://sourcegraph.com/.api/repos/${arg.repoURI}@${repoRevSpec.rev}/-/hover-info?file=${path}&line=${line - 1}&character=${col}`;
 
 			fetchPopoverData(url, function(html) {
 				if (activeTarget && html) showPopover(html, e.pageX, e.pageY);
@@ -340,7 +340,7 @@ function addEventListeners(el, arg, repoRevSpec, line) {
 
 	function showPopover(html, x, y) {
 		if (!popover) {
-			EventLogger.logEventForCategory("Def", "Hover", "HighlightDef", {isDelta: repoRevSpec.isDelta, language: utils.getPathExtension(arg.path)});
+			EventLogger.logEventForCategory("Def", "Hover", "HighlightDef", {isDelta: repoRevSpec.isDelta, language: utils.getPathExtension(path)});
 			popover = document.createElement("div");
 			popover.classList.add(styles.popover);
 			popover.classList.add("sg-popover");
@@ -392,7 +392,7 @@ function addEventListeners(el, arg, repoRevSpec, line) {
 					const def = parts.slice(1).join("");
 					const jmp = `https://${repo}/tree/${rev}/${def}`;
 
-					jumptodefcache[url] = {defUrl: jmp, defCurPage : repo === arg.repoURI && jmp.indexOf(arg.path) >= 0};
+					jumptodefcache[url] = {defUrl: jmp, defCurPage : repo === arg.repoURI && jmp.indexOf(path) >= 0};
 					cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
 				}
 			})

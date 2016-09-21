@@ -154,7 +154,7 @@ export default class BlobAnnotator extends Component {
 			const headerBar = document.getElementsByClassName("details-collapse table-of-contents js-details-container");
 			if (!headerBar || headerBar.length !== 1) return false;
 
-			const diffToggles = headerBar[0].getElementsByClassName("btn-group right");
+			const diffToggles = headerBar[0].getElementsByClassName("BtnGroup float-right");
 			if (!diffToggles || diffToggles.length !== 1) return false;
 
 			const selectedToggle = diffToggles[0].querySelector(".selected");
