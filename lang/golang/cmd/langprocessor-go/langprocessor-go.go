@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cmdutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
@@ -86,13 +87,31 @@ func goGetDependencies(ctx context.Context, repoDir string, env []string, repoUR
 	if repoURI == "github.com/golang/go" {
 		return nil // updating dependencies for stdlib does not make sense.
 	}
-
 	c := exec.Command("go", "list", "-f", `{{join .Deps "\n"}}`, "./...")
 	c.Dir = repoDir
 	c.Env = env
 	out, err := langp.CmdOutput(ctx, c)
 	if err != nil {
-		return err
+		// Note: We do not consider `go list` failures here to be real
+		// failures. Because otherwise repositories that contain Go code in an
+		// invalid (non-Go) format, like for example:
+		//
+		// https://github.com/kubernetes/kubernetes/tree/master/staging
+		//
+		// would simply cause:
+		//
+		//  can't load package: package k8s.io/kubernetes/staging/src/k8s.io/client-go/1.4/tools/cache: code in directory /Users/stephen/.sourcegraph/workspace/go/github.com/kubernetes/kubernetes/32ba5815ee48cdac110137d36631fe4d7f9458c4/workspace/gopath/src/k8s.io/kubernetes/staging/src/k8s.io/client-go/1.4/tools/cache expects import \"k8s.io/client-go/1.4/tools/cache\"
+		//
+		// because of the Go import path checking logic. In general 'go list'
+		// should not fail under normal circumstances.
+		if v, ok := err.(*cmdutil.ExitError); ok {
+			if !strings.Contains(string(v.Stderr), "expects import") {
+				// Assume it is a real error then.
+				return err
+			}
+		}
+		log.Println("ignoring 'go list' failure intentionally")
+		err = nil
 	}
 	var pkgs []string
 	stdlib := listGoStdlibPackages(ctx)
