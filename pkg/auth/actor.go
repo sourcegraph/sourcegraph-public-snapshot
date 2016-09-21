@@ -10,8 +10,7 @@ import (
 // Actor represents an agent that accesses resources. It can represent
 // an anonymous user or a logged-in user.
 type Actor struct {
-	// TODO: Make UID an int32.
-	UID int `json:",omitempty"`
+	UID string `json:",omitempty"`
 
 	// Login is the login of the currently authenticated user, if
 	// any. It is provided as a convenience and is not guaranteed to
@@ -44,12 +43,12 @@ type Actor struct {
 }
 
 func (a *Actor) String() string {
-	return fmt.Sprintf("Actor UID %d (scope=%v)", a.UID, a.Scope)
+	return fmt.Sprintf("Actor UID %s (scope=%v)", a.UID, a.Scope)
 }
 
 // IsAuthenticated returns true if the Actor is derived from an authenticated user.
 func (a *Actor) IsAuthenticated() bool {
-	return a.UID != 0
+	return a.UID != ""
 }
 
 // HasScope returns a boolean indicating whether this actor has the
@@ -61,16 +60,16 @@ func (a *Actor) HasScope(s string) bool {
 
 func (a *Actor) UserSpec() *sourcegraph.UserSpec {
 	return &sourcegraph.UserSpec{
-		UID: int32(a.UID),
+		UID: a.UID,
 	}
 }
 
 func (a *Actor) User() *sourcegraph.User {
-	if a.UID == 0 {
+	if a.UID == "" {
 		return nil
 	}
 	return &sourcegraph.User{
-		UID:       int32(a.UID),
+		UID:       a.UID,
 		Login:     a.Login,
 		AvatarURL: a.AvatarURL,
 	}
@@ -78,7 +77,7 @@ func (a *Actor) User() *sourcegraph.User {
 
 func (a *Actor) AuthInfo() *sourcegraph.AuthInfo {
 	return &sourcegraph.AuthInfo{
-		UID:   int32(a.UID),
+		UID:   a.UID,
 		Login: a.Login,
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -127,7 +128,7 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 
 	// Write cookie.
 	if err := auth.StartNewSession(w, r, &auth.Actor{
-		UID:             *ghUser.ID,
+		UID:             strconv.Itoa(*ghUser.ID),
 		Login:           *ghUser.Login,
 		Email:           *ghUser.Email,
 		AvatarURL:       *ghUser.AvatarURL,

@@ -737,7 +737,7 @@ message UserList {
 // User represents a registered user.
 message User {
 	// UID is the numeric primary key for a user.
-	int32 UID = 1 [(gogoproto.jsontag) = "UID"];
+	string UID = 1 [(gogoproto.jsontag) = "UID"];
 
 	// Login is the user's username.
 	string Login = 2 [(gogoproto.jsontag) = "Login"];
@@ -788,7 +788,7 @@ message User {
 // nonempty.
 message UserSpec {
 	// UID is a user's UID.
-	int32 UID = 2;
+	string UID = 2;
 }
 
 message EmailAddrList {
@@ -839,7 +839,7 @@ message BetaResponse {
 // (if any).
 message AuthInfo {
 	// UID is the UID of the currently authenticated user (if any).
-	int32 UID = 2;
+	string UID = 2;
 
 	// Login is the login of the currently authenticated user (if any).
 	string Login = 4;
@@ -854,7 +854,7 @@ message AuthInfo {
 // ExternalToken specifies an auth token of a user for an external host.
 message ExternalToken {
 	// UID is the UID of the user authorized by the token.
-	int32 uid = 1 [(gogoproto.customname) = "UID"];
+	string uid = 1 [(gogoproto.customname) = "UID"];
 
 	// Host is the external service which granted the token.
 	string host = 2;
@@ -1317,7 +1317,7 @@ message ServerConfig {
 message UserEvent {
 	string Type = 1;
 
-	int32 UID = 2;
+	string UID = 2;
 
 	string Service = 4;
 

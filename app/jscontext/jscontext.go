@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/gorilla/csrf"
@@ -97,11 +96,11 @@ func isBot(userAgent string) bool {
 
 var intercomSecretKey = os.Getenv("SG_INTERCOM_SECRET_KEY")
 
-func intercomHMAC(uid int) string {
-	if uid == 0 || intercomSecretKey == "" {
+func intercomHMAC(uid string) string {
+	if uid == "" || intercomSecretKey == "" {
 		return ""
 	}
 	mac := hmac.New(sha256.New, []byte(intercomSecretKey))
-	mac.Write([]byte(strconv.Itoa(uid)))
+	mac.Write([]byte(uid))
 	return hex.EncodeToString(mac.Sum(nil))
 }

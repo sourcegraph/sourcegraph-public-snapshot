@@ -138,7 +138,7 @@ func (s *Server) Cmd(env []string, args []string) *exec.Cmd {
 	return cmd
 }
 
-func (s *Server) AsUIDWithAccess(ctx context.Context, uid int) context.Context {
+func (s *Server) AsUIDWithAccess(ctx context.Context, uid string) context.Context {
 	token, err := auth.NewAccessToken(&auth.Actor{UID: uid}, nil, 10*time.Minute)
 	if err != nil {
 		panic(err)
@@ -337,7 +337,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	s.Ctx = sourcegraph.WithGRPCEndpoint(s.Ctx, s.Config.Endpoint.URLOrDefault())
 
 	// ID key
-	s.Ctx = s.AsUIDWithAccess(s.Ctx, 1)
+	s.Ctx = s.AsUIDWithAccess(s.Ctx, "1")
 
 	if err := s.configDB(); err != nil {
 		log.Fatal(err)

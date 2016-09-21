@@ -13,7 +13,7 @@ describe("PricingPage", () => {
 		});
 	});
 	it("should render for signed-in users", () => {
-		mockUser({UID: 1, Login: "Foo"}, () => {
+		mockUser({UID: "1", Login: "Foo"}, () => {
 			let o = renderToString(<PricingPage />);
 			expect(o).to.contain("Your current plan");
 			expect(o).to.not.contain("Sign up");

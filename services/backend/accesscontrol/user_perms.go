@@ -48,8 +48,8 @@ func VerifyUserHasAdminAccess(ctx context.Context, method string) error {
 // the given uid, or if the actor has admin access on the server.
 // This check should be used in cases where a request should succeed only
 // if the request is for the user's own information, or if the ctx actor is an admin.
-func VerifyUserSelfOrAdmin(ctx context.Context, method string, uid int32) error {
-	if uid != 0 && auth.ActorFromContext(ctx).UID == int(uid) {
+func VerifyUserSelfOrAdmin(ctx context.Context, method string, uid string) error {
+	if uid != "" && auth.ActorFromContext(ctx).UID == uid {
 		return nil
 	}
 

@@ -23,7 +23,7 @@ func testContext() (context.Context, *mocks) {
 	ctx = store.WithStores(ctx, m.stores.Stores())
 	ctx = svc.WithServices(ctx, m.servers.servers())
 	ctx = github.WithRepos(ctx, &m.githubRepos)
-	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: 1, Login: "test"})
+	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test"})
 	ctx = accesscontrol.WithInsecureSkip(ctx, true)
 	_, ctx = opentracing.StartSpanFromContext(ctx, "dummy")
 	return ctx, &m

@@ -19,7 +19,7 @@ func testContext() (context.Context, *githubmock.GitHubRepoGetter) {
 	var m githubmock.GitHubRepoGetter
 	ctx := context.Background()
 	ctx = github.WithRepos(ctx, &m)
-	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: 1, Login: "test"})
+	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test"})
 	ctx = github.WithMockHasAuthedUser(ctx, true)
 	_, ctx = opentracing.StartSpanFromContext(ctx, "dummy")
 	return ctx, &m
@@ -126,11 +126,11 @@ func TestUserHasReadAccessAll(t *testing.T) {
 }
 
 func TestVerifyAccess(t *testing.T) {
-	var uid int
+	var uid string
 	var ctx context.Context
 
 	// Test that UID 3 has no write/admin access, excluding to whitelisted methods
-	uid = 3
+	uid = "3"
 	ctx = asUID(uid)
 
 	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err == nil {
@@ -144,7 +144,7 @@ func TestVerifyAccess(t *testing.T) {
 	}
 
 	// Test that unauthed context has no write/admin access
-	uid = 0
+	uid = ""
 	ctx = asUID(uid)
 
 	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err == nil {
@@ -159,27 +159,27 @@ func TestVerifyAccess(t *testing.T) {
 
 	// Test that user has read access for their own data, but not other users'
 	// data
-	uid = 1
-	var uid2 int = 3
+	uid = "1"
+	uid2 := "3"
 
 	ctx = asUID(uid2)
-	if err := VerifyUserSelfOrAdmin(ctx, "Users.ListEmails", int32(uid2)); err != nil {
+	if err := VerifyUserSelfOrAdmin(ctx, "Users.ListEmails", uid2); err != nil {
 		t.Fatalf("user %v should have read access; got: %v\n", uid, err)
 	}
-	if err := VerifyUserSelfOrAdmin(ctx, "Users.ListEmails", int32(uid)); err == nil {
+	if err := VerifyUserSelfOrAdmin(ctx, "Users.ListEmails", uid); err == nil {
 		t.Fatalf("user %v should not have read access; got access\n", uid2)
 	}
 
 	// Test that for local auth, all authenticated users have write access,
 	// but unauthenticated users don't.
-	uid = 0
+	uid = ""
 	ctx = asUID(uid)
 
 	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err == nil {
 		t.Fatalf("user %v should not have write access; got access\n", uid)
 	}
 
-	uid = 1234
+	uid = "1234"
 	ctx = asUID(uid)
 
 	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err == nil {
@@ -187,7 +187,7 @@ func TestVerifyAccess(t *testing.T) {
 	}
 }
 
-func asUID(uid int) context.Context {
+func asUID(uid string) context.Context {
 	return auth.WithActor(context.Background(), &auth.Actor{
 		UID: uid,
 	})

@@ -17,7 +17,7 @@ func serveAuthInfo(w http.ResponseWriter, r *http.Request) error {
 
 func serveGitHubToken(w http.ResponseWriter, r *http.Request) error {
 	actor := auth.ActorFromContext(r.Context())
-	if actor.UID == 0 {
+	if actor.UID == "" {
 		return grpc.Errorf(codes.Unauthenticated, "not logged in")
 	}
 
@@ -26,7 +26,7 @@ func serveGitHubToken(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return writeJSON(w, &sourcegraph.ExternalToken{
-		UID:   int32(actor.UID),
+		UID:   actor.UID,
 		Host:  "github.com",
 		Token: actor.GitHubToken,
 		Scope: strings.Join(actor.GitHubScopes, ","),

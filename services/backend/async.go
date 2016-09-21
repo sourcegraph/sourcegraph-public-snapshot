@@ -43,7 +43,7 @@ func StartAsyncWorkers(ctx context.Context) {
 func (s *async) RefreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
 	// Keep track of who triggered a refresh
 	if actor := authpkg.ActorFromContext(ctx); actor.IsAuthenticated() {
-		op.Source = fmt.Sprintf("%s (UID %d %s)", op.Source, actor.UID, actor.Login)
+		op.Source = fmt.Sprintf("%s (UID %s %s)", op.Source, actor.UID, actor.Login)
 	}
 
 	args, err := json.Marshal(op)

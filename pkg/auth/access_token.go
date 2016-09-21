@@ -2,7 +2,6 @@ package auth
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -17,8 +16,8 @@ func NewAccessToken(actor *Actor, scopes []string, expiryDuration time.Duration)
 	tok := jwt.New(jwt.SigningMethod(jwt.SigningMethodHS256))
 
 	if actor != nil {
-		if actor.UID != 0 {
-			tok.Claims["UID"] = strconv.Itoa(actor.UID)
+		if actor.UID != "" {
+			tok.Claims["UID"] = actor.UID
 		}
 		if actor.Login != "" {
 			tok.Claims["Login"] = actor.Login
@@ -65,14 +64,7 @@ func ParseAndVerify(accessToken string) (*Actor, error) {
 	// unmarshal actor
 	var a Actor
 
-	if uidStr, _ := tok.Claims["UID"].(string); uidStr != "" {
-		var err error
-		a.UID, err = strconv.Atoi(uidStr)
-		if err != nil {
-			return nil, fmt.Errorf("bad UID %q in access token: %s", uidStr, err)
-		}
-	}
-
+	a.UID, _ = tok.Claims["UID"].(string)
 	a.Login, _ = tok.Claims["Login"].(string)
 	a.GitHubConnected, _ = tok.Claims["GitHubConnected"].(bool)
 	if ghScope, ok := tok.Claims["GitHubScopes"].(string); ok {

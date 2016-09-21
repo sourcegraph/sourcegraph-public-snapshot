@@ -34,7 +34,7 @@ export interface AsyncRefreshIndexesOp {
 }
 
 export interface AuthInfo {
-	UID?: number;
+	UID?: string;
 	Login?: string;
 	Write?: boolean;
 	Admin?: boolean;
@@ -508,7 +508,7 @@ export interface EventList {
 }
 
 export interface ExternalToken {
-	uid?: number;
+	uid?: string;
 	host?: string;
 	token?: string;
 	scope?: string;
@@ -1165,7 +1165,7 @@ export interface UploadPackOp {
 }
 
 export interface User {
-	UID: number;
+	UID: string;
 	Login: string;
 	Name?: string;
 	IsOrganization?: boolean;
@@ -1182,7 +1182,7 @@ export interface User {
 
 export interface UserEvent {
 	Type?: string;
-	UID?: number;
+	UID?: string;
 	Service?: string;
 	Method?: string;
 	Result?: string;
@@ -1197,7 +1197,7 @@ export interface UserList {
 }
 
 export interface UserSpec {
-	UID?: number;
+	UID?: string;
 }
 
 export interface VCSSearchResultList {

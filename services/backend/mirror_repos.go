@@ -36,13 +36,13 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	// as a different user.
 	canImpersonateUser := actor.HasScope("internal:repoupdater")
 	if op.AsUser != nil && canImpersonateUser {
-		asUserUID = int(op.AsUser.UID)
+		asUserUID = op.AsUser.UID
 	}
 
 	// Use the auth token for asUserUID if it can be successfully looked up (it may fail if that user doesn't have one),
 	// otherwise proceed without their credentials. It will work for public repos.
 	remoteOpts := vcs.RemoteOpts{}
-	if asUserUID != 0 {
+	if asUserUID != "" {
 		extToken, err := authpkg.FetchGitHubToken(ctx, asUserUID)
 		if err == nil {
 			// Set the auth token to be used in repo VCS operations.

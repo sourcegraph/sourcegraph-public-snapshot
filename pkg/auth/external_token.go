@@ -13,6 +13,6 @@ var (
 	ErrNoExternalAuthToken = errors.New("no external auth token found for user and host")
 )
 
-func FetchGitHubToken(ctx context.Context, uid int) (*sourcegraph.ExternalToken, error) {
+func FetchGitHubToken(ctx context.Context, uid string) (*sourcegraph.ExternalToken, error) {
 	return nil, ErrNoExternalAuthToken // TODO
 }

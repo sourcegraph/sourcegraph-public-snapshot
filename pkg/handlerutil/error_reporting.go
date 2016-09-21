@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"reflect"
 
-	"strconv"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
@@ -74,9 +73,9 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 	addTag("trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
 
 	// Add request context tags.
-	if actor := auth.ActorFromContext(r.Context()); actor.UID != 0 {
+	if actor := auth.ActorFromContext(r.Context()); actor.UID != "" {
 		addTag("Authed", "yes")
-		addTag("Authed UID", strconv.Itoa(int(actor.UID)))
+		addTag("Authed UID", actor.UID)
 		addTag("Authed user", actor.Login)
 	} else {
 		addTag("Authed", "no")

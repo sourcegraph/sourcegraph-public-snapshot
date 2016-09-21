@@ -90,7 +90,7 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 	requestDuration.With(labels).Observe(elapsed.Seconds())
 	requestGauge.WithLabelValues(name).Dec()
 
-	uid := strconv.Itoa(authpkg.ActorFromContext(ctx).UID)
+	uid := authpkg.ActorFromContext(ctx).UID
 	errStr := ""
 	if err != nil {
 		errStr = err.Error()

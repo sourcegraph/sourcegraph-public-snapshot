@@ -400,7 +400,7 @@ func repoMaybeEnqueueUpdate(ctx context.Context, repo *sourcegraph.Repo) {
 		return
 	}
 	var asUser *sourcegraph.UserSpec
-	if actor := authpkg.ActorFromContext(ctx); actor.UID != 0 {
+	if actor := authpkg.ActorFromContext(ctx); actor.UID != "" {
 		asUser = actor.UserSpec()
 	}
 	repoupdater.Enqueue(repo.ID, asUser)
