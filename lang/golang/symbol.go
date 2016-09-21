@@ -23,6 +23,7 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 	if err != nil {
 		return nil, err
 	}
+	isStdlib := len(q.Tokens) == 1 && q.Tokens[0] == "github.com/golang/go/..."
 
 	var symbols []lsp.SymbolInformation
 	var failed int
@@ -53,6 +54,9 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 	buildCtx := build.Default
 	buildCtx.GOPATH = h.filePath("gopath")
 	buildCtx.CgoEnabled = false
+	if isStdlib {
+		buildCtx.GOROOT = h.filePath("gopath/src/github.com/golang/go")
+	}
 	for _, pkg := range pkgs {
 		// Exclude vendored in code from symbols
 		if strings.Contains(pkg, "/vendor/") || strings.Contains(pkg, "/Godeps/") {
@@ -65,7 +69,11 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 			}
 			// We have to special case the pkg symbol since it
 			// doesn't have a parsed position
-			uri, err := h.fileURI(filepath.Join(buildCtx.GOPATH, "src", pkg))
+			path := filepath.Join(buildCtx.GOPATH, "src", pkg)
+			if isStdlib {
+				path = filepath.Join(buildCtx.GOPATH, "src/github.com/golang/go/src", pkg)
+			}
+			uri, err := h.fileURI(path)
 			if err != nil {
 				failed++
 				return
@@ -221,19 +229,29 @@ func isExported(name, containerName string) bool {
 }
 
 func expandPackages(ctx context.Context, env, pkgs []string) ([]string, error) {
+	isStdlib := false
 	if len(pkgs) == 1 && pkgs[0] == "github.com/golang/go/..." {
-		b, err := cmdOutput(ctx, env, exec.Command("go", "list", "-e", "-f", "{{if .Standard}}{{.ImportPath}}{{end}}", "..."))
-		if err != nil {
-			return nil, err
-		}
-		return strings.Fields(string(b)), nil
+		isStdlib = true
+		pkgs = []string{"github.com/golang/go/src/..."}
 	}
 	args := append([]string{"list", "-e"}, pkgs...)
 	b, err := cmdOutput(ctx, env, exec.Command("go", args...))
 	if err != nil {
 		return nil, err
 	}
-	return strings.Fields(string(b)), nil
+	expanded := strings.Fields(string(b))
+	if isStdlib {
+		filtered := make([]string, 0, len(expanded))
+		for _, p := range expanded {
+			p = p[len("github.com/golang/go/src/"):]
+			if p == "builtin" {
+				continue
+			}
+			filtered = append(filtered, p)
+		}
+		return filtered, nil
+	}
+	return expanded, nil
 }
 
 type queryType int
