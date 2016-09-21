@@ -1,19 +1,16 @@
 package oauth2client
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/url"
-	"strconv"
+	"sort"
 	"strings"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"golang.org/x/oauth2"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/canonicalurl"
@@ -22,7 +19,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 )
 
@@ -31,6 +27,12 @@ var githubNonceCookiePath = router.Rel.URLTo(router.GitHubOAuth2Receive).Path
 func init() {
 	internal.Handlers[router.GitHubOAuth2Initiate] = internal.Handler(serveGitHubOAuth2Initiate)
 	internal.Handlers[router.GitHubOAuth2Receive] = internal.Handler(serveGitHubOAuth2Receive)
+}
+
+func auth0ConfigWithRedirectURL() *oauth2.Config {
+	config := *auth.Auth0Config
+	config.RedirectURL = conf.AppURL.ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String()
+	return &config
 }
 
 // serveGitHubOAuth2Initiate generates the OAuth2 authorize URL
@@ -47,14 +49,6 @@ func serveGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 	// JS so we centralize usage analytics there.
 	returnTo = canonicalurl.FromURL(returnTo)
 
-	nonce := randstring.NewLen(32)
-	http.SetCookie(w, &http.Cookie{
-		Name:    "nonce",
-		Value:   nonce,
-		Path:    "",
-		Expires: time.Now().Add(10 * time.Minute),
-	})
-
 	var scopes []string
 	if s := r.URL.Query().Get("scopes"); s == "" {
 		// if we have no scope, we upgrade the credential to the
@@ -64,24 +58,26 @@ func serveGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 		scopes = strings.Split(s, ",")
 	}
 
-	http.Redirect(w, r, githubutil.Default.OAuth.AuthCodeURL(nonce+":"+returnTo.String(),
-		oauth2.SetAuthURLParam("scope", strings.Join(scopes, " ")),
-		oauth2.SetAuthURLParam("redirect_uri", conf.AppURL.ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String()),
+	return oAuth2Initiate(w, r, scopes, returnTo.String())
+}
+
+func oAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []string, returnTo string) error {
+	nonce := randstring.NewLen(32)
+	http.SetCookie(w, &http.Cookie{
+		Name:    "nonce",
+		Value:   nonce,
+		Path:    "",
+		Expires: time.Now().Add(10 * time.Minute),
+	})
+
+	http.Redirect(w, r, auth0ConfigWithRedirectURL().AuthCodeURL(nonce+":"+returnTo,
+		oauth2.SetAuthURLParam("connection", "github"),
+		oauth2.SetAuthURLParam("connection_scope", strings.Join(scopes, ",")),
 	), http.StatusSeeOther)
 	return nil
 }
 
 func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error) {
-	returnTo := "/"
-
-	defer func() {
-		if err != nil {
-			log15.Error("Error in receive handler in GitHub OAuth2 auth flow (suppressing HTTP 500 and returning redirect to non-GitHub login form).", "err", err)
-			http.Redirect(w, r, "/login?github-login-error=unknown&_event=FailedGitHubOAuth2Flow&return-to="+url.QueryEscape(returnTo), http.StatusSeeOther)
-			err = nil
-		}
-	}()
-
 	parts := strings.SplitN(r.URL.Query().Get("state"), ":", 2)
 	if len(parts) != 2 {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("invalid OAuth2 authorize client state")}
@@ -99,42 +95,68 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	if len(parts) != 2 || nonceCookie.Value == "" || parts[0] != nonceCookie.Value {
 		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("invalid state")}
 	}
-	returnTo = parts[1]
+	returnTo := parts[1]
 
-	// Exchange the code for a GitHub access token.
-	ghToken, err := githubutil.Default.OAuth.Exchange(r.Context(), r.URL.Query().Get("code"))
+	code := r.URL.Query().Get("code")
+	token, err := auth0ConfigWithRedirectURL().Exchange(r.Context(), code)
 	if err != nil {
 		return err
 	}
-	if !ghToken.Valid() {
-		return grpc.Errorf(codes.PermissionDenied, "exchanging auth code yielded invalid GitHub OAuth2 token")
+	if !token.Valid() {
+		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("exchanging auth code yielded invalid OAuth2 token")}
 	}
 
-	// Get the current user.
-	ghUser, ghResp, err := githubutil.Default.AuthedClient(ghToken.AccessToken).Users.Get("")
+	auth0Client := oauth2.NewClient(r.Context(), oauth2.StaticTokenSource(token))
+
+	resp, err := auth0Client.Get("https://" + auth.Auth0Domain + "/userinfo")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	var info struct {
+		UID         string `json:"user_id"`
+		Nickname    string `json:"nickname"`
+		Picture     string `json:"picture"`
+		Email       string `json:"email"`
+		AppMetadata struct {
+			GitHubScope []string `json:"github_scope"`
+		} `json:"app_metadata"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		return err
+	}
+
+	firstTime := len(info.AppMetadata.GitHubScope) == 0
+
+	githubToken, err := auth.FetchGitHubToken(r.Context(), info.UID)
 	if err != nil {
 		return err
 	}
 
-	firstTime := false
-
-	defer func() {
-		if err != nil {
-			log15.Error("Error during GitHub account linking or login flow (suppressing HTTP 500 and returning redirect to non-GitHub login form).", "err", err, "sourcegraph-uid", *ghUser.ID, "first-time", firstTime)
-			http.Redirect(w, r, "/login?github-login-error=unknown&_event=FailedGitHubOAuth2Flow&return-to="+url.QueryEscape(returnTo), http.StatusSeeOther)
-			err = nil
+	scopeOfToken := strings.Split(githubToken.Scope, ",")
+	mergedScope := mergeScopes(scopeOfToken, info.AppMetadata.GitHubScope)
+	if len(scopeOfToken) < len(mergedScope) {
+		// The user has once granted us more permissions than we got with this token. Run oauth flow
+		// again to fetch token with all permissions. This should be non-interactive.
+		return oAuth2Initiate(w, r, mergedScope, returnTo)
+	}
+	if len(scopeOfToken) > len(info.AppMetadata.GitHubScope) {
+		// Wohoo, we got more permissions. Remember in user database.
+		if err := auth.SetAppMetadata(r.Context(), info.UID, "github_scope", scopeOfToken); err != nil {
+			return err
 		}
-	}()
+	}
 
 	// Write cookie.
 	if err := auth.StartNewSession(w, r, &auth.Actor{
-		UID:             strconv.Itoa(*ghUser.ID),
-		Login:           *ghUser.Login,
-		Email:           *ghUser.Email,
-		AvatarURL:       *ghUser.AvatarURL,
+		UID:             info.UID,
+		Login:           info.Nickname,
+		Email:           info.Email,
+		AvatarURL:       info.Picture,
 		GitHubConnected: true,
-		GitHubScopes:    ghResp.Header["X-Oauth-Scopes"],
-		GitHubToken:     ghToken.AccessToken,
+		GitHubScopes:    scopeOfToken,
+		GitHubToken:     githubToken.Token,
 	}); err != nil {
 		return err
 	}
@@ -163,4 +185,21 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 
 	http.Redirect(w, r, returnToURL.String(), http.StatusSeeOther)
 	return nil
+}
+
+func mergeScopes(a, b []string) []string {
+	m := make(map[string]struct{})
+	for _, s := range a {
+		m[s] = struct{}{}
+	}
+	for _, s := range b {
+		m[s] = struct{}{}
+	}
+
+	var merged []string
+	for s := range m {
+		merged = append(merged, s)
+	}
+	sort.Strings(merged)
+	return merged
 }
