@@ -384,7 +384,7 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 					const rprv = part[0].split("@");
 					const repo = rprv[0];
 					if (rprv.length < 2) {
-						rev = repoRevSpec.rev;
+						rev = "master";
 					} else {
 						rev = rprv[1];
 					}
