@@ -378,7 +378,6 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 						jumptarget = jumptarget.substring(1); // remove leading slash
 					}
 
-					console.log(jumptarget);
 					const part = jumptarget.split("/-/blob/");
 					if (part.length < 2) return null;
 					const rprv = part[0].split("@");
