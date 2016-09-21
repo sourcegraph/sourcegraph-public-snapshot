@@ -3,9 +3,11 @@ package rcache
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -37,6 +39,18 @@ func New(keyPrefix string, ttlSeconds int) *Cache {
 	}
 }
 
+// HACK: Track API cache hits by examining keys on cache requests to see if
+// that have the GitHub domain in them. Temporary so we can get better
+// visibility into HTTP cache performance.
+const githubAPIHost = "api.github.com"
+
+var reposGitHubHTTPCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "repos",
+	Name:      "github_api_cache_hit",
+	Help:      "Counts cache hits and misses for the github API HTTP cache.",
+}, []string{"type"})
+
 // Get implements httpcache.Cache.Get
 func (r *Cache) Get(key string) ([]byte, bool) {
 	c := pool.Get()
@@ -46,6 +60,18 @@ func (r *Cache) Get(key string) ([]byte, bool) {
 	if err != nil && err != redis.ErrNil {
 		log15.Warn("failed to execute redis command", "cmd", "GET", "error", err)
 	}
+
+	// TODO remove this tracking or move it to a more appropriate place.
+	if strings.Contains(key, githubAPIHost) {
+		go func() {
+			if err == nil {
+				reposGitHubHTTPCacheCounter.WithLabelValues("hit").Inc()
+			} else {
+				reposGitHubHTTPCacheCounter.WithLabelValues("miss").Inc()
+			}
+		}()
+	}
+
 	return b, err == nil
 }
 
