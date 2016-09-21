@@ -292,7 +292,6 @@ export function convertStringNode(node, annsByStartByte, offset, lineStart) {
 
 let popoverCache = {};
 let jumptodefcache = {};
-export const defCache = {};
 
 function addEventListeners(el, arg, repoRevSpec, line) {
 	let activeTarget, popover;
@@ -328,7 +327,7 @@ function addEventListeners(el, arg, repoRevSpec, line) {
 			let col = activeTarget.dataset.byteoffset;
 			let url = `https://sourcegraph.com/.api/repos/${arg.repoURI}/-/hover-info?file=${arg.path}&line=${line - 1}&character=${col}`;
 
-			fetchPopoverData(url, function(html, data) {
+			fetchPopoverData(url, function(html) {
 				if (activeTarget && html) showPopover(html, e.pageX, e.pageY);
 			});
 		}
@@ -373,7 +372,7 @@ function addEventListeners(el, arg, repoRevSpec, line) {
 				if (typeof json.Path === 'undefined' || json.Path === "") {
 					jumptodefcache[url] = {defUrl: "", defCurPage: false};
 				} else {
-					let rev, jumpdef, jumptarget = json.Path;
+					let rev, jumptarget = json.Path;
 
 					if (jumptarget.indexOf(repoRevSpec.repoURI) !== -1) {
 						rev = repoRevSpec.rev;
@@ -389,16 +388,11 @@ function addEventListeners(el, arg, repoRevSpec, line) {
 					if (parts.length < 2) return null;
 
 					const repo = parts[0];
-					if (repo.startsWith("github.com/")) {
-						// TODO: Fix /blob/ to /tree/ on back-end; Github returns 301 moved permanently
-						const def = parts.slice(1).join("");
-						jumpdef = `https://${repo}/tree/${rev}/${def}#sourcegraph&def=${def}&rev=${rev}`;
-					} else {
-						const def = parts.slice(1).join("/-/blob/").replace("def/", "");
-						jumpdef = `https://github.com/#sourcegraph&repo=${repo}&def=${def}&rev=${rev}`;
-					}
+					// TODO: Fix /blob/ to /tree/ on back-end; Github returns 301 moved permanently
+					const def = parts.slice(1).join("");
+					const jmp = `https://${repo}/tree/${rev}/${def}`;
 
-					jumptodefcache[url] = {defUrl: jumpdef, defCurPage : repo === arg.repoURI && jumpdef.indexOf(arg.path) >= 0};
+					jumptodefcache[url] = {defUrl: jmp, defCurPage : repo === arg.repoURI && jmp.indexOf(arg.path) >= 0};
 					cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
 				}
 			})
@@ -406,18 +400,17 @@ function addEventListeners(el, arg, repoRevSpec, line) {
 	}
 
 	function fetchPopoverData(url, cb) {
-		if(typeof popoverCache[url] !== 'undefined') return cb(popoverCache[url], defCache[url]);
+		if(typeof popoverCache[url] !== 'undefined') return cb(popoverCache[url]);
 
 		fetch(url)
 			.then((json) => {
-				defCache[url] = json.def;
 				if (json.Title === "" && json.def == null) {
 					popoverCache[url] = ``;
 				} else {
 					popoverCache[url] = `<div><div class=${styles.popoverTitle}>${json.Title || ""}</div><div>${json.def ? json.def.DocHTML.__html || "" : ""}</div><div class=${styles.popoverRepo}>${json.def ? json.def.Repo || "" : ""}</div></div>`;
 				}
-				cb(popoverCache[url], defCache[url]);
+				cb(popoverCache[url]);
 			})
-			.catch((err) => console.log("Error getting definition info.") && cb(null, null));
+			.catch((err) => console.log("Error getting definition info.") && cb(null));
 	}
 }

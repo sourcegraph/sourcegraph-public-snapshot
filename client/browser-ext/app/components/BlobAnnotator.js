@@ -14,7 +14,6 @@ let buildsCache = {};
 @connect(
 	(state) => ({
 		resolvedRev: state.resolvedRev,
-		srclibDataVersion: state.srclibDataVersion,
 		annotations: state.annotations,
 		accessToken: state.accessToken,
 		authInfo: state.authInfo,
@@ -27,7 +26,6 @@ export default class BlobAnnotator extends Component {
 	static propTypes = {
 		path: React.PropTypes.string.isRequired,
 		resolvedRev: React.PropTypes.object.isRequired,
-		srclibDataVersion: React.PropTypes.object.isRequired,
 		annotations: React.PropTypes.object.isRequired,
 		actions: React.PropTypes.object.isRequired,
 		blobElement: React.PropTypes.object.isRequired,
@@ -170,14 +168,13 @@ export default class BlobAnnotator extends Component {
 		if (!state.isAnnotated) {
 			if (state.isDelta) {
 				if (state.baseCommitID) {
-					state.actions.getAnnotations(state.baseRepoURI, state.baseCommitID, state.path, true);
+					state.actions.getAnnotations(state.baseRepoURI, state.baseCommitID, state.path);
 				}
 				if (state.headCommitID) {
-					state.actions.getAnnotations(state.headRepoURI, state.headCommitID, state.path, true);
+					state.actions.getAnnotations(state.headRepoURI, state.headCommitID, state.path);
 				}
 				state.isAnnotated = true;
 			} else {
-				state.actions.getSrclibDataVersion(state.repoURI, state.rev);
 				state.actions.getAnnotations(state.repoURI, state.rev, state.path);
 				state.isAnnotated = true;
 			}
@@ -190,12 +187,10 @@ export default class BlobAnnotator extends Component {
 
 	_addAnnotations(state) {
 		function apply(repoURI, rev, branch, isBase) {
-			const dataVer = state.srclibDataVersion.content[keyFor(repoURI, rev, state.path)];
-			if (!dataVer || !dataVer.CommitID) return;
 
-			const json = state.annotations.content[keyFor(repoURI, dataVer.CommitID, state.path)];
+			const json = state.annotations.content[keyFor(repoURI, rev, state.path)];
 			if (json) {
-				addAnnotations(state.path, {repoURI, rev, branch, isDelta: state.isDelta, isBase}, state.blobElement, json.Annotations, json.LineStartBytes, state.isSplitDiff);
+				addAnnotations(state.path, {repoURI, rev, branch, isDelta: state.isDelta, isBase}, state.blobElement, json.IncludedAnnotations.Annotations, json.IncludedAnnotations.LineStartBytes, state.isSplitDiff);
 			}
 		}
 

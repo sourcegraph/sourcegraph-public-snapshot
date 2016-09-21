@@ -37,75 +37,11 @@ const resolvedRev = function(state = {content: {}}, action) {
 	}
 }
 
-const srclibDataVersion = function(state = {content: {}, fetches: {}}, action) {
-	switch (action.type) {
-	case ActionTypes.FETCHED_SRCLIB_DATA_VERSION:
-		return {
-			...state,
-			fetches: {
-				...state.fetches,
-				[keyFor(action.repo, action.rev, action.path)]: action.err ? action.err : false,
-			},
-			content: {
-				...state.content,
-				[keyFor(action.repo, action.rev, action.path)]: action.json ? action.json : null,
-			}
-		};
-	default:
-		return state;
-	}
-}
-
-const def = function(state = {content: {}}, action) {
-	switch (action.type) {
-	case ActionTypes.FETCHED_DEF:
-		if (!action.json && !state.content[keyFor(action.repo, action.rev, action.defPath)]) return state; // no update needed; avoid re-rending components
-
-		return {
-			...state,
-			content: {
-				...state.content,
-				[keyFor(action.repo, action.rev, action.defPath)]: action.json ? action.json : null,
-			}
-		};
-	default:
-		return state;
-	}
-}
-
-
-const defs = function(state = {content: {}, fetches: {}}, action) {
-	switch (action.type) {
-	case ActionTypes.WANT_DEFS:
-		return {
-			...state,
-			fetches: {
-				...state.fetches,
-				[keyFor(action.repo, action.rev, action.path, action.query)]: true,
-			}
-		};
-	case ActionTypes.FETCHED_DEFS:
-		return {
-			...state,
-			fetches: {
-				...state.fetches,
-				[keyFor(action.repo, action.rev, action.path, action.query)]: action.err ? action.err : false,
-			},
-			content: {
-				...state.content,
-				[keyFor(action.repo, action.rev, action.path, action.query)]: action.json ? action.json : null,
-			}
-		};
-	default:
-		return state;
-	}
-}
-
 const annotations = function(state = {content: {}}, action) {
 	switch (action.type) {
 	case ActionTypes.FETCHED_ANNOTATIONS:
 		if (!action.json && !state.content[keyFor(action.repo, action.rev, action.path)]) return state; // no update needed; avoid re-rending components
-
+		
 		return {
 			...state,
 			content: {
@@ -118,4 +54,4 @@ const annotations = function(state = {content: {}}, action) {
 	}
 }
 
-export default combineReducers({authInfo, accessToken, resolvedRev, srclibDataVersion, def, defs, annotations});
+export default combineReducers({authInfo, accessToken, resolvedRev, annotations});
