@@ -823,7 +823,6 @@ export interface Repo {
 	HTTPCloneURL?: string;
 	SSHCloneURL?: string;
 	HomepageURL?: string;
-	HTMLURL?: string;
 	DefaultBranch?: string;
 	Language?: string;
 	Blocked?: boolean;
@@ -878,7 +877,6 @@ export interface RepoListOptions {
 	Type?: string;
 	Owner?: string;
 	RemoteOnly?: boolean;
-	LocalOnly?: boolean;
 }
 
 export interface RepoListTagsOptions {
@@ -1021,10 +1019,20 @@ export interface ReposResolveRevOp {
 
 export interface ReposUpdateOp {
 	Repo?: number;
+	URI?: string;
+	Owner?: string;
+	Name?: string;
 	Description?: string;
-	Language?: string;
+	HTTPCloneURL?: string;
+	SSHCloneURL?: string;
+	HomepageURL?: string;
 	DefaultBranch?: string;
+	Language?: string;
+	Origin?: Origin;
+	Blocked?: any;
+	Deprecated?: any;
 	Fork?: any;
+	Mirror?: any;
 	Private?: any;
 }
 

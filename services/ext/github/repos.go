@@ -12,6 +12,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
+	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
@@ -195,8 +196,9 @@ func toRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 	repo := sourcegraph.Repo{
 		URI: "github.com/" + *ghrepo.FullName,
 		Origin: &sourcegraph.Origin{
-			ID:      strconv.Itoa(*ghrepo.ID),
-			Service: sourcegraph.Origin_GitHub,
+			ID:         strconv.Itoa(*ghrepo.ID),
+			Service:    sourcegraph.Origin_GitHub,
+			APIBaseURL: "https://api.github.com",
 		},
 		Name:          *ghrepo.Name,
 		HTTPCloneURL:  strv(ghrepo.CloneURL),
@@ -280,4 +282,33 @@ func ReposFromContext(ctx context.Context) Repos {
 		return &repos{}
 	}
 	return s
+}
+
+// ListAllGitHubRepos lists all GitHub repositories that fit the
+// criteria that are accessible to the currently authenticated user.
+// It's a convenience wrapper around Repos.ListAccessible, since there
+// are a few places where we want a list of *all* repositories
+// accessible to a user.
+func ListAllGitHubRepos(ctx context.Context, op_ *gogithub.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
+	const perPage = 100
+	const maxPage = 1000
+	op := *op_
+	op.PerPage = perPage
+
+	if !HasAuthedUser(ctx) {
+		return nil, nil
+	}
+	var allRepos []*sourcegraph.Repo
+	for page := 1; page <= maxPage; page++ {
+		op.Page = page
+		repos, err := ReposFromContext(ctx).ListAccessible(ctx, &op)
+		if err != nil {
+			return nil, err
+		}
+		allRepos = append(allRepos, repos...)
+		if len(repos) < perPage {
+			break
+		}
+	}
+	return allRepos, nil
 }

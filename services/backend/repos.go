@@ -1,33 +1,28 @@
 package backend
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	pathpkg "path"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
-	"github.com/neelance/parallel"
 	gogithub "github.com/sourcegraph/go-github/github"
-
-	"strings"
-
-	"context"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
@@ -50,27 +45,8 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 		return nil, err
 	}
 
-	// HACK(beyang): this behavior should really be set by an options struct
-	// field and not depend on permissions grants. Callers of this method
-	// assume DefaultBranch will be set right now, but it is not always set.
-	// For now, always set remote fields if the repository is public. (It
-	// cannot be set for private repositories, because otherwise the import
-	// step of builds will break).
-	//
-	// If the actor doesn't have a special grant to access this repo,
-	// query the remote server for the remote repo, to ensure the
-	// actor can access this repo.
-	//
-	// Special grants are given to drone workers to fetch repo metadata
-	// when configuring a build.
-	hasGrant := accesscontrol.VerifyScopeHasAccess(ctx, authpkg.ActorFromContext(ctx).Scope, "Repos.Get", repo.ID)
-	if !hasGrant {
-		if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
-			return nil, err
-		}
-	} else {
-		// if the actor does have a special grant (e.g., a worker), still best-effort attempt to set fields from remote.
-		s.setRepoFieldsFromRemote(ctx, repo)
+	if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
+		return nil, err
 	}
 
 	if repo.Blocked {
@@ -81,50 +57,30 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 }
 
 func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
-	repos, err := store.ReposFromContext(ctx).List(ctx, opt)
+	if opt == nil {
+		opt = &sourcegraph.RepoListOptions{}
+	}
+
+	if opt.RemoteOnly {
+		repos, err := github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{Type: opt.Type})
+		if err != nil {
+			return nil, err
+		}
+		return &sourcegraph.RepoList{Repos: repos}, nil
+	}
+
+	repos, err := store.ReposFromContext(ctx).List(ctx, &store.RepoListOp{
+		Name:      opt.Name,
+		Query:     opt.Query,
+		URIs:      opt.URIs,
+		Sort:      opt.Sort,
+		Direction: opt.Direction,
+		NoFork:    opt.NoFork,
+		Type:      opt.Type,
+		Owner:     opt.Owner,
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	// deletedRepoURI is used to prune repos from list. Its value should be something an existing repo cannot have, like empty string.
-	const deletedRepoURI = ""
-
-	par := parallel.NewRun(30)
-	for _, repo_ := range repos {
-		repo := repo_
-		par.Acquire()
-		go func() {
-			defer par.Release()
-			// TODO(shurcooL): Now that the store is doing more of this, investigate if setRepoFieldsFromRemote
-			//                 is still necceessary to do here, or if it can be optimized away.
-			if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
-				if grpc.Code(err) == codes.NotFound {
-					// This can happen if a repo is disabled; it will be included by list operation,
-					// but getting it directly will result in 404. Treat it as a missing repository,
-					// mark it to be removed from the list afterwards.
-					log15.Debug("Repo from list not found on remote", "repo", repo.URI)
-					repo.URI = deletedRepoURI
-					return
-				}
-				par.Error(err)
-				return
-			}
-		}()
-	}
-	if err := par.Wait(); err != nil {
-		return nil, err
-	}
-
-	// Clear any missing repos with URI == deletedRepoURI after setRepoFieldsFromRemote step.
-	for i := 0; i < len(repos); {
-		if repos[i].URI == deletedRepoURI {
-			// Delete missing repo from list.
-			copy(repos[i:], repos[i+1:])
-			repos[len(repos)-1] = nil
-			repos = repos[:len(repos)-1]
-			continue
-		}
-		i++
 	}
 
 	return &sourcegraph.RepoList{Repos: repos}, nil
@@ -158,31 +114,30 @@ func (s *repos) ListDeps(ctx context.Context, repos *sourcegraph.URIList) (*sour
 	}, nil
 }
 
+// setRepoFieldsFromRemote sets the fields of the repository from the
+// remote (e.g., GitHub) and updates the repository in the store layer.
 func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
-	var updateWithDataFromRemote *store.RepoUpdate
-	repo.HTMLURL = conf.AppURL.ResolveReference(app_router.Rel.URLToRepo(repo.URI)).String()
-	// Fetch latest metadata from GitHub (we don't even try to keep
-	// our cache up to date).
 	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
+		// Fetch latest metadata from GitHub
 		ghrepo, err := github.ReposFromContext(ctx).Get(ctx, repo.URI)
 		if err != nil {
 			return err
 		}
-		updateWithDataFromRemote = repoSetFromRemote(repo, ghrepo)
-	}
-
-	if updateWithDataFromRemote != nil {
-		log15.Debug("Updating repo metadata from remote", "repo", repo.URI)
-		// setRepoFieldsFromRemote is used in read requests, including
-		// unauthed ones. However, this write isn't as the user, but
-		// rather an optimization for us to save the data from
-		// github. As such we use an elevated context to allow the
-		// write.
-		if err := store.ReposFromContext(ctx).Update(elevatedActor(ctx), *updateWithDataFromRemote); err != nil {
-			log15.Error("Failed updating repo metadata from remote", "repo", repo.URI, "error", err)
+		if update := repoSetFromRemote(repo, ghrepo); update != nil {
+			log15.Debug("Updating repo metadata from remote", "repo", repo.URI)
+			// setRepoFieldsFromRemote is used in read requests, including
+			// unauthed ones. However, this write isn't as the user, but
+			// rather an optimization for us to save the data from
+			// github. As such we use an elevated context to allow the
+			// write.
+			if err := store.ReposFromContext(ctx).Update(elevatedActor(ctx), *update); err != nil {
+				log15.Error("Failed updating repo metadata from remote", "repo", repo.URI, "error", err)
+			}
 		}
 	}
-
+	if !repo.Mirror && repo.HTTPCloneURL == "" { // artifact of self-hosted repositories
+		repo.HTTPCloneURL = conf.AppURL.ResolveReference(approuter.Rel.URLToRepo(repo.URI)).String()
+	}
 	return nil
 }
 
@@ -200,28 +155,77 @@ func timestampEqual(a, b *pbtypes.Timestamp) bool {
 // different. If any fields are changed a non-nil store.RepoUpdate is returned
 // representing the update.
 func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *store.RepoUpdate {
+	updated := false
 	updateOp := &store.RepoUpdate{
 		ReposUpdateOp: &sourcegraph.ReposUpdateOp{
 			Repo: repo.ID,
 		},
 	}
-	updated := false
-	if repo.Description != ghrepo.Description {
+
+	if ghrepo.URI != repo.URI {
+		repo.URI = ghrepo.URI
+		updateOp.URI = ghrepo.URI
+		updated = true
+	}
+	if ghrepo.Owner != repo.Owner {
+		repo.Owner = ghrepo.Owner
+		updateOp.Owner = ghrepo.Owner
+		updated = true
+	}
+	if ghrepo.Name != repo.Name {
+		repo.Name = ghrepo.Name
+		updateOp.Name = ghrepo.Name
+		updated = true
+	}
+	if ghrepo.Description != repo.Description {
 		repo.Description = ghrepo.Description
 		updateOp.Description = ghrepo.Description
 		updated = true
 	}
-	if repo.Language != ghrepo.Language {
-		repo.Language = ghrepo.Language
-		updateOp.Language = ghrepo.Language
+	if ghrepo.HTTPCloneURL != repo.HTTPCloneURL {
+		repo.HTTPCloneURL = ghrepo.HTTPCloneURL
+		updateOp.HTTPCloneURL = ghrepo.HTTPCloneURL
 		updated = true
 	}
-	if repo.DefaultBranch != ghrepo.DefaultBranch {
+	if ghrepo.SSHCloneURL != repo.SSHCloneURL {
+		repo.SSHCloneURL = ghrepo.SSHCloneURL
+		updateOp.SSHCloneURL = ghrepo.SSHCloneURL
+		updated = true
+	}
+	if ghrepo.HomepageURL != repo.HomepageURL {
+		repo.HomepageURL = ghrepo.HomepageURL
+		updateOp.HomepageURL = ghrepo.HomepageURL
+		updated = true
+	}
+	if ghrepo.DefaultBranch != repo.DefaultBranch {
 		repo.DefaultBranch = ghrepo.DefaultBranch
 		updateOp.DefaultBranch = ghrepo.DefaultBranch
 		updated = true
 	}
-	if repo.Fork != ghrepo.Fork {
+	if ghrepo.Language != repo.Language {
+		repo.Language = ghrepo.Language
+		updateOp.Language = ghrepo.Language
+		updated = true
+	}
+	if ghrepo.Blocked != repo.Blocked {
+		repo.Blocked = ghrepo.Blocked
+		if ghrepo.Blocked {
+			updateOp.Blocked = sourcegraph.ReposUpdateOp_TRUE
+		} else {
+			updateOp.Blocked = sourcegraph.ReposUpdateOp_FALSE
+		}
+		updated = true
+	}
+	if ghrepo.Deprecated != repo.Deprecated {
+		repo.Deprecated = ghrepo.Deprecated
+		if ghrepo.Deprecated {
+			updateOp.Deprecated = sourcegraph.ReposUpdateOp_TRUE
+		} else {
+			updateOp.Deprecated = sourcegraph.ReposUpdateOp_FALSE
+		}
+		updated = true
+	}
+	if ghrepo.Fork != repo.Fork {
 		repo.Fork = ghrepo.Fork
 		if ghrepo.Fork {
 			updateOp.Fork = sourcegraph.ReposUpdateOp_TRUE
@@ -230,7 +234,16 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *store.
 		}
 		updated = true
 	}
-	if repo.Private != ghrepo.Private {
+	if ghrepo.Mirror != repo.Mirror {
+		repo.Mirror = ghrepo.Mirror
+		if ghrepo.Mirror {
+			updateOp.Mirror = sourcegraph.ReposUpdateOp_TRUE
+		} else {
+			updateOp.Mirror = sourcegraph.ReposUpdateOp_FALSE
+		}
+		updated = true
+	}
+	if ghrepo.Private != repo.Private {
 		repo.Private = ghrepo.Private
 		if ghrepo.Private {
 			updateOp.Private = sourcegraph.ReposUpdateOp_TRUE
@@ -239,6 +252,7 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *store.
 		}
 		updated = true
 	}
+
 	if !timestampEqual(repo.UpdatedAt, ghrepo.UpdatedAt) {
 		repo.UpdatedAt = ghrepo.UpdatedAt
 		if ghrepo.UpdatedAt != nil {
@@ -254,6 +268,26 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *store.
 			updateOp.PushedAt = &t
 		}
 		updated = true
+	}
+
+	if ghrepo.Origin != nil {
+		if repo.Origin != nil {
+			if repo.Origin.ID != ghrepo.Origin.ID || repo.Origin.Service != ghrepo.Origin.Service || repo.Origin.APIBaseURL != ghrepo.Origin.APIBaseURL {
+				repo.Origin = ghrepo.Origin
+				updateOp.Origin = ghrepo.Origin
+				updated = true
+			}
+		} else {
+			repo.Origin = ghrepo.Origin
+			updateOp.Origin = ghrepo.Origin
+			updated = true
+		}
+	} else {
+		if repo.Origin != nil {
+			repo.Origin = nil
+			updateOp.Origin = &sourcegraph.Origin{}
+			updated = true
+		}
 	}
 
 	// The Permissions field should NOT be persisted, because it is

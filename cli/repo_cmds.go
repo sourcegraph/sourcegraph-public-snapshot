@@ -259,7 +259,7 @@ func (c *repoCreateCmd) Execute(args []string) error {
 		return err
 	}
 
-	fmt.Println(repo.HTMLURL)
+	fmt.Println(repo.URI)
 	return nil
 }
 

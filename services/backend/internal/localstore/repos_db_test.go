@@ -7,9 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -19,6 +16,10 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 )
 
+/*
+ * Helpers
+ */
+
 func sortedRepoURIs(repos []*sourcegraph.Repo) []string {
 	var uris []string
 	for _, repo := range repos {
@@ -27,6 +28,27 @@ func sortedRepoURIs(repos []*sourcegraph.Repo) []string {
 	sort.Strings(uris)
 	return uris
 }
+
+func (s *repos) mustCreate(ctx context.Context, t *testing.T, repos ...*sourcegraph.Repo) []*sourcegraph.Repo {
+	var createdRepos []*sourcegraph.Repo
+	for _, repo := range repos {
+		repo.DefaultBranch = "master"
+
+		if _, err := s.Create(ctx, repo); err != nil {
+			t.Fatal(err)
+		}
+		repo, err := s.GetByURI(ctx, repo.URI)
+		if err != nil {
+			t.Fatal(err)
+		}
+		createdRepos = append(createdRepos, repo)
+	}
+	return createdRepos
+}
+
+/*
+ * Tests
+ */
 
 func TestRepos_Get(t *testing.T) {
 	if testing.Short() {
@@ -78,38 +100,6 @@ func TestRepos_Get_origin(t *testing.T) {
 	}
 }
 
-// Test that GitHub repos that don't have the OriginRepoID, etc.,
-// fields set are auto-migrated by the Get method to have those fields
-// set.
-//
-// NOTE: We can remove this auto-migration when the database has
-// numeric repo IDs set for all GitHub repos.
-func TestRepos_Get_migration_setGitHubOriginRepoID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-
-	ctx, mock, done := testContext()
-	defer done()
-
-	s := repos{}
-
-	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{Origin: &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub}})
-
-	wantOrigin := &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub, APIBaseURL: "https://api.github.com"}
-	created := s.mustCreate(ctx, t, &sourcegraph.Repo{URI: "github.com/a/b", Mirror: true})
-
-	repo, err := s.Get(ctx, created[0].ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(repo.Origin, wantOrigin) {
-		t.Errorf("got origin %v, want %v", repo.Origin, wantOrigin)
-	}
-}
-
 func TestRepos_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -155,7 +145,7 @@ func TestRepos_List_type(t *testing.T) {
 	s.mustCreate(ctx, t, r1, r2)
 
 	getRepoURIsByType := func(typ string) []string {
-		repos, err := s.List(ctx, &sourcegraph.RepoListOptions{Type: typ})
+		repos, err := s.List(ctx, &store.RepoListOp{Type: typ})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -219,7 +209,7 @@ func TestRepos_List_query(t *testing.T) {
 		{"xyz", nil},
 	}
 	for _, test := range tests {
-		repos, err := s.List(ctx, &sourcegraph.RepoListOptions{Query: test.query})
+		repos, err := s.List(ctx, &store.RepoListOp{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -263,12 +253,48 @@ func TestRepos_List_URIs(t *testing.T) {
 		{[]string{"a/b", "x/y", "c/d"}, []string{"a/b", "c/d"}},
 	}
 	for _, test := range tests {
-		repos, err := s.List(ctx, &sourcegraph.RepoListOptions{URIs: test.uris})
+		repos, err := s.List(ctx, &store.RepoListOp{URIs: test.uris})
 		if err != nil {
 			t.Fatal(err)
 		}
 		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%v: got repos %q, want %q", test.uris, got, test.want)
+		}
+	}
+}
+
+func TestRepos_List_byOwner(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+
+	ctx, _, done := testContext()
+	defer done()
+
+	ctx = github.WithMockHasAuthedUser(ctx, false)
+	s := repos{}
+	testRepos := []*sourcegraph.Repo{{URI: "a/r", Owner: "alice"}, {URI: "b/r", Owner: "bob"}}
+	s.mustCreate(ctx, t, testRepos...)
+
+	{
+		repos, err := s.List(ctx, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if reflect.DeepEqual(repos, testRepos) {
+			t.Errorf("expected %+v, got %+v", testRepos, repos)
+		}
+	}
+
+	{
+		repos, err := s.List(ctx, &store.RepoListOp{Owner: "alice"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if reflect.DeepEqual(repos, testRepos[0:1]) {
+			t.Errorf("expected %+v, got %+v", testRepos[0:1], repos)
 		}
 	}
 }
@@ -283,11 +309,13 @@ func TestRepos_List_GitHub_Authenticated(t *testing.T) {
 	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 
 	calledListAccessible := mock.githubRepos.MockListAccessible(ctx, []*sourcegraph.Repo{
-		&sourcegraph.Repo{URI: "github.com/is/accessible", DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}},
+		&sourcegraph.Repo{URI: "github.com/is/privateButAccessible", Private: true, DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}},
 	})
 	mock.githubRepos.Get_ = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
-		if uri == "github.com/is/accessible" {
-			return &sourcegraph.Repo{URI: "github.com/is/accessible", DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}}, nil
+		if uri == "github.com/is/privateButAccessible" {
+			return &sourcegraph.Repo{URI: "github.com/is/privateButAccessible", Private: true, DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}}, nil
+		} else if uri == "github.com/is/public" {
+			return &sourcegraph.Repo{URI: "github.com/is/public", Private: false, DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}}, nil
 		}
 		return nil, fmt.Errorf("unauthorized")
 	}
@@ -296,9 +324,11 @@ func TestRepos_List_GitHub_Authenticated(t *testing.T) {
 	s := repos{}
 
 	createRepos := []*sourcegraph.Repo{
-		&sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"},
-		&sourcegraph.Repo{URI: "github.com/is/accessible", DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}},
-		&sourcegraph.Repo{URI: "github.com/not/accessible", DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "456"}},
+		&sourcegraph.Repo{URI: "a/local", Private: false, DefaultBranch: "master"},
+		&sourcegraph.Repo{URI: "a/localPrivate", DefaultBranch: "master", Private: true},
+		&sourcegraph.Repo{URI: "github.com/is/public", Private: false, DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}},
+		&sourcegraph.Repo{URI: "github.com/is/privateButAccessible", Private: true, DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}},
+		&sourcegraph.Repo{URI: "github.com/is/inaccessibleBecausePrivate", Private: true, DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "456"}},
 	}
 	for _, repo := range createRepos {
 		if _, err := s.Create(ctx, repo); err != nil {
@@ -306,12 +336,12 @@ func TestRepos_List_GitHub_Authenticated(t *testing.T) {
 		}
 	}
 
-	repoList, err := s.List(ctx, &sourcegraph.RepoListOptions{})
+	repoList, err := s.List(ctx, &store.RepoListOp{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	want := []string{"a/b", "github.com/is/accessible"}
+	want := []string{"a/local", "github.com/is/privateButAccessible", "github.com/is/public"}
 	if got := sortedRepoURIs(repoList); !reflect.DeepEqual(got, want) {
 		t.Fatalf("got repos %q, want %q", got, want)
 	}
@@ -347,7 +377,7 @@ func TestRepos_List_GitHub_Authenticated_NoReposAccessible(t *testing.T) {
 		}
 	}
 
-	repoList, err := s.List(ctx, &sourcegraph.RepoListOptions{})
+	repoList, err := s.List(ctx, &store.RepoListOp{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -377,11 +407,11 @@ func TestRepos_List_GitHub_Unauthenticated(t *testing.T) {
 
 	s := repos{}
 
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/private", DefaultBranch: "master", Mirror: true}); err != nil {
+	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/private", Private: true, DefaultBranch: "master", Mirror: true}); err != nil {
 		t.Fatal(err)
 	}
 
-	repoList, err := s.List(ctx, &sourcegraph.RepoListOptions{})
+	repoList, err := s.List(ctx, &store.RepoListOp{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -392,154 +422,6 @@ func TestRepos_List_GitHub_Unauthenticated(t *testing.T) {
 
 	if *calledListAccessible {
 		t.Error("calledListAccessible, but wanted not called since there is no authed user")
-	}
-}
-
-func TestRepos_List_remoteOnly(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx, mock, done := testContext()
-	defer done()
-
-	calledListAccessible := mock.githubRepos.MockListAccessible(ctx, []*sourcegraph.Repo{
-		&sourcegraph.Repo{URI: "github.com/is/accessible", DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}},
-	})
-	ctx = github.WithMockHasAuthedUser(ctx, true)
-
-	s := repos{}
-
-	createRepos := []*sourcegraph.Repo{
-		&sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"},
-		&sourcegraph.Repo{URI: "github.com/is/accessible", DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}},
-		&sourcegraph.Repo{URI: "github.com/not/accessible", DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "456"}},
-	}
-	for _, repo := range createRepos {
-		if _, err := s.Create(ctx, repo); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	repoList, err := s.List(ctx, &sourcegraph.RepoListOptions{RemoteOnly: true})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := []string{"github.com/is/accessible"}
-	if got := sortedRepoURIs(repoList); !reflect.DeepEqual(got, want) {
-		t.Fatalf("got repos %q, want %q", got, want)
-	}
-	if got, want := repoList[0].ID, int32(2); got != want {
-		t.Errorf("got repo ID (from Sourcegraph DB): %v, want %v", got, want)
-	}
-	if !*calledListAccessible {
-		t.Error("!calledListAccessible")
-	}
-}
-
-func TestRepos_Search(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx, mock, done := testContext()
-	defer done()
-
-	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
-
-	s := repos{}
-
-	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{})
-
-	testRepos := []*sourcegraph.Repo{
-		{URI: "github.com/sourcegraph/srclib", Owner: "sourcegraph", Name: "srclib", Mirror: true},
-		{URI: "github.com/sourcegraph/srclib-go", Owner: "sourcegraph", Name: "srclib-go", Mirror: true},
-		{URI: "github.com/someone/srclib", Owner: "someone", Name: "srclib", Fork: true, Mirror: true},
-	}
-
-	// Add some repos.
-	for _, r := range testRepos {
-		if _, err := s.Create(ctx, r); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	tests := []struct {
-		query string
-		want  []string
-	}{
-		{"srclib", []string{"github.com/sourcegraph/srclib"}},
-		{"srcli", []string{"github.com/sourcegraph/srclib", "github.com/sourcegraph/srclib-go"}},
-		{"source src", []string{"github.com/sourcegraph/srclib", "github.com/sourcegraph/srclib-go"}},
-		{"source/src", nil},
-		{"sourcegraph/srclib", []string{"github.com/sourcegraph/srclib"}},
-		{"sourcegraph/srcli", []string{"github.com/sourcegraph/srclib", "github.com/sourcegraph/srclib-go"}},
-		{"github.com/sourcegraph/srclib", []string{"github.com/sourcegraph/srclib", "github.com/sourcegraph/srclib-go"}},
-		{"github.com sourcegraph srclib", nil},
-	}
-	for _, test := range tests {
-		results, err := s.Search(ctx, test.query)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		repos := make([]*sourcegraph.Repo, 0, len(results))
-		for _, r := range results {
-			repos = append(repos, r.Repo)
-		}
-		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.want) {
-			t.Errorf("%q: got repos %q, want %q", test.query, got, test.want)
-		}
-	}
-}
-
-func TestRepos_Search_privateRepo(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx, mock, done := testContext()
-	defer done()
-
-	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
-
-	s := repos{}
-
-	var calledGetGitHubRepo bool
-	mock.githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
-		calledGetGitHubRepo = true
-		return nil, grpc.Errorf(codes.NotFound, "")
-	}
-
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/sourcegraph/private-test", Owner: "sourcegraph", Name: "private-test", Mirror: true}); err != nil {
-		t.Fatal(err)
-	}
-
-	tests := []struct {
-		query string
-		want  []string
-	}{
-		{"private-test", nil},
-		{"sourcegraph/private-test", nil},
-		{"github.com/sourcegraph/private-test", nil},
-	}
-	for _, test := range tests {
-		results, err := s.Search(ctx, test.query)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		repos := make([]*sourcegraph.Repo, 0, len(results))
-		for _, r := range results {
-			repos = append(repos, r.Repo)
-		}
-		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.want) {
-			t.Errorf("%q: got repos %q, want %q", test.query, got, test.want)
-		}
-	}
-	if !calledGetGitHubRepo {
-		t.Error("!calledGetGitHubRepo")
 	}
 }
 
@@ -638,6 +520,47 @@ func TestRepos_Update_Description(t *testing.T) {
 	}
 	if want := "d"; repo.Description != want {
 		t.Errorf("got description %q, want %q", repo.Description, want)
+	}
+}
+
+// TestRepos_Update_Origin tests the behavior of Repos.Update to
+// update a repo's origin.
+func TestRepos_Update_Origin(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+
+	ctx, _, done := testContext()
+	defer done()
+
+	s := repos{}
+
+	// Add a repo.
+	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err := s.GetByURI(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := ""; repo.Description != want {
+		t.Errorf("got description %q, want %q", repo.Description, want)
+	}
+
+	newOrigin := &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub, APIBaseURL: "https://api.github.com"}
+	if err := s.Update(ctx, store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo.ID, Origin: newOrigin}}); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err = s.GetByURI(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := newOrigin; !reflect.DeepEqual(newOrigin, repo.Origin) {
+		t.Errorf("got origin %+v, want %+v", repo.Origin, want)
 	}
 }
 

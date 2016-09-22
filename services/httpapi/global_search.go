@@ -105,6 +105,7 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
+// DEPRECATED
 func serveSearchRepos(w http.ResponseWriter, r *http.Request) error {
 	cl := handlerutil.Client(r)
 

@@ -198,9 +198,6 @@ func TestRepo_caching_modifiedSince(t *testing.T) {
 }
 
 func TestRepos(t *testing.T) {
-	// HOTFIX: Temporarily stop repos requests to GitHub API until it's unblocked.
-	t.Skip()
-
 	c, mock := newTest()
 
 	wantRepos := &sourcegraph.RepoList{

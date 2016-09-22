@@ -9,8 +9,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
 )
 
-// TestRepos_CreateDeleteWorks_lg tests that creating and deleting a mirrored
-// repository does remove the filesystem-stored git repository (which acts as
+// TestRepos_CreateDeleteWorks_lg tests that creating and deleting a
+// mirrored
+// repository does remove the filesystem-stored git repository (which
+// acts as
 // a working directory for git ops).
 func TestRepos_CreateDeleteWorks_lg(t *testing.T) {
 	if testing.Short() {
