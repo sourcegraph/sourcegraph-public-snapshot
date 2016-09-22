@@ -1,3 +1,4 @@
+import * as throttle from "lodash/throttle";
 import * as React from "react";
 import {InjectedRouter} from "react-router";
 
@@ -7,15 +8,13 @@ import {Search as SearchIcon} from "sourcegraph/components/symbols";
 import {colors} from "sourcegraph/components/utils/index";
 
 import {urlToBlob, urlToBlobLine} from "sourcegraph/blob/routes";
-import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {RepoStore} from "sourcegraph/repo/RepoStore";
-import {Store} from "sourcegraph/Store";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {TreeStore} from "sourcegraph/tree/TreeStore";
+import "string_score";
 
-import {fuzzyRankResults} from "sourcegraph/search/modal/FuzzyMatch";
 import {Hint, ResultCategories} from "sourcegraph/search/modal/SearchComponent";
 import {RepoSpec} from "sourcegraph/search/modal/SearchModal";
 
@@ -85,7 +84,7 @@ export interface SearchDelegate {
 
 // SearchContainer contains the logic that deals with navigation and data
 // fetching.
-export class SearchContainer extends Container<Props & RepoSpec, State> {
+export class SearchContainer extends React.Component<Props & RepoSpec, State> {
 
 	static contextTypes: any = {
 		router: React.PropTypes.object.isRequired,
@@ -94,12 +93,15 @@ export class SearchContainer extends Container<Props & RepoSpec, State> {
 	context: { router: InjectedRouter };
 	searchInput: HTMLElement;
 	delegate: SearchDelegate;
+	listeners: {remove: () => void}[];
 
 	constructor(props: Props & RepoSpec) {
 		super(props);
 		this.keyListener = this.keyListener.bind(this);
 		this.bindSearchInput = this.bindSearchInput.bind(this);
 		this.updateInput = this.updateInput.bind(this);
+		this.updateResults = throttle(this.updateResults.bind(this), 150, {leading: true, trailing: true});
+		this.fetchResults = throttle(this.fetchResults, 150, {leading: true, trailing: true});
 		this.state = {
 			input: "",
 			selected: {category: 0, row: 0},
@@ -114,12 +116,17 @@ export class SearchContainer extends Container<Props & RepoSpec, State> {
 		};
 	}
 
-	stores(): Store<any>[] {
-		return [RepoStore, TreeStore];
+	componentDidMount(): void {
+		this.listeners = [
+			TreeStore.addListener(this.updateResults),
+			RepoStore.addListener(this.updateResults),
+		];
+		this.fetchResults();
+		this.updateResults();
 	}
 
-	reconcileState(state: State, props: Props): void {
-		state.results = this.results();
+	componentWillUnmount(): void {
+		this.listeners.forEach(s => { s.remove(); });
 	}
 
 	componentWillUpdate(_: Props, nextState: State): void {
@@ -129,17 +136,15 @@ export class SearchContainer extends Container<Props & RepoSpec, State> {
 		}
 	}
 
-	componentDidMount(): void {
-		super.componentDidMount();
-		this.fetchResults("");
-	}
-
-	query(): string {
-		return this.state.input.toLowerCase();
+	componentDidUpdate(_: Props, prevState: State): void {
+		if (this.state.input !== prevState.input) {
+			this.fetchResults();
+			this.updateResults();
+		}
 	}
 
 	keyListener(event: KeyboardEvent): void {
-		const results = this.results();
+		const results = this.state.results;
 		const visibleRowsInCategory = results.map((r, i) => r.Results ? Math.min(r.Results.length, this.state.limitForCategory[i]) : 0);
 		let category = this.state.selected.category;
 		let row = this.state.selected.row;
@@ -184,7 +189,8 @@ export class SearchContainer extends Container<Props & RepoSpec, State> {
 		event.preventDefault();
 	}
 
-	fetchResults(query: string): void {
+	fetchResults(): void {
+		const query = this.state.input;
 		const c = this.props.commitID ? this.props.commitID : "";
 		Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.repo, c, query));
 		Dispatcher.Backends.dispatch(new RepoActions.WantRepos(this.repoListQueryString(query)));
@@ -201,14 +207,12 @@ export class SearchContainer extends Container<Props & RepoSpec, State> {
 			input: input,
 		});
 		this.setState(state);
-		this.fetchResults(input.toLowerCase());
 	}
 
 	select(c: number, r: number): void {
-		const categories = this.results();
-		const results = categories[c].Results;
-		if (results) {
-			const result = results[r];
+		const results = this.state.results[c];
+		if (results && results.Results) {
+			const result = results.Results[r];
 			const resultInfo = {
 				result: result,
 				category: c,
@@ -224,8 +228,8 @@ export class SearchContainer extends Container<Props & RepoSpec, State> {
 
 	bindSearchInput(node: HTMLElement): void { this.searchInput = node; }
 
-	results(): Category[] {
-		const query = this.query();
+	updateResults(): void {
+		const query = this.state.input.toLowerCase();
 		const results: Category[] = [];
 
 		const symbols = RepoStore.symbols.list(this.props.repo, this.props.commitID, query);
@@ -266,19 +270,32 @@ export class SearchContainer extends Container<Props & RepoSpec, State> {
 
 		const files = TreeStore.fileLists.get(this.props.repo, this.props.commitID);
 		if (files) {
-			let fileResults: Result[] = [];
+			interface Scorable {
+				score: number;
+			}
+			let fileResults: (Result & Scorable)[] = [];
 			files.Files.forEach((file, i) => {
+				if (file.length < query.length) {
+					// Return early to avoid an expensive query.
+					return;
+				}
+				const fuzziness = .8;
+				const minimumSimilarity = .55;
+				const score = file.score(query, fuzziness);
+				if (query !== "" && score < minimumSimilarity) {
+					return;
+				}
 				const index = file.toLowerCase().indexOf(query);
 				const l = index >= 0 ? query.length : undefined;
-				fileResults.push({ title: file, description: "", index: index, length: l, URLPath: urlToBlob(this.props.repo, this.props.rev, file) });
+				fileResults.push({ title: file, description: "", index: index, length: l, URLPath: urlToBlob(this.props.repo, this.props.rev, file), score: score});
 			});
-			fileResults = fuzzyRankResults(this.query(), fileResults);
+			fileResults = fileResults.sort((a, b) => b.score - a.score);
 			results.push({ Title: "Files", IsLoading: false, Results: fileResults });
 		} else {
 			results.push({ Title: "Files", IsLoading: true });
 		}
 
-		return results;
+		this.setState(Object.assign({}, this.state, {results: results}));
 	}
 
 	expand(category: number): () => void {
@@ -294,7 +311,6 @@ export class SearchContainer extends Container<Props & RepoSpec, State> {
 	}
 
 	render(): JSX.Element {
-		let categories = this.results();
 		return (
 			<div style={modalStyle}>
 				<EventListener target={document.body} event={"keydown"} callback={this.keyListener} />
@@ -320,7 +336,7 @@ export class SearchContainer extends Container<Props & RepoSpec, State> {
 						onChange={this.updateInput} />
 				</div>
 				<Hint />
-				<ResultCategories categories={categories}
+				<ResultCategories categories={this.state.results}
 					selection={this.state.selected}
 					delegate={this.delegate}
 					scrollIntoView={this.state.allowScroll}
