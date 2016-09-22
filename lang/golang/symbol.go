@@ -144,6 +144,8 @@ func (h *Handler) externalRefs(buildCtx build.Context, repo, pkgPath string, inc
 
 	stdlib := listGoStdlibPackages(context.TODO())
 
+	resolveImportCache := make(map[string]string, 1000)
+
 	// TODO: gracefully returns results and an error (instead of failing on
 	// first encountered error).
 	fset := token.NewFileSet()
@@ -217,13 +219,18 @@ func (h *Handler) externalRefs(buildCtx build.Context, repo, pkgPath string, inc
 				// importPath could be a subpackage inside the repo).
 
 				// First, find out if the importPath is vendored or not.
-				impPkg, err := buildCtx.Import(importPath, filepath.Join(bpkg.SrcRoot, pkgPath), build.FindOnly)
-				if err != nil {
-					log.Println(err)
-					return true
+				resolvedImportPath, ok := resolveImportCache[importPath]
+				if !ok {
+					impPkg, err := buildCtx.Import(importPath, filepath.Join(bpkg.SrcRoot, pkgPath), build.FindOnly)
+					if err != nil {
+						log.Println(err)
+						return true
+					}
+					resolvedImportPath = impPkg.ImportPath
+					resolveImportCache[importPath] = resolvedImportPath
 				}
 
-				repoRoot, _, err := gitRevParse(context.TODO(), filepath.Join(h.filePath("gopath/src"), impPkg.ImportPath))
+				repoRoot, _, err := gitRevParse(context.TODO(), filepath.Join(h.filePath("gopath/src"), resolvedImportPath))
 				if err != nil {
 					log.Println(err)
 					return true
