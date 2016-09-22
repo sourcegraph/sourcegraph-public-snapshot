@@ -5,6 +5,7 @@ import {Provider} from "react-redux";
 import EventLogger from "../../app/analytics/EventLogger";
 import * as Actions from "../../app/actions";
 
+import Background from "../../app/components/Background";
 import {SearchIcon} from "../../app/components/Icons";
 import BlobAnnotator from "../../app/components/BlobAnnotator";
 import createStore from "../../app/store/configureStore";
@@ -26,6 +27,16 @@ function getFileName(info, {isDelta, path}) {
 		}
 	} else {
 		return path;
+	}
+}
+
+function injectBackgroundApp() {
+	if (!document.getElementById("sourcegraph-app-background")) {
+		let backgroundContainer = document.createElement("div");
+		backgroundContainer.id = "sourcegraph-app-background";
+		backgroundContainer.style.display = "none";
+		document.body.appendChild(backgroundContainer);
+		injectComponent(<Background />, backgroundContainer);
 	}
 }
 
@@ -57,6 +68,7 @@ function injectComponent(component, mountElement) {
 }
 
 function injectModules() {
+	injectBackgroundApp();
 	injectBlobAnnotator();
 
 	// Add invisible div to the page to indicate injection has completed.
