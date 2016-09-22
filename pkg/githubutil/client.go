@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"sync"
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
@@ -17,29 +18,55 @@ import (
 
 	"context"
 
+	"github.com/golang/groupcache/lru"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
 	"github.com/sourcegraph/httpcache"
 	"golang.org/x/oauth2"
 )
 
+func init() {
+	prometheus.MustRegister(githubUnauthedConcurrent)
+}
+
 // Config specifies configuration options for a GitHub API client used
 // by Sourcegraph code.
 type Config struct {
-	BaseURL      *url.URL          // base URL of GitHub API; e.g., https://api.github.com (or ghcompat URL)
-	OAuth        oauth2.Config     // OAuth config
-	Context      context.Context   // the context for requests to GitHub
-	Cache        httpcache.Cache   // if set, caches HTTP responses (namespaced per-token for authed client)
-	CacheControl string            // cache-control header to set on all client requests, if non-empty
-	Transport    http.RoundTripper // base HTTP transport (if nil, uses http.DefaultTransport)
+	BaseURL          *url.URL          // base URL of GitHub API; e.g., https://api.github.com (or ghcompat URL)
+	OAuth            oauth2.Config     // OAuth config
+	Context          context.Context   // the context for requests to GitHub
+	Cache            httpcache.Cache   // if set, caches HTTP responses (namespaced per-token for authed client)
+	CacheControl     string            // cache-control header to set on all client requests, if non-empty
+	Transport        http.RoundTripper // base HTTP transport (if nil, uses http.DefaultTransport)
+	UnauthedThrottle sync.Locker       // limits number of concurrent requests to GitHub for all unauthenticated clients
+	UserThrottles    *ThrottleCache    // limits number of concurrent requests to GitHub per user token
 }
+
+// ThrottleCache stores throttles for a given user so they can be reused across
+// different requests.
+type ThrottleCache struct {
+	sync.Mutex
+	Throttles *lru.Cache // GitHub access token -> *sync.Mutex
+}
+
+var githubUnauthedConcurrent = prometheus.NewGauge(prometheus.GaugeOpts{
+	Namespace: "src",
+	Subsystem: "github",
+	Name:      "unauthed_concurrent",
+	Help:      "Number of unauthed concurrent calls to GitHub's Repo API.",
+})
 
 // UnauthedClient is a GitHub API client using the config's OAuth2
 // client ID and secret, but not using any specific user's access
 // token. It enables a higher rate limit (5000 per hour instead of 60
 // per hour, as of Nov 2014).
 func (c *Config) UnauthedClient() *github.Client {
-	var t http.RoundTripper = c.baseTransport()
+	var t http.RoundTripper = baseTransport(c.Transport)
+	t = &throttledTransport{
+		Transport: t,
+		Throttle:  c.UnauthedThrottle,
+	}
 	if c.Cache != nil {
 		t = &httpcache.Transport{
 			Cache:               c.Cache,
@@ -47,7 +74,6 @@ func (c *Config) UnauthedClient() *github.Client {
 			MarkCachedResponses: true,
 		}
 	}
-	t = NewGitHubCacheControlTransport(c.CacheControl, t)
 	if c.OAuth.ClientID != "" {
 		t = &github.UnauthenticatedRateLimitedTransport{
 			ClientID:     c.OAuth.ClientID,
@@ -66,7 +92,13 @@ func (c *Config) UnauthedClient() *github.Client {
 // namespaced by token so that private information does not leak
 // across users.
 func (c *Config) AuthedClient(token string) *github.Client {
-	var t http.RoundTripper = c.baseTransport()
+	var t http.RoundTripper = baseTransport(c.Transport)
+	if c.UserThrottles != nil {
+		t = &throttledTransport{
+			Transport: t,
+			Throttle:  c.UserThrottles.Get(token),
+		}
+	}
 
 	tokHash := sha256.Sum256([]byte(token))
 	if c.Cache != nil {
@@ -80,9 +112,20 @@ func (c *Config) AuthedClient(token string) *github.Client {
 		}
 	}
 
-	t = NewGitHubCacheControlTransport(c.CacheControl, t)
 	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{Transport: t})
 	return c.client(c.OAuth.Client(ctx, &oauth2.Token{AccessToken: token}))
+}
+
+func (t *ThrottleCache) Get(token string) *sync.Mutex {
+	t.Lock()
+	defer t.Unlock()
+	v, ok := t.Throttles.Get(token)
+	if ok {
+		return v.(*sync.Mutex)
+	}
+	m := &sync.Mutex{}
+	t.Throttles.Add(token, m)
+	return m
 }
 
 // ApplicationAuthedClient returns a GitHub API client that sends the
@@ -97,7 +140,10 @@ func (c *Config) ApplicationAuthedClient() *github.Client {
 	// No need for caching; this is a rarely used client and is only
 	// used uncached for POST/DELETE operations anyway.
 
-	var t http.RoundTripper = c.baseTransport()
+	var t http.RoundTripper = &throttledTransport{
+		Transport: baseTransport(c.Transport),
+		Throttle:  c.UnauthedThrottle,
+	}
 
 	t = &github.BasicAuthTransport{
 		Username:  c.OAuth.ClientID,
@@ -127,8 +173,7 @@ func (c *Config) client(httpClient *http.Client) *github.Client {
 	return g
 }
 
-func (c *Config) baseTransport() http.RoundTripper {
-	transport := c.Transport
+func baseTransport(transport http.RoundTripper) http.RoundTripper {
 	if transport == nil {
 		transport = http.DefaultTransport
 	}
@@ -182,7 +227,11 @@ var Default = &Config{
 			// RedirectURL is not known at init time, so it's not set here.
 		},
 	},
-	Cache: httputil.Cache,
+	Cache:            httputil.Cache,
+	UnauthedThrottle: newGaugedMutex(githubUnauthedConcurrent),
+	UserThrottles: &ThrottleCache{
+		Throttles: lru.New(1000),
+	},
 }
 
 func NewTestClientServer() (client *github.Client, config *Config, mux *http.ServeMux) {

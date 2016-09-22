@@ -28,12 +28,6 @@ var (
 		Name:      "github_cache_hit",
 		Help:      "Counts cache hits and misses for public github repo metadata.",
 	}, []string{"type"})
-	reposGithubConcurrent = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "github",
-		Name:      "repo_concurrent",
-		Help:      "Number of concurrent calls to GitHub's Repo API.",
-	})
 	reposGitHubRequestsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repos",
@@ -44,7 +38,6 @@ var (
 
 func init() {
 	prometheus.MustRegister(reposGithubPublicCacheCounter)
-	prometheus.MustRegister(reposGithubConcurrent)
 	prometheus.MustRegister(reposGitHubRequestsCounter)
 }
 
@@ -63,20 +56,6 @@ type cachedRepo struct {
 	// NotFound indicates that the GitHub API returned a 404 when
 	// using an Unauthed or Authed request (repo may be exist privately for another authed user).
 	NotFound bool
-}
-
-// Bound the number of parallel requests to github. This is a hotfix to avoid
-// triggering github abuse. Default is really low to try to recover from abuse detection.
-var sem = make(chan bool, conf.GetenvIntOrDefault("SG_GITHUB_CONCURRENT", 1))
-
-func lock() {
-	reposGithubConcurrent.Inc()
-	sem <- true
-}
-
-func unlock() {
-	<-sem
-	reposGithubConcurrent.Dec()
 }
 
 var _ Repos = (*repos)(nil)
@@ -103,8 +82,6 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 			// request the repo from the GitHub API (but do not add it to the cache).
 			if client(ctx).isAuthedUser {
 				reposGithubPublicCacheCounter.WithLabelValues("authed").Inc()
-				lock()
-				defer unlock()
 				return getFromAPI(ctx, owner, repoName)
 			}
 			return nil, grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
@@ -112,8 +89,6 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 		return &cached.Repo, nil
 	}
 
-	lock()
-	defer unlock()
 	remoteRepo, err := getFromAPI(ctx, owner, repoName)
 	if grpc.Code(err) == codes.NotFound {
 		// Before we do anything, ensure we cache NotFound responses.
@@ -143,8 +118,6 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 }
 
 func (s *repos) GetByID(ctx context.Context, id int) (*sourcegraph.Repo, error) {
-	lock()
-	defer unlock()
 	ghrepo, resp, err := client(ctx).repos.GetByID(id)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.GetByID #%d", id))
@@ -254,8 +227,6 @@ func toRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 // See https://developer.github.com/v3/repos/#list-your-repositories
 // for more information.
 func (s *repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
-	lock()
-	defer unlock()
 	ghRepos, resp, err := client(ctx).repos.List("", opt)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, "github.Repos.ListAccessible")
@@ -273,8 +244,6 @@ func (s *repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOp
 // See http://developer.github.com/v3/repos/hooks/#create-a-hook
 // for more information.
 func (s *repos) CreateHook(ctx context.Context, repo string, hook *github.Hook) error {
-	lock()
-	defer unlock()
 	owner, repoName, err := githubutil.SplitRepoURI(repo)
 	if err != nil {
 		return grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
