@@ -378,7 +378,7 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 						jumptarget = jumptarget.substring(1);
 					}
 
-					const part = jumptarget.split("/-/blob/");
+					const part = jumptarget.split("/-/");
 					if (part.length < 2) return null;
 					const rprv = part[0].split("@");
 					const repo = rprv[0];
@@ -388,9 +388,8 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 						rev = rprv[1];
 					}
 
-					// TODO: Fix /blob/ to /tree/ on back-end; Github returns 301 moved permanently
 					const def = part.slice(1).join("");
-					const jmp = `https://${repo}/tree/${rev}/${def}`;
+					const jmp = `https://${repo}/${rev}/${def}`;
 
 					jumptodefcache[url] = {defUrl: jmp, defCurPage : repo === arg.repoURI && jmp.indexOf(path) >= 0};
 					cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
