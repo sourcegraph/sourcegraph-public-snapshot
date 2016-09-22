@@ -169,7 +169,7 @@ func (h *Handler) externalRefs(buildCtx build.Context, repo, pkgPath string, inc
 				// TODO: We could cache based on import path here, if it is
 				// slow since this runs for N files with probably similar
 				// imports.
-				impPkg, err := buildCtx.Import(impPath, "", 0)
+				impPkg, err := buildCtx.Import(impPath, filepath.Join(bpkg.SrcRoot, pkgPath), 0)
 				if err != nil {
 					return err
 				}
@@ -215,7 +215,15 @@ func (h *Handler) externalRefs(buildCtx build.Context, repo, pkgPath string, inc
 				// This could be a dependency that we have cloned via 'go get', so
 				// consult git in order to find the repository root (because e.g.
 				// importPath could be a subpackage inside the repo).
-				repoRoot, _, err := gitRevParse(context.TODO(), filepath.Join(h.filePath("gopath/src"), importPath))
+
+				// First, find out if the importPath is vendored or not.
+				impPkg, err := buildCtx.Import(importPath, filepath.Join(bpkg.SrcRoot, pkgPath), build.FindOnly)
+				if err != nil {
+					log.Println(err)
+					return true
+				}
+
+				repoRoot, _, err := gitRevParse(context.TODO(), filepath.Join(h.filePath("gopath/src"), impPkg.ImportPath))
 				if err != nil {
 					log.Println(err)
 					return true
