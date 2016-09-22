@@ -50,7 +50,7 @@ export interface Result {
 };
 
 interface Props {
-	dismissModal: () => void;
+	dismissModal: (resultSubmitted?: boolean) => void;
 };
 
 interface State {
@@ -217,11 +217,16 @@ export class SearchContainer extends React.Component<Props & RepoSpec, State> {
 				result: result,
 				category: c,
 				rankInCategory: r,
+			};
+			const eventProps = {
+				repo: this.props.repo,
+				rev: this.props.rev,
+				result: resultInfo,
 				query: this.state.input,
 			};
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_JUMP_TO, AnalyticsConstants.ACTION_CLICK, "JumpToItemSelected", resultInfo);
+			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_JUMP_TO, AnalyticsConstants.ACTION_CLICK, "JumpToItemSelected", eventProps);
 			const url = result.URLPath;
-			this.props.dismissModal();
+			this.props.dismissModal(true);
 			this.context.router.push(url);
 		}
 	}

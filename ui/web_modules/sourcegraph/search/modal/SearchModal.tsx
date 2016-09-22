@@ -2,6 +2,8 @@ import * as React from "react";
 
 import {ModalComp} from "sourcegraph/components/Modal";
 import {SearchContainer} from "sourcegraph/search/modal/SearchContainer";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface State {
 	showModal: boolean;
@@ -38,20 +40,32 @@ export class SearchModal extends React.Component<RepoSpec, State> {
 		document.body.removeEventListener("keydown", this.searchModalShortcuts);
 	}
 
+	_getEventProps(): any {
+		return {
+				repo: this.props.repo,
+				rev: this.props.rev,
+				query: (this.refs as {searchContainer: SearchContainer}).searchContainer.state.input,
+			};
+	}
+
 	searchModalShortcuts(event: KeyboardEvent & Node): void {
 		if (event.key === "Escape") {
-			this.setState({showModal: false});
+			this.dismissModal();
 		}
 		if (event.target.nodeName === "INPUT" || event.metaKey || event.ctrlKey) {
 			return;
 		}
 		if (event.key === "/") {
 			this.setState({showModal: !this.state.showModal});
+			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_JUMP_TO, AnalyticsConstants.ACTION_TOGGLE, "JumpToInitiated", this._getEventProps());
 		}
 		event.preventDefault();
 	}
 
-	dismissModal(): void {
+	dismissModal(resultSelected: boolean = false): void {
+		if (!resultSelected) {
+			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_JUMP_TO, AnalyticsConstants.ACTION_TOGGLE, "JumpToDismissed", this._getEventProps());
+		}
 		const state = Object.assign(this.state, {showModal: false});
 		this.setState(state);
 	}
@@ -62,6 +76,7 @@ export class SearchModal extends React.Component<RepoSpec, State> {
 		}
 		return <ModalComp onDismiss={this.dismissModal}>
 			<SearchContainer
+				ref="searchContainer"
 				{...this.props}
 				dismissModal={this.dismissModal} />
 		</ModalComp>;
