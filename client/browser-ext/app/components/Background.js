@@ -13,7 +13,6 @@ let createdReposCache = {};
 
 @connect(
 	(state) => ({
-		def: state.def,
 	}),
 	(dispatch) => ({
 		actions: bindActionCreators(Actions, dispatch)
@@ -74,11 +73,6 @@ export default class Background extends React.Component {
 
 	_popstateUpdate() {
 		this.removePopovers();
-		// If the user navigates "back" in the browser, there will not necessarily
-		// be a pjax:success event; it may be that the user is jumping back to
-		// a previous definition (even in the same file) in which case re-rendering
-		// the def info link is necessary.
-		this._renderDefInfo(this.props, utils.parseURLWithSourcegraphDef());
 	}
 
 	_refresh(props) {
