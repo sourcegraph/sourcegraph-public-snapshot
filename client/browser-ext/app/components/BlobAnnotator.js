@@ -138,13 +138,14 @@ export default class BlobAnnotator extends Component {
 
 	_isSplitDiff() {
 		if (this.state.isPullRequest) {
-			const diffTypeDropdown = document.getElementsByClassName("diffbar-item dropdown js-menu-container");
-			if (!diffTypeDropdown || diffTypeDropdown.length !== 1) return false;
+			const headerBar = document.getElementsByClassName("float-right pr-review-tools");
+			if (!headerBar || headerBar.length !== 1) return false;
 
-			const diffSelection = diffTypeDropdown[0].getElementsByClassName("dropdown-item selected");
-			if (!diffSelection || diffSelection.length !== 1) return false;
+			const diffToggles = headerBar[0].getElementsByClassName("BtnGroup");
+			if (!diffToggles || diffToggles.length !== 1) return false;
 
-			return diffSelection[0].href.includes("diff=split");
+			const disabledToggle = diffToggles[0].getElementsByTagName("A")[0];
+			return disabledToggle && !disabledToggle.href.includes("diff=split");
 		} else {
 			const headerBar = document.getElementsByClassName("details-collapse table-of-contents js-details-container");
 			if (!headerBar || headerBar.length !== 1) return false;
