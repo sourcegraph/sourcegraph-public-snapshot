@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"path"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
@@ -39,6 +40,11 @@ func serveGDDORefs(w http.ResponseWriter, r *http.Request) error {
 	repo := q.Get("repo")
 	pkg := q.Get("pkg")
 	def := q.Get("def")
+
+	if path.IsAbs(repo) {
+		// Prevent open redirect.
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("repo path should not be absolute")}
+	}
 
 	if repo == "" && isGoRepoPath(pkg) {
 		repo = "github.com/golang/go"
