@@ -378,7 +378,7 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 						jumptarget = jumptarget.substring(1);
 					}
 
-					const part = jumptarget.split("/-/");
+					const part = jumptarget.split("/-/blob/");
 					if (part.length < 2) return null;
 					const rprv = part[0].split("@");
 					const repo = rprv[0];
@@ -389,7 +389,7 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 					}
 
 					const def = part.slice(1).join("");
-					const jmp = `https://${repo}/${rev}/${def}`;
+					const jmp = `https://${repo}/blob/${rev}/${def}`;
 
 					jumptodefcache[url] = {defUrl: jmp, defCurPage : repo === arg.repoURI && jmp.indexOf(path) >= 0};
 					cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
