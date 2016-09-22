@@ -254,8 +254,8 @@ export function convertElementNode(node, annsByStartByte, offset, lineStart, rep
 	return {result: utf8.decode(innerHTML.join("")), bytesConsumed};
 }
 
-// isStringNode is a predicate function to identify string identifier DOM elements,
-// and annotates them accordingly using Github's code styling classes.
+// isStringNode and isCommentNode are predicate functions to
+// identify string identifier DOM elements, as per Github's code styling classes.
 export function isCommentNode(node) {
 	return node.classList.contains("pl-c");
 }
@@ -302,10 +302,10 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 		let col = t.dataset.byteoffset;
 		let url = `https://sourcegraph.com/.api/repos/${arg.repoURI}@${repoRevSpec.rev}/-/jump-def?file=${path}&line=${line - 1}&character=${col}`;
 
-		fetchJumpURL(url, function(defUrl, defCurPage) {
+		fetchJumpURL(url, function(defUrl, isCurrentPage) {
 			if (!defUrl) return;
 			// If target is within the same repo/file, open in current frame otherwise new tab
-			if (defCurPage) {
+			if (isCurrentPage) {
 				location.hash = defUrl.slice(defUrl.indexOf('#'));
 			} else {
 				window.open(defUrl);
@@ -365,7 +365,7 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 	}
 
 	function fetchJumpURL(url, cb) {
-		if(typeof jumptodefcache[url] !== 'undefined') return cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
+		if (typeof jumptodefcache[url] !== 'undefined') return cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
 
 		fetch(url)
 			.then((json) => {
@@ -375,7 +375,7 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 					let rev, jumptarget = json.Path;
 
 					if (jumptarget.startsWith("/")) {
-						jumptarget = jumptarget.substring(1); // remove leading slash
+						jumptarget = jumptarget.substring(1);
 					}
 
 					const part = jumptarget.split("/-/blob/");
@@ -400,12 +400,12 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 	}
 
 	function fetchPopoverData(url, cb) {
-		if(typeof popoverCache[url] !== 'undefined') return cb(popoverCache[url]);
+		if (typeof popoverCache[url] !== 'undefined') return cb(popoverCache[url]);
 
 		fetch(url)
 			.then((json) => {
 				if (json.Title === "" && json.def == null) {
-					popoverCache[url] = ``;
+					popoverCache[url] = "";
 				} else {
 					popoverCache[url] = `<div><div class=${styles.popoverTitle}>${json.Title || ""}</div><div>${json.def ? json.def.DocHTML.__html || "" : ""}</div><div class=${styles.popoverRepo}>${json.def ? json.def.Repo || "" : ""}</div></div>`;
 				}
