@@ -301,18 +301,15 @@ func exportedSymbol(r *langp.RepoRev, f *langp.File, s *lsp.SymbolInformation) *
 	}
 }
 
-func parseContainerName(containerName string) (pkg string, typ string) {
-	for i := len(containerName) - 1; i >= 0; i-- {
-		switch containerName[i] {
-		case '/':
-			// We are no longer looking at the last part of the
-			// container name
-			return containerName, ""
-		case '.':
-			return containerName[:i], containerName[i+1:]
-		}
+func parseContainerName(containerName string) (pkg, typ string) {
+	if containerName == "" {
+		return containerName, ""
 	}
-	return containerName, ""
+	split := strings.Fields(containerName)
+	if len(split) == 2 {
+		return split[0], split[1]
+	}
+	return split[0], ""
 }
 
 func lspKindToSymbol(kind lsp.SymbolKind) string {

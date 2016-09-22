@@ -121,7 +121,7 @@ func symbolDo(buildCtx build.Context, pkgPath string, includeTests bool, emit em
 			emit(v.Name, pkg.build.ImportPath, lsp.SKFunction, pkg.fs, v.Decl.Name.NamePos)
 		}
 		for _, v := range t.Methods {
-			emit(v.Name, pkg.build.ImportPath+"."+t.Name, lsp.SKMethod, pkg.fs, v.Decl.Name.NamePos)
+			emit(v.Name, pkg.build.ImportPath+" "+t.Name, lsp.SKMethod, pkg.fs, v.Decl.Name.NamePos)
 		}
 		for _, v := range t.Consts {
 			for _, name := range v.Names {
@@ -214,16 +214,9 @@ func isExported(name, containerName string) bool {
 		return false
 	}
 	// Ensure if we are part of a type, that the type is also exported
-	for i := len(containerName) - 1; i >= 0; i-- {
-		switch containerName[i] {
-		case '/':
-			// We are no longer looking at the last part of the
-			// container name
-			return true
-		case '.':
-			typeName := containerName[i+1:]
-			return ast.IsExported(typeName)
-		}
+	split := strings.Fields(containerName)
+	if len(split) == 2 {
+		return ast.IsExported(split[1])
 	}
 	return true
 }
