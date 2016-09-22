@@ -1,14 +1,13 @@
 // tslint:disable typedef ordered-imports
-import {uriForTreeEntry, treeEntryFromUri} from "sourcegraph/editor/FileModel";
+import {URI} from "sourcegraph/core/uri";
 import {EditorService, IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
 
+import * as lsp from "sourcegraph/editor/lsp";
 import { Def } from "sourcegraph/api";
 import { makeRepoRev } from "sourcegraph/repo";
 import {urlToDefInfo} from "sourcegraph/def/routes";
 import {EventLogger} from "sourcegraph/util/EventLogger";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-
-import {RangeOrPosition} from "sourcegraph/core/rangeOrPosition";
 
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
@@ -121,25 +120,8 @@ export class Editor implements monaco.IDisposable {
 	}
 
 	provideDefinition(model: monaco.editor.IReadOnlyModel, position: monaco.Position, token: monaco.CancellationToken): monaco.languages.Definition | monaco.Thenable<monaco.languages.Definition> {
-		return fetchJumpToDef(model, position).then((resp: JumpToDefResponse) => {
-			if (!resp || !resp.Path) {
-				return (null as any);
-			}
-
-			const uri = monaco.Uri.parse(`sourcegraph://${resp.Path}`);
-			if (!uri.fragment) {
-				throw new Error(`no uri fragment in uri ${uri.toString()}`);
-			}
-
-			const r = RangeOrPosition.parse(uri.fragment.replace(/^L/, ""));
-			if (!r) {
-				throw new Error(`failed to parse uri fragment ${uri.fragment}`);
-			}
-
-			return {
-				uri: monaco.Uri.from({scheme: uri.scheme, path: uri.path}),
-				range: r.toMonacoRange(),
-			};
+		return fetchJumpToDef(model, position).then((loc: lsp.Location) => {
+			return lsp.toMonacoLocation(loc);
 		});
 	}
 
@@ -153,7 +135,7 @@ export class Editor implements monaco.IDisposable {
 				contents.push("*Right-click to view all references.*");
 			}
 
-			const {repo, rev, path} = treeEntryFromUri(model.uri);
+			const {repo, rev, path} = URI.repoParams(model.uri);
 			EventLogger.logEventForCategory(
 				AnalyticsConstants.CATEGORY_DEF,
 				AnalyticsConstants.ACTION_HOVER,
@@ -176,7 +158,7 @@ export class Editor implements monaco.IDisposable {
 
 	provideReferences(model: monaco.editor.IReadOnlyModel, position: monaco.Position, context: monaco.languages.ReferenceContext, token: monaco.CancellationToken): monaco.languages.Location[] | monaco.Thenable<monaco.languages.Location[]> {
 		return refsAtPosition(model, position).then((resp: ReferencesResponse) => {
-			const {repo, rev, path} = treeEntryFromUri(model.uri);
+			const {repo, rev, path} = URI.repoParams(model.uri);
 			if (!resp) {
 				return;
 			}
@@ -188,16 +170,7 @@ export class Editor implements monaco.IDisposable {
 				{ repo, rev: rev || "", path }
 			);
 
-			const locs: monaco.languages.Location[] = [];
-			Object.keys(resp.Locs).forEach((file) => {
-				for (let [sl, sc, el, ec] of resp.Locs[file]) {
-				locs.push({
-					uri: uriForTreeEntry(repo, rev, file),
-					range: new monaco.Range(sl + 1, sc + 1, el + 1, ec + 2),
-				});
-				}
-			});
-			return locs;
+			return resp.Locs.map(lsp.toMonacoLocation);
 		});
 	}
 
@@ -205,7 +178,7 @@ export class Editor implements monaco.IDisposable {
 		const model = editor.getModel();
 		const pos = editor.getPosition();
 
-		const {repo, rev, path} = treeEntryFromUri(model.uri);
+		const {repo, rev, path} = URI.repoParams(model.uri);
 		EventLogger.logEventForCategory(
 			AnalyticsConstants.CATEGORY_REFERENCES,
 			AnalyticsConstants.ACTION_CLICK,
@@ -243,7 +216,7 @@ interface HoverInfoResponse {
 function defAtPosition(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<HoverInfoResponse> {
 	const line = position.lineNumber - 1;
 	const col = position.column - 1;
-	const {repo, rev, path} = treeEntryFromUri(model.uri);
+	const {repo, rev, path} = URI.repoParams(model.uri);
 	return fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/hover-info?file=${path}&line=${line}&character=${col}`)
 		.then(checkStatus)
 		.then(resp => resp.json())
@@ -254,10 +227,10 @@ interface JumpToDefResponse {
 	Path: string;
 }
 
-function fetchJumpToDef(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<JumpToDefResponse> {
+function fetchJumpToDef(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<lsp.Location> {
 	const line = position.lineNumber - 1;
 	const col = position.column - 1;
-	const {repo, rev, path} = treeEntryFromUri(model.uri);
+	const {repo, rev, path} = URI.repoParams(model.uri);
 	return fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/jump-def?file=${path}&line=${line}&character=${col}`)
 		.then(checkStatus)
 		.then(resp => resp.json())
@@ -265,13 +238,13 @@ function fetchJumpToDef(model: monaco.editor.IReadOnlyModel, position: monaco.Po
 }
 
 type ReferencesResponse = {
-	Locs: {[key: string]: number[][]};
+	Locs: lsp.Location[];
 };
 
 function refsAtPosition(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<ReferencesResponse> {
 	const line = position.lineNumber - 1;
 	const col = position.column - 1;
-	const {repo, rev, path} = treeEntryFromUri(model.uri);
+	const {repo, rev, path} = URI.repoParams(model.uri);
 	return fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/def/dummy/dummy/-/dummy/-/local-refs?file=${path}&line=${line}&character=${col}`)
 		.then(checkStatus)
 		.then(resp => resp.json())

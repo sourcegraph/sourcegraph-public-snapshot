@@ -6,7 +6,6 @@ import { InjectedRouter } from "react-router";
 import Helmet from "react-helmet";
 import * as debounce from "lodash/debounce";
 import { Editor } from "sourcegraph/editor/Editor";
-import {treeEntryFromUri} from "sourcegraph/editor/FileModel";
 import { EditorComponent } from "sourcegraph/editor/EditorComponent";
 import "sourcegraph/blob/BlobBackend";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
@@ -14,10 +13,10 @@ import * as Style from "sourcegraph/blob/styles/Blob.css";
 import { trimRepo } from "sourcegraph/repo";
 import { urlToBlob } from "sourcegraph/blob/routes";
 import { SearchModal } from "sourcegraph/search/modal/SearchModal";
-import {uriForTreeEntry} from "sourcegraph/editor/FileModel";
 import {IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
 import {ChromeExtensionToast} from "sourcegraph/components/ChromeExtensionToast";
 import {OnboardingModals} from "sourcegraph/components/OnboardingModals";
+import {URI} from "sourcegraph/core/uri";
 
 type Props = {
 	repo: string;
@@ -87,21 +86,24 @@ export class BlobMain extends React.Component<Props, any> {
 		if (!this._editor) {
 			throw new Error("editor is not ready");
 		}
-		if (!prevProps || (prevProps.repo !== nextProps.repo || prevProps.rev !== nextProps.rev || prevProps.path !== nextProps.path || prevProps.startLine !== nextProps.startLine || prevProps.startCol !== nextProps.startCol || prevProps.endLine !== nextProps.endLine || prevProps.endCol !== nextProps.endCol)) {
-			const uri = uriForTreeEntry(nextProps.repo, nextProps.rev, nextProps.path);
+		if (!prevProps || (prevProps.repo !== nextProps.repo || prevProps.rev !== nextProps.rev || prevProps.commitID !== nextProps.commitID || prevProps.path !== nextProps.path || prevProps.startLine !== nextProps.startLine || prevProps.startCol !== nextProps.startCol || prevProps.endLine !== nextProps.endLine || prevProps.endCol !== nextProps.endCol)) {
+			if (nextProps.commitID) {
+				// Use absolute commit IDs for the editor model URI.
+				const uri = URI.pathInRepo(nextProps.repo, nextProps.commitID, nextProps.path);
 
-			let range: monaco.IRange | undefined;
-			if (typeof nextProps.startLine === "number") {
-				const rop = RangeOrPosition.fromOneIndexed(nextProps.startLine, nextProps.startCol, nextProps.endLine, nextProps.endCol);
-				if (rop) {
-					range = rop.toMonacoRangeAllowEmpty();
+				let range: monaco.IRange | undefined;
+				if (typeof nextProps.startLine === "number") {
+					const rop = RangeOrPosition.fromOneIndexed(nextProps.startLine, nextProps.startCol, nextProps.endLine, nextProps.endCol);
+					if (rop) {
+						range = rop.toMonacoRangeAllowEmpty();
+					}
 				}
-			}
 
-			this._suppressNavigationOnEditorOpened = Boolean(prevProps && prevProps.location !== nextProps.location && nextProps.location.action === "POP" && !(prevProps.repo === nextProps.repo && prevProps.rev === nextProps.rev && prevProps.path === nextProps.path));
-			this._editor.setInput(uri, this._suppressNavigationOnEditorOpened ? undefined : range).then(() => {
-				this._suppressNavigationOnEditorOpened = false;
-			});
+				this._suppressNavigationOnEditorOpened = Boolean(prevProps && prevProps.location !== nextProps.location && nextProps.location.action === "POP" && !(prevProps.repo === nextProps.repo && prevProps.rev === nextProps.rev && prevProps.path === nextProps.path));
+				this._editor.setInput(uri, this._suppressNavigationOnEditorOpened ? undefined : range).then(() => {
+					this._suppressNavigationOnEditorOpened = false;
+				});
+			}
 		}
 	}
 
@@ -130,8 +132,17 @@ export class BlobMain extends React.Component<Props, any> {
 			return;
 		}
 
-		let treeEntry = treeEntryFromUri(e.model.uri);
-		let path = urlToBlob(treeEntry.repo, treeEntry.rev, treeEntry.path);
+		let {repo, rev, path} = URI.repoParams(e.model.uri);
+
+		// If same repo, use the rev from the URL, so that we don't
+		// change the address bar around a lot (bad UX).
+		//
+		// TODO(sqs): this will break true cross-rev same-repo jumps.
+		if (repo === this.props.repo) {
+			rev = this.props.rev;
+		}
+
+		let url = urlToBlob(repo, rev, path);
 
 		const sel = e.editor.getSelection();
 		if (!sel.isEmpty() || sel.startLineNumber !== 1) {
@@ -150,7 +161,7 @@ export class BlobMain extends React.Component<Props, any> {
 			}
 
 			const r = RangeOrPosition.fromOneIndexed(sel.startLineNumber, startCol, sel.endLineNumber, endCol);
-			path = `${path}#L${r.toString()}`;
+			url = `${url}#L${r.toString()}`;
 		}
 
 		// TODO(sqs): There is still some glitchiness with
@@ -159,7 +170,7 @@ export class BlobMain extends React.Component<Props, any> {
 		// to the "mark" (the point from which you jumped to the def);
 		// you go back to the previous def you had jumped to.
 
-		this.context.router.push(path);
+		this.context.router.push(url);
 	}
 
 	render(): JSX.Element | null {

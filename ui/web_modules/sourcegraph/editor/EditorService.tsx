@@ -2,7 +2,7 @@
 import {TreeEntry} from "sourcegraph/api";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
-import {treeEntryFromUri} from "sourcegraph/editor/FileModel";
+import {URI} from "sourcegraph/core/uri";
 import { makeRepoRev } from "sourcegraph/repo";
 
 const fetch = singleflightFetch(defaultFetch);
@@ -106,19 +106,47 @@ export class EditorService implements IEditorService {
 			return monaco.Promise.as(hackModel(existingModel));
 		}
 
-		const {repo, rev, path} = treeEntryFromUri(data.resource);
+		const {repo, rev, path} = URI.repoParams(data.resource);
 		return new monaco.Promise((c, e) => {
 			fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/tree/${path}?ContentsAsString=true&NoSrclibAnns=true`)
 				.then(checkStatus)
 				.then(resp => resp.json())
 				.then((treeEntry: TreeEntry) => {
 					// Call getModel again in case we lost a race.
-					const newModel = monaco.editor.getModel(data.resource) || monaco.editor.createModel(treeEntry.ContentsString || "", undefined, data.resource);
+					const newModel = monaco.editor.getModel(data.resource) || monaco.editor.createModel(treeEntry.ContentsString || "", getModeByFilename(path), data.resource);
 					c(hackModel(newModel));
 				})
 				.catch(err => e(err));
 		});
 	}
+}
+
+// TODO(sqs): Use the built-in ModeService instead of writing our own
+// hacky thing to figure out the mode (language) to use for a given
+// file.
+function getModeByFilename(path: string): string {
+	if (path.endsWith(".go")) {
+		return "go";
+	}
+	if (path.endsWith(".js") || path.endsWith(".jsx")) {
+		return "javascript";
+	}
+	if (path.endsWith(".ts") || path.endsWith(".tsx")) {
+		return "typescript";
+	}
+	if (path.endsWith(".py")) {
+		return "python";
+	}
+	if (path.endsWith(".html")) {
+		return "html";
+	}
+	if (path.endsWith(".css")) {
+		return "css";
+	}
+	if (path.endsWith(".php")) {
+		return "php";
+	}
+	return "plaintext";
 }
 
 // The below interfaces were copied from vscode.

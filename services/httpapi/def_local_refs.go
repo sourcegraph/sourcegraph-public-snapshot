@@ -14,13 +14,14 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
 // LocalRefLocationsList lists the locations that reference a def in same repository.
 type LocalRefLocationsList struct {
 	TotalFiles int
 	Files      []*sourcegraph.DefFileRef
-	Locs       map[string][][4]int
+	Locs       []lsp.Location
 }
 
 type DefFileRefs []*sourcegraph.DefFileRef
@@ -121,7 +122,7 @@ func universeDefLocalRefLocations(r *http.Request) (*LocalRefLocationsList, erro
 
 	// TODO: we currently only show files not specific location of references,
 	// so need to redesign the response type struct and adjust following code logic.
-	locs := make(map[string][][4]int)
+	var locs []lsp.Location
 	fileSet := make(map[string]int32)
 	for _, ref := range localRefs.Refs {
 		if _, ok := fileSet[ref.File]; ok {
@@ -129,7 +130,13 @@ func universeDefLocalRefLocations(r *http.Request) (*LocalRefLocationsList, erro
 		} else {
 			fileSet[ref.File] = 1
 		}
-		locs[ref.File] = append(locs[ref.File], [4]int{ref.StartLine, ref.StartCharacter, ref.EndLine, ref.EndCharacter})
+		locs = append(locs, lsp.Location{
+			URI: makeLSPURI(ref.Repo, "", ref.File),
+			Range: lsp.Range{
+				Start: lsp.Position{Line: ref.StartLine, Character: ref.StartCharacter},
+				End:   lsp.Position{Line: ref.EndLine, Character: ref.EndCharacter + 1},
+			},
+		})
 	}
 
 	localRefLocationsList := &LocalRefLocationsList{

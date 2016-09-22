@@ -1,18 +1,18 @@
 package httpapi
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
@@ -35,7 +35,7 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	var response graph.DefKey
+	var response lsp.Location
 
 	if universe.EnabledFile(file) {
 		defRange, err := langp.DefaultClient.Definition(r.Context(), &langp.Position{
@@ -59,13 +59,17 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		if defRange.Empty() {
-			response.Path = ""
+			// Nothing to do.
 		} else if defRange.File == "." {
 			// Special case the top level directory
-			response.Path = router.Rel.URLToRepoTreeEntry(defRange.Repo, rev, "").String()
+			response.URI = makeLSPURI(defRange.Repo, rev, "")
 		} else {
 			// We increment the line number by 1 because the blob view is not zero-indexed.
-			response.Path = router.Rel.URLToBlobRange(defRange.Repo, rev, defRange.File, defRange.StartLine+1, defRange.EndLine+1, defRange.StartCharacter+1, defRange.EndCharacter+2).String()
+			response.URI = makeLSPURI(defRange.Repo, rev, defRange.File)
+			response.Range = lsp.Range{
+				Start: lsp.Position{Line: defRange.StartLine, Character: defRange.StartCharacter},
+				End:   lsp.Position{Line: defRange.EndLine, Character: defRange.EndCharacter},
+			}
 		}
 		w.Header().Set("cache-control", "private, max-age=60")
 		return writeJSON(w, response)
@@ -103,7 +107,16 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 		rev = v.Rev
 	}
 
-	response.Path = router.Rel.URLToBlob(def.Repo, rev, def.File, int(def.StartLine)).String()
+	response.URI = makeLSPURI(def.Repo, rev, def.File)
+	response.Range = lsp.Range{
+		Start: lsp.Position{Line: int(def.StartLine) - 1},
+	}
 	w.Header().Set("cache-control", "private, max-age=60")
 	return writeJSON(w, response)
+}
+
+// makeLSPURI returns a file URI for the LSP response that Monaco on
+// the frontend knows how to interpret.
+func makeLSPURI(repo, rev, file string) string {
+	return fmt.Sprintf("git://%s?%s#%s", repo, rev, file)
 }
