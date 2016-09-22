@@ -67,6 +67,8 @@ func New(opts *Translator) http.Handler {
 type SymbolsTranslator struct {
 	ExportedSymbolsQuery func(*RepoRev) string
 	ExportedSymbol       func(*RepoRev, *File, *lsp.SymbolInformation) *Symbol
+	ExternalRefsQuery    func(*RepoRev) string
+	ExternalRef          func(*RepoRev, *File, *lsp.SymbolInformation) *DefSpec
 }
 
 type translator struct {
@@ -240,7 +242,38 @@ func (t *translator) LocalRefs(ctx context.Context, pos *Position) (*RefLocation
 }
 
 func (t *translator) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, error) {
-	return nil, errors.New("ExternalRefs is not supported yet")
+	if t.SymbolsTranslator == nil || t.SymbolsTranslator.ExternalRefsQuery == nil || t.SymbolsTranslator.ExternalRef == nil {
+		return nil, errors.New("ExternalRefs is not supported")
+	}
+
+	// Determine the root path for the workspace and prepare it.
+	workspaceStart := time.Now()
+	rootPath, err := t.workspace.Prepare(ctx, r.Repo, r.Commit)
+	if err != nil {
+		return nil, err
+	}
+	start := time.Now()
+
+	// TODO: should probably check server capabilities before invoking symbol,
+	// but good enough for now.
+	var respSymbol []lsp.SymbolInformation
+	err = t.lspDo(ctx, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
+		Query: t.SymbolsTranslator.ExternalRefsQuery(r),
+	}, &respSymbol)
+	defer observe(ctx, start, workspaceStart, r.Repo, err, len(respSymbol) == 0)
+	if err != nil {
+		return nil, err
+	}
+
+	defs := make([]*DefSpec, 0, len(respSymbol))
+	for _, s := range respSymbol {
+		f, err := t.resolveFile(ctx, r.Repo, r.Commit, s.Location.URI)
+		if err != nil {
+			return nil, err
+		}
+		defs = append(defs, t.SymbolsTranslator.ExternalRef(r, f, &s))
+	}
+	return &ExternalRefs{Defs: defs}, nil
 }
 
 func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLocations, error) {

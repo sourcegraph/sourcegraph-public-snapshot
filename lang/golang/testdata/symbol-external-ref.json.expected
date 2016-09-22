@@ -1,0 +1,1087 @@
+[
+  {
+    "id": 0,
+    "result": {
+      "capabilities": {
+        "hoverProvider": true,
+        "definitionProvider": true,
+        "referencesProvider": true,
+        "workspaceSymbolProvider": true
+      }
+    },
+    "jsonrpc": "2.0"
+  },
+  {
+    "id": 1,
+    "result": [
+      {
+        "name": "Handler",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 39,
+              "character": 17
+            },
+            "end": {
+              "line": 39,
+              "character": 23
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 57,
+              "character": 28
+            },
+            "end": {
+              "line": 57,
+              "character": 34
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "ResponseWriter",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 76,
+              "character": 29
+            },
+            "end": {
+              "line": 76,
+              "character": 42
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 76,
+              "character": 55
+            },
+            "end": {
+              "line": 76,
+              "character": 61
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "StatusMovedPermanently",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 89,
+              "character": 17
+            },
+            "end": {
+              "line": 89,
+              "character": 38
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Handler",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 94,
+              "character": 13
+            },
+            "end": {
+              "line": 94,
+              "character": 19
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "NotFoundHandler",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 101,
+              "character": 12
+            },
+            "end": {
+              "line": 101,
+              "character": 26
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Handler",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 196,
+              "character": 45
+            },
+            "end": {
+              "line": 196,
+              "character": 51
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "ResponseWriter",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 202,
+              "character": 48
+            },
+            "end": {
+              "line": 202,
+              "character": 61
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 203,
+              "character": 2
+            },
+            "end": {
+              "line": 203,
+              "character": 8
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "New",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 270,
+              "character": 17
+            },
+            "end": {
+              "line": 270,
+              "character": 19
+            }
+          }
+        },
+        "containerName": "github.com/golang/go errors"
+      },
+      {
+        "name": "Handler",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 314,
+              "character": 9
+            },
+            "end": {
+              "line": 314,
+              "character": 15
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 326,
+              "character": 13
+            },
+            "end": {
+              "line": 326,
+              "character": 19
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 338,
+              "character": 21
+            },
+            "end": {
+              "line": 338,
+              "character": 27
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 345,
+              "character": 16
+            },
+            "end": {
+              "line": 345,
+              "character": 22
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 345,
+              "character": 48
+            },
+            "end": {
+              "line": 345,
+              "character": 54
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 349,
+              "character": 24
+            },
+            "end": {
+              "line": 349,
+              "character": 30
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 349,
+              "character": 56
+            },
+            "end": {
+              "line": 349,
+              "character": 62
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Errorf",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 381,
+              "character": 11
+            },
+            "end": {
+              "line": 381,
+              "character": 16
+            }
+          }
+        },
+        "containerName": "github.com/golang/go fmt"
+      },
+      {
+        "name": "Errorf",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 393,
+              "character": 17
+            },
+            "end": {
+              "line": 393,
+              "character": 22
+            }
+          }
+        },
+        "containerName": "github.com/golang/go fmt"
+      },
+      {
+        "name": "Regexp",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 415,
+              "character": 55
+            },
+            "end": {
+              "line": 415,
+              "character": 60
+            }
+          }
+        },
+        "containerName": "github.com/golang/go regexp"
+      },
+      {
+        "name": "Regexp",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 420,
+              "character": 23
+            },
+            "end": {
+              "line": 420,
+              "character": 28
+            }
+          }
+        },
+        "containerName": "github.com/golang/go regexp"
+      },
+      {
+        "name": "Compile",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 422,
+              "character": 16
+            },
+            "end": {
+              "line": 422,
+              "character": 22
+            }
+          }
+        },
+        "containerName": "github.com/golang/go regexp"
+      },
+      {
+        "name": "CanonicalHeaderKey",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 446,
+              "character": 7
+            },
+            "end": {
+              "line": 446,
+              "character": 24
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Regexp",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 470,
+              "character": 43
+            },
+            "end": {
+              "line": 470,
+              "character": 48
+            }
+          }
+        },
+        "containerName": "github.com/golang/go regexp"
+      },
+      {
+        "name": "CanonicalHeaderKey",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 474,
+              "character": 7
+            },
+            "end": {
+              "line": 474,
+              "character": 24
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Handler",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 20,
+              "character": 9
+            },
+            "end": {
+              "line": 20,
+              "character": 15
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 48,
+              "character": 27
+            },
+            "end": {
+              "line": 48,
+              "character": 33
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Handler",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 93,
+              "character": 32
+            },
+            "end": {
+              "line": 93,
+              "character": 38
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "ResponseWriter",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 101,
+              "character": 35
+            },
+            "end": {
+              "line": 101,
+              "character": 48
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 101,
+              "character": 57
+            },
+            "end": {
+              "line": 101,
+              "character": 63
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "HandlerFunc",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 102,
+              "character": 18
+            },
+            "end": {
+              "line": 102,
+              "character": 28
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Handler",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 106,
+              "character": 29
+            },
+            "end": {
+              "line": 106,
+              "character": 35
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Errorf",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 116,
+              "character": 10
+            },
+            "end": {
+              "line": 116,
+              "character": 15
+            }
+          }
+        },
+        "containerName": "github.com/golang/go fmt"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 137,
+              "character": 8
+            },
+            "end": {
+              "line": 137,
+              "character": 14
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Errorf",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 156,
+              "character": 10
+            },
+            "end": {
+              "line": 156,
+              "character": 15
+            }
+          }
+        },
+        "containerName": "github.com/golang/go fmt"
+      },
+      {
+        "name": "TrimRight",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 159,
+              "character": 9
+            },
+            "end": {
+              "line": 159,
+              "character": 17
+            }
+          }
+        },
+        "containerName": "github.com/golang/go strings"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 199,
+              "character": 32
+            },
+            "end": {
+              "line": 199,
+              "character": 38
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Regexp",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 222,
+              "character": 36
+            },
+            "end": {
+              "line": 222,
+              "character": 41
+            }
+          }
+        },
+        "containerName": "github.com/golang/go regexp"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 224,
+              "character": 37
+            },
+            "end": {
+              "line": 224,
+              "character": 43
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Regexp",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 239,
+              "character": 26
+            },
+            "end": {
+              "line": 239,
+              "character": 31
+            }
+          }
+        },
+        "containerName": "github.com/golang/go regexp"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 273,
+              "character": 23
+            },
+            "end": {
+              "line": 273,
+              "character": 29
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 276,
+              "character": 30
+            },
+            "end": {
+              "line": 276,
+              "character": 36
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 290,
+              "character": 32
+            },
+            "end": {
+              "line": 290,
+              "character": 38
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "ToUpper",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 299,
+              "character": 15
+            },
+            "end": {
+              "line": 299,
+              "character": 21
+            }
+          }
+        },
+        "containerName": "github.com/golang/go strings"
+      },
+      {
+        "name": "Errorf",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 368,
+              "character": 10
+            },
+            "end": {
+              "line": 368,
+              "character": 15
+            }
+          }
+        },
+        "containerName": "github.com/golang/go fmt"
+      },
+      {
+        "name": "Request",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 386,
+              "character": 32
+            },
+            "end": {
+              "line": 386,
+              "character": 38
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/http"
+      },
+      {
+        "name": "ToLower",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 394,
+              "character": 15
+            },
+            "end": {
+              "line": 394,
+              "character": 21
+            }
+          }
+        },
+        "containerName": "github.com/golang/go strings"
+      },
+      {
+        "name": "URL",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 467,
+              "character": 39
+            },
+            "end": {
+              "line": 467,
+              "character": 41
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/url"
+      },
+      {
+        "name": "New",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 472,
+              "character": 14
+            },
+            "end": {
+              "line": 472,
+              "character": 16
+            }
+          }
+        },
+        "containerName": "github.com/golang/go errors"
+      },
+      {
+        "name": "URL",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 491,
+              "character": 9
+            },
+            "end": {
+              "line": 491,
+              "character": 11
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/url"
+      },
+      {
+        "name": "URL",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 501,
+              "character": 43
+            },
+            "end": {
+              "line": 501,
+              "character": 45
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/url"
+      },
+      {
+        "name": "New",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 506,
+              "character": 14
+            },
+            "end": {
+              "line": 506,
+              "character": 16
+            }
+          }
+        },
+        "containerName": "github.com/golang/go errors"
+      },
+      {
+        "name": "URL",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 516,
+              "character": 9
+            },
+            "end": {
+              "line": 516,
+              "character": 11
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/url"
+      },
+      {
+        "name": "URL",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 525,
+              "character": 43
+            },
+            "end": {
+              "line": 525,
+              "character": 45
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/url"
+      },
+      {
+        "name": "New",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 530,
+              "character": 14
+            },
+            "end": {
+              "line": 530,
+              "character": 16
+            }
+          }
+        },
+        "containerName": "github.com/golang/go errors"
+      },
+      {
+        "name": "URL",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 540,
+              "character": 9
+            },
+            "end": {
+              "line": 540,
+              "character": 11
+            }
+          }
+        },
+        "containerName": "github.com/golang/go net/url"
+      },
+      {
+        "name": "New",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 555,
+              "character": 13
+            },
+            "end": {
+              "line": 555,
+              "character": 15
+            }
+          }
+        },
+        "containerName": "github.com/golang/go errors"
+      },
+      {
+        "name": "New",
+        "kind": 7,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 570,
+              "character": 13
+            },
+            "end": {
+              "line": 570,
+              "character": 15
+            }
+          }
+        },
+        "containerName": "github.com/golang/go errors"
+      }
+    ],
+    "jsonrpc": "2.0"
+  },
+  {
+    "id": 2,
+    "result": null,
+    "jsonrpc": "2.0"
+  }
+]
