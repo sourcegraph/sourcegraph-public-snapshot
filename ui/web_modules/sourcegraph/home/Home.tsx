@@ -24,7 +24,7 @@ type HomeState = any;
 
 export class Home extends Container<HomeProps, HomeState> {
 	static contextTypes: React.ValidationMap<any> = {
-		siteConfig: React.PropTypes.object.isRequired,
+		router: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props: HomeProps) {
@@ -107,9 +107,9 @@ export class Home extends Container<HomeProps, HomeState> {
 						<div style={{maxWidth: "400px", maxHeight: "275px", flex: "1 1 400px", position: "relative"}}>
 							<LocationStateToggleLink modalName="demo_video" location={this.props.location}>
 								<FlexContainer direction="top_bottom" justify="center" style={{position: "absolute", top: "0px", bottom: "0px", right: "0px", left: "0px"}} className={classNames(colors.bg_dark_purple_8, base.br3, typography.tc)}>
-									<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/play.svg`} />
+									<img src={`${context.assetsRoot}/img/Homepage/play.svg`} />
 								</FlexContainer>
-								<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/video-screenshot.png`} width="100%" height="auto%" className={base.br3} />
+								<img src={`${context.assetsRoot}/img/Homepage/video-screenshot.png`} width="100%" height="auto%" className={base.br3} />
 							</LocationStateToggleLink>
 						</div>
 
@@ -134,7 +134,7 @@ export class Home extends Container<HomeProps, HomeState> {
 
 						{/* column describing examples */}
 						<div style={{maxWidth: "300px", flex: "1 1 300px"}} className={classNames(base.ph3, base.mt4)}>
-							<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/illo-docs.svg`} width="100%" />
+							<img src={`${context.assetsRoot}/img/Homepage/illo-docs.svg`} width="100%" />
 
 							<Heading level="5" className={base.mt3}>
 								Usage examples and instant documentation
@@ -147,7 +147,7 @@ export class Home extends Container<HomeProps, HomeState> {
 
 						{/* column describing search */}
 						<div style={{maxWidth: "300px", flex: "1 1 300px"}} className={classNames(base.ph3, base.mt4)}>
-							<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/illo-search.svg`} width="100%" />
+							<img src={`${context.assetsRoot}/img/Homepage/illo-search.svg`} width="100%" />
 
 							<Heading level="5" className={base.mt3}>
 								Global search by function, package, or symbol name
@@ -161,7 +161,7 @@ export class Home extends Container<HomeProps, HomeState> {
 
 						{/* column describing team features */}
 						<div style={{maxWidth: "300px", flex: "1 1 300px"}} className={classNames(base.ph3, base.mt4)}>
-							<img src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/illo-team.svg`} width="100%" />
+							<img src={`${context.assetsRoot}/img/Homepage/illo-team.svg`} width="100%" />
 
 							<Heading level="5" className={base.mt3}>
 								Designed with teams in mind
@@ -182,13 +182,13 @@ export class Home extends Container<HomeProps, HomeState> {
 					</Heading>
 
 					<FlexContainer justify="between" className={classNames(base.center, base.mt4)} style={{maxWidth: "440px"}}>
-						<img title="Go supported" className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/go2.svg`} />
-						<img title="Java supported" className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/java.svg`} />
+						<img title="Go supported" className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/go2.svg`} />
+						<img title="Java supported" className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/java.svg`} />
 						<div style={{display: "inline-block", position: "relative", cursor: "pointer"}} onMouseOver={() => this.setState({langMouseover: true})} onMouseLeave={() => this.setState({langMouseover: false})}>
-							<img title="JavaScript coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/js.svg`} />
-							<img title="Python coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/python.svg`} />
-							<img title="PHP coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/php.svg`} />
-							<img title="Scala coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/scala.svg`} />
+							<img title="JavaScript coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/js.svg`} />
+							<img title="Python coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/python.svg`} />
+							<img title="PHP coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/php.svg`} />
+							<img title="Scala coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/scala.svg`} />
 							{this.state.langMouseover &&
 								<LocationStateToggleLink style={{display: "flex", alignItems: "center", justifyContent: "center", position: "absolute", left: 0, right: 0, top: 0, bottom: 0}} href="/beta" modalName="beta" location={this.props.location}>
 									<div>
@@ -204,7 +204,6 @@ export class Home extends Container<HomeProps, HomeState> {
 						</div>
 					</FlexContainer>
 				</div>
-
 				{this.props.location.state && this.props.location.state.modal === "beta" &&
 					<LocationStateModal modalName="beta" location={this.props.location}>
 						<div className={styles.modal}>
@@ -227,10 +226,10 @@ export class Home extends Container<HomeProps, HomeState> {
 								</Heading>
 
 								<FlexContainer justify="end" style={{flex: "1 1"}}>
-									<img className={base.mr4} style={{marginBottom: "10px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/twitter.svg`} />
-									<img className={base.mr4} style={{marginBottom: "9px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/red-hat.svg`} />
-									<img className={base.mr4} style={{marginBottom: "7px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/daily-motion.svg`} />
-									<img className={base.mr4} style={{marginBottom: "5px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Homepage/logo/progressly.svg`} />
+									<img className={base.mr4} style={{marginBottom: "10px"}} src={`${context.assetsRoot}/img/Homepage/logo/twitter.svg`} />
+									<img className={base.mr4} style={{marginBottom: "9px"}} src={`${context.assetsRoot}/img/Homepage/logo/red-hat.svg`} />
+									<img className={base.mr4} style={{marginBottom: "7px"}} src={`${context.assetsRoot}/img/Homepage/logo/daily-motion.svg`} />
+									<img className={base.mr4} style={{marginBottom: "5px"}} src={`${context.assetsRoot}/img/Homepage/logo/progressly.svg`} />
 								</FlexContainer>
 							</FlexContainer>
 

@@ -11,6 +11,7 @@ import * as classNames from "classnames";
 import {Link} from "react-router";
 import {Heading, List} from "sourcegraph/components";
 import {Cone} from "sourcegraph/components/symbols";
+import {context} from "sourcegraph/app/context";
 
 export const NotInBeta = () => (
 	<div className={classNames(layout.containerFixed, base.pv5, base.ph4)} style={{maxWidth: "600px"}}>
@@ -21,9 +22,6 @@ export const NotInBeta = () => (
 );
 
 export class DesktopHome extends React.Component<{}, any> {
-	static contextTypes: React.ValidationMap<any> = {
-		siteConfig: React.PropTypes.object.isRequired,
-	};
 
 	render(): JSX.Element | null {
 		return (
@@ -33,7 +31,7 @@ export class DesktopHome extends React.Component<{}, any> {
 					<br className={base.hidden_s} />&nbsp;documentation to write better code, faster
 				</Heading>
 
-				<img src={`${(this.context as any).siteConfig.assetsRoot}/img/sg-desktop.gif`} width="356" title="Usage examples right in your editor" alt="Usage examples right in your editor" style={{maxWidth: "100%", display: "block", imageRendering: "pixelated"}} className={base.center}/>
+				<img src={`${context.assetsRoot}/img/sg-desktop.gif`} width="356" title="Usage examples right in your editor" alt="Usage examples right in your editor" style={{maxWidth: "100%", display: "block", imageRendering: "pixelated"}} className={base.center}/>
 
 				<div className={base.mv4}>
 					<Heading level="5">Go definitions and usages as you code</Heading>

@@ -1,6 +1,5 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
+import {context} from "sourcegraph/app/context";
 
 // This component renders the Sourcegraph logo, logomark, or logomark with tagline at custom sizes.
 
@@ -13,9 +12,6 @@ interface Props {
 type State = any;
 
 export class Logo extends React.Component<Props, State> {
-	static contextTypes: React.ValidationMap<any> = {
-		siteConfig: React.PropTypes.object.isRequired,
-	};
 
 	render(): JSX.Element | null {
 		const {width, type, className} = this.props;
@@ -28,6 +24,6 @@ export class Logo extends React.Component<Props, State> {
 			logoImg = "sourcegraph-logo-tagline.svg";
 		}
 
-		return <img src={`${(this.context as any).siteConfig.assetsRoot}/img/${logoImg}`} width={width} className={className} title="Sourcegraph" alt="Sourcegraph Logo" />;
+		return <img src={`${context.assetsRoot}/img/${logoImg}`} width={width} className={className} title="Sourcegraph" alt="Sourcegraph Logo" />;
 	}
 }

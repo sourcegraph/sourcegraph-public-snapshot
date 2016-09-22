@@ -40,7 +40,6 @@ type State = any;
 
 export class Integrations extends Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
-		siteConfig: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
 	};
 
@@ -65,7 +64,7 @@ export class Integrations extends Component<Props, State> {
 					<div className={styles.tool_list}>
 						{plugins.map((tool, i) => (
 							<a key={i} href={tool.url} target="_blank" className={styles.tool}>
-								<img className={styles.img} src={`${(this.context as any).siteConfig.assetsRoot}${tool.img}`}></img>
+								<img className={styles.img} src={`${context.assetsRoot}${tool.img}`}></img>
 								<div className={styles.caption}>{tool.name}</div>
 							</a>
 						))}
@@ -74,7 +73,7 @@ export class Integrations extends Component<Props, State> {
 					<div className={styles.tool_list}>
 						{otherTools.map((tool, i) => (
 							<a key={i} href={tool.url} target="_blank" className={styles.tool}>
-								<img className={styles.img} src={`${(this.context as any).siteConfig.assetsRoot}${tool.img}`}></img>
+								<img className={styles.img} src={`${context.assetsRoot}${tool.img}`}></img>
 								<div className={styles.caption}>{tool.name}</div>
 							</a>
 						))}

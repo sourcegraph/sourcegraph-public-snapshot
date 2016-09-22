@@ -10,8 +10,6 @@ import "sourcegraph/components/styles/_normalize.css";
 import * as styles from "sourcegraph/app/styles/App.css";
 
 import {withViewEventsLogged} from "sourcegraph/util/EventLogger";
-import {withFeaturesContext} from "sourcegraph/app/features";
-import {withSiteConfigContext} from "sourcegraph/app/siteConfig";
 import {desktopContainer} from "sourcegraph/desktop/DesktopContainer";
 
 import {routes as homeRoutes} from "sourcegraph/home";
@@ -74,13 +72,7 @@ export class App extends React.Component<Props, State> {
 const desktopClient = global.document && navigator.userAgent.includes("Electron");
 export const rootRoute: PlainRoute = {
 	path: "/",
-	component: withViewEventsLogged(
-		withSiteConfigContext(
-			withFeaturesContext(
-				desktopClient ? desktopContainer(App) : App
-			)
-		)
-	),
+	component: withViewEventsLogged(desktopClient ? desktopContainer(App) : App),
 	getIndexRoute: (location, callback) => {
 		callback(null, homeRoutes);
 	},

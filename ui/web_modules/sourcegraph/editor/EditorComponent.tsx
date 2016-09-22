@@ -4,6 +4,7 @@ import * as invariant from "invariant";
 import {loadMonaco} from "sourcegraph/editor/loader";
 import {Editor} from "sourcegraph/editor/Editor";
 import "sourcegraph/blob/styles/Monaco.css";
+import {context} from "sourcegraph/app/context";
 
 type Props = {
 	editorRef?: (editor: Editor | null) => void;
@@ -18,19 +19,12 @@ interface State {
 // must use the editorRef property to get the Monaco editor object and
 // manipulate it using the Monaco API.
 export class EditorComponent extends React.Component<Props, State> {
-	static contextTypes: React.ValidationMap<any> = {
-		siteConfig: React.PropTypes.object.isRequired,
-	};
-
-	context: {
-		siteConfig: { assetsRoot: string };
-	};
 
 	private _container: HTMLElement;
 	private _editor?: Editor;
 
 	componentWillMount(): void {
-		loadMonaco(this.context.siteConfig.assetsRoot).then(() => {
+		loadMonaco(context.assetsRoot).then(() => {
 			invariant(!this._editor, "editor is already initialized");
 			invariant(this._container, "container element ref is not available");
 

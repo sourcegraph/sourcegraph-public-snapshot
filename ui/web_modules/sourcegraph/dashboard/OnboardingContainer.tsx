@@ -25,7 +25,6 @@ const reposQuerystring = "RemoteOnly=true";
 
 export class OnboardingContainer extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
-		siteConfig: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
 	};
 

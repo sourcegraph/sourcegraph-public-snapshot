@@ -8,7 +8,6 @@ describe("SignedInDashboard", () => {
 		autotest(testdataData, "sourcegraph/dashboard/testdata/SignedInDashboard-data.json",
 			<SignedInDashboard location={{}} />,
 			{
-				siteConfig: {},
 				router: {push: () => { /* ignore */ }},
 			},
 		);

@@ -14,6 +14,7 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
+import {context} from "sourcegraph/app/context";
 
 interface Props {
 	location?: any;
@@ -26,7 +27,6 @@ type State = any;
 
 export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
-		siteConfig: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
 	};
 
@@ -53,7 +53,7 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 								Enable Sourcegraph on any private GitHub repositories for a better coding experience
 							</p>
 							<div className={classNames(base.pv5)}>
-								<img width={332} style={{marginBottom: "-95px"}} src={`${(this.context as any).siteConfig.assetsRoot}/img/Dashboard/OnboardingRepos.png`}></img>
+								<img width={332} style={{marginBottom: "-95px"}} src={`${context.assetsRoot}/img/Dashboard/OnboardingRepos.png`}></img>
 								{this.state.isLoading && <div><Loader/></div>}
 								{!this.state.isLoading && <GitHubAuthButton pageName={"GitHubPrivateCodeOnboarding"} scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>}
 							</div>

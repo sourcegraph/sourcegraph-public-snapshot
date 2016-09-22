@@ -30,7 +30,6 @@ type State = any;
 
 export class DashboardContainer extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
-		siteConfig: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
 	};
 

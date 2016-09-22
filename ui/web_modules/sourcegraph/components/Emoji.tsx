@@ -1,6 +1,5 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
+import {context} from "sourcegraph/app/context";
 
 interface Props {
 	className?: string;
@@ -11,15 +10,12 @@ interface Props {
 type State = any;
 
 export class Emoji extends React.Component<Props, State> {
-	static contextTypes: React.ValidationMap<any> = {
-		siteConfig: React.PropTypes.object.isRequired,
-	};
 
-	static defaultProps = {
+	static defaultProps: {
 		width: "16px",
 	};
 
 	render(): JSX.Element | null {
-		return <img src={`${(this.context as any).siteConfig.assetsRoot}/img/emoji/${this.props.name}.svg`} width={this.props.width} className={this.props.className} />;
+		return <img src={`${context.assetsRoot}/img/emoji/${this.props.name}.svg`} width={this.props.width} className={this.props.className} />;
 	}
 }

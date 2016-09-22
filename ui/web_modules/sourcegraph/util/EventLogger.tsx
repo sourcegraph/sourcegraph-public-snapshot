@@ -3,7 +3,6 @@ import * as React from "react";
 import { InjectedRouter, Route } from "react-router";
 import { context } from "sourcegraph/app/context";
 import { getRouteParams, getRoutePattern, getViewName } from "sourcegraph/app/routePatterns";
-import { SiteConfig } from "sourcegraph/app/siteConfig";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as UserActions from "sourcegraph/user/UserActions";
@@ -59,22 +58,18 @@ class EventLoggerClass {
 	}
 
 	// init initializes Amplitude and Intercom.
-	init(siteConfig: SiteConfig): void {
+	init(): void {
 		if (global.window && !this._amplitude) {
 			this._amplitude = require("amplitude-js");
 
 			this._telligent = global.window.telligent;
 
-			if (!siteConfig) {
-				throw new Error("EventLogger requires SiteConfig to be previously set using EventLogger.setSiteConfig before EventLogger can be initialized.");
-			}
-
 			let apiKey = "608f75cce80d583063837b8f5b18be54";
 			let env = "development";
-			if (siteConfig.buildVars.Version === "dev") {
+			if (context.buildVars.Version === "dev") {
 				apiKey = "2b4b1117d1faf3960c81899a4422a222";
 			} else {
-				switch (siteConfig.appURL) {
+				switch (context.appURL) {
 					case "https://sourcegraph.com":
 						apiKey = "e3c885c30d2c0c8bf33b1497b17806ba";
 						env = "production";

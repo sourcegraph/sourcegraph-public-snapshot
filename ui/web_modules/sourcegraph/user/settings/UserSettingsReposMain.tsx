@@ -18,12 +18,8 @@ interface Props {
 type State = any;
 
 export class UserSettingsReposMain extends Container<Props, State> {
-	static contextTypes: React.ValidationMap<any> = {
-		siteConfig: React.PropTypes.object.isRequired,
-		router: React.PropTypes.object.isRequired,
-	};
 
-	reconcileState(state: State, props: Props, context: any): void {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 		state.repos = RepoStore.repos.list(reposQuerystring);
 	}

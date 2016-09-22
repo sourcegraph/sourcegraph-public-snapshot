@@ -13,6 +13,7 @@ import * as colors from "sourcegraph/components/styles/_colors.css";
 import {GitHubLogo} from "sourcegraph/components/symbols";
 import {EventLogger} from "sourcegraph/util/EventLogger";
 import {EditorDemo} from "sourcegraph/dashboard/EditorDemo";
+import {context} from "sourcegraph/app/context";
 
 interface Props {
 	location?: any;
@@ -23,7 +24,6 @@ type State = any;
 
 export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
-		siteConfig: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
 	};
 
@@ -87,7 +87,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 						<div className={classNames(styles.user_actions)}>
 						<div className={classNames(styles.inline_actions, base.pt3)} style={{verticalAlign: "top"}}>
 							<GitHubLogo width={70} color={jsColors.coolGray3()} className={classNames(base.hidden_s)} style={{marginRight: "-20px", verticalAlign: "top"}}/>
-							<img width={70} className={classNames(base.hidden_s)} src={`${(this.context as any).siteConfig.assetsRoot}/img/sourcegraph-mark.svg`}></img>
+							<img width={70} className={classNames(base.hidden_s)} src={`${context.assetsRoot}/img/sourcegraph-mark.svg`}></img>
 						</div>
 						<div className={classNames(styles.inline_actions, base.pt2, base.pl3)} style={{maxWidth: "340px"}}>
 							<Heading align="left" level="6">

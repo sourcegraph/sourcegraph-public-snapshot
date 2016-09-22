@@ -116,6 +116,5 @@ export function GlobalNav(
 }
 
 (GlobalNav as React.StatelessComponent<Props>).contextTypes = {
-	siteConfig: React.PropTypes.object.isRequired,
 	router: React.PropTypes.object.isRequired,
 };
