@@ -75,7 +75,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 				<Helmet title="Home" />
 				<div className={styles.onboarding_container}>
 					<Panel className={classNames(base.pb3, base.ph4, base.ba, base.br2, colors.b__cool_pale_gray)}>
-						<Heading className={classNames(base.pt4)} align="center" level="">
+						<Heading pt={4} align="center" level={3}>
 							Browse code smarter on Sourcegraph
 						</Heading>
 						<div className={styles.user_actions} style={{ maxWidth: "360px" }}>

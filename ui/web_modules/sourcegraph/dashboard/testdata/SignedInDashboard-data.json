@@ -18,9 +18,9 @@
 										{
 											"type": "Heading",
 											"props": {
-												"className": "",
+												"pt": 5,
 												"align": "center",
-												"level": "4",
+												"level": 3,
 												"children": [
 													"Start exploring code"
 												]

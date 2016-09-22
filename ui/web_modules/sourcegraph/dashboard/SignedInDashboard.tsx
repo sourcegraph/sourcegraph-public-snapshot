@@ -104,7 +104,7 @@ export class SignedInDashboard extends Container<Props, State> {
 								</FlexContainer>
 							</div>
 						}
-						<Heading className={classNames(base.pt5)} align="center" level="4">
+						<Heading pt={5} align="center" level={3}>
 							Start exploring code
 						</Heading>
 						<p className={classNames(typography.tc, base.mt3, base.mb4, typography.f6, colors.cool_gray_8)} >
