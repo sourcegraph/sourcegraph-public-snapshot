@@ -9,7 +9,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 import {EventLogger} from "sourcegraph/util/EventLogger";
 
 const ChromeExtensionToastKey = "chrome-extension-toast-dismissed";
-const ToastTitle = "Save time while reviewing pull requests with Sourcegraph for GitHub";
+const ToastTitle = "Save time browsing code on GitHub with the Sourcegraph browser extension!";
 
 interface State {
 	isVisible: boolean;
@@ -36,7 +36,7 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 			return (
 				<Toast>
 					<a onClick={this._closeClicked.bind(this)} className={classNames(base.fr, base.mt2)}><CloseIcon/></a>
-					<LocationStateToggleLink modalName="chrome" location={this.props.location}>
+					<LocationStateToggleLink href="/join" modalName="chrome" location={this.props.location}>
 						<p onClick={this._toastCTAClicked.bind(this)} style={{textAlign: "center"}}>{ToastTitle}</p>
 					</LocationStateToggleLink>
 				</Toast>
