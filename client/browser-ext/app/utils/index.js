@@ -1,5 +1,5 @@
 export const supportedExtensions = [
-	"go", "java", "js", "jsx", "ts", "tsx"
+	"go" //, "java", "js", "jsx", "ts", "tsx"
 ];
 
 export function getPathExtension(path) {

@@ -28,7 +28,7 @@ function _resolveRev(dispatch, state, repo, rev) {
 }
 
 // This is used to fetch the styling info, which we now use to tokenize textNodes in DOM
-export function getAnnotations(repo, rev, path, exactRev) {
+export function getAnnotations(repo, rev, path) {
 	return function (dispatch, getState) {
 		const state = getState();
 		return _resolveRev(dispatch, state, repo, rev).then((json) => {

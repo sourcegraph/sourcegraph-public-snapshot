@@ -114,11 +114,6 @@ export default class BlobAnnotator extends Component {
 				this.state.headRepoURI = this.state.repoURI;
 			}
 		}
-
-		var self = this;
-		var repoURI = this.state.repoURI;
-		var commitID = this.state.commitID;
-		var rev = this.state.rev;
 	}
 
 	componentDidMount() {
@@ -216,6 +211,9 @@ export default class BlobAnnotator extends Component {
 	}
 
 	render() {
-		return <span><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px"}} /></span>;
+		if (!utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
+			return (<span id="sourcegraph-build-indicator-text" style={{paddingLeft: "5px"}}><a href={`https://sourcegraph.com/${this.state.repoURI}@${this.state.rev}/-/blob/${this.state.path}`}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px", WebkitFilter: "grayscale(100%)"}} /></a>{"Language not supported. Coming soon!"}</span>);
+		}
+		return (<span><a href={`https://sourcegraph.com/${this.state.repoURI}@${this.state.rev}/-/blob/${this.state.path}`}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px"}} /></a></span>);
 	}
 }
