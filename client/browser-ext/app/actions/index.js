@@ -45,14 +45,14 @@ export function getAnnotations(repo, rev, path) {
 
 export function refreshVCS(repo) {
 	return function (dispatch) {
-		return fetch(`https://sourcegraph.com/.api/repos/${repo}/-/refresh`, {method:  "POST"})
+		return fetch(`https://sourcegraph.com/.api/repos/${repo}/-/refresh`, {method: "POST"})
 			.then((json) => {})
 			.catch((err) => {});
 	}
 }
 
 export function ensureRepoExists(repo) {
-	return function() {
+	return function () {
 		const body = {
 			Op: {
 				New: {
