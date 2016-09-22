@@ -1,15 +1,8 @@
+// Package gitserver contains a server that manages git repositories on disk,
+// and a client that provides remote access to them.
 package gitserver
 
-import (
-	"errors"
-	"log"
-	"net"
-	"time"
-
-	"github.com/neelance/chanrpc"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-)
+import "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
 type request struct {
 	Exec   *execRequest
@@ -18,81 +11,71 @@ type request struct {
 	Remove *removeRequest
 }
 
-var ReposDir string
-var servers [](chan<- *request)
-
-func Serve(l net.Listener) error {
-	registerMetrics()
-	requests := make(chan *request, 100)
-	go processRequests(requests)
-	srv := &chanrpc.Server{RequestChan: requests}
-	return srv.Serve(l)
+// execRequest ...
+type execRequest struct {
+	Repo      string
+	Args      []string
+	Opt       *vcs.RemoteOpts
+	Stdin     <-chan []byte
+	ReplyChan chan<- *execReply
 }
 
-func processRequests(requests <-chan *request) {
-	for req := range requests {
-		if req.Exec != nil {
-			go handleExecRequest(req.Exec)
-		}
-		if req.Search != nil {
-			go handleSearchRequest(req.Search)
-		}
-		if req.Create != nil {
-			go handleCreateRequest(req.Create)
-		}
-		if req.Remove != nil {
-			go handleRemoveRequest(req.Remove)
-		}
-	}
+type execReply struct {
+	RepoNotFound    bool // If true, exec returned with noop because repo is not found.
+	CloneInProgress bool // If true, exec returned with noop because clone is in progress.
+	Stdout          <-chan []byte
+	Stderr          <-chan []byte
+	ProcessResult   <-chan *processResult
 }
 
-func Connect(addr string) {
-	requestsChan := make(chan *request, 100)
-	servers = append(servers, requestsChan)
+func (r *execReply) repoFound() bool { return !r.RepoNotFound }
 
-	go func() {
-		for {
-			err := chanrpc.DialAndDeliver(addr, requestsChan)
-			log.Printf("gitserver: DialAndDeliver error: %v", err)
-			time.Sleep(time.Second)
-		}
-	}()
+type processResult struct {
+	Error      string
+	ExitStatus int
 }
 
-type genericReply interface {
-	repoFound() bool
+// searchRequest ...
+type searchRequest struct {
+	Repo      string
+	Commit    vcs.CommitID
+	Opt       vcs.SearchOptions
+	ReplyChan chan<- *searchReply
 }
 
-var errRPCFailed = errors.New("gitserver: rpc failed")
-
-func broadcastCall(newRequest func() (*request, func() (genericReply, bool))) (interface{}, error) {
-	allReplies := make(chan genericReply, len(servers))
-	for _, server := range servers {
-		req, getReply := newRequest()
-		server <- req
-		go func() {
-			reply, ok := getReply()
-			if !ok {
-				allReplies <- nil
-				return
-			}
-			allReplies <- reply
-		}()
-	}
-
-	rpcError := false
-	for range servers {
-		reply := <-allReplies
-		if reply == nil {
-			rpcError = true
-			continue
-		}
-		if reply.repoFound() {
-			return reply, nil
-		}
-	}
-	if rpcError {
-		return nil, errRPCFailed
-	}
-	return nil, vcs.RepoNotExistError{}
+type searchReply struct {
+	RepoNotFound    bool // If true, search returned with noop because repo is not found.
+	CloneInProgress bool // If true, search returned with noop because clone is in progress.
+	Results         []*vcs.SearchResult
+	Error           string // If non-empty, an error happened.
 }
+
+func (r *searchReply) repoFound() bool { return !r.RepoNotFound }
+
+// createRequest ...
+type createRequest struct {
+	Repo         string
+	MirrorRemote string
+	Opt          *vcs.RemoteOpts
+	ReplyChan    chan<- *createReply
+}
+
+type createReply struct {
+	RepoExist       bool   // If true, create returned with noop because repo exists.
+	CloneInProgress bool   // If true, create returned with noop because clone is in progress.
+	Error           string // If non-empty, an error happened.
+}
+
+// removeRequest ...
+type removeRequest struct {
+	Repo      string
+	ReplyChan chan<- *removeReply
+}
+
+type removeReply struct {
+	RepoNotFound    bool   // If true, remove returned with noop because repo is not found.
+	CloneInProgress bool   // If true, remove returned with noop because clone is in progress.
+	Error           string // If non-empty, an error happened.
+}
+
+func (r *removeReply) repoFound() bool { return !r.RepoNotFound }

@@ -2,16 +2,14 @@ package gitcmd
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
 
+	githttp "github.com/AaronO/go-git-http"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitproto"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
-
-	"context"
-
-	githttp "github.com/AaronO/go-git-http"
 )
 
 func (r *Repository) ReceivePack(ctx context.Context, data []byte, opt gitproto.TransportOpt) ([]byte, []githttp.Event, error) {
@@ -41,7 +39,7 @@ func (r *Repository) servicePack(ctx context.Context, service string, data []byt
 	if opt.AdvertiseRefs {
 		args = append(args, "--advertise-refs")
 	}
-	cmd := gitserver.Command("git", append(args, ".")...)
+	cmd := gitserver.DefaultClient.Command("git", append(args, ".")...)
 	cmd.Repo = r.URL
 	cmd.Input, err = ioutil.ReadAll(rpcReader)
 	if err != nil {

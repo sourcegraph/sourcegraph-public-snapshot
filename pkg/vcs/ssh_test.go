@@ -15,10 +15,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/ssh"
 )
 
-func init() {
-	gitserver.InsecureSkipCheckVerifySSH = true
-}
-
 func startGitShellSSHServer(t *testing.T, label string, dir string) (*ssh.Server, vcs.RemoteOpts) {
 	s, err := ssh.NewServer("git-shell", dir, ssh.PrivateKey(ssh.SamplePrivKey))
 	if err != nil {
@@ -61,7 +57,7 @@ func TestRepository_Clone_ssh(t *testing.T) {
 			gitURL := s.GitURL + "/" + filepath.Base(test.repoDir)
 			cloneDir := path.Join(makeTmpDir(t, "ssh-clone"), "repo")
 			t.Logf("Cloning from %s to %s", gitURL, cloneDir)
-			if err := gitserver.Clone(cloneDir, gitURL, &remoteOpts); err != nil {
+			if err := gitserver.DefaultClient.Clone(cloneDir, gitURL, &remoteOpts); err != nil {
 				t.Fatalf("%s: Clone: %s", label, err)
 			}
 
@@ -132,7 +128,7 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 
 			baseURL := s.GitURL + "/" + filepath.Base(test.baseDir)
 			t.Logf("Cloning from %s to %s", baseURL, test.headDir)
-			if err := gitserver.Clone(test.headDir, baseURL, &remoteOpts); err != nil {
+			if err := gitserver.DefaultClient.Clone(test.headDir, baseURL, &remoteOpts); err != nil {
 				t.Errorf("Clone(%q, %q, %q): %s", label, baseURL, test.headDir, err)
 				return
 			}

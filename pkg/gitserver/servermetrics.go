@@ -7,12 +7,11 @@ import (
 	"syscall"
 	"time"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/prometheus/client_golang/prometheus"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
-func registerMetrics() {
+func (s *Server) registerMetrics() {
 	// test the latency of exec, which may increase under certain memory
 	// conditions
 	echoDuration := prometheus.NewGauge(prometheus.GaugeOpts{
@@ -35,7 +34,7 @@ func registerMetrics() {
 	}()
 
 	// report the size of the repos dir
-	if ReposDir == "" {
+	if s.ReposDir == "" {
 		log15.Error("ReposDir is not set, cannot export disk_space_available metric.")
 		return
 	}
@@ -46,7 +45,7 @@ func registerMetrics() {
 		Help:      "Amount of free space disk space on the repos mount.",
 	}, func() float64 {
 		var stat syscall.Statfs_t
-		syscall.Statfs(ReposDir, &stat)
+		syscall.Statfs(s.ReposDir, &stat)
 		return float64(stat.Bavail * uint64(stat.Bsize))
 	})
 	prometheus.MustRegister(c)

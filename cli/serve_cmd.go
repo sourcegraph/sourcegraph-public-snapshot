@@ -157,7 +157,7 @@ type ServeCmd struct {
 	GraphStoreOpts `group:"Graph data storage (defs, refs, etc.)" namespace:"graphstore"`
 
 	ReposDir   string `long:"fs.repos-dir" description:"root dir containing repos" default:"$SGPATH/repos" env:"SRC_REPOS_DIR"`
-	GitServers string `long:"git-servers" description:"addresses of the remote git servers; a local git server process is used by default" env:"SRC_GIT_SERVERS"`
+	Gitservers string `long:"git-servers" description:"addresses of the remote gitservers; a local gitserver process is used by default" env:"SRC_GIT_SERVERS"`
 }
 
 func (c *ServeCmd) configureAppURL() (*url.URL, error) {
@@ -279,7 +279,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	// Listen for events and periodically push them to analytics gateway.
 	eventsutil.StartEventLogger(clientCtx, 10*4096, 256, 10*time.Minute)
 
-	c.runGitServer()
+	c.runGitserver()
 
 	sm := http.NewServeMux()
 	for _, f := range cli.ServeMuxFuncs {
@@ -578,11 +578,13 @@ func (c *ServeCmd) safeConfigFlags() string {
 	return configStr
 }
 
-func (c *ServeCmd) runGitServer() {
-	gitServers := strings.Fields(c.GitServers)
-	if len(c.GitServers) != 0 {
-		for _, addr := range gitServers {
-			gitserver.Connect(addr)
+// runGitserver either connects to gitservers specified in c.Gitservers, if any.
+// Otherwise it starts a single local gitserver and connects to it.
+func (c *ServeCmd) runGitserver() {
+	gitservers := strings.Fields(c.Gitservers)
+	if len(gitservers) != 0 {
+		for _, addr := range gitservers {
+			gitserver.DefaultClient.Connect(addr)
 		}
 		return
 	}
@@ -590,7 +592,10 @@ func (c *ServeCmd) runGitServer() {
 	stdoutReader, stdoutWriter := io.Pipe()
 	go func() {
 		cmd := exec.Command(srccmd.Path, "git-server", "--auto-terminate", "--repos-dir="+os.ExpandEnv(c.ReposDir))
-		cmd.StdinPipe() // keep stdin from closing
+		_, err := cmd.StdinPipe() // keep stdin from closing
+		if err != nil {
+			log.Fatalf("git-server failed: %s", err)
+		}
 		cmd.Stdout = io.MultiWriter(os.Stdout, stdoutWriter)
 		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
@@ -607,7 +612,7 @@ func (c *ServeCmd) runGitServer() {
 	addr := line[strings.LastIndexByte(line, ' ')+1 : len(line)-1]
 	go io.Copy(ioutil.Discard, stdoutReader) // drain pipe
 
-	gitserver.Connect(addr)
+	gitserver.DefaultClient.Connect(addr)
 }
 
 // tcpKeepAliveListener sets TCP keep-alive timeouts on accepted

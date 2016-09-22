@@ -522,7 +522,7 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (int32, e
 	// live in PostgreSQL.)
 	// A mirrored repo is automatically cloned by the repo updater instead of here.
 	if !newRepo.Mirror && !skipFS {
-		if err := gitserver.Init(newRepo.URI); err != nil && err != vcs.ErrRepoExist {
+		if err := gitserver.DefaultClient.Init(newRepo.URI); err != nil && err != vcs.ErrRepoExist {
 			return 0, err
 		}
 	}
@@ -657,7 +657,7 @@ func (s *repos) Delete(ctx context.Context, repo int32) error {
 		return err
 	}
 	if !skipFS && dir != "" {
-		if err := gitserver.Remove(dir); err != nil {
+		if err := gitserver.DefaultClient.Remove(dir); err != nil {
 			log15.Warn("Deleting repo on filesystem failed", "repo", repo, "dir", dir, "err", err)
 		}
 	}

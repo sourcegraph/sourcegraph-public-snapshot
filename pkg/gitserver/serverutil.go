@@ -12,15 +12,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
 
-// InsecureSkipCheckVerifySSH controls whether the client verifies the
-// SSH server's certificate or host key. If InsecureSkipCheckVerifySSH
-// is true, the program is susceptible to a man-in-the-middle
-// attack. This should only be used for testing.
-var InsecureSkipCheckVerifySSH bool
-
-func runWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) error {
+func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) error {
 	if opt != nil && opt.SSH != nil {
-		gitSSHWrapper, gitSSHWrapperDir, keyFile, err := makeGitSSHWrapper(opt.SSH.PrivateKey)
+		gitSSHWrapper, gitSSHWrapperDir, keyFile, err := s.makeGitSSHWrapper(opt.SSH.PrivateKey)
 		defer func() {
 			if keyFile != "" {
 				if err := os.Remove(keyFile); err != nil {
@@ -39,7 +33,7 @@ func runWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) error {
 	}
 
 	if opt != nil && opt.HTTPS != nil {
-		gitPassHelper, gitPassHelperDir, err := makeGitPassHelper(opt.HTTPS.Pass)
+		gitPassHelper, gitPassHelperDir, err := s.makeGitPassHelper(opt.HTTPS.Pass)
 		if err != nil {
 			return err
 		}
@@ -56,9 +50,9 @@ func runWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) error {
 // makeGitSSHWrapper writes a GIT_SSH wrapper that runs ssh with the
 // private key. You should remove the sshWrapper, sshWrapperDir and
 // the keyFile after using them.
-func makeGitSSHWrapper(privKey []byte) (sshWrapper, sshWrapperDir, keyFile string, err error) {
+func (s *Server) makeGitSSHWrapper(privKey []byte) (sshWrapper, sshWrapperDir, keyFile string, err error) {
 	var otherOpt string
-	if InsecureSkipCheckVerifySSH {
+	if s.InsecureSkipCheckVerifySSH {
 		otherOpt = "-o StrictHostKeyChecking=no"
 	}
 
@@ -72,12 +66,12 @@ func makeGitSSHWrapper(privKey []byte) (sshWrapper, sshWrapperDir, keyFile strin
 		return "", "", keyFile, err
 	}
 
-	tmpFile, tmpFileDir, err := gitSSHWrapper(keyFile, otherOpt)
+	tmpFile, tmpFileDir, err := s.gitSSHWrapper(keyFile, otherOpt)
 	return tmpFile, tmpFileDir, keyFile, err
 }
 
-// Makes system-dependent SSH wrapper
-func gitSSHWrapper(keyFile string, otherOpt string) (sshWrapperFile string, tempDir string, err error) {
+// gitSSHWrapper makes system-dependent SSH wrapper.
+func (*Server) gitSSHWrapper(keyFile string, otherOpt string) (sshWrapperFile string, tempDir string, err error) {
 	// TODO(sqs): encrypt and store the key in the env so that
 	// attackers can't decrypt if they have disk access after our
 	// process dies
@@ -107,7 +101,7 @@ func gitSSHWrapper(keyFile string, otherOpt string) (sshWrapperFile string, temp
 
 // makeGitPassHelper writes a GIT_ASKPASS helper that supplies password over stdout.
 // You should remove the passHelper (and tempDir if any) after using it.
-func makeGitPassHelper(pass string) (passHelper string, tempDir string, err error) {
+func (*Server) makeGitPassHelper(pass string) (passHelper string, tempDir string, err error) {
 	tmpFile, dir, err := util.ScriptFile("go-vcs-gitcmd-ask")
 	if err != nil {
 		return tmpFile, dir, err

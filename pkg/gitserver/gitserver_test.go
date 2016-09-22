@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/neelance/chanrpc/chanrpcutil"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -77,7 +76,7 @@ func TestExec(t *testing.T) {
 	for _, test := range tests {
 		server1 := make(chan *request)
 		server2 := make(chan *request)
-		servers = [](chan<- *request){server1, server2}
+		client := &Client{servers: [](chan<- *request){server1, server2}}
 
 		go func(test *execTest) {
 			req1 := <-server1
@@ -95,7 +94,7 @@ func TestExec(t *testing.T) {
 			close(req2.Exec.ReplyChan)
 		}(test)
 
-		stdout, stderr, err := Command("git", "test").DividedOutput()
+		stdout, stderr, err := client.Command("git", "test").DividedOutput()
 		if err != test.expectedErr {
 			t.Errorf("expected error %#v, got %#v", test.expectedErr, err)
 		}
@@ -169,13 +168,13 @@ func TestCreate(t *testing.T) {
 			make(chan *request),
 			make(chan *request),
 		}
-		servers = [](chan<- *request){testServers[0], testServers[1]}
+		client := &Client{servers: [](chan<- *request){testServers[0], testServers[1]}}
 
 		const repo = "test/repo"
 
 		// Keep in sync with hashing algorithm in create.
 		sum := md5.Sum([]byte(repo))
-		serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(servers))
+		serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(client.servers))
 
 		go func(test *createTest) {
 			req1 := <-testServers[0]
@@ -199,7 +198,7 @@ func TestCreate(t *testing.T) {
 			close(req3.Create.ReplyChan)
 		}(test)
 
-		err := Clone(repo, "test/remote", nil)
+		err := client.Clone(repo, "test/remote", nil)
 		if !reflect.DeepEqual(test.expectedErr, err) {
 			t.Errorf("expected error %#v, got %#v", test.expectedErr, err)
 		}

@@ -67,7 +67,7 @@ func (r *Repository) ResolveRevision(spec string) (vcs.CommitID, error) {
 		return "", err
 	}
 
-	cmd := gitserver.Command("git", "rev-parse", spec+"^0")
+	cmd := gitserver.DefaultClient.Command("git", "rev-parse", spec+"^0")
 	cmd.Repo = r.URL
 	stdout, stderr, err := cmd.DividedOutput()
 	if err != nil {
@@ -162,7 +162,7 @@ func (r *Repository) Branches(opt vcs.BranchesOptions) ([]*vcs.Branch, error) {
 // branches runs the `git branch` command followed by the given arguments and
 // returns the list of branches if successful.
 func (r *Repository) branches(args ...string) ([]string, error) {
-	cmd := gitserver.Command("git", append([]string{"branch"}, args...)...)
+	cmd := gitserver.DefaultClient.Command("git", append([]string{"branch"}, args...)...)
 	cmd.Repo = r.URL
 	out, err := cmd.Output()
 	if err != nil {
@@ -186,7 +186,7 @@ func (r *Repository) branchesBehindAhead(branch, base string) (*vcs.BehindAhead,
 		return nil, err
 	}
 
-	cmd := gitserver.Command("git", "rev-list", "--count", "--left-right", fmt.Sprintf("refs/heads/%s...refs/heads/%s", base, branch))
+	cmd := gitserver.DefaultClient.Command("git", "rev-list", "--count", "--left-right", fmt.Sprintf("refs/heads/%s...refs/heads/%s", base, branch))
 	cmd.Repo = r.URL
 	out, err := cmd.Output()
 	if err != nil {
@@ -233,7 +233,7 @@ func (p byteSlices) Less(i, j int) bool { return bytes.Compare(p[i], p[j]) < 0 }
 func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 func (r *Repository) showRef(arg string) ([][2]string, error) {
-	cmd := gitserver.Command("git", "show-ref", arg)
+	cmd := gitserver.DefaultClient.Command("git", "show-ref", arg)
 	cmd.Repo = r.URL
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -358,7 +358,7 @@ func (r *Repository) commitLog(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, err
 		}
 	}
 
-	cmd := gitserver.Command("git", args...)
+	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.URL
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -410,7 +410,7 @@ func (r *Repository) commitLog(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, err
 	// Count commits.
 	var total uint
 	if !opt.NoTotal {
-		cmd = gitserver.Command("git", "rev-list", "--count", rng)
+		cmd = gitserver.DefaultClient.Command("git", "rev-list", "--count", rng)
 		if opt.Path != "" {
 			// This doesn't include --follow flag because rev-list doesn't support it, so the number may be slightly off.
 			cmd.Args = append(cmd.Args, "--", opt.Path)
@@ -488,7 +488,7 @@ func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.D
 	}
 
 	args = append(args, rng, "--")
-	cmd := gitserver.Command("git", args...)
+	cmd := gitserver.DefaultClient.Command("git", args...)
 	if opt != nil {
 		cmd.Args = append(cmd.Args, opt.Paths...)
 	}
@@ -516,7 +516,7 @@ func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, er
 	r.editLock.Lock()
 	defer r.editLock.Unlock()
 
-	cmd := gitserver.Command("git", "remote", "update", "--prune")
+	cmd := gitserver.DefaultClient.Command("git", "remote", "update", "--prune")
 	cmd.Repo = r.URL
 	cmd.Opt = &opt
 	_, stderr, err := cmd.DividedOutput()
@@ -572,7 +572,7 @@ func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk,
 		}
 	}
 
-	cmd := gitserver.Command("git", args...)
+	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.URL
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -681,7 +681,7 @@ func (r *Repository) MergeBase(a, b vcs.CommitID) (vcs.CommitID, error) {
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
 
-	cmd := gitserver.Command("git", "merge-base", "--", string(a), string(b))
+	cmd := gitserver.DefaultClient.Command("git", "merge-base", "--", string(a), string(b))
 	cmd.Repo = r.URL
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -696,7 +696,7 @@ func (r *Repository) Search(at vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.Sear
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
-	return gitserver.Search(r.URL, at, opt)
+	return gitserver.DefaultClient.Search(r.URL, at, opt)
 }
 
 func (r *Repository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, error) {
@@ -711,7 +711,7 @@ func (r *Repository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, er
 		opt.Rev = "HEAD"
 	}
 
-	cmd := gitserver.Command("git", "shortlog", "-sne", opt.Rev)
+	cmd := gitserver.DefaultClient.Command("git", "shortlog", "-sne", opt.Rev)
 	cmd.Repo = r.URL
 	out, err := cmd.Output()
 	if err != nil {
@@ -770,7 +770,7 @@ func (r *Repository) readFileBytes(commit vcs.CommitID, name string) ([]byte, er
 		return data.([]byte), nil
 	}
 
-	cmd := gitserver.Command("git", "show", string(commit)+":"+name)
+	cmd := gitserver.DefaultClient.Command("git", "show", string(commit)+":"+name)
 	cmd.Repo = r.URL
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -909,7 +909,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 		args = append(args, "-r", "-t")
 	}
 	args = append(args, "--", filepath.ToSlash(path))
-	cmd := gitserver.Command("git", args...)
+	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.URL
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -974,7 +974,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 			}
 		case "commit":
 			mode = mode | vcs.ModeSubmodule
-			cmd := gitserver.Command("git", "config", "--get", "submodule."+name+".url")
+			cmd := gitserver.DefaultClient.Command("git", "config", "--get", "submodule."+name+".url")
 			cmd.Repo = r.URL
 			url := "" // url is not available if submodules are not initialized
 			if out, err := cmd.Output(); err == nil {

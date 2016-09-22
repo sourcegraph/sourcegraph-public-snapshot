@@ -37,7 +37,7 @@ func (c *gitServerCmd) Execute(args []string) error {
 	if c.ReposDir == "" {
 		log.Fatal("git-server: --repos-dir flag is required")
 	}
-	gitserver.ReposDir = c.ReposDir
+	gitserver := gitserver.Server{ReposDir: c.ReposDir}
 
 	if c.AutoTerminate {
 		go func() {
