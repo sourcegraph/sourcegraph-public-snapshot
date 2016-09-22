@@ -212,8 +212,8 @@ export default class BlobAnnotator extends Component {
 
 	render() {
 		if (!utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
-			return (<span id="sourcegraph-build-indicator-text" style={{paddingLeft: "5px"}}><a href={`https://sourcegraph.com/${this.state.repoURI}@${this.state.rev}/-/blob/${this.state.path}`}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px", WebkitFilter: "grayscale(100%)"}} /></a>{"Language not supported. Coming soon!"}</span>);
+			return <span id="sourcegraph-build-indicator-text" style={{paddingLeft: "5px"}}><a href={`https://sourcegraph.com/${this.state.repoURI}@${this.state.rev}/-/blob/${this.state.path}`}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px", WebkitFilter: "grayscale(100%)"}} /></a>{"Language not supported. Coming soon!"}</span>;
 		}
-		return (<span><a href={`https://sourcegraph.com/${this.state.repoURI}@${this.state.rev}/-/blob/${this.state.path}`}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px"}} /></a></span>);
+		return <span><a href={`https://sourcegraph.com/${this.state.repoURI}@${this.state.rev}/-/blob/${this.state.path}`}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px"}} /></a></span>;
 	}
 }
