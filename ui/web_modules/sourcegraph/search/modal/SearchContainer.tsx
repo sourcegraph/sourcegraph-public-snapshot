@@ -24,7 +24,7 @@ import {EventLogger} from "sourcegraph/util/EventLogger";
 
 const modalStyle = {
 	position: "fixed",
-	top: 60,
+	top: 55,
 	right: 0,
 	left: 0,
 	maxWidth: 515,
@@ -225,24 +225,22 @@ export class SearchContainer extends Container<Props & RepoSpec, State> {
 	bindSearchInput(node: HTMLElement): void { this.searchInput = node; }
 
 	results(): Category[] {
-		let query = this.query();
-		let results: Category[] = [];
+		const query = this.query();
+		const results: Category[] = [];
 
 		const symbols = RepoStore.symbols.list(this.props.repo, this.props.commitID, query);
 		if (symbols) {
-			let symbolResults: Result[] = [];
+			const symbolResults: Result[] = [];
 			symbols.forEach(sym => {
 				let title = sym.name;
-				let kind = symbolKindName(sym.kind);
-				if (kind) {
-					title = `${kind} ${title}`;
-				}
+				const kind = symbolKindName(sym.kind);
+				const desc = `${kind ? kind : ""} in ${sym.location.uri}`;
+				let idx = title.toLowerCase().indexOf(query);
 				const path = sym.location.uri;
 				const line = sym.location.range.start.line;
-				const idx = title.toLowerCase().indexOf(query.toLowerCase());
 				symbolResults.push({
 					title: title,
-					description: sym.location.uri,
+					description: desc,
 					index: idx,
 					length: query.length,
 					URLPath: urlToBlobLine(this.props.repo, this.props.rev, path, line + 1),
@@ -270,7 +268,7 @@ export class SearchContainer extends Container<Props & RepoSpec, State> {
 		if (files) {
 			let fileResults: Result[] = [];
 			files.Files.forEach((file, i) => {
-				const index = file.toLowerCase().indexOf(query.toLowerCase());
+				const index = file.toLowerCase().indexOf(query);
 				const l = index >= 0 ? query.length : undefined;
 				fileResults.push({ title: file, description: "", index: index, length: l, URLPath: urlToBlob(this.props.repo, this.props.rev, file) });
 			});
@@ -361,11 +359,11 @@ function symbolKindName(kind: number): string {
 	case 11:
 		return "interface";
 	case 12:
-		return "func";
+		return "function";
 	case 13:
-		return "var";
+		return "variable";
 	case 14:
-		return "const";
+		return "constant";
 	case 15:
 		return "string";
 	case 16:

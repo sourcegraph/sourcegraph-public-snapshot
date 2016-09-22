@@ -2,7 +2,7 @@ import * as React from "react";
 
 import  {Heading} from "sourcegraph/components/Heading";
 import {colors} from "sourcegraph/components/utils/colors";
-import {modal_result} from "sourcegraph/search/modal/SearchModalStyle.css";
+import {modal_result, view_more} from "sourcegraph/search/modal/SearchModalStyle.css";
 
 const smallFont = ".85rem";
 
@@ -12,9 +12,8 @@ const ViewMore = ({expandCategory, type}) => <a style={{
 		fontWeight: "bold",
 		display: "block",
 		textAlign: "center",
-		color: colors.blue3(),
 		marginTop: 16,
-	}} onClick={expandCategory}>
+	}} className={view_more} onClick={expandCategory}>
 	View more {type}
 </a>;
 

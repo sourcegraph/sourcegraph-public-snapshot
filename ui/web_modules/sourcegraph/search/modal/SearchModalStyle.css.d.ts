@@ -3,5 +3,7 @@
 
 export const colors: string;
 export const c_blue_text: string;
+export const c_blue: string;
 export const modal_result: string;
+export const view_more: string;
 

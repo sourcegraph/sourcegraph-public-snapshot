@@ -1,6 +1,6 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 
-@value c_blue_text from colors;
+@value c_blue_text, c_blue from colors;
 
 .modal_result:hover {
 	border: 2px solid c_blue_text;
@@ -8,4 +8,12 @@
 
 .modal_result {
 	border: 2px solid transparent;
+}
+
+.view_more:hover {
+	color: c_blue_text;
+}
+
+.view_more {
+	color: c_blue;
 }
