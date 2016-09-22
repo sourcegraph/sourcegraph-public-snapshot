@@ -41,7 +41,7 @@ const annotations = function(state = {content: {}}, action) {
 	switch (action.type) {
 	case ActionTypes.FETCHED_ANNOTATIONS:
 		if (!action.json && !state.content[keyFor(action.repo, action.rev, action.path)]) return state; // no update needed; avoid re-rending components
-		
+
 		return {
 			...state,
 			content: {
