@@ -209,8 +209,8 @@ func gitRevParse(ctx context.Context, dir string) (repoPath, commit string, err 
 	if err != nil {
 		return "", "", err
 	}
-	lines := strings.Fields(string(out))
-	if len(lines) != 2 {
+	lines := strings.Split(string(out), "\n")
+	if len(lines) != 3 {
 		return "", "", errors.New("unexpected number of lines from git rev-parse")
 	}
 	gitRevParseCache.Add(dir, lines)
