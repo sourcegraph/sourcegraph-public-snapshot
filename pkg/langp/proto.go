@@ -113,7 +113,7 @@ type DefSpec struct {
 	Repo string
 
 	// Commit is the Git commit ID (not branch) of the repository.
-	Commit string
+	Commit string `json:",omitempty"`
 
 	// UnitType (example GoPackage).
 	UnitType string
