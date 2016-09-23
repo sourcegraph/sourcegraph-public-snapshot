@@ -14,6 +14,10 @@ import (
 	sgtest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/unit"
+
+	// indirectly import sourcegraph.com/sourcegraph/sourcegraph/app/internal/srclibsupport,
+	// otherwise TestDefs fails
+	_ "sourcegraph.com/sourcegraph/sourcegraph/app"
 )
 
 const (
