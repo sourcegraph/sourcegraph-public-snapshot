@@ -119,10 +119,8 @@ export class Editor implements monaco.IDisposable {
 		return this._editorService.onDidOpenEditor(listener);
 	}
 
-	provideDefinition(model: monaco.editor.IReadOnlyModel, position: monaco.Position, token: monaco.CancellationToken): monaco.languages.Definition | monaco.Thenable<monaco.languages.Definition> {
-		return fetchJumpToDef(model, position).then((loc: lsp.Location) => {
-			return lsp.toMonacoLocation(loc);
-		});
+	provideDefinition(model: monaco.editor.IReadOnlyModel, position: monaco.Position, token: monaco.CancellationToken): monaco.languages.Definition | monaco.Thenable<monaco.languages.Definition | null> {
+		return fetchJumpToDef(model, position).then((loc: lsp.Location) => loc && loc.uri ? lsp.toMonacoLocation(loc) : null);
 	}
 
 	provideHover(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<monaco.languages.Hover> {
