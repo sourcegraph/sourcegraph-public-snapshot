@@ -308,7 +308,7 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 			if (isCurrentPage) {
 				location.hash = defUrl.slice(defUrl.indexOf('#'));
 			} else {
-				window.open(defUrl);
+				location.href = defUrl;
 			}
 		});
 	});
@@ -369,19 +369,22 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 
 		fetch(url)
 			.then((json) => {
-				let jmpuri = json.uri.split("://");
-				if (jmpuri.length < 2) return null;
-				let jmpFragment0 = jmpuri[1].split("?");
-				let jmpFragment1 = jmpFragment0[1].split("#");
+				try {
+					const jmpuri = json.uri.split("://");
+					const jmpFragment0 = jmpuri[1].split("?");
+					const jmpFragment1 = jmpFragment0[1].split("#");
 
-				const jmprep = jmpFragment0[0];
-				const jmprev = jmpFragment1[0] ? jmpFragment1[0] : "master";
-				const jmppth = jmpFragment1[1];
-				const jmplin = (Array.isArray(json.range) ? json.range[0].start.line : json.range.start.line) + 1;
-				const jmp = `https://${jmprep}/blob/${jmprev}/${jmppth}#L${jmplin}`;
+					const jmprep = jmpFragment0[0];
+					const jmprev = jmpFragment1[0] ? jmpFragment1[0] : "master";
+					const jmppth = jmpFragment1[1];
+					const jmplin = (Array.isArray(json.range) ? json.range[0].start.line : json.range.start.line) + 1; // line is 0-index but Github uses 1-index
+					const jmp = `https://${jmprep}/blob/${jmprev}/${jmppth}#L${jmplin}`;
 
-				jumptodefcache[url] = {defUrl: jmp, defCurPage : jmprep === arg.repoURI && jmppth == path};
-				cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
+					jumptodefcache[url] = {defUrl: jmp, defCurPage : jmprep === arg.repoURI && jmppth == path};
+					cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
+				} catch (err) {
+					jumptodefcache[url] = {defUrl: "", defCurPage: false};
+				}
 			})
 			.catch((err) => console.log("Error getting jump target info.") && cb(null));
 	}
