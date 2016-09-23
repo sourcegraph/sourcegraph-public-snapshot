@@ -50,14 +50,14 @@ func AuthorizationMiddleware(next http.Handler) http.Handler {
 					log.Println("WARNING: The server received an OAuth2 access token that is exactly 255 characters long. This may indicate that the client's version of libcurl is older than 7.33.0 and does not support longer passwords in HTTP Basic auth. Sourcegraph's access tokens may exceed 255 characters, in which case libcurl will truncate them and auth will fail. If you notice auth failing, try upgrading both the OpenSSL and GnuTLS flavours of libcurl to a version 7.33.0 or greater. If that doesn't solve the issue, please report it.")
 				}
 				if _, err := auth.ParseAndVerify(accessToken); err == nil { // Legacy support for Chrome extension: This might be a session cookie.
-					r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), accessToken))
+					r = r.WithContext(auth.AuthenticateByAccessToken(r.Context(), accessToken))
 				} else {
 					r = r.WithContext(auth.AuthenticateBySession(r.Context(), password))
 				}
 			}
 
 		case "token", "bearer":
-			r = r.WithContext(sourcegraph.WithAccessToken(r.Context(), parts[1]))
+			r = r.WithContext(auth.AuthenticateByAccessToken(r.Context(), parts[1]))
 
 		case "session":
 			r = r.WithContext(auth.AuthenticateBySession(r.Context(), parts[1]))

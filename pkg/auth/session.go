@@ -111,3 +111,13 @@ func authenticateByCookie(r *http.Request) context.Context {
 
 	return r.Context()
 }
+
+// AuthenticateByAccessToken authenticates the actor by the given access token.
+func AuthenticateByAccessToken(ctx context.Context, accessToken string) context.Context {
+	actor, err := ParseAndVerify(accessToken)
+	if err != nil {
+		log15.Error("error verifying access token", "error", err)
+		return ctx
+	}
+	return WithActor(sourcegraph.WithAccessToken(ctx, accessToken), actor)
+}

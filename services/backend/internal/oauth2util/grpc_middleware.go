@@ -3,15 +3,11 @@ package oauth2util
 import (
 	"strings"
 
-	"github.com/dgrijalva/jwt-go"
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"context"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 )
 
@@ -50,22 +46,5 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 		return ctx, nil
 	}
 
-	actor, err := auth.ParseAndVerify(tokStr)
-	if err != nil {
-		if vErr, ok := err.(*jwt.ValidationError); ok && vErr.Errors&jwt.ValidationErrorExpired != 0 {
-			return ctx, nil
-		}
-		log15.Error("access token middleware failed to parse/verify token", "error", err)
-		return ctx, nil
-	}
-
-	// Make future calls use this access token.
-	ctx = sourcegraph.WithAccessToken(ctx, tokStr)
-
-	// Set actor in context.
-	if actor != nil {
-		ctx = auth.WithActor(ctx, actor)
-	}
-
-	return ctx, nil
+	return auth.AuthenticateByAccessToken(ctx, tokStr), nil
 }
