@@ -161,23 +161,23 @@ type SymbolKind int
 
 const (
 	SKFile        SymbolKind = 1
-	SKModule                 = 2
-	SKNamespace              = 3
-	SKPackage                = 4
-	SKClass                  = 5
-	SKMethod                 = 6
-	SKProperty               = 7
-	SKField                  = 8
-	SKConstructor            = 9
-	SKEnum                   = 10
-	SKInterface              = 11
-	SKFunction               = 12
-	SKVariable               = 13
-	SKConstant               = 14
-	SKString                 = 15
-	SKNumber                 = 16
-	SKBoolean                = 17
-	SKArray                  = 18
+	SKModule      SymbolKind = 2
+	SKNamespace   SymbolKind = 3
+	SKPackage     SymbolKind = 4
+	SKClass       SymbolKind = 5
+	SKMethod      SymbolKind = 6
+	SKProperty    SymbolKind = 7
+	SKField       SymbolKind = 8
+	SKConstructor SymbolKind = 9
+	SKEnum        SymbolKind = 10
+	SKInterface   SymbolKind = 11
+	SKFunction    SymbolKind = 12
+	SKVariable    SymbolKind = 13
+	SKConstant    SymbolKind = 14
+	SKString      SymbolKind = 15
+	SKNumber      SymbolKind = 16
+	SKBoolean     SymbolKind = 17
+	SKArray       SymbolKind = 18
 )
 
 type SymbolInformation struct {

@@ -47,7 +47,7 @@
             }
           }
         },
-        "containerName": "mux.MatcherFunc"
+        "containerName": "mux MatcherFunc"
       },
       {
         "name": "CurrentRoute",
@@ -83,7 +83,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "BuildVarsFunc",
@@ -101,7 +101,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "GetError",
@@ -119,7 +119,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "GetHandler",
@@ -137,7 +137,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "GetHostTemplate",
@@ -155,7 +155,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "GetName",
@@ -173,7 +173,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "GetPathTemplate",
@@ -191,7 +191,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "Handler",
@@ -209,7 +209,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "HandlerFunc",
@@ -227,7 +227,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "Headers",
@@ -245,7 +245,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "HeadersRegexp",
@@ -263,7 +263,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "Host",
@@ -281,7 +281,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "Match",
@@ -299,7 +299,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "MatcherFunc",
@@ -317,7 +317,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "Methods",
@@ -335,7 +335,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "Name",
@@ -353,7 +353,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "Path",
@@ -371,7 +371,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "PathPrefix",
@@ -389,7 +389,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "Queries",
@@ -407,7 +407,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "Schemes",
@@ -425,7 +425,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "SkipClean",
@@ -443,7 +443,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "Subrouter",
@@ -461,7 +461,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "URL",
@@ -479,7 +479,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "URLHost",
@@ -497,7 +497,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "URLPath",
@@ -515,7 +515,7 @@
             }
           }
         },
-        "containerName": "mux.Route"
+        "containerName": "mux Route"
       },
       {
         "name": "NewRouter",
@@ -551,7 +551,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "Get",
@@ -569,7 +569,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "GetRoute",
@@ -587,7 +587,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "Handle",
@@ -605,7 +605,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "HandleFunc",
@@ -623,7 +623,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "Headers",
@@ -641,7 +641,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "Host",
@@ -659,7 +659,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "Match",
@@ -677,7 +677,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "MatcherFunc",
@@ -695,7 +695,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "Methods",
@@ -713,7 +713,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "NewRoute",
@@ -731,7 +731,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "Path",
@@ -749,7 +749,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "PathPrefix",
@@ -767,7 +767,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "Queries",
@@ -785,7 +785,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "Schemes",
@@ -803,7 +803,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "ServeHTTP",
@@ -821,7 +821,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "SkipClean",
@@ -839,7 +839,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "StrictSlash",
@@ -857,7 +857,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "Walk",
@@ -875,7 +875,7 @@
             }
           }
         },
-        "containerName": "mux.Router"
+        "containerName": "mux Router"
       },
       {
         "name": "SkipRouter",

@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -195,6 +196,27 @@ func fileURI(ctx context.Context, repo, commit, file string) string {
 
 var gitRevParseCache = cache.Sync(lru.New(2000))
 
+func gitRevParse(ctx context.Context, dir string) (repoPath, commit string, err error) {
+	if v, found := gitRevParseCache.Get(dir); found {
+		// This is cache to avoid running git rev-parse below
+		lines := v.([]string)
+		return lines[0], lines[1], nil
+	}
+
+	cmd := exec.Command("git", "rev-parse", "--show-toplevel", "HEAD")
+	cmd.Dir = dir
+	out, err := langp.CmdOutput(ctx, cmd)
+	if err != nil {
+		return "", "", err
+	}
+	lines := strings.Split(string(out), "\n")
+	if len(lines) != 3 {
+		return "", "", errors.New("unexpected number of lines from git rev-parse")
+	}
+	gitRevParseCache.Add(dir, lines)
+	return lines[0], lines[1], nil
+}
+
 func resolveFile(ctx context.Context, workspace, mainRepo, mainRepoCommit, uri string) (*langp.File, error) {
 	if strings.HasPrefix(uri, "stdlib://") {
 		// We don't have stdlib checked out as a dep, so LSP returns a
@@ -222,30 +244,13 @@ func resolveFile(ctx context.Context, workspace, mainRepo, mainRepoCommit, uri s
 	if fi, err := os.Stat(fullPath); err != nil || !fi.IsDir() {
 		dir = filepath.Dir(dir)
 	}
-	var repoPath, commit string
-	if v, found := gitRevParseCache.Get(dir); found {
-		// This is cache to avoid running git rev-parse in the next block
-		lines := v.([]string)
-		repoPath = lines[0]
-		commit = lines[1]
-	} else {
-		// This is a dependency that we have cloned via 'go get', so consult
-		// git in order to find the repository (which is not always identical
-		// to import path).
 
-		cmd := exec.Command("git", "rev-parse", "--show-toplevel", "HEAD")
-		cmd.Dir = dir
-		out, err := langp.CmdOutput(ctx, cmd)
-		if err != nil {
-			return nil, err
-		}
-		lines := strings.Fields(string(out))
-		if len(lines) != 2 {
-			return nil, errors.New("unexpected number of lines from git rev-parse")
-		}
-		gitRevParseCache.Add(dir, lines)
-		repoPath = lines[0]
-		commit = lines[1]
+	// This could be a dependency that we have cloned via 'go get', so consult
+	// git in order to find the repository (which is not always identical
+	// to import path).
+	repoPath, commit, err := gitRevParse(ctx, dir)
+	if err != nil {
+		return nil, err
 	}
 
 	// Repo is repoPath relative to our GOPATH/src
@@ -301,18 +306,51 @@ func exportedSymbol(r *langp.RepoRev, f *langp.File, s *lsp.SymbolInformation) *
 	}
 }
 
-func parseContainerName(containerName string) (pkg string, typ string) {
-	for i := len(containerName) - 1; i >= 0; i-- {
-		switch containerName[i] {
-		case '/':
-			// We are no longer looking at the last part of the
-			// container name
-			return containerName, ""
-		case '.':
-			return containerName[:i], containerName[i+1:]
-		}
+func externalRefsQuery(r *langp.RepoRev) string {
+	importPath := langp.ResolveRepoAlias(r.Repo)
+	return "is:external-ref " + importPath + "/..."
+}
+
+func externalRef(r *langp.RepoRev, f *langp.File, s *lsp.SymbolInformation) *langp.Ref {
+	repo, pkg, filename, line, col := parseExternalRefContainerName(s.ContainerName)
+	// containerName may contain a type which we want as part of the path
+	return &langp.Ref{
+		Def: &langp.DefSpec{
+			Repo: repo,
+
+			// Commit is intentionally omitted, as it has no use in the context of
+			// external refs (all refs point to defs of repos at the default branch
+			// only).
+			Commit:   "",
+			UnitType: "GoPackage",
+			Unit:     pkg,
+			Path:     s.Name,
+		},
+		File:   filename,
+		Line:   line,
+		Column: col,
 	}
-	return containerName, ""
+}
+
+func parseExternalRefContainerName(containerName string) (repo, pkg, filename string, line, col int) {
+	s := strings.Fields(containerName)
+	if len(s) != 5 {
+		panic(fmt.Sprintf("parseExternalRefContainerName: invalid container name %q", containerName))
+	}
+	l, _ := strconv.Atoi(s[3])
+	c, _ := strconv.Atoi(s[4])
+	return s[0], s[1], s[2], int(l), int(c)
+}
+
+func parseContainerName(containerName string) (pkg, typ string) {
+	if containerName == "" {
+		return containerName, ""
+	}
+	split := strings.Fields(containerName)
+	if len(split) == 2 {
+		return split[0], split[1]
+	}
+	return split[0], ""
 }
 
 func lspKindToSymbol(kind lsp.SymbolKind) string {
@@ -362,6 +400,8 @@ func main() {
 		SymbolsTranslator: &langp.SymbolsTranslator{
 			ExportedSymbolsQuery: exportedSymbolsQuery,
 			ExportedSymbol:       exportedSymbol,
+			ExternalRefsQuery:    externalRefsQuery,
+			ExternalRef:          externalRef,
 		},
 		ResolveFile: resolveFile,
 		FileURI:     fileURI,

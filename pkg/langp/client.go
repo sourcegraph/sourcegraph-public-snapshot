@@ -210,7 +210,7 @@ func (c *Client) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, e
 		if err != nil {
 			return nil, err
 		}
-		result.Defs = append(result.Defs, v.Defs...)
+		result.Refs = append(result.Refs, v.Refs...)
 	}
 	return &result, nil
 }
