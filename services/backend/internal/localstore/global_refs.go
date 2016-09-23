@@ -489,8 +489,10 @@ func lpAllRefs(ctx context.Context, repo, commitID string) ([]*graph.Ref, error)
 		return nil, err
 	}
 
-	defs := make([]*langp.DefSpec, 0, len(external.Defs)+len(exported.Symbols))
-	copy(defs, external.Defs)
+	defs := make([]*langp.DefSpec, 0, len(external.Refs)+len(exported.Symbols))
+	for _, s := range external.Refs {
+		defs = append(defs, s.Def)
+	}
 	for _, s := range exported.Symbols {
 		defs = append(defs, &s.DefSpec)
 	}
