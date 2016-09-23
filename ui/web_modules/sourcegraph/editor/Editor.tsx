@@ -31,9 +31,7 @@ export class Editor implements monaco.IDisposable {
 			if (!this._initializedModes.has(mode)) {
 				this._toDispose.push(monaco.languages.registerHoverProvider(mode, this));
 				this._toDispose.push(monaco.languages.registerDefinitionProvider(mode, this));
-				if ((window as any).localStorage.monacoReferences) {
-					this._toDispose.push(monaco.languages.registerReferenceProvider(mode, this));
-				}
+				this._toDispose.push(monaco.languages.registerReferenceProvider(mode, this));
 				this._initializedModes.add(mode);
 			}
 		}));
