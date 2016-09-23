@@ -37,6 +37,14 @@ func testFixture(t *testing.T, c string) {
 	var req []*jsonrpc2.Request
 	unmarshalFile(t, c, &req)
 
+	gitRevParseCache.Add(
+		filepath.Join(os.Getenv("GOPATH"), "/src/sourcegraph.com/sourcegraph/sourcegraph/lang/golang/testdata/gopath/src/mux"),
+		[]string{
+			filepath.Join(os.Getenv("GOPATH"), "/src/sourcegraph.com/sourcegraph/sourcegraph/lang/golang/testdata/gopath/src/mux"),
+			"testcommit",
+		},
+	)
+
 	// Test data specifies relative paths, but the language server expects
 	// an absolute path. Make the path absolute now.
 	var init lsp.InitializeParams
