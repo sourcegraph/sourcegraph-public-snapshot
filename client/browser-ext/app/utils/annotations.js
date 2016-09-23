@@ -369,31 +369,19 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 
 		fetch(url)
 			.then((json) => {
-				if (typeof json.Path === 'undefined' || json.Path === "") {
-					jumptodefcache[url] = {defUrl: "", defCurPage: false};
-				} else {
-					let rev, jumptarget = json.Path;
+				let jmpuri = json.uri.split("://");
+				if (jmpuri.length < 2) return null;
+				let jmpFragment0 = jmpuri[1].split("?");
+				let jmpFragment1 = jmpFragment0[1].split("#");
 
-					if (jumptarget.startsWith("/")) {
-						jumptarget = jumptarget.substring(1);
-					}
+				const jmprep = jmpFragment0[0];
+				const jmprev = jmpFragment1[0] ? jmpFragment1[0] : "master";
+				const jmppth = jmpFragment1[1];
+				const jmplin = (Array.isArray(json.range) ? json.range[0].start.line : json.range.start.line) + 1;
+				const jmp = `https://${jmprep}/blob/${jmprev}/${jmppth}#L${jmplin}`;
 
-					const part = jumptarget.split("/-/blob/");
-					if (part.length < 2) return null;
-					const rprv = part[0].split("@");
-					const repo = rprv[0];
-					if (rprv.length < 2) {
-						rev = "master";
-					} else {
-						rev = rprv[1];
-					}
-
-					const def = part.slice(1).join("");
-					const jmp = `https://${repo}/blob/${rev}/${def}`;
-
-					jumptodefcache[url] = {defUrl: jmp, defCurPage : repo === arg.repoURI && jmp.indexOf(path) >= 0};
-					cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
-				}
+				jumptodefcache[url] = {defUrl: jmp, defCurPage : jmprep === arg.repoURI && jmppth == path};
+				cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
 			})
 			.catch((err) => console.log("Error getting jump target info.") && cb(null));
 	}
