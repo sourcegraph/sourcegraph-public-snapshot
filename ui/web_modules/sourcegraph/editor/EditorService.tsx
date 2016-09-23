@@ -146,6 +146,12 @@ function getModeByFilename(path: string): string {
 	if (path.endsWith(".php")) {
 		return "php";
 	}
+	if (path.endsWith(".java")) {
+		return "java";
+	}
+	if (path.endsWith(".scala")) {
+		return "scala";
+	}
 	return "plaintext";
 }
 
