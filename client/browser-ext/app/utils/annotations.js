@@ -277,12 +277,12 @@ export function convertStringNode(node, annsByStartByte, offset, lineStart) {
 		}
 	}
 
-	const text = [].map.call(node.childNodes, getChildNodeText).join("");
-	const match = {annLen: text.length, annGen: function(innerHTML) {
+	const strTxt = getChildNodeText(node);
+	const annGen = function(innerHTML) {
 		return `<span data-byteoffset=${offset + 1 - lineStart} style=${isCommentNode(node) ? "" : "cursor:pointer;"}>${innerHTML}</span>`;
-	}}
+	};
 
-	return {result: match.annGen(utf8.encode(_.unescape(node.innerHTML))), bytesConsumed: match.annLen};
+	return {result: annGen(strTxt), bytesConsumed: strTxt.length};
 }
 
 // The rest of this file is responsible for fetching/caching annotation specific data from the server
