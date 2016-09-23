@@ -268,7 +268,7 @@ export function isStringNode(node) {
 // maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
 export function convertStringNode(node, annsByStartByte, offset, lineStart) {
 	function getChildNodeText(node) {
-		if (node.nodeType == Node.ELEMENT_NODE) {
+		if (node.nodeType === Node.ELEMENT_NODE) {
 			return [].map.call(node.childNodes, getChildNodeText).join("");
 		} else if (node.nodeType === Node.TEXT_NODE) {
 			return utf8.encode(_.unescape(node.wholeText));
@@ -380,13 +380,13 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 					const jmplin = (Array.isArray(json.range) ? json.range[0].start.line : json.range.start.line) + 1; // line is 0-index but Github uses 1-index
 					const jmp = `https://${jmprep}/blob/${jmprev}/${jmppth}#L${jmplin}`;
 
-					jumptodefcache[url] = {defUrl: jmp, defCurPage : jmprep === arg.repoURI && jmppth == path};
+					jumptodefcache[url] = {defUrl: jmp, defCurPage: jmprep === arg.repoURI && jmppth === path};
 					cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
 				} catch (err) {
 					jumptodefcache[url] = {defUrl: "", defCurPage: false};
 				}
 			})
-			.catch((err) => console.log("Error getting jump target info.") && cb(null));
+			.catch((err) => cb(null));
 	}
 
 	function fetchPopoverData(url, cb) {
@@ -394,13 +394,13 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 
 		fetch(url)
 			.then((json) => {
-				if (json.Title === "" && json.def == null) {
+				if (json.Title === "" && !json.def) {
 					popoverCache[url] = "";
 				} else {
 					popoverCache[url] = `<div><div class=${styles.popoverTitle}>${json.Title || ""}</div><div>${json.def ? json.def.DocHTML.__html || "" : ""}</div><div class=${styles.popoverRepo}>${json.def ? json.def.Repo || "" : ""}</div></div>`;
 				}
 				cb(popoverCache[url]);
 			})
-			.catch((err) => console.log("Error getting definition info.") && cb(null));
+			.catch((err) => cb(null));
 	}
 }
