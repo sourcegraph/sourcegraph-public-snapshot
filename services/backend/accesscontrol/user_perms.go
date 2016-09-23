@@ -91,7 +91,10 @@ func VerifyActorHasGitHubRepoAccess(ctx context.Context, actor auth.Actor, metho
 	if strings.HasPrefix(strings.ToLower(repoURI), "github.com/") {
 		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
 			_, err := github.ReposFromContext(ctx).Get(ctx, repoURI)
-			if err != nil {
+			if _, ok := err.(*gogithub.RateLimitError); ok {
+				return grpc.Errorf(codes.ResourceExhausted, "GitHub API rate limit exceeded, try again later")
+			} else if err != nil {
+				// TODO: We don't support git clients anymore, get rid of this.
 				// We don't know if the error is unauthenticated or unauthorized, so return unauthenticated
 				// so that git clients will try again, providing authentication information.
 				// If we return codes.PermissionDenied here, then git clients won't even try to supply authentication info.
