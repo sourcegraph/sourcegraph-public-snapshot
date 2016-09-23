@@ -28,6 +28,7 @@ import (
 
 func init() {
 	prometheus.MustRegister(githubUnauthedConcurrent)
+	prometheus.MustRegister(reposGitHubHTTPCacheCounter)
 }
 
 // Config specifies configuration options for a GitHub API client used
@@ -56,6 +57,37 @@ var githubUnauthedConcurrent = prometheus.NewGauge(prometheus.GaugeOpts{
 	Name:      "unauthed_concurrent",
 	Help:      "Number of unauthed concurrent calls to GitHub's Repo API.",
 })
+
+var reposGitHubHTTPCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "repos",
+	Name:      "github_api_cache_hit",
+	Help:      "Counts cache hits and misses for the github API HTTP cache.",
+}, []string{"type"})
+
+// cacheWithMetrics tracks the number of cache hits and misses returned from an
+// httpcache.Cache in prometheus.
+type cacheWithMetrics struct {
+	cache httpcache.Cache
+}
+
+func (c *cacheWithMetrics) Get(key string) ([]byte, bool) {
+	resp, ok := c.cache.Get(key)
+	if ok {
+		reposGitHubHTTPCacheCounter.WithLabelValues("hit").Inc()
+	} else {
+		reposGitHubHTTPCacheCounter.WithLabelValues("miss").Inc()
+	}
+	return resp, ok
+}
+
+func (c *cacheWithMetrics) Set(key string, resp []byte) {
+	c.cache.Set(key, resp)
+}
+
+func (c *cacheWithMetrics) Delete(key string) {
+	c.cache.Delete(key)
+}
 
 // UnauthedClient is a GitHub API client using the config's OAuth2
 // client ID and secret, but not using any specific user's access
@@ -237,7 +269,9 @@ var Default = &Config{
 			// RedirectURL is not known at init time, so it's not set here.
 		},
 	},
-	Cache:            httputil.Cache,
+	Cache: &cacheWithMetrics{
+		cache: httputil.Cache,
+	},
 	UnauthedThrottle: newGaugedMutex(githubUnauthedConcurrent),
 	UserThrottles: &ThrottleCache{
 		Throttles: lru.New(1000),
