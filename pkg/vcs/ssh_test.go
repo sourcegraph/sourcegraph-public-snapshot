@@ -57,7 +57,7 @@ func TestRepository_Clone_ssh(t *testing.T) {
 			gitURL := s.GitURL + "/" + filepath.Base(test.repoDir)
 			cloneDir := path.Join(makeTmpDir(t, "ssh-clone"), "repo")
 			t.Logf("Cloning from %s to %s", gitURL, cloneDir)
-			if err := gitserver.DefaultClient.Clone(cloneDir, gitURL, &remoteOpts); err != nil {
+			if err := gitserver.DefaultClient.Clone(context.Background(), cloneDir, gitURL, &remoteOpts); err != nil {
 				t.Fatalf("%s: Clone: %s", label, err)
 			}
 
@@ -128,7 +128,7 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 
 			baseURL := s.GitURL + "/" + filepath.Base(test.baseDir)
 			t.Logf("Cloning from %s to %s", baseURL, test.headDir)
-			if err := gitserver.DefaultClient.Clone(test.headDir, baseURL, &remoteOpts); err != nil {
+			if err := gitserver.DefaultClient.Clone(context.Background(), test.headDir, baseURL, &remoteOpts); err != nil {
 				t.Errorf("Clone(%q, %q, %q): %s", label, baseURL, test.headDir, err)
 				return
 			}

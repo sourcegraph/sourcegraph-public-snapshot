@@ -53,7 +53,7 @@ func (s *repoVCS) Clone(ctx context.Context, repo int32, info *store.CloneInfo) 
 		return err
 	}
 
-	return gitserver.DefaultClient.Clone(dir, info.CloneURL, &info.RemoteOpts)
+	return gitserver.DefaultClient.Clone(ctx, dir, info.CloneURL, &info.RemoteOpts)
 }
 
 func (s *repoVCS) OpenGitTransport(ctx context.Context, repo int32) (gitproto.Transport, error) {

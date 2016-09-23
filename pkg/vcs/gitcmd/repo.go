@@ -32,6 +32,8 @@ var (
 )
 
 type Repository struct {
+	// TODO: This is not good. Context should be passed as first parameter in funcs, not stored in a long term struct.
+	//       Should refactor to get rid of this variable and add it as first parameter everywhere that's needed.
 	Context context.Context
 	URL     string
 
@@ -69,7 +71,7 @@ func (r *Repository) ResolveRevision(spec string) (vcs.CommitID, error) {
 
 	cmd := gitserver.DefaultClient.Command("git", "rev-parse", spec+"^0")
 	cmd.Repo = r.URL
-	stdout, stderr, err := cmd.DividedOutput()
+	stdout, stderr, err := cmd.DividedOutput(r.Context)
 	if err != nil {
 		if vcs.IsRepoNotExist(err) {
 			return "", err
@@ -164,7 +166,7 @@ func (r *Repository) Branches(opt vcs.BranchesOptions) ([]*vcs.Branch, error) {
 func (r *Repository) branches(args ...string) ([]string, error) {
 	cmd := gitserver.DefaultClient.Command("git", append([]string{"branch"}, args...)...)
 	cmd.Repo = r.URL
-	out, err := cmd.Output()
+	out, err := cmd.Output(r.Context)
 	if err != nil {
 		return nil, fmt.Errorf("exec %v in %s failed: %v (output follows)\n\n%s", cmd.Args, cmd.Repo, err, out)
 	}
@@ -188,7 +190,7 @@ func (r *Repository) branchesBehindAhead(branch, base string) (*vcs.BehindAhead,
 
 	cmd := gitserver.DefaultClient.Command("git", "rev-list", "--count", "--left-right", fmt.Sprintf("refs/heads/%s...refs/heads/%s", base, branch))
 	cmd.Repo = r.URL
-	out, err := cmd.Output()
+	out, err := cmd.Output(r.Context)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +237,7 @@ func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 func (r *Repository) showRef(arg string) ([][2]string, error) {
 	cmd := gitserver.DefaultClient.Command("git", "show-ref", arg)
 	cmd.Repo = r.URL
-	out, err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput(r.Context)
 	if err != nil {
 		if vcs.IsRepoNotExist(err) {
 			return nil, err
@@ -360,7 +362,7 @@ func (r *Repository) commitLog(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, err
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.URL
-	out, err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput(r.Context)
 	if err != nil {
 		out = bytes.TrimSpace(out)
 		if isBadObjectErr(string(out), string(opt.Head)) {
@@ -416,7 +418,7 @@ func (r *Repository) commitLog(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, err
 			cmd.Args = append(cmd.Args, "--", opt.Path)
 		}
 		cmd.Repo = r.URL
-		out, err = cmd.CombinedOutput()
+		out, err = cmd.CombinedOutput(r.Context)
 		if err != nil {
 			return nil, 0, fmt.Errorf("exec `git rev-list --count` failed: %s. Output was:\n\n%s", err, out)
 		}
@@ -493,7 +495,7 @@ func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.D
 		cmd.Args = append(cmd.Args, opt.Paths...)
 	}
 	cmd.Repo = r.URL
-	out, err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput(r.Context)
 	if err != nil {
 		out = bytes.TrimSpace(out)
 		if isBadObjectErr(string(out), string(base)) || isBadObjectErr(string(out), string(head)) || isInvalidRevisionRangeError(string(out), string(base)) || isInvalidRevisionRangeError(string(out), string(head)) {
@@ -519,7 +521,7 @@ func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, er
 	cmd := gitserver.DefaultClient.Command("git", "remote", "update", "--prune")
 	cmd.Repo = r.URL
 	cmd.Opt = &opt
-	_, stderr, err := cmd.DividedOutput()
+	_, stderr, err := cmd.DividedOutput(r.Context)
 	if err != nil {
 		return nil, fmt.Errorf("exec `git remote update` failed: %v. Stderr was:\n\n%s", err, string(stderr))
 	}
@@ -574,7 +576,7 @@ func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk,
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.URL
-	out, err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput(r.Context)
 	if err != nil {
 		return nil, fmt.Errorf("exec `git blame` failed: %s. Output was:\n\n%s", err, out)
 	}
@@ -683,7 +685,7 @@ func (r *Repository) MergeBase(a, b vcs.CommitID) (vcs.CommitID, error) {
 
 	cmd := gitserver.DefaultClient.Command("git", "merge-base", "--", string(a), string(b))
 	cmd.Repo = r.URL
-	out, err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput(r.Context)
 	if err != nil {
 		return "", fmt.Errorf("exec %v failed: %s. Output was:\n\n%s", cmd.Args, err, out)
 	}
@@ -696,7 +698,7 @@ func (r *Repository) Search(at vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.Sear
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
-	return gitserver.DefaultClient.Search(r.URL, at, opt)
+	return gitserver.DefaultClient.Search(r.Context, r.URL, at, opt)
 }
 
 func (r *Repository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, error) {
@@ -713,7 +715,7 @@ func (r *Repository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, er
 
 	cmd := gitserver.DefaultClient.Command("git", "shortlog", "-sne", opt.Rev)
 	cmd.Repo = r.URL
-	out, err := cmd.Output()
+	out, err := cmd.Output(r.Context)
 	if err != nil {
 		return nil, fmt.Errorf("exec `git shortlog -sne` failed: %v", err)
 	}
@@ -772,7 +774,7 @@ func (r *Repository) readFileBytes(commit vcs.CommitID, name string) ([]byte, er
 
 	cmd := gitserver.DefaultClient.Command("git", "show", string(commit)+":"+name)
 	cmd.Repo = r.URL
-	out, err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput(r.Context)
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) || bytes.Contains(out, []byte("does not exist")) {
 			return nil, &os.PathError{Op: "open", Path: name, Err: os.ErrNotExist}
@@ -911,7 +913,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 	args = append(args, "--", filepath.ToSlash(path))
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.URL
-	out, err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput(r.Context)
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) {
 			return nil, &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(path), Err: os.ErrNotExist}
@@ -977,7 +979,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 			cmd := gitserver.DefaultClient.Command("git", "config", "--get", "submodule."+name+".url")
 			cmd.Repo = r.URL
 			url := "" // url is not available if submodules are not initialized
-			if out, err := cmd.Output(); err == nil {
+			if out, err := cmd.Output(r.Context); err == nil {
 				url = string(bytes.TrimSpace(out))
 			}
 			sys = vcs.SubmoduleInfo{

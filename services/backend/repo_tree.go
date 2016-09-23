@@ -4,6 +4,7 @@ import (
 	"math"
 	"sort"
 	"strings"
+	"time"
 
 	"context"
 
@@ -24,6 +25,10 @@ type repoTree struct{}
 var _ sourcegraph.RepoTreeServer = (*repoTree)(nil)
 
 func (s *repoTree) Get(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
+	// Cap Get operation to some reasonable time.
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	entrySpec := op.Entry
 	opt := op.Opt
 	if opt == nil {
@@ -111,6 +116,10 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 }
 
 func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error) {
+	// Cap List operation to some reasonable time.
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	repoRevSpec := op.Rev
 
 	if !isAbsCommitID(repoRevSpec.CommitID) {
@@ -143,6 +152,10 @@ func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*s
 }
 
 func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp) (*sourcegraph.VCSSearchResultList, error) {
+	// Cap Search operation to some reasonable time.
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	repoRev := op.Rev
 	opt := op.Opt
 	if opt == nil || strings.TrimSpace(opt.Query) == "" {
