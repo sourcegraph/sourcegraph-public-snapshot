@@ -7,24 +7,32 @@ import * as grid from "sourcegraph/components/styles/_grid.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import {Container} from "sourcegraph/Container";
+import {GlobalSearchContainer} from "sourcegraph/search/GlobalSearchContainer";
 import {UserStore} from "sourcegraph/user/UserStore";
 import {Store} from "sourcegraph/Store";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {Heading, FlexContainer} from "sourcegraph/components";
+import {InjectedRouter} from "react-router";
 import {locationForSearch} from "sourcegraph/search/routes";
-import {GlobalSearchInput} from "sourcegraph/search/GlobalSearchInput";
+import {Location} from "history";
 import * as classNames from "classnames";
 import {Link} from "react-router";
 import {EventLogger} from "sourcegraph/util/EventLogger";
 import {context} from "sourcegraph/app/context";
 
 interface Props {
-	location: any;
+	location: Location;
 	currentStep?: string;
 	completedBanner?: boolean;
 }
 
-type State = any;
+interface State {
+	langs: Array<string> | null;
+};
+
+interface Context {
+	router: InjectedRouter;
+}
 
 type OnSelectQueryListener = (ev: React.MouseEvent<HTMLButtonElement>, query: string) => any;
 
@@ -35,6 +43,10 @@ export class SignedInDashboard extends Container<Props, State> {
 		router: React.PropTypes.object.isRequired,
 	};
 
+	context: {
+		router: InjectedRouter;
+	};
+
 	_pageName: string = this.props.completedBanner ? "CompletedOnboardingDashboard" : "Dashboard";
 
 	constructor(props) {
@@ -42,7 +54,7 @@ export class SignedInDashboard extends Container<Props, State> {
 		this._handleChange = this._handleChange.bind(this);
 	}
 
-	reconcileState(state: State, props: Props, context: any): void {
+	reconcileState(state: State, props: Props, context: Context): void {
 		Object.assign(state, props);
 
 		const settings = UserStore.settings;
@@ -58,7 +70,7 @@ export class SignedInDashboard extends Container<Props, State> {
 	}
 
 	_goToSearch(query: string) {
-		(this.context as any).router.push(locationForSearch(this.props.location, query, this.state.langs, defaultSearchScope, true, true));
+		this.context.router.push(locationForSearch(this.props.location, query, this.state.langs, defaultSearchScope, true, true));
 	}
 
 	stores(): Store<any>[] {
@@ -77,13 +89,12 @@ export class SignedInDashboard extends Container<Props, State> {
 	_renderGlobalSearchForm(): JSX.Element | null {
 		return (
 			<div className={classNames(base.pt4, base.center)}>
-				<GlobalSearchInput
-					placeholder="Search for any function, symbol or package"
-					name="q"
-					showIcon={true}
-					autoComplete="off"
-					query={this.state.query || ""}
-					onChange={this._handleChange} />
+				<GlobalSearchContainer
+					repo={null}
+					location={this.props.location}
+					router={this.context.router}
+					showResultsPanel={true}
+					style={{flex: "1 1 100%", margin: "0 8px"}} />
 			</div>
 		);
 	}
@@ -113,7 +124,7 @@ export class SignedInDashboard extends Container<Props, State> {
 						{this._renderGlobalSearchForm()}
 						<div className={classNames(styles.user_actions, colors.cool_gray_8)}>
 							Try these top searches:
-							<a onClick={this._topQuerySelected.bind(this, "new http request")}> new http request</a>, <a onClick={this._topQuerySelected.bind(this, "read file")}>read file</a>, <a onClick={this._topQuerySelected.bind(this, "json encoder")}>json encoder</a>
+							new http request, read file, json encoder
 						</div>
 						<div className={classNames(styles.user_actions, base.pt5)}>
 							<Heading className={base.pb4} level="5">Explore public repositories</Heading>

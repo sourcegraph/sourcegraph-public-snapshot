@@ -12,7 +12,6 @@ import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import * as Style from "sourcegraph/blob/styles/Blob.css";
 import { trimRepo } from "sourcegraph/repo";
 import { urlToBlob } from "sourcegraph/blob/routes";
-import { SearchModal } from "sourcegraph/search/modal/SearchModal";
 import {IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
 import {ChromeExtensionToast} from "sourcegraph/components/ChromeExtensionToast";
 import {OnboardingModals} from "sourcegraph/components/OnboardingModals";
@@ -182,7 +181,6 @@ export class BlobMain extends React.Component<Props, any> {
 
 		return (
 			<div className={Style.container}>
-				<SearchModal repo={this.props.repo} commitID={this.props.commitID} rev={this.props.rev}/>
 				<Helmet title={title} />
 				<ChromeExtensionToast location={this.props.location}/>
 				<OnboardingModals location={this.props.location}/>

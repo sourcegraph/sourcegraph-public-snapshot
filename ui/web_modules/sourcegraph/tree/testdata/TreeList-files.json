@@ -4,14 +4,6 @@
 		"props": {
 			"children": [
 				{
-					"type": "SearchModal",
-					"props": {
-						"repo": "repo",
-						"commitID": "c",
-						"rev": "rev"
-					}
-				},
-				{
 					"type": "div",
 					"props": {
 						"children": [

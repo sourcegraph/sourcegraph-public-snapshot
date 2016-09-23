@@ -32,7 +32,7 @@ interface State {
 	scope: any;
 }
 
-export class SearchForm extends React.Component<Props, State> {
+export class GlobalSearchContainer extends React.Component<Props, State> {
 
 	_container: HTMLElement;
 	_input: HTMLInputElement;

@@ -41,13 +41,22 @@
 												"className": "",
 												"children": [
 													{
-														"type": "GlobalSearchInput",
+														"type": "GlobalSearchContainer",
 														"props": {
-															"placeholder": "Search for any function, symbol or package",
-															"name": "q",
-															"showIcon": true,
-															"autoComplete": "off",
-															"query": ""
+															"location": {
+																"pathname": "foo",
+																"action": "bar",
+																"search": "foo",
+																"query": {},
+																"state": {},
+																"key": "foo"
+															},
+															"router": {},
+															"showResultsPanel": true,
+															"style": {
+																"flex": "1 1 100%",
+																"margin": "0 8px"
+															}
 														}
 													}
 												]
@@ -58,33 +67,7 @@
 											"props": {
 												"className": "",
 												"children": [
-													"Try these top searches:",
-													{
-														"type": "a",
-														"props": {
-															"children": [
-																" new http request"
-															]
-														}
-													},
-													", ",
-													{
-														"type": "a",
-														"props": {
-															"children": [
-																"read file"
-															]
-														}
-													},
-													", ",
-													{
-														"type": "a",
-														"props": {
-															"children": [
-																"json encoder"
-															]
-														}
-													}
+													"Try these top searches: new http request, read file, json encoder"
 												]
 											}
 										},

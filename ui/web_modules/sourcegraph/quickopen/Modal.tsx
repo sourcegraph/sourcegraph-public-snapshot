@@ -1,13 +1,9 @@
 import * as React from "react";
 
 import {ModalComp} from "sourcegraph/components/Modal";
-import {SearchContainer} from "sourcegraph/search/modal/SearchContainer";
+import {Container} from "sourcegraph/quickopen/Container";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
-
-interface State {
-	showModal: boolean;
-}
 
 interface Node {
 	target: {
@@ -15,21 +11,20 @@ interface Node {
 	};
 };
 
-export type RepoSpec = {
-	repo: string,
-	commitID?: string,
+export type Props = {
+	repo: string | null,
 	rev: string | null,
+	onDismiss: () => void,
+	activateSearch: () => void,
+	showModal: boolean,
 }
 
-// SearchModal controls when and how to show the search modal.
-export class SearchModal extends React.Component<RepoSpec, State> {
+// QuickOpenModal controls when and how to show the search modal.
+export class QuickOpenModal extends React.Component<Props, null> {
 	constructor() {
 		super();
 		this.searchModalShortcuts = this.searchModalShortcuts.bind(this);
 		this.dismissModal = this.dismissModal.bind(this);
-		this.state = {
-			showModal: false,
-		};
 	}
 
 	componentWillMount(): void {
@@ -41,10 +36,14 @@ export class SearchModal extends React.Component<RepoSpec, State> {
 	}
 
 	_getEventProps(): any {
+		let query = "";
+		if (this.refs["searchContainer"]) {
+			query = (this.refs as {searchContainer: Container}).searchContainer.state.input;
+		}
 		return {
 				repo: this.props.repo,
 				rev: this.props.rev,
-				query: (this.refs as {searchContainer: SearchContainer}).searchContainer.state.input,
+				query: query,
 			};
 	}
 
@@ -56,7 +55,10 @@ export class SearchModal extends React.Component<RepoSpec, State> {
 			return;
 		}
 		if (event.key === "/") {
-			this.setState({showModal: !this.state.showModal});
+			if (!this.props.showModal) {
+				this.dismissModal();
+			}
+			this.props.activateSearch();
 			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_JUMP_TO, AnalyticsConstants.ACTION_TOGGLE, "JumpToInitiated", this._getEventProps());
 		}
 		event.preventDefault();
@@ -66,18 +68,18 @@ export class SearchModal extends React.Component<RepoSpec, State> {
 		if (!resultSelected) {
 			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_JUMP_TO, AnalyticsConstants.ACTION_TOGGLE, "JumpToDismissed", this._getEventProps());
 		}
-		const state = Object.assign(this.state, {showModal: false});
-		this.setState(state);
+		this.props.onDismiss();
 	}
 
 	render(): JSX.Element {
-		if (!this.state.showModal) {
+		if (!this.props.showModal) {
 			return <div />;
 		}
+		const r = this.props.repo ? {URI: this.props.repo, rev: this.props.rev} : null;
 		return <ModalComp onDismiss={this.dismissModal}>
-			<SearchContainer
+			<Container
 				ref="searchContainer"
-				{...this.props}
+				repo={r}
 				dismissModal={this.dismissModal} />
 		</ModalComp>;
 	}

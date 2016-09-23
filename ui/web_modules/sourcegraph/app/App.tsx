@@ -60,7 +60,7 @@ export class App extends React.Component<Props, State> {
 		return (
 			<div className={this.state.className}>
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
-				<GlobalNav desktop={desktopClient} params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
+				<GlobalNav params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
 				{this.props.navContext && <div className={styles.breadcrumb}>{this.props.navContext}</div>}
 				{this.props.main}
 				<EventListener target={global.document} event="sourcegraph:desktop" callback={this._handleSourcegraphDesktop} />

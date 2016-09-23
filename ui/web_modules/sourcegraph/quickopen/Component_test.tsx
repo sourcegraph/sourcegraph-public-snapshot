@@ -1,8 +1,8 @@
 import expect from "expect.js";
 import * as React from "react";
 
-import {ResultCategories} from "sourcegraph/search/modal/SearchComponent";
-import {Category, SearchDelegate} from "sourcegraph/search/modal/SearchContainer";
+import {ResultCategories} from "sourcegraph/quickopen/Components";
+import {Category, SearchDelegate} from "sourcegraph/quickopen/Container";
 import {renderToString} from "sourcegraph/util/testutil/componentTestUtils";
 
 interface Case {

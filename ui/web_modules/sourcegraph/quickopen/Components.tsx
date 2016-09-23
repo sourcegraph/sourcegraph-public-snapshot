@@ -2,7 +2,7 @@ import * as React from "react";
 
 import  {Heading} from "sourcegraph/components/Heading";
 import {colors} from "sourcegraph/components/utils/colors";
-import {modal_result, view_more} from "sourcegraph/search/modal/SearchModalStyle.css";
+import {modal_result, view_more} from "sourcegraph/quickopen/Style.css";
 
 const smallFont = ".85rem";
 
@@ -50,11 +50,10 @@ const ResultRow = ({title, description, index, length}, categoryIndex, itemIndex
 
 const ResultCategory = ({title, results, isLoading, selected, delegate, categoryIndex, limit, expandCategory, scrollIntoView}) => {
 	if (isLoading) {
-		return (
-			<div style={{padding: "14px 0"}}>
-				<span style={{color: colors.coolGray3()}}>{title} (loading...)</span>
-			</div>
-		);
+		return <Heading color="gray"
+		level={7}>
+			{title} (loading...)
+		</Heading>;
 	}
 	if (results.length === 0) {
 		return <div></div>;
@@ -62,8 +61,8 @@ const ResultCategory = ({title, results, isLoading, selected, delegate, category
 	const total = results.length;
 	results = results.slice(0, limit);
 	return <div>
-		<Heading color={"gray"}
-		level={"7"}>
+		<Heading color="gray"
+		level={7}>
 			{title}
 		</Heading>
 		{results.map((result, index) =>

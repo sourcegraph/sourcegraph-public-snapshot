@@ -15,15 +15,14 @@ import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {TreeStore} from "sourcegraph/tree/TreeStore";
 import "string_score";
 
-import {Hint, ResultCategories} from "sourcegraph/search/modal/SearchComponent";
-import {RepoSpec} from "sourcegraph/search/modal/SearchModal";
+import {Hint, ResultCategories} from "sourcegraph/quickopen/Components";
 
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
 
 const modalStyle = {
 	position: "fixed",
-	top: 55,
+	top: 0,
 	right: 0,
 	left: 0,
 	maxWidth: 515,
@@ -33,10 +32,10 @@ const modalStyle = {
 	padding: 16,
 	display: "flex",
 	flexDirection: "column",
-	zIndex: 2,
+	zIndex: 4,
 	maxHeight: "90vh",
 	fontSize: "1rem",
-	boxShadow: `0 2px 4px 0 ${colors.black(0.05)}`,
+	boxShadow: `0 2px 4px 0 ${colors.black(.1)}`,
 };
 
 export interface Result {
@@ -51,6 +50,10 @@ export interface Result {
 
 interface Props {
 	dismissModal: (resultSubmitted?: boolean) => void;
+	repo: null | {
+		URI: string;
+		rev: string | null;
+	};
 };
 
 interface State {
@@ -68,6 +71,8 @@ interface State {
 	// Whether or not to allow scrolling. Used to prevent jumping when expanding
 	// a category.
 	allowScroll: boolean;
+	// Resolved repository commitID.
+	commitID: string | null;
 };
 
 export interface Category {
@@ -84,7 +89,7 @@ export interface SearchDelegate {
 
 // SearchContainer contains the logic that deals with navigation and data
 // fetching.
-export class SearchContainer extends React.Component<Props & RepoSpec, State> {
+export class Container extends React.Component<Props, State> {
 
 	static contextTypes: any = {
 		router: React.PropTypes.object.isRequired,
@@ -95,7 +100,7 @@ export class SearchContainer extends React.Component<Props & RepoSpec, State> {
 	delegate: SearchDelegate;
 	listeners: {remove: () => void}[];
 
-	constructor(props: Props & RepoSpec) {
+	constructor(props: Props) {
 		super(props);
 		this.keyListener = this.keyListener.bind(this);
 		this.bindSearchInput = this.bindSearchInput.bind(this);
@@ -108,6 +113,7 @@ export class SearchContainer extends React.Component<Props & RepoSpec, State> {
 			limitForCategory: [3, 3, 3],
 			results: [],
 			allowScroll: true,
+			commitID: null,
 		};
 		this.delegate = {
 			dismiss: props.dismissModal,
@@ -121,8 +127,14 @@ export class SearchContainer extends React.Component<Props & RepoSpec, State> {
 			TreeStore.addListener(this.updateResults),
 			RepoStore.addListener(this.updateResults),
 		];
-		this.fetchResults();
-		this.updateResults();
+		if (this.props.repo) {
+			const r = RepoStore.resolvedRevs.get(this.props.repo.URI, this.props.repo.rev);
+			this.setState(Object.assign({}, this.state, {commitID: r.CommitID}));
+		}
+		setTimeout(() =>  {
+			this.fetchResults();
+			this.updateResults();
+		});
 	}
 
 	componentWillUnmount(): void {
@@ -171,8 +183,9 @@ export class SearchContainer extends React.Component<Props & RepoSpec, State> {
 			if (row === visibleRowsInCategory[category] - 1 && category === results.length - 1) {
 				// noop
 			} else if (row >= visibleRowsInCategory[category] - 1) {
-				category = nextVisibleRow(1);
-				row = 0;
+				const next = nextVisibleRow(1);
+				row = next === category ? row : 0;
+				category = next;
 			} else {
 				row++;
 			}
@@ -191,10 +204,12 @@ export class SearchContainer extends React.Component<Props & RepoSpec, State> {
 
 	fetchResults(): void {
 		const query = this.state.input;
-		const c = this.props.commitID ? this.props.commitID : "";
-		Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.repo, c, query));
 		Dispatcher.Backends.dispatch(new RepoActions.WantRepos(this.repoListQueryString(query)));
-		Dispatcher.Backends.dispatch(new TreeActions.WantFileList(this.props.repo, c));
+		if (this.props.repo !== null && this.state.commitID)  {
+			const rev = this.props.repo.rev || "";
+			Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.repo.URI, rev, query));
+			Dispatcher.Backends.dispatch(new TreeActions.WantFileList(this.props.repo.URI, this.state.commitID));
+		}
 	}
 
 	repoListQueryString(query: string): string {
@@ -220,7 +235,6 @@ export class SearchContainer extends React.Component<Props & RepoSpec, State> {
 			};
 			const eventProps = {
 				repo: this.props.repo,
-				rev: this.props.rev,
 				result: resultInfo,
 				query: this.state.input,
 			};
@@ -236,29 +250,47 @@ export class SearchContainer extends React.Component<Props & RepoSpec, State> {
 	updateResults(): void {
 		const query = this.state.input.toLowerCase();
 		const results: Category[] = [];
+		const repo = this.props.repo;
 
-		const symbols = RepoStore.symbols.list(this.props.repo, this.props.commitID, query);
-		if (symbols) {
-			const symbolResults: Result[] = [];
-			symbols.forEach(sym => {
-				let title = sym.name;
-				const kind = symbolKindName(sym.kind);
-				const desc = `${kind ? kind : ""} in ${sym.location.uri}`;
-				let idx = title.toLowerCase().indexOf(query);
-				const path = sym.location.uri;
-				const line = sym.location.range.start.line;
-				symbolResults.push({
-					title: title,
-					description: desc,
-					index: idx,
-					length: query.length,
-					URLPath: urlToBlobLine(this.props.repo, this.props.rev, path, line + 1),
+		if (repo) {
+			const symbols = RepoStore.symbols.list(repo.URI, repo.rev, query);
+			if (symbols) {
+				const symbolResults: Result[] = [];
+				symbols.forEach(sym => {
+					let title = sym.name;
+					const kind = symbolKindName(sym.kind);
+					const desc = `${kind ? kind : ""} in ${sym.location.uri}`;
+					let idx = title.toLowerCase().indexOf(query);
+					const path = sym.location.uri;
+					const line = sym.location.range.start.line;
+					symbolResults.push({
+						title: title,
+						description: desc,
+						index: idx,
+						length: query.length,
+						URLPath: urlToBlobLine(repo.URI, repo.rev, path, line + 1),
+					});
 				});
-			});
+				results.push({ Title: "Definitions", IsLoading: false, Results: symbolResults });
+			} else {
+				results.push({ Title: "Definitions", IsLoading: true });
+			}
 
-			results.push({ Title: "Definitions", IsLoading: false, Results: symbolResults });
-		} else {
-			results.push({ Title: "Definitions", IsLoading: true });
+			const commit = this.state.commitID || "";
+			const files = TreeStore.fileLists.get(repo.URI, commit);
+			if (files) {
+				interface Scorable {
+					score: number;
+				}
+				let fileResults: (Result & Scorable)[] = files.Files.reduce((acc, file) => rankFile(acc, file, query), []);
+				fileResults.forEach(file => {
+					file.URLPath = urlToBlob(repo.URI, repo.rev, file.title);
+				});
+				fileResults = fileResults.sort((a, b) => b.score - a.score);
+				results.push({ Title: "Files", IsLoading: false, Results: fileResults });
+			} else {
+				results.push({ Title: "Files", IsLoading: true });
+			}
 		}
 
 		const repos = RepoStore.repos.list(this.repoListQueryString(query));
@@ -271,33 +303,6 @@ export class SearchContainer extends React.Component<Props & RepoSpec, State> {
 			}
 		} else {
 			results.push({ Title: "Repositories", IsLoading: true });
-		}
-
-		const files = TreeStore.fileLists.get(this.props.repo, this.props.commitID);
-		if (files) {
-			interface Scorable {
-				score: number;
-			}
-			let fileResults: (Result & Scorable)[] = [];
-			files.Files.forEach((file, i) => {
-				if (file.length < query.length) {
-					// Return early to avoid an expensive query.
-					return;
-				}
-				const fuzziness = .8;
-				const minimumSimilarity = .55;
-				const score = file.score(query, fuzziness);
-				if (query !== "" && score < minimumSimilarity) {
-					return;
-				}
-				const index = file.toLowerCase().indexOf(query);
-				const l = index >= 0 ? query.length : undefined;
-				fileResults.push({ title: file, description: "", index: index, length: l, URLPath: urlToBlob(this.props.repo, this.props.rev, file), score: score});
-			});
-			fileResults = fileResults.sort((a, b) => b.score - a.score);
-			results.push({ Title: "Files", IsLoading: false, Results: fileResults });
-		} else {
-			results.push({ Title: "Files", IsLoading: true });
 		}
 
 		this.setState(Object.assign({}, this.state, {results: results}));
@@ -397,3 +402,27 @@ function symbolKindName(kind: number): string {
 		return "";
 	}
 }
+
+const rankFile = (fileResults, file, query) => {
+	if (file.length < query.length) {
+		// Return early to avoid an expensive query.
+		return fileResults;
+	}
+	const fuzziness = .8;
+	const minimumSimilarity = .6;
+	let score = file.score(query, fuzziness);
+	if (query !== "" && score < minimumSimilarity) {
+		const basePathRegExp = /.*\/(.+)/;
+		const base: any = basePathRegExp.exec(file);
+		score = base ? base[1].score(query, fuzziness) : 0;
+	}
+	const index = file.toLowerCase().indexOf(query);
+	let length;
+	if (index >= 0) {
+		score = .6;
+		length = query.length;
+	}
+	if (score < minimumSimilarity) { return fileResults; }
+	fileResults.push({ title: file, description: "", index: index, length: length,  score: score});
+	return fileResults;
+};

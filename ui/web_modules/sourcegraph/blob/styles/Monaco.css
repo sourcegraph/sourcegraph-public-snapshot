@@ -15,3 +15,7 @@
 	z-index: calc(navbarZIndex + 1);
 	box-sizing: content-box;
 }
+
+:global .monaco-editor .context-view {
+	z-index: calc(navbarZIndex + 2);
+}

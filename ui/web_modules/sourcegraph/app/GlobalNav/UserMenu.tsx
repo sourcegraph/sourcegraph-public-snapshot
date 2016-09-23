@@ -28,9 +28,9 @@ export const UserMenu = (props): JSX.Element => {
 	}
 
 	return(
-		<Base p={2}>
+		<Base p={2} style={{display: "inline-block"}}>
 			<Popover left={true}>
-				<FlexContainer items="center" style={{lineHeight: "0"}}>
+				<FlexContainer items="center" style={{lineHeight: "0", height: 29}}>
 					{props.user.AvatarURL ? <Avatar size="small" img={props.user.AvatarURL} /> : <div>{props.user.Login}</div>}
 					<DownPointer width={12} color={colors.coolGray3()} style={{marginLeft: "8px"}}/>
 				</FlexContainer>

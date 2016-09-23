@@ -9,7 +9,6 @@ import {TreeStore} from "sourcegraph/tree/TreeStore";
 import "sourcegraph/tree/TreeBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {Header} from "sourcegraph/components/Header";
-import {SearchModal} from "sourcegraph/search/modal/SearchModal";
 
 import {urlToBlob} from "sourcegraph/blob/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
@@ -202,7 +201,6 @@ export class TreeList extends Container<Props, State> {
 		let listItems = this._listItems() || [];
 		return (
 			<div className={styles.tree_common}>
-				<SearchModal repo={this.props.repo} commitID={this.props.commitID} rev={this.props.rev}/>
 				<div className={styles.list_header}>
 					Files
 				</div>
