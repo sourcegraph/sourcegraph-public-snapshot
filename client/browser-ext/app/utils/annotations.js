@@ -269,7 +269,7 @@ export function isStringNode(node) {
 export function convertStringNode(node, annsByStartByte, offset, lineStart) {
 	function getChildNodeText(node) {
 		if (node.nodeType == Node.ELEMENT_NODE) {
-			return [].map.call(node.childNodes, getChildNodeText).reduce((a, b) => a.concat(b), []);
+			return [].map.call(node.childNodes, getChildNodeText).join("");
 		} else if (node.nodeType === Node.TEXT_NODE) {
 			return utf8.encode(_.unescape(node.wholeText));
 		} else {
@@ -277,12 +277,12 @@ export function convertStringNode(node, annsByStartByte, offset, lineStart) {
 		}
 	}
 
-	const text = getChildNodeText(node);
-	const strAnnGen = function(innerHTML) {
+	const text = [].map.call(node.childNodes, getChildNodeText).join("");
+	const match = {annLen: text.length, annGen: function(innerHTML) {
 		return `<span data-byteoffset=${offset + 1 - lineStart} style=${isCommentNode(node) ? "" : "cursor:pointer;"}>${innerHTML}</span>`;
-	};
+	}}
 
-	return {result: strAnnGen(_.escape(text)), bytesConsumed: text.length};
+	return {result: match.annGen(utf8.encode(_.unescape(node.innerHTML))), bytesConsumed: match.annLen};
 }
 
 // The rest of this file is responsible for fetching/caching annotation specific data from the server
