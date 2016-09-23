@@ -58,43 +58,6 @@ func CreateEmptyMirrorRepo(t *testing.T, ctx context.Context, repoURI string) er
 	return err
 }
 
-// CreateAndPushRepo is short-handed for:
-//
-//  CreateAndPushRepoFiles(t, ctx, repoURI, nil)
-//
-func CreateAndPushRepo(t *testing.T, ctx context.Context, repoURI string) (repo *sourcegraph.Repo, commitID string, done func(), err error) {
-	return CreateAndPushRepoFiles(t, ctx, repoURI, nil)
-}
-
-// CreateAndPushRepoFiles creates and pushes sample commits to a repo. Callers
-// must call the returned done() func when done (if err is non-nil) to free up
-// resources.
-func CreateAndPushRepoFiles(t *testing.T, ctx context.Context, repoURI string, files map[string]string) (repo *sourcegraph.Repo, commitID string, done func(), err error) {
-	repo, done, err = CreateRepo(t, ctx, repoURI, false)
-	if err != nil {
-		return nil, "", nil, err
-	}
-
-	authedCloneURL, err := AddSystemAuthToURL(ctx, "internal:write", repo.HTTPCloneURL)
-	if err != nil {
-		return nil, "", nil, err
-	}
-
-	if err := PushRepo(t, ctx, authedCloneURL, authedCloneURL, files, false); err != nil {
-		return nil, "", nil, err
-	}
-
-	cl, _ := sourcegraph.NewClientFromContext(ctx)
-	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: repo.ID,
-		Rev:  "master",
-	})
-	if err != nil {
-		return nil, "", nil, err
-	}
-	return repo, res.CommitID, done, nil
-}
-
 // PushRepo pushes sample commits to the remote specified.
 // If files is specified, it is treated as a map of filenames to file contents.
 // If files is nil, a default set of some text files is used. All files are
