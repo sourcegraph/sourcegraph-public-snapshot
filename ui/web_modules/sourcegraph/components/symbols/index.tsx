@@ -8,3 +8,4 @@ export {EmptyNodeIllo} from "sourcegraph/components/symbols/EmptyNodeIllo";
 export {Cone} from "sourcegraph/components/symbols/Cone";
 export {GitHubLogo} from "sourcegraph/components/symbols/GitHubLogo";
 export {Dismiss} from "sourcegraph/components/symbols/Dismiss";
+export {Spinner} from "sourcegraph/components/symbols/Spinner";
