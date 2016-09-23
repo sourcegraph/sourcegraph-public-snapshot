@@ -5,7 +5,6 @@ package inventory
 import (
 	"os"
 	"sort"
-	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 
@@ -16,26 +15,23 @@ import (
 
 // Scan performs an inventory of the tree at fs.
 //
-// Scan attempts to respect the ctx's deadline. If it is nearing the
-// deadline, it will return a partial inventory and the error value
-// context.Canceled.
+// Scan respects the ctx's deadline. If it exceeds the deadline,
+// it will return a partial inventory and the error value
+// context.DeadlineExceeded.
 func Scan(ctx context.Context, vfs fs.FileSystem) (*Inventory, error) {
 	langs := map[string]uint64{}
-
-	// Respect deadline.
-	//
-	// TODO(sqs): Also support ctx cancelation.
-	deadline, hasDeadline := ctx.Deadline()
-	const finishTime = 15 * time.Millisecond
 	var err error
 
 	w := fs.WalkFS("/", vfs)
+Outer:
 	for w.Step() {
-		if hasDeadline && deadline.Sub(time.Now()) < finishTime {
-			err = context.Canceled
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
 			// Carry through this error to the final "return"
 			// statement, so that we return a partial result.
-			break
+			break Outer
+		default:
 		}
 
 		if err := w.Err(); err != nil {

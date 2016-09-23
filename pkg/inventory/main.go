@@ -28,13 +28,13 @@ func main() {
 	ctx := context.Background()
 	if *timeout > 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithDeadline(ctx, time.Now().Add(*timeout))
+		ctx, cancel = context.WithTimeout(ctx, *timeout)
 		defer cancel()
 	}
 
 	inv, err := inventory.Scan(ctx, vfsutil.Walkable(vfs.OS(*dir), filepath.Join))
 	if err != nil {
-		if err == context.Canceled {
+		if err == context.DeadlineExceeded {
 			fmt.Fprintln(os.Stderr, "warning: timeout reached, inventory is incomplete")
 		} else {
 			fmt.Fprintf(os.Stderr, "error: listing inventory of %s: %s\n", *dir, err)
