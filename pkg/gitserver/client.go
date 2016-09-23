@@ -11,6 +11,7 @@ import (
 
 	"github.com/neelance/chanrpc"
 	"github.com/neelance/chanrpc/chanrpcutil"
+	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -45,6 +46,7 @@ func (c *Client) broadcastCall(ctx context.Context, newRequest func() (*request,
 	// Check that ctx is not expired before broadcasting over the network.
 	select {
 	case <-ctx.Done():
+		deadlineExceeededCounter.Inc()
 		return nil, ctx.Err()
 	default:
 	}
@@ -81,6 +83,17 @@ func (c *Client) broadcastCall(ctx context.Context, newRequest func() (*request,
 }
 
 var errRPCFailed = errors.New("gitserver: rpc failed")
+
+var deadlineExceeededCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "gitserver",
+	Name:      "client_deadline_exceeeded",
+	Help:      "Times that Client.broadcastCall() returned context.DeadlineExceeded",
+})
+
+func init() {
+	prometheus.MustRegister(deadlineExceeededCounter)
+}
 
 // Cmd represents a command to be executed remotely.
 type Cmd struct {
