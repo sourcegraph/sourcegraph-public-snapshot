@@ -17,6 +17,7 @@ import (
 // persisted locally.
 
 func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
+	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.Resolve")
 	// First, look up locally.
 	if repo, err := store.ReposFromContext(ctx).GetByURI(ctx, op.Path); err == nil {
 		return &sourcegraph.RepoResolution{Repo: repo.ID, CanonicalPath: op.Path}, nil
