@@ -1,6 +1,7 @@
 package gitserver
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/binary"
 	"errors"
@@ -40,7 +41,7 @@ type genericReply interface {
 	repoFound() bool
 }
 
-func (c *Client) broadcastCall(newRequest func() (*request, func() (genericReply, bool))) (interface{}, error) {
+func (c *Client) broadcastCall(ctx context.Context, newRequest func() (*request, func() (genericReply, bool))) (interface{}, error) {
 	allReplies := make(chan genericReply, len(c.servers))
 	for _, server := range c.servers {
 		req, getReply := newRequest()
@@ -98,8 +99,8 @@ func (c *Client) Command(name string, arg ...string) *Cmd {
 }
 
 // DividedOutput runs the command and returns its standard output and standard error.
-func (c *Cmd) DividedOutput() ([]byte, []byte, error) {
-	genReply, err := c.client.broadcastCall(func() (*request, func() (genericReply, bool)) {
+func (c *Cmd) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
+	genReply, err := c.client.broadcastCall(ctx, func() (*request, func() (genericReply, bool)) {
 		replyChan := make(chan *execReply, 1)
 		return &request{Exec: &execRequest{Repo: c.Repo, Args: c.Args[1:], Opt: c.Opt, Stdin: chanrpcutil.ToChunks(c.Input), ReplyChan: replyChan}},
 			func() (genericReply, bool) { reply, ok := <-replyChan; return reply, ok }
@@ -128,26 +129,26 @@ func (c *Cmd) DividedOutput() ([]byte, []byte, error) {
 }
 
 // Run starts the specified command and waits for it to complete.
-func (c *Cmd) Run() error {
-	_, _, err := c.DividedOutput()
+func (c *Cmd) Run(ctx context.Context) error {
+	_, _, err := c.DividedOutput(ctx)
 	return err
 }
 
 // Output runs the command and returns its standard output.
-func (c *Cmd) Output() ([]byte, error) {
-	stdout, _, err := c.DividedOutput()
+func (c *Cmd) Output(ctx context.Context) ([]byte, error) {
+	stdout, _, err := c.DividedOutput(ctx)
 	return stdout, err
 }
 
 // CombinedOutput runs the command and returns its combined standard output and standard error.
-func (c *Cmd) CombinedOutput() ([]byte, error) {
-	stdout, stderr, err := c.DividedOutput()
+func (c *Cmd) CombinedOutput(ctx context.Context) ([]byte, error) {
+	stdout, stderr, err := c.DividedOutput(ctx)
 	return append(stdout, stderr...), err
 }
 
 // Search performs a remote search.
-func (c *Client) Search(repo string, commit vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
-	genReply, err := c.broadcastCall(func() (*request, func() (genericReply, bool)) {
+func (c *Client) Search(ctx context.Context, repo string, commit vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
+	genReply, err := c.broadcastCall(ctx, func() (*request, func() (genericReply, bool)) {
 		replyChan := make(chan *searchReply, 1)
 		return &request{Search: &searchRequest{Repo: repo, Commit: commit, Opt: opt, ReplyChan: replyChan}},
 			func() (genericReply, bool) { reply, ok := <-replyChan; return reply, ok }
@@ -167,16 +168,16 @@ func (c *Client) Search(repo string, commit vcs.CommitID, opt vcs.SearchOptions)
 }
 
 // Init creates a new empty repository remotely.
-func (c *Client) Init(repo string) error {
-	return c.create(repo, "", nil)
+func (c *Client) Init(ctx context.Context, repo string) error {
+	return c.create(ctx, repo, "", nil)
 }
 
 // Clone performs a clone operation remotely.
-func (c *Client) Clone(repo string, remote string, opt *vcs.RemoteOpts) error {
+func (c *Client) Clone(ctx context.Context, repo string, remote string, opt *vcs.RemoteOpts) error {
 	if remote == "" {
 		return errors.New("empty remote")
 	}
-	return c.create(repo, remote, opt)
+	return c.create(ctx, repo, remote, opt)
 }
 
 // create creates a new repository in the gitserver cluster by initializing an empty repository
@@ -186,13 +187,13 @@ func (c *Client) Clone(repo string, remote string, opt *vcs.RemoteOpts) error {
 // A nil error is returned if the new repository was created successfully, but vcs.ErrRepoExist
 // is returned if there was already an existing repository in its place, causing create to be noop.
 // If the repository is in process of being cloned, vcs.RepoNotExistError{CloneInProgress: true} is returned.
-func (c *Client) create(repo string, mirrorRemote string, opt *vcs.RemoteOpts) error {
+func (c *Client) create(ctx context.Context, repo string, mirrorRemote string, opt *vcs.RemoteOpts) error {
 	// We check if repo already exists by executing `git remote`. It may seem redundant since the
 	// create request also checks that, but the purpose is to first do a broadcast and check if _any_
 	// server already has the repo available.
 	cmd := c.Command("git", "remote")
 	cmd.Repo = repo
-	err := cmd.Run()
+	err := cmd.Run(ctx)
 	if err == nil {
 		return vcs.ErrRepoExist
 	}
@@ -240,8 +241,8 @@ func (c *Client) create(repo string, mirrorRemote string, opt *vcs.RemoteOpts) e
 }
 
 // Remove removes repo remotely.
-func (c *Client) Remove(repo string) error {
-	genReply, err := c.broadcastCall(func() (*request, func() (genericReply, bool)) {
+func (c *Client) Remove(ctx context.Context, repo string) error {
+	genReply, err := c.broadcastCall(ctx, func() (*request, func() (genericReply, bool)) {
 		replyChan := make(chan *removeReply, 1)
 		return &request{Remove: &removeRequest{Repo: repo, ReplyChan: replyChan}},
 			func() (genericReply, bool) { reply, ok := <-replyChan; return reply, ok }

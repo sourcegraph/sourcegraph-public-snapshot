@@ -2,6 +2,7 @@ package gitserver
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"encoding/binary"
 	"errors"
@@ -94,7 +95,7 @@ func TestExec(t *testing.T) {
 			close(req2.Exec.ReplyChan)
 		}(test)
 
-		stdout, stderr, err := client.Command("git", "test").DividedOutput()
+		stdout, stderr, err := client.Command("git", "test").DividedOutput(context.Background())
 		if err != test.expectedErr {
 			t.Errorf("expected error %#v, got %#v", test.expectedErr, err)
 		}
@@ -198,7 +199,7 @@ func TestCreate(t *testing.T) {
 			close(req3.Create.ReplyChan)
 		}(test)
 
-		err := client.Clone(repo, "test/remote", nil)
+		err := client.Clone(context.Background(), repo, "test/remote", nil)
 		if !reflect.DeepEqual(test.expectedErr, err) {
 			t.Errorf("expected error %#v, got %#v", test.expectedErr, err)
 		}

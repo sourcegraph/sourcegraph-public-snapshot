@@ -46,7 +46,7 @@ func (r *Repository) servicePack(ctx context.Context, service string, data []byt
 		return nil, nil, fmt.Errorf("rpc reader error: %s", err)
 	}
 
-	stdout, stderr, err := cmd.DividedOutput()
+	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil && !bytes.Contains(stderr, []byte("The remote end hung up unexpectedly")) { // this error occurs on "git clone [...] --depth=1" even with normal git-http-backend
 		return nil, nil, fmt.Errorf("git-%s failed (%s); output was:\n%s", service, err, string(stderr))
 	}
