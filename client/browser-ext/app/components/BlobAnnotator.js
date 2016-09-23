@@ -14,10 +14,8 @@ let buildsCache = {};
 @connect(
 	(state) => ({
 		resolvedRev: state.resolvedRev,
-		srclibDataVersion: state.srclibDataVersion,
 		annotations: state.annotations,
 		accessToken: state.accessToken,
-		authInfo: state.authInfo,
 	}),
 	(dispatch) => ({
 		actions: bindActionCreators(Actions, dispatch)
@@ -27,7 +25,6 @@ export default class BlobAnnotator extends Component {
 	static propTypes = {
 		path: React.PropTypes.string.isRequired,
 		resolvedRev: React.PropTypes.object.isRequired,
-		srclibDataVersion: React.PropTypes.object.isRequired,
 		annotations: React.PropTypes.object.isRequired,
 		actions: React.PropTypes.object.isRequired,
 		blobElement: React.PropTypes.object.isRequired,
@@ -116,18 +113,12 @@ export default class BlobAnnotator extends Component {
 				this.state.headRepoURI = this.state.repoURI;
 			}
 		}
-
-		var self = this;
-		var repoURI = this.state.repoURI;
-		var commitID = this.state.commitID;
-		var rev = this.state.rev;
 	}
 
 	componentDidMount() {
 		// Click may be for context expansion, in which case we should
 		// re-annotate the blob (which is smart enough to only annoate
 		// lines which haven't already been annotated).
-		this.props.actions.getAuthentication(this.state);
 		document.addEventListener("click", this._clickRefresh);
 	}
 
@@ -145,18 +136,19 @@ export default class BlobAnnotator extends Component {
 
 	_isSplitDiff() {
 		if (this.state.isPullRequest) {
-			const diffTypeDropdown = document.getElementsByClassName("diffbar-item dropdown js-menu-container");
-			if (!diffTypeDropdown || diffTypeDropdown.length !== 1) return false;
+			const headerBar = document.getElementsByClassName("float-right pr-review-tools");
+			if (!headerBar || headerBar.length !== 1) return false;
 
-			const diffSelection = diffTypeDropdown[0].getElementsByClassName("dropdown-item selected");
-			if (!diffSelection || diffSelection.length !== 1) return false;
+			const diffToggles = headerBar[0].getElementsByClassName("BtnGroup");
+			if (!diffToggles || diffToggles.length !== 1) return false;
 
-			return diffSelection[0].href.includes("diff=split");
+			const disabledToggle = diffToggles[0].getElementsByTagName("A")[0];
+			return disabledToggle && !disabledToggle.href.includes("diff=split");
 		} else {
 			const headerBar = document.getElementsByClassName("details-collapse table-of-contents js-details-container");
 			if (!headerBar || headerBar.length !== 1) return false;
 
-			const diffToggles = headerBar[0].getElementsByClassName("btn-group right");
+			const diffToggles = headerBar[0].getElementsByClassName("BtnGroup float-right");
 			if (!diffToggles || diffToggles.length !== 1) return false;
 
 			const selectedToggle = diffToggles[0].querySelector(".selected");
@@ -170,14 +162,13 @@ export default class BlobAnnotator extends Component {
 		if (!state.isAnnotated) {
 			if (state.isDelta) {
 				if (state.baseCommitID) {
-					state.actions.getAnnotations(state.baseRepoURI, state.baseCommitID, state.path, true);
+					state.actions.getAnnotations(state.baseRepoURI, state.baseCommitID, state.path);
 				}
 				if (state.headCommitID) {
-					state.actions.getAnnotations(state.headRepoURI, state.headCommitID, state.path, true);
+					state.actions.getAnnotations(state.headRepoURI, state.headCommitID, state.path);
 				}
 				state.isAnnotated = true;
 			} else {
-				state.actions.getSrclibDataVersion(state.repoURI, state.rev);
 				state.actions.getAnnotations(state.repoURI, state.rev, state.path);
 				state.isAnnotated = true;
 			}
@@ -190,12 +181,16 @@ export default class BlobAnnotator extends Component {
 
 	_addAnnotations(state) {
 		function apply(repoURI, rev, branch, isBase) {
-			const dataVer = state.srclibDataVersion.content[keyFor(repoURI, rev, state.path)];
-			if (!dataVer || !dataVer.CommitID) return;
+			const fext = utils.getPathExtension(state.path);
 
-			const json = state.annotations.content[keyFor(repoURI, dataVer.CommitID, state.path)];
+			if (utils.supportedExtensions.indexOf(fext) < 0) {
+				console.error(`Sourcegraph: .${fext} not supported :( reach out to us for feature requests at matt@sourcegraph.com`);
+				return; // Don't annotate unsupported languages
+			}
+
+			const json = state.annotations.content[keyFor(repoURI, rev, state.path)];
 			if (json) {
-				addAnnotations(state.path, {repoURI, rev, branch, isDelta: state.isDelta, isBase}, state.blobElement, json.Annotations, json.LineStartBytes, state.isSplitDiff);
+				addAnnotations(state.path, {repoURI, rev, branch, isDelta: state.isDelta, isBase}, state.blobElement, json.IncludedAnnotations.Annotations, json.IncludedAnnotations.LineStartBytes, state.isSplitDiff);
 			}
 		}
 
@@ -215,6 +210,9 @@ export default class BlobAnnotator extends Component {
 	}
 
 	render() {
-		return <span><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px"}} /></span>;
+		if (!utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
+			return <span id="sourcegraph-build-indicator-text" style={{paddingLeft: "5px"}}><a href={`https://sourcegraph.com/${this.state.repoURI}@${this.state.rev}/-/blob/${this.state.path}`}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px", WebkitFilter: "grayscale(100%)"}} /></a>{"Language not supported. Coming soon!"}</span>;
+		}
+		return <span><a href={`https://sourcegraph.com/${this.state.repoURI}@${this.state.rev}/-/blob/${this.state.path}`}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px"}} /></a></span>;
 	}
 }

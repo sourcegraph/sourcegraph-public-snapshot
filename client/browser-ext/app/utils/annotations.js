@@ -17,6 +17,7 @@ export default function addAnnotations(path, repoRevSpec, el, anns, lineStartByt
 export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startBytesByLine, isSplitDiff) {
 	// The blob is represented by a table; the first column is the line number,
 	// the second is code. Each row is a line of code
+	const arg = utils.parseURL();
 	const table = el.querySelector("table");
 
 	let cells = [];
@@ -80,7 +81,7 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 		const offset = startBytesByLine[line];
 
 		// result is the new (annotated) innerHTML of the code cell
-		const {result, bytesConsumed} = convertNode(codeCell, annsByStartByte, offset, repoRevSpec);
+		const {result, bytesConsumed} = convertNode(codeCell, annsByStartByte, offset, offset, repoRevSpec);
 		// manipulate the DOM asynchronously so the page doesn't freeze while large
 		// code files are being annotated
 		let cell = codeCell;
@@ -91,7 +92,7 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 			} else {
 				cell.innerHTML = result;
 			}
-			addPopover(cell, path, repoRevSpec);
+			addEventListeners(cell, arg, path, repoRevSpec, line);
 		});
 	}
 }
@@ -102,7 +103,9 @@ export function indexAnnotations(anns) {
 	let annsByStartByte = {};
 	let annsByEndByte = {};
 	for (let i = 0; i < anns.length; i++) {
-		if (anns[i].URL) { // without a URL, it is a syntax highlighting annotation
+		// From pkg/syntaxhighlight/html_annotator.go
+		const annType = anns[i].Class;
+		if (annType !== "com" || annType !== "lit" || annType !== "pun") {
 			let ann = anns[i];
 			annsByStartByte[ann.StartByte] = ann;
 			annsByEndByte[ann.EndByte] = ann;
@@ -125,45 +128,15 @@ export function indexLineStartBytes(lineStartBytes) {
 // at the byte offset. The match result contains the number of bytes
 // matched by the annotation, and a generator function which returns
 // an HTML anchor tag string .
-export function annGenerator(annsByStartByte, byte, repoRevSpec) {
+export function annGenerator(annsByStartByte, byte, lineStart) {
 	const match = annsByStartByte[byte];
 	if (!match) return null;
 
 	const annLen = match.EndByte - match.StartByte;
 	if (annLen <= 0) return null; // sometimes, there will be an "empty" annotation, e.g. for CommonJS modules
 
-	let rev;
-	if (match.URL.indexOf(repoRevSpec.repoURI) !== -1) {
-		rev = repoRevSpec.rev;
-	} else {
-		rev = "master"; // assume external links are to default branch "master"
-	}
-	const annURL = utils.addRevToAnnURL(match.URL, rev);
-
-	function urlToDef(matchURL) {
-		if (!matchURL) return null;
-
-		if (matchURL.startsWith("/")) {
-			matchURL = matchURL.substring(1); // remove leading slash
-		}
-
-		const parts = matchURL.split("/-/");
-		if (parts.length < 2) return null;
-
-		const repo = parts[0];
-		const def = parts.slice(1).join("/-/").replace("def/", "");
-
-		if (repo.startsWith("github.com/")) {
-			return `https://${repo}#sourcegraph&def=${def}&rev=${rev}`;
-		}
-		return `https://github.com/#sourcegraph&repo=${repo}&def=${def}&rev=${rev}`;
-	}
-
-	const defIsOnGitHub = match.URL && match.URL.includes("github.com/");
-	const url = defIsOnGitHub ? urlToDef(match.URL) : `https://sourcegraph.com${match.URL}`;
-
 	return {annLen, annGen: function(innerHTML) {
-		return `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-src="https://sourcegraph.com${annURL}" class=${styles.sgdef}>${innerHTML}</a>`;
+		return `<span data-byteoffset=${byte + 1 - lineStart} style="cursor:pointer;">${innerHTML}</span>`;
 	}};
 }
 
@@ -190,7 +163,7 @@ export function getOpeningTag(node) {
 // It is the entry point for converting a <td> "cell" representing a line of code.
 // It may also be called recursively for children (which are assumed to be <span>
 // code highlighting annotations from GitHub).
-export function convertNode(node, annsByStartByte, offset, repoRevSpec, ignoreFirstTextChar) {
+export function convertNode(node, annsByStartByte, offset, lineStart, repoRevSpec, ignoreFirstTextChar) {
 	let result, bytesConsumed, c; // c is an intermediate result
 	if (node.nodeType === Node.ELEMENT_NODE) {
 		// The logic here is to:
@@ -208,9 +181,9 @@ export function convertNode(node, annsByStartByte, offset, repoRevSpec, ignoreFi
 			if (inner) node = inner;
 		}
 
-		c = isQuotedStringNode(node) ?
-			convertQuotedStringNode(node, annsByStartByte, offset, repoRevSpec) :
-			convertElementNode(node, annsByStartByte, offset, repoRevSpec, ignoreFirstTextChar);
+		c = isStringNode(node) || isCommentNode(node) ?
+			convertStringNode(node, annsByStartByte, offset, lineStart) :
+			convertElementNode(node, annsByStartByte, offset, lineStart, repoRevSpec, ignoreFirstTextChar);
 
 		if (!isTableCell) {
 			const openTag = getOpeningTag(node);
@@ -224,7 +197,7 @@ export function convertNode(node, annsByStartByte, offset, repoRevSpec, ignoreFi
 		}
 		bytesConsumed = c.bytesConsumed;
 	} else if (node.nodeType === Node.TEXT_NODE) {
-		c = convertTextNode(node, annsByStartByte, offset, repoRevSpec, ignoreFirstTextChar);
+		c = convertTextNode(node, annsByStartByte, offset, lineStart, ignoreFirstTextChar);
 		result = c.result;
 		bytesConsumed = c.bytesConsumed;
 	} else {
@@ -238,7 +211,7 @@ export function convertNode(node, annsByStartByte, offset, repoRevSpec, ignoreFi
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string and the number
 // of bytes consumed.
-export function convertTextNode(node, annsByStartByte, offset, repoRevSpec, ignoreFirstTextChar) {
+export function convertTextNode(node, annsByStartByte, offset, lineStart, ignoreFirstTextChar) {
 	let innerHTML = [];
 	let bytesConsumed;
 
@@ -250,7 +223,7 @@ export function convertTextNode(node, annsByStartByte, offset, repoRevSpec, igno
 		nodeText = nodeText.slice(1);
 	}
 	for (bytesConsumed = 0; bytesConsumed < nodeText.length;) {
-		const match = annGenerator(annsByStartByte, offset + bytesConsumed, repoRevSpec);
+		const match = annGenerator(annsByStartByte, offset + bytesConsumed, lineStart);
 		if (!match) {
 			innerHTML.push(_.escape(nodeText[bytesConsumed++]));
 			continue;
@@ -266,14 +239,14 @@ export function convertTextNode(node, annsByStartByte, offset, repoRevSpec, igno
 // convertElementNode takes a DOM node which should be of NodeType.ELEMENT_NODE
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
-export function convertElementNode(node, annsByStartByte, offset, repoRevSpec, ignoreFirstTextChar) {
+export function convertElementNode(node, annsByStartByte, offset, lineStart, repoRevSpec, ignoreFirstTextChar) {
 	let innerHTML = [];
 	let bytesConsumed = 0;
 
 	// The logic here is to simply recurse on each of the child nodes; everything is eventually
 	// just a text node or the special-cased "quoted string node" (see below).
 	for (let i = 0; i < node.childNodes.length; ++i) {
-		const res = convertNode(node.childNodes[i], annsByStartByte, offset + bytesConsumed, repoRevSpec, i === 0 && ignoreFirstTextChar);
+		const res = convertNode(node.childNodes[i], annsByStartByte, offset + bytesConsumed, lineStart, repoRevSpec, i === 0 && ignoreFirstTextChar);
 		innerHTML.push(res.result);
 		bytesConsumed += res.bytesConsumed;
 	}
@@ -281,44 +254,35 @@ export function convertElementNode(node, annsByStartByte, offset, repoRevSpec, i
 	return {result: utf8.decode(innerHTML.join("")), bytesConsumed};
 }
 
-// isQuotedStringNode is a predicate function to identify the special-cased
-// string identifier DOM element, which takes a like of go code like this:
-//
-//    import (
-//        "fmt"
-//    )
-//
-// and creates this (for the "fmt"):
-//
-//    "<span class="pl-s"><span class="pl-pds">"</span>fmt<span class="pl-pds">"</span></span>"
-//
-// Without the special-casing the <a class="sg-link" /> tag will be put around the opening quote,
-// but the total # of bytes consumed would automatically count the rest of the fmt".
-// This guarantees the annotation consumes the entire set of childNodes.
-export function isQuotedStringNode(node) {
-	return node.childNodes.length === 3 && node.querySelectorAll(".pl-pds").length === 2 &&
-		node.innerText.startsWith("\"") && node.innerText.endsWith("\"");
+// isStringNode and isCommentNode are predicate functions to
+// identify string identifier DOM elements, as per Github's code styling classes.
+export function isCommentNode(node) {
+	return node.classList.contains("pl-c");
 }
 
-// convertQuotedStringNode takes a DOM node which should pass the isQuotedStringNode predicate
-// (this must be checked by the caller) and returns an object containing the
-//  maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
-export function convertQuotedStringNode(node, annsByStartByte, offset, repoRevSpec) {
-	const text = `"${utf8.encode(_.unescape(node.childNodes[1].wholeText))}"`; // put quotes around the sanitized inner text
-	const match = annGenerator(annsByStartByte, offset, repoRevSpec);
+export function isStringNode(node) {
+	return node.classList.contains("pl-s");
+}
 
-	// NOTE:
-	// match could be undefined if the annotation doesn't consume the opening start quote;
-	// we assume there is no chance that the string inside the quotes would otherwise have annotations.
-	// ^^ this assumption may break some day, but I haven't seen it do so yet. Even so, we could
-	// check/theoretically handle this case, but I think it is better not to add more special casing to
-	// the special casing which is not yet observed in the wild.
-
-	if (!match) return {result: node.innerHTML, bytesConsumed: text.length};
-	if (match.annLen !== text.length) {
-		throw new Error(`annotation for quoted string node has length mismatch, got(${match.annLen}) wanted(${text.length})`);
+// convertStringNode takes a DOM node which is a plain string and returns an object containing the
+// maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
+export function convertStringNode(node, annsByStartByte, offset, lineStart) {
+	function getChildNodeText(node) {
+		if (node.nodeType === Node.ELEMENT_NODE) {
+			return [].map.call(node.childNodes, getChildNodeText).join("");
+		} else if (node.nodeType === Node.TEXT_NODE) {
+			return utf8.encode(_.unescape(node.wholeText));
+		} else {
+			throw new Error(`unexpected node type(${node.nodeType})`);
+		}
 	}
-	return {result: match.annGen(node.innerHTML), bytesConsumed: match.annLen};
+
+	const strTxt = getChildNodeText(node);
+	const annGen = function(innerHTML) {
+		return `<span data-byteoffset=${offset + 1 - lineStart} style=${isCommentNode(node) ? "" : "cursor:pointer;"}>${innerHTML}</span>`;
+	};
+
+	return {result: annGen(strTxt), bytesConsumed: strTxt.length};
 }
 
 // The rest of this file is responsible for fetching/caching annotation specific data from the server
@@ -327,9 +291,27 @@ export function convertQuotedStringNode(node, annsByStartByte, offset, repoRevSp
 // stuff we don't need synchonized to browser local storage.
 
 let popoverCache = {};
-export const defCache = {};
-function addPopover(el, path, repoRevSpec) {
+let jumptodefcache = {};
+
+function addEventListeners(el, arg, path, repoRevSpec, line) {
 	let activeTarget, popover;
+
+	el.addEventListener("click", (e) => {
+		let t = getTarget(e.target);
+		if (!t) return;
+		let col = t.dataset.byteoffset;
+		let url = `https://sourcegraph.com/.api/repos/${arg.repoURI}@${repoRevSpec.rev}/-/jump-def?file=${path}&line=${line - 1}&character=${col}`;
+
+		fetchJumpURL(url, function(defUrl, isCurrentPage) {
+			if (!defUrl) return;
+			// If target is within the same repo/file, open in current frame otherwise new tab
+			if (isCurrentPage) {
+				location.hash = defUrl.slice(defUrl.indexOf('#'));
+			} else {
+				location.href = defUrl;
+			}
+		});
+	});
 
 	el.addEventListener("mouseout", (e) => {
 		hidePopover();
@@ -341,17 +323,19 @@ function addPopover(el, path, repoRevSpec) {
 		if (!t) return;
 		if (activeTarget !== t) {
 			activeTarget = t;
-			let url = activeTarget.dataset.src.split("https://sourcegraph.com")[1];
-			url = `https://sourcegraph.com/.api/repos${url}?ComputeLineRange=true&Doc=true`;
-			fetchPopoverData(url, function(html, data) {
+
+			let col = activeTarget.dataset.byteoffset;
+			let url = `https://sourcegraph.com/.api/repos/${arg.repoURI}@${repoRevSpec.rev}/-/hover-info?file=${path}&line=${line - 1}&character=${col}`;
+
+			fetchPopoverData(url, function(html) {
 				if (activeTarget && html) showPopover(html, e.pageX, e.pageY);
 			});
 		}
 	});
 
 	function getTarget(t) {
-		while (t && t.tagName === "SPAN") {t = t.parentNode;}
-		if (t && t.tagName === "A" && t.classList.contains(styles.sgdef)) return t;
+		while (t && t.tagName !== "TD" && !t.dataset && !t.dataset.byteoffset) {t = t.parentNode;}
+		if (t && t.tagName === "SPAN" && t.dataset && t.dataset.byteoffset) return t;
 	}
 
 	function showPopover(html, x, y) {
@@ -380,20 +364,43 @@ function addPopover(el, path, repoRevSpec) {
 		}
 	}
 
-	function fetchPopoverData(url, cb) {
-		if (popoverCache[url]) return cb(popoverCache[url], defCache[url]);
+	function fetchJumpURL(url, cb) {
+		if (typeof jumptodefcache[url] !== 'undefined') return cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
+
 		fetch(url)
 			.then((json) => {
-				defCache[url] = json;
-				let html;
-				if (json.Data) {
-					const f = json.FmtStrings;
-					const doc = json.DocHTML ? `<div>${json.DocHTML.__html}</div>` : "";
-					html = `<div><div class=${styles.popoverTitle}>${f.DefKeyword || ""}${f.DefKeyword ? " " : ""}<b style="color:#4078C0">${f.Name.Unqualified}</b>${f.NameAndTypeSeparator || ""}${f.Type.ScopeQualified === f.DefKeyword ? "" : f.Type.ScopeQualified || ""}</div>${doc}<div class=${styles.popoverRepo}>${json.Repo}</div></div>`;
+				try {
+					const jmpuri = json.uri.split("://");
+					const jmpFragment0 = jmpuri[1].split("?");
+					const jmpFragment1 = jmpFragment0[1].split("#");
+
+					const jmprep = jmpFragment0[0];
+					const jmprev = jmpFragment1[0] ? jmpFragment1[0] : "master";
+					const jmppth = jmpFragment1[1];
+					const jmplin = (Array.isArray(json.range) ? json.range[0].start.line : json.range.start.line) + 1; // line is 0-index but Github uses 1-index
+					const jmp = `https://${jmprep}/blob/${jmprev}/${jmppth}#L${jmplin}`;
+
+					jumptodefcache[url] = {defUrl: jmp, defCurPage: jmprep === arg.repoURI && jmppth === path};
+					cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
+				} catch (err) {
+					jumptodefcache[url] = {defUrl: "", defCurPage: false};
 				}
-				popoverCache[url] = html;
-				cb(html, json);
 			})
-			.catch((err) => console.log("Error getting definition info.") && cb(null, null));
+			.catch((err) => cb(null));
+	}
+
+	function fetchPopoverData(url, cb) {
+		if (typeof popoverCache[url] !== 'undefined') return cb(popoverCache[url]);
+
+		fetch(url)
+			.then((json) => {
+				if (json.Title === "" && !json.def) {
+					popoverCache[url] = "";
+				} else {
+					popoverCache[url] = `<div><div class=${styles.popoverTitle}>${json.Title || ""}</div><div>${json.def ? json.def.DocHTML.__html || "" : ""}</div><div class=${styles.popoverRepo}>${json.def ? json.def.Repo || "" : ""}</div></div>`;
+				}
+				cb(popoverCache[url]);
+			})
+			.catch((err) => cb(null));
 	}
 }
