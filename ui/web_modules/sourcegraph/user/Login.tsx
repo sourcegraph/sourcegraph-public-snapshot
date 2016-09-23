@@ -28,6 +28,9 @@ export class LoginForm extends Component<Props, State> {
 				<p className={styles.sub_text}>
 					No account yet? <Link tabIndex={5} to="/join">Sign up.</Link>
 				</p>
+				<p className={styles.mid_text}>
+					By creating an account, you agree to our <a href="/privacy" target="_blank">privacy policy</a> and <a href="/terms" target="_blank">terms</a>.
+				</p>
 			</div>
 		);
 	}

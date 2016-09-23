@@ -28,6 +28,9 @@ export class SignupForm extends Component<Props, State> {
 				<p className={styles.sub_text}>
 					Already have an account? <Link tabIndex={6} to="/login">Sign in.</Link>
 				</p>
+				<p className={styles.mid_text}>
+					By creating an account, you agree to our <a href="/privacy" target="_blank">privacy policy</a> and <a href="/terms" target="_blank">terms</a>.
+				</p>
 			</div>
 		);
 	}
