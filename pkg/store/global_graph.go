@@ -38,7 +38,7 @@ type GlobalDeps interface {
 
 type Defs interface {
 	Search(ctx context.Context, op DefSearchOp) (*sourcegraph.SearchResultsList, error)
-	UpdateFromSrclibStore(ctx context.Context, op RefreshIndexOp) error
+	Update(ctx context.Context, op RefreshIndexOp) error
 }
 
 type DefSearchOp struct {

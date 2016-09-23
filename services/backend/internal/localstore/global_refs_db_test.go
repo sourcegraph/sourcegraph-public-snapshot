@@ -24,18 +24,13 @@ import (
 )
 
 func TestGlobalRefs(t *testing.T) {
+	t.Skip("https://github.com/sourcegraph/sourcegraph/issues/1276")
 	if testing.Short() {
 		t.Skip()
 	}
 
 	t.Parallel()
-	testGlobalRefs(t, &globalRefs{})
-}
-
-func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
-	if testing.Short() {
-		t.Skip()
-	}
+	g := &globalRefs{}
 
 	ctx, mocks, done := testContext()
 	defer done()
@@ -192,6 +187,7 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 }
 
 func TestGlobalRefsUpdate(t *testing.T) {
+	t.Skip("https://github.com/sourcegraph/sourcegraph/issues/1276")
 	if testing.Short() {
 		t.Skip()
 	}

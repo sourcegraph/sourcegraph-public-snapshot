@@ -19,15 +19,12 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	sstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
 // dbLang is a numerical identifier that identifies the language of a definition
@@ -403,12 +400,9 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 	return &sourcegraph.SearchResultsList{DefResults: results}, nil
 }
 
-// UpdateFromSrclibStore is a stop-gap method. Eventually, defs will replace
-// srclib store as the canonical storage for defs. Until then, the canonical
-// storage is srclib store. UpdateFromSrclibStore will sync the data in defs to
-// reflect what is in srclib store for a given (repo, commit).
-func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.RefreshIndexOp) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.UpdateFromSrclibStore", op.Repo); err != nil {
+// Update syncs data from universe into the defs2 table
+func (s *defs) Update(ctx context.Context, op store.RefreshIndexOp) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.Update", op.Repo); err != nil {
 		return err
 	}
 
@@ -429,7 +423,7 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.RefreshIndexO
 	defer totalEnd()
 
 	var defs []*graph.Def
-	if feature.Features.NoSrclib {
+	{
 		end := obs.start("langp")
 		r, err := langp.DefaultClient.ExportedSymbols(ctx, &langp.RepoRev{
 			Repo:   repo.URI,
@@ -437,38 +431,11 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.RefreshIndexO
 		})
 		end()
 		if err != nil {
-			log15.Debug("universe defs.Update failed", "repo", repo.URI, "commitID", op.CommitID, "err", err)
-		} else {
-			log15.Debug("universe defs.Update success", "repo", repo.URI, "commitID", op.CommitID, "count", len(r.Symbols))
-			defs = make([]*graph.Def, 0, len(r.Symbols))
-			for _, s := range r.Symbols {
-				defs = append(defs, symbolToDef(s))
-			}
-		}
-	} else if universe.Shadow(repo.URI) {
-		go func() {
-			shadowEnd := obs.start("langp")
-			shadowR, shadowErr := langp.DefaultClient.ExportedSymbols(ctx, &langp.RepoRev{
-				Repo:   repo.URI,
-				Commit: op.CommitID,
-			})
-			shadowEnd()
-			if shadowErr != nil {
-				log15.Debug("universe defs.Update failed", "repo", repo.URI, "commitID", op.CommitID, "err", shadowErr)
-				return
-			}
-			log15.Debug("universe defs.Update success", "repo", repo.URI, "commitID", op.CommitID, "count", len(shadowR.Symbols))
-		}()
-	}
-
-	if len(defs) == 0 {
-		end := obs.start("graphstore")
-		defs, err = store.GraphFromContext(ctx).Defs(
-			sstore.ByRepoCommitIDs(sstore.Version{Repo: repo.URI, CommitID: op.CommitID}),
-		)
-		end()
-		if err != nil {
 			return err
+		}
+		defs = make([]*graph.Def, 0, len(r.Symbols))
+		for _, s := range r.Symbols {
+			defs = append(defs, symbolToDef(s))
 		}
 	}
 
@@ -482,7 +449,7 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.RefreshIndexO
 	}
 
 	// KLUDGE to improve search quality. This info ideally would be emitted by srclib toolchains.
-	var chosenDefs []*graph.Def
+	chosenDefs := make([]*graph.Def, 0, len(defs))
 	for _, d := range defs {
 		if shouldIndex(d) {
 			chosenDefs = append(chosenDefs, d)

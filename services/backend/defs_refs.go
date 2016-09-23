@@ -3,8 +3,6 @@ package backend
 import (
 	"path"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -116,28 +114,29 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 		return nil, err
 	}
 
-	// There may be new commits that were pushed from the time we had
-	// srclib run and we analyse the commit. So we can't just pass in
-	// DefaultBranch, but must use the latest imported commit.
-	version, err := svc.Repos(ctx).GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{RepoRev: sourcegraph.RepoRevSpec{Repo: op.Repo, CommitID: rev.CommitID}})
-	if err != nil {
-		return nil, err
-	}
-
-	log15.Debug("Refreshing global indexes", "repo", op.Repo, "commitID", version.CommitID, "commitsBehind", version.CommitsBehind)
-
+	// rev.CommitID will be the latest commit on the DefaultBranch
 	indexOp := store.RefreshIndexOp{
 		Repo:     op.Repo,
-		CommitID: version.CommitID,
+		CommitID: rev.CommitID,
 	}
 
-	if err := store.GlobalRefsFromContext(ctx).Update(ctx, indexOp); err != nil {
-		return nil, err
-	}
+	// Update defs table for the exported symbols in repo.
+	defsErr := store.DefsFromContext(ctx).Update(ctx, indexOp)
 
-	// Update defs table
-	if err := store.DefsFromContext(ctx).UpdateFromSrclibStore(ctx, indexOp); err != nil {
-		return nil, err
+	// TODO GlobalRefs updates are disabled until we are happy with langp.ExternalRefs
+	// Update the references this repo makes to external repos
+	//refsErr := store.GlobalRefsFromContext(ctx).Update(ctx, indexOp)
+	var refsErr error
+
+	// We care more about defsErr, since it should be more stable. So lets
+	// lean on the side of reporting it instead of refsErr. We only return
+	// one error (instead of a errList or something) since it may have a
+	// specific gRPC meaning.
+	if defsErr != nil {
+		return nil, defsErr
+	}
+	if refsErr != nil {
+		return nil, refsErr
 	}
 
 	return &pbtypes.Void{}, nil
