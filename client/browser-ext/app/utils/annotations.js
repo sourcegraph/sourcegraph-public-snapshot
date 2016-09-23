@@ -136,7 +136,7 @@ export function annGenerator(annsByStartByte, byte, lineStart) {
 	if (annLen <= 0) return null; // sometimes, there will be an "empty" annotation, e.g. for CommonJS modules
 
 	return {annLen, annGen: function(innerHTML) {
-		return `<span data-byteoffset=${byte + 1 - lineStart} class=${styles.sgdef} style="cursor:pointer;">${innerHTML}</span>`;
+		return `<span data-byteoffset=${byte + 1 - lineStart} style="cursor:pointer;">${innerHTML}</span>`;
 	}};
 }
 
@@ -269,7 +269,7 @@ export function isStringNode(node) {
 export function convertStringNode(node, annsByStartByte, offset, lineStart) {
 	function getChildNodeText(node) {
 		if (node.nodeType == Node.ELEMENT_NODE) {
-			return [].map.call(node.childNodes, getChildNodeText).join("");
+			return [].map.call(node.childNodes, getChildNodeText).reduce((a, b) => a.concat(b), []);
 		} else if (node.nodeType === Node.TEXT_NODE) {
 			return utf8.encode(_.unescape(node.wholeText));
 		} else {
@@ -277,12 +277,12 @@ export function convertStringNode(node, annsByStartByte, offset, lineStart) {
 		}
 	}
 
-	const text = `"${[].slice.call(node.childNodes, 1, node.childNodes.length - 1).map(getChildNodeText).join("")}"`;
-	const match = {annLen: text.length, annGen: function(innerHTML) {
-		return `<span data-byteoffset=${offset + 1 - lineStart} class=${styles.sgdef} style=${isCommentNode(node) ? "" : "cursor:pointer;"}>${innerHTML}</span>`;
-	}}
+	const text = getChildNodeText(node);
+	const strAnnGen = function(innerHTML) {
+		return `<span data-byteoffset=${offset + 1 - lineStart} style=${isCommentNode(node) ? "" : "cursor:pointer;"}>${innerHTML}</span>`;
+	};
 
-	return {result: match.annGen(node.innerHTML), bytesConsumed: match.annLen};
+	return {result: strAnnGen(_.escape(text)), bytesConsumed: text.length};
 }
 
 // The rest of this file is responsible for fetching/caching annotation specific data from the server
