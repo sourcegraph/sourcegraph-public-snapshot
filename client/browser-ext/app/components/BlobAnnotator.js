@@ -16,7 +16,6 @@ let buildsCache = {};
 		resolvedRev: state.resolvedRev,
 		annotations: state.annotations,
 		accessToken: state.accessToken,
-		authInfo: state.authInfo,
 	}),
 	(dispatch) => ({
 		actions: bindActionCreators(Actions, dispatch)
@@ -120,7 +119,6 @@ export default class BlobAnnotator extends Component {
 		// Click may be for context expansion, in which case we should
 		// re-annotate the blob (which is smart enough to only annoate
 		// lines which haven't already been annotated).
-		this.props.actions.getAuthentication(this.state);
 		document.addEventListener("click", this._clickRefresh);
 	}
 
