@@ -46,7 +46,7 @@ func (c *Client) broadcastCall(ctx context.Context, newRequest func() (*request,
 	// Check that ctx is not expired before broadcasting over the network.
 	select {
 	case <-ctx.Done():
-		deadlineExceeededCounter.Inc()
+		deadlineExceededCounter.Inc()
 		return nil, ctx.Err()
 	default:
 	}
@@ -84,15 +84,15 @@ func (c *Client) broadcastCall(ctx context.Context, newRequest func() (*request,
 
 var errRPCFailed = errors.New("gitserver: rpc failed")
 
-var deadlineExceeededCounter = prometheus.NewCounter(prometheus.CounterOpts{
+var deadlineExceededCounter = prometheus.NewCounter(prometheus.CounterOpts{
 	Namespace: "src",
 	Subsystem: "gitserver",
-	Name:      "client_deadline_exceeeded",
+	Name:      "client_deadline_exceeded",
 	Help:      "Times that Client.broadcastCall() returned context.DeadlineExceeded",
 })
 
 func init() {
-	prometheus.MustRegister(deadlineExceeededCounter)
+	prometheus.MustRegister(deadlineExceededCounter)
 }
 
 // Cmd represents a command to be executed remotely.
