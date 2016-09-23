@@ -7,7 +7,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
@@ -44,9 +43,6 @@ func NewHandler(r *router.Router) http.Handler {
 	}
 
 	m.Handle("/", handlerutil.WithMiddleware(r, tmplReloadMiddleware))
-
-	// Add git transport routes
-	gitserver.AddHandlers(&r.Router)
 
 	r.Get(router.RobotsTxt).Handler(httptrace.TraceRoute(http.HandlerFunc(robotsTxt)))
 	r.Get(router.Favicon).Handler(httptrace.TraceRoute(http.HandlerFunc(favicon)))

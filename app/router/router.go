@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
-	gitrouter "sourcegraph.com/sourcegraph/sourcegraph/app/internal/gitserver/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
@@ -63,9 +62,6 @@ func New(base *mux.Router) *Router {
 	addOldDefRedirectRoute(&Router{*base}, base)
 	addOldTreeRedirectRoute(&Router{*base}, base)
 	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)
-
-	// attach git transport endpoints
-	gitrouter.New(base)
 
 	base.PathPrefix("/").Methods("GET").Name(UI)
 
