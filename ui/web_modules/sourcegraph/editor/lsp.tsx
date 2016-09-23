@@ -1,4 +1,3 @@
-// tslint:disable typedef ordered-imports
 interface Position {
 	line: number;
 	character: number;
