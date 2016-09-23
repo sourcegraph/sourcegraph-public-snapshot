@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -24,6 +25,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
+
+var pkgVendorRe = regexp.MustCompile("(^|.*/)(vendor|Godeps)(/.*|$)")
 
 func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
 	q := parseSymbolQuery(params.Query)
@@ -82,8 +85,12 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 		buildCtx.GOROOT = h.filePath("gopath/src/github.com/golang/go")
 	}
 	for _, pkg := range pkgs {
-		// Exclude vendored in code from symbols
-		if strings.Contains(pkg, "/vendor/") || strings.Contains(pkg, "/Godeps/") {
+		// Exclude vendored from symbols
+		if pkgVendorRe.MatchString(pkg) {
+			continue
+		}
+		// Internal packages are not exported
+		if q.Type == queryTypeExported && strings.Contains(pkg, "/internal/") {
 			continue
 		}
 		emitForPkg := func(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos token.Pos) {
@@ -373,6 +380,8 @@ func symbolDo(buildCtx build.Context, _, pkgPath string, includeTests bool, emit
 	// * v.Decl.TokPos is not correct
 	emit(pkg.build.ImportPath, "", lsp.SKPackage, pkg.fs, 0)
 	for _, t := range pkg.doc.Types {
+		emit(t.Name, pkg.build.ImportPath, lsp.SKClass, pkg.fs, t.Decl.TokPos)
+
 		for _, v := range t.Funcs {
 			emit(v.Name, pkg.build.ImportPath, lsp.SKFunction, pkg.fs, v.Decl.Name.NamePos)
 		}

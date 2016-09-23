@@ -286,10 +286,19 @@ func exportedSymbol(r *langp.RepoRev, f *langp.File, s *lsp.SymbolInformation) *
 	} else {
 		unit = strings.Join(pkgParts, "/")
 	}
+	name := s.Name
+	if i := strings.LastIndex(name, "/"); i >= 0 {
+		name = name[i+1:]
+	}
 	path := s.Name
 	if pkg, typ := parseContainerName(unit); typ != "" {
 		unit = pkg
 		path = typ + "/" + path
+	}
+	if s.Kind == lsp.SKPackage {
+		// Make our output match up with packages in srclib
+		unit = path
+		path = "."
 	}
 	// containerName may contain a type which we want as part of the path
 	return &langp.Symbol{
@@ -300,7 +309,7 @@ func exportedSymbol(r *langp.RepoRev, f *langp.File, s *lsp.SymbolInformation) *
 			Unit:     unit,
 			Path:     path,
 		},
-		Name: s.Name,
+		Name: name,
 		File: f.Path,
 		Kind: lspKindToSymbol(s.Kind),
 	}
@@ -362,7 +371,8 @@ func lspKindToSymbol(kind lsp.SymbolKind) string {
 	case lsp.SKFunction:
 		return "func"
 	case lsp.SKMethod:
-		return "method"
+		// srclib stores this as func
+		return "func"
 	case lsp.SKVariable:
 		return "var"
 	case lsp.SKClass:

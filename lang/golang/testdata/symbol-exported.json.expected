@@ -32,6 +32,42 @@
         }
       },
       {
+        "name": "BuildVarsFunc",
+        "kind": 5,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 403,
+              "character": 0
+            },
+            "end": {
+              "line": 403,
+              "character": 12
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "MatcherFunc",
+        "kind": 5,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 273,
+              "character": 0
+            },
+            "end": {
+              "line": 273,
+              "character": 10
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
         "name": "Match",
         "kind": 6,
         "location": {
@@ -48,6 +84,24 @@
           }
         },
         "containerName": "mux MatcherFunc"
+      },
+      {
+        "name": "Route",
+        "kind": 5,
+        "location": {
+          "uri": "file:///gopath/src/mux/route.go",
+          "range": {
+            "start": {
+              "line": 16,
+              "character": 0
+            },
+            "end": {
+              "line": 16,
+              "character": 4
+            }
+          }
+        },
+        "containerName": "mux"
       },
       {
         "name": "CurrentRoute",
@@ -518,6 +572,42 @@
         "containerName": "mux Route"
       },
       {
+        "name": "RouteMatch",
+        "kind": 5,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 312,
+              "character": 0
+            },
+            "end": {
+              "line": 312,
+              "character": 9
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
+        "name": "Router",
+        "kind": 5,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 37,
+              "character": 0
+            },
+            "end": {
+              "line": 37,
+              "character": 5
+            }
+          }
+        },
+        "containerName": "mux"
+      },
+      {
         "name": "NewRouter",
         "kind": 12,
         "location": {
@@ -876,6 +966,24 @@
           }
         },
         "containerName": "mux Router"
+      },
+      {
+        "name": "WalkFunc",
+        "kind": 5,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 275,
+              "character": 0
+            },
+            "end": {
+              "line": 275,
+              "character": 7
+            }
+          }
+        },
+        "containerName": "mux"
       },
       {
         "name": "SkipRouter",
