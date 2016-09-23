@@ -202,11 +202,21 @@ type tracingTransport struct {
 	ctx context.Context
 }
 
-func (t *tracingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *tracingTransport) RoundTrip(req *http.Request) (resp *http.Response, err error) {
 	span, ctx := opentracing.StartSpanFromContext(t.ctx, "GitHub")
 	span.SetTag("URL", req.URL.String())
-	defer span.Finish()
-	return t.t.RoundTrip(req.WithContext(ctx))
+	defer func() {
+		if err != nil {
+			span.SetTag("error", err.Error())
+		}
+		if resp != nil {
+			span.SetTag("status", resp.Status)
+		}
+		span.Finish()
+	}()
+
+	resp, err = t.t.RoundTrip(req.WithContext(ctx))
+	return
 }
 
 type disabledTransport struct{}
