@@ -28,11 +28,13 @@ export class Editor implements monaco.IDisposable {
 		// Register services for modes (languages) when new models are added.
 		this._toDispose.push(monaco.editor.onDidCreateModel(model => {
 			const mode = model.getMode().getId();
-			if (!this._initializedModes.has(mode)) {
-				this._toDispose.push(monaco.languages.registerHoverProvider(mode, this));
-				this._toDispose.push(monaco.languages.registerDefinitionProvider(mode, this));
-				this._toDispose.push(monaco.languages.registerReferenceProvider(mode, this));
-				this._initializedModes.add(mode);
+			if (mode === "go" || mode === "javascript" || mode === "typescript") {
+				if (!this._initializedModes.has(mode)) {
+					this._toDispose.push(monaco.languages.registerHoverProvider(mode, this));
+					this._toDispose.push(monaco.languages.registerDefinitionProvider(mode, this));
+					this._toDispose.push(monaco.languages.registerReferenceProvider(mode, this));
+					this._initializedModes.add(mode);
+				}
 			}
 		}));
 
