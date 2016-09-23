@@ -44,11 +44,9 @@ type genericReply interface {
 
 func (c *Client) broadcastCall(ctx context.Context, newRequest func() (*request, func() (genericReply, bool))) (interface{}, error) {
 	// Check that ctx is not expired before broadcasting over the network.
-	select {
-	case <-ctx.Done():
+	if err := ctx.Err(); err != nil {
 		deadlineExceededCounter.Inc()
-		return nil, ctx.Err()
-	default:
+		return nil, err
 	}
 
 	allReplies := make(chan genericReply, len(c.servers))
