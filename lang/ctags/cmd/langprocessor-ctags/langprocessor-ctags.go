@@ -92,6 +92,7 @@ func main() {
 			PrepareDeps: prepareDeps,
 		}),
 		ResolveFile: resolveFile,
+		FileURI:     fileURI,
 	}))
 	log.Fatal(http.ListenAndServe(*httpAddr, nil))
 }

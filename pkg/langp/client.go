@@ -30,8 +30,36 @@ const envLanguageProcessorPrefix = "SG_LANGUAGE_PROCESSOR_"
 // Maps real language name to canonical one, that can be used in environment variable names.
 // For example C++ => CPP
 var languageNameMap = map[string]string{
-	"C++":         "CPP",
-	"Objective-C": "OBJECTIVEC",
+	"Asp":         "CTAGS",
+	"Awk":         "CTAGS",
+	"Basic":       "CTAGS",
+	"Clojure":     "CTAGS",
+	"C++":         "CTAGS",
+	"C":           "CTAGS",
+	"C#":          "CTAGS",
+	"Cobol":       "CTAGS",
+	"D":           "CTAGS",
+	"DosBatch":    "CTAGS",
+	"Erlang":      "CTAGS",
+	"Fortran":     "CTAGS",
+	"Lisp":        "CTAGS",
+	"Lua":         "CTAGS",
+	"Make":        "CTAGS",
+	"MatLab":      "CTAGS",
+	"Objective-C": "CTAGS",
+	"OCaml":       "CTAGS",
+	"Pascal":      "CTAGS",
+	"Perl":        "CTAGS",
+	"Perl6":       "CTAGS",
+	"PHP":         "CTAGS",
+	"Python":      "CTAGS",
+	"R":           "CTAGS",
+	"Ruby":        "CTAGS",
+	"Rust":        "CTAGS",
+	"Scheme":      "CTAGS",
+	"Sh":          "CTAGS",
+	"SQL":         "CTAGS",
+	"Vim":         "CTAGS",
 }
 
 // DefaultClient is the default language processor client.

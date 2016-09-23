@@ -152,6 +152,18 @@ function getModeByFilename(path: string): string {
 	if (path.endsWith(".scala")) {
 		return "scala";
 	}
+	if (path.endsWith(".rb")) {
+		return "ruby";
+	}
+	if (path.endsWith(".c")) {
+		return "c";
+	}
+	if (path.endsWith(".cpp")) {
+		return "cpp";
+	}
+	if (path.endsWith(".cs")) {
+		return "csharp";
+	}
 	return "plaintext";
 }
 

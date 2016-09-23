@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/exec"
 
 	lightstep "github.com/lightstep/lightstep-tracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -54,6 +55,10 @@ func run() error {
 		opentracing.InitGlobalTracer(lightstep.NewTracer(lightstep.Options{
 			AccessToken: t,
 		}))
+	}
+
+	if _, err := exec.LookPath("pt"); err != nil {
+		return fmt.Errorf("Could not find `pt` command in $PATH. Install using go get -u github.com/monochromegane/the_platinum_searcher/...")
 	}
 
 	newHandler := func() jsonrpc2.Handler {

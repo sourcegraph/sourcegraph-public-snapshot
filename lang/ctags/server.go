@@ -88,6 +88,8 @@ func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		h.reset(&params)
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
+				DefinitionProvider:      true,
+				ReferencesProvider:      true,
 				WorkspaceSymbolProvider: true,
 			},
 		}, nil
@@ -96,6 +98,25 @@ func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		// Result is undefined, per
 		// https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#shutdown-request.
 		return nil, nil
+
+	case "textDocument/hover":
+		vslog("textDocument/hover not yet implemented")
+		return nil, nil
+
+	case "textDocument/definition":
+		var params lsp.TextDocumentPositionParams
+		if err = json.Unmarshal(*req.Params, &params); err != nil {
+			return
+		}
+		return h.handleDefinition(ctx, req, params)
+
+	case "textDocument/references":
+		var params lsp.ReferenceParams
+		if err = json.Unmarshal(*req.Params, &params); err != nil {
+			return
+		}
+		r, err := h.handleReferences(ctx, req, params)
+		return r, err
 
 	case "workspace/symbol":
 		var params lsp.WorkspaceSymbolParams

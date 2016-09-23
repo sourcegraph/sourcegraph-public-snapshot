@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -12,9 +13,58 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 )
 
+var enabledFileExts = make(map[string]struct{})
+
+func init() {
+	exts := []string{
+		".asp", ".asa", // Asp
+		".awk", ".gawk", ".mawk", // Awk
+		".bas", ".bi", ".bb", ".pb", // Basic
+		".clj",     // Clojure
+		".c", ".C", // C++
+		".c++", ".cc", ".cp", ".cpp", ".cxx", ".h", ".h++", ".hh", ".hp", ".hpp", ".hxx", ".inl", ".C", ".H", ".CPP", ".CXX", // C
+		".cs",                          // C#
+		".cbl", ".cob", ".CBL", ".COB", // Cobol
+		".d", ".di", // D
+		".bat", ".cmd", // DosBatch
+		".erl", ".ERL", ".hrl", ".HRL", // Erlang
+		".f", ".for", ".ftn", ".f77", ".f90", ".f95", ".f03", ".f08", ".f15", ".F", ".FOR", ".FTN", ".F77", ".F90", ".F95", ".F03", ".F08", ".F15", // Fortran
+		".go",                                         // Go
+		".java",                                       // Java
+		".js",                                         // JavaScript
+		".cl", ".clisp", ".el", ".l", ".lisp", ".lsp", // Lisp
+		".lua",                                               // Lua
+		".mak", ".mk", "Makefile", "makefile", "GNUmakefile", // Make
+		".m",              // MatLab
+		".mm", ".m", ".h", // ObjectiveC
+		".ml", ".mli", ".aug", // OCaml
+		".p", ".pas", // Pascal
+		".pl", ".pm", ".ph", ".plx", ".perl", // Perl
+		".p6", ".pm6", ".pm", ".pl6", // Perl6
+		".php", ".php3", ".php4", ".php5", ".php7", ".phtml", // PHP
+		".py", ".pyx", ".pxd", ".pxi", ".scons", // Python
+		".r", ".R", ".s", ".q", // R
+		".rb", ".ruby", // Ruby
+		".rs",                                           // Rust
+		".SCM", ".SM", ".sch", ".scheme", ".scm", ".sm", // Scheme
+		".sh", ".SH", ".bsh", ".bash", ".ksh", ".zsh", ".ash", // Sh
+		".sql",                            // SQL
+		".vim", ".vba", "vimrc", "gvimrc", // Vim
+	}
+	for _, ext := range exts {
+		enabledFileExts[ext] = struct{}{}
+	}
+}
+
 // EnabledFile tells if universe should be used because file should use a universe backend.
 func EnabledFile(file string) bool {
-	return strings.HasSuffix(file, ".go")
+	if ext := filepath.Ext(file); ext != "" {
+		if _, exists := enabledFileExts[ext]; exists {
+			return exists
+		}
+	}
+	_, exists := enabledFileExts[file]
+	return exists
 }
 
 // EnabledRepo tells if universe should be used because repo's language should use a universe backend.

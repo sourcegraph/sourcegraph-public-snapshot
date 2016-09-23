@@ -181,7 +181,7 @@ func Parse(ctx context.Context, rootDir string, files []string) (*TagsParser, er
 
 	// Reuse an existing ctags file if we have it, otherwise generate one.
 	if _, err := os.Stat(tagsFilename); os.IsNotExist(err) {
-		args := []string{"-f", tagsFilename, "--fields=*", "--excmd=pattern"}
+		args := []string{"-f", tagsFilename, "--fields=*", "--excmd=pattern", "--languages=-Ant,-Automake,-ctags,-CSS,-Diff,-HTML,-JSON,-reStructuredText,-YACC"}
 		if len(files) == 0 {
 			args = append(args, "-R")
 		} else {
