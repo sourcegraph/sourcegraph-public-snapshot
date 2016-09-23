@@ -3,6 +3,7 @@ package golang
 import (
 	"context"
 	"errors"
+	"fmt"
 	"go/ast"
 	"go/build"
 	"go/doc"
@@ -135,6 +136,11 @@ func (h *Handler) externalRefs(buildCtx build.Context, repo, pkgPath string, inc
 		return err
 	}
 
+	pkgRepoRoot, _, err := gitRevParse(context.TODO(), filepath.Join(bpkg.SrcRoot, bpkg.ImportPath))
+	if err != nil {
+		return err
+	}
+
 	// Formulate a list of all files we want to consider for external references.
 	files := bpkg.GoFiles
 	if includeTests {
@@ -150,7 +156,9 @@ func (h *Handler) externalRefs(buildCtx build.Context, repo, pkgPath string, inc
 	// first encountered error).
 	fset := token.NewFileSet()
 	for _, filename := range files {
-		f, err := parser.ParseFile(fset, filepath.Join(bpkg.SrcRoot, bpkg.ImportPath, filename), nil, 0)
+		// Make filename absolute, then parse it.
+		filename = filepath.Join(bpkg.SrcRoot, bpkg.ImportPath, filename)
+		f, err := parser.ParseFile(fset, filename, nil, 0)
 		if err != nil {
 			return err
 		}
@@ -206,6 +214,9 @@ func (h *Handler) externalRefs(buildCtx build.Context, repo, pkgPath string, inc
 
 			// If ident.Name references a package which is defined in this
 			// repository, exclude it (to avoid bloating the database).
+			//
+			// TODO: when using custom import paths, this prefix check does not
+			// work.
 			if pathHasPrefix(importPath, repo) {
 				return true
 			}
@@ -230,7 +241,7 @@ func (h *Handler) externalRefs(buildCtx build.Context, repo, pkgPath string, inc
 					resolveImportCache[importPath] = resolvedImportPath
 				}
 
-				repoRoot, _, err := gitRevParse(context.TODO(), filepath.Join(h.filePath("gopath/src"), resolvedImportPath))
+				repoRoot, _, err = gitRevParse(context.TODO(), filepath.Join(h.filePath("gopath/src"), resolvedImportPath))
 				if err != nil {
 					log.Println(err)
 					return true
@@ -245,7 +256,16 @@ func (h *Handler) externalRefs(buildCtx build.Context, repo, pkgPath string, inc
 			// better).
 			kind := lsp.SKProperty
 
-			containerName := repoRoot + " " + importPath
+			// The filename which we emit (pointing to where the reference, not
+			// def, is located) should be relative to the repository.
+			repoRelFile, err := filepath.Rel(pkgRepoRoot, filename)
+			if err != nil {
+				log.Println(err)
+				return true
+			}
+
+			p := fset.Position(v.Pos())
+			containerName := fmt.Sprintf("%s %s %s %d %d", repoRoot, importPath, repoRelFile, p.Line, p.Column)
 			emit(v.Sel.Name, containerName, kind, fset, v.Pos())
 			return true
 		}, nil, f)

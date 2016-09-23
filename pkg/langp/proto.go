@@ -171,7 +171,24 @@ type RefLocations struct {
 // ExternalRefs contains a list of all Defs used in a repository, but defined
 // outside of it.
 type ExternalRefs struct {
-	Defs []*DefSpec
+	Refs []*Ref
+}
+
+// Ref represents a reference to a definition.
+type Ref struct {
+	// Def is the definition that is being referenced. Because refs are always
+	// global (i.e. use the default VCS branch), Def.Commit should always be an
+	// empty string.
+	Def *DefSpec
+
+	// File is the file in which the reference to Def is made.
+	File string
+
+	// Line is the line in the file at which the reference to Def is made.
+	Line int
+
+	// Column is the line column at which the reference to Def is made.
+	Column int
 }
 
 // Symbols contains a list of Defs available within a repository.

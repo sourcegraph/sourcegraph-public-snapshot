@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -310,45 +311,35 @@ func externalRefsQuery(r *langp.RepoRev) string {
 	return "is:external-ref " + importPath + "/..."
 }
 
-func externalRef(r *langp.RepoRev, f *langp.File, s *lsp.SymbolInformation) *langp.DefSpec {
-	pkgParts := strings.Split(s.ContainerName, "/")
-	var unit string
-	if len(pkgParts) < 3 {
-		// Hack for stdlib
-		unit = s.ContainerName
-	} else {
-		unit = strings.Join(pkgParts, "/")
-	}
-	path := s.Name
-	repo, pkg, typ := parseExternalRefContainerName(unit)
-	unit = pkg
-	if typ != "" {
-		path = typ + "/" + path
-	}
+func externalRef(r *langp.RepoRev, f *langp.File, s *lsp.SymbolInformation) *langp.Ref {
+	repo, pkg, filename, line, col := parseExternalRefContainerName(s.ContainerName)
 	// containerName may contain a type which we want as part of the path
-	return &langp.DefSpec{
-		Repo: repo,
+	return &langp.Ref{
+		Def: &langp.DefSpec{
+			Repo: repo,
 
-		// Commit is intentionally omitted, as it has no use in the context of
-		// external refs (all refs point to defs of repos at the default branch
-		// only).
-		Commit:   "",
-		UnitType: "GoPackage",
-		Unit:     unit,
-		Path:     path,
+			// Commit is intentionally omitted, as it has no use in the context of
+			// external refs (all refs point to defs of repos at the default branch
+			// only).
+			Commit:   "",
+			UnitType: "GoPackage",
+			Unit:     pkg,
+			Path:     s.Name,
+		},
+		File:   filename,
+		Line:   line,
+		Column: col,
 	}
 }
 
-func parseExternalRefContainerName(containerName string) (repo, pkg, typ string) {
-	split := strings.Fields(containerName)
-	if len(split) >= 2 {
-		repo = split[0]
-		pkg = split[1]
+func parseExternalRefContainerName(containerName string) (repo, pkg, filename string, line, col int) {
+	s := strings.Fields(containerName)
+	if len(s) != 5 {
+		panic(fmt.Sprintf("parseExternalRefContainerName: invalid container name %q", containerName))
 	}
-	if len(split) == 3 {
-		typ = split[2]
-	}
-	return
+	l, _ := strconv.Atoi(s[3])
+	c, _ := strconv.Atoi(s[4])
+	return s[0], s[1], s[2], int(l), int(c)
 }
 
 func parseContainerName(containerName string) (pkg, typ string) {

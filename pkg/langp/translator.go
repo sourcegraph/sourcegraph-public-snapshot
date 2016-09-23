@@ -68,7 +68,7 @@ type SymbolsTranslator struct {
 	ExportedSymbolsQuery func(*RepoRev) string
 	ExportedSymbol       func(*RepoRev, *File, *lsp.SymbolInformation) *Symbol
 	ExternalRefsQuery    func(*RepoRev) string
-	ExternalRef          func(*RepoRev, *File, *lsp.SymbolInformation) *DefSpec
+	ExternalRef          func(*RepoRev, *File, *lsp.SymbolInformation) *Ref
 }
 
 type translator struct {
@@ -265,15 +265,15 @@ func (t *translator) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRef
 		return nil, err
 	}
 
-	defs := make([]*DefSpec, 0, len(respSymbol))
+	refs := make([]*Ref, 0, len(respSymbol))
 	for _, s := range respSymbol {
 		f, err := t.resolveFile(ctx, r.Repo, r.Commit, s.Location.URI)
 		if err != nil {
 			return nil, err
 		}
-		defs = append(defs, t.SymbolsTranslator.ExternalRef(r, f, &s))
+		refs = append(refs, t.SymbolsTranslator.ExternalRef(r, f, &s))
 	}
-	return &ExternalRefs{Defs: defs}, nil
+	return &ExternalRefs{Refs: refs}, nil
 }
 
 func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLocations, error) {
