@@ -1,16 +1,10 @@
 package backend
 
 import (
-	"math"
 	"sort"
-	"strings"
 	"time"
 
 	"context"
-
-	"github.com/cznic/mathutil"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
@@ -149,52 +143,4 @@ func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*s
 	}
 
 	return &sourcegraph.RepoTreeListResult{Files: files}, nil
-}
-
-func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp) (*sourcegraph.VCSSearchResultList, error) {
-	// Cap Search operation to some reasonable time.
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-
-	repoRev := op.Rev
-	opt := op.Opt
-	if opt == nil || strings.TrimSpace(opt.Query) == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "opt and opt.Query must be set")
-	}
-
-	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: repoRev.Repo})
-	if err != nil {
-		return nil, err
-	}
-
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	if !isAbsCommitID(repoRev.CommitID) {
-		return nil, errNotAbsCommitID
-	}
-
-	origN, origOffset := opt.SearchOptions.N, opt.SearchOptions.Offset
-	// Get all of the matches in the repo so we can count the total.
-	opt.SearchOptions.N, opt.SearchOptions.Offset = math.MaxInt32, 0
-	res, err := vcsrepo.Search(vcs.CommitID(repoRev.CommitID), opt.SearchOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	total := len(res)
-	// Paginate the results.
-	if int(origOffset) > total {
-		return nil, grpc.Errorf(codes.InvalidArgument, "page offset bounds out of range")
-	}
-	res = res[origOffset:mathutil.Min(int(origOffset+origN), total)]
-
-	return &sourcegraph.VCSSearchResultList{
-		SearchResults: res,
-		ListResponse: sourcegraph.ListResponse{
-			Total: int32(total),
-		},
-	}, nil
 }

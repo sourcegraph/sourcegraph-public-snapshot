@@ -896,29 +896,6 @@ export interface RepoTreeListResult {
 	Files?: string[];
 }
 
-export interface RepoTreeSearchOp {
-	Rev: RepoRevSpec;
-	Opt?: RepoTreeSearchOptions;
-}
-
-export interface RepoTreeSearchOptions {
-	Query?: string;
-	QueryType?: string;
-	ContextLines?: number;
-	N?: number;
-	Offset?: number;
-}
-
-export interface RepoTreeSearchResult {
-	File?: string;
-	StartByte?: number;
-	EndByte?: number;
-	StartLine?: number;
-	EndLine?: number;
-	Match?: number[];
-	RepoRev: RepoRevSpec;
-}
-
 export interface RepoWebhookOptions {
 	URI?: string;
 }
@@ -1000,10 +977,6 @@ export interface SearchOptions {
 	IncludeRepos?: boolean;
 	Fast?: boolean;
 	AllowEmpty?: boolean;
-}
-
-export interface SearchReposOp {
-	Query?: string;
 }
 
 export interface SearchReposResultList {

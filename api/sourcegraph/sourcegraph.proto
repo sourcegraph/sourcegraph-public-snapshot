@@ -1099,25 +1099,9 @@ message GetFileOptions {
 	int32 RecurseSingleSubfolderLimit = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
-message RepoTreeSearchOptions {
-	vcs.SearchOptions SearchOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-// A RepoTreeSearchResult is a tree search result that includes the repo and rev it
-// came from.
-message RepoTreeSearchResult {
-	vcs.SearchResult SearchResult = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-	RepoRevSpec RepoRev = 2 [(gogoproto.nullable) = false];
-}
-
 message RepoTreeGetOp {
 	TreeEntrySpec Entry = 1 [(gogoproto.nullable) = false];
 	RepoTreeGetOptions Opt = 2;
-}
-
-message RepoTreeSearchOp {
-	RepoRevSpec Rev = 1 [(gogoproto.nullable) = false];
-	RepoTreeSearchOptions Opt = 2;
 }
 
 message RepoTreeListOp {
@@ -1285,8 +1269,6 @@ message DefAuthorList {
 // and directory entries in repositories.
 service RepoTree {
 	rpc Get(RepoTreeGetOp) returns (TreeEntry);
-
-	rpc Search(RepoTreeSearchOp) returns (VCSSearchResultList);
 
 	// List returns a list of all the files in the repo tree at
 	// the given revision.
@@ -1523,12 +1505,6 @@ message RepoSearchResult {
 	Repo Repo = 1;
 }
 
-// SearchReposOp holds the options for repos search for a given query.
-message SearchReposOp {
-	// Query is the repo search query.
-	string Query = 1;
-}
-
 // SearchReposResultList holds a result of a repo search.
 message SearchReposResultList {
 	// Repos is the list of repo search results.
@@ -1561,9 +1537,4 @@ message SearchResultsList {
 service Search {
 	// Search returns a list of defs matching the given query string.
 	rpc Search(SearchOp) returns (SearchResultsList);
-
-	// SearchRepos returns a list of repos matching the given query string.
-	//
-	// DEPRECATED
-	rpc SearchRepos(SearchReposOp) returns (SearchReposResultList);
 }

@@ -134,27 +134,6 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 	return results, nil
 }
 
-func (s *search) SearchRepos(ctx context.Context, op *sourcegraph.SearchReposOp) (*sourcegraph.SearchReposResultList, error) {
-	const goalResults = 5 // How many search results we're looking to fill; tap into secondary sources if below this number.
-
-	var results = new(sourcegraph.SearchReposResultList)
-
-	query := op.Query
-
-	repos, err := store.ReposFromContext(ctx).Search(ctx, query)
-	if err != nil {
-		return results, err
-	}
-	for _, r := range repos {
-		results.Repos = append(results.Repos, r.Repo)
-	}
-
-	wantGHResults := goalResults - len(results.Repos)
-	results.Repos = append(results.Repos, searchReposOnGitHub(ctx, query, wantGHResults)...)
-
-	return results, nil
-}
-
 // searchReposOnGitHub tries to return wantResults from GitHub repositories search API.
 // It uses the user's connected GitHub account to ensure there's a reasonable amount of
 // rate limit allowed for queries to be successful most of the time. If user has no

@@ -21,7 +21,6 @@ const (
 	DeltaFiles               = "delta.files"
 	GitHubToken              = "github-token"
 	GlobalSearch             = "global.search"
-	SearchRepos              = "search.repos"
 	Repo                     = "repo"
 	RepoJumpDef              = "repo.jump-def"
 	RepoSymbols              = "repo.symbols"
@@ -35,7 +34,6 @@ const (
 	RepoResolveRev           = "repo.resolve-rev"
 	RepoTags                 = "repo.tags"
 	RepoTreeList             = "repo.tree-list"
-	RepoTreeSearch           = "repo-tree.search"
 	RepoHoverInfo            = "repo.hover-info"
 	RepoWebhookEnable        = "repo.webhook-enable"
 	RepoWebhookCallback      = "repo.webhook-callback"
@@ -74,7 +72,6 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/webhook/callback").Methods("POST").Name(RepoWebhookCallback)
 
 	base.Path("/global-search").Methods("GET").Name(GlobalSearch)
-	base.Path("/search-repos").Methods("GET").Name(SearchRepos)
 
 	base.Path("/internal/appdash/record-span").Methods("POST").Name(InternalAppdashRecordSpan)
 
@@ -101,7 +98,6 @@ func New(base *mux.Router) *mux.Router {
 	repoRev.Path("/commit").Methods("GET").Name(Commit)
 	repoRev.Path("/delta/{DeltaBaseRev}/-/files").Methods("GET").Name(DeltaFiles)
 	repoRev.Path("/inventory").Methods("GET").Name(RepoInventory)
-	repoRev.Path("/tree-search").Methods("GET").Name(RepoTreeSearch)
 	repoRev.Path("/tree{Path:.*}").Name(RepoTree)
 	repoRev.Path("/hover-info").Methods("GET").Name(RepoHoverInfo)
 	repoRev.Path("/jump-def").Methods("GET").Name(RepoJumpDef)
