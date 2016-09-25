@@ -17,13 +17,7 @@ const (
 	AuthInfo                 = "auth-info"
 	Commit                   = "commit"
 	Coverage                 = "coverage"
-	Def                      = "def"
-	DefRefs                  = "def.refs"
-	DefRefLocations          = "def.ref.locations"
 	DefLocalRefLocations     = "def.local.ref.locations"
-	DefExamples              = "def.examples"
-	DefAuthors               = "def.authors"
-	Defs                     = "defs"
 	DeltaFiles               = "delta.files"
 	GitHubToken              = "github-token"
 	GlobalSearch             = "global.search"
@@ -114,20 +108,13 @@ func New(base *mux.Router) *mux.Router {
 	repoRev.Path("/symbols").Methods("GET").Name(RepoSymbols)
 	repo.Path("/tags").Methods("GET").Name(RepoTags)
 
-	base.Path("/defs").Methods("GET").Name(Defs)
-
 	repoRev.Path("/srclib-import").Methods("PUT").Name(SrclibImport)
 	repoRev.Path("/srclib-data-version").Methods("GET").Name(SrclibDataVer)
 	repo.Path("/async-refresh-indexes").Methods("POST").Name(AsyncRefreshIndexes)
 
 	defPath := "/def/" + routevar.Def
 	def := repoRev.PathPrefix(defPath + "/-/").Subrouter()
-	def.Path("/authors").Methods("GET").Name(DefAuthors)
-	def.Path("/refs").Methods("GET").Name(DefRefs)
-	def.Path("/ref-locations").Methods("GET").Name(DefRefLocations)
 	def.Path("/local-refs").Methods("GET").Name(DefLocalRefLocations)
-	def.Path("/examples").Methods("GET").Name(DefExamples)
-	repoRev.Path(defPath).Methods("GET").Name(Def) // match subroutes first
 
 	base.Path("/resolve-custom-import/info").Methods("GET").Name(ResolveCustomImportsInfo)
 	base.Path("/resolve-custom-import/tree").Methods("GET").Name(ResolveCustomImportsTree)
