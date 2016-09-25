@@ -71,14 +71,15 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 	}
 
 	repos, err := store.ReposFromContext(ctx).List(ctx, &store.RepoListOp{
-		Name:      opt.Name,
-		Query:     opt.Query,
-		URIs:      opt.URIs,
-		Sort:      opt.Sort,
-		Direction: opt.Direction,
-		NoFork:    opt.NoFork,
-		Type:      opt.Type,
-		Owner:     opt.Owner,
+		Name:        opt.Name,
+		Query:       opt.Query,
+		URIs:        opt.URIs,
+		Sort:        opt.Sort,
+		Direction:   opt.Direction,
+		NoFork:      opt.NoFork,
+		Type:        opt.Type,
+		Owner:       opt.Owner,
+		ListOptions: opt.ListOptions,
 	})
 	if err != nil {
 		return nil, err

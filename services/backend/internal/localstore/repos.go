@@ -491,7 +491,11 @@ func reposListSQL(opt *store.RepoListOp) (string, []interface{}, error) {
 	}
 	orderBySQL += fmt.Sprintf("%s %s NULLS LAST", sort, direction)
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE %s ORDER BY %s`, selectSQL, fromSQL, whereSQL, orderBySQL)
+	// LIMIT
+	limitSQL := arg(opt.Limit())
+	offsetSQL := arg(opt.Offset())
+
+	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE %s ORDER BY %s LIMIT %s OFFSET %s`, selectSQL, fromSQL, whereSQL, orderBySQL, limitSQL, offsetSQL)
 	return sql, args, nil
 }
 

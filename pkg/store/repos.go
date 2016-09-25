@@ -83,6 +83,8 @@ type RepoListOp struct {
 	// Owner filters the list of repositories to those with the
 	// specified owner.
 	Owner string
+
+	sourcegraph.ListOptions
 }
 
 // InternalRepoUpdate is an update of repo fields that are used by

@@ -877,6 +877,8 @@ export interface RepoListOptions {
 	Type?: string;
 	Owner?: string;
 	RemoteOnly?: boolean;
+	PerPage?: number;
+	Page?: number;
 }
 
 export interface RepoListTagsOptions {

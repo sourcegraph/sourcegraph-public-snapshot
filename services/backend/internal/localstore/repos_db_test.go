@@ -125,6 +125,56 @@ func TestRepos_List(t *testing.T) {
 	}
 }
 
+func TestRepos_List_pagination(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+
+	ctx, _, done := testContext()
+	defer done()
+
+	ctx = github.WithMockHasAuthedUser(ctx, false)
+
+	s := repos{}
+
+	createdRepos := []*sourcegraph.Repo{
+		{URI: "r1"},
+		{URI: "r2"},
+		{URI: "r3"},
+	}
+	for _, repo := range createdRepos {
+		s.mustCreate(ctx, t, repo)
+	}
+
+	type testcase struct {
+		perPage int32
+		page    int32
+		exp     []string
+	}
+	tests := []testcase{
+		{perPage: 1, page: 1, exp: []string{"r1"}},
+		{perPage: 1, page: 2, exp: []string{"r2"}},
+		{perPage: 1, page: 3, exp: []string{"r3"}},
+		{perPage: 2, page: 1, exp: []string{"r1", "r2"}},
+		{perPage: 2, page: 2, exp: []string{"r3"}},
+		{perPage: 3, page: 1, exp: []string{"r1", "r2", "r3"}},
+		{perPage: 3, page: 2, exp: nil},
+		{perPage: 4, page: 1, exp: []string{"r1", "r2", "r3"}},
+		{perPage: 4, page: 2, exp: nil},
+	}
+	for _, test := range tests {
+		repos, err := s.List(ctx, &store.RepoListOp{Sort: "uri", Direction: "asc", ListOptions: sourcegraph.ListOptions{PerPage: test.perPage, Page: test.page}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.exp) {
+			t.Errorf("for test case %v, got %v (want %v)", test, repos, test.exp)
+		}
+	}
+}
+
 func TestRepos_List_type(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

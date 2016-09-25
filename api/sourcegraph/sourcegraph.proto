@@ -233,10 +233,13 @@ message RepoListOptions {
 	// GitHub that the currently authenticated user has access to.
 	//
 	// When RemoteOnly is true, the only other option field that is
-	// obeyed is Type, and returned repositories do not have valid IDs.
-	// If you want to get the ID of a repository, fetch it
-	// individually.
+	// obeyed is Type (pagination is ignored, too), and returned
+	// repositories do not have valid IDs. If you want to get the ID of
+	// a repository, fetch it individually.
 	bool RemoteOnly = 12 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// ListOptions controls pagination.
+	ListOptions ListOptions = 13 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // RepoWebhookOptions is used for enable repository webhook.
