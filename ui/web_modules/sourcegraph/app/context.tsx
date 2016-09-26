@@ -19,17 +19,12 @@ class Context {
 
 	features: Features;
 
-	// Some fields were migrated to React context from this global context object. These
-	// getters prevent you from accidentally accessing these fields in their old home,
-	// on this object.
-	get currentUser(): void {
-		throw new Error("currentUser is now accessible via this.context.user in components that specify 'user' in contextTypes");
+	hasPrivateGitHubToken(): boolean {
+		return Boolean(this.gitHubToken && this.gitHubToken.scope.includes("repo") && this.gitHubToken.scope.includes("read:org"));
 	}
-	get userEmail(): void {
-		throw new Error("userEmail is no longer available globally; use the UserBackend/UserStore to retrieve it");
-	}
-	get hasLinkedGitHub(): void {
-		throw new Error("hasLinkedGitHub is no longer available globally; use the UserBackend/UserStore directly");
+
+	hasHookGitHubToken(): boolean {
+		return Boolean(this.gitHubToken && this.gitHubToken.scope.includes("admin:repo_hook"));
 	}
 }
 

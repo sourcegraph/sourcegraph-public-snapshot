@@ -63,18 +63,6 @@ export class Repos extends React.Component<Props, State> {
 		return (`${repo.Owner}/${repo.Name}`).toLowerCase();
 	}
 
-	_hasGithubToken() {
-		return Boolean(context.gitHubToken);
-	}
-
-	_hasPrivateGitHubToken() {
-		return context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("repo") && context.gitHubToken.scope.includes("read:org");
-	}
-
-	_hasHookGitHubToken() {
-		return context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("admin:repo_hook");
-	}
-
 	_toggleRepo(remoteRepo: any) {
 		Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(remoteRepo.URI, remoteRepo, true));
 	}
@@ -92,13 +80,13 @@ export class Repos extends React.Component<Props, State> {
 					<Heading level={7} color="gray">Your repositories</Heading>
 					<p>To get jump-to-definition, search, and code examples, enable indexing on your repositories using the toggle. Private code indexed on Sourcegraph is only available to you and those with permissions to the underlying GitHub repository.</p>
 					<div className={styles.input_bar}>
-						{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} className={styles.github_button}>Add public repositories</GitHubAuthButton>}
-						{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>}
-						{!this._hasHookGitHubToken() && false && <GitHubAuthButton scopes={adminRepoGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add webhook notification</GitHubAuthButton>}
+						{!context.gitHubToken && <GitHubAuthButton returnTo={this.props.location} className={styles.github_button}>Add public repositories</GitHubAuthButton>}
+						{!context.hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>}
+						{!context.hasHookGitHubToken() && false && <GitHubAuthButton scopes={adminRepoGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add webhook notification</GitHubAuthButton>}
 					</div>
 				</header>
 				<div className={styles.settings}>
-					{this._hasGithubToken() &&
+					{context.gitHubToken &&
 					<div className={styles.list_heading}>
 						<Input type="text"
 							placeholder="Find a repository..."
@@ -117,7 +105,7 @@ export class Repos extends React.Component<Props, State> {
 										(repo.URI && repo.URI.replace("github.com/", "").replace("/", " / ", 1)) || `${repo.Owner} / ${repo.Name}`
 									}
 									{repo.Description && <p className={styles.description}>
-									{this._hasHookGitHubToken() && <button onClick={() => this._enableWebhook(repo.URI || `github.com/${repo.Owner}/${repo.Name}`)}>Enable Webhook</button>}
+									{context.hasHookGitHubToken() && <button onClick={() => this._enableWebhook(repo.URI || `github.com/${repo.Owner}/${repo.Name}`)}>Enable Webhook</button>}
 										{repo.Description.length > 100 ? `${repo.Description.substring(0, 100)}...` : repo.Description}
 									</p>}
 								</div>
@@ -129,11 +117,11 @@ export class Repos extends React.Component<Props, State> {
 							</div>
 						)}
 					</div>
-					{this._hasGithubToken() && repos.length === 0 && (!this._filterInput || !this._filterInput.value) &&
+					{context.gitHubToken && repos.length === 0 && (!this._filterInput || !this._filterInput.value) &&
 						<p className={styles.indicator}>Loading...</p>
 					}
 
-					{this._hasGithubToken() && this._filterInput && this._filterInput.value && repos.length === 0 &&
+					{context.gitHubToken && this._filterInput && this._filterInput.value && repos.length === 0 &&
 						<p className={styles.indicator}>No matching repositories</p>
 					}
 				</div>

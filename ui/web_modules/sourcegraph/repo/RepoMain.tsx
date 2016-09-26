@@ -1,16 +1,21 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
 import Helmet from "react-helmet";
-import * as styles from "sourcegraph/repo/styles/Repo.css";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
+
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
+
 import {trimRepo} from "sourcegraph/repo";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
+import * as styles from "sourcegraph/repo/styles/Repo.css";
+
 import {context} from "sourcegraph/app/context";
+
+import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {Header} from "sourcegraph/components/Header";
+
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
+import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
+import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 
 function repoPageTitle(repo: any): string {
 	let title = trimRepo(repo.URI);
@@ -61,13 +66,13 @@ export class RepoMain extends React.Component<Props, State> {
 		});
 	}
 
-	componentWillReceiveProps(nextProps) {
+	componentWillReceiveProps(nextProps: Props): void {
 		if (this.props.repoResolution !== nextProps.repoResolution) {
 			this._repoResolutionUpdated(nextProps.repo, nextProps.repoResolution);
 		}
 	}
 
-	_repoResolutionUpdated(repo: string, resolution: any) {
+	_repoResolutionUpdated(repo: string, resolution: any): void {
 		// Create the repo if we don't have repoObj (the result of creating a repo) yet,
 		// and this repo was just resolved to a remote repo (which must be explicitly created,
 		// as we do right here).
@@ -85,9 +90,11 @@ export class RepoMain extends React.Component<Props, State> {
 		const err = (this.props.repoResolution && this.props.repoResolution.Error) || (this.props.repoObj && this.props.repoObj.Error);
 		if (err) {
 			let msg;
+			let showGitHubCTA = false;
 			if (err.response && err.response.status === 401) {
 				EventLogger.logNonInteractionEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_ERROR, "ViewRepoMainError", {repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "401"});
-				msg = `Sign in to add repositories.`;
+				msg = context.user ? `Connect GitHub to add repositories` : `Sign in to add repositories.`;
+				showGitHubCTA = Boolean(context.user && !context.hasPrivateGitHubToken());
 			} else if (err.response && err.response.status === 404) {
 				EventLogger.logNonInteractionEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_ERROR, "ViewRepoMainError", {repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404"});
 				msg = `Repository not found.`;
@@ -101,6 +108,11 @@ export class RepoMain extends React.Component<Props, State> {
 					<Header
 						title={`${httpStatusCode(err)}`}
 						subtitle={msg} />
+					{showGitHubCTA &&
+						<div style={{textAlign: "center"}}>
+							<GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Add private repositories</GitHubAuthButton>
+						</div>
+					}
 				</div>
 			);
 		}

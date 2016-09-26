@@ -92,10 +92,6 @@ export class SearchSettings extends Container<Props, State> {
 		return this.state.settings && this.state.settings.search && this.state.settings.search.scope ? this.state.settings.search.scope : {};
 	}
 
-	_hasPrivateGitHubToken() {
-		return context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("repo") && context.gitHubToken.scope.includes("read:org") && context.gitHubToken.scope.includes("user:email");
-	}
-
 	_toggleLang(lang: string) {
 		const langs = this._langs();
 		const enabled = langs.includes(lang);
@@ -221,9 +217,9 @@ export class SearchSettings extends Container<Props, State> {
 								onClick={() => this._setScope({public: !scope.public})}
 								outline={!scope.public}>My public projects</Button>
 						}
-						{(!context.user || !this._hasPrivateGitHubToken()) &&
+						{(!context.user || !context.hasPrivateGitHubToken()) &&
 							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} className={styles.choice_button} returnTo={this.props.location}>My private projects</GitHubAuthButton>}
-						{this._hasPrivateGitHubToken() &&
+						{context.hasPrivateGitHubToken() &&
 							<Button
 								color={!scope.private ? "normal" : "blue"}
 								size="small"
