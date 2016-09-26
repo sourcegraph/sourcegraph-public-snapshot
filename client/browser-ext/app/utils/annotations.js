@@ -304,8 +304,8 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 
 		fetchJumpURL(url, function(defUrl, isCurrentPage) {
 			if (!defUrl) return;
-			// If target is within the same repo/file, open in current frame otherwise new tab
-			if (isCurrentPage) {
+			// Either move to a line on the same page, or refresh the page to a new blob view.
+			if (isCurrentPage && !repoRevSpec.isDelta) {
 				location.hash = defUrl.slice(defUrl.indexOf('#'));
 			} else {
 				location.href = defUrl;
