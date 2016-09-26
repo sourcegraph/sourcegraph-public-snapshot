@@ -18,7 +18,7 @@ export class Table extends React.Component<Props, State> {
 		const {className, children, bordered, style} = this.props;
 
 		return (
-			<table className={classNames(className, bordered && styles.bordered)} style={style} cellSpacing="0">
+			<table className={classNames(className, bordered ? styles.bordered : null)} style={style} cellSpacing="0">
 				{children}
 			</table>
 		);

@@ -36,7 +36,7 @@ export class Select extends React.Component<Props, State> {
 					required={true}
 					style={style}
 					defaultValue={defaultValue}
-					className={classNames(styles.select, error ? styles.border_red : styles.border_neutral, block && styles.block)}
+					className={classNames(styles.select, error ? styles.border_red : styles.border_neutral, block ? styles.block : null)}
 					placeholder={placeholder ? placeholder : ""}>
 					{children}
 				</select>

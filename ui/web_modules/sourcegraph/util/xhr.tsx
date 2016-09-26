@@ -4,23 +4,10 @@ import {context} from "sourcegraph/app/context";
 
 // This file provides a common entrypoint to the fetch API.
 
-export function combineHeaders(a: any, b: any): any {
-	if (!b) { return a; }
-	if (!a) { return b; }
-
-	if (!(a instanceof Headers)) { throw new Error("must be Headers type"); }
-	if (!(b instanceof Headers)) { throw new Error("must be Headers type"); }
-
-	if (b.forEach) {
-		// node-fetch's Headers is not a full implementation and doesn't support iterable,
-		// but it does expose forEach.
-		b.forEach((val: string, name: string) => a.append(name, val));
-	} else {
-		for (let [name, val] of b) {
-			a.append(name, val);
-		}
-	}
-	return a;
+export function combineHeaders(a: Headers, b: Headers): Headers {
+	let headers = new Headers(a);
+	b.forEach((val: string, name: any) => { headers.append(name, val); });
+	return headers;
 }
 
 // defaultFetch wraps the fetch API.
@@ -36,7 +23,7 @@ export function defaultFetch(url: string | Request, init?: RequestInit): Promise
 
 	return fetch(url, {
 		method: (init && init.method) || "GET",
-		headers: combineHeaders(defaultHeaders, init ? init.headers : null),
+		headers: (init && init.headers) ? combineHeaders(defaultHeaders, new Headers(init.headers)) : defaultHeaders,
 		body: init && init.body,
 		mode: init && init.mode,
 		redirect: init && init.redirect,

@@ -48,7 +48,7 @@ export function Button(props: {
 	delete other.className;
 
 	return (
-		<button {...(other as any)} className={classNames(colorClass(color, outline), (disabled || loading) && styles.disabled, block && styles.block, size && sizeClasses[size], className)}
+		<button {...(other as any)} className={classNames(colorClass(color, outline), (disabled || loading) ? styles.disabled : null, block ? styles.block : null, size && sizeClasses[size], className)}
 			onClick={onClick}>
 			{imageUrl ? <img className={styles.button_image} src={imageUrl} /> : ""}
 			{loading && <Loader {...props}/>}

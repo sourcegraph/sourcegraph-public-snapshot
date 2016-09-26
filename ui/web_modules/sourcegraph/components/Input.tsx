@@ -43,7 +43,7 @@ export class Input extends React.Component<Props, State> {
 				<input
 					{...other}
 					style={style} ref={domRef}
-					className={classNames(styles.input, block && styles.block, error ? styles.border_red : styles.border_neutral)}
+					className={classNames(styles.input, block ? styles.block : null, error ? styles.border_red : styles.border_neutral)}
 					placeholder={placeholder ? placeholder : ""} />
 				{helperText && <em className={classNames(styles.small, styles.block, base.mt2)}>{helperText}</em>}
 				{errorText &&

@@ -5,7 +5,7 @@ import * as styles from "sourcegraph/home/styles/Integrations.css";
 import {Heading, Button} from "sourcegraph/components";
 import {Component} from "sourcegraph/Component";
 import {inBeta} from "sourcegraph/user";
-import * as betautil from "sourcegraph/util/betautil.tsx";
+import * as betautil from "sourcegraph/util/betautil";
 import {context} from "sourcegraph/app/context";
 
 class Tool {
