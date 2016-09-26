@@ -37,6 +37,7 @@ type mocks struct {
 
 type mockServers struct {
 	Accounts     mock.AccountsServer
+	Async        mock.AsyncServer
 	Auth         mock.AuthServer
 	Defs         mock.DefsServer
 	MirrorRepos  mock.MirrorReposServer
@@ -51,6 +52,7 @@ func (s *mockServers) servers() svc.Services {
 	return svc.Services{
 		Accounts:     &s.Accounts,
 		Auth:         &s.Auth,
+		Async:        &s.Async,
 		Defs:         &s.Defs,
 		MirrorRepos:  &s.MirrorRepos,
 		RepoStatuses: &s.RepoStatuses,

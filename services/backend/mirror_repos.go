@@ -11,7 +11,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -139,21 +138,28 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 		return err
 	}
 
-	if universe.EnabledRepo(repo) || universe.Shadow(repo.URI) {
-		go func() {
-			// Ask the Language Processor to prepare the workspace.
-			err := langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
-				// TODO(slimsag): URI is correct only where the repo URI and clone
-				// URI are directly equal.. but CloneURI is only correct (for Go)
-				// when it directly matches the package import path.
-				Repo:   repo.URI,
-				Commit: res.CommitID,
-			})
-			if err != nil {
-				log15.Warn("cloneRepo: language processor failed to prepare workspace", "err", err, "repo", repo.URI, "commit", res.CommitID, "branch", repo.DefaultBranch)
-			}
-		}()
+	// Ask the Language Processor to prepare the workspace. This is async
+	if langp.DefaultClient != nil {
+		err = langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
+			// TODO(slimsag): URI is correct only where the repo URI and clone
+			// URI are directly equal.. but CloneURI is only correct (for Go)
+			// when it directly matches the package import path.
+			Repo:   repo.URI,
+			Commit: res.CommitID,
+		})
+		if err != nil {
+			log15.Warn("cloneRepo: language processor failed to prepare workspace", "err", err, "repo", repo.URI, "commit", res.CommitID, "branch", repo.DefaultBranch)
+		}
 	}
+
+	_, err = svc.Async(ctx).RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
+		Repo:   repo.ID,
+		Source: "clone",
+	})
+	if err != nil {
+		log15.Warn("cloneRepo: failed to enqueue refresh indexes update", "err", err, "repo", repo.URI, "commit", res.CommitID, "branch", repo.DefaultBranch)
+	}
+
 	return nil
 }
 

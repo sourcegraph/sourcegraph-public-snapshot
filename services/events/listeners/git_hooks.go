@@ -1,14 +1,14 @@
 package listeners
 
 import (
+	"fmt"
+
 	"github.com/AaronO/go-git-http"
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 )
@@ -40,34 +40,42 @@ func (g *gitHookListener) Start(ctx context.Context) {
 func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload) {
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
-		log15.Error("postPushHook: failed to create build", "err", err)
+		log15.Error("postPushHook: failed to get client", "err", err)
 		return
 	}
-	repo := payload.Repo
+	repoID := payload.Repo
 	event := payload.Event
 
 	if event.Type != githttp.PUSH && event.Type != githttp.PUSH_FORCE && event.Type != githttp.TAG {
 		return
 	}
 
-	if feature.Features.Universe {
-		repoFull, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repo})
+	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoID})
+	if err != nil {
+		log15.Warn("postPushHook: failed to get repo", "err", err)
+		return
+	}
+
+	// Ask the Language Processor to prepare the workspace.
+	err = langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
+		// TODO(slimsag): URI is correct only where the repo URI and clone
+		// URI are directly equal.. but CloneURI is only correct (for Go)
+		// when it directly matches the package import path.
+		Repo:   repo.URI,
+		Commit: event.Commit,
+	})
+	if err != nil {
+		log15.Warn("postPushHook: failed to prepare workspace", "err", err)
+	}
+
+	// If we have updated the DefaultBranch, trigger a refresh of the indexes
+	if event.Branch == repo.DefaultBranch {
+		_, err = cl.Async.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
+			Repo:   repoID,
+			Source: fmt.Sprintf("pushhook %s", event.Commit),
+		})
 		if err != nil {
-			log15.Error("postPushHook: failed to prepare workspace", "err", err)
-			return
-		}
-		if universe.EnabledRepo(repoFull) || universe.Shadow(repoFull.URI) {
-			// Ask the Language Processor to prepare the workspace.
-			if err := langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
-				// TODO(slimsag): URI is correct only where the repo URI and clone
-				// URI are directly equal.. but CloneURI is only correct (for Go)
-				// when it directly matches the package import path.
-				Repo:   repoFull.URI,
-				Commit: event.Commit,
-			}); err != nil {
-				log15.Error("postPushHook: failed to prepare workspace", "err", err)
-				return
-			}
+			log15.Warn("postPushHook: failed to refresh indexes", "err", err)
 		}
 	}
 }
