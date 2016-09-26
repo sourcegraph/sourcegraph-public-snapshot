@@ -44,6 +44,15 @@ WEBPACK_DEV_SERVER_URL ?= http://localhost:8080
 PUBLIC_WEBPACK_DEV_SERVER_URL ?= $(WEBPACK_DEV_SERVER_URL)
 WEBPACK_DEV_SERVER_ADDR ?= 127.0.0.1
 SERVEFLAGS ?=
+
+# non-critical credentials for dev environment
+export AUTH0_CLIENT_ID ?= onW9hT0c7biVUqqNNuggQtMLvxUWHWRC
+export AUTH0_CLIENT_SECRET ?= cpse5jYzcduFkQY79eDYXSwI6xVUO0bIvc4BP6WpojdSiEEG6MwGrt8hj_uX3p5a
+export AUTH0_DOMAIN ?= sourcegraph-dev.auth0.com
+export AUTH0_MANAGEMENT_API_TOKEN ?= eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJSYW1KekRwRmN6SFZZNTBpcmFSb0JMdTNRVmFHTE1VRiIsInNjb3BlcyI6eyJ1c2VycyI6eyJhY3Rpb25zIjpbInJlYWQiXX0sInVzZXJfaWRwX3Rva2VucyI6eyJhY3Rpb25zIjpbInJlYWQiXX0sInVzZXJzX2FwcF9tZXRhZGF0YSI6eyJhY3Rpb25zIjpbInVwZGF0ZSJdfX0sImlhdCI6MTQ3NDYzMjQ5NSwianRpIjoiNjM4NGJlNWMzMjdlNDg5MTBmYWM2ODQxZTRhMmI4MmQifQ.wx_Loem8oUF9rKdCahuBavnGv9qOkvDlcHdEvz7fFac
+export GITHUB_CLIENT_ID ?= 6f2a43bd8877ff5fd1d5
+export GITHUB_CLIENT_SECRET ?= c5ff37d80e3736924cbbdf2922a50cac31963e43
+
 serve-dev: serve-dep
 	@echo Starting server\; will recompile and restart when source files change
 	@echo
