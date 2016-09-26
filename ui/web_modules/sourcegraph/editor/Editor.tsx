@@ -35,6 +35,7 @@ export class Editor implements monaco.IDisposable {
 			}
 		};
 		this._toDispose.push(monaco.editor.onDidCreateModel(model => {
+			this.disableInterferingModes();
 			const mode = model.getMode().getId();
 			registerModeProviders(mode);
 		}));
@@ -126,15 +127,54 @@ export class Editor implements monaco.IDisposable {
 	}
 
 	provideDefinition(model: monaco.editor.IReadOnlyModel, position: monaco.Position, token: monaco.CancellationToken): monaco.languages.Definition | monaco.Thenable<monaco.languages.Definition | null> {
-		return fetchJumpToDef(model, position).then((loc: lsp.Location) => loc && loc.uri ? lsp.toMonacoLocation(loc) : null);
+		const xlangRes = lsp.send(model, "textDocument/definition", {
+			textDocument: {uri: model.uri.toString(true)},
+			position: lsp.toPosition(position),
+		})
+			.then((resp) => resp ? resp.result : null)
+			.then((resp: lsp.Location | lsp.Location[] | null) => {
+				if (!resp) {
+					return null;
+				}
+				const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
+				return locs.map(lsp.toMonacoLocation);
+			});
+
+		const res = fetchJumpToDef(model, position).then((loc: lsp.Location) => loc && loc.uri ? lsp.toMonacoLocation(loc) : null);
+
+		return ((window.localStorage as any).xlang) ? xlangRes : res;
 	}
 
 	provideHover(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<monaco.languages.Hover> {
-		return defAtPosition(model, position).then((resp: HoverInfoResponse) => {
+		const xlangRes = lsp.send(model, "textDocument/hover", {
+			textDocument: {uri: model.uri.toString(true)},
+			position: lsp.toPosition(position),
+		})
+			.then(resp => {
+				if (!resp || !resp.result || !resp.result.contents) {
+					return null;
+				}
+
+				let range: monaco.IRange;
+				if (resp.result.range) {
+					range = lsp.toMonacoRange(resp.result.range);
+				} else {
+					const word = model.getWordAtPosition(position);
+					range = new monaco.Range(position.lineNumber, word ? word.startColumn : position.column, position.lineNumber, word ? word.endColumn : position.column);
+				}
+				return {
+					contents: resp.result.contents,
+					range,
+				};
+			});
+
+		const res = defAtPosition(model, position).then((resp: HoverInfoResponse) => {
 			let contents: monaco.MarkedString[] = [];
-			if (resp && !resp.Unresolved) {
-				if (resp.Title) {
-					contents.push(resp.Title);
+			if (!resp) {
+				// No-op.
+			} else if (resp && !(resp as any).Unresolved) {
+				if ((resp as any).Title) {
+					contents.push((resp as any).Title);
 				}
 				contents.push("*Right-click to view all references.*");
 			}
@@ -158,10 +198,26 @@ export class Editor implements monaco.IDisposable {
 				contents: contents,
 			};
 		});
+
+		return ((window.localStorage as any).xlang) ? xlangRes : res;
 	}
 
 	provideReferences(model: monaco.editor.IReadOnlyModel, position: monaco.Position, context: monaco.languages.ReferenceContext, token: monaco.CancellationToken): monaco.languages.Location[] | monaco.Thenable<monaco.languages.Location[]> {
-		return refsAtPosition(model, position).then((resp: ReferencesResponse) => {
+		const xlangRes = lsp.send(model, "textDocument/references", {
+			textDocument: {uri: model.uri.toString(true)},
+			position: lsp.toPosition(position),
+			context: {includeDeclaration: false},
+		})
+			.then((resp) => resp ? resp.result : null)
+			.then((resp: lsp.Location | lsp.Location[] | null) => {
+				if (!resp) {
+					return null;
+				}
+				const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
+				return locs.map(lsp.toMonacoLocation);
+			});
+
+		const res = refsAtPosition(model, position).then((resp: ReferencesResponse) => {
 			const {repo, rev, path} = URI.repoParams(model.uri);
 			if (!resp) {
 				return;
@@ -176,6 +232,8 @@ export class Editor implements monaco.IDisposable {
 
 			return resp.Locs.map(lsp.toMonacoLocation);
 		});
+
+		return ((window.localStorage as any).xlang) ? xlangRes : res;
 	}
 
 	private	_findExternalReferences(editor: monaco.editor.ICommonCodeEditor): monaco.Promise<void> {
@@ -192,8 +250,39 @@ export class Editor implements monaco.IDisposable {
 
 		return new monaco.Promise<void>(() => {
 			defAtPosition(model, pos).then((resp) => {
-				if (resp) {
-					window.location.href = urlToDefInfo(resp.def);
+				if (resp && (resp as any).def) {
+					window.location.href = urlToDefInfo((resp as any).def);
+				} else {
+					console.error("No def landing URL found.", resp);
+				}
+			});
+		});
+	}
+
+	// disableInterferingModes disables built-in Monaco features that
+	// interfere with Sourcegraph. It retains all modes whose provider
+	// is the specified editor, so you must pass it the global editor
+	// instance that's currently in use.
+	//
+	// For example, it disables Monaco's built-in TypeScript language
+	// support, so that TypeScript language support comes from
+	// Sourcegraph's LSP backend instead.
+	//
+	// TODO(sqs): If vscode ever becomes more conducive to integrate
+	// into our own build system, we can avoid loading these
+	// unnecessary things altogether.
+	private disableInterferingModes(): void {
+		const removeFromLanguageFeatureRegistry = (reg: any) => {
+			reg._entries = reg._entries.filter((e) => {
+				return e.provider && e.provider === this; // only keep stuff *we* added
+			});
+		};
+		(global as any).require(["vs/editor/common/modes"], (modesModule) => {
+			Object.keys(modesModule).forEach((exportedName) => {
+				if (exportedName.endsWith("Registry") && modesModule[exportedName]._entries) {
+					const reg = modesModule[exportedName];
+					removeFromLanguageFeatureRegistry(reg);
+					this._toDispose.push(reg.onDidChange(() => removeFromLanguageFeatureRegistry(reg)));
 				}
 			});
 		});

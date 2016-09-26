@@ -14,7 +14,7 @@ func (h HandlerWithError) Handle(ctx context.Context, conn *Conn, req *Request) 
 	result, err := h(ctx, conn, req)
 	if req.Notif {
 		if err != nil {
-			log.Printf("jsonrpc2 handler: notification handling error: %s", err)
+			log.Printf("jsonrpc2 handler: notification %q handling error: %s", req.Method, err)
 		}
 		return
 	}

@@ -21,6 +21,8 @@ import (
 
 	// Misc.
 	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang"
 )
 
 func main() {

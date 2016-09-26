@@ -1,0 +1,199 @@
+package xlang
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net"
+	"os"
+	"time"
+
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
+	srccli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+)
+
+func init() {
+	c, err := srccli.CLI.AddCommand("xlang", "xlang", "", &cmd{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = c.AddCommand("send", "send an LSP request to a build/lang server", "", &sendCmd{})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func init() {
+	srccli.ServeInit = append(srccli.ServeInit, func() {
+		// If we're running "src serve" and haven't specified an
+		// LSP_PROXY, then we're probably in development mode. Start
+		// an in-process LSP proxy for convenience.
+		if addr := os.Getenv("LSP_PROXY"); addr == "" {
+			if err := RegisterServersFromEnv(); err != nil {
+				log.Fatal(err)
+			}
+			addr, run, err := devProxy()
+			if err != nil {
+				log.Fatal("LSP dev proxy:", err)
+			}
+			log15.Debug("Starting in-process LSP proxy.", "listen", addr)
+			if err := os.Setenv("LSP_PROXY", addr); err != nil {
+				log.Fatal("Set LSP_PROXY:", err)
+			}
+			go func() {
+				if err := run(); err != nil {
+					log.Fatal("LSP dev proxy:", err)
+				}
+			}()
+		} else {
+			log15.Info("Using LSP proxy.", "addr", addr)
+		}
+	})
+}
+
+func devProxy() (addr string, run func() error, err error) {
+	l, err := net.Listen("tcp", ":0")
+	if err != nil {
+		return
+	}
+	addr = l.Addr().String()
+	run = func() error {
+		return NewProxy().Serve(context.Background(), l)
+	}
+	return
+}
+
+type cmd struct{}
+
+func (c *cmd) Execute(args []string) error {
+	return nil
+}
+
+type sendCmd struct {
+	Addr            string        `long:"addr" description:"LSP proxy server address" env:"LSP_PROXY"`
+	Trace           bool          `long:"trace" description:"print traces"`
+	DiagnosticsWait time.Duration `long:"diagnostics-wait" description:"wait for the server to publish diagnostics asynchronously" default:"200ms"`
+	Quiet           bool          `short:"q" long:"quiet" description:"print minimal output (only JSON result)"`
+	Args            struct {
+		RootPath string `name:"ROOT-PATH" description:"rootPath for LSP initialization"`
+		Mode     string `name:"MODE" description:"mode ID ('go', 'javascript', 'typescript', etc.)"`
+		Method   string `name:"LSP-METHOD" description:"name of LSP method to send (e.g., textDocument/hover)"`
+	} `positional-args:"yes" required:"yes" count:"1"`
+}
+
+/*
+
+Useful one-liners:
+
+# Use in-process dev LSP proxy.
+export LSP_PROXY=:dev:
+
+echo '{"textDocument":{"uri":"git://github.com/gorilla/mux?0a192a1#mux.go"},"position":{"line":60,"character":37}}' | src xlang send git://github.com/gorilla/mux?0a192a1 go textDocument/definition
+
+echo '{"textDocument":{"uri":"git://github.com/gorilla/mux?0a192a1#mux.go"},"position":{"line":60,"character":37}}' | src xlang send git://github.com/gorilla/mux?0a192a1 go textDocument/hover
+
+echo '{"textDocument":{"uri":"git://github.com/gorilla/websocket?2d1e4548#client.go"},"position":{"line":23,"character":15}}' | src xlang send git://github.com/gorilla/websocket?2d1e4548 go textDocument/hover
+
+echo '{"textDocument":{"uri":"git://github.com/golang/go?6129f3736#src/io/io.go"},"position":{"line":131,"character":12}}' | src xlang send git://github.com/golang/go?6129f3736 go textDocument/hover
+
+echo '{"textDocument":{"uri":"git://github.com/docker/machine?e1a03348#libmachine/provision/provisioner.go"},"position":{"line":106,"character":49}}' | src xlang send git://github.com/docker/machine?e1a03348 go textDocument/hover
+
+# Needs lots of external deps (they're vendored, but in a non-standard way in GOPATH=./vendor).
+echo '{"textDocument":{"uri":"git://github.com/docker/docker?b16bfbad#daemon/create.go"},"position":{"line":110,"character":41}}' | src xlang send git://github.com/docker/docker?b16bfbad go textDocument/hover
+
+# k8s is a huge repo
+echo '{"textDocument":{"uri":"git://github.com/kubernetes/kubernetes?2580157#pkg/controller/informers/extensions.go"},"position":{"line":54,"character":26}}' | src xlang send git://github.com/kubernetes/kubernetes?2580157 go textDocument/hover
+
+*/
+
+func (c *sendCmd) Execute(args []string) error {
+	printIndentJSON := func(v json.RawMessage) {
+		var buf bytes.Buffer
+		if err := json.Indent(&buf, v, "", "  "); err == nil {
+			fmt.Println(buf.String())
+		} else {
+			log.Println(err)
+		}
+	}
+
+	if c.Addr == ":dev:" {
+		addr, run, err := devProxy()
+		if err != nil {
+			return err
+		}
+		c.Addr = addr
+		log.Println("# using in-process LSP proxy")
+		go func() {
+			if err := run(); err != nil {
+				log.Fatal("LSP dev proxy:", err)
+			}
+		}()
+	}
+	if c.Addr == "" {
+		return errors.New("must specify LSP proxy address in --addr option or LSP_PROXY env var")
+	}
+
+	if c.Quiet && c.Trace {
+		return errors.New("options -q/--quiet and --trace are mutually exclusive")
+	}
+
+	var connOpt []jsonrpc2.ConnOpt
+	if c.Trace {
+		connOpt = append(connOpt, jsonrpc2.LogMessages(log.New(os.Stderr, "", 0)))
+	}
+
+	h := &ClientHandler{
+		RecvDiagnostics: func(uri string, diags []lsp.Diagnostic) {
+			if c.Quiet {
+				return
+			}
+			fmt.Fprintf(os.Stderr, "# received diagnostics for %s:\n", uri)
+			for _, d := range diags {
+				fmt.Fprintf(os.Stderr, "#   :%d:%d: %s\n", d.Range.Start.Line+1, d.Range.Start.Character+1, d.Message)
+			}
+		},
+	}
+
+	dialCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	jc, err := DialProxy(dialCtx, c.Addr, h, connOpt...)
+	if err != nil {
+		return err
+	}
+	defer jc.Close()
+	ctx := context.Background()
+
+	var initResult lsp.InitializeResult
+	if err := jc.Call(ctx, "initialize", ClientProxyInitializeParams{
+		Mode:             c.Args.Mode,
+		InitializeParams: lsp.InitializeParams{RootPath: c.Args.RootPath},
+	}, &initResult); err != nil {
+		return err
+	}
+
+	reqParams, err := ioutil.ReadAll(os.Stdin)
+	if err != nil {
+		return err
+	}
+	var result *json.RawMessage
+	tReq0 := time.Now()
+	if err := jc.Call(ctx, c.Args.Method, (*json.RawMessage)(&reqParams), &result); err != nil {
+		return err
+	}
+	if !c.Quiet {
+		fmt.Fprintf(os.Stderr, "# %s took %s\n", c.Args.Method, time.Since(tReq0))
+	}
+	printIndentJSON(*result)
+
+	time.Sleep(c.DiagnosticsWait)
+
+	return nil
+}

@@ -5,15 +5,15 @@ package lsp
 type None struct{}
 
 type InitializeParams struct {
-	ProcessID    int                `json:"processId"`
-	RootPath     string             `json:"rootPath"`
-	Capabilities ClientCapabilities `json:"capabilities"`
+	ProcessID    int                 `json:"processId,omitempty"`
+	RootPath     string              `json:"rootPath"`
+	Capabilities *ClientCapabilities `json:"capabilities,omitempty"`
 }
 
 type ClientCapabilities struct{}
 
 type InitializeResult struct {
-	Capabilities ServerCapabilities `json:"capabilities"`
+	Capabilities ServerCapabilities `json:"capabilities,omitempty"`
 }
 
 type InitializeError struct {

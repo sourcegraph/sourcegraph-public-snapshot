@@ -53,6 +53,8 @@ const (
 	ResolveCustomImportsInfo = "resolve-custom-import.info"
 	ResolveCustomImportsTree = "resolve-custom-import.tree"
 
+	XLang = "xlang"
+
 	InternalAppdashRecordSpan = "internal.appdash.record-span"
 	BetaSubscription          = "beta-subscription"
 )
@@ -88,6 +90,8 @@ func New(base *mux.Router) *mux.Router {
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
 	base.Path(repoPath).Methods("GET").Name(Repo)
+
+	base.Path("/xlang/{LSPMethod:.*}").Methods("POST").Name(XLang)
 
 	base.Path("/sourcegraph-desktop/").Methods("GET").Name(SourcegraphDesktop)
 	// Additional paths added will be treated as a repo. To add a new path that should not be treated as a repo

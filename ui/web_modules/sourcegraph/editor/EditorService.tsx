@@ -86,7 +86,7 @@ export class EditorService implements IEditorService {
 
 			(this.editor as any).getControl = () => this.editor; // HACK
 			return this.editor;
-		}, err => console.error("Error", err));
+		});
 	}
 
 	public resolveEditorModel(data: IResourceInput, refresh?: boolean): monaco.Promise<ITextEditorModel> {

@@ -96,6 +96,8 @@ func NewHandler(m *mux.Router) http.Handler {
 
 	m.Get(apirouter.BetaSubscription).Handler(httptrace.TraceRoute(handler(serveBetaSubscription)))
 
+	m.Get(apirouter.XLang).Handler(httptrace.TraceRoute(handler(serveXLang)))
+
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
 		http.Error(w, "no route", http.StatusNotFound)

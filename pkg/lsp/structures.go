@@ -39,18 +39,18 @@ type Diagnostic struct {
 	 * The diagnostic's severity. Can be omitted. If omitted it is up to the
 	 * client to interpret diagnostics as error, warning, info or hint.
 	 */
-	Severity int `json:"severity"`
+	Severity DiagnosticSeverity `json:"severity,omitempty"`
 
 	/**
 	 * The diagnostic's code. Can be omitted.
 	 */
-	Code string `json:"code"`
+	Code string `json:"code,omitempty"`
 
 	/**
 	 * A human-readable string describing the source of this
 	 * diagnostic, e.g. 'typescript' or 'super lint'.
 	 */
-	Source string `json:"source"`
+	Source string `json:"source,omitempty"`
 
 	/**
 	 * The diagnostic's message.

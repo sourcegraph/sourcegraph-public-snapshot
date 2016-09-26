@@ -389,9 +389,9 @@ export interface DefsRefreshIndexOp {
 
 export interface Diagnostic {
 	range: any;
-	severity: number;
-	code: string;
-	source: string;
+	severity?: any;
+	code?: string;
+	source?: string;
 	message: string;
 }
 
@@ -573,13 +573,13 @@ export interface InitializeError {
 }
 
 export interface InitializeParams {
-	processId: number;
+	processId?: number;
 	rootPath: string;
-	capabilities: any;
+	capabilities?: any;
 }
 
 export interface InitializeResult {
-	capabilities: any;
+	capabilities?: any;
 }
 
 export interface ListOptions {
