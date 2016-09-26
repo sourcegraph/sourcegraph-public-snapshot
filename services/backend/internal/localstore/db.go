@@ -42,9 +42,9 @@ var (
 	dbLock         sync.Mutex      // protects globalDBH
 )
 
-// globalDBs opens the app and graph DBs if they aren't already open,
+// GlobalDBs opens the app and graph DBs if they aren't already open,
 // and returns them. Subsequent calls return the same DB handles.
-func globalDBs() (*dbutil2.Handle, *dbutil2.Handle, error) {
+func GlobalDBs() (*dbutil2.Handle, *dbutil2.Handle, error) {
 	dbLock.Lock()
 	defer dbLock.Unlock()
 

@@ -44,7 +44,7 @@ func init() {
 func initBackground(stores store.Stores) error {
 	// Currently the only thing we need in a background helper is the
 	// AppDBH
-	appDBH, _, err := globalDBs()
+	appDBH, _, err := GlobalDBs()
 	if err != nil {
 		return err
 	}

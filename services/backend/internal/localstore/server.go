@@ -9,7 +9,7 @@ import (
 func init() {
 	// Make the DB handle available in the server's context.
 	serverctx.Funcs = append(serverctx.Funcs, func(ctx context.Context) (context.Context, error) {
-		appDBH, graphDBH, err := globalDBs()
+		appDBH, graphDBH, err := GlobalDBs()
 		if err != nil {
 			return nil, err
 		}

@@ -20,6 +20,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 var githubNonceCookiePath = router.Rel.URLTo(router.GitHubOAuth2Receive).Path
@@ -122,6 +123,10 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		AppMetadata struct {
 			GitHubScope []string `json:"github_scope"`
 		} `json:"app_metadata"`
+		Identities []struct {
+			Connection string `json:"connection"`
+			UserID     int    `json:"user_id"`
+		} `json:"identities"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
 		return err
@@ -136,6 +141,17 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 
 	scopeOfToken := strings.Split(githubToken.Scope, ",")
 	mergedScope := mergeScopes(scopeOfToken, info.AppMetadata.GitHubScope)
+	if firstTime {
+		// try copying legacy scope
+		for _, identity := range info.Identities {
+			if identity.Connection == "github" {
+				if legacyScope := backend.LegacyGitHubScope(identity.UserID); len(legacyScope) > 0 {
+					firstTime = false
+					mergedScope = mergeScopes(mergedScope, legacyScope)
+				}
+			}
+		}
+	}
 	if len(scopeOfToken) < len(mergedScope) {
 		// The user has once granted us more permissions than we got with this token. Run oauth flow
 		// again to fetch token with all permissions. This should be non-interactive.
