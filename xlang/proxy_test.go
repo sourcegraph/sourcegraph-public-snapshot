@@ -619,6 +619,8 @@ func TestProxy_connections(t *testing.T) {
 				}
 				return
 			}
+			sort.Sort(testRequests(got))
+			sort.Sort(testRequests(want))
 			if !testRequestsEqual(got, want) {
 				return fmt.Errorf("got reqs != want reqs\n\nGOT REQS:\n%s\n\nWANT REQS:\n%s", join(got), join(want))
 			}
@@ -886,4 +888,20 @@ func TestProxy_propagation(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("want diagnostics, got nothing before timeout")
 	}
+}
+
+type testRequests []testRequest
+
+func (v testRequests) Len() int      { return len(v) }
+func (v testRequests) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
+func (v testRequests) Less(i, j int) bool {
+	ii, err := json.Marshal(i)
+	if err != nil {
+		panic(err)
+	}
+	jj, err := json.Marshal(j)
+	if err != nil {
+		panic(err)
+	}
+	return string(ii) < string(jj)
 }
