@@ -470,27 +470,6 @@ func (s wrappedRepoTree) Get(ctx context.Context, param *sourcegraph.RepoTreeGet
 	return
 }
 
-func (s wrappedRepoTree) Search(ctx context.Context, param *sourcegraph.RepoTreeSearchOp) (res *sourcegraph.VCSSearchResultList, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "RepoTree", "Search", param)
-	defer func() {
-		trace.After(ctx, "RepoTree", "Search", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.RepoTree.Search(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "RepoTree.Search returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "RepoTree.Search failed with internal error.")
-		}
-	}
-	return
-}
-
 func (s wrappedRepoTree) List(ctx context.Context, param *sourcegraph.RepoTreeListOp) (res *sourcegraph.RepoTreeListResult, err error) {
 	var errActual error
 	start := time.Now()
@@ -931,27 +910,6 @@ func (s wrappedSearch) Search(ctx context.Context, param *sourcegraph.SearchOp) 
 		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
 			// Sanitize, because these errors should not be user visible.
 			err = grpc.Errorf(code, "Search.Search failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedSearch) SearchRepos(ctx context.Context, param *sourcegraph.SearchReposOp) (res *sourcegraph.SearchReposResultList, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Search", "SearchRepos", param)
-	defer func() {
-		trace.After(ctx, "Search", "SearchRepos", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Search.SearchRepos(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Search.SearchRepos returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Search.SearchRepos failed with internal error.")
 		}
 	}
 	return

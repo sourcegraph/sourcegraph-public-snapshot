@@ -751,41 +751,6 @@ func (s wrappedRepoTree) Get(ctx context.Context, v1 *sourcegraph.RepoTreeGetOp)
 	return rv, nil
 }
 
-func (s wrappedRepoTree) Search(ctx context.Context, v1 *sourcegraph.RepoTreeSearchOp) (returnedResult *sourcegraph.VCSSearchResultList, returnedError error) {
-	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
-	span := opentracing.StartSpan("GRPC call: RepoTree.Search", opentracing.ChildOf(parentSpanCtx))
-	defer span.Finish()
-	ctx = opentracing.ContextWithSpan(ctx, span)
-
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in RepoTree.Search: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.RepoTreeOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "RepoTree")
-	}
-
-	rv, err := innerSvc.Search(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
 func (s wrappedRepoTree) List(ctx context.Context, v1 *sourcegraph.RepoTreeListOp) (returnedResult *sourcegraph.RepoTreeListResult, returnedError error) {
 	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
 	span := opentracing.StartSpan("GRPC call: RepoTree.List", opentracing.ChildOf(parentSpanCtx))
@@ -1524,41 +1489,6 @@ func (s wrappedSearch) Search(ctx context.Context, v1 *sourcegraph.SearchOp) (re
 	}
 
 	rv, err := innerSvc.Search(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedSearch) SearchRepos(ctx context.Context, v1 *sourcegraph.SearchReposOp) (returnedResult *sourcegraph.SearchReposResultList, returnedError error) {
-	parentSpanCtx := traceutil.ExtractGRPCMetadata(ctx)
-	span := opentracing.StartSpan("GRPC call: Search.SearchRepos", opentracing.ChildOf(parentSpanCtx))
-	defer span.Finish()
-	ctx = opentracing.ContextWithSpan(ctx, span)
-
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Search.SearchRepos: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.SearchOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Search")
-	}
-
-	rv, err := innerSvc.SearchRepos(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

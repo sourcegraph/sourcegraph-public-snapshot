@@ -104,25 +104,3 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 		Options: options,
 	})
 }
-
-// DEPRECATED
-func serveSearchRepos(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
-	var params struct {
-		Query string
-	}
-	if err := schemaDecoder.Decode(&params, r.URL.Query()); err != nil {
-		return err
-	}
-
-	op := &sourcegraph.SearchReposOp{
-		Query: params.Query,
-	}
-	results, err := cl.Search.SearchRepos(r.Context(), op)
-	if err != nil {
-		return err
-	}
-
-	return json.NewEncoder(w).Encode(results)
-}

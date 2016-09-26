@@ -373,17 +373,12 @@ func (s *AsyncServer) RefreshIndexes(v0 context.Context, v1 *sourcegraph.AsyncRe
 var _ sourcegraph.AsyncServer = (*AsyncServer)(nil)
 
 type RepoTreeClient struct {
-	Get_    func(ctx context.Context, in *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error)
-	Search_ func(ctx context.Context, in *sourcegraph.RepoTreeSearchOp) (*sourcegraph.VCSSearchResultList, error)
-	List_   func(ctx context.Context, in *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error)
+	Get_  func(ctx context.Context, in *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error)
+	List_ func(ctx context.Context, in *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error)
 }
 
 func (s *RepoTreeClient) Get(ctx context.Context, in *sourcegraph.RepoTreeGetOp, opts ...grpc.CallOption) (*sourcegraph.TreeEntry, error) {
 	return s.Get_(ctx, in)
-}
-
-func (s *RepoTreeClient) Search(ctx context.Context, in *sourcegraph.RepoTreeSearchOp, opts ...grpc.CallOption) (*sourcegraph.VCSSearchResultList, error) {
-	return s.Search_(ctx, in)
 }
 
 func (s *RepoTreeClient) List(ctx context.Context, in *sourcegraph.RepoTreeListOp, opts ...grpc.CallOption) (*sourcegraph.RepoTreeListResult, error) {
@@ -393,17 +388,12 @@ func (s *RepoTreeClient) List(ctx context.Context, in *sourcegraph.RepoTreeListO
 var _ sourcegraph.RepoTreeClient = (*RepoTreeClient)(nil)
 
 type RepoTreeServer struct {
-	Get_    func(v0 context.Context, v1 *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error)
-	Search_ func(v0 context.Context, v1 *sourcegraph.RepoTreeSearchOp) (*sourcegraph.VCSSearchResultList, error)
-	List_   func(v0 context.Context, v1 *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error)
+	Get_  func(v0 context.Context, v1 *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error)
+	List_ func(v0 context.Context, v1 *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error)
 }
 
 func (s *RepoTreeServer) Get(v0 context.Context, v1 *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
 	return s.Get_(v0, v1)
-}
-
-func (s *RepoTreeServer) Search(v0 context.Context, v1 *sourcegraph.RepoTreeSearchOp) (*sourcegraph.VCSSearchResultList, error) {
-	return s.Search_(v0, v1)
 }
 
 func (s *RepoTreeServer) List(v0 context.Context, v1 *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error) {
@@ -463,31 +453,21 @@ func (s *AnnotationsServer) GetDefAtPos(v0 context.Context, v1 *sourcegraph.Anno
 var _ sourcegraph.AnnotationsServer = (*AnnotationsServer)(nil)
 
 type SearchClient struct {
-	Search_      func(ctx context.Context, in *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
-	SearchRepos_ func(ctx context.Context, in *sourcegraph.SearchReposOp) (*sourcegraph.SearchReposResultList, error)
+	Search_ func(ctx context.Context, in *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
 }
 
 func (s *SearchClient) Search(ctx context.Context, in *sourcegraph.SearchOp, opts ...grpc.CallOption) (*sourcegraph.SearchResultsList, error) {
 	return s.Search_(ctx, in)
 }
 
-func (s *SearchClient) SearchRepos(ctx context.Context, in *sourcegraph.SearchReposOp, opts ...grpc.CallOption) (*sourcegraph.SearchReposResultList, error) {
-	return s.SearchRepos_(ctx, in)
-}
-
 var _ sourcegraph.SearchClient = (*SearchClient)(nil)
 
 type SearchServer struct {
-	Search_      func(v0 context.Context, v1 *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
-	SearchRepos_ func(v0 context.Context, v1 *sourcegraph.SearchReposOp) (*sourcegraph.SearchReposResultList, error)
+	Search_ func(v0 context.Context, v1 *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
 }
 
 func (s *SearchServer) Search(v0 context.Context, v1 *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error) {
 	return s.Search_(v0, v1)
-}
-
-func (s *SearchServer) SearchRepos(v0 context.Context, v1 *sourcegraph.SearchReposOp) (*sourcegraph.SearchReposResultList, error) {
-	return s.SearchRepos_(v0, v1)
 }
 
 var _ sourcegraph.SearchServer = (*SearchServer)(nil)

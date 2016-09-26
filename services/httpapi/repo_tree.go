@@ -124,26 +124,3 @@ func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
 	}
 	return writeJSON(w, treeList)
 }
-
-func serveRepoTreeSearch(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
-	repoRev, err := resolveLocalRepoRev(r.Context(), routevar.ToRepoRev(mux.Vars(r)))
-	if err != nil {
-		return err
-	}
-
-	var opt sourcegraph.RepoTreeSearchOptions
-	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
-		return err
-	}
-
-	treeSearch, err := cl.RepoTree.Search(r.Context(), &sourcegraph.RepoTreeSearchOp{
-		Rev: *repoRev,
-		Opt: &opt,
-	})
-	if err != nil {
-		return err
-	}
-	return writeJSON(w, treeSearch)
-}

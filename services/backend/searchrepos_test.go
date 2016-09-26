@@ -80,7 +80,7 @@ func TestSearchRepos(t *testing.T) {
 		{"github.com/sqs/rego", []string{"github.com/sqs/rego"}},
 	}
 	for _, test := range tests {
-		results, err := cl.Search.SearchRepos(ctx, &sourcegraph.SearchReposOp{Query: test.query})
+		results, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{Query: test.query, Type: "public"})
 		if err != nil {
 			t.Fatal(err)
 		}
