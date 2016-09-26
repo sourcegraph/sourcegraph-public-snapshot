@@ -7,6 +7,11 @@ import (
 )
 
 func init() {
+	if true {
+		// Disabled https://github.com/sourcegraph/sourcegraph/issues/1292
+		return
+	}
+
 	registerTest := func(name, q string) {
 		Register(&Test{
 			Name:        name,
