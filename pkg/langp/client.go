@@ -115,6 +115,10 @@ type langClient struct {
 
 	// client is used for making HTTP requests.
 	client *http.Client
+
+	// name is the name of the client. This will be the same as the key it
+	// is stored as.
+	name string
 }
 
 // endpointTo returns a URL based on c.endpoints (sharded by repoURI) with the
@@ -241,6 +245,10 @@ func (c *Client) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, e
 		return nil, err
 	}
 	for _, cl := range clients {
+		// ExternalRefs is currently only supported by Go
+		if cl.name != "GO" {
+			continue
+		}
 		var v ExternalRefs
 		err := c.do(ctx, cl, r.Repo, "external-refs", r, &v)
 		if err != nil {
@@ -279,6 +287,10 @@ func (c *Client) ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymb
 		return nil, err
 	}
 	for _, cl := range clients {
+		// ExportedSymbols is currently only supported by Go
+		if cl.name != "GO" {
+			continue
+		}
 		var v ExportedSymbols
 		err := c.do(ctx, cl, r.Repo, "exported-symbols", r, &v)
 		if err != nil {
@@ -438,6 +450,7 @@ func NewClient(endpoints map[string][]string) (*Client, error) {
 		// Create language client.
 		c.clients[lang] = &langClient{
 			endpoints: hash,
+			name:      lang,
 			client: &http.Client{
 				// TODO(slimsag): Once we have proper async operations we should
 				// lower this timeout to respect those numbers. Until then, some
