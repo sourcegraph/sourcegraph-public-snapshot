@@ -10,7 +10,7 @@ import (
 func LegacyGitHubScope(gitHubUID int) []string {
 	appDB, _, _ := localstore.GlobalDBs()
 	scope, err := appDB.SelectStr("SELECT scope FROM ext_auth_token WHERE ext_uid=$1;", gitHubUID)
-	if err != nil {
+	if err != nil || scope == "" {
 		return nil
 	}
 	return strings.Split(scope, ",")
