@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"context"
@@ -41,6 +43,17 @@ func StartAsyncWorkers(ctx context.Context) {
 }
 
 func (s *async) RefreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
+	// We filter out repos we can't index at this stage, so that our
+	// metrics on async success vs failure aren't polluted by repos we do
+	// not support.
+	ok, err := s.shouldRefreshIndex(ctx, op)
+	if err != nil {
+		return nil, err
+	} else if !ok {
+		asyncRefreshIndexesUnsupported.Inc()
+		return &pbtypes.Void{}, nil
+	}
+
 	// Keep track of who triggered a refresh
 	if actor := authpkg.ActorFromContext(ctx); actor.IsAuthenticated() {
 		op.Source = fmt.Sprintf("%s (UID %s %s)", op.Source, actor.UID, actor.Login)
@@ -58,6 +71,27 @@ func (s *async) RefreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefresh
 		return nil, err
 	}
 	return &pbtypes.Void{}, nil
+}
+
+func (s *async) shouldRefreshIndex(ctx context.Context, op *sourcegraph.AsyncRefreshIndexesOp) (bool, error) {
+	rev, err := svc.Repos(ctx).ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: op.Repo})
+	if err != nil {
+		return false, err
+	}
+	inv, err := svc.Repos(ctx).GetInventory(ctx, &sourcegraph.RepoRevSpec{
+		Repo:     op.Repo,
+		CommitID: rev.CommitID,
+	})
+	if err != nil {
+		return false, err
+	}
+	for _, l := range inv.Languages {
+		// We currently only support Go in universe
+		if l.Name == "Go" {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // try attempts to lock a job and do it. Returns true if work was done
@@ -141,4 +175,15 @@ func (s *asyncWorker) refreshIndexes(ctx context.Context, op *sourcegraph.AsyncR
 	}
 
 	return nil
+}
+
+var asyncRefreshIndexesUnsupported = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "async",
+	Name:      "refresh_indexes_unsupported",
+	Help:      "Number of repos we skip indexing.",
+})
+
+func init() {
+	prometheus.MustRegister(asyncRefreshIndexesUnsupported)
 }

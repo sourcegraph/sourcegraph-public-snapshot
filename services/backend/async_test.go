@@ -8,8 +8,10 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -21,6 +23,11 @@ func TestAsyncService_RefreshIndexes(t *testing.T) {
 	ctx, mock := testContext()
 
 	wantRepo := int32(10810)
+
+	mock.servers.Repos.MockResolveRev_NoCheck(t, vcs.CommitID("deadbeef"))
+	mock.servers.Repos.GetInventory_ = func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+		return &inventory.Inventory{Languages: []*inventory.Lang{{Name: "Go"}}}, nil
+	}
 
 	// Enqueue
 	op := &sourcegraph.AsyncRefreshIndexesOp{
