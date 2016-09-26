@@ -36,7 +36,7 @@ func init() {
 func initMappings() {
 	out, err := exec.Command("ctags", "--list-maps").CombinedOutput()
 	if err != nil {
-		log.Fatal("error initializing ctags mappings: ", err)
+		log.Printf("error initializing ctags mappings: %s", err)
 	}
 	ctagsMappings = string(out)
 }

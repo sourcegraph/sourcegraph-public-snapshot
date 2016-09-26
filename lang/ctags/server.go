@@ -23,6 +23,8 @@ func vslog(out ...string) {
 	os.Stderr.WriteString(strings.Join(out, "\n") + "\n")
 }
 
+var emptyArray = make([]string, 0)
+
 // Handler represents an LSP handler for one user.
 type Handler struct {
 	mu   sync.Mutex
@@ -108,7 +110,14 @@ func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		if err = json.Unmarshal(*req.Params, &params); err != nil {
 			return
 		}
-		return h.handleDefinition(ctx, req, params)
+		d, err := h.handleDefinition(ctx, req, params)
+		if err != nil {
+			return nil, err
+		}
+		if d == nil {
+			return emptyArray, nil
+		}
+		return d, nil
 
 	case "textDocument/references":
 		var params lsp.ReferenceParams
@@ -116,7 +125,13 @@ func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 			return
 		}
 		r, err := h.handleReferences(ctx, req, params)
-		return r, err
+		if err != nil {
+			return nil, err
+		}
+		if r == nil {
+			return emptyArray, nil
+		}
+		return r, nil
 
 	case "workspace/symbol":
 		var params lsp.WorkspaceSymbolParams
@@ -124,7 +139,14 @@ func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 			vslog(err.Error())
 			return
 		}
-		return h.handleSymbol(ctx, req, params)
+		s, err := h.handleSymbol(ctx, req, params)
+		if err != nil {
+			return nil, err
+		}
+		if s == nil {
+			return emptyArray, nil
+		}
+		return s, nil
 	}
 
 	return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("method not supported: %s", req.Method)}

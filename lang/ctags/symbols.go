@@ -3,7 +3,6 @@ package ctags
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -50,15 +49,18 @@ func (h *Handler) handleDefinition(ctx context.Context, req *jsonrpc2.Request, p
 	if err != nil {
 		return nil, err
 	}
+	if tok.kind != tokName {
+		return nil, nil
+	}
 
 	p, err := parser.Parse(ctx, rootDir, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var matches []lsp.Location
+	matches := make([]lsp.Location, 0)
 	for _, tag := range p.Tags() {
-		if strings.ToLower(tag.Name) == strings.ToLower(tok) {
+		if tag.Name == tok.token {
 			if loc := tagToLocation(&tag, rootDir); loc != nil {
 				matches = append(matches, *loc)
 			}
@@ -79,11 +81,16 @@ func (h *Handler) handleReferences(ctx context.Context, req *jsonrpc2.Request, p
 	if err != nil {
 		return nil, err
 	}
+	if tok.kind != tokName {
+		return nil, nil
+	}
+
+	vslog(fmt.Sprintf("finding references for %s", tok.token))
 
 	// Search for any token occurrence
 	var reflocs []lsp.Location
 	{
-		grepCmd := exec.Command("pt", "--ignore-case", "--nogroup", "--numbers", "--nocolor", "--column", "-w", tok, "--ignore=tags")
+		grepCmd := exec.Command("pt", "--nogroup", "--numbers", "--nocolor", "--column", "-w", tok.token, "--ignore=tags")
 		grepCmd.Dir = rootDir
 		b, err := grepCmd.Output()
 		if err != nil {
@@ -91,6 +98,10 @@ func (h *Handler) handleReferences(ctx context.Context, req *jsonrpc2.Request, p
 		}
 		lines := strings.Split(strings.TrimSpace(string(b)), "\n")
 		for _, line_ := range lines {
+			if line_ == "" {
+				continue
+			}
+
 			cmps := strings.SplitN(line_, ":", 4)
 			if len(cmps) != 4 {
 				return nil, fmt.Errorf("error parsing pt output line, expected format $FILE:$LINE:$COL:$LINE_CONTENT, but got %q", line_)
@@ -111,7 +122,7 @@ func (h *Handler) handleReferences(ctx context.Context, req *jsonrpc2.Request, p
 				URI: "file://" + filepath.Join(rootDir, file),
 				Range: lsp.Range{
 					Start: lsp.Position{Line: lineno, Character: colno},
-					End:   lsp.Position{Line: lineno, Character: colno + len(tok)},
+					End:   lsp.Position{Line: lineno, Character: colno + len(tok.token)},
 				},
 			})
 		}
@@ -224,54 +235,4 @@ func tagToLocation(tag *parser.Tag, rootDir string) *lsp.Location {
 			End:   lsp.Position{Line: tag.Line - 1, Character: nameIdx + len(tag.Name)},
 		},
 	}
-}
-
-// getTokenFromFile extracts the token at the given position (line, col) in the file
-func getTokenFromFile(filename string, l int, c int) (string, error) {
-	b, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return "", err
-	}
-	lines := strings.Split(string(b), "\n")
-	if l >= len(lines) {
-		return "", fmt.Errorf("line index exceeds number of lines in file")
-	}
-	line := lines[l]
-
-	return getToken(line, c), nil
-}
-
-// getToken extracts the token that overlaps index i from string s in a language-agnostic fashion
-func getToken(s string, i int) string {
-	// TODO(beyang): make this more robust, able to handle unicode, etc.
-	if i < 0 || i >= len(s) {
-		return ""
-	}
-	if !isTokenChar(s[i]) {
-		return ""
-	}
-
-	// walk backward
-	start := i
-	for j := i - 1; j >= 0; j-- {
-		if !isTokenChar(s[j]) {
-			break
-		}
-		start = j
-	}
-
-	// walk forward
-	end := i + 1
-	for j := i + 1; j < len(s); j++ {
-		if !isTokenChar(s[j]) {
-			break
-		}
-		end = j + 1
-	}
-
-	return s[start:end]
-}
-
-func isTokenChar(c byte) bool {
-	return ('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') || ('0' <= c && c <= '9') || '_' == c
 }
