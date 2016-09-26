@@ -56,7 +56,7 @@ To add a new E2E page test:
   1. **Important: Ensure that your test matches the testing criteria below!**
   2. Every test must use its own user!** This contraint must be enforced to avoid
   any concurrency issues.
-  3. Base your test on an existing one (see `login_flow.go` for example)
+  3. Base your test on an existing one (see `repo_flow.go` for example)
   4. Add a new `TestFoo` entry to `e2etest_test.go`.
   5. See the [test/e2e API](https://godoc.org/sourcegraph.com/sourcegraph/sourcegraph/test/e2e)
      and the [go-selenium API](https://godoc.org/sourcegraph.com/sourcegraph/go-selenium) docs.

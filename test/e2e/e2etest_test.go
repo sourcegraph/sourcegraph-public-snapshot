@@ -14,14 +14,6 @@ import (
 	"testing"
 )
 
-func TestLoginFlow(t *testing.T) {
-	runE2E(t, "login_flow")
-}
-
-func TestRegisterFlow(t *testing.T) {
-	runE2E(t, "register_flow")
-}
-
 func TestRepoFlow(t *testing.T) {
 	runE2E(t, "repo_flow")
 }
