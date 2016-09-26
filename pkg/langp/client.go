@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
@@ -148,8 +149,11 @@ type Client struct {
 // (e.g. as soon as we have access to their repos) in hopes of having
 // preparation completed already when a user makes their first request.
 func (c *Client) Prepare(ctx context.Context, r *RepoRev) error {
-	// Ask each LP to prepare the workspace.
-	for _, lc := range c.clients {
+	clients, err := c.clientsForRepo(ctx, r)
+	if err != nil {
+		return err
+	}
+	for _, lc := range clients {
 		if err := c.do(ctx, lc, r.Repo, "prepare", r, nil); err != nil {
 			return err
 		}
@@ -232,7 +236,11 @@ func (c *Client) DefSpecRefs(ctx context.Context, k *DefSpec) (*RefLocations, er
 // ExternalRefs resolves references to repository-external definitions.
 func (c *Client) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, error) {
 	var result ExternalRefs
-	for _, cl := range c.clients {
+	clients, err := c.clientsForRepo(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	for _, cl := range clients {
 		var v ExternalRefs
 		err := c.do(ctx, cl, r.Repo, "external-refs", r, &v)
 		if err != nil {
@@ -266,7 +274,11 @@ func (c *Client) Symbols(ctx context.Context, opt *SymbolsQuery) (*Symbols, erro
 // ExportedSymbols lists repository-local definitions which are exported.
 func (c *Client) ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error) {
 	var result ExportedSymbols
-	for _, cl := range c.clients {
+	clients, err := c.clientsForRepo(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	for _, cl := range clients {
 		var v ExportedSymbols
 		err := c.do(ctx, cl, r.Repo, "exported-symbols", r, &v)
 		if err != nil {
@@ -364,6 +376,37 @@ func (c *Client) do(ctx context.Context, cl *langClient, repo, endpoint string, 
 		return nil
 	}
 	return json.NewDecoder(tee).Decode(results)
+}
+
+func (c *Client) clientsForRepo(ctx context.Context, rr *RepoRev) ([]*langClient, error) {
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	repo, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: rr.Repo})
+	if err != nil {
+		return nil, err
+	}
+	inv, err := cl.Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{
+		Repo:     repo.Repo,
+		CommitID: rr.Commit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	clients := make([]*langClient, 0, len(inv.Languages))
+	for _, l := range inv.Languages {
+		normalized, ok := languageNameMap[l.Name]
+		if !ok {
+			normalized = l.Name
+		}
+		normalized = strings.ToUpper(normalized)
+		client, ok := c.clients[normalized]
+		if ok {
+			clients = append(clients, client)
+		}
+	}
+	return clients, nil
 }
 
 // NewClient returns a new client with the default options connecting the given

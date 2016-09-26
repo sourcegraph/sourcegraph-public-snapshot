@@ -49,6 +49,7 @@ const (
 	SourcegraphDesktop       = "sourcegraph-desktop"
 	SrclibImport             = "srclib.import"
 	SrclibDataVer            = "srclib.data-version"
+	AsyncRefreshIndexes      = "async.refresh-indexes"
 	ResolveCustomImportsInfo = "resolve-custom-import.info"
 	ResolveCustomImportsTree = "resolve-custom-import.tree"
 
@@ -113,6 +114,7 @@ func New(base *mux.Router) *mux.Router {
 
 	repoRev.Path("/srclib-import").Methods("PUT").Name(SrclibImport)
 	repoRev.Path("/srclib-data-version").Methods("GET").Name(SrclibDataVer)
+	repo.Path("/async-refresh-indexes").Methods("POST").Name(AsyncRefreshIndexes)
 
 	defPath := "/def/" + routevar.Def
 	def := repoRev.PathPrefix(defPath + "/-/").Subrouter()

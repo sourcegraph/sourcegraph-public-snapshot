@@ -52,7 +52,7 @@ func (h *Handler) handleReferences(ctx context.Context, req *jsonrpc2.Request, p
 			Range: r,
 		}, nil
 	}
-	var locs []lsp.Location
+	locs := []lsp.Location{}
 	if params.Context.IncludeDeclaration {
 		l, err := guruPosToLoc(def.ObjPos)
 		if err != nil {
@@ -107,7 +107,7 @@ func guruReferrers(ctx context.Context, env []string, path string, offset int) (
 	if err != nil {
 		return nil, nil, err
 	}
-	var pkgs []*serial.ReferrersPackage
+	pkgs := []*serial.ReferrersPackage{}
 	for {
 		var pkg serial.ReferrersPackage
 		err = d.Decode(&pkg)

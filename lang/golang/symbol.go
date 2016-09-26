@@ -52,7 +52,7 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 		repo = filepath.Join(split[:len(split)-2]...)
 	}
 
-	var symbols []lsp.SymbolInformation
+	symbols := []lsp.SymbolInformation{}
 	var failed int
 	emit := func(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos token.Pos) {
 		if q.Type == queryTypeExported && !isExported(name, container) {
