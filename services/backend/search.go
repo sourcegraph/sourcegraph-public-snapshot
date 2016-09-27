@@ -2,10 +2,8 @@ package backend
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -17,7 +15,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 var Search sourcegraph.SearchServer = &search{}
@@ -100,15 +97,6 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 	}
 	observe("defs", start)
 	opentracing.SpanFromContext(ctx).LogEvent("defs fetched")
-
-	start = time.Now()
-	hydratedDefResults, err := hydrateDefsResults(ctx, results.DefResults)
-	if err != nil {
-		return nil, err
-	}
-	results.DefResults = hydratedDefResults
-	observe("hydrate", start)
-	opentracing.SpanFromContext(ctx).LogEvent("defs hydrated")
 
 	// For global search analytics purposes
 	results.SearchQueryOptions = []*sourcegraph.SearchOptions{op.Opt}
@@ -215,91 +203,6 @@ func queryTokens(strippedQuery string) []string {
 		}
 	}
 	return toks
-}
-
-func hydrateDefsResults(ctx context.Context, defs []*sourcegraph.DefSearchResult) ([]*sourcegraph.DefSearchResult, error) {
-	if len(defs) == 0 {
-		return defs, nil
-	}
-
-	reporevs_ := make(map[string]struct{})
-	defkeys_ := make(map[graph.DefKey]struct{})
-	for _, def := range defs {
-		reporevs_[fmt.Sprintf("%s@%s", def.Def.DefKey.Repo, def.Def.DefKey.CommitID)] = struct{}{}
-		defkeys_[def.Def.DefKey] = struct{}{}
-	}
-	reporevs := make([]string, 0, len(reporevs_))
-	for rr := range reporevs_ {
-		reporevs = append(reporevs, rr)
-	}
-	defkeys := make([]*graph.DefKey, 0, len(defkeys_))
-	for dk := range defkeys_ {
-		dk_ := dk
-		defkeys = append(defkeys, &dk_)
-	}
-
-	// fetch definition metadata in parallel
-	var (
-		deflist []*sourcegraph.Def
-		mu      sync.Mutex
-		wg      sync.WaitGroup
-		errs    []error
-	)
-	wg.Add(len(defkeys))
-	for _, dk := range defkeys {
-		dk := dk
-		go func() {
-			defer wg.Done()
-
-			rp, err := store.ReposFromContext(ctx).GetByURI(ctx, dk.Repo)
-			if err != nil {
-				mu.Lock()
-				errs = append(errs, err)
-				mu.Unlock()
-				return
-			}
-			df, err := svc.Defs(ctx).Get(ctx, &sourcegraph.DefsGetOp{
-				Def: sourcegraph.DefSpec{
-					Repo:     rp.ID,
-					CommitID: dk.CommitID,
-					UnitType: dk.UnitType,
-					Unit:     dk.Unit,
-					Path:     dk.Path,
-				},
-				Opt: &sourcegraph.DefGetOptions{Doc: true},
-			})
-			if err != nil {
-				mu.Lock()
-				errs = append(errs, err)
-				mu.Unlock()
-				return
-			}
-			{
-				mu.Lock()
-				deflist = append(deflist, df)
-				mu.Unlock()
-			}
-		}()
-	}
-	wg.Wait()
-	if errs != nil {
-		return nil, fmt.Errorf("fetching definition metadata failed with errors: %+v", errs)
-	}
-
-	hydratedDefs := make(map[graph.DefKey]*sourcegraph.Def)
-	for _, def := range deflist {
-		hydratedDefs[def.DefKey] = def
-	}
-	hydratedResults := make([]*sourcegraph.DefSearchResult, 0, len(defs))
-	for _, defResult := range defs {
-		if d, exist := hydratedDefs[defResult.Def.DefKey]; exist {
-			defResult.Def = *d
-			hydratedResults = append(hydratedResults, defResult)
-		} else {
-			log15.Warn("did not find def in graph store, excluding from search results", "def", defResult)
-		}
-	}
-	return hydratedResults, nil
 }
 
 var searchDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
