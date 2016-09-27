@@ -25,6 +25,7 @@ import (
 var (
 	templates   = map[string]*htmpl.Template{}
 	templatesMu sync.Mutex
+	loadOnce    sync.Once
 )
 
 // Get gets a template by name, if it exists (and has previously been
@@ -65,6 +66,13 @@ func Load() {
 	}, nil); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// LoadOnce loads all templates unless they have been already loaded.
+func LoadOnce() {
+	loadOnce.Do(func() {
+		Load()
+	})
 }
 
 // Common holds fields that are available at the top level in every

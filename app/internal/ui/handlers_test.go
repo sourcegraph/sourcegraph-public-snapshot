@@ -16,14 +16,16 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/apptest"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil/srclibtest"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 func newTest() (*httptestutil.Client, *httptestutil.MockClients) {
-	return apptest.New()
+	tmpl.LoadOnce()
+	c, mock := httptestutil.NewTest(router)
+	return c, mock
 }
 
 func getForTest(c interface {
