@@ -3,6 +3,7 @@ package backend
 import (
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 
 	"context"
@@ -31,9 +32,17 @@ func TestSearch(t *testing.T) {
 		{Repo: repoURI, CommitID: "c1", UnitType: "t1", Unit: "u1", Path: "p2"},
 		{Repo: repoURI, CommitID: "c2", UnitType: "t2", Unit: "u2", Path: "p3"},
 	}
-	wantDefResults := make([]*sourcegraph.DefSearchResult, len(wantDefsKeys))
+	wantDefs := make([]*sourcegraph.Def, len(wantDefsKeys))
+	var (
+		calledDefGetMu sync.Mutex
+		calledDefGet   = make(map[graph.DefKey]bool)
+	)
 	for i, dk := range wantDefsKeys {
-		d := &sourcegraph.Def{Def: graph.Def{DefKey: dk}}
+		wantDefs[i] = &sourcegraph.Def{Def: graph.Def{DefKey: dk}}
+		calledDefGet[dk] = false
+	}
+	wantDefResults := make([]*sourcegraph.DefSearchResult, len(wantDefs))
+	for i, d := range wantDefs {
 		wantDefResults[i] = &sourcegraph.DefSearchResult{Def: *d, Score: 0, RefCount: 0}
 	}
 	wantResults := &sourcegraph.SearchResultsList{
@@ -43,6 +52,28 @@ func TestSearch(t *testing.T) {
 
 	query := "this is the test query"
 	expTokQuery := strings.Fields(query)
+
+	// Declare mocks
+	mock.servers.Defs.Get_ = func(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
+		calledDefGetMu.Lock()
+		defer calledDefGetMu.Unlock()
+
+		if op.Def.Repo != repoID {
+			t.Fatalf("expected request for def from repo %d, got %d", repoID, op.Def.Repo)
+		}
+		// Mock fetch of defs (should be called to hydrate each def result)
+		for _, d := range wantDefs {
+			if d.CommitID == op.Def.CommitID && d.Unit == op.Def.Unit && d.UnitType == op.Def.UnitType && d.Path == op.Def.Path {
+				calledDefGet[graph.DefKey{Repo: repoURI, CommitID: d.CommitID, Unit: d.Unit, UnitType: d.UnitType, Path: d.Path}] = true
+				return d, nil
+			}
+		}
+		t.Fatalf("attempted to request unmocked def: %+v", op)
+		return nil, nil
+	}
+	mock.stores.Repos.GetByURI_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+		return &sourcegraph.Repo{URI: repo, ID: repoID}, nil
+	}
 
 	calledDefsSearch := false
 	mock.stores.Defs.Search_ = func(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error) {
@@ -69,5 +100,11 @@ func TestSearch(t *testing.T) {
 
 	if !calledDefsSearch {
 		t.Errorf("!calledDefsSearch")
+	}
+
+	for dk, calledGet := range calledDefGet {
+		if !calledGet {
+			t.Errorf("failed to call Graph.Defs.Get on def %+v", dk)
+		}
 	}
 }
