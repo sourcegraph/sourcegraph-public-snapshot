@@ -436,8 +436,7 @@ func reposListSQL(opt *store.RepoListOp) (string, []interface{}, error) {
 			conds = append(conds, "lower(name)="+arg(strings.ToLower(opt.Name)))
 		}
 		if len(queryTerms) >= 1 {
-			uriQuery = strings.ToLower(uriQuery)
-			conds = append(conds, "lower(uri) LIKE "+arg("/"+uriQuery+"%")+" OR lower(uri) LIKE "+arg(uriQuery+"%/%")+" OR lower(name) LIKE "+arg(uriQuery+"%")+" OR lower(uri) = "+arg(uriQuery))
+			conds = append(conds, "uri ILIKE "+arg("%"+uriQuery+"%")+"AND uri NOT ILIKE 'github.com/orgs%'")
 		}
 		switch opt.Type {
 		case "private":

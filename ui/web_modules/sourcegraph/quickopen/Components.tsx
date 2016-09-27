@@ -17,7 +17,8 @@ const ViewMore = ({expandCategory, type}) => <a style={{
 	View more {type}
 </a>;
 
-const ResultRow = ({title, description, index, length}, categoryIndex, itemIndex, selected, delegate, scrollIntoView) => {
+export const ResultRow = ({title, description, index, length}, categoryIndex, itemIndex, selected, delegate, scrollIntoView) => {
+	const oflow = {textOverflow: "ellipsis", overflow: "hidden"};
 	return (
 		<a key={itemIndex} className={modal_result}
 			ref={node => { if (scrollIntoView && node && selected) {
@@ -33,15 +34,15 @@ const ResultRow = ({title, description, index, length}, categoryIndex, itemIndex
 			marginBottom: 8,
 		}}
 		onClick={() => delegate.select(categoryIndex, itemIndex)}>
-		{length ? <div>
+		{length ? <div style={oflow}>
 			<span>{title.substr(0, index)}</span>
 			<span style={{fontWeight: "bold"}}>{title.substr(index, length)}</span>
 			<span>{title.substr(index + length)}</span>
 		</div> :
-		<div>
+		<div style={oflow}>
 			{title}
 		</div>}
-		<div style={{fontSize: smallFont, color: selected ? colors.white(.7) : colors.coolGray3()}}>
+		<div style={Object.assign({fontSize: smallFont, color: selected ? colors.white(.7) : colors.coolGray3()}, oflow)}>
 			{description}
 		</div>
 		</a>
@@ -100,7 +101,7 @@ export const ResultCategories = ({categories, selection, delegate, limits, scrol
 						scrollIntoView={scrollIntoView}
 						expandCategory={delegate.expand(i)} />);
 	});
-	return <div style={{overflow: "auto"}}>
+	return <div style={{overflowY: "scroll"}}>
 		{sections}
 	</div>;
 };

@@ -403,26 +403,45 @@ function symbolKindName(kind: number): string {
 	}
 }
 
-const rankFile = (fileResults, file, query) => {
+// rankFile scores a filepath against a search query, and filters out bad matches.
+export const rankFile = (fileResults, file, query) => {
 	if (file.length < query.length) {
 		// Return early to avoid an expensive query.
 		return fileResults;
 	}
+	if (query === "") {
+		// If we don't have a query, no sense scoring anything.
+		fileResults.push({ title: file, description: "", index: -1, length: undefined,  score: 0 });
+		return fileResults;
+	}
+
+	// Score against the full path.
 	const fuzziness = .8;
 	const minimumSimilarity = .6;
 	let score = file.score(query, fuzziness);
-	if (query !== "" && score < minimumSimilarity) {
-		const basePathRegExp = /.*\/(.+)/;
-		const base: any = basePathRegExp.exec(file);
-		score = base ? base[1].score(query, fuzziness) : 0;
-	}
+
+	// Score against the last element of the path.
+	const basePathRegExp = /.*\/(.+)/;
+	const base: any = basePathRegExp.exec(file);
+	const baseScore = base ? base[1].score(query, fuzziness) : 0;
+	score = Math.max(score, baseScore);
+
+	// Substring matches, with a bonus for prefix.
 	const index = file.toLowerCase().indexOf(query);
-	let length;
-	if (index >= 0) {
-		score = .6;
-		length = query.length;
+	if (index === 0) {
+		const prefixScore = .8;
+		score = Math.max(prefixScore, score);
+	} else if (index > 0) {
+		const substringScore = .6;
+		score = Math.max(substringScore, score);
 	}
-	if (score < minimumSimilarity) { return fileResults; }
-	fileResults.push({ title: file, description: "", index: index, length: length,  score: score});
+
+	// Don't update the results if it isn't good enough.
+	if (score < minimumSimilarity) {
+		return fileResults;
+	}
+
+	const l = index > -1 ? query.length : undefined;
+	fileResults.push({ title: file, description: "", index: index, length: l,  score: score});
 	return fileResults;
 };

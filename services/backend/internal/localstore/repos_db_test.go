@@ -248,6 +248,9 @@ func TestRepos_List_query(t *testing.T) {
 	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "jkl/mno/pqr", Name: "pqr", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/orgs/xyz", Name: "pqr", DefaultBranch: "master", Mirror: true}); err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
 		query string
@@ -257,6 +260,8 @@ func TestRepos_List_query(t *testing.T) {
 		{"def", []string{"abc/def", "def/ghi"}},
 		{"ABC/DEF", []string{"abc/def"}},
 		{"xyz", nil},
+		{"mno/p", []string{"jkl/mno/pqr"}},
+		{"jkl mno pqr", []string{"jkl/mno/pqr"}},
 	}
 	for _, test := range tests {
 		repos, err := s.List(ctx, &store.RepoListOp{Query: test.query})

@@ -1,7 +1,7 @@
 import expect from "expect.js";
 import * as React from "react";
 
-import {ResultCategories} from "sourcegraph/quickopen/Components";
+import {ResultCategories, ResultRow} from "sourcegraph/quickopen/Components";
 import {Category, SearchDelegate} from "sourcegraph/quickopen/Container";
 import {renderToString} from "sourcegraph/util/testutil/componentTestUtils";
 
@@ -92,4 +92,14 @@ describe("ResultCategories", () => {
 			});
 		});
 	});
+
+	const props = {
+		title: "a",
+		description: "b",
+		index: 1,
+		length: 0,
+	};
+	const o = ResultRow(props, 1, 1, 1, null, false);
+	const c = o.props.children[0].props.style.textOverflow;
+	expect(c).to.eql("ellipsis");
 });
