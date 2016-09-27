@@ -25,6 +25,10 @@ export class Editor implements monaco.IDisposable {
 	private _initializedModes: Set<string> = new Set();
 
 	constructor(elem: HTMLElement) {
+		(global as any).require(["vs/editor/contrib/hover/browser/hoverOperation"], ({HoverOperation}) => {
+			HoverOperation.HOVER_TIME = 50;
+		});
+
 		// Register services for modes (languages) when new models are added.
 		const registerModeProviders = (mode: string) => {
 			if (!this._initializedModes.has(mode)) {
@@ -214,6 +218,9 @@ export class Editor implements monaco.IDisposable {
 					return null;
 				}
 				const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
+				locs.forEach((l) => {
+					l.uri = URI.toRefsDisplayURI(monaco.Uri.parse(l.uri)).toString();
+				});
 				return locs.map(lsp.toMonacoLocation);
 			});
 

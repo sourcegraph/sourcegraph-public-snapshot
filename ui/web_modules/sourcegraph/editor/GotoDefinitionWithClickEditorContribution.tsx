@@ -2,6 +2,7 @@
 import {EventLogger} from "sourcegraph/util/EventLogger";
 import {URI} from "sourcegraph/core/uri";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import * as debounce from "lodash/debounce";
 
 // tslint:disable typedef ordered-imports member-ordering
 import {IEditorService} from "sourcegraph/editor/EditorService";
@@ -33,14 +34,13 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 	private toUnhook: monaco.IDisposable[] = [];
 	private decorations: string[] = [];
 	private currentWordUnderMouse: IWordAtPositionWithLine | null;
-	private throttler: SimpleThrottler;
 	private lastMouseMoveEvent: monaco.editor.IEditorMouseEvent | null;
+	private findDefinitionDebounced: (target: monaco.editor.IMouseTarget, word: monaco.editor.IWordAtPosition) => void;
 
 	constructor(
 		editor: monaco.editor.ICodeEditor,
 	) {
 		this.editor = editor;
-		this.throttler = new SimpleThrottler();
 
 		this.toUnhook.push(this.editor.onMouseUp((e: monaco.editor.IEditorMouseEvent) => this.onEditorMouseUp(e)));
 		this.toUnhook.push(this.editor.onMouseMove((e: monaco.editor.IEditorMouseEvent) => this.onEditorMouseMove(e)));
@@ -53,6 +53,8 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 				this.resetHandler();
 			}
 		}));
+
+		this.findDefinitionDebounced = debounce(this.findDefinitionDebounced_, 150, { leading: true, trailing: true });
 	}
 
 	private onDidChangeCursorSelection(e: monaco.editor.ICursorSelectionChangedEvent): void {
@@ -68,8 +70,8 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 			return;
 		}
 
-		this.lastMouseMoveEvent = mouseEvent;
 		this.startFindDefinition(mouseEvent);
+		this.lastMouseMoveEvent = mouseEvent;
 	}
 
 	private startFindDefinition(mouseEvent: monaco.editor.IEditorMouseEvent, withKey?: monaco.IKeyboardEvent): void {
@@ -95,9 +97,11 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 		}
 
 		this.currentWordUnderMouse = word;
+		this.findDefinitionDebounced(mouseEvent.target, word);
+	}
 
-		// Find definition and decorate word if found
-		this.throttler.queue(() => this.findDefinition(mouseEvent.target)).then(results => {
+	private findDefinitionDebounced_(target: monaco.editor.IMouseTarget, word: monaco.editor.IWordAtPosition): void {
+		this.findDefinition(target).then(results => {
 			if (!results || !results.length) {
 				this.removeDecorations();
 				return;
@@ -105,9 +109,9 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 
 			this.addDecoration(
 				{
-					startLineNumber: position.lineNumber,
+					startLineNumber: target.position.lineNumber,
 					startColumn: word.startColumn,
-					endLineNumber: position.lineNumber,
+					endLineNumber: target.position.lineNumber,
 					endColumn: word.endColumn,
 				},
 				results.length > 1 ? `Click to show the ${results.length} definitions found.` : undefined
@@ -169,7 +173,9 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 		}
 
 		return new Promise((resolve, reject) => {
-			(global as any).require(["vs/editor/contrib/goToDeclaration/common/goToDeclaration"], ({getDeclarationsAtPosition}) => getDeclarationsAtPosition(this.editor.getModel(), target.position).then((result) => resolve(result)));
+			(global as any).require(["vs/editor/contrib/goToDeclaration/common/goToDeclaration"], ({getDeclarationsAtPosition}) => {
+				getDeclarationsAtPosition(this.editor.getModel(), target.position).then((result) => resolve(result));
+			});
 		});
 	}
 
@@ -205,12 +211,4 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 
 export interface ITask<T> {
 	(): T;
-}
-
-export class SimpleThrottler {
-	private current = Promise.resolve(null);
-
-	queue<T>(promiseTask: ITask<Promise<T>>): Promise<T> {
-		return this.current = this.current.then(() => promiseTask());
-	}
 }
