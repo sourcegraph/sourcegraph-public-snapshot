@@ -33,6 +33,13 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	// Optimization: Ensure our language server is ready to start
+	// responding to requests
+	go langp.DefaultClient.Prepare(r.Context(), &langp.RepoRev{
+		Repo:   orig.RepoRev.Repo,
+		Commit: repoRev.CommitID,
+	})
+
 	entrySpec := sourcegraph.TreeEntrySpec{
 		RepoRev: *repoRev,
 		Path:    orig.Path,
@@ -110,10 +117,18 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
 	cl := handlerutil.Client(r)
 
-	repoRev, err := resolveLocalRepoRev(r.Context(), routevar.ToRepoRev(mux.Vars(r)))
+	unresolvedRepoRev := routevar.ToRepoRev(mux.Vars(r))
+	repoRev, err := resolveLocalRepoRev(r.Context(), unresolvedRepoRev)
 	if err != nil {
 		return err
 	}
+
+	// Optimization: Ensure our language server is ready to start
+	// responding to requests
+	go langp.DefaultClient.Prepare(r.Context(), &langp.RepoRev{
+		Repo:   unresolvedRepoRev.Repo,
+		Commit: repoRev.CommitID,
+	})
 
 	treeList, err := cl.RepoTree.List(r.Context(), &sourcegraph.RepoTreeListOp{Rev: *repoRev})
 	if err != nil {

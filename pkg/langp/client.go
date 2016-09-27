@@ -367,6 +367,10 @@ func (c *Client) do(ctx context.Context, cl *langClient, repo, endpoint string, 
 }
 
 func (c *Client) clientsForRepo(ctx context.Context, rr *RepoRev) ([]*langClient, error) {
+	if len(c.clients) == 0 {
+		// This should never really be true, but is often true in tests.
+		return nil, nil
+	}
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		return nil, err
