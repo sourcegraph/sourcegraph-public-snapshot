@@ -282,7 +282,7 @@ export function convertStringNode(node, annsByStartByte, offset, lineStart) {
 		return `<span data-byteoffset=${offset + 1 - lineStart} style=${isCommentNode(node) ? "" : "cursor:pointer;"}>${innerHTML}</span>`;
 	};
 
-	return {result: annGen(strTxt), bytesConsumed: strTxt.length};
+	return {result: annGen(_.escape(strTxt)), bytesConsumed: strTxt.length};
 }
 
 // The rest of this file is responsible for fetching/caching annotation specific data from the server
