@@ -1,11 +1,6 @@
 #!/bin/bash
 
 # Runs test tasks across an arbitrary number of test runners.
-# Coverage reports are generated for all packages when testing the "master"
-# branch otherwise coverage reports are only generated for packages that have
-# changes relative to "master".
-# NOTE: To generate coverage reports, the tests have to run one package a time
-# so the process will generally take longer.
 
 set -e
 set -o pipefail
@@ -27,44 +22,22 @@ echo "Directories changed relative to master:"
 changed=$(git diff --dirstat=files,0 origin/master..$CIRCLE_SHA1 | grep -v /node_modules/; echo -n) # echo to suppress nonzero exit code
 echo "$changed"
 
+# Build a list of all pkgs for this node. If not master, exclude packages
+# based on changed files.
 pkgs=()
-covered=()
-# Iterate over packages that have tests.
-for pkg in $(go list -f '{{ if or (gt (len .TestGoFiles) 0) (gt (len .XTestGoFiles ) 0) }}{{ .ImportPath }}{{ end }}' ./... | grep -v /vendor/ | grep -v test/e2e | sort); do
+for pkg in $(go list ./... | grep -v /vendor/ | grep -v test/e2e | sort); do
 	if (( i % CIRCLE_NODE_TOTAL == CIRCLE_NODE_INDEX ))
 	then
 		if [ "$CIRCLE_BRANCH" == 'master' ] || echo "$changed" | awk -v D="$(pwd)" '{ print D "/" $2 }' | egrep "$pkg/$"
 		then
-			echo "Run test with coverage for package: $pkg"
-			go install -race ./cmd/src
-			go test -race -timeout 5m -coverprofile=/tmp/cover.$i.out "$pkg" | tee /tmp/go-test.out
-			covered+=("$pkg")
-		else
 			pkgs+=("$pkg")
 		fi
 	fi
 	((i=i+1))
 done
 
-# Iterate over packages that don't have tests (i.e., all others).
-for pkg in $(go list -f '{{ if not (or (gt (len .TestGoFiles) 0) (gt (len .XTestGoFiles ) 0)) }}{{ .ImportPath }}{{ end }}' ./... | grep -v /vendor/ | grep -v test/e2e | sort); do
-	if (( i % CIRCLE_NODE_TOTAL == CIRCLE_NODE_INDEX ))
-	then
-		# Just test that they build successfully, without coverage because no actual tests (i.e., coverage is 0).
-		pkgs+=("$pkg")
-	fi
-	((i=i+1))
-done
-
-if [ "${#covered[@]}" -gt "0" ]
-then
-	echo "Merge coverage output for packages: ${covered[@]}"
-	gocovmerge /tmp/cover.*.out > /tmp/covertotal.out
-fi
-
 if [ "${#pkgs[@]}" -gt "0" ]
 then
-	echo "Run tests without coverage for packages: ${pkgs[@]}"
 	go install -race ./cmd/src
-	go test -race -v -timeout 5m "${pkgs[@]}" | tee /tmp/go-test.out
+	go test -race -v -timeout 5m "${pkgs[@]}"
 fi
