@@ -165,20 +165,6 @@ func (c *Client) Prepare(ctx context.Context, r *RepoRev) error {
 	return nil
 }
 
-// DefSpecToPosition returns the position of the given DefSpec.
-func (c *Client) DefSpecToPosition(ctx context.Context, k *DefSpec) (*Position, error) {
-	cl, err := c.clientForUnitType(k.UnitType)
-	if err != nil {
-		return nil, err
-	}
-	var result Position
-	err = c.do(ctx, cl, k.Repo, "defspec-to-position", k, &result)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
 // Definition resolves the specified position, effectively returning where the
 // given definition is defined. For example, this is used for go to definition.
 func (c *Client) Definition(ctx context.Context, p *Position) (*Range, error) {

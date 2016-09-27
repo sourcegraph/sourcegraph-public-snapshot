@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -85,10 +84,6 @@ func (t *translator) Prepare(ctx context.Context, r *RepoRev) error {
 		return err
 	}
 	return nil
-}
-
-func (t *translator) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*Position, error) {
-	return nil, fmt.Errorf("DefSpecToPosition is not supported yet")
 }
 
 func (t *translator) Definition(ctx context.Context, pos *Position) (*Range, error) {

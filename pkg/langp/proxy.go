@@ -32,16 +32,6 @@ func (p *proxy) Prepare(ctx context.Context, r *RepoRev) error {
 	return nil
 }
 
-func (p *proxy) DefSpecToPosition(ctx context.Context, defSpec *DefSpec) (*Position, error) {
-	// Determine the root path for the workspace and prepare it.
-	_, err := p.workspace.Prepare(ctx, defSpec.Repo, defSpec.Commit)
-	if err != nil {
-		return nil, err
-	}
-
-	return p.Client.DefSpecToPosition(ctx, defSpec)
-}
-
 func (p *proxy) Definition(ctx context.Context, pos *Position) (*Range, error) {
 	// Determine the root path for the workspace and prepare it.
 	_, err := p.workspace.Prepare(ctx, pos.Repo, pos.Commit)
