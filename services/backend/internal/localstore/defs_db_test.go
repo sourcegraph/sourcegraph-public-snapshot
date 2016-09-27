@@ -14,10 +14,6 @@ import (
 	sgtest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/unit"
-
-	// indirectly import sourcegraph.com/sourcegraph/sourcegraph/app/internal/srclibsupport,
-	// otherwise TestDefs fails
-	_ "sourcegraph.com/sourcegraph/sourcegraph/app"
 )
 
 const (
@@ -37,6 +33,7 @@ type queryCase struct {
 }
 
 func TestDefs(t *testing.T) {
+	// depends on srclibsupport
 	t.Skip("https://github.com/sourcegraph/sourcegraph/issues/1276")
 	if testing.Short() {
 		t.Skip()
