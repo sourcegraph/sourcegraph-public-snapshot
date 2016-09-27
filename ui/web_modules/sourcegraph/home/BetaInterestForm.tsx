@@ -121,7 +121,7 @@ export class BetaInterestForm extends Container<Props, State> {
 		if (!context.user) {
 			return (<div className={styles.cta}>
 				<p className={styles.p}>You must sign in to continue.</p>
-				<GitHubAuthButton returnTo={this.props.loginReturnTo} color="blue" className={base.mr3} onClick={this.props.onSubmit ? this.props.onSubmit : () => { /* empty */ }}>
+				<GitHubAuthButton returnTo={this.props.loginReturnTo} color="blue" className={base.mr3}>
 					<strong>Sign in with GitHub</strong>
 				</GitHubAuthButton>
 			</div>);

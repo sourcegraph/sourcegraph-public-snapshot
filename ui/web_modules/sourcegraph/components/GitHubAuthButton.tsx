@@ -1,12 +1,11 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
-import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
+import {context} from "sourcegraph/app/context";
+import {Button} from "sourcegraph/components";
 import {GitHubIcon} from "sourcegraph/components/Icons";
 import * as typography from "sourcegraph/components/styles/_typography.css";
-import {Button} from "sourcegraph/components";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
+import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 
 interface Props {
 	scopes?: string;
@@ -17,7 +16,6 @@ interface Props {
 	size?: string;
 	children?: any;
 	className?: string;
-	onClick?: () => void;
 	tabIndex?: number;
 	pageName?: string;
 }
@@ -34,22 +32,26 @@ export class GitHubAuthButton extends React.Component<Props, State> {
 	};
 
 	render(): JSX.Element | null {
-		const {scopes, returnTo, outline, color, block, children, size, pageName, className, onClick, tabIndex} = this.props;
+		const {scopes, returnTo, outline, color, block, children, size, pageName, className, tabIndex} = this.props;
 		const url = urlToGitHubOAuth(scopes || null, returnTo || null);
 		return (
-			<a href={url}
-				onClick={() => {
-					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow", {page_name: pageName});
-					if (onClick) {
-						onClick();
-					}
-				}}
-				className={className}
-				tabIndex={tabIndex}>
-				<Button type="button" outline={outline} formNoValidate={true} color={color} block={block} size={size}>
+			<form method="POST" action={url}>
+				<input type="hidden" name="gorilla.csrf.Token" value={context.csrfToken} />
+				<Button
+						type="submit"
+						outline={outline}
+						formNoValidate={true}
+						color={color}
+						block={block}
+						size={size}
+						className={className}
+						tabIndex={tabIndex}
+						onClick={() => {
+							EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow", {page_name: pageName});
+						}}>
 					<GitHubIcon className={size === "small" ? typography.f5 : typography.f4} />&nbsp; {children}
 				</Button>
-			</a>
+			</form>
 		);
 	}
 }

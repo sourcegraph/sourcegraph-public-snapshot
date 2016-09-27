@@ -5,6 +5,7 @@ import {testOnly} from "sourcegraph/util/testOnly";
 
 class Context {
 	xhrHeaders: {[key: string]: string};
+	csrfToken: string;
 	userAgentIsBot: boolean;
 	user: User | null;
 	emails: EmailAddrList | null;

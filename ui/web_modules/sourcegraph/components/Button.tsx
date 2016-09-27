@@ -20,7 +20,7 @@ export function Button(props: {
 	type?: string,
 	formNoValidate?: boolean,
 	id?: string,
-	tabIndex?: string,
+	tabIndex?: number,
 	style?: any,
 }) {
 	let {

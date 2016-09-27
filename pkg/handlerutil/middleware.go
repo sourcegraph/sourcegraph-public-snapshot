@@ -2,7 +2,6 @@ package handlerutil
 
 import (
 	"net/http"
-	"regexp"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 
@@ -18,8 +17,6 @@ func WithMiddleware(h http.Handler, mw ...Middleware) http.Handler {
 	return mw[0](WithMiddleware(h, mw[1:]...))
 }
 
-var skipCSRFPattern = regexp.MustCompile("^/login/oauth/|git-[\\w-]+$")
-
 // NewHandlerWithCSRFProtection creates a new handler that uses the provided
 // handler. It additionally adds support for cross-site request forgery. To make
 // your forms compliant you will have to include a hidden input which contains
@@ -30,11 +27,6 @@ var skipCSRFPattern = regexp.MustCompile("^/login/oauth/|git-[\\w-]+$")
 //
 func NewHandlerWithCSRFProtection(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if skipCSRFPattern.MatchString(r.URL.Path) {
-			handler.ServeHTTP(w, r)
-			return
-		}
-
 		p := csrf.Protect(
 			[]byte("e953612ddddcdd5ec60d74e07d40218c"),
 			csrf.CookieName("csrf_token"),

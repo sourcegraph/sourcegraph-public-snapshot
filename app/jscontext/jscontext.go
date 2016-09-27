@@ -28,6 +28,7 @@ type JSContext struct {
 	AppURL            string                     `json:"appURL"`
 	LegacyAccessToken string                     `json:"accessToken"` // Legacy support for Chrome extension.
 	XHRHeaders        map[string]string          `json:"xhrHeaders"`
+	CSRFToken         string                     `json:"csrfToken"`
 	UserAgentIsBot    bool                       `json:"userAgentIsBot"`
 	AssetsRoot        string                     `json:"assetsRoot"`
 	BuildVars         buildvar.Vars              `json:"buildVars"`
@@ -62,7 +63,8 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		headers["Cache-Control"] = "no-cache"
 	}
 
-	headers["X-Csrf-Token"] = csrf.Token(req)
+	csrfToken := csrf.Token(req)
+	headers["X-Csrf-Token"] = csrfToken
 
 	var gitHubToken *sourcegraph.ExternalToken
 	if actor.GitHubConnected {
@@ -75,6 +77,7 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		AppURL:            conf.AppURL.String(),
 		LegacyAccessToken: sessionCookie, // Legacy support for Chrome extension.
 		XHRHeaders:        headers,
+		CSRFToken:         csrfToken,
 		UserAgentIsBot:    isBot(eventsutil.UserAgentFromContext(req.Context())),
 		AssetsRoot:        assets.URL("/").String(),
 		BuildVars:         buildvar.Public,

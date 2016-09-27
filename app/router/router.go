@@ -54,7 +54,7 @@ func New(base *mux.Router) *Router {
 
 	base.Path("/-/logout").Methods("GET").Name(Logout)
 
-	base.Path("/-/github-oauth/initiate").Methods("GET").Name(GitHubOAuth2Initiate)
+	base.Path("/-/github-oauth/initiate").Methods("POST").Name(GitHubOAuth2Initiate)
 	base.Path("/-/github-oauth/receive").Methods("GET", "POST").Name(GitHubOAuth2Receive)
 
 	base.Path("/-/godoc/refs").Methods("GET").Name(GDDORefs)
