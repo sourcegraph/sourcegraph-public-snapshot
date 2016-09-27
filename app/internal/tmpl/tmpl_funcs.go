@@ -1,4 +1,4 @@
-package app
+package tmpl
 
 import (
 	"context"
@@ -14,23 +14,13 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/snippet"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
-func init() {
-	for name, fn := range tmplFuncs {
-		if _, present := tmpl.FuncMap[name]; present {
-			panic("template func already exists: " + name)
-		}
-		tmpl.FuncMap[name] = fn
-	}
-}
-
-var tmplFuncs = htmpl.FuncMap{
+var FuncMap = htmpl.FuncMap{
 	"appconf": func() interface{} { return &appconf.Flags },
 
 	"json": func(v interface{}) (string, error) {

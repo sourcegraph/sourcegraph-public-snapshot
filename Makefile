@@ -102,7 +102,7 @@ test: check src app/assets/bundle.js
 	go test -race ${TESTPKGS}
 
 check: ${GOBIN}/go-template-lint
-	go-template-lint -f app/tmpl_funcs.go -t app/internal/tmpl/tmpl.go -td app/templates
+	go-template-lint -f app/internal/tmpl/tmpl_funcs.go -t app/internal/tmpl/tmpl.go -td app/templates
 	bash dev/check-for-template-inlines
 	bash dev/check-go-generate-all
 	bash dev/check-go-lint

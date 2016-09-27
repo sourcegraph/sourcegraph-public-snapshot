@@ -208,6 +208,3 @@ func parseHTMLTemplates(sets [][]string, layout []string) error {
 	wg.Wait()
 	return nil
 }
-
-// FuncMap is the template func map passed to each template.
-var FuncMap = htmpl.FuncMap{}
