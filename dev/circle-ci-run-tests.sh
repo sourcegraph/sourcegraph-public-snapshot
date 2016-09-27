@@ -38,7 +38,6 @@ for pkg in $(go list -f '{{ if or (gt (len .TestGoFiles) 0) (gt (len .XTestGoFil
 			echo "Run test with coverage for package: $pkg"
 			go install -race ./cmd/src
 			go test -race -timeout 5m -coverprofile=/tmp/cover.$i.out "$pkg" | tee /tmp/go-test.out
-			go-junit-report < /tmp/go-test.out >> $CIRCLE_TEST_REPORTS/junit/go-test.xml
 			covered+=("$pkg")
 		else
 			pkgs+=("$pkg")
@@ -68,5 +67,4 @@ then
 	echo "Run tests without coverage for packages: ${pkgs[@]}"
 	go install -race ./cmd/src
 	go test -race -v -timeout 5m "${pkgs[@]}" | tee /tmp/go-test.out
-	go-junit-report < /tmp/go-test.out > $CIRCLE_TEST_REPORTS/junit/go-test.xml
 fi

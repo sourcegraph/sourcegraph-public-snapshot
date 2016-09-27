@@ -48,8 +48,6 @@ dependencies:
 
 test:
   override:
-    - mkdir -p $CIRCLE_TEST_REPORTS/junit:
-        parallel: true
     - ./dev/circle-ci-run-tests.sh:
         pwd: $REPO
         parallel: true
