@@ -13,6 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/snippet"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
@@ -109,7 +110,7 @@ var tmplFuncs = htmpl.FuncMap{
 
 	"dangerouslySetHTML": func(s string) htmpl.HTML { return htmpl.HTML(s) },
 
-	"renderSnippet": renderSnippet,
+	"renderSnippet": snippet.Render,
 
 	"numberedNoun": func(count int32, word string) string {
 		if count == 1 {
@@ -164,41 +165,4 @@ var tmplFuncs = htmpl.FuncMap{
 	"urlToSitemap": func(lang string) string {
 		return router.Rel.URLToSitemap(lang).String()
 	},
-}
-
-type Snippet struct {
-	StartByte   int64
-	Code        string
-	Annotations *sourcegraph.AnnotationList
-	SourceURL   string
-}
-
-func renderSnippet(s *Snippet) htmpl.HTML {
-	var toks []string
-
-	var clsAnns, urlAnns []*sourcegraph.Annotation
-	for _, ann := range s.Annotations.Annotations {
-		if ann.Class != "" {
-			clsAnns = append(clsAnns, ann)
-		} else if ann.URL != "" {
-			urlAnns = append(urlAnns, ann)
-		}
-	}
-
-	var prevEnd int64 = 0
-	for _, ann := range clsAnns {
-		start, end := int64(ann.StartByte), int64(ann.EndByte)
-		if start < 0 || end > int64(len(s.Code)) {
-			continue
-		}
-
-		if start > prevEnd {
-			toks = append(toks, htmpl.HTMLEscapeString(s.Code[prevEnd:start]))
-		}
-		toks = append(toks, fmt.Sprintf("<span class=%s>", ann.Class), htmpl.HTMLEscapeString(s.Code[start:end]), "</span>")
-		prevEnd = int64(ann.EndByte)
-	}
-	toks = append(toks, htmpl.HTMLEscapeString(s.Code[prevEnd:]))
-
-	return htmpl.HTML(strings.Join(toks, ""))
 }

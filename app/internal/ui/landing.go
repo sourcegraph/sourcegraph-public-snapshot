@@ -11,7 +11,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/app"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/snippet"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui/toprepos"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
@@ -162,9 +162,9 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	var def *sourcegraph.Def
 	var refLocs *sourcegraph.RefLocationsList
 	var defEntry *sourcegraph.TreeEntry
-	var defSnippet *app.Snippet
+	var defSnippet *snippet.Snippet
 	var refEntries []*sourcegraph.TreeEntry
-	var refSnippets []*app.Snippet
+	var refSnippets []*snippet.Snippet
 
 	if def == nil {
 		def, _, err = handlerutil.GetDefCommon(r.Context(), vars, &sourcegraph.DefGetOptions{Doc: true, ComputeLineRange: true})
@@ -226,7 +226,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
-		defSnippet = &app.Snippet{
+		defSnippet = &snippet.Snippet{
 			StartByte:   defEntry.FileRange.StartByte,
 			Code:        defEntry.ContentsString,
 			Annotations: defAnns,
@@ -283,7 +283,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 			if err != nil {
 				return err
 			}
-			refSnippets = append(refSnippets, &app.Snippet{
+			refSnippets = append(refSnippets, &snippet.Snippet{
 				StartByte:   refEntry.FileRange.StartByte,
 				Code:        refEntry.ContentsString,
 				Annotations: refAnns,
@@ -317,11 +317,11 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		FileURL          string
 		Def              *sourcegraph.Def
 		DefEntry         *sourcegraph.TreeEntry
-		DefSnippet       *app.Snippet
+		DefSnippet       *snippet.Snippet
 		RefLocs          *sourcegraph.RefLocationsList
 		TruncatedRefLocs bool
 		RefEntries       []*sourcegraph.TreeEntry
-		RefSnippets      []*app.Snippet
+		RefSnippets      []*snippet.Snippet
 	}{
 		Meta:             *m,
 		Repo:             repo,
