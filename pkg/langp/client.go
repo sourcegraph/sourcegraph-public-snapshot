@@ -68,6 +68,10 @@ var DefaultClient *Client
 
 func init() {
 	if !feature.Features.Universe {
+		// Provide a client which does nothing
+		DefaultClient = &Client{
+			clients: map[string]*langClient{},
+		}
 		return
 	}
 
