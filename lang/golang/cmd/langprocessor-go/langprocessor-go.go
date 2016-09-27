@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -20,7 +19,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cmdutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
@@ -142,35 +140,6 @@ func goGetDependencies(ctx context.Context, repoDir string, env []string, repoUR
 	return langp.CmdRun(ctx, c)
 }
 
-// prepareLSPCache sends a workspace/symbols request. The underlying LSP
-// implementation should cache the data it calculates, so future requests to
-// it should respond quickly.
-func prepareLSPCache(update bool, workspace, repo string) error {
-	conn, err := net.Dial("tcp", *lspAddr)
-	if err != nil {
-		return err
-	}
-	ctx := context.Background()
-	c := jsonrpc2.NewConn(ctx, conn, nil)
-	defer func() {
-		if err := c.Close(); err != nil {
-			log.Println(err)
-		}
-	}()
-
-	if err := c.Call(ctx, "initialize", lsp.InitializeParams{RootPath: workspace}, nil); err != nil {
-		return err
-	}
-	if err := c.Call(ctx, "workspace/symbol", lsp.WorkspaceSymbolParams{Query: "external " + repo + "/..."}, nil); err != nil {
-		return err
-	}
-	if err := c.Call(ctx, "shutdown", nil, nil); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func prepareDeps(ctx context.Context, update bool, workspace, repo, commit string) error {
 	gopath := filepath.Join(workspace, "gopath")
 	repo = langp.ResolveRepoAlias(repo)
@@ -180,11 +149,6 @@ func prepareDeps(ctx context.Context, update bool, workspace, repo, commit strin
 	if err != nil {
 		return err
 	}
-
-	// We don't want prepareLSPCache failing to signal that the workspace
-	// is bad, since it is just for priming the symbol cache + is less
-	// reliable.
-	go prepareLSPCache(update, workspace, repo)
 
 	return nil
 }
