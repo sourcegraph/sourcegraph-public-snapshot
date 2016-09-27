@@ -129,7 +129,9 @@ export class Container extends React.Component<Props, State> {
 		];
 		if (this.props.repo) {
 			const r = RepoStore.resolvedRevs.get(this.props.repo.URI, this.props.repo.rev);
-			this.setState(Object.assign({}, this.state, {commitID: r.CommitID}));
+			if (r !== null) {
+				this.setState(Object.assign({}, this.state, {commitID: r.CommitID}));
+			}
 		}
 		setTimeout(() =>  {
 			this.fetchResults();
@@ -252,7 +254,7 @@ export class Container extends React.Component<Props, State> {
 		const results: Category[] = [];
 		const repo = this.props.repo;
 
-		if (repo) {
+		if (repo && this.state.commitID) {
 			const symbols = RepoStore.symbols.list(repo.URI, repo.rev, query);
 			if (symbols) {
 				const symbolResults: Result[] = [];
