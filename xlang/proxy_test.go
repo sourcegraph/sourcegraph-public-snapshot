@@ -32,6 +32,7 @@ import (
 )
 
 func TestProxy(t *testing.T) {
+	t.Skip("Disabled https://github.com/sourcegraph/sourcegraph/issues/1331")
 	tests := map[string]struct {
 		rootPath       string
 		mode           string
