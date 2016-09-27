@@ -1,6 +1,8 @@
 package backend_test
 
 import (
+	"os"
+	"strings"
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -27,12 +29,11 @@ func TestSearchRepos(t *testing.T) {
 
 	a, ctx := testserver.NewUnstartedServer()
 	a.Config.Serve.NoWorker = true
-	// TODO: Uncomment after https://github.com/sourcegraph/sourcegraph/pull/987 is merged.
-	//for _, v := range os.Environ() {
-	//	if strings.HasPrefix(v, "GITHUB_CLIENT_") { // Passthrough GitHub app credentials (if set) for authed API queries.
-	//		a.Config.ExtraEnvConfig = append(a.Config.ExtraEnvConfig, v)
-	//	}
-	//}
+	for _, v := range os.Environ() {
+		if strings.HasPrefix(v, "GITHUB_CLIENT_") { // Passthrough GitHub app credentials (if set) for authed API queries.
+			a.Config.ExtraEnvConfig = append(a.Config.ExtraEnvConfig, v)
+		}
+	}
 	if err := a.Start(); err != nil {
 		t.Fatal(err)
 	}
