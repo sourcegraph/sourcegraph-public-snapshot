@@ -567,6 +567,7 @@ func (v *locations) UnmarshalJSON(data []byte) error {
 // TestProxy_connections tests that connections are created, reused
 // and resumed as appropriate.
 func TestProxy_connections(t *testing.T) {
+	t.Skip("Disabled https://github.com/sourcegraph/sourcegraph/issues/1331")
 	ctx := context.Background()
 
 	xlang.VFSCreatorsByScheme["test"] = func(root *uri.URI) (vfs.FileSystem, error) {
