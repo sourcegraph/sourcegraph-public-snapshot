@@ -12,7 +12,6 @@ import (
 	"golang.org/x/oauth2"
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/canonicalurl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/returnto"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
@@ -25,21 +24,16 @@ import (
 
 var githubNonceCookiePath = router.Rel.URLTo(router.GitHubOAuth2Receive).Path
 
-func init() {
-	internal.Handlers[router.GitHubOAuth2Initiate] = internal.Handler(serveGitHubOAuth2Initiate)
-	internal.Handlers[router.GitHubOAuth2Receive] = internal.Handler(serveGitHubOAuth2Receive)
-}
-
 func auth0ConfigWithRedirectURL() *oauth2.Config {
 	config := *auth.Auth0Config
 	config.RedirectURL = conf.AppURL.ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String()
 	return &config
 }
 
-// serveGitHubOAuth2Initiate generates the OAuth2 authorize URL
+// ServeGitHubOAuth2Initiate generates the OAuth2 authorize URL
 // (including a nonce state value, also stored in a cookie) and
 // redirects the client to that URL.
-func serveGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
+func ServeGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 	returnTo, err := returnto.URLFromRequest(r)
 	if err != nil {
 		log15.Warn("Invalid return-to URL provided to OAuth2 flow initiation; ignoring.", "err", err)
@@ -78,7 +72,7 @@ func oAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []string, ret
 	return nil
 }
 
-func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error) {
+func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error) {
 	parts := strings.SplitN(r.URL.Query().Get("state"), ":", 2)
 	if len(parts) != 2 {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("invalid OAuth2 authorize client state")}

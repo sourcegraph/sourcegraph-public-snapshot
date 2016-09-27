@@ -7,18 +7,9 @@ import (
 	"path"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/resolveutil"
 )
-
-func init() {
-	if feature.Features.GodocRefs {
-		internal.Handlers[router.GDDORefs] = internal.Handler(serveGDDORefs)
-	}
-}
 
 // isGoRepoPath returns whether pkg is (likely to be) a Go stdlib
 // package import path.

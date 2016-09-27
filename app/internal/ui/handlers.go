@@ -13,7 +13,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
-	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
@@ -36,11 +35,10 @@ func init() {
 	router.Get(routeTopLevel).Handler(httptrace.TraceRoute(internal.Handler(serveAny)))
 	router.PathPrefix("/").Methods("GET").Handler(httptrace.TraceRoute(internal.Handler(serveAny)))
 	router.NotFoundHandler = internal.Handler(serveAny)
+}
 
-	// Attach to app handler's catch-all UI route. This is better than
-	// adding the UI routes to the app router directly because it
-	// keeps the two routers separate.
-	internal.Handlers[approuter.UI] = router
+func Router() *mux.Router {
+	return router
 }
 
 // handler wraps h, calling tmplExec with the HTTP equivalent error

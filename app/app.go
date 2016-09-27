@@ -7,10 +7,13 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/oauth2client"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
@@ -57,10 +60,14 @@ func NewHandler(r *router.Router) http.Handler {
 		http.Redirect(w, r, "/beta", 301)
 	})))
 
-	for route, handlerFunc := range internal.Handlers {
-		r.Get(route).Handler(httptrace.TraceRoute(handlerFunc))
-	}
+	r.Get(router.UI).Handler(ui.Router())
 
+	r.Get(router.GitHubOAuth2Initiate).Handler(httptrace.TraceRoute(internal.Handler(oauth2client.ServeGitHubOAuth2Initiate)))
+	r.Get(router.GitHubOAuth2Receive).Handler(httptrace.TraceRoute(internal.Handler(oauth2client.ServeGitHubOAuth2Receive)))
+
+	if feature.Features.GodocRefs {
+		r.Get(router.GDDORefs).Handler(httptrace.TraceRoute(internal.Handler(serveGDDORefs)))
+	}
 	return handlerutil.WithMiddleware(m, mw...)
 }
 
