@@ -1,26 +1,19 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
 import {Panel} from "sourcegraph/components";
-import {SearchSettings} from "sourcegraph/search/SearchSettings";
 import {GlobalSearch} from "sourcegraph/search/GlobalSearch";
 import * as styles from "sourcegraph/search/styles/SearchResultsPanel.css";
 
 interface Props {
-	repo: string | null;
 	location: any;
 	query: string;
 };
 
-type State = any;
-
-export class SearchResultsPanel extends React.Component<Props, State> {
+export class SearchResultsPanel extends React.Component<Props, {}> {
 	render(): JSX.Element | null {
-		const {repo, location, query} = this.props;
+		const {location, query} = this.props;
 		return (
 			<Panel hoverLevel="low" className={styles.search_panel}>
-				<SearchSettings className={styles.search_settings} innerClassName={styles.search_settings_inner} location={location} repo={repo} />
-				{query && <GlobalSearch className={styles.search_results} query={query} repo={repo} location={location} resultClassName={styles.search_result} />}
+				{query && <GlobalSearch className={styles.search_results} query={query} location={location} resultClassName={styles.search_result} />}
 			</Panel>
 		);
 	}

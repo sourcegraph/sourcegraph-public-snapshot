@@ -1,9 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
-import {Store} from "sourcegraph/Store";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {deepFreeze} from "sourcegraph/util/deepFreeze";
 import * as SearchActions from "sourcegraph/search/SearchActions";
+import {Store} from "sourcegraph/Store";
+import {deepFreeze} from "sourcegraph/util/deepFreeze";
 
 function keyForResults(query: string, repos: string[] | null, notRepos: string[] | null, commitID: string | null, limit: number | null): string {
 	return `${query}#${repos ? repos.join(":") : ""}#${notRepos ? notRepos.join(":") : ""}#${commitID ? commitID : ""}#${limit || ""}`;
@@ -12,7 +10,7 @@ function keyForResults(query: string, repos: string[] | null, notRepos: string[]
 class SearchStoreClass extends Store<any> {
 	content: any;
 
-	reset() {
+	reset(): void {
 		this.content = deepFreeze({});
 	}
 
@@ -20,7 +18,7 @@ class SearchStoreClass extends Store<any> {
 		return this.content[keyForResults(query, repos, notRepos, commitID, limit)] || null;
 	}
 
-	__onDispatch(action) {
+	__onDispatch(action: any): void {
 		switch (action.constructor) {
 		case SearchActions.ResultsFetched: {
 			let p: SearchActions.ResultsFetchedPayload = action.p;

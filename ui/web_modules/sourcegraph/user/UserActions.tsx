@@ -1,9 +1,6 @@
-import {Settings} from "sourcegraph/user";
-
 export type Action =
 	SubmitBetaSubscription |
-	BetaSubscriptionCompleted |
-	UpdateSettings;
+	BetaSubscriptionCompleted
 
 export class SubmitBetaSubscription {
 	email: string;
@@ -31,13 +28,5 @@ export class BetaSubscriptionCompleted {
 	constructor(resp: any) {
 		this.resp = resp;
 		this.eventName = "BetaSubscriptionCompleted";
-	}
-}
-
-export class UpdateSettings {
-	settings: Settings;
-
-	constructor(settings: Settings) {
-		this.settings = settings;
 	}
 }

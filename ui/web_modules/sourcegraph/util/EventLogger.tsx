@@ -6,7 +6,6 @@ import { getRouteParams, getRoutePattern, getViewName } from "sourcegraph/app/ro
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as UserActions from "sourcegraph/user/UserActions";
-import { UserStore } from "sourcegraph/user/UserStore";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { defPathToLanguage, getLanguageExtensionForPath } from "sourcegraph/util/inventory";
 
@@ -24,9 +23,6 @@ class EventLoggerClass {
 
 	constructor() {
 		this._intercomSettings = null;
-
-		// Listen to the UserStore for changes in the user login/logout state.
-		UserStore.addListener(() => this._updateUser());
 
 		// Listen for all Stores dispatches.
 		// You must separately log "frontend" actions of interest,
