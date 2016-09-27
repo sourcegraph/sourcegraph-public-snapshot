@@ -229,16 +229,16 @@ export class Container extends React.Component<Props, State> {
 		if (results && results.Results) {
 			const result = results.Results[r];
 			const resultInfo = {
-				result: result,
 				category: c,
 				rankInCategory: r,
 			};
+			Object.assign(resultInfo, result);
 			const eventProps = {
 				repo: this.props.repo,
-				result: resultInfo,
-				query: this.state.input,
+				quickOpenResult: resultInfo,
+				quickOpenQuery: this.state.input,
 			};
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_JUMP_TO, AnalyticsConstants.ACTION_CLICK, "JumpToItemSelected", eventProps);
+			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_QUICK_OPEN, AnalyticsConstants.ACTION_CLICK, "QuickOpenItemSelected", eventProps);
 			const url = result.URLPath;
 			this.props.dismissModal(true);
 			this.context.router.push(url);

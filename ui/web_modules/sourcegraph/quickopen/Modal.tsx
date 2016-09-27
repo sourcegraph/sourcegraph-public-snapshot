@@ -59,14 +59,14 @@ export class QuickOpenModal extends React.Component<Props, null> {
 				this.dismissModal();
 			}
 			this.props.activateSearch();
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_JUMP_TO, AnalyticsConstants.ACTION_TOGGLE, "JumpToInitiated", this._getEventProps());
+			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_QUICK_OPEN, AnalyticsConstants.ACTION_TOGGLE, "QuickOpenInitiated", this._getEventProps());
 		}
 		event.preventDefault();
 	}
 
 	dismissModal(resultSelected: boolean = false): void {
 		if (!resultSelected) {
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_JUMP_TO, AnalyticsConstants.ACTION_TOGGLE, "JumpToDismissed", this._getEventProps());
+			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_QUICK_OPEN, AnalyticsConstants.ACTION_TOGGLE, "QuickOpenDismissed", this._getEventProps());
 		}
 		this.props.onDismiss();
 	}
