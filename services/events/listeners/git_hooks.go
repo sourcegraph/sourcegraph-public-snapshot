@@ -50,34 +50,33 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 		return
 	}
 
-	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoID})
-	if err != nil {
-		log15.Warn("postPushHook: failed to get repo", "err", err)
-		return
-	}
+	go func() {
+		// Both of these are best effort, so we ignore the errors they
+		// return + kick them off in a goroutine to not block the
+		// clone
 
-	// Ask the Language Processor to prepare the workspace.
-	err = langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
-		// TODO(slimsag): URI is correct only where the repo URI and clone
-		// URI are directly equal.. but CloneURI is only correct (for Go)
-		// when it directly matches the package import path.
-		Repo:   repo.URI,
-		Commit: event.Commit,
-	})
-	if err != nil {
-		log15.Warn("postPushHook: failed to prepare workspace", "err", err)
-	}
-
-	// If we have updated the DefaultBranch, trigger a refresh of the indexes
-	if event.Branch == repo.DefaultBranch {
-		_, err = cl.Async.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
-			Repo:   repoID,
-			Source: fmt.Sprintf("pushhook %s", event.Commit),
-		})
+		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoID})
 		if err != nil {
-			log15.Warn("postPushHook: failed to refresh indexes", "err", err)
+			return
 		}
-	}
+
+		// Ask the Language Processor to prepare the workspace.
+		_ = langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
+			// TODO(slimsag): URI is correct only where the repo URI and clone
+			// URI are directly equal.. but CloneURI is only correct (for Go)
+			// when it directly matches the package import path.
+			Repo:   repo.URI,
+			Commit: event.Commit,
+		})
+
+		// If we have updated the DefaultBranch, trigger a refresh of the indexes
+		if event.Branch == repo.DefaultBranch {
+			_, _ = cl.Async.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
+				Repo:   repoID,
+				Source: fmt.Sprintf("pushhook %s", event.Commit),
+			})
+		}
+	}()
 }
 
 // inventoryHook triggers a Repos.GetInventory call that computes the

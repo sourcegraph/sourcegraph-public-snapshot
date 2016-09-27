@@ -110,10 +110,8 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 		return err
 	}
 
-	// We've just cloned the repository, so kick off a build on the default
-	// branch. This isn't needed for the fs backend because it initializes an
-	// empty repository first and then proceeds to just updateRepo, thus skipping
-	// this clone phase entirely.
+	// We've just cloned the repository, do a sanity check to ensure we
+	// can resolve the DefaultBranch.
 	res, err := svc.Repos(ctx).ResolveRev(elevatedActor(ctx), &sourcegraph.ReposResolveRevOp{
 		Repo: repo.ID,
 		Rev:  repo.DefaultBranch,
@@ -122,27 +120,25 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 		return err
 	}
 
-	// Ask the Language Processor to prepare the workspace. This is async
-	if langp.DefaultClient != nil {
-		err = langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
+	go func() {
+		// Both of these are best effort, so we ignore the errors they
+		// return + kick them off in a goroutine to not block the
+		// clone
+
+		// Ask the Language Processor to prepare the workspace. This is async
+		_ = langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
 			// TODO(slimsag): URI is correct only where the repo URI and clone
 			// URI are directly equal.. but CloneURI is only correct (for Go)
 			// when it directly matches the package import path.
 			Repo:   repo.URI,
 			Commit: res.CommitID,
 		})
-		if err != nil {
-			log15.Warn("cloneRepo: language processor failed to prepare workspace", "err", err, "repo", repo.URI, "commit", res.CommitID, "branch", repo.DefaultBranch)
-		}
-	}
 
-	_, err = svc.Async(ctx).RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
-		Repo:   repo.ID,
-		Source: "clone",
-	})
-	if err != nil {
-		log15.Warn("cloneRepo: failed to enqueue refresh indexes update", "err", err, "repo", repo.URI, "commit", res.CommitID, "branch", repo.DefaultBranch)
-	}
+		_, _ = svc.Async(ctx).RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
+			Repo:   repo.ID,
+			Source: "clone",
+		})
+	}()
 
 	return nil
 }
