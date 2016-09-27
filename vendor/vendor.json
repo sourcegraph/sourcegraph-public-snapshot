@@ -577,6 +577,12 @@
 			"revisionTime": "2016-05-25T05:16:44Z"
 		},
 		{
+			"checksumSHA1": "b1wpzaRN/8xD3nb7i0WKt9BpTLA=",
+			"path": "github.com/slimsag/untargz",
+			"revision": "d9b5a75313e059e175939a7e96ccd849a9530436",
+			"revisionTime": "2016-09-15T23:44:13Z"
+		},
+		{
 			"checksumSHA1": "nTwF2vd3Q8HO3GgQFUEThj+Q978=",
 			"path": "github.com/smartystreets/mafsa",
 			"revision": "1575156d598714bb1c41713191eefb7f5ccf3e8b",

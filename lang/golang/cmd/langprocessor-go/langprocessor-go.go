@@ -49,7 +49,10 @@ func prepareRepo(ctx context.Context, update bool, workspace, repo, commit strin
 
 	// Clone the repository.
 	repoDir := filepath.Join(gopath, "src", repo)
-	return langp.Clone(ctx, update, cloneURI, repoDir, commit)
+	if update {
+		return langp.UpdateRepo(ctx, commit, repoDir)
+	}
+	return langp.FastClone(ctx, cloneURI, commit, repoDir)
 }
 
 var (
@@ -150,7 +153,13 @@ func prepareDeps(ctx context.Context, update bool, workspace, repo, commit strin
 		return err
 	}
 
-	return nil
+	if update {
+		return nil
+	}
+
+	// Restore the repository tarball archive into a full git repository
+	cloneURI := langp.RepoCloneURL(ctx, repo)
+	return langp.RestoreRepo(ctx, cloneURI, commit, repoDir)
 }
 
 func fileURI(ctx context.Context, repo, commit, file string) string {

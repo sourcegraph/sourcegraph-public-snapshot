@@ -38,11 +38,21 @@ func prepareRepo(ctx context.Context, update bool, workspace, repo, commit strin
 
 	repoDir := filepath.Join(workspace, repo)
 	// Clone the repository.
-	return langp.Clone(ctx, update, cloneURI, repoDir, commit)
+	if update {
+		return langp.UpdateRepo(ctx, commit, repoDir)
+	}
+	return langp.FastClone(ctx, cloneURI, commit, repoDir)
 }
 
 func prepareDeps(ctx context.Context, update bool, workspace, repo, commit string) error {
-	return nil
+	if update {
+		return nil
+	}
+	// Restore the repository tarball archive into a full git repository.
+	repo = langp.ResolveRepoAlias(repo)
+	repoDir := filepath.Join(workspace, repo)
+	cloneURI := langp.RepoCloneURL(ctx, repo)
+	return langp.RestoreRepo(ctx, cloneURI, commit, repoDir)
 }
 
 func fileURI(ctx context.Context, repo, commit, file string) string {

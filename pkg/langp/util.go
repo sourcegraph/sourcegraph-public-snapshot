@@ -3,7 +3,10 @@ package langp
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/user"
@@ -13,6 +16,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/slimsag/untargz"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cmdutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
@@ -222,26 +226,129 @@ func CmdRun(ctx context.Context, c *exec.Cmd) (err error) {
 	return nil
 }
 
-// Clone clones the specified repository at the given commit into the specified
-// directory. If update is true, this function assumes the git repository
-// already exists and can just be fetched / updated.
-func Clone(ctx context.Context, update bool, cloneURI, repoDir, commit string) error {
-	if !update {
-		err := CmdRun(ctx, exec.Command("git", "clone", cloneURI, repoDir))
-		if err != nil {
-			return err
-		}
-	} else {
-		// Update our repo to match the remote.
-		cmd := exec.Command("git", "remote", "update", "--prune")
-		cmd.Dir = repoDir
-		if err := CmdRun(ctx, cmd); err != nil {
-			return err
-		}
+// UpdateRepo updates the git repository in the specified directory to the
+// specified revision.
+func UpdateRepo(ctx context.Context, rev, dir string) error {
+	// Update our repo to match the remote.
+	cmd := exec.Command("git", "remote", "update", "--prune")
+	cmd.Dir = dir
+	if err := CmdRun(ctx, cmd); err != nil {
+		return err
 	}
 
 	// Reset to the specific revision.
-	cmd := exec.Command("git", "reset", "--hard", commit)
-	cmd.Dir = repoDir
+	cmd = exec.Command("git", "reset", "--hard", rev)
+	cmd.Dir = dir
 	return CmdRun(ctx, cmd)
+}
+
+var fastCloneClient = &http.Client{
+	Timeout: 30 * time.Second,
+}
+
+// FastClone downloads a tarball archive of the specified repository at the
+// given revision and extracts it to the destination directory. Once finished,
+// the destination directory is not a proper git repository, but it can be
+// later restored to one via RestoreRepo.
+func FastClone(ctx context.Context, repoURI, rev, dir string) (err error) {
+	start := time.Now()
+	span, ctx := opentracing.StartSpanFromContext(ctx, "FastClone (GET + Extract tarball)")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+		}
+		span.Finish()
+	}()
+
+	org, repo, err := splitGitHubCloneURI(repoURI)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		log.Printf("TIME: FastClone %v %s/%s@%s\n", time.Since(start), org, repo, rev)
+	}()
+
+	tarball := &url.URL{
+		Scheme: "https",
+		Host:   "api.github.com",
+		Path:   fmt.Sprintf("repos/%s/%s/tarball/%s", org, repo, rev),
+	}
+	if token, _ := ctx.Value(GitHubTokenKey).(string); token != "" {
+		tarball.RawQuery = "access_token=" + token
+	}
+
+	// Fetch and extract tarball to the destination.
+	resp, err := fastCloneClient.Get(tarball.String())
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	span.SetTag("status", resp.Status)
+	if resp.StatusCode != 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		if len(body) > 1024 {
+			body = body[:1024]
+		}
+		return fmt.Errorf("%s; body: '%s'", resp.Status, string(body))
+	}
+	err = untargz.Extract(resp.Body, dir, &untargz.Opts{
+		TrimPathElements: 1, // Because GitHub archives always have a containing folder named "org-repo".
+	})
+	if err != nil {
+		return err
+	}
+
+	// We fake having a full git repo by just putting the minimal amount
+	// of information in to support:
+	// * git rev-parse --show-toplevel HEAD
+	cmd := exec.Command("git", "init")
+	cmd.Dir = dir
+	if err = CmdRun(ctx, cmd); err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filepath.Join(dir, ".git/HEAD"), []byte(rev+"\n"), 0644)
+	return err
+}
+
+// RestoreRepo restores the specified repoDir, which is assumed to be an
+// extracted tarball of repository sources at the specified revision, back to
+// it's full/complete natural state (i.e. as if you'd just cloned and
+// `git reset --hard <rev>` the repository).
+func RestoreRepo(ctx context.Context, cloneURI, rev, dir string) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "RestoreRepo (tarball -> git repo)")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+		}
+		span.Finish()
+	}()
+
+	cmd := exec.Command("git", "remote", "add", "origin", cloneURI)
+	cmd.Dir = dir
+	if err := CmdRun(ctx, cmd); err != nil {
+		return err
+	}
+	cmd = exec.Command("git", "fetch")
+	cmd.Dir = dir
+	if err := CmdRun(ctx, cmd); err != nil {
+		return err
+	}
+	cmd = exec.Command("git", "checkout", "-f", rev)
+	cmd.Dir = dir
+	return CmdRun(ctx, cmd)
+}
+
+func splitGitHubCloneURI(s string) (org, repo string, err error) {
+	u, err := url.Parse(s)
+	if err != nil {
+		return "", "", err
+	}
+	if u.Host != "github.com" {
+		return "", "", fmt.Errorf("not a github.com clone URI (%q)", s)
+	}
+	parts := strings.Split(u.Path, "/")
+	if len(parts) != 3 {
+		return "", "", fmt.Errorf("FastClone: failed to parse repo URI %q, found parts %q", s, parts)
+	}
+	return parts[1], parts[2], nil
 }

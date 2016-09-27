@@ -18,11 +18,14 @@ var (
 )
 
 func prepareRepo(ctx context.Context, update bool, workspace, repo, commit string) error {
-	cloneURI := langp.RepoCloneURL(ctx, repo)
 	repo = langp.ResolveRepoAlias(repo)
+	cloneURI := langp.RepoCloneURL(ctx, repo)
 
 	// Clone the repository.
-	return langp.Clone(ctx, update, cloneURI, workspace, commit)
+	if update {
+		return langp.UpdateRepo(ctx, commit, workspace)
+	}
+	return langp.FastClone(ctx, cloneURI, commit, workspace)
 }
 
 func main() {
@@ -48,6 +51,15 @@ func main() {
 			WorkDir:     workDir,
 			PrepareRepo: prepareRepo,
 			PrepareDeps: func(ctx context.Context, update bool, workspace, repo, commit string) error {
+				// Restore the repository tarball archive into a full git repository.
+				repo = langp.ResolveRepoAlias(repo)
+				if !update {
+					cloneURI := langp.RepoCloneURL(ctx, repo)
+					if err := langp.RestoreRepo(ctx, cloneURI, commit, workspace); err != nil {
+						return err
+					}
+				}
+
 				return client.Prepare(context.Background(), &langp.RepoRev{
 					Repo:   repo,
 					Commit: commit,
