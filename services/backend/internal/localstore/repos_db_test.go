@@ -274,6 +274,38 @@ func TestRepos_List_query(t *testing.T) {
 	}
 }
 
+func TestRepos_List_sort(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+
+	ctx, _, done := testContext()
+	defer done()
+
+	ctx = github.WithMockHasAuthedUser(ctx, false)
+
+	s := repos{}
+
+	// Add some repos.
+	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "fork/abc", Name: "abc", DefaultBranch: "master", Fork: true}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "owner/abc", Name: "abc", DefaultBranch: "master"}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Expect forks to be ranked lower.
+	repos, err := s.List(ctx, &store.RepoListOp{Query: "abc"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repos[0].URI != "owner/abc" || repos[1].URI != "fork/abc" {
+		t.Errorf("Expected forks to be ranked behind original repos.")
+	}
+}
+
 // TestRepos_List_URIs tests the behavior of Repos.List when called with
 // URIs.
 func TestRepos_List_URIs(t *testing.T) {

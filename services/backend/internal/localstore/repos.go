@@ -460,7 +460,7 @@ func reposListSQL(opt *store.RepoListOp) (string, []interface{}, error) {
 
 	// ORDER BY
 	if uriQuery != "" {
-		orderBySQL = fmt.Sprintf("(lower(name) = %s) DESC, ", arg(strings.ToLower(path.Base(uriQuery))))
+		orderBySQL = fmt.Sprintf("(lower(name) = %s), NOT fork DESC, ", arg(strings.ToLower(path.Base(uriQuery))))
 	}
 	sort := opt.Sort
 	if sort == "" {

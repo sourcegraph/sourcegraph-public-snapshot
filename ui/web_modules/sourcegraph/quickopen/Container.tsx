@@ -248,7 +248,7 @@ export class Container extends React.Component<Props, State> {
 	bindSearchInput(node: HTMLElement): void { this.searchInput = node; }
 
 	updateResults(): void {
-		const query = this.state.input.toLowerCase();
+		const query = this.state.input;
 		const results: Category[] = [];
 		const repo = this.props.repo;
 
@@ -260,7 +260,7 @@ export class Container extends React.Component<Props, State> {
 					let title = sym.name;
 					const kind = symbolKindName(sym.kind);
 					const desc = `${kind ? kind : ""} in ${sym.location.uri}`;
-					let idx = title.toLowerCase().indexOf(query);
+					let idx = title.toLowerCase().indexOf(query.toLowerCase());
 					const path = sym.location.uri;
 					const line = sym.location.range.start.line;
 					symbolResults.push({
@@ -282,7 +282,7 @@ export class Container extends React.Component<Props, State> {
 				interface Scorable {
 					score: number;
 				}
-				let fileResults: (Result & Scorable)[] = files.Files.reduce((acc, file) => rankFile(acc, file, query), []);
+				let fileResults: (Result & Scorable)[] = files.Files.reduce((acc, file) => rankFile(acc, file, query.toLowerCase()), []);
 				fileResults.forEach(file => {
 					file.URLPath = urlToBlob(repo.URI, repo.rev, file.title);
 				});
