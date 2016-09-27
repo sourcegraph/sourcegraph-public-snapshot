@@ -82,16 +82,6 @@ func (p *proxy) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, er
 	return p.Client.ExternalRefs(ctx, r)
 }
 
-func (p *proxy) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLocations, error) {
-	// Determine the root path for the workspace and prepare it.
-	_, err := p.workspace.Prepare(ctx, defSpec.Repo, defSpec.Commit)
-	if err != nil {
-		return nil, err
-	}
-
-	return p.Client.DefSpecRefs(ctx, defSpec)
-}
-
 func (p *proxy) ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error) {
 	// Determine the root path for the workspace and prepare it.
 	_, err := p.workspace.Prepare(ctx, r.Repo, r.Commit)

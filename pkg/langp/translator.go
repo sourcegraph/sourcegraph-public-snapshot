@@ -276,10 +276,6 @@ func (t *translator) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRef
 	return &ExternalRefs{Refs: refs}, nil
 }
 
-func (t *translator) DefSpecRefs(ctx context.Context, defSpec *DefSpec) (*RefLocations, error) {
-	return nil, errors.New("DefSpecRefs is not supported yet")
-}
-
 func (t *translator) Symbols(ctx context.Context, opt *SymbolsQuery) (*Symbols, error) {
 	// Determine the root path for the workspace and prepare it.
 	workspaceStart := time.Now()

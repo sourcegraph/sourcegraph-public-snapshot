@@ -30,7 +30,6 @@ type Server interface {
 	Hover(ctx context.Context, p *Position) (*Hover, error)
 	LocalRefs(ctx context.Context, p *Position) (*RefLocations, error)
 	ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, error)
-	DefSpecRefs(ctx context.Context, d *DefSpec) (*RefLocations, error)
 	Symbols(ctx context.Context, opt *SymbolsQuery) (*Symbols, error)
 	ExportedSymbols(ctx context.Context, r *RepoRev) (*ExportedSymbols, error)
 }
@@ -51,7 +50,6 @@ func NewServer(s Server) http.Handler {
 	mux.Handle("/exported-symbols", handler("/exported-symbols", srv.serveExportedSymbols))
 	mux.Handle("/external-refs", handler("/external-refs", srv.serveExternalRefs))
 	mux.Handle("/defspec-to-position", handler("/defspec-to-position", srv.serveDefSpecToPosition))
-	mux.Handle("/defspec-refs", handler("/defspec-refs", srv.serveDefSpecRefs))
 	mux.Handle("/hover", handler("/hover", srv.serveHover))
 	mux.Handle("/local-refs", handler("/local-refs", srv.serveLocalRefs))
 	mux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -226,30 +224,6 @@ func (s *server) serveDefSpecToPosition(ctx context.Context, body []byte) (inter
 		return nil, fmt.Errorf("Path field must be set")
 	}
 	return s.s.DefSpecToPosition(ctx, &d)
-}
-
-func (s *server) serveDefSpecRefs(ctx context.Context, body []byte) (interface{}, error) {
-	// Decode the user request and ensure that required fields are specified.
-	var d DefSpec
-	if err := json.Unmarshal(body, &d); err != nil {
-		return nil, err
-	}
-	if d.Repo == "" {
-		return nil, fmt.Errorf("Repo field must be set")
-	}
-	if d.Commit == "" {
-		return nil, fmt.Errorf("Commit field must be set")
-	}
-	if d.Unit == "" {
-		return nil, fmt.Errorf("Unit field must be set")
-	}
-	if d.UnitType == "" {
-		return nil, fmt.Errorf("UnitType field must be set")
-	}
-	if d.Path == "" {
-		return nil, fmt.Errorf("Path field must be set")
-	}
-	return s.s.DefSpecRefs(ctx, &d)
 }
 
 func (s *server) serveHover(ctx context.Context, body []byte) (interface{}, error) {

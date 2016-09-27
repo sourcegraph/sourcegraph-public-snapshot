@@ -223,20 +223,6 @@ func (c *Client) LocalRefs(ctx context.Context, p *Position) (*RefLocations, err
 	return &result, nil
 }
 
-// DefSpecRefs resolves references to repository definitions.
-func (c *Client) DefSpecRefs(ctx context.Context, k *DefSpec) (*RefLocations, error) {
-	var result RefLocations
-	for _, cl := range c.clients {
-		var v RefLocations
-		err := c.do(ctx, cl, k.Repo, "defspec-refs", k, &v)
-		if err != nil {
-			return nil, err
-		}
-		result.Refs = append(result.Refs, v.Refs...)
-	}
-	return &result, nil
-}
-
 // ExternalRefs resolves references to repository-external definitions.
 func (c *Client) ExternalRefs(ctx context.Context, r *RepoRev) (*ExternalRefs, error) {
 	var result ExternalRefs
