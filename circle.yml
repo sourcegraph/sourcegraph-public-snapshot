@@ -32,9 +32,7 @@ dependencies:
 
   override:
     - ./dev/ci/install-go.sh
-    - ./dev/ci/packages.sh
     - ./dev/ci/install-test-tools.sh
-    - ./dev/ci/install-gcloud.sh
     - ./dev/ci/install-protobuf.sh
     - ./dev/ci/patch-exec-latency.sh
     - ./dev/ci/versions.sh
