@@ -44,7 +44,7 @@ export class BlobMain extends React.Component<Props, any> {
 	};
 
 	private _editor?: Editor;
-	private _suppressNavigationOnEditorOpened: boolean = false;
+	private _shortCircuitURLNavigationOnEditorOpened: boolean = false;
 
 	constructor(props: Props) {
 		super(props);
@@ -90,17 +90,39 @@ export class BlobMain extends React.Component<Props, any> {
 				// Use absolute commit IDs for the editor model URI.
 				const uri = URI.pathInRepo(nextProps.repo, nextProps.commitID, nextProps.path);
 
-				let range: monaco.IRange | undefined;
+				let range: monaco.IRange;
 				if (typeof nextProps.startLine === "number") {
 					const rop = RangeOrPosition.fromOneIndexed(nextProps.startLine, nextProps.startCol, nextProps.endLine, nextProps.endCol);
-					if (rop) {
-						range = rop.toMonacoRangeAllowEmpty();
-					}
+					range = rop.toMonacoRangeAllowEmpty();
+				} else {
+					// Without a start line, set the cursor to start at the beginning of the document.
+					range = RangeOrPosition.fromOneIndexed(1).toMonacoRangeAllowEmpty();
 				}
 
-				this._suppressNavigationOnEditorOpened = Boolean(prevProps && prevProps.location !== nextProps.location && nextProps.location.action === "POP" && !(prevProps.repo === nextProps.repo && prevProps.rev === nextProps.rev && prevProps.path === nextProps.path));
-				this._editor.setInput(uri, this._suppressNavigationOnEditorOpened ? undefined : range).then(() => {
-					this._suppressNavigationOnEditorOpened = false;
+				// If you are new to this code, you may be confused how this method interacts with _onEditorOpened.
+				// You may also wonder how _shortCircuitURLNavigationOnEditorOpened works. Here's an explanation:
+				//
+				// Calling this._editor.setInput() below will indirectly invoke _onEditorOpened. The other way
+				// _onEditorOpened is invoked is through a jump-to-def. When a user does a jump-to-def, we need to
+				// update the URL so that React/flux will fetch blob contents, etc. Doing this updates props.location,
+				// and therefore this method to be invoked.
+				//
+				// We have the following cases to handle:
+				// - initial page load: starts with _editorPropsChanged, we tell monaco where to move the cursor,
+				///  (the second argument to this._editor.setInput below) and do not need to update the URL
+				// - jump-to-def: starts with _onEditorOpened, which calls router.push(url) and eventually invokes this
+				//   method (at which point, we've already updated the URL and don't need to do so again)
+				// - browser "back": starts with _editorPropsChanged (since props.location is updated), we simply
+				//   tell monaco which uri to open and at what range. This is determined entirely by nextProps.location
+				//   and we don't need _onEditorOpened to update the URL (the browser already did so)
+				//
+				// Therefore, whenever we invoke _onEditorOpened from _editorPropsChanged, we NEVER update URL.
+				// Jump-to-def starts with _onEditorOpened, and starting from that code path we ALWAYS update URL.
+
+				this._shortCircuitURLNavigationOnEditorOpened = true;
+				this._editor.setInput(uri, range).then(() => {
+					// Always reset this bit after opening the editor.
+					this._shortCircuitURLNavigationOnEditorOpened = false;
 				});
 			}
 		}
@@ -127,7 +149,7 @@ export class BlobMain extends React.Component<Props, any> {
 	}
 
 	_onEditorOpened(e: IEditorOpenedEvent): void {
-		if (this._suppressNavigationOnEditorOpened) {
+		if (this._shortCircuitURLNavigationOnEditorOpened) {
 			return;
 		}
 
@@ -162,12 +184,6 @@ export class BlobMain extends React.Component<Props, any> {
 			const r = RangeOrPosition.fromOneIndexed(sel.startLineNumber, startCol, sel.endLineNumber, endCol);
 			url = `${url}#L${r.toString()}`;
 		}
-
-		// TODO(sqs): There is still some glitchiness with
-		// back/forward. For example, if you are in a file and jump to
-		// another def in the file and then go back, you don't go back
-		// to the "mark" (the point from which you jumped to the def);
-		// you go back to the previous def you had jumped to.
 
 		this.context.router.push(url);
 	}
