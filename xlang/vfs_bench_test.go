@@ -20,7 +20,7 @@ import (
 //
 // Run it with:
 //
-//   go test ./xlang -bench VFS -benchmem
+//   go test ./xlang -bench VFS -benchmem -run '^$'
 //
 // Over the local Unix socket, on my (@sqs) workstation, I get about
 // 17 MB/s. TCP is about the same. Changing the parameters (file byte
@@ -42,7 +42,7 @@ func BenchmarkVFSOverJSONRPC2(b *testing.B) {
 	}()
 
 	// Start the test client.
-	conn, err := net.Dial("tcp", ":0")
+	conn, err := net.Dial("tcp", l.Addr().String())
 	if err != nil {
 		b.Fatal("Dial:", err)
 	}
