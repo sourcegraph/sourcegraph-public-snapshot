@@ -234,6 +234,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.mu.Unlock()
 
 		return lsp.ServerCapabilities{
+			ReferencesProvider: true,
 			DefinitionProvider: true,
 			HoverProvider:      true,
 		}, nil
