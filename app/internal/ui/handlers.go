@@ -119,26 +119,6 @@ func serveDefRedirectToDefLanding(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
 }
 
-func serveDefCommon(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	def, repo, err := handlerutil.GetDefCommon(r.Context(), mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
-	if err != nil {
-		return nil, err
-	}
-	m := defMeta(def, repo.URI, true)
-
-	// Def canonical URL is def landing.
-	m.CanonicalURL = canonicalRepoURL(
-		conf.AppURL,
-		routeDefLanding,
-		mux.Vars(r),
-		r.URL.Query(),
-		repo.DefaultBranch,
-		def.CommitID,
-	)
-
-	return m, nil
-}
-
 func serveRepo(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	rr := routevar.ToRepoRev(mux.Vars(r))
 	if rr.Rev == "" {
