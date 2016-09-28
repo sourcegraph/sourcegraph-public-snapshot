@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>Amplitude Tests</title>
+    <link rel="stylesheet" href="mocha.css"/>
+</head>
+<body>
+<div id="mocha"></div>
+<script src="mocha.js"></script>
+<script src="chai.js"></script>
+<script src="sinon.js"></script>
+<script>
+    mocha.ui('bdd');
+    var assert = chai.assert;
+    var expect = chai.expect;
+</script>
+<script src="../../amplitude.js"></script>
+<script src="../../build/tests.js"></script>
+<script>(window.mochaPhantomJS || mocha).run();</script>
+</body>
+</html>

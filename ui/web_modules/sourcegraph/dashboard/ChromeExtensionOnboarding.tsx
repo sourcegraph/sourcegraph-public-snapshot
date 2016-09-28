@@ -35,8 +35,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 	_successHandler() {
 		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionInstalled", {page_name: "ChromeExtensionOnboarding"});
 		EventLogger.setUserProperty("installed_chrome_extension", "true");
-		// TODO(kingy): figure out what you want to do with this.
-		// setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", EventLogger.getAmplitudeIdentificationProps())), 10);
+		setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", EventLogger.getAmplitudeIdentificationProps())), 10);
 		this._continueOnboarding();
 	}
 

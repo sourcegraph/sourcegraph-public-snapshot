@@ -38,6 +38,10 @@ env NODE_ENV=test ./node_modules/.bin/mocha-webpack ./web_modules/path/to/The_Te
   didn't include updates made to templates/_footer.js to support
   CommonJS as of git release tag 1.1.16). **NOTE:** You'll need to
   repeat these steps if you ever update raven-js.
+* amplitude-js had to be patched manually for loading via ES6 modules. The patch
+  consists of updating the package.json "main" script to reference `amplitude.js`,
+  not `src/index.js`. **NOTE:** You'll need to repeat this step if you ever
+  update amplitude-js.
 * react-icons has a dependency (react-icon-base) which shows a deprecation warning
   for using the className attribute on <svg> elements (which is provided by
   parent components in our application). The patch consists of changing
