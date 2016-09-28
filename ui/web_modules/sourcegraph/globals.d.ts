@@ -1,5 +1,7 @@
 /* tslint:disable */
 
+/// <reference path="../../node_modules/monaco-editor/monaco.d.ts" />
+
 declare var require: {
 	(path: string): any;
 	(paths: string[], callback: (...modules: any[]) => void): void;
