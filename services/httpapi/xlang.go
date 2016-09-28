@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
@@ -39,7 +40,32 @@ var xlangCreateConnection = func() (xlangClient, error) {
 	return xlang.DialProxy(dialCtx, addr, nil)
 }
 
-func serveXLang(w http.ResponseWriter, r *http.Request) error {
+var xlangRequestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	Namespace: "src",
+	Subsystem: "xlang",
+	Name:      "request_duration_seconds",
+	Help:      "The xlang request latencies in seconds.",
+	// Buckets are similar to statsutil.UserLatencyBuckets, but with more granularity for apdex measurements.
+	Buckets: []float64{0.1, 0.2, 0.5, 0.8, 1, 1.5, 2, 5, 10, 15, 20, 30},
+}, []string{"success", "method"})
+
+func init() {
+	prometheus.MustRegister(xlangRequestDuration)
+}
+
+func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
+	start := time.Now()
+	defer func() {
+		duration := time.Now().Sub(start)
+		v := mux.Vars(r)
+		method := v["LSPMethod"]
+		labels := prometheus.Labels{
+			"success": fmt.Sprintf("%t", err == nil),
+			"method":  method,
+		}
+		xlangRequestDuration.With(labels).Observe(duration.Seconds())
+	}()
+
 	if os.Getenv("DISABLE_XLANG_HTTP_GATEWAY") != "" {
 		// Escape valve in case it causes production issues and we
 		// need to quickly disable it.
