@@ -3,7 +3,6 @@ import {PlainRoute} from "react-router";
 import {matchPattern} from "react-router/lib/PatternUtils";
 
 export type RouteName = "styleguide" |
-	"search" |
 	"home" |
 	"integrations" |
 	"tool" |
@@ -27,7 +26,6 @@ export type RouteName = "styleguide" |
 export const rel = {
 	// NOTE: If you add a top-level route (e.g., "/about"), add it to the
 	// topLevel list in app/internal/ui/router.go.
-	search: "search",
 	about: "about",
 	beta: "beta",
 	contact: "contact",
@@ -50,7 +48,6 @@ export const rel = {
 };
 
 export const abs = {
-	search: rel.search,
 	about: rel.about,
 	contact: rel.contact,
 	security: rel.security,

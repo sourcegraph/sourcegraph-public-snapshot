@@ -1,7 +1,6 @@
 import {PlainRoute} from "react-router";
 import {User} from "sourcegraph/api";
 import {rel} from "sourcegraph/app/routePatterns";
-import {SearchSettings} from "sourcegraph/search";
 import {Login} from "sourcegraph/user/Login";
 import {Signup} from "sourcegraph/user/Signup";
 
@@ -15,10 +14,6 @@ export interface ExternalToken {
 	uid: number;
 	host: string;
 	scope: string;
-};
-
-export interface Settings {
-	search: SearchSettings | null;
 };
 
 export const routes: PlainRoute[] = [

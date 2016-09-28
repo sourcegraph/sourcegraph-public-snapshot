@@ -51,8 +51,6 @@
 																"state": {},
 																"key": "foo"
 															},
-															"router": {},
-															"showResultsPanel": true,
 															"style": {
 																"flex": "1 1 100%",
 																"margin": "0 8px"
@@ -108,14 +106,7 @@
 																							"props": {
 																								"to": "github.com/sourcegraph/checkup/-/blob/checkup.go",
 																								"children": [
-																									{
-																										"type": "span",
-																										"props": {
-																											"children": [
-																												"sourcegraph / checkup"
-																											]
-																										}
-																									}
+																									"sourcegraph / checkup"
 																								],
 																								"onlyActiveOnIndex": false,
 																								"style": {}
@@ -142,14 +133,7 @@
 																							"props": {
 																								"to": "github.com/gorilla/mux/-/blob/mux.go",
 																								"children": [
-																									{
-																										"type": "span",
-																										"props": {
-																											"children": [
-																												"gorilla / mux"
-																											]
-																										}
-																									}
+																									"gorilla / mux"
 																								],
 																								"onlyActiveOnIndex": false,
 																								"style": {}
@@ -184,14 +168,7 @@
 																							"props": {
 																								"to": "github.com/sourcegraph/thyme/-/blob/cmd/thyme/main.go",
 																								"children": [
-																									{
-																										"type": "span",
-																										"props": {
-																											"children": [
-																												"sourcegraph / thyme"
-																											]
-																										}
-																									}
+																									"sourcegraph / thyme"
 																								],
 																								"onlyActiveOnIndex": false,
 																								"style": {}
@@ -218,14 +195,7 @@
 																							"props": {
 																								"to": "https://sourcegraph.com/github.com/golang/go/-/blob/src/net/http/request.go",
 																								"children": [
-																									{
-																										"type": "span",
-																										"props": {
-																											"children": [
-																												"golang / go"
-																											]
-																										}
-																									}
+																									"golang / go"
 																								],
 																								"onlyActiveOnIndex": false,
 																								"style": {}

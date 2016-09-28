@@ -1,21 +1,15 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
-import * as styles from "sourcegraph/home/styles/BetaInterestForm.css";
-import {Button, Input, CheckboxList} from "sourcegraph/components";
-import * as Dispatcher from "sourcegraph/Dispatcher";
-import * as UserActions from "sourcegraph/user/UserActions";
-import * as base from "sourcegraph/components/styles/_base.css";
-import {languages, editors} from "sourcegraph/home/HomeUtils";
-import {langName} from "sourcegraph/Language";
-import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
-import {UserStore} from "sourcegraph/user/UserStore";
-import {Container} from "sourcegraph/Container";
 import * as classNames from "classnames";
-import {Store} from "sourcegraph/Store";
+import * as React from "react";
 import {context} from "sourcegraph/app/context";
-
-type OnChangeListener = () => void;
+import {Component} from "sourcegraph/Component";
+import {Button, CheckboxList, Input} from "sourcegraph/components";
+import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
+import * as base from "sourcegraph/components/styles/_base.css";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {editors, languages} from "sourcegraph/home/HomeUtils";
+import * as styles from "sourcegraph/home/styles/BetaInterestForm.css";
+import {langName} from "sourcegraph/Language";
+import * as UserActions from "sourcegraph/user/UserActions";
 
 interface Props {
 	onSubmit?: () => void;
@@ -26,7 +20,7 @@ interface Props {
 
 type State = any;
 
-export class BetaInterestForm extends Container<Props, State> {
+export class BetaInterestForm extends Component<Props, State> {
 	_dispatcherToken: string;
 
 	// TODO(slimsag): these should be 'element' type?
@@ -54,21 +48,17 @@ export class BetaInterestForm extends Container<Props, State> {
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
 
-	stores(): Store<any>[] {
-		return [UserStore];
-	}
-
 	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 	}
 
-	_onDispatch(action) {
+	_onDispatch(action: any): void {
 		if (action instanceof UserActions.BetaSubscriptionCompleted) {
 			this.setState({resp: action.resp});
 		}
 	}
 
-	_onChange() {
+	_onChange(): void {
 		window.localStorage["beta-interest-form"] = JSON.stringify({
 			fullName: this._fullName["value"],
 			email: this._email ? this._email["value"] : "",
@@ -78,7 +68,7 @@ export class BetaInterestForm extends Container<Props, State> {
 		});
 	}
 
-	_sendForm(ev) {
+	_sendForm(ev: any): void {
 		ev.preventDefault();
 		const name = this._fullName["value"];
 		let firstName;
