@@ -351,9 +351,10 @@
 			"revisionTime": "2016-05-04T02:26:26Z"
 		},
 		{
+			"checksumSHA1": "dNYxHiBLalTqluak2/Z8c3RsSEM=",
 			"path": "github.com/lib/pq",
-			"revision": "3e3efe51a0c4b23e817075438703cb15bd58c1a8",
-			"revisionTime": "2014-12-27T13:56:34+01:00"
+			"revision": "50761b0867bd1d9d069276790bcd4a3bccf2324a",
+			"revisionTime": "2016-08-31T22:25:20Z"
 		},
 		{
 			"path": "github.com/lib/pq/oid",
