@@ -10,6 +10,8 @@ import {Search as SearchIcon} from "sourcegraph/components/symbols";
 import {Spinner as LoadingIcon} from "sourcegraph/components/symbols";
 import {colors} from "sourcegraph/components/utils/index";
 
+import {URI} from "sourcegraph/core/uri";
+
 import {urlToBlob, urlToBlobLine} from "sourcegraph/blob/routes";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
@@ -100,7 +102,7 @@ export interface SearchDelegate {
 // by the view.
 function resultsToArray(results: Results): Category[] {
 	const {symbols, files, repos} = results;
-	return [files, symbols, repos];
+	return [symbols, files, repos];
 }
 
 // SearchContainer contains the logic that deals with navigation and data
@@ -229,9 +231,8 @@ export class Container extends React.Component<Props, State> {
 	fetchResults(): void {
 		const query = this.state.input;
 		Dispatcher.Backends.dispatch(new RepoActions.WantRepos(this.repoListQueryString(query)));
-		if (this.props.repo !== null && this.state.commitID)  {
-			const rev = this.props.repo.rev || "";
-			Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.repo.URI, rev, query));
+		if (this.props.repo !== null && this.state.commitID) {
+			Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.repo.URI, this.state.commitID, query));
 			Dispatcher.Backends.dispatch(new TreeActions.WantFileList(this.props.repo.URI, this.state.commitID));
 		}
 	}
@@ -276,24 +277,28 @@ export class Container extends React.Component<Props, State> {
 		const query = this.state.input;
 		const repo = this.props.repo;
 		let {symbols, files, repos} = cloneDeep(this.state.results);
+		const commitID = this.state.commitID;
 
 		// Update symbols
 		if (repo && this.state.commitID) {
-			const updatedSymbols = RepoStore.symbols.list(repo.URI, repo.rev, query);
+			const updatedSymbols = RepoStore.symbols.list(repo.URI, commitID, query);
 			if (updatedSymbols) {
 				const symbolResults: Result[] = [];
 				updatedSymbols.forEach(sym => {
 					let title = sym.name;
+					if (sym.containerName) {
+						title = `${sym.containerName}.${sym.name}`;
+					}
 					const kind = symbolKindName(sym.kind);
-					const desc = `${kind ? kind : ""} in ${sym.location.uri}`;
+					const {path} = URI.repoParamsExt(sym.location.uri);
+					const desc = `${kind ? kind : ""} in ${path}`;
 					let idx = title.toLowerCase().indexOf(query.toLowerCase());
-					const path = sym.location.uri;
 					const line = sym.location.range.start.line;
 					symbolResults.push({
 						title: title,
 						description: desc,
-						index: idx,
-						length: query.length,
+						index: idx !== -1 ? idx : 0,
+						length: idx !== -1 ? query.length : 0,
 						URLPath: urlToBlobLine(repo.URI, repo.rev, path, line + 1),
 					});
 				});
