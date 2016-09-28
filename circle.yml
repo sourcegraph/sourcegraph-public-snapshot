@@ -14,7 +14,7 @@ machine:
     PGUSER: ubuntu
     PGDATABASE: circle_test
     PGSSLMODE: disable
-    PATH: $HOME/google-cloud-sdk/bin:$HOME/protobuf-3.1.0/src:$PATH
+    PATH: $HOME/protobuf-3.1.0/src:$PATH
     REDIS_MASTER_ENDPOINT: ":6379"
     CLOUDSDK_CORE_DISABLE_PROMPTS: 1
     LONG_VERSION: $(printf %05d $CIRCLE_BUILD_NUM)_$(date +%Y-%m-%d)_${CIRCLE_SHA1:0:7}
@@ -26,7 +26,6 @@ machine:
 
 dependencies:
   cache_directories:
-    - ~/google-cloud-sdk
     - ~/protobuf-3.1.0/src
     - ~/cache
 
