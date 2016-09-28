@@ -7,6 +7,7 @@ import (
 	"net"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/neelance/parallel"
 
@@ -34,7 +35,7 @@ func BenchmarkVFSOverJSONRPC2(b *testing.B) {
 	if err != nil {
 		b.Fatal("Listen:", err)
 	}
-	sh := &vfsBenchServerHandler{rootPath: "/"}
+	sh := &vfsBenchServerHandler{simulatedLatency: 10 * time.Millisecond}
 	go func() {
 		if err := jsonrpc2.Serve(ctx, l, jsonrpc2.HandlerWithError(sh.handle)); err != nil {
 			b.Fatal("jsonrpc2.Serve:", err)
@@ -49,8 +50,9 @@ func BenchmarkVFSOverJSONRPC2(b *testing.B) {
 	c := jsonrpc2.NewConn(ctx, conn, jsonrpc2.HandlerWithError(vfsBenchClientHandler{}.handle))
 
 	contents := strings.Repeat("x", 1024*30)
-	batches := make([][]vfsBenchFile, 10)
-	filesPerBatch := 10
+	totalFiles := 2500
+	filesPerBatch := 1
+	batches := make([][]vfsBenchFile, totalFiles/filesPerBatch)
 	for b := range batches {
 		batches[b] = make([]vfsBenchFile, filesPerBatch)
 		for f := range batches[b] {
@@ -62,7 +64,7 @@ func BenchmarkVFSOverJSONRPC2(b *testing.B) {
 	}
 
 	npar := 4
-	b.Logf("sending ~%.1f MB total (%d batches, each with %d files of %d bytes each) with parallelism %d", float64(len(contents)*len(batches)*filesPerBatch)/1024/1024, len(batches), filesPerBatch, len(contents), npar)
+	b.Logf("sending ~%.1f MB total (%d batches, each with %d files of %d bytes each) with parallelism %d and %s simulated rtt latency", float64(len(contents)*len(batches)*filesPerBatch)/1024/1024, len(batches), filesPerBatch, len(contents), npar, sh.simulatedLatency)
 	b.SetBytes(int64(len(contents) * len(batches) * filesPerBatch))
 
 	par := parallel.NewRun(npar)
@@ -93,10 +95,12 @@ func (vfsBenchClientHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, re
 }
 
 type vfsBenchServerHandler struct {
-	rootPath string
+	simulatedLatency time.Duration
 }
 
 func (h vfsBenchServerHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
+	time.Sleep(h.simulatedLatency)
+
 	switch req.Method {
 	case "create":
 		var files []vfsBenchFile
