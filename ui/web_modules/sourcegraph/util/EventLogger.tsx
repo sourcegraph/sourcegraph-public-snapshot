@@ -10,7 +10,6 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 import { defPathToLanguage, getLanguageExtensionForPath } from "sourcegraph/util/inventory";
 
 class EventLoggerClass {
-	_amplitude: any = null;
 	_intercom: any = null;
 	_fullStory: any = null;
 	_telligent: any = null;
@@ -20,6 +19,7 @@ class EventLoggerClass {
 	_dispatcherToken: any;
 	_currentPlatform: string = "Web";
 	_currentPlatformVersion: string = "";
+	_gaClientID: string;
 
 	constructor() {
 		this._intercomSettings = null;
@@ -53,28 +53,16 @@ class EventLoggerClass {
 		}
 	}
 
-	// init initializes Amplitude and Intercom.
+	// init initializes Telligent and Intercom.
 	init(): void {
-		if (global.window && !this._amplitude) {
-			this._amplitude = require("amplitude-js");
-
+		if (global.window) {
 			this._telligent = global.window.telligent;
 
-			let apiKey = "608f75cce80d583063837b8f5b18be54";
 			let env = "development";
-			if (context.buildVars.Version === "dev") {
-				apiKey = "2b4b1117d1faf3960c81899a4422a222";
-			} else {
+			if (context.buildVars.Version !== "dev") {
 				switch (context.appURL) {
 					case "https://sourcegraph.com":
-						apiKey = "e3c885c30d2c0c8bf33b1497b17806ba";
 						env = "production";
-						break;
-					case "https://staging.sourcegraph.com":
-					case "https://staging2.sourcegraph.com":
-					case "https://staging3.sourcegraph.com":
-					case "https://staging4.sourcegraph.com":
-						apiKey = "903f9390c3eefd5651853cf8dbd9d363";
 						break;
 					default:
 						break;
@@ -95,10 +83,6 @@ class EventLoggerClass {
 					webPage: true,
 				},
 			});
-
-			this._amplitude.init(apiKey, null, {
-				includeReferrer: true,
-			});
 		}
 
 		if (global.window.Intercom) { this._intercom = global.window.Intercom; }
@@ -110,8 +94,9 @@ class EventLoggerClass {
 
 		this.userAgentIsBot = Boolean(context.userAgentIsBot);
 
-		// Opt out of Amplitude events if the user agent is a bot.
-		this._amplitude.setOptOut(this.userAgentIsBot);
+		global.window.ga(function(tracker: any): any {
+				this._gaClientID = tracker.get("clientId");
+		}.bind(this));
 
 		this._updateUser();
 	}
@@ -126,8 +111,6 @@ class EventLoggerClass {
 		const emails = context.emails && context.emails.EmailAddrs || null;
 
 		const primaryEmail = (emails && emails.filter(e => e.Primary).map(e => e.Email)[0]) || null;
-
-		this._updateUserForAmplitudeCookies();
 
 		if (context.user) {
 			this._setTrackerLoginInfo(context.user.Login);
@@ -175,10 +158,6 @@ class EventLoggerClass {
 	}
 
 	logout(): void {
-		// Distinguish between 2 users who log in from the same browser; see
-		// https://github.com/amplitude/Amplitude-Javascript#logging-out-and-anonymous-users.
-		if (this._amplitude) { this._amplitude.regenerateDeviceId(); }
-
 		// Prevent the next user who logs in (e.g., on a public terminal) from
 		// seeing the previous user's Intercom messages.
 		if (this._intercom) { this._intercom("shutdown"); }
@@ -186,18 +165,8 @@ class EventLoggerClass {
 		if (this._fullStory) { this._fullStory.clearUserCookie(); }
 	}
 
-	_updateUserForAmplitudeCookies(): void {
-		if (this._amplitude && this._amplitude.options && this._amplitude.options.deviceId) {
-			this.setAmplitudeDeviceIdForTrackers(this._amplitude.options.deviceId);
-		}
-	}
-
 	// Responsible for setting the login information for all event trackers
 	_setTrackerLoginInfo(loginInfo: string): void {
-		if (this._amplitude) {
-			this._amplitude.setUserId(loginInfo);
-		}
-
 		if (global.window.ga) {
 			global.window.ga("set", "userId", loginInfo);
 		}
@@ -213,17 +182,33 @@ class EventLoggerClass {
 		}
 	}
 
-	getAmplitudeIdentificationProps(): any {
-		if (!this._amplitude || !this._amplitude.options) {
+	/*
+	* Function to extract the Telligent user ID from the first-party cookie set by the Telligent JavaScript Tracker
+	*
+	* @return string or bool The ID string if the cookie exists or false if the cookie has not been set yet
+	*/
+	_getTelligentDuid(): string | null {
+		let cookieName = "_te_";
+		let matcher = new RegExp(cookieName + "id\\.[a-f0-9]+=([^;]+);?");
+		let match = document.cookie.match(matcher);
+		if (match && match[1]) {
+			return match[1].split(".")[0];
+		} else {
+			return null;
+		}
+	}
+
+	updateTrackerWithIdentificationProps(): any {
+		if (!this._telligent) {
 			return null;
 		}
 
-		return { detail: { deviceId: this._amplitude.options.deviceId, userId: context.user && context.user.Login } };
-	}
-
-	setAmplitudeDeviceIdForTrackers(value: string): void {
-		if (this._telligent) {
-			this._telligent("addStaticMetadataObject", { deviceInfo: { AmplitudeDeviceId: value } });
+		let idProps = { detail: { deviceId: this._getTelligentDuid(), userId: context.user && context.user.Login } };
+		if (global.window.ga) {
+			this._telligent("addStaticMetadataObject", {deviceInfo: {GAClientId: this._gaClientID}});
+			setTimeout(() =>  document.dispatchEvent(new CustomEvent("sourcegraph:identify", Object.assign(idProps, {gaClientId: this._gaClientID}))), 20);
+		} else {
+			setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", idProps)), 20);
 		}
 	}
 
@@ -232,17 +217,13 @@ class EventLoggerClass {
 		if (this._telligent) {
 			this._telligent("addStaticMetadata", property, value, "userInfo");
 		}
-
-		if (this._amplitude) {
-			this._amplitude.identify(new this._amplitude.Identify().set(property, value));
-		}
 	}
 
 	_decorateEventProperties(platformProperties: any): any {
 		return Object.assign({}, platformProperties, {Platform: this._currentPlatform, platformVersion: this._currentPlatformVersion, is_authed: context.user ? "true" : "false", path_name: global.window && global.window.location && global.window.location.pathname ? global.window.location.pathname.slice(1) : ""});
 	}
 
-	// Use logViewEvent as the default way to log view events for Amplitude and GA
+	// Use logViewEvent as the default way to log view events for Telligent and GA
 	// location is the URL, page is the path.
 	logViewEvent(title: string, page: string, eventProperties: any): void {
 		if (context.userAgentIsBot || !page) {
@@ -254,9 +235,6 @@ class EventLoggerClass {
 		if (this._telligent) {
 			this._telligent("track", "view", Object.assign({}, this._decorateEventProperties(eventProperties), {page_name: page, page_title: title}));
 		}
-
-		// Log Amplitude "View" event
-		this._amplitude.logEvent(title, Object.assign({}, eventProperties, { Platform: this._currentPlatform }));
 	}
 
 	// Default tracking call to all of our analytics servies.
@@ -270,9 +248,7 @@ class EventLoggerClass {
 		if (this._telligent) {
 			this._telligent("track", eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
 		}
-		if (this._amplitude) {
-			this._amplitude.logEvent(eventLabel, Object.assign({}, this._decorateEventProperties(eventProperties), {eventCategory: eventCategory, eventAction: eventAction}));
-		}
+
 		this._logToConsole(eventAction, Object.assign(this._decorateEventProperties(eventProperties),  {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
 
 		if (global && global.window) {
@@ -303,9 +279,6 @@ class EventLoggerClass {
 
 		if (this._telligent) {
 			this._telligent("track", eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
-		}
-		if (this._amplitude) {
-			this._amplitude.logEvent(eventLabel, Object.assign({}, this._decorateEventProperties(eventProperties), {eventCategory: eventCategory, eventAction: eventAction}));
 		}
 
 		global.window.ga("send", {
@@ -415,8 +388,8 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 			// values are updated.
 			if (this.props.location.pathname !== nextProps.location.pathname) {
 				this._logView(nextProps.routes, nextProps.location);
-				// Set the identity of the chrome extension only after it is mounted.
-				setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", EventLogger.getAmplitudeIdentificationProps())), 50);
+				// Greedily update the event logging tracker identity 
+				EventLogger.updateTrackerWithIdentificationProps();
 			}
 
 			this._checkEventQuery();
