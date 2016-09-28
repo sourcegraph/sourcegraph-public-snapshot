@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"go/types"
-	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
@@ -26,13 +25,13 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2Conn, req *j
 	qf := func(*types.Package) string { return "" }
 
 	var s string
-	if o != nil {
+	if f, ok := o.(*types.Var); ok && f.IsField() {
+		// TODO(sqs): make this be like (T).F not "struct field F string".
+		s = "struct " + o.String()
+	} else if o != nil {
 		s = types.ObjectString(o, qf)
 	} else if t != nil {
 		s = types.TypeString(t, qf)
-	}
-	if strings.HasPrefix(s, "field ") && t != nil {
-		s += ": " + t.String()
 	}
 
 	return &lsp.Hover{

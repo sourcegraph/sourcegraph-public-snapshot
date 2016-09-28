@@ -42,7 +42,7 @@ func TestProxy(t *testing.T) {
 		wantReferences map[string][]string
 		otherVFS       map[string]vfs.FileSystem
 	}{
-		"go": {
+		"go basic": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
 			fs: mapfs.New(map[string]string{
@@ -78,6 +78,16 @@ func TestProxy(t *testing.T) {
 					"git://test/pkg?master#a.go:1:23",
 					"git://test/pkg?master#b.go:1:23",
 				},
+			},
+		},
+		"go detailed": {
+			rootPath: "git://test/pkg?master",
+			mode:     "go",
+			fs: mapfs.New(map[string]string{
+				"a.go": "package p; type T struct { F string }",
+			}),
+			wantHover: map[string]string{
+			// "a.go:1:28": "(T).F string", // TODO(sqs): see golang/hover.go; this is the output we want
 			},
 		},
 		"go subdirectory in repo": {
