@@ -37,7 +37,6 @@ export function AboutPage(props: {}) {
 				<Heading level="4" underline="blue" className={styles.h5}>Using Sourcegraph</Heading>
 				<p className={styles.p}>Try it:</p>
 				<ul>
-					<li><Link to="/search?q=http.NewRequest">Instantly jump to any function/type/package in any repository</Link> — global, semantic code search</li>
 					<li><a href="/github.com/golang/go/-/info/GoPackage/net/http/-/NewRequest">See where/how a function/type/package is used, across all repositories</a> — live usage examples &amp; global cross-refs</li>
 				</ul>
 				<p className={styles.p}>No installation or signup required. <em>It just works</em>, for both open-source code and your private projects (unless you do crazy stuff with your build tooling).</p>

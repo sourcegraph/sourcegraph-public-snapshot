@@ -10,7 +10,7 @@ But staying in flow is hard. While coding, you often waste minutes digging for e
 
 ##### Try Sourcegraph:
 
-* [:mag_right: Instantly jump to any function/type/package in any repository — ***global, semantic code search***](https://sourcegraph.com/search?q=http.NewRequest)
+* :mag_right: Instantly jump to any function/type/package in any repository — ***global, semantic code search***
 * [:earth_africa: See where/how a function/type/package is used, across all repositories — ***live usage examples & global cross-refs***](https://sourcegraph.com/github.com/golang/go/-/info/GoPackage/net/http/-/NewRequest)
 * [:zap: Navigate and jump around code like an IDE](https://sourcegraph.com/github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest)
 
@@ -49,7 +49,7 @@ You can also:
 
 * [How do I call this function?](https://sourcegraph.com/github.com/golang/go/-/info/GoPackage/net/http/-/NewRequest)
 * [Who else uses this package?](https://sourcegraph.com/github.com/gorilla/mux/-/info/GoPackage/github.com/gorilla/mux/-/NewRouter)
-* [Where in the world is this type defined?](https://sourcegraph.com/search?q=websocket.Upgrader)
+* Where in the world is this type defined?
 
 
 ## Contributing
