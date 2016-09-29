@@ -31,7 +31,7 @@ const plugins = [
 	new ProgressBarPlugin(),
 ];
 
-if (production && !process.env.WEBPACK_QUICK) {
+if (production) {
 	plugins.push(
 		new webpack.optimize.OccurrenceOrderPlugin(),
 		new webpack.optimize.DedupePlugin(),
@@ -44,7 +44,7 @@ if (production && !process.env.WEBPACK_QUICK) {
 	);
 }
 
-const useHot = !production || process.env.WEBPACK_QUICK;
+const useHot = !production;
 if (useHot) {
 	plugins.push(
 		new webpack.HotModuleReplacementPlugin()
@@ -81,6 +81,11 @@ plugins.push(new UnusedFilesWebpackPlugin({
 	},
 }));
 
+var devtool = "source-map";
+if (!production) {
+	devtool = process.env.WEBPACK_SOURCEMAPS ? "eval-source-map" : "eval";
+}
+
 module.exports = {
 	name: "browser",
 	target: "web",
@@ -92,7 +97,7 @@ module.exports = {
 		modules: [`${__dirname}/web_modules`, "node_modules"],
 		extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
 	},
-	devtool: (production && !process.env.WEBPACK_QUICK) ? "source-map" : "eval",
+	devtool: devtool,
 	output: {
 		path: `${__dirname}/assets`,
 		filename: "[name].browser.js",
