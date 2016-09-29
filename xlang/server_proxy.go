@@ -303,7 +303,7 @@ func (c *serverProxyConn) presendFiles(ctx context.Context, rootFS vfs.FileSyste
 		par.Acquire()
 		go func(path string, contents []byte) {
 			defer par.Release()
-			if err := c.conn.Notify(ctx,
+			if err := c.conn.Call(ctx,
 				"textDocument/didOpen",
 				lsp.DidOpenTextDocumentParams{
 					TextDocument: lsp.TextDocumentItem{
@@ -311,6 +311,7 @@ func (c *serverProxyConn) presendFiles(ctx context.Context, rootFS vfs.FileSyste
 						Text: string(contents),
 					},
 				},
+				nil,
 				addTraceMeta(ctx),
 			); err != nil {
 				par.Error(err)
