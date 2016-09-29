@@ -1016,16 +1016,6 @@ message DefsListRefLocationsOp {
 	DefListRefLocationsOptions Opt = 2;
 }
 
-// DefsListExamples holds the options for fetching
-// usage examples referencing the specified def.
-message DefsListExamplesOp {
-	// Def identifies the definition whose examples are requested.
-	DefSpec Def = 1 [(gogoproto.nullable) = false];
-
-	// ListOptions specifies options for paginating the result.
-	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
 // RefLocationsList lists the repos and files that reference a def.
 message RefLocationsList {
 	// RepoRefs holds the repos and files referencing the def.
@@ -1197,9 +1187,6 @@ service Defs {
 
 	// ListRefLocations lists repos and files that refer to def.
 	rpc ListRefLocations(DefsListRefLocationsOp) returns (RefLocationsList);
-
-	// ListExamples lists usage examples for a given def.
-	rpc ListExamples(DefsListExamplesOp) returns (RefLocationsList);
 
 	// ListAuthors lists people who committed parts of def's definition.
 	rpc ListAuthors(DefsListAuthorsOp) returns (DefAuthorList);

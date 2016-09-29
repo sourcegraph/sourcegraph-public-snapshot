@@ -365,12 +365,6 @@ export interface DefsListAuthorsOp {
 	Opt?: DefListAuthorsOptions;
 }
 
-export interface DefsListExamplesOp {
-	Def: DefSpec;
-	PerPage?: number;
-	Page?: number;
-}
-
 export interface DefsListRefLocationsOp {
 	Def: DefSpec;
 	Opt?: DefListRefLocationsOptions;

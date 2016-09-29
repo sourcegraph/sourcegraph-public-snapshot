@@ -14,7 +14,6 @@ import (
 
 func init() {
 	stores := store.Stores{
-		DefExamples:  &examples{},
 		Defs:         &defs{},
 		GlobalDeps:   &globalDeps{},
 		GlobalRefs:   &globalRefs{},

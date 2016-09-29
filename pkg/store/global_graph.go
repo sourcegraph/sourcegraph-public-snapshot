@@ -19,12 +19,6 @@ type GlobalRefs interface {
 	Update(ctx context.Context, op RefreshIndexOp) error
 }
 
-// DefExamples defines the interface for getting and listing def usage examples.
-type DefExamples interface {
-	// Get returns the list of example locations for a given def.
-	Get(ctx context.Context, op *sourcegraph.DefsListExamplesOp) (*sourcegraph.RefLocationsList, error)
-}
-
 type RepoUnit struct {
 	Repo     int32
 	Unit     string

@@ -19,7 +19,6 @@ import (
 
 // Stores has a field for each store interface.
 type Stores struct {
-	DefExamples  DefExamples
 	Defs         Defs
 	GlobalDeps   GlobalDeps
 	GlobalRefs   GlobalRefs
@@ -34,8 +33,7 @@ type Stores struct {
 type contextKey int
 
 const (
-	_DefExamplesKey contextKey = iota
-	_DefsKey
+	_DefsKey contextKey = iota
 	_GlobalDepsKey
 	_GlobalRefsKey
 	_GraphKey
@@ -48,9 +46,6 @@ const (
 
 // WithStores returns a copy of parent with the given stores. If a store's field value is nil, its previous value is inherited from parent in the new context.
 func WithStores(ctx context.Context, s Stores) context.Context {
-	if s.DefExamples != nil {
-		ctx = WithDefExamples(ctx, s.DefExamples)
-	}
 	if s.Defs != nil {
 		ctx = WithDefs(ctx, s.Defs)
 	}
@@ -79,20 +74,6 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 		ctx = WithRepos(ctx, s.Repos)
 	}
 	return ctx
-}
-
-// WithDefExamples returns a copy of parent with the given DefExamples store.
-func WithDefExamples(parent context.Context, s DefExamples) context.Context {
-	return context.WithValue(parent, _DefExamplesKey, s)
-}
-
-// DefExamplesFromContext gets the context's DefExamples store. If the store is not present, it panics.
-func DefExamplesFromContext(ctx context.Context) DefExamples {
-	s, ok := ctx.Value(_DefExamplesKey).(DefExamples)
-	if !ok || s == nil {
-		panic("no DefExamples set in context")
-	}
-	return s
 }
 
 // WithDefs returns a copy of parent with the given Defs store.

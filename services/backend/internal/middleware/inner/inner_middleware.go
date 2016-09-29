@@ -273,27 +273,6 @@ func (s wrappedDefs) ListRefLocations(ctx context.Context, param *sourcegraph.De
 	return
 }
 
-func (s wrappedDefs) ListExamples(ctx context.Context, param *sourcegraph.DefsListExamplesOp) (res *sourcegraph.RefLocationsList, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Defs", "ListExamples", param)
-	defer func() {
-		trace.After(ctx, "Defs", "ListExamples", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Defs.ListExamples(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Defs.ListExamples returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Defs.ListExamples failed with internal error.")
-		}
-	}
-	return
-}
-
 func (s wrappedDefs) ListAuthors(ctx context.Context, param *sourcegraph.DefsListAuthorsOp) (res *sourcegraph.DefAuthorList, err error) {
 	var errActual error
 	start := time.Now()

@@ -25,16 +25,6 @@ func (s *GlobalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error 
 
 var _ store.GlobalRefs = (*GlobalRefs)(nil)
 
-type DefExamples struct {
-	Get_ func(ctx context.Context, op *sourcegraph.DefsListExamplesOp) (*sourcegraph.RefLocationsList, error)
-}
-
-func (s *DefExamples) Get(ctx context.Context, op *sourcegraph.DefsListExamplesOp) (*sourcegraph.RefLocationsList, error) {
-	return s.Get_(ctx, op)
-}
-
-var _ store.DefExamples = (*DefExamples)(nil)
-
 type GlobalDeps struct {
 	Upsert_  func(ctx context.Context, resolutions []*unit.Resolution) error
 	Resolve_ func(ctx context.Context, raw *unit.Key) ([]unit.Key, error)
