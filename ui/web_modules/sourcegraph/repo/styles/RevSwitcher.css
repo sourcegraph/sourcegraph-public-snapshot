@@ -1,68 +1,16 @@
-@value base "sourcegraph/components/styles/_base.css";
 @value colors "sourcegraph/components/styles/_colors.css";
-@value grid "sourcegraph/components/styles/_grid.css";
-@value typography "sourcegraph/components/styles/_typography.css";
 @value vars "sourcegraph/components/styles/_vars.css";
-@value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
 
 @value c_cool_gray from colors;
 @value media_sm from vars;
 
-.wrapper {
-	position: relative;
-	display: inline-block;
-	composes: pl1 from base;
-	font-size: 1rem;
-
-	/* vertically align with rest of NavContext */
-	margin-top: 3px;
-}
-.toggle {
-	cursor: pointer;
-	composes: cool_mid_gray from colors;
-}
-.toggle:hover { color: c_cool_gray; }
-@value icon_font_size from GlobalNav;
-.toggle_icon {
-	font-size: icon_font_size;
-}
-
-.dropdown_menu {
-	position: absolute;
-	min-width: 250px;
-	z-index: 1;
-}
-.open { display: block; }
-.closed {	display: none; }
-
-.input {	width: 100%; }
-
-.list_section {
-	max-height: 360px;
-	composes: ma0 ph0 from base;
-}
 
 .disabled {
-	composes: gray from colors;
+	composes: c_cool_gray from colors;
 	pointer-events: none;
 	cursor: default !important;
 	user-select: none;
 	list-style-type: none;
-}
-.detail {
-	opacity: 0.6;
-	composes: ml4 from base;
-	font-size: 0.9rem;
-}
-
-.icon {
-	vertical-align: middle;
-	user-select: none;
-	composes: pr1 from base;
-}
-.icon_hidden {
-	composes: icon;
-	opacity: 0;
 }
 
 @media screen and media_sm {

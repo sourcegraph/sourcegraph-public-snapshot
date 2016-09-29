@@ -8,7 +8,6 @@ import {RouterState} from "react-router";
 import {withResolvedRepoRev} from "sourcegraph/repo/withResolvedRepoRev";
 import {withTree} from "sourcegraph/tree/withTree";
 import {TreeMain} from "sourcegraph/tree/TreeMain";
-import {RepoNavContext} from "sourcegraph/tree/RepoNavContext";
 
 let _components;
 
@@ -39,7 +38,6 @@ export const routes = [
 			if (!_components) {
 				_components = {
 					main: withResolvedRepoRev(withTree(TreeMain)),
-					repoNavContext: RepoNavContext,
 				};
 			}
 			callback(null, _components);

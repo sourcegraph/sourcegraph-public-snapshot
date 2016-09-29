@@ -10,10 +10,11 @@ import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {Component, EventListener} from "sourcegraph/Component";
 import {Link} from "react-router";
 import * as styles from "sourcegraph/repo/styles/RevSwitcher.css";
-import * as classNames from "classnames";
 
-import {FaChevronDown, CheckIcon} from "sourcegraph/components/Icons";
-import {Input, Menu, Heading} from "sourcegraph/components";
+import {colors, typography, whitespace} from "sourcegraph/components/utils";
+
+import {Check, DownMenu} from "sourcegraph/components/symbols";
+import {Base, Input, Menu, Heading} from "sourcegraph/components";
 import {urlWithRev} from "sourcegraph/repo/routes";
 
 interface Props {
@@ -105,11 +106,28 @@ export class RevSwitcher extends Component<Props, State> {
 
 		return (
 			<div key={`r${name}.${commitID}`} role="menu_item">
-				<Link to={this._revSwitcherURL(name)} title={commitID}
+				<Link
+					to={this._revSwitcherURL(name)}
+					title={commitID}
 					onClick={this._closeDropdown}>
-					<CheckIcon className={isCurrent ? styles.icon : styles.icon_hidden} /> {name && <span>{abbrevRev(name)}</span>}
-					{isCurrent && commitsBehind ? <span className={styles.detail}>{commitsBehind} commit{commitsBehind !== 1 && "s"} ahead of index</span> : null}
-					{isCurrent && unindexed ? <span className={styles.detail}>not indexed</span> : null}
+					<span style={{ display: "inline-block", width: 24 }}>
+						{isCurrent && <Check width={16} style={{ fill: colors.coolGray3() }} />}
+					</span>
+
+					{name && <span style={{fontWeight: isCurrent ? "bold" : "normal"}}>
+						{abbrevRev(name)}
+					</span>}
+
+					{isCurrent && commitsBehind &&
+						<span style={{color: colors.coolGray3(), marginLeft: 6}}>
+							{commitsBehind} commit{commitsBehind !== 1 && "s"} ahead of index
+						</span>
+					}
+					{isCurrent && unindexed &&
+						<span style={{color: colors.coolGray3(), marginLeft: 6}}>
+							<small><em>not indexed</em></small>
+						</span>
+					}
 				</Link>
 			</div>
 		);
@@ -263,28 +281,44 @@ export class RevSwitcher extends Component<Props, State> {
 			title = `Viewing revision: ${abbrevRev(this.state.commitID)} (not indexed)`;
 		}
 
+		const sx = Object.assign({},
+			{
+				display: "inline-block",
+				fontWeight: "normal",
+				position: "relative",
+			},
+			typography.size[6],
+		);
+
 		return (
-			<div className={styles.wrapper}
-				ref={(e) => this._wrapper = e}>
-				<span className={styles.toggle}
-					title={title}
-					onClick={this._onToggleDropdown}>
-					<FaChevronDown className={styles.toggle_icon} />
+			<div ref={(e) => this._wrapper = e} style={sx}>
+				<span
+					onClick={this._onToggleDropdown}
+					style={{ cursor: "pointer" }}>
+					<Base ml={1}>
+						<DownMenu
+							width={10}
+							style={{ fill: colors.coolGray3() }}
+						/>
+					</Base>
 				</span>
-				<div className={classNames(styles.dropdown_menu, this.state.open ? styles.open : styles.closed)}>
-					<Menu>
+				<div style={{
+					display: this.state.open ? "block" : "none",
+					position: "absolute",
+				}}>
+					<Menu style={{minWidth: 320, paddingTop: whitespace[3]}}>
 						<div>
 							<Input block={true}
 								domRef={(e) => this._input = e}
 								type="text"
-								className={styles.input}
+								style={{fontWeight: "normal"}}
 								placeholder="Find branch or tag"
 								onChange={this._onChangeQuery}/>
 						</div>
 						{this.state.rev && !currentItem && !this.state.query && this._item(this.state.rev, this.state.commitID)}
-						<Heading level="5">Branches</Heading>
+						<Heading level={7} color="gray" mt={3}>Branches</Heading>
 						{branches}
-						<Heading level="5">Tags</Heading>
+						<Heading level={7} color="gray" mt={3}>Tags</Heading>
 						{tags}
 					</Menu>
 				</div>

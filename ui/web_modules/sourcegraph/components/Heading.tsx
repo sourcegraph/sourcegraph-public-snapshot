@@ -67,7 +67,7 @@ export const Heading = (props: Props): any => {
 	return <Base
 		m={props.m}
 		mt={props.mt}
-		mb={props.mb ? props.mb : 2}
+		mb={props.mb || props.mb === 0 ? props.mb : 2}
 		ml={props.ml}
 		mr={props.mr}
 		my={props.my}

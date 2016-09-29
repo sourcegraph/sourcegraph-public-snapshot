@@ -22,12 +22,6 @@ the entire viewport height.
 	flex: 1;
 }
 
-.breadcrumb {
-	composes: bb ph3 pv2 from base;
-	composes: b__cool_pale_gray_8 bg_white from colors;
-	flex-shrink: 0;
-}
-
 .main_container_homepage {
 	composes: main_container;
 }

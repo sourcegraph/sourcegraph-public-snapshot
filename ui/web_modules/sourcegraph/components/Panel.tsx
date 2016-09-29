@@ -11,7 +11,7 @@ interface Props {
 	inverse?: boolean; // light text on color background
 	hoverLevel?: string; // high, low, (empty)
 	hover?: boolean;
-	style?: Object;
+	style?: any;
 }
 
 type State = any;

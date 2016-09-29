@@ -5,6 +5,7 @@ import * as React from "react";
 import { InjectedRouter } from "react-router";
 import Helmet from "react-helmet";
 import * as debounce from "lodash/debounce";
+import { BlobTitle } from "sourcegraph/blob/BlobTitle";
 import { Editor } from "sourcegraph/editor/Editor";
 import { EditorComponent } from "sourcegraph/editor/EditorComponent";
 import "sourcegraph/blob/BlobBackend";
@@ -19,9 +20,13 @@ import {URI} from "sourcegraph/core/uri";
 
 type Props = {
 	repo: string;
-	rev: string | null;
-	commitID?: string;
+	repoObj: any;
+	rev: string;
+	commitID: string;
+	isCloning: boolean;
 	path: string;
+	routes: Array<Object>;
+	routeParams: any;
 	startLine?: number;
 	startCol?: number;
 	endLine?: number;
@@ -200,6 +205,16 @@ export class BlobMain extends React.Component<Props, any> {
 				<Helmet title={title} />
 				<ChromeExtensionToast location={this.props.location}/>
 				<OnboardingModals location={this.props.location}/>
+				<BlobTitle
+					repo={this.props.repo}
+					path={this.props.path}
+					repoObj={this.props.repoObj}
+					rev={this.props.rev}
+					commitID={this.props.commitID}
+					routes={this.props.routes}
+					routeParams={this.props.routeParams}
+					isCloning={this.props.isCloning}
+				/>
 				<EditorComponent editorRef={this._setEditor} style={{ display: "flex", flex: "auto", width: "100%" }} />
 			</div>
 		);

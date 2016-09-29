@@ -1,39 +1,8 @@
 @value base "sourcegraph/components/styles/_base.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 @value typography "sourcegraph/components/styles/_typography.css";
-@value grid "sourcegraph/components/styles/_grid.css";
 @value breadcrumb "sourcegraph/components/styles/breadcrumb.css";
 @value animation "sourcegraph/components/styles/animation.css";
-
-.tree_container {
-	composes: cf from base;
-	composes: col_9 from grid;
-	margin: 0 auto;
-}
-
-.tree_common {
-	composes: f5 from typography;
-	composes: bg_white from colors;
-	width: 100%;
-}
-
-.input_container {
-	composes: ma3 from base;
-	display: flex;
-}
-
-@value c_near_white from colors;
-.list_header {
-	display: flex;
-	align-items: center;
-	composes: mh3 pb1 from base;
-	composes: ftracked f6 from typography;
-	composes: cool_mid_gray from colors;
-}
-
-.list_item_group {
-	composes: pb3 from base;
-}
 
 .list_item {
 	display: flex;

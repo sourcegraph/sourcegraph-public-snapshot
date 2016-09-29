@@ -59,7 +59,9 @@ export class Editor implements monaco.IDisposable {
 			scrollBeyondLastLine: false,
 			wrappingColumn: 0,
 			fontFamily: code_font_face,
-			fontSize: 13,
+			fontSize: 15,
+			lineHeight: 21,
+			theme: "vs-dark",
 		}, {editorService: this._editorService});
 
 		this._editorService.setEditor(this._editor);

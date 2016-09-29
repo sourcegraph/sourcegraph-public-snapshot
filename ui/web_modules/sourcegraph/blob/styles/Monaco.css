@@ -1,9 +1,8 @@
+@value colors "sourcegraph/components/styles/_colors.css";
 @value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
 @value navbarZIndex from GlobalNav;
 
-:global .monaco-editor .identifier {
-	font-weight: bold;
-}
+@value c_cool_gray, c_cool_mid_gray, c_cool_mid_gray_3, c_cool_mid_gray_5, c_cool_mid_gray_8, c_cool_pale_gray, c_cool_dark_gray, c_blue from colors;
 
 /* Make cursor look less like a text insertion cursor. */
 :global .monaco-editor .cursor {
@@ -17,5 +16,209 @@
 }
 
 :global .monaco-editor .context-view {
-	z-index: calc(navbarZIndex + 2);
+	z-index: 100;
 }
+
+/* Add a bit more space between line numbers and code */
+:global .monaco-editor .monaco-scrollable-element .lines-content {
+	padding-left: 0.5rem;
+}
+
+/*
+	Style context menu
+*/
+
+:global .monaco-editor div.context-view.monaco-menu-container {
+	background: white;
+	border-radius: 3px;
+	font-family: inherit;
+}
+
+:global .monaco-menu .monaco-action-bar.vertical .action-label {
+	color: c_cool_dark_gray;
+	font-size: 0.9rem;
+}
+
+:global .monaco-menu-container .monaco-menu .monaco-action-bar.vertical li.action-item {
+	padding: 3px 6px;
+}
+
+:global .monaco-menu-container .monaco-menu .monaco-action-bar.vertical li.action-item:first-child {
+	border-top-left-radius: 3px;
+	border-top-right-radius: 3px;
+}
+
+:global .monaco-menu-container .monaco-menu .monaco-action-bar.vertical li.action-item:last-child {
+	border-bottom-left-radius: 3px;
+	border-bottom-right-radius: 3px;
+}
+
+:global .monaco-menu-container .monaco-menu .monaco-action-bar.vertical li.action-item .keybinding {
+	color: c_cool_mid_gray;
+	font-family: inherit;
+	font-size: 0.85rem;
+	font-weight: bold;
+	opacity: 1;
+	padding-top: 9px;
+}
+
+:global .monaco-menu-container .monaco-menu .monaco-action-bar.vertical li.action-item:hover .keybinding,
+:global .monaco-menu-container .monaco-menu .monaco-action-bar.vertical li.action-item:hover:not(.disabled) .action-label  {
+	color: inherit;
+}
+
+/*
+	Style scrollbar
+*/
+
+:global .monaco-editor .monaco-scrollable-element .decorationsOverviewRuler {
+	background-color: c_cool_mid_gray_3;
+}
+
+:global .monaco-editor .scrollbar .slider {
+	background-color: c_cool_mid_gray_5 !important;
+}
+
+/* Context item on hover */
+:global .monaco-menu-container .monaco-menu .monaco-action-bar.vertical li.action-item:hover:not(.disabled) {
+	background-color: c_blue;
+	color: white;
+}
+
+/*
+	Sourcegraph Monaco theme based on vs-dark
+*/
+
+@value yellow: #FDBA86;
+@value orange: #F78248;
+@value red: #F46B6C;
+@value magenta: #FF8DFE;
+@value violet: #D3BEFF;
+@value blue: #5BD2FC;
+@value cyan: #00FFE2;
+@value green: #4CDE90;
+
+/* Transition when link becomes a goto-def link */
+:global div.monaco-editor.vs-dark .goto-definition-link {
+	background-color: c_cool_mid_gray_8;
+	color: white !important;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+:global div.monaco-editor.vs-dark,
+:global div.monaco-editor.vs-dark .token {color: c_cool_pale_gray}
+:global div.monaco-editor.vs-dark,
+:global div.monaco-editor.vs-dark .monaco-editor-background { background-color: c_cool_dark_gray; }
+
+:global div.monaco-editor.vs-dark .token.comment { font-style: italic; }
+
+:global div.monaco-editor.vs-dark .line-numbers { color: c_cool_gray; }
+:global div.monaco-editor.vs-dark .line-numbers:hover { color: c_cool_mid_gray; }
+
+:global div.monaco-editor.vs-dark .token.terminal,
+:global div.monaco-editor.vs-dark .token.metatag,
+:global div.monaco-editor.vs-dark .token.annotation,
+:global div.monaco-editor.vs-dark .token.constant,
+:global div.monaco-editor.vs-dark .token.literal,
+:global div.monaco-editor.vs-dark .token.error-token { color: red; }
+
+:global div.monaco-editor.vs-dark .token.string.escape,
+:global div.monaco-editor.vs-dark .token.warn-token { color: orange; }
+
+:global div.monaco-editor.vs-dark .token.delimiter,
+:global div.monaco-editor.vs-dark .token.comment,
+:global div.monaco-editor.vs-dark .token.comment.shebang { color: c_cool_mid_gray; }
+
+:global div.monaco-editor.vs-dark .token.support,
+:global div.monaco-editor.vs-dark .token.support.type { color: c_cool_pale_gray; }
+
+:global div.monaco-editor.vs-dark .token.string,
+:global div.monaco-editor.vs-dark .token.attribute.value,
+:global div.monaco-editor.vs-dark .token.support.property-value,
+:global div.monaco-editor.vs-dark .token.literal.hex { color: yellow; }
+
+:global div.monaco-editor.vs-dark .token.comment.doc,
+:global div.monaco-editor.vs-dark .token.regexp,
+:global div.monaco-editor.vs-dark .token.constant.rgb-value { color: green; }
+
+:global div.monaco-editor.vs-dark .identifier,
+:global div.monaco-editor.vs-dark .token.entity.name.selector,
+:global div.monaco-editor.vs-dark .token.info-token { color: cyan; }
+
+:global div.monaco-editor.vs-dark .token.variable,
+:global div.monaco-editor.vs-dark .token.number,
+:global div.monaco-editor.vs-dark .token.number.hex,
+:global div.monaco-editor.vs-dark .token.number.binary,
+:global div.monaco-editor.vs-dark .token.number.octal,
+:global div.monaco-editor.vs-dark .token.constant.numeric,
+:global div.monaco-editor.vs-dark .token.tag,
+:global div.monaco-editor.vs-dark .token.variable.predefined,
+:global div.monaco-editor.vs-dark .token.debug-token { color: violet; }
+
+:global div.monaco-editor.vs-dark .token.key,
+:global div.monaco-editor.vs-dark .token.punctuation,
+:global div.monaco-editor.vs-dark .token.attribute.name {	color: magenta; }
+
+/* Keywords should come at the end in order to match cases like token.keyword.string */
+:global div.monaco-editor.vs-dark .token.keyword,
+:global div.monaco-editor.vs-dark .token.keyword.flow,
+:global div.monaco-editor.vs-dark .token.keyword.datatype { color: blue; }
+
+/* PHP */
+:global div.monaco-editor.vs-dark .token.metatag.php { font-weight: bold; }
+
+/* Ruby */
+:global div.monaco-editor.vs-dark .token.predefined.ruby { color: blue; }
+
+/* Markdown */
+:global div.monaco-editor.vs-dark .token.emphasis { font-style: italic;}
+:global div.monaco-editor.vs-dark .token.strong { font-weight: bold; }
+:global div.monaco-editor.vs-dark .token.header { color: blue ;}
+
+/* JSON */
+:global div.monaco-editor.vs-dark .token.string.key { color: cyan; }
+:global div.monaco-editor.vs-dark .token.string.value { color: yellow; }
+
+/* YAML */
+:global div.monaco-editor.vs-dark .token.string.yaml { color: yellow; }
+
+/* C# */
+:global div.monaco-editor.vs-dark .token.type	{ color: blue; }
+:global div.monaco-editor.vs-dark .token.identifier.method { color: yellow; }
+
+/* SQL */
+:global div.monaco-editor.vs-dark .token.string.sql { color: yellow; }
+:global div.monaco-editor.vs-dark .token.predefined.sql	{ color: magenta; }
+:global div.monaco-editor.vs-dark .token.operator.sql { color: c_cool_mid_gray; }
+
+/* HTML */
+:global div.monaco-editor.vs-dark .token.delimiter.html	{ color: c_cool_mid_gray_5; }
+:global div.monaco-editor.vs-dark .token.metatag.content.html { color: cyan; }
+:global div.monaco-editor.vs-dark .token.metatag.html { color: blue; }
+:global div.monaco-editor.vs-dark .token.string.html { color: yellow; }
+
+/* XML */
+:global div.monaco-editor.vs-dark .token.delimiter.xml { color: c_cool_mid_gray_5; }
+:global div.monaco-editor.vs-dark .token.metatag.content.xml { color: cyan; }
+:global div.monaco-editor.vs-dark .token.metatag.xml { color: blue; }
+
+/* CSS */
+:global div.monaco-editor.vs-dark .token.attribute.name.css { color: blue; }
+:global div.monaco-editor.vs-dark .token.attribute.value.css { color: c_cool_mid_gray_5; }
+:global div.monaco-editor.vs-dark .token.delimiter.css,
+:global div.monaco-editor.vs-dark .token.punctuation.css { color: c_cool_mid_gray; }
+
+/* VSXML */
+:global div.monaco-editor.vs-dark .token.vs	{ color: green; }
+:global div.monaco-editor.vs-dark .token.tag.vs { color: blue; }
+:global div.monaco-editor.vs-dark .token.delimiter.vs { color: c_cool_mid_gray; }
+:global div.monaco-editor.vs-dark .token.attribute.name.vs { color: c_cool_mid_gray; }
+:global div.monaco-editor.vs-dark .token.attribute.value.vs { color: c_cool_mid_gray; }
+
+/* Jade */
+:global div.monaco-editor.vs-dark .token.tag.id.jade,
+:global div.monaco-editor.vs-dark .token.tag.class.jade { color: violet; }
+
+:global div.monaco-editor.vs-dark .token.interpolation.jade,
+:global div.monaco-editor.vs-dark .token.interpolation.delimiter.jade { color: magenta; }

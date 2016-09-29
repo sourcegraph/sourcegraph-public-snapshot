@@ -10,7 +10,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 export const SignupOrLogin = (props): JSX.Element => {
 
 	const sx = {
-		flex: "1 0 135px",
+		flex: "0 0 135px",
 		textAlign: "center",
 	};
 

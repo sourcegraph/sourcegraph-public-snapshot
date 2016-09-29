@@ -43,8 +43,6 @@ export class RepoNavContext extends Component<Props, State> {
 			),
 		);
 
-		return (
-			<span>{pathBreadcrumb}</span>
-		);
+		return <span>{pathBreadcrumb}</span>;
 	}
 }

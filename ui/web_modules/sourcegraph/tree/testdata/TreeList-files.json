@@ -1,20 +1,30 @@
 {
 	"renderOutput": {
-		"type": "div",
+		"type": "Panel",
 		"props": {
+			"style": {
+				"fontSize": "1.25rem",
+				"lineHeight": 1.45
+			},
 			"children": [
 				{
-					"type": "div",
+					"type": "Base",
 					"props": {
+						"p": 3,
+						"mb": 3,
 						"children": [
-							"Files"
-						]
-					}
-				},
-				{
-					"type": "div",
-					"props": {
-						"children": [
+							{
+								"type": "Heading",
+								"props": {
+									"level": 7,
+									"color": "gray",
+									"my": 3,
+									"ml": 3,
+									"children": [
+										"Files"
+									]
+								}
+							},
 							{
 								"type": "Constructor",
 								"key": "f:/repo@rev/-/tree/p1",
@@ -48,7 +58,8 @@
 						]
 					}
 				}
-			]
+			],
+			"hover": false
 		}
 	},
 	"dispatched": [

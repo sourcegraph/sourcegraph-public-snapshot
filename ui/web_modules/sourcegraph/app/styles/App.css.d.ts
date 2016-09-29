@@ -12,7 +12,6 @@ export const c_cool_dark_gray: string;
 export const c_cool_pale_gray_2: string;
 export const main_container: string;
 export const main_content: string;
-export const breadcrumb: string;
 export const main_container_homepage: string;
 export const inner_main_content: string;
 

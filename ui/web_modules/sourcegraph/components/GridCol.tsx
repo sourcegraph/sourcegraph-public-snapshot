@@ -42,16 +42,16 @@ export function GridCol(props: Props): JSX.Element {
 		media(breakpoints["sm"], { width: props.colSm ? column[props.colSm] : "" }),
 		media(breakpoints["md"], { width: props.colMd ? column[props.colMd] : "" }),
 		media(breakpoints["lg"], { width: props.colLg ? column[props.colLg] : "" }),
-		props.style ? props.style : {},
 		{
 			boxSizing: "border-box",
 			width: column[props.col],
 		},
+		props.style ? props.style : {},
 	);
 
 	return <Base
 		{...sx}
-		align={props.align ? props.align : "left"}
+		align={props.align}
 		className={props.className}>
 			{props.children}
 	</Base>;

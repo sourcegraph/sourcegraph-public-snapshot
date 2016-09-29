@@ -17,6 +17,7 @@ interface Props {
 	rev?: string;
 	disabledLink?: boolean;
 	className?: string;
+	style?: Object;
 }
 
 type State = any;
@@ -41,6 +42,6 @@ export class RepoLink extends React.Component<Props, State> {
 			),
 		);
 
-		return <span className={this.props.className}>{pathBreadcrumb}</span>;
+		return <span style={this.props.style} className={this.props.className}>{pathBreadcrumb}</span>;
 	}
 }
