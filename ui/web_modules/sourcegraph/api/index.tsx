@@ -809,6 +809,7 @@ export interface RepoListOptions {
 	Type?: string;
 	Owner?: string;
 	RemoteOnly?: boolean;
+	RemoteSearch?: boolean;
 	PerPage?: number;
 	Page?: number;
 }

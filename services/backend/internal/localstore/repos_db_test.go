@@ -21,11 +21,16 @@ import (
  */
 
 func sortedRepoURIs(repos []*sourcegraph.Repo) []string {
+	uris := repoURIs(repos)
+	sort.Strings(uris)
+	return uris
+}
+
+func repoURIs(repos []*sourcegraph.Repo) []string {
 	var uris []string
 	for _, repo := range repos {
 		uris = append(uris, repo.URI)
 	}
-	sort.Strings(uris)
 	return uris
 }
 
@@ -228,48 +233,94 @@ func TestRepos_List_query(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
 	t.Parallel()
 
 	ctx, _, done := testContext()
 	defer done()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
-
 	s := repos{}
 
-	// Add some repos.
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "abc/def", Name: "def", DefaultBranch: "master"}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "def/ghi", Name: "ghi", DefaultBranch: "master"}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "jkl/mno/pqr", Name: "pqr", DefaultBranch: "master"}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/orgs/xyz", Name: "pqr", DefaultBranch: "master", Mirror: true}); err != nil {
-		t.Fatal(err)
+	{ // Test batch 1 (correct filtering)
+		createdRepos := []*sourcegraph.Repo{
+			{URI: "abc/def", Name: "def", DefaultBranch: "master"},
+			{URI: "def/ghi", Name: "ghi", DefaultBranch: "master"},
+			{URI: "jkl/mno/pqr", Name: "pqr", DefaultBranch: "master"},
+			{URI: "github.com/abc/xyz", Name: "pqr", DefaultBranch: "master", Mirror: true},  // this is an org!
+			{URI: "github.com/orgs/xyz", Name: "pqr", DefaultBranch: "master", Mirror: true}, // this is an org!
+		}
+		for _, repo := range createdRepos {
+			if created, err := s.Create(ctx, repo); err != nil {
+				t.Fatal(err)
+			} else {
+				repo.ID = created
+			}
+		}
+		tests := []struct {
+			query string
+			want  []string
+		}{
+			{"de", []string{"abc/def", "def/ghi"}},
+			{"def", []string{"abc/def", "def/ghi"}},
+			{"ABC/DEF", []string{"abc/def"}},
+			{"xyz", []string{"github.com/abc/xyz"}},
+			{"mno/p", []string{"jkl/mno/pqr"}},
+			{"jkl mno pqr", []string{"jkl/mno/pqr"}},
+		}
+		for _, test := range tests {
+			repos, err := s.List(ctx, &store.RepoListOp{Query: test.query})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+				t.Errorf("%q: got repos %q, want %q", test.query, got, test.want)
+			}
+		}
+		for _, repo := range createdRepos {
+			if err := s.Delete(ctx, repo.ID); err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
 
-	tests := []struct {
-		query string
-		want  []string
-	}{
-		{"de", []string{"abc/def", "def/ghi"}},
-		{"def", []string{"abc/def", "def/ghi"}},
-		{"ABC/DEF", []string{"abc/def"}},
-		{"xyz", nil},
-		{"mno/p", []string{"jkl/mno/pqr"}},
-		{"jkl mno pqr", []string{"jkl/mno/pqr"}},
-	}
-	for _, test := range tests {
-		repos, err := s.List(ctx, &store.RepoListOp{Query: test.query})
-		if err != nil {
-			t.Fatal(err)
+	{ // Test batch 2 (correct ranking)
+		// {URI: "github.com/org2/xyz", Name: "pqr", DefaultBranch: "master", Mirror: true, Fork: true},
+		createdRepos := []*sourcegraph.Repo{
+			{URI: "a/def", Name: "def", DefaultBranch: "master"},
+			{URI: "b/def", Name: "def", DefaultBranch: "master", Fork: true},
+			{URI: "c/def", Name: "def", DefaultBranch: "master", Private: true},
+			{URI: "def/ghi", Name: "ghi", DefaultBranch: "master"},
+			{URI: "def/jkl", Name: "ghi", DefaultBranch: "master", Fork: true},
+			{URI: "def/mno", Name: "ghi", DefaultBranch: "master", Private: true},
 		}
-		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.want) {
-			t.Errorf("%q: got repos %q, want %q", test.query, got, test.want)
+		for _, repo := range createdRepos {
+			if created, err := s.Create(ctx, repo); err != nil {
+				t.Fatal(err)
+			} else {
+				repo.ID = created
+			}
+		}
+		tests := []struct {
+			query string
+			want  []string
+		}{
+			{"def", []string{"c/def", "a/def", "def/mno", "def/ghi", "b/def", "def/jkl"}},
+			{"b/def", []string{"b/def"}},
+			{"def/", []string{"def/mno", "def/ghi", "def/jkl"}},
+		}
+		for _, test := range tests {
+			repos, err := s.List(ctx, &store.RepoListOp{Query: test.query})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+				t.Errorf("%q: got repos %q, want %q", test.query, got, test.want)
+			}
+		}
+		for _, repo := range createdRepos {
+			if err := s.Delete(ctx, repo.ID); err != nil {
+				t.Fatal(err)
+			}
 		}
 	}
 }

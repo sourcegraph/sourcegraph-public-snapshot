@@ -99,3 +99,7 @@ func ActorFromContext(ctx context.Context) *Actor {
 func WithActor(ctx context.Context, a *Actor) context.Context {
 	return context.WithValue(ctx, actorKey, a)
 }
+
+func WithoutActor(ctx context.Context) context.Context {
+	return context.WithValue(ctx, actorKey, nil)
+}

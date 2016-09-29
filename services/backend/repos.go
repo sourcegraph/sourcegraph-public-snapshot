@@ -7,6 +7,7 @@ import (
 	"fmt"
 	pathpkg "path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -56,6 +57,11 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 	return repo, nil
 }
 
+// ghRepoQueryMatcher matches search queries that look like they refer
+// to GitHub repositories. Examples include "github.com/gorilla/mux", "gorilla/mux", "gorilla mux",
+// "gorilla / mux"
+var ghRepoQueryMatcher = regexp.MustCompile(`^(?:github.com/)?([^/\s]+)[/\s]+([^/\s]+)$`)
+
 func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
 	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.List")
 	if opt == nil {
@@ -83,6 +89,33 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	// Augment with external results if user is authenticated,
+	// RemoteSearch is true, and Query is non-empty.
+	if authpkg.ActorFromContext(ctx).IsAuthenticated() && opt.RemoteSearch && opt.Query != "" {
+		ghquery := opt.Query
+		if matches := ghRepoQueryMatcher.FindStringSubmatch(opt.Query); matches != nil {
+			// Apply query transformation to make GitHub results better.
+			ghquery = fmt.Sprintf("user:%s in:name %s", matches[1], matches[2])
+		}
+
+		if ghrepos, err := github.ReposFromContext(ctx).Search(ctx, ghquery, nil); err == nil {
+			existingRepos := make(map[string]struct{}, len(repos))
+			for _, repo := range repos {
+				existingRepos[repo.URI] = struct{}{}
+			}
+			for _, ghrepo := range ghrepos {
+				if _, in := existingRepos[ghrepo.URI]; !in {
+					repos = append(repos, ghrepo)
+				}
+			}
+		} else {
+			// Fetching results from GitHub is best-effort, as we
+			// might hit the rate limit and don't want this to kill
+			// the search experience entirely.
+			log15.Warn("Unable to fetch repo search results from GitHub", "query", opt.Query, "error", err)
+		}
 	}
 
 	return &sourcegraph.RepoList{Repos: repos}, nil

@@ -215,7 +215,7 @@ export class Container extends React.Component<Props, State> {
 	}
 
 	repoListQueryString(query: string): string {
-		return `Query=${encodeURIComponent(query)}&Type=public`;
+		return `Query=${encodeURIComponent(query)}&RemoteSearch=t&PerPage=100`;
 	}
 
 	updateInput(event: React.FormEvent<HTMLInputElement>): void {

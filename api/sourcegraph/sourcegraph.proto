@@ -238,6 +238,14 @@ message RepoListOptions {
 	// a repository, fetch it individually.
 	bool RemoteOnly = 12 [(gogoproto.moretags) = "url:\",omitempty\""];
 
+	// RemoteSearch should be used in conjunction with the Query field.
+	// If true, it will issue an external query to remote code host
+	// search APIs and augment the list of returned results with
+	// repositories that exist on external hosts but not yet on
+	// Sourcegraph. RemoteSearch is ignored if there is no authenticated
+	// user.
+	bool RemoteSearch = 14  [(gogoproto.moretags) = "url:\",omitempty\""];
+
 	// ListOptions controls pagination.
 	ListOptions ListOptions = 13 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }

@@ -44,6 +44,7 @@ func init() {
 type Repos interface {
 	Get(context.Context, string) (*sourcegraph.Repo, error)
 	GetByID(context.Context, int) (*sourcegraph.Repo, error)
+	Search(ctx context.Context, query string, op *github.SearchOptions) ([]*sourcegraph.Repo, error)
 	ListAccessible(context.Context, *github.RepositoryListOptions) ([]*sourcegraph.Repo, error)
 	CreateHook(context.Context, string, *github.Hook) error
 }
@@ -123,6 +124,18 @@ func (s *repos) GetByID(ctx context.Context, id int) (*sourcegraph.Repo, error) 
 		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.GetByID #%d", id))
 	}
 	return toRepo(ghrepo), nil
+}
+
+func (s *repos) Search(ctx context.Context, query string, op *github.SearchOptions) ([]*sourcegraph.Repo, error) {
+	res, _, err := client(ctx).search.Repositories(query, op)
+	if err != nil {
+		return nil, err
+	}
+	repos := make([]*sourcegraph.Repo, 0, len(res.Repositories))
+	for _, ghrepo := range res.Repositories {
+		repos = append(repos, toRepo(&ghrepo))
+	}
+	return repos, nil
 }
 
 // getFromPublicCache attempts to get a response from the redis cache.

@@ -416,6 +416,7 @@ func reposListSQL(opt *store.RepoListOp) (string, []interface{}, error) {
 		var conds []string
 
 		conds = append(conds, "(NOT blocked)")
+		conds = append(conds, "uri NOT ILIKE 'github.com/orgs%'") // kludge: filter out repos that are actually orgs
 
 		if opt.NoFork {
 			conds = append(conds, "(NOT fork)")
@@ -436,7 +437,7 @@ func reposListSQL(opt *store.RepoListOp) (string, []interface{}, error) {
 			conds = append(conds, "lower(name)="+arg(strings.ToLower(opt.Name)))
 		}
 		if len(queryTerms) >= 1 {
-			conds = append(conds, "uri ILIKE "+arg("%"+uriQuery+"%")+"AND uri NOT ILIKE 'github.com/orgs%'")
+			conds = append(conds, "uri ILIKE "+arg("%"+uriQuery+"%"))
 		}
 		switch opt.Type {
 		case "private":
@@ -459,13 +460,15 @@ func reposListSQL(opt *store.RepoListOp) (string, []interface{}, error) {
 	}
 
 	// ORDER BY
+	var orderByTerms []string
 	if uriQuery != "" {
-		orderBySQL = fmt.Sprintf("(lower(name) = %s), NOT fork DESC, ", arg(strings.ToLower(path.Base(uriQuery))))
+		orderByTerms = append(orderByTerms, "NOT fork DESC", fmt.Sprintf("(lower(name) = %s) DESC", arg(strings.ToLower(path.Base(uriQuery)))), "private DESC")
 	}
 	sort := opt.Sort
 	if sort == "" {
 		sort = "id"
 	}
+
 	sortKeyToCol := map[string]string{
 		"id":      "repo.id",
 		"uri":     "repo.uri",
@@ -488,7 +491,8 @@ func reposListSQL(opt *store.RepoListOp) (string, []interface{}, error) {
 	if direction != "asc" && direction != "desc" {
 		return "", nil, grpc.Errorf(codes.InvalidArgument, "invalid direction: "+direction)
 	}
-	orderBySQL += fmt.Sprintf("%s %s NULLS LAST", sort, direction)
+	orderByTerms = append(orderByTerms, fmt.Sprintf("%s %s NULLS LAST", sort, direction))
+	orderBySQL = strings.Join(orderByTerms, ", ")
 
 	// LIMIT
 	limitSQL := arg(opt.Limit())

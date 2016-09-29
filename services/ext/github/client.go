@@ -27,7 +27,8 @@ func init() {
 // minimalClient contains the minimal set of GitHub API methods needed
 // by this package.
 type minimalClient struct {
-	repos githubRepos
+	repos  githubRepos
+	search githubSearch
 
 	// These are authenticated as the OAuth2 client application using
 	// HTTP Basic auth, not as the user. (Some GitHub API endpoints
@@ -39,7 +40,8 @@ type minimalClient struct {
 
 func newMinimalClient(isAuthedUser bool, userClient *github.Client, appClient *github.Client) *minimalClient {
 	return &minimalClient{
-		repos: userClient.Repositories,
+		repos:  userClient.Repositories,
+		search: userClient.Search,
 
 		appAuthorizations: appClient.Authorizations,
 
@@ -52,6 +54,10 @@ type githubRepos interface {
 	GetByID(id int) (*github.Repository, *github.Response, error)
 	List(user string, opt *github.RepositoryListOptions) ([]*github.Repository, *github.Response, error)
 	CreateHook(owner, repo string, hook *github.Hook) (*github.Hook, *github.Response, error)
+}
+
+type githubSearch interface {
+	Repositories(query string, opt *github.SearchOptions) (*github.RepositoriesSearchResult, *github.Response, error)
 }
 
 type githubAuthorizations interface {
