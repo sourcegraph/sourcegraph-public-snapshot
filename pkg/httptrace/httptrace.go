@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
@@ -49,14 +50,15 @@ func Middleware(next http.Handler) http.Handler {
 		start := time.Now()
 		ctx := r.Context()
 
-		// -- currently we don't associate XHR calls with the parent page's span --
-		// parentSpanCtx, err := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
-		// if err != nil && err != opentracing.ErrSpanContextNotFound {
-		// 	log15.Error("extracting parent span failed", "error", err)
-		// }
+		wireContext, err := opentracing.GlobalTracer().Extract(
+			opentracing.HTTPHeaders,
+			opentracing.HTTPHeadersCarrier(r.Header))
+		if err != nil && err != opentracing.ErrSpanContextNotFound {
+			log15.Error("extracting parent span failed", "error", err)
+		}
 
 		// start new span
-		span := opentracing.StartSpan("")
+		span := opentracing.StartSpan("", ext.RPCServerOption(wireContext))
 		span.SetTag("URL", r.URL.String())
 		defer span.Finish()
 		rw.Header().Set("X-Trace", traceutil.SpanURL(span))

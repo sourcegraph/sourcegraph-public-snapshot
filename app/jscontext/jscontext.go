@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/gorilla/csrf"
-	opentracing "github.com/opentracing/opentracing-go"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
@@ -50,11 +49,12 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		headers["Authorization"] = httpapiauth.AuthorizationHeaderWithSessionCookie(sessionCookie)
 	}
 
-	if span := opentracing.SpanFromContext(req.Context()); span != nil {
-		if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, opentracing.TextMapCarrier(headers)); err != nil {
-			return JSContext{}, err
-		}
-	}
+	// -- currently we don't associate XHR calls with the parent page's span --
+	// if span := opentracing.SpanFromContext(req.Context()); span != nil {
+	// 	if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, opentracing.TextMapCarrier(headers)); err != nil {
+	// 		return JSContext{}, err
+	// 	}
+	// }
 
 	// Propagate Cache-Control no-cache and max-age=0 directives
 	// to the requests made by our client-side JavaScript. This is
