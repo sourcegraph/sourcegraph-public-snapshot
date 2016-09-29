@@ -1024,6 +1024,12 @@ message DefRepoRef {
 	repeated DefFileRef Files = 4;
 }
 
+// FilePosition represents a line:column in a file.
+message FilePosition {
+	int32 Line = 1;
+	int32 Column = 2;
+}
+
 // DefFileRef identifies a file that references a def.
 message DefFileRef {
 	// Path is the path of this file.
@@ -1031,6 +1037,9 @@ message DefFileRef {
 
 	// Count is the number of references to the def in this file.
 	int32 Count = 2;
+
+	// Positions is the locations in the file that the def is referenced.
+	repeated FilePosition Positions = 4;
 
 	// Score is the importance score of this file for the def.
 	float Score = 3;

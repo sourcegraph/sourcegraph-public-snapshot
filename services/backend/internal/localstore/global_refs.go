@@ -45,11 +45,13 @@ func init() {
 		DefKeyID  int64 `db:"def_key_id"`
 		Repo      string
 		File      string
+		Positions [2]int
 		Count     int
 		UpdatedAt *time.Time `db:"updated_at"`
 	}
 	GraphSchema.Map.AddTableWithName(dbGlobalRef{}, "global_refs_new")
 	GraphSchema.CreateSQL = append(GraphSchema.CreateSQL,
+		`ALTER TABLE global_refs_new ALTER COLUMN positions TYPE integer[] USING positions::integer[];`,
 		`CREATE INDEX global_refs_new_def_key_id ON global_refs_new USING btree (def_key_id);`,
 		`CREATE INDEX global_refs_new_repo ON global_refs_new USING btree (repo);`,
 		`CREATE MATERIALIZED VIEW global_refs_stats AS SELECT def_key_id, count(distinct repo) AS repos, sum(count) AS refs FROM global_refs_new GROUP BY def_key_id;`,
@@ -119,6 +121,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		Repo      string
 		RepoCount int `db:"repo_count"`
 		File      string
+		Positions *pq.Int64Array
 		Count     int
 	}
 
@@ -130,7 +133,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	}
 
 	var sql string
-	innerSelectSQL := `SELECT repo, file, count FROM global_refs_new`
+	innerSelectSQL := `SELECT repo, file, positions, count FROM global_refs_new`
 	innerSelectSQL += ` WHERE def_key_id=` + arg(defKeyID)
 	if len(opt.Repos) > 0 {
 		repoBindVars := make([]string, len(opt.Repos))
@@ -141,7 +144,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	}
 	innerSelectSQL += " LIMIT 65536" // TODO is this a sufficient/sane limit?
 
-	sql = "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM (" + innerSelectSQL + ") res"
+	sql = "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, positions, count FROM (" + innerSelectSQL + ") res"
 	orderBySQL := " ORDER BY repo=" + arg(defRepoPath) + " DESC, repo_count DESC, count DESC"
 	sql += orderBySQL
 
@@ -170,9 +173,14 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 			}
 		}
 		if r.File != "" && r.Count != 0 {
+			var pos []int64
+			if r.Positions != nil {
+				pos = []int64(*r.Positions)
+			}
 			refsByRepo[r.Repo].Files = append(refsByRepo[r.Repo].Files, &sourcegraph.DefFileRef{
-				Path:  r.File,
-				Count: int32(r.Count),
+				Path:      r.File,
+				Positions: deinterlacePositions(pos),
+				Count:     int32(r.Count),
 			})
 		}
 	}
@@ -209,6 +217,26 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		RepoRefs:   repoRefs,
 		TotalRepos: int32(totalRepos),
 	}, nil
+}
+
+// deinterlacePositions deinterlaces the interlaced [line, column] slice p into
+// their non-interlaced form. We store the positions in the DB interlaced
+// because github.com/lib/pq does not support multidimensional array types
+// (and implementing this is tedious). Thus they are stored interlaced, i.e.
+//
+//  [line0, col0, line1, col1, line2, col2]
+//
+func deinterlacePositions(p []int64) (out []*sourcegraph.FilePosition) {
+	if len(p)%2 != 0 {
+		panic("deinterlacePositions: unequal length array (bad data?)")
+	}
+	for i := 0; i < len(p); i += 2 {
+		out = append(out, &sourcegraph.FilePosition{
+			Line:   int32(p[i]),
+			Column: int32(p[i+1]),
+		})
+	}
+	return
 }
 
 // filterVisibleRepos ensures all the defs we return we have access to
@@ -319,7 +347,6 @@ func (g *globalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error 
 	if err != nil {
 		return err
 	}
-
 	refs := make([]*langp.Ref, 0, len(external.Refs))
 	for _, r := range external.Refs {
 		if shouldIndexRef(r) {
@@ -327,7 +354,7 @@ func (g *globalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error 
 		}
 	}
 
-	log15.Debug("GlobalRefs.Update", "repo", repo, "commitID", commitID, "oldCommitID", oldCommitID, "numRefs", len(refs))
+	log15.Info("GlobalRefs.Update", "repo", repo, "commitID", commitID, "oldCommitID", oldCommitID, "numRefs", len(refs))
 
 	if len(refs) == 0 {
 		return fmt.Errorf("no indexable refs for %s %s", repo, commitID)
@@ -344,18 +371,37 @@ func (g *globalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error 
 	getOrInsertDefKeys(ctx, dbh, defKeyIDs)
 	observe("defkeys", start)
 
+	// Create a list of ref positions by file.
+	type fileDefKey struct {
+		graph.DefKey
+		File string
+	}
+	posByFileDefKey := make(map[fileDefKey][]int)
+	for _, r := range refs {
+		k := fileDefKey{
+			DefKey: graph.DefKey{Repo: r.Def.Repo, UnitType: r.Def.UnitType, Unit: r.Def.Unit, Path: r.Def.Path},
+			File:   r.File,
+		}
+		if len(posByFileDefKey[k]) > 10 { // Only keep 10 ref positions to avoid pollution
+			continue
+		}
+		posByFileDefKey[k] = append(posByFileDefKey[k], r.Line)
+		posByFileDefKey[k] = append(posByFileDefKey[k], r.Column)
+	}
+
 	tmpCreateSQL := `CREATE TEMPORARY TABLE global_refs_tmp (
 	def_key_id bigint,
 	repo TEXT,
 	file TEXT,
+	positions integer[],
 	count integer default 1
 )
 ON COMMIT DROP;`
 	finalDeleteSQL := `DELETE FROM global_refs_new WHERE repo=$1;`
-	finalInsertSQL := `INSERT INTO global_refs_new(def_key_id, repo, file, count, updated_at)
-	SELECT def_key_id, repo, file, sum(count) as count, now() as updated_at
+	finalInsertSQL := `INSERT INTO global_refs_new(def_key_id, repo, file, positions, count, updated_at)
+	SELECT def_key_id, repo, file, positions, sum(count) as count, now() as updated_at
 	FROM global_refs_tmp
-	GROUP BY def_key_id, repo, file;`
+	GROUP BY def_key_id, repo, file, positions;`
 
 	// Do actual update in one transaction, to ensure we don't have concurrent
 	// updates to repo
@@ -366,7 +412,7 @@ ON COMMIT DROP;`
 			return err
 		}
 
-		stmt, err := dbutil.Prepare(tx, pq.CopyIn("global_refs_tmp", "def_key_id", "repo", "file"))
+		stmt, err := dbutil.Prepare(tx, pq.CopyIn("global_refs_tmp", "def_key_id", "repo", "file", "positions"))
 		if err != nil {
 			return fmt.Errorf("global_refs_tmp prepare failed: %s", err)
 		}
@@ -374,8 +420,10 @@ ON COMMIT DROP;`
 		// Insert refs into temporary table
 		start = time.Now()
 		for _, r := range refs {
-			defKeyID := defKeyIDs[graph.DefKey{Repo: r.Def.Repo, UnitType: r.Def.UnitType, Unit: r.Def.Unit, Path: r.Def.Path}]
-			if _, err := stmt.Exec(defKeyID, repo, r.File); err != nil {
+			defKey := graph.DefKey{Repo: r.Def.Repo, UnitType: r.Def.UnitType, Unit: r.Def.Unit, Path: r.Def.Path}
+			defKeyID := defKeyIDs[defKey]
+			pos := posByFileDefKey[fileDefKey{DefKey: defKey, File: r.File}]
+			if _, err := stmt.Exec(defKeyID, repo, r.File, pq.Array(pos)); err != nil {
 				return fmt.Errorf("global_refs_tmp stmt insert failed: %s", err)
 			}
 		}

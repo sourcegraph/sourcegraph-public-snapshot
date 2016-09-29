@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
@@ -32,7 +31,7 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 	if err != nil {
 		return nil, err
 	}
-	if feature.Features.NoSrclib && universe.EnabledFile(entry.Path) {
+	if entry.Path == "" || universe.EnabledFile(entry.Path) {
 		return &sourcegraph.SrclibDataVersion{
 			CommitID:      entry.RepoRev.CommitID,
 			CommitsBehind: 0,

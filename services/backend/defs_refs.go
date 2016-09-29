@@ -119,10 +119,8 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	// Update defs table for the exported symbols in repo.
 	defsErr := store.DefsFromContext(ctx).Update(ctx, indexOp)
 
-	// TODO GlobalRefs updates are disabled until we are happy with langp.ExternalRefs
 	// Update the references this repo makes to external repos
-	//refsErr := store.GlobalRefsFromContext(ctx).Update(ctx, indexOp)
-	var refsErr error
+	refsErr := store.GlobalRefsFromContext(ctx).Update(ctx, indexOp)
 
 	// We care more about defsErr, since it should be more stable. So lets
 	// lean on the side of reporting it instead of refsErr. We only return
