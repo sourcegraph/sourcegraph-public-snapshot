@@ -97,9 +97,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) error {
 		} else {
 			resps[i] = &jsonrpc2.Response{}
 			err := c.Call(ctx, req.Method, req.Params, &resps[i].Result, addMeta)
-			if e, ok := err.(*jsonrpc2.Error); ok {
-				resps[i].Error = e
-			} else if err != nil {
+			if err != nil {
 				return err
 			}
 		}
