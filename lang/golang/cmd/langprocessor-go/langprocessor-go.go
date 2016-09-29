@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -10,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -294,34 +294,39 @@ func externalRefsQuery(r *langp.RepoRev) string {
 }
 
 func externalRef(r *langp.RepoRev, f *langp.File, s *lsp.SymbolInformation) *langp.Ref {
-	repo, pkg, filename, line, col := parseExternalRefContainerName(s.ContainerName)
-	// containerName may contain a type which we want as part of the path
+	name := s.Name
+	if name == "" {
+		name = "." // Srclib expects "." for import paths.
+	}
+
+	var v struct {
+		DefPath                   []string
+		DefImportPath, Repo, File string
+		Line, Column              int
+	}
+	err := json.Unmarshal([]byte(s.ContainerName), &v)
+	if err != nil {
+		panic(err) // Should never happen, would mean langserver-go and langprocessor-go are out of sync.
+	}
+
+	name = strings.Join(append([]string{name}, v.DefPath...), "/")
+
 	return &langp.Ref{
 		Def: &langp.DefSpec{
-			Repo: repo,
+			Repo: v.Repo,
 
 			// Commit is intentionally omitted, as it has no use in the context of
 			// external refs (all refs point to defs of repos at the default branch
 			// only).
 			Commit:   "",
 			UnitType: "GoPackage",
-			Unit:     pkg,
-			Path:     s.Name,
+			Unit:     v.DefImportPath,
+			Path:     name,
 		},
-		File:   filename,
-		Line:   line,
-		Column: col,
+		File:   v.File,
+		Line:   v.Line,
+		Column: v.Column,
 	}
-}
-
-func parseExternalRefContainerName(containerName string) (repo, pkg, filename string, line, col int) {
-	s := strings.Fields(containerName)
-	if len(s) != 5 {
-		panic(fmt.Sprintf("parseExternalRefContainerName: invalid container name %q", containerName))
-	}
-	l, _ := strconv.Atoi(s[3])
-	c, _ := strconv.Atoi(s[4])
-	return s[0], s[1], s[2], int(l), int(c)
 }
 
 func parseContainerName(containerName string) (pkg, typ string) {

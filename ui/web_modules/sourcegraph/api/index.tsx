@@ -242,6 +242,7 @@ export interface DefDoc {
 export interface DefFileRef {
 	Path?: string;
 	Count?: number;
+	Positions?: FilePosition[];
 	Score?: number;
 }
 
@@ -514,6 +515,11 @@ export interface FileData {
 export interface FileEvent {
 	uri: string;
 	type: number;
+}
+
+export interface FilePosition {
+	Line?: number;
+	Column?: number;
 }
 
 export interface FileRange {

@@ -2,8 +2,8 @@ package golang
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
-	"fmt"
 	"go/ast"
 	"go/build"
 	"go/doc"
@@ -14,12 +14,12 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/golang/groupcache/lru"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/lang/golang/internal/refs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cmdutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
@@ -149,133 +149,102 @@ func (h *Handler) externalRefs(buildCtx build.Context, repo, pkgPath string, inc
 	}
 
 	// Formulate a list of all files we want to consider for external references.
-	files := bpkg.GoFiles
+	fileNames := bpkg.GoFiles
 	if includeTests {
-		files = append(files, bpkg.TestGoFiles...)
+		fileNames = append(fileNames, bpkg.TestGoFiles...)
 	}
-	files = append(files, bpkg.CgoFiles...)
+	fileNames = append(fileNames, bpkg.CgoFiles...)
 
-	stdlib := listGoStdlibPackages(context.TODO())
+	cfg := refs.Default()
 
-	resolveImportCache := make(map[string]string, 1000)
-
-	// TODO: gracefully returns results and an error (instead of failing on
-	// first encountered error).
-	fset := token.NewFileSet()
-	for _, filename := range files {
+	// Parse files.
+	var files []*ast.File
+	for _, fileName := range fileNames {
 		// Make filename absolute, then parse it.
-		filename = filepath.Join(bpkg.SrcRoot, bpkg.ImportPath, filename)
-		f, err := parser.ParseFile(fset, filename, nil, 0)
+		fileName = filepath.Join(bpkg.SrcRoot, bpkg.ImportPath, fileName)
+		f, err := parser.ParseFile(cfg.FileSet, fileName, nil, 0)
 		if err != nil {
-			return err
+			// Only log the error, in hope that it's limited to just this one file.
+			log.Println("externalRefs:", err)
+		}
+		files = append(files, f)
+	}
+
+	// Compute external references.
+	stdlib := listGoStdlibPackages(context.TODO())
+	resolveImportCache := make(map[string]string, 1000)
+	err = cfg.Refs(bpkg.ImportPath, files, func(r *refs.Ref) {
+		var repoRoot string
+		if _, isStdlib := stdlib[r.Def.ImportPath]; isStdlib {
+			repoRoot = "github.com/golang/go"
+		} else {
+			// This could be a dependency that we have cloned via 'go get', so
+			// consult git in order to find the repository root (because e.g.
+			// importPath could be a subpackage inside the repo).
+
+			// First, find out if the importPath is vendored or not.
+			resolvedImportPath, ok := resolveImportCache[r.Def.ImportPath]
+			if !ok {
+				impPkg, err := buildCtx.Import(r.Def.ImportPath, filepath.Join(bpkg.SrcRoot, pkgPath), build.FindOnly)
+				if err != nil {
+					log.Println("externalRefs:", err)
+					return
+				}
+				resolvedImportPath = impPkg.ImportPath
+				resolveImportCache[r.Def.ImportPath] = resolvedImportPath
+			}
+
+			repoRoot, _, err = gitRevParse(context.TODO(), filepath.Join(h.filePath("gopath/src"), resolvedImportPath))
+			if err != nil {
+				log.Println("externalRefs:", err)
+				return
+			}
+			repoRoot = strings.TrimPrefix(repoRoot, h.filePath("gopath/src")+"/")
 		}
 
-		// Formulate a map of package names to their respective import paths.
-		pkgToImport := make(map[string]string, len(f.Imports))
-		for _, imp := range f.Imports {
-			impPath, err := strconv.Unquote(imp.Path.Value)
-			if err != nil {
-				return err
-			}
-			pkgName := ""
-			if imp.Name != nil {
-				pkgName = imp.Name.Name
-			} else {
-				// User didn't specify package name, so import it to find it.
-				//
-				// TODO: We could cache based on import path here, if it is
-				// slow since this runs for N files with probably similar
-				// imports.
-				impPkg, err := buildCtx.Import(impPath, filepath.Join(bpkg.SrcRoot, pkgPath), 0)
-				if err != nil {
-					return err
-				}
-				pkgName = impPkg.Name
-			}
-			pkgToImport[pkgName] = impPath
+		// If the definition being referenced is defined within this
+		// repository, exclude it (to avoid bloating the database).
+		if pathHasPrefix(repoRoot, repo) {
+			return
 		}
 
-		Walk(func(scope *ast.Scope, node ast.Node) bool {
-			v, ok := node.(*ast.SelectorExpr)
-			if !ok {
-				return true
-			}
-			ident, ok := v.X.(*ast.Ident)
-			if !ok {
-				return true
-			}
-			if recursiveScopeLookup(scope, ident.Name) != nil {
-				return true
-			}
+		// The filename which we emit (pointing to where the reference, not
+		// def, is located) should be relative to the repository.
+		repoRelFile, err := filepath.Rel(pkgRepoRoot, r.Position.Filename)
+		if err != nil {
+			log.Println("externalRefs:", err)
+			return
+		}
 
-			// if ident.Name does not reference an imported package, ignore it.
-			// This can happen if the SelectorExpr is actually for a variable
-			// defined outside of this file but in the same package. For
-			// external refs, though, we luckily only care about things
-			// external to our package so we only have to compare against the
-			// imported packages to find out.
-			importPath, ok := pkgToImport[ident.Name]
-			if !ok {
-				return true
-			}
+		var name string
+		var path []string
+		if fields := strings.Fields(r.Def.Path); len(fields) > 0 {
+			name = fields[0]
+			path = fields[1:]
+		}
 
-			// If ident.Name references a package which is defined in this
-			// repository, exclude it (to avoid bloating the database).
-			//
-			// TODO: when using custom import paths, this prefix check does not
-			// work.
-			if pathHasPrefix(importPath, repo) {
-				return true
-			}
+		containerName, err := json.Marshal(&struct {
+			DefPath                   []string
+			DefImportPath, Repo, File string
+			Line, Column              int
+		}{
+			DefPath:       path,
+			DefImportPath: r.Def.ImportPath,
+			Repo:          repoRoot,
+			File:          repoRelFile,
+			Line:          r.Position.Line,
+			Column:        r.Position.Column,
+		})
+		if err != nil {
+			log.Println("externalRefs:", err)
+			return
+		}
 
-			var repoRoot string
-			if _, isStdlib := stdlib[importPath]; isStdlib {
-				repoRoot = "github.com/golang/go"
-			} else {
-				// This could be a dependency that we have cloned via 'go get', so
-				// consult git in order to find the repository root (because e.g.
-				// importPath could be a subpackage inside the repo).
-
-				// First, find out if the importPath is vendored or not.
-				resolvedImportPath, ok := resolveImportCache[importPath]
-				if !ok {
-					impPkg, err := buildCtx.Import(importPath, filepath.Join(bpkg.SrcRoot, pkgPath), build.FindOnly)
-					if err != nil {
-						log.Println(err)
-						return true
-					}
-					resolvedImportPath = impPkg.ImportPath
-					resolveImportCache[importPath] = resolvedImportPath
-				}
-
-				repoRoot, _, err = gitRevParse(context.TODO(), filepath.Join(h.filePath("gopath/src"), resolvedImportPath))
-				if err != nil {
-					log.Println(err)
-					return true
-				}
-				repoRoot = strings.TrimPrefix(repoRoot, h.filePath("gopath/src")+"/")
-			}
-
-			// TODO(slimsag): If this is really important (I think it is not,
-			// because langp does not use this result) then we would have to
-			// infer this here (which is really hard to do right I think) or
-			// modify Walk further to give it to us (also non-trivial, but
-			// better).
-			kind := lsp.SKProperty
-
-			// The filename which we emit (pointing to where the reference, not
-			// def, is located) should be relative to the repository.
-			repoRelFile, err := filepath.Rel(pkgRepoRoot, filename)
-			if err != nil {
-				log.Println(err)
-				return true
-			}
-
-			p := fset.Position(v.Pos())
-			containerName := fmt.Sprintf("%s %s %s %d %d", repoRoot, importPath, repoRelFile, p.Line, p.Column)
-			emit(v.Sel.Name, containerName, kind, fset, v.Pos())
-			return true
-		}, nil, f)
+		emit(name, string(containerName), lsp.SKProperty, cfg.FileSet, token.Pos(r.Position.Offset))
+	})
+	if err != nil {
+		// Only log the error, in hope that it's limited to just a few refs or files.
+		log.Println("externalRefs:", err)
 	}
 	return nil
 }
