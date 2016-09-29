@@ -59,6 +59,7 @@ describe("ResultCategories", () => {
 			}, {
 				Title: "Category 3",
 				IsLoading: true,
+				Results: [],
 			}],
 			limits: [3, 3, 3],
 			selected: [1, 1],
@@ -68,7 +69,6 @@ describe("ResultCategories", () => {
 				"Result 1",
 				"this is result 2-a",
 				"this is result 2-b",
-				"loading...",
 			],
 		}, {
 			categories: [{

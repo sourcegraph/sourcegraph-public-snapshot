@@ -49,17 +49,11 @@ export const ResultRow = ({title, description, index, length}, categoryIndex, it
 	);
 };
 
-const ResultCategory = ({title, results, isLoading, selected, delegate, categoryIndex, limit, expandCategory, scrollIntoView}) => {
-	if (isLoading) {
-		return <Heading color="gray"
-		level={7}>
-			{title} (loading...)
-		</Heading>;
-	}
-	if (results.length === 0) {
+const ResultCategory = ({title, results, selected, delegate, categoryIndex, limit, expandCategory, scrollIntoView}) => {
+	const total = results.length;
+	if (total === 0) {
 		return <div></div>;
 	}
-	const total = results.length;
 	results = results.slice(0, limit);
 	return <div>
 		<Heading color="gray"
@@ -74,12 +68,7 @@ const ResultCategory = ({title, results, isLoading, selected, delegate, category
 };
 
 export const ResultCategories = ({categories, selection, delegate, limits, scrollIntoView}) => {
-	let loadingOrFound = false;
-	categories.forEach(category => {
-		if (category.IsLoading || (category.Results && category.Results.length)) {
-			loadingOrFound = true;
-		}
-	});
+	const loadingOrFound = categories.some(cat => cat.IsLoading || cat.Results.length > 0);
 	if (!loadingOrFound) {
 		return <div style={{padding: "14px 0", color: colors.white(), textAlign: "center"}}>No results found</div>;
 	}
@@ -92,7 +81,6 @@ export const ResultCategories = ({categories, selection, delegate, limits, scrol
 		sections.push(<ResultCategory
 						key={category.Title}
 						limit={limits[i]}
-						isLoading={category.IsLoading}
 						categoryIndex={i}
 						title={category.Title}
 						selected={selected}

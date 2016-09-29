@@ -1,3 +1,5 @@
+import * as cloneDeep from "lodash/cloneDeep";
+import * as findIndex from "lodash/findIndex";
 import * as throttle from "lodash/throttle";
 import * as React from "react";
 import {InjectedRouter} from "react-router";
@@ -5,6 +7,7 @@ import {InjectedRouter} from "react-router";
 import {EventListener} from "sourcegraph/Component";
 import {Input} from "sourcegraph/components/Input";
 import {Search as SearchIcon} from "sourcegraph/components/symbols";
+import {Spinner as LoadingIcon} from "sourcegraph/components/symbols";
 import {colors} from "sourcegraph/components/utils/index";
 
 import {urlToBlob, urlToBlobLine} from "sourcegraph/blob/routes";
@@ -56,6 +59,12 @@ interface Props {
 	};
 };
 
+interface Results {
+	repos: Category;
+	symbols: Category;
+	files: Category;
+};
+
 interface State {
 	// The search string in the input box.
 	input: string;
@@ -67,7 +76,7 @@ interface State {
 	// Number of results to show in each category.
 	limitForCategory: number[];
 	// The results of the search.
-	results: Category[];
+	results: Results;
 	// Whether or not to allow scrolling. Used to prevent jumping when expanding
 	// a category.
 	allowScroll: boolean;
@@ -77,7 +86,7 @@ interface State {
 
 export interface Category {
 	Title: string;
-	Results?: Result[];
+	Results: Result[];
 	IsLoading: boolean;
 }
 
@@ -85,6 +94,13 @@ export interface SearchDelegate {
 	dismiss: any;
 	select: (category: number, row: number) => void;
 	expand: (category: number) => void;
+}
+
+// resultsToArray converts from a structured data type into one that can be used
+// by the view.
+function resultsToArray(results: Results): Category[] {
+	const {symbols, files, repos} = results;
+	return [files, symbols, repos];
 }
 
 // SearchContainer contains the logic that deals with navigation and data
@@ -111,7 +127,11 @@ export class Container extends React.Component<Props, State> {
 			input: "",
 			selected: {category: 0, row: 0},
 			limitForCategory: [3, 3, 3],
-			results: [],
+			results: {
+				symbols: {Title: "Definitions", IsLoading: false, Results: []},
+				files: {Title: "Files", IsLoading: false, Results: []},
+				repos: {Title: "Repositories", IsLoading: false, Results: []},
+			},
 			allowScroll: true,
 			commitID: null,
 		};
@@ -146,7 +166,6 @@ export class Container extends React.Component<Props, State> {
 	componentWillUpdate(_: Props, nextState: State): void {
 		if (nextState.input !== this.state.input) {
 			nextState.limitForCategory = [3, 3, 3];
-			nextState.selected = {category: 0, row: 0};
 		}
 	}
 
@@ -158,7 +177,7 @@ export class Container extends React.Component<Props, State> {
 	}
 
 	keyListener(event: KeyboardEvent): void {
-		const results = this.state.results;
+		const results = resultsToArray(this.state.results);
 		const visibleRowsInCategory = results.map((r, i) => r.Results ? Math.min(r.Results.length, this.state.limitForCategory[i]) : 0);
 		let category = this.state.selected.category;
 		let row = this.state.selected.row;
@@ -176,8 +195,11 @@ export class Container extends React.Component<Props, State> {
 			if (row === 0 && category === 0) {
 				// noop
 			} else if (row <= 0) {
-				category = nextVisibleRow(-1);
-				row = visibleRowsInCategory[category] - 1;
+				const newCategory = nextVisibleRow(-1);
+				if (newCategory !== category) {
+					row = visibleRowsInCategory[newCategory] - 1;
+					category = newCategory;
+				}
 			} else {
 				row--;
 			}
@@ -227,7 +249,8 @@ export class Container extends React.Component<Props, State> {
 	}
 
 	select(c: number, r: number): void {
-		const results = this.state.results[c];
+		const categories = resultsToArray(this.state.results);
+		const results = categories[c];
 		if (results && results.Results) {
 			const result = results.Results[r];
 			const resultInfo = {
@@ -251,14 +274,15 @@ export class Container extends React.Component<Props, State> {
 
 	updateResults(): void {
 		const query = this.state.input;
-		const results: Category[] = [];
 		const repo = this.props.repo;
+		let {symbols, files, repos} = cloneDeep(this.state.results);
 
+		// Update symbols
 		if (repo && this.state.commitID) {
-			const symbols = RepoStore.symbols.list(repo.URI, repo.rev, query);
-			if (symbols) {
+			const updatedSymbols = RepoStore.symbols.list(repo.URI, repo.rev, query);
+			if (updatedSymbols) {
 				const symbolResults: Result[] = [];
-				symbols.forEach(sym => {
+				updatedSymbols.forEach(sym => {
 					let title = sym.name;
 					const kind = symbolKindName(sym.kind);
 					const desc = `${kind ? kind : ""} in ${sym.location.uri}`;
@@ -273,38 +297,55 @@ export class Container extends React.Component<Props, State> {
 						URLPath: urlToBlobLine(repo.URI, repo.rev, path, line + 1),
 					});
 				});
-				results.push({ Title: "Definitions", IsLoading: false, Results: symbolResults });
+				symbols.IsLoading = false;
+				symbols.Results = symbolResults;
 			} else {
-				results.push({ Title: "Definitions", IsLoading: true });
+				symbols.IsLoading = true;
 			}
 
+			// Update files
 			const commit = this.state.commitID || "";
-			const files = TreeStore.fileLists.get(repo.URI, commit);
-			if (files) {
+			const updatedFiles = TreeStore.fileLists.get(repo.URI, commit);
+			if (updatedFiles) {
 				interface Scorable {
 					score: number;
 				}
-				let fileResults: (Result & Scorable)[] = files.Files.reduce((acc, file) => rankFile(acc, file, query.toLowerCase()), []);
+				let fileResults: (Result & Scorable)[] = updatedFiles.Files.reduce((acc, file) => rankFile(acc, file, query.toLowerCase()), []);
 				fileResults.forEach(file => {
 					file.URLPath = urlToBlob(repo.URI, repo.rev, file.title);
 				});
 				fileResults = fileResults.sort((a, b) => b.score - a.score);
-				results.push({ Title: "Files", IsLoading: false, Results: fileResults });
+				files.IsLoading = false;
+				files.Results = fileResults;
 			} else {
-				results.push({ Title: "Files", IsLoading: true });
+				files.IsLoading = true;
 			}
 		}
 
-		const repos = RepoStore.repos.list(this.repoListQueryString(query));
-		if (repos) {
-			if (repos.Repos) {
-				const repoResults = repos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
-				results.push({ Title: "Repositories", IsLoading: false, Results: repoResults });
+		// Update repos
+		const updatedRepos = RepoStore.repos.list(this.repoListQueryString(query));
+		if (updatedRepos) {
+			if (updatedRepos.Repos) {
+				const repoResults = updatedRepos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
+				repos.IsLoading = false;
+				repos.Results = repoResults;
 			} else {
-				results.push({ Title: "Repositories", IsLoading: false, Results: [] });
+				repos.IsLoading = false;
+				repos.Results = [];
 			}
 		} else {
-			results.push({ Title: "Repositories", IsLoading: true });
+			repos.IsLoading = true;
+		}
+
+		// Update selection (don't want to leave the selection on a category
+		// that doesn't exist anymore!)
+		const results = {symbols: symbols, repos: repos, files: files};
+		const resultsArray = resultsToArray(results);
+		const sel = this.state.selected;
+		if (resultsArray[sel.category].Results.length - 1 < sel.row) {
+			sel.row = 0;
+			const firstVisibleCategory = Math.max(0, findIndex(resultsArray, (c => c.Results.length > 0)));
+			sel.category = firstVisibleCategory;
 		}
 
 		this.setState(Object.assign({}, this.state, {results: results}));
@@ -322,7 +363,14 @@ export class Container extends React.Component<Props, State> {
 		};
 	}
 
+	loading(): boolean {
+		const results = resultsToArray(this.state.results);
+		return results.some(category => category.IsLoading);
+	}
+
 	render(): JSX.Element {
+		const icon = this.loading() ? <LoadingIcon /> : <SearchIcon style={{fill: colors.coolGray2()}} />;
+		const categories = resultsToArray(this.state.results);
 		return (
 			<div style={modalStyle}>
 				<EventListener target={document.body} event={"keydown"} callback={this.keyListener} />
@@ -337,7 +385,7 @@ export class Container extends React.Component<Props, State> {
 					alignItems: "center",
 					flexDirection: "row",
 				}}>
-					<SearchIcon style={{fill: colors.coolGray2()}} />
+					{icon}
 					<Input
 						style={{boxSizing: "border-box", border: "none", flex: "1 0 auto"}}
 						placeholder="Search for repositories, files or definitions"
@@ -348,7 +396,7 @@ export class Container extends React.Component<Props, State> {
 						onChange={this.updateInput} />
 				</div>
 				<Hint />
-				<ResultCategories categories={this.state.results}
+				<ResultCategories categories={categories}
 					selection={this.state.selected}
 					delegate={this.delegate}
 					scrollIntoView={this.state.allowScroll}
