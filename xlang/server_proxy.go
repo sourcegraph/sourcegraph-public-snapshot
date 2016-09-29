@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -240,6 +241,20 @@ func (p *Proxy) callServer(ctx context.Context, id serverID, rootFS vfs.FileSyst
 	return c.conn.Call(ctx, method, params, result, addTraceMeta(ctx))
 }
 
+// modeFileFilter is a map of mode ID (e.g., "go") to a function that
+// returns true if the file should be sent to that mode's lang/build
+// server. It is used to, e.g., only send .go files to the Go
+// build/lang server (which can significantly improve perf).
+//
+// TODO(sqs): make this configurable by the build/lang server (which
+// could return a list of file globs in the LSP InitializeResult, for
+// example).
+var modeFileFilter = map[string]func(os.FileInfo) bool{
+	"go": func(fi os.FileInfo) bool {
+		return strings.HasSuffix(fi.Name(), ".go")
+	},
+}
+
 // presendFiles sends all relevant files from rootFS to the server in
 // textDocument/didOpen notifications so that the server loads them
 // into its VFS.
@@ -266,8 +281,8 @@ func (c *serverProxyConn) presendFiles(ctx context.Context, rootFS vfs.FileSyste
 		span.Finish()
 	}()
 
-	// Read all of the files in the repository at the given commit.
-	allFiles, err := vfsutil.ReadAllFiles(rootFS, "", nil)
+	// Read files in the repository at the given commit.
+	allFiles, err := vfsutil.ReadAllFiles(rootFS, "", modeFileFilter[c.id.mode])
 	if err != nil {
 		return err
 	}
