@@ -168,6 +168,7 @@ export class Container extends React.Component<Props, State> {
 	componentWillUpdate(_: Props, nextState: State): void {
 		if (nextState.input !== this.state.input) {
 			nextState.limitForCategory = [3, 3, 3];
+			nextState.selected = {category: 0, row: 0};
 		}
 	}
 
