@@ -24,30 +24,24 @@ type GitRepoVFS struct {
 	Rev      string // Git revision (should be absolute, 40-char for consistency, unless nondeterminism is OK)
 	Subtree  string // only include this subtree
 
-	mu  sync.Mutex
-	err error // the error encountered during the fetch
-	fs  vfs.FileSystem
+	once sync.Once
+	err  error // the error encountered during the fetch
+	fs   vfs.FileSystem
 }
 
 var gitCommitSHARx = regexp.MustCompile(`^[0-9a-f]{40}$`)
 
 // fetchOrWait initiates the HTTP fetch if it has not yet
 // started. Otherwise it waits for it to finish.
-func (fs *GitRepoVFS) fetchOrWait() (err error) {
-	fs.mu.Lock()
-	defer fs.mu.Unlock()
+func (fs *GitRepoVFS) fetchOrWait() error {
+	fs.once.Do(func() {
+		fs.err = fs.fetch()
+	})
 
-	if fs.err != nil {
-		return fs.err
-	}
-	if fs.fs != nil {
-		return nil
-	}
+	return fs.err
+}
 
-	defer func() {
-		fs.err = err
-	}()
-
+func (fs *GitRepoVFS) fetch() error {
 	urlMu := urlMu(fs.CloneURL)
 	urlMu.Lock()
 	defer urlMu.Unlock()

@@ -53,30 +53,24 @@ type GitHubRepoVFS struct {
 	rev     string // Git revision (should be absolute, 40-char for consistency, unless nondeterminism is OK)
 	subtree string // path prefix inside of repo root
 
-	mu  sync.Mutex
-	err error // the error encountered during the fetch
-	fs  vfs.FileSystem
+	once sync.Once
+	err  error // the error encountered during the fetch
+	fs   vfs.FileSystem
 
 	save bool // save to the local file system for reuse
 }
 
 // fetchOrWait initiates the HTTP fetch if it has not yet
 // started. Otherwise it waits for it to finish.
-func (fs *GitHubRepoVFS) fetchOrWait() (err error) {
-	fs.mu.Lock()
-	defer fs.mu.Unlock()
+func (fs *GitHubRepoVFS) fetchOrWait() error {
+	fs.once.Do(func() {
+		fs.err = fs.fetch()
+	})
 
-	if fs.err != nil {
-		return fs.err
-	}
-	if fs.fs != nil {
-		return nil
-	}
+	return fs.err
+}
 
-	defer func() {
-		fs.err = err
-	}()
-
+func (fs *GitHubRepoVFS) fetch() error {
 	url := fmt.Sprintf("https://codeload.%s/zip/%s", fs.repo, fs.rev)
 
 	if fs.save {
@@ -85,6 +79,7 @@ func (fs *GitHubRepoVFS) fetchOrWait() (err error) {
 		defer urlMu.Unlock()
 	}
 
+	var err error
 	var body []byte
 	fsPath := filepath.Join("/tmp/xlang-github-cache", fs.repo, fs.rev+".zip")
 	if fs.save {
