@@ -59,12 +59,13 @@ func init() {
 
 func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	start := time.Now()
+	success := true
 	defer func() {
 		duration := time.Now().Sub(start)
 		v := mux.Vars(r)
 		method := v["LSPMethod"]
 		labels := prometheus.Labels{
-			"success": fmt.Sprintf("%t", err == nil),
+			"success": fmt.Sprintf("%t", err == nil && success),
 			"method":  method,
 		}
 		xlangRequestDuration.With(labels).Observe(duration.Seconds())
@@ -140,6 +141,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 				// lightstep.
 				ext.Error.Set(span, true)
 				span.LogEvent(fmt.Sprintf("error: %s failed with %v", req.Method, err))
+				success = false
 				if !handlerutil.DebugMode {
 					e.Message = "(error message omitted)"
 				}
