@@ -43,7 +43,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
@@ -275,9 +274,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	clientCtx := clientCtxFunc(context.Background())
-
-	// Listen for events and periodically push them to analytics gateway.
-	eventsutil.StartEventLogger(clientCtx, 10*4096, 256, 10*time.Minute)
 
 	c.runGitserver()
 
