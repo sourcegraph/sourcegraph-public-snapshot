@@ -58,6 +58,10 @@ func TestDefLanding_OK(t *testing.T) {
 				Kind:     "func",
 				File:     "f",
 			},
+			FmtStrings: &graph.DefFormatStrings{
+				DefKeyword: "func",
+				Name:       graph.QualFormatStrings{ScopeQualified: "NewRouter"},
+			},
 			DocHTML: &pbtypes.HTML{HTML: "<p><b>hello</b> world!</p>"},
 		})
 		var calledDefsListRefLocations bool
