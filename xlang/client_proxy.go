@@ -161,7 +161,10 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 	if c.shutdown {
 		c.mu.Unlock()
 		if req.Method == "exit" {
-			return nil, c.close()
+			// Ignore error returned by close, since we want to exit
+			// anyways.
+			_ = c.close()
+			return nil, nil
 		}
 		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidRequest, Message: "client proxy handler is shutting down"}
 	}
