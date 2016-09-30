@@ -78,6 +78,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) error {
 	opName := "LSP HTTP gateway: " + reqs[1].Method
 	span, ctx := opentracing.StartSpanFromContext(r.Context(), opName)
 	defer span.Finish()
+	span.LogEventWithPayload("requests", reqs)
 	carrier := opentracing.TextMapCarrier{}
 	if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.TextMap, carrier); err != nil {
 		return err
@@ -102,5 +103,6 @@ func serveXLang(w http.ResponseWriter, r *http.Request) error {
 			}
 		}
 	}
+	span.LogEventWithPayload("responses", resps)
 	return writeJSON(w, resps)
 }
