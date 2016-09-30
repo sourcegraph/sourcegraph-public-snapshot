@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -106,7 +107,13 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	// Inject tracing info.
 	opName := "LSP HTTP gateway: " + reqs[1].Method
 	span, ctx := opentracing.StartSpanFromContext(r.Context(), opName)
-	defer span.Finish()
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+		span.Finish()
+	}()
 	span.LogEventWithPayload("requests", reqs)
 	carrier := opentracing.TextMapCarrier{}
 	if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.TextMap, carrier); err != nil {
@@ -128,6 +135,11 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 			resps[i] = &jsonrpc2.Response{}
 			err := c.Call(ctx, req.Method, req.Params, &resps[i].Result, addMeta)
 			if e, ok := err.(*jsonrpc2.Error); ok {
+				// We do not mark the handler as failed, but
+				// we want to record that it failed in
+				// lightstep.
+				ext.Error.Set(span, true)
+				span.LogEvent(fmt.Sprintf("error: %s failed with %v", req.Method, err))
 				if !handlerutil.DebugMode {
 					e.Message = "(error message omitted)"
 				}
