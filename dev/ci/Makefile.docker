@@ -1,7 +1,7 @@
 # Build docker images other than the main sourcegraph app.
 # NOTE: It is expected to run this from the project root.
 
-.PHONY: default gcloud langp-go langp-java langp-js
+.PHONY: default gcloud langp-go langp-java langp-js xlang
 
 default:
 	@echo "Please select a target"
@@ -22,3 +22,6 @@ langp-java: gcloud
 langp-js: gcloud
 	cd lang/js/cmd/langprocessor-js && ./build.sh
 	cd lang/js/cmd/langproxy-js && ./build.sh
+
+xlang: gcloud
+	cd xlang && $(MAKE)
