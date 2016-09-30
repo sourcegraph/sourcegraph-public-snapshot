@@ -29,6 +29,8 @@ func init() {
 			"serve": true,
 			// "src git-server" does not need a context at all.
 			"git-server": true,
+			// "src xlang" speak jsonrpc2
+			"xlang": true,
 		}
 		if cli.CLI.Active != nil && skipGRPC[cli.CLI.Active.Name] {
 			return
