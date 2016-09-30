@@ -29,6 +29,11 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	_, err = c.AddCommand("sendx", "send an LSP request to a build/lang server based on tracked error output.", "", &sendCmdSimple{})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func init() {
@@ -95,6 +100,11 @@ type sendCmd struct {
 	Args sendCmdArgs `positional-args:"yes" required:"yes" count:"1"`
 }
 
+type sendCmdSimple struct {
+	sendCmdOpts
+	Input string `long:"input" description:"JSON blob describing Args and params for sendCmd"`
+}
+
 /*
 
 Useful one-liners:
@@ -126,6 +136,23 @@ func (c *sendCmd) Execute(args []string) error {
 		return err
 	}
 	return sendExecute(&c.sendCmdOpts, &c.Args, reqParams)
+}
+
+func (c *sendCmdSimple) Execute(args []string) error {
+	input := &struct {
+		sendCmdArgs
+		Params *json.RawMessage
+	}{}
+	err := json.Unmarshal([]byte(c.Input), input)
+	if err != nil {
+		return err
+	}
+	reqParams, _ := input.Params.MarshalJSON()
+	logPrefix := []byte("tracked error: ")
+	if bytes.HasPrefix(reqParams, logPrefix) {
+		reqParams = reqParams[len(logPrefix):]
+	}
+	return sendExecute(&c.sendCmdOpts, &input.sendCmdArgs, reqParams)
 }
 
 func sendExecute(c *sendCmdOpts, args *sendCmdArgs, reqParams []byte) error {
