@@ -5,7 +5,6 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitproto"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -54,8 +53,4 @@ func (s *repoVCS) Clone(ctx context.Context, repo int32, info *store.CloneInfo) 
 	}
 
 	return gitserver.DefaultClient.Clone(ctx, dir, info.CloneURL, &info.RemoteOpts)
-}
-
-func (s *repoVCS) OpenGitTransport(ctx context.Context, repo int32) (gitproto.Transport, error) {
-	return s.Open(ctx, repo)
 }

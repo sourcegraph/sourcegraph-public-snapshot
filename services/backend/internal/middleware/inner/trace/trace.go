@@ -12,24 +12,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
-
-// prepareArg prepares the gRPC method arg for logging/tracing. For
-// example, it does not log/trace arg if it is a very long byte slice
-// (as it often is for git transport ops).
-func prepareArg(server, method string, arg interface{}) interface{} {
-	switch arg := arg.(type) {
-	case *sourcegraph.ReceivePackOp:
-		return &sourcegraph.ReceivePackOp{Repo: arg.Repo, Data: []byte("OMITTED"), AdvertiseRefs: arg.AdvertiseRefs}
-	case *sourcegraph.UploadPackOp:
-		return &sourcegraph.UploadPackOp{Repo: arg.Repo, Data: []byte("OMITTED"), AdvertiseRefs: arg.AdvertiseRefs}
-	}
-	return arg
-}
 
 // Before is called before a method executes and is passed the server
 // and method name and the argument. The returned context is passed
@@ -75,7 +61,7 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 	span := opentracing.SpanFromContext(ctx)
 	span.SetTag("Server", server)
 	span.SetTag("Method", method)
-	span.SetTag("Argument", fmt.Sprintf("%#v", prepareArg(server, method, arg)))
+	span.SetTag("Argument", fmt.Sprintf("%#v", arg))
 	if err != nil {
 		span.SetTag("Error", err.Error())
 	}

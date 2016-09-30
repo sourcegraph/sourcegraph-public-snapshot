@@ -829,48 +829,6 @@ func (s wrappedRepos) GetInventory(ctx context.Context, param *sourcegraph.RepoR
 	return
 }
 
-func (s wrappedRepos) ReceivePack(ctx context.Context, param *sourcegraph.ReceivePackOp) (res *sourcegraph.Packet, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Repos", "ReceivePack", param)
-	defer func() {
-		trace.After(ctx, "Repos", "ReceivePack", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Repos.ReceivePack(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Repos.ReceivePack returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.ReceivePack failed with internal error.")
-		}
-	}
-	return
-}
-
-func (s wrappedRepos) UploadPack(ctx context.Context, param *sourcegraph.UploadPackOp) (res *sourcegraph.Packet, err error) {
-	var errActual error
-	start := time.Now()
-	ctx = trace.Before(ctx, "Repos", "UploadPack", param)
-	defer func() {
-		trace.After(ctx, "Repos", "UploadPack", param, errActual, time.Since(start))
-	}()
-	res, errActual = backend.Services.Repos.UploadPack(ctx, param)
-	if res == nil && errActual == nil {
-		errActual = grpc.Errorf(codes.Internal, "Repos.UploadPack returned nil, nil")
-	}
-	err = errActual
-	if err != nil && !DebugMode(ctx) {
-		if code := errcode.GRPC(err); code == codes.Unknown || code == codes.Internal {
-			// Sanitize, because these errors should not be user visible.
-			err = grpc.Errorf(code, "Repos.UploadPack failed with internal error.")
-		}
-	}
-	return
-}
-
 type wrappedSearch struct{}
 
 func (s wrappedSearch) Search(ctx context.Context, param *sourcegraph.SearchOp) (res *sourcegraph.SearchResultsList, err error) {

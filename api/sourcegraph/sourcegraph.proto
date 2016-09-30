@@ -396,9 +396,6 @@ service Repos {
 	// languages, etc., used by the repository, as evidenced by the
 	// repository's files.
 	rpc GetInventory(RepoRevSpec) returns (inventory.Inventory);
-
-	rpc ReceivePack(ReceivePackOp) returns (Packet);
-	rpc UploadPack(UploadPackOp) returns (Packet);
 }
 
 // ReposResolveRevOp specifies a Repos.ResolveRev operation.
@@ -418,24 +415,8 @@ message ResolvedRev {
 	string CommitID = 1;
 }
 
-message ReceivePackOp {
-	int32 repo = 1;
-	bytes data = 3;
-	bool advertiseRefs = 4;
-}
-
-message UploadPackOp {
-	int32 repo = 1;
-	bytes data = 3;
-	bool advertiseRefs = 4;
-}
-
 message URIList {
 	repeated string URIs = 1;
-}
-
-message Packet {
-	bytes data = 1;
 }
 
 message RepoResolveOp {

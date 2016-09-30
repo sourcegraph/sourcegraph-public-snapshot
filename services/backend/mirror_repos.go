@@ -21,6 +21,10 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 )
 
+// emptyGitCommitID is used in githttp.Event objects in the Last (or
+// Commit) field to signify that a branch was created (or deleted).
+const emptyGitCommitID = "0000000000000000000000000000000000000000"
+
 var MirrorRepos sourcegraph.MirrorReposServer = &mirrorRepos{}
 
 type mirrorRepos struct{}

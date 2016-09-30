@@ -624,10 +624,6 @@ export interface Output {
 	Anns?: any[];
 }
 
-export interface Packet {
-	data?: number[];
-}
-
 export interface ParameterInformation {
 	label: string;
 	documentation?: string;
@@ -655,12 +651,6 @@ export interface QualFormatStrings {
 }
 
 export interface Range {
-}
-
-export interface ReceivePackOp {
-	repo?: number;
-	data?: number[];
-	advertiseRefs?: boolean;
 }
 
 export interface Ref {
@@ -1124,12 +1114,6 @@ export interface UpdateEmailsOp {
 }
 
 export interface UpdateResult {
-}
-
-export interface UploadPackOp {
-	repo?: number;
-	data?: number[];
-	advertiseRefs?: boolean;
 }
 
 export interface User {

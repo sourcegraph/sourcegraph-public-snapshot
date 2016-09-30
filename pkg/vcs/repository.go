@@ -3,12 +3,6 @@ package vcs
 import (
 	"errors"
 	"os"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitproto"
-
-	"context"
-
-	"github.com/AaronO/go-git-http"
 )
 
 // RepoNotExistError is an error that reports a repository doesn't exist.
@@ -98,14 +92,6 @@ type Repository interface {
 	// Search searches the text of a repository at the given commit
 	// ID.
 	Search(CommitID, SearchOptions) ([]*SearchResult, error)
-
-	// ReceivePack returns the output of git-receive-pack, reading
-	// from body.
-	ReceivePack(ctx context.Context, body []byte, opt gitproto.TransportOpt) ([]byte, []githttp.Event, error)
-
-	// UploadPack returns the output of git-upload-pack, reading from
-	// body.
-	UploadPack(ctx context.Context, body []byte, opt gitproto.TransportOpt) ([]byte, []githttp.Event, error)
 }
 
 // BlameOptions configures a blame.

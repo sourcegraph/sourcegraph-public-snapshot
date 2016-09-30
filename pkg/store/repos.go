@@ -6,7 +6,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitproto"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -114,7 +113,6 @@ type RepoStatuses interface {
 type RepoVCS interface {
 	Open(ctx context.Context, repo int32) (vcs.Repository, error)
 	Clone(ctx context.Context, repo int32, info *CloneInfo) error
-	OpenGitTransport(ctx context.Context, repo int32) (gitproto.Transport, error)
 }
 
 // CloneInfo is the information needed to clone a repository.

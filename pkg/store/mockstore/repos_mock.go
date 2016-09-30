@@ -6,7 +6,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitproto"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -88,9 +87,8 @@ func (s *RepoStatuses) Create(ctx context.Context, repo int32, commitID string, 
 var _ store.RepoStatuses = (*RepoStatuses)(nil)
 
 type RepoVCS struct {
-	Open_             func(ctx context.Context, repo int32) (vcs.Repository, error)
-	Clone_            func(ctx context.Context, repo int32, info *store.CloneInfo) error
-	OpenGitTransport_ func(ctx context.Context, repo int32) (gitproto.Transport, error)
+	Open_  func(ctx context.Context, repo int32) (vcs.Repository, error)
+	Clone_ func(ctx context.Context, repo int32, info *store.CloneInfo) error
 }
 
 func (s *RepoVCS) Open(ctx context.Context, repo int32) (vcs.Repository, error) {
@@ -99,10 +97,6 @@ func (s *RepoVCS) Open(ctx context.Context, repo int32) (vcs.Repository, error) 
 
 func (s *RepoVCS) Clone(ctx context.Context, repo int32, info *store.CloneInfo) error {
 	return s.Clone_(ctx, repo, info)
-}
-
-func (s *RepoVCS) OpenGitTransport(ctx context.Context, repo int32) (gitproto.Transport, error) {
-	return s.OpenGitTransport_(ctx, repo)
 }
 
 var _ store.RepoVCS = (*RepoVCS)(nil)
