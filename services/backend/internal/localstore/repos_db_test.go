@@ -13,6 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
+	githubmock "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/mocks"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -62,7 +63,7 @@ func TestRepos_Get(t *testing.T) {
 
 	t.Parallel()
 
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
 	s := repos{}
@@ -85,7 +86,7 @@ func TestRepos_Get_origin(t *testing.T) {
 
 	t.Parallel()
 
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
 	s := repos{}
@@ -112,7 +113,7 @@ func TestRepos_List(t *testing.T) {
 
 	t.Parallel()
 
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
@@ -137,7 +138,7 @@ func TestRepos_List_pagination(t *testing.T) {
 
 	t.Parallel()
 
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
@@ -190,7 +191,7 @@ func TestRepos_List_type(t *testing.T) {
 	r1 := &sourcegraph.Repo{URI: "r1", Private: true}
 	r2 := &sourcegraph.Repo{URI: "r2"}
 
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
@@ -235,7 +236,7 @@ func TestRepos_List_query(t *testing.T) {
 	}
 	t.Parallel()
 
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
@@ -332,7 +333,7 @@ func TestRepos_List_sort(t *testing.T) {
 
 	t.Parallel()
 
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
@@ -366,7 +367,7 @@ func TestRepos_List_URIs(t *testing.T) {
 
 	t.Parallel()
 
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
@@ -408,7 +409,7 @@ func TestRepos_List_byOwner(t *testing.T) {
 
 	t.Parallel()
 
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
@@ -442,13 +443,15 @@ func TestRepos_List_GitHub_Authenticated(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, mock, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
-	calledListAccessible := mock.githubRepos.MockListAccessible(ctx, []*sourcegraph.Repo{
+	githubRepos := &githubmock.GitHubRepoGetter{}
+	ctx = github.WithRepos(ctx, githubRepos)
+	calledListAccessible := githubRepos.MockListAccessible(ctx, []*sourcegraph.Repo{
 		&sourcegraph.Repo{URI: "github.com/is/privateButAccessible", Private: true, DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}},
 	})
-	mock.githubRepos.Get_ = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+	githubRepos.Get_ = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 		if uri == "github.com/is/privateButAccessible" {
 			return &sourcegraph.Repo{URI: "github.com/is/privateButAccessible", Private: true, DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}}, nil
 		} else if uri == "github.com/is/public" {
@@ -494,14 +497,16 @@ func TestRepos_List_GitHub_Authenticated_NoReposAccessible(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, mock, done := testContext()
+	ctx, done := testContext()
 	defer done()
 	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 
 	s := repos{}
 
-	calledListAccessible := mock.githubRepos.MockListAccessible(ctx, nil)
-	mock.githubRepos.Get_ = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+	githubRepos := &githubmock.GitHubRepoGetter{}
+	ctx = github.WithRepos(ctx, githubRepos)
+	calledListAccessible := githubRepos.MockListAccessible(ctx, nil)
+	githubRepos.Get_ = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 		return nil, fmt.Errorf("unauthorized")
 	}
 
@@ -534,13 +539,15 @@ func TestRepos_List_GitHub_Unauthenticated(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, mock, done := testContext()
+	ctx, done := testContext()
 	defer done()
 	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 
-	calledListAccessible := mock.githubRepos.MockListAccessible(ctx, nil)
+	githubRepos := &githubmock.GitHubRepoGetter{}
+	ctx = github.WithRepos(ctx, githubRepos)
+	calledListAccessible := githubRepos.MockListAccessible(ctx, nil)
 	ctx = github.WithMockHasAuthedUser(ctx, false)
-	mock.githubRepos.Get_ = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+	githubRepos.Get_ = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 		return nil, fmt.Errorf("unauthorized")
 	}
 
@@ -571,7 +578,7 @@ func TestRepos_Create(t *testing.T) {
 
 	t.Parallel()
 
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
 	s := repos{}
@@ -603,7 +610,7 @@ func TestRepos_Create_dupe(t *testing.T) {
 
 	t.Parallel()
 
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
 	s := repos{}
@@ -631,7 +638,7 @@ func TestRepos_Update_Description(t *testing.T) {
 
 	t.Parallel()
 
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
 	s := repos{}
@@ -671,7 +678,7 @@ func TestRepos_Update_Origin(t *testing.T) {
 
 	t.Parallel()
 
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
 	s := repos{}
@@ -710,7 +717,7 @@ func TestRepos_Update_UpdatedAt(t *testing.T) {
 
 	t.Parallel()
 
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
 	s := repos{}
@@ -753,7 +760,7 @@ func TestRepos_Update_PushedAt(t *testing.T) {
 
 	t.Parallel()
 
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
 	s := repos{}

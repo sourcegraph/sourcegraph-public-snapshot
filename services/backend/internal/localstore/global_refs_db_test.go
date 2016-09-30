@@ -32,7 +32,8 @@ func TestGlobalRefs(t *testing.T) {
 	t.Parallel()
 	g := &globalRefs{}
 
-	ctx, mocks, done := testContext()
+	ctx, done := testContext()
+	var mocks *mocks // FIXME
 	defer done()
 
 	createdRepos := (&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "x/y"}, &sourcegraph.Repo{URI: "a/b"})
@@ -195,7 +196,8 @@ func TestGlobalRefsUpdate(t *testing.T) {
 	t.Parallel()
 
 	g := &globalRefs{}
-	ctx, mocks, done := testContext()
+	ctx, done := testContext()
+	var mocks *mocks // FIXME
 	defer done()
 
 	createdRepos := (&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "def/repo"}, &sourcegraph.Repo{URI: "repo"})
@@ -319,7 +321,7 @@ func TestGlobalRefs_version(t *testing.T) {
 	t.Parallel()
 
 	g := &globalRefs{}
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 
 	get := func(want string) {
@@ -375,7 +377,8 @@ func TestGlobalRefs_version(t *testing.T) {
 }
 
 func benchmarkGlobalRefsGet(b *testing.B, g store.GlobalRefs) {
-	ctx, mocks, done := testContext()
+	ctx, done := testContext()
+	var mocks *mocks // FIXME
 	defer done()
 	get := func() error {
 		repo, err := (&repos{}).GetByURI(ctx, "github.com/golang/go")
@@ -412,7 +415,8 @@ func benchmarkGlobalRefsGet(b *testing.B, g store.GlobalRefs) {
 }
 
 func benchmarkGlobalRefsUpdate(b *testing.B, g store.GlobalRefs) {
-	ctx, mocks, done := testContext()
+	ctx, done := testContext()
+	var mocks *mocks // FIXME
 	defer done()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {

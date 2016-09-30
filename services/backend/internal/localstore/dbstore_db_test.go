@@ -4,11 +4,9 @@ import (
 	"context"
 
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testdb"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	githubmock "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/mocks"
 )
 
@@ -20,7 +18,7 @@ func init() {
 // handle and other test configuration. Call done() when done using it
 // to release the DB handle to the pool so it can be used by other
 // tests.
-func testContext() (ctx context.Context, mock *mocks, done func()) {
+func testContext() (ctx context.Context, done func()) {
 	ctx = context.Background()
 
 	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test"})
@@ -29,14 +27,9 @@ func testContext() (ctx context.Context, mock *mocks, done func()) {
 	appDBH, appDBDone := testdb.NewHandle("app", &AppSchema)
 	graphDBH, graphDBDone := testdb.NewHandle("graph", &GraphSchema)
 
-	mock = &mocks{}
-	ctx = store.WithStores(ctx, mock.Stores.Stores())
-	ctx = store.WithRepoVCS(ctx, &mock.RepoVCS)
-	ctx = github.WithRepos(ctx, &mock.githubRepos)
-
 	dbCtx := WithAppDBH(ctx, appDBH)
 	dbCtx = WithGraphDBH(dbCtx, graphDBH)
-	return dbCtx, mock, func() {
+	return dbCtx, func() {
 		appDBDone()
 		graphDBDone()
 	}

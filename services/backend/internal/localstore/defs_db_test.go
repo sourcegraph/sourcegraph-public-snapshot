@@ -113,7 +113,8 @@ func TestDefs(t *testing.T) {
 
 func testDefs(t *testing.T, outerTest outerCase) {
 	var g defs
-	ctx, mocks, done := testContext()
+	ctx, done := testContext()
+	var mocks *mocks // FIXME
 	defer done()
 	ctx = store.WithRepos(ctx, &repos{})
 

@@ -12,7 +12,7 @@ func TestIsPQErrorUniqueViolation(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, _, done := testContext()
+	ctx, done := testContext()
 	defer done()
 	dbutil.Transact(appDBH(ctx), func(tx gorp.SqlExecutor) error {
 		tx.Exec(`CREATE TEMPORARY TABLE pq_test_tmp (id int PRIMARY KEY) ON COMMIT DROP`)
