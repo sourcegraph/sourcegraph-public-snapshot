@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
+	"sourcegraph.com/sqs/pbtypes"
 )
 
 type defDescr struct {
@@ -157,14 +158,12 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	repoLandURL := approuter.Rel.URLToRepoLanding(repo.URI).String()
-	var fileURL string
 	var def *sourcegraph.Def
 	var refLocs *sourcegraph.RefLocationsList
 	var defEntry *sourcegraph.TreeEntry
 	var defSnippet *snippet.Snippet
-	var refEntries []*sourcegraph.TreeEntry
 	var refSnippets []*snippet.Snippet
+	var viewDefURL, defFileURL string
 
 	if def == nil {
 		def, _, err = handlerutil.GetDefCommon(r.Context(), vars, &sourcegraph.DefGetOptions{Doc: true, ComputeLineRange: true})
@@ -230,10 +229,10 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 			StartByte:   defEntry.FileRange.StartByte,
 			Code:        defEntry.ContentsString,
 			Annotations: defAnns,
-			SourceURL:   approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine)).String(),
 		}
+		viewDefURL = approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine)).String()
 
-		fileURL = approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0).String()
+		defFileURL = approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0).String()
 
 		// fetch example
 		refs, err := cl.Defs.ListRefs(r.Context(), &sourcegraph.DefsListRefsOp{
@@ -267,7 +266,6 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 			if err != nil {
 				return fmt.Errorf("could not get ref tree: %s", err)
 			}
-			refEntries = append(refEntries, refEntry)
 			refAnns, err := cl.Annotations.List(r.Context(), &sourcegraph.AnnotationsListOptions{
 				Entry: refEntrySpec,
 				Range: &sourcegraph.FileRange{
@@ -309,31 +307,30 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 
 	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, &struct {
 		tmpl.Common
-		Meta meta
-
-		Repo             *sourcegraph.Repo
-		RepoRev          sourcegraph.RepoRevSpec
-		RepoLandingURL   string
-		FileURL          string
-		Def              *sourcegraph.Def
-		DefEntry         *sourcegraph.TreeEntry
-		DefSnippet       *snippet.Snippet
-		RefLocs          *sourcegraph.RefLocationsList
-		TruncatedRefLocs bool
-		RefEntries       []*sourcegraph.TreeEntry
-		RefSnippets      []*snippet.Snippet
+		Meta                meta
+		Description         *pbtypes.HTML
+		RefSnippets         []*snippet.Snippet
+		ViewDefURL          string
+		DefName             string // e.g. "func NewRouter"
+		ShortDefName        string // e.g. "NewRouter"
+		DefFileURL          string
+		DefFileName         string
+		TotalRepoReferences int32
+		DefSnippet          *snippet.Snippet
+		RefLocs             *sourcegraph.RefLocationsList
+		TruncatedRefLocs    bool
 	}{
-		Meta:             *m,
-		Repo:             repo,
-		RepoRev:          repoRev,
-		RepoLandingURL:   repoLandURL,
-		FileURL:          fileURL,
-		Def:              def,
-		DefEntry:         defEntry,
-		DefSnippet:       defSnippet,
-		RefLocs:          refLocs,
-		TruncatedRefLocs: refLocs.TotalRepos > int32(len(refLocs.RepoRefs)),
-		RefEntries:       refEntries,
-		RefSnippets:      refSnippets,
+		Meta:                *m,
+		Description:         def.DocHTML,
+		RefSnippets:         refSnippets,
+		ViewDefURL:          viewDefURL,
+		DefName:             def.FmtStrings.DefKeyword + " " + def.FmtStrings.Name.ScopeQualified,
+		ShortDefName:        def.Name,
+		DefFileURL:          defFileURL,
+		DefFileName:         repo.URI + "/" + def.Def.File,
+		TotalRepoReferences: refLocs.TotalRepos,
+		DefSnippet:          defSnippet,
+		RefLocs:             refLocs,
+		TruncatedRefLocs:    refLocs.TotalRepos > int32(len(refLocs.RepoRefs)),
 	})
 }

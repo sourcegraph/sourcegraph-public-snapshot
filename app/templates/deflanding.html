@@ -15,38 +15,29 @@
 <div ignore-csp style="max-width: 680px" class="mx-auto mx2">
 
 	<div class="mb3">
-		<a href="{{.DefSnippet.SourceURL}}" class="btn btn-blue right mt2">View definition</a>
+		<a href="{{.ViewDefURL}}" class="btn btn-blue right mt2">View definition</a>
 		<h1 class="mb0">
-			{{with .Def.FmtStrings}}
-				<span class="code">
-					{{.DefKeyword}}
-					{{.Name.ScopeQualified}}
-				</span>
-			{{end}}
+			<span class="code">{{.DefName}}</span>
 		</h1>
 
 		<p>
-			Defined in <a href="{{.FileURL}}">{{.Repo.URI}}/{{.Def.Def.File}}</a>
+			Defined in <a href="{{.DefFileURL}}">{{.DefFileName}}</a>
 		</p>
 	</div>
 
-	{{with .Def}}
-
-	{{if .DocHTML.HTML}}
+	{{with .Description}}
 	<div class="mt3 mb4">
 		<h2>Description</h2>
-		<p>{{dangerouslySetHTML .DocHTML.HTML}}</p>
+		<p>{{dangerouslySetHTML .HTML}}</p>
 	</div>
 	{{end}}
 
-	{{end}}{{/* end "with .Def" */}}
-
-	{{if .RefSnippets}}
+	{{with .RefSnippets}}
 		<div class="my4">
 
 			<h2>Examples</h2>
 
-			{{range .RefSnippets}}
+			{{range .}}
 				<a href="{{.SourceURL}}" class="plainlink">
 					<p><pre class="snippet rounded">{{renderSnippet .}}</pre></p>
 				</a>
@@ -56,7 +47,7 @@
 
 	<div class="my4">
 		<h2>
-			<span class="code">{{.Def.Name}}</span> is referenced in {{.RefLocs.TotalRepos}} {{numberedNoun .RefLocs.TotalRepos "repository"}}
+			<span class="code">{{.ShortDefName}}</span> is referenced in {{.TotalRepoReferences}} {{numberedNoun .TotalRepoReferences "repository"}}
 		</h2>
 
 		{{range $repo := .RefLocs.RepoRefs}}
