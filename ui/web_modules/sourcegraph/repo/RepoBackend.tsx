@@ -1,3 +1,5 @@
+// tslint:disable typedef ordered-imports
+import * as lsp from "sourcegraph/editor/lsp";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
@@ -191,21 +193,17 @@ export const RepoBackend = {
 
 		if (payload instanceof RepoActions.WantSymbols) {
 			const action = payload;
-			const symbols = RepoStore.symbols.list(action.repo, action.rev, action.query);
-			if (symbols === null) {
-				const url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/symbols${action.query ? `?Query=` + encodeURIComponent(action.query) : ""}`;
-				RepoBackend.fetch(url)
-					.then(checkStatus)
-					.then((resp) => resp.json())
-					.catch((err) => {
-						Dispatcher.Stores.dispatch(new RepoActions.FetchedSymbols(action.repo, action.rev, action.query, []));
-					})
-					.then((data) => {
-						Dispatcher.Stores.dispatch(
-							new RepoActions.FetchedSymbols(action.repo, action.rev, action.query, data.Symbols)
-						);
-					});
-			}
+
+			lsp.sendExt(`git:\/\/${action.repo}?${action.rev}`, "go", "workspace/symbol", { query: action.query })
+				.then((r) => {
+					let result = r.result;
+					if (!result || !result.length) {
+						result = [];
+					}
+					Dispatcher.Stores.dispatch(
+						new RepoActions.FetchedSymbols(action.repo, action.rev, action.query, result)
+					);
+				});
 		}
 	},
 };

@@ -146,6 +146,13 @@ func (h *LangHandler) handle(ctx context.Context, conn jsonrpc2Conn, req *jsonrp
 		}
 		return h.handleReferences(ctx, conn, req, params)
 
+	case "workspace/symbol":
+		var params lsp.WorkspaceSymbolParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
+		}
+		return h.handleSymbol(ctx, conn, req, params)
+
 	default:
 		if isFileSystemRequest(req.Method) {
 			return nil, h.handleFileSystemRequest(ctx, req)
