@@ -13,6 +13,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
@@ -99,6 +100,9 @@ func serveXLang(w http.ResponseWriter, r *http.Request) error {
 			resps[i] = &jsonrpc2.Response{}
 			err := c.Call(ctx, req.Method, req.Params, &resps[i].Result, addMeta)
 			if e, ok := err.(*jsonrpc2.Error); ok {
+				if !handlerutil.DebugMode {
+					e.Message = "(error message omitted)"
+				}
 				resps[i].Error = e
 			} else if err != nil {
 				return err
