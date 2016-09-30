@@ -6,7 +6,6 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as debounce from "lodash/debounce";
 import "sourcegraph/repo/RepoBackend";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
-import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {Component, EventListener} from "sourcegraph/Component";
 import {Link} from "react-router";
 import * as styles from "sourcegraph/repo/styles/RevSwitcher.css";
@@ -29,9 +28,6 @@ interface Props {
 
 	// tags is RepoStore.tags.
 	tags: any;
-
-	// srclibDataVersions is TreeStore.srclibDataVersions.
-	srclibDataVersions: any;
 
 	// to construct URLs
 	routes: any[];
@@ -67,8 +63,6 @@ export class RevSwitcher extends Component<Props, State> {
 	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 
-		state.srclibDataVersion = state.srclibDataVersions ? state.srclibDataVersions.get(state.repo, state.commitID) : null;
-
 		// effectiveRev is the rev from the URL, or else the repo's default branch.
 		state.effectiveRev = state.rev || (state.repoObj && !state.repoObj.Error ? state.repoObj.DefaultBranch : null);
 	}
@@ -81,7 +75,6 @@ export class RevSwitcher extends Component<Props, State> {
 			if (!initialLoad || nextState.prefetch) {
 				Dispatcher.Backends.dispatch(new RepoActions.WantBranches(nextState.repo));
 				Dispatcher.Backends.dispatch(new RepoActions.WantTags(nextState.repo));
-				Dispatcher.Backends.dispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.commitID, null));
 			}
 		}
 	}
@@ -101,9 +94,6 @@ export class RevSwitcher extends Component<Props, State> {
 	_item(name, commitID) {
 		let isCurrent = name === this.state.effectiveRev;
 
-		const unindexed = this.state.srclibDataVersion && !this.state.srclibDataVersion.CommitID;
-		const commitsBehind = this.state.srclibDataVersion && !this.state.srclibDataVersion.Error ? this.state.srclibDataVersion.CommitsBehind : 0;
-
 		return (
 			<div key={`r${name}.${commitID}`} role="menu_item">
 				<Link
@@ -118,16 +108,6 @@ export class RevSwitcher extends Component<Props, State> {
 						{abbrevRev(name)}
 					</span>}
 
-					{isCurrent && commitsBehind &&
-						<span style={{color: colors.coolGray3(), marginLeft: 6}}>
-							{commitsBehind} commit{commitsBehind !== 1 && "s"} ahead of index
-						</span>
-					}
-					{isCurrent && unindexed &&
-						<span style={{color: colors.coolGray3(), marginLeft: 6}}>
-							<small><em>not indexed</em></small>
-						</span>
-					}
 				</Link>
 			</div>
 		);
@@ -275,10 +255,6 @@ export class RevSwitcher extends Component<Props, State> {
 		let title;
 		if (this.state.rev) {
 			title = `Viewing revision: ${abbrevRev(this.state.rev)}`;
-		} else if (this.state.srclibDataVersion && this.state.srclibDataVersion.CommitID) {
-			title = `Viewing last-built revision on default branch: ${this.state.commitID ? abbrevRev(this.state.commitID) : ""}`;
-		} else {
-			title = `Viewing revision: ${abbrevRev(this.state.commitID)} (not indexed)`;
 		}
 
 		const sx = Object.assign({},

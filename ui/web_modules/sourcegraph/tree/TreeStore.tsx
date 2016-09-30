@@ -14,7 +14,6 @@ class TreeStoreClass extends Store<any> {
 	commits: any;
 	fileLists: any;
 	fileTree: any;
-	srclibDataVersions: any;
 
 	reset() {
 		this.commits = deepFreeze({
@@ -35,12 +34,6 @@ class TreeStoreClass extends Store<any> {
 				return this.content[keyFor(repo, commitID)] || null;
 			},
 		});
-		this.srclibDataVersions = deepFreeze({
-			content: {},
-			get(repo, commitID, path) {
-				return this.content[keyFor(repo, commitID, path)] || null;
-			},
-		});
 	}
 
 	toJSON(): any {
@@ -48,7 +41,6 @@ class TreeStoreClass extends Store<any> {
 			commits: this.commits,
 			fileLists: this.fileLists,
 			fileTree: this.fileTree,
-			srclibDataVersions: this.srclibDataVersions,
 		};
 	}
 
@@ -92,14 +84,6 @@ class TreeStoreClass extends Store<any> {
 				}));
 				break;
 			}
-
-		case TreeActions.FetchedSrclibDataVersion:
-			this.srclibDataVersions = deepFreeze(Object.assign({}, this.srclibDataVersions, {
-				content: Object.assign({}, this.srclibDataVersions.content, {
-					[keyFor(action.repo, action.commitID, action.path)]: action.version,
-				}),
-			}));
-			break;
 
 		default:
 			return; // don't emit change

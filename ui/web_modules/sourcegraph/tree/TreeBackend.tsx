@@ -32,25 +32,6 @@ export const TreeBackend = {
 					.then((data) => Dispatcher.Stores.dispatch(new TreeActions.FileListFetched(action.repo, action.commitID, data)));
 			}
 		}
-
-		if (payload instanceof TreeActions.WantSrclibDataVersion) {
-			const action = payload;
-			let version = TreeStore.srclibDataVersions.get(action.repo, action.commitID, action.path);
-			if (version === null || action.force) {
-				TreeBackend.fetch(`/.api/repos/${action.repo}@${action.commitID}/-/srclib-data-version?Path=${action.path ? encodeURIComponent(action.path) : ""}`)
-					.then((resp) => {
-						if (resp.status === 404) {
-							return Object.assign({}, resp, {json: () => ({})});
-						} else if (resp.status === 200) {
-							return resp;
-						}
-						return checkStatus(resp);
-					})
-					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
-					.then((data) => Dispatcher.Stores.dispatch(new TreeActions.FetchedSrclibDataVersion(action.repo, action.commitID, action.path, data)));
-			}
-		}
 	},
 };
 

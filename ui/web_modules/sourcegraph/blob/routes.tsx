@@ -4,7 +4,6 @@ import { abs, rel, getRouteParams } from "sourcegraph/app/routePatterns";
 import { urlTo } from "sourcegraph/util/urlTo";
 import { makeRepoRev, repoPath, repoRev } from "sourcegraph/repo";
 import { withLineColBoundToHash } from "sourcegraph/blob/withLineColBoundToHash";
-import { withLastSrclibDataVersion } from "sourcegraph/blob/withLastSrclibDataVersion";
 import { withResolvedRepoRev } from "sourcegraph/repo/withResolvedRepoRev";
 import { withFileBlob } from "sourcegraph/blob/withFileBlob";
 import { BlobMain } from "sourcegraph/blob/BlobMain";
@@ -21,10 +20,8 @@ export const routes = [
 				// Create only once to avoid unnecessary remounting after each route change.
 				_blobMainComponent = withLineColBoundToHash(
 					withResolvedRepoRev(
-						withLastSrclibDataVersion(
-							withFileBlob(
-								BlobMain
-							)
+						withFileBlob(
+							BlobMain
 						)
 					)
 				);

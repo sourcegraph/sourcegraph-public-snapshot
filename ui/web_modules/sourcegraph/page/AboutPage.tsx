@@ -45,9 +45,8 @@ export function AboutPage(props: {}) {
 				<Heading level="5">Supported languages</Heading>
 <ul>
 <li>Go &mdash; <a href="/github.com/golang/go/-/info/GoPackage/net/http/-/NewRequest">try it</a></li>
-<li>Java &mdash; <a href="/github.com/square/okhttp/-/info/JavaArtifact/com.squareup.okhttp3/okhttp/-/okhttp3/Request:type/Builder:type/method:java.lang.String:okhttp3.RequestBody">try it</a></li>
 </ul>
-				<p className={styles.p}><em>Coming soon: JavaScript, Python, C#, PHP, Objective-C, C/C++, Scala, Perl, TypeScript, etc.</em> <a href="mailto:support@sourcegraph.com">Email us</a> to get early beta access to these languages for your team or project.</p>
+				<p className={styles.p}><em>Coming soon: Java, JavaScript, Python, C#, PHP, Objective-C, C/C++, Scala, Perl, TypeScript, etc.</em> <a href="mailto:support@sourcegraph.com">Email us</a> to get early beta access to these languages for your team or project.</p>
 
 				{!context.user && <div className={styles.cta}>
 					<GitHubAuthButton color="purple" className={base.mr3}>

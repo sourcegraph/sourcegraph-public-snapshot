@@ -16,9 +16,6 @@ interface Props {
 	repoObj?: any;
 	isCloning: boolean;
 
-	// srclibDataVersions is TreeStore.srclibDataVersions.
-	srclibDataVersions?: any;
-
 	// to construct URLs
 	routes: any[];
 	routeParams: any;
@@ -33,7 +30,6 @@ export class RevSwitcherContainer extends Container<Props, State> {
 		Object.assign(state, props);
 		state.branches = RepoStore.branches;
 		state.tags = RepoStore.tags;
-		state.srclibDataVersions = TreeStore.srclibDataVersions;
 	}
 
 	stores(): Store<any>[] {
@@ -45,7 +41,6 @@ export class RevSwitcherContainer extends Container<Props, State> {
 			<RevSwitcher
 				branches={this.state.branches}
 				tags={this.state.tags}
-				srclibDataVersions={this.state.srclibDataVersions}
 				{...this.props} />
 			);
 	}

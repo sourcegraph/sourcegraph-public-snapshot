@@ -183,8 +183,8 @@ export class Home extends Container<HomeProps, HomeState> {
 
 					<FlexContainer justify="between" className={classNames(base.center, base.mt4)} style={{maxWidth: "440px"}}>
 						<img title="Go supported" className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/go2.svg`} />
-						<img title="Java supported" className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/java.svg`} />
 						<div style={{display: "inline-block", position: "relative", cursor: "pointer"}} onMouseOver={() => this.setState({langMouseover: true})} onMouseLeave={() => this.setState({langMouseover: false})}>
+							<img title="Java coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/java.svg`} />
 							<img title="JavaScript coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/js.svg`} />
 							<img title="Python coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/python.svg`} />
 							<img title="PHP coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/php.svg`} />

@@ -2,9 +2,7 @@ export type Action =
 	WantCommit |
 	CommitFetched |
 	WantFileList |
-	FileListFetched |
-	WantSrclibDataVersion |
-	FetchedSrclibDataVersion;
+	FileListFetched;
 
 export class WantCommit {
 	repo: string;
@@ -51,33 +49,5 @@ export class FileListFetched {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.fileList = fileList;
-	}
-}
-
-export class WantSrclibDataVersion {
-	repo: string;
-	commitID: string;
-	path: string | null;
-	force: boolean;
-
-	constructor(repo: string, commitID: string, path?: string | null, force?: boolean) {
-		this.repo = repo;
-		this.commitID = commitID;
-		this.path = path || null;
-		this.force = force || false;
-	}
-}
-
-export class FetchedSrclibDataVersion {
-	repo: string;
-	commitID: string;
-	path: string | null;
-	version: string | null;
-
-	constructor(repo: string, commitID: string, path?: string | null, version?: string | null) {
-		this.repo = repo;
-		this.commitID = commitID;
-		this.path = path || null;
-		this.version = version || null;
 	}
 }

@@ -9,6 +9,7 @@ import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {BlobStore, keyForFile} from "sourcegraph/blob/BlobStore";
 import "sourcegraph/blob/BlobBackend";
 import {urlToTree} from "sourcegraph/tree/routes";
+import { rel } from "sourcegraph/app/routePatterns";
 
 // withFileBlob wraps Component and passes it a "blob" property containing
 // the blob fetched from the server. The path is taken from props or parsed from
@@ -22,6 +23,7 @@ export function withFileBlob(Component) {
 		commitID?: string;
 		params: any;
 		path: string;
+		route?: any;
 	}
 
 	type State = any;
@@ -38,6 +40,11 @@ export function withFileBlob(Component) {
 		reconcileState(state: State, props: Props): void {
 			Object.assign(state, props);
 			state.blob = state.path && state.commitID ? (BlobStore.files[keyForFile(state.repo, state.commitID, state.path)] || null) : null;
+
+			state.path = props.route && props.route.path && props.route.path.startsWith(rel.blob) ? props.params.splat[1] : state.path;
+			if (!state.path) {
+				state.path = null;
+			}
 		}
 
 		onStateTransition(prevState: State, nextState: State): void {
