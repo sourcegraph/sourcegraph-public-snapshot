@@ -65,11 +65,3 @@ func goRangesToLSPLocations(fset *token.FileSet, nodes []posEnd) []lsp.Location 
 	}
 	return locs
 }
-
-func goRangeToLSPLocation(fset *token.FileSet, pos token.Pos, end token.Pos) lsp.Location {
-	return lsp.Location{
-		URI:   "file://" + fset.Position(pos).Filename,
-		Range: rangeForNode(fset, fakeNode{p: pos, e: end}),
-	}
-
-}

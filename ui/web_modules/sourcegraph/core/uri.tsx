@@ -37,19 +37,6 @@ export class URI {
 		};
 	}
 
-	// repoParamsExt mirrors the functionality of repoParams, but is
-	// meant to be called outside of Monaco (or when Monaco has not
-	// loaded).
-	static repoParamsExt(uri: string): {repo: string, rev: string | null, path: string} {
-		let a = document.createElement("a");
-		a.href = uri;
-		return {
-			repo: `${a.hostname}/${a.pathname.replace(/\.git$/, "")}`,
-			rev: decodeURIComponent(a.search.replace(/^\?/, "")),
-			path: a.hash.replace(/^\#/, "").replace(/^\//, ""),
-		};
-	}
-
 	// withoutFilePath returns the URI without the file path (the URL
 	// fragment).
 	static withoutFilePath(uri: monaco.Uri): monaco.Uri {
