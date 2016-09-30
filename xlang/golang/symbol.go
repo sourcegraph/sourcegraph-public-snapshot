@@ -133,7 +133,7 @@ func toSym(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos t
 }
 
 func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2Conn, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
-	results := resultSorter{query: parseQuery(params.Query), results: make([]lsp.SymbolInformation, 0)}
+	results := resultSorter{query: parseQuery(params.Query)}
 	{
 		fs := token.NewFileSet()
 		rootPath := h.filePath(h.init.RootPath)

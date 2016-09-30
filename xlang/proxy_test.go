@@ -39,7 +39,6 @@ func TestProxy(t *testing.T) {
 		wantHover      map[string]string
 		wantDefinition map[string]string
 		wantReferences map[string][]string
-		wantSymbols    map[string][]string
 		otherVFS       map[string]vfs.FileSystem
 	}{
 		"go basic": {
@@ -79,11 +78,6 @@ func TestProxy(t *testing.T) {
 					"git://test/pkg?master#b.go:1:23",
 				},
 			},
-			wantSymbols: map[string][]string{
-				"":  []string{"git://test/pkg?master#a.go:function:pkg.A", "git://test/pkg?master#b.go:function:pkg.B"},
-				"A": []string{"git://test/pkg?master#a.go:function:pkg.A"},
-				"B": []string{"git://test/pkg?master#b.go:function:pkg.B"},
-			},
 		},
 		"go detailed": {
 			rootPath: "git://test/pkg?master",
@@ -93,11 +87,6 @@ func TestProxy(t *testing.T) {
 			}),
 			wantHover: map[string]string{
 			// "a.go:1:28": "(T).F string", // TODO(sqs): see golang/hover.go; this is the output we want
-			},
-			wantSymbols: map[string][]string{
-				"":  []string{"git://test/pkg?master#a.go:class:pkg.T"},
-				"T": []string{"git://test/pkg?master#a.go:class:pkg.T"},
-				"F": []string{}, // we don't return fields for now
 			},
 		},
 		"go subdirectory in repo": {
@@ -120,9 +109,6 @@ func TestProxy(t *testing.T) {
 				"d2/b.go:1:39": "git://test/pkg?master#d/d2/b.go:1:39",
 				"d2/b.go:1:47": "git://test/pkg?master#d/a.go:1:17",
 				"d2/b.go:1:52": "git://test/pkg?master#d/d2/b.go:1:39",
-			},
-			wantSymbols: map[string][]string{
-				"": []string{"git://test/pkg?master#d/a.go:function:d.A", "git://test/pkg?master#d/d2/b.go:function:d2.B"},
 			},
 		},
 		"go multiple packages in dir": {
@@ -152,9 +138,6 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				// "main.go:3:47": "git://test/pkg?master#a.go:1:17",    // p.A() -> a.go func A()
 				// "main.go:3:52": "git://test/pkg?master#main.go:3:39", // B() -> func B()
 			},
-			wantSymbols: map[string][]string{
-				"": []string{"git://test/pkg?master#a.go:function:pkg.A"},
-			},
 		},
 		"goroot": {
 			rootPath: "git://test/pkg?master",
@@ -172,9 +155,6 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"https://github.com/golang/go?go1.7.1": mapfs.New(map[string]string{
 					"src/fmt/print.go": "package fmt; func Println(a ...interface{}) (n int, err error) { return }",
 				}),
-			},
-			wantSymbols: map[string][]string{
-				"": []string{"git://test/pkg?master#a.go:variable:pkg._"},
 			},
 		},
 		"gopath": {
@@ -194,9 +174,6 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				// "b/b.go:1:20": "git://test/pkg?master#a", // TODO(sqs): make import paths hoverable
 				"b/b.go:1:43": "git://test/pkg?master#a/a.go:1:17",
 			},
-			wantSymbols: map[string][]string{
-				"": []string{"git://test/pkg?master#a/a.go:function:a.A", "git://test/pkg?master#b/b.go:variable:b._"},
-			},
 		},
 		"go vendored dep": {
 			rootPath: "git://test/pkg?master",
@@ -210,9 +187,6 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			},
 			wantDefinition: map[string]string{
 				"a.go:1:61": "git://test/pkg?master#vendor/github.com/v/vendored/v.go:1:24",
-			},
-			wantSymbols: map[string][]string{
-				"": []string{"git://test/pkg?master#a.go:variable:pkg._", "git://test/pkg?master#vendor/github.com/v/vendored/v.go:function:vendored.V"},
 			},
 		},
 		"go external dep": {
@@ -312,22 +286,6 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				}),
 			},
 		},
-		"go symbols": {
-			rootPath: "git://test/pkg?master",
-			mode:     "go",
-			fs: mapfs.New(map[string]string{
-				"abc.go": `package a; type XYZ struct {}; func (x XYZ) ABC() {}`,
-				"bcd.go": `package a; type YZA struct {}; func (y YZA) BCD() {}`,
-				"xyz.go": `package a; func yza() {}`,
-			}),
-			wantSymbols: map[string][]string{
-				"":    []string{"git://test/pkg?master#abc.go:method:XYZ.ABC", "git://test/pkg?master#bcd.go:method:YZA.BCD", "git://test/pkg?master#abc.go:class:pkg.XYZ", "git://test/pkg?master#bcd.go:class:pkg.YZA", "git://test/pkg?master#xyz.go:function:pkg.yza"},
-				"xyz": []string{"git://test/pkg?master#abc.go:class:pkg.XYZ", "git://test/pkg?master#abc.go:method:XYZ.ABC", "git://test/pkg?master#xyz.go:function:pkg.yza"},
-				"yza": []string{"git://test/pkg?master#bcd.go:class:pkg.YZA", "git://test/pkg?master#xyz.go:function:pkg.yza", "git://test/pkg?master#bcd.go:method:YZA.BCD"},
-				"abc": []string{"git://test/pkg?master#abc.go:method:XYZ.ABC", "git://test/pkg?master#abc.go:class:pkg.XYZ"},
-				"bcd": []string{"git://test/pkg?master#bcd.go:method:YZA.BCD", "git://test/pkg?master#bcd.go:class:pkg.YZA"},
-			},
-		},
 	}
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
@@ -380,12 +338,6 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			for pos, want := range test.wantReferences {
 				t.Run(fmt.Sprintf("references-%s", pos), func(t *testing.T) {
 					referencesTest(t, ctx, c, root, pos, want)
-				})
-			}
-
-			for query, want := range test.wantSymbols {
-				t.Run(fmt.Sprintf("symbols(q=%q)", query), func(t *testing.T) {
-					symbolsTest(t, ctx, c, root, query, want)
 				})
 			}
 		})
@@ -493,19 +445,6 @@ func referencesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *u
 	}
 }
 
-func symbolsTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, query string, want []string) {
-	symbols, err := callSymbols(ctx, c, query)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for i := range symbols {
-		symbols[i] = strings.TrimPrefix(symbols[i], "file:///")
-	}
-	if !reflect.DeepEqual(symbols, want) {
-		t.Errorf("got %#v, want %q", symbols, want)
-	}
-}
-
 func parsePos(s string) (file string, line, char int, err error) {
 	parts := strings.Split(s, ":")
 	if len(parts) != 3 {
@@ -584,40 +523,6 @@ func callReferences(ctx context.Context, c *jsonrpc2.Conn, uri string, line, cha
 		str[i] = fmt.Sprintf("%s:%d:%d", loc.URI, loc.Range.Start.Line+1, loc.Range.Start.Character+1)
 	}
 	return str, nil
-}
-
-var symbolKindName = map[lsp.SymbolKind]string{
-	lsp.SKFile:        "file",
-	lsp.SKModule:      "module",
-	lsp.SKNamespace:   "namespace",
-	lsp.SKPackage:     "package",
-	lsp.SKClass:       "class",
-	lsp.SKMethod:      "method",
-	lsp.SKProperty:    "property",
-	lsp.SKField:       "field",
-	lsp.SKConstructor: "constructor",
-	lsp.SKEnum:        "enum",
-	lsp.SKInterface:   "interface",
-	lsp.SKFunction:    "function",
-	lsp.SKVariable:    "variable",
-	lsp.SKConstant:    "constant",
-	lsp.SKString:      "string",
-	lsp.SKNumber:      "number",
-	lsp.SKBoolean:     "boolean",
-	lsp.SKArray:       "array",
-}
-
-func callSymbols(ctx context.Context, c *jsonrpc2.Conn, query string) ([]string, error) {
-	var symbols []lsp.SymbolInformation
-	err := c.Call(ctx, "workspace/symbol", lsp.WorkspaceSymbolParams{Query: query}, &symbols)
-	if err != nil {
-		return nil, err
-	}
-	syms := make([]string, len(symbols))
-	for i, s := range symbols {
-		syms[i] = fmt.Sprintf("%s:%s:%s.%s", s.Location.URI, symbolKindName[s.Kind], s.ContainerName, s.Name)
-	}
-	return syms, nil
 }
 
 type markedStrings []lsp.MarkedString
