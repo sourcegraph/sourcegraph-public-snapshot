@@ -29,6 +29,11 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	_, err = c.AddCommand("sendx", "send an LSP request to a build/lang server based on tracked error output.", "", &sendCmdSimple{})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func init() {
@@ -77,16 +82,27 @@ func (c *cmd) Execute(args []string) error {
 	return nil
 }
 
-type sendCmd struct {
+type sendCmdOpts struct {
 	Addr            string        `long:"addr" description:"LSP proxy server address" env:"LSP_PROXY"`
 	Trace           bool          `long:"trace" description:"print traces"`
 	DiagnosticsWait time.Duration `long:"diagnostics-wait" description:"wait for the server to publish diagnostics asynchronously" default:"200ms"`
 	Quiet           bool          `short:"q" long:"quiet" description:"print minimal output (only JSON result)"`
-	Args            struct {
-		RootPath string `name:"ROOT-PATH" description:"rootPath for LSP initialization"`
-		Mode     string `name:"MODE" description:"mode ID ('go', 'javascript', 'typescript', etc.)"`
-		Method   string `name:"LSP-METHOD" description:"name of LSP method to send (e.g., textDocument/hover)"`
-	} `positional-args:"yes" required:"yes" count:"1"`
+}
+
+type sendCmdArgs struct {
+	RootPath string `name:"ROOT-PATH" description:"rootPath for LSP initialization"`
+	Mode     string `name:"MODE" description:"mode ID ('go', 'javascript', 'typescript', etc.)"`
+	Method   string `name:"LSP-METHOD" description:"name of LSP method to send (e.g., textDocument/hover)"`
+}
+
+type sendCmd struct {
+	sendCmdOpts
+	Args sendCmdArgs `positional-args:"yes" required:"yes" count:"1"`
+}
+
+type sendCmdSimple struct {
+	sendCmdOpts
+	Input string `long:"input" description:"JSON blob describing Args and params for sendCmd"`
 }
 
 /*
@@ -115,6 +131,31 @@ echo '{"textDocument":{"uri":"git://github.com/kubernetes/kubernetes?2580157#pkg
 */
 
 func (c *sendCmd) Execute(args []string) error {
+	reqParams, err := ioutil.ReadAll(os.Stdin)
+	if err != nil {
+		return err
+	}
+	return sendExecute(&c.sendCmdOpts, &c.Args, reqParams)
+}
+
+func (c *sendCmdSimple) Execute(args []string) error {
+	input := &struct {
+		sendCmdArgs
+		Params *json.RawMessage
+	}{}
+	err := json.Unmarshal([]byte(c.Input), input)
+	if err != nil {
+		return err
+	}
+	reqParams, _ := input.Params.MarshalJSON()
+	logPrefix := []byte("tracked error: ")
+	if bytes.HasPrefix(reqParams, logPrefix) {
+		reqParams = reqParams[len(logPrefix):]
+	}
+	return sendExecute(&c.sendCmdOpts, &input.sendCmdArgs, reqParams)
+}
+
+func sendExecute(c *sendCmdOpts, args *sendCmdArgs, reqParams []byte) error {
 	printIndentJSON := func(v json.RawMessage) {
 		var buf bytes.Buffer
 		if err := json.Indent(&buf, v, "", "  "); err == nil {
@@ -173,23 +214,19 @@ func (c *sendCmd) Execute(args []string) error {
 
 	var initResult lsp.InitializeResult
 	if err := jc.Call(ctx, "initialize", ClientProxyInitializeParams{
-		Mode:             c.Args.Mode,
-		InitializeParams: lsp.InitializeParams{RootPath: c.Args.RootPath},
+		Mode:             args.Mode,
+		InitializeParams: lsp.InitializeParams{RootPath: args.RootPath},
 	}, &initResult); err != nil {
 		return err
 	}
 
-	reqParams, err := ioutil.ReadAll(os.Stdin)
-	if err != nil {
-		return err
-	}
 	var result *json.RawMessage
 	tReq0 := time.Now()
-	if err := jc.Call(ctx, c.Args.Method, (*json.RawMessage)(&reqParams), &result); err != nil {
+	if err := jc.Call(ctx, args.Method, (*json.RawMessage)(&reqParams), &result); err != nil {
 		return err
 	}
 	if !c.Quiet {
-		fmt.Fprintf(os.Stderr, "# %s took %s\n", c.Args.Method, time.Since(tReq0))
+		fmt.Fprintf(os.Stderr, "# %s took %s\n", args.Method, time.Since(tReq0))
 	}
 	printIndentJSON(*result)
 
