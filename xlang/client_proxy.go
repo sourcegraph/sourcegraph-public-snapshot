@@ -248,6 +248,15 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}
 		var respObj interface{}
 		if err := c.callServer(ctx, req.Method, req.Params, &respObj); err != nil {
+			// Machine parseable to assist us finding most common errors
+			msg, _ := json.Marshal(map[string]interface{}{
+				"RootPath": c.context.rootPath.String(),
+				"Mode":     c.context.mode,
+				"Method":   req.Method,
+				"Params":   req.Params,
+				"Error":    err.Error(),
+			})
+			log.Printf("tracked error: %s", string(msg))
 			return nil, err
 		}
 		return respObj, nil
