@@ -149,7 +149,8 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 			// Don't interfere with text selection.
 			return;
 		}
-		if (mouseEvent.event.leftButton && mouseEvent.target.type === monaco.editor.MouseTargetType.CONTENT_TEXT) {
+
+		if (mouseEvent.event.leftButton && mouseEvent.target.type === monaco.editor.MouseTargetType.CONTENT_TEXT && !mouseEvent.event.ctrlKey) {
 			this.gotoDefinition(mouseEvent.target).done(() => {
 				this.removeDecorations();
 			}, (err: Error) => {
