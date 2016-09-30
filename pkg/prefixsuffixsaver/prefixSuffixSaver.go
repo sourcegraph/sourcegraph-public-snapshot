@@ -1,16 +1,16 @@
-package langp
+package prefixsuffixsaver
 
 import (
 	"bytes"
 	"strconv"
 )
 
-// NOTE: This type is borrowed directly from the Go stdlib (os/exec/exec.go).
+// NOTE: This type is borrowed directly from the Go stdlib (os/exec/exec.go), except Exported and named Writer
 
-// prefixSuffixSaver is an io.Writer which retains the first N bytes
+// Writer is an io.Writer which retains the first N bytes
 // and the last N bytes written to it. The Bytes() methods reconstructs
 // it with a pretty error message.
-type prefixSuffixSaver struct {
+type Writer struct {
 	N         int // max size of prefix or suffix
 	prefix    []byte
 	suffix    []byte // ring buffer once len(suffix) == N
@@ -24,7 +24,7 @@ type prefixSuffixSaver struct {
 	// now just for error messages. It's only ~64KB anyway.
 }
 
-func (w *prefixSuffixSaver) Write(p []byte) (n int, err error) {
+func (w *Writer) Write(p []byte) (n int, err error) {
 	lenp := len(p)
 	p = w.fill(&w.prefix, p)
 
@@ -50,7 +50,7 @@ func (w *prefixSuffixSaver) Write(p []byte) (n int, err error) {
 
 // fill appends up to len(p) bytes of p to *dst, such that *dst does not
 // grow larger than w.N. It returns the un-appended suffix of p.
-func (w *prefixSuffixSaver) fill(dst *[]byte, p []byte) (pRemain []byte) {
+func (w *Writer) fill(dst *[]byte, p []byte) (pRemain []byte) {
 	if remain := w.N - len(*dst); remain > 0 {
 		add := minInt(len(p), remain)
 		*dst = append(*dst, p[:add]...)
@@ -59,7 +59,7 @@ func (w *prefixSuffixSaver) fill(dst *[]byte, p []byte) (pRemain []byte) {
 	return p
 }
 
-func (w *prefixSuffixSaver) Bytes() []byte {
+func (w *Writer) Bytes() []byte {
 	if w.suffix == nil {
 		return w.prefix
 	}

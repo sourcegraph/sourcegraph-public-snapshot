@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 
 	"github.com/golang/groupcache/consistenthash"
@@ -347,7 +348,7 @@ func (c *Client) do(ctx context.Context, cl *langClient, repo, endpoint string, 
 	defer resp.Body.Close()
 
 	// 1 KB is a good, safe choice for medium-to-high throughput traces.
-	saver := &prefixSuffixSaver{N: 1 * 1024}
+	saver := &prefixsuffixsaver.Writer{N: 1 * 1024}
 	tee := io.TeeReader(resp.Body, saver)
 	defer func() {
 		span.LogEventWithPayload("response - "+resp.Status, string(saver.Bytes()))
