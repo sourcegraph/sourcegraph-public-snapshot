@@ -110,11 +110,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 338,
+              "line": 363,
               "character": 5
             },
             "end": {
-              "line": 338,
+              "line": 363,
               "character": 16
             }
           }
@@ -578,11 +578,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 312,
+              "line": 337,
               "character": 0
             },
             "end": {
-              "line": 312,
+              "line": 337,
               "character": 9
             }
           }
@@ -596,11 +596,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 37,
+              "line": 38,
               "character": 0
             },
             "end": {
-              "line": 37,
+              "line": 38,
               "character": 5
             }
           }
@@ -614,11 +614,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 15,
+              "line": 16,
               "character": 5
             },
             "end": {
-              "line": 15,
+              "line": 16,
               "character": 13
             }
           }
@@ -632,11 +632,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 257,
+              "line": 279,
               "character": 17
             },
             "end": {
-              "line": 257,
+              "line": 279,
               "character": 29
             }
           }
@@ -650,11 +650,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 110,
+              "line": 117,
               "character": 17
             },
             "end": {
-              "line": 110,
+              "line": 117,
               "character": 19
             }
           }
@@ -668,11 +668,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 116,
+              "line": 123,
               "character": 17
             },
             "end": {
-              "line": 116,
+              "line": 123,
               "character": 24
             }
           }
@@ -686,11 +686,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 196,
+              "line": 218,
               "character": 17
             },
             "end": {
-              "line": 196,
+              "line": 218,
               "character": 22
             }
           }
@@ -704,11 +704,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 202,
+              "line": 224,
               "character": 17
             },
             "end": {
-              "line": 202,
+              "line": 224,
               "character": 26
             }
           }
@@ -722,11 +722,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 209,
+              "line": 231,
               "character": 17
             },
             "end": {
-              "line": 209,
+              "line": 231,
               "character": 23
             }
           }
@@ -740,11 +740,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 215,
+              "line": 237,
               "character": 17
             },
             "end": {
-              "line": 215,
+              "line": 237,
               "character": 20
             }
           }
@@ -758,11 +758,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 57,
+              "line": 60,
               "character": 17
             },
             "end": {
-              "line": 57,
+              "line": 60,
               "character": 21
             }
           }
@@ -776,11 +776,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 221,
+              "line": 243,
               "character": 17
             },
             "end": {
-              "line": 221,
+              "line": 243,
               "character": 27
             }
           }
@@ -794,11 +794,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 227,
+              "line": 249,
               "character": 17
             },
             "end": {
-              "line": 227,
+              "line": 249,
               "character": 23
             }
           }
@@ -812,11 +812,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 188,
+              "line": 210,
               "character": 17
             },
             "end": {
-              "line": 188,
+              "line": 210,
               "character": 24
             }
           }
@@ -830,11 +830,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 233,
+              "line": 255,
               "character": 17
             },
             "end": {
-              "line": 233,
+              "line": 255,
               "character": 20
             }
           }
@@ -848,11 +848,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 239,
+              "line": 261,
               "character": 17
             },
             "end": {
-              "line": 239,
+              "line": 261,
               "character": 26
             }
           }
@@ -866,11 +866,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 245,
+              "line": 267,
               "character": 17
             },
             "end": {
-              "line": 245,
+              "line": 267,
               "character": 23
             }
           }
@@ -884,11 +884,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 251,
+              "line": 273,
               "character": 17
             },
             "end": {
-              "line": 251,
+              "line": 273,
               "character": 23
             }
           }
@@ -902,11 +902,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 76,
+              "line": 79,
               "character": 17
             },
             "end": {
-              "line": 76,
+              "line": 79,
               "character": 25
             }
           }
@@ -920,11 +920,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 147,
+              "line": 154,
               "character": 17
             },
             "end": {
-              "line": 147,
+              "line": 154,
               "character": 25
             }
           }
@@ -938,12 +938,30 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 134,
+              "line": 141,
               "character": 17
             },
             "end": {
-              "line": 134,
+              "line": 141,
               "character": 27
+            }
+          }
+        },
+        "containerName": "mux Router"
+      },
+      {
+        "name": "UseEncodedPath",
+        "kind": 6,
+        "location": {
+          "uri": "file:///gopath/src/mux/mux.go",
+          "range": {
+            "start": {
+              "line": 169,
+              "character": 17
+            },
+            "end": {
+              "line": 169,
+              "character": 30
             }
           }
         },
@@ -956,11 +974,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 264,
+              "line": 286,
               "character": 17
             },
             "end": {
-              "line": 264,
+              "line": 286,
               "character": 20
             }
           }
@@ -974,11 +992,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 275,
+              "line": 297,
               "character": 0
             },
             "end": {
-              "line": 275,
+              "line": 297,
               "character": 7
             }
           }
@@ -992,11 +1010,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 270,
+              "line": 292,
               "character": 0
             },
             "end": {
-              "line": 270,
+              "line": 292,
               "character": 9
             }
           }
@@ -1010,11 +1028,11 @@
           "uri": "file:///gopath/src/mux/mux.go",
           "range": {
             "start": {
-              "line": 326,
+              "line": 351,
               "character": 5
             },
             "end": {
-              "line": 326,
+              "line": 351,
               "character": 8
             }
           }

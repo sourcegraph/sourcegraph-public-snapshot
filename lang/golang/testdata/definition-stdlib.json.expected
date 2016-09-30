@@ -13,21 +13,7 @@
   },
   {
     "id": 1,
-    "result": [
-      {
-        "uri": "stdlib://0d818588685976407c81c60d2fda289361cbc8ec/src/net/http/server.go",
-        "range": {
-          "start": {
-            "line": 76,
-            "character": 5
-          },
-          "end": {
-            "line": 76,
-            "character": 11
-          }
-        }
-      }
-    ],
+    "result": [],
     "jsonrpc": "2.0"
   },
   {
