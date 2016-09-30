@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
 
@@ -135,6 +137,22 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 			}
 		}
 	}
-	span.LogEventWithPayload("responses", resps)
-	return writeJSON(w, resps)
+
+	// 1 KB is a good, safe choice for medium-to-high throughput traces.
+	saver := &prefixsuffixsaver.Writer{N: 1 * 1024}
+	defer func() {
+		if saver.Skipped() == 0 {
+			// We have returned a small object. Fine to let
+			// lightstep serialize it itself, which leads to nicer
+			// traces.
+			span.LogEventWithPayload("responses", resps)
+		} else {
+			span.LogEventWithPayload("response", string(saver.Bytes()))
+		}
+	}()
+
+	// We don't want to use writeJSON, since we want to log the response
+	// body to saver as well
+	w.Header().Set("content-type", "application/json; charset=utf-8")
+	return json.NewEncoder(io.MultiWriter(saver, w)).Encode(resps)
 }
