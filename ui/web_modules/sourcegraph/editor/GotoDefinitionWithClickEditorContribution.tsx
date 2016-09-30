@@ -36,6 +36,8 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 	private currentWordUnderMouse: IWordAtPositionWithLine | null;
 	private lastMouseMoveEvent: monaco.editor.IEditorMouseEvent | null;
 	private findDefinitionDebounced: (target: monaco.editor.IMouseTarget, word: monaco.editor.IWordAtPosition) => void;
+	private mouseLine: number;
+	private mouseColumn: number;
 
 	constructor(
 		editor: monaco.editor.ICodeEditor,
@@ -48,6 +50,13 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 		this.toUnhook.push(this.editor.onDidChangeCursorSelection((e) => this.onDidChangeCursorSelection(e)));
 		this.toUnhook.push(this.editor.onDidChangeModel((e) => this.resetHandler()));
 		this.toUnhook.push(this.editor.onDidChangeModelContent(() => this.resetHandler()));
+		this.toUnhook.push(this.editor.onMouseMove((e) => {
+			if (!e.target.position) {
+				return;
+			}
+			this.mouseLine = e.target.position.lineNumber;
+			this.mouseColumn = e.target.position.column;
+		}));
 		this.toUnhook.push(this.editor.onDidScrollChange((e) => {
 			if (e.scrollTopChanged || e.scrollLeftChanged) {
 				this.resetHandler();
@@ -107,6 +116,10 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 				return;
 			}
 
+			// If the mouse isn't currently over the word we just fetched, don't highlight it.
+			if (this.mouseLine !== target.position.lineNumber || this.mouseColumn < word.startColumn || word.endColumn < this.mouseColumn) {
+				return;
+			}
 			this.addDecoration(
 				{
 					startLineNumber: target.position.lineNumber,
