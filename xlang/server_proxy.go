@@ -281,6 +281,16 @@ func (c *serverProxyConn) presendFiles(ctx context.Context, rootFS vfs.FileSyste
 		span.Finish()
 	}()
 
+	// GitHubVFS allows us to do a fetch with a context, which means we
+	// get tracing. The VFS interface otherwise does not allow us to do
+	// that.
+	type PreFetchOrWaiter interface {
+		PreFetchOrWait(context.Context)
+	}
+	if f, ok := rootFS.(PreFetchOrWaiter); ok {
+		f.PreFetchOrWait(ctx)
+	}
+
 	// Read files in the repository at the given commit.
 	allFiles, err := vfsutil.ReadAllFiles(rootFS, "", modeFileFilter[c.id.mode])
 	if err != nil {

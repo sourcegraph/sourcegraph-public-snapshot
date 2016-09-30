@@ -3,6 +3,7 @@ package vfsutil
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +12,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"sync"
+
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/zipfs"
@@ -60,35 +64,62 @@ type GitHubRepoVFS struct {
 	save bool // save to the local file system for reuse
 }
 
+// PreFetchOrWait can be used by clients to pre-emptively start fetching
+// contents. Unlike the VFS interface it also allows passing in a Context, so
+// we can record trace data/cancel/etc.
+func (fs *GitHubRepoVFS) PreFetchOrWait(ctx context.Context) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "GitRepoVFS PreFetchOrWait")
+	defer span.Finish()
+	fs.once.Do(func() {
+		fs.err = fs.fetch(ctx)
+	})
+}
+
 // fetchOrWait initiates the HTTP fetch if it has not yet
 // started. Otherwise it waits for it to finish.
 func (fs *GitHubRepoVFS) fetchOrWait() error {
 	fs.once.Do(func() {
-		fs.err = fs.fetch()
+		fs.err = fs.fetch(context.Background())
 	})
 
 	return fs.err
 }
 
-func (fs *GitHubRepoVFS) fetch() error {
+func (fs *GitHubRepoVFS) fetch(ctx context.Context) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "GitRepoVFS fetch")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+		span.Finish()
+	}()
+
 	url := fmt.Sprintf("https://codeload.%s/zip/%s", fs.repo, fs.rev)
+	span.SetTag("repo", fs.repo)
+	span.SetTag("commit", fs.rev)
+	span.SetTag("save", fs.save)
 
 	if fs.save {
 		urlMu := urlMu(url)
 		urlMu.Lock()
 		defer urlMu.Unlock()
+		span.LogEvent("urlMu acquired")
 	}
 
-	var err error
 	var body []byte
 	fsPath := filepath.Join("/tmp/xlang-github-cache", fs.repo, fs.rev+".zip")
 	if fs.save {
 		body, err = ioutil.ReadFile(fsPath)
+		if err != nil {
+			span.LogEvent("read from " + fsPath)
+		}
 	}
 	if !fs.save || os.IsNotExist(err) {
 		// https://github.com/a/b/archive/master.zip redirects to
 		// codeload.github.com, so let's just use the latter directly and
 		// save a roundtrip.
+		span.LogEvent("fetching " + url)
 		resp, err := http.Get(url)
 		if err != nil {
 			return err
@@ -101,6 +132,7 @@ func (fs *GitHubRepoVFS) fetch() error {
 		if err != nil {
 			return err
 		}
+		span.LogEvent("fetched " + url)
 
 		// Cache on the file system.
 		if fs.save {
@@ -110,6 +142,7 @@ func (fs *GitHubRepoVFS) fetch() error {
 			if err := ioutil.WriteFile(fsPath, body, 0600); err != nil {
 				return err
 			}
+			span.LogEvent("cached to " + fsPath)
 		}
 	} else if err != nil {
 		return err

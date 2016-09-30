@@ -15,6 +15,9 @@ import (
 	"sync"
 	"time"
 
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/zipfs"
 )
@@ -31,20 +34,41 @@ type GitRepoVFS struct {
 
 var gitCommitSHARx = regexp.MustCompile(`^[0-9a-f]{40}$`)
 
+// PreFetchOrWait can be used by clients to pre-emptively start fetching
+// contents. Unlike the VFS interface it also allows passing in a Context, so
+// we can record trace data/cancel/etc.
+func (fs *GitRepoVFS) PreFetchOrWait(ctx context.Context) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "GitRepoVFS PreFetchOrWait")
+	defer span.Finish()
+	fs.once.Do(func() {
+		fs.err = fs.fetch(ctx)
+	})
+}
+
 // fetchOrWait initiates the HTTP fetch if it has not yet
 // started. Otherwise it waits for it to finish.
 func (fs *GitRepoVFS) fetchOrWait() error {
 	fs.once.Do(func() {
-		fs.err = fs.fetch()
+		fs.err = fs.fetch(context.Background())
 	})
 
 	return fs.err
 }
 
-func (fs *GitRepoVFS) fetch() error {
+func (fs *GitRepoVFS) fetch(ctx context.Context) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "GitRepoVFS fetch")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+		span.Finish()
+	}()
+
 	urlMu := urlMu(fs.CloneURL)
 	urlMu.Lock()
 	defer urlMu.Unlock()
+	span.LogEvent("urlMu acquired")
 
 	const basePath = "/tmp/xlang-git-clone-cache"
 	h := sha256.Sum256([]byte(fs.CloneURL))
@@ -60,7 +84,7 @@ func (fs *GitRepoVFS) fetch() error {
 	// Try resolving the revision immediately. If we can resolve it, no need to clone or update.
 	commitID, err := gitObjectNameSHA(repoDir, fs.Rev)
 	if err != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 		defer cancel()
 		if _, err := os.Stat(repoDir); err == nil {
 			// Update the repo and hope that we fetch the rev (and can
