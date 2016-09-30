@@ -28,18 +28,21 @@ export default class BlobAnnotator extends Component {
 		annotations: React.PropTypes.object.isRequired,
 		actions: React.PropTypes.object.isRequired,
 		blobElement: React.PropTypes.object.isRequired,
+		infoElement: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props) {
 		super(props);
 		this._clickRefresh = this._clickRefresh.bind(this);
 		this.state = utils.parseURL();
+		this.state.path = props.path;
 		if (this.state.isDelta) {
 			this.state.isSplitDiff = this._isSplitDiff();
 
 			let baseCommitID, headCommitID;
 			let el = document.getElementsByClassName("js-socket-channel js-updatable-content js-pull-refresh-on-pjax");
 			if (el && el.length > 0) {
+				// Blob view
 				for (let i = 0; i < el.length; ++i) {
 					const url = el[i].dataset ? el[i].dataset.url : null;
 					if (!url) continue;
@@ -55,7 +58,15 @@ export default class BlobAnnotator extends Component {
 						if (k === "end_commit_oid") headCommitID = v;
 					}
 				}
+			} else if (props.infoElement.tagName === 'A') {
+				// For snippets in conversation view of pull request
+				const baseInput = document.querySelector('input[name="comparison_base_oid"]');
+				if (baseInput) {
+					baseCommitID = baseInput.value;
+				}
+				headCommitID = props.infoElement.href.split("/files/")[1].split("#diff")[0];
 			} else if (this.state.isPullRequest) {
+				// Files changed view in pull requests
 				const baseInput = document.querySelector('input[name="comparison_base_oid"]');
 				if (baseInput) {
 					baseCommitID = baseInput.value;
@@ -65,6 +76,7 @@ export default class BlobAnnotator extends Component {
 					headCommitID = headInput.value;
 				}
 			} else if (this.state.isCommit) {
+				// Files changed view in commits
 				let shaContainer = document.querySelectorAll(".sha-block");
 				if (shaContainer && shaContainer.length === 2) {
 					let baseShaEl = shaContainer[0].querySelector("a");
@@ -116,14 +128,24 @@ export default class BlobAnnotator extends Component {
 	}
 
 	componentDidMount() {
-		// Click may be for context expansion, in which case we should
+		// Handle context expansion, in which case we should
 		// re-annotate the blob (which is smart enough to only annoate
 		// lines which haven't already been annotated).
-		document.addEventListener("click", this._clickRefresh);
+		let diffExpanders = document.getElementsByClassName("diff-expander");
+		if (diffExpanders) {
+			for (let idx = 0; idx < diffExpanders.length; idx++) {
+				diffExpanders[idx].addEventListener("click", this._clickRefresh);
+			}
+		}
 	}
 
 	componentWillUnmount() {
-		document.removeEventListener("click", this._clickRefresh);
+		let diffExpanders = document.getElementsByClassName("diff-expander");
+		if (diffExpanders) {
+			for (let idx = 0; idx < diffExpanders.length; idx++) {
+				diffExpanders[idx].removeEventListener("click", this._clickRefresh);
+			}
+		}
 	}
 
 	_clickRefresh() {
@@ -213,6 +235,6 @@ export default class BlobAnnotator extends Component {
 		if (!utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
 			return <span id="sourcegraph-build-indicator-text" style={{paddingLeft: "5px"}}><a href={`https://sourcegraph.com/${this.state.repoURI}@${this.state.rev}/-/blob/${this.state.path}`}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px", WebkitFilter: "grayscale(100%)"}} /></a>{"Language not supported. Coming soon!"}</span>;
 		}
-		return <span><a href={`https://sourcegraph.com/${this.state.repoURI}@${this.state.rev}/-/blob/${this.state.path}`}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px"}} /></a></span>;
+		return <span><a href={`https://sourcegraph.com/${this.state.repoURI}@${this.state.rev || this.state.baseCommitID}/-/blob/${this.state.path}`}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px"}} /></a></span>;
 	}
 }

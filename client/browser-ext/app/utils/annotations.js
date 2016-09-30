@@ -17,7 +17,6 @@ export default function addAnnotations(path, repoRevSpec, el, anns, lineStartByt
 export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startBytesByLine, isSplitDiff) {
 	// The blob is represented by a table; the first column is the line number,
 	// the second is code. Each row is a line of code
-	const arg = utils.parseURL();
 	const table = el.querySelector("table");
 
 	let cells = [];
@@ -74,8 +73,14 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 			codeCell = row.cells[1];
 		}
 
-		// Prevent double annotation of lines.
-		if (el.dataset[`${line}_${repoRevSpec.rev}`]) continue;
+		// If the line has already been annotated,
+		// restore event handlers if necessary otherwise move to next line
+		if (el.dataset[`${line}_${repoRevSpec.rev}`]) {
+			if (!el.onclick || !el.onmouseout || !el.onmouseover) {
+				addEventListeners(codeCell, path, repoRevSpec, line);
+			}
+			continue;
+		}
 		el.dataset[`${line}_${repoRevSpec.rev}`] = true;
 
 		const offset = startBytesByLine[line];
@@ -92,7 +97,7 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 			} else {
 				cell.innerHTML = result;
 			}
-			addEventListeners(cell, arg, path, repoRevSpec, line);
+			addEventListeners(cell, path, repoRevSpec, line);
 		});
 	}
 }
@@ -293,14 +298,14 @@ export function convertStringNode(node, annsByStartByte, offset, lineStart) {
 let popoverCache = {};
 let jumptodefcache = {};
 
-function addEventListeners(el, arg, path, repoRevSpec, line) {
+function addEventListeners(el, path, repoRevSpec, line) {
 	let activeTarget, popover;
 
-	el.addEventListener("click", (e) => {
+	el.onclick = function(e) {
 		let t = getTarget(e.target);
 		if (!t) return;
 		let col = t.dataset.byteoffset;
-		let url = `https://sourcegraph.com/.api/repos/${arg.repoURI}@${repoRevSpec.rev}/-/jump-def?file=${path}&line=${line - 1}&character=${col}`;
+		let url = `https://sourcegraph.com/.api/repos/${repoRevSpec.repoURI}@${repoRevSpec.rev}/-/jump-def?file=${path}&line=${line - 1}&character=${col}`;
 
 		fetchJumpURL(url, function(defUrl, isCurrentPage) {
 			if (!defUrl) return;
@@ -311,27 +316,27 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 				location.href = defUrl;
 			}
 		});
-	});
+	}
 
-	el.addEventListener("mouseout", (e) => {
+	el.onmouseout = function(e) {
 		hidePopover();
 		activeTarget = null;
-	});
+	}
 
-	el.addEventListener("mouseover", (e) => {
+	el.onmouseover = function(e) {
 		let t = getTarget(e.target);
 		if (!t) return;
 		if (activeTarget !== t) {
 			activeTarget = t;
 
 			let col = activeTarget.dataset.byteoffset;
-			let url = `https://sourcegraph.com/.api/repos/${arg.repoURI}@${repoRevSpec.rev}/-/hover-info?file=${path}&line=${line - 1}&character=${col}`;
+			let url = `https://sourcegraph.com/.api/repos/${repoRevSpec.repoURI}@${repoRevSpec.rev}/-/hover-info?file=${path}&line=${line - 1}&character=${col}`;
 
 			fetchPopoverData(url, function(html) {
 				if (activeTarget && html) showPopover(html, e.pageX, e.pageY);
 			});
 		}
-	});
+	}
 
 	function getTarget(t) {
 		while (t && t.tagName !== "TD" && !t.dataset && !t.dataset.byteoffset) {t = t.parentNode;}
@@ -375,12 +380,14 @@ function addEventListeners(el, arg, path, repoRevSpec, line) {
 					const jmpFragment1 = jmpFragment0[1].split("#");
 
 					const jmprep = jmpFragment0[0];
-					const jmprev = jmpFragment1[0] ? jmpFragment1[0] : "master";
+
+					// TODO: Fix this revision overriding, back-end is returning wrong jump-def line range
+					const jmprev = jmprep === 'github.com/golang/go' ? "go1.7.1" : jmpFragment1[0] ? jmpFragment1[0] : "master";
 					const jmppth = jmpFragment1[1];
 					const jmplin = (Array.isArray(json.range) ? json.range[0].start.line : json.range.start.line) + 1; // line is 0-index but Github uses 1-index
 					const jmp = `https://${jmprep}/blob/${jmprev}/${jmppth}#L${jmplin}`;
 
-					jumptodefcache[url] = {defUrl: jmp, defCurPage: jmprep === arg.repoURI && jmppth === path};
+					jumptodefcache[url] = {defUrl: jmp, defCurPage: jmprep === repoRevSpec.repoURI && jmppth === path};
 					cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
 				} catch (err) {
 					jumptodefcache[url] = {defUrl: "", defCurPage: false};

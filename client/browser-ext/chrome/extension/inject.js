@@ -1,5 +1,6 @@
 import React from "react";
 import {render} from "react-dom";
+import {unmountComponentAtNode} from "react-dom";
 import {Provider} from "react-redux";
 
 import EventLogger from "../../app/analytics/EventLogger";
@@ -22,6 +23,8 @@ function getFileName(info, {isDelta, path}) {
 			return userSelect.title;
 		} else if (info.title) {
 			return info.title;
+		} else if (info.tagName === "A") {
+			return info.innerHTML.trim(); // get text and strip whitespace
 		} else {
 			return null;
 		}
@@ -54,25 +57,44 @@ function injectBlobAnnotator() {
 		const infoFilePath = getFileName(info, {isDelta, path});
 		if (!infoFilePath) continue;
 
-		if (file.dataset && file.dataset["sgAnnotator"]) continue; // prevent injecting twice
-		file.dataset["sgAnnotator"] = true;
-
 		const blobAnnotatorContainer = document.createElement("span");
+		blobAnnotatorContainer.className = "sourcegraph-app-annotator";
 		info.appendChild(blobAnnotatorContainer);
-		injectComponent(<BlobAnnotator path={infoFilePath} blobElement={blob} />, blobAnnotatorContainer);
+		injectComponent(<BlobAnnotator path={infoFilePath} blobElement={blob} infoElement={info} />, blobAnnotatorContainer);
 	}
+}
+
+function ejectComponent(mountElement) {
+	unmountComponentAtNode(mountElement);
+	mountElement.remove();
 }
 
 function injectComponent(component, mountElement) {
 	render(<Provider store={store}>{component}</Provider>, mountElement);
 }
 
-function injectModules() {
-	injectBackgroundApp();
-	injectBlobAnnotator();
+function ejectModules() {
+	var annotators = document.getElementsByClassName('sourcegraph-app-annotator');
+	var background = document.getElementById('sourcegraph-app-background');
+	var bootstrap = document.getElementById('sourcegraph-app-bootstrap');
 
+	for (let idx = annotators.length - 1; idx >= 0; idx--) {
+		ejectComponent(annotators.item(idx));
+	}
+
+	if (background)
+		ejectComponent(background);
+
+	if (bootstrap)
+		bootstrap.remove(); // Not a react component
+}
+
+function injectModules() {
 	// Add invisible div to the page to indicate injection has completed.
 	if (!document.getElementById("sourcegraph-app-bootstrap")) {
+		injectBackgroundApp();
+		injectBlobAnnotator();
+
 		let el = document.createElement("div");
 		el.id = "sourcegraph-app-bootstrap";
 		el.style.display = "none";
@@ -96,7 +118,11 @@ window.addEventListener("load", () => {
 		if (identity) EventLogger.updatePropsForUser(identity);
 	});
 });
-document.addEventListener("pjax:success", () => {
+
+document.addEventListener("pjax:end", () => {
+	// Unmount and remount react components because pjax breaks
+	// dynamically registered event handlers like mouseover/click etc..
+	ejectModules();
 	injectModules();
 });
 
