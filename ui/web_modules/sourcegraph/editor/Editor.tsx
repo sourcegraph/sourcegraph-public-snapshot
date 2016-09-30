@@ -19,6 +19,35 @@ const fetch = singleflightFetch(defaultFetch);
 
 const neverPromise = new Promise(() => null); // never resolved
 
+const promiseRaceResolvedOnly = (a, b: Promise<any>): Promise<any> => {
+	// Promise.race returns the first promise that is either resolved
+	// or rejected. We want a funciton that returns the first promise
+	// that is resolved. If both are rejected, then return one of the
+	// rejections so that the promise eventually terminates.
+	return new Promise((resolve, reject) => {
+		let waitingForOther = false;
+		let done = false;
+		const resolve2 = (v) => {
+			if (!v) {
+				waitingForOther = true;
+			} else if (!done) {
+				resolve(v);
+				done = true;
+			}
+		};
+		const reject2 = (err) => {
+			if (!waitingForOther) {
+				waitingForOther = true;
+			} else if (!done) {
+				reject(err);
+				done = true;
+			}
+		};
+		a.then(resolve2, reject2);
+		b.then(resolve2, reject2);
+	});
+};
+
 // Editor wraps the Monaco code editor.
 export class Editor implements monaco.IDisposable {
 	private _editor: monaco.editor.IStandaloneCodeEditor;
@@ -154,7 +183,7 @@ export class Editor implements monaco.IDisposable {
 		// feature flags localStorage.{langp,xlang}Only cause only
 		// results from that source to be used (but requests are still
 		// sent off to both).
-		return Promise.race([xlangRes, langpRes]);
+		return promiseRaceResolvedOnly(xlangRes, langpRes as Promise<any>);
 	}
 
 	provideHover(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<monaco.languages.Hover> {
@@ -211,7 +240,7 @@ export class Editor implements monaco.IDisposable {
 			};
 		});
 
-		return Promise.race([xlangRes, langpRes]);
+		return promiseRaceResolvedOnly(xlangRes, langpRes as Promise<any>);
 	}
 
 	provideReferences(model: monaco.editor.IReadOnlyModel, position: monaco.Position, context: monaco.languages.ReferenceContext, token: monaco.CancellationToken): monaco.languages.Location[] | monaco.Thenable<monaco.languages.Location[]> {
@@ -248,7 +277,7 @@ export class Editor implements monaco.IDisposable {
 			return resp.Locs.map(lsp.toMonacoLocation);
 		});
 
-		return Promise.race([xlangRes, langpRes]);
+		return promiseRaceResolvedOnly(xlangRes, langpRes as Promise<any>);
 	}
 
 	private	_findExternalReferences(editor: monaco.editor.ICommonCodeEditor): monaco.Promise<void> {
