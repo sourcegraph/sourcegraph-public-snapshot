@@ -17,6 +17,8 @@ import {GotoDefinitionWithClickEditorContribution} from "sourcegraph/editor/Goto
 
 const fetch = singleflightFetch(defaultFetch);
 
+const neverPromise = new Promise(() => null); // never resolved
+
 // Editor wraps the Monaco code editor.
 export class Editor implements monaco.IDisposable {
 	private _editor: monaco.editor.IStandaloneCodeEditor;
@@ -133,7 +135,7 @@ export class Editor implements monaco.IDisposable {
 	}
 
 	provideDefinition(model: monaco.editor.IReadOnlyModel, position: monaco.Position, token: monaco.CancellationToken): monaco.languages.Definition | monaco.Thenable<monaco.languages.Definition | null> {
-		const xlangRes = lsp.send(model, "textDocument/definition", {
+		const xlangRes = (window.localStorage as any).langpOnly ? neverPromise : lsp.send(model, "textDocument/definition", {
 			textDocument: {uri: model.uri.toString(true)},
 			position: lsp.toPosition(position),
 		})
@@ -146,13 +148,17 @@ export class Editor implements monaco.IDisposable {
 				return locs.map(lsp.toMonacoLocation);
 			});
 
-		const res = fetchJumpToDef(model, position).then((loc: lsp.Location) => loc && loc.uri ? lsp.toMonacoLocation(loc) : null);
+		const langpRes = (window.localStorage as any).xlangOnly ? neverPromise : fetchJumpToDef(model, position).then((loc: lsp.Location) => loc && loc.uri ? lsp.toMonacoLocation(loc) : null);
 
-		return ((window.localStorage as any).xlang) ? xlangRes : res;
+		// Return whichever result (langp or xlang) arrives first. The
+		// feature flags localStorage.{langp,xlang}Only cause only
+		// results from that source to be used (but requests are still
+		// sent off to both).
+		return Promise.race([xlangRes, langpRes]);
 	}
 
 	provideHover(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<monaco.languages.Hover> {
-		const xlangRes = lsp.send(model, "textDocument/hover", {
+		const xlangRes = (window.localStorage as any).langpOnly ? neverPromise : lsp.send(model, "textDocument/hover", {
 			textDocument: {uri: model.uri.toString(true)},
 			position: lsp.toPosition(position),
 		})
@@ -174,7 +180,7 @@ export class Editor implements monaco.IDisposable {
 				};
 			});
 
-		const res = defAtPosition(model, position).then((resp: HoverInfoResponse) => {
+		const langpRes = (window.localStorage as any).xlangOnly ? neverPromise : defAtPosition(model, position).then((resp: HoverInfoResponse) => {
 			let contents: monaco.MarkedString[] = [];
 			if (!resp) {
 				// No-op.
@@ -205,11 +211,11 @@ export class Editor implements monaco.IDisposable {
 			};
 		});
 
-		return ((window.localStorage as any).xlang) ? xlangRes : res;
+		return Promise.race([xlangRes, langpRes]);
 	}
 
 	provideReferences(model: monaco.editor.IReadOnlyModel, position: monaco.Position, context: monaco.languages.ReferenceContext, token: monaco.CancellationToken): monaco.languages.Location[] | monaco.Thenable<monaco.languages.Location[]> {
-		const xlangRes = lsp.send(model, "textDocument/references", {
+		const xlangRes = (window.localStorage as any).langpOnly ? neverPromise : lsp.send(model, "textDocument/references", {
 			textDocument: {uri: model.uri.toString(true)},
 			position: lsp.toPosition(position),
 			context: {includeDeclaration: false},
@@ -226,7 +232,7 @@ export class Editor implements monaco.IDisposable {
 				return locs.map(lsp.toMonacoLocation);
 			});
 
-		const res = refsAtPosition(model, position).then((resp: ReferencesResponse) => {
+		const langpRes = (window.localStorage as any).xlangOnly ? neverPromise : refsAtPosition(model, position).then((resp: ReferencesResponse) => {
 			const {repo, rev, path} = URI.repoParams(model.uri);
 			if (!resp) {
 				return;
@@ -242,7 +248,7 @@ export class Editor implements monaco.IDisposable {
 			return resp.Locs.map(lsp.toMonacoLocation);
 		});
 
-		return ((window.localStorage as any).xlang) ? xlangRes : res;
+		return Promise.race([xlangRes, langpRes]);
 	}
 
 	private	_findExternalReferences(editor: monaco.editor.ICommonCodeEditor): monaco.Promise<void> {
