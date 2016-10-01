@@ -135,7 +135,7 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2Conn, req *
 	{
 		fs := token.NewFileSet()
 		rootPath := h.filePath(h.init.RootPath)
-		bctx := h.overlayBuildContext(h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
+		bctx := h.overlayBuildContext(ctx, h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
 		rootpkg, err := filepath.Rel(filepath.Join(bctx.GOPATH, "src"), rootPath)
 		if err != nil {
 			return nil, fmt.Errorf("workspace root path was not relative to $GOPATH/src: %s", err)

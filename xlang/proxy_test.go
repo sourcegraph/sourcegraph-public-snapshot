@@ -21,14 +21,12 @@ import (
 	// Register Go server for testing.
 	_ "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang"
 
-	"golang.org/x/tools/godoc/vfs"
-
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil/mapfs"
 )
 
 func TestProxy(t *testing.T) {
@@ -243,7 +241,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:55": "git://github.com/d/dep?HEAD#vendor/vendp/vp.go:1:32",
 			},
 			otherVFS: map[string]map[string]string{
-				"https://github.com/d/dep?HEAD": {
+				"https://github.com/d/dep?HEAD": map[string]string{
 					"d.go":               `package dep; import "vendp"; func D() (v vendp.V) { return }`,
 					"vendor/vendp/vp.go": "package vendp; type V struct { F int }",
 				},
@@ -332,11 +330,11 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			orig := xlang.VFSCreatorsByScheme["git"]
-			xlang.VFSCreatorsByScheme["git"] = func(root *uri.URI) (vfs.FileSystem, error) {
+			xlang.VFSCreatorsByScheme["git"] = func(root *uri.URI) (ctxvfs.FileSystem, error) {
 				if fs, ok := test.otherVFS[root.String()]; ok {
-					return newMapFS(fs), nil
+					return mapFS(fs), nil
 				}
-				return newMapFS(test.fs), nil
+				return mapFS(test.fs), nil
 			}
 			defer func() {
 				xlang.VFSCreatorsByScheme["git"] = orig
@@ -673,8 +671,8 @@ func (v *locations) UnmarshalJSON(data []byte) error {
 func TestProxy_connections(t *testing.T) {
 	ctx := context.Background()
 
-	xlang.VFSCreatorsByScheme["test"] = func(root *uri.URI) (vfs.FileSystem, error) {
-		return newMapFS(map[string]string{"f": "x"}), nil
+	xlang.VFSCreatorsByScheme["test"] = func(root *uri.URI) (ctxvfs.FileSystem, error) {
+		return ctxvfs.Map(map[string][]byte{"f": []byte("x")}), nil
 	}
 	defer func() {
 		delete(xlang.VFSCreatorsByScheme, "test")
@@ -912,8 +910,8 @@ func testRequestsEqual(as, bs []testRequest) bool {
 func TestProxy_propagation(t *testing.T) {
 	ctx := context.Background()
 
-	xlang.VFSCreatorsByScheme["test"] = func(root *uri.URI) (vfs.FileSystem, error) {
-		return newMapFS(map[string]string{"f": "x"}), nil
+	xlang.VFSCreatorsByScheme["test"] = func(root *uri.URI) (ctxvfs.FileSystem, error) {
+		return ctxvfs.Map(map[string][]byte{"f": []byte("x")}), nil
 	}
 	defer func() {
 		delete(xlang.VFSCreatorsByScheme, "test")
@@ -1011,13 +1009,12 @@ func (v testRequests) Less(i, j int) bool {
 	return string(ii) < string(jj)
 }
 
-// newMapFS lets us easily instantiate a ./xlang/vfsutil/mapfs VFS
-// with a map[string]string (which is less noisy than
-// map[string][]byte in test fixtures).
-func newMapFS(m map[string]string) vfs.FileSystem {
+// mapFS lets us easily instantiate a VFS with a map[string]string
+// (which is less noisy than map[string][]byte in test fixtures).
+func mapFS(m map[string]string) ctxvfs.FileSystem {
 	m2 := make(map[string][]byte, len(m))
 	for k, v := range m {
-		m2["/"+k] = []byte(v)
+		m2[k] = []byte(v)
 	}
-	return mapfs.New(m2)
+	return ctxvfs.Map(m2)
 }

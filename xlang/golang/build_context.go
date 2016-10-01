@@ -4,12 +4,12 @@ import (
 	"context"
 	"go/build"
 	"io"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
-	"golang.org/x/tools/godoc/vfs"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil/lockfs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 )
 
 func (h *LangHandler) defaultBuildContext() *build.Context {
@@ -29,33 +29,33 @@ func (h *LangHandler) defaultBuildContext() *build.Context {
 	return bctx
 }
 
-func (h *handlerShared) overlayBuildContext(orig *build.Context, useOSFileSystem bool) *build.Context {
-	mfs := lockfs.New(&h.mu, h.fs)
+func (h *handlerShared) overlayBuildContext(ctx context.Context, orig *build.Context, useOSFileSystem bool) *build.Context {
+	mfs := ctxvfs.Sync(&h.mu, h.fs)
 
-	var fs vfs.FileSystem
+	var fs ctxvfs.FileSystem
 	if useOSFileSystem {
-		ns := vfs.NameSpace{}
+		ns := ctxvfs.NameSpace{}
 		// The overlay FS takes precedence, but we fall back to the OS
 		// file system.
-		ns.Bind("/", mfs, "/", vfs.BindReplace)
-		ns.Bind("/", vfs.OS("/"), "/", vfs.BindAfter)
+		ns.Bind("/", mfs, "/", ctxvfs.BindReplace)
+		ns.Bind("/", ctxvfs.OS("/"), "/", ctxvfs.BindAfter)
 		fs = ns
 	} else {
 		fs = mfs
 	}
 
-	return fsBuildContext(orig, fs)
+	return fsBuildContext(ctx, orig, fs)
 }
 
-func fsBuildContext(orig *build.Context, fs vfs.FileSystem) *build.Context {
+func fsBuildContext(ctx context.Context, orig *build.Context, fs ctxvfs.FileSystem) *build.Context {
 	copy := *orig // make a copy
 	ctxt := &copy
 
 	ctxt.OpenFile = func(path string) (io.ReadCloser, error) {
-		return fs.Open(path)
+		return fs.Open(ctx, path)
 	}
 	ctxt.IsDir = func(path string) bool {
-		fi, err := fs.Stat(path)
+		fi, err := fs.Stat(ctx, path)
 		return err == nil && fi.Mode().IsDir()
 	}
 	ctxt.HasSubdir = func(root, dir string) (rel string, ok bool) {
@@ -68,7 +68,9 @@ func fsBuildContext(orig *build.Context, fs vfs.FileSystem) *build.Context {
 		}
 		return rel, true
 	}
-	ctxt.ReadDir = fs.ReadDir
+	ctxt.ReadDir = func(path string) ([]os.FileInfo, error) {
+		return fs.ReadDir(ctx, path)
+	}
 	return ctxt
 }
 

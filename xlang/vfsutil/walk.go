@@ -1,18 +1,19 @@
 package vfsutil
 
 import (
+	"context"
 	"os"
 	pathpkg "path"
 
-	"golang.org/x/tools/godoc/vfs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 )
 
-func ReadAllFiles(fs vfs.FileSystem, root string, filter func(os.FileInfo) bool) (map[string][]byte, error) {
+func ReadAllFiles(ctx context.Context, fs ctxvfs.FileSystem, root string, filter func(os.FileInfo) bool) (map[string][]byte, error) {
 	if root == "" {
 		root = "/"
 	}
 	files := map[string][]byte{}
-	w := WalkFS(root, fs)
+	w := WalkFS(ctx, root, fs)
 	for w.Step() {
 		if err := w.Err(); err != nil {
 			return nil, err
@@ -23,7 +24,7 @@ func ReadAllFiles(fs vfs.FileSystem, root string, filter func(os.FileInfo) bool)
 			w.SkipDir()
 		case fi.Mode().IsRegular():
 			if filter == nil || filter(fi) {
-				contents, err := vfs.ReadFile(fs, w.Path())
+				contents, err := ctxvfs.ReadFile(ctx, fs, w.Path())
 				if err != nil {
 					return nil, err
 				}
@@ -42,7 +43,8 @@ func ReadAllFiles(fs vfs.FileSystem, root string, filter func(os.FileInfo) bool)
 // but means that for very large directories Walker can be inefficient.
 // Walker does not follow symbolic links.
 type Walker struct {
-	fs      vfs.FileSystem
+	fs      ctxvfs.FileSystem
+	ctx     context.Context
 	cur     item
 	stack   []item
 	descend bool
@@ -55,10 +57,11 @@ type item struct {
 }
 
 // WalkFS returns a new Walker rooted at root on the FileSystem fs.
-func WalkFS(root string, fs vfs.FileSystem) *Walker {
-	info, err := fs.Lstat(root)
+func WalkFS(ctx context.Context, root string, fs ctxvfs.FileSystem) *Walker {
+	info, err := fs.Lstat(ctx, root)
 	return &Walker{
 		fs:    fs,
+		ctx:   ctx,
 		stack: []item{{root, info, err}},
 	}
 }
@@ -69,7 +72,7 @@ func WalkFS(root string, fs vfs.FileSystem) *Walker {
 // It returns false when the walk stops at the end of the tree.
 func (w *Walker) Step() bool {
 	if w.descend && w.cur.err == nil && w.cur.info.IsDir() {
-		list, err := w.fs.ReadDir(w.cur.path)
+		list, err := w.fs.ReadDir(w.ctx, w.cur.path)
 		if err != nil {
 			w.cur.err = err
 			w.stack = append(w.stack, w.cur)

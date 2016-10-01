@@ -19,8 +19,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"golang.org/x/tools/godoc/vfs"
-
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
@@ -52,7 +51,7 @@ type serverProxyConn struct {
 	id serverID
 
 	mu        sync.Mutex
-	rootFS    vfs.FileSystem
+	rootFS    ctxvfs.FileSystem
 	sentFiles bool      // whether all files have been (pre)sent already
 	last      time.Time // max(last request sent, last response received), used to disconnect from unused servers
 
@@ -203,7 +202,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 	return c, nil
 }
 
-func makeRootFileSystem(root *uri.URI) (vfs.FileSystem, error) {
+func makeRootFileSystem(root *uri.URI) (ctxvfs.FileSystem, error) {
 	create, ok := VFSCreatorsByScheme[root.Scheme]
 	if !ok {
 		return nil, fmt.Errorf("no VFS creator for scheme %q", root.Scheme)
@@ -289,18 +288,8 @@ func (c *serverProxyConn) presendFiles(ctx context.Context) (err error) {
 		span.Finish()
 	}()
 
-	// GitHubVFS allows us to do a fetch with a context, which means we
-	// get tracing. The VFS interface otherwise does not allow us to do
-	// that.
-	type PreFetchOrWaiter interface {
-		PreFetchOrWait(context.Context)
-	}
-	if f, ok := c.rootFS.(PreFetchOrWaiter); ok {
-		f.PreFetchOrWait(ctx)
-	}
-
 	// Read files in the repository at the given commit.
-	allFiles, err := vfsutil.ReadAllFiles(c.rootFS, "", modeFileFilter[c.id.mode])
+	allFiles, err := vfsutil.ReadAllFiles(ctx, c.rootFS, "", modeFileFilter[c.id.mode])
 	if err != nil {
 		return err
 	}

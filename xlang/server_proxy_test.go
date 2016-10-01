@@ -8,12 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/tools/godoc/vfs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil/mapfs"
 )
 
 // TestServerProxy_sendFiles tests that the server proxy sends files
@@ -21,8 +20,8 @@ import (
 func TestServerProxy_sendFiles(t *testing.T) {
 	ctx := context.Background()
 
-	xlang.VFSCreatorsByScheme["test"] = func(root *uri.URI) (vfs.FileSystem, error) {
-		return mapfs.New(map[string][]byte{"/f": []byte("x")}), nil
+	xlang.VFSCreatorsByScheme["test"] = func(root *uri.URI) (ctxvfs.FileSystem, error) {
+		return ctxvfs.Map(map[string][]byte{"f": []byte("x")}), nil
 	}
 	defer func() {
 		delete(xlang.VFSCreatorsByScheme, "test")

@@ -13,9 +13,8 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
-
-	"golang.org/x/tools/godoc/vfs"
 )
 
 // fetchTransitiveDepsOfFile fetches the transitive dependencies of
@@ -40,7 +39,7 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 		span.Finish()
 	}()
 
-	bctx := h.overlayBuildContext(&build.Context{
+	bctx := h.overlayBuildContext(ctx, &build.Context{
 		GOOS:     goos,
 		GOARCH:   goarch,
 		GOPATH:   gopath,
@@ -152,7 +151,16 @@ func (h *BuildHandler) fetchDep(ctx context.Context, d *directory) error {
 		// need to create it here, or else we'll see typechecker
 		// errors like "StackGuardMultiplier not declared by package
 		// sys."
-		fs = newWithFileOverlaid(fs, "/src/runtime/internal/sys/zversion.go", []byte(fmt.Sprintf(`package sys;const DefaultGoroot = %q;const TheVersion = %q;const Goexperiment="";const StackGuardMultiplier=1`, goroot, runtime.Version())))
+		fs = ctxvfs.SingleFileOverlay(fs,
+			"/src/runtime/internal/sys/zversion.go",
+			[]byte(fmt.Sprintf(`
+package sys
+
+const DefaultGoroot = %q
+const TheVersion = %q
+const Goexperiment=""
+const StackGuardMultiplier=1`,
+				goroot, runtime.Version())))
 	}
 
 	var oldPath string
@@ -163,7 +171,7 @@ func (h *BuildHandler) fetchDep(ctx context.Context, d *directory) error {
 	}
 
 	h.handlerShared.mu.Lock()
-	h.fs.Bind(oldPath, fs, "/", vfs.BindAfter)
+	h.fs.Bind(oldPath, fs, "/", ctxvfs.BindAfter)
 	h.handlerShared.mu.Unlock()
 
 	return nil

@@ -15,6 +15,8 @@ import (
 	"sync"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
+
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 
@@ -34,24 +36,12 @@ type GitRepoVFS struct {
 
 var gitCommitSHARx = regexp.MustCompile(`^[0-9a-f]{40}$`)
 
-// PreFetchOrWait can be used by clients to pre-emptively start fetching
-// contents. Unlike the VFS interface it also allows passing in a Context, so
-// we can record trace data/cancel/etc.
-func (fs *GitRepoVFS) PreFetchOrWait(ctx context.Context) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "GitRepoVFS PreFetchOrWait")
-	defer span.Finish()
+// fetchOrWait initiates the fetch if it has not yet
+// started. Otherwise it waits for it to finish.
+func (fs *GitRepoVFS) fetchOrWait(ctx context.Context) error {
 	fs.once.Do(func() {
 		fs.err = fs.fetch(ctx)
 	})
-}
-
-// fetchOrWait initiates the HTTP fetch if it has not yet
-// started. Otherwise it waits for it to finish.
-func (fs *GitRepoVFS) fetchOrWait() error {
-	fs.once.Do(func() {
-		fs.err = fs.fetch(context.Background())
-	})
-
 	return fs.err
 }
 
@@ -126,29 +116,29 @@ func (fs *GitRepoVFS) fetch(ctx context.Context) (err error) {
 	return nil
 }
 
-func (fs *GitRepoVFS) Open(path string) (vfs.ReadSeekCloser, error) {
-	if err := fs.fetchOrWait(); err != nil {
+func (fs *GitRepoVFS) Open(ctx context.Context, path string) (ctxvfs.ReadSeekCloser, error) {
+	if err := fs.fetchOrWait(ctx); err != nil {
 		return nil, err
 	}
 	return fs.fs.Open(path)
 }
 
-func (fs *GitRepoVFS) Lstat(path string) (os.FileInfo, error) {
-	if err := fs.fetchOrWait(); err != nil {
+func (fs *GitRepoVFS) Lstat(ctx context.Context, path string) (os.FileInfo, error) {
+	if err := fs.fetchOrWait(ctx); err != nil {
 		return nil, err
 	}
 	return fs.fs.Lstat(path)
 }
 
-func (fs *GitRepoVFS) Stat(path string) (os.FileInfo, error) {
-	if err := fs.fetchOrWait(); err != nil {
+func (fs *GitRepoVFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
+	if err := fs.fetchOrWait(ctx); err != nil {
 		return nil, err
 	}
 	return fs.fs.Stat(path)
 }
 
-func (fs *GitRepoVFS) ReadDir(path string) ([]os.FileInfo, error) {
-	if err := fs.fetchOrWait(); err != nil {
+func (fs *GitRepoVFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, error) {
+	if err := fs.fetchOrWait(ctx); err != nil {
 		return nil, err
 	}
 	return fs.fs.ReadDir(path)
