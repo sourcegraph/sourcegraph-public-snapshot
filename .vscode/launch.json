@@ -1,0 +1,14 @@
+{
+    "version": "0.1.0",
+    "configurations": [
+        {
+            "name": "(ui) http://localhost:3080/*",
+            "type": "chrome",
+            "request": "attach",
+            "port": 9222,
+            "webRoot": "${workspaceRoot}/ui",
+            "url": "http://localhost:3080/*",
+            "sourceMaps": true
+        }
+    ]
+}

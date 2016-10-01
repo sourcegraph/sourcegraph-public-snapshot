@@ -15,16 +15,22 @@ development environment. Here's what you need:
 - [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
 - [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.2 or higher)
 - [Redis](http://redis.io/) (v3.0.7 or higher)
+- A test user account on GitHub
+  - create a test user account on GitHub whose username has the suffix `-test`
+  - get somebody to add you to the "sourcegraphtest" GitHub organization
+  - add a second profile to Chrome for your `*-test` GitHub user (https://cl.ly/3A3y1O040G3R),
+  or download [Chrome Canary](https://www.google.com/chrome/browser/canary.html) for development
 
 If you are new to Go, you should also [set up your `GOPATH`](https://golang.org/doc/code.html#GOPATH)
 (a directory which contains all your projects).
 
-### Optional (but highly recommended)
+### Optional (but recommended)
 
-- [GitHub](https://github.com/settings/applications/new): Register
-  your local instance of Sourcegraph as a GitHub OAuth application to
-  enable users to connect their GitHub account. This enables higher
-  rate limits against the GitHub API.
+- [Visual Studio Code](https://code.visualstudio.com): this IDE comes with great out-of-the-box
+  features for Go and TypeScript codebase. Recommended extensions:
+  - [Go](https://marketplace.visualstudio.com/items?itemName=lukehoban.Go)
+  - [TSLint](https://marketplace.visualstudio.com/items?itemName=eg2.tslint)
+  - [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
 
 ## Get the code
 
@@ -123,6 +129,22 @@ To run a specific package's tests:
 ```
 go test ./util/textutil
 ```
+
+## Debugger
+
+If you use VSCode and have the "Debugger for Chrome" extension, these steps allow you to
+use the interactive visual debugger for our frontend codebase:
+
+- Quit Chrome
+- (optional, but recommended: set the env variable `WEBPACK_SOURCEMAPS=t` before running your dev server)
+- Launch Chrome (Canary) from the command line with a remote debugging port:
+  - Mac OS: `/Applications/Google\ Chrome\ Canary.app/Contents/MacOS/Google\ Chrome\ Canary --remote-debugging-port=9222`
+  - Windows: `start chrome.exe –remote-debugging-port=9222`
+  - Linux: `chromium-browser --remote-debugging-port=9222`
+- Go to http://localhost:3080
+- Open the Debugger in VSCode: "View" > "Debug"
+- Launch the "(ui) http://localhost:3080/*" debug configuration
+- Set breakpoints, enjoy
 
 ## govendor
 
