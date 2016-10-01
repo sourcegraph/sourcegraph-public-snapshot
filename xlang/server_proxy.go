@@ -232,12 +232,6 @@ func (p *Proxy) callServer(ctx context.Context, id serverID, rootFS vfs.FileSyst
 		return err
 	}
 
-	// TODO(sqs): There's a race condition here: even though we've
-	// present the files, LSP's textDocument/didOpen (which is how we
-	// send the files) is a notification, so we don't get an ack. We
-	// want to handle the case where the peer has not yet received the
-	// files.
-
 	return c.conn.Call(ctx, method, params, result, addTraceMeta(ctx))
 }
 
