@@ -1000,11 +1000,11 @@ type testRequests []testRequest
 func (v testRequests) Len() int      { return len(v) }
 func (v testRequests) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
 func (v testRequests) Less(i, j int) bool {
-	ii, err := json.Marshal(i)
+	ii, err := json.Marshal(v[i])
 	if err != nil {
 		panic(err)
 	}
-	jj, err := json.Marshal(j)
+	jj, err := json.Marshal(v[j])
 	if err != nil {
 		panic(err)
 	}
