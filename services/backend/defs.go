@@ -13,8 +13,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
@@ -105,7 +105,7 @@ func (s *defs) get(ctx context.Context, def sourcegraph.DefSpec) (*graph.Def, er
 		return nil, err
 	}
 
-	d, err := store.GraphFromContext(ctx).Defs(srcstore.ByDefKey(def.DefKey(repo.URI)))
+	d, err := localstore.Graph.Defs(srcstore.ByDefKey(def.DefKey(repo.URI)))
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 
 	fs := defListOptionsFilters(opt)
 	fs = append(fs, srcstore.DefsSortByKey{})
-	defs0, err := store.GraphFromContext(ctx).Defs(fs...)
+	defs0, err := localstore.Graph.Defs(fs...)
 	if err != nil {
 		return nil, err
 	}

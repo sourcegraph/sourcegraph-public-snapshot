@@ -1,26 +1,6 @@
 package store
 
-import (
-	"time"
-
-	"context"
-)
-
-// Queue pushes and dequeues jobs. Note: we don't dequeue a job directly,
-// instead we need to mark a job as finished. This allows us to pick up work
-// when processing fails on it.
-type Queue interface {
-	// Enqueue puts j onto the queue
-	Enqueue(ctx context.Context, j *Job) error
-
-	// LockJob removes a job from queue, or returns nil if there is no
-	// jobs. You must call LockedJob.MarkSuccess or LockedJob.MarkError
-	// when done.
-	LockJob(ctx context.Context) (*LockedJob, error)
-
-	// Stats returns statistics about the queue per Job Type
-	Stats(ctx context.Context) (map[string]QueueStats, error)
-}
+import "time"
 
 // Job contains the fields necessary to do a Job
 type Job struct {

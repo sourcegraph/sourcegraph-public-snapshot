@@ -71,12 +71,12 @@ func TestSearch(t *testing.T) {
 		t.Fatalf("attempted to request unmocked def: %+v", op)
 		return nil, nil
 	}
-	mock.stores.Repos.GetByURI_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	mock.stores.Repos.GetByURI = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		return &sourcegraph.Repo{URI: repo, ID: repoID}, nil
 	}
 
 	calledDefsSearch := false
-	mock.stores.Defs.Search_ = func(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error) {
+	mock.stores.Defs.Search = func(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error) {
 		calledDefsSearch = true
 		if !reflect.DeepEqual(expTokQuery, op.TokQuery) {
 			t.Fatalf("expected op.TokQuery %+v, got %+v", expTokQuery, op.TokQuery)

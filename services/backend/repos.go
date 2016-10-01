@@ -25,6 +25,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
 	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
@@ -41,7 +42,7 @@ type repos struct{}
 var _ sourcegraph.ReposServer = (*repos)(nil)
 
 func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
-	repo, err := store.ReposFromContext(ctx).Get(ctx, repoSpec.ID)
+	repo, err := localstore.Repos.Get(ctx, repoSpec.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +77,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 		return &sourcegraph.RepoList{Repos: repos}, nil
 	}
 
-	repos, err := store.ReposFromContext(ctx).List(ctx, &store.RepoListOp{
+	repos, err := localstore.Repos.List(ctx, &store.RepoListOp{
 		Name:        opt.Name,
 		Query:       opt.Query,
 		URIs:        opt.URIs,
@@ -128,7 +129,7 @@ func (s *repos) ListDeps(ctx context.Context, repos *sourcegraph.URIList) (*sour
 	repoFilters := []srcstore.UnitFilter{
 		srcstore.ByRepos(repos.URIs...),
 	}
-	units, err := store.GraphFromContext(ctx).Units(repoFilters...)
+	units, err := localstore.Graph.Units(repoFilters...)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +166,7 @@ func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.R
 			// rather an optimization for us to save the data from
 			// github. As such we use an elevated context to allow the
 			// write.
-			if err := store.ReposFromContext(ctx).Update(elevatedActor(ctx), *update); err != nil {
+			if err := localstore.Repos.Update(elevatedActor(ctx), *update); err != nil {
 				log15.Error("Failed updating repo metadata from remote", "repo", repo.URI, "error", err)
 			}
 		}
@@ -409,7 +410,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		return nil, grpc.Errorf(codes.Unimplemented, "repo creation operation not supported")
 	}
 
-	repoID, err := store.ReposFromContext(ctx).Create(ctx, repo)
+	repoID, err := localstore.Repos.Create(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -472,7 +473,7 @@ func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRe
 func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
 	ts := time.Now()
 	update := store.RepoUpdate{ReposUpdateOp: op, UpdatedAt: &ts}
-	if err := store.ReposFromContext(ctx).Update(ctx, update); err != nil {
+	if err := localstore.Repos.Update(ctx, update); err != nil {
 		return nil, err
 	}
 
@@ -480,14 +481,14 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sou
 }
 
 func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	if err := store.ReposFromContext(ctx).Delete(ctx, repo.ID); err != nil {
+	if err := localstore.Repos.Delete(ctx, repo.ID); err != nil {
 		return nil, err
 	}
 	return &pbtypes.Void{}, nil
 }
 
 func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
-	conf, err := store.RepoConfigsFromContext(ctx).Get(ctx, repo.ID)
+	conf, err := localstore.RepoConfigs.Get(ctx, repo.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -553,7 +554,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 }
 
 func (s *repos) getInventoryUncached(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.Repo)
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, repoRev.Repo)
 	if err != nil {
 		return nil, err
 	}

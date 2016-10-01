@@ -17,9 +17,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	annotationspkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/annotations"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/syntaxhighlight"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
@@ -173,7 +173,7 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 		}
 	}
 
-	refs, err := store.GraphFromContext(ctx).Refs(filters...)
+	refs, err := localstore.Graph.Refs(filters...)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +256,7 @@ func (s *annotations) GetDefAtPos(ctx context.Context, opt *sourcegraph.Annotati
 		}),
 	}
 
-	refs, err := store.GraphFromContext(ctx).Refs(filters...)
+	refs, err := localstore.Graph.Refs(filters...)
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +266,7 @@ func (s *annotations) GetDefAtPos(ctx context.Context, opt *sourcegraph.Annotati
 	}
 
 	r := refs[0]
-	defRepo, err := store.ReposFromContext(ctx).GetByURI(ctx, r.DefRepo)
+	defRepo, err := localstore.Repos.GetByURI(ctx, r.DefRepo)
 	if err != nil {
 		return nil, err
 	}

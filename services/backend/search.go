@@ -16,6 +16,7 @@ import (
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
@@ -91,7 +92,7 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 	opentracing.SpanFromContext(ctx).LogEvent("query tokenized")
 
 	start = time.Now()
-	results, err := store.DefsFromContext(ctx).Search(ctx, store.DefSearchOp{
+	results, err := localstore.Defs.Search(ctx, store.DefSearchOp{
 		TokQuery: descToks,
 		Opt:      op.Opt,
 	})
@@ -126,7 +127,7 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 	}
 
 	defer observe("repos", time.Now())
-	results.RepoResults, err = store.ReposFromContext(ctx).Search(ctx, op.Query)
+	results.RepoResults, err = localstore.Repos.Search(ctx, op.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +252,7 @@ func hydrateDefsResults(ctx context.Context, defs []*sourcegraph.DefSearchResult
 		go func() {
 			defer wg.Done()
 
-			rp, err := store.ReposFromContext(ctx).GetByURI(ctx, dk.Repo)
+			rp, err := localstore.Repos.GetByURI(ctx, dk.Repo)
 			if err != nil {
 				mu.Lock()
 				errs = append(errs, err)

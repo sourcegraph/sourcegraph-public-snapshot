@@ -7,16 +7,17 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 )
 
+var MockRepoVCS *mockstore.RepoVCS
+
 // repoVCS is a local filesystem-backed implementation of the RepoVCS
 // store interface.
 type repoVCS struct{}
-
-var _ store.RepoVCS = (*repoVCS)(nil)
 
 // getRepoDir gets the dir (relative to the base repo VCS storage dir)
 // where the repo's git repository data lives.
@@ -32,6 +33,10 @@ func getRepoDir(ctx context.Context, repo int32) (string, error) {
 }
 
 func (s *repoVCS) Open(ctx context.Context, repo int32) (vcs.Repository, error) {
+	if MockRepoVCS != nil {
+		return MockRepoVCS.Open(ctx, repo)
+	}
+
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoVCS.Open", repo); err != nil {
 		return nil, err
 	}
@@ -44,6 +49,10 @@ func (s *repoVCS) Open(ctx context.Context, repo int32) (vcs.Repository, error) 
 }
 
 func (s *repoVCS) Clone(ctx context.Context, repo int32, info *store.CloneInfo) error {
+	if MockRepoVCS != nil {
+		return MockRepoVCS.Clone(ctx, repo, info)
+	}
+
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoVCS.Clone", repo); err != nil {
 		return err
 	}

@@ -7,8 +7,8 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
@@ -63,7 +63,7 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 		return nil, errNotAbsCommitID
 	}
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, entrySpec.RepoRev.Repo)
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, entrySpec.RepoRev.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*s
 		return nil, err
 	}
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.ID)
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
 	if err != nil {
 		return nil, err
 	}

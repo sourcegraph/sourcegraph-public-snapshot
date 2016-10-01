@@ -116,7 +116,7 @@ func testDefs(t *testing.T, outerTest outerCase) {
 	ctx, done := testContext()
 	var mocks *mocks // FIXME
 	defer done()
-	ctx = store.WithRepos(ctx, &repos{})
+	MockRepos = nil
 
 	var (
 		repoURIs = make(map[string]struct{})
@@ -141,10 +141,10 @@ func testDefs(t *testing.T, outerTest outerCase) {
 
 	mockstore.GraphMockDefs(&mocks.Stores.Graph, outerTest.defs...)
 	mockstore.GraphMockUnits(&mocks.Stores.Graph, units...)
-	mocks.Repos.GetByURI_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		return &sourcegraph.Repo{}, nil
 	}
-	mocks.RepoVCS.Open_ = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+	mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return sgtest.MockRepository{
 			ResolveRevision_: func(spec string) (vcs.CommitID, error) {
 				return vcs.CommitID(commitID), nil

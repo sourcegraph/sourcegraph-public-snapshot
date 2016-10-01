@@ -6,7 +6,7 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 )
 
@@ -28,12 +28,16 @@ func (c *dbRepoConfig) fromRepoConfig(repo int32, c2 *sourcegraph.RepoConfig) {
 	c.Repo = repo
 }
 
+var MockRepoConfigs *mockstore.RepoConfigs
+
 // repoConfigs is a DB-backed implementation of the RepoConfigs store.
 type repoConfigs struct{}
 
-var _ store.RepoConfigs = (*repoConfigs)(nil)
-
 func (s *repoConfigs) Get(ctx context.Context, repo int32) (*sourcegraph.RepoConfig, error) {
+	if MockRepoConfigs != nil {
+		return MockRepoConfigs.Get(ctx, repo)
+	}
+
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoConfigs.Get", repo); err != nil {
 		return nil, err
 	}
@@ -47,6 +51,10 @@ func (s *repoConfigs) Get(ctx context.Context, repo int32) (*sourcegraph.RepoCon
 }
 
 func (s *repoConfigs) Update(ctx context.Context, repo int32, conf sourcegraph.RepoConfig) error {
+	if MockRepoConfigs != nil {
+		return MockRepoConfigs.Update(ctx, repo, conf)
+	}
+
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoConfigs.Update", repo); err != nil {
 		return err
 	}

@@ -11,6 +11,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 )
 
@@ -35,11 +36,16 @@ CREATE TABLE que_jobs
 
 const queueMaxAttempts = 2
 
+var MockQueue *mockstore.Queue
+
 type queue struct{}
 
-var _ store.Queue = (*queue)(nil)
-
+// Enqueue puts j onto the queue
 func (q *queue) Enqueue(ctx context.Context, j *store.Job) error {
+	if MockQueue != nil {
+		return MockQueue.Enqueue(ctx, j)
+	}
+
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Queue.Enqueue."+j.Type, nil); err != nil {
 		return err
 	}
@@ -50,7 +56,14 @@ func (q *queue) Enqueue(ctx context.Context, j *store.Job) error {
 	return c.Enqueue(q.toQue(j))
 }
 
+// LockJob removes a job from queue, or returns nil if there is no
+// jobs. You must call LockedJob.MarkSuccess or LockedJob.MarkError
+// when done.
 func (q *queue) LockJob(ctx context.Context) (*store.LockedJob, error) {
+	if MockQueue != nil {
+		return MockQueue.LockJob(ctx)
+	}
+
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Queue.LockJob", nil); err != nil {
 		return nil, err
 	}
@@ -76,7 +89,12 @@ func (q *queue) LockJob(ctx context.Context) (*store.LockedJob, error) {
 	return store.NewLockedJob(q.fromQue(j), j.Delete, errFunc), nil
 }
 
+// Stats returns statistics about the queue per Job Type
 func (q *queue) Stats(ctx context.Context) (map[string]store.QueueStats, error) {
+	if MockQueue != nil {
+		return MockQueue.Stats(ctx)
+	}
+
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Queue.Stats", nil); err != nil {
 		return nil, err
 	}

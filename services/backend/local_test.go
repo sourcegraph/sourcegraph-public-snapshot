@@ -7,9 +7,9 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/mock"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	githubmock "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/mocks"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
@@ -20,7 +20,15 @@ import (
 func testContext() (context.Context, *mocks) {
 	var m mocks
 	ctx := context.Background()
-	ctx = store.WithStores(ctx, m.stores.Stores())
+	localstore.MockDefs = &m.stores.Defs
+	localstore.MockGlobalDeps = &m.stores.GlobalDeps
+	localstore.MockGlobalRefs = &m.stores.GlobalRefs
+	localstore.Graph = &m.stores.Graph
+	localstore.MockQueue = &m.stores.Queue
+	localstore.MockRepoConfigs = &m.stores.RepoConfigs
+	localstore.MockRepoStatuses = &m.stores.RepoStatuses
+	localstore.MockRepoVCS = &m.stores.RepoVCS
+	localstore.MockRepos = &m.stores.Repos
 	ctx = svc.WithServices(ctx, m.servers.servers())
 	ctx = github.WithRepos(ctx, &m.githubRepos)
 	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test"})

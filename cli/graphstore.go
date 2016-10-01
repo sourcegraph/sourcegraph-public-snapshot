@@ -3,10 +3,8 @@ package cli
 import (
 	"os"
 
-	"context"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/graphstoreutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 type GraphStoreOpts struct {
@@ -17,6 +15,6 @@ func (o *GraphStoreOpts) expandEnv() {
 	o.Root = os.ExpandEnv(o.Root)
 }
 
-func (o *GraphStoreOpts) context(ctx context.Context) context.Context {
-	return store.WithGraph(ctx, graphstoreutil.New(o.Root, nil))
+func (o *GraphStoreOpts) apply() {
+	backend.SetGraphStore(graphstoreutil.New(o.Root, nil))
 }

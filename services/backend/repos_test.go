@@ -105,7 +105,7 @@ func TestReposService_Get_UnauthedUpdateMeta(t *testing.T) {
 
 	calledGet := mock.stores.Repos.MockGet_Return(t, wantRepo)
 	var calledUpdate bool
-	mock.stores.Repos.Update_ = func(ctx context.Context, op store.RepoUpdate) error {
+	mock.stores.Repos.Update = func(ctx context.Context, op store.RepoUpdate) error {
 		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo); err != nil {
 			return err
 		}
@@ -174,7 +174,7 @@ func TestRepos_Create_New(t *testing.T) {
 	}
 
 	calledCreate := false
-	mock.stores.Repos.Create_ = func(ctx context.Context, repo *sourcegraph.Repo) (int32, error) {
+	mock.stores.Repos.Create = func(ctx context.Context, repo *sourcegraph.Repo) (int32, error) {
 		calledCreate = true
 		if repo.URI != wantRepo.URI {
 			t.Errorf("got uri %#v, want %#v", repo.URI, wantRepo.URI)
@@ -220,7 +220,7 @@ func TestRepos_Create_Origin(t *testing.T) {
 	}
 
 	calledCreate := false
-	mock.stores.Repos.Create_ = func(ctx context.Context, repo *sourcegraph.Repo) (int32, error) {
+	mock.stores.Repos.Create = func(ctx context.Context, repo *sourcegraph.Repo) (int32, error) {
 		calledCreate = true
 		if !reflect.DeepEqual(repo.Origin, wantRepo.Origin) {
 			t.Errorf("got repo origin %#v, want %#v", repo.Origin, wantRepo.Origin)

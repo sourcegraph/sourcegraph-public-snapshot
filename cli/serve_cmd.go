@@ -242,6 +242,8 @@ func (c *ServeCmd) Execute(args []string) error {
 		return err
 	}
 
+	c.GraphStoreOpts.apply()
+
 	// Server identity keypair
 	if s := c.IDKeyData; s != "" {
 		auth.ActiveIDKey, err = auth.FromString(s)
@@ -269,7 +271,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		for _, f := range cli.ServerContext {
 			ctx = f(ctx)
 		}
-		ctx = c.GraphStoreOpts.context(ctx)
 		return ctx
 	}
 

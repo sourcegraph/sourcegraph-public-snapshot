@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
@@ -19,7 +19,7 @@ import (
 func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
 	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.Resolve")
 	// First, look up locally.
-	if repo, err := store.ReposFromContext(ctx).GetByURI(ctx, op.Path); err == nil {
+	if repo, err := localstore.Repos.GetByURI(ctx, op.Path); err == nil {
 		return &sourcegraph.RepoResolution{Repo: repo.ID, CanonicalPath: op.Path}, nil
 	} else if errcode.GRPC(err) != codes.NotFound {
 		return nil, err
@@ -29,7 +29,7 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*so
 	if repo, err := github.ReposFromContext(ctx).Get(ctx, op.Path); err == nil {
 		// If canonical location differs, try looking up locally at canonical location.
 		if canonicalPath := "github.com/" + repo.Owner + "/" + repo.Name; op.Path != canonicalPath {
-			if repo, err := store.ReposFromContext(ctx).GetByURI(ctx, canonicalPath); err == nil {
+			if repo, err := localstore.Repos.GetByURI(ctx, canonicalPath); err == nil {
 				return &sourcegraph.RepoResolution{Repo: repo.ID, CanonicalPath: canonicalPath}, nil
 			}
 		}

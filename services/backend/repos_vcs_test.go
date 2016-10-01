@@ -152,7 +152,7 @@ func Test_Repos_ListCommits(t *testing.T) {
 		}
 		return wantCommits, uint(len(wantCommits)), nil
 	}
-	mock.stores.RepoVCS.Open_ = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+	mock.stores.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return mockRepo, nil
 	}
 

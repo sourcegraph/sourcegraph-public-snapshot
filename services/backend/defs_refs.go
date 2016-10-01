@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
@@ -86,7 +87,7 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 	}
 
 	filters := append(repoFilters, refFilters...)
-	bareRefs, err := store.GraphFromContext(ctx).Refs(filters...)
+	bareRefs, err := localstore.Graph.Refs(filters...)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +183,7 @@ func (s *defs) srclibMigrate(ctx context.Context, refLocations *sourcegraph.RefL
 }
 
 func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
-	refLocations, err := store.GlobalRefsFromContext(ctx).Get(ctx, op)
+	refLocations, err := localstore.GlobalRefs.Get(ctx, op)
 	s.srclibMigrate(ctx, refLocations)
 	return refLocations, err
 }
@@ -200,10 +201,10 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	}
 
 	// Update defs table for the exported symbols in repo.
-	defsErr := store.DefsFromContext(ctx).Update(ctx, indexOp)
+	defsErr := localstore.Defs.Update(ctx, indexOp)
 
 	// Update the references this repo makes to external repos
-	refsErr := store.GlobalRefsFromContext(ctx).Update(ctx, indexOp)
+	refsErr := localstore.GlobalRefs.Update(ctx, indexOp)
 
 	// We care more about defsErr, since it should be more stable. So lets
 	// lean on the side of reporting it instead of refsErr. We only return

@@ -11,7 +11,7 @@ import (
 
 func (s *Queue) MockEnqueue(t *testing.T, wantJob *store.Job) (called *bool) {
 	called = new(bool)
-	s.Enqueue_ = func(ctx context.Context, job *store.Job) error {
+	s.Enqueue = func(ctx context.Context, job *store.Job) error {
 		*called = true
 		if !reflect.DeepEqual(job, wantJob) {
 			t.Errorf("got job {Type:%s Args:%s}, want {Type:%s Args:%s}", job.Type, string(job.Args), wantJob.Type, string(wantJob.Args))
@@ -39,7 +39,7 @@ func (s *Queue) MockLockJob_Return(t *testing.T, job *store.Job) (called, called
 	if job == nil {
 		j = nil
 	}
-	s.LockJob_ = func(ctx context.Context) (*store.LockedJob, error) {
+	s.LockJob = func(ctx context.Context) (*store.LockedJob, error) {
 		*called = true
 		return j, nil
 	}

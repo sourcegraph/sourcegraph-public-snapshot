@@ -10,16 +10,12 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
-// instrumentedQueue wraps q to instrument logging and metrics.
-type instrumentedQueue struct {
-	store.Queue
-}
-
-var _ store.Queue = (*instrumentedQueue)(nil)
+// instrumentedQueue wraps queue to instrument logging and metrics.
+type instrumentedQueue struct{}
 
 // Enqueue implements store.Queue.
 func (q *instrumentedQueue) Enqueue(ctx context.Context, j *store.Job) error {
-	err := q.Queue.Enqueue(ctx, j)
+	err := (&queue{}).Enqueue(ctx, j)
 	if err != nil {
 		queueErrors.WithLabelValues("enqueue").Inc()
 		log15.Debug("queue.Enqueue failed", "type", j.Type, "err", err)
@@ -32,7 +28,7 @@ func (q *instrumentedQueue) Enqueue(ctx context.Context, j *store.Job) error {
 
 // LockJob implements store.Queue.
 func (q *instrumentedQueue) LockJob(ctx context.Context) (*store.LockedJob, error) {
-	j, err := q.Queue.LockJob(ctx)
+	j, err := (&queue{}).LockJob(ctx)
 	if err != nil {
 		queueErrors.WithLabelValues("lockjob").Inc()
 		log15.Debug("queue.LockJob failed", "err", err)
@@ -70,7 +66,7 @@ func (q *instrumentedQueue) LockJob(ctx context.Context) (*store.LockedJob, erro
 
 // Stats implements store.Queue.
 func (q *instrumentedQueue) Stats(ctx context.Context) (map[string]store.QueueStats, error) {
-	return q.Queue.Stats(ctx)
+	return (&queue{}).Stats(ctx)
 }
 
 const (
@@ -81,9 +77,8 @@ const (
 // newQueueStatsCollector returns a prometheus collector based on the
 // statistics returned by queue.Stats(). ctx needs to be long lived, and will
 // be used when calling queue.Stats()
-func newQueueStatsCollector(ctx context.Context, queue store.Queue) prometheus.Collector {
+func newQueueStatsCollector(ctx context.Context) prometheus.Collector {
 	return &queueStatsCollector{
-		queue: queue,
 		ctx:   ctx,
 		types: make(map[string]bool),
 		numJobs: prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -102,8 +97,7 @@ func newQueueStatsCollector(ctx context.Context, queue store.Queue) prometheus.C
 }
 
 type queueStatsCollector struct {
-	queue store.Queue
-	ctx   context.Context
+	ctx context.Context
 
 	types            map[string]bool
 	mu               sync.Mutex
@@ -119,7 +113,7 @@ func (c *queueStatsCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect implements prometheus.Collector
 func (c *queueStatsCollector) Collect(ch chan<- prometheus.Metric) {
-	stats, err := c.queue.Stats(c.ctx)
+	stats, err := (&queue{}).Stats(c.ctx)
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if err != nil {

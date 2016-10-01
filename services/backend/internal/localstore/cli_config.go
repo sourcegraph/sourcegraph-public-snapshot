@@ -7,39 +7,41 @@ import (
 	"context"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 )
 
-func init() {
-	stores := store.Stores{
-		Defs:         &defs{},
-		GlobalDeps:   &globalDeps{},
-		GlobalRefs:   &globalRefs{},
-		Queue:        &instrumentedQueue{Queue: &queue{}},
-		RepoConfigs:  &repoConfigs{},
-		RepoStatuses: &repoStatuses{},
-		RepoVCS:      &repoVCS{},
-		Repos:        &repos{},
-	}
+import srcstore "sourcegraph.com/sourcegraph/srclib/store"
 
+var (
+	Defs         = &defs{}
+	GlobalDeps   = &globalDeps{}
+	GlobalRefs   = &globalRefs{}
+	Graph        srcstore.MultiRepoStoreImporterIndexer
+	Queue        = &instrumentedQueue{}
+	RepoConfigs  = &repoConfigs{}
+	RepoStatuses = &repoStatuses{}
+	RepoVCS      = &repoVCS{}
+	Repos        = &repos{}
+)
+
+func init() {
 	once := sync.Once{}
 	serverctx.Funcs = append(serverctx.Funcs, func(ctx context.Context) (context.Context, error) {
 		// initBackground inside of serverctx.Funcs to ensure cli
 		// options have already been set.
 		once.Do(func() {
-			err := initBackground(stores)
+			err := initBackground()
 			if err != nil {
 				log.Fatal(err)
 			}
 		})
-		return store.WithStores(ctx, stores), nil
+		return ctx, nil
 	})
 
 }
 
 // initBackground starts up background store helpers
-func initBackground(stores store.Stores) error {
+func initBackground() error {
 	// Currently the only thing we need in a background helper is the
 	// AppDBH
 	appDBH, _, err := GlobalDBs()
@@ -48,7 +50,7 @@ func initBackground(stores store.Stores) error {
 	}
 	ctx := WithAppDBH(context.Background(), appDBH)
 
-	c := newQueueStatsCollector(ctx, stores.Queue)
+	c := newQueueStatsCollector(ctx)
 	prometheus.MustRegister(c)
 
 	return nil

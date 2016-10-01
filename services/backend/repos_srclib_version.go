@@ -12,9 +12,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	srclibstore "sourcegraph.com/sourcegraph/srclib/store"
 )
@@ -28,7 +28,7 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 		return nil, errNotAbsCommitID
 	}
 
-	repo, err := store.ReposFromContext(ctx).Get(ctx, entry.RepoRev.Repo)
+	repo, err := localstore.Repos.Get(ctx, entry.RepoRev.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 	}
 
 	// First, try to find an exact match.
-	vers, err := store.GraphFromContext(ctx).Versions(
+	vers, err := localstore.Graph.Versions(
 		srclibstore.ByRepoCommitIDs(srclibstore.Version{Repo: repo.URI, CommitID: entry.RepoRev.CommitID}),
 	)
 	if err != nil {
@@ -148,7 +148,7 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 	}
 
 	// Get all srclib built data versions.
-	vers, err := store.GraphFromContext(ctx).Versions(
+	vers, err := localstore.Graph.Versions(
 		srclibstore.ByRepos(repo),
 		srclibstore.ByCommitIDs(candidateCommitIDs...),
 	)

@@ -14,9 +14,9 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
@@ -46,7 +46,7 @@ func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsO
 	}
 
 	// Blame file to determine VCS authors.
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.ID)
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
 	if err != nil {
 		return nil, err
 	}

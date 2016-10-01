@@ -14,13 +14,15 @@ import (
 )
 
 func TestInstrumentQueue(t *testing.T) {
-	m := &mockstore.Queue{}
-	q := instrumentedQueue{m}
+	MockQueue = &mockstore.Queue{}
+	defer func() { MockQueue = nil }()
+
+	q := instrumentedQueue{}
 	ctx := context.Background()
 
 	// Enqueue
 	want := &store.Job{Type: "test"}
-	called := m.MockEnqueue(t, want)
+	called := MockQueue.MockEnqueue(t, want)
 	if err := q.Enqueue(ctx, want); err != nil {
 		t.Fatal(err)
 	}
@@ -29,7 +31,7 @@ func TestInstrumentQueue(t *testing.T) {
 	}
 
 	// LockJob
-	called, calledSuccess, calledError := m.MockLockJob_Return(t, want)
+	called, calledSuccess, calledError := MockQueue.MockLockJob_Return(t, want)
 	got, err := q.LockJob(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -69,7 +71,9 @@ func TestInstrumentQueue(t *testing.T) {
 }
 
 func TestQueueStatsCollector(t *testing.T) {
-	m := &mockstore.Queue{}
+	MockQueue = &mockstore.Queue{}
+	defer func() { MockQueue = nil }()
+
 	stats := map[string]store.QueueStats{
 		"a": store.QueueStats{
 			NumJobs:          3,
@@ -79,14 +83,14 @@ func TestQueueStatsCollector(t *testing.T) {
 			NumJobs: 1,
 		},
 	}
-	m.Stats_ = func(_ context.Context) (map[string]store.QueueStats, error) {
+	MockQueue.Stats = func(_ context.Context) (map[string]store.QueueStats, error) {
 		return stats, nil
 	}
 
 	// We just check that we collect 4 stats, and don't actually check we
 	// collect legit values.
 	var (
-		c     = newQueueStatsCollector(context.Background(), m)
+		c     = newQueueStatsCollector(context.Background())
 		ch    = make(chan prometheus.Metric)
 		count = 0
 	)

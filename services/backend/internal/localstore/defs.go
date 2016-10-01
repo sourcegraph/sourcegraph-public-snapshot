@@ -23,6 +23,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
@@ -180,11 +181,15 @@ func init() {
 	}
 }
 
+var MockDefs *mockstore.Defs
+
 type defs struct{}
 
-var _ store.Defs = (*defs)(nil)
-
 func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error) {
+	if MockDefs != nil {
+		return MockDefs.Search(ctx, op)
+	}
+
 	startTime := time.Now()
 	var args []interface{}
 	arg := func(v interface{}) string {
@@ -229,7 +234,7 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 			end := obs.start("notrepos")
 			notRIDs := make([]int64, len(op.Opt.NotRepos))
 			for i, r := range op.Opt.NotRepos {
-				notRepo, err := store.ReposFromContext(ctx).Get(ctx, r)
+				notRepo, err := Repos.Get(ctx, r)
 				if err != nil {
 					return nil, fmt.Errorf("error getting excluded repository: %s", err)
 				}
@@ -259,7 +264,7 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 			end := obs.start("repos")
 			var repoArgs []string
 			for _, repo := range op.Opt.Repos {
-				rp, err := store.ReposFromContext(ctx).Get(ctx, repo)
+				rp, err := Repos.Get(ctx, repo)
 				if err != nil {
 					return nil, fmt.Errorf("error getting included repository: %s", err)
 				}
@@ -402,6 +407,10 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 
 // Update syncs data from universe into the defs2 table
 func (s *defs) Update(ctx context.Context, op store.RefreshIndexOp) error {
+	if MockDefs != nil {
+		return MockDefs.Update(ctx, op)
+	}
+
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.Update", op.Repo); err != nil {
 		return err
 	}
@@ -414,7 +423,7 @@ func (s *defs) Update(ctx context.Context, op store.RefreshIndexOp) error {
 		return fmt.Errorf("commit ID must be 40 characters long, was: %q", op.CommitID)
 	}
 
-	repo, err := store.ReposFromContext(ctx).Get(ctx, op.Repo)
+	repo, err := Repos.Get(ctx, op.Repo)
 	if err != nil {
 		return err
 	}

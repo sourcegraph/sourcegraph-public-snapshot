@@ -12,9 +12,16 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
+
+var Repos interface {
+	// Get a repository.
+	Get(ctx context.Context, repo int32) (*sourcegraph.Repo, error)
+
+	// GetByURI a repository by its URI.
+	GetByURI(ctx context.Context, repo string) (*sourcegraph.Repo, error)
+}
 
 // VerifyUserHasReadAccess checks if the user in the current context
 // is authorized to make write requests to this server.
@@ -111,9 +118,9 @@ func getRepo(ctx context.Context, repoIDOrURI interface{}) (repoID int32, repoUR
 
 	var repoObj *sourcegraph.Repo
 	if repoID != 0 && repoURI == "" {
-		repoObj, err = store.ReposFromContext(ctx).Get(ctx, repoID)
+		repoObj, err = Repos.Get(ctx, repoID)
 	} else if repoURI != "" && repoID == 0 {
-		repoObj, err = store.ReposFromContext(ctx).GetByURI(ctx, repoURI)
+		repoObj, err = Repos.GetByURI(ctx, repoURI)
 	}
 	if err != nil {
 		return

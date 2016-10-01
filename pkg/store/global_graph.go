@@ -1,38 +1,11 @@
 package store
 
-import (
-	"context"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/srclib/unit"
-)
-
-// GlobalRefs defines the interface for getting and listing global ref locations.
-type GlobalRefs interface {
-	// Get returns the names and ref counts of all repos and files within those repos
-	// that refer the given def.
-	Get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
-
-	// Update takes the graph output of a repo at the latest commit and
-	// updates the set of refs in the global ref store that originate from
-	// it.
-	Update(ctx context.Context, op RefreshIndexOp) error
-}
+import "sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 
 type RepoUnit struct {
 	Repo     int32
 	Unit     string
 	UnitType string
-}
-
-type GlobalDeps interface {
-	Upsert(ctx context.Context, resolutions []*unit.Resolution) error
-	Resolve(ctx context.Context, raw *unit.Key) ([]unit.Key, error)
-}
-
-type Defs interface {
-	Search(ctx context.Context, op DefSearchOp) (*sourcegraph.SearchResultsList, error)
-	Update(ctx context.Context, op RefreshIndexOp) error
 }
 
 type DefSearchOp struct {

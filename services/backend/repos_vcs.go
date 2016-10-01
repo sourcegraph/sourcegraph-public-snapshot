@@ -8,8 +8,8 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
@@ -38,7 +38,7 @@ func resolveRepoRev(ctx context.Context, repo int32, rev string) (vcs.CommitID, 
 		rev = repoObj.DefaultBranch
 	}
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo)
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo)
 	if err != nil {
 		return "", err
 	}
@@ -71,7 +71,7 @@ func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 		return nil, errNotAbsCommitID
 	}
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.Repo)
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, repoRev.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommit
 		return nil, grpc.Errorf(codes.InvalidArgument, "Head (revision specifier) is required")
 	}
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.ID)
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func (s *repos) ListBranches(ctx context.Context, op *sourcegraph.ReposListBranc
 		return nil, err
 	}
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.ID)
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (s *repos) ListTags(ctx context.Context, op *sourcegraph.ReposListTagsOp) (
 		return nil, err
 	}
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.ID)
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +189,7 @@ func (s *repos) ListCommitters(ctx context.Context, op *sourcegraph.ReposListCom
 		return nil, err
 	}
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.ID)
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
 	if err != nil {
 		return nil, err
 	}

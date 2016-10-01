@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -63,7 +64,7 @@ func (s *async) RefreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefresh
 	if err != nil {
 		return nil, err
 	}
-	err = store.QueueFromContext(ctx).Enqueue(ctx, &store.Job{
+	err = localstore.Queue.Enqueue(ctx, &store.Job{
 		Type: "RefreshIndexes",
 		Args: args,
 	})
@@ -96,7 +97,7 @@ func (s *async) shouldRefreshIndex(ctx context.Context, op *sourcegraph.AsyncRef
 
 // try attempts to lock a job and do it. Returns true if work was done
 func (s *asyncWorker) try(ctx context.Context) bool {
-	j, err := store.QueueFromContext(ctx).LockJob(ctx)
+	j, err := localstore.Queue.LockJob(ctx)
 	if err != nil {
 		log15.Debug("Queue.LockJob failed", "err", err)
 		return false
@@ -157,7 +158,7 @@ func (s *asyncWorker) refreshIndexes(ctx context.Context, op *sourcegraph.AsyncR
 		if err != nil {
 			return err
 		}
-		return store.QueueFromContext(ctx).Enqueue(ctx, &store.Job{
+		return localstore.Queue.Enqueue(ctx, &store.Job{
 			Type:  "RefreshIndexes",
 			Args:  args,
 			Delay: 10 * time.Minute,

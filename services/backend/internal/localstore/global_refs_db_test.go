@@ -39,7 +39,7 @@ func TestGlobalRefs(t *testing.T) {
 	createdRepos := (&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "x/y"}, &sourcegraph.Repo{URI: "a/b"})
 	xyRepoID := createdRepos[0].ID
 	abRepoID := createdRepos[1].ID
-	ctx = store.WithRepos(ctx, &repos{})
+	MockRepos = nil
 
 	testRefs1 := []*graph.Ref{
 		{DefPath: ".", DefRepo: "", DefUnit: "", File: "a/b/u/s.go"},              // package ref
@@ -232,7 +232,7 @@ func TestGlobalRefsUpdate(t *testing.T) {
 		},
 	}
 	ctx = svc.WithServices(ctx, svc.Services{Repos: mockReposS})
-	ctx = store.WithRepos(ctx, &repos{})
+	MockRepos = nil
 
 	allRefs := map[string][]*graph.Ref{}
 	mockRefs(mocks, allRefs)
@@ -376,7 +376,7 @@ func TestGlobalRefs_version(t *testing.T) {
 	}
 }
 
-func benchmarkGlobalRefsGet(b *testing.B, g store.GlobalRefs) {
+func benchmarkGlobalRefsGet(b *testing.B) {
 	ctx, done := testContext()
 	var mocks *mocks // FIXME
 	defer done()
@@ -385,21 +385,16 @@ func benchmarkGlobalRefsGet(b *testing.B, g store.GlobalRefs) {
 		if err != nil {
 			return err
 		}
-		_, err = g.Get(ctx, &sourcegraph.DefsListRefLocationsOp{Def: sourcegraph.DefSpec{Repo: repo.ID, Unit: "fmt", UnitType: "GoPackage", Path: "Errorf"}})
+		_, err = GlobalRefs.Get(ctx, &sourcegraph.DefsListRefLocationsOp{Def: sourcegraph.DefSpec{Repo: repo.ID, Unit: "fmt", UnitType: "GoPackage", Path: "Errorf"}})
 		return err
 	}
 	if err := get(); err != nil {
 		b.Log("Loading data into GlobalRefs")
 		nRepos := 10000
 		nRefs := 10
-		globalRefsUpdate(b, g, ctx, mocks, nRepos, nRefs)
-		type CanRefresh interface {
-			StatRefresh(context.Context) error
-		}
-		if x, ok := g.(CanRefresh); ok {
-			b.Log("Refreshing")
-			x.StatRefresh(ctx)
-		}
+		globalRefsUpdate(b, ctx, mocks, nRepos, nRefs)
+		b.Log("Refreshing")
+		GlobalRefs.StatRefresh(ctx)
 	}
 
 	b.ResetTimer()
@@ -414,19 +409,19 @@ func benchmarkGlobalRefsGet(b *testing.B, g store.GlobalRefs) {
 	b.StopTimer()
 }
 
-func benchmarkGlobalRefsUpdate(b *testing.B, g store.GlobalRefs) {
+func benchmarkGlobalRefsUpdate(b *testing.B) {
 	ctx, done := testContext()
 	var mocks *mocks // FIXME
 	defer done()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		globalRefsUpdate(b, g, ctx, mocks, 1, 100)
+		globalRefsUpdate(b, ctx, mocks, 1, 100)
 	}
 	// defer done() can be expensive
 	b.StopTimer()
 }
 
-func globalRefsUpdate(b *testing.B, g store.GlobalRefs, ctx context.Context, mocks *mocks, nRepos, nRefs int) {
+func globalRefsUpdate(b *testing.B, ctx context.Context, mocks *mocks, nRepos, nRefs int) {
 	allRefs := map[string][]*graph.Ref{}
 	for i := 0; i < nRepos; i++ {
 		pkg := fmt.Sprintf("foo.com/foo/bar%d", i)
@@ -458,18 +453,10 @@ func globalRefsUpdate(b *testing.B, g store.GlobalRefs, ctx context.Context, moc
 		if err != nil {
 			b.Fatal(err)
 		}
-		if err := g.Update(ctx, store.RefreshIndexOp{Repo: repoObj.ID, CommitID: "aaaaa"}); err != nil {
+		if err := GlobalRefs.Update(ctx, store.RefreshIndexOp{Repo: repoObj.ID, CommitID: "aaaaa"}); err != nil {
 			b.Fatal(err)
 		}
 	}
-}
-
-func BenchmarkGlobalRefsGet(b *testing.B) {
-	benchmarkGlobalRefsGet(b, &globalRefs{})
-}
-
-func BenchmarkGlobalRefsUpdate(b *testing.B) {
-	benchmarkGlobalRefsUpdate(b, &globalRefs{})
 }
 
 func mockRefs(mocks *mocks, allRefs map[string][]*graph.Ref) {
@@ -486,10 +473,10 @@ func mockRefs(mocks *mocks, allRefs map[string][]*graph.Ref) {
 		}
 		return allRefs[repos[0]], nil
 	}
-	mocks.Repos.Get_ = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
+	mocks.Repos.Get = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
 		return &sourcegraph.Repo{}, nil
 	}
-	mocks.RepoVCS.Open_ = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+	mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return sgtest.MockRepository{
 			ResolveRevision_: func(spec string) (vcs.CommitID, error) {
 				return "aaaa", nil

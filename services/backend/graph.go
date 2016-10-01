@@ -3,8 +3,8 @@ package backend
 import (
 	"context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 	"sourcegraph.com/sqs/pbtypes"
@@ -26,7 +26,7 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 	}
 
 	// Update global deps
-	dstore := store.GlobalDepsFromContext(ctx)
+	dstore := localstore.GlobalDeps
 	resolution := &unit.Resolution{
 		Resolved: unit.Key{
 			Repo:     op.Repo,
@@ -69,7 +69,7 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 		}
 	}
 
-	gstore := store.GraphFromContext(ctx)
+	gstore := localstore.Graph
 	if _, err := pb.Server(gstore).Import(ctx, op); err != nil {
 		return nil, err
 	}
@@ -81,12 +81,12 @@ func (s *graph_) Index(ctx context.Context, op *pb.IndexOp) (*pbtypes.Void, erro
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Graph.Index", op.Repo); err != nil {
 		return nil, err
 	}
-	return pb.Server(store.GraphFromContext(ctx)).Index(ctx, op)
+	return pb.Server(localstore.Graph).Index(ctx, op)
 }
 
 func (s *graph_) CreateVersion(ctx context.Context, op *pb.CreateVersionOp) (*pbtypes.Void, error) {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Graph.CreateVersion", op.Repo); err != nil {
 		return nil, err
 	}
-	return pb.Server(store.GraphFromContext(ctx)).CreateVersion(ctx, op)
+	return pb.Server(localstore.Graph).CreateVersion(ctx, op)
 }

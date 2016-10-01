@@ -15,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
@@ -63,13 +64,13 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		}
 	}
 
-	repo, err := store.ReposFromContext(ctx).Get(ctx, op.Repo)
+	repo, err := localstore.Repos.Get(ctx, op.Repo)
 	if err != nil {
 		log15.Error("RefreshVCS: failed to get repo", "error", err, "repo", op.Repo)
 		return nil, err
 	}
 
-	vcsRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.ID)
+	vcsRepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
 	if err != nil {
 		log15.Error("RefreshVCS: failed to open VCS", "error", err, "URI", repo.URI)
 		return nil, err
@@ -92,7 +93,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	{
 		now := time.Now()
 		ctx2 := authpkg.WithActor(ctx, &authpkg.Actor{Scope: map[string]bool{"internal:repo-internal-update": true}})
-		if err := store.ReposFromContext(ctx).InternalUpdate(ctx2, repo.ID, store.InternalRepoUpdate{VCSSyncedAt: &now}); err != nil {
+		if err := localstore.Repos.InternalUpdate(ctx2, repo.ID, store.InternalRepoUpdate{VCSSyncedAt: &now}); err != nil {
 			log15.Info("RefreshVCS: updating repo internal VCSSyncedAt failed", "err", err, "repo", repo.URI)
 			return nil, err
 		}
@@ -106,7 +107,7 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 		return err
 	}
 
-	err := store.RepoVCSFromContext(ctx).Clone(elevatedActor(ctx), repo.ID, &store.CloneInfo{
+	err := localstore.RepoVCS.Clone(elevatedActor(ctx), repo.ID, &store.CloneInfo{
 		CloneURL:   repo.HTTPCloneURL,
 		RemoteOpts: remoteOpts,
 	})
