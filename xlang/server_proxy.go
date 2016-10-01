@@ -411,6 +411,15 @@ func (c *serverProxyConn) shutdownAndExit(ctx context.Context) error {
 			errs.add(err)
 		}
 	}
+
+	// Close file system to free up resources (e.g., if the VFS is
+	// backed by a file on disk, this will close the file).
+	if fs, ok := c.rootFS.(io.Closer); ok && fs != nil {
+		if err := fs.Close(); err != nil {
+			errs.add(err)
+		}
+	}
+
 	close(c.shutdown)
 	return errs.error()
 }

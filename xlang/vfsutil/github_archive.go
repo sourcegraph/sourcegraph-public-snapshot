@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -60,6 +61,7 @@ type GitHubRepoVFS struct {
 	once sync.Once
 	err  error // the error encountered during the fetch
 	fs   vfs.FileSystem
+	c    io.Closer // closes the zip file if it was read from disk
 
 	save bool // save to the local file system for reuse
 }
@@ -107,12 +109,13 @@ func (fs *GitHubRepoVFS) fetch(ctx context.Context) (err error) {
 		span.LogEvent("urlMu acquired")
 	}
 
-	var body []byte
+	var zr *zip.ReadCloser
 	fsPath := filepath.Join("/tmp/xlang-github-cache", fs.repo, fs.rev+".zip")
 	if fs.save {
-		body, err = ioutil.ReadFile(fsPath)
+		zr, err = zip.OpenReader(fsPath)
 		if err == nil {
 			span.LogEvent("read from " + fsPath)
+			fs.c = zr
 		}
 	}
 	if !fs.save || os.IsNotExist(err) {
@@ -128,7 +131,7 @@ func (fs *GitHubRepoVFS) fetch(ctx context.Context) (err error) {
 		if resp.StatusCode != http.StatusOK {
 			return fmt.Errorf("github repo archive: URL %s returned HTTP %d", url, resp.StatusCode)
 		}
-		body, err = ioutil.ReadAll(resp.Body)
+		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
@@ -144,12 +147,13 @@ func (fs *GitHubRepoVFS) fetch(ctx context.Context) (err error) {
 			}
 			span.LogEvent("cached to " + fsPath)
 		}
-	} else if err != nil {
-		return err
-	}
 
-	zr, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
-	if err != nil {
+		zrNoCloser, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
+		if err != nil {
+			return err
+		}
+		zr = &zip.ReadCloser{Reader: *zrNoCloser}
+	} else if err != nil {
 		return err
 	}
 
@@ -163,7 +167,7 @@ func (fs *GitHubRepoVFS) fetch(ctx context.Context) (err error) {
 	// be "Bb-COMMITID", and our path prefix will be incorrect).
 	ns := vfs.NameSpace{}
 	prefix := path.Join(path.Base(fs.repo)+"-"+fs.rev, fs.subtree)
-	ns.Bind("/", zipfs.New(&zip.ReadCloser{Reader: *zr}, fs.repo), prefix, vfs.BindReplace)
+	ns.Bind("/", zipfs.New(zr, fs.repo), prefix, vfs.BindReplace)
 	fs.fs = ns
 	return nil
 }
@@ -194,6 +198,16 @@ func (fs *GitHubRepoVFS) ReadDir(path string) ([]os.FileInfo, error) {
 		return nil, err
 	}
 	return fs.fs.ReadDir(path)
+}
+
+// Close closes the .zip file on disk. If it is buffered in memory,
+// Close is a no-op.
+func (fs *GitHubRepoVFS) Close() error {
+	fs.once.Do(func() {}) // this synchronizes our access to fs.fs
+	if fs.c != nil {
+		return fs.c.Close()
+	}
+	return nil
 }
 
 func (fs *GitHubRepoVFS) String() string {
