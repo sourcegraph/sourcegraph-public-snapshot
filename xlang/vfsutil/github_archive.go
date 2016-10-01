@@ -111,7 +111,7 @@ func (fs *GitHubRepoVFS) fetch(ctx context.Context) (err error) {
 	fsPath := filepath.Join("/tmp/xlang-github-cache", fs.repo, fs.rev+".zip")
 	if fs.save {
 		body, err = ioutil.ReadFile(fsPath)
-		if err != nil {
+		if err == nil {
 			span.LogEvent("read from " + fsPath)
 		}
 	}
