@@ -1,9 +1,12 @@
 package golang
 
 import (
+	"context"
 	"go/build"
 	"io"
+	"path"
 	"path/filepath"
+	"strings"
 
 	"golang.org/x/tools/godoc/vfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil/lockfs"
@@ -67,4 +70,21 @@ func fsBuildContext(orig *build.Context, fs vfs.FileSystem) *build.Context {
 	}
 	ctxt.ReadDir = fs.ReadDir
 	return ctxt
+}
+
+// containingPackage returns the package that contains the given
+// file. It is like buildutil.ContainingPackage, except that it
+// returns the whole package (i.e., it doesn't use build.FindOnly),
+// and it does not perform FS calls that are unnecessary for us (such
+// as searching the GOROOT; this is only called on the main
+// workspace's code, not its deps).
+func containingPackage(ctx context.Context, bctx *build.Context, filename string) (*build.Package, error) {
+	if !strings.HasPrefix(bctx.GOPATH, "/") || strings.Contains(bctx.GOPATH, ":") {
+		panic("build context GOPATH must contain exactly 1 entry: " + bctx.GOPATH)
+	}
+
+	pkgDir := path.Dir(filename)
+	srcDir := path.Join(bctx.GOPATH, "src") + "/"
+	importPath := strings.TrimPrefix(pkgDir, srcDir)
+	return bctx.Import(importPath, pkgDir, 0)
 }

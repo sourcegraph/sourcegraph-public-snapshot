@@ -15,7 +15,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 
-	"golang.org/x/tools/go/buildutil"
 	"golang.org/x/tools/godoc/vfs"
 )
 
@@ -49,13 +48,7 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 		Compiler: gocompiler,
 	}, false)
 
-	bpkg, err := buildutil.ContainingPackage(bctx, "", h.filePath(fileURI))
-	if err != nil && !isMultiplePackageError(err) {
-		return err
-	}
-	// Need to re-import the package because ContainingPackage uses
-	// build.FindOnly, which doesn't set the Imports fields.
-	bpkg, err = bctx.Import(bpkg.ImportPath, h.rootFSPath, 0)
+	bpkg, err := containingPackage(ctx, bctx, h.filePath(fileURI))
 	if err != nil && !isMultiplePackageError(err) {
 		return err
 	}

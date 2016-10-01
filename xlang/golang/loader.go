@@ -17,7 +17,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 
-	"golang.org/x/tools/go/buildutil"
 	"golang.org/x/tools/go/loader"
 )
 
@@ -43,19 +42,7 @@ func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2Conn, fileURI 
 
 	bctx := h.overlayBuildContext(h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
 
-	var importPath string
-	bpkg, err := buildutil.ContainingPackage(bctx, h.filePath(h.init.RootPath), filename)
-	if err != nil && !isMultiplePackageError(err) {
-		return nil, nil, nil, err
-	}
-	if bpkg != nil {
-		importPath = bpkg.ImportPath
-	}
-	srcDir := h.filePath(h.init.RootPath)
-
-	// Re-import because buildutil.ContainingPackage only sets certain
-	// fields.
-	bpkg, err = bctx.Import(importPath, srcDir, 0)
+	bpkg, err := containingPackage(ctx, bctx, filename)
 	if mpErr, ok := err.(*build.MultiplePackageError); ok {
 		bpkg, err = buildPackageForNamedFileInMultiPackageDir(bpkg, mpErr, filepath.Base(filename))
 		if err != nil {
