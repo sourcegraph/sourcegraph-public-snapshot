@@ -24,6 +24,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
@@ -51,6 +52,7 @@ type serverProxyConn struct {
 	id serverID
 
 	mu        sync.Mutex
+	rootFS    vfs.FileSystem
 	sentFiles bool      // whether all files have been (pre)sent already
 	last      time.Time // max(last request sent, last response received), used to disconnect from unused servers
 
@@ -185,6 +187,10 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		// Save connection.
 		c = p.newServerProxyConn(context.Background(), rwc)
 		c.id = id
+		c.rootFS, err = makeRootFileSystem(&id.rootPath)
+		if err != nil {
+			return nil, err
+		}
 
 		if err := c.lspInitialize(ctx); err != nil {
 			if err2 := rwc.Close(); err2 != nil {
@@ -195,6 +201,14 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 	}
 
 	return c, nil
+}
+
+func makeRootFileSystem(root *uri.URI) (vfs.FileSystem, error) {
+	create, ok := VFSCreatorsByScheme[root.Scheme]
+	if !ok {
+		return nil, fmt.Errorf("no VFS creator for scheme %q", root.Scheme)
+	}
+	return create(root)
 }
 
 func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
@@ -210,7 +224,7 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 
 // callServer sends an LSP request to the specified server
 // (establishing the connection first if necessary).
-func (p *Proxy) callServer(ctx context.Context, id serverID, rootFS vfs.FileSystem, method string, params, result interface{}) (err error) {
+func (p *Proxy) callServer(ctx context.Context, id serverID, method string, params, result interface{}) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: "+method,
 		opentracing.Tags{"mode": id.mode, "rootPath": id.rootPath, "method": method, "params": params},
 	)
@@ -228,7 +242,7 @@ func (p *Proxy) callServer(ctx context.Context, id serverID, rootFS vfs.FileSyst
 	}
 	c.updateLastTime()
 
-	if err := c.presendFiles(ctx, rootFS); err != nil {
+	if err := c.presendFiles(ctx); err != nil {
 		return err
 	}
 
@@ -252,7 +266,7 @@ var modeFileFilter = map[string]func(os.FileInfo) bool{
 // presendFiles sends all relevant files from rootFS to the server in
 // textDocument/didOpen notifications so that the server loads them
 // into its VFS.
-func (c *serverProxyConn) presendFiles(ctx context.Context, rootFS vfs.FileSystem) (err error) {
+func (c *serverProxyConn) presendFiles(ctx context.Context) (err error) {
 	// Make other clients wait for this, because they'd have to wait
 	// anyway if they were the one sending the files.
 	c.mu.Lock()
@@ -281,12 +295,12 @@ func (c *serverProxyConn) presendFiles(ctx context.Context, rootFS vfs.FileSyste
 	type PreFetchOrWaiter interface {
 		PreFetchOrWait(context.Context)
 	}
-	if f, ok := rootFS.(PreFetchOrWaiter); ok {
+	if f, ok := c.rootFS.(PreFetchOrWaiter); ok {
 		f.PreFetchOrWait(ctx)
 	}
 
 	// Read files in the repository at the given commit.
-	allFiles, err := vfsutil.ReadAllFiles(rootFS, "", modeFileFilter[c.id.mode])
+	allFiles, err := vfsutil.ReadAllFiles(c.rootFS, "", modeFileFilter[c.id.mode])
 	if err != nil {
 		return err
 	}

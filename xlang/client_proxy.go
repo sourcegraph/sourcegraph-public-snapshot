@@ -16,8 +16,6 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"golang.org/x/tools/godoc/vfs"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
@@ -125,7 +123,6 @@ type clientProxyConn struct {
 	mu       sync.Mutex
 	context  contextID
 	init     *ClientProxyInitializeParams
-	rootFS   vfs.FileSystem
 	last     time.Time // max(last request received, last response sent), used to evict idle clients
 	shutdown bool      // whether this connection has received an LSP "shutdown"
 
@@ -218,11 +215,6 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, fmt.Errorf(`client must send a "mode" in the initialize request to specify the language`)
 		}
 
-		rootFS, err := c.prepareRootFileSystem(params.RootPath)
-		if err != nil {
-			return nil, err
-		}
-
 		c.mu.Lock()
 		if c.init != nil {
 			c.mu.Unlock()
@@ -230,7 +222,6 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			// it sends 2 "initialize" requests).
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidRequest, Message: fmt.Sprintf("client proxy handler is already initialized")}
 		}
-		c.rootFS = rootFS
 		c.init = &params
 		c.context.rootPath = *rootPathURI
 		c.context.mode = c.init.Mode
@@ -321,18 +312,6 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 	}
 }
 
-func (c *clientProxyConn) prepareRootFileSystem(rootPath string) (vfs.FileSystem, error) {
-	root, err := uri.Parse(rootPath)
-	if err != nil {
-		return nil, err
-	}
-	create, ok := VFSCreatorsByScheme[root.Scheme]
-	if !ok {
-		return nil, fmt.Errorf("no VFS creator for scheme %q", root.Scheme)
-	}
-	return create(root)
-}
-
 // rewritePathFromClient updates URIs in client messages that refer to
 // repositories (e.g.,
 // "git://github.com/facebook/react.git?master#dir/file.txt" ->
@@ -404,7 +383,7 @@ func (c *clientProxyConn) callServer(ctx context.Context, method string, params,
 	}
 
 	id := serverID{contextID: c.context, pathPrefix: ""} // which kind of lang/build server to communicate with
-	if err := c.proxy.callServer(ctx, id, c.rootFS, method, params, result); err != nil {
+	if err := c.proxy.callServer(ctx, id, method, params, result); err != nil {
 		return err
 	}
 
