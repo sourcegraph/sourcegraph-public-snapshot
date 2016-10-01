@@ -193,7 +193,7 @@ export class Editor implements monaco.IDisposable {
 		})
 			.then(resp => {
 				if (!resp || !resp.result || !resp.result.contents) {
-					return null;
+					return {contents: []}; // if null, strings, whitespace, etc. will show a perpetu-"Loading..." tooltip
 				}
 
 				let range: monaco.IRange;
