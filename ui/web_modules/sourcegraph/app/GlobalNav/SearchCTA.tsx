@@ -22,7 +22,7 @@ export const SearchCTA = (props): JSX.Element => {
 	);
 
 	return(
-		<Base p={2} mr={2} {...sx}>
+		<Base id="SearchCTA-e2e-test" p={2} mr={2} {...sx}>
 			<SearchIcon color={colors.coolGray3()} width={14} />
 			<Base ml={2} style={{display: "inline"}}>
 				Search

@@ -7,46 +7,67 @@ import (
 )
 
 func init() {
-	if true {
-		// Disabled https://github.com/sourcegraph/sourcegraph/issues/1292
-		return
-	}
-
-	registerTest := func(name, q string) {
-		Register(&Test{
-			Name:        name,
-			Description: "fetch every search item on sourcegraph.com for Go, ensure each first listing has usage examples",
-			Func: func(t *T) error {
-				return runSearchFlow(t, q)
-			},
-			Quarantined: true,
-		})
-	}
-
-	registerTest("search_flow_0", "new http request")
-	registerTest("search_flow_1", "read file")
-	registerTest("search_flow_2", "json encoder")
-	registerTest("search_flow_3", "sql query")
-	registerTest("search_flow_4", "indent json")
+	Register(&Test{
+		Name:        "QuickOpenFiles",
+		Description: "Test QuickOpen finds files.",
+		Func:        fileSearch,
+		Quarantined: true,
+	})
+	Register(&Test{
+		Name:        "QuickOpenRepos",
+		Description: "Test QuickOpen finds repositories.",
+		Func:        fileSearch,
+		Quarantined: true,
+	})
+	Register(&Test{
+		Name:        "QuickOpenDefs",
+		Description: "Test QuickOpen finds symbols.",
+		Func:        fileSearch,
+		Quarantined: true,
+	})
 }
 
-func runSearchFlow(t *T, query string) error {
+func startSearch(query string, t *T) (*T, error) {
 	wd := t.WebDriver
 
-	err := wd.Get(t.Endpoint("/search"))
+	err := wd.Get(t.Endpoint("/github.com/gorilla/mux"))
+	if err != nil {
+		return nil, err
+	}
+
+	time.Sleep(3 * time.Second)
+	t.ExecuteScript(`document.getElementsByTagName('body')[0].dispatchEvent(new KeyboardEvent("keydown", {key: "/"}))`, nil)
+	quickOpenInput := t.WaitForElement(selenium.ById, "SearchInput-e2e-test")
+	quickOpenInput.SendKeys(query)
+	return t, nil
+}
+
+func fileSearch(t *T) error {
+	t, err := startSearch("mux", t)
 	if err != nil {
 		return err
 	}
+	e := t.WaitForElement(selenium.ByXPATH, `//div[text()="Files"]`)
+	e.FindElement(selenium.ByXPATH, `//div[text()="mux.go"]`)
+	return nil
+}
 
-	searchInput := t.WaitForElement(selenium.ById, "e2etest-search-input")
-	searchInput.SendKeys(query)
-	time.Sleep(3 * time.Second)
+func defSearch(t *T) error {
+	t, err := startSearch("newroute", t)
+	if err != nil {
+		return err
+	}
+	e := t.WaitForElement(selenium.ByXPATH, `//div[text()="Definitions"]`)
+	e.FindElement(selenium.ByXPATH, `//div[text()="mux.NewRouter"]`)
+	return nil
+}
 
-	// Since the search results are listed in `code` tags,
-	// this will find the first search result (so it can be clicked)
-	t.Click(selenium.ByTagName, "code")
-
-	// The usage examples are in these elements.
-	t.WaitForElement(selenium.ByCSSSelector, "pre.snippet")
+func repoSearch(t *T) error {
+	t, err := startSearch("github.com/gorilla/mux", t)
+	if err != nil {
+		return err
+	}
+	e := t.WaitForElement(selenium.ByXPATH, `//div[text()="Repositories"]`)
+	e.FindElement(selenium.ByXPATH, `//div[text()="github.com/gorilla/mux"]`)
 	return nil
 }

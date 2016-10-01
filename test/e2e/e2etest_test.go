@@ -18,29 +18,10 @@ func TestRepoFlow(t *testing.T) {
 	runE2E(t, "repo_flow")
 }
 
-func TestSearchFlow0(t *testing.T) {
-	t.Skip("Disabled https://github.com/sourcegraph/sourcegraph/issues/1292")
-	runE2E(t, "search_flow_0")
-}
-
-func TestSearchFlow1(t *testing.T) {
-	t.Skip("Disabled https://github.com/sourcegraph/sourcegraph/issues/1292")
-	runE2E(t, "search_flow_1")
-}
-
-func TestSearchFlow2(t *testing.T) {
-	t.Skip("Disabled https://github.com/sourcegraph/sourcegraph/issues/1292")
-	runE2E(t, "search_flow_2")
-}
-
-func TestSearchFlow3(t *testing.T) {
-	t.Skip("Disabled https://github.com/sourcegraph/sourcegraph/issues/1292")
-	runE2E(t, "search_flow_3")
-}
-
-func TestSearchFlow4(t *testing.T) {
-	t.Skip("Disabled https://github.com/sourcegraph/sourcegraph/issues/1292")
-	runE2E(t, "search_flow_4")
+func TestSearchFlow(t *testing.T) {
+	runE2E(t, "QuickOpenFiles")
+	runE2E(t, "QuickOpenRepos")
+	runE2E(t, "QuickOpenDefs")
 }
 
 var fatalMsg string
@@ -85,7 +66,6 @@ func HardwareID() (string, error) {
 }
 
 func runE2E(t *testing.T, name string) {
-	t.Parallel()
 	var test *Test
 	for _, tst := range tr.tests {
 		if tst.Name == name {
