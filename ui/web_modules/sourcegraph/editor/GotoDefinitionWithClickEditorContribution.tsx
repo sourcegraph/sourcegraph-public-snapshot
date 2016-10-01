@@ -33,6 +33,7 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 	private editor: monaco.editor.ICodeEditor;
 	private toUnhook: monaco.IDisposable[] = [];
 	private decorations: string[] = [];
+	private selectedDefDecoration: string[] = [];
 	private currentWordUnderMouse: IWordAtPositionWithLine | null;
 	private lastMouseMoveEvent: monaco.editor.IEditorMouseEvent | null;
 	private findDefinitionDebounced: (target: monaco.editor.IMouseTarget, word: monaco.editor.IWordAtPosition) => void;
@@ -70,6 +71,10 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 		if (e.selection && e.selection.startColumn !== e.selection.endColumn) {
 			this.resetHandler(); // immediately stop this feature if the user starts to select (https://github.com/Microsoft/vscode/issues/7827)
 		}
+
+		// After the selection is changed check to see if the new current selection
+		// has landed on a definition. If so, highlight it.
+		this.highlightDefinitionAtSelection(e.selection);
 	}
 
 	private onEditorMouseMove(mouseEvent: monaco.editor.IEditorMouseEvent): void {
@@ -110,7 +115,7 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 	}
 
 	private findDefinitionDebounced_(target: monaco.editor.IMouseTarget, word: monaco.editor.IWordAtPosition): void {
-		this.findDefinition(target).then(results => {
+		this.findDefinition(target.position).then(results => {
 			if (!results || !results.length) {
 				this.removeDecorations();
 				return;
@@ -129,6 +134,41 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 				},
 				results.length > 1 ? `Click to show the ${results.length} definitions found.` : undefined
 			);
+		});
+	}
+
+	private highlightDefinitionAtSelection(selection: monaco.Selection) {
+		let position = ({
+			lineNumber: selection.startLineNumber,
+			column: selection.startColumn,
+		});
+		this.findDefinition(position).then(results => {
+			if (!results || !results.length) {
+				this.selectedDefDecoration = this.editor.deltaDecorations(this.selectedDefDecoration, []);
+				return;
+			}
+			let range: monaco.IRange | null = null;
+			for (let def of results) {
+				if (def.range.startLineNumber === selection.startLineNumber && def.range.startColumn === selection.startColumn) {
+					range = new monaco.Range(
+						def.range.startLineNumber,
+						def.range.startColumn,
+						def.range.endLineNumber,
+						def.range.endColumn,
+					);
+				}
+			}
+			if (!range) {
+				return;
+			}
+
+			let decoration = {
+				range: range,
+				options: {
+					inlineClassName: "selected-definition",
+				},
+			};
+			this.selectedDefDecoration = this.editor.deltaDecorations(this.selectedDefDecoration, [decoration]);
 		});
 	}
 
@@ -180,7 +220,7 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 			mouseEvent.target.type === monaco.editor.MouseTargetType.CONTENT_TEXT;
 	}
 
-	private findDefinition(target: monaco.editor.IMouseTarget): Promise<monaco.languages.Location[]> {
+	private findDefinition(position: monaco.IPosition): Promise<monaco.languages.Location[]> {
 		let model = this.editor.getModel();
 		if (!model) {
 			return Promise.resolve(null);
@@ -188,7 +228,7 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 
 		return new Promise((resolve, reject) => {
 			(global as any).require(["vs/editor/contrib/goToDeclaration/common/goToDeclaration"], ({getDeclarationsAtPosition}) => {
-				getDeclarationsAtPosition(this.editor.getModel(), target.position).then((result) => resolve(result));
+				getDeclarationsAtPosition(model, position).then((result) => resolve(result));
 			});
 		});
 	}

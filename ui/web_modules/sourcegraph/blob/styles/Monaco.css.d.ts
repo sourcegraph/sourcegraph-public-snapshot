@@ -12,6 +12,7 @@ export const c_cool_mid_gray_8: string;
 export const c_cool_pale_gray: string;
 export const c_cool_dark_gray: string;
 export const c_blue: string;
+export const c_blue_8: string;
 export const yellow: string;
 export const orange: string;
 export const red: string;

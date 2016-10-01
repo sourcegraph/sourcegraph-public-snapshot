@@ -2,7 +2,7 @@
 @value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
 @value navbarZIndex from GlobalNav;
 
-@value c_cool_gray, c_cool_mid_gray, c_cool_mid_gray_3, c_cool_mid_gray_5, c_cool_mid_gray_8, c_cool_pale_gray, c_cool_dark_gray, c_blue from colors;
+@value c_cool_gray, c_cool_mid_gray, c_cool_mid_gray_3, c_cool_mid_gray_5, c_cool_mid_gray_8, c_cool_pale_gray, c_cool_dark_gray, c_blue, c_blue_8 from colors;
 
 /* Make cursor look less like a text insertion cursor. */
 :global .monaco-editor .cursor {
@@ -104,6 +104,14 @@
 	color: white !important;
 	font-weight: bold;
 	text-decoration: none;
+}
+
+:global div.monaco-editor.vs-dark .selected-definition {
+	background-color: c_blue_8;
+	color: white !important;
+	font-weight: bold;
+	text-decoration: none;
+	border-radius: 1px;
 }
 
 :global div.monaco-editor.vs-dark,
