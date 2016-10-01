@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"golang.org/x/tools/godoc/vfs"
-	"golang.org/x/tools/godoc/vfs/mapfs"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil/mapfs"
 )
 
 func TestNamespaceFS(t *testing.T) {
-	mfs := mapfs.New(map[string]string{"/a/b.txt": "c"})
+	mfs := mapfs.New(map[string][]byte{"/a/b.txt": []byte("c")})
 	ns := vfs.NewNameSpace()
 	ns.Bind("/x/y", mfs, "/", vfs.BindBefore)
 

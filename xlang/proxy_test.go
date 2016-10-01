@@ -22,13 +22,13 @@ import (
 	_ "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang"
 
 	"golang.org/x/tools/godoc/vfs"
-	"golang.org/x/tools/godoc/vfs/mapfs"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil/mapfs"
 )
 
 func TestProxy(t *testing.T) {
@@ -45,7 +45,7 @@ func TestProxy(t *testing.T) {
 		"go basic": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: mapfs.New(map[string]string{
+			fs: newMapFS(map[string]string{
 				"a.go": "package p; func A() { A() }",
 				"b.go": "package p; func B() { A() }",
 			}),
@@ -88,7 +88,7 @@ func TestProxy(t *testing.T) {
 		"go detailed": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: mapfs.New(map[string]string{
+			fs: newMapFS(map[string]string{
 				"a.go": "package p; type T struct { F string }",
 			}),
 			wantHover: map[string]string{
@@ -103,7 +103,7 @@ func TestProxy(t *testing.T) {
 		"go subdirectory in repo": {
 			rootPath: "git://test/pkg?master#d",
 			mode:     "go",
-			fs: mapfs.New(map[string]string{
+			fs: newMapFS(map[string]string{
 				"a.go":    "package d; func A() { A() }",
 				"d2/b.go": `package d2; import "test/pkg/d"; func B() { d.A(); B() }`,
 			}),
@@ -128,7 +128,7 @@ func TestProxy(t *testing.T) {
 		"go multiple packages in dir": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: mapfs.New(map[string]string{
+			fs: newMapFS(map[string]string{
 				"a.go": "package p; func A() { A() }",
 				"main.go": `// +build ignore
 
@@ -159,7 +159,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"goroot": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: mapfs.New(map[string]string{
+			fs: newMapFS(map[string]string{
 				"a.go": `package p; import "fmt"; var _ = fmt.Println`,
 			}),
 			wantHover: map[string]string{
@@ -169,7 +169,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:40": "git://github.com/golang/go?" + runtime.Version() + "#src/fmt/print.go:1:19",
 			},
 			otherVFS: map[string]vfs.FileSystem{
-				"https://github.com/golang/go?go1.7.1": mapfs.New(map[string]string{
+				"https://github.com/golang/go?go1.7.1": newMapFS(map[string]string{
 					"src/fmt/print.go": "package fmt; func Println(a ...interface{}) (n int, err error) { return }",
 				}),
 			},
@@ -180,7 +180,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"gopath": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: mapfs.New(map[string]string{
+			fs: newMapFS(map[string]string{
 				"a/a.go": `package a; func A() {}`,
 				"b/b.go": `package b; import "test/pkg/a"; var _ = a.A`,
 			}),
@@ -201,7 +201,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"go vendored dep": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: mapfs.New(map[string]string{
+			fs: newMapFS(map[string]string{
 				"a.go": `package a; import "github.com/v/vendored"; var _ = vendored.V`,
 				"vendor/github.com/v/vendored/v.go": "package vendored; func V() {}",
 			}),
@@ -218,7 +218,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"go external dep": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: mapfs.New(map[string]string{
+			fs: newMapFS(map[string]string{
 				"a.go": `package a; import "github.com/d/dep"; var _ = dep.D`,
 			}),
 			wantHover: map[string]string{
@@ -228,7 +228,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:51": "git://github.com/d/dep?HEAD#d.go:1:19",
 			},
 			otherVFS: map[string]vfs.FileSystem{
-				"https://github.com/d/dep?HEAD": mapfs.New(map[string]string{
+				"https://github.com/d/dep?HEAD": newMapFS(map[string]string{
 					"d.go": "package dep; func D() {}",
 				}),
 			},
@@ -236,14 +236,14 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"external dep with vendor": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: mapfs.New(map[string]string{
+			fs: newMapFS(map[string]string{
 				"a.go": `package p; import "github.com/d/dep"; var _ = dep.D().F`,
 			}),
 			wantDefinition: map[string]string{
 				"a.go:1:55": "git://github.com/d/dep?HEAD#vendor/vendp/vp.go:1:32",
 			},
 			otherVFS: map[string]vfs.FileSystem{
-				"https://github.com/d/dep?HEAD": mapfs.New(map[string]string{
+				"https://github.com/d/dep?HEAD": newMapFS(map[string]string{
 					"d.go":               `package dep; import "vendp"; func D() (v vendp.V) { return }`,
 					"vendor/vendp/vp.go": "package vendp; type V struct { F int }",
 				}),
@@ -252,7 +252,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"go external dep at subtree": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: mapfs.New(map[string]string{
+			fs: newMapFS(map[string]string{
 				"a.go": `package a; import "github.com/d/dep/subp"; var _ = subp.D`,
 			}),
 			wantHover: map[string]string{
@@ -262,7 +262,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:57": "git://github.com/d/dep?HEAD#subp/d.go:1:20",
 			},
 			otherVFS: map[string]vfs.FileSystem{
-				"https://github.com/d/dep?HEAD": mapfs.New(map[string]string{
+				"https://github.com/d/dep?HEAD": newMapFS(map[string]string{
 					"subp/d.go": "package subp; func D() {}",
 				}),
 			},
@@ -270,7 +270,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"go nested external dep": { // a depends on dep1, dep1 depends on dep2
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: mapfs.New(map[string]string{
+			fs: newMapFS(map[string]string{
 				"a.go": `package a; import "github.com/d/dep1"; var _ = dep1.D1().D2`,
 			}),
 			wantHover: map[string]string{
@@ -282,10 +282,10 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:58": "git://github.com/d/dep2?HEAD#d2.go:1:32", // field D2
 			},
 			otherVFS: map[string]vfs.FileSystem{
-				"https://github.com/d/dep1?HEAD": mapfs.New(map[string]string{
+				"https://github.com/d/dep1?HEAD": newMapFS(map[string]string{
 					"d1.go": `package dep1; import "github.com/d/dep2"; func D1() dep2.D2 { return dep2.D2{} }`,
 				}),
-				"https://github.com/d/dep2?HEAD": mapfs.New(map[string]string{
+				"https://github.com/d/dep2?HEAD": newMapFS(map[string]string{
 					"d2.go": "package dep2; type D2 struct { D2 int }",
 				}),
 			},
@@ -293,7 +293,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"go external dep at vanity import path": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: mapfs.New(map[string]string{
+			fs: newMapFS(map[string]string{
 				"a.go": `package a; import "golang.org/x/text"; var _ = text.F`,
 			}),
 			wantHover: map[string]string{
@@ -307,7 +307,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				// in-memory dummy data, but we still need to hit the
 				// network to resolve the Go custom import path
 				// (because that's not mocked yet).
-				"https://github.com/golang/text?HEAD": mapfs.New(map[string]string{
+				"https://github.com/golang/text?HEAD": newMapFS(map[string]string{
 					"dummy.go": "package text; func F() {}",
 				}),
 			},
@@ -315,7 +315,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"go symbols": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: mapfs.New(map[string]string{
+			fs: newMapFS(map[string]string{
 				"abc.go": `package a; type XYZ struct {}; func (x XYZ) ABC() {}`,
 				"bcd.go": `package a; type YZA struct {}; func (y YZA) BCD() {}`,
 				"xyz.go": `package a; func yza() {}`,
@@ -674,7 +674,7 @@ func TestProxy_connections(t *testing.T) {
 	ctx := context.Background()
 
 	xlang.VFSCreatorsByScheme["test"] = func(root *uri.URI) (vfs.FileSystem, error) {
-		return mapfs.New(map[string]string{"f": "x"}), nil
+		return newMapFS(map[string]string{"f": "x"}), nil
 	}
 	defer func() {
 		delete(xlang.VFSCreatorsByScheme, "test")
@@ -913,7 +913,7 @@ func TestProxy_propagation(t *testing.T) {
 	ctx := context.Background()
 
 	xlang.VFSCreatorsByScheme["test"] = func(root *uri.URI) (vfs.FileSystem, error) {
-		return mapfs.New(map[string]string{"f": "x"}), nil
+		return newMapFS(map[string]string{"f": "x"}), nil
 	}
 	defer func() {
 		delete(xlang.VFSCreatorsByScheme, "test")
@@ -1009,4 +1009,15 @@ func (v testRequests) Less(i, j int) bool {
 		panic(err)
 	}
 	return string(ii) < string(jj)
+}
+
+// newMapFS lets us easily instantiate a ./xlang/vfsutil/mapfs VFS
+// with a map[string]string (which is less noisy than
+// map[string][]byte in test fixtures).
+func newMapFS(m map[string]string) vfs.FileSystem {
+	m2 := make(map[string][]byte, len(m))
+	for k, v := range m {
+		m2["/"+k] = []byte(v)
+	}
+	return mapfs.New(m2)
 }
