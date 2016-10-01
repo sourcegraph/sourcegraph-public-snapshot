@@ -127,6 +127,8 @@ echo '{"textDocument":{"uri":"git://github.com/gorilla/websocket?2d1e4548#client
 
 echo '{"textDocument":{"uri":"git://github.com/golang/go?6129f3736#src/io/io.go"},"position":{"line":131,"character":12}}' | src xlang send git://github.com/golang/go?6129f3736 go textDocument/hover
 
+echo '{"textDocument":{"uri":"git://github.com/golang/go?go1.7.1#src/net/http/client.go"},"position":{"line":134,"character":22}}' | src xlang send git://github.com/golang/go?go1.7.1 go textDocument/hover
+
 echo '{"textDocument":{"uri":"git://github.com/docker/machine?e1a03348#libmachine/provision/provisioner.go"},"position":{"line":106,"character":49}}' | src xlang send git://github.com/docker/machine?e1a03348 go textDocument/hover
 
 # Needs lots of external deps (they're vendored, but in a non-standard way in GOPATH=./vendor).
