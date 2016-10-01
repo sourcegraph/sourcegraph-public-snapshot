@@ -12,6 +12,9 @@ import (
 	"os"
 	"time"
 
+	lightstep "github.com/lightstep/lightstep-tracer-go"
+	opentracing "github.com/opentracing/opentracing-go"
+
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	srccli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
@@ -166,6 +169,12 @@ func sendExecute(c *sendCmdOpts, args *sendCmdArgs, reqParams []byte) error {
 	}
 
 	if c.Addr == ":dev:" {
+		if t := os.Getenv("LIGHTSTEP_ACCESS_TOKEN"); t != "" {
+			opentracing.InitGlobalTracer(lightstep.NewTracer(lightstep.Options{
+				AccessToken: t,
+			}))
+		}
+
 		addr, run, err := devProxy()
 		if err != nil {
 			return err
