@@ -61,6 +61,9 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 		// If the package exists in the repo, or is vendored, or has
 		// already been fetched, this will succeed.
 		pkg, err := bctx.Import(path, srcDir, mode)
+		if isMultiplePackageError(err) {
+			err = nil
+		}
 		if err == nil {
 			return pkg, nil
 		}
