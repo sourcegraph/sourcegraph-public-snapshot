@@ -103,6 +103,15 @@ export class Editor implements monaco.IDisposable {
 			(palette as any)._shouldShowInContextMenu = false;
 			palette.dispose();
 		}
+		// Don't show context menu for peek view or comments, etc.
+		this._editor.onContextMenu(e => {
+			// HACK: This method relies on Monaco private internals.
+			const ident = /.*identifier.*/.exec(e.target.element.className);
+			const peekWidget = e.target.detail === "vs.editor.contrib.zoneWidget1";
+			if (!ident || peekWidget) {
+				(this._editor as any)._contextViewService.hideContextView();
+			}
+		});
 
 		// Add the "Find External References" item to the context menu.
 		this._editor.addAction({
