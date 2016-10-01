@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"reflect"
@@ -16,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -100,14 +102,39 @@ func serveRepoInventory(w http.ResponseWriter, r *http.Request) error {
 	return writeJSON(w, &resp)
 }
 
-func serveRepos(w http.ResponseWriter, r *http.Request) error {
+var repoSearchDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	Namespace: "src",
+	Subsystem: "repos_list",
+	Name:      "search_duration_seconds",
+	Help:      "Repo search latency in seconds.",
+	// Buckets are similar to statsutil.UserLatencyBuckets, but with more granularity for apdex measurements.
+	Buckets: []float64{0.1, 0.2, 0.5, 0.8, 1, 1.5, 2, 5, 10, 15, 20, 30},
+}, []string{"success", "query", "remote_search", "remote_only"})
+
+func init() {
+	prometheus.MustRegister(repoSearchDuration)
+}
+
+func serveRepos(w http.ResponseWriter, r *http.Request) (err error) {
 	cl := handlerutil.Client(r)
 
 	var opt sourcegraph.RepoListOptions
-	err := schemaDecoder.Decode(&opt, r.URL.Query())
+	err = schemaDecoder.Decode(&opt, r.URL.Query())
 	if err != nil {
 		return err
 	}
+
+	start := time.Now()
+	defer func() {
+		duration := time.Now().Sub(start)
+		labels := prometheus.Labels{
+			"success":       fmt.Sprintf("%t", err == nil),
+			"query":         fmt.Sprint(opt.Query != ""),
+			"remote_search": fmt.Sprint(opt.RemoteSearch),
+			"remote_only":   fmt.Sprint(opt.RemoteOnly),
+		}
+		repoSearchDuration.With(labels).Observe(duration.Seconds())
+	}()
 
 	repos, err := cl.Repos.List(r.Context(), &opt)
 	if err != nil {
