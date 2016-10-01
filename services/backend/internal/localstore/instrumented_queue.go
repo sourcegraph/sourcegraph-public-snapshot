@@ -1,4 +1,4 @@
-package middleware
+package localstore
 
 import (
 	"sync"
@@ -10,44 +10,44 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
-// InstrumentedQueue wraps q to instrument logging and metrics.
-type InstrumentedQueue struct {
+// instrumentedQueue wraps q to instrument logging and metrics.
+type instrumentedQueue struct {
 	store.Queue
 }
 
-var _ store.Queue = (*InstrumentedQueue)(nil)
+var _ store.Queue = (*instrumentedQueue)(nil)
 
 // Enqueue implements store.Queue.
-func (q *InstrumentedQueue) Enqueue(ctx context.Context, j *store.Job) error {
+func (q *instrumentedQueue) Enqueue(ctx context.Context, j *store.Job) error {
 	err := q.Queue.Enqueue(ctx, j)
 	if err != nil {
-		errors.WithLabelValues("enqueue").Inc()
+		queueErrors.WithLabelValues("enqueue").Inc()
 		log15.Debug("queue.Enqueue failed", "type", j.Type, "err", err)
 	} else {
-		enqueued.WithLabelValues(j.Type).Inc()
+		queueEnqueued.WithLabelValues(j.Type).Inc()
 		log15.Debug("queue.Enqueue success", "type", j.Type)
 	}
 	return err
 }
 
 // LockJob implements store.Queue.
-func (q *InstrumentedQueue) LockJob(ctx context.Context) (*store.LockedJob, error) {
+func (q *instrumentedQueue) LockJob(ctx context.Context) (*store.LockedJob, error) {
 	j, err := q.Queue.LockJob(ctx)
 	if err != nil {
-		errors.WithLabelValues("lockjob").Inc()
+		queueErrors.WithLabelValues("lockjob").Inc()
 		log15.Debug("queue.LockJob failed", "err", err)
 	} else if j != nil {
-		lockedJobs.WithLabelValues(j.Type).Inc()
+		queueLockedJobs.WithLabelValues(j.Type).Inc()
 		log15.Debug("queue.LockJob success", "type", j.Type)
 		return store.NewLockedJob(
 			j.Job,
 			func() error {
 				err := j.MarkSuccess()
 				if err != nil {
-					errors.WithLabelValues("marksucess").Inc()
+					queueErrors.WithLabelValues("marksucess").Inc()
 					log15.Debug("LockedJob.MarkSuccess failed", "type", j.Type, "err", err)
 				} else {
-					markedSuccess.WithLabelValues(j.Type).Inc()
+					queueMarkedSuccess.WithLabelValues(j.Type).Inc()
 					log15.Debug("LockedJob.MarkSuccess success", "type", j.Type)
 				}
 				return err
@@ -55,10 +55,10 @@ func (q *InstrumentedQueue) LockJob(ctx context.Context) (*store.LockedJob, erro
 			func(reason string) error {
 				err := j.MarkError(reason)
 				if err != nil {
-					errors.WithLabelValues("markerror").Inc()
+					queueErrors.WithLabelValues("markerror").Inc()
 					log15.Debug("LockedJob.MarkError failed", "type", j.Type, "reason", reason, "err", err)
 				} else {
-					markedError.WithLabelValues(j.Type).Inc()
+					queueMarkedError.WithLabelValues(j.Type).Inc()
 					log15.Debug("LockedJob.MarkError success", "type", j.Type, "reason", reason)
 				}
 				return err
@@ -69,7 +69,7 @@ func (q *InstrumentedQueue) LockJob(ctx context.Context) (*store.LockedJob, erro
 }
 
 // Stats implements store.Queue.
-func (q *InstrumentedQueue) Stats(ctx context.Context) (map[string]store.QueueStats, error) {
+func (q *instrumentedQueue) Stats(ctx context.Context) (map[string]store.QueueStats, error) {
 	return q.Queue.Stats(ctx)
 }
 
@@ -78,10 +78,10 @@ const (
 	typeLabel = "type"
 )
 
-// NewQueueStatsCollector returns a prometheus collector based on the
+// newQueueStatsCollector returns a prometheus collector based on the
 // statistics returned by queue.Stats(). ctx needs to be long lived, and will
 // be used when calling queue.Stats()
-func NewQueueStatsCollector(ctx context.Context, queue store.Queue) prometheus.Collector {
+func newQueueStatsCollector(ctx context.Context, queue store.Queue) prometheus.Collector {
 	return &queueStatsCollector{
 		queue: queue,
 		ctx:   ctx,
@@ -96,7 +96,7 @@ func NewQueueStatsCollector(ctx context.Context, queue store.Queue) prometheus.C
 			Namespace: namespace,
 			Subsystem: "queue",
 			Name:      "jobs_with_error",
-			Help:      "The number of jobs in the queue (including running jobs) which have previously been MarkedError.",
+			Help:      "The number of jobs in the queue (including running jobs) which have previously been queueMarkedError.",
 		}, []string{typeLabel}),
 	}
 }
@@ -140,31 +140,31 @@ func (c *queueStatsCollector) Collect(ch chan<- prometheus.Metric) {
 	c.numJobsWithError.Reset()
 }
 
-var enqueued = prometheus.NewCounterVec(prometheus.CounterOpts{
+var queueEnqueued = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Namespace: namespace,
 	Subsystem: "queue",
 	Name:      "enqueue_total",
 	Help:      "Total number of Jobs successfully enqueued.",
 }, []string{typeLabel})
-var lockedJobs = prometheus.NewCounterVec(prometheus.CounterOpts{
+var queueLockedJobs = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Namespace: namespace,
 	Subsystem: "queue",
 	Name:      "lockedjobs_total",
 	Help:      "Total number of Jobs successfully Locked.",
 }, []string{typeLabel})
-var errors = prometheus.NewCounterVec(prometheus.CounterOpts{
+var queueErrors = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Namespace: namespace,
 	Subsystem: "queue",
 	Name:      "errors_total",
 	Help:      "Total number of errors.",
 }, []string{"method"})
-var markedSuccess = prometheus.NewCounterVec(prometheus.CounterOpts{
+var queueMarkedSuccess = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Namespace: namespace,
 	Subsystem: "queue",
 	Name:      "marked_success_total",
 	Help:      "Total number of LockedJobs.MarkSuccess().",
 }, []string{typeLabel})
-var markedError = prometheus.NewCounterVec(prometheus.CounterOpts{
+var queueMarkedError = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Namespace: namespace,
 	Subsystem: "queue",
 	Name:      "marked_error_total",
@@ -172,9 +172,9 @@ var markedError = prometheus.NewCounterVec(prometheus.CounterOpts{
 }, []string{typeLabel})
 
 func init() {
-	prometheus.MustRegister(enqueued)
-	prometheus.MustRegister(lockedJobs)
-	prometheus.MustRegister(errors)
-	prometheus.MustRegister(markedSuccess)
-	prometheus.MustRegister(markedError)
+	prometheus.MustRegister(queueEnqueued)
+	prometheus.MustRegister(queueLockedJobs)
+	prometheus.MustRegister(queueErrors)
+	prometheus.MustRegister(queueMarkedSuccess)
+	prometheus.MustRegister(queueMarkedError)
 }

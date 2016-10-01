@@ -1,4 +1,4 @@
-package middleware
+package localstore
 
 import (
 	"reflect"
@@ -15,7 +15,7 @@ import (
 
 func TestInstrumentQueue(t *testing.T) {
 	m := &mockstore.Queue{}
-	q := InstrumentedQueue{m}
+	q := instrumentedQueue{m}
 	ctx := context.Background()
 
 	// Enqueue
@@ -86,7 +86,7 @@ func TestQueueStatsCollector(t *testing.T) {
 	// We just check that we collect 4 stats, and don't actually check we
 	// collect legit values.
 	var (
-		c     = NewQueueStatsCollector(context.Background(), m)
+		c     = newQueueStatsCollector(context.Background(), m)
 		ch    = make(chan prometheus.Metric)
 		count = 0
 	)

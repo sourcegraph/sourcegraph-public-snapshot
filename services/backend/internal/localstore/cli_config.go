@@ -8,7 +8,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 )
 
@@ -17,7 +16,7 @@ func init() {
 		Defs:         &defs{},
 		GlobalDeps:   &globalDeps{},
 		GlobalRefs:   &globalRefs{},
-		Queue:        &middleware.InstrumentedQueue{Queue: &queue{}},
+		Queue:        &instrumentedQueue{Queue: &queue{}},
 		RepoConfigs:  &repoConfigs{},
 		RepoStatuses: &repoStatuses{},
 		RepoVCS:      &repoVCS{},
@@ -49,7 +48,7 @@ func initBackground(stores store.Stores) error {
 	}
 	ctx := WithAppDBH(context.Background(), appDBH)
 
-	c := middleware.NewQueueStatsCollector(ctx, stores.Queue)
+	c := newQueueStatsCollector(ctx, stores.Queue)
 	prometheus.MustRegister(c)
 
 	return nil
