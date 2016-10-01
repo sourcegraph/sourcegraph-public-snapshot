@@ -66,7 +66,7 @@ func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2Conn, fileURI 
 	}
 
 	// TODO(sqs): do all pkgs in workspace together?
-	fset, prog, diags, err := h.cachedTypecheck(bctx, bpkg)
+	fset, prog, diags, err := h.cachedTypecheck(ctx, bctx, bpkg)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -208,7 +208,15 @@ func (h *LangHandler) typecheckMu(k typecheckKey) *sync.Mutex {
 	return mu
 }
 
-func (h *LangHandler) cachedTypecheck(bctx *build.Context, bpkg *build.Package) (*token.FileSet, *loader.Program, diagnostics, error) {
+func (h *LangHandler) cachedTypecheck(ctx context.Context, bctx *build.Context, bpkg *build.Package) (*token.FileSet, *loader.Program, diagnostics, error) {
+	parentSpan := opentracing.SpanFromContext(ctx)
+	span := parentSpan.Tracer().StartSpan("xlang-go: typecheck",
+		opentracing.Tags{"pkg": bpkg.ImportPath},
+		opentracing.ChildOf(parentSpan.Context()),
+	)
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	k := typecheckKey{bpkg.ImportPath, bpkg.Dir, bpkg.Name}
 
 	mu := h.typecheckMu(k)
@@ -216,6 +224,7 @@ func (h *LangHandler) cachedTypecheck(bctx *build.Context, bpkg *build.Package) 
 	defer mu.Unlock()
 
 	res, ok := h.cache[k]
+	span.SetTag("cached", ok)
 	if !ok {
 		res.fset = token.NewFileSet()
 		res.prog, res.diags, res.err = typecheck(res.fset, bctx, bpkg)
