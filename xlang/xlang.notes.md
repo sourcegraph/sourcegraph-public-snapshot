@@ -57,7 +57,7 @@ The client (web browser) sends a series of LSP requests to the server:
 The HTTP API receives these requests and checks that the user can access the repo. It sends the following requests to the proxy:
 
 * `--> initialize rootPath=git://github.com/sourcegraph/sourcegraph?master` mode=typescript
-* `--> textDocument/definition textDocument=file:///ui/web_modules/sourcegraph/editor/Editor.tsx position=10:20` (note the transformation to a file:/// URI)
+* `--> textDocument/definition textDocument=git://github.com/sourcegraph/sourcegraph?master#ui/web_modules/sourcegraph/editor/Editor.tsx position=10:20`
 
 The proxy receives these requests and determines which workspace root directory the file is in (always the root `/` for now) and which build/language server to use (using the non-standard "mode" on the LSP initialize request).
 
