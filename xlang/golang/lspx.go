@@ -16,9 +16,8 @@ type initializeParams struct {
 	lsp.InitializeParams
 
 	// NoOSFileSystemAccess makes the server never access the OS file
-	// system. It uses the in-memory VFS (populated by
-	// textDocument/didOpen calls and dependency fetches) for file
-	// system access.
+	// system. It exclusively uses the file overlay (from
+	// textDocument/didOpen) and the LSP proxy's VFS.
 	NoOSFileSystemAccess bool
 
 	// BuildContext, if set, configures the language server's default

@@ -782,8 +782,6 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 		{"initialize", lspx.InitializeParams{
 			InitializeParams: lsp.InitializeParams{RootPath: "file:///"},
 			OriginalRootPath: "test://test"}},
-		{"textDocument/didOpen", lsp.DidOpenTextDocumentParams{
-			TextDocument: lsp.TextDocumentItem{URI: "file:///f", Text: "x"}}},
 		{"textDocument/definition", lsp.TextDocumentPositionParams{
 			TextDocument: lsp.TextDocumentIdentifier{URI: "file:///myfile"},
 			Position:     lsp.Position{Line: 1, Character: 2}}},
@@ -836,8 +834,6 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 		{"initialize", lspx.InitializeParams{
 			InitializeParams: lsp.InitializeParams{RootPath: "file:///"},
 			OriginalRootPath: "test://test"}},
-		{"textDocument/didOpen", lsp.DidOpenTextDocumentParams{
-			TextDocument: lsp.TextDocumentItem{URI: "file:///f", Text: "x"}}},
 		{"textDocument/definition", lsp.TextDocumentPositionParams{
 			TextDocument: lsp.TextDocumentIdentifier{URI: "file:///myfile3"},
 			Position:     lsp.Position{Line: 5, Character: 6}}},

@@ -1,22 +1,4 @@
 // Package lspx contains extensions to the LSP protocol.
-//
-// In addition to the types described here, Sourcegraph extends the
-// LSP protocol in the following ways.
-//
-// 1. If the client sends a textDocument/didOpen message as a request
-//    (with a nonempty request "id" field), then the server must treat
-//    it as a request (even though the LSP spec says this method is a
-//    notification). The server must reply with an empty result (if
-//    there is no error) or an error (if there is an error).
-//
-//    This behavior is mandated by the JSON-RPC 2.0 spec; it
-//    would be invalid for the server to not reply.
-//
-//    TODO(sqs): A valid LSP and JSON-RPC 2.0 server could, however,
-//    refuse to treat textDocument/didOpen as a request (as opposed to
-//    a notification) and return an error. Therefore we should rely on the
-//    server's published capabilities to know if the server can reply
-//    to textDocument/didOpen requests.
 package lspx
 
 import (

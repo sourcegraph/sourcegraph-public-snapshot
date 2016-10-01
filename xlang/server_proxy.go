@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"runtime"
-	"strings"
 	"sync"
 	"time"
 
@@ -24,7 +23,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 // serverID identifies a lang/build server by the minimal state
@@ -50,10 +48,9 @@ type serverProxyConn struct {
 
 	id serverID
 
-	mu        sync.Mutex
-	rootFS    ctxvfs.FileSystem
-	sentFiles bool      // whether all files have been (pre)sent already
-	last      time.Time // max(last request sent, last response received), used to disconnect from unused servers
+	mu     sync.Mutex
+	rootFS ctxvfs.FileSystem // the workspace's file system
+	last   time.Time         // max(last request sent, last response received), used to disconnect from unused servers
 
 	shutdown chan struct{} // a channel that is closed when the server is shut down by us
 }
@@ -241,96 +238,49 @@ func (p *Proxy) callServer(ctx context.Context, id serverID, method string, para
 	}
 	c.updateLastTime()
 
-	if err := c.presendFiles(ctx); err != nil {
-		return err
-	}
-
 	return c.conn.Call(ctx, method, params, result, addTraceMeta(ctx))
 }
 
-// modeFileFilter is a map of mode ID (e.g., "go") to a function that
-// returns true if the file should be sent to that mode's lang/build
-// server. It is used to, e.g., only send .go files to the Go
-// build/lang server (which can significantly improve perf).
-//
-// TODO(sqs): make this configurable by the build/lang server (which
-// could return a list of file globs in the LSP InitializeResult, for
-// example).
-var modeFileFilter = map[string]func(os.FileInfo) bool{
-	"go": func(fi os.FileInfo) bool {
-		return strings.HasSuffix(fi.Name(), ".go")
-	},
-}
-
-// presendFiles sends all relevant files from rootFS to the server in
-// textDocument/didOpen notifications so that the server loads them
-// into its VFS.
-func (c *serverProxyConn) presendFiles(ctx context.Context) (err error) {
-	// Make other clients wait for this, because they'd have to wait
-	// anyway if they were the one sending the files.
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.sentFiles {
-		return nil
-	}
-	defer func() {
-		if err == nil {
-			c.sentFiles = true
-		}
-	}()
-
-	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: send files", opentracing.Tags{})
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogEvent(fmt.Sprintf("error: %v", err))
-		}
-		span.Finish()
-	}()
-
-	// Read files in the repository at the given commit.
-	allFiles, err := vfsutil.ReadAllFiles(ctx, c.rootFS, "", modeFileFilter[c.id.mode])
-	if err != nil {
-		return err
-	}
-
-	totalFileBytes := 0
-	for _, f := range allFiles {
-		totalFileBytes += len(f)
-	}
-	span.SetTag("files", len(allFiles))
-	span.SetTag("fileBytes", totalFileBytes)
-
-	// Send all files. See vfs_bench_test.go for why this is fast
-	// enough for our purposes.
-	par := parallel.NewRun(runtime.GOMAXPROCS(0))
-	for path, contents := range allFiles {
-		// TODO(sqs): add heuristics to not send certain binary files
-		// or other irrelevant files.
-		par.Acquire()
-		go func(path string, contents []byte) {
-			defer par.Release()
-			if err := c.conn.Call(ctx,
-				"textDocument/didOpen",
-				lsp.DidOpenTextDocumentParams{
-					TextDocument: lsp.TextDocumentItem{
-						URI:  "file://" + path,
-						Text: string(contents),
-					},
-				},
-				nil,
-				addTraceMeta(ctx),
-			); err != nil {
-				par.Error(err)
-			}
-		}(path, contents)
-	}
-	return par.Wait()
-}
-
-func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
+func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
 	c.updateLastTime()
 	defer c.updateLastTime()
+
+	// Trace the handling of this request.
+	//
+	// Don't trace when we are handling traces, or else we will have a
+	// lot of noise in our traces.
+	if req.Method != "telemetry/event" {
+		var span opentracing.Span
+		op := "LSP server proxy: handle " + req.Method
+
+		// Try to get our parent span context from this JSON-RPC request's metadata.
+		if req.Meta != nil {
+			var carrier opentracing.TextMapCarrier
+			if err := json.Unmarshal(*req.Meta, &carrier); err != nil {
+				return nil, err
+			}
+			if clientCtx, err := opentracing.GlobalTracer().Extract(opentracing.TextMap, carrier); err == nil {
+				span = opentracing.StartSpan(op, ext.RPCServerOption(clientCtx))
+				ctx = opentracing.ContextWithSpan(ctx, span)
+			} else if err != opentracing.ErrSpanContextNotFound {
+				return nil, err
+			}
+		}
+
+		// Otherwise derive the span from our own context.
+		if span == nil {
+			span, ctx = opentracing.StartSpanFromContext(ctx, op)
+		}
+
+		span.SetTag("method", req.Method)
+		defer func() {
+			if err != nil {
+				ext.Error.Set(span, true)
+				span.LogEvent(fmt.Sprintf("error: %v", err))
+			}
+			span.Finish()
+		}()
+	}
 
 	switch req.Method {
 	case "telemetry/event":
@@ -349,6 +299,16 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			}
 		}
 		return nil, nil
+
+	case "fs/readFile", "fs/readDir", "fs/stat", "fs/lstat":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		var path string
+		if err := json.Unmarshal(*req.Params, &path); err != nil {
+			return nil, err
+		}
+		return c.handleFS(ctx, req.Method, path)
 
 	case "textDocument/publishDiagnostics":
 		// Forward to all clients.
