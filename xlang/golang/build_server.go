@@ -35,7 +35,7 @@ import (
 // /goroot/src/fmt/print.go ->
 // git://github.com/golang/go?go1.7.1#src/fmt/print.go).
 func NewBuildHandler() jsonrpc2.Handler {
-	shared := new(handlerShared)
+	shared := &handlerShared{shared: true}
 	return jsonrpc2.HandlerWithError((&BuildHandler{
 		handlerShared: shared,
 		lang:          &LangHandler{handlerShared: shared},

@@ -38,8 +38,12 @@ func (h *LangHandler) reset(init *initializeParams) error {
 	if err := h.handlerCommon.reset(init.RootPath); err != nil {
 		return err
 	}
-	if err := h.handlerShared.reset(init.RootPath); err != nil {
-		return err
+	if !h.handlerShared.shared {
+		// Only reset the shared data if this lang server is running
+		// by itself.
+		if err := h.handlerShared.reset(init.RootPath); err != nil {
+			return err
+		}
 	}
 	h.init = init
 	h.cacheMus = map[typecheckKey]*sync.Mutex{}

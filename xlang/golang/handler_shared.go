@@ -13,6 +13,7 @@ import (
 // wrapped lang server may share in memory.
 type handlerShared struct {
 	mu               sync.Mutex        // guards all fields
+	shared           bool              // true if this struct is shared with a build server
 	fs               namespaceFS       // full filesystem (mounts both deps and overlay)
 	overlayFS        map[string][]byte // files to overlay
 	overlayMountPath string            // mount point of overlay on fs (usually /src/github.com/foo/bar)
