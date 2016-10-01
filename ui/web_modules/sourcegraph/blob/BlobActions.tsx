@@ -2,7 +2,9 @@ import { TreeEntry } from "sourcegraph/api";
 
 export type Action =
 	WantFile |
-	FileFetched;
+	FileFetched |
+	Toast |
+	ClearToast;
 
 export class WantFile {
 	repo: string;
@@ -30,3 +32,15 @@ export class FileFetched {
 		this.file = file;
 	}
 }
+
+export class Toast {
+	msg: string;
+	timeout: number;
+
+	constructor(msg: string, timeout?: number) {
+		this.msg = msg;
+		this.timeout = timeout || 2500;
+	}
+}
+
+export class ClearToast {}

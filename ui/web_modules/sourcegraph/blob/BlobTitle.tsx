@@ -1,6 +1,6 @@
 import * as React from "react";
 import {Link} from "react-router";
-import {Base, Heading} from "sourcegraph/components";
+import {Base, FlexContainer, Heading} from "sourcegraph/components";
 import {colors, typography} from "sourcegraph/components/utils";
 import {RevSwitcherContainer} from "sourcegraph/repo/RevSwitcherContainer";
 
@@ -13,6 +13,7 @@ interface Props {
 	routes: Array<Object>;
 	routeParams: any;
 	isCloning: boolean;
+	toast: string | null;
 }
 
 const sx = {
@@ -26,6 +27,11 @@ const subSx = Object.assign({},
 	typography.size[7],
 );
 
+const toastSx = Object.assign({},
+	{color: colors.orange(), marginTop: "auto", marginBottom: "auto"},
+	typography.size[8],
+);
+
 export const BlobTitle = ({
 	repo,
 	path,
@@ -35,17 +41,23 @@ export const BlobTitle = ({
 	routes,
 	routeParams,
 	isCloning,
+	toast,
 }: Props) => <Base style={sx} px={3} py={2}>
-	<Heading level={5} color="white" mb={0}>
-		{path}
-		{commitID && <RevSwitcherContainer
-			repo={repo}
-			repoObj={repoObj}
-			rev={rev}
-			commitID={commitID}
-			routes={routes}
-			routeParams={routeParams}
-			isCloning={isCloning} />}
-	</Heading>
-	<Link style={subSx} to={`/${repo}`} >{repo}</Link>
+	<FlexContainer justify="between">
+		<div>
+			<Heading level={5} color="white" mb={0}>
+				{path}
+				{commitID && <RevSwitcherContainer
+					repo={repo}
+					repoObj={repoObj}
+					rev={rev}
+					commitID={commitID}
+					routes={routes}
+					routeParams={routeParams}
+					isCloning={isCloning} />}
+			</Heading>
+			<Link style={subSx} to={`/${repo}`} >{repo}</Link>
+		</div>
+		{toast && <div style={toastSx}>{toast}</div>}
+	</FlexContainer>
 </Base>;
