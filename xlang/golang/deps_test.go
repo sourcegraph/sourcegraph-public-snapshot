@@ -4,13 +4,17 @@ import (
 	"fmt"
 	"go/build"
 	"reflect"
+	"sync"
 	"testing"
 )
 
 func TestImportDeps(t *testing.T) {
+	var mu sync.Mutex
 	imported := map[string]struct{}{}
 	importPackage := func(path, srcDir string, mode build.ImportMode) (*build.Package, error) {
+		mu.Lock()
 		imported[path] = struct{}{}
+		mu.Unlock()
 		switch path {
 		case "a":
 			return &build.Package{Imports: []string{"b", "c"}}, nil
