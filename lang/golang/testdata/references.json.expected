@@ -18,11 +18,11 @@
         "uri": "file:///gopath/src/mux/mux.go",
         "range": {
           "start": {
-            "line": 65,
+            "line": 68,
             "character": 6
           },
           "end": {
-            "line": 65,
+            "line": 68,
             "character": 20
           }
         }
@@ -31,11 +31,11 @@
         "uri": "file:///gopath/src/mux/mux.go",
         "range": {
           "start": {
-            "line": 66,
+            "line": 69,
             "character": 20
           },
           "end": {
-            "line": 66,
+            "line": 69,
             "character": 34
           }
         }

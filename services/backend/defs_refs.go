@@ -2,6 +2,12 @@ package backend
 
 import (
 	"path"
+	"sync"
+	"time"
+
+	opentracing "github.com/opentracing/opentracing-go"
+
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -100,8 +106,85 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 	}, nil
 }
 
+// TODO(slimsag): Remove this in the future.
+var lastKickoff = &struct {
+	mu sync.Mutex
+	t  time.Time
+}{
+	t: time.Now(),
+}
+
+// TODO(slimsag): Remove this in the future.
+func (s *defs) srclibMigrate(ctx context.Context, refLocations *sourcegraph.RefLocationsList) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "srclib migrate",
+		opentracing.FollowsFrom(opentracing.SpanFromContext(ctx).Context()),
+	)
+	defer span.Finish()
+
+	// We kick off a refresh for repositories, but only if the last refresh
+	// kicked off happened >10s ago. This is to do the migration gradually,
+	// instead of spawning thousands of goroutines
+	var shouldRefresh bool
+	lastKickoff.mu.Lock()
+	if time.Since(lastKickoff.t) > 10*time.Second {
+		shouldRefresh = true
+		lastKickoff.t = time.Now()
+	}
+	lastKickoff.mu.Unlock()
+
+	if shouldRefresh {
+		return
+	}
+
+	// Determine which repositories in the results have not been refreshed
+	// since we switched off of srclib. i.e. which repos are still resolving
+	// ref location file positions via srclib store.
+	//
+	// This is just a stop gap solution for a nice, slow, migration. To see
+	// how many repos are left to be migrated:
+	//
+	// 	select count(distinct repo) from global_refs_new where positions IS NULL;
+	//
+	// Or to list them all:
+	//
+	// 	select distinct repo from global_refs_new where positions IS NULL;
+	//
+	repos := make(map[string]struct{})
+	for _, r := range refLocations.RepoRefs {
+		for _, f := range r.Files {
+			if len(f.Positions) != 0 {
+				continue
+			}
+			repos[r.Repo] = struct{}{}
+		}
+	}
+
+	for r := range repos {
+		log15.Info("[srclib migration] refreshing", "repo", r)
+		repo, err := svc.Repos(ctx).Resolve(ctx, &sourcegraph.RepoResolveOp{
+			Path:   r,
+			Remote: true,
+		})
+		if err != nil {
+			log15.Warn("[srclib migration] failed to kickoff migration", "error", err)
+			continue
+		}
+		_, err = svc.Async(ctx).RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
+			Repo:   repo.Repo,
+			Source: "migration",
+			Force:  true,
+		})
+		if err != nil {
+			log15.Warn("[srclib migration] failed to submit async migration", "error", err)
+			continue
+		}
+	}
+}
+
 func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
-	return store.GlobalRefsFromContext(ctx).Get(ctx, op)
+	refLocations, err := store.GlobalRefsFromContext(ctx).Get(ctx, op)
+	s.srclibMigrate(ctx, refLocations)
+	return refLocations, err
 }
 
 func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
@@ -119,10 +202,8 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	// Update defs table for the exported symbols in repo.
 	defsErr := store.DefsFromContext(ctx).Update(ctx, indexOp)
 
-	// TODO GlobalRefs updates are disabled until we are happy with langp.ExternalRefs
 	// Update the references this repo makes to external repos
-	//refsErr := store.GlobalRefsFromContext(ctx).Update(ctx, indexOp)
-	var refsErr error
+	refsErr := store.GlobalRefsFromContext(ctx).Update(ctx, indexOp)
 
 	// We care more about defsErr, since it should be more stable. So lets
 	// lean on the side of reporting it instead of refsErr. We only return

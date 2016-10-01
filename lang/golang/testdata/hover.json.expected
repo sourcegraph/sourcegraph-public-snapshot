@@ -14,32 +14,14 @@
   {
     "id": 1,
     "result": {
-      "contents": [
-        {
-          "language": "go",
-          "value": "NewRouter func() *Router"
-        },
-        {
-          "language": "text/html",
-          "value": "\u003cp\u003e\nNewRouter returns a new router instance.\n\u003c/p\u003e\n"
-        },
-        {
-          "language": "text/plain",
-          "value": "NewRouter returns a new router instance.\n"
-        },
-        {
-          "language": "text/definfo",
-          "value": "{\"URI\":\"file:///gopath/src/mux/mux.go\",\"UnitType\":\"GoPackage\",\"Unit\":\"mux\",\"Path\":\"NewRouter\"}"
-        }
-      ],
       "range": {
         "start": {
-          "line": 15,
-          "character": 5
+          "line": 0,
+          "character": 0
         },
         "end": {
-          "line": 15,
-          "character": 13
+          "line": 0,
+          "character": 0
         }
       }
     },

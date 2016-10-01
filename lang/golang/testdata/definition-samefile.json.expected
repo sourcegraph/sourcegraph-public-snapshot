@@ -13,21 +13,7 @@
   },
   {
     "id": 1,
-    "result": [
-      {
-        "uri": "file:///gopath/src/mux/mux.go",
-        "range": {
-          "start": {
-            "line": 37,
-            "character": 5
-          },
-          "end": {
-            "line": 37,
-            "character": 10
-          }
-        }
-      }
-    ],
+    "result": [],
     "jsonrpc": "2.0"
   },
   {
