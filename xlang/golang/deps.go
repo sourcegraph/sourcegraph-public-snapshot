@@ -10,6 +10,9 @@ import (
 	"sort"
 	"sync"
 
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 
 	"golang.org/x/tools/go/buildutil"
@@ -23,7 +26,21 @@ import (
 // It adds fetched dependencies to its own file system overlay, and
 // the returned depFiles should be passed onto the language server to
 // add to its overlay.
-func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI string) error {
+func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI string) (err error) {
+	parentSpan := opentracing.SpanFromContext(ctx)
+	span := parentSpan.Tracer().StartSpan("xlang-go: fetch transitive dependencies",
+		opentracing.Tags{"fileURI": fileURI},
+		opentracing.ChildOf(parentSpan.Context()),
+	)
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogEvent(fmt.Sprintf("error: %v", err))
+		}
+		span.Finish()
+	}()
+
 	bctx := h.overlayBuildContext(&build.Context{
 		GOOS:     goos,
 		GOARCH:   goarch,

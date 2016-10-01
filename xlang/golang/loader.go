@@ -13,6 +13,8 @@ import (
 	"strings"
 	"sync"
 
+	opentracing "github.com/opentracing/opentracing-go"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 
 	"golang.org/x/tools/go/buildutil"
@@ -20,6 +22,14 @@ import (
 )
 
 func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2Conn, fileURI string, position lsp.Position) (*token.FileSet, *ast.Ident, *loader.PackageInfo, error) {
+	parentSpan := opentracing.SpanFromContext(ctx)
+	span := parentSpan.Tracer().StartSpan("xlang-go: load program",
+		opentracing.Tags{"fileURI": fileURI},
+		opentracing.ChildOf(parentSpan.Context()),
+	)
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	filename := h.filePath(fileURI)
 
 	contents, err := h.readFile(fileURI)
