@@ -50,8 +50,9 @@ type BuildHandler struct {
 	mu sync.Mutex
 	handlerCommon
 	*handlerShared
-	init     *lspx.InitializeParams // set by "initialize" request
-	depsDone bool                   // deps have been fetched and sent to the lang server
+	init           *lspx.InitializeParams // set by "initialize" request
+	rootImportPath string                 // root import path of the workspace (e.g., "github.com/foo/bar")
+	depsDone       bool                   // deps have been fetched and sent to the lang server
 }
 
 const (
@@ -142,10 +143,9 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		if err != nil {
 			return nil, err
 		}
-		var importPath string
 		switch u.Scheme {
 		case "git":
-			importPath = path.Join(u.Host, strings.TrimSuffix(u.Path, ".git"), u.FilePath())
+			h.rootImportPath = path.Join(u.Host, strings.TrimSuffix(u.Path, ".git"), u.FilePath())
 		default:
 			return nil, fmt.Errorf("unrecognized originalRootPath: %q", u)
 		}
@@ -153,8 +153,8 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		span.SetTag("originalRootPath", params.OriginalRootPath)
 
 		// Sanity-check the import path.
-		if importPath == "" || importPath != path.Clean(importPath) || strings.Contains(importPath, "..") || strings.HasPrefix(importPath, string(os.PathSeparator)) || strings.HasPrefix(importPath, "/") || strings.HasPrefix(importPath, ".") {
-			return nil, fmt.Errorf("empty or suspicious import path: %q", importPath)
+		if h.rootImportPath == "" || h.rootImportPath != path.Clean(h.rootImportPath) || strings.Contains(h.rootImportPath, "..") || strings.HasPrefix(h.rootImportPath, string(os.PathSeparator)) || strings.HasPrefix(h.rootImportPath, "/") || strings.HasPrefix(h.rootImportPath, ".") {
+			return nil, fmt.Errorf("empty or suspicious import path: %q", h.rootImportPath)
 		}
 
 		// Send "initialize" to the wrapped lang server.
@@ -183,7 +183,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		// Put all files in the workspace under a /src/IMPORTPATH
 		// directory, such as /src/github.com/foo/bar, so that Go can
 		// build it in GOPATH=/.
-		rootFSPath := "/src/" + importPath
+		rootFSPath := "/src/" + h.rootImportPath
 		langInitParams.RootPath = "file://" + rootFSPath
 		if err := h.reset(&params, langInitParams.RootPath); err != nil {
 			return nil, err

@@ -85,6 +85,21 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 			return pkg, nil
 		}
 
+		// If this package resolves to the same repo, then use any
+		// imported package, even if it has errors. The errors would
+		// be caused by the repo itself, not our dep fetching.
+		//
+		// TODO(sqs): if a package example.com/a imports
+		// example.com/a/b and example.com/a/b lives in a separate
+		// repo, then this will break. This is the case for some
+		// azul3d packages, but it's rare.
+		if pathHasPrefix(path, h.rootImportPath) {
+			if pkg != nil {
+				return pkg, nil
+			}
+			return nil, fmt.Errorf("package %q is inside of workspace root but failed to import: %s", path, err)
+		}
+
 		// Otherwise, it's an external dependency. Fetch the package
 		// and try again.
 		d, err := resolveImportPath(http.DefaultClient, path)
@@ -94,6 +109,15 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 		if d.vcs != "git" {
 			return nil, fmt.Errorf("Go dependency at import path %q has unsupported VCS %q (clone URL is %q)", path, d.vcs, d.cloneURL)
 		}
+
+		// If this package resolves to the same repo, then don't fetch
+		// it; it is already on disk. If we fetch it, we might end up
+		// with multiple conflicting versions of the workspace's repo
+		// overlaid on each other.
+		if pathHasPrefix(d.projectRoot, h.rootImportPath) {
+			return nil, fmt.Errorf("package %q is inside of workspace root, refusing to fetch remotely", path)
+		}
+
 		urlMu := urlMu(d.cloneURL)
 		urlMu.Lock()
 		defer urlMu.Unlock()

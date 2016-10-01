@@ -132,6 +132,8 @@ echo '{"textDocument":{"uri":"git://github.com/docker/machine?e1a03348#libmachin
 # Needs lots of external deps (they're vendored, but in a non-standard way in GOPATH=./vendor).
 echo '{"textDocument":{"uri":"git://github.com/docker/docker?b16bfbad#daemon/create.go"},"position":{"line":110,"character":41}}' | src xlang send git://github.com/docker/docker?b16bfbad go textDocument/hover
 
+echo '{"textDocument":{"uri":"git://github.com/docker/docker?762556c#pkg/symlink/fs.go"},"position":{"line":62,"character":5}}' | src xlang send git://github.com/docker/docker?762556c go textDocument/hover
+
 # k8s is a huge repo
 echo '{"textDocument":{"uri":"git://github.com/kubernetes/kubernetes?2580157#pkg/controller/informers/extensions.go"},"position":{"line":54,"character":26}}' | src xlang send git://github.com/kubernetes/kubernetes?2580157 go textDocument/hover
 

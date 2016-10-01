@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,6 +13,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"sync"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -158,16 +160,21 @@ func (fs *GitHubRepoVFS) fetch(ctx context.Context) (err error) {
 	}
 
 	// GitHub zip files have a top-level dir "{repobasename}-{sha}/",
-	// so we need to remove that.
-	//
-	// TODO(sqs): if fs.repo is not in the canonical case
-	// (upper/lowercase), this will fail (e.g., if fs.repo is
-	// "github.com/aa/bb" but the canonical casing is
-	// "github.com/Aa/Bb", then the first folder in the zip file will
-	// be "Bb-COMMITID", and our path prefix will be incorrect).
+	// so we need to remove that. The repobasename is in the canonical
+	// casing, which may be different from fs.repo.
+	var prefix string
+	if len(zr.File) > 0 {
+		name := zr.File[0].Name
+		if strings.Contains(name, "/") {
+			prefix = path.Dir(name)
+		} else {
+			prefix = name
+		}
+	} else {
+		return errors.New("zip archive has no files")
+	}
 	ns := vfs.NameSpace{}
-	prefix := path.Join(path.Base(fs.repo)+"-"+fs.rev, fs.subtree)
-	ns.Bind("/", zipfs.New(zr, fs.repo), prefix, vfs.BindReplace)
+	ns.Bind("/", zipfs.New(zr, fs.repo), path.Join("/"+prefix, fs.subtree), vfs.BindReplace)
 	fs.fs = ns
 	return nil
 }
