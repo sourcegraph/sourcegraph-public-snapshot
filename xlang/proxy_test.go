@@ -35,20 +35,20 @@ func TestProxy(t *testing.T) {
 	tests := map[string]struct {
 		rootPath       string
 		mode           string
-		fs             vfs.FileSystem
+		fs             map[string]string
 		wantHover      map[string]string
 		wantDefinition map[string]string
 		wantReferences map[string][]string
 		wantSymbols    map[string][]string
-		otherVFS       map[string]vfs.FileSystem
+		otherVFS       map[string]map[string]string // URL scheme -> map VFS
 	}{
 		"go basic": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: newMapFS(map[string]string{
+			fs: map[string]string{
 				"a.go": "package p; func A() { A() }",
 				"b.go": "package p; func B() { A() }",
-			}),
+			},
 			wantHover: map[string]string{
 				"a.go:1:17": "func A()",
 				"a.go:1:23": "func A()",
@@ -88,9 +88,9 @@ func TestProxy(t *testing.T) {
 		"go detailed": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: newMapFS(map[string]string{
+			fs: map[string]string{
 				"a.go": "package p; type T struct { F string }",
-			}),
+			},
 			wantHover: map[string]string{
 			// "a.go:1:28": "(T).F string", // TODO(sqs): see golang/hover.go; this is the output we want
 			},
@@ -103,10 +103,10 @@ func TestProxy(t *testing.T) {
 		"go subdirectory in repo": {
 			rootPath: "git://test/pkg?master#d",
 			mode:     "go",
-			fs: newMapFS(map[string]string{
+			fs: map[string]string{
 				"a.go":    "package d; func A() { A() }",
 				"d2/b.go": `package d2; import "test/pkg/d"; func B() { d.A(); B() }`,
-			}),
+			},
 			wantHover: map[string]string{
 				"a.go:1:17":    "func A()",
 				"a.go:1:23":    "func A()",
@@ -128,12 +128,12 @@ func TestProxy(t *testing.T) {
 		"go multiple packages in dir": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: newMapFS(map[string]string{
+			fs: map[string]string{
 				"a.go": "package p; func A() { A() }",
 				"main.go": `// +build ignore
 
 package main; import "test/pkg"; func B() { p.A(); B() }`,
-			}),
+			},
 			wantHover: map[string]string{
 				"a.go:1:17": "func A()",
 				"a.go:1:23": "func A()",
@@ -159,19 +159,19 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"goroot": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: newMapFS(map[string]string{
+			fs: map[string]string{
 				"a.go": `package p; import "fmt"; var _ = fmt.Println`,
-			}),
+			},
 			wantHover: map[string]string{
 				"a.go:1:40": "func Println(a ...interface{}) (n int, err error)",
 			},
 			wantDefinition: map[string]string{
 				"a.go:1:40": "git://github.com/golang/go?" + runtime.Version() + "#src/fmt/print.go:1:19",
 			},
-			otherVFS: map[string]vfs.FileSystem{
-				"https://github.com/golang/go?go1.7.1": newMapFS(map[string]string{
+			otherVFS: map[string]map[string]string{
+				"https://github.com/golang/go?go1.7.1": {
 					"src/fmt/print.go": "package fmt; func Println(a ...interface{}) (n int, err error) { return }",
-				}),
+				},
 			},
 			wantSymbols: map[string][]string{
 				"": []string{"git://test/pkg?master#a.go:variable:pkg._"},
@@ -180,10 +180,10 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"gopath": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: newMapFS(map[string]string{
+			fs: map[string]string{
 				"a/a.go": `package a; func A() {}`,
 				"b/b.go": `package b; import "test/pkg/a"; var _ = a.A`,
-			}),
+			},
 			wantHover: map[string]string{
 				"a/a.go:1:17": "func A()",
 				// "b/b.go:1:20": "package", // TODO(sqs): make import paths hoverable
@@ -201,10 +201,10 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"go vendored dep": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: newMapFS(map[string]string{
+			fs: map[string]string{
 				"a.go": `package a; import "github.com/v/vendored"; var _ = vendored.V`,
 				"vendor/github.com/v/vendored/v.go": "package vendored; func V() {}",
-			}),
+			},
 			wantHover: map[string]string{
 				"a.go:1:61": "func V()",
 			},
@@ -218,61 +218,61 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"go external dep": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: newMapFS(map[string]string{
+			fs: map[string]string{
 				"a.go": `package a; import "github.com/d/dep"; var _ = dep.D`,
-			}),
+			},
 			wantHover: map[string]string{
 				"a.go:1:51": "func D()",
 			},
 			wantDefinition: map[string]string{
 				"a.go:1:51": "git://github.com/d/dep?HEAD#d.go:1:19",
 			},
-			otherVFS: map[string]vfs.FileSystem{
-				"https://github.com/d/dep?HEAD": newMapFS(map[string]string{
+			otherVFS: map[string]map[string]string{
+				"https://github.com/d/dep?HEAD": {
 					"d.go": "package dep; func D() {}",
-				}),
+				},
 			},
 		},
 		"external dep with vendor": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: newMapFS(map[string]string{
+			fs: map[string]string{
 				"a.go": `package p; import "github.com/d/dep"; var _ = dep.D().F`,
-			}),
+			},
 			wantDefinition: map[string]string{
 				"a.go:1:55": "git://github.com/d/dep?HEAD#vendor/vendp/vp.go:1:32",
 			},
-			otherVFS: map[string]vfs.FileSystem{
-				"https://github.com/d/dep?HEAD": newMapFS(map[string]string{
+			otherVFS: map[string]map[string]string{
+				"https://github.com/d/dep?HEAD": {
 					"d.go":               `package dep; import "vendp"; func D() (v vendp.V) { return }`,
 					"vendor/vendp/vp.go": "package vendp; type V struct { F int }",
-				}),
+				},
 			},
 		},
 		"go external dep at subtree": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: newMapFS(map[string]string{
+			fs: map[string]string{
 				"a.go": `package a; import "github.com/d/dep/subp"; var _ = subp.D`,
-			}),
+			},
 			wantHover: map[string]string{
 				"a.go:1:57": "func D()",
 			},
 			wantDefinition: map[string]string{
 				"a.go:1:57": "git://github.com/d/dep?HEAD#subp/d.go:1:20",
 			},
-			otherVFS: map[string]vfs.FileSystem{
-				"https://github.com/d/dep?HEAD": newMapFS(map[string]string{
+			otherVFS: map[string]map[string]string{
+				"https://github.com/d/dep?HEAD": {
 					"subp/d.go": "package subp; func D() {}",
-				}),
+				},
 			},
 		},
 		"go nested external dep": { // a depends on dep1, dep1 depends on dep2
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: newMapFS(map[string]string{
+			fs: map[string]string{
 				"a.go": `package a; import "github.com/d/dep1"; var _ = dep1.D1().D2`,
-			}),
+			},
 			wantHover: map[string]string{
 				"a.go:1:53": "func D1() D2",
 				"a.go:1:59": "D2 int",
@@ -281,45 +281,45 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:53": "git://github.com/d/dep1?HEAD#d1.go:1:48", // func D1
 				"a.go:1:58": "git://github.com/d/dep2?HEAD#d2.go:1:32", // field D2
 			},
-			otherVFS: map[string]vfs.FileSystem{
-				"https://github.com/d/dep1?HEAD": newMapFS(map[string]string{
+			otherVFS: map[string]map[string]string{
+				"https://github.com/d/dep1?HEAD": {
 					"d1.go": `package dep1; import "github.com/d/dep2"; func D1() dep2.D2 { return dep2.D2{} }`,
-				}),
-				"https://github.com/d/dep2?HEAD": newMapFS(map[string]string{
+				},
+				"https://github.com/d/dep2?HEAD": {
 					"d2.go": "package dep2; type D2 struct { D2 int }",
-				}),
+				},
 			},
 		},
 		"go external dep at vanity import path": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: newMapFS(map[string]string{
+			fs: map[string]string{
 				"a.go": `package a; import "golang.org/x/text"; var _ = text.F`,
-			}),
+			},
 			wantHover: map[string]string{
 				"a.go:1:53": "func F()",
 			},
 			wantDefinition: map[string]string{
 				"a.go:1:53": "git://github.com/golang/text?HEAD#dummy.go:1:20",
 			},
-			otherVFS: map[string]vfs.FileSystem{
+			otherVFS: map[string]map[string]string{
 				// We override the Git cloning of this repo to use
 				// in-memory dummy data, but we still need to hit the
 				// network to resolve the Go custom import path
 				// (because that's not mocked yet).
-				"https://github.com/golang/text?HEAD": newMapFS(map[string]string{
+				"https://github.com/golang/text?HEAD": {
 					"dummy.go": "package text; func F() {}",
-				}),
+				},
 			},
 		},
 		"go symbols": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
-			fs: newMapFS(map[string]string{
+			fs: map[string]string{
 				"abc.go": `package a; type XYZ struct {}; func (x XYZ) ABC() {}`,
 				"bcd.go": `package a; type YZA struct {}; func (y YZA) BCD() {}`,
 				"xyz.go": `package a; func yza() {}`,
-			}),
+			},
 			wantSymbols: map[string][]string{
 				"":    []string{"git://test/pkg?master#abc.go:method:XYZ.ABC", "git://test/pkg?master#bcd.go:method:YZA.BCD", "git://test/pkg?master#abc.go:class:pkg.XYZ", "git://test/pkg?master#bcd.go:class:pkg.YZA", "git://test/pkg?master#xyz.go:function:pkg.yza"},
 				"xyz": []string{"git://test/pkg?master#abc.go:class:pkg.XYZ", "git://test/pkg?master#abc.go:method:XYZ.ABC", "git://test/pkg?master#xyz.go:function:pkg.yza"},
@@ -334,9 +334,9 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			orig := xlang.VFSCreatorsByScheme["git"]
 			xlang.VFSCreatorsByScheme["git"] = func(root *uri.URI) (vfs.FileSystem, error) {
 				if fs, ok := test.otherVFS[root.String()]; ok {
-					return fs, nil
+					return newMapFS(fs), nil
 				}
-				return test.fs, nil
+				return newMapFS(test.fs), nil
 			}
 			defer func() {
 				xlang.VFSCreatorsByScheme["git"] = orig
