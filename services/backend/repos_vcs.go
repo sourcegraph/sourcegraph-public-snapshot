@@ -7,8 +7,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
@@ -42,11 +44,17 @@ func resolveRepoRev(ctx context.Context, repo int32, rev string) (vcs.CommitID, 
 	}
 	commitID, err := vcsrepo.ResolveRevision(rev)
 	if err != nil {
-		// attempt to reclone repo if its VCS repository doesn't exist
-		if _, notExist := err.(vcs.RepoNotExistError); notExist {
-			if _, innerErr := svc.MirrorRepos(ctx).RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repo}); innerErr != nil {
-				return "", err
+		// Attempt to reclone repo if its VCS repository doesn't exist.
+		// Do it in the background, return 202 so that frontend can display cloning interstitual.
+		if notExistError, ok := err.(vcs.RepoNotExistError); ok {
+			if !notExistError.CloneInProgress {
+				var asUser *sourcegraph.UserSpec
+				if actor := authpkg.ActorFromContext(ctx); actor.UID != "" {
+					asUser = actor.UserSpec()
+				}
+				repoupdater.Enqueue(repo, asUser)
 			}
+			return "", vcs.RepoNotExistError{CloneInProgress: true}
 		}
 		commitID, err = vcsrepo.ResolveRevision(rev)
 		if err != nil {
