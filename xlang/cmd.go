@@ -48,7 +48,7 @@ func init() {
 			if err := RegisterServersFromEnv(); err != nil {
 				log.Fatal(err)
 			}
-			addr, run, err := devProxy()
+			addr, run, _, err := devProxy()
 			if err != nil {
 				log.Fatal("LSP dev proxy:", err)
 			}
@@ -67,14 +67,18 @@ func init() {
 	})
 }
 
-func devProxy() (addr string, run func() error, err error) {
+func devProxy() (addr string, run, done func() error, err error) {
 	l, err := net.Listen("tcp", ":0")
 	if err != nil {
 		return
 	}
 	addr = l.Addr().String()
+	proxy := NewProxy()
 	run = func() error {
-		return NewProxy().Serve(context.Background(), l)
+		return proxy.Serve(context.Background(), l)
+	}
+	done = func() error {
+		return proxy.Close(context.Background())
 	}
 	return
 }
@@ -175,12 +179,13 @@ func sendExecute(c *sendCmdOpts, args *sendCmdArgs, reqParams []byte) error {
 			}))
 		}
 
-		addr, run, err := devProxy()
+		addr, run, done, err := devProxy()
 		if err != nil {
 			return err
 		}
 		c.Addr = addr
 		log.Println("# using in-process LSP proxy")
+		defer done()
 		go func() {
 			if err := run(); err != nil {
 				log.Fatal("LSP dev proxy:", err)
