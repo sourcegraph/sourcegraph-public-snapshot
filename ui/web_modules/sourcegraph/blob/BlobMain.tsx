@@ -1,24 +1,25 @@
-// tslint:disable: typedef ordered-imports
-
 import { Location } from "history";
-import * as React from "react";
-import { InjectedRouter } from "react-router";
-import Helmet from "react-helmet";
 import * as debounce from "lodash/debounce";
-import { BlobTitle } from "sourcegraph/blob/BlobTitle";
-import { Editor } from "sourcegraph/editor/Editor";
-import { EditorComponent } from "sourcegraph/editor/EditorComponent";
+import * as React from "react";
+import Helmet from "react-helmet";
+import { InjectedRouter } from "react-router";
 import "sourcegraph/blob/BlobBackend";
-import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
-import * as Style from "sourcegraph/blob/styles/Blob.css";
-import { trimRepo } from "sourcegraph/repo";
+import { BlobStore } from "sourcegraph/blob/BlobStore";
+import { BlobTitle } from "sourcegraph/blob/BlobTitle";
 import { urlToBlob } from "sourcegraph/blob/routes";
-import {IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
+import * as Style from "sourcegraph/blob/styles/Blob.css";
 import {ChromeExtensionToast} from "sourcegraph/components/ChromeExtensionToast";
 import {OnboardingModals} from "sourcegraph/components/OnboardingModals";
+import {Container} from "sourcegraph/Container";
+import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import {URI} from "sourcegraph/core/uri";
+import { Editor } from "sourcegraph/editor/Editor";
+import { EditorComponent } from "sourcegraph/editor/EditorComponent";
+import {IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
+import { trimRepo } from "sourcegraph/repo";
+import {Store} from "sourcegraph/Store";
 
-type Props = {
+interface Props {
 	repo: string;
 	repoObj: any;
 	rev: string;
@@ -38,8 +39,12 @@ type Props = {
 	// eliminating the WantFile dispatch.
 }
 
+interface State extends Props {
+	toast: string | null;
+}
+
 // BlobMain wraps the Editor component for the primary code view.
-export class BlobMain extends React.Component<Props, any> {
+export class BlobMain extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -59,6 +64,8 @@ export class BlobMain extends React.Component<Props, any> {
 	}
 
 	componentDidMount(): void {
+		super.componentDidMount();
+
 		global.document.addEventListener("keydown", this._onKeyDownForFindInPage);
 		global.document.addEventListener("resize", this._onResize);
 
@@ -66,6 +73,8 @@ export class BlobMain extends React.Component<Props, any> {
 	}
 
 	componentWillUnmount(): void {
+		super.componentWillUnmount();
+
 		global.document.removeEventListener("keydown", this._onKeyDownForFindInPage);
 		global.document.removeEventListener("resize", this._onResize);
 
@@ -76,6 +85,15 @@ export class BlobMain extends React.Component<Props, any> {
 		if (this._editor) {
 			this._editorPropsChanged(this.props, nextProps);
 		}
+	}
+
+	reconcileState(state: State, props: Props): void {
+		Object.assign(state, props);
+		state.toast = BlobStore.toast;
+	}
+
+	stores(): Store<any>[] {
+		return [BlobStore];
 	}
 
 	_setEditor(editor: Editor | null): void {
@@ -214,6 +232,7 @@ export class BlobMain extends React.Component<Props, any> {
 					routes={this.props.routes}
 					routeParams={this.props.routeParams}
 					isCloning={this.props.isCloning}
+					toast={this.state.toast}
 				/>
 				<EditorComponent editorRef={this._setEditor} style={{ display: "flex", flex: "auto", width: "100%" }} />
 			</div>

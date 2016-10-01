@@ -1,19 +1,17 @@
-// tslint:disable typedef ordered-imports
-import {URI} from "sourcegraph/core/uri";
-import {EditorService, IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
-
-import * as lsp from "sourcegraph/editor/lsp";
 import { Def } from "sourcegraph/api";
-import { makeRepoRev } from "sourcegraph/repo";
+import * as BlobActions from "sourcegraph/blob/BlobActions";
+import { code_font_face } from "sourcegraph/components/styles/_vars.css";
+import {URI} from "sourcegraph/core/uri";
 import {urlToDefInfo} from "sourcegraph/def/routes";
-import {EventLogger} from "sourcegraph/util/EventLogger";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {EditorService, IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
+import {GotoDefinitionWithClickEditorContribution} from "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
+import * as lsp from "sourcegraph/editor/lsp";
+import { makeRepoRev } from "sourcegraph/repo";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-
+import {EventLogger} from "sourcegraph/util/EventLogger";
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
-
-import { code_font_face } from "sourcegraph/components/styles/_vars.css";
-import {GotoDefinitionWithClickEditorContribution} from "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
 
 const fetch = singleflightFetch(defaultFetch);
 
@@ -306,7 +304,7 @@ export class Editor implements monaco.IDisposable {
 				if (resp && (resp as any).def) {
 					window.location.href = urlToDefInfo((resp as any).def);
 				} else {
-					console.error("No def landing URL found.", resp);
+					Dispatcher.Stores.dispatch(new BlobActions.Toast("No external references found"));
 				}
 			});
 		});
