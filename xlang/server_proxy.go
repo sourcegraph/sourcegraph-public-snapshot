@@ -347,9 +347,6 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// Recording the raw span as-is requires the lower-level impl
 		// types.
 		if o, ok := opentracing.GlobalTracer().(basictracer.Tracer); ok {
-			type rawSpanRecorder interface {
-				RecordSpan(basictracer.RawSpan)
-			}
 			if r, ok := o.Options().Recorder.(*lightstep.Recorder); ok {
 				r.RecordSpan(rawSpan)
 			}

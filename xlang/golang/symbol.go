@@ -21,8 +21,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
-var pkgVendorRe = regexp.MustCompile("(^|.*/)(vendor|Godeps)(/.*|$)")
-
 type query struct {
 	kind   lsp.SymbolKind
 	tokens []string

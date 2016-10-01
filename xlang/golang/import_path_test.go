@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
-	"regexp"
 	"runtime"
 	"strings"
 	"testing"
@@ -58,8 +57,6 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 	return resp, nil
 }
-
-var githubPattern = regexp.MustCompile(`^github\.com/(?P<owner>[a-z0-9A-Z_.\-]+)/(?P<repo>[a-z0-9A-Z_.\-]+)(?P<dir>/[a-z0-9A-Z_.\-/]*)?$`)
 
 func TestResolveDynamicImportPath(t *testing.T) {
 	tests := []struct {
