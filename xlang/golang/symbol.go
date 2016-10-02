@@ -92,14 +92,19 @@ func score(q query, s lsp.SymbolInformation) (scor int) {
 	return scor
 }
 
+type scoredSymbol struct {
+	score int
+	lsp.SymbolInformation
+}
+
 type resultSorter struct {
 	query
-	results []lsp.SymbolInformation
+	results []scoredSymbol
 }
 
 func (s *resultSorter) Len() int { return len(s.results) }
 func (s *resultSorter) Less(i, j int) bool {
-	iscore, jscore := score(s.query, s.results[i]), score(s.query, s.results[j])
+	iscore, jscore := s.results[i].score, s.results[j].score
 	if iscore == jscore {
 		if s.results[i].ContainerName == s.results[j].ContainerName {
 			return s.results[i].Name < s.results[j].Name
@@ -112,9 +117,18 @@ func (s *resultSorter) Swap(i, j int) {
 	s.results[i], s.results[j] = s.results[j], s.results[i]
 }
 func (s *resultSorter) Collect(si lsp.SymbolInformation) {
-	if score(s.query, si) > 0 {
-		s.results = append(s.results, si)
+	score := score(s.query, si)
+	if score > 0 {
+		sc := scoredSymbol{score, si}
+		s.results = append(s.results, sc)
 	}
+}
+func (s *resultSorter) Results() []lsp.SymbolInformation {
+	res := make([]lsp.SymbolInformation, len(s.results))
+	for i, s := range s.results {
+		res[i] = s.SymbolInformation
+	}
+	return res
 }
 
 func toSym(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos token.Pos) lsp.SymbolInformation {
@@ -131,7 +145,7 @@ func toSym(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos t
 }
 
 func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2Conn, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
-	results := resultSorter{query: parseQuery(params.Query), results: make([]lsp.SymbolInformation, 0)}
+	results := resultSorter{query: parseQuery(params.Query), results: make([]scoredSymbol, 0)}
 	{
 		fs := token.NewFileSet()
 		rootPath := h.filePath(h.init.RootPath)
@@ -197,7 +211,10 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2Conn, req *
 		}
 	}
 	sort.Sort(&results)
-	return results.results, nil
+	if len(results.results) > params.Limit && params.Limit > 0 {
+		results.results = results.results[:params.Limit]
+	}
+	return results.Results(), nil
 }
 
 // parseDir mirrors parser.ParseDir, but uses the passed in build context's VFS. In other words,

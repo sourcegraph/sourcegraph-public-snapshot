@@ -189,6 +189,7 @@ type SymbolInformation struct {
 
 type WorkspaceSymbolParams struct {
 	Query string `json:"query"`
+	Limit int    `json:"limit"`
 }
 
 type CodeActionContext struct {

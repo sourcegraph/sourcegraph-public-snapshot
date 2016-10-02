@@ -98,8 +98,8 @@ func Test_resultSorter(t *testing.T) {
 			results.Collect(s)
 		}
 		sort.Sort(&results)
-		if !reflect.DeepEqual(results.results, test.expResults) {
-			t.Errorf("got %+v, but wanted %+v", results.results, test.expResults)
+		if !reflect.DeepEqual(results.Results(), test.expResults) {
+			t.Errorf("got %+v, but wanted %+v", results.Results(), test.expResults)
 		}
 	}
 }

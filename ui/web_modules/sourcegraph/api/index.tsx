@@ -1174,4 +1174,5 @@ export interface WorkspaceEdit {
 
 export interface WorkspaceSymbolParams {
 	query: string;
+	limit: number;
 }
