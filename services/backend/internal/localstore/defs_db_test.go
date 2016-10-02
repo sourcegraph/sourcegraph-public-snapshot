@@ -9,7 +9,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	sgtest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -116,7 +115,7 @@ func testDefs(t *testing.T, outerTest outerCase) {
 	ctx, done := testContext()
 	var mocks *mocks // FIXME
 	defer done()
-	MockRepos = nil
+	TestMockRepos = nil
 
 	var (
 		repoURIs = make(map[string]struct{})
@@ -139,8 +138,8 @@ func testDefs(t *testing.T, outerTest outerCase) {
 
 	rps = (&repos{}).mustCreate(ctx, t, rps...)
 
-	mockstore.GraphMockDefs(&mocks.Stores.Graph, outerTest.defs...)
-	mockstore.GraphMockUnits(&mocks.Stores.Graph, units...)
+	GraphMockDefs(&mocks.Graph, outerTest.defs...)
+	GraphMockUnits(&mocks.Graph, units...)
 	mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		return &sourcegraph.Repo{}, nil
 	}

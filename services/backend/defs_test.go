@@ -8,14 +8,14 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/store"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 )
 
 func TestDefsService_List_Repos(t *testing.T) {
 	var s defs
 	ctx, mock := testContext()
 
-	calledDefs := mockstore.GraphMockDefs(&mock.stores.Graph)
+	calledDefs := localstore.GraphMockDefs(&mock.stores.Graph)
 	calledGetRepo := mock.servers.Repos.MockGet(t, 1)
 	calledReposResolve := mock.servers.Repos.MockResolve_Local(t, "r", 1)
 

@@ -23,7 +23,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
@@ -181,13 +180,11 @@ func init() {
 	}
 }
 
-var MockDefs *mockstore.Defs
-
 type defs struct{}
 
 func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error) {
-	if MockDefs != nil {
-		return MockDefs.Search(ctx, op)
+	if TestMockDefs != nil {
+		return TestMockDefs.Search(ctx, op)
 	}
 
 	startTime := time.Now()
@@ -407,8 +404,8 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 
 // Update syncs data from universe into the defs2 table
 func (s *defs) Update(ctx context.Context, op store.RefreshIndexOp) error {
-	if MockDefs != nil {
-		return MockDefs.Update(ctx, op)
+	if TestMockDefs != nil {
+		return TestMockDefs.Update(ctx, op)
 	}
 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.Update", op.Repo); err != nil {
@@ -911,4 +908,11 @@ var defsSearchResultsNone = prometheus.NewCounter(prometheus.CounterOpts{
 func init() {
 	prometheus.MustRegister(defsSearchResultsLength)
 	prometheus.MustRegister(defsSearchResultsNone)
+}
+
+var TestMockDefs *MockDefs
+
+type MockDefs struct {
+	Search func(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error)
+	Update func(ctx context.Context, op store.RefreshIndexOp) error
 }

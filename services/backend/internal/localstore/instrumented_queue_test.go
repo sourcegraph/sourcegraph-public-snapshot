@@ -10,19 +10,18 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 )
 
 func TestInstrumentQueue(t *testing.T) {
-	MockQueue = &mockstore.Queue{}
-	defer func() { MockQueue = nil }()
+	TestMockQueue = &MockQueue{}
+	defer func() { TestMockQueue = nil }()
 
 	q := instrumentedQueue{}
 	ctx := context.Background()
 
 	// Enqueue
 	want := &store.Job{Type: "test"}
-	called := MockQueue.MockEnqueue(t, want)
+	called := TestMockQueue.MockEnqueue(t, want)
 	if err := q.Enqueue(ctx, want); err != nil {
 		t.Fatal(err)
 	}
@@ -31,7 +30,7 @@ func TestInstrumentQueue(t *testing.T) {
 	}
 
 	// LockJob
-	called, calledSuccess, calledError := MockQueue.MockLockJob_Return(t, want)
+	called, calledSuccess, calledError := TestMockQueue.MockLockJob_Return(t, want)
 	got, err := q.LockJob(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -71,8 +70,8 @@ func TestInstrumentQueue(t *testing.T) {
 }
 
 func TestQueueStatsCollector(t *testing.T) {
-	MockQueue = &mockstore.Queue{}
-	defer func() { MockQueue = nil }()
+	TestMockQueue = &MockQueue{}
+	defer func() { TestMockQueue = nil }()
 
 	stats := map[string]store.QueueStats{
 		"a": store.QueueStats{
@@ -83,7 +82,7 @@ func TestQueueStatsCollector(t *testing.T) {
 			NumJobs: 1,
 		},
 	}
-	MockQueue.Stats = func(_ context.Context) (map[string]store.QueueStats, error) {
+	TestMockQueue.Stats = func(_ context.Context) (map[string]store.QueueStats, error) {
 		return stats, nil
 	}
 

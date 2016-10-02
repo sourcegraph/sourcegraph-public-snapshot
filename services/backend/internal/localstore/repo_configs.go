@@ -2,11 +2,14 @@ package localstore
 
 import (
 	"database/sql"
+	"testing"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 )
 
@@ -28,14 +31,12 @@ func (c *dbRepoConfig) fromRepoConfig(repo int32, c2 *sourcegraph.RepoConfig) {
 	c.Repo = repo
 }
 
-var MockRepoConfigs *mockstore.RepoConfigs
-
 // repoConfigs is a DB-backed implementation of the RepoConfigs store.
 type repoConfigs struct{}
 
 func (s *repoConfigs) Get(ctx context.Context, repo int32) (*sourcegraph.RepoConfig, error) {
-	if MockRepoConfigs != nil {
-		return MockRepoConfigs.Get(ctx, repo)
+	if TestMockRepoConfigs != nil {
+		return TestMockRepoConfigs.Get(ctx, repo)
 	}
 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoConfigs.Get", repo); err != nil {
@@ -51,8 +52,8 @@ func (s *repoConfigs) Get(ctx context.Context, repo int32) (*sourcegraph.RepoCon
 }
 
 func (s *repoConfigs) Update(ctx context.Context, repo int32, conf sourcegraph.RepoConfig) error {
-	if MockRepoConfigs != nil {
-		return MockRepoConfigs.Update(ctx, repo, conf)
+	if TestMockRepoConfigs != nil {
+		return TestMockRepoConfigs.Update(ctx, repo, conf)
 	}
 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoConfigs.Update", repo); err != nil {
@@ -69,4 +70,24 @@ func (s *repoConfigs) Update(ctx context.Context, repo int32, conf sourcegraph.R
 		return appDBH(ctx).Insert(&dbConf)
 	}
 	return nil
+}
+
+var TestMockRepoConfigs *MockRepoConfigs
+
+type MockRepoConfigs struct {
+	Get    func(ctx context.Context, repo int32) (*sourcegraph.RepoConfig, error)
+	Update func(ctx context.Context, repo int32, conf sourcegraph.RepoConfig) error
+}
+
+func (s *MockRepoConfigs) MockGet_Return(t *testing.T, wantRepo int32, returns *sourcegraph.RepoConfig) (called *bool) {
+	called = new(bool)
+	s.Get = func(ctx context.Context, repo int32) (*sourcegraph.RepoConfig, error) {
+		*called = true
+		if repo != wantRepo {
+			t.Errorf("got repo %d, want %d", repo, wantRepo)
+			return nil, grpc.Errorf(codes.NotFound, "config for repo %v not found", repo)
+		}
+		return returns, nil
+	}
+	return
 }

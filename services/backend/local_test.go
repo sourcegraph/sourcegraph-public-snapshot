@@ -7,7 +7,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/mock"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
@@ -20,15 +19,15 @@ import (
 func testContext() (context.Context, *mocks) {
 	var m mocks
 	ctx := context.Background()
-	localstore.MockDefs = &m.stores.Defs
-	localstore.MockGlobalDeps = &m.stores.GlobalDeps
-	localstore.MockGlobalRefs = &m.stores.GlobalRefs
+	localstore.TestMockDefs = &m.stores.Defs
+	localstore.TestMockGlobalDeps = &m.stores.GlobalDeps
+	localstore.TestMockGlobalRefs = &m.stores.GlobalRefs
 	localstore.Graph = &m.stores.Graph
-	localstore.MockQueue = &m.stores.Queue
-	localstore.MockRepoConfigs = &m.stores.RepoConfigs
-	localstore.MockRepoStatuses = &m.stores.RepoStatuses
-	localstore.MockRepoVCS = &m.stores.RepoVCS
-	localstore.MockRepos = &m.stores.Repos
+	localstore.TestMockQueue = &m.stores.Queue
+	localstore.TestMockRepoConfigs = &m.stores.RepoConfigs
+	localstore.TestMockRepoStatuses = &m.stores.RepoStatuses
+	localstore.TestMockRepoVCS = &m.stores.RepoVCS
+	localstore.TestMockRepos = &m.stores.Repos
 	ctx = svc.WithServices(ctx, m.servers.servers())
 	ctx = github.WithRepos(ctx, &m.githubRepos)
 	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test"})
@@ -38,7 +37,7 @@ func testContext() (context.Context, *mocks) {
 }
 
 type mocks struct {
-	stores      mockstore.Stores
+	stores      localstore.MockStores
 	servers     mockServers
 	githubRepos githubmock.GitHubRepoGetter
 }

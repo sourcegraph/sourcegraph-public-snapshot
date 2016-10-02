@@ -2,18 +2,17 @@ package localstore
 
 import (
 	"context"
+	"testing"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
+	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 )
-
-var MockRepoVCS *mockstore.RepoVCS
 
 // repoVCS is a local filesystem-backed implementation of the RepoVCS
 // store interface.
@@ -33,8 +32,8 @@ func getRepoDir(ctx context.Context, repo int32) (string, error) {
 }
 
 func (s *repoVCS) Open(ctx context.Context, repo int32) (vcs.Repository, error) {
-	if MockRepoVCS != nil {
-		return MockRepoVCS.Open(ctx, repo)
+	if TestMockRepoVCS != nil {
+		return TestMockRepoVCS.Open(ctx, repo)
 	}
 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoVCS.Open", repo); err != nil {
@@ -49,8 +48,8 @@ func (s *repoVCS) Open(ctx context.Context, repo int32) (vcs.Repository, error) 
 }
 
 func (s *repoVCS) Clone(ctx context.Context, repo int32, info *store.CloneInfo) error {
-	if MockRepoVCS != nil {
-		return MockRepoVCS.Clone(ctx, repo, info)
+	if TestMockRepoVCS != nil {
+		return TestMockRepoVCS.Clone(ctx, repo, info)
 	}
 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoVCS.Clone", repo); err != nil {
@@ -62,4 +61,33 @@ func (s *repoVCS) Clone(ctx context.Context, repo int32, info *store.CloneInfo) 
 	}
 
 	return gitserver.DefaultClient.Clone(ctx, dir, info.CloneURL, &info.RemoteOpts)
+}
+
+var TestMockRepoVCS *MockRepoVCS
+
+type MockRepoVCS struct {
+	Open  func(ctx context.Context, repo int32) (vcs.Repository, error)
+	Clone func(ctx context.Context, repo int32, info *store.CloneInfo) error
+}
+
+func (s *MockRepoVCS) MockOpen(t *testing.T, wantRepo int32, mockVCSRepo vcstesting.MockRepository) (called *bool) {
+	called = new(bool)
+	s.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+		*called = true
+		if repo != wantRepo {
+			t.Errorf("got repo %d, want %d", repo, wantRepo)
+			return nil, grpc.Errorf(codes.NotFound, "repo %v not found", wantRepo)
+		}
+		return mockVCSRepo, nil
+	}
+	return
+}
+
+func (s *MockRepoVCS) MockOpen_NoCheck(t *testing.T, mockVCSRepo vcstesting.MockRepository) (called *bool) {
+	called = new(bool)
+	s.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+		*called = true
+		return mockVCSRepo, nil
+	}
+	return
 }

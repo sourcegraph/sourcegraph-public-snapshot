@@ -1,4 +1,4 @@
-package mockstore
+package localstore
 
 import (
 	"sourcegraph.com/sourcegraph/srclib/graph"

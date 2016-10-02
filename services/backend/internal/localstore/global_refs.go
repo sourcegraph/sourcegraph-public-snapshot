@@ -22,7 +22,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
@@ -70,16 +69,14 @@ func init() {
 	GraphSchema.Map.AddTableWithName(dbGlobalRefVersion{}, "global_refs_version").SetKeys(false, "repo")
 }
 
-var MockGlobalRefs *mockstore.GlobalRefs
-
 // globalRefs is a DB-backed implementation of the GlobalRefs store.
 type globalRefs struct{}
 
 // Get returns the names and ref counts of all repos and files within those repos
 // that refer the given def.
 func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
-	if MockGlobalRefs != nil {
-		return MockGlobalRefs.Get(ctx, op)
+	if TestMockGlobalRefs != nil {
+		return TestMockGlobalRefs.Get(ctx, op)
 	}
 
 	defRepo, err := (&repos{}).Get(ctx, op.Def.Repo)
@@ -321,8 +318,8 @@ func (g *globalRefs) getRefStats(ctx context.Context, defKeyID int64) (int64, er
 // updates the set of refs in the global ref store that originate from
 // it.
 func (g *globalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error {
-	if MockGlobalRefs != nil {
-		return MockGlobalRefs.Update(ctx, op)
+	if TestMockGlobalRefs != nil {
+		return TestMockGlobalRefs.Update(ctx, op)
 	}
 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", op.Repo); err != nil {
@@ -536,4 +533,11 @@ var globalRefsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 func init() {
 	prometheus.MustRegister(globalRefsDuration)
 	prometheus.MustRegister(globalRefsUpdateDuration)
+}
+
+var TestMockGlobalRefs *MockGlobalRefs
+
+type MockGlobalRefs struct {
+	Get    func(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
+	Update func(ctx context.Context, op store.RefreshIndexOp) error
 }

@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"gopkg.in/gorp.v1"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 )
 
@@ -58,13 +57,11 @@ func fromResolution(r *unit.Resolution) *resolution {
 	}
 }
 
-var MockGlobalDeps *mockstore.GlobalDeps
-
 type globalDeps struct{}
 
 func (g *globalDeps) Upsert(ctx context.Context, resolutions []*unit.Resolution) error {
-	if MockGlobalDeps != nil {
-		return MockGlobalDeps.Upsert(ctx, resolutions)
+	if TestMockGlobalDeps != nil {
+		return TestMockGlobalDeps.Upsert(ctx, resolutions)
 	}
 
 	for _, res_ := range resolutions {
@@ -107,8 +104,8 @@ WHERE NOT EXISTS (SELECT * FROM upsert);`
 }
 
 func (g *globalDeps) Resolve(ctx context.Context, raw *unit.Key) ([]unit.Key, error) {
-	if MockGlobalDeps != nil {
-		return MockGlobalDeps.Resolve(ctx, raw)
+	if TestMockGlobalDeps != nil {
+		return TestMockGlobalDeps.Resolve(ctx, raw)
 	}
 
 	if raw.IsResolved() {
@@ -142,4 +139,11 @@ func (g *globalDeps) Resolve(ctx context.Context, raw *unit.Key) ([]unit.Key, er
 		resolved[i] = res_[i].toResolution().Resolved
 	}
 	return resolved, nil
+}
+
+var TestMockGlobalDeps *MockGlobalDeps
+
+type MockGlobalDeps struct {
+	Upsert  func(ctx context.Context, resolutions []*unit.Resolution) error
+	Resolve func(ctx context.Context, raw *unit.Key) ([]unit.Key, error)
 }

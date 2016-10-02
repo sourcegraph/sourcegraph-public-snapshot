@@ -9,7 +9,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/slack"
 	"sourcegraph.com/sqs/pbtypes"
@@ -92,13 +91,11 @@ func toRepoStatuses(rs []*dbRepoStatus) []*sourcegraph.RepoStatus {
 	return r2s
 }
 
-var MockRepoStatuses *mockstore.RepoStatuses
-
 type repoStatuses struct{}
 
 func (s *repoStatuses) GetCombined(ctx context.Context, repo int32, commitID string) (*sourcegraph.CombinedStatus, error) {
-	if MockRepoStatuses != nil {
-		return MockRepoStatuses.GetCombined(ctx, repo, commitID)
+	if TestMockRepoStatuses != nil {
+		return TestMockRepoStatuses.GetCombined(ctx, repo, commitID)
 	}
 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoStatuses.GetCombined", repo); err != nil {
@@ -117,8 +114,8 @@ func (s *repoStatuses) GetCombined(ctx context.Context, repo int32, commitID str
 }
 
 func (s *repoStatuses) GetCoverage(ctx context.Context) (*sourcegraph.RepoStatusList, error) {
-	if MockRepoStatuses != nil {
-		return MockRepoStatuses.GetCoverage(ctx)
+	if TestMockRepoStatuses != nil {
+		return TestMockRepoStatuses.GetCoverage(ctx)
 	}
 
 	// No accesscontrol check is necessary here; coverage should only computed / reported
@@ -170,8 +167,8 @@ After: refScore(%f), defScore(%f)`, prev.Repo, prev.Language, refScore(ps), defS
 }
 
 func (s *repoStatuses) Create(ctx context.Context, repo int32, commitID string, status *sourcegraph.RepoStatus) error {
-	if MockRepoStatuses != nil {
-		return MockRepoStatuses.Create(ctx, repo, commitID, status)
+	if TestMockRepoStatuses != nil {
+		return TestMockRepoStatuses.Create(ctx, repo, commitID, status)
 	}
 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoStatuses.Create", repo); err != nil {
@@ -244,4 +241,12 @@ func (s *repoStatuses) Create(ctx context.Context, repo int32, commitID string, 
 		return err
 	}
 	return err
+}
+
+var TestMockRepoStatuses *MockRepoStatuses
+
+type MockRepoStatuses struct {
+	GetCombined func(ctx context.Context, repo int32, commitID string) (*sourcegraph.CombinedStatus, error)
+	GetCoverage func(ctx context.Context) (*sourcegraph.RepoStatusList, error)
+	Create      func(ctx context.Context, repo int32, commitID string, status *sourcegraph.RepoStatus) error
 }

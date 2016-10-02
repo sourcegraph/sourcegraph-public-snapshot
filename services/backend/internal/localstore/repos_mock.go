@@ -1,4 +1,4 @@
-package mockstore
+package localstore
 
 import (
 	"testing"
@@ -11,7 +11,18 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
-func (s *Repos) MockGet(t *testing.T, wantRepo int32) (called *bool) {
+type MockRepos struct {
+	Get            func(ctx context.Context, repo int32) (*sourcegraph.Repo, error)
+	GetByURI       func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
+	List           func(v0 context.Context, v1 *store.RepoListOp) ([]*sourcegraph.Repo, error)
+	Search         func(v0 context.Context, v1 string) ([]*sourcegraph.RepoSearchResult, error)
+	Create         func(v0 context.Context, v1 *sourcegraph.Repo) (int32, error)
+	Update         func(v0 context.Context, v1 store.RepoUpdate) error
+	InternalUpdate func(ctx context.Context, repo int32, op store.InternalRepoUpdate) error
+	Delete         func(ctx context.Context, repo int32) error
+}
+
+func (s *MockRepos) MockGet(t *testing.T, wantRepo int32) (called *bool) {
 	called = new(bool)
 	s.Get = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
 		*called = true
@@ -24,7 +35,7 @@ func (s *Repos) MockGet(t *testing.T, wantRepo int32) (called *bool) {
 	return
 }
 
-func (s *Repos) MockGet_Path(t *testing.T, wantRepo int32, repoPath string) (called *bool) {
+func (s *MockRepos) MockGet_Path(t *testing.T, wantRepo int32, repoPath string) (called *bool) {
 	called = new(bool)
 	s.Get = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
 		*called = true
@@ -37,7 +48,7 @@ func (s *Repos) MockGet_Path(t *testing.T, wantRepo int32, repoPath string) (cal
 	return
 }
 
-func (s *Repos) MockUpdate(t *testing.T, wantRepo int32) (called *bool) {
+func (s *MockRepos) MockUpdate(t *testing.T, wantRepo int32) (called *bool) {
 	called = new(bool)
 	s.Update = func(ctx context.Context, repoUpdate store.RepoUpdate) error {
 		*called = true
@@ -50,7 +61,7 @@ func (s *Repos) MockUpdate(t *testing.T, wantRepo int32) (called *bool) {
 	return
 }
 
-func (s *Repos) MockGet_Return(t *testing.T, returns *sourcegraph.Repo) (called *bool) {
+func (s *MockRepos) MockGet_Return(t *testing.T, returns *sourcegraph.Repo) (called *bool) {
 	called = new(bool)
 	s.Get = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
 		*called = true
@@ -63,7 +74,7 @@ func (s *Repos) MockGet_Return(t *testing.T, returns *sourcegraph.Repo) (called 
 	return
 }
 
-func (s *Repos) MockGetByURI(t *testing.T, wantURI string, repoID int32) (called *bool) {
+func (s *MockRepos) MockGetByURI(t *testing.T, wantURI string, repoID int32) (called *bool) {
 	called = new(bool)
 	s.GetByURI = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 		*called = true
@@ -76,7 +87,7 @@ func (s *Repos) MockGetByURI(t *testing.T, wantURI string, repoID int32) (called
 	return
 }
 
-func (s *Repos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
+func (s *MockRepos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 	called = new(bool)
 	s.List = func(ctx context.Context, opt *store.RepoListOp) ([]*sourcegraph.Repo, error) {
 		*called = true
@@ -89,7 +100,7 @@ func (s *Repos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 	return
 }
 
-func (s *Repos) MockInternalUpdate(t *testing.T) (called *bool) {
+func (s *MockRepos) MockInternalUpdate(t *testing.T) (called *bool) {
 	called = new(bool)
 	s.InternalUpdate = func(ctx context.Context, repo int32, op store.InternalRepoUpdate) error {
 		*called = true

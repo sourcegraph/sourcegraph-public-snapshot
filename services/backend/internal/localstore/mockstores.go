@@ -1,0 +1,18 @@
+package localstore
+
+import (
+	srcstore "sourcegraph.com/sourcegraph/srclib/store"
+)
+
+// MockStores has a field for each store interface with the concrete mock type (to obviate the need for tedious type assertions in test code).
+type MockStores struct {
+	Defs         MockDefs
+	GlobalDeps   MockGlobalDeps
+	GlobalRefs   MockGlobalRefs
+	Graph        srcstore.MockMultiRepoStore
+	Queue        MockQueue
+	RepoConfigs  MockRepoConfigs
+	RepoStatuses MockRepoStatuses
+	RepoVCS      MockRepoVCS
+	Repos        MockRepos
+}

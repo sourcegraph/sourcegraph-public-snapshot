@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
@@ -16,7 +16,7 @@ func TestDefsService_ListRefs(t *testing.T) {
 	want := []*graph.Ref{{File: "f"}}
 
 	calledReposGet := mock.servers.Repos.MockGet_Path(t, 1, "r")
-	calledRefs := mockstore.GraphMockRefs(&mock.stores.Graph, want...)
+	calledRefs := localstore.GraphMockRefs(&mock.stores.Graph, want...)
 
 	refs, err := s.ListRefs(ctx, &sourcegraph.DefsListRefsOp{Def: sourcegraph.DefSpec{CommitID: "c", Repo: 1, Path: "p"}})
 	if err != nil {

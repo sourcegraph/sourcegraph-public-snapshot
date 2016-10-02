@@ -39,7 +39,7 @@ func TestGlobalRefs(t *testing.T) {
 	createdRepos := (&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "x/y"}, &sourcegraph.Repo{URI: "a/b"})
 	xyRepoID := createdRepos[0].ID
 	abRepoID := createdRepos[1].ID
-	MockRepos = nil
+	TestMockRepos = nil
 
 	testRefs1 := []*graph.Ref{
 		{DefPath: ".", DefRepo: "", DefUnit: "", File: "a/b/u/s.go"},              // package ref
@@ -232,7 +232,7 @@ func TestGlobalRefsUpdate(t *testing.T) {
 		},
 	}
 	ctx = svc.WithServices(ctx, svc.Services{Repos: mockReposS})
-	MockRepos = nil
+	TestMockRepos = nil
 
 	allRefs := map[string][]*graph.Ref{}
 	mockRefs(mocks, allRefs)
@@ -460,7 +460,7 @@ func globalRefsUpdate(b *testing.B, ctx context.Context, mocks *mocks, nRepos, n
 }
 
 func mockRefs(mocks *mocks, allRefs map[string][]*graph.Ref) {
-	mocks.Stores.Graph.Refs_ = func(f ...sstore.RefFilter) ([]*graph.Ref, error) {
+	mocks.Graph.Refs_ = func(f ...sstore.RefFilter) ([]*graph.Ref, error) {
 		if len(f) != 1 {
 			return nil, errors.New("mockRefs: Expected only 1 filter")
 		}

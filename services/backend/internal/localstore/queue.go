@@ -2,6 +2,8 @@ package localstore
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
 	"time"
 
 	"context"
@@ -11,7 +13,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 )
 
@@ -36,14 +37,12 @@ CREATE TABLE que_jobs
 
 const queueMaxAttempts = 2
 
-var MockQueue *mockstore.Queue
-
 type queue struct{}
 
 // Enqueue puts j onto the queue
 func (q *queue) Enqueue(ctx context.Context, j *store.Job) error {
-	if MockQueue != nil {
-		return MockQueue.Enqueue(ctx, j)
+	if TestMockQueue != nil {
+		return TestMockQueue.Enqueue(ctx, j)
 	}
 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Queue.Enqueue."+j.Type, nil); err != nil {
@@ -60,8 +59,8 @@ func (q *queue) Enqueue(ctx context.Context, j *store.Job) error {
 // jobs. You must call LockedJob.MarkSuccess or LockedJob.MarkError
 // when done.
 func (q *queue) LockJob(ctx context.Context) (*store.LockedJob, error) {
-	if MockQueue != nil {
-		return MockQueue.LockJob(ctx)
+	if TestMockQueue != nil {
+		return TestMockQueue.LockJob(ctx)
 	}
 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Queue.LockJob", nil); err != nil {
@@ -91,8 +90,8 @@ func (q *queue) LockJob(ctx context.Context) (*store.LockedJob, error) {
 
 // Stats returns statistics about the queue per Job Type
 func (q *queue) Stats(ctx context.Context) (map[string]store.QueueStats, error) {
-	if MockQueue != nil {
-		return MockQueue.Stats(ctx)
+	if TestMockQueue != nil {
+		return TestMockQueue.Stats(ctx)
 	}
 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Queue.Stats", nil); err != nil {
@@ -140,4 +139,49 @@ func (q *queue) client(ctx context.Context) (*que.Client, error) {
 		return nil, fmt.Errorf("queue could not get underlying *sql.Db from appDBH")
 	}
 	return que.NewClient(dbm.Db), nil
+}
+
+var TestMockQueue *MockQueue
+
+type MockQueue struct {
+	Enqueue func(ctx context.Context, j *store.Job) error
+	LockJob func(ctx context.Context) (*store.LockedJob, error)
+	Stats   func(ctx context.Context) (map[string]store.QueueStats, error)
+}
+
+func (s *MockQueue) MockEnqueue(t *testing.T, wantJob *store.Job) (called *bool) {
+	called = new(bool)
+	s.Enqueue = func(ctx context.Context, job *store.Job) error {
+		*called = true
+		if !reflect.DeepEqual(job, wantJob) {
+			t.Errorf("got job {Type:%s Args:%s}, want {Type:%s Args:%s}", job.Type, string(job.Args), wantJob.Type, string(wantJob.Args))
+		}
+		return nil
+	}
+	return
+}
+
+func (s *MockQueue) MockLockJob_Return(t *testing.T, job *store.Job) (called, calledSuccess, calledError *bool) {
+	called = new(bool)
+	calledSuccess = new(bool)
+	calledError = new(bool)
+	j := store.NewLockedJob(
+		job,
+		func() error {
+			*calledSuccess = true
+			return nil
+		},
+		func(_ string) error {
+			*calledError = true
+			return nil
+		},
+	)
+	if job == nil {
+		j = nil
+	}
+	s.LockJob = func(ctx context.Context) (*store.LockedJob, error) {
+		*called = true
+		return j, nil
+	}
+	return
 }

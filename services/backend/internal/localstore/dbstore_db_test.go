@@ -4,7 +4,6 @@ import (
 	"context"
 
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testdb"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	githubmock "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/mocks"
@@ -36,7 +35,6 @@ func testContext() (ctx context.Context, done func()) {
 }
 
 type mocks struct {
-	mockstore.Stores
-	mockstore.RepoVCS
+	MockStores
 	githubRepos githubmock.GitHubRepoGetter
 }
