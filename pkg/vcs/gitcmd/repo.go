@@ -1005,6 +1005,6 @@ func ensureAbsCommit(commitID vcs.CommitID) {
 	// commit IDs if we can avoid it, because we can't cache the
 	// expensive part of those computations.
 	if len(commitID) != 40 {
-		panic("non-absolute commit ID")
+		panic("non-absolute commit ID: " + string(commitID))
 	}
 }
