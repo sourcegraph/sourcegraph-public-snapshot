@@ -303,6 +303,9 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 			return nil, walkErr
 		}
 		if err := conn.Notify(ctx, req.Method, paramsObj); err != nil {
+			if err == jsonrpc2.ErrClosed {
+				err = nil // suppress worthless "notification handling error" log messages when the client has hung up
+			}
 			return nil, err
 		}
 		return nil, nil
