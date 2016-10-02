@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -245,12 +246,11 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 	c.updateLastTime()
 	defer c.updateLastTime()
 
-	// Trace the handling of this request.
-	//
-	// Don't trace when we are handling traces, or else we will have a
-	// lot of noise in our traces.
-	if req.Method != "telemetry/event" {
-		var span opentracing.Span
+	// Trace the handling of this request. Only create child spans for
+	// significant operations, not when we're just receiving traces or
+	// performing simple VFS ops.
+	var span opentracing.Span
+	if shouldCreateChildSpan := req.Method != "telemetry/event" && !strings.HasPrefix(req.Method, "fs/"); shouldCreateChildSpan {
 		op := "LSP server proxy: handle " + req.Method
 
 		// Try to get our parent span context from this JSON-RPC request's metadata.
