@@ -12,8 +12,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 )
 
-// TestXLang is an integration test that actually hits the xlang
-// proxy.
 func TestXLang(t *testing.T) {
 	c, _ := newTest()
 
