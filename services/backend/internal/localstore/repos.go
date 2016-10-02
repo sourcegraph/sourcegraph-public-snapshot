@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"path"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -32,6 +32,8 @@ func init() {
 	AppSchema.Map.AddTableWithName(dbRepo{}, "repo").SetKeys(true, "ID")
 	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		"ALTER TABLE repo ALTER COLUMN uri TYPE citext",
+		"ALTER TABLE repo ALTER COLUMN owner TYPE citext", // migration 2016.9.30
+		"ALTER TABLE repo ALTER COLUMN name TYPE citext",  // migration 2016.9.30
 		"CREATE UNIQUE INDEX repo_uri_unique ON repo(uri);",
 		"ALTER TABLE repo ALTER COLUMN description TYPE text",
 		`ALTER TABLE repo ALTER COLUMN default_branch SET NOT NULL;`,
@@ -41,8 +43,10 @@ func init() {
 		`ALTER TABLE repo ALTER COLUMN vcs_synced_at TYPE timestamp with time zone USING vcs_synced_at::timestamp with time zone;`,
 		"CREATE INDEX repo_name ON repo(name text_pattern_ops);",
 
-		// fast for repo searching by URI and name
-		"CREATE INDEX repo_lower_uri_lower_name ON repo((lower(uri)::text) text_pattern_ops, lower(name));",
+		"CREATE INDEX repo_owner_ci ON repo(owner);", // migration 2016.9.30
+		"CREATE INDEX repo_name_ci ON repo(name);",   // migration 2016.9.30
+
+		// migration 2016.9.30: `DROP INDEX repo_lower_uri_lower_name;`
 	)
 }
 
@@ -439,6 +443,12 @@ func (s *repos) Search(ctx context.Context, query string) ([]*sourcegraph.RepoSe
 
 var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty result set")
 
+var (
+	repoQuerySplitter    = regexp.MustCompile(`[/\s]+`)
+	repoOwnerRepoPattern = regexp.MustCompile(`^([^/\s]+)[/\s]+([^\s]+)$`)
+	repoOwnerPattern     = regexp.MustCompile(`^([^/\s]+)[/\s]+$`)
+)
+
 // reposListSQL translates the options struct to the SQL for querying
 // PosgreSQL.
 func reposListSQL(opt *RepoListOp) (string, []interface{}, error) {
@@ -451,8 +461,7 @@ func reposListSQL(opt *RepoListOp) (string, []interface{}, error) {
 		return v
 	}
 
-	queryTerms := strings.Fields(opt.Query)
-	uriQuery := strings.ToLower(strings.Join(queryTerms, "/"))
+	queryTerms := repoQuerySplitter.Split(opt.Query, -1)
 
 	{ // SELECT
 		selectSQL = "repo.*"
@@ -484,8 +493,14 @@ func reposListSQL(opt *RepoListOp) (string, []interface{}, error) {
 		if opt.Name != "" {
 			conds = append(conds, "lower(name)="+arg(strings.ToLower(opt.Name)))
 		}
-		if len(queryTerms) >= 1 {
-			conds = append(conds, "uri ILIKE "+arg("%"+uriQuery+"%"))
+		if len(queryTerms) == 1 && strings.HasSuffix(opt.Query, "/") {
+			conds = append(conds, `owner=`+arg(queryTerms[0]))
+		} else if len(queryTerms) >= 1 {
+			var queryConds []string
+			for _, queryTerm := range queryTerms {
+				queryConds = append(queryConds, `name=`+arg(queryTerm), `owner=`+arg(queryTerm))
+			}
+			conds = append(conds, fmt.Sprintf(`(%s)`, strings.Join(queryConds, " OR ")))
 		}
 		switch opt.Type {
 		case "private":
@@ -509,9 +524,23 @@ func reposListSQL(opt *RepoListOp) (string, []interface{}, error) {
 
 	// ORDER BY
 	var orderByTerms []string
-	if uriQuery != "" {
-		orderByTerms = append(orderByTerms, "NOT fork DESC", fmt.Sprintf("(lower(name) = %s) DESC", arg(strings.ToLower(path.Base(uriQuery)))), "private DESC")
+	if match := repoOwnerPattern.FindAllStringSubmatch(opt.Query, 1); len(match) == 1 && len(match[0]) == 2 {
+		// "$OWNER/" case
+		orderByTerms = append(orderByTerms, `owner=`+arg(match[0][1])+` DESC`)
+	} else if match := repoOwnerRepoPattern.FindAllStringSubmatch(opt.Query, 1); len(match) == 1 && len(match[0]) == 3 {
+		// "$OWNER/$REPO" case
+		orderByTerms = append(orderByTerms, `(owner=`+arg(match[0][1])+` AND `+`name=`+arg(match[0][2])+`) DESC`)
 	}
+	orderByTerms = append(orderByTerms, "NOT fork DESC")
+	if len(queryTerms) >= 1 {
+		// rank repositories with a name equaling the last search term higher
+		orderByTerms = append(orderByTerms, "name="+arg(queryTerms[len(queryTerms)-1])+" DESC")
+	}
+	if len(queryTerms) >= 2 {
+		orderByTerms = append(orderByTerms, "owner="+arg(queryTerms[len(queryTerms)-2])+" DESC")
+	}
+	orderByTerms = append(orderByTerms, "private DESC", "name ASC")
+
 	sort := opt.Sort
 	if sort == "" {
 		sort = "id"
