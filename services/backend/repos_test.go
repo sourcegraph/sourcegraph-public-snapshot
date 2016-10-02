@@ -13,8 +13,8 @@ import (
 	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
@@ -105,7 +105,7 @@ func TestReposService_Get_UnauthedUpdateMeta(t *testing.T) {
 
 	calledGet := mock.stores.Repos.MockGet_Return(t, wantRepo)
 	var calledUpdate bool
-	mock.stores.Repos.Update = func(ctx context.Context, op store.RepoUpdate) error {
+	mock.stores.Repos.Update = func(ctx context.Context, op localstore.RepoUpdate) error {
 		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo); err != nil {
 			return err
 		}

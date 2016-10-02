@@ -10,8 +10,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -34,7 +34,7 @@ func TestAsyncService_RefreshIndexes(t *testing.T) {
 		Repo:   wantRepo,
 		Source: "test",
 	}
-	job := &store.Job{
+	job := &localstore.Job{
 		Type: "RefreshIndexes",
 		Args: mustMarshal(t, &sourcegraph.AsyncRefreshIndexesOp{
 			Repo:   wantRepo,
@@ -79,7 +79,7 @@ func TestAsyncWorker(t *testing.T) {
 		t.Error("did not call LockJob")
 	}
 
-	calledLockJob, calledSuccess, calledError := mock.stores.Queue.MockLockJob_Return(t, &store.Job{Type: "NOOP"})
+	calledLockJob, calledSuccess, calledError := mock.stores.Queue.MockLockJob_Return(t, &localstore.Job{Type: "NOOP"})
 	didWork = w.try(ctx)
 	if !didWork {
 		t.Error("did not do work")
@@ -94,7 +94,7 @@ func TestAsyncWorker(t *testing.T) {
 		t.Error("job should of succeeded")
 	}
 
-	calledLockJob, calledSuccess, calledError = mock.stores.Queue.MockLockJob_Return(t, &store.Job{Type: "does not exist"})
+	calledLockJob, calledSuccess, calledError = mock.stores.Queue.MockLockJob_Return(t, &localstore.Job{Type: "does not exist"})
 	didWork = w.try(ctx)
 	if !didWork {
 		t.Error("did not do work")
@@ -150,7 +150,7 @@ func TestAsyncWorker_mutex(t *testing.T) {
 		Repo:                wantRepo,
 		RefreshRefLocations: true,
 	})
-	calledEnqueue := mock2.stores.Queue.MockEnqueue(t, &store.Job{
+	calledEnqueue := mock2.stores.Queue.MockEnqueue(t, &localstore.Job{
 		Type: "RefreshIndexes",
 		Args: mustMarshal(t, &sourcegraph.AsyncRefreshIndexesOp{
 			Repo:   wantRepo,

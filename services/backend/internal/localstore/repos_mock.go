@@ -8,17 +8,16 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 type MockRepos struct {
 	Get            func(ctx context.Context, repo int32) (*sourcegraph.Repo, error)
 	GetByURI       func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
-	List           func(v0 context.Context, v1 *store.RepoListOp) ([]*sourcegraph.Repo, error)
+	List           func(v0 context.Context, v1 *RepoListOp) ([]*sourcegraph.Repo, error)
 	Search         func(v0 context.Context, v1 string) ([]*sourcegraph.RepoSearchResult, error)
 	Create         func(v0 context.Context, v1 *sourcegraph.Repo) (int32, error)
-	Update         func(v0 context.Context, v1 store.RepoUpdate) error
-	InternalUpdate func(ctx context.Context, repo int32, op store.InternalRepoUpdate) error
+	Update         func(v0 context.Context, v1 RepoUpdate) error
+	InternalUpdate func(ctx context.Context, repo int32, op InternalRepoUpdate) error
 	Delete         func(ctx context.Context, repo int32) error
 }
 
@@ -50,7 +49,7 @@ func (s *MockRepos) MockGet_Path(t *testing.T, wantRepo int32, repoPath string) 
 
 func (s *MockRepos) MockUpdate(t *testing.T, wantRepo int32) (called *bool) {
 	called = new(bool)
-	s.Update = func(ctx context.Context, repoUpdate store.RepoUpdate) error {
+	s.Update = func(ctx context.Context, repoUpdate RepoUpdate) error {
 		*called = true
 		if repoUpdate.ReposUpdateOp.Repo != wantRepo {
 			t.Errorf("got repo %q, want %q", repoUpdate.ReposUpdateOp.Repo, wantRepo)
@@ -89,7 +88,7 @@ func (s *MockRepos) MockGetByURI(t *testing.T, wantURI string, repoID int32) (ca
 
 func (s *MockRepos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 	called = new(bool)
-	s.List = func(ctx context.Context, opt *store.RepoListOp) ([]*sourcegraph.Repo, error) {
+	s.List = func(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo, error) {
 		*called = true
 		repos := make([]*sourcegraph.Repo, len(wantRepos))
 		for i, repo := range wantRepos {
@@ -102,7 +101,7 @@ func (s *MockRepos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 
 func (s *MockRepos) MockInternalUpdate(t *testing.T) (called *bool) {
 	called = new(bool)
-	s.InternalUpdate = func(ctx context.Context, repo int32, op store.InternalRepoUpdate) error {
+	s.InternalUpdate = func(ctx context.Context, repo int32, op InternalRepoUpdate) error {
 		*called = true
 		return nil
 	}

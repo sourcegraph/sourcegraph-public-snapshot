@@ -15,7 +15,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/mock"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	sgtest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
@@ -94,12 +93,12 @@ func TestGlobalRefs(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := g.Update(ctx, store.RefreshIndexOp{Repo: repoObj.ID, CommitID: "aaaaa"}); err != nil {
+		if err := g.Update(ctx, RefreshIndexOp{Repo: repoObj.ID, CommitID: "aaaaa"}); err != nil {
 			t.Fatalf("could not update %s: %s", repo, err)
 		}
 	}
 	// Updates should be idempotent.
-	err := g.Update(ctx, store.RefreshIndexOp{Repo: abRepoID, CommitID: "aaaaa"})
+	err := g.Update(ctx, RefreshIndexOp{Repo: abRepoID, CommitID: "aaaaa"})
 	if err != nil {
 		t.Fatalf("could not idempotent update a/b: %s", err)
 	}
@@ -288,7 +287,7 @@ func TestGlobalRefsUpdate(t *testing.T) {
 
 	// We should only have results for first
 	genRefs("first")
-	err = g.Update(ctx, store.RefreshIndexOp{Repo: repoID, CommitID: "aaaaa"})
+	err = g.Update(ctx, RefreshIndexOp{Repo: repoID, CommitID: "aaaaa"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -296,7 +295,7 @@ func TestGlobalRefsUpdate(t *testing.T) {
 
 	// We always reindex, even if we have indexed a commit.
 	genRefs("second")
-	err = g.Update(ctx, store.RefreshIndexOp{Repo: repoID, CommitID: "aaaaa"})
+	err = g.Update(ctx, RefreshIndexOp{Repo: repoID, CommitID: "aaaaa"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -304,7 +303,7 @@ func TestGlobalRefsUpdate(t *testing.T) {
 
 	// Update what the latest commit is, that should cause us to index third
 	genRefs("third")
-	err = g.Update(ctx, store.RefreshIndexOp{Repo: repoID, CommitID: "bbbbb"})
+	err = g.Update(ctx, RefreshIndexOp{Repo: repoID, CommitID: "bbbbb"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -453,7 +452,7 @@ func globalRefsUpdate(b *testing.B, ctx context.Context, mocks *mocks, nRepos, n
 		if err != nil {
 			b.Fatal(err)
 		}
-		if err := GlobalRefs.Update(ctx, store.RefreshIndexOp{Repo: repoObj.ID, CommitID: "aaaaa"}); err != nil {
+		if err := GlobalRefs.Update(ctx, RefreshIndexOp{Repo: repoObj.ID, CommitID: "aaaaa"}); err != nil {
 			b.Fatal(err)
 		}
 	}

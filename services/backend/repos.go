@@ -22,7 +22,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
 	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
@@ -78,7 +77,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 		return &sourcegraph.RepoList{Repos: repos}, nil
 	}
 
-	repos, err := localstore.Repos.List(ctx, &store.RepoListOp{
+	repos, err := localstore.Repos.List(ctx, &localstore.RepoListOp{
 		Name:        opt.Name,
 		Query:       opt.Query,
 		URIs:        opt.URIs,
@@ -191,9 +190,9 @@ func timestampEqual(a, b *pbtypes.Timestamp) bool {
 // repoSetFromRemote updates repo with fields from ghrepo that are
 // different. If any fields are changed a non-nil store.RepoUpdate is returned
 // representing the update.
-func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *store.RepoUpdate {
+func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *localstore.RepoUpdate {
 	updated := false
-	updateOp := &store.RepoUpdate{
+	updateOp := &localstore.RepoUpdate{
 		ReposUpdateOp: &sourcegraph.ReposUpdateOp{
 			Repo: repo.ID,
 		},
@@ -473,7 +472,7 @@ func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRe
 
 func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
 	ts := time.Now()
-	update := store.RepoUpdate{ReposUpdateOp: op, UpdatedAt: &ts}
+	update := localstore.RepoUpdate{ReposUpdateOp: op, UpdatedAt: &ts}
 	if err := localstore.Repos.Update(ctx, update); err != nil {
 		return nil, err
 	}

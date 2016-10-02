@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"testing"
 	"time"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 func TestQueue_LockJob_AlreadyLocked(t *testing.T) {
@@ -15,7 +13,7 @@ func TestQueue_LockJob_AlreadyLocked(t *testing.T) {
 	defer done()
 	TestMockQueue = nil
 
-	if err := q.Enqueue(ctx, &store.Job{Type: "MyJob"}); err != nil {
+	if err := q.Enqueue(ctx, &Job{Type: "MyJob"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -47,7 +45,7 @@ func TestQueue_LockJob_BoundedAttempts(t *testing.T) {
 	defer done()
 	TestMockQueue = nil
 
-	if err := q.Enqueue(ctx, &store.Job{Type: "MyJob"}); err != nil {
+	if err := q.Enqueue(ctx, &Job{Type: "MyJob"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -87,12 +85,12 @@ func TestQueue_Job_Delay(t *testing.T) {
 	q := &queue{}
 	now := time.Now()
 
-	j := q.toQue(&store.Job{})
+	j := q.toQue(&Job{})
 	if j.RunAt.Before(now) {
 		t.Errorf("job without delay scheduled to run in the past. want %s <= %s", now, j.RunAt)
 	}
 
-	j = q.toQue(&store.Job{Delay: 10 * time.Minute})
+	j = q.toQue(&Job{Delay: 10 * time.Minute})
 	if j.RunAt.Before(now.Add(9 * time.Minute)) {
 		t.Errorf("job scheduled too early. wanted roughly %s, got %s", now.Add(10*time.Minute), j.RunAt)
 	}
@@ -108,7 +106,7 @@ func TestQueue_Stats(t *testing.T) {
 	TestMockQueue = nil
 
 	push := func(qt string) {
-		if err := q.Enqueue(ctx, &store.Job{Type: qt}); err != nil {
+		if err := q.Enqueue(ctx, &Job{Type: qt}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -141,7 +139,7 @@ func TestQueue_Stats(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := map[string]store.QueueStats{
+	want := map[string]QueueStats{
 		"a": {
 			NumJobs:          9,
 			NumJobsWithError: 1,

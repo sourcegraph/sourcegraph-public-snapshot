@@ -12,7 +12,6 @@ import (
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 )
 
@@ -37,10 +36,53 @@ CREATE TABLE que_jobs
 
 const queueMaxAttempts = 2
 
+// Job contains the fields necessary to do a Job
+type Job struct {
+	// Type determines what to do
+	Type string
+
+	// Args is passed to the worker
+	Args []byte
+
+	// Delay will ensure at least Delay time passes before popping the Job
+	// off the queue.
+	Delay time.Duration
+}
+
+// LockedJob is a job returned from the queue. You must call MarkSuccess or
+// MarkError when done.
+type LockedJob struct {
+	*Job
+	success func() error
+	error   func(string) error
+}
+
+// NewLockedJob constructs a new LockedJob
+func NewLockedJob(j *Job, success func() error, error func(string) error) *LockedJob {
+	return &LockedJob{
+		Job:     j,
+		success: success,
+		error:   error,
+	}
+}
+
+// MarkSuccess marks the Job as successful and deletes it from the queue
+func (j *LockedJob) MarkSuccess() error { return j.success() }
+
+// MarkError marks the job as failed with reason. It will put it back on the
+// queue for later processing.
+func (j *LockedJob) MarkError(reason string) error { return j.error(reason) }
+
+// QueueStats captures statistics of what is in the queue for a Job Type
+type QueueStats struct {
+	NumJobs          int
+	NumJobsWithError int
+}
+
 type queue struct{}
 
 // Enqueue puts j onto the queue
-func (q *queue) Enqueue(ctx context.Context, j *store.Job) error {
+func (q *queue) Enqueue(ctx context.Context, j *Job) error {
 	if TestMockQueue != nil {
 		return TestMockQueue.Enqueue(ctx, j)
 	}
@@ -58,7 +100,7 @@ func (q *queue) Enqueue(ctx context.Context, j *store.Job) error {
 // LockJob removes a job from queue, or returns nil if there is no
 // jobs. You must call LockedJob.MarkSuccess or LockedJob.MarkError
 // when done.
-func (q *queue) LockJob(ctx context.Context) (*store.LockedJob, error) {
+func (q *queue) LockJob(ctx context.Context) (*LockedJob, error) {
 	if TestMockQueue != nil {
 		return TestMockQueue.LockJob(ctx)
 	}
@@ -80,16 +122,16 @@ func (q *queue) LockJob(ctx context.Context) (*store.LockedJob, error) {
 	errFunc := j.Error
 	if j.ErrorCount+1 >= queueMaxAttempts {
 		errFunc = func(reason string) error {
-			log15.Debug("store.Job.MarkError ignoring", "type", j.Type, "lastReason", j.LastError.String, "reason", reason)
+			log15.Debug("Job.MarkError ignoring", "type", j.Type, "lastReason", j.LastError.String, "reason", reason)
 			return j.Delete()
 		}
 	}
 
-	return store.NewLockedJob(q.fromQue(j), j.Delete, errFunc), nil
+	return NewLockedJob(q.fromQue(j), j.Delete, errFunc), nil
 }
 
 // Stats returns statistics about the queue per Job Type
-func (q *queue) Stats(ctx context.Context) (map[string]store.QueueStats, error) {
+func (q *queue) Stats(ctx context.Context) (map[string]QueueStats, error) {
 	if TestMockQueue != nil {
 		return TestMockQueue.Stats(ctx)
 	}
@@ -106,10 +148,10 @@ func (q *queue) Stats(ctx context.Context) (map[string]store.QueueStats, error) 
 	if err != nil {
 		return nil, err
 	}
-	qs := map[string]store.QueueStats{}
+	qs := map[string]QueueStats{}
 	for _, row := range stats {
 		s := row.(*stat)
-		qs[s.Type] = store.QueueStats{
+		qs[s.Type] = QueueStats{
 			NumJobs:          s.NumJobs,
 			NumJobsWithError: s.NumJobsWithError,
 		}
@@ -117,7 +159,7 @@ func (q *queue) Stats(ctx context.Context) (map[string]store.QueueStats, error) 
 	return qs, nil
 }
 
-func (q *queue) toQue(j *store.Job) *que.Job {
+func (q *queue) toQue(j *Job) *que.Job {
 	return &que.Job{
 		Type:  j.Type,
 		Args:  j.Args,
@@ -125,8 +167,8 @@ func (q *queue) toQue(j *store.Job) *que.Job {
 	}
 }
 
-func (q *queue) fromQue(j *que.Job) *store.Job {
-	return &store.Job{
+func (q *queue) fromQue(j *que.Job) *Job {
+	return &Job{
 		Type: j.Type,
 		Args: j.Args,
 	}
@@ -144,14 +186,14 @@ func (q *queue) client(ctx context.Context) (*que.Client, error) {
 var TestMockQueue *MockQueue
 
 type MockQueue struct {
-	Enqueue func(ctx context.Context, j *store.Job) error
-	LockJob func(ctx context.Context) (*store.LockedJob, error)
-	Stats   func(ctx context.Context) (map[string]store.QueueStats, error)
+	Enqueue func(ctx context.Context, j *Job) error
+	LockJob func(ctx context.Context) (*LockedJob, error)
+	Stats   func(ctx context.Context) (map[string]QueueStats, error)
 }
 
-func (s *MockQueue) MockEnqueue(t *testing.T, wantJob *store.Job) (called *bool) {
+func (s *MockQueue) MockEnqueue(t *testing.T, wantJob *Job) (called *bool) {
 	called = new(bool)
-	s.Enqueue = func(ctx context.Context, job *store.Job) error {
+	s.Enqueue = func(ctx context.Context, job *Job) error {
 		*called = true
 		if !reflect.DeepEqual(job, wantJob) {
 			t.Errorf("got job {Type:%s Args:%s}, want {Type:%s Args:%s}", job.Type, string(job.Args), wantJob.Type, string(wantJob.Args))
@@ -161,11 +203,11 @@ func (s *MockQueue) MockEnqueue(t *testing.T, wantJob *store.Job) (called *bool)
 	return
 }
 
-func (s *MockQueue) MockLockJob_Return(t *testing.T, job *store.Job) (called, calledSuccess, calledError *bool) {
+func (s *MockQueue) MockLockJob_Return(t *testing.T, job *Job) (called, calledSuccess, calledError *bool) {
 	called = new(bool)
 	calledSuccess = new(bool)
 	calledError = new(bool)
-	j := store.NewLockedJob(
+	j := NewLockedJob(
 		job,
 		func() error {
 			*calledSuccess = true
@@ -179,7 +221,7 @@ func (s *MockQueue) MockLockJob_Return(t *testing.T, job *store.Job) (called, ca
 	if job == nil {
 		j = nil
 	}
-	s.LockJob = func(ctx context.Context) (*store.LockedJob, error) {
+	s.LockJob = func(ctx context.Context) (*LockedJob, error) {
 		*called = true
 		return j, nil
 	}

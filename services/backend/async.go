@@ -15,7 +15,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
@@ -64,7 +63,7 @@ func (s *async) RefreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefresh
 	if err != nil {
 		return nil, err
 	}
-	err = localstore.Queue.Enqueue(ctx, &store.Job{
+	err = localstore.Queue.Enqueue(ctx, &localstore.Job{
 		Type: "RefreshIndexes",
 		Args: args,
 	})
@@ -122,7 +121,7 @@ func (s *asyncWorker) try(ctx context.Context) bool {
 }
 
 // doSafe is a wrapper which recovers from panics
-func (s *asyncWorker) doSafe(ctx context.Context, job *store.Job) (err error) {
+func (s *asyncWorker) doSafe(ctx context.Context, job *localstore.Job) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("panic when running job %+v: %v", job, r)
@@ -132,7 +131,7 @@ func (s *asyncWorker) doSafe(ctx context.Context, job *store.Job) (err error) {
 	return
 }
 
-func (s *asyncWorker) do(ctx context.Context, job *store.Job) error {
+func (s *asyncWorker) do(ctx context.Context, job *localstore.Job) error {
 	switch job.Type {
 	case "RefreshIndexes":
 		op := &sourcegraph.AsyncRefreshIndexesOp{}
@@ -158,7 +157,7 @@ func (s *asyncWorker) refreshIndexes(ctx context.Context, op *sourcegraph.AsyncR
 		if err != nil {
 			return err
 		}
-		return localstore.Queue.Enqueue(ctx, &store.Job{
+		return localstore.Queue.Enqueue(ctx, &localstore.Job{
 			Type:  "RefreshIndexes",
 			Args:  args,
 			Delay: 10 * time.Minute,

@@ -8,7 +8,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	sgtest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -159,7 +158,7 @@ func testDefs(t *testing.T, outerTest outerCase) {
 	}
 
 	for _, repo := range rps {
-		op := store.RefreshIndexOp{Repo: repo.ID, CommitID: commitID}
+		op := RefreshIndexOp{Repo: repo.ID, CommitID: commitID}
 		err := g.Update(ctx, op)
 		if err != nil {
 			t.Fatal(err)
@@ -167,7 +166,7 @@ func testDefs(t *testing.T, outerTest outerCase) {
 	}
 
 	for _, test := range outerTest.queries {
-		got, err := g.Search(ctx, store.DefSearchOp{Opt: &test.opt, TokQuery: test.query})
+		got, err := g.Search(ctx, DefSearchOp{Opt: &test.opt, TokQuery: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}

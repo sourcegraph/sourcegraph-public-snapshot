@@ -21,7 +21,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
@@ -69,7 +68,7 @@ func init() {
 	GraphSchema.Map.AddTableWithName(dbGlobalRefVersion{}, "global_refs_version").SetKeys(false, "repo")
 }
 
-// globalRefs is a DB-backed implementation of the GlobalRefs store.
+// globalRefs is a DB-backed implementation of the GlobalRefs
 type globalRefs struct{}
 
 // Get returns the names and ref counts of all repos and files within those repos
@@ -317,7 +316,7 @@ func (g *globalRefs) getRefStats(ctx context.Context, defKeyID int64) (int64, er
 // Update takes the graph output of a repo at the latest commit and
 // updates the set of refs in the global ref store that originate from
 // it.
-func (g *globalRefs) Update(ctx context.Context, op store.RefreshIndexOp) error {
+func (g *globalRefs) Update(ctx context.Context, op RefreshIndexOp) error {
 	if TestMockGlobalRefs != nil {
 		return TestMockGlobalRefs.Update(ctx, op)
 	}
@@ -539,5 +538,5 @@ var TestMockGlobalRefs *MockGlobalRefs
 
 type MockGlobalRefs struct {
 	Get    func(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
-	Update func(ctx context.Context, op store.RefreshIndexOp) error
+	Update func(ctx context.Context, op RefreshIndexOp) error
 }

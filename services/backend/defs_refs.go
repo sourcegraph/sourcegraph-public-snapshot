@@ -15,7 +15,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
@@ -195,7 +194,7 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	}
 
 	// rev.CommitID will be the latest commit on the DefaultBranch
-	indexOp := store.RefreshIndexOp{
+	indexOp := localstore.RefreshIndexOp{
 		Repo:     op.Repo,
 		CommitID: rev.CommitID,
 	}

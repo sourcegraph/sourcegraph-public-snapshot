@@ -6,9 +6,9 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -49,7 +49,7 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 			return nil, vcs.RepoNotExistError{}
 		},
 	})
-	mock.stores.RepoVCS.Clone = func(_ context.Context, _ int32, _ *store.CloneInfo) error {
+	mock.stores.RepoVCS.Clone = func(_ context.Context, _ int32, _ *localstore.CloneInfo) error {
 		cloned = true
 		return nil
 	}
@@ -79,7 +79,7 @@ func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 			return nil, vcs.RepoNotExistError{}
 		},
 	})
-	mock.stores.RepoVCS.Clone = func(_ context.Context, _ int32, _ *store.CloneInfo) error {
+	mock.stores.RepoVCS.Clone = func(_ context.Context, _ int32, _ *localstore.CloneInfo) error {
 		return vcs.ErrRepoExist
 	}
 	mock.servers.Async.RefreshIndexes_ = func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {

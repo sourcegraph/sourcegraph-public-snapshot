@@ -20,7 +20,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sqs/pbtypes"
@@ -168,7 +167,7 @@ func toRepos(rs []*dbRepo) []*sourcegraph.Repo {
 	return r2s
 }
 
-// repos is a DB-backed implementation of the Repos store.
+// repos is a DB-backed implementation of the Repos
 type repos struct{}
 
 // Get returns metadata for the request repository ID. It fetches data
@@ -237,10 +236,42 @@ func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{})
 	return repo.toRepo(), nil
 }
 
-// List repositories in the Sourcegraph repository store. Note:
+type RepoListOp struct {
+	// Name filters the repository list by name.
+	Name string
+
+	// Query specifies a search query for repositories. If specified, then the Sort and
+	// Direction options are ignored
+	Query string
+
+	// URIs specifies a set of repository URIs to list.
+	URIs []string
+
+	// Sort determines how the returned list of repositories is sorted.
+	Sort string
+
+	// Direction determines the sort direction.
+	Direction string
+
+	// NoFork excludes forks from the list of returned repositories.
+	NoFork bool
+
+	// Type of repositories to list. Possible values are currently
+	// ones supported by the GitHub API, including: all, owner,
+	// public, private, member. Default is "all".
+	Type string
+
+	// Owner filters the list of repositories to those with the
+	// specified owner.
+	Owner string
+
+	sourcegraph.ListOptions
+}
+
+// List repositories in the Sourcegraph repository  Note:
 // this will not return any repositories from external services
-// that are not present in the Sourcegraph repository store.
-func (s *repos) List(ctx context.Context, opt *store.RepoListOp) ([]*sourcegraph.Repo, error) {
+// that are not present in the Sourcegraph repository
+func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo, error) {
 	if TestMockRepos != nil {
 		return TestMockRepos.List(ctx, opt)
 	}
@@ -249,7 +280,7 @@ func (s *repos) List(ctx context.Context, opt *store.RepoListOp) ([]*sourcegraph
 		return nil, err
 	}
 	if opt == nil {
-		opt = &store.RepoListOp{}
+		opt = &RepoListOp{}
 	}
 
 	sql, args, err := reposListSQL(opt)
@@ -410,7 +441,7 @@ var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty 
 
 // reposListSQL translates the options struct to the SQL for querying
 // PosgreSQL.
-func reposListSQL(opt *store.RepoListOp) (string, []interface{}, error) {
+func reposListSQL(opt *RepoListOp) (string, []interface{}, error) {
 	var selectSQL, fromSQL, whereSQL, orderBySQL string
 
 	var args []interface{}
@@ -568,8 +599,20 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (int32, e
 	return r.ID, err
 }
 
+// RepoUpdate represents an update to specific fields of a repo. Only
+// fields with non-zero values are updated.
+//
+// The ReposUpdateOp.Repo field must be filled in to specify the repo
+// that will be updated.
+type RepoUpdate struct {
+	*sourcegraph.ReposUpdateOp
+
+	UpdatedAt *time.Time
+	PushedAt  *time.Time
+}
+
 // Update a repository.
-func (s *repos) Update(ctx context.Context, op store.RepoUpdate) error {
+func (s *repos) Update(ctx context.Context, op RepoUpdate) error {
 	if TestMockRepos != nil {
 		return TestMockRepos.Update(ctx, op)
 	}
@@ -646,9 +689,18 @@ func (s *repos) Update(ctx context.Context, op store.RepoUpdate) error {
 	return nil
 }
 
+// InternalRepoUpdate is an update of repo fields that are used by
+// internal Sourcegraph processes only. It is separate from RepoUpdate
+// so that internal updates can be performed by machine processes that
+// do not need to assume the privileges of the repo's owner (and can
+// merely have an internal token scope).
+type InternalRepoUpdate struct {
+	VCSSyncedAt *time.Time
+}
+
 // InternalUpdate performs an update of internal repository
 // fields. See InternalRepoUpdate for more information.
-func (s *repos) InternalUpdate(ctx context.Context, repo int32, op store.InternalRepoUpdate) error {
+func (s *repos) InternalUpdate(ctx context.Context, repo int32, op InternalRepoUpdate) error {
 	if TestMockRepos != nil {
 		return TestMockRepos.InternalUpdate(ctx, repo, op)
 	}

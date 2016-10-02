@@ -31,7 +31,7 @@ func (c *dbRepoConfig) fromRepoConfig(repo int32, c2 *sourcegraph.RepoConfig) {
 	c.Repo = repo
 }
 
-// repoConfigs is a DB-backed implementation of the RepoConfigs store.
+// repoConfigs is a DB-backed implementation of the RepoConfigs
 type repoConfigs struct{}
 
 func (s *repoConfigs) Get(ctx context.Context, repo int32) (*sourcegraph.RepoConfig, error) {

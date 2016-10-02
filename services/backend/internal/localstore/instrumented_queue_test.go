@@ -8,8 +8,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"context"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 func TestInstrumentQueue(t *testing.T) {
@@ -20,7 +18,7 @@ func TestInstrumentQueue(t *testing.T) {
 	ctx := context.Background()
 
 	// Enqueue
-	want := &store.Job{Type: "test"}
+	want := &Job{Type: "test"}
 	called := TestMockQueue.MockEnqueue(t, want)
 	if err := q.Enqueue(ctx, want); err != nil {
 		t.Fatal(err)
@@ -73,16 +71,16 @@ func TestQueueStatsCollector(t *testing.T) {
 	TestMockQueue = &MockQueue{}
 	defer func() { TestMockQueue = nil }()
 
-	stats := map[string]store.QueueStats{
-		"a": store.QueueStats{
+	stats := map[string]QueueStats{
+		"a": QueueStats{
 			NumJobs:          3,
 			NumJobsWithError: 1,
 		},
-		"b": store.QueueStats{
+		"b": QueueStats{
 			NumJobs: 1,
 		},
 	}
-	TestMockQueue.Stats = func(_ context.Context) (map[string]store.QueueStats, error) {
+	TestMockQueue.Stats = func(_ context.Context) (map[string]QueueStats, error) {
 		return stats, nil
 	}
 

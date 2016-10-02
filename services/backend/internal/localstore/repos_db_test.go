@@ -10,7 +10,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	githubmock "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/mocks"
@@ -171,7 +170,7 @@ func TestRepos_List_pagination(t *testing.T) {
 		{perPage: 4, page: 2, exp: nil},
 	}
 	for _, test := range tests {
-		repos, err := s.List(ctx, &store.RepoListOp{Sort: "uri", Direction: "asc", ListOptions: sourcegraph.ListOptions{PerPage: test.perPage, Page: test.page}})
+		repos, err := s.List(ctx, &RepoListOp{Sort: "uri", Direction: "asc", ListOptions: sourcegraph.ListOptions{PerPage: test.perPage, Page: test.page}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -201,7 +200,7 @@ func TestRepos_List_type(t *testing.T) {
 	s.mustCreate(ctx, t, r1, r2)
 
 	getRepoURIsByType := func(typ string) []string {
-		repos, err := s.List(ctx, &store.RepoListOp{Type: typ})
+		repos, err := s.List(ctx, &RepoListOp{Type: typ})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -269,7 +268,7 @@ func TestRepos_List_query(t *testing.T) {
 			{"jkl mno pqr", []string{"jkl/mno/pqr"}},
 		}
 		for _, test := range tests {
-			repos, err := s.List(ctx, &store.RepoListOp{Query: test.query})
+			repos, err := s.List(ctx, &RepoListOp{Query: test.query})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -310,7 +309,7 @@ func TestRepos_List_query(t *testing.T) {
 			{"def/", []string{"def/mno", "def/ghi", "def/jkl"}},
 		}
 		for _, test := range tests {
-			repos, err := s.List(ctx, &store.RepoListOp{Query: test.query})
+			repos, err := s.List(ctx, &RepoListOp{Query: test.query})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -349,7 +348,7 @@ func TestRepos_List_sort(t *testing.T) {
 	}
 
 	// Expect forks to be ranked lower.
-	repos, err := s.List(ctx, &store.RepoListOp{Query: "abc"})
+	repos, err := s.List(ctx, &RepoListOp{Query: "abc"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -392,7 +391,7 @@ func TestRepos_List_URIs(t *testing.T) {
 		{[]string{"a/b", "x/y", "c/d"}, []string{"a/b", "c/d"}},
 	}
 	for _, test := range tests {
-		repos, err := s.List(ctx, &store.RepoListOp{URIs: test.uris})
+		repos, err := s.List(ctx, &RepoListOp{URIs: test.uris})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -428,7 +427,7 @@ func TestRepos_List_byOwner(t *testing.T) {
 	}
 
 	{
-		repos, err := s.List(ctx, &store.RepoListOp{Owner: "alice"})
+		repos, err := s.List(ctx, &RepoListOp{Owner: "alice"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -478,7 +477,7 @@ func TestRepos_List_GitHub_Authenticated(t *testing.T) {
 
 	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 
-	repoList, err := s.List(ctx, &store.RepoListOp{})
+	repoList, err := s.List(ctx, &RepoListOp{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -521,7 +520,7 @@ func TestRepos_List_GitHub_Authenticated_NoReposAccessible(t *testing.T) {
 		}
 	}
 
-	repoList, err := s.List(ctx, &store.RepoListOp{})
+	repoList, err := s.List(ctx, &RepoListOp{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -557,7 +556,7 @@ func TestRepos_List_GitHub_Unauthenticated(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repoList, err := s.List(ctx, &store.RepoListOp{})
+	repoList, err := s.List(ctx, &RepoListOp{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -656,7 +655,7 @@ func TestRepos_Update_Description(t *testing.T) {
 		t.Errorf("got description %q, want %q", repo.Description, want)
 	}
 
-	if err := s.Update(ctx, store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo.ID, Description: "d"}}); err != nil {
+	if err := s.Update(ctx, RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo.ID, Description: "d"}}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -697,7 +696,7 @@ func TestRepos_Update_Origin(t *testing.T) {
 	}
 
 	newOrigin := &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub, APIBaseURL: "https://api.github.com"}
-	if err := s.Update(ctx, store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo.ID, Origin: newOrigin}}); err != nil {
+	if err := s.Update(ctx, RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo.ID, Origin: newOrigin}}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -737,7 +736,7 @@ func TestRepos_Update_UpdatedAt(t *testing.T) {
 
 	// Perform any update.
 	newTime := time.Unix(123456, 0)
-	if err := s.Update(ctx, store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo.ID}, UpdatedAt: &newTime}); err != nil {
+	if err := s.Update(ctx, RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo.ID}, UpdatedAt: &newTime}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -779,7 +778,7 @@ func TestRepos_Update_PushedAt(t *testing.T) {
 	}
 
 	newTime := time.Unix(123456, 0)
-	if err := s.Update(ctx, store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo.ID}, PushedAt: &newTime}); err != nil {
+	if err := s.Update(ctx, RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo.ID}, PushedAt: &newTime}); err != nil {
 		t.Fatal(err)
 	}
 

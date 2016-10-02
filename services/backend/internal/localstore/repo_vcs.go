@@ -7,7 +7,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
@@ -47,7 +46,17 @@ func (s *repoVCS) Open(ctx context.Context, repo int32) (vcs.Repository, error) 
 	return gitcmd.Open(dir), nil
 }
 
-func (s *repoVCS) Clone(ctx context.Context, repo int32, info *store.CloneInfo) error {
+// CloneInfo is the information needed to clone a repository.
+type CloneInfo struct {
+	// VCS is the type of VCS (e.g., "git")
+	VCS string
+	// CloneURL is the remote URL from which to clone.
+	CloneURL string
+	// Additional options
+	vcs.RemoteOpts
+}
+
+func (s *repoVCS) Clone(ctx context.Context, repo int32, info *CloneInfo) error {
 	if TestMockRepoVCS != nil {
 		return TestMockRepoVCS.Clone(ctx, repo, info)
 	}
@@ -67,7 +76,7 @@ var TestMockRepoVCS *MockRepoVCS
 
 type MockRepoVCS struct {
 	Open  func(ctx context.Context, repo int32) (vcs.Repository, error)
-	Clone func(ctx context.Context, repo int32, info *store.CloneInfo) error
+	Clone func(ctx context.Context, repo int32, info *CloneInfo) error
 }
 
 func (s *MockRepoVCS) MockOpen(t *testing.T, wantRepo int32, mockVCSRepo vcstesting.MockRepository) (called *bool) {

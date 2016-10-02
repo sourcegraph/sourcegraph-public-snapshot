@@ -7,14 +7,13 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 // instrumentedQueue wraps queue to instrument logging and metrics.
 type instrumentedQueue struct{}
 
-// Enqueue implements store.Queue.
-func (q *instrumentedQueue) Enqueue(ctx context.Context, j *store.Job) error {
+// Enqueue implements Queue.
+func (q *instrumentedQueue) Enqueue(ctx context.Context, j *Job) error {
 	err := (&queue{}).Enqueue(ctx, j)
 	if err != nil {
 		queueErrors.WithLabelValues("enqueue").Inc()
@@ -26,8 +25,8 @@ func (q *instrumentedQueue) Enqueue(ctx context.Context, j *store.Job) error {
 	return err
 }
 
-// LockJob implements store.Queue.
-func (q *instrumentedQueue) LockJob(ctx context.Context) (*store.LockedJob, error) {
+// LockJob implements Queue.
+func (q *instrumentedQueue) LockJob(ctx context.Context) (*LockedJob, error) {
 	j, err := (&queue{}).LockJob(ctx)
 	if err != nil {
 		queueErrors.WithLabelValues("lockjob").Inc()
@@ -35,7 +34,7 @@ func (q *instrumentedQueue) LockJob(ctx context.Context) (*store.LockedJob, erro
 	} else if j != nil {
 		queueLockedJobs.WithLabelValues(j.Type).Inc()
 		log15.Debug("queue.LockJob success", "type", j.Type)
-		return store.NewLockedJob(
+		return NewLockedJob(
 			j.Job,
 			func() error {
 				err := j.MarkSuccess()
@@ -64,8 +63,8 @@ func (q *instrumentedQueue) LockJob(ctx context.Context) (*store.LockedJob, erro
 	return j, err
 }
 
-// Stats implements store.Queue.
-func (q *instrumentedQueue) Stats(ctx context.Context) (map[string]store.QueueStats, error) {
+// Stats implements Queue.
+func (q *instrumentedQueue) Stats(ctx context.Context) (map[string]QueueStats, error) {
 	return (&queue{}).Stats(ctx)
 }
 

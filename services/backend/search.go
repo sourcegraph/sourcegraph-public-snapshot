@@ -15,7 +15,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -92,7 +91,7 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 	opentracing.SpanFromContext(ctx).LogEvent("query tokenized")
 
 	start = time.Now()
-	results, err := localstore.Defs.Search(ctx, store.DefSearchOp{
+	results, err := localstore.Defs.Search(ctx, localstore.DefSearchOp{
 		TokQuery: descToks,
 		Opt:      op.Opt,
 	})

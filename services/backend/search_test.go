@@ -9,7 +9,7 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
@@ -76,7 +76,7 @@ func TestSearch(t *testing.T) {
 	}
 
 	calledDefsSearch := false
-	mock.stores.Defs.Search = func(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error) {
+	mock.stores.Defs.Search = func(ctx context.Context, op localstore.DefSearchOp) (*sourcegraph.SearchResultsList, error) {
 		calledDefsSearch = true
 		if !reflect.DeepEqual(expTokQuery, op.TokQuery) {
 			t.Fatalf("expected op.TokQuery %+v, got %+v", expTokQuery, op.TokQuery)

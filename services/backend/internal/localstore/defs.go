@@ -22,7 +22,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
@@ -182,7 +181,14 @@ func init() {
 
 type defs struct{}
 
-func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error) {
+type DefSearchOp struct {
+	// TokQuery is a list of tokens that describe the user's text
+	// query. Order matter, as the last token is given especial weight.
+	TokQuery []string
+	Opt      *sourcegraph.SearchOptions
+}
+
+func (s *defs) Search(ctx context.Context, op DefSearchOp) (*sourcegraph.SearchResultsList, error) {
 	if TestMockDefs != nil {
 		return TestMockDefs.Search(ctx, op)
 	}
@@ -402,8 +408,13 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 	return &sourcegraph.SearchResultsList{DefResults: results}, nil
 }
 
+type RefreshIndexOp struct {
+	Repo     int32
+	CommitID string
+}
+
 // Update syncs data from universe into the defs2 table
-func (s *defs) Update(ctx context.Context, op store.RefreshIndexOp) error {
+func (s *defs) Update(ctx context.Context, op RefreshIndexOp) error {
 	if TestMockDefs != nil {
 		return TestMockDefs.Update(ctx, op)
 	}
@@ -913,6 +924,6 @@ func init() {
 var TestMockDefs *MockDefs
 
 type MockDefs struct {
-	Search func(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error)
-	Update func(ctx context.Context, op store.RefreshIndexOp) error
+	Search func(ctx context.Context, op DefSearchOp) (*sourcegraph.SearchResultsList, error)
+	Update func(ctx context.Context, op RefreshIndexOp) error
 }
