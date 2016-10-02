@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -242,6 +243,13 @@ func (p *Proxy) callServer(ctx context.Context, id serverID, method string, para
 	return c.conn.Call(ctx, method, params, result, addTraceMeta(ctx))
 }
 
+// traceFSRequests is whether to trace the LSP proxy's incoming
+// requests for fs/readFile, fs/readDir, fs/stat, fs/lstat, etc. It is
+// off by default because there are a lot of these and the traces can
+// get quite noisy if it's enabled, but it is configurable because
+// it's useful when you are debugging certain perf issues.
+var traceFSRequests, _ = strconv.ParseBool(os.Getenv("LSP_PROXY_TRACE_FS_REQUESTS"))
+
 func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
 	c.updateLastTime()
 	defer c.updateLastTime()
@@ -250,7 +258,7 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 	// significant operations, not when we're just receiving traces or
 	// performing simple VFS ops.
 	var span opentracing.Span
-	if shouldCreateChildSpan := req.Method != "telemetry/event" && !strings.HasPrefix(req.Method, "fs/"); shouldCreateChildSpan {
+	if shouldCreateChildSpan := req.Method != "telemetry/event" && (traceFSRequests || !strings.HasPrefix(req.Method, "fs/")); shouldCreateChildSpan {
 		op := "LSP server proxy: handle " + req.Method
 
 		// Try to get our parent span context from this JSON-RPC request's metadata.
