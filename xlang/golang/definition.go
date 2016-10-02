@@ -25,7 +25,7 @@ func (h *LangHandler) handleDefinition(ctx context.Context, conn jsonrpc2Conn, r
 	if !ok {
 		obj, ok = pkg.Defs[node]
 	}
-	if ok {
+	if ok && obj != nil {
 		nodes = append(nodes, fakeNode{obj.Pos(), obj.Pos() + token.Pos(len(obj.Name()))})
 	}
 	if len(nodes) == 0 {
