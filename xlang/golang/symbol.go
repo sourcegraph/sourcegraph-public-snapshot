@@ -165,7 +165,7 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2Conn, req *
 			pkg := pkg
 			wg.Add(1)
 			go func() {
-				collectFromPkg(bctx, fs, pkg, rootPath, &results)
+				h.collectFromPkg(bctx, fs, pkg, rootPath, &results)
 				wg.Done()
 			}()
 		}
@@ -175,65 +175,74 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2Conn, req *
 	if len(results.results) > params.Limit && params.Limit > 0 {
 		results.results = results.results[:params.Limit]
 	}
+
 	return results.Results(), nil
 }
 
-func collectFromPkg(bctx *build.Context, fs *token.FileSet, pkg string, rootPath string, results *resultSorter) {
-	buildPkg, err := bctx.Import(pkg, rootPath, 0)
-	if err != nil {
-		if !(strings.Contains(err.Error(), "no buildable Go source files") || strings.Contains(err.Error(), "found packages") || strings.HasPrefix(pkg, "github.com/golang/go/test/")) {
-			log.Printf("skipping possible package %s: %s", pkg, err)
+func (h *LangHandler) collectFromPkg(bctx *build.Context, fs *token.FileSet, pkg string, rootPath string, results *resultSorter) {
+	pkgSyms := h.getPkgSyms(pkg)
+	if pkgSyms == nil {
+		buildPkg, err := bctx.Import(pkg, rootPath, 0)
+		if err != nil {
+			if !(strings.Contains(err.Error(), "no buildable Go source files") || strings.Contains(err.Error(), "found packages") || strings.HasPrefix(pkg, "github.com/golang/go/test/")) {
+				log.Printf("skipping possible package %s: %s", pkg, err)
+			}
+			return
 		}
-		return
-	}
 
-	astPkgs, err := parseDir(fs, bctx, buildPkg.Dir, nil, 0)
-	if err != nil {
-		log.Printf("failed to parse directory %s: %s", buildPkg.Dir, err)
-		return
-	}
-	astPkg := astPkgs[buildPkg.Name]
-	if astPkg == nil {
-		if !strings.HasPrefix(buildPkg.ImportPath, "github.com/golang/go/misc/cgo/") {
-			log.Printf("didn't find build package name %q in parsed AST packages %v", buildPkg.ImportPath, astPkgs)
+		astPkgs, err := parseDir(fs, bctx, buildPkg.Dir, nil, 0)
+		if err != nil {
+			log.Printf("failed to parse directory %s: %s", buildPkg.Dir, err)
+			return
 		}
-		return
-	}
-	docPkg := doc.New(astPkg, buildPkg.ImportPath, doc.AllDecls)
+		astPkg := astPkgs[buildPkg.Name]
+		if astPkg == nil {
+			if !strings.HasPrefix(buildPkg.ImportPath, "github.com/golang/go/misc/cgo/") {
+				log.Printf("didn't find build package name %q in parsed AST packages %v", buildPkg.ImportPath, astPkgs)
+			}
+			return
+		}
+		docPkg := doc.New(astPkg, buildPkg.ImportPath, doc.AllDecls)
 
-	// Emit decls
-	for _, t := range docPkg.Types {
-		results.Collect(toSym(t.Name, buildPkg.ImportPath, lsp.SKClass, fs, t.Decl.TokPos))
+		// Emit decls
+		for _, t := range docPkg.Types {
+			pkgSyms = append(pkgSyms, toSym(t.Name, buildPkg.ImportPath, lsp.SKClass, fs, t.Decl.TokPos))
 
-		for _, v := range t.Funcs {
-			results.Collect(toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
-		}
-		for _, v := range t.Methods {
-			results.Collect(toSym(v.Name, buildPkg.ImportPath+" "+t.Name, lsp.SKMethod, fs, v.Decl.Name.NamePos))
-		}
-		for _, v := range t.Consts {
-			for _, name := range v.Names {
-				results.Collect(toSym(name, buildPkg.ImportPath, lsp.SKConstant, fs, v.Decl.TokPos))
+			for _, v := range t.Funcs {
+				pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
+			}
+			for _, v := range t.Methods {
+				pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg.ImportPath+" "+t.Name, lsp.SKMethod, fs, v.Decl.Name.NamePos))
+			}
+			for _, v := range t.Consts {
+				for _, name := range v.Names {
+					pkgSyms = append(pkgSyms, toSym(name, buildPkg.ImportPath, lsp.SKConstant, fs, v.Decl.TokPos))
+				}
+			}
+			for _, v := range t.Vars {
+				for _, name := range v.Names {
+					pkgSyms = append(pkgSyms, toSym(name, buildPkg.ImportPath, lsp.SKField, fs, v.Decl.TokPos))
+				}
 			}
 		}
-		for _, v := range t.Vars {
+		for _, v := range docPkg.Consts {
 			for _, name := range v.Names {
-				results.Collect(toSym(name, buildPkg.ImportPath, lsp.SKField, fs, v.Decl.TokPos))
+				pkgSyms = append(pkgSyms, toSym(name, buildPkg.ImportPath, lsp.SKConstant, fs, v.Decl.TokPos))
 			}
 		}
-	}
-	for _, v := range docPkg.Consts {
-		for _, name := range v.Names {
-			results.Collect(toSym(name, buildPkg.ImportPath, lsp.SKConstant, fs, v.Decl.TokPos))
+		for _, v := range docPkg.Vars {
+			for _, name := range v.Names {
+				pkgSyms = append(pkgSyms, toSym(name, buildPkg.ImportPath, lsp.SKVariable, fs, v.Decl.TokPos))
+			}
 		}
-	}
-	for _, v := range docPkg.Vars {
-		for _, name := range v.Names {
-			results.Collect(toSym(name, buildPkg.ImportPath, lsp.SKVariable, fs, v.Decl.TokPos))
+		for _, v := range docPkg.Funcs {
+			pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
 		}
+		h.setPkgSyms(pkg, pkgSyms)
 	}
-	for _, v := range docPkg.Funcs {
-		results.Collect(toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
+
+	for _, sym := range pkgSyms {
+		results.Collect(sym)
 	}
 }
 
