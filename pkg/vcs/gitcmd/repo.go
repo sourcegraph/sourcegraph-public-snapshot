@@ -55,7 +55,7 @@ func checkSpecArgSafety(spec string) error {
 }
 
 func (r *Repository) ResolveRevision(ctx context.Context, spec string) (vcs.CommitID, error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "Git: ResolveRevision")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ResolveRevision")
 	span.SetTag("Spec", spec)
 	defer span.Finish()
 
@@ -104,7 +104,7 @@ func (f branchFilter) add(list []string) {
 }
 
 func (r *Repository) Branches(ctx context.Context, opt vcs.BranchesOptions) ([]*vcs.Branch, error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "Git: Branches")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Branches")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
@@ -204,7 +204,7 @@ func (r *Repository) branchesBehindAhead(ctx context.Context, branch, base strin
 }
 
 func (r *Repository) Tags(ctx context.Context) ([]*vcs.Tag, error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "Git: Tags")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Tags")
 	defer span.Finish()
 
 	r.editLock.RLock()
@@ -281,7 +281,7 @@ func (r *Repository) getCommit(ctx context.Context, id vcs.CommitID) (*vcs.Commi
 }
 
 func (r *Repository) GetCommit(ctx context.Context, id vcs.CommitID) (*vcs.Commit, error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "Git: GetCommit")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: GetCommit")
 	span.SetTag("Commit", id)
 	defer span.Finish()
 
@@ -292,7 +292,7 @@ func (r *Repository) GetCommit(ctx context.Context, id vcs.CommitID) (*vcs.Commi
 }
 
 func (r *Repository) Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "Git: Commits")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Commits")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
@@ -455,7 +455,7 @@ func (r *Repository) Diff(ctx context.Context, base, head vcs.CommitID, opt *vcs
 		return diff.(*vcs.Diff), nil
 	}
 
-	span, _ := opentracing.StartSpanFromContext(ctx, "Git: Diff")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Diff")
 	span.SetTag("Base", base)
 	span.SetTag("Head", head)
 	span.SetTag("Opt", opt)
@@ -508,7 +508,7 @@ func (r *Repository) Diff(ctx context.Context, base, head vcs.CommitID, opt *vcs
 // UpdateEverything updates all branches, tags, etc., to match the
 // default remote repository.
 func (r *Repository) UpdateEverything(ctx context.Context, opt vcs.RemoteOpts) (*vcs.UpdateResult, error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "Git: UpdateEverything")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: UpdateEverything")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
@@ -532,7 +532,7 @@ func (r *Repository) UpdateEverything(ctx context.Context, opt vcs.RemoteOpts) (
 var blameCache = cache.Sync(lru.New(500))
 
 func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "Git: BlameFile")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: BlameFile")
 	span.SetTag(path, opt)
 	defer span.Finish()
 
@@ -672,7 +672,7 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameO
 }
 
 func (r *Repository) MergeBase(ctx context.Context, a, b vcs.CommitID) (vcs.CommitID, error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "Git: MergeBase")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: MergeBase")
 	span.SetTag("A", a)
 	span.SetTag("B", b)
 	defer span.Finish()
@@ -690,7 +690,7 @@ func (r *Repository) MergeBase(ctx context.Context, a, b vcs.CommitID) (vcs.Comm
 }
 
 func (r *Repository) Search(ctx context.Context, at vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "Git: Search")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Search")
 	span.SetTag("Commit", at)
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -699,7 +699,7 @@ func (r *Repository) Search(ctx context.Context, at vcs.CommitID, opt vcs.Search
 }
 
 func (r *Repository) Committers(ctx context.Context, opt vcs.CommittersOptions) ([]*vcs.Committer, error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "Git: Committers")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Committers")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
@@ -742,7 +742,7 @@ func (r *Repository) Committers(ctx context.Context, opt vcs.CommittersOptions) 
 }
 
 func (r *Repository) ReadFile(ctx context.Context, commit vcs.CommitID, name string) ([]byte, error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "Git: ReadFile")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ReadFile")
 	span.SetTag("Name", name)
 	defer span.Finish()
 
@@ -795,7 +795,7 @@ func (r *Repository) readFileBytes(ctx context.Context, commit vcs.CommitID, nam
 }
 
 func (r *Repository) Lstat(ctx context.Context, commit vcs.CommitID, path string) (os.FileInfo, error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "Git: Lstat")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Lstat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
 	defer span.Finish()
@@ -826,7 +826,7 @@ func (r *Repository) Lstat(ctx context.Context, commit vcs.CommitID, path string
 }
 
 func (r *Repository) Stat(ctx context.Context, commit vcs.CommitID, path string) (os.FileInfo, error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "Git: Stat")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Stat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
 	defer span.Finish()
@@ -863,7 +863,7 @@ func (r *Repository) Stat(ctx context.Context, commit vcs.CommitID, path string)
 }
 
 func (r *Repository) ReadDir(ctx context.Context, commit vcs.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "Git: ReadDir")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ReadDir")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
 	span.SetTag("Recurse", recurse)
