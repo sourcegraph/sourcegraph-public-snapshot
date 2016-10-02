@@ -206,7 +206,6 @@ export default class BlobAnnotator extends Component {
 			const fext = utils.getPathExtension(state.path);
 
 			if (utils.supportedExtensions.indexOf(fext) < 0) {
-				console.error(`Sourcegraph: .${fext} not supported :( reach out to us for feature requests at matt@sourcegraph.com`);
 				return; // Don't annotate unsupported languages
 			}
 
