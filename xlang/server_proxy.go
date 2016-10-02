@@ -308,6 +308,9 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if err := json.Unmarshal(*req.Params, &path); err != nil {
 			return nil, err
 		}
+		if span != nil {
+			span.SetTag("path", path)
+		}
 		return c.handleFS(ctx, req.Method, path)
 
 	case "textDocument/publishDiagnostics":
