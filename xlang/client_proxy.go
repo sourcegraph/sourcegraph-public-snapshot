@@ -379,7 +379,7 @@ func (c *clientProxyConn) callServer(ctx context.Context, method string, params,
 		return newURI
 	})
 	if walkErr != nil {
-		return err
+		return walkErr
 	}
 
 	id := serverID{contextID: c.context, pathPrefix: ""} // which kind of lang/build server to communicate with
@@ -404,7 +404,7 @@ func (c *clientProxyConn) callServer(ctx context.Context, method string, params,
 		return newURI
 	})
 	if walkErr != nil {
-		return err
+		return walkErr
 	}
 	result2, err = json.Marshal(resultObj)
 	if err != nil {
