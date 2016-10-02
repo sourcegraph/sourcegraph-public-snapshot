@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/build"
 	"net/http"
+	"net/url"
 	"path"
 	"runtime"
 	"sort"
@@ -14,7 +15,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 // fetchTransitiveDepsOfFile fetches the transitive dependencies of
@@ -98,9 +99,6 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 		if err != nil {
 			return nil, err
 		}
-		if d.vcs != "git" {
-			return nil, fmt.Errorf("Go dependency at import path %q has unsupported VCS %q (clone URL is %q)", path, d.vcs, d.cloneURL)
-		}
 
 		// If this package resolves to the same repo, then don't fetch
 		// it; it is already on disk. If we fetch it, we might end up
@@ -135,12 +133,20 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 }
 
 func (h *BuildHandler) fetchDep(ctx context.Context, d *directory) error {
+	if d.vcs != "git" {
+		return fmt.Errorf("dependency at import path %q has unsupported VCS %q (clone URL is %q)", d.importPath, d.vcs, d.cloneURL)
+	}
+
 	rev := d.rev
 	if rev == "" {
 		rev = "HEAD"
 	}
 
-	fs, err := xlang.CreateGitVFS(fmt.Sprintf("%s?%s#%s", d.cloneURL, rev, ""))
+	cloneURL, err := url.Parse(d.cloneURL)
+	if err != nil {
+		return err
+	}
+	fs, err := vfsutil.NewRemoteRepoVFS(ctx, cloneURL, rev)
 	if err != nil {
 		return err
 	}

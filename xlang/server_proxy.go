@@ -24,7 +24,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 // serverID identifies a lang/build server by the minimal state
@@ -185,7 +185,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		// Save connection.
 		c = p.newServerProxyConn(context.Background(), rwc)
 		c.id = id
-		c.rootFS, err = makeRootFileSystem(&id.rootPath)
+		c.rootFS, err = vfsutil.NewRemoteRepoVFS(ctx, id.rootPath.CloneURL(), id.rootPath.Rev())
 		if err != nil {
 			return nil, err
 		}
@@ -199,14 +199,6 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 	}
 
 	return c, nil
-}
-
-func makeRootFileSystem(root *uri.URI) (ctxvfs.FileSystem, error) {
-	create, ok := VFSCreatorsByScheme[root.Scheme]
-	if !ok {
-		return nil, fmt.Errorf("no VFS creator for scheme %q", root.Scheme)
-	}
-	return create(root)
 }
 
 func (c *serverProxyConn) lspInitialize(ctx context.Context) error {

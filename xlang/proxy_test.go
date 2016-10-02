@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/url"
 	"os"
 	"reflect"
 	"runtime"
@@ -27,6 +28,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 func TestProxy(t *testing.T) {
@@ -38,7 +40,7 @@ func TestProxy(t *testing.T) {
 		wantDefinition map[string]string
 		wantReferences map[string][]string
 		wantSymbols    map[string][]string
-		otherVFS       map[string]map[string]string // URL scheme -> map VFS
+		depFS          map[string]map[string]string // dep clone URL -> map VFS
 	}{
 		"go basic": {
 			rootPath: "git://test/pkg?master",
@@ -166,7 +168,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			wantDefinition: map[string]string{
 				"a.go:1:40": "git://github.com/golang/go?" + runtime.Version() + "#src/fmt/print.go:1:19",
 			},
-			otherVFS: map[string]map[string]string{
+			depFS: map[string]map[string]string{
 				"https://github.com/golang/go?go1.7.1": {
 					"src/fmt/print.go": "package fmt; func Println(a ...interface{}) (n int, err error) { return }",
 				},
@@ -225,7 +227,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			wantDefinition: map[string]string{
 				"a.go:1:51": "git://github.com/d/dep?HEAD#d.go:1:19",
 			},
-			otherVFS: map[string]map[string]string{
+			depFS: map[string]map[string]string{
 				"https://github.com/d/dep?HEAD": {
 					"d.go": "package dep; func D() {}",
 				},
@@ -240,7 +242,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			wantDefinition: map[string]string{
 				"a.go:1:55": "git://github.com/d/dep?HEAD#vendor/vendp/vp.go:1:32",
 			},
-			otherVFS: map[string]map[string]string{
+			depFS: map[string]map[string]string{
 				"https://github.com/d/dep?HEAD": map[string]string{
 					"d.go":               `package dep; import "vendp"; func D() (v vendp.V) { return }`,
 					"vendor/vendp/vp.go": "package vendp; type V struct { F int }",
@@ -259,7 +261,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			wantDefinition: map[string]string{
 				"a.go:1:57": "git://github.com/d/dep?HEAD#subp/d.go:1:20",
 			},
-			otherVFS: map[string]map[string]string{
+			depFS: map[string]map[string]string{
 				"https://github.com/d/dep?HEAD": {
 					"subp/d.go": "package subp; func D() {}",
 				},
@@ -279,7 +281,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:53": "git://github.com/d/dep1?HEAD#d1.go:1:48", // func D1
 				"a.go:1:58": "git://github.com/d/dep2?HEAD#d2.go:1:32", // field D2
 			},
-			otherVFS: map[string]map[string]string{
+			depFS: map[string]map[string]string{
 				"https://github.com/d/dep1?HEAD": {
 					"d1.go": `package dep1; import "github.com/d/dep2"; func D1() dep2.D2 { return dep2.D2{} }`,
 				},
@@ -300,7 +302,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			wantDefinition: map[string]string{
 				"a.go:1:53": "git://github.com/golang/text?HEAD#dummy.go:1:20",
 			},
-			otherVFS: map[string]map[string]string{
+			depFS: map[string]map[string]string{
 				// We override the Git cloning of this repo to use
 				// in-memory dummy data, but we still need to hit the
 				// network to resolve the Go custom import path
@@ -329,16 +331,23 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 	}
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
-			orig := xlang.VFSCreatorsByScheme["git"]
-			xlang.VFSCreatorsByScheme["git"] = func(root *uri.URI) (ctxvfs.FileSystem, error) {
-				if fs, ok := test.otherVFS[root.String()]; ok {
-					return mapFS(fs), nil
+			{
+				orig := vfsutil.NewRemoteRepoVFS
+				vfsutil.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+					id := cloneURL.String() + "?" + rev
+					switch {
+					case test.rootPath == id || strings.HasPrefix(test.rootPath, id+"#"):
+						return mapFS(test.fs), nil
+					case test.depFS[id] != nil:
+						return mapFS(test.depFS[id]), nil
+					default:
+						return nil, fmt.Errorf("no file system found for dep at %s rev %q", cloneURL, rev)
+					}
 				}
-				return mapFS(test.fs), nil
+				defer func() {
+					vfsutil.NewRemoteRepoVFS = orig
+				}()
 			}
-			defer func() {
-				xlang.VFSCreatorsByScheme["git"] = orig
-			}()
 
 			ctx := context.Background()
 			proxy := xlang.NewProxy()
@@ -671,11 +680,12 @@ func (v *locations) UnmarshalJSON(data []byte) error {
 func TestProxy_connections(t *testing.T) {
 	ctx := context.Background()
 
-	xlang.VFSCreatorsByScheme["test"] = func(root *uri.URI) (ctxvfs.FileSystem, error) {
+	orig := vfsutil.NewRemoteRepoVFS
+	vfsutil.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 		return ctxvfs.Map(map[string][]byte{"f": []byte("x")}), nil
 	}
 	defer func() {
-		delete(xlang.VFSCreatorsByScheme, "test")
+		vfsutil.NewRemoteRepoVFS = orig
 	}()
 
 	// Store data sent/received for checking.
@@ -906,11 +916,12 @@ func testRequestsEqual(as, bs []testRequest) bool {
 func TestProxy_propagation(t *testing.T) {
 	ctx := context.Background()
 
-	xlang.VFSCreatorsByScheme["test"] = func(root *uri.URI) (ctxvfs.FileSystem, error) {
+	orig := vfsutil.NewRemoteRepoVFS
+	vfsutil.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 		return ctxvfs.Map(map[string][]byte{"f": []byte("x")}), nil
 	}
 	defer func() {
-		delete(xlang.VFSCreatorsByScheme, "test")
+		vfsutil.NewRemoteRepoVFS = orig
 	}()
 
 	proxy := xlang.NewProxy()
