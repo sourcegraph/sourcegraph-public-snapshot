@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"reflect"
 	"strings"
 	"testing"
@@ -67,7 +68,7 @@ func TestDefsService_ListAuthors(t *testing.T) {
 	var calledVCSRepoBlameFile bool
 	mock.servers.Repos.MockGet_Return(t, &sourcegraph.Repo{ID: 1, URI: "r"})
 	mock.stores.RepoVCS.MockOpen(t, 1, vcstesting.MockRepository{
-		BlameFile_: func(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
+		BlameFile_: func(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
 			calledVCSRepoBlameFile = true
 			return []*vcs.Hunk{
 				{StartByte: 5, EndByte: 16, CommitID: "c", Author: vcs.Signature{Email: "u@u.com", Date: t1}},

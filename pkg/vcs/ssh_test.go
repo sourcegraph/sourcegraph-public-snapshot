@@ -61,9 +61,9 @@ func TestRepository_Clone_ssh(t *testing.T) {
 				t.Fatalf("%s: Clone: %s", label, err)
 			}
 
-			r := gitcmd.Open(context.Background(), cloneDir)
+			r := gitcmd.Open(cloneDir)
 
-			tags, err := r.Tags()
+			tags, err := r.Tags(ctx)
 			if err != nil {
 				t.Errorf("%s: Tags: %s", label, err)
 			}
@@ -73,7 +73,7 @@ func TestRepository_Clone_ssh(t *testing.T) {
 				t.Errorf("%s: got tags %s, want %s", label, asJSON(tags), asJSON(wantTags))
 			}
 
-			branches, err := r.Branches(vcs.BranchesOptions{})
+			branches, err := r.Branches(ctx, vcs.BranchesOptions{})
 			if err != nil {
 				t.Errorf("%s: Branches: %s", label, err)
 			}
@@ -133,10 +133,10 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 				return
 			}
 
-			r := gitcmd.Open(context.Background(), test.headDir)
+			r := gitcmd.Open(test.headDir)
 
 			// r should not have any tags yet.
-			tags, err := r.Tags()
+			tags, err := r.Tags(ctx)
 			if err != nil {
 				t.Errorf("%s: Tags: %s", label, err)
 				return
@@ -160,7 +160,7 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 			makeGitRepositoryBare(t, test.baseDir)
 
 			// update the mirror.
-			result, err := r.UpdateEverything(remoteOpts)
+			result, err := r.UpdateEverything(ctx, remoteOpts)
 			if err != nil {
 				t.Errorf("%s: UpdateEverything: %s", label, err)
 				return
@@ -171,7 +171,7 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 
 			// r should now have the tag t0 we added to the base repo,
 			// since we just updated r.
-			tags, err = r.Tags()
+			tags, err = r.Tags(ctx)
 			if err != nil {
 				t.Errorf("%s: Tags: %s", label, err)
 				return
@@ -182,7 +182,7 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 
 			// r should now have the branch b0 we added to the base
 			// repo, since we just updated r.
-			branches, err := r.Branches(vcs.BranchesOptions{})
+			branches, err := r.Branches(ctx, vcs.BranchesOptions{})
 			if err != nil {
 				t.Errorf("%s: Branches: %s", label, err)
 				return

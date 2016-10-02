@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
@@ -16,8 +17,8 @@ import (
 // sub-folders with a single sub-folder inside. It will only inspect up to
 // recurseSingleSubfolderLimit sub-folders. first should always be set to
 // true, other values are used internally.
-func readDir(r vcs.Repository, commit vcs.CommitID, base string, recurseSingleSubfolderLimit int, first bool) ([]*sourcegraph.BasicTreeEntry, error) {
-	entries, err := r.ReadDir(commit, base, false)
+func readDir(ctx context.Context, r vcs.Repository, commit vcs.CommitID, base string, recurseSingleSubfolderLimit int, first bool) ([]*sourcegraph.BasicTreeEntry, error) {
+	entries, err := r.ReadDir(ctx, commit, base, false)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +42,7 @@ func readDir(r vcs.Repository, commit vcs.CommitID, base string, recurseSingleSu
 			go func() {
 				defer wg.Done()
 				defer func() { <-sem }()
-				ee, err := readDir(r, commit, path.Join(base, name), recurseSingleSubfolderLimit, false)
+				ee, err := readDir(ctx, r, commit, path.Join(base, name), recurseSingleSubfolderLimit, false)
 				if err != nil {
 					recurseErr = err
 					return

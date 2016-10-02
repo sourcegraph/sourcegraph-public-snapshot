@@ -1,6 +1,10 @@
 package backend
 
-import "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+import (
+	"context"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+)
 
 // blameFileByteRange calls r.BlameFile and filters the returned hunks
 // to only those that contain bytes in [startByte, endByte). It is
@@ -14,8 +18,8 @@ import "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 // byte ranges do not extend outside of [startByte, endByte). However,
 // their start and end lines are not clipped and reflect the original
 // hunk's start and end lines.
-func blameFileByteRange(r vcs.Repository, path string, opt *vcs.BlameOptions, startByte, endByte int) ([]*vcs.Hunk, error) {
-	hunks, err := r.BlameFile(path, opt)
+func blameFileByteRange(ctx context.Context, r vcs.Repository, path string, opt *vcs.BlameOptions, startByte, endByte int) ([]*vcs.Hunk, error) {
+	hunks, err := r.BlameFile(ctx, path, opt)
 	if err != nil {
 		return nil, err
 	}

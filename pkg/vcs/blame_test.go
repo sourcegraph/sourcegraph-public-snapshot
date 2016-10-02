@@ -47,14 +47,14 @@ func TestRepository_BlameFile(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		newestCommitID, err := test.repo.ResolveRevision(string(test.opt.NewestCommit))
+		newestCommitID, err := test.repo.ResolveRevision(ctx, string(test.opt.NewestCommit))
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on base: %s", label, test.opt.NewestCommit, err)
 			continue
 		}
 
 		test.opt.NewestCommit = newestCommitID
-		hunks, err := test.repo.BlameFile(test.path, test.opt)
+		hunks, err := test.repo.BlameFile(ctx, test.path, test.opt)
 		if err != nil {
 			t.Errorf("%s: BlameFile(%s, %+v): %s", label, test.path, test.opt, err)
 			continue

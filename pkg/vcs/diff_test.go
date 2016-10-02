@@ -46,19 +46,19 @@ func TestRepository_Diff(t *testing.T) {
 	// TODO(sqs): implement diff for hg native
 
 	for label, test := range tests {
-		baseCommitID, err := test.repo.ResolveRevision(test.base)
+		baseCommitID, err := test.repo.ResolveRevision(ctx, test.base)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on base: %s", label, test.base, err)
 			continue
 		}
 
-		headCommitID, err := test.repo.ResolveRevision(test.head)
+		headCommitID, err := test.repo.ResolveRevision(ctx, test.head)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on head: %s", label, test.head, err)
 			continue
 		}
 
-		diff, err := test.repo.Diff(baseCommitID, headCommitID, test.opt)
+		diff, err := test.repo.Diff(ctx, baseCommitID, headCommitID, test.opt)
 		if err != nil {
 			t.Errorf("%s: Diff(%s, %s, %v): %s", label, baseCommitID, headCommitID, test.opt, err)
 			continue
@@ -76,12 +76,12 @@ func TestRepository_Diff(t *testing.T) {
 			t.Errorf("%s: diff != wantDiff\n\ndiff ==========\n%s\n\nwantDiff ==========\n%s", label, asJSON(diff), asJSON(test.wantDiff))
 		}
 
-		if _, err := test.repo.Diff(nonexistentCommitID, headCommitID, test.opt); err != vcs.ErrRevisionNotFound {
+		if _, err := test.repo.Diff(ctx, nonexistentCommitID, headCommitID, test.opt); err != vcs.ErrRevisionNotFound {
 			t.Errorf("%s: Diff with bad base commit ID: want ErrRevisionNotFound, got %v", label, err)
 			continue
 		}
 
-		if _, err := test.repo.Diff(baseCommitID, nonexistentCommitID, test.opt); err != vcs.ErrRevisionNotFound {
+		if _, err := test.repo.Diff(ctx, baseCommitID, nonexistentCommitID, test.opt); err != vcs.ErrRevisionNotFound {
 			t.Errorf("%s: Diff with bad head commit ID: want ErrRevisionNotFound, got %v", label, err)
 			continue
 		}
@@ -125,19 +125,19 @@ func TestRepository_Diff_rename(t *testing.T) {
 	// TODO(sqs): implement diff for hg native
 
 	for label, test := range tests {
-		baseCommitID, err := test.repo.ResolveRevision(test.base)
+		baseCommitID, err := test.repo.ResolveRevision(ctx, test.base)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on base: %s", label, test.base, err)
 			continue
 		}
 
-		headCommitID, err := test.repo.ResolveRevision(test.head)
+		headCommitID, err := test.repo.ResolveRevision(ctx, test.head)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on head: %s", label, test.head, err)
 			continue
 		}
 
-		diff, err := test.repo.Diff(baseCommitID, headCommitID, test.opt)
+		diff, err := test.repo.Diff(ctx, baseCommitID, headCommitID, test.opt)
 		if err != nil {
 			t.Errorf("%s: Diff(%s, %s, %v): %s", label, baseCommitID, headCommitID, test.opt, err)
 			continue
@@ -155,12 +155,12 @@ func TestRepository_Diff_rename(t *testing.T) {
 			t.Errorf("%s: diff != wantDiff\n\ndiff ==========\n%s\n\nwantDiff ==========\n%s", label, asJSON(diff), asJSON(test.wantDiff))
 		}
 
-		if _, err := test.repo.Diff(nonexistentCommitID, headCommitID, test.opt); err != vcs.ErrRevisionNotFound {
+		if _, err := test.repo.Diff(ctx, nonexistentCommitID, headCommitID, test.opt); err != vcs.ErrRevisionNotFound {
 			t.Errorf("%s: Diff with bad base commit ID: want ErrRevisionNotFound, got %v", label, err)
 			continue
 		}
 
-		if _, err := test.repo.Diff(baseCommitID, nonexistentCommitID, test.opt); err != vcs.ErrRevisionNotFound {
+		if _, err := test.repo.Diff(ctx, baseCommitID, nonexistentCommitID, test.opt); err != vcs.ErrRevisionNotFound {
 			t.Errorf("%s: Diff with bad head commit ID: want ErrRevisionNotFound, got %v", label, err)
 			continue
 		}

@@ -1,7 +1,6 @@
 package vcs_test
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -24,7 +23,7 @@ func BenchmarkFileSystem_GitCmd(b *testing.B) {
 	}()
 
 	cmds, files := makeGitCommandsAndFiles(benchFileSystemCommits)
-	r := gitcmd.Open(context.Background(), initGitRepository(b, cmds...))
+	r := gitcmd.Open(initGitRepository(b, cmds...))
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -40,7 +39,7 @@ func BenchmarkGetCommit_GitCmd(b *testing.B) {
 
 	cmds, _ := makeGitCommandsAndFiles(benchGetCommitCommits)
 	openRepo := func() vcs.Repository {
-		return gitcmd.Open(context.Background(), initGitRepository(b, cmds...))
+		return gitcmd.Open(initGitRepository(b, cmds...))
 	}
 
 	b.ResetTimer()
@@ -57,7 +56,7 @@ func BenchmarkCommits_GitCmd(b *testing.B) {
 
 	cmds, _ := makeGitCommandsAndFiles(benchCommitsCommits)
 	openRepo := func() vcs.Repository {
-		return gitcmd.Open(context.Background(), initGitRepository(b, cmds...))
+		return gitcmd.Open(initGitRepository(b, cmds...))
 	}
 
 	b.ResetTimer()
@@ -96,7 +95,7 @@ func benchFilename(i int) string {
 }
 
 func benchFileSystem(b *testing.B, r vcs.Repository, tag string, files []string) {
-	commitID, err := r.ResolveRevision(tag)
+	commitID, err := r.ResolveRevision(ctx, tag)
 	if err != nil {
 		b.Errorf("ResolveRevision: %s", err)
 		return
@@ -109,7 +108,7 @@ func benchFileSystem(b *testing.B, r vcs.Repository, tag string, files []string)
 
 		if dir != "." {
 			// dir should exist and be a dir.
-			dir1Info, err := fs.Stat(dir)
+			dir1Info, err := fs.Stat(ctx, dir)
 			if err != nil {
 				b.Errorf("fs.Stat(%q): %s", dir, err)
 				return
@@ -119,7 +118,7 @@ func benchFileSystem(b *testing.B, r vcs.Repository, tag string, files []string)
 			}
 
 			// dir should contain an entry file1.
-			dirEntries, err := fs.ReadDir(dir)
+			dirEntries, err := fs.ReadDir(ctx, dir)
 			if err != nil {
 				b.Errorf("fs.ReadDir(dir): %s", err)
 				return
@@ -131,7 +130,7 @@ func benchFileSystem(b *testing.B, r vcs.Repository, tag string, files []string)
 		}
 
 		// file should exist, and be a file.
-		file, err := fs.Open(f)
+		file, err := fs.Open(ctx, f)
 		if err != nil {
 			b.Errorf("fs.Open(%q): %s", f, err)
 			return
@@ -143,7 +142,7 @@ func benchFileSystem(b *testing.B, r vcs.Repository, tag string, files []string)
 		}
 		file.Close()
 
-		fi, err := fs.Stat(f)
+		fi, err := fs.Stat(ctx, f)
 		if err != nil {
 			b.Errorf("fs.Stat(%q): %s", f, err)
 			return
@@ -157,13 +156,13 @@ func benchFileSystem(b *testing.B, r vcs.Repository, tag string, files []string)
 func benchGetCommit(b *testing.B, openRepo func() vcs.Repository, tag string) {
 	r := openRepo()
 
-	commitID, err := r.ResolveRevision(tag)
+	commitID, err := r.ResolveRevision(ctx, tag)
 	if err != nil {
 		b.Errorf("ResolveRevision: %s", err)
 		return
 	}
 
-	_, err = r.GetCommit(commitID)
+	_, err = r.GetCommit(ctx, commitID)
 	if err != nil {
 		b.Errorf("GetCommit: %s", err)
 		return
@@ -173,13 +172,13 @@ func benchGetCommit(b *testing.B, openRepo func() vcs.Repository, tag string) {
 func benchCommits(b *testing.B, openRepo func() vcs.Repository, tag string) {
 	r := openRepo()
 
-	commitID, err := r.ResolveRevision(tag)
+	commitID, err := r.ResolveRevision(ctx, tag)
 	if err != nil {
 		b.Errorf("ResolveRevision: %s", err)
 		return
 	}
 
-	_, _, err = r.Commits(vcs.CommitsOptions{Head: commitID})
+	_, _, err = r.Commits(ctx, vcs.CommitsOptions{Head: commitID})
 	if err != nil {
 		b.Errorf("Commits: %s", err)
 		return

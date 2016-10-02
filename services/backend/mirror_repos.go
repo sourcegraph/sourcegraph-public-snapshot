@@ -153,13 +153,13 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 	// behavior.
 
 	// Grab the current revision of every branch.
-	branches, err := vcsRepo.Branches(vcs.BranchesOptions{})
+	branches, err := vcsRepo.Branches(ctx, vcs.BranchesOptions{})
 	if err != nil {
 		return err
 	}
 
 	// Update everything.
-	updateResult, err := vcsRepo.UpdateEverything(remoteOpts)
+	updateResult, err := vcsRepo.UpdateEverything(ctx, remoteOpts)
 	if err != nil {
 		return err
 	}
@@ -191,7 +191,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 			}
 
 			// Determine the new branch head revision.
-			head, err := vcsRepo.ResolveRevision("refs/heads/" + change.Branch)
+			head, err := vcsRepo.ResolveRevision(ctx, "refs/heads/"+change.Branch)
 			if err != nil {
 				return err
 			}
@@ -220,7 +220,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 		}
 
 		// Determine new branch head revision.
-		head, err := vcsRepo.ResolveRevision("refs/heads/" + oldBranch.Name)
+		head, err := vcsRepo.ResolveRevision(ctx, "refs/heads/"+oldBranch.Name)
 		if err == vcs.ErrRevisionNotFound {
 			// Branch was deleted.
 			// TODO: what about GitPayload.ContentEncoding field?

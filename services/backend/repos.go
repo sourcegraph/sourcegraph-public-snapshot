@@ -20,6 +20,7 @@ import (
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -560,7 +561,7 @@ func (s *repos) getInventoryUncached(ctx context.Context, repoRev *sourcegraph.R
 	}
 
 	fs := vcs.FileSystem(vcsrepo, vcs.CommitID(repoRev.CommitID))
-	inv, err := inventory.Scan(ctx, vfsutil.Walkable(fs, filepath.Join))
+	inv, err := inventory.Scan(ctx, vfsutil.Walkable(ctxvfs.StripContext(fs), filepath.Join))
 	if err != nil {
 		return nil, err
 	}

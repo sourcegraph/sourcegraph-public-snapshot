@@ -100,7 +100,7 @@ func testGitRepositorySearch(t *testing.T, repoInitCmds []string, searchOpt vcs.
 	}
 
 	for label, test := range tests {
-		res, err := test.repo.Search(test.spec, test.opt)
+		res, err := test.repo.Search(ctx, test.spec, test.opt)
 		if err != nil {
 			t.Errorf("%s: Search: %s", label, err)
 			continue

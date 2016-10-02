@@ -17,10 +17,10 @@ func TestRefreshVCS(t *testing.T) {
 	var updatedEverything bool
 	mock.stores.Repos.MockGet(t, 1)
 	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
-		Branches_: func(_ vcs.BranchesOptions) ([]*vcs.Branch, error) {
+		Branches_: func(ctx context.Context, _ vcs.BranchesOptions) ([]*vcs.Branch, error) {
 			return []*vcs.Branch{}, nil
 		},
-		UpdateEverything_: func(_ vcs.RemoteOpts) (*vcs.UpdateResult, error) {
+		UpdateEverything_: func(ctx context.Context, _ vcs.RemoteOpts) (*vcs.UpdateResult, error) {
 			updatedEverything = true
 			return &vcs.UpdateResult{Changes: []vcs.Change{}}, nil
 		},
@@ -45,7 +45,7 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 	mock.stores.Repos.MockGet(t, 1)
 	mock.servers.Repos.MockResolveRev_NoCheck(t, "deadbeef")
 	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
-		Branches_: func(_ vcs.BranchesOptions) ([]*vcs.Branch, error) {
+		Branches_: func(ctx context.Context, _ vcs.BranchesOptions) ([]*vcs.Branch, error) {
 			return nil, vcs.RepoNotExistError{}
 		},
 	})
@@ -75,7 +75,7 @@ func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 	mock.stores.Repos.MockGet(t, 1)
 	mock.servers.Repos.MockResolveRev_NoCheck(t, "deadbeef")
 	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
-		Branches_: func(_ vcs.BranchesOptions) ([]*vcs.Branch, error) {
+		Branches_: func(ctx context.Context, _ vcs.BranchesOptions) ([]*vcs.Branch, error) {
 			return nil, vcs.RepoNotExistError{}
 		},
 	})

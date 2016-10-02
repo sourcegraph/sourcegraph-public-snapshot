@@ -32,10 +32,7 @@ var (
 )
 
 type Repository struct {
-	// TODO: This is not good. Context should be passed as first parameter in funcs, not stored in a long term struct.
-	//       Should refactor to get rid of this variable and add it as first parameter everywhere that's needed.
-	Context context.Context
-	URL     string
+	URL string
 
 	editLock sync.RWMutex // protects ops that change repository data
 }
@@ -44,8 +41,8 @@ func (r *Repository) String() string {
 	return fmt.Sprintf("git repo %s", r.URL)
 }
 
-func Open(ctx context.Context, url string) *Repository {
-	return &Repository{Context: ctx, URL: url}
+func Open(url string) *Repository {
+	return &Repository{URL: url}
 }
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
@@ -57,8 +54,8 @@ func checkSpecArgSafety(spec string) error {
 	return nil
 }
 
-func (r *Repository) ResolveRevision(spec string) (vcs.CommitID, error) {
-	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: ResolveRevision")
+func (r *Repository) ResolveRevision(ctx context.Context, spec string) (vcs.CommitID, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Git: ResolveRevision")
 	span.SetTag("Spec", spec)
 	defer span.Finish()
 
@@ -71,7 +68,7 @@ func (r *Repository) ResolveRevision(spec string) (vcs.CommitID, error) {
 
 	cmd := gitserver.DefaultClient.Command("git", "rev-parse", spec+"^0")
 	cmd.Repo = r.URL
-	stdout, stderr, err := cmd.DividedOutput(r.Context)
+	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		if vcs.IsRepoNotExist(err) {
 			return "", err
@@ -106,8 +103,8 @@ func (f branchFilter) add(list []string) {
 	}
 }
 
-func (r *Repository) Branches(opt vcs.BranchesOptions) ([]*vcs.Branch, error) {
-	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: Branches")
+func (r *Repository) Branches(ctx context.Context, opt vcs.BranchesOptions) ([]*vcs.Branch, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Git: Branches")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
@@ -116,21 +113,21 @@ func (r *Repository) Branches(opt vcs.BranchesOptions) ([]*vcs.Branch, error) {
 
 	f := make(branchFilter)
 	if opt.MergedInto != "" {
-		b, err := r.branches("--merged", opt.MergedInto)
+		b, err := r.branches(ctx, "--merged", opt.MergedInto)
 		if err != nil {
 			return nil, err
 		}
 		f.add(b)
 	}
 	if opt.ContainsCommit != "" {
-		b, err := r.branches("--contains=" + opt.ContainsCommit)
+		b, err := r.branches(ctx, "--contains="+opt.ContainsCommit)
 		if err != nil {
 			return nil, err
 		}
 		f.add(b)
 	}
 
-	refs, err := r.showRef("--heads")
+	refs, err := r.showRef(ctx, "--heads")
 	if err != nil {
 		return nil, err
 	}
@@ -145,13 +142,13 @@ func (r *Repository) Branches(opt vcs.BranchesOptions) ([]*vcs.Branch, error) {
 
 		branch := &vcs.Branch{Name: name, Head: id}
 		if opt.IncludeCommit {
-			branch.Commit, err = r.getCommit(id)
+			branch.Commit, err = r.getCommit(ctx, id)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if opt.BehindAheadBranch != "" {
-			branch.Counts, err = r.branchesBehindAhead(name, opt.BehindAheadBranch)
+			branch.Counts, err = r.branchesBehindAhead(ctx, name, opt.BehindAheadBranch)
 			if err != nil {
 				return nil, err
 			}
@@ -163,10 +160,10 @@ func (r *Repository) Branches(opt vcs.BranchesOptions) ([]*vcs.Branch, error) {
 
 // branches runs the `git branch` command followed by the given arguments and
 // returns the list of branches if successful.
-func (r *Repository) branches(args ...string) ([]string, error) {
+func (r *Repository) branches(ctx context.Context, args ...string) ([]string, error) {
 	cmd := gitserver.DefaultClient.Command("git", append([]string{"branch"}, args...)...)
 	cmd.Repo = r.URL
-	out, err := cmd.Output(r.Context)
+	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("exec %v in %s failed: %v (output follows)\n\n%s", cmd.Args, cmd.Repo, err, out)
 	}
@@ -180,7 +177,7 @@ func (r *Repository) branches(args ...string) ([]string, error) {
 }
 
 // branchesBehindAhead returns the behind/ahead commit counts information for branch, against base branch.
-func (r *Repository) branchesBehindAhead(branch, base string) (*vcs.BehindAhead, error) {
+func (r *Repository) branchesBehindAhead(ctx context.Context, branch, base string) (*vcs.BehindAhead, error) {
 	if err := checkSpecArgSafety(branch); err != nil {
 		return nil, err
 	}
@@ -190,7 +187,7 @@ func (r *Repository) branchesBehindAhead(branch, base string) (*vcs.BehindAhead,
 
 	cmd := gitserver.DefaultClient.Command("git", "rev-list", "--count", "--left-right", fmt.Sprintf("refs/heads/%s...refs/heads/%s", base, branch))
 	cmd.Repo = r.URL
-	out, err := cmd.Output(r.Context)
+	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -206,14 +203,14 @@ func (r *Repository) branchesBehindAhead(branch, base string) (*vcs.BehindAhead,
 	return &vcs.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }
 
-func (r *Repository) Tags() ([]*vcs.Tag, error) {
-	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: Tags")
+func (r *Repository) Tags(ctx context.Context) ([]*vcs.Tag, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Git: Tags")
 	defer span.Finish()
 
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
 
-	refs, err := r.showRef("--tags")
+	refs, err := r.showRef(ctx, "--tags")
 	if err != nil {
 		return nil, err
 	}
@@ -234,10 +231,10 @@ func (p byteSlices) Len() int           { return len(p) }
 func (p byteSlices) Less(i, j int) bool { return bytes.Compare(p[i], p[j]) < 0 }
 func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-func (r *Repository) showRef(arg string) ([][2]string, error) {
+func (r *Repository) showRef(ctx context.Context, arg string) ([][2]string, error) {
 	cmd := gitserver.DefaultClient.Command("git", "show-ref", arg)
 	cmd.Repo = r.URL
-	out, err := cmd.CombinedOutput(r.Context)
+	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if vcs.IsRepoNotExist(err) {
 			return nil, err
@@ -266,12 +263,12 @@ func (r *Repository) showRef(arg string) ([][2]string, error) {
 }
 
 // getCommit returns the commit with the given id. The caller must be holding r.editLock.
-func (r *Repository) getCommit(id vcs.CommitID) (*vcs.Commit, error) {
+func (r *Repository) getCommit(ctx context.Context, id vcs.CommitID) (*vcs.Commit, error) {
 	if err := checkSpecArgSafety(string(id)); err != nil {
 		return nil, err
 	}
 
-	commits, _, err := r.commitLog(vcs.CommitsOptions{Head: id, N: 1, NoTotal: true})
+	commits, _, err := r.commitLog(ctx, vcs.CommitsOptions{Head: id, N: 1, NoTotal: true})
 	if err != nil {
 		return nil, err
 	}
@@ -283,19 +280,19 @@ func (r *Repository) getCommit(id vcs.CommitID) (*vcs.Commit, error) {
 	return commits[0], nil
 }
 
-func (r *Repository) GetCommit(id vcs.CommitID) (*vcs.Commit, error) {
-	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: GetCommit")
+func (r *Repository) GetCommit(ctx context.Context, id vcs.CommitID) (*vcs.Commit, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Git: GetCommit")
 	span.SetTag("Commit", id)
 	defer span.Finish()
 
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
 
-	return r.getCommit(id)
+	return r.getCommit(ctx, id)
 }
 
-func (r *Repository) Commits(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error) {
-	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: Commits")
+func (r *Repository) Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Git: Commits")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
@@ -309,7 +306,7 @@ func (r *Repository) Commits(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error
 		return nil, 0, err
 	}
 
-	return r.commitLog(opt)
+	return r.commitLog(ctx, opt)
 }
 
 func isBadObjectErr(output, obj string) bool {
@@ -326,7 +323,7 @@ var commitLogCache = cache.Sync(lru.New(500))
 // starting from Head until Base or beginning of branch (unless NoTotal is true).
 //
 // The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func (r *Repository) commitLog(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error) {
+func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error) {
 	args := []string{"log", `--format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00`}
 	if opt.N != 0 {
 		args = append(args, "-n", strconv.FormatUint(uint64(opt.N), 10))
@@ -362,7 +359,7 @@ func (r *Repository) commitLog(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, err
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.URL
-	out, err := cmd.CombinedOutput(r.Context)
+	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		out = bytes.TrimSpace(out)
 		if isBadObjectErr(string(out), string(opt.Head)) {
@@ -418,7 +415,7 @@ func (r *Repository) commitLog(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, err
 			cmd.Args = append(cmd.Args, "--", opt.Path)
 		}
 		cmd.Repo = r.URL
-		out, err = cmd.CombinedOutput(r.Context)
+		out, err = cmd.CombinedOutput(ctx)
 		if err != nil {
 			return nil, 0, fmt.Errorf("exec `git rev-list --count` failed: %s. Output was:\n\n%s", err, out)
 		}
@@ -443,7 +440,7 @@ func parseUint(s string) (uint, error) {
 
 var diffCache = cache.Sync(lru.New(100))
 
-func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error) {
+func (r *Repository) Diff(ctx context.Context, base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error) {
 	ensureAbsCommit(base)
 	ensureAbsCommit(head)
 	if opt == nil {
@@ -458,7 +455,7 @@ func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.D
 		return diff.(*vcs.Diff), nil
 	}
 
-	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: Diff")
+	span, _ := opentracing.StartSpanFromContext(ctx, "Git: Diff")
 	span.SetTag("Base", base)
 	span.SetTag("Head", head)
 	span.SetTag("Opt", opt)
@@ -495,7 +492,7 @@ func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.D
 		cmd.Args = append(cmd.Args, opt.Paths...)
 	}
 	cmd.Repo = r.URL
-	out, err := cmd.CombinedOutput(r.Context)
+	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		out = bytes.TrimSpace(out)
 		if isBadObjectErr(string(out), string(base)) || isBadObjectErr(string(out), string(head)) || isInvalidRevisionRangeError(string(out), string(base)) || isInvalidRevisionRangeError(string(out), string(head)) {
@@ -510,8 +507,8 @@ func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.D
 
 // UpdateEverything updates all branches, tags, etc., to match the
 // default remote repository.
-func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, error) {
-	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: UpdateEverything")
+func (r *Repository) UpdateEverything(ctx context.Context, opt vcs.RemoteOpts) (*vcs.UpdateResult, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Git: UpdateEverything")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
@@ -521,7 +518,7 @@ func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, er
 	cmd := gitserver.DefaultClient.Command("git", "remote", "update", "--prune")
 	cmd.Repo = r.URL
 	cmd.Opt = &opt
-	_, stderr, err := cmd.DividedOutput(r.Context)
+	_, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("exec `git remote update` failed: %v. Stderr was:\n\n%s", err, string(stderr))
 	}
@@ -534,8 +531,8 @@ func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, er
 
 var blameCache = cache.Sync(lru.New(500))
 
-func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
-	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: BlameFile")
+func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Git: BlameFile")
 	span.SetTag(path, opt)
 	defer span.Finish()
 
@@ -576,7 +573,7 @@ func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk,
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.URL
-	out, err := cmd.CombinedOutput(r.Context)
+	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("exec `git blame` failed: %s. Output was:\n\n%s", err, out)
 	}
@@ -674,8 +671,8 @@ func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk,
 	return hunks, nil
 }
 
-func (r *Repository) MergeBase(a, b vcs.CommitID) (vcs.CommitID, error) {
-	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: MergeBase")
+func (r *Repository) MergeBase(ctx context.Context, a, b vcs.CommitID) (vcs.CommitID, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Git: MergeBase")
 	span.SetTag("A", a)
 	span.SetTag("B", b)
 	defer span.Finish()
@@ -685,24 +682,24 @@ func (r *Repository) MergeBase(a, b vcs.CommitID) (vcs.CommitID, error) {
 
 	cmd := gitserver.DefaultClient.Command("git", "merge-base", "--", string(a), string(b))
 	cmd.Repo = r.URL
-	out, err := cmd.CombinedOutput(r.Context)
+	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return "", fmt.Errorf("exec %v failed: %s. Output was:\n\n%s", cmd.Args, err, out)
 	}
 	return vcs.CommitID(bytes.TrimSpace(out)), nil
 }
 
-func (r *Repository) Search(at vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
-	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: Search")
+func (r *Repository) Search(ctx context.Context, at vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Git: Search")
 	span.SetTag("Commit", at)
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
-	return gitserver.DefaultClient.Search(r.Context, r.URL, at, opt)
+	return gitserver.DefaultClient.Search(ctx, r.URL, at, opt)
 }
 
-func (r *Repository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, error) {
-	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: Committers")
+func (r *Repository) Committers(ctx context.Context, opt vcs.CommittersOptions) ([]*vcs.Committer, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Git: Committers")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
@@ -715,7 +712,7 @@ func (r *Repository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, er
 
 	cmd := gitserver.DefaultClient.Command("git", "shortlog", "-sne", opt.Rev)
 	cmd.Repo = r.URL
-	out, err := cmd.Output(r.Context)
+	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("exec `git shortlog -sne` failed: %v", err)
 	}
@@ -744,8 +741,8 @@ func (r *Repository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, er
 	return committers, nil
 }
 
-func (r *Repository) ReadFile(commit vcs.CommitID, name string) ([]byte, error) {
-	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: ReadFile")
+func (r *Repository) ReadFile(ctx context.Context, commit vcs.CommitID, name string) ([]byte, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Git: ReadFile")
 	span.SetTag("Name", name)
 	defer span.Finish()
 
@@ -756,7 +753,7 @@ func (r *Repository) ReadFile(commit vcs.CommitID, name string) ([]byte, error) 
 	name = util.Rel(name)
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
-	b, err := r.readFileBytes(commit, name)
+	b, err := r.readFileBytes(ctx, commit, name)
 	if err != nil {
 		return nil, err
 	}
@@ -765,7 +762,7 @@ func (r *Repository) ReadFile(commit vcs.CommitID, name string) ([]byte, error) 
 
 var readFileBytesCache = cache.Sync(lru.New(1000))
 
-func (r *Repository) readFileBytes(commit vcs.CommitID, name string) ([]byte, error) {
+func (r *Repository) readFileBytes(ctx context.Context, commit vcs.CommitID, name string) ([]byte, error) {
 	ensureAbsCommit(commit)
 	cacheKey := r.URL + "|" + string(commit) + "|" + name
 	if data, found := readFileBytesCache.Get(cacheKey); found {
@@ -774,14 +771,14 @@ func (r *Repository) readFileBytes(commit vcs.CommitID, name string) ([]byte, er
 
 	cmd := gitserver.DefaultClient.Command("git", "show", string(commit)+":"+name)
 	cmd.Repo = r.URL
-	out, err := cmd.CombinedOutput(r.Context)
+	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) || bytes.Contains(out, []byte("does not exist")) {
 			return nil, &os.PathError{Op: "open", Path: name, Err: os.ErrNotExist}
 		}
 		if bytes.HasPrefix(out, []byte("fatal: bad object ")) {
 			// Could be a git submodule.
-			fi, err := r.Stat(commit, name)
+			fi, err := r.Stat(ctx, commit, name)
 			if err != nil {
 				return nil, err
 			}
@@ -797,8 +794,8 @@ func (r *Repository) readFileBytes(commit vcs.CommitID, name string) ([]byte, er
 	return out, nil
 }
 
-func (r *Repository) Lstat(commit vcs.CommitID, path string) (os.FileInfo, error) {
-	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: Lstat")
+func (r *Repository) Lstat(ctx context.Context, commit vcs.CommitID, path string) (os.FileInfo, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Git: Lstat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
 	defer span.Finish()
@@ -817,7 +814,7 @@ func (r *Repository) Lstat(commit vcs.CommitID, path string) (os.FileInfo, error
 		return &util.FileInfo{Mode_: os.ModeDir}, nil
 	}
 
-	fis, err := r.lsTree(commit, path, false)
+	fis, err := r.lsTree(ctx, commit, path, false)
 	if err != nil {
 		return nil, err
 	}
@@ -828,8 +825,8 @@ func (r *Repository) Lstat(commit vcs.CommitID, path string) (os.FileInfo, error
 	return fis[0], nil
 }
 
-func (r *Repository) Stat(commit vcs.CommitID, path string) (os.FileInfo, error) {
-	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: Stat")
+func (r *Repository) Stat(ctx context.Context, commit vcs.CommitID, path string) (os.FileInfo, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Git: Stat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
 	defer span.Finish()
@@ -843,18 +840,18 @@ func (r *Repository) Stat(commit vcs.CommitID, path string) (os.FileInfo, error)
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
 
-	fi, err := r.Lstat(commit, path)
+	fi, err := r.Lstat(ctx, commit, path)
 	if err != nil {
 		return nil, err
 	}
 
 	if fi.Mode()&os.ModeSymlink != 0 {
 		// Deref symlink.
-		b, err := r.readFileBytes(commit, path)
+		b, err := r.readFileBytes(ctx, commit, path)
 		if err != nil {
 			return nil, err
 		}
-		fi2, err := r.Lstat(commit, string(b))
+		fi2, err := r.Lstat(ctx, commit, string(b))
 		if err != nil {
 			return nil, err
 		}
@@ -865,8 +862,8 @@ func (r *Repository) Stat(commit vcs.CommitID, path string) (os.FileInfo, error)
 	return fi, nil
 }
 
-func (r *Repository) ReadDir(commit vcs.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
-	span, _ := opentracing.StartSpanFromContext(r.Context, "Git: ReadDir")
+func (r *Repository) ReadDir(ctx context.Context, commit vcs.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Git: ReadDir")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
 	span.SetTag("Recurse", recurse)
@@ -880,13 +877,13 @@ func (r *Repository) ReadDir(commit vcs.CommitID, path string, recurse bool) ([]
 	defer r.editLock.RUnlock()
 	// Trailing slash is necessary to ls-tree under the dir (not just
 	// to list the dir's tree entry in its parent dir).
-	return r.lsTree(commit, filepath.Clean(util.Rel(path))+"/", recurse)
+	return r.lsTree(ctx, commit, filepath.Clean(util.Rel(path))+"/", recurse)
 }
 
 var lsTreeCache = cache.Sync(lru.New(10000))
 
 // lsTree returns ls of tree at path. The caller must be holding r.editLock.RLock().
-func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
+func (r *Repository) lsTree(ctx context.Context, commit vcs.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
 	ensureAbsCommit(commit)
 	cacheKey := r.URL + "|" + string(commit) + "|" + path + "|" + strconv.FormatBool(recurse)
 	if fis, found := lsTreeCache.Get(cacheKey); found {
@@ -913,7 +910,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 	args = append(args, "--", filepath.ToSlash(path))
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.URL
-	out, err := cmd.CombinedOutput(r.Context)
+	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) {
 			return nil, &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(path), Err: os.ErrNotExist}
@@ -979,7 +976,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 			cmd := gitserver.DefaultClient.Command("git", "config", "--get", "submodule."+name+".url")
 			cmd.Repo = r.URL
 			url := "" // url is not available if submodules are not initialized
-			if out, err := cmd.Output(r.Context); err == nil {
+			if out, err := cmd.Output(ctx); err == nil {
 				url = string(bytes.TrimSpace(out))
 			}
 			sys = vcs.SubmoduleInfo{

@@ -42,7 +42,7 @@ func resolveRepoRev(ctx context.Context, repo int32, rev string) (vcs.CommitID, 
 	if err != nil {
 		return "", err
 	}
-	commitID, err := vcsrepo.ResolveRevision(rev)
+	commitID, err := vcsrepo.ResolveRevision(ctx, rev)
 	if err != nil {
 		// Attempt to reclone repo if its VCS repository doesn't exist.
 		// Do it in the background, return 202 so that frontend can display cloning interstitual.
@@ -56,7 +56,7 @@ func resolveRepoRev(ctx context.Context, repo int32, rev string) (vcs.CommitID, 
 			}
 			return "", vcs.RepoNotExistError{CloneInProgress: true}
 		}
-		commitID, err = vcsrepo.ResolveRevision(rev)
+		commitID, err = vcsrepo.ResolveRevision(ctx, rev)
 		if err != nil {
 			return "", err
 		}
@@ -76,7 +76,7 @@ func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 		return nil, err
 	}
 
-	return vcsrepo.GetCommit(vcs.CommitID(repoRev.CommitID))
+	return vcsrepo.GetCommit(ctx, vcs.CommitID(repoRev.CommitID))
 }
 
 func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error) {
@@ -102,14 +102,14 @@ func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommit
 		return nil, err
 	}
 
-	head, err := vcsrepo.ResolveRevision(op.Opt.Head)
+	head, err := vcsrepo.ResolveRevision(ctx, op.Opt.Head)
 	if err != nil {
 		return nil, err
 	}
 
 	var base vcs.CommitID
 	if op.Opt.Base != "" {
-		base, err = vcsrepo.ResolveRevision(op.Opt.Base)
+		base, err = vcsrepo.ResolveRevision(ctx, op.Opt.Base)
 		if err != nil {
 			return nil, err
 		}
@@ -119,7 +119,7 @@ func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommit
 	if op.Opt.PerPage == -1 {
 		n = 0 // retrieve all commits
 	}
-	commits, _, err := vcsrepo.Commits(vcs.CommitsOptions{
+	commits, _, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
 		Head:    head,
 		Base:    base,
 		Skip:    uint(op.Opt.ListOptions.Offset()),
@@ -152,7 +152,7 @@ func (s *repos) ListBranches(ctx context.Context, op *sourcegraph.ReposListBranc
 		return nil, err
 	}
 
-	branches, err := vcsrepo.Branches(vcs.BranchesOptions{
+	branches, err := vcsrepo.Branches(ctx, vcs.BranchesOptions{
 		IncludeCommit:     op.Opt.IncludeCommit,
 		BehindAheadBranch: op.Opt.BehindAheadBranch,
 		ContainsCommit:    op.Opt.ContainsCommit,
@@ -175,7 +175,7 @@ func (s *repos) ListTags(ctx context.Context, op *sourcegraph.ReposListTagsOp) (
 		return nil, err
 	}
 
-	tags, err := vcsrepo.Tags()
+	tags, err := vcsrepo.Tags(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func (s *repos) ListCommitters(ctx context.Context, op *sourcegraph.ReposListCom
 		opt.N = int(op.Opt.PerPage)
 	}
 
-	committers, err := vcsrepo.Committers(opt)
+	committers, err := vcsrepo.Committers(ctx, opt)
 	if err != nil {
 		return nil, err
 	}

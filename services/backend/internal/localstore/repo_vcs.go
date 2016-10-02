@@ -45,7 +45,7 @@ func (s *repoVCS) Open(ctx context.Context, repo int32) (vcs.Repository, error) 
 		return nil, err
 	}
 
-	return gitcmd.Open(ctx, dir), nil
+	return gitcmd.Open(dir), nil
 }
 
 func (s *repoVCS) Clone(ctx context.Context, repo int32, info *store.CloneInfo) error {

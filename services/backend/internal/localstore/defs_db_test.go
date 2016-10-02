@@ -146,10 +146,10 @@ func testDefs(t *testing.T, outerTest outerCase) {
 	}
 	mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return sgtest.MockRepository{
-			ResolveRevision_: func(spec string) (vcs.CommitID, error) {
+			ResolveRevision_: func(ctx context.Context, spec string) (vcs.CommitID, error) {
 				return vcs.CommitID(commitID), nil
 			},
-			Branches_: func(vcs.BranchesOptions) ([]*vcs.Branch, error) {
+			Branches_: func(context.Context, vcs.BranchesOptions) ([]*vcs.Branch, error) {
 				return []*vcs.Branch{
 					&vcs.Branch{
 						Commit: &vcs.Commit{ID: vcs.CommitID(commitID)},

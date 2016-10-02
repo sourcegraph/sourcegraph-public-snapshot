@@ -70,7 +70,7 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 
 	commit := vcs.CommitID(entrySpec.RepoRev.CommitID)
 
-	fi, err := vcsrepo.Lstat(commit, entrySpec.Path)
+	fi, err := vcsrepo.Lstat(ctx, commit, entrySpec.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -80,14 +80,14 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 	fwr := sourcegraph.FileWithRange{BasicTreeEntry: e}
 
 	if fi.Mode().IsDir() {
-		ee, err := readDir(vcsrepo, commit, entrySpec.Path, int(opt.RecurseSingleSubfolderLimit), true)
+		ee, err := readDir(ctx, vcsrepo, commit, entrySpec.Path, int(opt.RecurseSingleSubfolderLimit), true)
 		if err != nil {
 			return nil, err
 		}
 		sort.Sort(TreeEntriesByTypeByName(ee))
 		e.Entries = ee
 	} else if fi.Mode().IsRegular() {
-		contents, err := vcsrepo.ReadFile(commit, entrySpec.Path)
+		contents, err := vcsrepo.ReadFile(ctx, commit, entrySpec.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -130,7 +130,7 @@ func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*s
 		return nil, err
 	}
 
-	infos, err := vcsrepo.ReadDir(vcs.CommitID(repoRevSpec.CommitID), ".", true)
+	infos, err := vcsrepo.ReadDir(ctx, vcs.CommitID(repoRevSpec.CommitID), ".", true)
 	if err != nil {
 		return nil, err
 	}

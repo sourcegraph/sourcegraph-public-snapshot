@@ -51,7 +51,7 @@ func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsO
 		return nil, err
 	}
 
-	hunks, err := blameFileByteRange(vcsrepo, def.File, &vcs.BlameOptions{NewestCommit: vcs.CommitID(def.CommitID)}, int(def.DefStart), int(def.DefEnd))
+	hunks, err := blameFileByteRange(ctx, vcsrepo, def.File, &vcs.BlameOptions{NewestCommit: vcs.CommitID(def.CommitID)}, int(def.DefStart), int(def.DefEnd))
 	if err != nil {
 		return nil, err
 	}

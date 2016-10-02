@@ -1,6 +1,7 @@
 package vcs
 
 import (
+	"context"
 	"errors"
 	"os"
 )
@@ -38,17 +39,17 @@ type Repository interface {
 	// cases where the revision is not found, or more specific errors
 	// (such as ErrCommitNotFound) if spec can be partially resolved
 	// or determined to be a certain kind of revision specifier.
-	ResolveRevision(spec string) (CommitID, error)
+	ResolveRevision(ctx context.Context, spec string) (CommitID, error)
 
 	// Branches returns a list of all branches in the repository.
-	Branches(BranchesOptions) ([]*Branch, error)
+	Branches(context.Context, BranchesOptions) ([]*Branch, error)
 
 	// Tags returns a list of all tags in the repository.
-	Tags() ([]*Tag, error)
+	Tags(context.Context) ([]*Tag, error)
 
 	// GetCommit returns the commit with the given commit ID, or
 	// ErrCommitNotFound if no such commit exists.
-	GetCommit(CommitID) (*Commit, error)
+	GetCommit(context.Context, CommitID) (*Commit, error)
 
 	// Commits returns all commits matching the options, as well as
 	// the total number of commits (the count of which is not subject
@@ -56,42 +57,42 @@ type Repository interface {
 	//
 	// Optionally, the caller can request the total not to be computed,
 	// as this can be expensive for large branches.
-	Commits(CommitsOptions) (commits []*Commit, total uint, err error)
+	Commits(context.Context, CommitsOptions) (commits []*Commit, total uint, err error)
 
 	// Committers returns the per-author commit statistics of the repo.
-	Committers(CommittersOptions) ([]*Committer, error)
+	Committers(context.Context, CommittersOptions) ([]*Committer, error)
 
 	// Stat returns a FileInfo describing the named file at commit. If the file
 	// is a symbolic link, the returned FileInfo describes the symbolic link.
 	// Lstat makes no attempt to follow the link.
-	Lstat(commit CommitID, name string) (os.FileInfo, error)
+	Lstat(ctx context.Context, commit CommitID, name string) (os.FileInfo, error)
 
 	// Stat returns a FileInfo describing the named file at commit.
-	Stat(commit CommitID, name string) (os.FileInfo, error)
+	Stat(ctx context.Context, commit CommitID, name string) (os.FileInfo, error)
 
 	// ReadFile returns the content of the named file at commit.
-	ReadFile(commit CommitID, name string) ([]byte, error)
+	ReadFile(ctx context.Context, commit CommitID, name string) ([]byte, error)
 
 	// Readdir reads the contents of the named directory at commit.
-	ReadDir(commit CommitID, name string, recurse bool) ([]os.FileInfo, error)
+	ReadDir(ctx context.Context, commit CommitID, name string, recurse bool) ([]os.FileInfo, error)
 
-	BlameFile(path string, opt *BlameOptions) ([]*Hunk, error)
+	BlameFile(ctx context.Context, path string, opt *BlameOptions) ([]*Hunk, error)
 
 	// Diff shows changes between two commits. If base or head do not
 	// exist, an error is returned.
-	Diff(base, head CommitID, opt *DiffOptions) (*Diff, error)
+	Diff(ctx context.Context, base, head CommitID, opt *DiffOptions) (*Diff, error)
 
 	// MergeBase returns the merge base commit for the specified
 	// commits.
-	MergeBase(CommitID, CommitID) (CommitID, error)
+	MergeBase(context.Context, CommitID, CommitID) (CommitID, error)
 
 	// UpdateEverything updates all branches, tags, etc., to match the
 	// default remote repository.
-	UpdateEverything(RemoteOpts) (*UpdateResult, error)
+	UpdateEverything(context.Context, RemoteOpts) (*UpdateResult, error)
 
 	// Search searches the text of a repository at the given commit
 	// ID.
-	Search(CommitID, SearchOptions) ([]*SearchResult, error)
+	Search(context.Context, CommitID, SearchOptions) ([]*SearchResult, error)
 }
 
 // BlameOptions configures a blame.

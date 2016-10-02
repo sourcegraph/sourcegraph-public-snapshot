@@ -28,6 +28,8 @@ var times = []string{
 
 var nonexistentCommitID = vcs.CommitID(strings.Repeat("a", 40))
 
+var ctx = context.Background()
+
 func TestRepository_ResolveBranch(t *testing.T) {
 	t.Parallel()
 
@@ -47,7 +49,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(test.branch)
+		commitID, err := test.repo.ResolveRevision(ctx, test.branch)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -78,7 +80,7 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(test.branch)
+		commitID, err := test.repo.ResolveRevision(ctx, test.branch)
 		if err != test.wantErr {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -110,7 +112,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(test.tag)
+		commitID, err := test.repo.ResolveRevision(ctx, test.tag)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -141,7 +143,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(test.tag)
+		commitID, err := test.repo.ResolveRevision(ctx, test.tag)
 		if err != test.wantErr {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -163,7 +165,7 @@ func TestRepository_Branches(t *testing.T) {
 	}
 	tests := map[string]struct {
 		repo interface {
-			Branches(vcs.BranchesOptions) ([]*vcs.Branch, error)
+			Branches(context.Context, vcs.BranchesOptions) ([]*vcs.Branch, error)
 		}
 		wantBranches []*vcs.Branch
 	}{
@@ -174,7 +176,7 @@ func TestRepository_Branches(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		branches, err := test.repo.Branches(vcs.BranchesOptions{})
+		branches, err := test.repo.Branches(ctx, vcs.BranchesOptions{})
 		if err != nil {
 			t.Errorf("%s: Branches: %s", label, err)
 			continue
@@ -219,7 +221,7 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 
 	for label, test := range map[string]struct {
 		repo interface {
-			Branches(vcs.BranchesOptions) ([]*vcs.Branch, error)
+			Branches(context.Context, vcs.BranchesOptions) ([]*vcs.Branch, error)
 		}
 		wantBranches map[string][]*vcs.Branch
 	}{
@@ -229,7 +231,7 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 		},
 	} {
 		for branch, mergedInto := range test.wantBranches {
-			branches, err := test.repo.Branches(vcs.BranchesOptions{MergedInto: branch})
+			branches, err := test.repo.Branches(ctx, vcs.BranchesOptions{MergedInto: branch})
 			if err != nil {
 				t.Errorf("%s: Branches: %s", label, err)
 				continue
@@ -260,7 +262,7 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 
 	tests := map[string]struct {
 		repo interface {
-			Branches(vcs.BranchesOptions) ([]*vcs.Branch, error)
+			Branches(context.Context, vcs.BranchesOptions) ([]*vcs.Branch, error)
 		}
 		commitToWantBranches map[string][]*vcs.Branch
 	}{
@@ -272,7 +274,7 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 
 	for label, test := range tests {
 		for commit, wantBranches := range test.commitToWantBranches {
-			branches, err := test.repo.Branches(vcs.BranchesOptions{ContainsCommit: commit})
+			branches, err := test.repo.Branches(ctx, vcs.BranchesOptions{ContainsCommit: commit})
 			if err != nil {
 				t.Errorf("%s: Branches: %s", label, err)
 				continue
@@ -313,7 +315,7 @@ func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
 
 	tests := map[string]struct {
 		repo interface {
-			Branches(vcs.BranchesOptions) ([]*vcs.Branch, error)
+			Branches(context.Context, vcs.BranchesOptions) ([]*vcs.Branch, error)
 		}
 		wantBranches []*vcs.Branch
 	}{
@@ -324,7 +326,7 @@ func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		branches, err := test.repo.Branches(vcs.BranchesOptions{BehindAheadBranch: "master"})
+		branches, err := test.repo.Branches(ctx, vcs.BranchesOptions{BehindAheadBranch: "master"})
 		if err != nil {
 			t.Errorf("%s: Branches: %s", label, err)
 			continue
@@ -370,7 +372,7 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 
 	tests := map[string]struct {
 		repo interface {
-			Branches(vcs.BranchesOptions) ([]*vcs.Branch, error)
+			Branches(context.Context, vcs.BranchesOptions) ([]*vcs.Branch, error)
 		}
 		wantBranches []*vcs.Branch
 	}{
@@ -381,7 +383,7 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		branches, err := test.repo.Branches(vcs.BranchesOptions{IncludeCommit: true})
+		branches, err := test.repo.Branches(ctx, vcs.BranchesOptions{IncludeCommit: true})
 		if err != nil {
 			t.Errorf("%s: Branches: %s", label, err)
 			continue
@@ -404,7 +406,7 @@ func TestRepository_Tags(t *testing.T) {
 	}
 	tests := map[string]struct {
 		repo interface {
-			Tags() ([]*vcs.Tag, error)
+			Tags(context.Context) ([]*vcs.Tag, error)
 		}
 		wantTags []*vcs.Tag
 	}{
@@ -415,7 +417,7 @@ func TestRepository_Tags(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		tags, err := test.repo.Tags()
+		tags, err := test.repo.Tags(ctx)
 		if err != nil {
 			t.Errorf("%s: Tags: %s", label, err)
 			continue
@@ -445,7 +447,7 @@ func TestRepository_GetCommit(t *testing.T) {
 	}
 	tests := map[string]struct {
 		repo interface {
-			GetCommit(vcs.CommitID) (*vcs.Commit, error)
+			GetCommit(context.Context, vcs.CommitID) (*vcs.Commit, error)
 		}
 		id         vcs.CommitID
 		wantCommit *vcs.Commit
@@ -458,7 +460,7 @@ func TestRepository_GetCommit(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commit, err := test.repo.GetCommit(test.id)
+		commit, err := test.repo.GetCommit(ctx, test.id)
 		if err != nil {
 			t.Errorf("%s: GetCommit: %s", label, err)
 			continue
@@ -469,7 +471,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		}
 
 		// Test that trying to get a nonexistent commit returns ErrRevisionNotFound.
-		if _, err := test.repo.GetCommit(nonexistentCommitID); err != vcs.ErrRevisionNotFound {
+		if _, err := test.repo.GetCommit(ctx, nonexistentCommitID); err != vcs.ErrRevisionNotFound {
 			t.Errorf("%s: for nonexistent commit: got err %v, want %v", label, err, vcs.ErrRevisionNotFound)
 		}
 	}
@@ -502,7 +504,7 @@ func TestRepository_Commits(t *testing.T) {
 	}
 	tests := map[string]struct {
 		repo interface {
-			Commits(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error)
+			Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error)
 		}
 		id          vcs.CommitID
 		wantCommits []*vcs.Commit
@@ -517,7 +519,7 @@ func TestRepository_Commits(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commits, total, err := test.repo.Commits(vcs.CommitsOptions{Head: test.id})
+		commits, total, err := test.repo.Commits(ctx, vcs.CommitsOptions{Head: test.id})
 		if err != nil {
 			t.Errorf("%s: Commits: %s", label, err)
 			continue
@@ -545,7 +547,7 @@ func TestRepository_Commits(t *testing.T) {
 		}
 
 		// Test that trying to get a nonexistent commit returns ErrRevisionNotFound.
-		if _, _, err := test.repo.Commits(vcs.CommitsOptions{Head: nonexistentCommitID}); err != vcs.ErrRevisionNotFound {
+		if _, _, err := test.repo.Commits(ctx, vcs.CommitsOptions{Head: nonexistentCommitID}); err != vcs.ErrRevisionNotFound {
 			t.Errorf("%s: for nonexistent commit: got err %v, want %v", label, err, vcs.ErrRevisionNotFound)
 		}
 	}
@@ -579,7 +581,7 @@ func TestRepository_Commits_options(t *testing.T) {
 	}
 	tests := map[string]struct {
 		repo interface {
-			Commits(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error)
+			Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error)
 		}
 		opt         vcs.CommitsOptions
 		wantCommits []*vcs.Commit
@@ -603,7 +605,7 @@ func TestRepository_Commits_options(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commits, total, err := test.repo.Commits(test.opt)
+		commits, total, err := test.repo.Commits(ctx, test.opt)
 		if err != nil {
 			t.Errorf("%s: Commits(): %s", label, err)
 			continue
@@ -654,7 +656,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	}
 	tests := map[string]struct {
 		repo interface {
-			Commits(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error)
+			Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error)
 		}
 		opt         vcs.CommitsOptions
 		wantCommits []*vcs.Commit
@@ -681,7 +683,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commits, total, err := test.repo.Commits(test.opt)
+		commits, total, err := test.repo.Commits(ctx, test.opt)
 		if err != nil {
 			t.Errorf("%s: Commits(): %s", label, err)
 			continue
@@ -743,6 +745,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		},
 	}
 	for label, test := range tests {
+		ctx := context.Background()
 
 		var commitID string
 		if test.commitID == "" {
@@ -753,7 +756,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		fs := vcs.FileSystem(test.repo, vcs.CommitID(commitID))
 
 		// file1 should be a file.
-		file1Info, err := fs.Stat("file1")
+		file1Info, err := fs.Stat(ctx, "file1")
 		if err != nil {
 			t.Errorf("%s: fs.Stat(file1): %s", label, err)
 			continue
@@ -772,7 +775,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		}
 
 		// link1 should be a link.
-		link1Linfo, err := fs.Lstat("link1")
+		link1Linfo, err := fs.Lstat(ctx, "link1")
 		if err != nil {
 			t.Errorf("%s: fs.Lstat(link1): %s", label, err)
 			continue
@@ -784,7 +787,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 		// Also check the FileInfo returned by ReadDir to ensure it's
 		// consistent with the FileInfo returned by Lstat.
-		entries, err := fs.ReadDir(".")
+		entries, err := fs.ReadDir(ctx, ".")
 		if err != nil {
 			t.Errorf("%s: fs.ReadDir(.): %s", label, err)
 			continue
@@ -799,7 +802,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		}
 
 		// link1 stat should follow the link to file1.
-		link1Info, err := fs.Stat("link1")
+		link1Info, err := fs.Stat(ctx, "link1")
 		if err != nil {
 			t.Errorf("%s: fs.Stat(link1): %s", label, err)
 			continue
@@ -853,13 +856,13 @@ func TestRepository_FileSystem(t *testing.T) {
 		fs1 := vcs.FileSystem(test.repo, test.first)
 
 		// notafile should not exist.
-		if _, err := fs1.Stat("notafile"); !os.IsNotExist(err) {
+		if _, err := fs1.Stat(ctx, "notafile"); !os.IsNotExist(err) {
 			t.Errorf("%s: fs1.Stat(notafile): got err %v, want os.IsNotExist", label, err)
 			continue
 		}
 
 		// dir1 should exist and be a dir.
-		dir1Info, err := fs1.Stat("dir1")
+		dir1Info, err := fs1.Stat(ctx, "dir1")
 		if err != nil {
 			t.Errorf("%s: fs1.Stat(dir1): %s", label, err)
 			continue
@@ -875,7 +878,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir1 should contain one entry: file1.
-		dir1Entries, err := fs1.ReadDir("dir1")
+		dir1Entries, err := fs1.ReadDir(ctx, "dir1")
 		if err != nil {
 			t.Errorf("%s: fs1.ReadDir(dir1): %s", label, err)
 			continue
@@ -893,7 +896,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir1/file1 should exist, contain "infile1", have the right mtime, and be a file.
-		file1, err := fs1.Open("dir1/file1")
+		file1, err := fs1.Open(ctx, "dir1/file1")
 		if err != nil {
 			t.Errorf("%s: fs1.Open(dir1/file1): %s", label, err)
 			continue
@@ -906,7 +909,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		if !bytes.Equal(file1Data, []byte("infile1")) {
 			t.Errorf("%s: got file1Data == %q, want %q", label, string(file1Data), "infile1")
 		}
-		file1Info, err = fs1.Stat("dir1/file1")
+		file1Info, err = fs1.Stat(ctx, "dir1/file1")
 		if err != nil {
 			t.Errorf("%s: fs1.Stat(dir1/file1): %s", label, err)
 			continue
@@ -922,33 +925,33 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// file 2 shouldn't exist in the 1st commit.
-		_, err = fs1.Open("file 2")
+		_, err = fs1.Open(ctx, "file 2")
 		if !os.IsNotExist(err) {
 			t.Errorf("%s: fs1.Open(file 2): got err %v, want os.IsNotExist (file 2 should not exist in this commit)", label, err)
 		}
 
 		// file 2 should exist in the 2nd commit.
 		fs2 := vcs.FileSystem(test.repo, test.second)
-		_, err = fs2.Open("file 2")
+		_, err = fs2.Open(ctx, "file 2")
 		if err != nil {
 			t.Errorf("%s: fs2.Open(file 2): %s", label, err)
 			continue
 		}
 
 		// file1 should also exist in the 2nd commit.
-		file1Info, err = fs2.Stat("dir1/file1")
+		file1Info, err = fs2.Stat(ctx, "dir1/file1")
 		if err != nil {
 			t.Errorf("%s: fs2.Stat(dir1/file1): %s", label, err)
 			continue
 		}
-		_, err = fs2.Open("dir1/file1")
+		_, err = fs2.Open(ctx, "dir1/file1")
 		if err != nil {
 			t.Errorf("%s: fs2.Open(dir1/file1): %s", label, err)
 			continue
 		}
 
 		// root should exist (via Stat).
-		root, err := fs2.Stat(".")
+		root, err := fs2.Stat(ctx, ".")
 		if err != nil {
 			t.Errorf("%s: fs2.Stat(.): %s", label, err)
 			continue
@@ -958,7 +961,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// root should have 2 entries: dir1 and file 2.
-		rootEntries, err := fs2.ReadDir(".")
+		rootEntries, err := fs2.ReadDir(ctx, ".")
 		if err != nil {
 			t.Errorf("%s: fs2.ReadDir(.): %s", label, err)
 			continue
@@ -975,7 +978,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir1 should still only contain one entry: file1.
-		dir1Entries, err = fs2.ReadDir("dir1")
+		dir1Entries, err = fs2.ReadDir(ctx, "dir1")
 		if err != nil {
 			t.Errorf("%s: fs1.ReadDir(dir1): %s", label, err)
 			continue
@@ -1025,14 +1028,14 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision("master")
+		commitID, err := test.repo.ResolveRevision(ctx, "master")
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		fs := vcs.FileSystem(test.repo, commitID)
 
-		entries, err := fs.ReadDir(".")
+		entries, err := fs.ReadDir(ctx, ".")
 		if err != nil {
 			t.Errorf("%s: fs.ReadDir(.): %s", label, err)
 			continue
@@ -1049,7 +1052,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 		}
 
 		for _, name := range wantNames {
-			stat, err := fs.Stat(name)
+			stat, err := fs.Stat(ctx, name)
 			if err != nil {
 				t.Errorf("%s: Stat(%q): %s", label, name, err)
 				continue
@@ -1085,7 +1088,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision("master")
+		commitID, err := test.repo.ResolveRevision(ctx, "master")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1115,13 +1118,13 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 
 		// Check the submodule os.FileInfo both when it's returned by
 		// Stat and when it's returned in a list by ReadDir.
-		submod, err := fs.Stat("submod")
+		submod, err := fs.Stat(ctx, "submod")
 		if err != nil {
 			t.Errorf("%s: fs.Stat(submod): %s", label, err)
 			continue
 		}
 		checkSubmoduleFileInfo(label+" (Stat)", submod)
-		entries, err := fs.ReadDir(".")
+		entries, err := fs.ReadDir(ctx, ".")
 		if err != nil {
 			t.Errorf("%s: fs.ReadDir(.): %s", label, err)
 			continue
@@ -1129,7 +1132,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		// .gitmodules file is entries[0]
 		checkSubmoduleFileInfo(label+" (ReadDir)", entries[1])
 
-		sr, err := fs.Open("submod")
+		sr, err := fs.Open(ctx, "submod")
 		if err != nil {
 			t.Errorf("%s: fs.Open(submod): %s", label, err)
 			continue
@@ -1145,7 +1148,7 @@ func TestOpen(t *testing.T) {
 	t.Parallel()
 
 	dir := initGitRepository(t)
-	gitcmd.Open(context.Background(), dir)
+	gitcmd.Open(dir)
 }
 
 func TestClone(t *testing.T) {
@@ -1190,9 +1193,9 @@ func TestRepository_UpdateEverything(t *testing.T) {
 			continue
 		}
 
-		r := gitcmd.Open(context.Background(), test.headDir)
+		r := gitcmd.Open(test.headDir)
 
-		initial, err := r.ResolveRevision("initial")
+		initial, err := r.ResolveRevision(ctx, "initial")
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q): %s", test.vcs, "initial", err)
 			continue
@@ -1200,7 +1203,7 @@ func TestRepository_UpdateEverything(t *testing.T) {
 		fs1 := vcs.FileSystem(r, initial)
 
 		// newfile does not yet exist in either the mirror or origin.
-		_, err = fs1.Stat("newfile")
+		_, err = fs1.Stat(ctx, "newfile")
 		if !os.IsNotExist(err) {
 			t.Errorf("%s: fs1.Stat(newfile): got err %v, want os.IsNotExist", test.vcs, err)
 			continue
@@ -1220,7 +1223,7 @@ func TestRepository_UpdateEverything(t *testing.T) {
 		makeGitRepositoryBare(t, test.baseDir)
 
 		// update the mirror.
-		result, err := r.UpdateEverything(vcs.RemoteOpts{})
+		result, err := r.UpdateEverything(ctx, vcs.RemoteOpts{})
 		if err != nil {
 			t.Errorf("%s: UpdateEverything: %s", test.vcs, err)
 			continue
@@ -1235,10 +1238,10 @@ func TestRepository_UpdateEverything(t *testing.T) {
 		// reopen the mirror because the tags/commits changed (after
 		// UpdateEverything) and we currently have no way to reload the existing
 		// repository.
-		r = gitcmd.Open(context.Background(), test.headDir)
+		r = gitcmd.Open(test.headDir)
 
 		// newfile should exist in the mirror now.
-		second, err := r.ResolveRevision("second")
+		second, err := r.ResolveRevision(ctx, "second")
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q): %s", test.vcs, "second", err)
 			continue
@@ -1248,7 +1251,7 @@ func TestRepository_UpdateEverything(t *testing.T) {
 			t.Errorf("%s: FileSystem(%q): %s", test.vcs, second, err)
 			continue
 		}
-		_, err = fs2.Stat("newfile")
+		_, err = fs2.Stat(ctx, "newfile")
 		if err != nil {
 			t.Errorf("%s: fs2.Stat(newfile): got err %v, want nil", test.vcs, err)
 			continue
@@ -1301,7 +1304,7 @@ func makeGitRepositoryBare(t testing.TB, dir string) {
 // returns the repository.
 func makeGitRepositoryCmd(t testing.TB, cmds ...string) *gitcmd.Repository {
 	dir := initGitRepository(t, cmds...)
-	return gitcmd.Open(context.Background(), dir)
+	return gitcmd.Open(dir)
 }
 
 func commitsEqual(a, b *vcs.Commit) bool {
