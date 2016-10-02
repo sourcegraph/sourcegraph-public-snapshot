@@ -31,20 +31,20 @@ var tmpl = template.Must(template.New("").Delims("<<<", ">>>").Parse(`// GENERAT
 package inner
 
 import (
+	"context"
 	"time"
 
-	"context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/srclib/store/pb"
-	"sourcegraph.com/sqs/pbtypes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/middleware/inner/trace"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/middleware/inner/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
+	"sourcegraph.com/sourcegraph/srclib/store/pb"
+	"sourcegraph.com/sqs/pbtypes"
 )
 
 // Services returns the local services wrapped with auth, etc.

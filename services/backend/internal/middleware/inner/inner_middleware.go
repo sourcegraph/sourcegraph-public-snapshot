@@ -13,9 +13,9 @@
 package inner
 
 import (
+	"context"
 	"time"
 
-	"context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
