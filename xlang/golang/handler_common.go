@@ -16,7 +16,7 @@ import (
 // handlerShared is shared in-memory.)
 type handlerCommon struct {
 	mu         sync.Mutex // guards all fields
-	rootFSPath string     // root path of the project's files in the file system, without the "file://" prefix (typically /src/github.com/foo/bar)
+	rootFSPath string     // root path of the project's files in the (possibly virtual) file system, without the "file://" prefix (typically /src/github.com/foo/bar)
 	shutdown   bool
 	tracer     opentracing.Tracer
 	tracerOK   bool

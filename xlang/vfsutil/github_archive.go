@@ -16,6 +16,8 @@ import (
 	"strings"
 	"sync"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
+
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 
@@ -29,7 +31,7 @@ import (
 // If saveOnFS is set, then the zip files will be cached on the local
 // file system. You need to take care that there is sufficient disk
 // space.
-func NewGitHubRepoVFS(repo, rev, subtree string, saveOnFS bool) (vfs.FileSystem, error) {
+func NewGitHubRepoVFS(repo, rev, subtree string, saveOnFS bool) (ctxvfs.FileSystem, error) {
 	if !githubRepoRx.MatchString(repo) {
 		return nil, fmt.Errorf(`invalid GitHub repo %q: must be "github.com/user/repo"`, repo)
 	}
@@ -68,24 +70,12 @@ type GitHubRepoVFS struct {
 	save bool // save to the local file system for reuse
 }
 
-// PreFetchOrWait can be used by clients to pre-emptively start fetching
-// contents. Unlike the VFS interface it also allows passing in a Context, so
-// we can record trace data/cancel/etc.
-func (fs *GitHubRepoVFS) PreFetchOrWait(ctx context.Context) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "GitRepoVFS PreFetchOrWait")
-	defer span.Finish()
+// fetchOrWait initiates the HTTP fetch if it has not yet
+// started. Otherwise it waits for it to finish.
+func (fs *GitHubRepoVFS) fetchOrWait(ctx context.Context) error {
 	fs.once.Do(func() {
 		fs.err = fs.fetch(ctx)
 	})
-}
-
-// fetchOrWait initiates the HTTP fetch if it has not yet
-// started. Otherwise it waits for it to finish.
-func (fs *GitHubRepoVFS) fetchOrWait() error {
-	fs.once.Do(func() {
-		fs.err = fs.fetch(context.Background())
-	})
-
 	return fs.err
 }
 
@@ -179,29 +169,29 @@ func (fs *GitHubRepoVFS) fetch(ctx context.Context) (err error) {
 	return nil
 }
 
-func (fs *GitHubRepoVFS) Open(path string) (vfs.ReadSeekCloser, error) {
-	if err := fs.fetchOrWait(); err != nil {
+func (fs *GitHubRepoVFS) Open(ctx context.Context, path string) (ctxvfs.ReadSeekCloser, error) {
+	if err := fs.fetchOrWait(ctx); err != nil {
 		return nil, err
 	}
 	return fs.fs.Open(path)
 }
 
-func (fs *GitHubRepoVFS) Lstat(path string) (os.FileInfo, error) {
-	if err := fs.fetchOrWait(); err != nil {
+func (fs *GitHubRepoVFS) Lstat(ctx context.Context, path string) (os.FileInfo, error) {
+	if err := fs.fetchOrWait(ctx); err != nil {
 		return nil, err
 	}
 	return fs.fs.Lstat(path)
 }
 
-func (fs *GitHubRepoVFS) Stat(path string) (os.FileInfo, error) {
-	if err := fs.fetchOrWait(); err != nil {
+func (fs *GitHubRepoVFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
+	if err := fs.fetchOrWait(ctx); err != nil {
 		return nil, err
 	}
 	return fs.fs.Stat(path)
 }
 
-func (fs *GitHubRepoVFS) ReadDir(path string) ([]os.FileInfo, error) {
-	if err := fs.fetchOrWait(); err != nil {
+func (fs *GitHubRepoVFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, error) {
+	if err := fs.fetchOrWait(ctx); err != nil {
 		return nil, err
 	}
 	return fs.fs.ReadDir(path)

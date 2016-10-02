@@ -31,7 +31,7 @@ func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2Conn, fileURI 
 
 	filename := h.filePath(fileURI)
 
-	contents, err := h.readFile(fileURI)
+	contents, err := h.readFile(ctx, fileURI)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -40,7 +40,7 @@ func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2Conn, fileURI 
 		return nil, nil, nil, fmt.Errorf("invalid position: %s:%d:%d (%s)", filename, position.Line, position.Character, why)
 	}
 
-	bctx := h.overlayBuildContext(h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
+	bctx := h.overlayBuildContext(ctx, h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
 
 	bpkg, err := containingPackage(ctx, bctx, filename)
 	if mpErr, ok := err.(*build.MultiplePackageError); ok {

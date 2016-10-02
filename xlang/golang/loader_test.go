@@ -78,7 +78,7 @@ func setUpLoaderTest(fs map[string]string) (*token.FileSet, *build.Context) {
 	for filename, contents := range fs {
 		h.addOverlayFile("file://"+filename, []byte(contents))
 	}
-	bctx := h.overlayBuildContext(&build.Default, false)
+	bctx := h.overlayBuildContext(nil, &build.Default, false)
 	bctx.GOPATH = "/"
 	return token.NewFileSet(), bctx
 }

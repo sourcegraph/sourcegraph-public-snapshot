@@ -1,14 +1,15 @@
 package vfsutil
 
 import (
+	"context"
 	"strings"
 	"testing"
 
-	"golang.org/x/tools/godoc/vfs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 )
 
-func testVFS(t *testing.T, fs vfs.FileSystem, want map[string]string) {
-	tree, err := ReadAllFiles(fs, "", nil)
+func testVFS(t *testing.T, fs ctxvfs.FileSystem, want map[string]string) {
+	tree, err := ReadAllFiles(context.Background(), fs, "", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

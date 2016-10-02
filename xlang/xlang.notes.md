@@ -4,7 +4,7 @@
 
 * Everything is done in memory (except reading source files from GOROOT for the Go langserver at the moment).
   * An entire repo "clone" plus in-memory analysis of docker/machine takes 1.3s to complete, end-to-end, and ~27 MB of memory to keep resident.
-* There is no shared state other than what is passed over the JSON-RPC connection between Sourcegraph and the build/lang server.. For example, all of the files that the lang server needs are sent to it using the LSP textDocument/didOpen request. This seems crazy, but it's fast. (There is a benchmark that shows the speed; it's around 15 MB/s unoptimized. For comparison, all of the .go files in the Go stdlib amount to 5 MB, so we can "clone" the Go stdlib in 300msec.)
+* There is no shared state other than what is passed over the JSON-RPC connection between the LSP proxy and the build/lang server.
   * To integrate a new build/lang server, Sourcegraph just needs a socket address (TCP, Unix socket, or even stdio will suffice), and it doesn't need any control over the environment. No shared state!
 * Disk is used as a cache for repos, but the system is fast even when it needs to fetch them all on the fly. It fetches GitHub repos (which is where most Go repos live) using GitHub's zip archive APIs and keeps them in memory.
 * Deps are fetched on the fly based on whatever the currently viewed source file needs. For Go, this is easy; I use code from gddo.
@@ -65,28 +65,27 @@ The proxy receives these requests and determines which workspace root directory 
 
 The proxy sends the following requests to the build server:
 
-* `--> initialize rootPath=file:///`
-* `--> textDocument/didOpen uri=file:///ui/web_modules/sourcegraph/editor/Editor.tsx text=...` requests for every single file in the repo that the build/lang servers could possibly need (e.g., all `.go` files), all rooted at `file:///`
-* `--> textDocument/definition textDocument=file:///ui/web_modules/sourcegraph/editor/Editor.tsx position=10:20`
+* `--> initialize rootPath=vfs:///`
+* `--> textDocument/definition textDocument=vfs:///ui/web_modules/sourcegraph/editor/Editor.tsx position=10:20`
 
-The build server receives these requests and stores the files received in `textDocument/didOpen` requests in an in-memory virtual file system (or on disk if absolutely necessary).
+The build server first determines the configuration and environment in which to run the language server. It scans the tsconfig.json file to see that the TypeScript SDK is version 2.0, and it performs dependency analysis to determine that the Editor.tsx file depends on 13 other files in the workspace, plus files from 5 external npm packages (that, unlike in reality, are not committed to the repository). Providing only certain dependencies' files is a huge win for performance and resource consumption.
 
-It then determines the configuration and environment in which to run the language server. It scans the tsconfig.json file to see that the TypeScript SDK is version 2.0, and it performs dependency analysis to determine that the Editor.tsx file depends on 13 other files in the workspace, plus files from 5 external npm packages (that, unlike in reality, are not committed to the repository). Providing only certain dependencies' files is a huge win for performance and resource consumption.
+To access the workspace file system while performing these operations, the build server sends `fs/readFile`, `fs/readDir`, `fs/stat`, etc., JSON-RPC requests to its LSP proxy peer.
 
 The build server then sends the following requests to the language server:
 
-* `--> initialize rootPath=file:/// typescript.sdk=2.0`
-* `--> textDocument/definition textDocument=file:///ui/web_modules/sourcegraph/editor/Editor.tsx position=10:20`
+* `--> initialize rootPath=vfs:/// typescript.sdk=2.0`
+* `--> textDocument/definition textDocument=vfs:///ui/web_modules/sourcegraph/editor/Editor.tsx position=10:20`
 
 The language server receives these requests and behaves as a standard LSP server. It returns the following response to the build server:
 
-* `<-- textDocument/definition Location: uri=file:///ui/node_modules/react/lib/ReactClass.js range=30:40-45`
+* `<-- textDocument/definition Location: uri=vfs:///ui/node_modules/react/lib/ReactClass.js range=30:40-45`
 
 The build server receives this response and notices that it refers to a path inside an npm package (react@15.1.0). It performs some analysis on the definition location and then returns the following response to the proxy:
 
-* `<-- textDocument/definition Location[]: [uri=file:///ui/node_modules/react/lib/ReactClass.js range=30:40-45, uri=npm://react@15.1.0?file=lib/ReactMount.js&range=30:40-45&name=render&containerName=ReactMount]` (note the addition of the second Location)
+* `<-- textDocument/definition Location[]: [uri=vfs:///ui/node_modules/react/lib/ReactClass.js range=30:40-45, uri=npm://react@15.1.0?file=lib/ReactMount.js&range=30:40-45&name=render&containerName=ReactMount]` (note the addition of the second Location)
 
-The proxy receives this response and converts any `file:///` URIs back to `git://` URLs and sends the following response to the client:
+The proxy receives this response and converts any `vfs:///` URIs back to `git://` URLs and sends the following response to the client:
 
 * `<-- textDocument/definition Location[]: [uri=git://github.com/sourcegraph/sourcegraph?master#ui/node_modules/react/lib/ReactClass.js range=30:40-45, uri=npm://react@15.1.0?file=lib/ReactMount.js&range=30:40-45&name=render&containerName=ReactMount]` (note that the first Location is now a `git://` URL)
 
@@ -204,10 +203,9 @@ For now, as described above, we can release a CLI tool for developers to upload 
 
 ## Creating a new build/lang server
 
-* The big thing is that it should not depend on the file system. It's fine to use the file system as an overlay, but it should accept files and their contents sent in `textDocument/didOpen` LSP requests. Sourcegraph sends every relevant file to your server.
+* The big thing is that it should not depend on the OS file system. Any files sent via `textDocument/didOpen` should take precedence over files on the file system. And if the rootPath's scheme is `vfs` (not `file`), then it should access the virtual file system on the LSP proxy.
 
-  If you truly can't make your server work in-memory, then you can write the `textDocument/didOpen` file contents to a temporary directory. (But check with other people first to make sure there isn't a better solution.)
-* All file URIs will be rooted at `file:///`, so if the repo has a `a.js` and `b/c.js`, your server will see `textDocument/didOpen` requests with URIs `file:///a.js` and `file:///b/c.js`.
+  If you truly can't make your server work in-memory, then you can write the `textDocument/didOpen` file contents and the LSP proxy's VFS contents to a temporary directory. (But check with other people first to make sure there isn't a better solution.)
 * If you want to emit a cross-repository reference, you can emit an LSP `Location` with a URI of the form `git://github.com/foo/bar?HEAD#path/to/the/file.txt`. The `?HEAD` is there to be explicit that you don't know which commit ID to refer to. (See the rest of this document for how we will do smarter, non-positional cross-repository references. But this kind will work for now, and I don't want anyone to block on stuff we haven't nailed down with Universe yet.)
 
 Otherwise, just speak LSP and it'll work with both Sourcegraph and VS Code!

@@ -18,6 +18,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
@@ -188,6 +189,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		if err := h.reset(&params, langInitParams.RootPath); err != nil {
 			return nil, err
 		}
+		h.fs.Bind(h.overlayMountPath, &remoteProxyFS{conn: conn}, "/", ctxvfs.BindBefore)
 		var langInitResp lsp.InitializeResult
 		if err := h.callLangServer(ctx, conn, req.Method, req.Notif, langInitParams, &langInitResp); err != nil {
 			return nil, err
