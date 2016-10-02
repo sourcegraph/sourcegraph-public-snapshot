@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 
 	"golang.org/x/tools/go/buildutil"
 
@@ -99,7 +100,8 @@ type scoredSymbol struct {
 
 type resultSorter struct {
 	query
-	results []scoredSymbol
+	results   []scoredSymbol
+	resultsMu sync.Mutex
 }
 
 func (s *resultSorter) Len() int { return len(s.results) }
@@ -117,11 +119,13 @@ func (s *resultSorter) Swap(i, j int) {
 	s.results[i], s.results[j] = s.results[j], s.results[i]
 }
 func (s *resultSorter) Collect(si lsp.SymbolInformation) {
+	s.resultsMu.Lock()
 	score := score(s.query, si)
 	if score > 0 {
 		sc := scoredSymbol{score, si}
 		s.results = append(s.results, sc)
 	}
+	s.resultsMu.Unlock()
 }
 func (s *resultSorter) Results() []lsp.SymbolInformation {
 	res := make([]lsp.SymbolInformation, len(s.results))
@@ -154,67 +158,83 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2Conn, req *
 		if err != nil {
 			return nil, fmt.Errorf("workspace root path was not relative to $GOPATH/src: %s", err)
 		}
+
+		var wg sync.WaitGroup
 		pkgs := buildutil.ExpandPatterns(bctx, []string{fmt.Sprintf("%s/...", rootpkg)})
 		for pkg, _ := range pkgs {
-			buildPkg, err := bctx.Import(pkg, rootPath, 0)
-			if err != nil {
-				log.Printf("skipping possible package %s: %s", pkg, err)
-				continue
-			}
-
-			astPkgs, err := parseDir(fs, bctx, buildPkg.Dir, nil, 0)
-			if err != nil {
-				log.Printf("failed to parse directory %s: %s", buildPkg.Dir, err)
-				continue
-			}
-			astPkg := astPkgs[buildPkg.Name]
-			if astPkg == nil {
-				log.Printf("didn't find build package name %q in parsed AST packages %v", buildPkg.ImportPath, astPkgs)
-				continue
-			}
-			docPkg := doc.New(astPkg, buildPkg.ImportPath, doc.AllDecls)
-
-			// Emit decls
-			for _, t := range docPkg.Types {
-				results.Collect(toSym(t.Name, buildPkg.ImportPath, lsp.SKClass, fs, t.Decl.TokPos))
-
-				for _, v := range t.Funcs {
-					results.Collect(toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
-				}
-				for _, v := range t.Methods {
-					results.Collect(toSym(v.Name, buildPkg.ImportPath+" "+t.Name, lsp.SKMethod, fs, v.Decl.Name.NamePos))
-				}
-				for _, v := range t.Consts {
-					for _, name := range v.Names {
-						results.Collect(toSym(name, buildPkg.ImportPath, lsp.SKConstant, fs, v.Decl.TokPos))
-					}
-				}
-				for _, v := range t.Vars {
-					for _, name := range v.Names {
-						results.Collect(toSym(name, buildPkg.ImportPath, lsp.SKField, fs, v.Decl.TokPos))
-					}
-				}
-			}
-			for _, v := range docPkg.Consts {
-				for _, name := range v.Names {
-					results.Collect(toSym(name, buildPkg.ImportPath, lsp.SKConstant, fs, v.Decl.TokPos))
-				}
-			}
-			for _, v := range docPkg.Vars {
-				for _, name := range v.Names {
-					results.Collect(toSym(name, buildPkg.ImportPath, lsp.SKVariable, fs, v.Decl.TokPos))
-				}
-			}
-			for _, v := range docPkg.Funcs {
-				results.Collect(toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
-			}
+			pkg := pkg
+			wg.Add(1)
+			go func() {
+				collectFromPkg(bctx, fs, pkg, rootPath, &results)
+				wg.Done()
+			}()
 		}
+		wg.Wait()
 	}
 	sort.Sort(&results)
 	if len(results.results) > params.Limit && params.Limit > 0 {
 		results.results = results.results[:params.Limit]
 	}
 	return results.Results(), nil
+}
+
+func collectFromPkg(bctx *build.Context, fs *token.FileSet, pkg string, rootPath string, results *resultSorter) {
+	buildPkg, err := bctx.Import(pkg, rootPath, 0)
+	if err != nil {
+		if !(strings.Contains(err.Error(), "no buildable Go source files") || strings.Contains(err.Error(), "found packages") || strings.HasPrefix(pkg, "github.com/golang/go/test/")) {
+			log.Printf("skipping possible package %s: %s", pkg, err)
+		}
+		return
+	}
+
+	astPkgs, err := parseDir(fs, bctx, buildPkg.Dir, nil, 0)
+	if err != nil {
+		log.Printf("failed to parse directory %s: %s", buildPkg.Dir, err)
+		return
+	}
+	astPkg := astPkgs[buildPkg.Name]
+	if astPkg == nil {
+		if !strings.HasPrefix(buildPkg.ImportPath, "github.com/golang/go/misc/cgo/") {
+			log.Printf("didn't find build package name %q in parsed AST packages %v", buildPkg.ImportPath, astPkgs)
+		}
+		return
+	}
+	docPkg := doc.New(astPkg, buildPkg.ImportPath, doc.AllDecls)
+
+	// Emit decls
+	for _, t := range docPkg.Types {
+		results.Collect(toSym(t.Name, buildPkg.ImportPath, lsp.SKClass, fs, t.Decl.TokPos))
+
+		for _, v := range t.Funcs {
+			results.Collect(toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
+		}
+		for _, v := range t.Methods {
+			results.Collect(toSym(v.Name, buildPkg.ImportPath+" "+t.Name, lsp.SKMethod, fs, v.Decl.Name.NamePos))
+		}
+		for _, v := range t.Consts {
+			for _, name := range v.Names {
+				results.Collect(toSym(name, buildPkg.ImportPath, lsp.SKConstant, fs, v.Decl.TokPos))
+			}
+		}
+		for _, v := range t.Vars {
+			for _, name := range v.Names {
+				results.Collect(toSym(name, buildPkg.ImportPath, lsp.SKField, fs, v.Decl.TokPos))
+			}
+		}
+	}
+	for _, v := range docPkg.Consts {
+		for _, name := range v.Names {
+			results.Collect(toSym(name, buildPkg.ImportPath, lsp.SKConstant, fs, v.Decl.TokPos))
+		}
+	}
+	for _, v := range docPkg.Vars {
+		for _, name := range v.Names {
+			results.Collect(toSym(name, buildPkg.ImportPath, lsp.SKVariable, fs, v.Decl.TokPos))
+		}
+	}
+	for _, v := range docPkg.Funcs {
+		results.Collect(toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
+	}
 }
 
 // parseDir mirrors parser.ParseDir, but uses the passed in build context's VFS. In other words,
