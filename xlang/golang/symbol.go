@@ -22,23 +22,15 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
+// query is a structured representation that is parsed from the user's
+// raw query string.
 type query struct {
 	kind   lsp.SymbolKind
 	tokens []string
 }
 
-var keywords = map[string]lsp.SymbolKind{
-	"package": lsp.SKPackage,
-	"type":    lsp.SKClass,
-	"method":  lsp.SKMethod,
-	"field":   lsp.SKField,
-	"func":    lsp.SKFunction,
-	"var":     lsp.SKVariable,
-	"const":   lsp.SKConstant,
-}
-
-var tokenizer = regexp.MustCompile(`[\.\s\/\:]+`)
-
+// parseQuery parses a user's raw query string and returns a
+// structured representation of the query.
 func parseQuery(q string) query {
 	var qu query
 	toks := tokenizer.Split(strings.ToLower(q), -1)
@@ -50,6 +42,75 @@ func parseQuery(q string) query {
 		}
 	}
 	return qu
+}
+
+// keywords are keyword tokens that will be interpreted as symbol kind
+// filters in the search query.
+var keywords = map[string]lsp.SymbolKind{
+	"package": lsp.SKPackage,
+	"type":    lsp.SKClass,
+	"method":  lsp.SKMethod,
+	"field":   lsp.SKField,
+	"func":    lsp.SKFunction,
+	"var":     lsp.SKVariable,
+	"const":   lsp.SKConstant,
+}
+
+// tokenizer is a regexp for tokenizing a raw user query string.
+var tokenizer = regexp.MustCompile(`[\.\s\/\:]+`)
+
+// resultSorter is a utility struct for collecting, filtering, and
+// sorting symbol results.
+type resultSorter struct {
+	query
+	results   []scoredSymbol
+	resultsMu sync.Mutex
+}
+
+// scoredSymbol is a symbol with an attached search relevancy score.
+// It is used internally by resultSorter.
+type scoredSymbol struct {
+	score int
+	lsp.SymbolInformation
+}
+
+/*
+ * sort.Interface methods
+ */
+func (s *resultSorter) Len() int { return len(s.results) }
+func (s *resultSorter) Less(i, j int) bool {
+	iscore, jscore := s.results[i].score, s.results[j].score
+	if iscore == jscore {
+		if s.results[i].ContainerName == s.results[j].ContainerName {
+			return s.results[i].Name < s.results[j].Name
+		}
+		return s.results[i].ContainerName < s.results[j].ContainerName
+	}
+	return iscore > jscore
+}
+func (s *resultSorter) Swap(i, j int) {
+	s.results[i], s.results[j] = s.results[j], s.results[i]
+}
+
+// Collect is a thread-safe method that will record the passed-in
+// symbol in the list of results if its score > 0.
+func (s *resultSorter) Collect(si lsp.SymbolInformation) {
+	s.resultsMu.Lock()
+	score := score(s.query, si)
+	if score > 0 {
+		sc := scoredSymbol{score, si}
+		s.results = append(s.results, sc)
+	}
+	s.resultsMu.Unlock()
+}
+
+// Results returns the ranked list of SymbolInformation values.
+func (s *resultSorter) Results() []lsp.SymbolInformation {
+	res := make([]lsp.SymbolInformation, len(s.results))
+	for i, s := range s.results {
+		res[i] = s.SymbolInformation
+	}
+	return res
 }
 
 // score returns 0 for results that aren't matches. Results that are matches are assigned
@@ -93,48 +154,8 @@ func score(q query, s lsp.SymbolInformation) (scor int) {
 	return scor
 }
 
-type scoredSymbol struct {
-	score int
-	lsp.SymbolInformation
-}
-
-type resultSorter struct {
-	query
-	results   []scoredSymbol
-	resultsMu sync.Mutex
-}
-
-func (s *resultSorter) Len() int { return len(s.results) }
-func (s *resultSorter) Less(i, j int) bool {
-	iscore, jscore := s.results[i].score, s.results[j].score
-	if iscore == jscore {
-		if s.results[i].ContainerName == s.results[j].ContainerName {
-			return s.results[i].Name < s.results[j].Name
-		}
-		return s.results[i].ContainerName < s.results[j].ContainerName
-	}
-	return iscore > jscore
-}
-func (s *resultSorter) Swap(i, j int) {
-	s.results[i], s.results[j] = s.results[j], s.results[i]
-}
-func (s *resultSorter) Collect(si lsp.SymbolInformation) {
-	s.resultsMu.Lock()
-	score := score(s.query, si)
-	if score > 0 {
-		sc := scoredSymbol{score, si}
-		s.results = append(s.results, sc)
-	}
-	s.resultsMu.Unlock()
-}
-func (s *resultSorter) Results() []lsp.SymbolInformation {
-	res := make([]lsp.SymbolInformation, len(s.results))
-	for i, s := range s.results {
-		res[i] = s.SymbolInformation
-	}
-	return res
-}
-
+// toSym returns a SymbolInformation value derived from values we get
+// from the Go parser and doc packages.
 func toSym(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos token.Pos) lsp.SymbolInformation {
 	container = filepath.Base(container)
 	if f := strings.Fields(container); len(f) > 0 {
@@ -148,6 +169,8 @@ func toSym(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos t
 	}
 }
 
+// handleSymbol handles `workspace/symbol` requests for the Go
+// language server.
 func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2Conn, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
 	results := resultSorter{query: parseQuery(params.Query), results: make([]scoredSymbol, 0)}
 	{
@@ -179,6 +202,9 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2Conn, req *
 	return results.Results(), nil
 }
 
+// collectFromPkg collects all the symbols from the specified package
+// into the results. It uses LangHandler's package symbol cache to
+// speed up repeated calls.
 func (h *LangHandler) collectFromPkg(bctx *build.Context, fs *token.FileSet, pkg string, rootPath string, results *resultSorter) {
 	pkgSyms := h.getPkgSyms(pkg)
 	if pkgSyms == nil {
