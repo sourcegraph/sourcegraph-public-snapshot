@@ -94,14 +94,22 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 
 	// Augment with external results if user is authenticated,
 	// RemoteSearch is true, and Query is non-empty.
-	if authpkg.ActorFromContext(ctx).IsAuthenticated() && opt.RemoteSearch && opt.Query != "" {
+	if authpkg.ActorFromContext(ctx).IsAuthenticated() && opt.RemoteSearch {
 		ghquery := opt.Query
 		if matches := ghRepoQueryMatcher.FindStringSubmatch(opt.Query); matches != nil {
 			// Apply query transformation to make GitHub results better.
 			ghquery = fmt.Sprintf("user:%s in:name %s", matches[1], matches[2])
 		}
 
-		if ghrepos, err := github.ReposFromContext(ctx).Search(ctx, ghquery, nil); err == nil {
+		var ghrepos []*sourcegraph.Repo
+		var err error
+		if ghquery == "" {
+			ghrepos, err = github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{Type: opt.Type})
+			ghrepos, repos = repos, ghrepos
+		} else {
+			ghrepos, err = github.ReposFromContext(ctx).Search(ctx, ghquery, nil)
+		}
+		if err == nil {
 			existingRepos := make(map[string]struct{}, len(repos))
 			for _, repo := range repos {
 				existingRepos[repo.URI] = struct{}{}

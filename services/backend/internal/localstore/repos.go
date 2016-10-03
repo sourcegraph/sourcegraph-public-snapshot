@@ -461,7 +461,12 @@ func reposListSQL(opt *RepoListOp) (string, []interface{}, error) {
 		return v
 	}
 
-	queryTerms := repoQuerySplitter.Split(opt.Query, -1)
+	var queryTerms []string
+	for _, v := range repoQuerySplitter.Split(opt.Query, -1) {
+		if v != "" {
+			queryTerms = append(queryTerms, v)
+		}
+	}
 
 	{ // SELECT
 		selectSQL = "repo.*"

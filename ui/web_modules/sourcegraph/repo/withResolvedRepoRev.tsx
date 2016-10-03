@@ -118,6 +118,7 @@ export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
 			if (prevState.repo !== nextState.repo || prevState.commitID !== nextState.commitID || prevState.repoObj !== nextState.repoObj) {
 				if (!nextState.inventory && nextState.commitID && nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning) {
 					Dispatcher.Backends.dispatch(new RepoActions.WantInventory(nextState.repo, nextState.commitID));
+					Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(nextState.repo, nextState.commitID, ""));
 				}
 			}
 

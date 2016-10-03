@@ -294,7 +294,7 @@ func TestRepos_List_query(t *testing.T) {
 		}{
 			{"def", []string{"c/def", "a/def", "def/mno", "def/ghi", "b/def", "def/jkl"}},
 			{"b/def", []string{"b/def", "c/def", "a/def", "def/mno", "def/ghi", "def/jkl"}},
-			{"def/", []string{"def/mno", "def/ghi", "def/jkl", "c/def", "a/def", "b/def"}},
+			{"def/", []string{"def/mno", "def/ghi", "def/jkl"}},
 		}
 		for _, test := range tests {
 			repos, err := s.List(ctx, &RepoListOp{Query: test.query})
