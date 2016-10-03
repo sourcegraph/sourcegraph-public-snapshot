@@ -28,6 +28,10 @@ export class Container<P, S> extends Component<P, S> {
 		}
 	}
 
+	componentWillReceiveProps(nextProps: P, nextContext?: any): void {
+		super.componentWillReceiveProps(nextProps, nextContext);
+	}
+
 	stores(): Store<any>[] {
 		return [];
 	}
