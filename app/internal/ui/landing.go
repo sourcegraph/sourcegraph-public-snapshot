@@ -9,9 +9,10 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday"
 
+	htmpl "html/template"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/snippet"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui/toprepos"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
@@ -151,16 +152,19 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	vars := mux.Vars(r)
 
-	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), vars)
+	repo, _, err := handlerutil.GetRepoAndRev(r.Context(), vars)
 	if err != nil {
 		return err
 	}
 
+	type snippet struct {
+		Code      htmpl.HTML
+		SourceURL string
+	}
+
 	var def *sourcegraph.Def
 	var refLocs *sourcegraph.DeprecatedRefLocationsList
-	var defEntry *sourcegraph.TreeEntry
-	var defSnippet *snippet.Snippet
-	var refSnippets []*snippet.Snippet
+	var refSnippets []*snippet
 	var viewDefURL, defFileURL string
 
 	if def == nil {
@@ -205,39 +209,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		// fetch definition
-		entrySpec := sourcegraph.TreeEntrySpec{
-			RepoRev: repoRev,
-			Path:    def.Def.File,
-		}
-		opt := sourcegraph.RepoTreeGetOptions{
-			ContentsAsString: true,
-			GetFileOptions: sourcegraph.GetFileOptions{
-				FileRange: sourcegraph.FileRange{
-					StartLine: int64(def.StartLine),
-					EndLine:   int64(def.EndLine),
-				},
-			},
-			NoSrclibAnns: false,
-		}
-		defEntry, err = backend.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &opt})
-		if err != nil {
-			return err
-		}
-		defAnns, err := backend.Annotations.List(r.Context(), &sourcegraph.AnnotationsListOptions{
-			Entry:        entrySpec,
-			Range:        &opt.FileRange,
-			NoSrclibAnns: opt.NoSrclibAnns,
-		})
-		if err != nil {
-			return err
-		}
-		defSnippet = &snippet.Snippet{
-			StartByte:   defEntry.FileRange.StartByte,
-			Code:        defEntry.ContentsString,
-			Annotations: defAnns,
-		}
 		viewDefURL = approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine)).String()
-
 		defFileURL = approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0).String()
 
 		// fetch example
@@ -272,26 +244,9 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 			if err != nil {
 				return fmt.Errorf("could not get ref tree: %s", err)
 			}
-			refAnns, err := backend.Annotations.List(r.Context(), &sourcegraph.AnnotationsListOptions{
-				Entry: refEntrySpec,
-				Range: &sourcegraph.FileRange{
-					// note(beyang): specify line range here, instead of byte range, because the
-					// annotation byte offsets will be relative to the start of the snippet in the
-					// former, but relative to the start of the file in the latter. This makes the
-					// behavior consistent with the def snippet.
-					StartLine: refEntry.FileRange.StartLine,
-					EndLine:   refEntry.FileRange.EndLine,
-				},
-				NoSrclibAnns: opt.NoSrclibAnns,
-			})
-			if err != nil {
-				return err
-			}
-			refSnippets = append(refSnippets, &snippet.Snippet{
-				StartByte:   refEntry.FileRange.StartByte,
-				Code:        refEntry.ContentsString,
-				Annotations: refAnns,
-				SourceURL:   approuter.Rel.URLToBlob(ref.Repo, ref.CommitID, ref.File, int(refEntry.FileRange.StartLine+1)).String(),
+			refSnippets = append(refSnippets, &snippet{
+				Code:      htmpl.HTML(refEntry.ContentsString),
+				SourceURL: approuter.Rel.URLToBlob(ref.Repo, ref.CommitID, ref.File, int(refEntry.FileRange.StartLine+1)).String(),
 			})
 		}
 	}
@@ -315,14 +270,13 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		tmpl.Common
 		Meta                meta
 		Description         *htmlutil.HTML
-		RefSnippets         []*snippet.Snippet
+		RefSnippets         []*snippet
 		ViewDefURL          string
 		DefName             string // e.g. "func NewRouter"
 		ShortDefName        string // e.g. "NewRouter"
 		DefFileURL          string
 		DefFileName         string
 		TotalRepoReferences int32
-		DefSnippet          *snippet.Snippet
 		RefLocs             *sourcegraph.DeprecatedRefLocationsList
 		TruncatedRefLocs    bool
 	}{
@@ -335,7 +289,6 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		DefFileURL:          defFileURL,
 		DefFileName:         repo.URI + "/" + def.Def.File,
 		TotalRepoReferences: refLocs.TotalRepos,
-		DefSnippet:          defSnippet,
 		RefLocs:             refLocs,
 		TruncatedRefLocs:    refLocs.TotalRepos > int32(len(refLocs.RepoRefs)),
 	})

@@ -39,7 +39,7 @@
 
 			{{range .}}
 				<a href="{{.SourceURL}}" class="plainlink">
-					<p><pre class="snippet rounded">{{renderSnippet .}}</pre></p>
+					<p><pre class="snippet rounded">{{.}}</pre></p>
 				</a>
 			{{end}}
 		</div>
@@ -65,14 +65,6 @@
 			<p>...</p>
 		{{end}}
 	</div>
-
-	<div class="my3" id="definition">
-		<h2>Definition</h2>
-		<a href="{{.ViewDefURL}}" class="plainlink">
-			<pre class="bg-white code border rounded border-cool-gray-4 p2 snippet">{{renderSnippet .DefSnippet}}</pre>
-		</a>
-	</div>
-
 </div>
 {{end}}
 

@@ -13,7 +13,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/snippet"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -99,8 +98,6 @@ var FuncMap = htmpl.FuncMap{
 	"buildvar": func() buildvar.Vars { return buildvar.All },
 
 	"dangerouslySetHTML": func(s string) htmpl.HTML { return htmpl.HTML(s) },
-
-	"renderSnippet": snippet.Render,
 
 	"numberedNoun": func(count int32, word string) string {
 		if count == 1 {
