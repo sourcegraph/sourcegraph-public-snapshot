@@ -570,6 +570,9 @@ func callDefinition(ctx context.Context, c *jsonrpc2.Conn, uri string, line, cha
 	}
 	var str string
 	for i, loc := range res {
+		if loc.URI == "" {
+			continue
+		}
 		if i != 0 {
 			str += ", "
 		}
