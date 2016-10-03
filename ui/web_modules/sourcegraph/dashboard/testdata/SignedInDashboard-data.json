@@ -16,7 +16,7 @@
 									"className": "",
 									"children": [
 										{
-											"type": "Heading",
+											"type": "",
 											"props": {
 												"pt": 5,
 												"align": "center",
@@ -39,31 +39,24 @@
 											"type": "div",
 											"props": {
 												"className": "",
-												"style": {
-													"textAlign": "center"
-												},
 												"children": [
 													{
-														"type": "a",
+														"type": "GlobalSearchContainer",
 														"props": {
-															"onClick": {
-																"dispatchedToStores": [],
-																"dispatchedToBackends": [
-																	{
-																		"$constructor": "SetQuickOpenVisible",
-																		"quickOpenVisible": true
-																	}
-																]
+															"location": {
+																"pathname": "foo",
+																"action": "bar",
+																"search": "foo",
+																"query": {},
+																"state": {},
+																"key": "foo"
 															},
-															"children": [
-																{
-																	"type": "SearchCTA",
-																	"props": {
-																		"width": 30,
-																		"content": "Find a repository"
-																	}
-																}
-															]
+															"router": {},
+															"showResultsPanel": true,
+															"style": {
+																"flex": "1 1 100%",
+																"margin": "0 8px"
+															}
 														}
 													}
 												]
@@ -74,7 +67,7 @@
 											"props": {
 												"className": "",
 												"children": [
-													"Jump to popular GitHub repositories, like: docker/docker, golang/go, or sourcegraph/thyme"
+													"Try these top searches: new http request, read file, json encoder"
 												]
 											}
 										},
@@ -84,7 +77,7 @@
 												"className": "",
 												"children": [
 													{
-														"type": "Heading",
+														"type": "",
 														"props": {
 															"level": "5",
 															"children": [
@@ -111,11 +104,18 @@
 																					"className": "",
 																					"children": [
 																						{
-																							"type": "Constructor",
+																							"type": "",
 																							"props": {
 																								"to": "github.com/sourcegraph/checkup/-/blob/checkup.go",
 																								"children": [
-																									"sourcegraph / checkup"
+																									{
+																										"type": "span",
+																										"props": {
+																											"children": [
+																												"sourcegraph / checkup"
+																											]
+																										}
+																									}
 																								],
 																								"onlyActiveOnIndex": false,
 																								"style": {}
@@ -138,11 +138,18 @@
 																					"className": "",
 																					"children": [
 																						{
-																							"type": "Constructor",
+																							"type": "",
 																							"props": {
 																								"to": "github.com/gorilla/mux/-/blob/mux.go",
 																								"children": [
-																									"gorilla / mux"
+																									{
+																										"type": "span",
+																										"props": {
+																											"children": [
+																												"gorilla / mux"
+																											]
+																										}
+																									}
 																								],
 																								"onlyActiveOnIndex": false,
 																								"style": {}
@@ -173,11 +180,18 @@
 																					"className": "",
 																					"children": [
 																						{
-																							"type": "Constructor",
+																							"type": "",
 																							"props": {
 																								"to": "github.com/sourcegraph/thyme/-/blob/cmd/thyme/main.go",
 																								"children": [
-																									"sourcegraph / thyme"
+																									{
+																										"type": "span",
+																										"props": {
+																											"children": [
+																												"sourcegraph / thyme"
+																											]
+																										}
+																									}
 																								],
 																								"onlyActiveOnIndex": false,
 																								"style": {}
@@ -200,11 +214,18 @@
 																					"className": "",
 																					"children": [
 																						{
-																							"type": "Constructor",
+																							"type": "",
 																							"props": {
 																								"to": "https://sourcegraph.com/github.com/golang/go/-/blob/src/net/http/request.go",
 																								"children": [
-																									"golang / go"
+																									{
+																										"type": "span",
+																										"props": {
+																											"children": [
+																												"golang / go"
+																											]
+																										}
+																									}
 																								],
 																								"onlyActiveOnIndex": false,
 																								"style": {}

@@ -6,7 +6,7 @@
 				{
 					"type": "",
 					"props": {
-						"to": "/r/-/info/undefined/undefined/-/undefined",
+						"to": "/r/-/refs/undefined/undefined/-/undefined",
 						"children": [
 							{
 								"type": "Button",
