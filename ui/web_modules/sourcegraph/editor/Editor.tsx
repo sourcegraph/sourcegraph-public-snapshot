@@ -106,11 +106,13 @@ export class Editor implements monaco.IDisposable {
 			palette.dispose();
 		}
 		// Don't show context menu for peek view or comments, etc.
+		// Also don't show for unsupported languages.
 		this._editor.onContextMenu(e => {
 			// HACK: This method relies on Monaco private internals.
+			const unsupportedLang = this._editor.getModel().getModeId() !== "go";
 			const ident = /.*identifier.*/.exec(e.target.element.className);
 			const peekWidget = e.target.detail === "vs.editor.contrib.zoneWidget1";
-			if (!ident || peekWidget) {
+			if (!ident || peekWidget || unsupportedLang) {
 				(this._editor as any)._contextViewService.hideContextView();
 			}
 		});
