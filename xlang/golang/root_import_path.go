@@ -51,14 +51,22 @@ func (h *BuildHandler) determineRootImportPath(ctx context.Context, originalRoot
 	const maxFiles = 25  // heuristic, shouldn't need to read too many files to find this out
 	numFiles := 0
 	for w.Step() {
+		if err := w.Err(); err != nil {
+			return "", err
+		}
 		fi := w.Stat()
-		if fi.Mode().IsDir() && (strings.HasPrefix(fi.Name(), ".") || fi.Name() == "cmd" || fi.Name() == "examples" || fi.Name() == "Godeps" || fi.Name() == "vendor" || fi.Name() == "third_party" || strings.HasPrefix(fi.Name(), "_") || strings.Count(w.Path(), "/") >= maxSlashes) {
+		if fi.Mode().IsDir() && ((fi.Name() != "." && strings.HasPrefix(fi.Name(), ".")) || fi.Name() == "cmd" || fi.Name() == "examples" || fi.Name() == "Godeps" || fi.Name() == "vendor" || fi.Name() == "third_party" || strings.HasPrefix(fi.Name(), "_") || strings.Count(w.Path(), "/") >= maxSlashes) {
 			w.SkipDir()
 			continue
 		}
 		if strings.HasSuffix(fi.Name(), ".go") {
 			if numFiles >= maxFiles {
-				break
+				// Instead of breaking, we SkipDir here so that we
+				// ensure we always read all files in the root dir (to
+				// improve the heuristic hit rate). We will not read
+				// any more subdir files after calling SkipDir, which
+				// is what we want.
+				w.SkipDir()
 			}
 			numFiles++
 
