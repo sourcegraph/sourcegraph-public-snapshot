@@ -135,7 +135,7 @@ func score(q query, s lsp.SymbolInformation) (scor int) {
 			scor += 3
 		}
 		if strings.Contains(filename, tok) && len(tok) >= 3 {
-			scor += 1
+			scor++
 		}
 		if strings.HasPrefix(filepath.Base(filename), tok) && len(tok) >= 3 {
 			scor += 2
@@ -184,13 +184,12 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2Conn, req *
 
 		var wg sync.WaitGroup
 		pkgs := buildutil.ExpandPatterns(bctx, []string{fmt.Sprintf("%s/...", rootpkg)})
-		for pkg, _ := range pkgs {
-			pkg := pkg
+		for pkg := range pkgs {
 			wg.Add(1)
-			go func() {
+			go func(pkg string) {
+				defer wg.Done()
 				h.collectFromPkg(bctx, fs, pkg, rootPath, &results)
-				wg.Done()
-			}()
+			}(pkg)
 		}
 		wg.Wait()
 	}
@@ -280,7 +279,7 @@ func parseDir(fset *token.FileSet, bctx *build.Context, path string, filter func
 		return nil, err
 	}
 
-	pkgs = make(map[string]*ast.Package)
+	pkgs = map[string]*ast.Package{}
 	for _, d := range list {
 		if strings.HasSuffix(d.Name(), ".go") && (filter == nil || filter(d)) {
 			filename := filepath.Join(path, d.Name())
@@ -290,7 +289,7 @@ func parseDir(fset *token.FileSet, bctx *build.Context, path string, filter func
 				if !found {
 					pkg = &ast.Package{
 						Name:  name,
-						Files: make(map[string]*ast.File),
+						Files: map[string]*ast.File{},
 					}
 					pkgs[name] = pkg
 				}

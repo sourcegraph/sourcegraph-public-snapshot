@@ -182,7 +182,7 @@ func (h *LangHandler) getPkgSyms(pkg string) []lsp.SymbolInformation {
 func (h *LangHandler) setPkgSyms(pkg string, syms []lsp.SymbolInformation) {
 	h.pkgSymCacheMu.Lock()
 	if h.pkgSymCache == nil {
-		h.pkgSymCache = make(map[string][]lsp.SymbolInformation)
+		h.pkgSymCache = map[string][]lsp.SymbolInformation{}
 	}
 	h.pkgSymCache[pkg] = syms
 	h.pkgSymCacheMu.Unlock()
