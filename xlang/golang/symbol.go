@@ -35,6 +35,9 @@ func parseQuery(q string) query {
 	var qu query
 	toks := tokenizer.Split(strings.ToLower(q), -1)
 	for _, tok := range toks {
+		if tok == "" {
+			continue
+		}
 		if kind, isKeyword := keywords[tok]; isKeyword {
 			qu.kind = kind
 		} else {
@@ -82,6 +85,9 @@ func (s *resultSorter) Less(i, j int) bool {
 	iscore, jscore := s.results[i].score, s.results[j].score
 	if iscore == jscore {
 		if s.results[i].ContainerName == s.results[j].ContainerName {
+			if s.results[i].Name == s.results[j].Name {
+				return s.results[i].Location.URI < s.results[j].Location.URI
+			}
 			return s.results[i].Name < s.results[j].Name
 		}
 		return s.results[i].ContainerName < s.results[j].ContainerName
@@ -123,8 +129,12 @@ func score(q query, s lsp.SymbolInformation) (scor int) {
 	}
 	name, container := strings.ToLower(s.Name), strings.ToLower(s.ContainerName)
 	filename := strings.TrimPrefix(strings.ToLower(s.Location.URI), "file://")
-	if len(q.tokens) == 0 {
-		return 1
+	if len(q.tokens) == 0 { // early return if empty query
+		if strings.HasPrefix(filename, "vendor/") || strings.Contains(filename, "/vendor/") {
+			return 1 // lower score for vendor symbols
+		} else {
+			return 2
+		}
 	}
 	for i, tok := range q.tokens {
 		tok := strings.ToLower(tok)
@@ -150,6 +160,10 @@ func score(q query, s lsp.SymbolInformation) (scor int) {
 		if tok == container {
 			scor += 3
 		}
+	}
+	if scor > 0 && !(strings.HasPrefix(filename, "vendor/") || strings.Contains(filename, "/vendor/")) {
+		// boost for non-vendor symbols
+		scor += 5
 	}
 	return scor
 }

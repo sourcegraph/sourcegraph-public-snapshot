@@ -219,6 +219,37 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"": []string{"git://test/pkg?master#a.go:variable:pkg._", "git://test/pkg?master#vendor/github.com/v/vendored/v.go:function:vendored.V"},
 			},
 		},
+		"go vendor symbols with same name": {
+			rootPath: "git://test/pkg?master",
+			mode:     "go",
+			fs: map[string]string{
+				"z.go": `package pkg; func x() bool { return true }`,
+				"vendor/github.com/a/pkg2/x.go": `package pkg2; func x() bool { return true }`,
+				"vendor/github.com/x/pkg3/x.go": `package pkg3; func x() bool { return true }`,
+			},
+			wantSymbols: map[string][]string{
+				"": []string{
+					"git://test/pkg?master#z.go:function:pkg.x",
+					"git://test/pkg?master#vendor/github.com/a/pkg2/x.go:function:pkg2.x",
+					"git://test/pkg?master#vendor/github.com/x/pkg3/x.go:function:pkg3.x",
+				},
+				"x": []string{
+					"git://test/pkg?master#z.go:function:pkg.x",
+					"git://test/pkg?master#vendor/github.com/a/pkg2/x.go:function:pkg2.x",
+					"git://test/pkg?master#vendor/github.com/x/pkg3/x.go:function:pkg3.x",
+				},
+				"pkg2.x": []string{
+					"git://test/pkg?master#vendor/github.com/a/pkg2/x.go:function:pkg2.x",
+					"git://test/pkg?master#z.go:function:pkg.x",
+					"git://test/pkg?master#vendor/github.com/x/pkg3/x.go:function:pkg3.x",
+				},
+				"pkg3.x": []string{
+					"git://test/pkg?master#vendor/github.com/x/pkg3/x.go:function:pkg3.x",
+					"git://test/pkg?master#z.go:function:pkg.x",
+					"git://test/pkg?master#vendor/github.com/a/pkg2/x.go:function:pkg2.x",
+				},
+			},
+		},
 		"go external dep": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
