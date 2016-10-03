@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -38,6 +39,11 @@ func init() {
 	}
 
 	_, err = c.AddCommand("sendx", "send an LSP request to a build/lang server based on tracked error output.", "", &sendCmdSimple{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = c.AddCommand("url", "guess URL for where a user clicked based on tracked error output.", "", &urlCmd{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -269,4 +275,35 @@ func sendExecute(c *sendCmdOpts, args *sendCmdArgs, reqParams []byte) error {
 	time.Sleep(c.DiagnosticsWait)
 
 	return nil
+}
+
+type urlCmd struct {
+	Input string `long:"input" description:"JSON blob describing from tracked error logs"`
+}
+
+func (c *urlCmd) Execute(args []string) error {
+	u := guessTrackedErrorURL([]byte(c.Input))
+	if u == "" {
+		return nil
+	}
+	log.Println("# The URL is a guess. It should be correct for standard simple repos.")
+	fmt.Println("https://sourcegraph.com/" + u)
+	fmt.Println("http://localhost:3080/" + u)
+	return nil
+}
+
+func guessTrackedErrorURL(input []byte) string {
+	t := &struct {
+		Params *lsp.TextDocumentPositionParams
+	}{}
+	err := json.Unmarshal(input, t)
+	if err != nil || t.Params == nil {
+		return ""
+	}
+	p := t.Params
+	u, err := url.Parse(p.TextDocument.URI)
+	if err != nil {
+		return ""
+	}
+	return fmt.Sprintf("%s@%s/-/blob/%s#L%d:%d", path.Join(u.Host, u.Path), u.RawQuery, u.Fragment, p.Position.Line+1, p.Position.Character+1)
 }
