@@ -194,7 +194,7 @@ export class Container extends React.Component<Props, State> {
 			}
 			return category;
 		};
-		if (event.key === "ArrowUp") {
+		if (event.keyCode === 38) { // ArrowUp.
 			if (row === 0 && category === 0) {
 				// noop
 			} else if (row <= 0) {
@@ -206,7 +206,7 @@ export class Container extends React.Component<Props, State> {
 			} else {
 				row--;
 			}
-		} else if (event.key === "ArrowDown") {
+		} else if (event.keyCode === 40) { // ArrowDown.
 			if (row === visibleRowsInCategory[category] - 1 && category === results.length - 1) {
 				// noop
 			} else if (row >= visibleRowsInCategory[category] - 1) {
@@ -216,7 +216,7 @@ export class Container extends React.Component<Props, State> {
 			} else {
 				row++;
 			}
-		} else if (event.key === "Enter") {
+		} else if (event.keyCode === 13) { // Enter.
 			this.select(this.state.selected.category, this.state.selected.row);
 		} else {
 			return;

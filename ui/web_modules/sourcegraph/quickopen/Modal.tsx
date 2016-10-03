@@ -48,13 +48,13 @@ export class QuickOpenModal extends React.Component<Props, null> {
 	}
 
 	searchModalShortcuts(event: KeyboardEvent & Node): void {
-		if (event.key === "Escape") {
+		if (event.keyCode === 27) { // Escape.
 			this.dismissModal();
 		}
 		if (event.target.nodeName === "INPUT" || event.metaKey || event.ctrlKey) {
 			return;
 		}
-		if (event.key === "/") {
+		if (event.keyCode === 191) { // Slash key ('/').
 			if (!this.props.showModal) {
 				this.dismissModal();
 			}
