@@ -83,6 +83,8 @@ export class BlobMain extends Container<Props, State> {
 	}
 
 	componentWillReceiveProps(nextProps: Props): void {
+		super.componentWillReceiveProps(nextProps);
+
 		if (this._editor) {
 			this._editorPropsChanged(this.props, nextProps);
 		}
