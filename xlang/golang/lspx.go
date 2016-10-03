@@ -23,6 +23,12 @@ type initializeParams struct {
 	// BuildContext, if set, configures the language server's default
 	// go/build.Context.
 	BuildContext *initializeBuildContextParams
+
+	// RootImportPath is the root Go import path for this
+	// workspace. For example,
+	// "sourcegraph.com/sourcegraph/sourcegraph" is the root import
+	// path for "github.com/sourcegraph/sourcegraph".
+	RootImportPath string `json:"rootImportPath,omitempty"`
 }
 
 type initializeBuildContextParams struct {

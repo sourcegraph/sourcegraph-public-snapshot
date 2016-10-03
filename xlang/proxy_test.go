@@ -211,6 +211,16 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				// "b/b.go:1:20": "git://test/pkg?master#a", // TODO(sqs): make import paths hoverable
 				"b/b.go:1:43": "git://test/pkg?master#a/a.go:1:17",
 			},
+			wantReferences: map[string][]string{
+				"a/a.go:1:17": []string{
+					"git://test/pkg?master#a/a.go:1:17",
+					"git://test/pkg?master#b/b.go:1:43",
+				},
+				"b/b.go:1:43": []string{ // calling "references" on call site should return same result as on decl
+					"git://test/pkg?master#a/a.go:1:17",
+					"git://test/pkg?master#b/b.go:1:43",
+				},
+			},
 			wantSymbols: map[string][]string{
 				"": []string{"git://test/pkg?master#a/a.go:function:a.A", "git://test/pkg?master#b/b.go:variable:b._"},
 			},
@@ -227,6 +237,12 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			},
 			wantDefinition: map[string]string{
 				"a.go:1:61": "git://test/pkg?master#vendor/github.com/v/vendored/v.go:1:24",
+			},
+			wantReferences: map[string][]string{
+				"vendor/github.com/v/vendored/v.go:1:24": []string{
+					"git://test/pkg?master#vendor/github.com/v/vendored/v.go:1:24",
+					"git://test/pkg?master#a.go:1:61",
+				},
 			},
 			wantSymbols: map[string][]string{
 				"": []string{"git://test/pkg?master#a.go:variable:pkg._", "git://test/pkg?master#vendor/github.com/v/vendored/v.go:function:vendored.V"},
@@ -267,7 +283,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
 			fs: map[string]string{
-				"a.go": `package a; import "github.com/d/dep"; var _ = dep.D`,
+				"a.go": `package a; import "github.com/d/dep"; var _ = dep.D; var _ = dep.D`,
 			},
 			wantHover: map[string]string{
 				"a.go:1:51": "func D()",
@@ -275,9 +291,18 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			wantDefinition: map[string]string{
 				"a.go:1:51": "git://github.com/d/dep?HEAD#d.go:1:19",
 			},
+			wantReferences: map[string][]string{
+				"a.go:1:51": []string{
+					"git://test/pkg?master#a.go:1:51",
+					"git://test/pkg?master#a.go:1:66",
+					// Do not include "refs" from the dependency
+					// package itself; only return results in the
+					// workspace.
+				},
+			},
 			depFS: map[string]map[string]string{
 				"https://github.com/d/dep?HEAD": {
-					"d.go": "package dep; func D() {}",
+					"d.go": "package dep; func D() {}; var _ = D",
 				},
 			},
 		},

@@ -176,6 +176,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		// build it in GOPATH=/.
 		rootFSPath := "/src/" + h.rootImportPath
 		langInitParams.RootPath = "file://" + rootFSPath
+		langInitParams.RootImportPath = h.rootImportPath
 		if err := h.reset(&params, langInitParams.RootPath); err != nil {
 			return nil, err
 		}
