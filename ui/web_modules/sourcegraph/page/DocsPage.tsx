@@ -1,6 +1,5 @@
 import * as React from "react";
 import Helmet from "react-helmet";
-import {context} from "sourcegraph/app/context";
 import {Heading, Hero} from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/page/Page.css";
@@ -49,7 +48,7 @@ export function DocsPage(): JSX.Element {
 					<li>
 						<a href="#languages_supported">Languages Supported</a>
 					</li>
-				</ul>				
+				</ul>
 				<a id="sourcegraph"></a>
 				<a id="code_intelligence"></a>
 				<Heading level="4" className={styles.h5}>Code Intelligence</Heading>
@@ -59,9 +58,9 @@ export function DocsPage(): JSX.Element {
 				<a id="find_local_references"></a>
 				<Heading level="5" className={styles.h5}>Find Local References</Heading>
 				<p className={styles.p}>Right click on a symbol and select “Find Local References” to find all the places it's referenced in the current repository.</p>
-				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src={`${context.assetsRoot}/img/DocsPage/find_local_references_1.png`} width="100%"/></a>
+				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/find_local_references_1.png" width="100%"/></a>
 				<p className={styles.p}>A pop-up will appear, under the symbol, showing how it's being used in specific examples.</p>
-				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src={`${context.assetsRoot}/img/DocsPage/find_local_references_2.png`} width="100%"/></a>
+				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/find_local_references_2.png" width="100%"/></a>
 				<br/>
 				<br/>
 				<br/>
@@ -69,7 +68,7 @@ export function DocsPage(): JSX.Element {
 				<a id="go_to_definition"></a>
 				<Heading level="5" className={styles.h5}>Go to Definition</Heading>
 				<p className={styles.p}>Click on a symbol to jump to its definition. Alternatively, you can right click on a symbol and select “Go to Definition” to do the same thing.</p>
-				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src={`${context.assetsRoot}/img/DocsPage/go_to_definition.png`} width="100%"/></a>
+				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/go_to_definition.png" width="100%"/></a>
 				<br/>
 				<br/>
 				<br/>
@@ -77,7 +76,7 @@ export function DocsPage(): JSX.Element {
 				<a id="find_external_references"></a>
 				<Heading level="5" className={styles.h5}>Find External References</Heading>
 				<p className={styles.p}>Right click on a symbol and select “Find External References” to find all the places it's referenced across all publicly viewable code on GitHub.</p>
-				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src={`${context.assetsRoot}/img/DocsPage/find_external_references_1.png`} width="100%"/></a>
+				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/find_external_references.png" width="100%"/></a>
 				<br/>
 				<br/>
 
@@ -95,21 +94,21 @@ export function DocsPage(): JSX.Element {
 				<a id="repository_search"></a>
 				<Heading level="5" className={styles.h5}>Repository Search</Heading>
 				<p className={styles.p}>Jump to any publicly viewable GitHub repository and also any private repositories you've authenticated.</p>
-				<a href="https://sourcegraph.com/github.com/docker/docker/-/blob/api/errors/errors.go" target="_blank"><img src={`${context.assetsRoot}/img/DocsPage/repo_search.png`} width="100%" /></a>
+				<a href="https://sourcegraph.com/github.com/docker/docker/-/blob/api/errors/errors.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/repo_search.png" width="100%" /></a>
 				<br/>
 				<br/>
 
 				<a id="file_search"></a>
 				<Heading level="5" className={styles.h5}>File Search</Heading>
 				<p className={styles.p}>Once you are within a repository, you can jump to any file within the repository.</p>
-				<a href="https://sourcegraph.com/github.com/gorilla/mux" target="_blank"><img src={`${context.assetsRoot}/img/DocsPage/file_search.png`} width="100%" /></a>
+				<a href="https://sourcegraph.com/github.com/gorilla/mux" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/file_search.png" width="100%" /></a>
 				<br/>
 				<br/>
 
 				<a id="definition_search"></a>
 				<Heading level="5" className={styles.h5}>Definition Search</Heading>
 				<p className={styles.p}>Once you are within a repository, you can jump to any definition. A definition can be any function, method, struct, type, variable, or package.</p>
-				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src={`${context.assetsRoot}/img/DocsPage/definition_search.png`} width="100%" /></a>
+				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/definition_search.png" width="100%" /></a>
 				<br/>
 				<br/>
 
@@ -122,14 +121,14 @@ export function DocsPage(): JSX.Element {
 				<a id="github_hover_over_documentation"></a>
 				<Heading level="5" className={styles.h5}>Hover over Documentation</Heading>
 				<p className={styles.p}>Hover over any symbol on GitHub to get its type information and documentation.</p>
-				<a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack" target="_blank"><img src={`${context.assetsRoot}/img/DocsPage/github_hover_over_documentation.png`} width="100%" /></a>
+				<a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/github_hover_over_documentation.png" width="100%" /></a>
 				<br/>
 				<br/>
 
 				<a id="github_jump_to_definition"></a>
 				<Heading level="5" className={styles.h5}>Jump to Definition</Heading>
 				<p className={styles.p}>Click on a symbol on GitHub to jump to its definition.</p>
-				<a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack" target="_blank"><img src={`${context.assetsRoot}/img/DocsPage/github_jump_to_definition.png`} width="100%" /></a>
+				<a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/github_jump_to_definition.png" width="100%" /></a>
 				<br/>
 				<br/>
 
