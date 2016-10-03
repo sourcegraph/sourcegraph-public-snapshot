@@ -75,11 +75,14 @@ func fsBuildContext(ctx context.Context, orig *build.Context, fs ctxvfs.FileSyst
 }
 
 // containingPackage returns the package that contains the given
-// file. It is like buildutil.ContainingPackage, except that it
-// returns the whole package (i.e., it doesn't use build.FindOnly),
-// and it does not perform FS calls that are unnecessary for us (such
-// as searching the GOROOT; this is only called on the main
-// workspace's code, not its deps).
+// file. It is like buildutil.ContainingPackage, except that:
+//
+// * it returns the whole package (i.e., it doesn't use build.FindOnly)
+// * it does not perform FS calls that are unnecessary for us (such
+//   as searching the GOROOT; this is only called on the main
+//   workspace's code, not its deps).
+// * if the file is in the xtest package (package p_test not package p),
+//   it returns build.Package only representing that xtest package
 func containingPackage(bctx *build.Context, filename string) (*build.Package, error) {
 	if !strings.HasPrefix(bctx.GOPATH, "/") || strings.Contains(bctx.GOPATH, ":") {
 		panic("build context GOPATH must contain exactly 1 entry: " + bctx.GOPATH)
@@ -88,5 +91,27 @@ func containingPackage(bctx *build.Context, filename string) (*build.Package, er
 	pkgDir := path.Dir(filename)
 	srcDir := path.Join(bctx.GOPATH, "src") + "/"
 	importPath := strings.TrimPrefix(pkgDir, srcDir)
-	return bctx.Import(importPath, pkgDir, 0)
+	var xtest bool
+	pkg, err := bctx.Import(importPath, pkgDir, 0)
+	if pkg != nil {
+		base := path.Base(filename)
+		for _, f := range pkg.XTestGoFiles {
+			if f == base {
+				xtest = true
+				break
+			}
+		}
+	}
+
+	// If the filename we want refers to a file in an xtest package
+	// (package p_test not package p), then munge the package so that
+	// it only refers to that xtest package.
+	if pkg != nil && xtest && !strings.HasSuffix(pkg.Name, "_test") {
+		pkg.Name += "_test"
+		pkg.GoFiles = nil
+		pkg.CgoFiles = nil
+		pkg.TestGoFiles = nil
+	}
+
+	return pkg, err
 }

@@ -98,6 +98,19 @@ func TestProxy(t *testing.T) {
 				"F": []string{}, // we don't return fields for now
 			},
 		},
+		"go xtest": {
+			rootPath: "git://test/pkg?master",
+			mode:     "go",
+			fs: map[string]string{
+				"a.go":      "package p; var A int",
+				"a_test.go": `package p_test; import "test/pkg"; var X = p.A`,
+			},
+			wantHover: map[string]string{
+				"a.go:1:16":      "A int",
+				"a_test.go:1:40": "X int",
+				"a_test.go:1:46": "A int",
+			},
+		},
 		"go subdirectory in repo": {
 			rootPath: "git://test/pkg?master#d",
 			mode:     "go",
