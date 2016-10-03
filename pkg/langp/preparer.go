@@ -469,13 +469,13 @@ func (p *Preparer) prepareDeps(ctx context.Context, update bool, repo, commit st
 }
 
 func (p *Preparer) tracedPrepareRepo(ctx context.Context, update bool, workspace, repo, commit string) error {
-	span, _ := opentracing.StartSpanFromContext(ctx, "PreparerOpts.PrepareRepo")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "PreparerOpts.PrepareRepo")
 	defer span.Finish()
 	return p.PreparerOpts.PrepareRepo(ctx, update, workspace, repo, commit)
 }
 
 func (p *Preparer) tracedPrepareDeps(ctx context.Context, update bool, workspace, repo, commit string) error {
-	span, _ := opentracing.StartSpanFromContext(ctx, "PreparerOpts.PrepareDeps")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "PreparerOpts.PrepareDeps")
 	defer span.Finish()
 	return p.PreparerOpts.PrepareDeps(ctx, update, workspace, repo, commit)
 }

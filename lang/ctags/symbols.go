@@ -174,7 +174,7 @@ func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, param
 }
 
 func filterRankTags(ctx context.Context, query string, tags []parser.Tag) []parser.Tag {
-	filterSpan, _ := opentracing.StartSpanFromContext(ctx, "filter tags")
+	filterSpan, ctx := opentracing.StartSpanFromContext(ctx, "filter tags")
 	defer filterSpan.Finish()
 
 	// Limit the amount of symbols we serve to the client. Allowing an
