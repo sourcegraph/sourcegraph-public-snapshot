@@ -3,7 +3,7 @@ package golang
 import (
 	"context"
 	"errors"
-	"go/token"
+	"go/ast"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
@@ -20,7 +20,7 @@ func (h *LangHandler) handleDefinition(ctx context.Context, conn jsonrpc2Conn, r
 		return nil, err
 	}
 
-	var nodes []posEnd
+	var nodes []*ast.Ident
 	obj, ok := pkg.Uses[node]
 	if !ok {
 		obj, ok = pkg.Defs[node]
@@ -32,7 +32,7 @@ func (h *LangHandler) handleDefinition(ctx context.Context, conn jsonrpc2Conn, r
 		// TODO(sqs): find a way to actually emit builtin locations
 		// (pointing to builtin/builtin.go).
 		if p := obj.Pos(); p.IsValid() {
-			nodes = append(nodes, fakeNode{p, p + token.Pos(len(obj.Name()))})
+			nodes = append(nodes, &ast.Ident{NamePos: p, Name: obj.Name()})
 		}
 	}
 	if len(nodes) == 0 {

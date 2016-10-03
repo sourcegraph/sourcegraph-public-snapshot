@@ -49,12 +49,7 @@ type fakeNode struct{ p, e token.Pos }
 func (n fakeNode) Pos() token.Pos { return n.p }
 func (n fakeNode) End() token.Pos { return n.e }
 
-type posEnd interface {
-	Pos() token.Pos
-	End() token.Pos
-}
-
-func goRangesToLSPLocations(fset *token.FileSet, nodes []posEnd) []lsp.Location {
+func goRangesToLSPLocations(fset *token.FileSet, nodes []*ast.Ident) []lsp.Location {
 	locs := make([]lsp.Location, len(nodes))
 	for i, node := range nodes {
 		p := fset.Position(node.Pos())

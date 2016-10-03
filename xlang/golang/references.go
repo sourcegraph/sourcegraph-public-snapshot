@@ -3,7 +3,7 @@ package golang
 import (
 	"context"
 	"errors"
-	"go/token"
+	"go/ast"
 	"go/types"
 	"sort"
 
@@ -25,9 +25,9 @@ func (h *LangHandler) handleReferences(ctx context.Context, conn jsonrpc2Conn, r
 		return nil, errors.New("references object not found")
 	}
 
-	var nodes []posEnd
+	var nodes []*ast.Ident
 	if params.Context.IncludeDeclaration {
-		nodes = append(nodes, fakeNode{obj.Pos(), obj.Pos() + token.Pos(len(obj.Name()))})
+		nodes = append(nodes, &ast.Ident{NamePos: obj.Pos(), Name: obj.Name()})
 	}
 	for node, o := range pkg.Info.Uses {
 		if sameObj(obj, o) {
