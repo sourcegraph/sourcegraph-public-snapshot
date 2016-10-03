@@ -60,8 +60,6 @@ func TestRepos_Get(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
-
 	ctx, done := testContext()
 	defer done()
 
@@ -82,8 +80,6 @@ func TestRepos_Get_origin(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
@@ -110,8 +106,6 @@ func TestRepos_List(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
-
 	ctx, done := testContext()
 	defer done()
 
@@ -134,8 +128,6 @@ func TestRepos_List_pagination(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
@@ -185,8 +177,6 @@ func TestRepos_List_type(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
-
 	r1 := &sourcegraph.Repo{URI: "r1", Private: true}
 	r2 := &sourcegraph.Repo{URI: "r2"}
 
@@ -233,7 +223,6 @@ func TestRepos_List_query(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
@@ -329,8 +318,6 @@ func TestRepos_List_sort(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
-
 	ctx, done := testContext()
 	defer done()
 
@@ -362,8 +349,6 @@ func TestRepos_List_URIs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
@@ -404,8 +389,6 @@ func TestRepos_List_byOwner(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
@@ -574,8 +557,6 @@ func TestRepos_Create(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
-
 	ctx, done := testContext()
 	defer done()
 
@@ -606,8 +587,6 @@ func TestRepos_Create_dupe(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
-
 	ctx, done := testContext()
 	defer done()
 
@@ -633,8 +612,6 @@ func TestRepos_Update_Description(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
@@ -674,8 +651,6 @@ func TestRepos_Update_Origin(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
-
 	ctx, done := testContext()
 	defer done()
 
@@ -712,8 +687,6 @@ func TestRepos_Update_UpdatedAt(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
@@ -755,8 +728,6 @@ func TestRepos_Update_PushedAt(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()

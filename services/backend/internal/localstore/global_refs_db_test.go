@@ -28,7 +28,6 @@ func TestGlobalRefs(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
 	g := &globalRefs{}
 
 	ctx, done := testContext()
@@ -192,8 +191,6 @@ func TestGlobalRefsUpdate(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
-
 	g := &globalRefs{}
 	ctx, done := testContext()
 	var mocks *mocks // FIXME
@@ -316,8 +313,6 @@ func TestGlobalRefs_version(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	t.Parallel()
 
 	g := &globalRefs{}
 	ctx, done := testContext()

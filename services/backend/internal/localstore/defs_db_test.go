@@ -36,7 +36,6 @@ func TestDefs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 
 	var (
 		d_abc_xyz = graph.Def{DefKey: graph.DefKey{Repo: "a/b", CommitID: commitID, Unit: "a/b/u", UnitType: "GoPackage", Path: "abc/xyz"}, Name: "XYZ", Kind: "func"}
