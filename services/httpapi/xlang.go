@@ -23,6 +23,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
@@ -151,11 +152,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 		// Our current span is not from httptrace, so we need to
 		// manually inject GRPCMetadata
 		ctx = traceutil.InjectGRPCMetadata(ctx, span.Context())
-		cl, err := sourcegraph.NewClientFromContext(ctx)
-		if err != nil {
-			return err
-		}
-		if _, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo}); err != nil {
+		if _, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo}); err != nil {
 			return err
 		}
 		checkedUserHasReadAccessToRepo = true

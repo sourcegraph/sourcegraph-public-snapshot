@@ -11,7 +11,7 @@ func init() {
 	notif.MustBeDisabled()
 }
 
-func newTest() (*httptestutil.Client, *httptestutil.MockClients) {
+func newTest() *httptestutil.Client {
 	mux := NewHandler(router.New(mux.NewRouter()))
 	return httptestutil.NewTest(mux)
 }

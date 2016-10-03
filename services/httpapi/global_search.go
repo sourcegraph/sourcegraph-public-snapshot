@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 type RepoSearchResult struct {
@@ -24,8 +24,6 @@ type SearchOptions struct {
 }
 
 func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	var params struct {
 		Query        string
 		Repos        []string
@@ -63,7 +61,7 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 		},
 	}
 
-	results, err := cl.Search.Search(r.Context(), op)
+	results, err := backend.Search.Search(r.Context(), op)
 	if err != nil {
 		return err
 	}

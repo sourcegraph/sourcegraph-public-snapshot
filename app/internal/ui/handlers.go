@@ -18,6 +18,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 func init() {
@@ -60,15 +61,13 @@ func handler(h func(w http.ResponseWriter, r *http.Request) (*meta, error)) http
 // not pass data to the JavaScript UI code.
 
 func repoTreeGet(ctx context.Context, routeVars map[string]string) (*sourcegraph.TreeEntry, *sourcegraph.Repo, *sourcegraph.RepoRevSpec, error) {
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-
 	repo, repoRev, err := handlerutil.GetRepoAndRev(ctx, routeVars)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	entry := routevar.ToTreeEntry(routeVars)
-	e, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
+	e, err := backend.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
 		Entry: sourcegraph.TreeEntrySpec{RepoRev: repoRev, Path: entry.Path},
 		Opt:   nil,
 	})

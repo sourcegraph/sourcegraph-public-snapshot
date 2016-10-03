@@ -15,7 +15,6 @@ import (
 // with the configured credentials. They should be used for all CLI
 // operations.
 var cliContext context.Context
-var cliClient *sourcegraph.Client
 
 func init() {
 	cli.CLI.InitFuncs = append(cli.CLI.InitFuncs, func() {
@@ -34,14 +33,6 @@ func init() {
 		}
 		if cli.CLI.Active != nil && skipGRPC[cli.CLI.Active.Name] {
 			return
-		}
-
-		cliContext = withCLICredentials(sourcegraph.WithGRPCEndpoint(context.Background(), endpoint.URLOrDefault()))
-
-		var err error
-		cliClient, err = sourcegraph.NewClientFromContext(cliContext)
-		if err != nil {
-			log.Fatalf("could not create client: %s", err)
 		}
 	})
 }

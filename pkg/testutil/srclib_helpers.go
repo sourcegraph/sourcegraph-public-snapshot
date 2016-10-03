@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 // CheckImport checks whether the defs produced by the srclib-sample
@@ -19,10 +20,8 @@ import (
 // you just checked that specific defs exist, then the index creation
 // could fail (or have a bug) without you realizing it.
 func CheckImport(t *testing.T, ctx context.Context, repo int32, repoPath string, commitID string) {
-	cl, _ := sourcegraph.NewClientFromContext(ctx)
-
 	if len(commitID) != 40 {
-		res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+		res, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 			Repo: repo,
 			Rev:  commitID,
 		})
@@ -40,7 +39,7 @@ func CheckImport(t *testing.T, ctx context.Context, repo int32, repoPath string,
 
 	// Specific def lookup.
 	for _, defSpec := range sampleDefs {
-		def, err := cl.Defs.Get(ctx, &sourcegraph.DefsGetOp{Def: defSpec, Opt: nil})
+		def, err := backend.Defs.Get(ctx, &sourcegraph.DefsGetOp{Def: defSpec, Opt: nil})
 		if err != nil {
 			t.Errorf("failed to get def %#v: %s", defSpec, err)
 			continue

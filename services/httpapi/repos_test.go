@@ -12,16 +12,17 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
 func TestRepo(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	wantRepo := &sourcegraph.Repo{ID: 1}
 
-	calledReposResolve := mock.Repos.MockResolve_Local(t, "r/r", 1)
-	calledGet := mock.Repos.MockGet(t, 1)
+	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r/r", 1)
+	calledGet := backend.Mocks.Repos.MockGet(t, 1)
 
 	var repo *sourcegraph.Repo
 	if err := c.GetJSON("/repos/r/r", &repo); err != nil {
@@ -39,15 +40,15 @@ func TestRepo(t *testing.T) {
 }
 
 func TestRepoResolve_IncludedRepo(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	want := &repoResolution{
 		Data:         sourcegraph.RepoResolution{Repo: 1, CanonicalPath: "r"},
 		IncludedRepo: &sourcegraph.Repo{ID: 1},
 	}
 
-	calledResolve := mock.Repos.MockResolve_Local(t, "r", 1)
-	calledGet := mock.Repos.MockGet(t, 1)
+	calledResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
+	calledGet := backend.Mocks.Repos.MockGet(t, 1)
 
 	var res *repoResolution
 	if err := c.GetJSON("/repos/r/-/resolve", &res); err != nil {
@@ -65,15 +66,15 @@ func TestRepoResolve_IncludedRepo(t *testing.T) {
 }
 
 func TestRepoResolve_IncludedRepo_ignoreErr(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	want := &repoResolution{
 		Data: sourcegraph.RepoResolution{Repo: 1, CanonicalPath: "r"},
 	}
 
-	calledResolve := mock.Repos.MockResolve_Local(t, "r", 1)
+	calledResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
 	var calledReposGet bool
-	mock.Repos.Get_ = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	backend.Mocks.Repos.Get = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		calledReposGet = true
 		return nil, grpc.Errorf(codes.Unknown, "error")
 	}
@@ -94,13 +95,13 @@ func TestRepoResolve_IncludedRepo_ignoreErr(t *testing.T) {
 }
 
 func TestRepoResolve_Remote(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	want := &repoResolution{
 		Data: sourcegraph.RepoResolution{RemoteRepo: &sourcegraph.Repo{Name: "r"}},
 	}
 
-	calledResolve := mock.Repos.MockResolve_Remote(t, "r", &sourcegraph.Repo{Name: "r"})
+	calledResolve := backend.Mocks.Repos.MockResolve_Remote(t, "r", &sourcegraph.Repo{Name: "r"})
 
 	var res *repoResolution
 	if err := c.GetJSON("/repos/r/-/resolve", &res); err != nil {
@@ -115,9 +116,9 @@ func TestRepoResolve_Remote(t *testing.T) {
 }
 
 func TestRepoResolve_notFound(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
-	calledResolve := mock.Repos.MockResolve_NotFound(t, "r")
+	calledResolve := backend.Mocks.Repos.MockResolve_NotFound(t, "r")
 
 	resp, err := c.Get("/repos/r/-/resolve")
 	if err != nil {
@@ -134,13 +135,13 @@ func TestRepoResolve_notFound(t *testing.T) {
 // Test that if the repo hasn't been modified since the client's
 // If-Modified-Since, HTTP 304 Not Modified is returned.
 func TestRepo_caching_notModified(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	mtime := time.Now().UTC()
 	ts := pbtypes.NewTimestamp(mtime)
 
-	calledReposResolve := mock.Repos.MockResolve_Local(t, "r/r", 1)
-	calledGet := mock.Repos.MockGet_Return(t, &sourcegraph.Repo{
+	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r/r", 1)
+	calledGet := backend.Mocks.Repos.MockGet_Return(t, &sourcegraph.Repo{
 		ID:        1,
 		URI:       "r/r",
 		UpdatedAt: &ts,
@@ -167,13 +168,13 @@ func TestRepo_caching_notModified(t *testing.T) {
 // Test that if the repo was modified after the client's
 // If-Modified-Since, it is returned.
 func TestRepo_caching_modifiedSince(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	mtime := time.Now().UTC()
 	ts := pbtypes.NewTimestamp(mtime)
 
-	calledReposResolve := mock.Repos.MockResolve_Local(t, "r/r", 1)
-	calledGet := mock.Repos.MockGet_Return(t, &sourcegraph.Repo{
+	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r/r", 1)
+	calledGet := backend.Mocks.Repos.MockGet_Return(t, &sourcegraph.Repo{
 		ID:        1,
 		URI:       "r/r",
 		UpdatedAt: &ts,
@@ -198,13 +199,13 @@ func TestRepo_caching_modifiedSince(t *testing.T) {
 }
 
 func TestRepos(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	wantRepos := &sourcegraph.RepoList{
 		Repos: []*sourcegraph.Repo{{URI: "r/r"}},
 	}
 
-	calledList := mock.Repos.MockList(t, "r/r")
+	calledList := backend.Mocks.Repos.MockList(t, "r/r")
 
 	var repos *sourcegraph.RepoList
 	if err := c.GetJSON("/repos", &repos); err != nil {
@@ -219,12 +220,12 @@ func TestRepos(t *testing.T) {
 }
 
 func TestRepoCreate(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	want := &sourcegraph.Repo{URI: "r"}
 
 	var calledCreate bool
-	mock.Repos.Create_ = func(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
+	backend.Mocks.Repos.Create = func(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
 		if op.GetNew().URI != want.URI {
 			t.Errorf("got URI %q, want %q", op.GetNew().URI, want.URI)
 		}

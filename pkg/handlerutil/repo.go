@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
@@ -74,18 +75,13 @@ func GetRepoAndRevCommon(ctx context.Context, vars map[string]string) (rc *RepoC
 // route vars. Callers should ideally handle the custom error type
 // URLMovedError.
 func GetRepoCommon(ctx context.Context, vars map[string]string) (rc *RepoCommon, err error) {
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	rc = &RepoCommon{}
 	rc.Repo, err = GetRepo(ctx, vars)
 	if err != nil {
 		return
 	}
 
-	rc.RepoConfig, err = cl.Repos.GetConfig(ctx, &sourcegraph.RepoSpec{ID: rc.Repo.ID})
+	rc.RepoConfig, err = backend.Repos.GetConfig(ctx, &sourcegraph.RepoSpec{ID: rc.Repo.ID})
 	return
 }
 
@@ -101,12 +97,7 @@ func GetRepoID(ctx context.Context, vars map[string]string) (int32, error) {
 		return int32(id), nil
 	}
 
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: origRepo})
+	res, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: origRepo})
 	if err != nil {
 		return 0, err
 	}
@@ -128,12 +119,7 @@ func GetRepo(ctx context.Context, vars map[string]string) (repo *sourcegraph.Rep
 		return nil, err
 	}
 
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoID})
+	return backend.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoID})
 }
 
 // getRepoRev resolves the RepoRevSpec and commit specified in the
@@ -149,12 +135,7 @@ func getRepoRev(ctx context.Context, vars map[string]string, repoID int32, defau
 		}
 	}
 
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return sourcegraph.RepoRevSpec{}, err
-	}
-
-	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+	res, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: repoID,
 		Rev:  repoRev.Rev,
 	})
@@ -211,16 +192,11 @@ func RedirectToNewRepoURI(w http.ResponseWriter, r *http.Request, newRepoURI str
 // recently. This is because in this case we assume the user cares
 // more about seeing srclib defs/refs than any exact version.
 func ResolveSrclibDataVersion(ctx context.Context, entry sourcegraph.TreeEntrySpec, userInputRev string) (sourcegraph.RepoRevSpec, *sourcegraph.SrclibDataVersion, error) {
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return sourcegraph.RepoRevSpec{}, nil, err
-	}
-
 	if userInputRev == "" {
 		entry.Path = ""
 	}
 
-	dataVer, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &entry)
+	dataVer, err := backend.Repos.GetSrclibDataVersionForPath(ctx, &entry)
 	if err == nil {
 		entry.RepoRev.CommitID = dataVer.CommitID
 	}
@@ -255,12 +231,7 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 		},
 	}
 
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return
-	}
-
-	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+	res, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: repo.ID,
 		Rev:  repoRev.Rev,
 	})
@@ -278,7 +249,7 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 	}
 	dc.Def.DefKey.CommitID = resolvedRev.CommitID
 
-	dc, err = cl.Defs.Get(ctx, &sourcegraph.DefsGetOp{
+	dc, err = backend.Defs.Get(ctx, &sourcegraph.DefsGetOp{
 		Def: sourcegraph.NewDefSpecFromDefKey(dc.Def.DefKey, repo.ID),
 		Opt: opt,
 	})
@@ -307,7 +278,7 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 		// If the user didn't specify a rev in the URL, then they probably
 		// care more about seeing the def than seeing the exact version,
 		// so we only perform this strict check if they did.
-		defResolvedRev, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
+		defResolvedRev, err := backend.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
 			RepoRev: absRepoRev, // use originally requested rev, not already resolved last-srclib-version
 			Path:    dc.File,
 		})

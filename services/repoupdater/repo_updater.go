@@ -11,7 +11,13 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
+	"sourcegraph.com/sqs/pbtypes"
 )
+
+// FIXME this dependency injection should be removed
+var MirrorRepos interface {
+	RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
+}
 
 const (
 	repoUpdaterQueueDepth = 10
@@ -135,12 +141,6 @@ func (ru *repoUpdater) enqueue(op *repoUpdateOp) {
 }
 
 func (ru *repoUpdater) run(ctx context.Context) {
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		log15.Error("repoUpdater: RefreshVCS: could not create client", "error", err)
-		return
-	}
-
 	for range ru.checkQueue {
 		for {
 			// Dequeue one update.
@@ -164,7 +164,7 @@ func (ru *repoUpdater) run(ctx context.Context) {
 			} else {
 				log15.Debug("repoUpdater: RefreshVCS:", "repo", updateOp.Repo)
 			}
-			if _, err := cl.MirrorRepos.RefreshVCS(ctx, op); err != nil {
+			if _, err := MirrorRepos.RefreshVCS(ctx, op); err != nil {
 				log15.Warn("repoUpdater: RefreshVCS:", "error", err)
 				continue
 			}

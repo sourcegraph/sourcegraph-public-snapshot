@@ -8,6 +8,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
 )
 
@@ -40,8 +41,7 @@ func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
 	}
 
 	// Check inventory.
-	cl, _ := sourcegraph.NewClientFromContext(ctx)
-	inv, err := cl.Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: repo.ID})
+	inv, err := backend.Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: repo.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
 
 	// Check that repo.Language was automatically set.
 	time.Sleep(1 * time.Second)
-	repo, err = cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repo.ID})
+	repo, err = backend.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repo.ID})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -5,16 +5,17 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 func TestAnnotations(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	wantAnns := &sourcegraph.AnnotationList{
 		Annotations: []*sourcegraph.Annotation{{URL: "u"}},
 	}
 
-	calledList := mock.Annotations.MockList(t, wantAnns.Annotations...)
+	calledList := backend.Mocks.Annotations.MockList(t, wantAnns.Annotations...)
 
 	var anns *sourcegraph.AnnotationList
 	if err := c.GetJSON("/annotations", &anns); err != nil {

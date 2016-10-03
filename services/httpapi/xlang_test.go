@@ -14,14 +14,15 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 func TestXLang(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	calledValid := false
 	calledUnauthed := false
-	mock.Repos.Resolve_ = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
+	backend.Mocks.Repos.Resolve = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
 		switch op.Path {
 		case "my/repo":
 			calledValid = true

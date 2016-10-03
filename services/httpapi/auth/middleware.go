@@ -11,6 +11,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
 const oauthBasicUsername = "x-oauth-basic"
@@ -35,6 +36,7 @@ func AuthorizationMiddleware(next http.Handler) http.Handler {
 
 		parts := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
 		if len(parts) != 2 {
+			r = r.WithContext(github.NewContextWithAuthedClient(r.Context()))
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -64,6 +66,7 @@ func AuthorizationMiddleware(next http.Handler) http.Handler {
 
 		}
 
+		r = r.WithContext(github.NewContextWithAuthedClient(r.Context()))
 		next.ServeHTTP(w, r)
 	})
 }

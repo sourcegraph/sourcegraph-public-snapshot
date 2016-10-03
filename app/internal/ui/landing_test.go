@@ -10,12 +10,13 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
 func TestDefLanding_OK(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	tests := []struct {
 		rev string
@@ -31,9 +32,9 @@ func TestDefLanding_OK(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
+		calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
 		var calledGet bool
-		mock.Repos.Get_ = func(ctx context.Context, op *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+		backend.Mocks.Repos.Get = func(ctx context.Context, op *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 			calledGet = true
 			return &sourcegraph.Repo{
 				ID:            1,
@@ -42,9 +43,9 @@ func TestDefLanding_OK(t *testing.T) {
 				DefaultBranch: "b",
 			}, nil
 		}
-		calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
-		calledReposGetSrclibDataVersionForPath := mock.Repos.MockGetSrclibDataVersionForPath_Current(t)
-		calledDefsGet := mock.Defs.MockGet_Return(t, &sourcegraph.Def{
+		calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "c")
+		calledReposGetSrclibDataVersionForPath := backend.Mocks.Repos.MockGetSrclibDataVersionForPath_Current(t)
+		calledDefsGet := backend.Mocks.Defs.MockGet_Return(t, &sourcegraph.Def{
 			Def: graph.Def{
 				Name: "aaa",
 				DefKey: graph.DefKey{
@@ -65,19 +66,19 @@ func TestDefLanding_OK(t *testing.T) {
 			DocHTML: &pbtypes.HTML{HTML: "<p><b>hello</b> world!</p>"},
 		})
 		var calledDefsListRefLocations bool
-		mock.Defs.ListRefLocations_ = func(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
+		backend.Mocks.Defs.ListRefLocations = func(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
 			calledDefsListRefLocations = true
 			return &sourcegraph.RefLocationsList{}, nil
 		}
 		var calledDefsListRefs bool
-		mock.Defs.ListRefs_ = func(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error) {
+		backend.Mocks.Defs.ListRefs = func(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error) {
 			calledDefsListRefs = true
 			return &sourcegraph.RefList{}, nil
 		}
-		calledRepoTreeGet := mock.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
+		calledRepoTreeGet := backend.Mocks.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
 			FileRange: &sourcegraph.FileRange{},
 		})
-		calledAnnotationsList := mock.Annotations.MockList(t)
+		calledAnnotationsList := backend.Mocks.Annotations.MockList(t)
 
 		wantMeta := meta{
 			Title:        test.wantTitlePrefix + " · r · Sourcegraph",
@@ -125,19 +126,19 @@ func TestDefLanding_OK(t *testing.T) {
 }
 
 func TestDefLanding_Error(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	for url, req := range urls {
 		if req.repo == "" || req.rev == "" || req.defUnitType == "" || req.defUnit == "" || req.defPath == "" {
 			continue
 		}
 
-		calledReposResolve := mock.Repos.MockResolve_Local(t, req.repo, 1)
-		calledGet := mock.Repos.MockGet(t, 1)
-		calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
-		calledReposGetSrclibDataVersionForPath := mock.Repos.MockGetSrclibDataVersionForPath_Current(t)
+		calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, req.repo, 1)
+		calledGet := backend.Mocks.Repos.MockGet(t, 1)
+		calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "v")
+		calledReposGetSrclibDataVersionForPath := backend.Mocks.Repos.MockGetSrclibDataVersionForPath_Current(t)
 		var calledDefsGet bool
-		mock.Defs.Get_ = func(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
+		backend.Mocks.Defs.Get = func(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
 			calledDefsGet = true
 			return nil, grpc.Errorf(codes.NotFound, "")
 		}

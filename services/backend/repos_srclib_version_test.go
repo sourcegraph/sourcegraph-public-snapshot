@@ -23,7 +23,7 @@ const (
 
 func TestReposService_GetSrclibDataVersionForPath_exact(t *testing.T) {
 	var s repos
-	ctx, _ := testContext()
+	ctx := testContext()
 
 	calledReposGet := localstore.Mocks.Repos.MockGet_Path(t, 1, "r")
 	calledVersions := localstore.GraphMockVersions(&localstore.Mocks.Graph, &srclibstore.Version{Repo: "r", CommitID: strings.Repeat("c", 40)})
@@ -56,12 +56,12 @@ func TestReposService_GetSrclibDataVersionForPath_lookback_versionSameAsLastComm
 
 func testReposService_GetSrclibDataVersionForPath_lookback(t *testing.T, versionCommitID string, commitsBehind int32) {
 	var s repos
-	ctx, mock := testContext()
+	ctx := testContext()
 
 	calledReposGet := localstore.Mocks.Repos.MockGet_Path(t, 1, "r")
 	calledVersions := localstore.GraphMockVersionsFiltered(&localstore.Mocks.Graph, &srclibstore.Version{Repo: "r", CommitID: versionCommitID})
 	var calledListCommitsWithPath, calledListCommitsNoPath bool
-	mock.servers.Repos.ListCommits_ = func(ctx context.Context, op *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error) {
+	Mocks.Repos.ListCommits = func(ctx context.Context, op *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error) {
 		if op.Opt.Path != "" {
 			// Return the last commit that changed the file "p".
 			calledListCommitsWithPath = true
@@ -98,11 +98,11 @@ func testReposService_GetSrclibDataVersionForPath_lookback(t *testing.T, version
 
 func TestReposService_GetSrclibDataVersionForPath_notFoundNoVersionsNoCommits(t *testing.T) {
 	var s repos
-	ctx, mock := testContext()
+	ctx := testContext()
 
 	calledReposGet := localstore.Mocks.Repos.MockGet_Path(t, 1, "r")
 	calledVersions := localstore.GraphMockVersions(&localstore.Mocks.Graph)
-	calledListCommits := mock.servers.Repos.MockListCommits(t)
+	calledListCommits := Mocks.Repos.MockListCommits(t)
 
 	_, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
 		RepoRev: sourcegraph.RepoRevSpec{Repo: 1, CommitID: strings.Repeat("c", 40)},
@@ -124,11 +124,11 @@ func TestReposService_GetSrclibDataVersionForPath_notFoundNoVersionsNoCommits(t 
 
 func TestReposService_GetSrclibDataVersionForPath_notFoundWrongVersionsNoCommits(t *testing.T) {
 	var s repos
-	ctx, mock := testContext()
+	ctx := testContext()
 
 	calledReposGet := localstore.Mocks.Repos.MockGet_Path(t, 1, "r")
 	calledVersions := localstore.GraphMockVersionsFiltered(&localstore.Mocks.Graph, &srclibstore.Version{Repo: "r", CommitID: "x"})
-	calledListCommits := mock.servers.Repos.MockListCommits(t)
+	calledListCommits := Mocks.Repos.MockListCommits(t)
 
 	_, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
 		RepoRev: sourcegraph.RepoRevSpec{Repo: 1, CommitID: strings.Repeat("c", 40)},
@@ -150,11 +150,11 @@ func TestReposService_GetSrclibDataVersionForPath_notFoundWrongVersionsNoCommits
 
 func TestReposService_GetSrclibDataVersionForPath_notFoundNoVersionsWrongCommits(t *testing.T) {
 	var s repos
-	ctx, mock := testContext()
+	ctx := testContext()
 
 	calledReposGet := localstore.Mocks.Repos.MockGet_Path(t, 1, "r")
 	calledVersions := localstore.GraphMockVersions(&localstore.Mocks.Graph)
-	calledListCommits := mock.servers.Repos.MockListCommits(t, "x")
+	calledListCommits := Mocks.Repos.MockListCommits(t, "x")
 
 	_, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
 		RepoRev: sourcegraph.RepoRevSpec{Repo: 1, CommitID: strings.Repeat("c", 40)},

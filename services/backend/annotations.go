@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"testing"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -20,16 +21,19 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/syntaxhighlight"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
-var Annotations sourcegraph.AnnotationsServer = &annotations{}
+var Annotations = &annotations{}
 
 type annotations struct{}
 
 func (s *annotations) List(ctx context.Context, opt *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error) {
+	if Mocks.Annotations.List != nil {
+		return Mocks.Annotations.List(ctx, opt)
+	}
+
 	var fileRange sourcegraph.FileRange
 	if opt.Range != nil {
 		fileRange = *opt.Range
@@ -39,7 +43,7 @@ func (s *annotations) List(ctx context.Context, opt *sourcegraph.AnnotationsList
 		return nil, errNotAbsCommitID
 	}
 
-	entry, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{
+	entry, err := RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
 		Entry: opt.Entry,
 		Opt: &sourcegraph.RepoTreeGetOptions{
 			GetFileOptions: sourcegraph.GetFileOptions{
@@ -215,6 +219,10 @@ func computeLineStartBytes(data []byte) []uint32 {
 }
 
 func (s *annotations) GetDefAtPos(ctx context.Context, opt *sourcegraph.AnnotationsGetDefAtPosOptions) (*sourcegraph.DefSpec, error) {
+	if Mocks.Annotations.GetDefAtPos != nil {
+		return Mocks.Annotations.GetDefAtPos(ctx, opt)
+	}
+
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Annotations.GetDefAtPos", opt.Entry.RepoRev.Repo); err != nil {
 		return nil, err
 	}
@@ -223,12 +231,12 @@ func (s *annotations) GetDefAtPos(ctx context.Context, opt *sourcegraph.Annotati
 		return nil, fmt.Errorf("GetDefAtPos: no file path specified for file in %v", opt.Entry.RepoRev)
 	}
 
-	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: opt.Entry.RepoRev.Repo})
+	repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: opt.Entry.RepoRev.Repo})
 	if err != nil {
 		return nil, err
 	}
 
-	entry, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{
+	entry, err := RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
 		Entry: opt.Entry,
 	})
 	if err != nil {
@@ -276,7 +284,7 @@ func (s *annotations) GetDefAtPos(ctx context.Context, opt *sourcegraph.Annotati
 	case opt.Entry.RepoRev.Repo:
 		defCommitID = opt.Entry.RepoRev.CommitID
 	default:
-		defaultRev, err := svc.Repos(ctx).ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+		defaultRev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 			Repo: defRepo.ID,
 		})
 		if err != nil {
@@ -292,4 +300,18 @@ func (s *annotations) GetDefAtPos(ctx context.Context, opt *sourcegraph.Annotati
 		Unit:     r.DefUnit,
 		Path:     r.DefPath,
 	}, nil
+}
+
+type MockAnnotations struct {
+	List        func(v0 context.Context, v1 *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error)
+	GetDefAtPos func(v0 context.Context, v1 *sourcegraph.AnnotationsGetDefAtPosOptions) (*sourcegraph.DefSpec, error)
+}
+
+func (s *MockAnnotations) MockList(t *testing.T, wantAnns ...*sourcegraph.Annotation) (called *bool) {
+	called = new(bool)
+	s.List = func(ctx context.Context, opt *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error) {
+		*called = true
+		return &sourcegraph.AnnotationList{Annotations: wantAnns}, nil
+	}
+	return
 }

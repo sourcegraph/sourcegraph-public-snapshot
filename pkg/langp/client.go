@@ -18,6 +18,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
@@ -25,6 +26,12 @@ import (
 	"github.com/golang/groupcache/consistenthash"
 	opentracing "github.com/opentracing/opentracing-go"
 )
+
+// FIXME this dependency injection should be removed
+var Repos interface {
+	Resolve(ctx context.Context, in *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
+	GetInventory(ctx context.Context, in *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
+}
 
 // Prefix for environment variables referring to language processor configuration
 const envLanguageProcessorPrefix = "SG_LANGUAGE_PROCESSOR_"
@@ -372,15 +379,11 @@ func (c *Client) clientsForRepo(ctx context.Context, rr *RepoRev) ([]*langClient
 		// This should never really be true, but is often true in tests.
 		return nil, nil
 	}
-	cl, err := sourcegraph.NewClientFromContext(ctx)
+	repo, err := Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: rr.Repo})
 	if err != nil {
 		return nil, err
 	}
-	repo, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: rr.Repo})
-	if err != nil {
-		return nil, err
-	}
-	inv, err := cl.Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{
+	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{
 		Repo:     repo.Repo,
 		CommitID: rr.Commit,
 	})

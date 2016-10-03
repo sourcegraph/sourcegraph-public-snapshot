@@ -9,6 +9,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 )
 
@@ -30,8 +31,6 @@ func serveRepoResolveRev(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveCommit(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	rawRepoRev := routevar.ToRepoRev(mux.Vars(r))
 	abs := len(rawRepoRev.Rev) == 40 // absolute commit ID?
 
@@ -39,7 +38,7 @@ func serveCommit(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	commit, err := cl.Repos.GetCommit(r.Context(), repoRev)
+	commit, err := backend.Repos.GetCommit(r.Context(), repoRev)
 	if err != nil {
 		return err
 	}
@@ -55,8 +54,6 @@ func serveCommit(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	repoID, err := resolveLocalRepo(r.Context(), routevar.ToRepo(mux.Vars(r)))
 	if err != nil {
 		return err
@@ -67,7 +64,7 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	commits, err := cl.Repos.ListCommits(r.Context(), &sourcegraph.ReposListCommitsOp{Repo: repoID, Opt: &opt})
+	commits, err := backend.Repos.ListCommits(r.Context(), &sourcegraph.ReposListCommitsOp{Repo: repoID, Opt: &opt})
 	if err != nil {
 		return err
 	}
@@ -101,8 +98,6 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	var opt sourcegraph.RepoListBranchesOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
 	if err != nil {
@@ -114,7 +109,7 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	branches, err := cl.Repos.ListBranches(r.Context(), &sourcegraph.ReposListBranchesOp{Repo: repo, Opt: &opt})
+	branches, err := backend.Repos.ListBranches(r.Context(), &sourcegraph.ReposListBranchesOp{Repo: repo, Opt: &opt})
 	if err != nil {
 		return err
 	}
@@ -122,8 +117,6 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	var opt sourcegraph.RepoListTagsOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
 	if err != nil {
@@ -135,7 +128,7 @@ func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	tags, err := cl.Repos.ListTags(r.Context(), &sourcegraph.ReposListTagsOp{Repo: repo, Opt: &opt})
+	tags, err := backend.Repos.ListTags(r.Context(), &sourcegraph.ReposListTagsOp{Repo: repo, Opt: &opt})
 	if err != nil {
 		return err
 	}

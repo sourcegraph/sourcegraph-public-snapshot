@@ -14,6 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 // LocalRefLocationsList lists the locations that reference a def in same repository.
@@ -38,8 +39,6 @@ func (list DefFileRefs) Swap(i, j int) {
 }
 
 func serveDefLocalRefLocations(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	var opt sourcegraph.DefListRefLocationsOptions
 	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
 		return err
@@ -78,7 +77,7 @@ func serveDefLocalRefLocations(w http.ResponseWriter, r *http.Request) error {
 		Path:     def.Path,
 	}
 
-	refLocations, err := cl.Defs.ListRefLocations(r.Context(), &sourcegraph.DefsListRefLocationsOp{
+	refLocations, err := backend.Defs.ListRefLocations(r.Context(), &sourcegraph.DefsListRefLocationsOp{
 		Def: defSpec,
 		Opt: &opt,
 	})

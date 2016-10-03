@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -73,7 +74,6 @@ func serveRepoIndex(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
 	vars := mux.Vars(r)
 
 	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), vars)
@@ -89,7 +89,7 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 
 	repoURL := approuter.Rel.URLToRepo(repo.URI).String()
 
-	results, err := cl.Search.Search(r.Context(), &sourcegraph.SearchOp{
+	results, err := backend.Search.Search(r.Context(), &sourcegraph.SearchOp{
 		Opt: &sourcegraph.SearchOptions{
 			Repos:        []int32{repo.ID},
 			Languages:    []string{"Go"},
@@ -103,7 +103,7 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var sanitizedREADME []byte
-	readmeEntry, err := cl.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{
+	readmeEntry, err := backend.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{
 		Entry: sourcegraph.TreeEntrySpec{
 			RepoRev: repoRev,
 			Path:    "README.md",
@@ -150,7 +150,6 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
 	vars := mux.Vars(r)
 
 	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), vars)
@@ -181,7 +180,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 
 		// get all caller repositories with counts (global refs)
 		const reflocRepoLimit = 5
-		refLocs, err = cl.Defs.ListRefLocations(r.Context(), &sourcegraph.DefsListRefLocationsOp{
+		refLocs, err = backend.Defs.ListRefLocations(r.Context(), &sourcegraph.DefsListRefLocationsOp{
 			Def: defSpec,
 			Opt: &sourcegraph.DefListRefLocationsOptions{
 				// NOTE(mate): this has no effect at the moment
@@ -213,11 +212,11 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 			},
 			NoSrclibAnns: false,
 		}
-		defEntry, err = cl.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &opt})
+		defEntry, err = backend.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &opt})
 		if err != nil {
 			return err
 		}
-		defAnns, err := cl.Annotations.List(r.Context(), &sourcegraph.AnnotationsListOptions{
+		defAnns, err := backend.Annotations.List(r.Context(), &sourcegraph.AnnotationsListOptions{
 			Entry:        entrySpec,
 			Range:        &opt.FileRange,
 			NoSrclibAnns: opt.NoSrclibAnns,
@@ -235,7 +234,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		defFileURL = approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0).String()
 
 		// fetch example
-		refs, err := cl.Defs.ListRefs(r.Context(), &sourcegraph.DefsListRefsOp{
+		refs, err := backend.Defs.ListRefs(r.Context(), &sourcegraph.DefsListRefsOp{
 			Def: defSpec,
 			Opt: &sourcegraph.DefListRefsOptions{ListOptions: sourcegraph.ListOptions{PerPage: 3}},
 		})
@@ -254,7 +253,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 				},
 				NoSrclibAnns: false,
 			}
-			refRepo, err := cl.Repos.Resolve(r.Context(), &sourcegraph.RepoResolveOp{Path: ref.Repo})
+			refRepo, err := backend.Repos.Resolve(r.Context(), &sourcegraph.RepoResolveOp{Path: ref.Repo})
 			if err != nil {
 				return err
 			}
@@ -262,11 +261,11 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 				RepoRev: sourcegraph.RepoRevSpec{Repo: refRepo.Repo, CommitID: ref.CommitID},
 				Path:    ref.File,
 			}
-			refEntry, err := cl.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{Entry: refEntrySpec, Opt: opt})
+			refEntry, err := backend.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{Entry: refEntrySpec, Opt: opt})
 			if err != nil {
 				return fmt.Errorf("could not get ref tree: %s", err)
 			}
-			refAnns, err := cl.Annotations.List(r.Context(), &sourcegraph.AnnotationsListOptions{
+			refAnns, err := backend.Annotations.List(r.Context(), &sourcegraph.AnnotationsListOptions{
 				Entry: refEntrySpec,
 				Range: &sourcegraph.FileRange{
 					// note(beyang): specify line range here, instead of byte range, because the

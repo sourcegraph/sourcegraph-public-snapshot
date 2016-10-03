@@ -11,11 +11,11 @@ import (
 
 func TestDefsService_ListRefs(t *testing.T) {
 	var s defs
-	ctx, mock := testContext()
+	ctx := testContext()
 
 	want := []*graph.Ref{{File: "f"}}
 
-	calledReposGet := mock.servers.Repos.MockGet_Path(t, 1, "r")
+	calledReposGet := Mocks.Repos.MockGet_Path(t, 1, "r")
 	calledRefs := localstore.GraphMockRefs(&localstore.Mocks.Graph, want...)
 
 	refs, err := s.ListRefs(ctx, &sourcegraph.DefsListRefsOp{Def: sourcegraph.DefSpec{CommitID: "c", Repo: 1, Path: "p"}})

@@ -28,9 +28,6 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	lightstep "github.com/lightstep/lightstep-tracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/soheilhy/cmux"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-flags"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app"
@@ -48,14 +45,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/server"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 // Stripped down help message presented to most users (full help message can be
@@ -256,19 +250,11 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	// Shared context setup between client and server.
 	sharedCtxFunc := func(ctx context.Context) context.Context {
-		ctx = sourcegraph.WithGRPCEndpoint(ctx, endpoint.URLOrDefault())
 		return ctx
 	}
 	clientCtxFunc := func(ctx context.Context) context.Context {
 		ctx = sharedCtxFunc(ctx)
 		for _, f := range cli.ClientContext {
-			ctx = f(ctx)
-		}
-		return ctx
-	}
-	serverCtxFunc := func(ctx context.Context) context.Context {
-		ctx = sharedCtxFunc(ctx)
-		for _, f := range cli.ServerContext {
 			ctx = f(ctx)
 		}
 		return ctx
@@ -333,45 +319,17 @@ func (c *ServeCmd) Execute(args []string) error {
 	c.initializeEventListeners(clientCtx)
 
 	serveHTTPS := func(l net.Listener, srv *http.Server, addr string) {
-		grpcSrv := server.New(server.Config(serverCtxFunc))
-
-		// Handler that sends traffic to either Web or gRPC depending
-		// on content-type
-		srv.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
-				grpcSrv.ServeHTTP(w, r)
-			} else {
-				h.ServeHTTP(w, r)
-			}
-		})
-
 		log15.Debug("HTTPS running", "on", addr)
+		srv.Handler = h
 		srv.Addr = addr
 		go func() { log.Fatal(srv.Serve(l)) }()
 	}
 
 	serveHTTP := func(l net.Listener, srv *http.Server, addr string) {
-		// We need to use cmux since go's built in http server won't
-		// allow http/2 on non TLS connections.
-		lmux := cmux.New(l)
-		grpcListener := lmux.Match(cmux.HTTP2HeaderField("content-type", "application/grpc"))
-		anyListener := lmux.Match(cmux.Any())
-
-		// Web
 		log15.Debug("HTTP running", "on", addr)
 		srv.Addr = addr
 		srv.Handler = h
-		go func() { log.Fatal(srv.Serve(anyListener)) }()
-
-		// gRPC
-		grpcSrv := server.New(server.Config(serverCtxFunc))
-		go func() { log.Fatal(grpcSrv.Serve(grpcListener)) }()
-
-		go func() {
-			if err := lmux.Serve(); err != nil && !strings.Contains(err.Error(), "use of closed network connection") {
-				log.Fatalf("Error serving: %s.", err)
-			}
-		}()
+		go func() { log.Fatal(srv.Serve(l)) }()
 	}
 
 	// Start HTTP server.
@@ -419,7 +377,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	// Connection test
-	c.checkReachability(clientCtx)
 	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
 
 	// Start background repo updater worker.
@@ -454,7 +411,6 @@ func (c *ServeCmd) Execute(args []string) error {
 				return nil, err
 			}
 		}
-		ctx = svc.WithServices(ctx, server.Config(serverCtxFunc))
 		scope := "internal:" + name
 		ctx = auth.WithActor(ctx, &auth.Actor{Scope: map[string]bool{scope: true}})
 		ctx, err = authenticateScopedContext(ctx, []string{scope})
@@ -502,54 +458,6 @@ func (c *ServeCmd) initializeEventListeners(parent context.Context) {
 		} else {
 			l.Start(listenerCtx)
 		}
-	}
-}
-
-// checkReachability attempts to contact the gRPC server on both the
-// internally and externally published URL. It calls log.Fatal if the
-// server can't contact itself, which indicates a likely configuration
-// problem (wrong gRPC URL or bind address?).
-func (c *ServeCmd) checkReachability(ctx context.Context) {
-	var timeout time.Duration
-	if os.Getenv("CI") == "" {
-		timeout = 5 * time.Second
-	} else {
-		timeout = 15 * time.Second // CI is slower
-	}
-
-	doCheck := func(ctx context.Context, errorIsFatal bool) {
-		ctx, cancel := context.WithTimeout(ctx, timeout)
-		defer cancel()
-		cl, err := sourcegraph.NewClientFromContext(ctx)
-		if err != nil {
-			if errorIsFatal {
-				log.Fatalf("Fatal: could not create client: %s", err)
-			} else {
-				log.Printf("Warning: could not create client: %s", err)
-			}
-			return
-		}
-		if _, err := cl.Meta.Config(ctx, &pbtypes.Void{}); err != nil && grpc.Code(err) != codes.Unauthenticated {
-			msg := fmt.Sprintf("Reachability check to server at %s failed (%s). Clients (including the web app) would be unable to connect to the server.", sourcegraph.GRPCEndpoint(ctx), err)
-			if errorIsFatal {
-				log.Fatalf(msg)
-			} else {
-				log.Println("Warning:", msg)
-			}
-		}
-	}
-
-	// Check internal gRPC endpoint.
-	doCheck(ctx, true)
-
-	// Check external gRPC endpoint if it differs from the internal
-	// endpoint.
-	extEndpoint, err := url.Parse(c.AppURL)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if extEndpoint != nil && extEndpoint.String() != sourcegraph.GRPCEndpoint(ctx).String() {
-		doCheck(sourcegraph.WithGRPCEndpoint(ctx, extEndpoint), false)
 	}
 }
 

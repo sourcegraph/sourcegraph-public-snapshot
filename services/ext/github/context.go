@@ -18,7 +18,9 @@ func init() {
 	// run AFTER the actor has been stored in the context, because it
 	// depends on the actor.
 	serverctx.LastFuncs = append(serverctx.LastFuncs,
-		NewContextWithAuthedClient,
+		func(ctx context.Context) (context.Context, error) {
+			return NewContextWithAuthedClient(ctx), nil
+		},
 	)
 }
 
@@ -49,7 +51,7 @@ func NewContextWithClient(ctx context.Context, isAuthedUser bool, userClient *gi
 // GitHub client that is authenticated using the credentials of the
 // context's actor, or unauthenticated if there is no actor (or if the
 // actor has no stored GitHub credentials).
-func NewContextWithAuthedClient(ctx context.Context) (context.Context, error) {
+func NewContextWithAuthedClient(ctx context.Context) context.Context {
 	ghConf := *githubutil.Default
 	ghConf.Context = ctx
 
@@ -62,7 +64,7 @@ func NewContextWithAuthedClient(ctx context.Context) (context.Context, error) {
 	} else {
 		userClient = ghConf.UnauthedClient()
 	}
-	return NewContextWithClient(ctx, isAuthedUser, userClient, ghConf.ApplicationAuthedClient()), nil
+	return NewContextWithClient(ctx, isAuthedUser, userClient, ghConf.ApplicationAuthedClient())
 }
 
 func newContext(ctx context.Context, client *minimalClient) context.Context {

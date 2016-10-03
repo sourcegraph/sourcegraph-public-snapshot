@@ -14,9 +14,9 @@ import (
 	"log"
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -41,12 +41,7 @@ func AddConfigHandler(mux *http.ServeMux) {
 			return
 		}
 
-		cl, err := sourcegraph.NewClientFromContext(r.Context())
-		if err != nil {
-			http.Error(w, "", http.StatusInternalServerError)
-		}
-
-		config, err := cl.Meta.Config(r.Context(), &pbtypes.Void{})
+		config, err := backend.Meta.Config(r.Context(), &pbtypes.Void{})
 		if err != nil {
 			log.Printf("Error serving %s: %s.", r.URL, err)
 			// Can't use package errcode due to import cycle.

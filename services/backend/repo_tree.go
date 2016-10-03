@@ -2,23 +2,28 @@ package backend
 
 import (
 	"sort"
+	"testing"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
-var RepoTree sourcegraph.RepoTreeServer = &repoTree{}
+var RepoTree = &repoTree{}
 
 type repoTree struct{}
 
-var _ sourcegraph.RepoTreeServer = (*repoTree)(nil)
-
 func (s *repoTree) Get(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
+	if Mocks.RepoTree.Get != nil {
+		return Mocks.RepoTree.Get(ctx, op)
+	}
+
 	// Cap Get operation to some reasonable time.
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
@@ -110,6 +115,10 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 }
 
 func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error) {
+	if Mocks.RepoTree.List != nil {
+		return Mocks.RepoTree.List(ctx, op)
+	}
+
 	// Cap List operation to some reasonable time.
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
@@ -120,7 +129,7 @@ func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*s
 		return nil, errNotAbsCommitID
 	}
 
-	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: repoRevSpec.Repo})
+	repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoRevSpec.Repo})
 	if err != nil {
 		return nil, err
 	}
@@ -143,4 +152,44 @@ func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*s
 	}
 
 	return &sourcegraph.RepoTreeListResult{Files: files}, nil
+}
+
+type MockRepoTree struct {
+	Get  func(v0 context.Context, v1 *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error)
+	List func(v0 context.Context, v1 *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error)
+}
+
+func (s *MockRepoTree) MockGet_Return_NoCheck(t *testing.T, returns *sourcegraph.TreeEntry) (called *bool) {
+	called = new(bool)
+	s.Get = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
+		*called = true
+		return returns, nil
+	}
+	return
+}
+
+func (s *MockRepoTree) MockGet_Return_FileContents(t *testing.T, path, contents string) (called *bool) {
+	called = new(bool)
+	s.Get = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
+		if op.Entry.Path != path {
+			t.Errorf("got path %q, want %q", op.Entry.Path, path)
+			return nil, grpc.Errorf(codes.NotFound, "path %q not found", op.Entry.Path)
+		}
+		*called = true
+		return &sourcegraph.TreeEntry{BasicTreeEntry: &sourcegraph.BasicTreeEntry{
+			Name:     path,
+			Type:     sourcegraph.FileEntry,
+			Contents: []byte(contents),
+		}}, nil
+	}
+	return
+}
+
+func (s *MockRepoTree) MockGet_NotFound(t *testing.T) (called *bool) {
+	called = new(bool)
+	s.Get = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
+		*called = true
+		return nil, grpc.Errorf(codes.NotFound, "path %q not found", op.Entry.Path)
+	}
+	return
 }

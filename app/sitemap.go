@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -67,8 +68,6 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
@@ -101,13 +100,13 @@ func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 	})
 
 	// Add defs if there is a valid srclib version.
-	dataVer, err := cl.Repos.GetSrclibDataVersionForPath(r.Context(), &sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec})
+	dataVer, err := backend.Repos.GetSrclibDataVersionForPath(r.Context(), &sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec})
 	if err != nil && grpc.Code(err) != codes.NotFound {
 		return err
 	}
 	if dataVer != nil {
 		seenDefs := map[graph.DefKey]bool{}
-		defs, err := cl.Defs.List(r.Context(), &sourcegraph.DefListOptions{
+		defs, err := backend.Defs.List(r.Context(), &sourcegraph.DefListOptions{
 			RepoRevs:    []string{rc.Repo.URI + "@" + dataVer.CommitID},
 			Exported:    true,
 			IncludeTest: false,

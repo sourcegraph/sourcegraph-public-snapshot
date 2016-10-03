@@ -24,7 +24,7 @@ func TestDefsService_ListAuthors(t *testing.T) {
 	}()
 
 	var s defs
-	ctx, mock := testContext()
+	ctx := testContext()
 
 	t1 := pbtypes.NewTimestamp(time.Unix(12345, 0))
 
@@ -61,13 +61,13 @@ func TestDefsService_ListAuthors(t *testing.T) {
 		Path:     "p",
 	}
 
-	calledGet := mock.servers.Defs.MockGet_Return(t, &sourcegraph.Def{Def: graph.Def{
+	calledGet := Mocks.Defs.MockGet_Return(t, &sourcegraph.Def{Def: graph.Def{
 		DefKey:   defSpec.DefKey("r"),
 		DefStart: 10,
 		DefEnd:   20,
 	}})
 	var calledVCSRepoBlameFile bool
-	mock.servers.Repos.MockGet_Return(t, &sourcegraph.Repo{ID: 1, URI: "r"})
+	Mocks.Repos.MockGet_Return(t, &sourcegraph.Repo{ID: 1, URI: "r"})
 	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstesting.MockRepository{
 		BlameFile_: func(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
 			calledVCSRepoBlameFile = true

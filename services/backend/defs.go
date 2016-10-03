@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"path"
+	"reflect"
+	"testing"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -15,19 +17,21 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/unit"
+	"sourcegraph.com/sqs/pbtypes"
 )
 
-var Defs sourcegraph.DefsServer = &defs{}
+var Defs = &defs{}
 
 type defs struct{}
 
-var _ sourcegraph.DefsServer = (*defs)(nil)
-
 func (s *defs) Get(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
+	if Mocks.Defs.Get != nil {
+		return Mocks.Defs.Get(ctx, op)
+	}
+
 	defSpec := op.Def
 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.Get", defSpec.Repo); err != nil {
@@ -100,7 +104,7 @@ func computeLineRange(ctx context.Context, entrySpec sourcegraph.TreeEntrySpec, 
 // get returns the def with the given def key (and no additional
 // information, such as docs).
 func (s *defs) get(ctx context.Context, def sourcegraph.DefSpec) (*graph.Def, error) {
-	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: def.Repo})
+	repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: def.Repo})
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +120,10 @@ func (s *defs) get(ctx context.Context, def sourcegraph.DefSpec) (*graph.Def, er
 }
 
 func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sourcegraph.DefList, error) {
+	if Mocks.Defs.List != nil {
+		return Mocks.Defs.List(ctx, opt)
+	}
+
 	if opt == nil {
 		opt = &sourcegraph.DefListOptions{}
 	}
@@ -136,13 +144,13 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 		repoPath, commitID := sourcegraph.ParseRepoAndCommitID(repoRev)
 
 		// Dealias. This call also verifies that the repo is visible to the current user.
-		resA, err := svc.Repos(ctx).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
+		resA, err := Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
 		if err != nil {
 			log15.Warn("Defs.List: dropping repo rev from the list because resolution failed.", "err", err, "repoRev", repoRev)
 			continue
 		}
 
-		rA, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: resA.Repo})
+		rA, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: resA.Repo})
 		if err != nil {
 			log.Printf("Warning: dropping repo rev %q from defs list because repo or repo alias was not found: %s.", repoRev, err)
 			continue
@@ -336,4 +344,62 @@ func populateDefFormatStrings(def *sourcegraph.Def) {
 		DefKeyword:           f.DefKeyword(),
 		Kind:                 f.Kind(),
 	}
+}
+
+type MockDefs struct {
+	Get              func(v0 context.Context, v1 *sourcegraph.DefsGetOp) (*sourcegraph.Def, error)
+	List             func(v0 context.Context, v1 *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
+	ListRefs         func(v0 context.Context, v1 *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
+	ListRefLocations func(v0 context.Context, v1 *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
+	ListAuthors      func(v0 context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error)
+	RefreshIndex     func(v0 context.Context, v1 *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error)
+}
+
+func (s *MockDefs) MockGet(t *testing.T, wantDef sourcegraph.DefSpec) (called *bool) {
+	called = new(bool)
+	s.Get = func(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
+		*called = true
+		def := op.Def
+		if def != wantDef {
+			t.Errorf("got def %+v, want %+v", def, wantDef)
+			return nil, grpc.Errorf(codes.NotFound, "def %v not found", wantDef)
+		}
+		return &sourcegraph.Def{Def: graph.Def{DefKey: def.DefKey("r")}}, nil
+	}
+	return
+}
+
+func (s *MockDefs) MockGet_Return(t *testing.T, wantDef *sourcegraph.Def) (called *bool) {
+	called = new(bool)
+	s.Get = func(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
+		*called = true
+		def := op.Def
+		if def != wantDef.DefSpec(def.Repo) {
+			t.Errorf("got def %+v, want %+v", def, wantDef.DefSpec(def.Repo))
+			return nil, grpc.Errorf(codes.NotFound, "def %v not found", wantDef.DefKey)
+		}
+		return wantDef, nil
+	}
+	return
+}
+
+func (s *MockDefs) MockList(t *testing.T, wantDefs ...*sourcegraph.Def) (called *bool) {
+	called = new(bool)
+	s.List = func(ctx context.Context, opt *sourcegraph.DefListOptions) (*sourcegraph.DefList, error) {
+		*called = true
+		return &sourcegraph.DefList{Defs: wantDefs}, nil
+	}
+	return
+}
+
+func (s *MockDefs) MockRefreshIndex(t *testing.T, wantOp *sourcegraph.DefsRefreshIndexOp) (called *bool) {
+	called = new(bool)
+	s.RefreshIndex = func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
+		*called = true
+		if !reflect.DeepEqual(op, wantOp) {
+			t.Fatalf("unexpected DefsRefreshIndexOp, got %+v != %+v", op, wantOp)
+		}
+		return &pbtypes.Void{}, nil
+	}
+	return
 }

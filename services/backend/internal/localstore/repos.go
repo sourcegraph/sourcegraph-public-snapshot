@@ -74,7 +74,7 @@ type dbRepo struct {
 	VCSSyncedAt   *time.Time `db:"vcs_synced_at"`
 
 	OriginRepoID     *string `db:"origin_repo_id"`
-	OriginService    *int32  `db:"origin_service"` // values from protobuf Origin.ServiceType enum
+	OriginService    *int32  `db:"origin_service"` // values from Origin.ServiceType enum
 	OriginAPIBaseURL *string `db:"origin_api_base_url"`
 }
 

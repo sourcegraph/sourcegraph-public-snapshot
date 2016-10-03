@@ -27,6 +27,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/slack"
 )
 
@@ -61,7 +62,6 @@ type coverageCmd struct {
 	MaxFileTokens int    `long:"max-file-tokens" description:"maximum number of tokens to consider in a file (speeds up coverage runs when low, but may skew results)" default:"-1"`
 
 	backend coverage.Client
-	cl      *sourcegraph.Client
 }
 
 // aggregatedCoverage represents coverage data that has been aggregated, e.g.
@@ -190,7 +190,6 @@ func (c *coverageCmd) Execute(args []string) error {
 	}
 
 	// Create the connection to LSP server.
-	c.cl = cliClient
 	var err error
 	switch {
 	case langp.DefaultClient != nil:
@@ -415,7 +414,7 @@ func (c *coverageCmd) calcRepoCoverage(ctx context.Context, lang, repoURI string
 		files = []string{c.File}
 	} else {
 		// Query a list of the repository files.
-		tree, err := c.cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{
+		tree, err := backend.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{
 			Rev: *repoRevSpec,
 		})
 		if err != nil {
@@ -467,7 +466,7 @@ func (c *coverageCmd) calcFileCoverage(ctx context.Context, lang, repoURI string
 	}
 	treeGetOp := sourcegraph.RepoTreeGetOptions{}
 	treeGetOp.EntireFile = true
-	entry, err := c.cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
+	entry, err := backend.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
 		Entry: entrySpec,
 		Opt:   &treeGetOp,
 	})
@@ -581,19 +580,19 @@ func (c *coverageCmd) calcTokCoverage(ctx context.Context, lang, repoURI string,
 
 func (c *coverageCmd) getRepoRevSpec(ctx context.Context, repoURI string) (*sourcegraph.RepoRevSpec, error) {
 	// Resolve the repo.
-	res, err := c.cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoURI})
+	res, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoURI})
 	if err != nil {
 		return nil, err
 	}
 
 	// Get the repo.
-	repo, err := c.cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: res.Repo})
+	repo, err := backend.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: res.Repo})
 	if err != nil {
 		return nil, err
 	}
 
 	// Resolve the default branch revision.
-	resRev, err := c.cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+	resRev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: res.Repo,
 		Rev:  repo.DefaultBranch,
 	})
@@ -611,7 +610,7 @@ func (c *coverageCmd) getRepoRevSpec(ctx context.Context, repoURI string) (*sour
 // exists locally. If the repo does not exist locally, the remote gRPC endpoint
 // is consulted to clone the repository.
 func (c *coverageCmd) ensureLocalRepoExists(ctx context.Context, repo string) error {
-	res, err := c.cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo, Remote: true})
+	res, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo, Remote: true})
 	if grpc.Code(err) == codes.NotFound {
 		// Repo doesn't exist on the remote, but maybe we have it locally
 		// already.
@@ -633,7 +632,7 @@ func (c *coverageCmd) ensureLocalRepoExists(ctx context.Context, repo string) er
 
 	// Automatically create a local mirror.
 	log15.Info("Creating a local mirror of remote repo", "cloneURL", res.RemoteRepo.HTTPCloneURL)
-	_, err = c.cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
+	_, err = backend.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
 		Op: &sourcegraph.ReposCreateOp_Origin{Origin: res.RemoteRepo.Origin},
 	})
 	return err

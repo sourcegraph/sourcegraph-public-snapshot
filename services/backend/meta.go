@@ -9,11 +9,9 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-var Meta sourcegraph.MetaServer = &meta{}
+var Meta = &meta{}
 
 type meta struct{}
-
-var _ sourcegraph.MetaServer = (*meta)(nil)
 
 func (s *meta) Config(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.ServerConfig, error) {
 	c := &sourcegraph.ServerConfig{
@@ -22,4 +20,8 @@ func (s *meta) Config(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Server
 	}
 
 	return c, nil
+}
+
+type MockMeta struct {
+	Config func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerConfig, error)
 }

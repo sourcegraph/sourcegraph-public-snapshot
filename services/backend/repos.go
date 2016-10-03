@@ -29,19 +29,20 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/test/e2e/e2etestuser"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-var Repos sourcegraph.ReposServer = &repos{}
+var Repos = &repos{}
 
 type repos struct{}
 
-var _ sourcegraph.ReposServer = (*repos)(nil)
-
 func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	if Mocks.Repos.Get != nil {
+		return Mocks.Repos.Get(ctx, repoSpec)
+	}
+
 	repo, err := localstore.Repos.Get(ctx, repoSpec.ID)
 	if err != nil {
 		return nil, err
@@ -64,6 +65,10 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 var ghRepoQueryMatcher = regexp.MustCompile(`^(?:github.com/)?([^/\s]+)[/\s]+([^/\s]+)$`)
 
 func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
+	if Mocks.Repos.List != nil {
+		return Mocks.Repos.List(ctx, opt)
+	}
+
 	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.List")
 	if opt == nil {
 		opt = &sourcegraph.RepoListOptions{}
@@ -134,6 +139,10 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 //
 // TODO properly support using repo IDs instead of URIs.
 func (s *repos) ListDeps(ctx context.Context, repos *sourcegraph.URIList) (*sourcegraph.URIList, error) {
+	if Mocks.Repos.ListDeps != nil {
+		return Mocks.Repos.ListDeps(ctx, repos)
+	}
+
 	repoFilters := []srcstore.UnitFilter{
 		srcstore.ByRepos(repos.URIs...),
 	}
@@ -346,6 +355,10 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *locals
 }
 
 func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
+	if Mocks.Repos.Create != nil {
+		return Mocks.Repos.Create(ctx, op)
+	}
+
 	var repo *sourcegraph.Repo
 	switch {
 	case op.GetFromGitHubID() != 0:
@@ -479,6 +492,10 @@ func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRe
 }
 
 func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
+	if Mocks.Repos.Update != nil {
+		return Mocks.Repos.Update(ctx, op)
+	}
+
 	ts := time.Now()
 	update := localstore.RepoUpdate{ReposUpdateOp: op, UpdatedAt: &ts}
 	if err := localstore.Repos.Update(ctx, update); err != nil {
@@ -489,6 +506,10 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sou
 }
 
 func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
+	if Mocks.Repos.Delete != nil {
+		return Mocks.Repos.Delete(ctx, repo)
+	}
+
 	if err := localstore.Repos.Delete(ctx, repo.ID); err != nil {
 		return nil, err
 	}
@@ -496,6 +517,10 @@ func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtype
 }
 
 func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
+	if Mocks.Repos.GetConfig != nil {
+		return Mocks.Repos.GetConfig(ctx, repo)
+	}
+
 	conf, err := localstore.RepoConfigs.Get(ctx, repo.ID)
 	if err != nil {
 		return nil, err
@@ -507,6 +532,10 @@ func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sou
 }
 
 func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+	if Mocks.Repos.GetInventory != nil {
+		return Mocks.Repos.GetInventory(ctx, repoRev)
+	}
+
 	// Cap GetInventory operation to some reasonable time.
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
@@ -526,7 +555,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	// after a git push). Just using the memory cache would mean that
 	// each server process would have to recompute this result.
 	const statusContext = "cache:repo.inventory"
-	statuses, err := svc.RepoStatuses(ctx).GetCombined(ctx, repoRev)
+	statuses, err := RepoStatuses.GetCombined(ctx, repoRev)
 	if err != nil {
 		return nil, err
 	}
@@ -550,7 +579,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 		return nil, err
 	}
 
-	_, err = svc.RepoStatuses(ctx).Create(ctx, &sourcegraph.RepoStatusesCreateOp{
+	_, err = RepoStatuses.Create(ctx, &sourcegraph.RepoStatusesCreateOp{
 		Repo:   *repoRev,
 		Status: sourcegraph.RepoStatus{Description: string(jsonData), Context: statusContext},
 	})
@@ -611,15 +640,15 @@ func sendCreateRepoSlackMsg(ctx context.Context, uri, language string, mirror, p
 }
 
 func (s *repos) EnableWebhook(ctx context.Context, op *sourcegraph.RepoWebhookOptions) (*pbtypes.Void, error) {
+	if Mocks.Repos.EnableWebhook != nil {
+		return Mocks.Repos.EnableWebhook(ctx, op)
+	}
+
 	if !github.HasAuthedUser(ctx) {
 		return nil, errors.New("Unauthed user")
 	}
 
-	var err error
-	ctx, err = github.NewContextWithAuthedClient(ctx)
-	if err != nil {
-		return nil, err
-	}
+	ctx = github.NewContextWithAuthedClient(ctx)
 	if err := github.ReposFromContext(ctx).CreateHook(ctx, op.URI, &gogithub.Hook{
 		Name:   gogithub.String("web"),
 		Events: []string{"push", "pull_request"},

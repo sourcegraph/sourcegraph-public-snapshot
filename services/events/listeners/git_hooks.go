@@ -10,6 +10,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 )
 
@@ -38,11 +39,6 @@ func (g *gitHookListener) Start(ctx context.Context) {
 }
 
 func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload) {
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		log15.Error("postPushHook: failed to get client", "err", err)
-		return
-	}
 	repoID := payload.Repo
 	event := payload.Event
 
@@ -55,7 +51,7 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 		// return + kick them off in a goroutine to not block the
 		// clone
 
-		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoID})
+		repo, err := backend.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoID})
 		if err != nil {
 			return
 		}
@@ -71,7 +67,7 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 
 		// If we have updated the DefaultBranch, trigger a refresh of the indexes
 		if event.Branch == repo.DefaultBranch {
-			_, _ = cl.Async.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
+			_, _ = backend.Async.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
 				Repo:   repoID,
 				Source: fmt.Sprintf("pushhook %s", event.Commit),
 			})
@@ -85,16 +81,12 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 // available immediately for future callers (which generally expect
 // that operation to be fast).
 func inventoryHook(ctx context.Context, id events.EventID, payload events.GitPayload) {
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		log15.Error("inventoryHook error", "err", err)
-	}
 	event := payload.Event
 	if event.Type == githttp.PUSH || event.Type == githttp.PUSH_FORCE {
 		repoRev := &sourcegraph.RepoRevSpec{Repo: payload.Repo, CommitID: event.Commit}
 		// Trigger a call to Repos.GetInventory so the inventory is
 		// cached for subsequent calls.
-		inv, err := cl.Repos.GetInventory(ctx, repoRev)
+		inv, err := backend.Repos.GetInventory(ctx, repoRev)
 		if err != nil {
 			log15.Warn("inventoryHook: call to Repos.GetInventory failed", "err", err, "repoRev", repoRev)
 			return
@@ -102,14 +94,14 @@ func inventoryHook(ctx context.Context, id events.EventID, payload events.GitPay
 
 		// If this push is to the default branch, update the repo's
 		// Language field with the primary language.
-		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoRev.Repo})
+		repo, err := backend.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoRev.Repo})
 		if err != nil {
 			log15.Warn("inventoryHook: call to Repos.Get failed", "err", err, "repoRev", repoRev)
 			return
 		}
 		if event.Branch == repo.DefaultBranch {
 			lang := inv.PrimaryProgrammingLanguage()
-			if _, err := cl.Repos.Update(ctx, &sourcegraph.ReposUpdateOp{Repo: repo.ID, Language: lang}); err != nil {
+			if _, err := backend.Repos.Update(ctx, &sourcegraph.ReposUpdateOp{Repo: repo.ID, Language: lang}); err != nil {
 				log15.Warn("inventoryHook: call to Repos.Update to set language failed", "err", err, "repoRev", repoRev, "language", lang)
 			}
 		}

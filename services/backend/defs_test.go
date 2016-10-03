@@ -13,11 +13,11 @@ import (
 
 func TestDefsService_List_Repos(t *testing.T) {
 	var s defs
-	ctx, mock := testContext()
+	ctx := testContext()
 
 	calledDefs := localstore.GraphMockDefs(&localstore.Mocks.Graph)
-	calledGetRepo := mock.servers.Repos.MockGet(t, 1)
-	calledReposResolve := mock.servers.Repos.MockResolve_Local(t, "r", 1)
+	calledGetRepo := Mocks.Repos.MockGet(t, 1)
+	calledReposResolve := Mocks.Repos.MockResolve_Local(t, "r", 1)
 
 	_, err := s.List(ctx, &sourcegraph.DefListOptions{
 		RepoRevs: []string{"r@tttttttttttttttttttttttttttttttttttttttt"},

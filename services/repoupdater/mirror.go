@@ -15,6 +15,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 )
 
+// FIXME this dependency injection should be removed
+var Repos interface {
+	List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
+}
+
 func init() {
 	sgxcli.ServeInit = append(sgxcli.ServeInit, func() {
 		// If we're updating repos in the background, kick off the updates initially.
@@ -50,11 +55,7 @@ func (r *mirrorRepoUpdater) Start(ctx context.Context) {
 }
 
 func (r *mirrorRepoUpdater) mirrorRepos(ctx context.Context) error {
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return err
-	}
-	repos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
+	repos, err := Repos.List(ctx, &sourcegraph.RepoListOptions{
 		// Only update public mirror repos in the background, as we cannot reliably identify
 		// the auth token to use for updating private mirrors.
 		// TODO: make it possible to background update private mirror repos.

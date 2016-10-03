@@ -12,9 +12,9 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 type treeEntry struct {
@@ -23,8 +23,6 @@ type treeEntry struct {
 }
 
 func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	vars := mux.Vars(r)
 	orig := routevar.ToTreeEntry(vars)
 	repoRev, err := resolveLocalRepoRev(r.Context(), orig.RepoRev)
@@ -49,7 +47,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	entry, err := cl.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &opt})
+	entry, err := backend.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &opt})
 	if err != nil {
 		return err
 	}
@@ -74,7 +72,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	// most cases. Don't do this if the file is large; currently
 	// the heuristic is ~ 2500 lines at avg. 40 chars per line
 	if entry.Type == sourcegraph.FileEntry && len(entry.ContentsString) < (40*2500) {
-		anns, err := cl.Annotations.List(r.Context(), &sourcegraph.AnnotationsListOptions{
+		anns, err := backend.Annotations.List(r.Context(), &sourcegraph.AnnotationsListOptions{
 			Entry:        entrySpec,
 			Range:        &opt.FileRange,
 			NoSrclibAnns: opt.NoSrclibAnns,
@@ -94,8 +92,6 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	unresolvedRepoRev := routevar.ToRepoRev(mux.Vars(r))
 	repoRev, err := resolveLocalRepoRev(r.Context(), unresolvedRepoRev)
 	if err != nil {
@@ -109,7 +105,7 @@ func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
 		Commit: repoRev.CommitID,
 	})
 
-	treeList, err := cl.RepoTree.List(r.Context(), &sourcegraph.RepoTreeListOp{Rev: *repoRev})
+	treeList, err := backend.RepoTree.List(r.Context(), &sourcegraph.RepoTreeListOp{Rev: *repoRev})
 	if err != nil {
 		return err
 	}

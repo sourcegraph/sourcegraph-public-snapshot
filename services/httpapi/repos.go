@@ -15,6 +15,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
@@ -47,15 +48,13 @@ type repoResolution struct {
 }
 
 func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	var op sourcegraph.RepoResolveOp
 	if err := schemaDecoder.Decode(&op, r.URL.Query()); err != nil {
 		return err
 	}
 	op.Path = routevar.ToRepo(mux.Vars(r))
 
-	res0, err := cl.Repos.Resolve(r.Context(), &op)
+	res0, err := backend.Repos.Resolve(r.Context(), &op)
 	if err != nil {
 		return err
 	}
@@ -67,7 +66,7 @@ func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 	// always need the local repo in this case, so including it saves
 	// a round-trip.
 	if res0.Repo != 0 {
-		repo, err := cl.Repos.Get(r.Context(), &sourcegraph.RepoSpec{ID: res0.Repo})
+		repo, err := backend.Repos.Get(r.Context(), &sourcegraph.RepoSpec{ID: res0.Repo})
 		if err == nil {
 			res.IncludedRepo = repo
 		} else {
@@ -79,14 +78,12 @@ func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoInventory(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	repoRev, err := resolveLocalRepoRev(r.Context(), routevar.ToRepoRev(mux.Vars(r)))
 	if err != nil {
 		return err
 	}
 
-	res, err := cl.Repos.GetInventory(r.Context(), repoRev)
+	res, err := backend.Repos.GetInventory(r.Context(), repoRev)
 	if err != nil {
 		return err
 	}
@@ -116,8 +113,6 @@ func init() {
 }
 
 func serveRepos(w http.ResponseWriter, r *http.Request) (err error) {
-	cl := handlerutil.Client(r)
-
 	var opt sourcegraph.RepoListOptions
 	err = schemaDecoder.Decode(&opt, r.URL.Query())
 	if err != nil {
@@ -136,7 +131,7 @@ func serveRepos(w http.ResponseWriter, r *http.Request) (err error) {
 		repoSearchDuration.With(labels).Observe(duration.Seconds())
 	}()
 
-	repos, err := cl.Repos.List(r.Context(), &opt)
+	repos, err := backend.Repos.List(r.Context(), &opt)
 	if err != nil {
 		return err
 	}
@@ -149,8 +144,6 @@ func serveRepos(w http.ResponseWriter, r *http.Request) (err error) {
 }
 
 func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	var op sourcegraph.ReposCreateOp
 	if err := json.NewDecoder(r.Body).Decode(&op); err != nil {
 		if err == io.EOF {
@@ -159,7 +152,7 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	repo, err := cl.Repos.Create(r.Context(), &op)
+	repo, err := backend.Repos.Create(r.Context(), &op)
 	if err != nil {
 		return err
 	}
@@ -171,15 +164,11 @@ func resolveLocalRepo(ctx context.Context, repoPath string) (int32, error) {
 }
 
 func resolveLocalRepoRev(ctx context.Context, repoRev routevar.RepoRev) (*sourcegraph.RepoRevSpec, error) {
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
 	repo, err := resolveLocalRepo(ctx, repoRev.Repo)
 	if err != nil {
 		return nil, err
 	}
-	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo, Rev: repoRev.Rev})
+	res, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo, Rev: repoRev.Rev})
 	if err != nil {
 		return nil, err
 	}

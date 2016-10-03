@@ -13,13 +13,16 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
 func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error) {
+	if Mocks.Defs.ListRefs != nil {
+		return Mocks.Defs.ListRefs(ctx, op)
+	}
+
 	defSpec := op.Def
 	opt := op.Opt
 	if opt == nil {
@@ -40,7 +43,7 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 		return nil, grpc.Errorf(codes.InvalidArgument, "ListRefs: CommitID must be specified")
 	}
 
-	defRepoObj, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: defSpec.Repo})
+	defRepoObj, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: defSpec.Repo})
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +51,7 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 		return nil, err
 	}
 
-	refRepoObj, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: opt.Repo})
+	refRepoObj, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: opt.Repo})
 	if err != nil {
 		return nil, err
 	}
@@ -103,11 +106,19 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 }
 
 func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
+	if Mocks.Defs.ListRefLocations != nil {
+		return Mocks.Defs.ListRefLocations(ctx, op)
+	}
+
 	return localstore.GlobalRefs.Get(ctx, op)
 }
 
 func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
-	rev, err := svc.Repos(ctx).ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: op.Repo})
+	if Mocks.Defs.RefreshIndex != nil {
+		return Mocks.Defs.RefreshIndex(ctx, op)
+	}
+
+	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: op.Repo})
 	if err != nil {
 		log15.Warn("Defs.RefreshIndex (Repos.ResolveRev) failed", "error", err)
 		return nil, err

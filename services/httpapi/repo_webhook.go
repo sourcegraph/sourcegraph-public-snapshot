@@ -7,13 +7,11 @@ import (
 
 	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 )
 
 func serveRepoWebhookEnable(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	var opt sourcegraph.RepoWebhookOptions
 	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
 		return err
@@ -22,7 +20,7 @@ func serveRepoWebhookEnable(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("empty URI")
 	}
 
-	_, err := cl.Repos.EnableWebhook(r.Context(), &opt)
+	_, err := backend.Repos.EnableWebhook(r.Context(), &opt)
 	if err != nil {
 		return err
 	}

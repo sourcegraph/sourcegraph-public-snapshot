@@ -12,15 +12,16 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 func TestRepoResolveRev_ok(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	want := &sourcegraph.ResolvedRev{CommitID: "c"}
 
-	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
-	calledResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
+	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
+	calledResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "c")
 
 	var res *sourcegraph.ResolvedRev
 	if err := c.GetJSON("/repos/r@v/-/rev", &res); err != nil {
@@ -38,11 +39,11 @@ func TestRepoResolveRev_ok(t *testing.T) {
 }
 
 func TestRepoResolveRev_notFound(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
-	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
+	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
 	var calledResolveRev bool
-	mock.Repos.ResolveRev_ = func(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
 		calledResolveRev = true
 		return nil, grpc.Errorf(codes.NotFound, "")
 	}
@@ -63,13 +64,13 @@ func TestRepoResolveRev_notFound(t *testing.T) {
 }
 
 func TestCommit_ok(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	want := &vcs.Commit{ID: "c"}
 
-	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
-	calledResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
-	calledReposGetCommit := mock.Repos.MockGetCommit_Return_NoCheck(t, want)
+	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
+	calledResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "c")
+	calledReposGetCommit := backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, want)
 
 	var commit *vcs.Commit
 	if err := c.GetJSON("/repos/r@v/-/commit", &commit); err != nil {

@@ -12,46 +12,17 @@ import (
 	"net/url"
 
 	"strings"
-
-	"context"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 
-func NewTest(h http.Handler) (*Client, *MockClients) {
-	var mocks MockClients
-	mocks.Ctx = context.Background()
-
-	// TODO(sqs): this makes the tests non-parallelizable, which is not ok
-	// since we have a few instances of tests using NewTest and running in
-	// parallel (eg: OAuth)
-	sourcegraph.MockNewClientFromContext(func(ctx context.Context) (*sourcegraph.Client, error) {
-		return mocks.Client(), nil
-	})
-
-	httpClient := Client{http.Client{Transport: handlerTransport{h, &mocks.Ctx}}}
-
-	return &httpClient, &mocks
-}
-
-// ResetGlobals resets the sourcegraph.NewClientFromContext var to
-// its original value (not the mocks set by NewTest).
-func ResetGlobals() {
-	sourcegraph.RestoreNewClientFromContext()
+func NewTest(h http.Handler) *Client {
+	return &Client{http.Client{Transport: handlerTransport{h}}}
 }
 
 type handlerTransport struct {
 	http.Handler
-
-	// ctx is a pointer to the Ctx field on the MockClients, so that
-	// test code can update it and the handlerTransport will be able
-	// to see the latest value.
-	ctx *context.Context
 }
 
 func (t handlerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req = req.WithContext(*t.ctx)
-
 	rw := httptest.NewRecorder()
 	rw.Body = new(bytes.Buffer)
 	if req.Body == nil {

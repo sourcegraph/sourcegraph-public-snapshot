@@ -47,9 +47,6 @@ type Server struct {
 
 	SGPATH string
 
-	// Client is an anonymous API client that hits the test Server's API.
-	Client *sourcegraph.Client
-
 	// ServerCmd is the exec'd child process subprocess.
 	ServerCmd *exec.Cmd
 
@@ -334,7 +331,6 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	s.Config.Serve.GraphStoreOpts.Root = reposDir
 
 	s.Ctx = context.Background()
-	s.Ctx = sourcegraph.WithGRPCEndpoint(s.Ctx, s.Config.Endpoint.URLOrDefault())
 
 	// ID key
 	s.Ctx = s.AsUIDWithAccess(s.Ctx, "1")
@@ -397,8 +393,6 @@ func (s *Server) Start() error {
 		time.Sleep(25 * time.Millisecond)
 	}
 	time.Sleep(75 * time.Millisecond)
-
-	s.Client, _ = sourcegraph.NewClientFromContext(s.Ctx)
 
 	return nil
 }

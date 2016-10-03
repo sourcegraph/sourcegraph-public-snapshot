@@ -22,7 +22,7 @@ func TestSearch(t *testing.T) {
 		repoID  = 1
 	)
 
-	ctx, mock := testContext()
+	ctx := testContext()
 
 	s := search{}
 
@@ -54,7 +54,7 @@ func TestSearch(t *testing.T) {
 	expTokQuery := strings.Fields(query)
 
 	// Declare mocks
-	mock.servers.Defs.Get_ = func(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
+	Mocks.Defs.Get = func(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
 		calledDefGetMu.Lock()
 		defer calledDefGetMu.Unlock()
 

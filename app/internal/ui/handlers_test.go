@@ -19,13 +19,14 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil/srclibtest"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
-func newTest() (*httptestutil.Client, *httptestutil.MockClients) {
+func newTest() *httptestutil.Client {
 	tmpl.LoadOnce()
-	c, mock := httptestutil.NewTest(router)
-	return c, mock
+	backend.Mocks = backend.MockServices{}
+	return httptestutil.NewTest(router)
 }
 
 func getForTest(c interface {
@@ -60,7 +61,7 @@ func getForTest(c interface {
 }
 
 func TestCatchAll(t *testing.T) {
-	c, _ := newTest()
+	c := newTest()
 
 	m, err := getForTest(c, "/tools", http.StatusOK)
 	if err != nil {
@@ -96,11 +97,11 @@ func init() {
 }
 
 func TestRepo_OK(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
-	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
+	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
 	var calledGet bool
-	mock.Repos.Get_ = func(ctx context.Context, op *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	backend.Mocks.Repos.Get = func(ctx context.Context, op *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		calledGet = true
 		return &sourcegraph.Repo{
 			ID:          1,
@@ -134,14 +135,14 @@ func TestRepo_OK(t *testing.T) {
 }
 
 func TestRepo_Error_Resolve(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	for url, req := range urls {
 		if req.repo == "" {
 			continue
 		}
 
-		calledReposResolve := mock.Repos.MockResolve_NotFound(t, req.repo)
+		calledReposResolve := backend.Mocks.Repos.MockResolve_NotFound(t, req.repo)
 
 		if _, err := getForTest(c, url, http.StatusNotFound); err != nil {
 			t.Errorf("%s: %s", url, err)
@@ -154,16 +155,16 @@ func TestRepo_Error_Resolve(t *testing.T) {
 }
 
 func TestRepo_Error_Get(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	for url, req := range urls {
 		if req.repo == "" {
 			continue
 		}
 
-		calledReposResolve := mock.Repos.MockResolve_Local(t, req.repo, 1)
+		calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, req.repo, 1)
 		var calledGet bool
-		mock.Repos.Get_ = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+		backend.Mocks.Repos.Get = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 			calledGet = true
 			return nil, grpc.Errorf(codes.NotFound, "")
 		}
@@ -182,11 +183,11 @@ func TestRepo_Error_Get(t *testing.T) {
 }
 
 func TestRepoRev_OK(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
-	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
+	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
 	var calledGet bool
-	mock.Repos.Get_ = func(ctx context.Context, op *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	backend.Mocks.Repos.Get = func(ctx context.Context, op *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		calledGet = true
 		return &sourcegraph.Repo{
 			ID:          1,
@@ -194,7 +195,7 @@ func TestRepoRev_OK(t *testing.T) {
 			Description: "d",
 		}, nil
 	}
-	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
+	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "c")
 
 	wantMeta := meta{
 		Title:        "r: d · Sourcegraph",
@@ -222,17 +223,17 @@ func TestRepoRev_OK(t *testing.T) {
 }
 
 func TestRepoRev_Error(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	for url, req := range urls {
 		if req.repo == "" || req.rev == "" {
 			continue
 		}
 
-		calledReposResolve := mock.Repos.MockResolve_Local(t, req.repo, 1)
-		calledGet := mock.Repos.MockGet(t, 1)
+		calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, req.repo, 1)
+		calledGet := backend.Mocks.Repos.MockGet(t, 1)
 		var calledReposResolveRev bool
-		mock.Repos.ResolveRev_ = func(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
+		backend.Mocks.Repos.ResolveRev = func(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
 			calledReposResolveRev = true
 			return nil, grpc.Errorf(codes.NotFound, "")
 		}
@@ -254,11 +255,11 @@ func TestRepoRev_Error(t *testing.T) {
 }
 
 func TestBlob_OK(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
-	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
+	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
 	var calledGet bool
-	mock.Repos.Get_ = func(ctx context.Context, op *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	backend.Mocks.Repos.Get = func(ctx context.Context, op *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		calledGet = true
 		return &sourcegraph.Repo{
 			ID:          1,
@@ -266,8 +267,8 @@ func TestBlob_OK(t *testing.T) {
 			Description: "desc",
 		}, nil
 	}
-	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
-	calledRepoTreeGet := mock.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
+	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "c")
+	calledRepoTreeGet := backend.Mocks.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
 		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
 			Name: "f",
 			Type: sourcegraph.FileEntry,
@@ -303,12 +304,12 @@ func TestBlob_OK(t *testing.T) {
 }
 
 func TestBlob_NotFound_NonFile(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
-	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
-	calledGet := mock.Repos.MockGet(t, 1)
-	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
-	calledRepoTreeGet := mock.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
+	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
+	calledGet := backend.Mocks.Repos.MockGet(t, 1)
+	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "v")
+	calledRepoTreeGet := backend.Mocks.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
 		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
 			Name: "d",
 			Type: sourcegraph.DirEntry,
@@ -333,18 +334,18 @@ func TestBlob_NotFound_NonFile(t *testing.T) {
 }
 
 func TestBlob_Error(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	for url, req := range urls {
 		if req.repo == "" || req.rev == "" || req.blob == "" {
 			continue
 		}
 
-		calledReposResolve := mock.Repos.MockResolve_Local(t, req.repo, 1)
-		calledGet := mock.Repos.MockGet(t, 1)
-		calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
+		calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, req.repo, 1)
+		calledGet := backend.Mocks.Repos.MockGet(t, 1)
+		calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "v")
 		var calledRepoTreeGet bool
-		mock.RepoTree.Get_ = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
+		backend.Mocks.RepoTree.Get = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
 			calledRepoTreeGet = true
 			return nil, grpc.Errorf(codes.NotFound, "")
 		}
@@ -369,7 +370,7 @@ func TestBlob_Error(t *testing.T) {
 }
 
 func TestDefRedirect_OK(t *testing.T) {
-	c, _ := newTest()
+	c := newTest()
 
 	tests := map[string]string{
 		"/r/-/refs/t/u/-/p": "/r/-/info/t/u/-/p",
@@ -391,11 +392,11 @@ func TestDefRedirect_OK(t *testing.T) {
 }
 
 func TestTree_OK(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
-	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
+	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
 	var calledGet bool
-	mock.Repos.Get_ = func(ctx context.Context, op *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	backend.Mocks.Repos.Get = func(ctx context.Context, op *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		calledGet = true
 		return &sourcegraph.Repo{
 			ID:          1,
@@ -403,8 +404,8 @@ func TestTree_OK(t *testing.T) {
 			Description: "desc",
 		}, nil
 	}
-	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
-	calledRepoTreeGet := mock.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
+	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "c")
+	calledRepoTreeGet := backend.Mocks.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
 		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
 			Name: "d",
 			Type: sourcegraph.DirEntry,
@@ -440,12 +441,12 @@ func TestTree_OK(t *testing.T) {
 }
 
 func TestTree_NotFound_NonDir(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
-	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
-	calledGet := mock.Repos.MockGet(t, 1)
-	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
-	calledRepoTreeGet := mock.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
+	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
+	calledGet := backend.Mocks.Repos.MockGet(t, 1)
+	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "v")
+	calledRepoTreeGet := backend.Mocks.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
 		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
 			Name: "f",
 			Type: sourcegraph.FileEntry,
@@ -470,18 +471,18 @@ func TestTree_NotFound_NonDir(t *testing.T) {
 }
 
 func TestTree_Error(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	for url, req := range urls {
 		if req.repo == "" || req.rev == "" || req.tree == "" {
 			continue
 		}
 
-		calledReposResolve := mock.Repos.MockResolve_Local(t, req.repo, 1)
-		calledGet := mock.Repos.MockGet(t, 1)
-		calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
+		calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, req.repo, 1)
+		calledGet := backend.Mocks.Repos.MockGet(t, 1)
+		calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "v")
 		var calledRepoTreeGet bool
-		mock.RepoTree.Get_ = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
+		backend.Mocks.RepoTree.Get = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
 			calledRepoTreeGet = true
 			return nil, grpc.Errorf(codes.NotFound, "")
 		}

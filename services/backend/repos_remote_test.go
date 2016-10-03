@@ -11,10 +11,12 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
+	githubmock "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/mocks"
 )
 
 func TestRepos_Resolve_local(t *testing.T) {
-	ctx, _ := testContext()
+	ctx := testContext()
 
 	calledReposGet := localstore.Mocks.Repos.MockGetByURI(t, "r", 1)
 
@@ -33,7 +35,9 @@ func TestRepos_Resolve_local(t *testing.T) {
 }
 
 func TestRepos_Resolve_local_otherError(t *testing.T) {
-	ctx, mock := testContext()
+	ctx := testContext()
+	var githubRepos githubmock.GitHubRepoGetter
+	ctx = github.WithRepos(ctx, &githubRepos)
 
 	var calledReposGet bool
 	localstore.Mocks.Repos.GetByURI = func(context.Context, string) (*sourcegraph.Repo, error) {
@@ -42,7 +46,7 @@ func TestRepos_Resolve_local_otherError(t *testing.T) {
 	}
 
 	var calledGetGitHubRepo bool
-	mock.githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		calledGetGitHubRepo = true
 		return nil, grpc.Errorf(codes.Internal, "")
 	}
@@ -60,7 +64,9 @@ func TestRepos_Resolve_local_otherError(t *testing.T) {
 }
 
 func TestRepos_Resolve_GitHub_NonRemote(t *testing.T) {
-	ctx, mock := testContext()
+	ctx := testContext()
+	var githubRepos githubmock.GitHubRepoGetter
+	ctx = github.WithRepos(ctx, &githubRepos)
 
 	var calledReposGet bool
 	localstore.Mocks.Repos.GetByURI = func(context.Context, string) (*sourcegraph.Repo, error) {
@@ -69,7 +75,7 @@ func TestRepos_Resolve_GitHub_NonRemote(t *testing.T) {
 	}
 
 	var calledGetGitHubRepo bool
-	mock.githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		calledGetGitHubRepo = true
 		return &sourcegraph.Repo{Origin: &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub}}, nil
 	}
@@ -86,7 +92,9 @@ func TestRepos_Resolve_GitHub_NonRemote(t *testing.T) {
 }
 
 func TestRepos_Resolve_GitHub_Remote(t *testing.T) {
-	ctx, mock := testContext()
+	ctx := testContext()
+	var githubRepos githubmock.GitHubRepoGetter
+	ctx = github.WithRepos(ctx, &githubRepos)
 
 	var calledReposGet bool
 	localstore.Mocks.Repos.GetByURI = func(context.Context, string) (*sourcegraph.Repo, error) {
@@ -95,7 +103,7 @@ func TestRepos_Resolve_GitHub_Remote(t *testing.T) {
 	}
 
 	var calledGetGitHubRepo bool
-	mock.githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		calledGetGitHubRepo = true
 		return &sourcegraph.Repo{Origin: &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub}}, nil
 	}
@@ -118,7 +126,9 @@ func TestRepos_Resolve_GitHub_Remote(t *testing.T) {
 }
 
 func TestRepos_Resolve_GitHub_otherError(t *testing.T) {
-	ctx, mock := testContext()
+	ctx := testContext()
+	var githubRepos githubmock.GitHubRepoGetter
+	ctx = github.WithRepos(ctx, &githubRepos)
 
 	var calledReposGet bool
 	localstore.Mocks.Repos.GetByURI = func(context.Context, string) (*sourcegraph.Repo, error) {
@@ -127,7 +137,7 @@ func TestRepos_Resolve_GitHub_otherError(t *testing.T) {
 	}
 
 	var calledGetGitHubRepo bool
-	mock.githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		calledGetGitHubRepo = true
 		return nil, grpc.Errorf(codes.Internal, "")
 	}
@@ -145,7 +155,9 @@ func TestRepos_Resolve_GitHub_otherError(t *testing.T) {
 }
 
 func TestRepos_Resolve_notFound(t *testing.T) {
-	ctx, mock := testContext()
+	ctx := testContext()
+	var githubRepos githubmock.GitHubRepoGetter
+	ctx = github.WithRepos(ctx, &githubRepos)
 
 	var calledReposGet bool
 	localstore.Mocks.Repos.GetByURI = func(context.Context, string) (*sourcegraph.Repo, error) {
@@ -154,7 +166,7 @@ func TestRepos_Resolve_notFound(t *testing.T) {
 	}
 
 	var calledGetGitHubRepo bool
-	mock.githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		calledGetGitHubRepo = true
 		return nil, grpc.Errorf(codes.NotFound, "")
 	}

@@ -13,11 +13,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
@@ -75,7 +74,7 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 		return writeJSON(w, response)
 	}
 
-	defSpec, err := cl.Annotations.GetDefAtPos(r.Context(), &sourcegraph.AnnotationsGetDefAtPosOptions{
+	defSpec, err := backend.Annotations.GetDefAtPos(r.Context(), &sourcegraph.AnnotationsGetDefAtPosOptions{
 		Entry: sourcegraph.TreeEntrySpec{
 			RepoRev: repoRev,
 			Path:    file,
@@ -86,7 +85,7 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	def, err := cl.Defs.Get(r.Context(),
+	def, err := backend.Defs.Get(r.Context(),
 		&sourcegraph.DefsGetOp{
 			Def: sourcegraph.DefSpec{
 				Repo:     defSpec.Repo,

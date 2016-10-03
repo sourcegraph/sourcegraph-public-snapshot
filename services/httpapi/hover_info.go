@@ -11,12 +11,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
@@ -80,7 +79,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		return writeJSON(w, resp)
 	}
 
-	defSpec, err := cl.Annotations.GetDefAtPos(r.Context(), &sourcegraph.AnnotationsGetDefAtPosOptions{
+	defSpec, err := backend.Annotations.GetDefAtPos(r.Context(), &sourcegraph.AnnotationsGetDefAtPosOptions{
 		Entry: sourcegraph.TreeEntrySpec{
 			RepoRev: repoRev,
 			Path:    file,
@@ -92,7 +91,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	resp.Def, err = cl.Defs.Get(r.Context(), &sourcegraph.DefsGetOp{
+	resp.Def, err = backend.Defs.Get(r.Context(), &sourcegraph.DefsGetOp{
 		Def: *defSpec,
 		Opt: &sourcegraph.DefGetOptions{
 			Doc: true,

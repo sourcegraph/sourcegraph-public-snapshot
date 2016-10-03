@@ -6,10 +6,11 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 func TestRepoTree_file(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	want := &sourcegraph.TreeEntry{
 		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
@@ -19,11 +20,11 @@ func TestRepoTree_file(t *testing.T) {
 		},
 	}
 
-	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
-	calledGet := mock.RepoTree.MockGet_Return_NoCheck(t, want)
-	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
-	calledAnnotationsList := mock.Annotations.MockList(t, nil)
-	mock.Repos.MockGet_Return(t, &sourcegraph.Repo{ID: 1})
+	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
+	calledGet := backend.Mocks.RepoTree.MockGet_Return_NoCheck(t, want)
+	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "c")
+	calledAnnotationsList := backend.Mocks.Annotations.MockList(t, nil)
+	backend.Mocks.Repos.MockGet_Return(t, &sourcegraph.Repo{ID: 1})
 
 	var entry *sourcegraph.TreeEntry
 	if err := c.GetJSON("/repos/r/-/tree/f", &entry); err != nil {
@@ -47,7 +48,7 @@ func TestRepoTree_file(t *testing.T) {
 }
 
 func TestRepoTree_dir(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
 	want := &sourcegraph.TreeEntry{
 		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
@@ -59,10 +60,10 @@ func TestRepoTree_dir(t *testing.T) {
 		},
 	}
 
-	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
-	calledGet := mock.RepoTree.MockGet_Return_NoCheck(t, want)
-	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
-	mock.Repos.MockGet_Return(t, &sourcegraph.Repo{ID: 1})
+	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
+	calledGet := backend.Mocks.RepoTree.MockGet_Return_NoCheck(t, want)
+	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "c")
+	backend.Mocks.Repos.MockGet_Return(t, &sourcegraph.Repo{ID: 1})
 
 	var entry *sourcegraph.TreeEntry
 	if err := c.GetJSON("/repos/r/-/tree/f", &entry); err != nil {
@@ -83,11 +84,11 @@ func TestRepoTree_dir(t *testing.T) {
 }
 
 func TestRepoTree_notFound(t *testing.T) {
-	c, mock := newTest()
+	c := newTest()
 
-	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
-	calledGet := mock.RepoTree.MockGet_NotFound(t)
-	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
+	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
+	calledGet := backend.Mocks.RepoTree.MockGet_NotFound(t)
+	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "c")
 
 	resp, err := c.Get("/repos/r/-/tree/f")
 	if err != nil {

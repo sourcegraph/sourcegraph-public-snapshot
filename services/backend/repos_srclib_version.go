@@ -15,11 +15,14 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	srclibstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
 func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
+	if Mocks.Repos.GetSrclibDataVersionForPath != nil {
+		return Mocks.Repos.GetSrclibDataVersionForPath(ctx, entry)
+	}
+
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetSrclibDataVersionForPath", entry.RepoRev.Repo); err != nil {
 		return nil, err
 	}
@@ -86,7 +89,7 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 	// different version of the file.
 	var base string
 	if entry.Path != "" {
-		lastPathCommit, err := svc.Repos(ctx).ListCommits(ctx, &sourcegraph.ReposListCommitsOp{
+		lastPathCommit, err := Repos.ListCommits(ctx, &sourcegraph.ReposListCommitsOp{
 			Repo: entry.RepoRev.Repo,
 			Opt: &sourcegraph.RepoListCommitsOptions{
 				Head:        entry.RepoRev.CommitID,
@@ -115,7 +118,7 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 	const lookbackLimit = 250
 
 	// List the recent commits that we'll use to check for builds.
-	candidateCommits, err := svc.Repos(ctx).ListCommits(ctx,
+	candidateCommits, err := Repos.ListCommits(ctx,
 		&sourcegraph.ReposListCommitsOp{
 			Repo: entry.RepoRev.Repo,
 			Opt: &sourcegraph.RepoListCommitsOptions{

@@ -13,6 +13,26 @@ import (
 	"github.com/kr/fs"
 )
 
+// Inventory summarizes a tree's contents (e.g., which programming
+// languages are used).
+type Inventory struct {
+	// Languages are the programming languages used in the tree.
+	Languages []*Lang `json:"Languages,omitempty"`
+}
+
+// Lang represents a programming language used in a directory tree.
+type Lang struct {
+	// Name is the name of a programming language (e.g., "Go" or
+	// "Java").
+	Name string `json:"Name,omitempty"`
+	// TotalBytes is the total number of bytes of code written in the
+	// programming language.
+	TotalBytes uint64 `json:"TotalBytes,omitempty"`
+	// Type is either "data", "programming", "markup", "prose", or
+	// empty.
+	Type string `json:"Type,omitempty"`
+}
+
 // Scan performs an inventory of the tree at fs.
 //
 // Scan respects the ctx's deadline. If it exceeds the deadline,

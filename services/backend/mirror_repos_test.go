@@ -13,7 +13,7 @@ import (
 )
 
 func TestRefreshVCS(t *testing.T) {
-	ctx, _ := testContext()
+	ctx := testContext()
 	var updatedEverything bool
 	localstore.Mocks.Repos.MockGet(t, 1)
 	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
@@ -40,10 +40,11 @@ func TestRefreshVCS(t *testing.T) {
 }
 
 func TestRefreshVCS_cloneRepo(t *testing.T) {
-	ctx, mock := testContext()
+	skipCloneRepoAsyncSteps = true
+	ctx := testContext()
 	var cloned bool
 	localstore.Mocks.Repos.MockGet(t, 1)
-	mock.servers.Repos.MockResolveRev_NoCheck(t, "deadbeef")
+	Mocks.Repos.MockResolveRev_NoCheck(t, "deadbeef")
 	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		Branches_: func(ctx context.Context, _ vcs.BranchesOptions) ([]*vcs.Branch, error) {
 			return nil, vcs.RepoNotExistError{}
@@ -53,7 +54,7 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 		cloned = true
 		return nil
 	}
-	mock.servers.Async.RefreshIndexes_ = func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
+	Mocks.Async.RefreshIndexes = func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
 		return &pbtypes.Void{}, nil
 	}
 	calledInternalUpdate := localstore.Mocks.Repos.MockInternalUpdate(t)
@@ -71,9 +72,10 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 }
 
 func TestRefreshVCS_cloneRepoExists(t *testing.T) {
-	ctx, mock := testContext()
+	skipCloneRepoAsyncSteps = true
+	ctx := testContext()
 	localstore.Mocks.Repos.MockGet(t, 1)
-	mock.servers.Repos.MockResolveRev_NoCheck(t, "deadbeef")
+	Mocks.Repos.MockResolveRev_NoCheck(t, "deadbeef")
 	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		Branches_: func(ctx context.Context, _ vcs.BranchesOptions) ([]*vcs.Branch, error) {
 			return nil, vcs.RepoNotExistError{}
@@ -82,7 +84,7 @@ func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 	localstore.Mocks.RepoVCS.Clone = func(_ context.Context, _ int32, _ *localstore.CloneInfo) error {
 		return vcs.ErrRepoExist
 	}
-	mock.servers.Async.RefreshIndexes_ = func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
+	Mocks.Async.RefreshIndexes = func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
 		return &pbtypes.Void{}, nil
 	}
 	calledInternalUpdate := localstore.Mocks.Repos.MockInternalUpdate(t)

@@ -16,13 +16,12 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/executil"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 // CreateRepo creates a new repo. Callers must call the returned
 // done() func when done (if err is non-nil) to free up resources.
 func CreateRepo(t *testing.T, ctx context.Context, repoURI string, mirror bool) (repo *sourcegraph.Repo, done func(), err error) {
-	cl, _ := sourcegraph.NewClientFromContext(ctx)
-
 	op := &sourcegraph.ReposCreateOp_NewRepo{
 		URI: repoURI,
 	}
@@ -36,7 +35,7 @@ func CreateRepo(t *testing.T, ctx context.Context, repoURI string, mirror bool) 
 		done = func() {} // no-op
 	}
 
-	repo, err = cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{Op: &sourcegraph.ReposCreateOp_New{New: op}})
+	repo, err = backend.Repos.Create(ctx, &sourcegraph.ReposCreateOp{Op: &sourcegraph.ReposCreateOp_New{New: op}})
 	if err != nil {
 		done()
 		return nil, done, err
@@ -47,14 +46,12 @@ func CreateRepo(t *testing.T, ctx context.Context, repoURI string, mirror bool) 
 
 // CreateEmptyMirrorRepo creates an empty mirror repo.
 func CreateEmptyMirrorRepo(t *testing.T, ctx context.Context, repoURI string) error {
-	cl, _ := sourcegraph.NewClientFromContext(ctx)
-
 	op := &sourcegraph.ReposCreateOp_NewRepo{
 		URI:      repoURI,
 		CloneURL: "https://" + repoURI,
 		Mirror:   true,
 	}
-	_, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{Op: &sourcegraph.ReposCreateOp_New{New: op}})
+	_, err := backend.Repos.Create(ctx, &sourcegraph.ReposCreateOp{Op: &sourcegraph.ReposCreateOp_New{New: op}})
 	return err
 }
 

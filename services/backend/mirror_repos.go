@@ -17,7 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -25,13 +24,15 @@ import (
 // Commit) field to signify that a branch was created (or deleted).
 const emptyGitCommitID = "0000000000000000000000000000000000000000"
 
-var MirrorRepos sourcegraph.MirrorReposServer = &mirrorRepos{}
+var MirrorRepos = &mirrorRepos{}
 
 type mirrorRepos struct{}
 
-var _ sourcegraph.MirrorReposServer = (*mirrorRepos)(nil)
-
 func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
+	if Mocks.MirrorRepos.RefreshVCS != nil {
+		return Mocks.MirrorRepos.RefreshVCS(ctx, op)
+	}
+
 	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "RefreshVCS")
 	actor := authpkg.ActorFromContext(ctx)
 	asUserUID := actor.UID
@@ -55,11 +56,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 			}
 
 			// Set a GitHub client authed as the user in the context, to be used to make GitHub API calls.
-			ctx, err = github.NewContextWithAuthedClient(authpkg.WithActor(ctx, &authpkg.Actor{UID: asUserUID, GitHubToken: extToken.Token}))
-			if err != nil {
-				log15.Error("RefreshVCS: failed github authentication for user", "error", err, "uid", asUserUID)
-				return nil, err
-			}
+			ctx = github.NewContextWithAuthedClient(authpkg.WithActor(ctx, &authpkg.Actor{UID: asUserUID, GitHubToken: extToken.Token}))
 		}
 	}
 
@@ -101,6 +98,8 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	return &pbtypes.Void{}, nil
 }
 
+var skipCloneRepoAsyncSteps = false
+
 func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, remoteOpts vcs.RemoteOpts) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirrorRepos.cloneRepo", repo.URI); err != nil {
 		return err
@@ -116,7 +115,7 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 
 	// We've just cloned the repository, do a sanity check to ensure we
 	// can resolve the DefaultBranch.
-	res, err := svc.Repos(ctx).ResolveRev(elevatedActor(ctx), &sourcegraph.ReposResolveRevOp{
+	res, err := Repos.ResolveRev(elevatedActor(ctx), &sourcegraph.ReposResolveRevOp{
 		Repo: repo.ID,
 		Rev:  repo.DefaultBranch,
 	})
@@ -124,25 +123,27 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 		return err
 	}
 
-	go func() {
-		// Both of these are best effort, so we ignore the errors they
-		// return + kick them off in a goroutine to not block the
-		// clone
+	if !skipCloneRepoAsyncSteps {
+		go func() {
+			// Both of these are best effort, so we ignore the errors they
+			// return + kick them off in a goroutine to not block the
+			// clone
 
-		// Ask the Language Processor to prepare the workspace. This is async
-		_ = langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
-			// TODO(slimsag): URI is correct only where the repo URI and clone
-			// URI are directly equal.. but CloneURI is only correct (for Go)
-			// when it directly matches the package import path.
-			Repo:   repo.URI,
-			Commit: res.CommitID,
-		})
+			// Ask the Language Processor to prepare the workspace. This is async
+			_ = langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
+				// TODO(slimsag): URI is correct only where the repo URI and clone
+				// URI are directly equal.. but CloneURI is only correct (for Go)
+				// when it directly matches the package import path.
+				Repo:   repo.URI,
+				Commit: res.CommitID,
+			})
 
-		_, _ = svc.Async(ctx).RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
-			Repo:   repo.ID,
-			Source: "clone",
-		})
-	}()
+			_, _ = Async.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
+				Repo:   repo.ID,
+				Source: "clone",
+			})
+		}()
+	}
 
 	return nil
 }
@@ -256,4 +257,8 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 		})
 	}
 	return nil
+}
+
+type MockMirrorRepos struct {
+	RefreshVCS func(v0 context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
 }

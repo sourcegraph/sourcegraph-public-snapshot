@@ -5,12 +5,10 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 func serveAnnotations(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.Client(r)
-
 	// HACK: Make the Entry.RepoRev.Repo value available at the
 	// keypath Repo so that we can decode it into the Repo field. You
 	// can't specify a dotted keypath in the url struct tag in
@@ -34,7 +32,7 @@ func serveAnnotations(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	anns, err := cl.Annotations.List(r.Context(), &opt)
+	anns, err := backend.Annotations.List(r.Context(), &opt)
 	if err != nil {
 		return err
 	}

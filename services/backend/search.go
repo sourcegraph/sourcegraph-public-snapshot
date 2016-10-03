@@ -16,15 +16,12 @@ import (
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
-var Search sourcegraph.SearchServer = &search{}
+var Search = &search{}
 
 type search struct{}
-
-var _ sourcegraph.SearchServer = (*search)(nil)
 
 var tokenToKind = map[string]string{
 	"func":    "func",
@@ -46,6 +43,10 @@ var tokenToLanguage = map[string]string{
 }
 
 func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error) {
+	if Mocks.Search.Search != nil {
+		return Mocks.Search.Search(ctx, op)
+	}
+
 	observe := func(part string, start time.Time) {
 		d := time.Since(start)
 		log15.Debug("TRACE search", "query", op.Query, "part", part, "duration", d)
@@ -59,7 +60,7 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 	for _, token := range strings.Fields(op.Query) { // at first tokenize on spaces
 		if strings.HasPrefix(token, "r:") {
 			repoPath := strings.TrimPrefix(token, "r:")
-			res, err := svc.Repos(ctx).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
+			res, err := Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
 			if err == nil {
 				op.Opt.Repos = append(op.Opt.Repos, res.Repo)
 			} else {
@@ -258,7 +259,7 @@ func hydrateDefsResults(ctx context.Context, defs []*sourcegraph.DefSearchResult
 				mu.Unlock()
 				return
 			}
-			df, err := svc.Defs(ctx).Get(ctx, &sourcegraph.DefsGetOp{
+			df, err := Defs.Get(ctx, &sourcegraph.DefsGetOp{
 				Def: sourcegraph.DefSpec{
 					Repo:     rp.ID,
 					CommitID: dk.CommitID,
@@ -312,4 +313,8 @@ var searchDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 
 func init() {
 	prometheus.MustRegister(searchDuration)
+}
+
+type MockSearch struct {
+	Search func(v0 context.Context, v1 *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error)
 }

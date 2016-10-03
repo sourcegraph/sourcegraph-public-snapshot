@@ -96,9 +96,6 @@ export interface BranchesOptions {
 export interface Change {
 }
 
-export interface Client {
-}
-
 export interface ClientCapabilities {
 }
 
@@ -540,9 +537,6 @@ export interface FormattingOptions {
 	tabSize: number;
 	insertSpaces: boolean;
 	key: string;
-}
-
-export interface GRPCCodec {
 }
 
 export interface GetFileOptions {

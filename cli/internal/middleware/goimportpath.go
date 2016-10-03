@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 // goImportMetaTag represents a go-import meta tag.
@@ -63,12 +64,6 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 		}
 
 		ctx := req.Context()
-		cl, err := sourcegraph.NewClientFromContext(ctx)
-		if err != nil {
-			log.Println("SourcegraphComGoGetHandler: sourcegraph.NewClientFromContext:", err)
-			http.Error(w, "internal error", http.StatusInternalServerError)
-			return
-		}
 		pathElements := strings.Split(req.URL.Path[1:], "/")
 
 		// Check if the requested path or its prefix is a hosted repository.
@@ -78,7 +73,7 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 		for i := 1; i <= len(pathElements); i++ {
 			repoPath := strings.Join(pathElements[:i], "/")
 
-			res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
+			res, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
 			if grpc.Code(err) == codes.NotFound {
 				continue
 			} else if err != nil {
@@ -87,7 +82,7 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 				return
 			}
 
-			repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: res.Repo})
+			repo, err := backend.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: res.Repo})
 			if err == nil && repo.Mirror {
 				continue
 			} else if errcode.HTTP(err) == http.StatusNotFound {
@@ -96,7 +91,7 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 				// TODO: Distinguish between other known/expected errors vs unexpected errors,
 				//       and treat unexpected errors appropriately. Doing this requires Repos.Get
 				//       method to be documented to specify which known error types it can return.
-				log.Println("SourcegraphComGoGetHandler: cl.Repos.Get:", err)
+				log.Println("SourcegraphComGoGetHandler: backend.Repos.Get:", err)
 				http.Error(w, "error getting repository", http.StatusInternalServerError)
 				return
 			}

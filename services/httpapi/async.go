@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 // serveRefreshIndexes is not meant to be called from the UI, but is intended
@@ -23,15 +24,14 @@ func serveRefreshIndexes(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	cl := handlerutil.Client(r)
 	if opt.Blocking {
-		_, err = cl.Defs.RefreshIndex(r.Context(), &sourcegraph.DefsRefreshIndexOp{
+		_, err = backend.Defs.RefreshIndex(r.Context(), &sourcegraph.DefsRefreshIndexOp{
 			Repo:                repo,
 			RefreshRefLocations: true,
 			Force:               true,
 		})
 	} else {
-		_, err = cl.Async.RefreshIndexes(r.Context(), &sourcegraph.AsyncRefreshIndexesOp{
+		_, err = backend.Async.RefreshIndexes(r.Context(), &sourcegraph.AsyncRefreshIndexesOp{
 			Repo:   repo,
 			Source: "httpapi",
 			Force:  true,

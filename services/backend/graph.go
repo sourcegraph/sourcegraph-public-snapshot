@@ -14,7 +14,7 @@ import (
 // gRPC for now, because it is more necessary and has a simpler
 // interface to convert to protobufs.
 
-var Graph pb.MultiRepoImporterServer = &graph_{}
+var Graph = &graph_{}
 
 // The "_" differentiates it from package graph, which other files in
 // this package import.

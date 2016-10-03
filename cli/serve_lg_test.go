@@ -13,8 +13,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
 
 	"sync"
-
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 // Test that spawning one server works (the simple case).
@@ -113,14 +111,8 @@ func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 		t.Fatal(err)
 	}
 
-	// Test gRPC server.
-	serverConfig, err := a.Client.Meta.Config(ctx, &pbtypes.Void{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// Test HTTP API.
-	httpURL, err := url.Parse(serverConfig.AppURL)
+	httpURL, err := url.Parse(a.Config.Serve.AppURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +130,7 @@ func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 	}
 
 	// Test app server.
-	resp3, err := http.Get(serverConfig.AppURL + "/_/status")
+	resp3, err := http.Get(a.Config.Serve.AppURL + "/_/status")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,9 +139,5 @@ func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 	}
 	if want := http.StatusOK; resp3.StatusCode != want {
 		t.Errorf("got HTTP status %d, want %d", resp3.StatusCode, want)
-	}
-
-	if err := a.Cmd(nil, []string{"meta", "config"}).Run(); err != nil {
-		t.Errorf("meta config cmd failed: %s", err)
 	}
 }

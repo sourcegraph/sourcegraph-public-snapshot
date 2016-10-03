@@ -15,19 +15,19 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 func TestGoImportPath(t *testing.T) {
-	_, mock := httptestutil.NewTest(nil)
-	defer httptestutil.ResetGlobals()
-	mock.Repos.Resolve_ = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
+	httptestutil.NewTest(nil)
+	backend.Mocks.Repos.Resolve = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
 		ids := map[string]int32{"sourcegraph/sourcegraph": 1, "sourcegraph/srclib-go": 2}
 		if id := ids[op.Path]; id != 0 {
 			return &sourcegraph.RepoResolution{Repo: id}, nil
 		}
 		return nil, grpc.Errorf(codes.NotFound, "")
 	}
-	mock.Repos.Get_ = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	backend.Mocks.Repos.Get = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		switch repo.ID {
 		case 1: // "sourcegraph/sourcegraph" hosted repo.
 			return &sourcegraph.Repo{}, nil
@@ -84,7 +84,6 @@ func TestGoImportPath(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		req = req.WithContext(mock.Ctx)
 
 		middleware.SourcegraphComGoGetHandler(nil).ServeHTTP(rw, req)
 
@@ -103,10 +102,8 @@ func TestGoImportPath(t *testing.T) {
 // 	If there are 3 path elements, e.g., "/alpha/beta/gamma", start by checking
 // 	repo path "alpha", then "alpha/beta", and finally "alpha/beta/gamma".
 func TestGoImportPath_repoCheckSequence(t *testing.T) {
-	_, mock := httptestutil.NewTest(nil)
-	defer httptestutil.ResetGlobals()
 	var attemptedRepoPaths []string
-	mock.Repos.Resolve_ = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
+	backend.Mocks.Repos.Resolve = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
 		attemptedRepoPaths = append(attemptedRepoPaths, op.Path)
 		return nil, grpc.Errorf(codes.NotFound, "")
 	}
@@ -117,7 +114,6 @@ func TestGoImportPath_repoCheckSequence(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	req = req.WithContext(mock.Ctx)
 
 	middleware.SourcegraphComGoGetHandler(nil).ServeHTTP(rw, req)
 

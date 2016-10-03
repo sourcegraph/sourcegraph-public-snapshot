@@ -3,6 +3,8 @@ package backend
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"testing"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -17,11 +19,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-var Async sourcegraph.AsyncServer = &async{}
+var Async = &async{}
 
 type async struct{}
 type asyncWorker struct{}
@@ -43,6 +44,10 @@ func StartAsyncWorkers(ctx context.Context) {
 }
 
 func (s *async) RefreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
+	if Mocks.Async.RefreshIndexes != nil {
+		return Mocks.Async.RefreshIndexes(ctx, op)
+	}
+
 	// We filter out repos we can't index at this stage, so that our
 	// metrics on async success vs failure aren't polluted by repos we do
 	// not support.
@@ -74,11 +79,11 @@ func (s *async) RefreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefresh
 }
 
 func (s *async) shouldRefreshIndex(ctx context.Context, op *sourcegraph.AsyncRefreshIndexesOp) (bool, error) {
-	rev, err := svc.Repos(ctx).ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: op.Repo})
+	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: op.Repo})
 	if err != nil {
 		return false, err
 	}
-	inv, err := svc.Repos(ctx).GetInventory(ctx, &sourcegraph.RepoRevSpec{
+	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{
 		Repo:     op.Repo,
 		CommitID: rev.CommitID,
 	})
@@ -165,7 +170,7 @@ func (s *asyncWorker) refreshIndexes(ctx context.Context, op *sourcegraph.AsyncR
 	}
 	defer release()
 
-	_, err := svc.Defs(ctx).RefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
+	_, err := Defs.RefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
 		Repo:                op.Repo,
 		RefreshRefLocations: true,
 		Force:               op.Force,
@@ -186,4 +191,20 @@ var asyncRefreshIndexesUnsupported = prometheus.NewCounter(prometheus.CounterOpt
 
 func init() {
 	prometheus.MustRegister(asyncRefreshIndexesUnsupported)
+}
+
+type MockAsync struct {
+	RefreshIndexes func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error)
+}
+
+func (s *MockAsync) MockRefreshIndexes(t *testing.T, want *sourcegraph.AsyncRefreshIndexesOp) (called *bool) {
+	called = new(bool)
+	s.RefreshIndexes = func(ctx context.Context, got *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
+		*called = true
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got AsyncRefeshIndexesOp %+v, want %+v", got, want)
+		}
+		return &pbtypes.Void{}, nil
+	}
+	return
 }

@@ -14,7 +14,6 @@ machine:
     PGUSER: ubuntu
     PGDATABASE: circle_test
     PGSSLMODE: disable
-    PATH: $HOME/protobuf-3.1.0/src:$PATH
     REDIS_MASTER_ENDPOINT: ":6379"
     CLOUDSDK_CORE_DISABLE_PROMPTS: 1
     LONG_VERSION: $(printf %05d $CIRCLE_BUILD_NUM)_$(date +%Y-%m-%d)_${CIRCLE_SHA1:0:7}
@@ -26,13 +25,11 @@ machine:
 
 dependencies:
   cache_directories:
-    - ~/protobuf-3.1.0/src
     - ~/cache
 
   override:
     - ./dev/ci/install-go.sh
     - ./dev/ci/install-test-tools.sh
-    - ./dev/ci/install-protobuf.sh
     - ./dev/ci/patch-exec-latency.sh
     - ./dev/ci/versions.sh
     - ./dev/ci/install-checkup.sh

@@ -17,10 +17,13 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
 func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error) {
+	if Mocks.Defs.ListAuthors != nil {
+		return Mocks.Defs.ListAuthors(ctx, op)
+	}
+
 	if !feature.Features.Authors {
 		return nil, grpc.Errorf(codes.Unimplemented, "Defs.ListAuthors is disabled")
 	}
@@ -35,12 +38,12 @@ func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsO
 		return nil, grpc.Errorf(codes.InvalidArgument, "Defs.ListAuthors must be called with an absolute commit ID (got %q)", defSpec.CommitID)
 	}
 
-	def, err := svc.Defs(ctx).Get(ctx, &sourcegraph.DefsGetOp{Def: defSpec, Opt: nil})
+	def, err := Defs.Get(ctx, &sourcegraph.DefsGetOp{Def: defSpec, Opt: nil})
 	if err != nil {
 		return nil, err
 	}
 
-	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: defSpec.Repo})
+	repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: defSpec.Repo})
 	if err != nil {
 		return nil, err
 	}

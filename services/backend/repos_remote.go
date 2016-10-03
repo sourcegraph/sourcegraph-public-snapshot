@@ -17,6 +17,10 @@ import (
 // persisted locally.
 
 func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
+	if Mocks.Repos.Resolve != nil {
+		return Mocks.Repos.Resolve(ctx, op)
+	}
+
 	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.Resolve")
 	// First, look up locally.
 	if repo, err := localstore.Repos.GetByURI(ctx, op.Path); err == nil {
