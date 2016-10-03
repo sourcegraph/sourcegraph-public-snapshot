@@ -47,6 +47,7 @@ func TestProxy(t *testing.T) {
 				"b.go": "package p; func B() { A() }",
 			},
 			wantHover: map[string]string{
+				"a.go:1:9":  "package p",
 				"a.go:1:17": "func A()",
 				"a.go:1:23": "func A()",
 				"b.go:1:17": "func B()",

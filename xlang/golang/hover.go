@@ -3,6 +3,8 @@ package golang
 import (
 	"context"
 	"fmt"
+	"go/ast"
+	"go/token"
 	"go/types"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
@@ -23,6 +25,14 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2Conn, req *j
 	o := pkg.ObjectOf(node)
 	t := pkg.TypeOf(node)
 	if o == nil && t == nil {
+		// Package statement idents don't have an object, so try that separately.
+		if pkgName := packageStatementName(fset, pkg.Files, node); pkgName != "" {
+			return &lsp.Hover{
+				Contents: []lsp.MarkedString{{Language: "go", Value: "package " + pkgName}},
+				Range:    rangeForNode(fset, node),
+			}, nil
+		}
+
 		return nil, fmt.Errorf("type/object not found at %+v", params.Position)
 	}
 
@@ -43,4 +53,15 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2Conn, req *j
 		Contents: []lsp.MarkedString{{Language: "go", Value: s}},
 		Range:    rangeForNode(fset, node),
 	}, nil
+}
+
+// packageStatementName returns the package name ((*ast.Ident).Name)
+// of node iff node is the package statement of a file ("package p").
+func packageStatementName(fset *token.FileSet, files []*ast.File, node *ast.Ident) string {
+	for _, f := range files {
+		if f.Name == node {
+			return node.Name
+		}
+	}
+	return ""
 }
