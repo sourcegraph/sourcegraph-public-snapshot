@@ -145,7 +145,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 			return nil, err
 		}
 
-		// Save connection.
+		// Create connection.
 		var connOpt []jsonrpc2.ConnOpt
 		if p.Trace {
 			connOpt = append(connOpt, jsonrpc2.LogMessages(log.New(os.Stderr, "", 0)))
@@ -157,6 +157,25 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 			shutdown: make(chan struct{}),
 		}
 		c.conn = jsonrpc2.NewConn(ctx, rwc, jsonrpc2.HandlerWithError(c.handle), connOpt...)
+		c.id = id
+
+		// SECURITY NOTE: We assume that the caller to the LSP client
+		// proxy has already checked the user's permissions to read
+		// this repo, so we don't need to check permissions again
+		// here.
+		c.rootFS, err = NewRemoteRepoVFS(id.rootPath.CloneURL(), id.rootPath.Rev())
+		if err != nil {
+			return nil, err
+		}
+
+		if err := c.lspInitialize(ctx); err != nil {
+			if err2 := rwc.Close(); err2 != nil {
+				return nil, fmt.Errorf("cleaning up after failed server proxy initialize: %s (orig error: %s)", err2, err)
+			}
+			return nil, err
+		}
+
+		// Save connection.
 		p.mu.Lock()
 		if p.servers == nil {
 			p.servers = make(map[*serverProxyConn]struct{}, 1)
@@ -177,23 +196,6 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 			p.mu.Unlock()
 			serverConnsGauge.Dec()
 		}()
-		c.id = id
-
-		// SECURITY NOTE: We assume that the caller to the LSP client
-		// proxy has already checked the user's permissions to read
-		// this repo, so we don't need to check permissions again
-		// here.
-		c.rootFS, err = NewRemoteRepoVFS(id.rootPath.CloneURL(), id.rootPath.Rev())
-		if err != nil {
-			return nil, err
-		}
-
-		if err := c.lspInitialize(ctx); err != nil {
-			if err2 := rwc.Close(); err2 != nil {
-				return nil, fmt.Errorf("cleaning up after failed server proxy initialize: %s (orig error: %s)", err2, err)
-			}
-			return nil, err
-		}
 	}
 
 	return c, nil
