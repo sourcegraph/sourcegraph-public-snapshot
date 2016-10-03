@@ -7,7 +7,9 @@ import (
 	"io"
 	"log"
 	"os"
+	"path"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -325,6 +327,11 @@ func (c *clientProxyConn) rewritePathFromClient(uriStr string) (string, error) {
 	uri, err := uri.Parse(uriStr)
 	if err != nil {
 		return "", err
+	}
+	if p := path.Clean(uri.FilePath()); strings.HasPrefix(p, "/") || strings.HasPrefix(p, "..") {
+		return "", fmt.Errorf("invalid file path in URI %q in LSP proxy client request (must not begin with '/', '..', or contain '.' or '..' components)", uriStr)
+	} else if uri.FilePath() != "" && p != uri.FilePath() {
+		return "", fmt.Errorf("invalid file path in URI %q (raw file path %q != cleaned file path %q)", uriStr, uri.FilePath(), p)
 	}
 	if *uri.WithFilePath("") != *c.context.rootPath.WithFilePath("") {
 		// SECURITY NOTE: This is a safety check against the user

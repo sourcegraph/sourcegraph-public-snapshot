@@ -35,6 +35,13 @@ func TestRewritePaths(t *testing.T) {
 		"git://a.com/?c#d/f",
 		"git://a.com/b/../a?c#d/f",
 		"git://a.com/b/..?c#d/f",
+		"git://a.com?c#/d",
+		"git://a.com?c#../d",
+		"git://a.com?c#..",
+		"git://a.com?c#.",
+		"git://a.com?c#./..",
+		"git://a.com?c#a/../b",
+		"git://a.com?c#a//b",
 	}
 	for _, p := range bad {
 		_, err := c.rewritePathFromClient(p)
