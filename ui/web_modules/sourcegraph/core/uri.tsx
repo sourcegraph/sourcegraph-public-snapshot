@@ -18,6 +18,12 @@ export class URI {
 	// revision in a Git repository. It is a Sourcegraph-specific
 	// convention.
 	static pathInRepo(repo: string, rev: string | null, path: string): monaco.Uri {
+		if (!rev) {
+			if ((global as any).console.debug) {
+				console.debug("Created URI without a rev; using HEAD.", {repo, rev, path}); // tslint:disable-line no-console
+			}
+			rev = "HEAD";
+		}
 		return monaco.Uri.parse(`git:\/\/${repo}`).with({
 			fragment: path.replace(/^\//, ""),
 			query: rev ? encodeURIComponent(rev) : "",
