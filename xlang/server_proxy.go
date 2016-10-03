@@ -207,7 +207,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 
 func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: initialize",
-		opentracing.Tags{"mode": c.id.mode, "rootPath": c.id.rootPath},
+		opentracing.Tags{"mode": c.id.mode, "rootPath": c.id.rootPath.String()},
 	)
 	defer span.Finish()
 	return c.conn.Call(ctx, "initialize", lspx.InitializeParams{
@@ -220,7 +220,7 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 // (establishing the connection first if necessary).
 func (p *Proxy) callServer(ctx context.Context, id serverID, method string, params, result interface{}) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: "+method,
-		opentracing.Tags{"mode": id.mode, "rootPath": id.rootPath, "method": method, "params": params},
+		opentracing.Tags{"mode": id.mode, "rootPath": id.rootPath.String(), "method": method, "params": params},
 	)
 	defer func() {
 		if err != nil {
