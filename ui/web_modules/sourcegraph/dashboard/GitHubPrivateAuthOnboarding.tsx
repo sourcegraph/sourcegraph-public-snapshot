@@ -116,7 +116,7 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 				<Helmet title="Home" />
 				<div className={styles.onboarding_container}>
 					<Panel className={classNames(base.pb3, base.ph4, base.ba, base.br2, colors.b__cool_pale_gray)}>
-						<Heading className={classNames(base.pt4)} align="center" level="">
+						<Heading pt={4} align="center" level="">
 							Browse your private code with Sourcegraph
 						</Heading>
 						<div className={styles.user_actions} style={{maxWidth: "380px"}}>
