@@ -31,10 +31,10 @@ func TestRewritePaths(t *testing.T) {
 	}
 	// We disallow paths that are not part of the repo from initialize
 	bad := []string{
-		"git://a.com/bad?rev=c#d/f",
-		"git://a.com/?rev=c#d/f",
-		"git://a.com/b/../a?rev=c#d/f",
-		"git://a.com/b/..?rev=c#d/f",
+		"git://a.com/bad?c#d/f",
+		"git://a.com/?c#d/f",
+		"git://a.com/b/../a?c#d/f",
+		"git://a.com/b/..?c#d/f",
 	}
 	for _, p := range bad {
 		_, err := c.rewritePathFromClient(p)
