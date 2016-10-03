@@ -1,6 +1,7 @@
 package localstore
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -12,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/gorp.v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
 var (
@@ -71,6 +73,30 @@ func GlobalDBs() (*dbutil2.Handle, *dbutil2.Handle, error) {
 	}
 
 	return globalAppDBH, globalGraphDBH, nil
+}
+
+// appDBH returns the app DB handle.
+func appDBH(ctx context.Context) gorp.SqlExecutor {
+	appDBH, _, err := GlobalDBs()
+	if err != nil {
+		panic("DB not available: " + err.Error())
+	}
+	return traceutil.SQLExecutor{
+		SqlExecutor: appDBH,
+		Context:     ctx,
+	}
+}
+
+// graphDBH returns the graph DB handle.
+func graphDBH(ctx context.Context) gorp.SqlExecutor {
+	_, graphDBH, err := GlobalDBs()
+	if err != nil {
+		panic("DB not available: " + err.Error())
+	}
+	return traceutil.SQLExecutor{
+		SqlExecutor: graphDBH,
+		Context:     ctx,
+	}
 }
 
 // openDB opens and returns the DB handle for the DB. Use DB unless

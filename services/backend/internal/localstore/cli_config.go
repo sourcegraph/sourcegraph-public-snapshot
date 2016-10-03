@@ -42,15 +42,7 @@ func init() {
 
 // initBackground starts up background store helpers
 func initBackground() error {
-	// Currently the only thing we need in a background helper is the
-	// AppDBH
-	appDBH, _, err := GlobalDBs()
-	if err != nil {
-		return err
-	}
-	ctx := WithAppDBH(context.Background(), appDBH)
-
-	c := newQueueStatsCollector(ctx)
+	c := newQueueStatsCollector(context.Background())
 	prometheus.MustRegister(c)
 
 	return nil

@@ -24,12 +24,11 @@ func testContext() (ctx context.Context, done func()) {
 
 	Mocks = MockStores{}
 
-	appDBH, appDBDone := testdb.NewHandle("app", &AppSchema)
-	graphDBH, graphDBDone := testdb.NewHandle("graph", &GraphSchema)
+	var appDBDone, graphDBDone func()
+	globalAppDBH, appDBDone = testdb.NewHandle("app", &AppSchema)
+	globalGraphDBH, graphDBDone = testdb.NewHandle("graph", &GraphSchema)
 
-	dbCtx := WithAppDBH(ctx, appDBH)
-	dbCtx = WithGraphDBH(dbCtx, graphDBH)
-	return dbCtx, func() {
+	return ctx, func() {
 		appDBDone()
 		graphDBDone()
 	}
