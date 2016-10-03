@@ -9,7 +9,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	lightstep "github.com/lightstep/lightstep-tracer-go"
@@ -18,8 +20,10 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	srccli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 func init() {
@@ -68,6 +72,11 @@ func init() {
 }
 
 func devProxy() (addr string, run, done func() error, err error) {
+	// The LSP dev proxy also assumes that a gitserver is available in
+	// gitserver.DefaultClient. If devProxy is called outside of `src
+	// serve` (which handles that already), you will need to connect
+	// to gitservers explicitly, or override how repos are fetched in
+	// NewRemoteRepoVFS.
 	l, err := net.Listen("tcp", ":0")
 	if err != nil {
 		return
@@ -175,6 +184,15 @@ func sendExecute(c *sendCmdOpts, args *sendCmdArgs, reqParams []byte) error {
 			log.Println(err)
 		}
 	}
+
+	// Fetch code from codeload.github.com, not from gitserver (which
+	// is not available in `src xlang sendx?` because nowhere do we
+	// spin it up or connect to it.)
+	NewRemoteRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+		fullName := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git") // of the form "github.com/foo/bar"
+		return vfsutil.NewGitHubRepoVFS(fullName, rev, "", true)
+	}
+	fmt.Fprintln(os.Stderr, "# Fetching code from codeload.github.com, not gitserver")
 
 	if c.Addr == ":dev:" {
 		if t := os.Getenv("LIGHTSTEP_ACCESS_TOKEN"); t != "" {
