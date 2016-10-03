@@ -102,7 +102,7 @@ export interface SearchDelegate {
 // by the view.
 function resultsToArray(results: Results): Category[] {
 	const {symbols, files, repos} = results;
-	return [symbols, files, repos];
+	return [files, symbols, repos];
 }
 
 // SearchContainer contains the logic that deals with navigation and data
