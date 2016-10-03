@@ -47,6 +47,9 @@ export const UserMenu = (props): JSX.Element => {
 					<LocationStateToggleLink href="/beta" modalName="menuBeta" role="menu_item" location={location}	onToggle={(v) => v && EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickJoinBeta", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 						Beta program
 					</LocationStateToggleLink>
+					<a href="/docs" role="menu_item" onClick={(v) => v && EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ClickJoinBeta", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
+						Docs
+					</a>
 					<a onClick={handleIntercomToggle} role="menu_item">
 						Contact
 					</a>
