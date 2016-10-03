@@ -9,6 +9,7 @@ import (
 	"path"
 	"runtime"
 	"sort"
+	"strings"
 	"sync"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -146,7 +147,7 @@ func (h *BuildHandler) fetchDep(ctx context.Context, d *directory) error {
 	if err != nil {
 		return err
 	}
-	fs, err := vfsutil.NewRemoteRepoVFS(ctx, cloneURL, rev)
+	fs, err := NewDepRepoVFS(cloneURL, rev)
 	if err != nil {
 		return err
 	}
@@ -295,4 +296,25 @@ func allPackageImportsSorted(pkg *build.Package) []string {
 func isMultiplePackageError(err error) bool {
 	_, ok := err.(*build.MultiplePackageError)
 	return ok
+}
+
+// NewDepRepoVFS returns a virtual file system interface for accessing
+// the files in the specified (public) repo at the given commit.
+//
+// TODO(sqs): design a way for the Go build/lang server to access
+// private repos. Private repos are currently only supported for the
+// main workspace repo, not as dependencies.
+var NewDepRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+	// Fast-path for GitHub repos, which we can fetch on-demand from
+	// GitHub's repo .zip archive download endpoint.
+	if cloneURL.Host == "github.com" {
+		fullName := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git") // of the form "github.com/foo/bar"
+		return vfsutil.NewGitHubRepoVFS(fullName, rev, "", true)
+	}
+
+	// Fall back to a full git clone for non-github.com repos.
+	return &vfsutil.GitRepoVFS{
+		CloneURL: cloneURL.String(),
+		Rev:      rev,
+	}, nil
 }

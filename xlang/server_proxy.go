@@ -24,7 +24,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 // serverID identifies a lang/build server by the minimal state
@@ -185,7 +184,12 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		// Save connection.
 		c = p.newServerProxyConn(context.Background(), rwc)
 		c.id = id
-		c.rootFS, err = vfsutil.NewRemoteRepoVFS(ctx, id.rootPath.CloneURL(), id.rootPath.Rev())
+
+		// SECURITY NOTE: We assume that the caller to the LSP client
+		// proxy has already checked the user's permissions to read
+		// this repo, so we don't need to check permissions again
+		// here.
+		c.rootFS, err = NewRemoteRepoVFS(id.rootPath.CloneURL(), id.rootPath.Rev())
 		if err != nil {
 			return nil, err
 		}

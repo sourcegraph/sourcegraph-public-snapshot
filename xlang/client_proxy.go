@@ -326,6 +326,14 @@ func (c *clientProxyConn) rewritePathFromClient(uriStr string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if *uri.WithFilePath("") != *c.context.rootPath.WithFilePath("") {
+		// SECURITY NOTE: This is a safety check against the user
+		// trying to specify one repository in the initialize request
+		// and refer to another repository's files in the another
+		// request. This is important, because we only perform the
+		// access check for the initialize request.
+		return "", fmt.Errorf("file path %q in LSP proxy client request must be underneath root path %q", uriStr, &c.context.rootPath)
+	}
 	return "file:///" + uri.FilePath(), nil
 }
 

@@ -7,11 +7,13 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 
 	lightstep "github.com/lightstep/lightstep-tracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
 
@@ -40,6 +42,11 @@ func run() error {
 		opentracing.InitGlobalTracer(lightstep.NewTracer(lightstep.Options{
 			AccessToken: t,
 		}))
+	}
+
+	// Connect to gitserver(s).
+	for _, addr := range strings.Fields(os.Getenv("SRC_GIT_SERVERS")) {
+		gitserver.DefaultClient.Connect(addr)
 	}
 
 	if err := xlang.RegisterServersFromEnv(); err != nil {

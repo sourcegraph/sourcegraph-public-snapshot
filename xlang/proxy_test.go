@@ -19,16 +19,13 @@ import (
 	"testing"
 	"time"
 
-	// Register Go server for testing.
-	_ "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/golang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 func TestProxy(t *testing.T) {
@@ -399,21 +396,27 @@ var (
 	}
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
+			// Mock repo and dep fetching to use test fixtures.
 			{
-				orig := vfsutil.NewRemoteRepoVFS
-				vfsutil.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
-					id := cloneURL.String() + "?" + rev
-					switch {
-					case test.rootPath == id || strings.HasPrefix(test.rootPath, id+"#"):
-						return mapFS(test.fs), nil
-					case test.depFS[id] != nil:
-						return mapFS(test.depFS[id]), nil
-					default:
-						return nil, fmt.Errorf("no file system found for dep at %s rev %q", cloneURL, rev)
-					}
+				orig := xlang.NewRemoteRepoVFS
+				xlang.NewRemoteRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+					return mapFS(test.fs), nil
 				}
 				defer func() {
-					vfsutil.NewRemoteRepoVFS = orig
+					xlang.NewRemoteRepoVFS = orig
+				}()
+			}
+			{
+				orig := golang.NewDepRepoVFS
+				golang.NewDepRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+					id := cloneURL.String() + "?" + rev
+					if fs, ok := test.depFS[id]; ok {
+						return mapFS(fs), nil
+					}
+					return nil, fmt.Errorf("no file system found for dep at %s rev %q", cloneURL, rev)
+				}
+				defer func() {
+					golang.NewDepRepoVFS = orig
 				}()
 			}
 
@@ -751,12 +754,12 @@ func (v *locations) UnmarshalJSON(data []byte) error {
 func TestProxy_connections(t *testing.T) {
 	ctx := context.Background()
 
-	orig := vfsutil.NewRemoteRepoVFS
-	vfsutil.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+	orig := xlang.NewRemoteRepoVFS
+	xlang.NewRemoteRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 		return ctxvfs.Map(map[string][]byte{"f": []byte("x")}), nil
 	}
 	defer func() {
-		vfsutil.NewRemoteRepoVFS = orig
+		xlang.NewRemoteRepoVFS = orig
 	}()
 
 	// Store data sent/received for checking.
@@ -987,12 +990,12 @@ func testRequestsEqual(as, bs []testRequest) bool {
 func TestProxy_propagation(t *testing.T) {
 	ctx := context.Background()
 
-	orig := vfsutil.NewRemoteRepoVFS
-	vfsutil.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+	orig := xlang.NewRemoteRepoVFS
+	xlang.NewRemoteRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 		return ctxvfs.Map(map[string][]byte{"f": []byte("x")}), nil
 	}
 	defer func() {
-		vfsutil.NewRemoteRepoVFS = orig
+		xlang.NewRemoteRepoVFS = orig
 	}()
 
 	proxy := xlang.NewProxy()
@@ -1068,6 +1071,43 @@ func TestProxy_propagation(t *testing.T) {
 
 	case <-time.After(time.Second):
 		t.Fatal("want diagnostics, got nothing before timeout")
+	}
+}
+
+// TestClientProxy_enforceAllURIsUnderneathRootPath tests that the
+// client proxy forbids the use of any URIs in requests that are not
+// underneath the initialize's rootPath. This is important for
+// security as otherwise there is a risk that code could be fetched
+// from other private repositories. This check is not the only
+// safeguard (and without this safeguard, it would still forbid access
+// to other repositories); this check is intended to increase the
+// number of mistakes we need to make to introduce a security
+// vulnerability.
+func TestClientProxy_enforceAllURIsUnderneathRootPath(t *testing.T) {
+	ctx := context.Background()
+
+	proxy := xlang.NewProxy()
+	addr, done := startProxy(t, proxy)
+	defer done()
+
+	c := dialProxy(t, addr, nil)
+
+	// Connect to the proxy.
+	initParams := xlang.ClientProxyInitializeParams{
+		InitializeParams: lsp.InitializeParams{RootPath: "test://test"},
+		Mode:             "test",
+	}
+	if err := c.Call(ctx, "initialize", initParams, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	// Send a request with a URI referring to a different repo from
+	// the one in initialize's rootPath.
+	if err := c.Call(ctx, "textDocument/definition", lsp.TextDocumentPositionParams{
+		TextDocument: lsp.TextDocumentIdentifier{URI: "test://different-repo#myfile"},
+		Position:     lsp.Position{Line: 1, Character: 2},
+	}, nil); err == nil || !strings.Contains(err.Error(), "must be underneath root path") {
+		t.Fatalf("got error %v, want it to contain 'must be underneath root path'", err)
 	}
 }
 

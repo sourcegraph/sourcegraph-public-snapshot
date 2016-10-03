@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -15,11 +16,14 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 // We need to multiplex an entire xlang connection pool on an HTTP
@@ -83,10 +87,27 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 		return err
 	}
 
-	// We only ever need to send 4 (initialize, the actual method,
-	// shutdown, exit) on the frontend, so be strict here for now.
+	// Sanity check the request body. Be strict based on what we know
+	// the UI sends us.
 	if len(reqs) != 4 {
 		return fmt.Errorf("got %d jsonrpc2 requests, want exactly 4", len(reqs))
+	}
+	if reqs[0].Method != "initialize" || reqs[1].Method == "initialize" || reqs[2].Method != "shutdown" || reqs[3].Method != "exit" {
+		return fmt.Errorf("invalid jsonrpc2 request methods %q: expected initialize, anything but initialize, shutdown, exit (in that order)", []string{reqs[0].Method, reqs[1].Method, reqs[2].Method, reqs[3].Method})
+	}
+	if reqs[0].Params == nil {
+		return errors.New("invalid jsonrpc2 initialize request: empty params")
+	}
+	var initParams lsp.InitializeParams
+	if err := json.Unmarshal(*reqs[0].Params, &initParams); err != nil {
+		return fmt.Errorf("invalid jsonrpc2 initialize params: %s", err)
+	}
+	if initParams.RootPath == "" {
+		return errors.New("invalid empty LSP root path in initialize request")
+	}
+	rootPathURI, err := uri.Parse(initParams.RootPath)
+	if err != nil {
+		return fmt.Errorf("invalid LSP root path %q: %s", initParams.RootPath, err)
 	}
 
 	// Check consistency against the URL. The URL route params are for
@@ -96,18 +117,9 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: fmt.Errorf("LSP method param in URL %q != %q method in LSP message params", v["LSPMethod"], reqs[1].Method)}
 	}
 
-	// Use a one-shot connection to the LSP proxy. This is cheap,
-	// since the LSP proxy will reuse an already running server for
-	// the given workspace if available.
-	c, err := xlangCreateConnection()
-	if err != nil {
-		return err
-	}
-	defer c.Close()
-
 	// Inject tracing info.
 	opName := "LSP HTTP gateway: " + reqs[1].Method
-	span, ctx := opentracing.StartSpanFromContext(r.Context(), opName)
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), opName, opentracing.Tags{"rootPath": rootPathURI.String()})
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -121,6 +133,48 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 		return err
 	}
 	addMeta := jsonrpc2.Meta(carrier)
+
+	// Check that the user has permission to read this repo. Calling
+	// Repos.Resolve will fail if the user does not have access to the
+	// specified repo.
+	//
+	// SECURITY NOTE: The LSP client proxy DOES NOT check
+	// permissions. It accesses the gitserver directly and relies on
+	// its callers to check permissions.
+	checkedUserHasReadAccessToRepo := false // safeguard to make sure we don't accidentally delete the check below
+	{
+		// SECURITY NOTE: Do not delete this block. If you delete this
+		// block, anyone can access any private code, even if they are
+		// not authorized to do so.
+		repo := rootPathURI.Host + strings.TrimSuffix(rootPathURI.Path, ".git") // of the form "github.com/foo/bar"
+		cl, err := sourcegraph.NewClientFromContext(ctx)
+		if err != nil {
+			return err
+		}
+		if _, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo}); err != nil {
+			return err
+		}
+		checkedUserHasReadAccessToRepo = true
+	}
+
+	// Use a one-shot connection to the LSP proxy. This is cheap,
+	// since the LSP proxy will reuse an already running server for
+	// the given workspace if available.
+	c, err := xlangCreateConnection()
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+
+	if !checkedUserHasReadAccessToRepo {
+		// SECURITY NOTE: If we somehow got here without checking that
+		// the user has read access to the repo, then there is a
+		// serious issue (e.g., the permission check code above got
+		// deleted). This if-statement is not what enforces security;
+		// it just makes it harder to make a stupid mistake and remove
+		// the permission check.
+		return &errcode.HTTPErr{Status: http.StatusUnauthorized, Err: errors.New("authorization check failed")}
+	}
 
 	// Only return the last response to the HTTP client (e.g., just
 	// return the result of "textDocument/definition" if "initialize"

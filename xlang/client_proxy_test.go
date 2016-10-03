@@ -29,4 +29,17 @@ func TestRewritePaths(t *testing.T) {
 			t.Errorf("rewritePathFromServer(%s): got client path %q, want %q", wantServerPath, clientPath, wantClientPath)
 		}
 	}
+	// We disallow paths that are not part of the repo from initialize
+	bad := []string{
+		"git://a.com/bad?rev=c#d/f",
+		"git://a.com/?rev=c#d/f",
+		"git://a.com/b/../a?rev=c#d/f",
+		"git://a.com/b/..?rev=c#d/f",
+	}
+	for _, p := range bad {
+		_, err := c.rewritePathFromClient(p)
+		if err == nil {
+			t.Errorf("c.rewritePathFromClient(%v) should fail", p)
+		}
+	}
 }

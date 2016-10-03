@@ -9,11 +9,31 @@ import (
 	"strings"
 	"testing"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 )
 
 func TestXLang(t *testing.T) {
-	c, _ := newTest()
+	c, mock := newTest()
+
+	calledValid := false
+	calledUnauthed := false
+	mock.Repos.Resolve_ = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
+		switch op.Path {
+		case "my/repo":
+			calledValid = true
+			return &sourcegraph.RepoResolution{Repo: 1, CanonicalPath: "my/repo"}, nil
+		case "your/repo":
+			calledUnauthed = true
+			return nil, grpc.Errorf(codes.Unauthenticated, "nope")
+		default:
+			t.Errorf("got unexpected repo %q", op.Path)
+			return nil, grpc.Errorf(codes.NotFound, "404")
+		}
+	}
 
 	orig := xlangCreateConnection
 	defer func() {
@@ -47,11 +67,30 @@ func TestXLang(t *testing.T) {
 		return nil
 	}
 
-	if err := postJSON("someMethod", nil, `[{"id":0,"method":"initialize","params":{"rootPath":"/"}},{"id":1,"method":"someMethod","params":{}},{"id":2,"method":"shutdown"},{"id":3,"method":"exit"}]`, nil); err != nil {
+	// First try on a private repo we can't access
+	if err := postJSON("someMethod", nil, `[{"id":0,"method":"initialize","params":{"rootPath":"git://your/repo?myrev"}},{"id":1,"method":"someMethod","params":{}},{"id":2,"method":"shutdown"},{"id":3,"method":"exit"}]`, nil); err == nil {
+		t.Error(err)
+	}
+	if calledValid {
+		t.Error("calledValid")
+	}
+	if !calledUnauthed {
+		t.Error("!calledUnauthed")
+	}
+	calledUnauthed = false
+
+	if err := postJSON("someMethod", nil, `[{"id":0,"method":"initialize","params":{"rootPath":"git://my/repo?myrev"}},{"id":1,"method":"someMethod","params":{}},{"id":2,"method":"shutdown"},{"id":3,"method":"exit"}]`, nil); err != nil {
 		t.Fatal(err)
 	}
 	if want := []string{"initialize", "someMethod", "shutdown", "exit"}; !reflect.DeepEqual(xc.methodsCalled, want) {
 		t.Errorf("got methods called == %v, want %v", xc.methodsCalled, want)
+	}
+
+	if !calledValid {
+		t.Error("!calledValid")
+	}
+	if calledUnauthed {
+		t.Error("calledUnauthed")
 	}
 }
 
