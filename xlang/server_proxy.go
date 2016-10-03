@@ -56,42 +56,6 @@ type serverProxyConn struct {
 	shutdown chan struct{} // a channel that is closed when the server is shut down by us
 }
 
-func (p *Proxy) newServerProxyConn(ctx context.Context, rwc io.ReadWriteCloser) *serverProxyConn {
-	var connOpt []jsonrpc2.ConnOpt
-	if p.Trace {
-		connOpt = append(connOpt, jsonrpc2.LogMessages(log.New(os.Stderr, "", 0)))
-	}
-
-	c := &serverProxyConn{
-		proxy:    p,
-		last:     time.Now(),
-		shutdown: make(chan struct{}),
-	}
-	c.conn = jsonrpc2.NewConn(ctx, rwc, jsonrpc2.HandlerWithError(c.handle), connOpt...)
-	p.mu.Lock()
-	if p.servers == nil {
-		p.servers = make(map[*serverProxyConn]struct{}, 1)
-	}
-	p.servers[c] = struct{}{}
-	serverConnsGauge.Set(float64(len(p.servers)))
-	serverConnsCounter.Inc()
-	p.mu.Unlock()
-	go func() {
-		select {
-		case <-c.conn.DisconnectNotify():
-		case <-c.shutdown:
-		}
-		p.mu.Lock()
-		delete(p.servers, c)
-		delete(p.serverNewConnMus, c.id)
-		serverConnsGauge.Set(float64(len(p.servers)))
-		p.mu.Unlock()
-		serverConnsGauge.Dec()
-	}()
-
-	return c
-}
-
 var (
 	serverConnsGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "src",
@@ -176,13 +140,23 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 
 	// No connection found, so we need to open one.
 	if c == nil {
-		rwc, err := connectToServer(context.Background(), id.mode)
+		rwc, err := connectToServer(ctx, id.mode)
 		if err != nil {
 			return nil, err
 		}
 
-		// Save connection.
-		c = p.newServerProxyConn(context.Background(), rwc)
+		// Create connection.
+		var connOpt []jsonrpc2.ConnOpt
+		if p.Trace {
+			connOpt = append(connOpt, jsonrpc2.LogMessages(log.New(os.Stderr, "", 0)))
+		}
+
+		c = &serverProxyConn{
+			proxy:    p,
+			last:     time.Now(),
+			shutdown: make(chan struct{}),
+		}
+		c.conn = jsonrpc2.NewConn(ctx, rwc, jsonrpc2.HandlerWithError(c.handle), connOpt...)
 		c.id = id
 
 		// SECURITY NOTE: We assume that the caller to the LSP client
@@ -191,15 +165,42 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		// here.
 		c.rootFS, err = NewRemoteRepoVFS(id.rootPath.CloneURL(), id.rootPath.Rev())
 		if err != nil {
+			_ = c.conn.Close()
+			_ = rwc.Close()
 			return nil, err
 		}
 
 		if err := c.lspInitialize(ctx); err != nil {
-			if err2 := rwc.Close(); err2 != nil {
-				return nil, fmt.Errorf("cleaning up after failed server proxy initialize: %s (orig error: %s)", err2, err)
+			// ignore cleanup errors, best effort
+			if fs, ok := c.rootFS.(io.Closer); ok && fs != nil {
+				_ = fs.Close()
 			}
+			_ = c.conn.Close()
+			_ = rwc.Close()
 			return nil, err
 		}
+
+		// Save connection.
+		p.mu.Lock()
+		if p.servers == nil {
+			p.servers = make(map[*serverProxyConn]struct{}, 1)
+		}
+		p.servers[c] = struct{}{}
+		serverConnsGauge.Set(float64(len(p.servers)))
+		serverConnsCounter.Inc()
+		p.mu.Unlock()
+		go func() {
+			select {
+			case <-c.conn.DisconnectNotify():
+			case <-c.shutdown:
+			}
+			p.mu.Lock()
+			delete(p.servers, c)
+			delete(p.serverNewConnMus, c.id)
+			serverConnsGauge.Set(float64(len(p.servers)))
+			p.mu.Unlock()
+			serverConnsGauge.Dec()
+		}()
 	}
 
 	return c, nil
