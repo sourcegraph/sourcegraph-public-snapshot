@@ -216,6 +216,9 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if params.Mode == "" {
 			return nil, fmt.Errorf(`client must send a "mode" in the initialize request to specify the language`)
 		}
+		if rootPathURI.Rev() == "" {
+			return nil, fmt.Errorf("invalid empty Git revision in rootPath %q", rootPathURI)
+		}
 
 		c.mu.Lock()
 		if c.init != nil {

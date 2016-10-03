@@ -882,7 +882,7 @@ func TestProxy_connections(t *testing.T) {
 
 	// C1 connects to the proxy.
 	initParams := xlang.ClientProxyInitializeParams{
-		InitializeParams: lsp.InitializeParams{RootPath: "test://test"},
+		InitializeParams: lsp.InitializeParams{RootPath: "test://test?v"},
 		Mode:             "test",
 	}
 	if err := c1.Call(ctx, "initialize", initParams, nil); err != nil {
@@ -898,7 +898,7 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 	// Now C1 sends an actual request. The proxy should open a
 	// connection to S1, initialize it, and send the request.
 	if err := c1.Call(ctx, "textDocument/definition", lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test#myfile"},
+		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test?v#myfile"},
 		Position:     lsp.Position{Line: 1, Character: 2},
 	}, nil); err != nil {
 		t.Fatal(err)
@@ -906,7 +906,7 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 	want := []testRequest{
 		{"initialize", lspx.InitializeParams{
 			InitializeParams: lsp.InitializeParams{RootPath: "file:///"},
-			OriginalRootPath: "test://test"}},
+			OriginalRootPath: "test://test?v"}},
 		{"textDocument/definition", lsp.TextDocumentPositionParams{
 			TextDocument: lsp.TextDocumentIdentifier{URI: "file:///myfile"},
 			Position:     lsp.Position{Line: 1, Character: 2}}},
@@ -921,7 +921,7 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 	// C1 sends another request. The server is already initialized, so
 	// just the single request needs to get sent.
 	if err := c1.Call(ctx, "textDocument/hover", lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test#myfile2"},
+		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test?v#myfile2"},
 		Position:     lsp.Position{Line: 3, Character: 4},
 	}, nil); err != nil {
 		t.Fatal(err)
@@ -948,7 +948,7 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 	// request, the proxy should transparently spin up a new server
 	// and reinitialize it appropriately.
 	if err := c1.Call(ctx, "textDocument/definition", lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test#myfile3"},
+		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test?v#myfile3"},
 		Position:     lsp.Position{Line: 5, Character: 6},
 	}, nil); err != nil {
 		t.Fatal(err)
@@ -958,7 +958,7 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 		{"exit", nil},
 		{"initialize", lspx.InitializeParams{
 			InitializeParams: lsp.InitializeParams{RootPath: "file:///"},
-			OriginalRootPath: "test://test"}},
+			OriginalRootPath: "test://test?v"}},
 		{"textDocument/definition", lsp.TextDocumentPositionParams{
 			TextDocument: lsp.TextDocumentIdentifier{URI: "file:///myfile3"},
 			Position:     lsp.Position{Line: 5, Character: 6}}},
@@ -1079,7 +1079,7 @@ func TestProxy_propagation(t *testing.T) {
 
 	// Connect to the proxy.
 	initParams := xlang.ClientProxyInitializeParams{
-		InitializeParams: lsp.InitializeParams{RootPath: "test://test"},
+		InitializeParams: lsp.InitializeParams{RootPath: "test://test?v"},
 		Mode:             "test",
 	}
 	if err := c.Call(ctx, "initialize", initParams, nil); err != nil {
@@ -1088,7 +1088,7 @@ func TestProxy_propagation(t *testing.T) {
 
 	// Call something that triggers the server to return diagnostics.
 	if err := c.Call(ctx, "textDocument/definition", lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test#myfile"},
+		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test?v#myfile"},
 		Position:     lsp.Position{Line: 1, Character: 2},
 	}, nil); err != nil {
 		t.Fatal(err)
@@ -1098,7 +1098,7 @@ func TestProxy_propagation(t *testing.T) {
 	select {
 	case diags := <-recvDiags:
 		want := lsp.PublishDiagnosticsParams{
-			URI: "test://test#myfile",
+			URI: "test://test?v#myfile",
 			Diagnostics: []lsp.Diagnostic{
 				{
 					Range:   lsp.Range{Start: lsp.Position{Line: 1, Character: 1}, End: lsp.Position{Line: 1, Character: 1}},
@@ -1135,7 +1135,7 @@ func TestClientProxy_enforceAllURIsUnderneathRootPath(t *testing.T) {
 
 	// Connect to the proxy.
 	initParams := xlang.ClientProxyInitializeParams{
-		InitializeParams: lsp.InitializeParams{RootPath: "test://test"},
+		InitializeParams: lsp.InitializeParams{RootPath: "test://test?v"},
 		Mode:             "test",
 	}
 	if err := c.Call(ctx, "initialize", initParams, nil); err != nil {
