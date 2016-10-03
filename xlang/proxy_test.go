@@ -160,13 +160,14 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
 			fs: map[string]string{
-				"a.go": `package p; import "fmt"; var _ = fmt.Println`,
+				"a.go": `package p; import "fmt"; var _ = fmt.Println; var x int`,
 			},
 			wantHover: map[string]string{
 				"a.go:1:40": "func Println(a ...interface{}) (n int, err error)",
 			},
 			wantDefinition: map[string]string{
 				"a.go:1:40": "git://github.com/golang/go?" + runtime.Version() + "#src/fmt/print.go:1:19",
+				// "a.go:1:53": "git://github.com/golang/go?" + runtime.Version() + "#src/builtin/builtin.go:TODO:TODO", // TODO(sqs): support builtins
 			},
 			depFS: map[string]map[string]string{
 				"https://github.com/golang/go?go1.7.1": {
@@ -174,7 +175,10 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				},
 			},
 			wantSymbols: map[string][]string{
-				"": []string{"git://test/pkg?master#a.go:variable:pkg._"},
+				"": []string{
+					"git://test/pkg?master#a.go:variable:pkg._",
+					"git://test/pkg?master#a.go:variable:pkg.x",
+				},
 			},
 		},
 		"gopath": {
