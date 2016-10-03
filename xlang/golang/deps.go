@@ -49,7 +49,7 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 		Compiler: gocompiler,
 	}, false)
 
-	bpkg, err := containingPackage(ctx, bctx, h.filePath(fileURI))
+	bpkg, err := containingPackage(bctx, h.filePath(fileURI))
 	if err != nil && !isMultiplePackageError(err) {
 		return err
 	}

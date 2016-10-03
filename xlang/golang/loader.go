@@ -42,7 +42,7 @@ func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2Conn, fileURI 
 
 	bctx := h.overlayBuildContext(ctx, h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
 
-	bpkg, err := containingPackage(ctx, bctx, filename)
+	bpkg, err := containingPackage(bctx, filename)
 	if mpErr, ok := err.(*build.MultiplePackageError); ok {
 		bpkg, err = buildPackageForNamedFileInMultiPackageDir(bpkg, mpErr, filepath.Base(filename))
 		if err != nil {

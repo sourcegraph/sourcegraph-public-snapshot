@@ -80,7 +80,7 @@ func fsBuildContext(ctx context.Context, orig *build.Context, fs ctxvfs.FileSyst
 // and it does not perform FS calls that are unnecessary for us (such
 // as searching the GOROOT; this is only called on the main
 // workspace's code, not its deps).
-func containingPackage(ctx context.Context, bctx *build.Context, filename string) (*build.Package, error) {
+func containingPackage(bctx *build.Context, filename string) (*build.Package, error) {
 	if !strings.HasPrefix(bctx.GOPATH, "/") || strings.Contains(bctx.GOPATH, ":") {
 		panic("build context GOPATH must contain exactly 1 entry: " + bctx.GOPATH)
 	}
