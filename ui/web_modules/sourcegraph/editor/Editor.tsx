@@ -17,6 +17,16 @@ const fetch = singleflightFetch(defaultFetch);
 
 const neverPromise = new Promise(() => null); // never resolved
 
+function cacheKey(model: monaco.editor.IReadOnlyModel, position: monaco.Position): string | null {
+	const word = model.getWordAtPosition(position);
+	if (!word) {
+		return null;
+	}
+	return `${model.uri.toString(true)}:${position.lineNumber}:${word.startColumn}:${word.endColumn}`;
+}
+const hoverCache = new Map<string, any>();
+const defCache = new Map<string, any>();
+
 const promiseRaceResolvedOnly = (a, b: Promise<any>): Promise<any> => {
 	// Promise.race returns the first promise that is either resolved
 	// or rejected. We want a funciton that returns the first promise
@@ -177,6 +187,14 @@ export class Editor implements monaco.IDisposable {
 	}
 
 	provideDefinition(model: monaco.editor.IReadOnlyModel, position: monaco.Position, token: monaco.CancellationToken): monaco.languages.Definition | monaco.Thenable<monaco.languages.Definition | null> {
+		const key = cacheKey(model, position);
+		if (key) {
+			const cacheHit = defCache.get(key);
+			if (cacheHit) {
+				return Promise.resolve(cacheHit);
+			}
+		}
+
 		const xlangRes = (window.localStorage as any).langpOnly ? neverPromise : lsp.send(model, "textDocument/definition", {
 			textDocument: {uri: model.uri.toString(true)},
 			position: lsp.toPosition(position),
@@ -187,7 +205,11 @@ export class Editor implements monaco.IDisposable {
 					return null;
 				}
 				const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
-				return locs.map(lsp.toMonacoLocation);
+				const translatedLocs: monaco.languages.Location[] = locs.map(lsp.toMonacoLocation);
+				if (key) {
+					defCache.set(key, translatedLocs);
+				}
+				return translatedLocs;
 			});
 
 		const langpRes = (window.localStorage as any).xlangOnly ? neverPromise : fetchJumpToDef(model, position).then((loc: lsp.Location) => loc && loc.uri ? lsp.toMonacoLocation(loc) : null);
@@ -200,6 +222,14 @@ export class Editor implements monaco.IDisposable {
 	}
 
 	provideHover(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<monaco.languages.Hover> {
+		const key = cacheKey(model, position);
+		if (key) {
+			const cacheHit = hoverCache.get(key);
+			if (cacheHit) {
+				return Promise.resolve(cacheHit);
+			}
+		}
+
 		const xlangRes = (window.localStorage as any).langpOnly ? neverPromise : lsp.send(model, "textDocument/hover", {
 			textDocument: {uri: model.uri.toString(true)},
 			position: lsp.toPosition(position),
@@ -216,10 +246,14 @@ export class Editor implements monaco.IDisposable {
 					const word = model.getWordAtPosition(position);
 					range = new monaco.Range(position.lineNumber, word ? word.startColumn : position.column, position.lineNumber, word ? word.endColumn : position.column);
 				}
-				return {
+				const hover: monaco.languages.Hover = {
 					contents: resp.result.contents,
 					range,
 				};
+				if (key) {
+					hoverCache.set(key, hover);
+				}
+				return hover;
 			});
 
 		const langpRes = (window.localStorage as any).xlangOnly ? neverPromise : defAtPosition(model, position).then((resp: HoverInfoResponse) => {
