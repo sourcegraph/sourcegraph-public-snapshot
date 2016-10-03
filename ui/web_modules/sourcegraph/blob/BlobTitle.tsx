@@ -1,9 +1,11 @@
 import {hover} from "glamor";
 import * as React from "react";
 import {Link} from "react-router";
+import {UnsupportedLanguageAlert} from "sourcegraph/blob/UnsupportedLanguageAlert";
 import {Base, FlexContainer, Heading} from "sourcegraph/components";
 import {colors, typography} from "sourcegraph/components/utils";
 import {RevSwitcherContainer} from "sourcegraph/repo/RevSwitcherContainer";
+import {getPathExtension, supportedExtensions} from "sourcegraph/util/supportedExtensions";
 
 interface Props {
 	repo: string;
@@ -28,13 +30,18 @@ const subSx = Object.assign({},
 	typography.size[7],
 );
 
-const toastSx = Object.assign({},
-	{color: colors.orange(), marginTop: "auto", marginBottom: "auto"},
-	typography.size[8],
-);
 const subHover = {
 	color: `${colors.coolGray4()} !important`,
 };
+
+const toastSx = Object.assign({},
+	{
+		color: colors.orange(),
+		marginTop: "auto",
+		marginBottom: "auto",
+	},
+	typography.size[8],
+);
 
 function getFilePath(repo: string, path: string): JSX.Element[] {
 	const filePathArray = repo.split("/").concat(path.split("/"));
@@ -81,6 +88,9 @@ export function BlobTitle({
 	isCloning,
 	toast,
 }: Props): JSX.Element {
+	const extension = getPathExtension(path);
+	const isSupported = extension ? supportedExtensions.indexOf(extension) !== -1 : false;
+
 	return <Base style={sx} px={3} py={2}>
 		<FlexContainer justify="between">
 			<div>
@@ -97,6 +107,7 @@ export function BlobTitle({
 				</Heading>
 				<span style={subSx}>{getFilePath(repo, path)}</span>
 			</div>
+			{!isSupported && <UnsupportedLanguageAlert ext={extension}/>}
 			{toast && <div style={toastSx}>{toast}</div>}
 		</FlexContainer>
 	</Base>;
