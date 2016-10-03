@@ -22,7 +22,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 // NewBuildHandler creates a new build server wrapping a (also newly
@@ -137,20 +136,11 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		}
 
 		// Determine the root import path of this workspace (e.g., "github.com/user/repo").
-		if params.OriginalRootPath == "" {
-			return nil, errors.New("unable to determine Go workspace root import path without due to empty root path")
-		}
-		u, err := uri.Parse(params.OriginalRootPath)
+		rootImportPath, err := h.determineRootImportPath(ctx, params.OriginalRootPath, conn)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("unable to determine workspace's root Go import path: %s (original rootPath is %q)", err, params.OriginalRootPath)
 		}
-		switch u.Scheme {
-		case "git":
-			h.rootImportPath = path.Join(u.Host, strings.TrimSuffix(u.Path, ".git"), u.FilePath())
-		default:
-			return nil, fmt.Errorf("unrecognized originalRootPath: %q", u)
-		}
-
+		h.rootImportPath = rootImportPath
 		span.SetTag("originalRootPath", params.OriginalRootPath)
 
 		// Sanity-check the import path.

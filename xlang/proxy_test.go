@@ -347,6 +347,39 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				},
 			},
 		},
+
+		// This covers repos like github.com/kubernetes/kubernetes,
+		// which have doc.go files in subpackages with canonical
+		// import path comments of "//
+		// k8s.io/kubernetes/SUBPACKAGE...". If we don't set up the
+		// workspace at /src/k8s.io/kubernetes, then cross-package
+		// definitions will fail, and we will erroneously fetch a
+		// separate (HEAD) copy of the entire kubernetes repo at the
+		// k8s.io/kubernetes/... root.
+		"go packages with canonical import path different from its repo": {
+			rootPath: "git://test/foo?master",
+			mode:     "go",
+			fs: map[string]string{
+				"a/a.go": `package a // import "other/foo/a"
+
+import "other/foo/b"
+
+var A = b.B`,
+				"b/b.go": `package b // import "other/foo/b"
+
+var (
+	B = 123
+	bb = B
+)`,
+			},
+			wantDefinition: map[string]string{
+				"a/a.go:5:5":  "git://test/foo?master#a/a.go:5:5", // "var A"
+				"a/a.go:5:11": "git://test/foo?master#b/b.go:4:2", // "b.B"
+				"b/b.go:4:2":  "git://test/foo?master#b/b.go:4:2", // "B = 123"
+				"b/b.go:5:7":  "git://test/foo?master#b/b.go:4:2", // "bb = B"
+			},
+		},
+
 		"go symbols": {
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
