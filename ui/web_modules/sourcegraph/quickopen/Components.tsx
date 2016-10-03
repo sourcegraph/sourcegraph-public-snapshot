@@ -23,7 +23,9 @@ export const ResultRow = ({title, description, index, length}, categoryIndex, it
 		<a key={itemIndex} className={modal_result}
 			ref={node => { if (scrollIntoView && node && selected) {
 			// Nonstandard, but improves experience in Chrome.
-			(node as any).scrollIntoViewIfNeeded(false);
+			if ((node as any).scrollIntoViewIfNeeded) {
+				(node as any).scrollIntoViewIfNeeded(false);
+			}
 		}}}
 		style={{
 			borderRadius: 3,
