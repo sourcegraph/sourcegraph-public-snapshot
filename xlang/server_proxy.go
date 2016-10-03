@@ -165,13 +165,18 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		// here.
 		c.rootFS, err = NewRemoteRepoVFS(id.rootPath.CloneURL(), id.rootPath.Rev())
 		if err != nil {
+			_ = c.conn.Close()
+			_ = rwc.Close()
 			return nil, err
 		}
 
 		if err := c.lspInitialize(ctx); err != nil {
-			if err2 := rwc.Close(); err2 != nil {
-				return nil, fmt.Errorf("cleaning up after failed server proxy initialize: %s (orig error: %s)", err2, err)
+			// ignore cleanup errors, best effort
+			if fs, ok := c.rootFS.(io.Closer); ok && fs != nil {
+				_ = fs.Close()
 			}
+			_ = c.conn.Close()
+			_ = rwc.Close()
 			return nil, err
 		}
 
