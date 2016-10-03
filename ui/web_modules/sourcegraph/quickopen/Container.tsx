@@ -395,7 +395,7 @@ export class Container extends React.Component<Props, State> {
 					<Input
 						id="SearchInput-e2e-test"
 						style={{boxSizing: "border-box", border: "none", flex: "1 0 auto"}}
-						placeholder="Search for repositories, files or definitions"
+						placeholder={this.props.repo ? "Search for repositories, files or definitions" : "Search for repositories"}
 						value={this.state.input}
 						block={true}
 						autoFocus={true}

@@ -3,29 +3,28 @@ import * as React from "react";
 import {Link} from "react-router";
 import {InjectedRouter} from "react-router";
 import {context} from "sourcegraph/app/context";
-
-import {Base, FlexContainer, Logo} from "sourcegraph/components";
-import {colors, layout} from "sourcegraph/components/utils";
-
-import * as styles from "sourcegraph/app/styles/GlobalNav.css";
-
-import {BetaSignup, Integrations, Login, Signup} from "sourcegraph/app/modals/index";
-import {DemoVideo} from "sourcegraph/home/modals/DemoVideo";
-
+import  "sourcegraph/app/GlobalNav/GlobalNavBackend"; // for side-effects
+import {GlobalNavStore, ToggleQuickOpen} from "sourcegraph/app/GlobalNav/GlobalNavStore";
 import {SearchCTA} from "sourcegraph/app/GlobalNav/SearchCTA";
 import {SignupOrLogin} from "sourcegraph/app/GlobalNav/SignupOrLogin";
 import {UserMenu} from "sourcegraph/app/GlobalNav/UserMenu";
-import {QuickOpenModal} from "sourcegraph/quickopen/Modal";
-
 import {LocationState} from "sourcegraph/app/locationState";
+import {BetaSignup, Integrations, Login, Signup} from "sourcegraph/app/modals/index";
 import {isRootRoute} from "sourcegraph/app/routePatterns";
+import * as styles from "sourcegraph/app/styles/GlobalNav.css";
+import {Base, FlexContainer, Logo} from "sourcegraph/components";
+import {colors, layout} from "sourcegraph/components/utils";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {DemoVideo} from "sourcegraph/home/modals/DemoVideo";
+import {QuickOpenModal} from "sourcegraph/quickopen/Modal";
 import {repoParam, repoPath, repoRev} from "sourcegraph/repo";
+import {Store} from "sourcegraph/Store";
 
 interface Props {
 	navContext?: JSX.Element;
 	location: Location & {state: LocationState};
 	params: any;
-	channelStatusCode?: number;
 	role?: string;
 }
 
@@ -33,15 +32,23 @@ interface State {
 	showSearch: boolean;
 }
 
-export class GlobalNav extends React.Component<Props, State> {
+export class GlobalNav extends Container<Props, State> {
 
-	constructor() {
-		super();
+	constructor(props: Props) {
+		super(props);
 		this.onSearchDismiss = this.onSearchDismiss.bind(this);
 		this.activateSearch = this.activateSearch.bind(this);
 		this.state = {
 			showSearch: false,
 		};
+	}
+
+	reconcileState(state: State, props: Props): void {
+		state.showSearch = GlobalNavStore.quickOpenVisible;
+	}
+
+	stores(): Store<any>[] {
+		return [GlobalNavStore];
 	}
 
 	static contextTypes: React.ValidationMap<any> = {
@@ -51,11 +58,11 @@ export class GlobalNav extends React.Component<Props, State> {
 	context: { router: InjectedRouter };
 
 	onSearchDismiss(): void {
-		this.setState({showSearch: false});
+		Dispatcher.Backends.dispatch(new ToggleQuickOpen(false));
 	}
 
 	activateSearch(): void {
-		this.setState({showSearch: true});
+		Dispatcher.Backends.dispatch(new ToggleQuickOpen(true));
 	}
 
 	render(): JSX.Element {
@@ -120,7 +127,10 @@ export class GlobalNav extends React.Component<Props, State> {
 					activateSearch={this.activateSearch}
 					onDismiss={this.onSearchDismiss} />
 				<FlexContainer items="center" style={{paddingRight: "0.5rem"}}>
-					<a style={{flex: "0 0 auto"}} onClick={this.activateSearch}><SearchCTA /></a>
+					{
+						// TODO(uforic): find a way to listen to the URL path, if home page we don't want to show
+						<a onClick={this.activateSearch}><SearchCTA width={14} /></a>
+					}
 					{context.user
 						? <UserMenu user={context.user} location={location} style={{flex: "0 0 auto", marginTop: 4}} />
 						: <SignupOrLogin user={context.user} location={location} />
