@@ -2,6 +2,7 @@
 // tslint:disable
 
 export const colors: string;
+export const vars: string;
 export const GlobalNav: string;
 export const navbarZIndex: string;
 export const c_cool_gray: string;
@@ -10,9 +11,17 @@ export const c_cool_mid_gray_3: string;
 export const c_cool_mid_gray_5: string;
 export const c_cool_mid_gray_8: string;
 export const c_cool_pale_gray: string;
+export const c_cool_pale_gray_5: string;
 export const c_cool_dark_gray: string;
 export const c_blue: string;
+export const c_blue_text: string;
+export const c_blue_2: string;
+export const c_blue_5: string;
 export const c_blue_8: string;
+export const c_black_20: string;
+export const c_black_10: string;
+export const c_purple: string;
+export const font_size_7: string;
 export const yellow: string;
 export const orange: string;
 export const red: string;
