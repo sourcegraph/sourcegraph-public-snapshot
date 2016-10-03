@@ -1,3 +1,4 @@
+import {hover} from "glamor";
 import * as React from "react";
 import {Link} from "react-router";
 import {Base, FlexContainer, Heading} from "sourcegraph/components";
@@ -10,7 +11,7 @@ interface Props {
 	repoObj: any;
 	rev: string;
 	commitID: string;
-	routes: Array<Object>;
+	routes: Object[];
 	routeParams: any;
 	isCloning: boolean;
 	toast: string | null;
@@ -31,8 +32,45 @@ const toastSx = Object.assign({},
 	{color: colors.orange(), marginTop: "auto", marginBottom: "auto"},
 	typography.size[8],
 );
+const subHover = {
+	color: `${colors.coolGray4()} !important`,
+};
 
-export const BlobTitle = ({
+function getFilePath(repo: string, path: string): JSX.Element[] {
+	const filePathArray = repo.split("/").concat(path.split("/"));
+	const isGitHubRepo = filePathArray[0] === "github.com";
+	filePathArray.pop();
+
+	return filePathArray.map((item, i, array) => {
+		const relPath = isGitHubRepo
+			? array.slice(3, i + 1).join("/")
+			: array.slice(0, i + 1).join("/");
+
+		if (isGitHubRepo && i >= 1 && i <= 2) { return <span key={i} />; };
+
+		return item === "github.com"
+			? <span key={i}>
+				<Link
+					{...hover(subHover)}
+					style={subSx}
+					to={`/${repo}`}>
+					{repo.split("/").join(" / ")}</Link>
+			</span>
+			: <span key={i}>
+				&nbsp;/&nbsp;
+				<Link
+					{...hover(subHover)}
+					style={subSx}
+					to={`/${repo}/-/tree/${relPath}`} >{item}</Link>
+			</span>;
+	});
+};
+
+function getFilename(repo: string, path: string): string | undefined {
+	return repo.split("/").concat(path.split("/")).pop();
+};
+
+export function BlobTitle({
 	repo,
 	path,
 	repoObj,
@@ -42,22 +80,24 @@ export const BlobTitle = ({
 	routeParams,
 	isCloning,
 	toast,
-}: Props) => <Base style={sx} px={3} py={2}>
-	<FlexContainer justify="between">
-		<div>
-			<Heading level={5} color="white" mb={0}>
-				{path}
-				{commitID && <RevSwitcherContainer
-					repo={repo}
-					repoObj={repoObj}
-					rev={rev}
-					commitID={commitID}
-					routes={routes}
-					routeParams={routeParams}
-					isCloning={isCloning} />}
-			</Heading>
-			<Link style={subSx} to={`/${repo}`} >{repo}</Link>
-		</div>
-		{toast && <div style={toastSx}>{toast}</div>}
-	</FlexContainer>
-</Base>;
+}: Props): JSX.Element {
+	return <Base style={sx} px={3} py={2}>
+		<FlexContainer justify="between">
+			<div>
+				<Heading level={5} color="white" mb={0}>
+					{getFilename(repo, path)}
+					{commitID && <RevSwitcherContainer
+						repo={repo}
+						repoObj={repoObj}
+						rev={rev}
+						commitID={commitID}
+						routes={routes}
+						routeParams={routeParams}
+						isCloning={isCloning} />}
+				</Heading>
+				<span style={subSx}>{getFilePath(repo, path)}</span>
+			</div>
+			{toast && <div style={toastSx}>{toast}</div>}
+		</FlexContainer>
+	</Base>;
+};

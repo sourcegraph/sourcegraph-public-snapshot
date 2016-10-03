@@ -114,6 +114,10 @@
 	border-radius: 1px;
 }
 
+:global div.monaco-editor.vs-dark .token.identifier {
+	cursor: pointer;
+}
+
 :global div.monaco-editor.vs-dark,
 :global div.monaco-editor.vs-dark .token {color: c_cool_pale_gray}
 :global div.monaco-editor.vs-dark,
@@ -146,11 +150,12 @@
 :global div.monaco-editor.vs-dark .token.support.property-value,
 :global div.monaco-editor.vs-dark .token.literal.hex { color: yellow; }
 
+:global div.monaco-editor.vs-dark .token.identifier { color: c_cool_pale_gray; }
+
 :global div.monaco-editor.vs-dark .token.comment.doc,
 :global div.monaco-editor.vs-dark .token.regexp,
 :global div.monaco-editor.vs-dark .token.constant.rgb-value { color: green; }
 
-:global div.monaco-editor.vs-dark .identifier,
 :global div.monaco-editor.vs-dark .token.entity.name.selector,
 :global div.monaco-editor.vs-dark .token.info-token { color: cyan; }
 
