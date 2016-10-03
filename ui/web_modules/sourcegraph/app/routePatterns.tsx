@@ -17,6 +17,7 @@ export type RouteName = "styleguide" |
 	"reset" |
 	"about" |
 	"beta" |
+	"docs" |
 	"contact" |
 	"security" |
 	"pricing" |
@@ -28,6 +29,7 @@ export const rel = {
 	// topLevel list in app/internal/ui/router.go.
 	about: "about",
 	beta: "beta",
+	docs: "docs",
 	contact: "contact",
 	security: "security",
 	pricing: "pricing",
