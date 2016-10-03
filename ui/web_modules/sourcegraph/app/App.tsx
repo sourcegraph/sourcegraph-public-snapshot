@@ -25,6 +25,7 @@ interface Props {
 	navContext: JSX.Element;
 	location: any;
 	params?: any;
+	channelStatusCode?: number;
 }
 
 type State = any;
@@ -58,7 +59,7 @@ export class App extends React.Component<Props, State> {
 		return (
 			<div className={this.state.className}>
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
-				<GlobalNav params={this.props.params} location={this.props.location} />
+				<GlobalNav params={this.props.params} location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
 				{this.props.main}
 				<EventListener target={global.document} event="sourcegraph:desktop" callback={this._handleSourcegraphDesktop} />
 			</div>

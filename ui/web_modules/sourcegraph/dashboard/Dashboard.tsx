@@ -3,26 +3,18 @@ import {Location} from "history";
 import * as React from "react";
 import {Link} from "react-router";
 import {context} from "sourcegraph/app/context";
-import {ToggleQuickOpen} from "sourcegraph/app/GlobalNav/GlobalNavStore";
-import {SearchCTA} from "sourcegraph/app/GlobalNav/SearchCTA";
 import {FlexContainer, Heading} from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as grid from "sourcegraph/components/styles/_grid.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
-import * as Dispatcher from "sourcegraph/Dispatcher";
-
-import "sourcegraph/app/GlobalNav/GlobalNavBackend"; // for side-effects
+import {GlobalSearchContainer} from "sourcegraph/search/GlobalSearchContainer";
 
 interface Props {
 	location: Location;
 	currentStep?: string;
 	completedBanner?: boolean;
-}
-
-function triggerSearchModal(): void {
-	Dispatcher.Backends.dispatch(new ToggleQuickOpen(true));
 }
 
 export function Dashboard(props: Props): JSX.Element {
@@ -46,12 +38,14 @@ export function Dashboard(props: Props): JSX.Element {
 				<p className={classNames(typography.tc, base.mt3, base.mb4, typography.f6, colors.cool_gray_8)} >
 					You've got everything you need to start exploring the code you depend on.
 				</p>
-				<div className={classNames(base.center)} style={{textAlign:`center`}}>
-					<a onClick={triggerSearchModal}><SearchCTA width={30} content="Find a repository"/></a>
+				<div className={classNames(base.pt4, base.center)}>
+					<GlobalSearchContainer
+						location={props.location}
+						style={{ flex: "1 1 100%", margin: "0 8px" }} />
 				</div>
 				<div className={classNames(styles.user_actions, colors.cool_gray_8)}>
-					Jump to popular GitHub repositories, like:
-					docker/docker, golang/go, or sourcegraph/thyme
+					Try these top searches:
+					new http request, read file, json encoder
 				</div>
 				<div className={classNames(styles.user_actions, base.pt5)}>
 					<Heading className={base.pb4} level="5">Explore public repositories</Heading>

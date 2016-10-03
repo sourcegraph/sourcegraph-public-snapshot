@@ -39,31 +39,22 @@
 											"type": "div",
 											"props": {
 												"className": "",
-												"style": {
-													"textAlign": "center"
-												},
 												"children": [
 													{
-														"type": "a",
+														"type": "GlobalSearchContainer",
 														"props": {
-															"onClick": {
-																"dispatchedToStores": [],
-																"dispatchedToBackends": [
-																	{
-																		"$constructor": "ToggleQuickOpen",
-																		"quickOpenVisible": true
-																	}
-																]
+															"location": {
+																"pathname": "foo",
+																"action": "bar",
+																"search": "foo",
+																"query": {},
+																"state": {},
+																"key": "foo"
 															},
-															"children": [
-																{
-																	"type": "SearchCTA",
-																	"props": {
-																		"width": 30,
-																		"content": "Find a repository"
-																	}
-																}
-															]
+															"style": {
+																"flex": "1 1 100%",
+																"margin": "0 8px"
+															}
 														}
 													}
 												]
@@ -74,7 +65,7 @@
 											"props": {
 												"className": "",
 												"children": [
-													"Jump to popular GitHub repositories, like: docker/docker, golang/go, or sourcegraph/thyme"
+													"Try these top searches: new http request, read file, json encoder"
 												]
 											}
 										},
