@@ -59,7 +59,9 @@ func Middleware(next http.Handler) http.Handler {
 
 		// start new span
 		span := opentracing.StartSpan("", ext.RPCServerOption(wireContext))
-		span.SetTag("URL", r.URL.String())
+		ext.HTTPUrl.Set(span, r.URL.String())
+		ext.HTTPMethod.Set(span, r.Method)
+		span.SetTag("http.referer", r.Header.Get("referer"))
 		defer span.Finish()
 		rw.Header().Set("X-Trace", traceutil.SpanURL(span))
 		ctx = opentracing.ContextWithSpan(ctx, span)
@@ -71,18 +73,17 @@ func Middleware(next http.Handler) http.Handler {
 		rwIntercept := &ResponseWriterStatusIntercept{ResponseWriter: rw}
 		next.ServeHTTP(rwIntercept, r.WithContext(ctx))
 
-		// route name is only known after the request has been handled
-		span.SetOperationName("Serve: " + routeName)
-		span.SetTag("Route", routeName)
-		span.SetTag("Method", r.Method)
-		span.SetTag("URL", r.URL.String())
-
 		// If the code is zero, the inner Handler never explicitly called
 		// WriterHeader. We can assume the response code is 200 in such a case
 		code := rwIntercept.Code
 		if code == 0 {
 			code = 200
 		}
+
+		// route name is only known after the request has been handled
+		span.SetOperationName("Serve: " + routeName)
+		span.SetTag("Route", routeName)
+		ext.HTTPStatusCode.Set(span, uint16(code))
 
 		duration := time.Now().Sub(start)
 		labels := prometheus.Labels{
