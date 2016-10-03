@@ -120,9 +120,11 @@ export class Editor implements monaco.IDisposable {
 		this._editor.onContextMenu(e => {
 			// HACK: This method relies on Monaco private internals.
 			const unsupportedLang = this._editor.getModel().getModeId() !== "go";
+			// Disable the context menu during chrome onboarding.
+			const isOnboarding = location.search.includes("ob=chrome");
 			const ident = /.*identifier.*/.exec(e.target.element.className);
 			const peekWidget = e.target.detail === "vs.editor.contrib.zoneWidget1";
-			if (!ident || peekWidget || unsupportedLang) {
+			if (!ident || peekWidget || unsupportedLang || isOnboarding) {
 				(this._editor as any)._contextViewService.hideContextView();
 			}
 		});
