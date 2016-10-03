@@ -161,6 +161,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			},
 			wantHover: map[string]string{
 				"a.go:1:40": "func Println(a ...interface{}) (n int, err error)",
+				"a.go:1:53": "type int int",
 			},
 			wantDefinition: map[string]string{
 				"a.go:1:40": "git://github.com/golang/go?" + runtime.Version() + "#src/fmt/print.go:1:19",
@@ -168,7 +169,8 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			},
 			depFS: map[string]map[string]string{
 				"https://github.com/golang/go?go1.7.1": {
-					"src/fmt/print.go": "package fmt; func Println(a ...interface{}) (n int, err error) { return }",
+					"src/fmt/print.go":       "package fmt; func Println(a ...interface{}) (n int, err error) { return }",
+					"src/builtin/builtin.go": "package builtin; type int int",
 				},
 			},
 			wantSymbols: map[string][]string{
