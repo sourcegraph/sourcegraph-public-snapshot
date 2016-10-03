@@ -1,20 +1,19 @@
-// tslint:disable: typedef ordered-imports
+// tslint:disable: typedef
 
-import * as React from "react";
 import fuzzysearch from "fuzzysearch";
-import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as debounce from "lodash/debounce";
-import "sourcegraph/repo/RepoBackend";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
-import {Component, EventListener} from "sourcegraph/Component";
+import * as React from "react";
 import {Link} from "react-router";
-import * as styles from "sourcegraph/repo/styles/RevSwitcher.css";
-
-import {colors, typography, whitespace} from "sourcegraph/components/utils";
-
+import {RouteParams} from "sourcegraph/app/routeParams";
+import {Component, EventListener} from "sourcegraph/Component";
+import {Base, Heading, Input, Menu} from "sourcegraph/components";
 import {Check, DownMenu} from "sourcegraph/components/symbols";
-import {Base, Input, Menu, Heading} from "sourcegraph/components";
+import {colors, typography, whitespace} from "sourcegraph/components/utils";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
+import "sourcegraph/repo/RepoBackend";
 import {urlWithRev} from "sourcegraph/repo/routes";
+import * as styles from "sourcegraph/repo/styles/RevSwitcher.css";
 
 interface Props {
 	repo: string;
@@ -31,7 +30,7 @@ interface Props {
 
 	// to construct URLs
 	routes: any[];
-	routeParams: any;
+	routeParams: RouteParams;
 }
 
 type State = any;

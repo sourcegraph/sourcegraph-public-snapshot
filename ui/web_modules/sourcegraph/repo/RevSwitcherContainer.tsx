@@ -1,13 +1,12 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
+import {RouteParams} from "sourcegraph/app/routeParams";
 import {Container} from "sourcegraph/Container";
 import "sourcegraph/repo/RepoBackend";
 import {RepoStore} from "sourcegraph/repo/RepoStore";
-import "sourcegraph/tree/TreeBackend";
-import {TreeStore} from "sourcegraph/tree/TreeStore";
 import {RevSwitcher} from "sourcegraph/repo/RevSwitcher";
 import {Store} from "sourcegraph/Store";
+import "sourcegraph/tree/TreeBackend";
+import {TreeStore} from "sourcegraph/tree/TreeStore";
 
 interface Props {
 	repo: string;
@@ -18,7 +17,7 @@ interface Props {
 
 	// to construct URLs
 	routes: any[];
-	routeParams: any;
+	routeParams: RouteParams;
 }
 
 type State = any;

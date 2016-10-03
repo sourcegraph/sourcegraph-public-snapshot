@@ -3,6 +3,7 @@ import * as debounce from "lodash/debounce";
 import * as React from "react";
 import Helmet from "react-helmet";
 import { InjectedRouter } from "react-router";
+import {RouteParams} from "sourcegraph/app/routeParams";
 import "sourcegraph/blob/BlobBackend";
 import { BlobStore } from "sourcegraph/blob/BlobStore";
 import { BlobTitle } from "sourcegraph/blob/BlobTitle";
@@ -27,8 +28,8 @@ interface Props {
 	commitID: string;
 	isCloning: boolean;
 	path: string;
-	routes: Array<Object>;
-	routeParams: any;
+	routes: Object[];
+	routeParams: RouteParams;
 	startLine?: number;
 	startCol?: number;
 	endLine?: number;

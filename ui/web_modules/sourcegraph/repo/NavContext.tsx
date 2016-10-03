@@ -1,9 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
-
-import {RepoLink} from "sourcegraph/components/RepoLink";
+import {RouteParams} from "sourcegraph/app/routeParams";
 import {Label} from "sourcegraph/components";
+import {RepoLink} from "sourcegraph/components/RepoLink";
 import {RevSwitcherContainer} from "sourcegraph/repo/RevSwitcherContainer";
 import * as styles from "sourcegraph/repo/styles/Repo.css";
 
@@ -18,7 +16,7 @@ interface Props {
 
 	// to pass to RevSwitcherContainer so it can construct URLs
 	routes: any[];
-	routeParams: any;
+	routeParams: RouteParams;
 }
 
 type State = any;

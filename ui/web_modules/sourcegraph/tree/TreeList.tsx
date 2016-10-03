@@ -9,7 +9,6 @@ import {TreeStore} from "sourcegraph/tree/TreeStore";
 import "sourcegraph/tree/TreeBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {Header} from "sourcegraph/components/Header";
-
 import {urlToBlob} from "sourcegraph/blob/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
 import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
@@ -17,7 +16,6 @@ import * as classNames from "classnames";
 import {Store} from "sourcegraph/Store";
 import {Base, Heading, Panel} from "sourcegraph/components";
 import {typography} from "sourcegraph/components/utils";
-
 import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
 import * as styles from "sourcegraph/tree/styles/Tree.css";
 
@@ -61,6 +59,7 @@ interface Props {
 	path: string;
 	location: any;
 	route?: Route;
+	style?: React.CSSProperties;
 }
 
 type State = {
@@ -203,7 +202,12 @@ export class TreeList extends Container<Props, State> {
 
 		let listItems = this._listItems() || [];
 
-		return <Panel style={typography.size[5]}>
+		const sx = Object.assign({},
+			typography.size[5],
+			this.props.style,
+		);
+
+		return <Panel style={sx}>
 			<Base p={3} mb={3}>
 				<Heading level={7} color="gray" my={3} ml={3}>Files</Heading>
 				{listItems}

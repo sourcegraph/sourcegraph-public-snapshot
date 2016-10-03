@@ -1,6 +1,7 @@
 import {hover} from "glamor";
 import * as React from "react";
 import {Link} from "react-router";
+import {RouteParams} from "sourcegraph/app/routeParams";
 import {UnsupportedLanguageAlert} from "sourcegraph/blob/UnsupportedLanguageAlert";
 import {Base, FlexContainer, Heading} from "sourcegraph/components";
 import {colors, typography} from "sourcegraph/components/utils";
@@ -14,7 +15,7 @@ interface Props {
 	rev: string;
 	commitID: string;
 	routes: Object[];
-	routeParams: any;
+	routeParams: RouteParams;
 	isCloning: boolean;
 	toast: string | null;
 }

@@ -46,7 +46,7 @@ export function GridCol(props: Props): JSX.Element {
 			boxSizing: "border-box",
 			width: column[props.col],
 		},
-		props.style ? props.style : {},
+		props.style || {},
 	);
 
 	return <Base
