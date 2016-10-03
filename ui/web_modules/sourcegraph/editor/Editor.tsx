@@ -69,13 +69,17 @@ export class Editor implements monaco.IDisposable {
 		};
 		this._toDispose.push(monaco.editor.onDidCreateModel(model => {
 			this.disableInterferingModes();
-			const mode = model.getMode().getId();
-			registerModeProviders(mode);
-		}));
-		this._toDispose.push(monaco.editor.onDidChangeModelLanguage(e => {
-			// In case the mode doesn't get loaded async until after
-			// onDidCreateModel, try to register again.
-			registerModeProviders(e.model.getModeId());
+			// HACK: when the editor loads, this will fire twice:
+			// - once for the "empty" document (mode = plaintext)
+			// - once with the actual mode of the document
+			// If we use browser navigation to go from/to this editor, the model
+			// will have the correct mode set...but this callback
+			// will only fire with the original model (mode = plaintext).
+			// (Nor will the onDidChangeModelLanguage callback fire).
+			// This hack hardcodes mode providers only for Go, regardless
+			// of any state of the editor mode. This way context menu items
+			// will *always* appear for Go files, and never for other modes.
+			registerModeProviders("go");
 		}));
 
 		this._editorService = new EditorService();
