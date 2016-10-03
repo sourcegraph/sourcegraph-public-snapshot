@@ -27,6 +27,7 @@ func TestIntegration(t *testing.T) {
 		mode           string
 		wantHover      map[string]string
 		wantDefinition map[string]string
+		wantReferences map[string][]string
 	}{
 		"git://github.com/gorilla/mux?0a192a193177452756c362c20087ddafcf6829c4": {
 			mode: "go",
@@ -75,6 +76,16 @@ func TestIntegration(t *testing.T) {
 			wantDefinition: map[string]string{
 				"src/encoding/hex/hex.go:70:12":  "git://github.com/golang/go?go1.7.1#src/encoding/hex/hex.go:70:6", // func decl
 				"src/encoding/hex/hex.go:104:18": "git://github.com/golang/go?go1.7.1#src/bytes/buffer.go:17:6",     // stdlib type
+			},
+			wantReferences: map[string][]string{
+				"src/net/http/httptest/server.go:204:25": []string{ // httptest.Server
+					"git://github.com/golang/go?go1.7.1#src/net/http/httptest/server.go:204:18",
+					"git://github.com/golang/go?go1.7.1#src/net/http/httptest/server_test.go:92:5",
+					"git://github.com/golang/go?go1.7.1#src/net/http/serve_test.go:2625:7",
+					"git://github.com/golang/go?go1.7.1#src/net/http/transport_test.go:2553:6",
+					"git://github.com/golang/go?go1.7.1#src/net/http/transport_test.go:478:5",
+					"git://github.com/golang/go?go1.7.1#src/net/http/transport_test.go:532:5",
+				},
 			},
 		},
 		"git://github.com/docker/machine?e1a03348ad83d8e8adb19d696bc7bcfb18ccd770": {
@@ -135,6 +146,12 @@ func TestIntegration(t *testing.T) {
 			for pos, want := range test.wantDefinition {
 				t.Run(fmt.Sprintf("definition-%s", strings.Replace(pos, "/", "-", -1)), func(t *testing.T) {
 					definitionTest(t, ctx, c, root, pos, want)
+				})
+			}
+
+			for pos, want := range test.wantReferences {
+				t.Run(fmt.Sprintf("references-%s", pos), func(t *testing.T) {
+					referencesTest(t, ctx, c, root, pos, want)
 				})
 			}
 		})

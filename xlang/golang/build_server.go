@@ -136,16 +136,21 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		}
 
 		// Determine the root import path of this workspace (e.g., "github.com/user/repo").
+		span.SetTag("originalRootPath", params.OriginalRootPath)
 		rootImportPath, err := h.determineRootImportPath(ctx, params.OriginalRootPath, conn)
 		if err != nil {
 			return nil, fmt.Errorf("unable to determine workspace's root Go import path: %s (original rootPath is %q)", err, params.OriginalRootPath)
 		}
-		h.rootImportPath = rootImportPath
-		span.SetTag("originalRootPath", params.OriginalRootPath)
-
 		// Sanity-check the import path.
-		if h.rootImportPath == "" || h.rootImportPath != path.Clean(h.rootImportPath) || strings.Contains(h.rootImportPath, "..") || strings.HasPrefix(h.rootImportPath, string(os.PathSeparator)) || strings.HasPrefix(h.rootImportPath, "/") || strings.HasPrefix(h.rootImportPath, ".") {
-			return nil, fmt.Errorf("empty or suspicious import path: %q", h.rootImportPath)
+		if rootImportPath == "" || rootImportPath != path.Clean(rootImportPath) || strings.Contains(rootImportPath, "..") || strings.HasPrefix(rootImportPath, string(os.PathSeparator)) || strings.HasPrefix(rootImportPath, "/") || strings.HasPrefix(rootImportPath, ".") {
+			return nil, fmt.Errorf("empty or suspicious import path: %q", rootImportPath)
+		}
+		var isStdlib bool
+		if rootImportPath == "github.com/golang/go" {
+			rootImportPath = ""
+			isStdlib = true
+		} else {
+			h.rootImportPath = rootImportPath
 		}
 
 		// Send "initialize" to the wrapped lang server.
@@ -174,8 +179,11 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		// Put all files in the workspace under a /src/IMPORTPATH
 		// directory, such as /src/github.com/foo/bar, so that Go can
 		// build it in GOPATH=/.
-		rootFSPath := "/src/" + h.rootImportPath
-		langInitParams.RootPath = "file://" + rootFSPath
+		if isStdlib {
+			langInitParams.RootPath = "file://" + goroot
+		} else {
+			langInitParams.RootPath = "file://" + "/src/" + h.rootImportPath
+		}
 		langInitParams.RootImportPath = h.rootImportPath
 		if err := h.reset(&params, langInitParams.RootPath); err != nil {
 			return nil, err

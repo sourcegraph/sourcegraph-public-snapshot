@@ -89,7 +89,13 @@ func containingPackage(bctx *build.Context, filename string) (*build.Package, er
 	}
 
 	pkgDir := path.Dir(filename)
-	srcDir := path.Join(bctx.GOPATH, "src") + "/"
+	var srcDir string
+	if pathHasPrefix(filename, goroot) {
+		srcDir = bctx.GOROOT // if workspace is Go stdlib
+	} else {
+		srcDir = bctx.GOPATH
+	}
+	srcDir = path.Join(srcDir, "src") + "/"
 	importPath := strings.TrimPrefix(pkgDir, srcDir)
 	var xtest bool
 	pkg, err := bctx.Import(importPath, pkgDir, 0)

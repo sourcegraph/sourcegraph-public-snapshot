@@ -47,6 +47,10 @@ func (h *LangHandler) handleReferences(ctx context.Context, conn jsonrpc2Conn, r
 	objposn := fset.Position(obj.Pos())
 	_, pkgLevel := classify(obj)
 
+	pkgInWorkspace := func(path string) bool {
+		return pathHasPrefix(path, h.init.RootImportPath)
+	}
+
 	// Find the set of packages in this workspace that depend on
 	// defpkg. Only function bodies in those packages need
 	// type-checking.
@@ -67,8 +71,7 @@ func (h *LangHandler) handleReferences(ctx context.Context, conn jsonrpc2Conn, r
 			// Don't typecheck func bodies in dependency packages
 			// (except the package that defines the object), because
 			// we wouldn't return those refs anyway.
-			pkgInWorkspace := pathHasPrefix(path, h.init.RootImportPath)
-			return users[strings.TrimSuffix(path, "_test")] && (pkgInWorkspace || path == defpkg)
+			return users[strings.TrimSuffix(path, "_test")] && (pkgInWorkspace(path) || path == defpkg)
 		},
 	}
 	allowErrors(&lconf)
@@ -122,7 +125,7 @@ func (h *LangHandler) handleReferences(ctx context.Context, conn jsonrpc2Conn, r
 
 			// Look for references to the query object. Only collect
 			// those that are in this workspace.
-			if pathHasPrefix(info.Pkg.Path(), h.init.RootImportPath) {
+			if pkgInWorkspace(info.Pkg.Path()) {
 				refs = append(refs, usesOf(obj, info)...)
 			}
 		}
