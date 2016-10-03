@@ -79,7 +79,6 @@ export const Heading = (props: Props): any => {
 		pr={props.pr}
 		py={props.py}
 		px={props.px}
-		id={props.id}
 		style={sx}>
 		{props.children} <br />
 		{props.underline && <hr style={underlineSx} />}

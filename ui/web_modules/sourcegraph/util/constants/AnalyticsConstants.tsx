@@ -22,6 +22,7 @@ export const CATEGORY_INTERNAL = "Internal";
 export const CATEGORY_ENGAGEMENT = "ReEngagement";
 export const CATEGORY_TOAST = "Toast";
 export const CATEGORY_UNKNOWN = "Unknown";
+export const CATEGORY_DOCS = "DocsPage";
 
 // Action constants
 // A string that is uniquely paired with each category, and commonly used to define the type of user interaction for the web object.
