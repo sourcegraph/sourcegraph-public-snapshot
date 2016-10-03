@@ -176,13 +176,13 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 
 	// No connection found, so we need to open one.
 	if c == nil {
-		rwc, err := connectToServer(context.Background(), id.mode)
+		rwc, err := connectToServer(ctx, id.mode)
 		if err != nil {
 			return nil, err
 		}
 
 		// Save connection.
-		c = p.newServerProxyConn(context.Background(), rwc)
+		c = p.newServerProxyConn(ctx, rwc)
 		c.id = id
 
 		// SECURITY NOTE: We assume that the caller to the LSP client
