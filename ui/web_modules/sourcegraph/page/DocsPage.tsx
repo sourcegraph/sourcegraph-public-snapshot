@@ -4,6 +4,9 @@ import {context} from "sourcegraph/app/context";
 import {Heading, Hero} from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/page/Page.css";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {EventLogger} from "sourcegraph/util/EventLogger";
+
 
 export function DocsPage(): JSX.Element {
 	return (
@@ -16,7 +19,7 @@ export function DocsPage(): JSX.Element {
 			</Hero>
 			<div className={styles.content}>
 				<Heading level="3">Overview</Heading>
-				<p className={styles.p}>Sourcegraph is a tool that helps developers explore and understand code. These docs describe how to leverage Sourcegraph in your development workflow. If you have any problems or requests, please contact <a href="#contact_us">support</a>.</p>
+				<p className={styles.p}>Sourcegraph is a tool that helps developers explore and understand code. These docs describe how to leverage Sourcegraph in your development workflow. If you have any problems or requests, please contact <a href="#contact_us" onClick={(e) => e && EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DOCS, AnalyticsConstants.ACTION_CLICK, "clickedContactSupportFromDocs")}>support</a>.</p>
 				<ul>
 					<li>
 						<a href="#sourcegraph">Sourcegraph</a>
@@ -132,7 +135,7 @@ export function DocsPage(): JSX.Element {
 
 				<a id="github_extension"></a>
 				<Heading level="3" underline="blue">GitHub Extension</Heading>
-				<p className={styles.p}>Sourcegraph's GitHub extension allows you to browse GitHub with IDE-like functionality. Click <a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack">here</a> to install.</p>
+				<p className={styles.p}>Sourcegraph's GitHub extension allows you to browse GitHub with IDE-like functionality. Click <a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack" onClick={(e) => e && EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DOCS, AnalyticsConstants.ACTION_CLICK, "clickedInstallBrowserExtFromDocs")}>here</a> to install.</p>
 
 				<a id="github_hover_over_documentation"></a>
 				<Heading level="5" className={styles.h5}>Hover over Documentation</Heading>
@@ -152,7 +155,7 @@ export function DocsPage(): JSX.Element {
 
 				<a id="auth_private_repos"></a>
 				<Heading level="3" underline="blue">Sourcegraph for your Private Code</Heading>
-				<p className={styles.p}>Want code intelligence and search for your private repositories? Click <a href="https://sourcegraph.com/?ob=github">here</a> to authenticate.</p>
+				<p className={styles.p}>Want code intelligence and search for your private repositories? Click <a href="https://sourcegraph.com/?ob=github" onClick={(e) => e && EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DOCS, AnalyticsConstants.ACTION_CLICK, "clickedAuthPrivateReposFromDocs")}>here</a> to authenticate.</p>
 
 				<br/>
 
