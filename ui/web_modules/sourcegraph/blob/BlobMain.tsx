@@ -7,9 +7,10 @@ import "sourcegraph/blob/BlobBackend";
 import { BlobStore } from "sourcegraph/blob/BlobStore";
 import { BlobTitle } from "sourcegraph/blob/BlobTitle";
 import { urlToBlob } from "sourcegraph/blob/routes";
-import * as Style from "sourcegraph/blob/styles/Blob.css";
+import {FlexContainer} from "sourcegraph/components";
 import {ChromeExtensionToast} from "sourcegraph/components/ChromeExtensionToast";
 import {OnboardingModals} from "sourcegraph/components/OnboardingModals";
+import {colors} from "sourcegraph/components/utils/colors";
 import {Container} from "sourcegraph/Container";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import {URI} from "sourcegraph/core/uri";
@@ -217,9 +218,8 @@ export class BlobMain extends Container<Props, State> {
 		if (pathParts) {
 			title = `${pathParts[pathParts.length - 1]} · ${title}`;
 		}
-
 		return (
-			<div className={Style.container}>
+			<FlexContainer direction="top_bottom" style={{flex:"auto", backgroundColor: colors.coolGray1()}}>
 				<Helmet title={title} />
 				<ChromeExtensionToast location={this.props.location}/>
 				<OnboardingModals location={this.props.location}/>
@@ -235,7 +235,6 @@ export class BlobMain extends Container<Props, State> {
 					toast={this.state.toast}
 				/>
 				<EditorComponent editorRef={this._setEditor} style={{ display: "flex", flex: "auto", width: "100%" }} />
-			</div>
-		);
+			</FlexContainer>);
 	}
 }

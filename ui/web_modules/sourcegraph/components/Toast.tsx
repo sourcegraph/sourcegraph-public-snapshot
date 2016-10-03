@@ -10,8 +10,7 @@ interface Props {
 
 export class Toast extends React.Component<Props, {}> {
 	static defaultProps: Props = {
-		style: {},
-		className: classNames(base.pv1, base.ph2, base.ba, base.br2, colors.b__cool_pale_gray),
+		className: classNames(base.pv1, base.ph2, base.ba, base.br2, colors.b__cool_pale_gray, colors.bg_near_white),
 	};
 
 	constructor(props: Props) {
