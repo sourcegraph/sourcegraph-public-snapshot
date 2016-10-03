@@ -13,11 +13,9 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/mock"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	sgtest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	sstore "sourcegraph.com/sourcegraph/srclib/store"
 )
@@ -37,7 +35,6 @@ func TestGlobalRefs(t *testing.T) {
 	createdRepos := (&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "x/y"}, &sourcegraph.Repo{URI: "a/b"})
 	xyRepoID := createdRepos[0].ID
 	abRepoID := createdRepos[1].ID
-	TestMockRepos = nil
 
 	testRefs1 := []*graph.Ref{
 		{DefPath: ".", DefRepo: "", DefUnit: "", File: "a/b/u/s.go"},              // package ref
@@ -199,36 +196,6 @@ func TestGlobalRefsUpdate(t *testing.T) {
 	createdRepos := (&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "def/repo"}, &sourcegraph.Repo{URI: "repo"})
 	defRepoID := createdRepos[0].ID
 	repoID := createdRepos[1].ID
-	// TODO(keegancsmith) remove once we don't need to speak to the repo
-	// service https://app.asana.com/0/138665145800110/137848642885286
-	mockReposS := &mock.ReposServer{
-		Get_: func(_ context.Context, r *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
-			var uri string
-			switch r.ID {
-			case defRepoID:
-				uri = "def/repo"
-			case repoID:
-				uri = "repo"
-			default:
-				panic("unrecognized ID")
-			}
-			return &sourcegraph.Repo{ID: r.ID, URI: uri}, nil
-		},
-		Resolve_: func(_ context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
-			var id int32
-			switch op.Path {
-			case "def/repo":
-				id = defRepoID
-			case "repo":
-				id = repoID
-			default:
-				panic("unrecognized path: " + op.Path)
-			}
-			return &sourcegraph.RepoResolution{Repo: id}, nil
-		},
-	}
-	ctx = svc.WithServices(ctx, svc.Services{Repos: mockReposS})
-	TestMockRepos = nil
 
 	allRefs := map[string][]*graph.Ref{}
 	mockRefs(mocks, allRefs)
