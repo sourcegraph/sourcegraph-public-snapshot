@@ -248,8 +248,10 @@ export class Editor implements monaco.IDisposable {
 					const word = model.getWordAtPosition(position);
 					range = new monaco.Range(position.lineNumber, word ? word.startColumn : position.column, position.lineNumber, word ? word.endColumn : position.column);
 				}
+				const contents = resp.result.contents instanceof Array ? resp.result.contents : [resp.result.contents];
+				contents.push("*Right-click to view references*");
 				const hover: monaco.languages.Hover = {
-					contents: resp.result.contents,
+					contents: contents,
 					range,
 				};
 				if (key) {
@@ -266,7 +268,7 @@ export class Editor implements monaco.IDisposable {
 				if ((resp as any).Title) {
 					contents.push((resp as any).Title);
 				}
-				contents.push("*Right-click to view all references.*");
+				contents.push("*Right-click to view references*");
 			}
 
 			const {repo, rev, path} = URI.repoParams(model.uri);
