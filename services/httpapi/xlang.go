@@ -22,6 +22,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
@@ -147,6 +148,9 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 		// block, anyone can access any private code, even if they are
 		// not authorized to do so.
 		repo := rootPathURI.Host + strings.TrimSuffix(rootPathURI.Path, ".git") // of the form "github.com/foo/bar"
+		// Our current span is not from httptrace, so we need to
+		// manually inject GRPCMetadata
+		ctx = traceutil.InjectGRPCMetadata(ctx, span.Context())
 		cl, err := sourcegraph.NewClientFromContext(ctx)
 		if err != nil {
 			return err
