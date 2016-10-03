@@ -9,10 +9,13 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 
 export const SignupOrLogin = (props): JSX.Element => {
 
-	const sx = {
-		flex: "0 0 135px",
-		textAlign: "center",
-	};
+	const sx = Object.assign({},
+		{
+			textAlign: "center",
+			display: "inline-block",
+		},
+		props.style
+	);
 
 	return(
 		<div style={sx}>

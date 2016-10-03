@@ -14,7 +14,6 @@ export const SearchCTA = (props): JSX.Element => {
 			display: "inline-block",
 			color: colors.coolGray3(),
 			verticalAlign: "top",
-			marginTop: 3,
 		},
 		$(":hover", { color: colors.blueText() }),
 		$(":hover svg", { fill: colors.blueText() }),

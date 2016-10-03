@@ -119,14 +119,13 @@ export class GlobalNav extends React.Component<Props, State> {
 					showModal={this.state.showSearch}
 					activateSearch={this.activateSearch}
 					onDismiss={this.onSearchDismiss} />
-
-				{context.user
-					? <div>
-							<a onClick={this.activateSearch}><SearchCTA /></a>
-							<UserMenu user={context.user} location={location} />
-						</div>
-					: <SignupOrLogin user={context.user} location={location} />
-				}
+				<FlexContainer items="center" style={{paddingRight: "0.5rem"}}>
+					<a style={{flex: "0 0 auto"}} onClick={this.activateSearch}><SearchCTA /></a>
+					{context.user
+						? <UserMenu user={context.user} location={location} style={{flex: "0 0 auto", marginTop: 4}} />
+						: <SignupOrLogin user={context.user} location={location} />
+					}
+				</FlexContainer>
 			</FlexContainer>
 		</Base>;
 	}
