@@ -26,6 +26,10 @@ type LangHandler struct {
 	*handlerShared
 	init *initializeParams // set by "initialize" request
 
+	// cached symbols
+	pkgSymCacheMu sync.Mutex
+	pkgSymCache   map[string][]lsp.SymbolInformation
+
 	// cached typechecking results
 	cacheMus map[typecheckKey]*sync.Mutex
 	cache    map[typecheckKey]typecheckResult
@@ -164,4 +168,22 @@ func (h *LangHandler) handle(ctx context.Context, conn jsonrpc2Conn, req *jsonrp
 
 		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("method not supported: %s", req.Method)}
 	}
+}
+
+// getPkgSyms returns the cached symbols for package pkg, if they
+// exist. Otherwise, it returns nil.
+func (h *LangHandler) getPkgSyms(pkg string) []lsp.SymbolInformation {
+	h.pkgSymCacheMu.Lock()
+	defer h.pkgSymCacheMu.Unlock()
+	return h.pkgSymCache[pkg]
+}
+
+// setPkgSyms updates the cached symbols for package pkg.
+func (h *LangHandler) setPkgSyms(pkg string, syms []lsp.SymbolInformation) {
+	h.pkgSymCacheMu.Lock()
+	if h.pkgSymCache == nil {
+		h.pkgSymCache = map[string][]lsp.SymbolInformation{}
+	}
+	h.pkgSymCache[pkg] = syms
+	h.pkgSymCacheMu.Unlock()
 }

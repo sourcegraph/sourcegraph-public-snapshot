@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 
 	"golang.org/x/tools/go/buildutil"
 
@@ -21,23 +22,15 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
+// query is a structured representation that is parsed from the user's
+// raw query string.
 type query struct {
 	kind   lsp.SymbolKind
 	tokens []string
 }
 
-var keywords = map[string]lsp.SymbolKind{
-	"package": lsp.SKPackage,
-	"type":    lsp.SKClass,
-	"method":  lsp.SKMethod,
-	"field":   lsp.SKField,
-	"func":    lsp.SKFunction,
-	"var":     lsp.SKVariable,
-	"const":   lsp.SKConstant,
-}
-
-var tokenizer = regexp.MustCompile(`[\.\s\/\:]+`)
-
+// parseQuery parses a user's raw query string and returns a
+// structured representation of the query.
 func parseQuery(q string) query {
 	var qu query
 	toks := tokenizer.Split(strings.ToLower(q), -1)
@@ -49,6 +42,75 @@ func parseQuery(q string) query {
 		}
 	}
 	return qu
+}
+
+// keywords are keyword tokens that will be interpreted as symbol kind
+// filters in the search query.
+var keywords = map[string]lsp.SymbolKind{
+	"package": lsp.SKPackage,
+	"type":    lsp.SKClass,
+	"method":  lsp.SKMethod,
+	"field":   lsp.SKField,
+	"func":    lsp.SKFunction,
+	"var":     lsp.SKVariable,
+	"const":   lsp.SKConstant,
+}
+
+// tokenizer is a regexp for tokenizing a raw user query string.
+var tokenizer = regexp.MustCompile(`[\.\s\/\:]+`)
+
+// resultSorter is a utility struct for collecting, filtering, and
+// sorting symbol results.
+type resultSorter struct {
+	query
+	results   []scoredSymbol
+	resultsMu sync.Mutex
+}
+
+// scoredSymbol is a symbol with an attached search relevancy score.
+// It is used internally by resultSorter.
+type scoredSymbol struct {
+	score int
+	lsp.SymbolInformation
+}
+
+/*
+ * sort.Interface methods
+ */
+func (s *resultSorter) Len() int { return len(s.results) }
+func (s *resultSorter) Less(i, j int) bool {
+	iscore, jscore := s.results[i].score, s.results[j].score
+	if iscore == jscore {
+		if s.results[i].ContainerName == s.results[j].ContainerName {
+			return s.results[i].Name < s.results[j].Name
+		}
+		return s.results[i].ContainerName < s.results[j].ContainerName
+	}
+	return iscore > jscore
+}
+func (s *resultSorter) Swap(i, j int) {
+	s.results[i], s.results[j] = s.results[j], s.results[i]
+}
+
+// Collect is a thread-safe method that will record the passed-in
+// symbol in the list of results if its score > 0.
+func (s *resultSorter) Collect(si lsp.SymbolInformation) {
+	s.resultsMu.Lock()
+	score := score(s.query, si)
+	if score > 0 {
+		sc := scoredSymbol{score, si}
+		s.results = append(s.results, sc)
+	}
+	s.resultsMu.Unlock()
+}
+
+// Results returns the ranked list of SymbolInformation values.
+func (s *resultSorter) Results() []lsp.SymbolInformation {
+	res := make([]lsp.SymbolInformation, len(s.results))
+	for i, s := range s.results {
+		res[i] = s.SymbolInformation
+	}
+	return res
 }
 
 // score returns 0 for results that aren't matches. Results that are matches are assigned
@@ -73,7 +135,7 @@ func score(q query, s lsp.SymbolInformation) (scor int) {
 			scor += 3
 		}
 		if strings.Contains(filename, tok) && len(tok) >= 3 {
-			scor += 1
+			scor++
 		}
 		if strings.HasPrefix(filepath.Base(filename), tok) && len(tok) >= 3 {
 			scor += 2
@@ -92,45 +154,8 @@ func score(q query, s lsp.SymbolInformation) (scor int) {
 	return scor
 }
 
-type scoredSymbol struct {
-	score int
-	lsp.SymbolInformation
-}
-
-type resultSorter struct {
-	query
-	results []scoredSymbol
-}
-
-func (s *resultSorter) Len() int { return len(s.results) }
-func (s *resultSorter) Less(i, j int) bool {
-	iscore, jscore := s.results[i].score, s.results[j].score
-	if iscore == jscore {
-		if s.results[i].ContainerName == s.results[j].ContainerName {
-			return s.results[i].Name < s.results[j].Name
-		}
-		return s.results[i].ContainerName < s.results[j].ContainerName
-	}
-	return iscore > jscore
-}
-func (s *resultSorter) Swap(i, j int) {
-	s.results[i], s.results[j] = s.results[j], s.results[i]
-}
-func (s *resultSorter) Collect(si lsp.SymbolInformation) {
-	score := score(s.query, si)
-	if score > 0 {
-		sc := scoredSymbol{score, si}
-		s.results = append(s.results, sc)
-	}
-}
-func (s *resultSorter) Results() []lsp.SymbolInformation {
-	res := make([]lsp.SymbolInformation, len(s.results))
-	for i, s := range s.results {
-		res[i] = s.SymbolInformation
-	}
-	return res
-}
-
+// toSym returns a SymbolInformation value derived from values we get
+// from the Go parser and doc packages.
 func toSym(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos token.Pos) lsp.SymbolInformation {
 	container = filepath.Base(container)
 	if f := strings.Fields(container); len(f) > 0 {
@@ -144,6 +169,8 @@ func toSym(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos t
 	}
 }
 
+// handleSymbol handles `workspace/symbol` requests for the Go
+// language server.
 func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2Conn, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
 	results := resultSorter{query: parseQuery(params.Query), results: make([]scoredSymbol, 0)}
 	{
@@ -154,67 +181,94 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2Conn, req *
 		if err != nil {
 			return nil, fmt.Errorf("workspace root path was not relative to $GOPATH/src: %s", err)
 		}
+
+		var wg sync.WaitGroup
 		pkgs := buildutil.ExpandPatterns(bctx, []string{fmt.Sprintf("%s/...", rootpkg)})
-		for pkg, _ := range pkgs {
-			buildPkg, err := bctx.Import(pkg, rootPath, 0)
-			if err != nil {
-				log.Printf("skipping possible package %s: %s", pkg, err)
-				continue
-			}
-
-			astPkgs, err := parseDir(fs, bctx, buildPkg.Dir, nil, 0)
-			if err != nil {
-				log.Printf("failed to parse directory %s: %s", buildPkg.Dir, err)
-				continue
-			}
-			astPkg := astPkgs[buildPkg.Name]
-			if astPkg == nil {
-				log.Printf("didn't find build package name %q in parsed AST packages %v", buildPkg.ImportPath, astPkgs)
-				continue
-			}
-			docPkg := doc.New(astPkg, buildPkg.ImportPath, doc.AllDecls)
-
-			// Emit decls
-			for _, t := range docPkg.Types {
-				results.Collect(toSym(t.Name, buildPkg.ImportPath, lsp.SKClass, fs, t.Decl.TokPos))
-
-				for _, v := range t.Funcs {
-					results.Collect(toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
-				}
-				for _, v := range t.Methods {
-					results.Collect(toSym(v.Name, buildPkg.ImportPath+" "+t.Name, lsp.SKMethod, fs, v.Decl.Name.NamePos))
-				}
-				for _, v := range t.Consts {
-					for _, name := range v.Names {
-						results.Collect(toSym(name, buildPkg.ImportPath, lsp.SKConstant, fs, v.Decl.TokPos))
-					}
-				}
-				for _, v := range t.Vars {
-					for _, name := range v.Names {
-						results.Collect(toSym(name, buildPkg.ImportPath, lsp.SKField, fs, v.Decl.TokPos))
-					}
-				}
-			}
-			for _, v := range docPkg.Consts {
-				for _, name := range v.Names {
-					results.Collect(toSym(name, buildPkg.ImportPath, lsp.SKConstant, fs, v.Decl.TokPos))
-				}
-			}
-			for _, v := range docPkg.Vars {
-				for _, name := range v.Names {
-					results.Collect(toSym(name, buildPkg.ImportPath, lsp.SKVariable, fs, v.Decl.TokPos))
-				}
-			}
-			for _, v := range docPkg.Funcs {
-				results.Collect(toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
-			}
+		for pkg := range pkgs {
+			wg.Add(1)
+			go func(pkg string) {
+				defer wg.Done()
+				h.collectFromPkg(bctx, fs, pkg, rootPath, &results)
+			}(pkg)
 		}
+		wg.Wait()
 	}
 	sort.Sort(&results)
 	if len(results.results) > params.Limit && params.Limit > 0 {
 		results.results = results.results[:params.Limit]
 	}
+
 	return results.Results(), nil
+}
+
+// collectFromPkg collects all the symbols from the specified package
+// into the results. It uses LangHandler's package symbol cache to
+// speed up repeated calls.
+func (h *LangHandler) collectFromPkg(bctx *build.Context, fs *token.FileSet, pkg string, rootPath string, results *resultSorter) {
+	pkgSyms := h.getPkgSyms(pkg)
+	if pkgSyms == nil {
+		buildPkg, err := bctx.Import(pkg, rootPath, 0)
+		if err != nil {
+			if !(strings.Contains(err.Error(), "no buildable Go source files") || strings.Contains(err.Error(), "found packages") || strings.HasPrefix(pkg, "github.com/golang/go/test/")) {
+				log.Printf("skipping possible package %s: %s", pkg, err)
+			}
+			return
+		}
+
+		astPkgs, err := parseDir(fs, bctx, buildPkg.Dir, nil, 0)
+		if err != nil {
+			log.Printf("failed to parse directory %s: %s", buildPkg.Dir, err)
+			return
+		}
+		astPkg := astPkgs[buildPkg.Name]
+		if astPkg == nil {
+			if !strings.HasPrefix(buildPkg.ImportPath, "github.com/golang/go/misc/cgo/") {
+				log.Printf("didn't find build package name %q in parsed AST packages %v", buildPkg.ImportPath, astPkgs)
+			}
+			return
+		}
+		docPkg := doc.New(astPkg, buildPkg.ImportPath, doc.AllDecls)
+
+		// Emit decls
+		for _, t := range docPkg.Types {
+			pkgSyms = append(pkgSyms, toSym(t.Name, buildPkg.ImportPath, lsp.SKClass, fs, t.Decl.TokPos))
+
+			for _, v := range t.Funcs {
+				pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
+			}
+			for _, v := range t.Methods {
+				pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg.ImportPath+" "+t.Name, lsp.SKMethod, fs, v.Decl.Name.NamePos))
+			}
+			for _, v := range t.Consts {
+				for _, name := range v.Names {
+					pkgSyms = append(pkgSyms, toSym(name, buildPkg.ImportPath, lsp.SKConstant, fs, v.Decl.TokPos))
+				}
+			}
+			for _, v := range t.Vars {
+				for _, name := range v.Names {
+					pkgSyms = append(pkgSyms, toSym(name, buildPkg.ImportPath, lsp.SKField, fs, v.Decl.TokPos))
+				}
+			}
+		}
+		for _, v := range docPkg.Consts {
+			for _, name := range v.Names {
+				pkgSyms = append(pkgSyms, toSym(name, buildPkg.ImportPath, lsp.SKConstant, fs, v.Decl.TokPos))
+			}
+		}
+		for _, v := range docPkg.Vars {
+			for _, name := range v.Names {
+				pkgSyms = append(pkgSyms, toSym(name, buildPkg.ImportPath, lsp.SKVariable, fs, v.Decl.TokPos))
+			}
+		}
+		for _, v := range docPkg.Funcs {
+			pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
+		}
+		h.setPkgSyms(pkg, pkgSyms)
+	}
+
+	for _, sym := range pkgSyms {
+		results.Collect(sym)
+	}
 }
 
 // parseDir mirrors parser.ParseDir, but uses the passed in build context's VFS. In other words,
@@ -225,7 +279,7 @@ func parseDir(fset *token.FileSet, bctx *build.Context, path string, filter func
 		return nil, err
 	}
 
-	pkgs = make(map[string]*ast.Package)
+	pkgs = map[string]*ast.Package{}
 	for _, d := range list {
 		if strings.HasSuffix(d.Name(), ".go") && (filter == nil || filter(d)) {
 			filename := filepath.Join(path, d.Name())
@@ -235,7 +289,7 @@ func parseDir(fset *token.FileSet, bctx *build.Context, path string, filter func
 				if !found {
 					pkg = &ast.Package{
 						Name:  name,
-						Files: make(map[string]*ast.File),
+						Files: map[string]*ast.File{},
 					}
 					pkgs[name] = pkg
 				}
