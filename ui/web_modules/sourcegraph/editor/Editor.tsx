@@ -98,6 +98,15 @@ export class Editor implements monaco.IDisposable {
 
 		this._editorService.setEditor(this._editor);
 
+		// Warm up the LSP server immediately when the document loads
+		// instead of waiting until the user tries to hover.
+		this._editor.onDidChangeModel((e: monaco.editor.IModelChangedEvent) => {
+			lsp.send(this._editor.getModel(), "textDocument/definition", {
+				textDocument: {uri: e.newModelUrl.toString(true)},
+				position: new monaco.Position(0, 0),
+			});
+		});
+
 		// Remove the "Command Palette" item from the context menu.
 		const palette = this._editor.getAction("editor.action.quickCommand");
 		if (palette) {
