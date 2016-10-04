@@ -11,7 +11,7 @@ import {SearchIcon} from "../../app/components/Icons";
 import BlobAnnotator from "../../app/components/BlobAnnotator";
 import createStore from "../../app/store/configureStore";
 
-import {parseURL, isGitHubURL, isSourcegraphURL} from "../../app/utils";
+import {parseURL, isGitHubURL, isSourcegraphURL, supportedExtensions, getPathExtension} from "../../app/utils";
 
 let isSearchAppShown = false; // global state indicating whether the search app is visible
 let store = createStore({});
@@ -52,15 +52,53 @@ function injectBlobAnnotator() {
 		const file = files[i];
 		const info = file.querySelector(".file-info");
 		const blob = file.querySelector(".blob-wrapper");
+		const actn = file.querySelector(".file-actions");
+		const note = file.querySelector(".show-file-notes");
+		const btng = actn ? actn.querySelector(".BtnGroup") : null;
 		if (!blob) continue;
 
 		const infoFilePath = getFileName(info, {isDelta, path});
 		if (!infoFilePath) continue;
 
-		const blobAnnotatorContainer = document.createElement("span");
-		blobAnnotatorContainer.className = "sourcegraph-app-annotator";
-		info.appendChild(blobAnnotatorContainer);
-		injectComponent(<BlobAnnotator path={infoFilePath} blobElement={blob} infoElement={info} />, blobAnnotatorContainer);
+		const blobAnnotatorContainer = document.createElement("button");
+		blobAnnotatorContainer.className = "btn btn-sm tooltipped tooltipped-n sourcegraph-app-annotator";
+
+		if (supportedExtensions.includes(getPathExtension(infoFilePath))) {
+			blobAnnotatorContainer.setAttribute("aria-label", "View on Sourcegraph");
+		} else {
+			blobAnnotatorContainer.setAttribute("disabled", true);
+			blobAnnotatorContainer.setAttribute("aria-label", "Language support coming soon!");
+		}
+
+		blobAnnotatorContainer.style.display = "inline-block";
+		blobAnnotatorContainer.style.verticalAlign = "middle";
+		blobAnnotatorContainer.style.marginTop = info.tagName === 'A' ? "2px" : "0px";
+		blobAnnotatorContainer.style.marginRight = info.tagName === 'A' ? "0px" : "5px";
+
+		if (actn) {
+			if (btng) {
+				blobAnnotatorContainer.style.float = "none";
+				btng.parentNode.insertBefore(blobAnnotatorContainer, btng);
+			} else {
+				if (note) {
+					blobAnnotatorContainer.style.float = "none";
+					note.parentNode.insertBefore(blobAnnotatorContainer, note.nextSibling);
+				} else {
+					blobAnnotatorContainer.style.float = "left";
+					actn.appendChild(blobAnnotatorContainer);
+				}
+			}
+		} else {
+			if (info) {
+				blobAnnotatorContainer.style.float = "right";
+				info.parentNode.insertBefore(blobAnnotatorContainer, info.nextSibling);
+			} else {
+				blobAnnotatorContainer.style.float = "left";
+				files.appendChild(blobAnnotatorContainer);
+			}
+		}
+
+		injectComponent(<BlobAnnotator path={infoFilePath} blobElement={blob} infoElement={info} selfElement={blobAnnotatorContainer} />, blobAnnotatorContainer);
 	}
 }
 

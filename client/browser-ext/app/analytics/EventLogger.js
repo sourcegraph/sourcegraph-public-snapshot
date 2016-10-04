@@ -12,13 +12,26 @@ export class EventLogger {
         }
     }
 
+	_decorateEventProperties(eventProperties: any) {
+		return Object.assign({}, eventProperties, {path_name: global.window && global.window.location && global.window.location.pathname ? global.window.location.pathname.slice(1) : ""});
+	}
+
+	_logToConsole(eventAction: string, object?: any) {
+		if (global.window && global.window.localStorage && global.window.localStorage["log_debug"]) {
+			console.debug("%cEVENT %s", "color: #aaa", eventAction, object);
+		}
+	}
+
     logEventForCategory(eventCategory: string, eventAction: string, eventLabel: string, eventProperties ? : any) {
         if (process.env.NODE_ENV === "test") return;
 
         eventProperties = eventProperties ? eventProperties : {};
         eventProperties["Platform"] = window.navigator.userAgent.indexOf("Firefox") !== -1 ? "FirefoxExtension" : "ChromeExtension";
 
-        chrome.runtime.sendMessage({ type: "trackEvent", payload: Object.assign({}, eventProperties, { eventLabel, eventCategory, eventAction }) });
+        const eventCtxt = this._decorateEventProperties(eventProperties, { eventLabel, eventCategory, eventAction });
+
+        this._logToConsole(eventAction, Object.assign(eventCtxt));
+        chrome.runtime.sendMessage({ type: "trackEvent", payload: Object.assign(eventCtxt) });
     }
 }
 

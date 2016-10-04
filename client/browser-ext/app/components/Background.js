@@ -31,9 +31,9 @@ export default class Background extends React.Component {
 	}
 
 	componentDidMount() {
-		document.addEventListener("pjax:success", this._cleanupAndRefresh);
+		document.addEventListener("pjax:end", this._cleanupAndRefresh);
 		window.addEventListener("popstate", this._popstateUpdate);
-		this._refresh();
+		this._cleanupAndRefresh();
 	}
 
 	componentWillUpdate(nextProps) {
@@ -42,7 +42,7 @@ export default class Background extends React.Component {
 	}
 
 	componentWillUnmount() {
-		document.removeEventListener("pjax:success", this._cleanupAndRefresh);
+		document.removeEventListener("pjax:end", this._cleanupAndRefresh);
 		document.removeEventListener("popstate", this._popstateUpdate);
 	}
 

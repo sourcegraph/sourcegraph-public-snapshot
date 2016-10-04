@@ -29,13 +29,18 @@ export default class BlobAnnotator extends Component {
 		actions: React.PropTypes.object.isRequired,
 		blobElement: React.PropTypes.object.isRequired,
 		infoElement: React.PropTypes.object.isRequired,
+		selfElement: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props) {
 		super(props);
+
+		this.onclick = this.onclick.bind(this);
 		this._clickRefresh = this._clickRefresh.bind(this);
+
 		this.state = utils.parseURL();
 		this.state.path = props.path;
+
 		if (this.state.isDelta) {
 			this.state.isSplitDiff = this._isSplitDiff();
 
@@ -64,7 +69,14 @@ export default class BlobAnnotator extends Component {
 				if (baseInput) {
 					baseCommitID = baseInput.value;
 				}
-				headCommitID = props.infoElement.href.split("/files/")[1].split("#diff")[0];
+				if (typeof props.infoElement.href !== 'undefined') {
+					headCommitID = props.infoElement.href.split("/files/")[1].split("#diff")[0];
+				} else {
+					const headInput = document.querySelector('input[name="comparison_end_oid"]');
+					if (headInput) {
+						headCommitID = headInput.value;
+					}
+				}
 			} else if (this.state.isPullRequest) {
 				// Files changed view in pull requests
 				const baseInput = document.querySelector('input[name="comparison_base_oid"]');
@@ -125,6 +137,8 @@ export default class BlobAnnotator extends Component {
 				this.state.headRepoURI = this.state.repoURI;
 			}
 		}
+
+		props.selfElement.onclick = this.onclick;
 	}
 
 	componentDidMount() {
@@ -224,16 +238,17 @@ export default class BlobAnnotator extends Component {
 		}
 	}
 
-	onClick(ev) {
-		let el = document.getElementsByClassName("label label-private v-align-middle");
-		let isPrivateRepo = el.length > 0;
-		EventLogger.logEventForCategory("Help", "Click", "ChromeExtensionFaqsClicked", {type: ev.target.text, is_private_repo: this.isPrivateRepo()});
+	onclick(ev) {
+		const isPrivateRepo = document.getElementsByClassName("label label-private v-align-middle").length > 0;
+		EventLogger.logEventForCategory("File", "Click", "ChromeExtensionSgButtonClicked", {repo: this.state.repoURI, path: window.location.href, is_private_repo: isPrivateRepo});
+		location.href = `https://sourcegraph.com/${this.state.repoURI}@${this.state.rev || this.state.baseCommitID}/-/blob/${this.state.path}`;
 	}
 
 	render() {
-		if (!utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
-			return <span id="sourcegraph-build-indicator-text" style={{paddingLeft: "5px"}}><a href={`https://sourcegraph.com/${this.state.repoURI}@${this.state.rev}/-/blob/${this.state.path}`}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px", WebkitFilter: "grayscale(100%)"}} /></a>{"Language not supported. Coming soon!"}</span>;
+		if (utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
+			return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</span>;
+		} else {
+			return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</span>;
 		}
-		return <span><a href={`https://sourcegraph.com/${this.state.repoURI}@${this.state.rev || this.state.baseCommitID}/-/blob/${this.state.path}`}><SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", paddingRight: "5px", fontSize: "25px"}} /></a></span>;
 	}
 }
