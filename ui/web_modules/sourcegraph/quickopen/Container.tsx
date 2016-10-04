@@ -243,7 +243,7 @@ export class Container extends React.Component<Props, State> {
 		const query = this.state.input;
 
 		// Fetch results without incurring a GitHub search request immediately
-		Dispatcher.Backends.dispatch(new RepoActions.WantRepos(this.repoListQueryString(query, false)));
+		Dispatcher.Backends.dispatch(new RepoActions.WantRepos(this.repoListQueryString(query)));
 		// Debounced fetch of results with GitHub search request
 		this.fetchRepoResultsWithGitHub(query);
 
@@ -253,11 +253,11 @@ export class Container extends React.Component<Props, State> {
 		}
 	}
 
-	repoListQueryString(query: string, withRemote: boolean): string {
+	repoListQueryString(query: string, withRemote: boolean = false): string {
 		if (withRemote) {
 			return `Query=${encodeURIComponent(query)}&RemoteSearch=t&PerPage=100`;
 		}
-		return `Query=${encodeURIComponent(query)}&RemoteSearch=f&PerPage=100`;
+		return `Query=${encodeURIComponent(query)}&PerPage=100`;
 	}
 
 	updateInput(event: React.FormEvent<HTMLInputElement>): void {
@@ -351,7 +351,7 @@ export class Container extends React.Component<Props, State> {
 		let updatedRepos = RepoStore.repos.list(this.repoListQueryString(query, true));
 		if (!updatedRepos) {
 			// If not, then fall back to results without GitHub requests.
-			updatedRepos = RepoStore.repos.list(this.repoListQueryString(query, false));
+			updatedRepos = RepoStore.repos.list(this.repoListQueryString(query));
 		}
 		if (updatedRepos) {
 			if (updatedRepos.Repos) {

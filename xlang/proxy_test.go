@@ -421,16 +421,29 @@ var (
 			rootPath: "git://test/pkg?master",
 			mode:     "go",
 			fs: map[string]string{
-				"abc.go": `package a; type XYZ struct {}; func (x XYZ) ABC() {}`,
-				"bcd.go": `package a; type YZA struct {}; func (y YZA) BCD() {}`,
-				"xyz.go": `package a; func yza() {}`,
+				"abc.go": `package a
+
+type XYZ struct {}
+
+func (x XYZ) ABC() {}
+`,
+				"bcd.go": `package a
+
+type YZA struct {}
+
+func (y YZA) BCD() {}
+`,
+				"xyz.go": `package a
+
+func yza() {}
+`,
 			},
 			wantSymbols: map[string][]string{
-				"":    []string{"git://test/pkg?master#abc.go:method:XYZ.ABC:0:44", "git://test/pkg?master#bcd.go:method:YZA.BCD:0:44", "git://test/pkg?master#abc.go:class:pkg.XYZ:0:16", "git://test/pkg?master#bcd.go:class:pkg.YZA:0:16", "git://test/pkg?master#xyz.go:function:pkg.yza:0:16"},
-				"xyz": []string{"git://test/pkg?master#abc.go:class:pkg.XYZ:0:16", "git://test/pkg?master#abc.go:method:XYZ.ABC:0:44", "git://test/pkg?master#xyz.go:function:pkg.yza:0:16"},
-				"yza": []string{"git://test/pkg?master#bcd.go:class:pkg.YZA:0:16", "git://test/pkg?master#xyz.go:function:pkg.yza:0:16", "git://test/pkg?master#bcd.go:method:YZA.BCD:0:44"},
-				"abc": []string{"git://test/pkg?master#abc.go:method:XYZ.ABC:0:44", "git://test/pkg?master#abc.go:class:pkg.XYZ:0:16"},
-				"bcd": []string{"git://test/pkg?master#bcd.go:method:YZA.BCD:0:44", "git://test/pkg?master#bcd.go:class:pkg.YZA:0:16"},
+				"":    []string{"git://test/pkg?master#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?master#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?master#abc.go:class:pkg.XYZ:2:5", "git://test/pkg?master#bcd.go:class:pkg.YZA:2:5", "git://test/pkg?master#xyz.go:function:pkg.yza:2:5"},
+				"xyz": []string{"git://test/pkg?master#abc.go:class:pkg.XYZ:2:5", "git://test/pkg?master#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?master#xyz.go:function:pkg.yza:2:5"},
+				"yza": []string{"git://test/pkg?master#bcd.go:class:pkg.YZA:2:5", "git://test/pkg?master#xyz.go:function:pkg.yza:2:5", "git://test/pkg?master#bcd.go:method:YZA.BCD:4:13"},
+				"abc": []string{"git://test/pkg?master#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?master#abc.go:class:pkg.XYZ:2:5"},
+				"bcd": []string{"git://test/pkg?master#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?master#bcd.go:class:pkg.YZA:2:5"},
 			},
 		},
 	}
