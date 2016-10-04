@@ -1,4 +1,5 @@
 import * as cloneDeep from "lodash/cloneDeep";
+import * as debounce from "lodash/debounce";
 import * as findIndex from "lodash/findIndex";
 import * as throttle from "lodash/throttle";
 import * as React from "react";
@@ -118,6 +119,12 @@ export class Container extends React.Component<Props, State> {
 	delegate: SearchDelegate;
 	listeners: {remove: () => void}[];
 
+	// fetchRepoResults fetches repository search results, augmented
+	// with results from a GitHub search API request. Due to the
+	// GitHub search API abuse limit, this is debounced (see the
+	// initialization in the constructor).
+	fetchRepoResultsWithGitHub: (query: string) => void;
+
 	constructor(props: Props) {
 		super(props);
 		this.keyListener = this.keyListener.bind(this);
@@ -142,6 +149,9 @@ export class Container extends React.Component<Props, State> {
 			select: this.select.bind(this),
 			expand: this.expand.bind(this),
 		};
+		this.fetchRepoResultsWithGitHub = debounce(((query: string) => {
+			Dispatcher.Backends.dispatch(new RepoActions.WantRepos(this.repoListQueryString(query, true)));
+		}).bind(this), 2000, { leading: false, trailing: true }); // 2 second debounce
 	}
 
 	componentDidMount(): void {
@@ -231,15 +241,23 @@ export class Container extends React.Component<Props, State> {
 
 	fetchResults(): void {
 		const query = this.state.input;
-		Dispatcher.Backends.dispatch(new RepoActions.WantRepos(this.repoListQueryString(query)));
+
+		// Fetch results without incurring a GitHub search request immediately
+		Dispatcher.Backends.dispatch(new RepoActions.WantRepos(this.repoListQueryString(query, false)));
+		// Debounced fetch of results with GitHub search request
+		this.fetchRepoResultsWithGitHub(query);
+
 		if (this.props.repo !== null && this.state.commitID) {
 			Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.repo.URI, this.state.commitID, query));
 			Dispatcher.Backends.dispatch(new TreeActions.WantFileList(this.props.repo.URI, this.state.commitID));
 		}
 	}
 
-	repoListQueryString(query: string): string {
-		return `Query=${encodeURIComponent(query)}&RemoteSearch=t&PerPage=100`;
+	repoListQueryString(query: string, withRemote: boolean): string {
+		if (withRemote) {
+			return `Query=${encodeURIComponent(query)}&RemoteSearch=t&PerPage=100`;
+		}
+		return `Query=${encodeURIComponent(query)}&RemoteSearch=f&PerPage=100`;
 	}
 
 	updateInput(event: React.FormEvent<HTMLInputElement>): void {
@@ -328,8 +346,12 @@ export class Container extends React.Component<Props, State> {
 			}
 		}
 
-		// Update repos
-		const updatedRepos = RepoStore.repos.list(this.repoListQueryString(query));
+		// Update repos. First look up if there are results that include GitHub results.
+		let updatedRepos = RepoStore.repos.list(this.repoListQueryString(query, true));
+		if (!updatedRepos) {
+			// If not, then fall back to results without GitHub requests.
+			updatedRepos = RepoStore.repos.list(this.repoListQueryString(query, false));
+		}
 		if (updatedRepos) {
 			if (updatedRepos.Repos) {
 				const repoResults = updatedRepos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
