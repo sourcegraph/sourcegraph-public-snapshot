@@ -349,26 +349,6 @@ interface JumpToDefResponse {
 	Path: string;
 }
 
-function fetchJumpToDef(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<lsp.Location> {
-	const line = position.lineNumber - 1;
-	const col = position.column - 1;
-	const {repo, rev, path} = URI.repoParams(model.uri);
-	return fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/jump-def?file=${path}&line=${line}&character=${col}`)
-		.then(checkStatus)
-		.then(resp => resp.json())
-		.catch(err => null);
-}
-
 type ReferencesResponse = {
 	Locs: lsp.Location[];
 };
-
-function refsAtPosition(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<ReferencesResponse> {
-	const line = position.lineNumber - 1;
-	const col = position.column - 1;
-	const {repo, rev, path} = URI.repoParams(model.uri);
-	return fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/def/dummy/dummy/-/dummy/-/local-refs?file=${path}&line=${line}&character=${col}`)
-		.then(checkStatus)
-		.then(resp => resp.json())
-		.catch(err => null);
-}
