@@ -103,6 +103,18 @@ func TestUserHasReadAccessAll(t *testing.T) {
 		shouldCallGitHub:          true,
 		mockGitHubAccessibleRepos: testRepos("c", "b"),
 		expRepos:                  testRepos("a", "b", "c"),
+	}, {
+		title:                     "preserve input order",
+		inputRepos:                testRepos("b", "a"),
+		shouldCallGitHub:          true,
+		mockGitHubAccessibleRepos: testRepos("b"),
+		expRepos:                  testRepos("b", "a"),
+	}, {
+		title:                     "preserve input order with some denied",
+		inputRepos:                testRepos("c", "b", "d", "a"),
+		shouldCallGitHub:          true,
+		mockGitHubAccessibleRepos: testRepos("c", "d"),
+		expRepos:                  testRepos("c", "d", "a"),
 	}}
 
 	for _, test := range testcases {
