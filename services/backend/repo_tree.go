@@ -19,10 +19,13 @@ var RepoTree = &repoTree{}
 
 type repoTree struct{}
 
-func (s *repoTree) Get(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
+func (s *repoTree) Get(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (res *sourcegraph.TreeEntry, err error) {
 	if Mocks.RepoTree.Get != nil {
 		return Mocks.RepoTree.Get(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "RepoTree", "Get", op, &err)
+	defer done()
 
 	// Cap Get operation to some reasonable time.
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -114,10 +117,13 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 	return &fwr, nil
 }
 
-func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error) {
+func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (res *sourcegraph.RepoTreeListResult, err error) {
 	if Mocks.RepoTree.List != nil {
 		return Mocks.RepoTree.List(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "RepoTree", "List", op, &err)
+	defer done()
 
 	// Cap List operation to some reasonable time.
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)

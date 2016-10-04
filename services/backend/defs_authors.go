@@ -19,10 +19,13 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 )
 
-func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error) {
+func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsOp) (res *sourcegraph.DefAuthorList, err error) {
 	if Mocks.Defs.ListAuthors != nil {
 		return Mocks.Defs.ListAuthors(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "Defs", "ListAuthors", op, &err)
+	defer done()
 
 	if !feature.Features.Authors {
 		return nil, grpc.Errorf(codes.Unimplemented, "Defs.ListAuthors is disabled")

@@ -16,10 +16,13 @@ import (
 // This file deals with remote repos (e.g., GitHub repos) that are not
 // persisted locally.
 
-func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
+func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (res *sourcegraph.RepoResolution, err error) {
 	if Mocks.Repos.Resolve != nil {
 		return Mocks.Repos.Resolve(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "Repos", "Resolve", op, &err)
+	defer done()
 
 	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.Resolve")
 	// First, look up locally.

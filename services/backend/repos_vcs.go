@@ -13,10 +13,13 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 )
 
-func (s *repos) ResolveRev(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
+func (s *repos) ResolveRev(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (res *sourcegraph.ResolvedRev, err error) {
 	if Mocks.Repos.ResolveRev != nil {
 		return Mocks.Repos.ResolveRev(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "Repos", "ResolveRev", op, &err)
+	defer done()
 
 	commitID, err := resolveRepoRev(ctx, op.Repo, op.Rev)
 	if err != nil {
@@ -67,10 +70,13 @@ func resolveRepoRev(ctx context.Context, repo int32, rev string) (vcs.CommitID, 
 	return commitID, nil
 }
 
-func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
+func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (res *vcs.Commit, err error) {
 	if Mocks.Repos.GetCommit != nil {
 		return Mocks.Repos.GetCommit(ctx, repoRev)
 	}
+
+	ctx, done := trace(ctx, "Repos", "GetCommit", repoRev, &err)
+	defer done()
 
 	log15.Debug("svc.local.repos.GetCommit", "repo-rev", repoRev)
 
@@ -86,10 +92,13 @@ func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 	return vcsrepo.GetCommit(ctx, vcs.CommitID(repoRev.CommitID))
 }
 
-func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error) {
+func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommitsOp) (res *sourcegraph.CommitList, err error) {
 	if Mocks.Repos.ListCommits != nil {
 		return Mocks.Repos.ListCommits(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "Repos", "ListCommits", op, &err)
+	defer done()
 
 	log15.Debug("svc.local.repos.ListCommits", "op", op)
 
@@ -152,10 +161,13 @@ func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommit
 	return &sourcegraph.CommitList{Commits: commits, StreamResponse: streamResponse}, nil
 }
 
-func (s *repos) ListBranches(ctx context.Context, op *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error) {
+func (s *repos) ListBranches(ctx context.Context, op *sourcegraph.ReposListBranchesOp) (res *sourcegraph.BranchList, err error) {
 	if Mocks.Repos.ListBranches != nil {
 		return Mocks.Repos.ListBranches(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "Repos", "ListBranches", op, &err)
+	defer done()
 
 	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
 	if err != nil {
@@ -179,10 +191,13 @@ func (s *repos) ListBranches(ctx context.Context, op *sourcegraph.ReposListBranc
 	return &sourcegraph.BranchList{Branches: branches}, nil
 }
 
-func (s *repos) ListTags(ctx context.Context, op *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error) {
+func (s *repos) ListTags(ctx context.Context, op *sourcegraph.ReposListTagsOp) (res *sourcegraph.TagList, err error) {
 	if Mocks.Repos.ListTags != nil {
 		return Mocks.Repos.ListTags(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "Repos", "ListTags", op, &err)
+	defer done()
 
 	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
 	if err != nil {
@@ -202,10 +217,13 @@ func (s *repos) ListTags(ctx context.Context, op *sourcegraph.ReposListTagsOp) (
 	return &sourcegraph.TagList{Tags: tags}, nil
 }
 
-func (s *repos) ListCommitters(ctx context.Context, op *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error) {
+func (s *repos) ListCommitters(ctx context.Context, op *sourcegraph.ReposListCommittersOp) (res *sourcegraph.CommitterList, err error) {
 	if Mocks.Repos.ListCommitters != nil {
 		return Mocks.Repos.ListCommitters(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "Repos", "ListCommitters", op, &err)
+	defer done()
 
 	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
 	if err != nil {

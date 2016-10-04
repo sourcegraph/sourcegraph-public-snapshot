@@ -38,10 +38,13 @@ var Repos = &repos{}
 
 type repos struct{}
 
-func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *sourcegraph.Repo, err error) {
 	if Mocks.Repos.Get != nil {
 		return Mocks.Repos.Get(ctx, repoSpec)
 	}
+
+	ctx, done := trace(ctx, "Repos", "Get", repoSpec, &err)
+	defer done()
 
 	repo, err := localstore.Repos.Get(ctx, repoSpec.ID)
 	if err != nil {
@@ -64,10 +67,13 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 // "gorilla / mux"
 var ghRepoQueryMatcher = regexp.MustCompile(`^(?:github.com/)?([^/\s]+)[/\s]+([^/\s]+)$`)
 
-func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
+func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res *sourcegraph.RepoList, err error) {
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
 	}
+
+	ctx, done := trace(ctx, "Repos", "List", opt, &err)
+	defer done()
 
 	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.List")
 	if opt == nil {
@@ -138,10 +144,13 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 //  ListDeps lists dependencies for a given list of repo URIs.
 //
 // TODO properly support using repo IDs instead of URIs.
-func (s *repos) ListDeps(ctx context.Context, repos *sourcegraph.URIList) (*sourcegraph.URIList, error) {
+func (s *repos) ListDeps(ctx context.Context, repos *sourcegraph.URIList) (res *sourcegraph.URIList, err error) {
 	if Mocks.Repos.ListDeps != nil {
 		return Mocks.Repos.ListDeps(ctx, repos)
 	}
+
+	ctx, done := trace(ctx, "Repos", "ListDeps", repos, &err)
+	defer done()
 
 	repoFilters := []srcstore.UnitFilter{
 		srcstore.ByRepos(repos.URIs...),
@@ -354,10 +363,13 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *locals
 	return nil
 }
 
-func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
+func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (res *sourcegraph.Repo, err error) {
 	if Mocks.Repos.Create != nil {
 		return Mocks.Repos.Create(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "Repos", "Create", op, &err)
+	defer done()
 
 	var repo *sourcegraph.Repo
 	switch {
@@ -491,10 +503,13 @@ func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRe
 	}, nil
 }
 
-func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
+func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (res *sourcegraph.Repo, err error) {
 	if Mocks.Repos.Update != nil {
 		return Mocks.Repos.Update(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "Repos", "Update", op, &err)
+	defer done()
 
 	ts := time.Now()
 	update := localstore.RepoUpdate{ReposUpdateOp: op, UpdatedAt: &ts}
@@ -505,10 +520,13 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sou
 	return s.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
 }
 
-func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
+func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (res *pbtypes.Void, err error) {
 	if Mocks.Repos.Delete != nil {
 		return Mocks.Repos.Delete(ctx, repo)
 	}
+
+	ctx, done := trace(ctx, "Repos", "Delete", repo, &err)
+	defer done()
 
 	if err := localstore.Repos.Delete(ctx, repo.ID); err != nil {
 		return nil, err
@@ -516,10 +534,13 @@ func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtype
 	return &pbtypes.Void{}, nil
 }
 
-func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
+func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (res *sourcegraph.RepoConfig, err error) {
 	if Mocks.Repos.GetConfig != nil {
 		return Mocks.Repos.GetConfig(ctx, repo)
 	}
+
+	ctx, done := trace(ctx, "Repos", "GetConfig", repo, &err)
+	defer done()
 
 	conf, err := localstore.RepoConfigs.Get(ctx, repo.ID)
 	if err != nil {
@@ -531,10 +552,13 @@ func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sou
 	return conf, nil
 }
 
-func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
 		return Mocks.Repos.GetInventory(ctx, repoRev)
 	}
+
+	ctx, done := trace(ctx, "Repos", "GetInventory", repoRev, &err)
+	defer done()
 
 	// Cap GetInventory operation to some reasonable time.
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
@@ -639,10 +663,13 @@ func sendCreateRepoSlackMsg(ctx context.Context, uri, language string, mirror, p
 	notif.PostOnboardingNotif(msg)
 }
 
-func (s *repos) EnableWebhook(ctx context.Context, op *sourcegraph.RepoWebhookOptions) (*pbtypes.Void, error) {
+func (s *repos) EnableWebhook(ctx context.Context, op *sourcegraph.RepoWebhookOptions) (res *pbtypes.Void, err error) {
 	if Mocks.Repos.EnableWebhook != nil {
 		return Mocks.Repos.EnableWebhook(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "Repos", "EnableWebhook", op, &err)
+	defer done()
 
 	if !github.HasAuthedUser(ctx) {
 		return nil, errors.New("Unauthed user")

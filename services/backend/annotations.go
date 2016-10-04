@@ -29,10 +29,13 @@ var Annotations = &annotations{}
 
 type annotations struct{}
 
-func (s *annotations) List(ctx context.Context, opt *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error) {
+func (s *annotations) List(ctx context.Context, opt *sourcegraph.AnnotationsListOptions) (res *sourcegraph.AnnotationList, err error) {
 	if Mocks.Annotations.List != nil {
 		return Mocks.Annotations.List(ctx, opt)
 	}
+
+	ctx, done := trace(ctx, "Annotations", "List", opt, &err)
+	defer done()
 
 	var fileRange sourcegraph.FileRange
 	if opt.Range != nil {
@@ -218,10 +221,13 @@ func computeLineStartBytes(data []byte) []uint32 {
 	return pos
 }
 
-func (s *annotations) GetDefAtPos(ctx context.Context, opt *sourcegraph.AnnotationsGetDefAtPosOptions) (*sourcegraph.DefSpec, error) {
+func (s *annotations) GetDefAtPos(ctx context.Context, opt *sourcegraph.AnnotationsGetDefAtPosOptions) (res *sourcegraph.DefSpec, err error) {
 	if Mocks.Annotations.GetDefAtPos != nil {
 		return Mocks.Annotations.GetDefAtPos(ctx, opt)
 	}
+
+	ctx, done := trace(ctx, "Annotations", "GetDefAtPos", opt, &err)
+	defer done()
 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Annotations.GetDefAtPos", opt.Entry.RepoRev.Repo); err != nil {
 		return nil, err

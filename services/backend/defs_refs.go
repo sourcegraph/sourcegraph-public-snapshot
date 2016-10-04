@@ -18,10 +18,13 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error) {
+func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (res *sourcegraph.RefList, err error) {
 	if Mocks.Defs.ListRefs != nil {
 		return Mocks.Defs.ListRefs(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "Defs", "ListRefs", op, &err)
+	defer done()
 
 	defSpec := op.Def
 	opt := op.Opt
@@ -105,18 +108,24 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 	}, nil
 }
 
-func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
+func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (res *sourcegraph.RefLocationsList, err error) {
 	if Mocks.Defs.ListRefLocations != nil {
 		return Mocks.Defs.ListRefLocations(ctx, op)
 	}
 
+	ctx, done := trace(ctx, "Defs", "ListRefLocations", op, &err)
+	defer done()
+
 	return localstore.GlobalRefs.Get(ctx, op)
 }
 
-func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
+func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (res *pbtypes.Void, err error) {
 	if Mocks.Defs.RefreshIndex != nil {
 		return Mocks.Defs.RefreshIndex(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "Defs", "RefreshIndex", op, &err)
+	defer done()
 
 	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: op.Repo})
 	if err != nil {

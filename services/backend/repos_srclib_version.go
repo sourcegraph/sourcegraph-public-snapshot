@@ -18,10 +18,13 @@ import (
 	srclibstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
-func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
+func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegraph.TreeEntrySpec) (res *sourcegraph.SrclibDataVersion, err error) {
 	if Mocks.Repos.GetSrclibDataVersionForPath != nil {
 		return Mocks.Repos.GetSrclibDataVersionForPath(ctx, entry)
 	}
+
+	ctx, done := trace(ctx, "Repos", "GetSrclibDataVersionForPath", entry, &err)
+	defer done()
 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetSrclibDataVersionForPath", entry.RepoRev.Repo); err != nil {
 		return nil, err

@@ -12,26 +12,35 @@ var RepoStatuses = &repoStatuses{}
 
 type repoStatuses struct{}
 
-func (s *repoStatuses) GetCombined(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error) {
+func (s *repoStatuses) GetCombined(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (res *sourcegraph.CombinedStatus, err error) {
 	if Mocks.RepoStatuses.GetCombined != nil {
 		return Mocks.RepoStatuses.GetCombined(ctx, repoRev)
 	}
 
+	ctx, done := trace(ctx, "RepoStatuses", "GetCombined", repoRev, &err)
+	defer done()
+
 	return localstore.RepoStatuses.GetCombined(ctx, repoRev.Repo, repoRev.CommitID)
 }
 
-func (s *repoStatuses) GetCoverage(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.RepoStatusList, error) {
+func (s *repoStatuses) GetCoverage(ctx context.Context, _ *pbtypes.Void) (res *sourcegraph.RepoStatusList, err error) {
 	if Mocks.RepoStatuses.GetCoverage != nil {
 		return Mocks.RepoStatuses.GetCoverage(ctx, &pbtypes.Void{})
 	}
 
+	ctx, done := trace(ctx, "RepoStatuses", "GetCoverage", nil, &err)
+	defer done()
+
 	return localstore.RepoStatuses.GetCoverage(ctx)
 }
 
-func (s *repoStatuses) Create(ctx context.Context, op *sourcegraph.RepoStatusesCreateOp) (*sourcegraph.RepoStatus, error) {
+func (s *repoStatuses) Create(ctx context.Context, op *sourcegraph.RepoStatusesCreateOp) (res *sourcegraph.RepoStatus, err error) {
 	if Mocks.RepoStatuses.Create != nil {
 		return Mocks.RepoStatuses.Create(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "RepoStatuses", "Create", op, &err)
+	defer done()
 
 	repoRev := op.Repo
 	status := &op.Status

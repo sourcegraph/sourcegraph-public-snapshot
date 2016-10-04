@@ -28,10 +28,13 @@ var MirrorRepos = &mirrorRepos{}
 
 type mirrorRepos struct{}
 
-func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
+func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) (res *pbtypes.Void, err error) {
 	if Mocks.MirrorRepos.RefreshVCS != nil {
 		return Mocks.MirrorRepos.RefreshVCS(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "MirrorRepos", "RefreshVCS", op, &err)
+	defer done()
 
 	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "RefreshVCS")
 	actor := authpkg.ActorFromContext(ctx)

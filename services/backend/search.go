@@ -42,10 +42,13 @@ var tokenToLanguage = map[string]string{
 	"python": "python",
 }
 
-func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error) {
+func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (res *sourcegraph.SearchResultsList, err error) {
 	if Mocks.Search.Search != nil {
 		return Mocks.Search.Search(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "Search", "Search", op, &err)
+	defer done()
 
 	observe := func(part string, start time.Time) {
 		d := time.Since(start)

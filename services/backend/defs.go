@@ -27,10 +27,13 @@ var Defs = &defs{}
 
 type defs struct{}
 
-func (s *defs) Get(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
+func (s *defs) Get(ctx context.Context, op *sourcegraph.DefsGetOp) (res *sourcegraph.Def, err error) {
 	if Mocks.Defs.Get != nil {
 		return Mocks.Defs.Get(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "Defs", "Get", op, &err)
+	defer done()
 
 	defSpec := op.Def
 
@@ -119,10 +122,13 @@ func (s *defs) get(ctx context.Context, def sourcegraph.DefSpec) (*graph.Def, er
 	return d[0], nil
 }
 
-func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sourcegraph.DefList, error) {
+func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (res *sourcegraph.DefList, err error) {
 	if Mocks.Defs.List != nil {
 		return Mocks.Defs.List(ctx, opt)
 	}
+
+	ctx, done := trace(ctx, "Defs", "List", opt, &err)
+	defer done()
 
 	if opt == nil {
 		opt = &sourcegraph.DefListOptions{}

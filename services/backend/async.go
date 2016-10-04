@@ -43,10 +43,13 @@ func StartAsyncWorkers(ctx context.Context) {
 	}
 }
 
-func (s *async) RefreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
+func (s *async) RefreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefreshIndexesOp) (res *pbtypes.Void, err error) {
 	if Mocks.Async.RefreshIndexes != nil {
 		return Mocks.Async.RefreshIndexes(ctx, op)
 	}
+
+	ctx, done := trace(ctx, "Async", "RefreshIndexes", op, &err)
+	defer done()
 
 	// We filter out repos we can't index at this stage, so that our
 	// metrics on async success vs failure aren't polluted by repos we do
