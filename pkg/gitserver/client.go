@@ -11,6 +11,8 @@ import (
 
 	"github.com/neelance/chanrpc"
 	"github.com/neelance/chanrpc/chanrpcutil"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -42,7 +44,18 @@ type genericReply interface {
 	repoFound() bool
 }
 
-func (c *Client) broadcastCall(ctx context.Context, newRequest func() (*request, func() (genericReply, bool))) (interface{}, error) {
+func (c *Client) broadcastCall(ctx context.Context, newRequest func() (*request, func() (genericReply, bool))) (_ interface{}, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.broadcastCall")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+	req, _ := newRequest()
+	req.setSpanTags(span)
+
 	// Check that ctx is not expired before broadcasting over the network.
 	if err := ctx.Err(); err != nil {
 		deadlineExceededCounter.Inc()

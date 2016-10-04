@@ -2,7 +2,10 @@
 // and a client that provides remote access to them.
 package gitserver
 
-import "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+import (
+	"github.com/opentracing/opentracing-go"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+)
 
 type request struct {
 	Exec   *execRequest
@@ -79,3 +82,29 @@ type removeReply struct {
 }
 
 func (r *removeReply) repoFound() bool { return !r.RepoNotFound }
+
+// setSpanTags sets the relevant span tags on span for this request.
+func (r *request) setSpanTags(span opentracing.Span) {
+	switch {
+	case r.Exec != nil:
+		span.SetTag("request", "Exec")
+		span.SetTag("repo", r.Exec.Repo)
+		span.SetTag("args", r.Exec.Args)
+		span.SetTag("opt", r.Exec.Opt)
+	case r.Search != nil:
+		span.SetTag("request", "Search")
+		span.SetTag("repo", r.Search.Repo)
+		span.SetTag("commit", r.Search.Commit)
+		span.SetTag("opt", r.Search.Opt)
+	case r.Create != nil:
+		span.SetTag("request", "Create")
+		span.SetTag("repo", r.Create.Repo)
+		span.SetTag("MirrorRemote", r.Create.MirrorRemote)
+		span.SetTag("opt", r.Create.Opt)
+	case r.Remove != nil:
+		span.SetTag("request", "Remove")
+		span.SetTag("repo", r.Remove.Repo)
+	default:
+		span.SetTag("request", "unknown type")
+	}
+}
