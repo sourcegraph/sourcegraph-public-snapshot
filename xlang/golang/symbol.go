@@ -249,7 +249,11 @@ func (h *LangHandler) collectFromPkg(bctx *build.Context, fs *token.FileSet, pkg
 
 		// Emit decls
 		for _, t := range docPkg.Types {
-			pkgSyms = append(pkgSyms, toSym(t.Name, buildPkg.ImportPath, lsp.SKClass, fs, t.Decl.TokPos))
+			if len(t.Decl.Specs) == 1 { // the type name is the first spec in type declarations
+				pkgSyms = append(pkgSyms, toSym(t.Name, buildPkg.ImportPath, lsp.SKClass, fs, t.Decl.Specs[0].Pos()))
+			} else { // in case there's some edge case where there's not 1 spec, fall back to the start of the declaration
+				pkgSyms = append(pkgSyms, toSym(t.Name, buildPkg.ImportPath, lsp.SKClass, fs, t.Decl.TokPos))
+			}
 
 			for _, v := range t.Funcs {
 				pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))

@@ -45,6 +45,10 @@ export function urlToBlobLine(repo: string, rev: string | null, path: string, li
 	return `${urlToBlob(repo, rev, path)}#L${line}`;
 }
 
+export function urlToBlobLineCol(repo: string, rev: string | null, path: string, line: number, col: number): string {
+	return `${urlToBlob(repo, rev, path)}#L${line}:${col}`;
+}
+
 export function parseBlobURL(urlPathname: string): {repo: string, rev: string | null, path: string, hash?: string} {
 	let hash: string | undefined;
 	if (urlPathname.indexOf("#") !== -1) {

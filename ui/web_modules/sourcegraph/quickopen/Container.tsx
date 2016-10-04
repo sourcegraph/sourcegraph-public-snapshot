@@ -13,7 +13,7 @@ import {colors} from "sourcegraph/components/utils/index";
 
 import {URIUtils} from "sourcegraph/core/uri";
 
-import {urlToBlob, urlToBlobLine} from "sourcegraph/blob/routes";
+import {urlToBlob, urlToBlobLineCol} from "sourcegraph/blob/routes";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {RepoStore} from "sourcegraph/repo/RepoStore";
@@ -313,12 +313,13 @@ export class Container extends React.Component<Props, State> {
 					const desc = `${kind ? kind : ""} in ${path}`;
 					let idx = title.toLowerCase().indexOf(query.toLowerCase());
 					const line = sym.location.range.start.line;
+					const col = sym.location.range.start.character;
 					symbolResults.push({
 						title: title,
 						description: desc,
 						index: idx !== -1 ? idx : 0,
 						length: idx !== -1 ? query.length : 0,
-						URLPath: urlToBlobLine(repo.URI, repo.rev, path, line + 1),
+						URLPath: urlToBlobLineCol(repo.URI, repo.rev, path, line + 1, col + 1),
 					});
 				});
 				symbols.IsLoading = false;
