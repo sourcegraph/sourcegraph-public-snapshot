@@ -1,11 +1,14 @@
 import {hover} from "glamor";
 import * as React from "react";
 import {Link} from "react-router";
+
 import {RouteParams} from "sourcegraph/app/routeParams";
 import {UnsupportedLanguageAlert} from "sourcegraph/blob/UnsupportedLanguageAlert";
 import {Base, FlexContainer, Heading} from "sourcegraph/components";
 import {colors, typography} from "sourcegraph/components/utils";
 import {RevSwitcherContainer} from "sourcegraph/repo/RevSwitcherContainer";
+import {urlToRepo} from "sourcegraph/repo/routes";
+import {urlToTree} from "sourcegraph/tree/routes";
 import {getPathExtension, supportedExtensions} from "sourcegraph/util/supportedExtensions";
 
 interface Props {
@@ -44,38 +47,35 @@ const toastSx = Object.assign({},
 	typography.size[8],
 );
 
-function getFilePath(repo: string, path: string): JSX.Element[] {
-	const filePathArray = repo.split("/").concat(path.split("/"));
-	const isGitHubRepo = filePathArray[0] === "github.com";
-	filePathArray.pop();
+function BreadCrumb({repo, path, rev}: {repo: string, path: string, rev: string}): JSX.Element {
+	const pathToFile = path.split("/").slice(0, -1);
+	const links: JSX.Element[] = [];
+	links[0] = 	<Link
+		key={0}
+		{...hover(subHover)}
+		style={subSx}
+		to={urlToRepo(repo)}>{repo}
+	</Link>;
 
-	return filePathArray.map((item, i, array) => {
-		const relPath = isGitHubRepo
-			? array.slice(3, i + 1).join("/")
-			: array.slice(0, i + 1).join("/");
+	const crumbs = pathToFile.map((item, index) => <span key={index + 1}>&nbsp;/&nbsp;
+		<Link
+			style={subSx}
+			{...hover(subHover)}
+			to={urlToTree(repo, rev, pathToFile.slice(0, index + 1))}>
+			{item}
+		</Link>
+	</span>);
 
-		if (isGitHubRepo && i >= 1 && i <= 2) { return <span key={i} />; };
+	links.push(...crumbs);
 
-		return item === "github.com" && i === 0
-			? <span key={i}>
-				<Link
-					{...hover(subHover)}
-					style={subSx}
-					to={`/${repo}`}>
-					{repo.split("/").join(" / ")}</Link>
-			</span>
-			: <span key={i}>
-				&nbsp;/&nbsp;
-				<Link
-					{...hover(subHover)}
-					style={subSx}
-					to={`/${repo}/-/tree/${relPath}`} >{item}</Link>
-			</span>;
-	});
+	return <span>
+		{links}
+	</span>;
 };
 
-function getFilename(repo: string, path: string): string | undefined {
-	return repo.split("/").concat(path.split("/")).pop();
+function basename(path: string): string {
+	const base = path.split("/").pop();
+	return base || path;
 };
 
 export function BlobTitle({
@@ -96,7 +96,7 @@ export function BlobTitle({
 		<FlexContainer justify="between">
 			<div>
 				<Heading level={5} color="white" mb={0}>
-					{getFilename(repo, path)}
+					{basename(path)}
 					{commitID && <RevSwitcherContainer
 						repo={repo}
 						repoObj={repoObj}
@@ -106,7 +106,7 @@ export function BlobTitle({
 						routeParams={routeParams}
 						isCloning={isCloning} />}
 				</Heading>
-				<span style={subSx}>{getFilePath(repo, path)}</span>
+				<BreadCrumb repo={repo} path={path} rev={rev} />
 			</div>
 			{!isSupported && <UnsupportedLanguageAlert ext={extension}/>}
 			{toast && <div style={toastSx}>{toast}</div>}
