@@ -195,6 +195,15 @@ export class Editor implements monaco.IDisposable {
 				if (!resp) {
 					return null;
 				}
+
+				const {repo, rev, path} = URI.repoParams(model.uri);
+				EventLogger.logEventForCategory(
+					AnalyticsConstants.CATEGORY_DEF,
+					AnalyticsConstants.ACTION_CLICK,
+					"BlobTokenClicked",
+					{ srcRepo: repo, srcRev: rev || "", srcPath: path, language: model.getModeId() }
+				);
+
 				const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
 				const translatedLocs: monaco.languages.Location[] = locs
 					.filter((loc) => Object.keys(loc).length !== 0)
@@ -223,6 +232,19 @@ export class Editor implements monaco.IDisposable {
 				if (!resp || !resp.result || !resp.result.contents) {
 					return {contents: []}; // if null, strings, whitespace, etc. will show a perpetu-"Loading..." tooltip
 				}
+
+				const {repo, rev, path} = URI.repoParams(model.uri);
+				EventLogger.logEventForCategory(
+					AnalyticsConstants.CATEGORY_DEF,
+					AnalyticsConstants.ACTION_HOVER,
+					"Hovering",
+					{
+						repo: repo,
+						rev: rev || "",
+						path: path,
+						language: model.getModeId(),
+					}
+				);
 
 				let range: monaco.IRange;
 				if (resp.result.range) {
@@ -257,6 +279,15 @@ export class Editor implements monaco.IDisposable {
 				if (!resp) {
 					return null;
 				}
+
+				const {repo, rev, path} = URI.repoParams(model.uri);
+				EventLogger.logEventForCategory(
+					AnalyticsConstants.CATEGORY_REFERENCES,
+					AnalyticsConstants.ACTION_CLICK,
+					"ClickedViewReferences",
+					{ repo, rev: rev || "", path }
+				);
+
 				const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
 				locs.forEach((l) => {
 					l.uri = URI.toRefsDisplayURI(monaco.Uri.parse(l.uri)).toString();
