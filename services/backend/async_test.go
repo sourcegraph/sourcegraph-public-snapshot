@@ -2,6 +2,8 @@ package backend
 
 import (
 	"encoding/json"
+	"errors"
+	"reflect"
 	"testing"
 	"time"
 
@@ -111,15 +113,14 @@ func TestAsyncWorker(t *testing.T) {
 }
 
 func TestAsyncWorker_mutex(t *testing.T) {
-	t.Skip("FIXME")
-
 	// TODO(keegancsmith) distributed locking should be a store, so we can
 	// mock it
 	rcache.SetupForTest("TestAsyncWorker_mutex")
 
 	w := &asyncWorker{}
-	ctx1 := testContext()
-	ctx2 := testContext()
+	ctxParent := testContext()
+	ctx1 := context.WithValue(ctxParent, "source", 1)
+	ctx2 := context.WithValue(ctxParent, "source", 2)
 
 	wantRepo := int32(10811)
 	op := &sourcegraph.AsyncRefreshIndexesOp{
@@ -131,12 +132,29 @@ func TestAsyncWorker_mutex(t *testing.T) {
 	// closed. That way we can do another call concurrently and ensure the
 	// mutex blocks.
 	called1 := make(chan interface{})
+	called2 := false
 	wait1 := make(chan interface{})
 	done1 := make(chan interface{})
 	Mocks.Defs.RefreshIndex = func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
-		close(called1)
-		<-wait1
-		return nil, nil
+		switch ctx.Value("source").(int) {
+		case 1:
+			close(called1)
+			<-wait1
+			return nil, nil
+		case 2:
+			called2 = true
+			wantOp := &sourcegraph.DefsRefreshIndexOp{
+				Repo:                wantRepo,
+				RefreshRefLocations: true,
+			}
+			if !reflect.DeepEqual(op, wantOp) {
+				t.Fatalf("unexpected DefsRefreshIndexOp, got %+v != %+v", op, wantOp)
+			}
+			return &pbtypes.Void{}, nil
+		default:
+			t.Fatal("unexpected ctx")
+		}
+		return nil, errors.New("unreachable")
 	}
 	go func() {
 		err := w.refreshIndexes(ctx1, op)
@@ -148,10 +166,6 @@ func TestAsyncWorker_mutex(t *testing.T) {
 	<-called1
 
 	// Now we should fail to acquire the mutex -> do not run Defs.RefreshIndex
-	called2 := Mocks.Defs.MockRefreshIndex(t, &sourcegraph.DefsRefreshIndexOp{
-		Repo:                wantRepo,
-		RefreshRefLocations: true,
-	})
 	calledEnqueue := localstore.Mocks.Queue.MockEnqueue(t, &localstore.Job{
 		Type: "RefreshIndexes",
 		Args: mustMarshal(t, &sourcegraph.AsyncRefreshIndexesOp{
@@ -167,7 +181,7 @@ func TestAsyncWorker_mutex(t *testing.T) {
 	if !*calledEnqueue {
 		t.Error("second refreshIndexes did not enqueue job for later")
 	}
-	if *called2 {
+	if called2 {
 		t.Error("second refreshIndexes should not run Defs.RefreshIndex")
 	}
 
