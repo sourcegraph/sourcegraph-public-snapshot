@@ -135,6 +135,16 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		p.mu.Unlock()
 
 		mu.Lock()
+
+		// Check again if someone else established the connection
+		// while we were waiting for mu.
+		for sc := range p.servers {
+			if sc.id == id {
+				mu.Unlock()
+				return sc, nil
+			}
+		}
+
 		defer mu.Unlock()
 	}
 
