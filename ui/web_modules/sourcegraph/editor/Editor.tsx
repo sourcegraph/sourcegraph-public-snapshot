@@ -320,6 +320,11 @@ export class Editor implements monaco.IDisposable {
 		return new monaco.Promise<void>(() => {
 			defAtPosition(model, pos).then((resp) => {
 				if (resp && (resp as any).def) {
+					// TODO(uforic): Remove this when we remove srclib dependency. Fix a special case for golang/go. 
+					const def = resp.def;
+					if (def.Repo === "github.com/golang/go" && def.Unit && def.Unit.startsWith("github.com/golang/go/src/")) {
+						def.Unit = def.Unit.replace("github.com/golang/go/src/", "");
+					}
 					window.location.href = urlToDefInfo((resp as any).def);
 				} else {
 					Dispatcher.Stores.dispatch(new BlobActions.Toast("No external references found"));
