@@ -26,13 +26,15 @@ func (h *LangHandler) handleDefinition(ctx context.Context, conn jsonrpc2Conn, r
 		obj, ok = pkg.Defs[node]
 	}
 	if ok && obj != nil {
-		// Builtins have an invalid Pos. Just don't emit a definition for
-		// them, for now. It's not that valuable to jump to their def.
-		//
-		// TODO(sqs): find a way to actually emit builtin locations
-		// (pointing to builtin/builtin.go).
 		if p := obj.Pos(); p.IsValid() {
 			nodes = append(nodes, &ast.Ident{NamePos: p, Name: obj.Name()})
+		} else {
+			// Builtins have an invalid Pos. Just don't emit a definition for
+			// them, for now. It's not that valuable to jump to their def.
+			//
+			// TODO(sqs): find a way to actually emit builtin locations
+			// (pointing to builtin/builtin.go).
+			return nil, nil
 		}
 	}
 	if len(nodes) == 0 {
