@@ -177,7 +177,10 @@ export class Editor implements monaco.IDisposable {
 					return null;
 				}
 				const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
-				const translatedLocs: monaco.languages.Location[] = locs.map(lsp.toMonacoLocation);
+				console.log("LOCS", locs);
+				const translatedLocs: monaco.languages.Location[] = locs
+					.filter((loc) => Object.keys(loc).length !== 0)
+					.map(lsp.toMonacoLocation);
 				if (key) {
 					defCache.set(key, translatedLocs);
 				}
