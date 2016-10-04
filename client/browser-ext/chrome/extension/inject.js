@@ -11,7 +11,7 @@ import {SearchIcon} from "../../app/components/Icons";
 import BlobAnnotator from "../../app/components/BlobAnnotator";
 import createStore from "../../app/store/configureStore";
 
-import {parseURL, isGitHubURL, isSourcegraphURL, supportedExtensions, getPathExtension} from "../../app/utils";
+import {parseURL, isGitHubURL, isSourcegraphURL} from "../../app/utils";
 
 let isSearchAppShown = false; // global state indicating whether the search app is visible
 let store = createStore({});
@@ -62,14 +62,6 @@ function injectBlobAnnotator() {
 
 		const blobAnnotatorContainer = document.createElement("button");
 		blobAnnotatorContainer.className = "btn btn-sm tooltipped tooltipped-n sourcegraph-app-annotator";
-
-		if (supportedExtensions.includes(getPathExtension(infoFilePath))) {
-			blobAnnotatorContainer.setAttribute("aria-label", "View on Sourcegraph");
-		} else {
-			blobAnnotatorContainer.setAttribute("disabled", true);
-			blobAnnotatorContainer.setAttribute("aria-label", "Language support coming soon!");
-		}
-
 		blobAnnotatorContainer.style.display = "inline-block";
 		blobAnnotatorContainer.style.verticalAlign = "middle";
 		blobAnnotatorContainer.style.marginTop = info.tagName === 'A' ? "2px" : "0px";

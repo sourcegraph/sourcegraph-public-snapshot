@@ -14,17 +14,30 @@ const accessToken = function(state = null, action) {
 const resolvedRev = function(state = {content: {}}, action) {
 	switch (action.type) {
 	case ActionTypes.RESOLVED_REV:
-		if (!action.json && !state.content[keyFor(action.repo, action.rev)]) return state; // no update needed; avoid re-rending components
-
-		return {
-			...state,
-			content: {
-				...state.content,
-				[keyFor(action.repo, action.rev)]: action.json ? action.json : null,
+		if (!state.content[keyFor(action.repo, action.rev)]) {
+			if (!action.json) {
+				if (action.err && action.err.response.status === 401) {
+					return {
+						...state,
+						content: {
+							...state.content,
+							[keyFor(action.repo)]: {authRequired: true},
+						}
+					};
+				}
+				return state; // no meaningful update; avoid re-rendering components
 			}
-		};
+
+			return {
+				...state,
+				content: {
+					...state.content,
+					[keyFor(action.repo, action.rev)]: action.json ? action.json : null,
+				}
+			};
+		}
 	default:
-		return state;
+		return state; // no update needed; avoid re-rending components
 	}
 }
 

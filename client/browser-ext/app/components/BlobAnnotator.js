@@ -35,8 +35,9 @@ export default class BlobAnnotator extends Component {
 	constructor(props) {
 		super(props);
 
-		this.onclick = this.onclick.bind(this);
 		this._clickRefresh = this._clickRefresh.bind(this);
+		this.onclick_signIn = this.onclick_signIn.bind(this);
+		this.onclick_fileView = this.onclick_fileView.bind(this);
 
 		this.state = utils.parseURL();
 		this.state.path = props.path;
@@ -137,8 +138,6 @@ export default class BlobAnnotator extends Component {
 				this.state.headRepoURI = this.state.repoURI;
 			}
 		}
-
-		props.selfElement.onclick = this.onclick;
 	}
 
 	componentDidMount() {
@@ -238,17 +237,50 @@ export default class BlobAnnotator extends Component {
 		}
 	}
 
-	onclick(ev) {
-		const isPrivateRepo = document.getElementsByClassName("label label-private v-align-middle").length > 0;
-		EventLogger.logEventForCategory("File", "Click", "ChromeExtensionSgButtonClicked", {repo: this.state.repoURI, path: window.location.href, is_private_repo: isPrivateRepo});
-		location.href = `https://sourcegraph.com/${this.state.repoURI}@${this.state.rev || this.state.baseCommitID}/-/blob/${this.state.path}`;
+	isPrivateRepo() {
+		let el = document.getElementsByClassName("label label-private v-align-middle");
+		return el.length > 0
+	}
+
+	onclick_signIn(ev) {
+		EventLogger.logEventForCategory("Auth", "Redirect", "ChromeExtensionSgButtonClicked", {repo: this.state.repoURI, path: window.location.href, is_private_repo: this.isPrivateRepo()});
+		location.href = `https://sourcegraph.com/login`;
+	}
+
+	onclick_fileView(ev) {
+		EventLogger.logEventForCategory("File", "Click", "ChromeExtensionSgButtonClicked", {repo: this.state.repoURI, path: window.location.href, is_private_repo: this.isPrivateRepo()});
+		location.href = `https://sourcegraph.com/${this.state.repoURI}@${this.state.rev || this.state.headCommitID}/-/blob/${this.state.path}`;
 	}
 
 	render() {
-		if (utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
-			return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</span>;
+		let isPrivate = this.isPrivateRepo();
+
+		if (isPrivate &&
+			(typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)] !== 'undefined') &&
+			(typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)].authRequired !== 'undefined')) {
+
+			// Not signed in
+			this.state.selfElement.removeAttribute("disabled");
+			this.state.selfElement.setAttribute("aria-label", "Sign in to Sourcegraph for private repositories");
+			this.state.selfElement.onclick = this.onclick_signIn;
 		} else {
-			return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</span>;
+			if (utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
+				this.state.selfElement.setAttribute("aria-label", "View on Sourcegraph");
+				this.state.selfElement.onclick = this.onclick_fileView;
+			} else {
+				// TODO: Only set style to disabled and log the click event for statistics on unsupported languages?
+				this.state.selfElement.setAttribute("disabled", true);
+
+				if (utils.upcomingExtensions.includes(utils.getPathExtension(this.state.path))) {
+					this.state.selfElement.setAttribute("aria-label", "Language support coming soon!");
+				} else {
+					this.state.selfElement.setAttribute("aria-label", "File not supported");
+				}
+
+				return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</span>;
+			}
 		}
+
+		return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</span>;
 	}
 }
