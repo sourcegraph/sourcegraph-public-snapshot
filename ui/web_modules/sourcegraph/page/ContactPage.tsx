@@ -36,7 +36,7 @@ export function ContactPage(props: {}, {}) {
 				</ul>
 
 				<Heading level="4" underline="blue" className={styles.h5}>Other inquiries</Heading>
-				<p className={styles.p}>For anything else related to Sourcegraph, contact us at <a href="mailto:hi@sourcegraph.com">hi@sourcegraph.com</a>.</p>
+				<p className={styles.p}>For enterprise account inquiries or anything else related to Sourcegraph, contact us at <a href="mailto:hi@sourcegraph.com">hi@sourcegraph.com</a>.</p>
 
 				<Heading level="4" underline="blue" className={styles.h5}>In the real world</Heading>
 				<p className={styles.p}>Sourcegraph<br/>121 2nd St, Suite 200<br/>San Francisco CA, 94105, USA</p>

@@ -134,7 +134,6 @@
 .plan_panel {
 	composes: pt3 pb2 ph3 mb2 br3 from base;
 	composes: tc from typography;
-	min-height: 210px;
 }
 .currency {
 	composes: f3 from typography;
