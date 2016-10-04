@@ -56,7 +56,7 @@ function getFilePath(repo: string, path: string): JSX.Element[] {
 
 		if (isGitHubRepo && i >= 1 && i <= 2) { return <span key={i} />; };
 
-		return item === "github.com"
+		return item === "github.com" && i === 0
 			? <span key={i}>
 				<Link
 					{...hover(subHover)}
