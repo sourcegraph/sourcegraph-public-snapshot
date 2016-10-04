@@ -25,6 +25,7 @@ import (
 // raw query string.
 type query struct {
 	kind   lsp.SymbolKind
+	filter filterType
 	tokens []string
 }
 
@@ -33,17 +34,44 @@ type query struct {
 func parseQuery(q string) query {
 	var qu query
 	toks := tokenizer.Split(strings.ToLower(q), -1)
+	index := 0
 	for _, tok := range toks {
 		if tok == "" {
 			continue
 		}
+		index++
 		if kind, isKeyword := keywords[tok]; isKeyword {
 			qu.kind = kind
-		} else {
-			qu.tokens = append(qu.tokens, tok)
+			continue
 		}
+		if filter, isFilter := parseFilter(tok); isFilter {
+			qu.filter = filter
+			continue
+		}
+		qu.tokens = append(qu.tokens, tok)
 	}
 	return qu
+}
+
+type filterType string
+
+const (
+	filterExported filterType = "exported"
+)
+
+var filters = map[string]filterType{
+	string(filterExported): filterExported,
+}
+
+// parseFilter parses a search query filter token, e.g. "is:exported".
+// Only "is:<filter>" tokens are currently supported.
+func parseFilter(s string) (filterType, bool) {
+	if !strings.HasPrefix(s, "is:") {
+		return "", false
+	}
+	s = strings.TrimPrefix(s, "is:")
+	filter, ok := filters[s]
+	return filter, ok
 }
 
 // keywords are keyword tokens that will be interpreted as symbol kind
@@ -59,7 +87,7 @@ var keywords = map[string]lsp.SymbolKind{
 }
 
 // tokenizer is a regexp for tokenizing a raw user query string.
-var tokenizer = regexp.MustCompile(`[\.\s\/\:]+`)
+var tokenizer = regexp.MustCompile(`[\.\s\/]+`)
 
 // resultSorter is a utility struct for collecting, filtering, and
 // sorting symbol results.
@@ -128,8 +156,13 @@ func score(q query, s lsp.SymbolInformation) (scor int) {
 	}
 	name, container := strings.ToLower(s.Name), strings.ToLower(s.ContainerName)
 	filename := strings.TrimPrefix(strings.ToLower(s.Location.URI), "file://")
+	isVendor := strings.HasPrefix(filename, "vendor/") || strings.Contains(filename, "/vendor/")
+	if q.filter == filterExported && isVendor {
+		// is:exported excludes vendor symbols always.
+		return 0
+	}
 	if len(q.tokens) == 0 { // early return if empty query
-		if strings.HasPrefix(filename, "vendor/") || strings.Contains(filename, "/vendor/") {
+		if isVendor {
 			return 1 // lower score for vendor symbols
 		} else {
 			return 2
@@ -259,6 +292,9 @@ func (h *LangHandler) collectFromPkg(bctx *build.Context, fs *token.FileSet, pkg
 				pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
 			}
 			for _, v := range t.Methods {
+				if results.query.filter == filterExported && (!ast.IsExported(v.Name) || !ast.IsExported(t.Name)) {
+					continue
+				}
 				pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg.ImportPath+" "+t.Name, lsp.SKMethod, fs, v.Decl.Name.NamePos))
 			}
 			for _, v := range t.Consts {
@@ -289,6 +325,9 @@ func (h *LangHandler) collectFromPkg(bctx *build.Context, fs *token.FileSet, pkg
 	}
 
 	for _, sym := range pkgSyms {
+		if results.query.filter == filterExported && !ast.IsExported(sym.Name) {
+			continue
+		}
 		results.Collect(sym)
 	}
 }

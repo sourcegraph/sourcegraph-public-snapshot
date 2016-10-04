@@ -79,6 +79,20 @@ func Test_resultSorter(t *testing.T) {
 			Kind:     lsp.SKFunction,
 		}},
 	}, {
+		// Just tests that 'is:exported' does not affect resultSorter
+		// results, as filtering is done elsewhere in (*LangHandler).collectFromPkg
+		rawQuery: "is:exported",
+		allSymbols: []lsp.SymbolInformation{{
+			ContainerName: "foo", Name: "bar",
+			Location: lsp.Location{URI: "file.go"},
+			Kind:     lsp.SKFunction,
+		}},
+		expResults: []lsp.SymbolInformation{{
+			ContainerName: "foo", Name: "bar",
+			Location: lsp.Location{URI: "file.go"},
+			Kind:     lsp.SKFunction,
+		}},
+	}, {
 		rawQuery: "",
 		allSymbols: []lsp.SymbolInformation{{
 			ContainerName: "foo", Name: "bar",
