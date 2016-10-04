@@ -94,7 +94,10 @@ module.exports = {
 		"./web_modules/sourcegraph/init/browser.tsx",
 	],
 	resolve: {
-		modules: [`${__dirname}/web_modules`, "node_modules"],
+		modules: [
+			`${__dirname}/web_modules`,
+			"node_modules",
+		],
 		extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
 	},
 	devtool: devtool,
