@@ -25,6 +25,25 @@ function cacheKey(model: monaco.editor.IReadOnlyModel, position: monaco.Position
 const hoverCache = new Map<string, any>();
 const defCache = new Map<string, any>();
 
+// HACK: don't show "Right-click to view references" on primitive types; if done properly, this
+// should be determined by a type property on the hover response.
+const refsBlacklist = new Set<string>();
+["true", "false"].forEach((bool) => refsBlacklist.add(`const ${bool} untyped bool`));
+["bool", "string", "int", "int8", "int16", "int64", "uint", "uint8", "uint16", "uint64", "uintptr", "byte", "rune", "float32", "float64", "complex64", "complex128"].forEach((type) => refsBlacklist.add(`type ${type} ${type}`));
+["append", "cap", "close", "complex", "copy", "delete", "imag", "len", "make", "new", "panic", "print", "println", "real", "recover"].forEach((builtin) => refsBlacklist.add(`builtin ${builtin}`));
+function isPrimitive(contents: any[]): boolean {
+	for (let content of contents) {
+		if (content instanceof String) {
+			if (refsBlacklist.has(content as string)) {
+				return true;
+			}
+		} else if (refsBlacklist.has(content.value)) {
+			return true;
+		}
+	}
+
+	return false;
+}
 
 // Editor wraps the Monaco code editor.
 export class Editor implements monaco.IDisposable {
@@ -177,7 +196,6 @@ export class Editor implements monaco.IDisposable {
 					return null;
 				}
 				const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
-				console.log("LOCS", locs);
 				const translatedLocs: monaco.languages.Location[] = locs
 					.filter((loc) => Object.keys(loc).length !== 0)
 					.map(lsp.toMonacoLocation);
@@ -214,7 +232,9 @@ export class Editor implements monaco.IDisposable {
 					range = new monaco.Range(position.lineNumber, word ? word.startColumn : position.column, position.lineNumber, word ? word.endColumn : position.column);
 				}
 				const contents = resp.result.contents instanceof Array ? resp.result.contents : [resp.result.contents];
-				contents.push("*Right-click to view references*");
+				if (!isPrimitive(contents)) {
+					contents.push("*Right-click to view references*");
+				}
 				const hover: monaco.languages.Hover = {
 					contents: contents,
 					range,
