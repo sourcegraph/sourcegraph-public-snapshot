@@ -168,7 +168,6 @@ export default class BlobAnnotator extends Component {
 		setTimeout(() => this._addAnnotations(this.state), 500);
 	}
 
-
 	_isSplitDiff() {
 		if (this.state.isPullRequest) {
 			const headerBar = document.getElementsByClassName("float-right pr-review-tools");
@@ -261,7 +260,7 @@ export default class BlobAnnotator extends Component {
 
 			// Not signed in
 			this.state.selfElement.removeAttribute("disabled");
-			this.state.selfElement.setAttribute("aria-label", "Sign in to Sourcegraph for private repositories");
+			this.state.selfElement.setAttribute("aria-label", `Authorize Sourcegraph for ${this.state.repoURI.split("github.com/")[1]}`);
 			this.state.selfElement.onclick = this.onclick_signIn;
 		} else {
 			if (utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
