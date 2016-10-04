@@ -28,6 +28,7 @@ func TestIntegration(t *testing.T) {
 		wantHover      map[string]string
 		wantDefinition map[string]string
 		wantReferences map[string][]string
+		wantSymbols    map[string][]string
 	}{
 		"git://github.com/gorilla/mux?0a192a193177452756c362c20087ddafcf6829c4": {
 			mode: "go",
@@ -86,6 +87,9 @@ func TestIntegration(t *testing.T) {
 					"git://github.com/golang/go?go1.7.1#src/net/http/transport_test.go:478:5",
 					"git://github.com/golang/go?go1.7.1#src/net/http/transport_test.go:532:5",
 				},
+			},
+			wantSymbols: map[string][]string{
+				"Sum256": []string{"git://github.com/golang/go?go1.7.1#src/crypto/sha256/sha256.go:function:sha256.Sum256"},
 			},
 		},
 		"git://github.com/docker/machine?e1a03348ad83d8e8adb19d696bc7bcfb18ccd770": {
@@ -152,6 +156,12 @@ func TestIntegration(t *testing.T) {
 			for pos, want := range test.wantReferences {
 				t.Run(fmt.Sprintf("references-%s", pos), func(t *testing.T) {
 					referencesTest(t, ctx, c, root, pos, want)
+				})
+			}
+
+			for query, want := range test.wantSymbols {
+				t.Run(fmt.Sprintf("symbols(q=%q)", query), func(t *testing.T) {
+					symbolsTest(t, ctx, c, root, query, want)
 				})
 			}
 		})

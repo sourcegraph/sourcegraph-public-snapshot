@@ -2,7 +2,6 @@ package golang
 
 import (
 	"context"
-	"fmt"
 	"go/ast"
 	"go/build"
 	"go/doc"
@@ -191,13 +190,18 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2Conn, req *
 		fs := token.NewFileSet()
 		rootPath := h.filePath(h.init.RootPath)
 		bctx := h.overlayBuildContext(ctx, h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
-		rootpkg, err := filepath.Rel(filepath.Join(bctx.GOPATH, "src"), rootPath)
-		if err != nil {
-			return nil, fmt.Errorf("workspace root path was not relative to $GOPATH/src: %s", err)
+
+		var pkgPat string
+		if h.init.RootImportPath == "" {
+			// Go stdlib (empty root import path)
+			pkgPat = "..."
+		} else {
+			// All other Go packages.
+			pkgPat = h.init.RootImportPath + "/..."
 		}
 
 		var wg sync.WaitGroup
-		pkgs := buildutil.ExpandPatterns(bctx, []string{fmt.Sprintf("%s/...", rootpkg)})
+		pkgs := buildutil.ExpandPatterns(bctx, []string{pkgPat})
 		for pkg := range pkgs {
 			wg.Add(1)
 			go func(pkg string) {
