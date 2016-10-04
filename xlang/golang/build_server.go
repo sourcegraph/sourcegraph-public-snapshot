@@ -47,12 +47,27 @@ func NewBuildHandler() jsonrpc2.Handler {
 type BuildHandler struct {
 	lang *LangHandler
 
-	mu sync.Mutex
+	mu                    sync.Mutex
+	fetchAndSendDepsOnces map[string]*sync.Once // key is file URI
 	handlerCommon
 	*handlerShared
 	init           *lspx.InitializeParams // set by "initialize" request
 	rootImportPath string                 // root import path of the workspace (e.g., "github.com/foo/bar")
 	depsDone       bool                   // deps have been fetched and sent to the lang server
+}
+
+func (h *BuildHandler) fetchAndSendDepsOnce(fileURI string) *sync.Once {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.fetchAndSendDepsOnces == nil {
+		h.fetchAndSendDepsOnces = map[string]*sync.Once{}
+	}
+	once, ok := h.fetchAndSendDepsOnces[fileURI]
+	if !ok {
+		once = new(sync.Once)
+		h.fetchAndSendDepsOnces[fileURI] = once
+	}
+	return once
 }
 
 const (
@@ -250,24 +265,12 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 
 		// Fetch transitive dependencies for the named files, if this
 		// is a language analysis request.
-		fetchAndSendDeps := func() error {
-			// TODO(sqs): this lock will have bad perf implications, make it finer
-			h.mu.Lock()
-			defer h.mu.Unlock()
-			if h.depsDone {
-				return nil
-			}
-
-			for _, uri := range urisInRequest {
+		for _, uri := range urisInRequest {
+			h.fetchAndSendDepsOnce(uri).Do(func() {
 				if err := h.fetchTransitiveDepsOfFile(ctx, uri); err != nil {
 					log.Printf("Warning: fetching deps for Go file %q: %s.", uri, err)
 				}
-			}
-			h.depsDone = true
-			return nil
-		}
-		if err := fetchAndSendDeps(); err != nil {
-			return nil, err
+			})
 		}
 
 		var result interface{}
