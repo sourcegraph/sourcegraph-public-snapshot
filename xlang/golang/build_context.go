@@ -44,6 +44,8 @@ func (h *handlerShared) overlayBuildContext(ctx context.Context, orig *build.Con
 		fs = mfs
 	}
 
+	fs = addSysZversionFile(fs)
+
 	return fsBuildContext(ctx, orig, fs)
 }
 

@@ -153,21 +153,7 @@ func (h *BuildHandler) fetchDep(ctx context.Context, d *directory) error {
 	}
 
 	if _, isStdlib := stdlibPackagePaths[d.importPath]; isStdlib {
-		// The zversion.go file is generated during the Go release
-		// process and does not exist in the VCS repo archive zips. We
-		// need to create it here, or else we'll see typechecker
-		// errors like "StackGuardMultiplier not declared by package
-		// sys."
-		fs = ctxvfs.SingleFileOverlay(fs,
-			"/src/runtime/internal/sys/zversion.go",
-			[]byte(fmt.Sprintf(`
-package sys
-
-const DefaultGoroot = %q
-const TheVersion = %q
-const Goexperiment=""
-const StackGuardMultiplier=1`,
-				goroot, runtime.Version())))
+		fs = addSysZversionFile(fs)
 	}
 
 	var oldPath string
