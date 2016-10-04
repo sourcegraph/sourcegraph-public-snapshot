@@ -171,42 +171,45 @@ func VerifyActorHasReadAccess(ctx context.Context, actor *auth.Actor, method str
 // Unlike other access functions, this function does not return an
 // error when there is a permission-denied error for one of the
 // repositories. Instead, the first return value is the list of
-// repositories to which access is allowed. If permission was denied
-// for any repository, this list will be shorter than the repos
-// argument. If there is any error in determining the list of allowed
-// repositories, the second return value will be non-nil error.
+// repositories to which access is allowed (input order is preserved).
+// If permission was denied for any repository, this list will be
+// shorter than the repos argument. If there is any error in
+// determining the list of allowed repositories, the second return
+// value will be non-nil error.
 func VerifyUserHasReadAccessAll(ctx context.Context, method string, repos []*sourcegraph.Repo) (allowed []*sourcegraph.Repo, err error) {
 	if skip(ctx) {
 		return repos, nil
 	}
 
-	var privateRepos []*sourcegraph.Repo
+	hasPrivate := false
 	for _, repo := range repos {
-		if repo.Private { // only check access if repository is marked "Private"
-			privateRepos = append(privateRepos, repo)
-		} else {
-			allowed = append(allowed, repo)
+		if repo.Private {
+			hasPrivate = true
+			break
 		}
 	}
 
-	// If private repositories exist, list all accessible GitHub
-	// repositories and cross-check against that list.
-	if len(privateRepos) > 0 {
-		ghrepoURIs := make(map[string]struct{})
+	privateGHRepoURIs := map[string]struct{}{}
+	if hasPrivate {
 		ghrepos, err := github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{Type: "private"})
 		if err != nil {
 			return nil, fmt.Errorf("could not list all accessible GitHub repositories: %s", err)
 		}
 		for _, ghrepo := range ghrepos {
-			ghrepoURIs[ghrepo.URI] = struct{}{}
-		}
-
-		for _, repo := range privateRepos {
-			if _, isGitHubAccessible := ghrepoURIs[repo.URI]; isGitHubAccessible {
-				allowed = append(allowed, repo)
-			}
+			privateGHRepoURIs[ghrepo.URI] = struct{}{}
 		}
 	}
+
+	for _, repo := range repos {
+		if repo.Private {
+			if _, authorized := privateGHRepoURIs[repo.URI]; authorized {
+				allowed = append(allowed, repo)
+			}
+		} else {
+			allowed = append(allowed, repo)
+		}
+	}
+
 	return allowed, nil
 }
 
