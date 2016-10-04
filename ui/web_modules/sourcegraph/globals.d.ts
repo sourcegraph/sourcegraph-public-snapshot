@@ -47,6 +47,10 @@ declare module "fs" {
 	export default {} as any;
 }
 
+declare module "url" {
+	export function parse(url: string): any;
+}
+
 declare module "child_process" {
 	export default {} as any;
 }
