@@ -1,5 +1,7 @@
 // tslint:disable no-namespace
 
+import {parse} from "url";
+
 // A URI in Sourcegraph refers to a (file) path and revision in a
 // repository. For example:
 //
@@ -86,8 +88,9 @@ export class URI {
 		if (dispURI.query.indexOf("refsDisp") === -1) {
 			return dispURI;
 		}
-		let query = new (global as any).URLSearchParams(dispURI.query);
-		let rev = query.get("q") ? query.get("q") : "";
+		let url = parse(dispURI.toString());
+		let query = url.query;
+		let rev = query["q"] ? query["q"] : "";
 		let sepIdx = dispURI.path.indexOf("/ ");
 		let repo = dispURI.path.slice(0, sepIdx);
 		let filepath = dispURI.path.slice(sepIdx + 2);
