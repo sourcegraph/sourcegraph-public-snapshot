@@ -67,7 +67,9 @@ func TestIntegration(t *testing.T) {
 				"csrf.go:57:28": "git://github.com/gorilla/securecookie?HEAD#securecookie.go:154:6", // diff repo
 			},
 		},
-		"git://github.com/golang/go?go1.7.1": {
+		"git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171": {
+			// SHA is equivalent to go1.7.1 tag, but make sure we
+			// retain the original rev spec in definition results.
 			mode: "go",
 			wantHover: map[string]string{
 				"src/encoding/hex/hex.go:70:12":  "func fromHexChar(c byte) (byte, bool)", // func decl
@@ -75,21 +77,21 @@ func TestIntegration(t *testing.T) {
 				"src/net/http/server.go:78:32":   "type Request struct{...",
 			},
 			wantDefinition: map[string]string{
-				"src/encoding/hex/hex.go:70:12":  "git://github.com/golang/go?go1.7.1#src/encoding/hex/hex.go:70:6", // func decl
-				"src/encoding/hex/hex.go:104:18": "git://github.com/golang/go?go1.7.1#src/bytes/buffer.go:17:6",     // stdlib type
+				"src/encoding/hex/hex.go:70:12":  "git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/encoding/hex/hex.go:70:6", // func decl
+				"src/encoding/hex/hex.go:104:18": "git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/bytes/buffer.go:17:6",     // stdlib type
 			},
 			wantReferences: map[string][]string{
 				"src/net/http/httptest/server.go:204:25": []string{ // httptest.Server
-					"git://github.com/golang/go?go1.7.1#src/net/http/httptest/server.go:204:18",
-					"git://github.com/golang/go?go1.7.1#src/net/http/httptest/server_test.go:92:5",
-					"git://github.com/golang/go?go1.7.1#src/net/http/serve_test.go:2625:7",
-					"git://github.com/golang/go?go1.7.1#src/net/http/transport_test.go:2553:6",
-					"git://github.com/golang/go?go1.7.1#src/net/http/transport_test.go:478:5",
-					"git://github.com/golang/go?go1.7.1#src/net/http/transport_test.go:532:5",
+					"git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/net/http/httptest/server.go:204:18",
+					"git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/net/http/httptest/server_test.go:92:5",
+					"git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/net/http/serve_test.go:2625:7",
+					"git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/net/http/transport_test.go:2553:6",
+					"git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/net/http/transport_test.go:478:5",
+					"git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/net/http/transport_test.go:532:5",
 				},
 			},
 			wantSymbols: map[string][]string{
-				"Sum256": []string{"git://github.com/golang/go?go1.7.1#src/crypto/sha256/sha256.go:function:sha256.Sum256"},
+				"Sum256": []string{"git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/crypto/sha256/sha256.go:function:sha256.Sum256"},
 			},
 		},
 		"git://github.com/docker/machine?e1a03348ad83d8e8adb19d696bc7bcfb18ccd770": {

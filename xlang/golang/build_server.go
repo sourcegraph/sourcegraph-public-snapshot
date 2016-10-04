@@ -314,6 +314,15 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri string) (string, error) {
 		// Refers to a file in the Go stdlib?
 		if pathHasPrefix(u.Path, goroot) {
 			fileInGoStdlib := pathTrimPrefix(u.Path, goroot)
+			if h.rootImportPath == "" {
+				// The workspace is the Go stdlib and this refers to
+				// something in the Go stdlib, so let's use file:///
+				// so that the LSP proxy adds our current rev, instead
+				// of using runtime.Version() (which is not
+				// necessarily the commit of the Go stdlib we're
+				// analyzing).
+				return "file:///" + fileInGoStdlib, nil
+			}
 			return "git://github.com/golang/go?" + runtime.Version() + "#" + fileInGoStdlib, nil
 		}
 
