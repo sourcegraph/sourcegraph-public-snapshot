@@ -2,7 +2,6 @@ package xlang_test
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"os"
 	"strings"
@@ -143,29 +142,7 @@ func TestIntegration(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			for pos, want := range test.wantHover {
-				t.Run(fmt.Sprintf("hover-%s", strings.Replace(pos, "/", "-", -1)), func(t *testing.T) {
-					hoverTest(t, ctx, c, root, pos, want)
-				})
-			}
-
-			for pos, want := range test.wantDefinition {
-				t.Run(fmt.Sprintf("definition-%s", strings.Replace(pos, "/", "-", -1)), func(t *testing.T) {
-					definitionTest(t, ctx, c, root, pos, want)
-				})
-			}
-
-			for pos, want := range test.wantReferences {
-				t.Run(fmt.Sprintf("references-%s", pos), func(t *testing.T) {
-					referencesTest(t, ctx, c, root, pos, want)
-				})
-			}
-
-			for query, want := range test.wantSymbols {
-				t.Run(fmt.Sprintf("symbols(q=%q)", query), func(t *testing.T) {
-					symbolsTest(t, ctx, c, root, query, want)
-				})
-			}
+			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantReferences, test.wantSymbols)
 		})
 	}
 }
