@@ -194,6 +194,10 @@ export const RepoBackend = {
 		if (payload instanceof RepoActions.WantSymbols) {
 			const action = payload;
 
+			let symbols = RepoStore.symbols.list(payload.repo, payload.rev, payload.query);
+			if (symbols !== null) {
+				return;
+			}
 			lsp.sendExt(`git:\/\/${action.repo}?${action.rev}`, "go", "workspace/symbol", { query: action.query, limit: 100 })
 				.then((r) => {
 					let result = r.result;
