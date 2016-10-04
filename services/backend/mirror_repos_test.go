@@ -13,10 +13,10 @@ import (
 )
 
 func TestRefreshVCS(t *testing.T) {
-	ctx, mock := testContext()
+	ctx, _ := testContext()
 	var updatedEverything bool
-	mock.stores.Repos.MockGet(t, 1)
-	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
+	localstore.Mocks.Repos.MockGet(t, 1)
+	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		Branches_: func(ctx context.Context, _ vcs.BranchesOptions) ([]*vcs.Branch, error) {
 			return []*vcs.Branch{}, nil
 		},
@@ -25,7 +25,7 @@ func TestRefreshVCS(t *testing.T) {
 			return &vcs.UpdateResult{Changes: []vcs.Change{}}, nil
 		},
 	})
-	calledInternalUpdate := mock.stores.Repos.MockInternalUpdate(t)
+	calledInternalUpdate := localstore.Mocks.Repos.MockInternalUpdate(t)
 
 	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
 	if !updatedEverything {
@@ -42,21 +42,21 @@ func TestRefreshVCS(t *testing.T) {
 func TestRefreshVCS_cloneRepo(t *testing.T) {
 	ctx, mock := testContext()
 	var cloned bool
-	mock.stores.Repos.MockGet(t, 1)
+	localstore.Mocks.Repos.MockGet(t, 1)
 	mock.servers.Repos.MockResolveRev_NoCheck(t, "deadbeef")
-	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
+	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		Branches_: func(ctx context.Context, _ vcs.BranchesOptions) ([]*vcs.Branch, error) {
 			return nil, vcs.RepoNotExistError{}
 		},
 	})
-	mock.stores.RepoVCS.Clone = func(_ context.Context, _ int32, _ *localstore.CloneInfo) error {
+	localstore.Mocks.RepoVCS.Clone = func(_ context.Context, _ int32, _ *localstore.CloneInfo) error {
 		cloned = true
 		return nil
 	}
 	mock.servers.Async.RefreshIndexes_ = func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
 		return &pbtypes.Void{}, nil
 	}
-	calledInternalUpdate := mock.stores.Repos.MockInternalUpdate(t)
+	calledInternalUpdate := localstore.Mocks.Repos.MockInternalUpdate(t)
 
 	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
 	if !cloned {
@@ -72,20 +72,20 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 
 func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 	ctx, mock := testContext()
-	mock.stores.Repos.MockGet(t, 1)
+	localstore.Mocks.Repos.MockGet(t, 1)
 	mock.servers.Repos.MockResolveRev_NoCheck(t, "deadbeef")
-	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
+	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		Branches_: func(ctx context.Context, _ vcs.BranchesOptions) ([]*vcs.Branch, error) {
 			return nil, vcs.RepoNotExistError{}
 		},
 	})
-	mock.stores.RepoVCS.Clone = func(_ context.Context, _ int32, _ *localstore.CloneInfo) error {
+	localstore.Mocks.RepoVCS.Clone = func(_ context.Context, _ int32, _ *localstore.CloneInfo) error {
 		return vcs.ErrRepoExist
 	}
 	mock.servers.Async.RefreshIndexes_ = func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
 		return &pbtypes.Void{}, nil
 	}
-	calledInternalUpdate := mock.stores.Repos.MockInternalUpdate(t)
+	calledInternalUpdate := localstore.Mocks.Repos.MockInternalUpdate(t)
 
 	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
 	if err != nil {

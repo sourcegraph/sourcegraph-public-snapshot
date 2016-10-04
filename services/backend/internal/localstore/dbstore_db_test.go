@@ -6,7 +6,6 @@ import (
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testdb"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
-	githubmock "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/mocks"
 )
 
 func init() {
@@ -23,6 +22,8 @@ func testContext() (ctx context.Context, done func()) {
 	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test"})
 	ctx = accesscontrol.WithInsecureSkip(ctx, true)
 
+	Mocks = MockStores{}
+
 	appDBH, appDBDone := testdb.NewHandle("app", &AppSchema)
 	graphDBH, graphDBDone := testdb.NewHandle("graph", &GraphSchema)
 
@@ -32,9 +33,4 @@ func testContext() (ctx context.Context, done func()) {
 		appDBDone()
 		graphDBDone()
 	}
-}
-
-type mocks struct {
-	MockStores
-	githubRepos githubmock.GitHubRepoGetter
 }

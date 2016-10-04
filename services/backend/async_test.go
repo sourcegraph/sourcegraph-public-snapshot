@@ -41,7 +41,7 @@ func TestAsyncService_RefreshIndexes(t *testing.T) {
 			Source: "test (UID 1 test)",
 		}),
 	}
-	calledEnqueue := mock.stores.Queue.MockEnqueue(t, job)
+	calledEnqueue := localstore.Mocks.Queue.MockEnqueue(t, job)
 	_, err := s.RefreshIndexes(ctx, op)
 	if err != nil {
 		t.Fatal(err)
@@ -68,9 +68,9 @@ func TestAsyncWorker(t *testing.T) {
 	rcache.SetupForTest("TestAsyncWorker")
 
 	w := &asyncWorker{}
-	ctx, mock := testContext()
+	ctx, _ := testContext()
 
-	calledLockJob, _, _ := mock.stores.Queue.MockLockJob_Return(t, nil)
+	calledLockJob, _, _ := localstore.Mocks.Queue.MockLockJob_Return(t, nil)
 	didWork := w.try(ctx)
 	if didWork {
 		t.Error("did work with an empty queue")
@@ -79,7 +79,7 @@ func TestAsyncWorker(t *testing.T) {
 		t.Error("did not call LockJob")
 	}
 
-	calledLockJob, calledSuccess, calledError := mock.stores.Queue.MockLockJob_Return(t, &localstore.Job{Type: "NOOP"})
+	calledLockJob, calledSuccess, calledError := localstore.Mocks.Queue.MockLockJob_Return(t, &localstore.Job{Type: "NOOP"})
 	didWork = w.try(ctx)
 	if !didWork {
 		t.Error("did not do work")
@@ -94,7 +94,7 @@ func TestAsyncWorker(t *testing.T) {
 		t.Error("job should of succeeded")
 	}
 
-	calledLockJob, calledSuccess, calledError = mock.stores.Queue.MockLockJob_Return(t, &localstore.Job{Type: "does not exist"})
+	calledLockJob, calledSuccess, calledError = localstore.Mocks.Queue.MockLockJob_Return(t, &localstore.Job{Type: "does not exist"})
 	didWork = w.try(ctx)
 	if !didWork {
 		t.Error("did not do work")
@@ -150,7 +150,7 @@ func TestAsyncWorker_mutex(t *testing.T) {
 		Repo:                wantRepo,
 		RefreshRefLocations: true,
 	})
-	calledEnqueue := mock2.stores.Queue.MockEnqueue(t, &localstore.Job{
+	calledEnqueue := localstore.Mocks.Queue.MockEnqueue(t, &localstore.Job{
 		Type: "RefreshIndexes",
 		Args: mustMarshal(t, &sourcegraph.AsyncRefreshIndexesOp{
 			Repo:   wantRepo,

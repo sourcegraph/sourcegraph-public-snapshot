@@ -60,8 +60,8 @@ func fromResolution(r *unit.Resolution) *resolution {
 type globalDeps struct{}
 
 func (g *globalDeps) Upsert(ctx context.Context, resolutions []*unit.Resolution) error {
-	if TestMockGlobalDeps != nil {
-		return TestMockGlobalDeps.Upsert(ctx, resolutions)
+	if Mocks.GlobalDeps.Upsert != nil {
+		return Mocks.GlobalDeps.Upsert(ctx, resolutions)
 	}
 
 	for _, res_ := range resolutions {
@@ -104,8 +104,8 @@ WHERE NOT EXISTS (SELECT * FROM upsert);`
 }
 
 func (g *globalDeps) Resolve(ctx context.Context, raw *unit.Key) ([]unit.Key, error) {
-	if TestMockGlobalDeps != nil {
-		return TestMockGlobalDeps.Resolve(ctx, raw)
+	if Mocks.GlobalDeps.Resolve != nil {
+		return Mocks.GlobalDeps.Resolve(ctx, raw)
 	}
 
 	if raw.IsResolved() {
@@ -140,8 +140,6 @@ func (g *globalDeps) Resolve(ctx context.Context, raw *unit.Key) ([]unit.Key, er
 	}
 	return resolved, nil
 }
-
-var TestMockGlobalDeps *MockGlobalDeps
 
 type MockGlobalDeps struct {
 	Upsert  func(ctx context.Context, resolutions []*unit.Resolution) error

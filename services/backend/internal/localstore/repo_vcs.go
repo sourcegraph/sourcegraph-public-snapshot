@@ -31,8 +31,8 @@ func getRepoDir(ctx context.Context, repo int32) (string, error) {
 }
 
 func (s *repoVCS) Open(ctx context.Context, repo int32) (vcs.Repository, error) {
-	if TestMockRepoVCS != nil {
-		return TestMockRepoVCS.Open(ctx, repo)
+	if Mocks.RepoVCS.Open != nil {
+		return Mocks.RepoVCS.Open(ctx, repo)
 	}
 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoVCS.Open", repo); err != nil {
@@ -57,8 +57,8 @@ type CloneInfo struct {
 }
 
 func (s *repoVCS) Clone(ctx context.Context, repo int32, info *CloneInfo) error {
-	if TestMockRepoVCS != nil {
-		return TestMockRepoVCS.Clone(ctx, repo, info)
+	if Mocks.RepoVCS.Clone != nil {
+		return Mocks.RepoVCS.Clone(ctx, repo, info)
 	}
 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoVCS.Clone", repo); err != nil {
@@ -71,8 +71,6 @@ func (s *repoVCS) Clone(ctx context.Context, repo int32, info *CloneInfo) error 
 
 	return gitserver.DefaultClient.Clone(ctx, dir, info.CloneURL, &info.RemoteOpts)
 }
-
-var TestMockRepoVCS *MockRepoVCS
 
 type MockRepoVCS struct {
 	Open  func(ctx context.Context, repo int32) (vcs.Repository, error)

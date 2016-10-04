@@ -11,15 +11,14 @@ import (
 )
 
 func TestInstrumentQueue(t *testing.T) {
-	TestMockQueue = &MockQueue{}
-	defer func() { TestMockQueue = nil }()
+	Mocks = MockStores{}
 
 	q := instrumentedQueue{}
 	ctx := context.Background()
 
 	// Enqueue
 	want := &Job{Type: "test"}
-	called := TestMockQueue.MockEnqueue(t, want)
+	called := Mocks.Queue.MockEnqueue(t, want)
 	if err := q.Enqueue(ctx, want); err != nil {
 		t.Fatal(err)
 	}
@@ -28,7 +27,7 @@ func TestInstrumentQueue(t *testing.T) {
 	}
 
 	// LockJob
-	called, calledSuccess, calledError := TestMockQueue.MockLockJob_Return(t, want)
+	called, calledSuccess, calledError := Mocks.Queue.MockLockJob_Return(t, want)
 	got, err := q.LockJob(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -68,8 +67,7 @@ func TestInstrumentQueue(t *testing.T) {
 }
 
 func TestQueueStatsCollector(t *testing.T) {
-	TestMockQueue = &MockQueue{}
-	defer func() { TestMockQueue = nil }()
+	Mocks = MockStores{}
 
 	stats := map[string]QueueStats{
 		"a": QueueStats{
@@ -80,7 +78,7 @@ func TestQueueStatsCollector(t *testing.T) {
 			NumJobs: 1,
 		},
 	}
-	TestMockQueue.Stats = func(_ context.Context) (map[string]QueueStats, error) {
+	Mocks.Queue.Stats = func(_ context.Context) (map[string]QueueStats, error) {
 		return stats, nil
 	}
 

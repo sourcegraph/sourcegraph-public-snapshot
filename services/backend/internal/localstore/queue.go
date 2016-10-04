@@ -83,8 +83,8 @@ type queue struct{}
 
 // Enqueue puts j onto the queue
 func (q *queue) Enqueue(ctx context.Context, j *Job) error {
-	if TestMockQueue != nil {
-		return TestMockQueue.Enqueue(ctx, j)
+	if Mocks.Queue.Enqueue != nil {
+		return Mocks.Queue.Enqueue(ctx, j)
 	}
 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Queue.Enqueue."+j.Type, nil); err != nil {
@@ -101,8 +101,8 @@ func (q *queue) Enqueue(ctx context.Context, j *Job) error {
 // jobs. You must call LockedJob.MarkSuccess or LockedJob.MarkError
 // when done.
 func (q *queue) LockJob(ctx context.Context) (*LockedJob, error) {
-	if TestMockQueue != nil {
-		return TestMockQueue.LockJob(ctx)
+	if Mocks.Queue.LockJob != nil {
+		return Mocks.Queue.LockJob(ctx)
 	}
 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Queue.LockJob", nil); err != nil {
@@ -132,8 +132,8 @@ func (q *queue) LockJob(ctx context.Context) (*LockedJob, error) {
 
 // Stats returns statistics about the queue per Job Type
 func (q *queue) Stats(ctx context.Context) (map[string]QueueStats, error) {
-	if TestMockQueue != nil {
-		return TestMockQueue.Stats(ctx)
+	if Mocks.Queue.Stats != nil {
+		return Mocks.Queue.Stats(ctx)
 	}
 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Queue.Stats", nil); err != nil {
@@ -182,8 +182,6 @@ func (q *queue) client(ctx context.Context) (*que.Client, error) {
 	}
 	return que.NewClient(dbm.Db), nil
 }
-
-var TestMockQueue *MockQueue
 
 type MockQueue struct {
 	Enqueue func(ctx context.Context, j *Job) error

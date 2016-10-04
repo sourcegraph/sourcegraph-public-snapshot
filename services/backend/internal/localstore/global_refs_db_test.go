@@ -29,7 +29,6 @@ func TestGlobalRefs(t *testing.T) {
 	g := &globalRefs{}
 
 	ctx, done := testContext()
-	var mocks *mocks // FIXME
 	defer done()
 
 	createdRepos := (&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "x/y"}, &sourcegraph.Repo{URI: "a/b"})
@@ -83,7 +82,7 @@ func TestGlobalRefs(t *testing.T) {
 	addRefs("a/b", "a/b/u", "t", testRefs1)
 	addRefs("a/b", "a/b/p", "t", testRefs2)
 	addRefs("x/y", "x/y/c", "t", testRefs3)
-	mockRefs(mocks, allRefs)
+	mockRefs(allRefs)
 	for repo := range allRefs {
 		repoObj, err := (&repos{}).GetByURI(ctx, repo)
 		if err != nil {
@@ -190,7 +189,6 @@ func TestGlobalRefsUpdate(t *testing.T) {
 
 	g := &globalRefs{}
 	ctx, done := testContext()
-	var mocks *mocks // FIXME
 	defer done()
 
 	createdRepos := (&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "def/repo"}, &sourcegraph.Repo{URI: "repo"})
@@ -198,7 +196,7 @@ func TestGlobalRefsUpdate(t *testing.T) {
 	repoID := createdRepos[1].ID
 
 	allRefs := map[string][]*graph.Ref{}
-	mockRefs(mocks, allRefs)
+	mockRefs(allRefs)
 
 	def := sourcegraph.DefSpec{Repo: defRepoID, Unit: "def/unit", UnitType: "def/type", Path: "def/path"}
 	nFiles := 10
@@ -339,7 +337,6 @@ func TestGlobalRefs_version(t *testing.T) {
 
 func benchmarkGlobalRefsGet(b *testing.B) {
 	ctx, done := testContext()
-	var mocks *mocks // FIXME
 	defer done()
 	get := func() error {
 		repo, err := (&repos{}).GetByURI(ctx, "github.com/golang/go")
@@ -353,7 +350,7 @@ func benchmarkGlobalRefsGet(b *testing.B) {
 		b.Log("Loading data into GlobalRefs")
 		nRepos := 10000
 		nRefs := 10
-		globalRefsUpdate(b, ctx, mocks, nRepos, nRefs)
+		globalRefsUpdate(b, ctx, nRepos, nRefs)
 		b.Log("Refreshing")
 		GlobalRefs.StatRefresh(ctx)
 	}
@@ -372,17 +369,16 @@ func benchmarkGlobalRefsGet(b *testing.B) {
 
 func benchmarkGlobalRefsUpdate(b *testing.B) {
 	ctx, done := testContext()
-	var mocks *mocks // FIXME
 	defer done()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		globalRefsUpdate(b, ctx, mocks, 1, 100)
+		globalRefsUpdate(b, ctx, 1, 100)
 	}
 	// defer done() can be expensive
 	b.StopTimer()
 }
 
-func globalRefsUpdate(b *testing.B, ctx context.Context, mocks *mocks, nRepos, nRefs int) {
+func globalRefsUpdate(b *testing.B, ctx context.Context, nRepos, nRefs int) {
 	allRefs := map[string][]*graph.Ref{}
 	for i := 0; i < nRepos; i++ {
 		pkg := fmt.Sprintf("foo.com/foo/bar%d", i)
@@ -407,7 +403,7 @@ func globalRefsUpdate(b *testing.B, ctx context.Context, mocks *mocks, nRepos, n
 		repoRefs = append(repoRefs, refs...)
 		allRefs[pkg] = repoRefs
 	}
-	mockRefs(mocks, allRefs)
+	mockRefs(allRefs)
 	for i := 0; i < nRepos; i++ {
 		pkg := fmt.Sprintf("foo.com/foo/bar%d", i)
 		repoObj, err := (&repos{}).GetByURI(ctx, pkg)
@@ -420,8 +416,8 @@ func globalRefsUpdate(b *testing.B, ctx context.Context, mocks *mocks, nRepos, n
 	}
 }
 
-func mockRefs(mocks *mocks, allRefs map[string][]*graph.Ref) {
-	mocks.Graph.Refs_ = func(f ...sstore.RefFilter) ([]*graph.Ref, error) {
+func mockRefs(allRefs map[string][]*graph.Ref) {
+	Mocks.Graph.Refs_ = func(f ...sstore.RefFilter) ([]*graph.Ref, error) {
 		if len(f) != 1 {
 			return nil, errors.New("mockRefs: Expected only 1 filter")
 		}
@@ -434,10 +430,10 @@ func mockRefs(mocks *mocks, allRefs map[string][]*graph.Ref) {
 		}
 		return allRefs[repos[0]], nil
 	}
-	mocks.Repos.Get = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
+	Mocks.Repos.Get = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
 		return &sourcegraph.Repo{}, nil
 	}
-	mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+	Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return sgtest.MockRepository{
 			ResolveRevision_: func(ctx context.Context, spec string) (vcs.CommitID, error) {
 				return "aaaa", nil

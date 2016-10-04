@@ -35,8 +35,8 @@ func (c *dbRepoConfig) fromRepoConfig(repo int32, c2 *sourcegraph.RepoConfig) {
 type repoConfigs struct{}
 
 func (s *repoConfigs) Get(ctx context.Context, repo int32) (*sourcegraph.RepoConfig, error) {
-	if TestMockRepoConfigs != nil {
-		return TestMockRepoConfigs.Get(ctx, repo)
+	if Mocks.RepoConfigs.Get != nil {
+		return Mocks.RepoConfigs.Get(ctx, repo)
 	}
 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoConfigs.Get", repo); err != nil {
@@ -52,8 +52,8 @@ func (s *repoConfigs) Get(ctx context.Context, repo int32) (*sourcegraph.RepoCon
 }
 
 func (s *repoConfigs) Update(ctx context.Context, repo int32, conf sourcegraph.RepoConfig) error {
-	if TestMockRepoConfigs != nil {
-		return TestMockRepoConfigs.Update(ctx, repo, conf)
+	if Mocks.RepoConfigs.Update != nil {
+		return Mocks.RepoConfigs.Update(ctx, repo, conf)
 	}
 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoConfigs.Update", repo); err != nil {
@@ -71,8 +71,6 @@ func (s *repoConfigs) Update(ctx context.Context, repo int32, conf sourcegraph.R
 	}
 	return nil
 }
-
-var TestMockRepoConfigs *MockRepoConfigs
 
 type MockRepoConfigs struct {
 	Get    func(ctx context.Context, repo int32) (*sourcegraph.RepoConfig, error)

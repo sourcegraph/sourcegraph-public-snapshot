@@ -11,6 +11,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -67,7 +68,7 @@ func TestDefsService_ListAuthors(t *testing.T) {
 	}})
 	var calledVCSRepoBlameFile bool
 	mock.servers.Repos.MockGet_Return(t, &sourcegraph.Repo{ID: 1, URI: "r"})
-	mock.stores.RepoVCS.MockOpen(t, 1, vcstesting.MockRepository{
+	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstesting.MockRepository{
 		BlameFile_: func(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
 			calledVCSRepoBlameFile = true
 			return []*vcs.Hunk{

@@ -11,7 +11,6 @@ func TestQueue_LockJob_AlreadyLocked(t *testing.T) {
 	q := &queue{}
 	ctx, done := testContext()
 	defer done()
-	TestMockQueue = nil
 
 	if err := q.Enqueue(ctx, &Job{Type: "MyJob"}); err != nil {
 		t.Fatal(err)
@@ -43,7 +42,6 @@ func TestQueue_LockJob_BoundedAttempts(t *testing.T) {
 	q := &queue{}
 	ctx, done := testContext()
 	defer done()
-	TestMockQueue = nil
 
 	if err := q.Enqueue(ctx, &Job{Type: "MyJob"}); err != nil {
 		t.Fatal(err)
@@ -103,7 +101,6 @@ func TestQueue_Stats(t *testing.T) {
 	q := &queue{}
 	ctx, done := testContext()
 	defer done()
-	TestMockQueue = nil
 
 	push := func(qt string) {
 		if err := q.Enqueue(ctx, &Job{Type: qt}); err != nil {

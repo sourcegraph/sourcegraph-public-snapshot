@@ -189,8 +189,8 @@ type DefSearchOp struct {
 }
 
 func (s *defs) Search(ctx context.Context, op DefSearchOp) (*sourcegraph.SearchResultsList, error) {
-	if TestMockDefs != nil {
-		return TestMockDefs.Search(ctx, op)
+	if Mocks.Defs.Search != nil {
+		return Mocks.Defs.Search(ctx, op)
 	}
 
 	startTime := time.Now()
@@ -415,8 +415,8 @@ type RefreshIndexOp struct {
 
 // Update syncs data from universe into the defs2 table
 func (s *defs) Update(ctx context.Context, op RefreshIndexOp) error {
-	if TestMockDefs != nil {
-		return TestMockDefs.Update(ctx, op)
+	if Mocks.Defs.Update != nil {
+		return Mocks.Defs.Update(ctx, op)
 	}
 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.Update", op.Repo); err != nil {
@@ -920,8 +920,6 @@ func init() {
 	prometheus.MustRegister(defsSearchResultsLength)
 	prometheus.MustRegister(defsSearchResultsNone)
 }
-
-var TestMockDefs *MockDefs
 
 type MockDefs struct {
 	Search func(ctx context.Context, op DefSearchOp) (*sourcegraph.SearchResultsList, error)

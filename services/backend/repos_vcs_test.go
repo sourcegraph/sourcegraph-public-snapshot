@@ -11,6 +11,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 )
 
 func TestReposService_resolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
@@ -20,7 +21,7 @@ func TestReposService_resolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) 
 
 	calledGet := mock.servers.Repos.MockGet_Return(t, &sourcegraph.Repo{ID: 1, URI: "r", DefaultBranch: "b"})
 	var calledVCSRepoResolveRevision bool
-	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
+	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (vcs.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return vcs.CommitID(want), nil
@@ -50,7 +51,7 @@ func TestReposService_resolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 
 	calledGet := mock.servers.Repos.MockGet(t, 1)
 	var calledVCSRepoResolveRevision bool
-	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
+	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (vcs.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return vcs.CommitID(want), nil
@@ -79,7 +80,7 @@ func TestReposService_resolveRev_commitIDSpecified_resolvesCommitID(t *testing.T
 
 	calledGet := mock.servers.Repos.MockGet(t, 1)
 	var calledVCSRepoResolveRevision bool
-	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
+	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (vcs.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return vcs.CommitID(want), nil
@@ -108,7 +109,7 @@ func TestReposService_resolveRev_commitIDSpecified_failsToResolve(t *testing.T) 
 
 	calledGet := mock.servers.Repos.MockGet(t, 1)
 	var calledVCSRepoResolveRevision bool
-	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
+	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (vcs.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return "", errors.New("x")
@@ -152,7 +153,7 @@ func Test_Repos_ListCommits(t *testing.T) {
 		}
 		return wantCommits, uint(len(wantCommits)), nil
 	}
-	mock.stores.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+	localstore.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return mockRepo, nil
 	}
 

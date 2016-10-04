@@ -19,15 +19,8 @@ import (
 func testContext() (context.Context, *mocks) {
 	var m mocks
 	ctx := context.Background()
-	localstore.TestMockDefs = &m.stores.Defs
-	localstore.TestMockGlobalDeps = &m.stores.GlobalDeps
-	localstore.TestMockGlobalRefs = &m.stores.GlobalRefs
-	localstore.Graph = &m.stores.Graph
-	localstore.TestMockQueue = &m.stores.Queue
-	localstore.TestMockRepoConfigs = &m.stores.RepoConfigs
-	localstore.TestMockRepoStatuses = &m.stores.RepoStatuses
-	localstore.TestMockRepoVCS = &m.stores.RepoVCS
-	localstore.TestMockRepos = &m.stores.Repos
+	localstore.Mocks = localstore.MockStores{}
+	localstore.Graph = &localstore.Mocks.Graph
 	ctx = svc.WithServices(ctx, m.servers.servers())
 	ctx = github.WithRepos(ctx, &m.githubRepos)
 	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test"})
@@ -37,7 +30,6 @@ func testContext() (context.Context, *mocks) {
 }
 
 type mocks struct {
-	stores      localstore.MockStores
 	servers     mockServers
 	githubRepos githubmock.GitHubRepoGetter
 }

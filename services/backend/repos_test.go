@@ -34,8 +34,8 @@ func TestReposService_Get(t *testing.T) {
 
 	mock.githubRepos.MockGet_Return(ctx, ghrepo)
 
-	calledGet := mock.stores.Repos.MockGet_Return(t, wantRepo)
-	calledUpdate := mock.stores.Repos.MockUpdate(t, 1)
+	calledGet := localstore.Mocks.Repos.MockGet_Return(t, wantRepo)
+	calledUpdate := localstore.Mocks.Repos.MockUpdate(t, 1)
 
 	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: 1})
 	if err != nil {
@@ -67,8 +67,8 @@ func TestReposService_Get_UpdateMeta(t *testing.T) {
 		Description: "This is a repository",
 	})
 
-	calledGet := mock.stores.Repos.MockGet_Return(t, wantRepo)
-	calledUpdate := mock.stores.Repos.MockUpdate(t, 1)
+	calledGet := localstore.Mocks.Repos.MockGet_Return(t, wantRepo)
+	calledUpdate := localstore.Mocks.Repos.MockUpdate(t, 1)
 
 	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: 1})
 	if err != nil {
@@ -103,9 +103,9 @@ func TestReposService_Get_UnauthedUpdateMeta(t *testing.T) {
 		Description: "This is a repository",
 	})
 
-	calledGet := mock.stores.Repos.MockGet_Return(t, wantRepo)
+	calledGet := localstore.Mocks.Repos.MockGet_Return(t, wantRepo)
 	var calledUpdate bool
-	mock.stores.Repos.Update = func(ctx context.Context, op localstore.RepoUpdate) error {
+	localstore.Mocks.Repos.Update = func(ctx context.Context, op localstore.RepoUpdate) error {
 		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo); err != nil {
 			return err
 		}
@@ -145,8 +145,8 @@ func TestReposService_Get_NonGitHub(t *testing.T) {
 
 	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{})
 
-	calledGet := mock.stores.Repos.MockGet_Return(t, wantRepo)
-	calledUpdate := mock.stores.Repos.MockUpdate(t, 1)
+	calledGet := localstore.Mocks.Repos.MockGet_Return(t, wantRepo)
+	calledUpdate := localstore.Mocks.Repos.MockUpdate(t, 1)
 
 	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: 1})
 	if err != nil {
@@ -165,7 +165,7 @@ func TestReposService_Get_NonGitHub(t *testing.T) {
 
 func TestRepos_Create_New(t *testing.T) {
 	var s repos
-	ctx, mock := testContext()
+	ctx, _ := testContext()
 
 	wantRepo := &sourcegraph.Repo{
 		ID:   1,
@@ -174,14 +174,14 @@ func TestRepos_Create_New(t *testing.T) {
 	}
 
 	calledCreate := false
-	mock.stores.Repos.Create = func(ctx context.Context, repo *sourcegraph.Repo) (int32, error) {
+	localstore.Mocks.Repos.Create = func(ctx context.Context, repo *sourcegraph.Repo) (int32, error) {
 		calledCreate = true
 		if repo.URI != wantRepo.URI {
 			t.Errorf("got uri %#v, want %#v", repo.URI, wantRepo.URI)
 		}
 		return wantRepo.ID, nil
 	}
-	mock.stores.Repos.MockGet(t, 1)
+	localstore.Mocks.Repos.MockGet(t, 1)
 
 	_, err := s.Create(ctx, &sourcegraph.ReposCreateOp{
 		Op: &sourcegraph.ReposCreateOp_New{New: &sourcegraph.ReposCreateOp_NewRepo{
@@ -220,14 +220,14 @@ func TestRepos_Create_Origin(t *testing.T) {
 	}
 
 	calledCreate := false
-	mock.stores.Repos.Create = func(ctx context.Context, repo *sourcegraph.Repo) (int32, error) {
+	localstore.Mocks.Repos.Create = func(ctx context.Context, repo *sourcegraph.Repo) (int32, error) {
 		calledCreate = true
 		if !reflect.DeepEqual(repo.Origin, wantRepo.Origin) {
 			t.Errorf("got repo origin %#v, want %#v", repo.Origin, wantRepo.Origin)
 		}
 		return wantRepo.ID, nil
 	}
-	mock.stores.Repos.MockGet(t, 1)
+	localstore.Mocks.Repos.MockGet(t, 1)
 
 	_, err := s.Create(ctx, &sourcegraph.ReposCreateOp{
 		Op: &sourcegraph.ReposCreateOp_Origin{Origin: wantRepo.Origin},
@@ -245,7 +245,7 @@ func TestRepos_Create_Origin(t *testing.T) {
 
 func TestReposService_List(t *testing.T) {
 	var s repos
-	ctx, mock := testContext()
+	ctx, _ := testContext()
 
 	wantRepos := &sourcegraph.RepoList{
 		Repos: []*sourcegraph.Repo{
@@ -254,7 +254,7 @@ func TestReposService_List(t *testing.T) {
 		},
 	}
 
-	calledList := mock.stores.Repos.MockList(t, "r1", "r2")
+	calledList := localstore.Mocks.Repos.MockList(t, "r1", "r2")
 
 	repos, err := s.List(ctx, nil)
 	if err != nil {
@@ -275,7 +275,7 @@ func TestRepos_List_remoteOnly(t *testing.T) {
 	calledListAccessible := mock.githubRepos.MockListAccessible(ctx, []*sourcegraph.Repo{
 		&sourcegraph.Repo{URI: "github.com/is/accessible"},
 	})
-	calledReposStoreList := mock.stores.Repos.MockList(t, "a/b", "github.com/is/accessible", "github.com/not/accessible")
+	calledReposStoreList := localstore.Mocks.Repos.MockList(t, "a/b", "github.com/is/accessible", "github.com/not/accessible")
 	ctx = github.WithMockHasAuthedUser(ctx, true)
 
 	repoList, err := s.List(ctx, &sourcegraph.RepoListOptions{RemoteOnly: true})
@@ -302,7 +302,7 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 	{
 		testcase := "auth'd user (common case)"
 		calledGHSearch := mock.githubRepos.MockSearch(ctx, []*sourcegraph.Repo{{URI: "remote1"}})
-		calledReposList := mock.stores.Repos.MockList(t, "local1")
+		calledReposList := localstore.Mocks.Repos.MockList(t, "local1")
 
 		want := &sourcegraph.RepoList{Repos: []*sourcegraph.Repo{{URI: "local1"}, {URI: "remote1"}}}
 		results, err := s.List(ctx, &sourcegraph.RepoListOptions{RemoteSearch: true, Query: "my query"})
@@ -325,7 +325,7 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 		testcase := "no auth'd user"
 		ctx := authpkg.WithoutActor(ctx) // unauth'd context
 		calledGHSearch := mock.githubRepos.MockSearch(ctx, []*sourcegraph.Repo{{URI: "remote1"}})
-		calledReposList := mock.stores.Repos.MockList(t, "local1")
+		calledReposList := localstore.Mocks.Repos.MockList(t, "local1")
 
 		want := &sourcegraph.RepoList{Repos: []*sourcegraph.Repo{{URI: "local1"}}}
 		results, err := s.List(ctx, &sourcegraph.RepoListOptions{RemoteSearch: true, Query: "my query"})
@@ -346,7 +346,7 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 
 	{
 		testcase := "no dupe when GitHub and Sourcegraph repos overlap"
-		calledReposList := mock.stores.Repos.MockList(t, "r1", "r2")
+		calledReposList := localstore.Mocks.Repos.MockList(t, "r1", "r2")
 		calledGHSearch := mock.githubRepos.MockSearch(ctx, []*sourcegraph.Repo{{URI: "r2"}, {URI: "r3"}})
 
 		want := &sourcegraph.RepoList{Repos: []*sourcegraph.Repo{{URI: "r1"}, {URI: "r2"}, {URI: "r3"}}}
@@ -373,7 +373,7 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 			calledGHSearch = true
 			return nil, fmt.Errorf("GH API error")
 		}
-		calledReposList := mock.stores.Repos.MockList(t, "local1")
+		calledReposList := localstore.Mocks.Repos.MockList(t, "local1")
 
 		want := &sourcegraph.RepoList{Repos: []*sourcegraph.Repo{{URI: "local1"}}}
 		results, err := s.List(ctx, &sourcegraph.RepoListOptions{RemoteSearch: true, Query: "my query"})
@@ -399,7 +399,7 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 			lastReceviedGithubQuery = query
 			return nil, nil
 		}
-		mock.stores.Repos.MockList(t)
+		localstore.Mocks.Repos.MockList(t)
 
 		queryPairs := [][2]string{
 			[2]string{"gorilla/mux", "user:gorilla in:name mux"},
@@ -421,12 +421,12 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 
 func TestRepos_GetConfig(t *testing.T) {
 	var s repos
-	ctx, mock := testContext()
+	ctx, _ := testContext()
 
 	wantRepoConfig := &sourcegraph.RepoConfig{}
 
-	mock.stores.Repos.MockGetByURI(t, "r", 1)
-	calledConfigsGet := mock.stores.RepoConfigs.MockGet_Return(t, 1, wantRepoConfig)
+	localstore.Mocks.Repos.MockGetByURI(t, "r", 1)
+	calledConfigsGet := localstore.Mocks.RepoConfigs.MockGet_Return(t, 1, wantRepoConfig)
 
 	conf, err := s.GetConfig(ctx, &sourcegraph.RepoSpec{ID: 1})
 	if err != nil {

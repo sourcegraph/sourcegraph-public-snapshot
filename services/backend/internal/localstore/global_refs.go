@@ -74,8 +74,8 @@ type globalRefs struct{}
 // Get returns the names and ref counts of all repos and files within those repos
 // that refer the given def.
 func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
-	if TestMockGlobalRefs != nil {
-		return TestMockGlobalRefs.Get(ctx, op)
+	if Mocks.GlobalRefs.Get != nil {
+		return Mocks.GlobalRefs.Get(ctx, op)
 	}
 
 	defRepo, err := (&repos{}).Get(ctx, op.Def.Repo)
@@ -317,8 +317,8 @@ func (g *globalRefs) getRefStats(ctx context.Context, defKeyID int64) (int64, er
 // updates the set of refs in the global ref store that originate from
 // it.
 func (g *globalRefs) Update(ctx context.Context, op RefreshIndexOp) error {
-	if TestMockGlobalRefs != nil {
-		return TestMockGlobalRefs.Update(ctx, op)
+	if Mocks.GlobalRefs.Update != nil {
+		return Mocks.GlobalRefs.Update(ctx, op)
 	}
 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", op.Repo); err != nil {
@@ -533,8 +533,6 @@ func init() {
 	prometheus.MustRegister(globalRefsDuration)
 	prometheus.MustRegister(globalRefsUpdateDuration)
 }
-
-var TestMockGlobalRefs *MockGlobalRefs
 
 type MockGlobalRefs struct {
 	Get    func(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)

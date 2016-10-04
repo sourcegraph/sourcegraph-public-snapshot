@@ -111,9 +111,7 @@ func TestDefs(t *testing.T) {
 func testDefs(t *testing.T, outerTest outerCase) {
 	var g defs
 	ctx, done := testContext()
-	var mocks *mocks // FIXME
 	defer done()
-	TestMockRepos = nil
 
 	var (
 		repoURIs = make(map[string]struct{})
@@ -136,12 +134,12 @@ func testDefs(t *testing.T, outerTest outerCase) {
 
 	rps = (&repos{}).mustCreate(ctx, t, rps...)
 
-	GraphMockDefs(&mocks.Graph, outerTest.defs...)
-	GraphMockUnits(&mocks.Graph, units...)
-	mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	GraphMockDefs(&Mocks.Graph, outerTest.defs...)
+	GraphMockUnits(&Mocks.Graph, units...)
+	Mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		return &sourcegraph.Repo{}, nil
 	}
-	mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+	Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return sgtest.MockRepository{
 			ResolveRevision_: func(ctx context.Context, spec string) (vcs.CommitID, error) {
 				return vcs.CommitID(commitID), nil

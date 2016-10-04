@@ -94,8 +94,8 @@ func toRepoStatuses(rs []*dbRepoStatus) []*sourcegraph.RepoStatus {
 type repoStatuses struct{}
 
 func (s *repoStatuses) GetCombined(ctx context.Context, repo int32, commitID string) (*sourcegraph.CombinedStatus, error) {
-	if TestMockRepoStatuses != nil {
-		return TestMockRepoStatuses.GetCombined(ctx, repo, commitID)
+	if Mocks.RepoStatuses.GetCombined != nil {
+		return Mocks.RepoStatuses.GetCombined(ctx, repo, commitID)
 	}
 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoStatuses.GetCombined", repo); err != nil {
@@ -114,8 +114,8 @@ func (s *repoStatuses) GetCombined(ctx context.Context, repo int32, commitID str
 }
 
 func (s *repoStatuses) GetCoverage(ctx context.Context) (*sourcegraph.RepoStatusList, error) {
-	if TestMockRepoStatuses != nil {
-		return TestMockRepoStatuses.GetCoverage(ctx)
+	if Mocks.RepoStatuses.GetCoverage != nil {
+		return Mocks.RepoStatuses.GetCoverage(ctx)
 	}
 
 	// No accesscontrol check is necessary here; coverage should only computed / reported
@@ -167,8 +167,8 @@ After: refScore(%f), defScore(%f)`, prev.Repo, prev.Language, refScore(ps), defS
 }
 
 func (s *repoStatuses) Create(ctx context.Context, repo int32, commitID string, status *sourcegraph.RepoStatus) error {
-	if TestMockRepoStatuses != nil {
-		return TestMockRepoStatuses.Create(ctx, repo, commitID, status)
+	if Mocks.RepoStatuses.Create != nil {
+		return Mocks.RepoStatuses.Create(ctx, repo, commitID, status)
 	}
 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoStatuses.Create", repo); err != nil {
@@ -242,8 +242,6 @@ func (s *repoStatuses) Create(ctx context.Context, repo int32, commitID string, 
 	}
 	return err
 }
-
-var TestMockRepoStatuses *MockRepoStatuses
 
 type MockRepoStatuses struct {
 	GetCombined func(ctx context.Context, repo int32, commitID string) (*sourcegraph.CombinedStatus, error)

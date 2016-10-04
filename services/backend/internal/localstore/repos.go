@@ -180,8 +180,8 @@ type repos struct{}
 // stale, the caller is responsible for fetching data from any
 // external services.
 func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
-	if TestMockRepos != nil {
-		return TestMockRepos.Get(ctx, id)
+	if Mocks.Repos.Get != nil {
+		return Mocks.Repos.Get(ctx, id)
 	}
 
 	repo, err := s.getBySQL(ctx, "id=$1", id)
@@ -200,8 +200,8 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 // documentation for repos.Get for the contract on the freshness of
 // the data returned.
 func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
-	if TestMockRepos != nil {
-		return TestMockRepos.GetByURI(ctx, uri)
+	if Mocks.Repos.GetByURI != nil {
+		return Mocks.Repos.GetByURI(ctx, uri)
 	}
 
 	repo, err := s.getByURI(ctx, uri)
@@ -276,8 +276,8 @@ type RepoListOp struct {
 // this will not return any repositories from external services
 // that are not present in the Sourcegraph repository
 func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo, error) {
-	if TestMockRepos != nil {
-		return TestMockRepos.List(ctx, opt)
+	if Mocks.Repos.List != nil {
+		return Mocks.Repos.List(ctx, opt)
 	}
 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.List", nil); err != nil {
@@ -327,8 +327,8 @@ func (repos *priorityRepoList) Less(i, j int) bool {
 
 // DEPRECATED
 func (s *repos) Search(ctx context.Context, query string) ([]*sourcegraph.RepoSearchResult, error) {
-	if TestMockRepos != nil {
-		return TestMockRepos.Search(ctx, query)
+	if Mocks.Repos.Search != nil {
+		return Mocks.Repos.Search(ctx, query)
 	}
 
 	query = strings.TrimSpace(query)
@@ -594,8 +594,8 @@ func (s *repos) query(ctx context.Context, sql string, args ...interface{}) ([]*
 
 // Create a repository and return its ID.
 func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (int32, error) {
-	if TestMockRepos != nil {
-		return TestMockRepos.Create(ctx, newRepo)
+	if Mocks.Repos.Create != nil {
+		return Mocks.Repos.Create(ctx, newRepo)
 	}
 
 	if strings.HasPrefix(newRepo.URI, "github.com/") {
@@ -647,8 +647,8 @@ type RepoUpdate struct {
 
 // Update a repository.
 func (s *repos) Update(ctx context.Context, op RepoUpdate) error {
-	if TestMockRepos != nil {
-		return TestMockRepos.Update(ctx, op)
+	if Mocks.Repos.Update != nil {
+		return Mocks.Repos.Update(ctx, op)
 	}
 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo); err != nil {
@@ -735,8 +735,8 @@ type InternalRepoUpdate struct {
 // InternalUpdate performs an update of internal repository
 // fields. See InternalRepoUpdate for more information.
 func (s *repos) InternalUpdate(ctx context.Context, repo int32, op InternalRepoUpdate) error {
-	if TestMockRepos != nil {
-		return TestMockRepos.InternalUpdate(ctx, repo, op)
+	if Mocks.Repos.InternalUpdate != nil {
+		return Mocks.Repos.InternalUpdate(ctx, repo, op)
 	}
 
 	// SECURITY NOTE: If you add more fields and more UPDATE queries,
@@ -766,8 +766,8 @@ func (s *repos) InternalUpdate(ctx context.Context, repo int32, op InternalRepoU
 
 // Delete a repository.
 func (s *repos) Delete(ctx context.Context, repo int32) error {
-	if TestMockRepos != nil {
-		return TestMockRepos.Delete(ctx, repo)
+	if Mocks.Repos.Delete != nil {
+		return Mocks.Repos.Delete(ctx, repo)
 	}
 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Delete", repo); err != nil {
@@ -794,5 +794,3 @@ func (s *repos) Delete(ctx context.Context, repo int32) error {
 	}
 	return nil
 }
-
-var TestMockRepos *MockRepos

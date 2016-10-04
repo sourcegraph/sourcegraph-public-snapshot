@@ -16,7 +16,7 @@ func TestDefsService_ListRefs(t *testing.T) {
 	want := []*graph.Ref{{File: "f"}}
 
 	calledReposGet := mock.servers.Repos.MockGet_Path(t, 1, "r")
-	calledRefs := localstore.GraphMockRefs(&mock.stores.Graph, want...)
+	calledRefs := localstore.GraphMockRefs(&localstore.Mocks.Graph, want...)
 
 	refs, err := s.ListRefs(ctx, &sourcegraph.DefsListRefsOp{Def: sourcegraph.DefSpec{CommitID: "c", Repo: 1, Path: "p"}})
 	if err != nil {
