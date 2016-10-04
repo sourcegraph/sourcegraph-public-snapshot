@@ -269,6 +269,7 @@ export class Home extends Container<HomeProps, HomeState> {
 			<div className={classNames(base.center, base.mv5, base.ph3, styles.footer)}>
 				<a href="/about">About</a>
 				<a href="https://text.sourcegraph.com">Blog</a>
+				<a href="/docs">Docs</a>
 				<a href="/jobs">Careers</a>
 				<a href="/contact">Contact</a>
 				<a href="/pricing">Pricing</a>
