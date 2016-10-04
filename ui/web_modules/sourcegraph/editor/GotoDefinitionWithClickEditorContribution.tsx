@@ -104,6 +104,12 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 			return;
 		}
 		const word = Object.assign(wordAtPos, {lineNumber: position.lineNumber});
+		if (word.endColumn === position.column) {
+			// The end column of a word is the position AFTER the last character in
+			// the word. Prevent this.currentWordUserMouse from being set while
+			// hovering over a character outside of the word.
+			return;
+		}
 
 		// Return early if word at position is still the same
 		if (this.currentWordUnderMouse && this.currentWordUnderMouse.lineNumber === word.lineNumber && this.currentWordUnderMouse.startColumn === word.startColumn && this.currentWordUnderMouse.endColumn === word.endColumn && this.currentWordUnderMouse.word === word.word) {
