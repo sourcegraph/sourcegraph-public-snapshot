@@ -2,7 +2,7 @@
 import {TreeEntry} from "sourcegraph/api";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
-import {URI} from "sourcegraph/core/uri";
+import {URIUtils} from "sourcegraph/core/uri";
 import { makeRepoRev } from "sourcegraph/repo";
 
 const fetch = singleflightFetch(defaultFetch);
@@ -106,7 +106,7 @@ export class EditorService implements IEditorService {
 			return monaco.Promise.as(hackModel(existingModel));
 		}
 
-		const {repo, rev, path} = URI.repoParams(data.resource);
+		const {repo, rev, path} = URIUtils.repoParams(data.resource);
 		return new monaco.Promise((c, e) => {
 			fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/tree/${path}?ContentsAsString=true&NoSrclibAnns=true`)
 				.then(checkStatus)

@@ -1,7 +1,7 @@
 import { Def } from "sourcegraph/api";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import { code_font_face } from "sourcegraph/components/styles/_vars.css";
-import {URI} from "sourcegraph/core/uri";
+import {URIUtils} from "sourcegraph/core/uri";
 import {urlToDefInfo} from "sourcegraph/def/routes";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {EditorService, IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
@@ -205,7 +205,7 @@ export class Editor implements monaco.IDisposable {
 					return null;
 				}
 
-				const {repo, rev, path} = URI.repoParams(model.uri);
+				const {repo, rev, path} = URIUtils.repoParams(model.uri);
 				EventLogger.logEventForCategory(
 					AnalyticsConstants.CATEGORY_DEF,
 					AnalyticsConstants.ACTION_CLICK,
@@ -242,7 +242,7 @@ export class Editor implements monaco.IDisposable {
 					return {contents: []}; // if null, strings, whitespace, etc. will show a perpetu-"Loading..." tooltip
 				}
 
-				const {repo, rev, path} = URI.repoParams(model.uri);
+				const {repo, rev, path} = URIUtils.repoParams(model.uri);
 				EventLogger.logEventForCategory(
 					AnalyticsConstants.CATEGORY_DEF,
 					AnalyticsConstants.ACTION_HOVER,
@@ -289,7 +289,7 @@ export class Editor implements monaco.IDisposable {
 					return null;
 				}
 
-				const {repo, rev, path} = URI.repoParams(model.uri);
+				const {repo, rev, path} = URIUtils.repoParams(model.uri);
 				EventLogger.logEventForCategory(
 					AnalyticsConstants.CATEGORY_REFERENCES,
 					AnalyticsConstants.ACTION_CLICK,
@@ -299,7 +299,7 @@ export class Editor implements monaco.IDisposable {
 
 				const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
 				locs.forEach((l) => {
-					l.uri = URI.toRefsDisplayURI(monaco.Uri.parse(l.uri)).toString();
+					l.uri = URIUtils.toRefsDisplayURI(monaco.Uri.parse(l.uri)).toString();
 				});
 				return locs.map(lsp.toMonacoLocation);
 			});
@@ -309,7 +309,7 @@ export class Editor implements monaco.IDisposable {
 		const model = editor.getModel();
 		const pos = editor.getPosition();
 
-		const {repo, rev, path} = URI.repoParams(model.uri);
+		const {repo, rev, path} = URIUtils.repoParams(model.uri);
 		EventLogger.logEventForCategory(
 			AnalyticsConstants.CATEGORY_REFERENCES,
 			AnalyticsConstants.ACTION_CLICK,
@@ -383,7 +383,7 @@ interface HoverInfoResponse {
 function defAtPosition(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<HoverInfoResponse> {
 	const line = position.lineNumber - 1;
 	const col = position.column - 1;
-	const {repo, rev, path} = URI.repoParams(model.uri);
+	const {repo, rev, path} = URIUtils.repoParams(model.uri);
 	return fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/hover-info?file=${path}&line=${line}&character=${col}`)
 		.then(checkStatus)
 		.then(resp => resp.json())

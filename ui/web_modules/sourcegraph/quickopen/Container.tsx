@@ -10,7 +10,7 @@ import {Search as SearchIcon} from "sourcegraph/components/symbols";
 import {Spinner as LoadingIcon} from "sourcegraph/components/symbols";
 import {colors} from "sourcegraph/components/utils/index";
 
-import {URI} from "sourcegraph/core/uri";
+import {URIUtils} from "sourcegraph/core/uri";
 
 import {urlToBlob, urlToBlobLine} from "sourcegraph/blob/routes";
 import * as Dispatcher from "sourcegraph/Dispatcher";
@@ -291,7 +291,7 @@ export class Container extends React.Component<Props, State> {
 						title = `${sym.containerName}.${sym.name}`;
 					}
 					const kind = symbolKindName(sym.kind);
-					const {path} = URI.repoParamsExt(sym.location.uri);
+					const {path} = URIUtils.repoParamsExt(sym.location.uri);
 					const desc = `${kind ? kind : ""} in ${path}`;
 					let idx = title.toLowerCase().indexOf(query.toLowerCase());
 					const line = sym.location.range.start.line;

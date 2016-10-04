@@ -14,7 +14,7 @@ import {OnboardingModals} from "sourcegraph/components/OnboardingModals";
 import {colors} from "sourcegraph/components/utils/colors";
 import {Container} from "sourcegraph/Container";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
-import {URI} from "sourcegraph/core/uri";
+import {URIUtils} from "sourcegraph/core/uri";
 import { Editor } from "sourcegraph/editor/Editor";
 import { EditorComponent } from "sourcegraph/editor/EditorComponent";
 import {IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
@@ -115,7 +115,7 @@ export class BlobMain extends Container<Props, State> {
 		if (!prevProps || (prevProps.repo !== nextProps.repo || prevProps.rev !== nextProps.rev || prevProps.commitID !== nextProps.commitID || prevProps.path !== nextProps.path || prevProps.startLine !== nextProps.startLine || prevProps.startCol !== nextProps.startCol || prevProps.endLine !== nextProps.endLine || prevProps.endCol !== nextProps.endCol)) {
 			if (nextProps.commitID) {
 				// Use absolute commit IDs for the editor model URI.
-				const uri = URI.pathInRepo(nextProps.repo, nextProps.commitID, nextProps.path);
+				const uri = URIUtils.pathInRepo(nextProps.repo, nextProps.commitID, nextProps.path);
 
 				let range: monaco.IRange;
 				if (typeof nextProps.startLine === "number") {
@@ -180,7 +180,7 @@ export class BlobMain extends Container<Props, State> {
 			return;
 		}
 
-		let {repo, rev, path} = URI.repoParams(e.model.uri);
+		let {repo, rev, path} = URIUtils.repoParams(e.model.uri);
 
 		// If same repo, use the rev from the URL, so that we don't
 		// change the address bar around a lot (bad UX).

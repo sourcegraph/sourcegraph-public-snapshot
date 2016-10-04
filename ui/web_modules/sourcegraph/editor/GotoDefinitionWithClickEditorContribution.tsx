@@ -1,6 +1,6 @@
 // tslint:disable typedef ordered-imports
 import {EventLogger} from "sourcegraph/util/EventLogger";
-import {URI} from "sourcegraph/core/uri";
+import {URIUtils} from "sourcegraph/core/uri";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import * as debounce from "lodash/debounce";
 
@@ -242,7 +242,7 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 	private gotoDefinition(target: monaco.editor.IMouseTarget): monaco.Promise<any> {
 		const model = this.editor.getModel();
 		if (model) {
-			const src = URI.repoParams(model.uri);
+			const src = URIUtils.repoParams(model.uri);
 			EventLogger.logEventForCategory(
 				AnalyticsConstants.CATEGORY_DEF,
 				AnalyticsConstants.ACTION_CLICK,

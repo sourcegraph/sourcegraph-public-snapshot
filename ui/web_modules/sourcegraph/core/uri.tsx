@@ -9,7 +9,7 @@ import {parse} from "url";
 //
 // Use pathInRepo to generate this URI, and use repoParams to
 // extract the repo, rev, and path parameters from it.
-export class URI {
+export class URIUtils {
 	// Implementation note: This is a class so that callers refer to
 	// it as "URI.whatever", which makes it easier to scan. We aren't
 	// able to make it inherit from monaco.Uri because we load Monaco
