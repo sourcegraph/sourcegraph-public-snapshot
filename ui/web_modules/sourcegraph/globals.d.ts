@@ -51,6 +51,10 @@ declare module "url" {
 	export function parse(url: string, parseQueryString?: boolean): any;
 }
 
+declare module "querystring" {
+	export function parse(query: string): any;
+}
+
 declare module "child_process" {
 	export default {} as any;
 }

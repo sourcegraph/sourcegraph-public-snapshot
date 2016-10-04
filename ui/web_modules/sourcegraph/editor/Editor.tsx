@@ -201,7 +201,7 @@ export class Editor implements monaco.IDisposable {
 		}
 
 		return lsp.send(model, "textDocument/definition", {
-			textDocument: {uri: model.uri.toString(true)},
+			textDocument: {uri: URIUtils.fromRefsDisplayURIMaybe(model.uri).toString(true)},
 			position: lsp.toPosition(position),
 		})
 			.then((resp) => resp ? resp.result : null)
@@ -248,7 +248,7 @@ export class Editor implements monaco.IDisposable {
 		}
 
 		return lsp.send(model, "textDocument/hover", {
-			textDocument: {uri: model.uri.toString(true)},
+			textDocument: {uri: URIUtils.fromRefsDisplayURIMaybe(model.uri).toString(true)},
 			position: lsp.toPosition(position),
 		})
 			.then(resp => {

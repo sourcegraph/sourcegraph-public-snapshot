@@ -43,7 +43,7 @@ type LSPResponse = {
 // for managing the lifecycle of the LSP servers; this client treats
 // it as a stateless service.
 export function send(model: monaco.editor.IReadOnlyModel, method: string, params: any): Promise<LSPResponse> {
-	return sendExt(URIUtils.withoutFilePath(model.uri).toString(true), model.getModeId(), method, params);
+	return sendExt(URIUtils.withoutFilePath(URIUtils.fromRefsDisplayURIMaybe(model.uri)).toString(true), model.getModeId(), method, params);
 }
 
 // sendExt mirrors the functionality of send, but is intended to be used by callers outside of Monaco.

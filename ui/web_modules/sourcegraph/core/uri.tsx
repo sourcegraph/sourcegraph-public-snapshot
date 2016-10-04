@@ -1,5 +1,6 @@
 // tslint:disable no-namespace
 
+import {parse as parseQuery} from "querystring";
 import {parse} from "url";
 
 // A URI in Sourcegraph refers to a (file) path and revision in a
