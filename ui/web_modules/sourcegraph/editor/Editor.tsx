@@ -15,8 +15,6 @@ import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
 const fetch = singleflightFetch(defaultFetch);
 
-const neverPromise = new Promise(() => null); // never resolved
-
 function cacheKey(model: monaco.editor.IReadOnlyModel, position: monaco.Position): string | null {
 	const word = model.getWordAtPosition(position);
 	if (!word) {
@@ -27,34 +25,6 @@ function cacheKey(model: monaco.editor.IReadOnlyModel, position: monaco.Position
 const hoverCache = new Map<string, any>();
 const defCache = new Map<string, any>();
 
-const promiseRaceResolvedOnly = (a, b: Promise<any>): Promise<any> => {
-	// Promise.race returns the first promise that is either resolved
-	// or rejected. We want a funciton that returns the first promise
-	// that is resolved. If both are rejected, then return one of the
-	// rejections so that the promise eventually terminates.
-	return new Promise((resolve, reject) => {
-		let waitingForOther = false;
-		let done = false;
-		const resolve2 = (v) => {
-			if (!v) {
-				waitingForOther = true;
-			} else if (!done) {
-				resolve(v);
-				done = true;
-			}
-		};
-		const reject2 = (err) => {
-			if (!waitingForOther) {
-				waitingForOther = true;
-			} else if (!done) {
-				reject(err);
-				done = true;
-			}
-		};
-		a.then(resolve2, reject2);
-		b.then(resolve2, reject2);
-	});
-};
 
 // Editor wraps the Monaco code editor.
 export class Editor implements monaco.IDisposable {
@@ -197,7 +167,7 @@ export class Editor implements monaco.IDisposable {
 			}
 		}
 
-		const xlangRes = (window.localStorage as any).langpOnly ? neverPromise : lsp.send(model, "textDocument/definition", {
+		return lsp.send(model, "textDocument/definition", {
 			textDocument: {uri: model.uri.toString(true)},
 			position: lsp.toPosition(position),
 		})
@@ -213,14 +183,6 @@ export class Editor implements monaco.IDisposable {
 				}
 				return translatedLocs;
 			});
-
-		const langpRes = (window.localStorage as any).xlangOnly ? neverPromise : fetchJumpToDef(model, position).then((loc: lsp.Location) => loc && loc.uri ? lsp.toMonacoLocation(loc) : null);
-
-		// Return whichever result (langp or xlang) arrives first. The
-		// feature flags localStorage.{langp,xlang}Only cause only
-		// results from that source to be used (but requests are still
-		// sent off to both).
-		return promiseRaceResolvedOnly(xlangRes, langpRes as Promise<any>);
 	}
 
 	provideHover(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<monaco.languages.Hover> {
@@ -232,7 +194,7 @@ export class Editor implements monaco.IDisposable {
 			}
 		}
 
-		const xlangRes = (window.localStorage as any).langpOnly ? neverPromise : lsp.send(model, "textDocument/hover", {
+		return lsp.send(model, "textDocument/hover", {
 			textDocument: {uri: model.uri.toString(true)},
 			position: lsp.toPosition(position),
 		})
@@ -259,43 +221,10 @@ export class Editor implements monaco.IDisposable {
 				}
 				return hover;
 			});
-
-		const langpRes = (window.localStorage as any).xlangOnly ? neverPromise : defAtPosition(model, position).then((resp: HoverInfoResponse) => {
-			let contents: monaco.MarkedString[] = [];
-			if (!resp) {
-				// No-op.
-			} else if (resp && !(resp as any).Unresolved) {
-				if ((resp as any).Title) {
-					contents.push((resp as any).Title);
-				}
-				contents.push("*Right-click to view references*");
-			}
-
-			const {repo, rev, path} = URI.repoParams(model.uri);
-			EventLogger.logEventForCategory(
-				AnalyticsConstants.CATEGORY_DEF,
-				AnalyticsConstants.ACTION_HOVER,
-				"Hovering",
-				{
-					repo: repo,
-					rev: rev || "",
-					path: path,
-					language: model.getModeId(),
-				}
-			);
-
-			const word = model.getWordAtPosition(position) || new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column);
-			return {
-				range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
-				contents: contents,
-			};
-		});
-
-		return promiseRaceResolvedOnly(xlangRes, langpRes as Promise<any>);
 	}
 
 	provideReferences(model: monaco.editor.IReadOnlyModel, position: monaco.Position, context: monaco.languages.ReferenceContext, token: monaco.CancellationToken): monaco.languages.Location[] | monaco.Thenable<monaco.languages.Location[]> {
-		const xlangRes = (window.localStorage as any).langpOnly ? neverPromise : lsp.send(model, "textDocument/references", {
+		return lsp.send(model, "textDocument/references", {
 			textDocument: {uri: model.uri.toString(true)},
 			position: lsp.toPosition(position),
 			context: {includeDeclaration: false},
@@ -311,24 +240,6 @@ export class Editor implements monaco.IDisposable {
 				});
 				return locs.map(lsp.toMonacoLocation);
 			});
-
-		const langpRes = (window.localStorage as any).xlangOnly ? neverPromise : refsAtPosition(model, position).then((resp: ReferencesResponse) => {
-			const {repo, rev, path} = URI.repoParams(model.uri);
-			if (!resp) {
-				return;
-			}
-
-			EventLogger.logEventForCategory(
-				AnalyticsConstants.CATEGORY_REFERENCES,
-				AnalyticsConstants.ACTION_CLICK,
-				"ClickedViewReferences",
-				{ repo, rev: rev || "", path }
-			);
-
-			return resp.Locs.map(lsp.toMonacoLocation);
-		});
-
-		return promiseRaceResolvedOnly(xlangRes, langpRes as Promise<any>);
 	}
 
 	private	_findExternalReferences(editor: monaco.editor.ICommonCodeEditor): monaco.Promise<void> {
