@@ -3,7 +3,6 @@ package xlang_test
 import (
 	"context"
 	"net/url"
-	"os"
 	"strings"
 	"testing"
 
@@ -17,9 +16,6 @@ import (
 func TestIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip long integration test")
-	}
-	if os.Getenv("CI") != "" {
-		t.Skip("skip network-dependent test in CI")
 	}
 
 	tests := map[string]struct { // map key is rootPath
