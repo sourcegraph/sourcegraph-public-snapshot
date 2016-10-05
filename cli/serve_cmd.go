@@ -41,9 +41,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi"
@@ -242,26 +240,9 @@ func (c *ServeCmd) Execute(args []string) error {
 		log15.Warn("Using default ID key.")
 	}
 
-	// Shared context setup between client and server.
-	sharedCtxFunc := func(ctx context.Context) context.Context {
-		return ctx
-	}
-	clientCtxFunc := func(ctx context.Context) context.Context {
-		ctx = sharedCtxFunc(ctx)
-		for _, f := range cli.ClientContext {
-			ctx = f(ctx)
-		}
-		return ctx
-	}
-
-	clientCtx := clientCtxFunc(context.Background())
-
 	c.runGitserver()
 
 	sm := http.NewServeMux()
-	for _, f := range cli.ServeMuxFuncs {
-		f(sm)
-	}
 	newRouter := func() *mux.Router {
 		router := mux.NewRouter()
 		// httpctx.Base will clear the context for us
@@ -291,7 +272,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		log15.Warn("TLS is disabled but app url scheme is https", "appURL", conf.AppURL)
 	}
 
-	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), middleware.HealthCheck, middleware.RealIP, middleware.NoCacheByDefault}
+	mw := []handlerutil.Middleware{middleware.HealthCheck, middleware.RealIP, middleware.NoCacheByDefault}
 	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_HSTS")); v {
 		mw = append(mw, middleware.StrictTransportSecurity)
 	}
@@ -299,8 +280,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	mw = append(mw, httptrace.Middleware)
 	mw = append(mw, middleware.BlackHole)
 	mw = append(mw, middleware.SourcegraphComGoGetHandler)
-
-	h := handlerutil.WithMiddleware(sm, mw...)
 
 	// Start background workers that receive input from main app.
 	//
@@ -310,20 +289,12 @@ func (c *ServeCmd) Execute(args []string) error {
 	//
 	//
 	// Start event listeners.
-	c.initializeEventListeners(clientCtx)
+	c.initializeEventListeners()
 
-	serveHTTPS := func(l net.Listener, srv *http.Server, addr string) {
-		log15.Debug("HTTPS running", "on", addr)
-		srv.Handler = h
-		srv.Addr = addr
-		go func() { log.Fatal(srv.Serve(l)) }()
-	}
-
-	serveHTTP := func(l net.Listener, srv *http.Server, addr string) {
-		log15.Debug("HTTP running", "on", addr)
-		srv.Addr = addr
-		srv.Handler = h
-		go func() { log.Fatal(srv.Serve(l)) }()
+	srv := &http.Server{
+		Handler:      handlerutil.WithMiddleware(sm, mw...),
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 60 * time.Second,
 	}
 
 	// Start HTTP server.
@@ -333,10 +304,9 @@ func (c *ServeCmd) Execute(args []string) error {
 			return err
 		}
 		l = tcpKeepAliveListener{l.(*net.TCPListener)}
-		serveHTTP(l, &http.Server{
-			ReadTimeout:  75 * time.Second,
-			WriteTimeout: 60 * time.Second,
-		}, c.HTTPAddr)
+
+		log15.Debug("HTTP running", "on", c.HTTPAddr)
+		go func() { log.Fatal(srv.Serve(l)) }()
 	}
 
 	// Start HTTPS server.
@@ -352,29 +322,20 @@ func (c *ServeCmd) Execute(args []string) error {
 			return err
 		}
 
-		srv := &http.Server{
-			ReadTimeout:  75 * time.Second,
-			WriteTimeout: 60 * time.Second,
-		}
-		config := srv.TLSConfig
-		if config == nil {
-			config = &tls.Config{
-				NextProtos: []string{"h2"},
-			}
-		}
+		l = tls.NewListener(l, &tls.Config{
+			NextProtos:   []string{"h2"},
+			Certificates: []tls.Certificate{cert},
+		})
 
-		config.Certificates = []tls.Certificate{cert}
-		srv.TLSConfig = config
-		l = tls.NewListener(l, srv.TLSConfig)
-
-		serveHTTPS(l, srv, c.HTTPSAddr)
+		log15.Debug("HTTPS running", "on", c.HTTPSAddr)
+		go func() { log.Fatal(srv.Serve(l)) }()
 	}
 
 	// Connection test
 	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
 
 	// Start background repo updater worker.
-	repoUpdaterCtx, err := authenticateScopedContext(clientCtx, []string{"internal:repoupdater"})
+	repoUpdaterCtx, err := authenticateScopedContext(context.Background(), []string{"internal:repoupdater"})
 	if err != nil {
 		return err
 	}
@@ -384,13 +345,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	// but other background workers that need access to the store will
 	// likely pop up in the future. We need to make this less hacky
 	internalServerCtx := func(name string) (context.Context, error) {
-		ctx := clientCtx
-		for _, f := range serverctx.Funcs {
-			ctx, err = f(ctx)
-			if err != nil {
-				return nil, err
-			}
-		}
+		ctx := context.Background()
 		scope := "internal:" + name
 		ctx = auth.WithActor(ctx, &auth.Actor{Scope: map[string]bool{scope: true}})
 		ctx, err = authenticateScopedContext(ctx, []string{scope})
@@ -428,9 +383,9 @@ func authenticateScopedContext(ctx context.Context, scopes []string) (context.Co
 
 // initializeEventListeners creates special scoped contexts and passes them to
 // event listeners.
-func (c *ServeCmd) initializeEventListeners(parent context.Context) {
+func (c *ServeCmd) initializeEventListeners() {
 	for _, l := range events.GetRegisteredListeners() {
-		listenerCtx, err := authenticateScopedContext(auth.WithActor(parent, &auth.Actor{}), l.Scopes())
+		listenerCtx, err := authenticateScopedContext(auth.WithActor(context.Background(), &auth.Actor{}), l.Scopes())
 		if err != nil {
 			log.Fatalf("Could not initialize listener context: %v", err)
 		} else {

@@ -6,23 +6,7 @@ import (
 	"github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 )
-
-func init() {
-	// Make a GitHub API client available in the context that is
-	// authenticated as the current user, or just using our
-	// application credentials if there's no current user.
-	//
-	// This appends to LastFuncs, not just Funcs, because it must be
-	// run AFTER the actor has been stored in the context, because it
-	// depends on the actor.
-	serverctx.LastFuncs = append(serverctx.LastFuncs,
-		func(ctx context.Context) (context.Context, error) {
-			return NewContextWithAuthedClient(ctx), nil
-		},
-	)
-}
 
 type contextKey int
 

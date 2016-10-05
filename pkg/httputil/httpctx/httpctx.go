@@ -14,15 +14,6 @@ const (
 	routeNameKey key = iota
 )
 
-// Base is a middleware that sets a context.Context on each HTTP request.
-func Base(ctx context.Context) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r.WithContext(ctx)) // TODO this is bad, we're losing the request's own context
-		})
-	}
-}
-
 // RouteName returns the named route that r is routed to, which is
 // taken from the manually provided name (using WithRouteName) or the
 // mux router, in that order.
