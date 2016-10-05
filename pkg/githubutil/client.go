@@ -68,15 +68,16 @@ var reposGitHubHTTPCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpt
 // cacheWithMetrics tracks the number of cache hits and misses returned from an
 // httpcache.Cache in prometheus.
 type cacheWithMetrics struct {
-	cache httpcache.Cache
+	cache   httpcache.Cache
+	counter *prometheus.CounterVec
 }
 
 func (c *cacheWithMetrics) Get(key string) ([]byte, bool) {
 	resp, ok := c.cache.Get(key)
 	if ok {
-		reposGitHubHTTPCacheCounter.WithLabelValues("hit").Inc()
+		c.counter.WithLabelValues("hit").Inc()
 	} else {
-		reposGitHubHTTPCacheCounter.WithLabelValues("miss").Inc()
+		c.counter.WithLabelValues("miss").Inc()
 	}
 	return resp, ok
 }
@@ -270,7 +271,8 @@ var Default = &Config{
 		},
 	},
 	Cache: &cacheWithMetrics{
-		cache: httputil.Cache,
+		cache:   httputil.Cache,
+		counter: reposGitHubHTTPCacheCounter,
 	},
 	UnauthedThrottle: newGaugedMutex(githubUnauthedConcurrent),
 	UserThrottles: &ThrottleCache{
