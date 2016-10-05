@@ -208,7 +208,7 @@
                 <g id="Search" transform="translate(0.000000, 444.000000)" fill="#1A304D">
                     <g id="Global-usage-examples">
                         <text id="Global-search-by-fun" font-family="Circular-Std-Bold, Circular Std" font-size="18" font-weight="bold">
-                            <tspan x="0.837146667" y="18">Global search by function, </tspan>
+                            <tspan x="0.837146667" y="18">Search by function, </tspan>
                             <tspan x="0.837146667" y="41">package, or symbol name</tspan>
                         </text>
                         <text id="Find-exactly-the-fun" font-family="Circular-Std-Book, Circular Std" font-size="15" font-weight="300" line-spacing="21">
@@ -556,7 +556,7 @@
                 <g id="Search" transform="translate(0.000000, 444.000000)" fill="#1A304D">
                     <g id="Global-usage-examples">
                         <text id="Global-search-by-fun" font-family="Circular-Std-Bold, Circular Std" font-size="18" font-weight="bold">
-                            <tspan x="0.837146667" y="18">Global search by function, </tspan>
+                            <tspan x="0.837146667" y="18">Search by function, </tspan>
                             <tspan x="0.837146667" y="41">package, or symbol name</tspan>
                         </text>
                         <text id="Find-exactly-the-fun" font-family="Circular-Std-Book, Circular Std" font-size="15" font-weight="300" line-spacing="21">

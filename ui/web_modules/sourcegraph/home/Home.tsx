@@ -150,7 +150,7 @@ export class Home extends Container<HomeProps, HomeState> {
 							<img src={`${context.assetsRoot}/img/Homepage/illo-search.svg`} width="100%" />
 
 							<Heading level="5" className={base.mt3}>
-								Global search by function, package, or symbol name
+								Search by function, package, or symbol name
 							</Heading>
 
 							<p>
