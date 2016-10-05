@@ -1,6 +1,6 @@
 # Docker image for JavaScript/TypeScript lang/build server
 
-FROM node:5.7.0-slim
+FROM node:5.10.0-slim
 
 RUN apt-get update -y && apt-get install -y git
 RUN npm install typescript -g
