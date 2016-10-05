@@ -3,6 +3,7 @@ package xlang_test
 import (
 	"context"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 
@@ -120,6 +121,10 @@ func TestIntegration(t *testing.T) {
 	for rootPath, test := range tests {
 		label := strings.TrimPrefix(strings.Replace(strings.Replace(rootPath, "//", "", 1), "/", "-", -1), "git:") // abbreviated label
 		t.Run(label, func(t *testing.T) {
+			if os.Getenv("CI") != "" && strings.Contains(rootPath, "github.com/golang/go") {
+				t.Skip("Skipping the Go stdlib integration test in CI; it exceeds the available memory (4 GB) and fails the whole build.")
+			}
+
 			{
 				// Serve repository data from codeload.github.com for
 				// test performance instead of from gitserver. This
@@ -180,6 +185,10 @@ func TestIntegration(t *testing.T) {
 			}
 
 			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantReferences, test.wantSymbols)
+
+			if err := c.Close(); err != nil {
+				t.Fatal(err)
+			}
 		})
 	}
 }
