@@ -78,6 +78,8 @@ export class Editor implements monaco.IDisposable {
 			// of any state of the editor mode. This way context menu items
 			// will *always* appear for Go files, and never for other modes.
 			registerModeProviders("go");
+			registerModeProviders("typescript");
+			registerModeProviders("javascript");
 		}));
 
 		this._editorService = new EditorService();
@@ -122,7 +124,8 @@ export class Editor implements monaco.IDisposable {
 		// Also don't show for unsupported languages.
 		this._editor.onContextMenu(e => {
 			// HACK: This method relies on Monaco private internals.
-			const unsupportedLang = this._editor.getModel().getModeId() !== "go";
+			const mode = this._editor.getModel().getModeId();
+			const unsupportedLang = mode !== "go" && mode !== "typescript";
 			// Disable the context menu during chrome onboarding.
 			const isOnboarding = location.search.includes("ob=chrome");
 			const ident = /.*identifier.*/.exec(e.target.element.className);
@@ -252,7 +255,7 @@ export class Editor implements monaco.IDisposable {
 			position: lsp.toPosition(position),
 		})
 			.then(resp => {
-				if (!resp || !resp.result || !resp.result.contents) {
+				if (!resp || !resp.result || !resp.result.contents || resp.result.contents.length === 0) {
 					return {contents: []}; // if null, strings, whitespace, etc. will show a perpetu-"Loading..." tooltip
 				}
 
@@ -339,7 +342,7 @@ export class Editor implements monaco.IDisposable {
 			.catch(err => null)
 			.then((resp) => {
 				if (resp && (resp as any).def) {
-					// TODO(uforic): Remove this when we remove srclib dependency. Fix a special case for golang/go. 
+					// TODO(uforic): Remove this when we remove srclib dependency. Fix a special case for golang/go.
 					const def = resp.def;
 					if (def.Repo === "github.com/golang/go" && def.Unit && def.Unit.startsWith("github.com/golang/go/src/")) {
 						def.Unit = def.Unit.replace("github.com/golang/go/src/", "");

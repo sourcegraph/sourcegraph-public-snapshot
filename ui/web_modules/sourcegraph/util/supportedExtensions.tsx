@@ -1,7 +1,7 @@
 // Adapted from client/browser-ext/app/utils/index.js
 
 export const supportedExtensions = [
-	"go", //"java", "js", "jsx", "ts", "tsx"
+	"go", "ts", "tsx", //"java", "js", "jsx"
 ];
 
 export function getPathExtension(path: string): string | null {
