@@ -20,7 +20,6 @@ import (
 	_ "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 
 	// Misc.
-	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
 	_ "sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	_ "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang"
 )

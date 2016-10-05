@@ -22,7 +22,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
 	"sourcegraph.com/sourcegraph/srclib/flagutil"
 )
 
@@ -371,7 +370,7 @@ func (s *Server) Start() error {
 			s.Close()
 			return fmt.Errorf("timeout waiting for test server at %s to start (%s)", s.Config.Serve.AppURL, maxWait)
 		}
-		if resp, err := http.Get(s.Config.Serve.AppURL + wellknown.ConfigPath); err == nil {
+		if resp, err := http.Get(s.Config.Serve.AppURL); err == nil {
 			resp.Body.Close()
 			break
 		}
