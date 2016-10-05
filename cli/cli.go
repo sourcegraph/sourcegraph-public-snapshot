@@ -54,7 +54,6 @@ func Main() error {
 	}
 
 	_, err := cli.CLI.Parse()
-	printErrorHelp(err)
 	return err
 }
 

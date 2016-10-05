@@ -31,6 +31,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/slack"
 )
 
+var cliContext = context.Background() // FIXME
+
 var sgSlackCoverageWebhookURL = os.Getenv("SG_SLACK_COVERAGE_WEBHOOK_URL")
 
 func init() {

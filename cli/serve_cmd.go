@@ -172,11 +172,6 @@ func (c *ServeCmd) configureAppURL() (*url.URL, error) {
 		return nil, err
 	}
 
-	// Endpoint defaults to the AppURL.
-	if endpoint.URL == "" {
-		endpoint.URL = appURL.String()
-	}
-
 	return appURL, nil
 }
 

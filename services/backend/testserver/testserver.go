@@ -63,7 +63,6 @@ type Server struct {
 
 type Config struct {
 	Flags          []interface{} // flags to `src`
-	Endpoint       cli.EndpointOpts
 	Serve          cli.ServeCmd
 	ServeFlags     []interface{} // flags to `src serve`
 	ExtraEnvConfig []string      // Optional additional environment variables.
@@ -71,7 +70,7 @@ type Config struct {
 
 func (c *Config) args() ([]string, error) {
 	flags := c.Flags
-	flags = append(flags, &c.Endpoint, "serve", &c.Serve)
+	flags = append(flags, "serve", &c.Serve)
 	flags = append(flags, c.ServeFlags...)
 	return makeCommandLineArgs(flags...)
 }
@@ -110,15 +109,7 @@ func (s *Server) serverEnvConfig() []string {
 // Cmd returns a command that can be executed to perform client
 // operations against the server spawned by s.
 func (s *Server) Cmd(env []string, args []string) *exec.Cmd {
-	configArgs, err := makeCommandLineArgs(
-		&s.Config.Endpoint,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	cmd := exec.Command(srccmd.Path)
-	cmd.Args = append(cmd.Args, configArgs...)
 	cmd.Args = append(cmd.Args, args...)
 	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
@@ -311,7 +302,6 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	// HTTP
 	s.Config.Serve.HTTPAddr = fmt.Sprintf(":%d", httpPort)
 	s.Config.Serve.HTTPSAddr = fmt.Sprintf(":%d", httpsPort)
-	s.Config.Endpoint.URL = fmt.Sprintf("%s://localhost:%d", scheme, mainHTTPPort)
 
 	// App
 	s.Config.Serve.AppURL = fmt.Sprintf("%s://localhost:%d/", scheme, mainHTTPPort)
