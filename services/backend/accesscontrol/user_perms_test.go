@@ -2,6 +2,7 @@ package accesscontrol
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -134,6 +135,165 @@ func TestUserHasReadAccessAll(t *testing.T) {
 		if !reflect.DeepEqual(gotRepos, test.expRepos) {
 			t.Errorf("in test case %s, expected %+v, got %+v", test.title, test.expRepos, gotRepos)
 		}
+	}
+}
+
+type MockRepos struct {
+	_Get                     func(ctx context.Context, repo int32) (*sourcegraph.Repo, error)
+	_GetByURI                func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
+	_UnsafeDangerousGetByURI func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
+}
+
+func (m *MockRepos) Get(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
+	return m._Get(ctx, repo)
+}
+
+func (m *MockRepos) GetByURI(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	return m._GetByURI(ctx, repo)
+}
+
+func (m *MockRepos) UnsafeDangerousGetByURI(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	return m._UnsafeDangerousGetByURI(ctx, repo)
+}
+
+func TestVerifyUserHasReadAccessToDefRepoRefs(t *testing.T) {
+	ctx, mock := testContext()
+
+	type testcase struct {
+		title                     string
+		input                     []*sourcegraph.DefRepoRef
+		shouldCallGitHub          bool
+		mockGitHubAccessibleRepos []*sourcegraph.Repo
+		expected                  []*sourcegraph.DefRepoRef
+	}
+	testRepos_ := map[string]*sourcegraph.Repo{
+		"a": {URI: "a"},
+		"b": {URI: "b", Private: true},
+		"c": {URI: "c", Private: true},
+		"d": {URI: "d", Private: true},
+		"e": {URI: "e", Private: true},
+	}
+	testRepos := func(uris ...string) (r []*sourcegraph.Repo) {
+		for _, uri := range uris {
+			r = append(r, testRepos_[uri])
+		}
+		return
+	}
+	testDefs := func(uris ...string) (d []*sourcegraph.DefRepoRef) {
+		for _, uri := range uris {
+			d = append(d, &sourcegraph.DefRepoRef{Repo: uri})
+		}
+		return
+	}
+
+	testcases := []testcase{{
+		title:                     "allow public repo access",
+		input:                     testDefs("a"),
+		shouldCallGitHub:          false,
+		mockGitHubAccessibleRepos: testRepos("a"),
+		expected:                  testDefs("a"),
+	}, {
+		title:                     "multiple repo defs",
+		input:                     testDefs("a", "b", "c", "d"),
+		shouldCallGitHub:          true,
+		mockGitHubAccessibleRepos: testRepos("a", "c", "d"),
+		expected:                  testDefs("a", "c", "d"),
+	}, {
+		title:                     "multiple defs same repo",
+		input:                     testDefs("a", "c", "a", "d", "a", "b"),
+		shouldCallGitHub:          true,
+		mockGitHubAccessibleRepos: testRepos("a"),
+		expected:                  testDefs("a", "a", "a"),
+	}, {
+		title:                     "allow private repo access",
+		input:                     testDefs("b"),
+		shouldCallGitHub:          true,
+		mockGitHubAccessibleRepos: testRepos("b"),
+		expected:                  testDefs("b"),
+	}, {
+		title:                     "private repo denied",
+		input:                     testDefs("b"),
+		shouldCallGitHub:          true,
+		mockGitHubAccessibleRepos: nil,
+		expected:                  []*sourcegraph.DefRepoRef{},
+	}, {
+		title:                     "public repo access, selected private repo access, inaccessible private repo denied",
+		input:                     testDefs("a", "b", "c"),
+		shouldCallGitHub:          true,
+		mockGitHubAccessibleRepos: testRepos("b"),
+		expected:                  testDefs("a", "b"),
+	}, {
+		title:                     "edge case: no input repos",
+		input:                     nil,
+		shouldCallGitHub:          false,
+		mockGitHubAccessibleRepos: nil,
+		expected:                  []*sourcegraph.DefRepoRef{},
+	}, {
+		title:                     "private not in list of accessible",
+		input:                     testDefs("b"),
+		shouldCallGitHub:          true,
+		mockGitHubAccessibleRepos: testRepos("c"),
+		expected:                  []*sourcegraph.DefRepoRef{},
+	}, {
+		title:                     "public not in list of accessible (still allowed)",
+		input:                     testDefs("a"),
+		shouldCallGitHub:          false,
+		mockGitHubAccessibleRepos: testRepos("c"),
+		expected:                  testDefs("a"),
+	}, {
+		title:                     "public not in list of accessible (still allowed) and private not either",
+		input:                     testDefs("a", "b"),
+		shouldCallGitHub:          true,
+		mockGitHubAccessibleRepos: testRepos("c"),
+		expected:                  testDefs("a"),
+	}, {
+		title:                     "public and private repos accessible, one private denied",
+		input:                     testDefs("a", "b", "c", "d"),
+		shouldCallGitHub:          true,
+		mockGitHubAccessibleRepos: testRepos("c", "b"),
+		expected:                  testDefs("a", "b", "c"),
+	}, {
+		title:                     "preserve input order",
+		input:                     testDefs("b", "a"),
+		shouldCallGitHub:          true,
+		mockGitHubAccessibleRepos: testRepos("b"),
+		expected:                  testDefs("b", "a"),
+	}, {
+		title:                     "preserve input order with some denied",
+		input:                     testDefs("c", "b", "d", "a"),
+		shouldCallGitHub:          true,
+		mockGitHubAccessibleRepos: testRepos("c", "d"),
+		expected:                  testDefs("c", "d", "a"),
+	}}
+
+	for _, test := range testcases {
+		t.Run(test.title, func(t *testing.T) {
+			calledListAccessible := mock.MockListAccessible(ctx, test.mockGitHubAccessibleRepos)
+
+			Repos = &MockRepos{
+				_UnsafeDangerousGetByURI: func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+					if r, ok := testRepos_[repo]; ok {
+						return r, nil
+					}
+					return nil, errors.New("repo not found")
+				},
+			}
+
+			got, err := VerifyUserHasReadAccessToDefRepoRefs(ctx, "GlobalRefs.Get", test.input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if *calledListAccessible != test.shouldCallGitHub {
+				if test.shouldCallGitHub {
+					t.Errorf("expected GitHub API to be called for permissions check, but it wasn't")
+				} else {
+					t.Errorf("did not expect GitHub API to be called for permissions check, but it was")
+				}
+			}
+			if !reflect.DeepEqual(got, test.expected) {
+				t.Errorf("in test case %s, expected %+v, got %+v", test.title, test.expected, got)
+			}
+		})
 	}
 }
 
