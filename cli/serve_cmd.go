@@ -47,6 +47,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
@@ -446,6 +447,7 @@ func authenticateScopedContext(ctx context.Context, scopes []string) (context.Co
 	if err != nil {
 		return nil, err
 	}
+	ctx = github.NewContextWithAuthedClient(ctx)
 	return auth.WithActor(sourcegraph.WithAccessToken(ctx, tok), a), nil
 }
 
