@@ -19,7 +19,7 @@ var globalOpt struct {
 	VerbosePkg string               `long:"verbose-pkg" description:"if set, only log output from specified package" env:"SRC_VERBOSE_PKG"`
 	LogLevel   string               `long:"log-level" description:"upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)" default:"info" env:"SRC_LOG_LEVEL"`
 
-	Trace          []string      `long:"log-trace" description:"comma separated list of trace logs to show. Options: all,gRPC,HTTP,build,github" default:"all" env:"SRC_LOG_TRACE"`
+	Trace          []string      `long:"log-trace" description:"comma separated list of trace logs to show. Options: all,gRPC,HTTP,build,github" default:"HTTP" env:"SRC_LOG_TRACE"`
 	TraceThreshold time.Duration `long:"log-trace-threshold" description:"Show traces that take longer than this." env:"SRC_LOG_TRACE_THRESHOLD"`
 }
 
