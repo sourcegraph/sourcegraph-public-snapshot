@@ -73,12 +73,15 @@ const (
 	typeLabel = "type"
 )
 
+func init() {
+	prometheus.MustRegister(newQueueStatsCollector())
+}
+
 // newQueueStatsCollector returns a prometheus collector based on the
 // statistics returned by queue.Stats(). ctx needs to be long lived, and will
 // be used when calling queue.Stats()
-func newQueueStatsCollector(ctx context.Context) prometheus.Collector {
+func newQueueStatsCollector() prometheus.Collector {
 	return &queueStatsCollector{
-		ctx:   ctx,
 		types: make(map[string]bool),
 		numJobs: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -96,8 +99,6 @@ func newQueueStatsCollector(ctx context.Context) prometheus.Collector {
 }
 
 type queueStatsCollector struct {
-	ctx context.Context
-
 	types            map[string]bool
 	mu               sync.Mutex
 	numJobs          *prometheus.GaugeVec
@@ -112,7 +113,7 @@ func (c *queueStatsCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect implements prometheus.Collector
 func (c *queueStatsCollector) Collect(ch chan<- prometheus.Metric) {
-	stats, err := (&queue{}).Stats(c.ctx)
+	stats, err := (&queue{}).Stats(context.Background())
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if err != nil {

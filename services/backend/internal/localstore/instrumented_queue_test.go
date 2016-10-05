@@ -85,7 +85,7 @@ func TestQueueStatsCollector(t *testing.T) {
 	// We just check that we collect 4 stats, and don't actually check we
 	// collect legit values.
 	var (
-		c     = newQueueStatsCollector(context.Background())
+		c     = newQueueStatsCollector()
 		ch    = make(chan prometheus.Metric)
 		count = 0
 	)
