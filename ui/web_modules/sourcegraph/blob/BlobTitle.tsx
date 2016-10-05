@@ -54,7 +54,7 @@ function BreadCrumb({repo, path, rev}: {repo: string, path: string, rev: string}
 		key={0}
 		{...hover(subHover)}
 		style={subSx}
-		to={urlToRepo(repo)}>{repo}
+		to={urlToRepo(repo)}>{repo.split("/").join(" / ")}
 	</Link>;
 
 	const crumbs = pathToFile.map((item, index) => <span key={index + 1}
