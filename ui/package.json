@@ -56,7 +56,6 @@
     "glamor": "^2.15.5",
     "isomorphic-fetch": "2.2.1",
     "lodash": "4.15.0",
-    "monaco-editor": "0.5.3",
     "querystring": "^0.2.0",
     "raven-js": "3.5.1",
     "react": "15.3.1",
