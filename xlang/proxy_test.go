@@ -77,9 +77,10 @@ func TestProxy(t *testing.T) {
 				},
 			},
 			wantSymbols: map[string][]string{
-				"":  []string{"git://test/pkg?master#a.go:function:pkg.A:0:16", "git://test/pkg?master#b.go:function:pkg.B:0:16"},
-				"A": []string{"git://test/pkg?master#a.go:function:pkg.A:0:16"},
-				"B": []string{"git://test/pkg?master#b.go:function:pkg.B:0:16"},
+				"":            []string{"git://test/pkg?master#a.go:function:pkg.A:0:16", "git://test/pkg?master#b.go:function:pkg.B:0:16"},
+				"A":           []string{"git://test/pkg?master#a.go:function:pkg.A:0:16"},
+				"B":           []string{"git://test/pkg?master#b.go:function:pkg.B:0:16"},
+				"is:exported": []string{"git://test/pkg?master#a.go:function:pkg.A:0:16", "git://test/pkg?master#b.go:function:pkg.B:0:16"},
 			},
 		},
 		"go detailed": {
@@ -92,9 +93,20 @@ func TestProxy(t *testing.T) {
 			// "a.go:1:28": "(T).F string", // TODO(sqs): see golang/hover.go; this is the output we want
 			},
 			wantSymbols: map[string][]string{
-				"":  []string{"git://test/pkg?master#a.go:class:pkg.T:0:16"},
-				"T": []string{"git://test/pkg?master#a.go:class:pkg.T:0:16"},
-				"F": []string{}, // we don't return fields for now
+				"":            []string{"git://test/pkg?master#a.go:class:pkg.T:0:16"},
+				"T":           []string{"git://test/pkg?master#a.go:class:pkg.T:0:16"},
+				"F":           []string{}, // we don't return fields for now
+				"is:exported": []string{"git://test/pkg?master#a.go:class:pkg.T:0:16"},
+			},
+		},
+		"exported defs unexported type": {
+			rootPath: "git://test/pkg?master",
+			mode:     "go",
+			fs: map[string]string{
+				"a.go": "package p; type t struct { F string }",
+			},
+			wantSymbols: map[string][]string{
+				"is:exported": []string{},
 			},
 		},
 		"go xtest": {
@@ -132,7 +144,8 @@ func TestProxy(t *testing.T) {
 				"d2/b.go:1:52": "git://test/pkg?master#d/d2/b.go:1:39",
 			},
 			wantSymbols: map[string][]string{
-				"": []string{"git://test/pkg?master#d/a.go:function:d.A:0:16", "git://test/pkg?master#d/d2/b.go:function:d2.B:0:38"},
+				"":            []string{"git://test/pkg?master#d/a.go:function:d.A:0:16", "git://test/pkg?master#d/d2/b.go:function:d2.B:0:38"},
+				"is:exported": []string{"git://test/pkg?master#d/a.go:function:d.A:0:16", "git://test/pkg?master#d/d2/b.go:function:d2.B:0:38"},
 			},
 		},
 		"go multiple packages in dir": {
@@ -163,7 +176,8 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				// "main.go:3:52": "git://test/pkg?master#main.go:3:39", // B() -> func B()
 			},
 			wantSymbols: map[string][]string{
-				"": []string{"git://test/pkg?master#a.go:function:pkg.A:0:16"},
+				"":            []string{"git://test/pkg?master#a.go:function:pkg.A:0:16"},
+				"is:exported": []string{"git://test/pkg?master#a.go:function:pkg.A:0:16"},
 			},
 		},
 		"goroot": {
@@ -191,6 +205,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 					"git://test/pkg?master#a.go:variable:pkg._:0:25",
 					"git://test/pkg?master#a.go:variable:pkg.x:0:46",
 				},
+				"is:exported": []string{},
 			},
 		},
 		"gopath": {
@@ -221,7 +236,8 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				},
 			},
 			wantSymbols: map[string][]string{
-				"": []string{"git://test/pkg?master#a/a.go:function:a.A:0:16", "git://test/pkg?master#b/b.go:variable:b._:0:32"},
+				"":            []string{"git://test/pkg?master#a/a.go:function:a.A:0:16", "git://test/pkg?master#b/b.go:variable:b._:0:32"},
+				"is:exported": []string{"git://test/pkg?master#a/a.go:function:a.A:0:16"},
 			},
 		},
 		"go vendored dep": {
@@ -244,7 +260,8 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				},
 			},
 			wantSymbols: map[string][]string{
-				"": []string{"git://test/pkg?master#a.go:variable:pkg._:0:43", "git://test/pkg?master#vendor/github.com/v/vendored/v.go:function:vendored.V:0:23"},
+				"":            []string{"git://test/pkg?master#a.go:variable:pkg._:0:43", "git://test/pkg?master#vendor/github.com/v/vendored/v.go:function:vendored.V:0:23"},
+				"is:exported": []string{},
 			},
 		},
 		"go vendor symbols with same name": {
@@ -276,6 +293,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 					"git://test/pkg?master#z.go:function:pkg.x:0:18",
 					"git://test/pkg?master#vendor/github.com/a/pkg2/x.go:function:pkg2.x:0:19",
 				},
+				"is:exported": []string{},
 			},
 		},
 		"go external dep": {
@@ -439,11 +457,12 @@ func yza() {}
 `,
 			},
 			wantSymbols: map[string][]string{
-				"":    []string{"git://test/pkg?master#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?master#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?master#abc.go:class:pkg.XYZ:2:5", "git://test/pkg?master#bcd.go:class:pkg.YZA:2:5", "git://test/pkg?master#xyz.go:function:pkg.yza:2:5"},
-				"xyz": []string{"git://test/pkg?master#abc.go:class:pkg.XYZ:2:5", "git://test/pkg?master#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?master#xyz.go:function:pkg.yza:2:5"},
-				"yza": []string{"git://test/pkg?master#bcd.go:class:pkg.YZA:2:5", "git://test/pkg?master#xyz.go:function:pkg.yza:2:5", "git://test/pkg?master#bcd.go:method:YZA.BCD:4:13"},
-				"abc": []string{"git://test/pkg?master#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?master#abc.go:class:pkg.XYZ:2:5"},
-				"bcd": []string{"git://test/pkg?master#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?master#bcd.go:class:pkg.YZA:2:5"},
+				"":            []string{"git://test/pkg?master#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?master#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?master#abc.go:class:pkg.XYZ:2:5", "git://test/pkg?master#bcd.go:class:pkg.YZA:2:5", "git://test/pkg?master#xyz.go:function:pkg.yza:2:5"},
+				"xyz":         []string{"git://test/pkg?master#abc.go:class:pkg.XYZ:2:5", "git://test/pkg?master#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?master#xyz.go:function:pkg.yza:2:5"},
+				"yza":         []string{"git://test/pkg?master#bcd.go:class:pkg.YZA:2:5", "git://test/pkg?master#xyz.go:function:pkg.yza:2:5", "git://test/pkg?master#bcd.go:method:YZA.BCD:4:13"},
+				"abc":         []string{"git://test/pkg?master#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?master#abc.go:class:pkg.XYZ:2:5"},
+				"bcd":         []string{"git://test/pkg?master#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?master#bcd.go:class:pkg.YZA:2:5"},
+				"is:exported": []string{"git://test/pkg?master#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?master#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?master#abc.go:class:pkg.XYZ:2:5", "git://test/pkg?master#bcd.go:class:pkg.YZA:2:5"},
 			},
 		},
 	}
