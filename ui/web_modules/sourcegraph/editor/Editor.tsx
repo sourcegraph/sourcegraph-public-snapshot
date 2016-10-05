@@ -66,7 +66,6 @@ export class Editor implements monaco.IDisposable {
 			}
 		};
 		this._toDispose.push(monaco.editor.onDidCreateModel(model => {
-			this.disableInterferingModes();
 			// HACK: when the editor loads, this will fire twice:
 			// - once for the "empty" document (mode = plaintext)
 			// - once with the actual mode of the document
@@ -331,35 +330,6 @@ export class Editor implements monaco.IDisposable {
 					Dispatcher.Stores.dispatch(new BlobActions.Toast("No external references found"));
 				}
 			});
-	}
-
-	// disableInterferingModes disables built-in Monaco features that
-	// interfere with Sourcegraph. It retains all modes whose provider
-	// is the specified editor, so you must pass it the global editor
-	// instance that's currently in use.
-	//
-	// For example, it disables Monaco's built-in TypeScript language
-	// support, so that TypeScript language support comes from
-	// Sourcegraph's LSP backend instead.
-	//
-	// TODO(sqs): If vscode ever becomes more conducive to integrate
-	// into our own build system, we can avoid loading these
-	// unnecessary things altogether.
-	private disableInterferingModes(): void {
-		const removeFromLanguageFeatureRegistry = (reg: any) => {
-			reg._entries = reg._entries.filter((e) => {
-				return e.provider && e.provider === this; // only keep stuff *we* added
-			});
-		};
-		(global as any).require(["vs/editor/common/modes"], (modesModule) => {
-			Object.keys(modesModule).forEach((exportedName) => {
-				if (exportedName.endsWith("Registry") && modesModule[exportedName]._entries) {
-					const reg = modesModule[exportedName];
-					removeFromLanguageFeatureRegistry(reg);
-					this._toDispose.push(reg.onDidChange(() => removeFromLanguageFeatureRegistry(reg)));
-				}
-			});
-		});
 	}
 
 	public layout(): void {
