@@ -10,6 +10,7 @@ import { makeRepoRev } from "sourcegraph/repo";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
+import {isSupportedMode, typescriptSupported} from "sourcegraph/util/supportedExtensions";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
 const fetch = singleflightFetch(defaultFetch);
@@ -76,10 +77,11 @@ export class Editor implements monaco.IDisposable {
 			// (Nor will the onDidChangeModelLanguage callback fire).
 			// This hack hardcodes mode providers only for Go, regardless
 			// of any state of the editor mode. This way context menu items
-			// will *always* appear for Go files, and never for other modes.
+			// will *always* appear for files with the extensions below.
 			registerModeProviders("go");
-			registerModeProviders("typescript");
-			registerModeProviders("javascript");
+			if (typescriptSupported()) {
+				registerModeProviders("typescript");
+			}
 		}));
 
 		this._editorService = new EditorService();
@@ -124,13 +126,10 @@ export class Editor implements monaco.IDisposable {
 		// Also don't show for unsupported languages.
 		this._editor.onContextMenu(e => {
 			// HACK: This method relies on Monaco private internals.
-			const mode = this._editor.getModel().getModeId();
-			const unsupportedLang = mode !== "go" && mode !== "typescript";
-			// Disable the context menu during chrome onboarding.
 			const isOnboarding = location.search.includes("ob=chrome");
 			const ident = /.*identifier.*/.exec(e.target.element.className);
 			const peekWidget = e.target.detail === "vs.editor.contrib.zoneWidget1";
-			if (!ident || peekWidget || unsupportedLang || isOnboarding) {
+			if (!ident || peekWidget || !isSupportedMode(this._editor.getModel().getModeId()) || isOnboarding) {
 				(this._editor as any)._contextViewService.hideContextView();
 			}
 		});

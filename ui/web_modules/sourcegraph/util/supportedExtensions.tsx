@@ -1,8 +1,28 @@
-// Adapted from client/browser-ext/app/utils/index.js
+export function typescriptSupported(): boolean {
+	if (typeof global.window === "undefined") {
+		return false;
+	}
+	return Boolean(window.localStorage["xlangTypescript"]);
+}
 
-export const supportedExtensions = [
-	"go", "ts", "tsx", //"java", "js", "jsx"
-];
+let _exts = ["go"];
+if (typescriptSupported()) {
+	_exts.push("ts");
+	_exts.push("tsx");
+}
+
+export const supportedExtensions = _exts;
+
+export function isSupportedExtension(ext: string): boolean {
+	return supportedExtensions.indexOf(ext) !== -1;
+}
+
+export function isSupportedMode(modeId: string): boolean {
+	if (modeId === "go") {
+		return true;
+	}
+	return typescriptSupported() && modeId === "typescript";
+}
 
 export function getPathExtension(path: string): string | null {
 	const pathSplit = path.split(".");
