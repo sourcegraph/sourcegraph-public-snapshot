@@ -7,8 +7,10 @@ import (
 	"strings"
 	"testing"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 // Notable benchmark results:
@@ -29,18 +31,39 @@ func BenchmarkIntegration(b *testing.B) {
 		b.Skip("skip long integration test")
 	}
 
+	{
+		// Serve repository data from codeload.github.com for
+		// test performance instead of from gitserver. This
+		// technically means we aren't testing gitserver, but
+		// that is well tested separately, and the benefit of
+		// fast tests here outweighs the benefits of a coarser
+		// integration test.
+		orig := xlang.NewRemoteRepoVFS
+		xlang.NewRemoteRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+			fullName := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git") // of the form "github.com/foo/bar"
+			return vfsutil.NewGitHubRepoVFS(fullName, rev, "", true)
+		}
+		defer func() {
+			xlang.NewRemoteRepoVFS = orig
+		}()
+	}
+
 	tests := map[string]struct { // map key is rootPath
-		mode   string
-		params lsp.TextDocumentPositionParams
-		want   locations
+		mode string
+
+		definitionParams *lsp.TextDocumentPositionParams
+		wantDefinitions  locations
+
+		symbolParams *lsp.WorkspaceSymbolParams
+		wantSymbols  []lsp.SymbolInformation
 	}{
 		"git://github.com/gorilla/mux?0a192a193177452756c362c20087ddafcf6829c4": {
 			mode: "go",
-			params: lsp.TextDocumentPositionParams{
+			definitionParams: &lsp.TextDocumentPositionParams{
 				TextDocument: lsp.TextDocumentIdentifier{URI: "mux.go"},
 				Position:     lsp.Position{Line: 60, Character: 37},
 			},
-			want: locations{
+			wantDefinitions: locations{
 				{
 					URI: "git://github.com/golang/go?go1.7.1#src/net/http/request.go",
 					Range: lsp.Range{
@@ -50,54 +73,115 @@ func BenchmarkIntegration(b *testing.B) {
 				},
 			},
 		},
+		"git://github.com/golang/go?go1.7.1": {
+			mode:         "go",
+			symbolParams: &lsp.WorkspaceSymbolParams{Query: "NewUnstartedServer"},
+			wantSymbols: []lsp.SymbolInformation{
+				{
+					ContainerName: "httptest",
+					Name:          "NewUnstartedServer",
+					Kind:          lsp.SKFunction,
+					Location: lsp.Location{
+						URI: "git://github.com/golang/go?go1.7.1#src/net/http/httptest/server.go",
+						Range: lsp.Range{
+							Start: lsp.Position{Line: 84, Character: 5},
+							End:   lsp.Position{Line: 84, Character: 22},
+						},
+					},
+				},
+			},
+		},
 	}
 	for rootPath, test := range tests {
-		u, err := url.Parse(rootPath)
+		root, err := url.Parse(rootPath)
 		if err != nil {
 			b.Fatal(err)
 		}
-		test.params.TextDocument.URI = rootPath + "#" + test.params.TextDocument.URI
-		label := strings.Replace(u.Host+u.Path, "/", "-", -1)
+		label := strings.Replace(root.Host+root.Path, "/", "-", -1)
 
-		b.Run(label, func(b *testing.B) {
-			ctx := context.Background()
-			proxy := xlang.NewProxy()
-			addr, done := startProxy(b, proxy)
-			defer done()
+		if test.definitionParams != nil {
+			test.definitionParams.TextDocument.URI = rootPath + "#" + test.definitionParams.TextDocument.URI
+			b.Run(label+"-definition", func(b *testing.B) {
+				ctx := context.Background()
+				proxy := xlang.NewProxy()
+				addr, done := startProxy(b, proxy)
+				defer done()
 
-			for i := 0; i < b.N; i++ {
-				b.StopTimer()
-				c := dialProxy(b, addr, nil)
-				b.StartTimer()
+				for i := 0; i < b.N; i++ {
+					b.StopTimer()
+					c := dialProxy(b, addr, nil)
+					b.StartTimer()
 
-				if err := c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
-					InitializeParams: lsp.InitializeParams{RootPath: rootPath},
-					Mode:             test.mode,
-				}, nil); err != nil {
-					b.Fatal(err)
+					if err := c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
+						InitializeParams: lsp.InitializeParams{RootPath: rootPath},
+						Mode:             test.mode,
+					}, nil); err != nil {
+						b.Fatal(err)
+					}
+
+					var loc locations
+					if err := c.Call(ctx, "textDocument/definition", test.definitionParams, &loc); err != nil {
+						b.Fatal(err)
+					}
+
+					if err := c.Close(); err != nil {
+						b.Fatal(err)
+					}
+
+					// If we don't shut down the server, then subsequent
+					// iterations will test the performance when it's
+					// already cached, which is not what we want.
+					b.StopTimer()
+					proxy.ShutDownIdleServers(ctx, 0)
+					if !reflect.DeepEqual(loc, test.wantDefinitions) {
+						b.Fatalf("got %v, want %v", loc, test.wantDefinitions)
+					}
+					b.StartTimer()
 				}
+				b.StopTimer() // don't include server teardown
+			})
+		}
 
-				var loc locations
-				if err := c.Call(ctx, "textDocument/definition", test.params, &loc); err != nil {
-					b.Fatal(err)
+		if test.symbolParams != nil {
+			b.Run(label+"-symbols", func(b *testing.B) {
+				ctx := context.Background()
+				proxy := xlang.NewProxy()
+				addr, done := startProxy(b, proxy)
+				defer done()
+
+				for i := 0; i < b.N; i++ {
+					b.StopTimer()
+					c := dialProxy(b, addr, nil)
+					b.StartTimer()
+
+					if err := c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
+						InitializeParams: lsp.InitializeParams{RootPath: rootPath},
+						Mode:             test.mode,
+					}, nil); err != nil {
+						b.Fatal(err)
+					}
+
+					var syms []lsp.SymbolInformation
+					if err := c.Call(ctx, "workspace/symbol", test.symbolParams, &syms); err != nil {
+						b.Fatal(err)
+					}
+
+					if err := c.Close(); err != nil {
+						b.Fatal(err)
+					}
+
+					// If we don't shut down the server, then subsequent
+					// iterations will test the performance when it's
+					// already cached, which is not what we want.
+					b.StopTimer()
+					proxy.ShutDownIdleServers(ctx, 0)
+					if !reflect.DeepEqual(syms, test.wantSymbols) {
+						b.Fatalf("got %v, want %v", syms, test.wantSymbols)
+					}
+					b.StartTimer()
 				}
-
-				if err := c.Close(); err != nil {
-					b.Fatal(err)
-				}
-
-				if !reflect.DeepEqual(loc, test.want) {
-					b.Fatalf("got %v, want %v", loc, test.want)
-				}
-
-				// If we don't shut down the server, then subsequent
-				// iterations will test the performance when it's
-				// already cached, which is not what we want.
-				b.StopTimer()
-				proxy.ShutDownIdleServers(ctx, 0)
-				b.StartTimer()
-			}
-			b.StopTimer() // don't include server teardown
-		})
+				b.StopTimer() // don't include server teardown
+			})
+		}
 	}
 }
