@@ -5,48 +5,46 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 import * as debounce from "lodash/debounce";
 
 // tslint:disable typedef ordered-imports member-ordering
-import {IEditorService} from "sourcegraph/editor/EditorService";
+import {IEditorService} from "vs/platform/editor/common/editor";
+import {editorContribution} from "vs/editor/browser/editorBrowserExtensions";
+import * as editorCommon from "vs/editor/common/editorCommon";
+import {ICodeEditor, IEditorMouseEvent, IMouseTarget} from "vs/editor/browser/editorBrowser";
+import {IDisposable} from "vs/base/common/lifecycle";
+import {Range} from "vs/editor/common/core/range";
+import {TPromise} from "vs/base/common/winjs.base";
+import {getDeclarationsAtPosition} from "vs/editor/contrib/goToDeclaration/common/goToDeclaration";
+import {IKeyboardEvent} from "vs/base/browser/keyboardEvent";
+import {Location} from "vs/editor/common/modes";
+import {Selection} from "vs/editor/common/core/selection";
+import {Position} from "vs/editor/common/core/position";
 
 // IWordAtPositionWithLine lets us distinguish between two of the same
 // words at the same start column on separate lines.
-interface IWordAtPositionWithLine extends monaco.editor.IWordAtPosition {
+interface IWordAtPositionWithLine extends editorCommon.IWordAtPosition {
 	lineNumber: number; // The line number where the word starts.
 }
 
-export class GotoDefinitionWithClickEditorContribution implements monaco.editor.IEditorContribution {
-	// register registers this contribution and sets the EditorService.
-	static register(editorService: IEditorService): Promise<void> {
-		GotoDefinitionWithClickEditorContribution.editorService = editorService;
-		return new Promise((resolve, reject) => {
-			(global as any).require(["vs/editor/browser/editorBrowserExtensions"], (m) => {
-				let f = m.editorContribution /* monaco-editor 0.6.1 */ || m.EditorBrowserRegistry.registerEditorContribution /* =~ 0.5 */;
-				f(GotoDefinitionWithClickEditorContribution);
-				resolve();
-			});
-		});
-	}
-
+@editorContribution
+export class GotoDefinitionWithClickEditorContribution implements editorCommon.IEditorContribution {
 	private static ID = "editor.contrib.gotodefinitionwithclick";
 
-	private static editorService: IEditorService;
-
-	private editor: monaco.editor.ICodeEditor;
-	private toUnhook: monaco.IDisposable[] = [];
+	private toUnhook: IDisposable[] = [];
 	private decorations: string[] = [];
 	private selectedDefDecoration: string[] = [];
 	private currentWordUnderMouse: IWordAtPositionWithLine | null;
-	private lastMouseMoveEvent: monaco.editor.IEditorMouseEvent | null;
-	private findDefinitionDebounced: (target: monaco.editor.IMouseTarget, word: monaco.editor.IWordAtPosition) => void;
+	private lastMouseMoveEvent: IEditorMouseEvent | null;
+	private findDefinitionDebounced: (target: IMouseTarget, word: editorCommon.IWordAtPosition) => void;
 	private mouseLine: number;
 	private mouseColumn: number;
 
 	constructor(
-		editor: monaco.editor.ICodeEditor,
+		private editor: ICodeEditor,
+		@IEditorService private editorService: IEditorService
 	) {
 		this.editor = editor;
 
-		this.toUnhook.push(this.editor.onMouseUp((e: monaco.editor.IEditorMouseEvent) => this.onEditorMouseUp(e)));
-		this.toUnhook.push(this.editor.onMouseMove((e: monaco.editor.IEditorMouseEvent) => this.onEditorMouseMove(e)));
+		this.toUnhook.push(this.editor.onMouseUp((e: IEditorMouseEvent) => this.onEditorMouseUp(e)));
+		this.toUnhook.push(this.editor.onMouseMove((e: IEditorMouseEvent) => this.onEditorMouseMove(e)));
 
 		this.toUnhook.push(this.editor.onDidChangeCursorSelection((e) => this.onDidChangeCursorSelection(e)));
 		this.toUnhook.push(this.editor.onDidChangeModel((e) => this.resetHandler()));
@@ -67,7 +65,7 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 		this.findDefinitionDebounced = debounce(this.findDefinitionDebounced_, 150, { leading: true, trailing: true });
 	}
 
-	private onDidChangeCursorSelection(e: monaco.editor.ICursorSelectionChangedEvent): void {
+	private onDidChangeCursorSelection(e: editorCommon.ICursorSelectionChangedEvent): void {
 		if (e.selection && e.selection.startColumn !== e.selection.endColumn) {
 			this.resetHandler(); // immediately stop this feature if the user starts to select (https://github.com/Microsoft/vscode/issues/7827)
 		}
@@ -77,8 +75,8 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 		this.highlightDefinitionAtSelection(e.selection);
 	}
 
-	private onEditorMouseMove(mouseEvent: monaco.editor.IEditorMouseEvent): void {
-		if (mouseEvent.target.type === monaco.editor.MouseTargetType.UNKNOWN) {
+	private onEditorMouseMove(mouseEvent: IEditorMouseEvent): void {
+		if (mouseEvent.target.type === editorCommon.MouseTargetType.UNKNOWN) {
 			// Occurs occasionally when mousing over syntax-highlighted tokens. Must ignore or
 			// else the decorations will erroneously be removed.
 			return;
@@ -88,7 +86,7 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 		this.lastMouseMoveEvent = mouseEvent;
 	}
 
-	private startFindDefinition(mouseEvent: monaco.editor.IEditorMouseEvent, withKey?: monaco.IKeyboardEvent): void {
+	private startFindDefinition(mouseEvent: IEditorMouseEvent, withKey?: IKeyboardEvent): void {
 		if (!this.isEnabled(mouseEvent)) {
 			this.currentWordUnderMouse = null;
 			this.removeDecorations();
@@ -120,7 +118,7 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 		this.findDefinitionDebounced(mouseEvent.target, word);
 	}
 
-	private findDefinitionDebounced_(target: monaco.editor.IMouseTarget, word: monaco.editor.IWordAtPosition): void {
+	private findDefinitionDebounced_(target: IMouseTarget, word: editorCommon.IWordAtPosition): void {
 		this.findDefinition(target.position).then(results => {
 			if (!results || !results.length) {
 				this.removeDecorations();
@@ -143,7 +141,7 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 		});
 	}
 
-	private highlightDefinitionAtSelection(selection: monaco.Selection) {
+	private highlightDefinitionAtSelection(selection: Selection) {
 		let position = ({
 			lineNumber: selection.startLineNumber,
 			column: selection.startColumn,
@@ -153,10 +151,10 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 				this.selectedDefDecoration = this.editor.deltaDecorations(this.selectedDefDecoration, []);
 				return;
 			}
-			let range: monaco.IRange | null = null;
+			let range: editorCommon.IRange | null = null;
 			for (let def of results) {
 				if (def.range.startLineNumber === selection.startLineNumber && def.range.startColumn === selection.startColumn) {
-					range = new monaco.Range(
+					range = new Range(
 						def.range.startLineNumber,
 						def.range.startColumn,
 						def.range.endLineNumber,
@@ -178,7 +176,7 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 		});
 	}
 
-	private addDecoration(range: monaco.IRange, text?: string): void {
+	private addDecoration(range: editorCommon.IRange, text?: string): void {
 		let model = this.editor.getModel();
 		if (!model) {
 			return;
@@ -203,13 +201,13 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 		this.removeDecorations();
 	}
 
-	private onEditorMouseUp(mouseEvent: monaco.editor.IEditorMouseEvent): void {
+	private onEditorMouseUp(mouseEvent: IEditorMouseEvent): void {
 		if (!this.editor.getSelection().isEmpty()) {
 			// Don't interfere with text selection.
 			return;
 		}
 
-		if (mouseEvent.event.leftButton && mouseEvent.target.type === monaco.editor.MouseTargetType.CONTENT_TEXT && !mouseEvent.event.ctrlKey) {
+		if (mouseEvent.event.leftButton && mouseEvent.target.type === editorCommon.MouseTargetType.CONTENT_TEXT && !mouseEvent.event.ctrlKey) {
 			this.gotoDefinition(mouseEvent.target).done(() => {
 				this.removeDecorations();
 			}, (err: Error) => {
@@ -219,27 +217,23 @@ export class GotoDefinitionWithClickEditorContribution implements monaco.editor.
 		}
 	}
 
-	private isEnabled(mouseEvent: monaco.editor.IEditorMouseEvent): boolean {
+	private isEnabled(mouseEvent: IEditorMouseEvent): boolean {
 		// TODO(sqs): assumes that this is always true: DefinitionProviderRegistry.has(this.editor.getModel());
 		return this.editor.getModel() &&
 			(typeof mouseEvent.event.detail === "number" && mouseEvent.event.detail <= 1) &&
-			mouseEvent.target.type === monaco.editor.MouseTargetType.CONTENT_TEXT;
+			mouseEvent.target.type === editorCommon.MouseTargetType.CONTENT_TEXT;
 	}
 
-	private findDefinition(position: monaco.IPosition): Promise<monaco.languages.Location[]> {
+	private findDefinition(position: editorCommon.IPosition): TPromise<Location[]> {
 		let model = this.editor.getModel();
 		if (!model) {
-			return Promise.resolve(null);
+			throw new Error("no model");
 		}
 
-		return new Promise((resolve, reject) => {
-			(global as any).require(["vs/editor/contrib/goToDeclaration/common/goToDeclaration"], ({getDeclarationsAtPosition}) => {
-				getDeclarationsAtPosition(model, position).then((result) => resolve(result));
-			});
-		});
+		return getDeclarationsAtPosition(model, Position.lift(position));
 	}
 
-	private gotoDefinition(target: monaco.editor.IMouseTarget): monaco.Promise<any> {
+	private gotoDefinition(target: IMouseTarget): TPromise<any> {
 		const model = this.editor.getModel();
 		if (model) {
 			const src = URIUtils.repoParams(model.uri);

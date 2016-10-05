@@ -1,7 +1,6 @@
 const webpack = require("webpack");
 const autoprefixer = require("autoprefixer");
 const url = require("url");
-const CopyWebpackPlugin = require("copy-webpack-plugin");
 const UnusedFilesWebpackPlugin = require("unused-files-webpack-plugin").UnusedFilesWebpackPlugin;
 const ProgressBarPlugin = require("progress-bar-webpack-plugin");
 
@@ -24,10 +23,16 @@ const plugins = [
 		"process.env": {
 			NODE_ENV: JSON.stringify(process.env.NODE_ENV || "development"),
 		},
+		"process.getuid": "function() { return 0; }",
+		lazyProxyReject: `function() { }`,
 	}),
 	new webpack.IgnorePlugin(/testdata\//),
 	new webpack.IgnorePlugin(/\.json$/),
 	new webpack.IgnorePlugin(/\_test\.js$/),
+
+	// This file isn't actually used, but it contains a dynamic import that Webpack complains about.
+	new webpack.IgnorePlugin(/\/monaco\.contribution\.js$/),
+
 	new ProgressBarPlugin(),
 ];
 
@@ -65,7 +70,6 @@ if (process.env.PUBLIC_WEBPACK_DEV_SERVER_URL) {
 	publicWebpackDevServer = uStruct.host;
 }
 
-plugins.push(new CopyWebpackPlugin([{from: `node_modules/monaco-editor/${production ? "min" : "dev"}/vs`, to: "vs"}]));
 plugins.push(new UnusedFilesWebpackPlugin({
 	pattern: "web_modules/**/*.*",
 	globOptions: {
@@ -97,6 +101,7 @@ module.exports = {
 		modules: [
 			`${__dirname}/web_modules`,
 			"node_modules",
+			`${__dirname}/node_modules/vscode/src`,
 		],
 		extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
 	},
@@ -111,9 +116,10 @@ module.exports = {
 		loaders: [
 			{test: /\.tsx?$/, loader: 'ts'},
 			{test: /\.json$/, loader: "json"},
-			{test: /\.woff$/, loader: "url?name=fonts/[name].[ext]"},
-			{test: /\.svg$/, loader: "url"},
-			{test: /\.css$/, loader: "style!css?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss"},
+			{test: /\.(woff|eot|ttf)$/, loader: "url?name=fonts/[name].[ext]"},
+			{test: /\.(svg|png)$/, loader: "url"},
+			{test: /\.css$/, exclude: `${__dirname}/node_modules/vscode`, loader: "style!css?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss"},
+			{test: /\.css$/, include: `${__dirname}/node_modules/vscode`, loader: "style!css"}, // TODO(sqs): add ?sourceMap
 		],
 		noParse: /\.min\.js$/,
 	},

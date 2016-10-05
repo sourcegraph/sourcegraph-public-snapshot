@@ -27,5 +27,5 @@ if grep -qr --include="*.tsx" ' from "\.' web_modules/; then
 fi
 
 # check for TypeScript errors before tslint
-./node_modules/.bin/tsc
+./node_modules/.bin/tsc --skipLibCheck
 find ./web_modules -name '*.ts' -or -name '*.tsx' | xargs ./node_modules/.bin/tslint

@@ -20,6 +20,7 @@ import { EditorComponent } from "sourcegraph/editor/EditorComponent";
 import {IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
 import { trimRepo } from "sourcegraph/repo";
 import {Store} from "sourcegraph/Store";
+import {IRange} from "vs/editor/common/editorCommon";
 
 interface Props {
 	repo: string;
@@ -117,7 +118,7 @@ export class BlobMain extends Container<Props, State> {
 				// Use absolute commit IDs for the editor model URI.
 				const uri = URIUtils.pathInRepo(nextProps.repo, nextProps.commitID, nextProps.path);
 
-				let range: monaco.IRange;
+				let range: IRange;
 				if (typeof nextProps.startLine === "number") {
 					const rop = RangeOrPosition.fromOneIndexed(nextProps.startLine, nextProps.startCol, nextProps.endLine, nextProps.endCol);
 					range = rop.toMonacoRangeAllowEmpty();
@@ -193,7 +194,7 @@ export class BlobMain extends Container<Props, State> {
 		let url = urlToBlob(repo, rev, path);
 
 		const sel = e.editor.getSelection();
-		if (!sel.isEmpty() || sel.startLineNumber !== 1) {
+		if (sel && (!sel.isEmpty() || sel.startLineNumber !== 1)) {
 			let startCol: number | undefined = sel.startColumn;
 			let endCol: number | undefined = sel.endColumn;
 			if (e.model.getLineMinColumn(sel.startLineNumber) === startCol) {

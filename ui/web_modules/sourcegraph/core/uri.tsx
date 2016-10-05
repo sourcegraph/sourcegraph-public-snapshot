@@ -1,6 +1,5 @@
-// tslint:disable no-namespace
-
 import {parse} from "url";
+import URI from "vs/base/common/uri";
 
 // A URI in Sourcegraph refers to a (file) path and revision in a
 // repository. For example:
@@ -10,30 +9,24 @@ import {parse} from "url";
 // Use pathInRepo to generate this URI, and use repoParams to
 // extract the repo, rev, and path parameters from it.
 export class URIUtils {
-	// Implementation note: This is a class so that callers refer to
-	// it as "URI.whatever", which makes it easier to scan. We aren't
-	// able to make it inherit from monaco.Uri because we load Monaco
-	// asynchronously, but if that changes in the future, we can make
-	// this a true subclass of monaco.Uri.
-
 	// pathInRepo returns a URI to a file at a specific (optional)
 	// revision in a Git repository. It is a Sourcegraph-specific
 	// convention.
-	static pathInRepo(repo: string, rev: string | null, path: string): monaco.Uri {
+	static pathInRepo(repo: string, rev: string | null, path: string): URI {
 		if (!rev) {
 			if ((global as any).console.debug) {
 				console.debug("Created URI without a rev; using HEAD.", {repo, rev, path}); // tslint:disable-line no-console
 			}
 			rev = "HEAD";
 		}
-		return monaco.Uri.parse(`git:\/\/${repo}`).with({
+		return URI.parse(`git:\/\/${repo}`).with({
 			fragment: path.replace(/^\//, ""),
 			query: rev ? encodeURIComponent(rev) : "",
 		});
 	}
 
 	// repoParams extracts the repo, rev, and path parameters
-	static repoParams(uri: monaco.Uri): {repo: string, rev: string | null, path: string} {
+	static repoParams(uri: URI): {repo: string, rev: string | null, path: string} {
 		uri = this.fromRefsDisplayURIMaybe(uri);
 		if (uri.scheme !== "git") {
 			throw new Error(`expected git URI scheme in ${uri.toString()}`);
@@ -60,11 +53,11 @@ export class URIUtils {
 
 	// withoutFilePath returns the URI without the file path (the URL
 	// fragment).
-	static withoutFilePath(uri: monaco.Uri): monaco.Uri {
+	static withoutFilePath(uri: URI): URI {
 		if (!uri.fragment) {
 			return uri;
 		}
-		return monaco.Uri.from({
+		return URI.from({
 			scheme: uri.scheme,
 			authority: uri.authority,
 			path: uri.path,
@@ -77,14 +70,14 @@ export class URIUtils {
 	// nicely in the Monaco references sidebar. This is a kludge, because the
 	// display logic for that component is not easily overridable and the only
 	// other alternative would be to change our own URI scheme for files.
-	static toRefsDisplayURI(serverURI: monaco.Uri): monaco.Uri {
-		return monaco.Uri.parse(`${serverURI.scheme}:\/\/${serverURI.authority}${serverURI.path}\/%20${serverURI.fragment}?q=${serverURI.query}&refsDisp=t`);
+	static toRefsDisplayURI(serverURI: URI): URI {
+		return URI.parse(`${serverURI.scheme}:\/\/${serverURI.authority}${serverURI.path}\/%20${serverURI.fragment}?q=${serverURI.query}&refsDisp=t`);
 	}
 
 	// fromDisplayURI converts a URI back from the Monaco-find-references form
 	// to its standard form. If the URI is not in that form to begin with, this
 	// just returns the original URI.
-	static fromRefsDisplayURIMaybe(dispURI: monaco.Uri): monaco.Uri {
+	static fromRefsDisplayURIMaybe(dispURI: URI): URI {
 		if (dispURI.query.indexOf("refsDisp") === -1) {
 			return dispURI;
 		}
@@ -94,7 +87,7 @@ export class URIUtils {
 		let sepIdx = dispURI.path.indexOf("/ ");
 		let repo = dispURI.path.slice(0, sepIdx);
 		let filepath = dispURI.path.slice(sepIdx + 2);
-		return monaco.Uri.from({
+		return URI.from({
 			scheme: dispURI.scheme,
 			authority: dispURI.authority,
 			path: repo,

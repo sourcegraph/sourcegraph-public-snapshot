@@ -3,12 +3,17 @@
     "target": "es5", // don't generate "class" statements, etc.
     "module": "es6", // generate "import" statements which will be processed by webpack
     "moduleResolution": "node",
-    "baseUrl": "web_modules",
+    "baseUrl": ".",
+    "paths": {
+        "sourcegraph/*": ["web_modules/sourcegraph/*"],
+        "vs/*": ["node_modules/vscode/src/vs/*"]
+    },
     "lib": ["es2016", "dom"],
     "types": ["mocha", "lodash"],
     "jsx": "react",
     "strictNullChecks": true,
     "sourceMap": true,
+    "experimentalDecorators": true,
     "noEmit": true
   },
   "exclude": [

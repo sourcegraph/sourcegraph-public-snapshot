@@ -1,34 +1,38 @@
 import {URIUtils} from "sourcegraph/core/uri";
 import {defaultFetch as fetch} from "sourcegraph/util/xhr";
+import URI from "vs/base/common/uri";
+import {Range} from "vs/editor/common/core/range";
+import {IPosition, IRange, IReadOnlyModel} from "vs/editor/common/editorCommon";
+import {Location as VSCLocation} from "vs/editor/common/modes";
 
-interface Position {
+interface LSPPosition {
 	line: number;
 	character: number;
 }
 
-export function toPosition(pos: monaco.IPosition): Position {
+export function toPosition(pos: IPosition): LSPPosition {
 	return {line: pos.lineNumber - 1, character: pos.column - 1};
 }
 
-interface Range {
-	start: Position;
-	end: Position;
+interface LSPRange {
+	start: LSPPosition;
+	end: LSPPosition;
 }
 
 export interface Location {
 	uri: string;
-	range: Range;
+	range: LSPRange;
 }
 
-export function toMonacoLocation(loc: Location): monaco.languages.Location {
+export function toMonacoLocation(loc: Location): VSCLocation {
 	return {
-		uri: monaco.Uri.parse(loc.uri),
+		uri: URI.parse(loc.uri),
 		range: toMonacoRange(loc.range),
 	};
 }
 
-export function toMonacoRange(r: Range): monaco.IRange {
-	return new monaco.Range(r.start.line + 1, r.start.character + 1, r.end.line + 1, r.end.character + 1);
+export function toMonacoRange(r: LSPRange): IRange {
+	return new Range(r.start.line + 1, r.start.character + 1, r.end.line + 1, r.end.character + 1);
 }
 
 type LSPResponse = {
@@ -42,7 +46,7 @@ type LSPResponse = {
 // "initialize" params into each request. The server is responsible
 // for managing the lifecycle of the LSP servers; this client treats
 // it as a stateless service.
-export function send(model: monaco.editor.IReadOnlyModel, method: string, params: any): Promise<LSPResponse> {
+export function send(model: IReadOnlyModel, method: string, params: any): Promise<LSPResponse> {
 	return sendExt(URIUtils.withoutFilePath(model.uri).toString(true), model.getModeId(), method, params);
 }
 
