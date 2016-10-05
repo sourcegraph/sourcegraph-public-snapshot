@@ -19,7 +19,6 @@ import (
 
 	"context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
@@ -127,8 +126,7 @@ func (s *Server) Cmd(env []string, args []string) *exec.Cmd {
 }
 
 func (s *Server) AsUIDWithAccess(ctx context.Context, uid string) context.Context {
-	token := auth.NewAccessToken(&auth.Actor{UID: uid}, 10*time.Minute)
-	return sourcegraph.WithAccessToken(ctx, token)
+	return auth.WithActor(ctx, &auth.Actor{UID: uid})
 }
 
 func (s *Server) Close() {

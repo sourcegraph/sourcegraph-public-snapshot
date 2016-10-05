@@ -29,7 +29,6 @@ import (
 	lightstep "github.com/lightstep/lightstep-tracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"sourcegraph.com/sourcegraph/go-flags"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
@@ -438,9 +437,8 @@ func authenticateScopedContext(ctx context.Context, scopes []string) (context.Co
 	a := &auth.Actor{
 		Scope: scopeMap,
 	}
-	tok := auth.NewAccessToken(a, 0)
 	ctx = github.NewContextWithAuthedClient(ctx)
-	return auth.WithActor(sourcegraph.WithAccessToken(ctx, tok), a), nil
+	return auth.WithActor(ctx, a), nil
 }
 
 // initializeEventListeners creates special scoped contexts and passes them to

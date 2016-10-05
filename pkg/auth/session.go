@@ -5,12 +5,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
-	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/boj/redistore"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 
 var sessionStore *redistore.RediStore
@@ -100,8 +98,7 @@ func authenticateByCookie(r *http.Request) context.Context {
 			return r.Context()
 		}
 
-		token := NewAccessToken(&actor, 7*24*time.Hour)
-		return WithActor(sourcegraph.WithAccessToken(r.Context(), token), &actor)
+		return WithActor(r.Context(), &actor)
 	}
 
 	return r.Context()
@@ -114,5 +111,5 @@ func AuthenticateByAccessToken(ctx context.Context, accessToken string) context.
 		log15.Error("error verifying access token", "error", err)
 		return ctx
 	}
-	return WithActor(sourcegraph.WithAccessToken(ctx, accessToken), actor)
+	return WithActor(ctx, actor)
 }

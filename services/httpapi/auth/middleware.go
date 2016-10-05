@@ -4,12 +4,12 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
@@ -75,11 +75,11 @@ func AuthorizationMiddleware(next http.Handler) http.Handler {
 // used to authenticate the current user. This should only be used internally since the access
 // token can not be revoked.
 func AuthorizationHeaderWithAccessToken(ctx context.Context) string {
-	accessToken := sourcegraph.AccessTokenFromContext(ctx)
-	if accessToken == "" {
+	a := auth.ActorFromContext(ctx)
+	if !a.IsAuthenticated() {
 		return ""
 	}
-	return "token " + accessToken
+	return "token " + auth.NewAccessToken(a, time.Hour)
 }
 
 // AuthorizationHeaderWithSessionCookie returns a value for the "Authorization" header that can be
