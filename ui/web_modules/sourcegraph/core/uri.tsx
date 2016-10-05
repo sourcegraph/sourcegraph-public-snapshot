@@ -88,7 +88,7 @@ export class URIUtils {
 		if (dispURI.query.indexOf("refsDisp") === -1) {
 			return dispURI;
 		}
-		let url = parse(dispURI.toString());
+		let url = parse(dispURI.toString(true), true); // skip encoding so that parse() works
 		let query = url.query;
 		let rev = query["q"] ? query["q"] : "";
 		let sepIdx = dispURI.path.indexOf("/ ");
