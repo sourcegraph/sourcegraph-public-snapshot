@@ -100,12 +100,7 @@ func authenticateByCookie(r *http.Request) context.Context {
 			return r.Context()
 		}
 
-		token, err := NewAccessToken(&actor, 7*24*time.Hour)
-		if err != nil {
-			log15.Error("error creating access token", "error", err)
-			return r.Context()
-		}
-
+		token := NewAccessToken(&actor, 7*24*time.Hour)
 		return WithActor(sourcegraph.WithAccessToken(r.Context(), token), &actor)
 	}
 

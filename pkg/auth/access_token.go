@@ -10,7 +10,7 @@ import (
 
 // New creates and signs a new OAuth2 access token that grants the
 // actor's access to the holder of the token.
-func NewAccessToken(actor *Actor, expiryDuration time.Duration) (string, error) {
+func NewAccessToken(actor *Actor, expiryDuration time.Duration) string {
 	tok := jwt.New(jwt.SigningMethod(jwt.SigningMethodHS256))
 
 	if actor != nil {
@@ -34,10 +34,10 @@ func NewAccessToken(actor *Actor, expiryDuration time.Duration) (string, error) 
 
 	s, err := tok.SignedString(ActiveIDKey.hmacKey)
 	if err != nil {
-		return "", err
+		panic(err) // this can not happen due to bad parameters to NewAccessToken
 	}
 
-	return s, nil
+	return s
 }
 
 // ParseAndVerify parses the access token and verifies that it is signed correctly.

@@ -443,10 +443,7 @@ func authenticateScopedContext(ctx context.Context, scopes []string) (context.Co
 	a := &auth.Actor{
 		Scope: scopeMap,
 	}
-	tok, err := auth.NewAccessToken(a, 0)
-	if err != nil {
-		return nil, err
-	}
+	tok := auth.NewAccessToken(a, 0)
 	ctx = github.NewContextWithAuthedClient(ctx)
 	return auth.WithActor(sourcegraph.WithAccessToken(ctx, tok), a), nil
 }

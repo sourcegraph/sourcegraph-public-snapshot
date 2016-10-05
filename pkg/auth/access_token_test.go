@@ -5,10 +5,7 @@ import (
 )
 
 func TestToken(t *testing.T) {
-	tok, err := NewAccessToken(nil, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
+	tok := NewAccessToken(nil, 0)
 
 	if _, err := ParseAndVerify(tok); err != nil {
 		t.Fatal(err)
@@ -18,6 +15,7 @@ func TestToken(t *testing.T) {
 	defer func() {
 		ActiveIDKey = defaultKey
 	}()
+	var err error
 	ActiveIDKey, err = NewIDKey([]byte(`-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEAp0CJyHipPd63h/+kI1aLcg6EzERUuACLDmpj7JfZVLEz2rkp
 gGJO+iA1mDLrv485rsYVhoGgsqdGOc8PNU4D9IcHJ4VXU6ZNTlx/uR7HUpwkGITH
