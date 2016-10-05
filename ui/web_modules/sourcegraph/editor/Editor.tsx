@@ -1,4 +1,3 @@
-import { Def } from "sourcegraph/api";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 import {URIUtils} from "sourcegraph/core/uri";
@@ -132,7 +131,7 @@ export class Editor implements monaco.IDisposable {
 			id: "findExternalReferences",
 			label: "Find External References",
 			contextMenuGroupId: "1_goto",
-			run: (e) => this._findExternalReferences(e),
+			run: (e) => this._findExternalReferences(e.getModel(), e.getPosition()),
 		});
 
 		// Rename the "Find All References" action to "Find Local References".
@@ -305,10 +304,7 @@ export class Editor implements monaco.IDisposable {
 			});
 	}
 
-	private	_findExternalReferences(editor: monaco.editor.ICommonCodeEditor): monaco.Promise<void> {
-		const model = editor.getModel();
-		const pos = editor.getPosition();
-
+	private	_findExternalReferences(model: monaco.editor.IModel, pos: monaco.IPosition): monaco.Promise<void> {
 		const {repo, rev, path} = URIUtils.repoParams(model.uri);
 		EventLogger.logEventForCategory(
 			AnalyticsConstants.CATEGORY_REFERENCES,
@@ -317,8 +313,13 @@ export class Editor implements monaco.IDisposable {
 			{ repo, rev: rev || "", path }
 		);
 
-		return new monaco.Promise<void>(() => {
-			defAtPosition(model, pos).then((resp) => {
+		const line = pos.lineNumber - 1;
+		const col = pos.column - 1;
+		return fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/hover-info?file=${path}&line=${line}&character=${col}`)
+			.then(checkStatus)
+			.then(resp => resp.json())
+			.catch(err => null)
+			.then((resp) => {
 				if (resp && (resp as any).def) {
 					// TODO(uforic): Remove this when we remove srclib dependency. Fix a special case for golang/go. 
 					const def = resp.def;
@@ -330,7 +331,6 @@ export class Editor implements monaco.IDisposable {
 					Dispatcher.Stores.dispatch(new BlobActions.Toast("No external references found"));
 				}
 			});
-		});
 	}
 
 	// disableInterferingModes disables built-in Monaco features that
@@ -373,27 +373,3 @@ export class Editor implements monaco.IDisposable {
 		});
 	}
 }
-
-interface HoverInfoResponse {
-	def: Def;
-	Title?: string;
-	Unresolved?: boolean;
-}
-
-function defAtPosition(model: monaco.editor.IReadOnlyModel, position: monaco.Position): monaco.Thenable<HoverInfoResponse> {
-	const line = position.lineNumber - 1;
-	const col = position.column - 1;
-	const {repo, rev, path} = URIUtils.repoParams(model.uri);
-	return fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/hover-info?file=${path}&line=${line}&character=${col}`)
-		.then(checkStatus)
-		.then(resp => resp.json())
-		.catch(err => null);
-}
-
-interface JumpToDefResponse {
-	Path: string;
-}
-
-type ReferencesResponse = {
-	Locs: lsp.Location[];
-};
