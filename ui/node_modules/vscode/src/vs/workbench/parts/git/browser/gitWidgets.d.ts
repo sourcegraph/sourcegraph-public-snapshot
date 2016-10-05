@@ -1,0 +1,32 @@
+import { IDisposable } from 'vs/base/common/lifecycle';
+import { IGitService } from 'vs/workbench/parts/git/common/git';
+import { IStatusbarItem } from 'vs/workbench/browser/parts/statusbar/statusbar';
+import { IQuickOpenService } from 'vs/workbench/services/quickopen/common/quickOpenService';
+import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
+import { IMessageService } from 'vs/platform/message/common/message';
+export declare class GitStatusbarItem implements IStatusbarItem {
+    private messageService;
+    private telemetryService;
+    private instantiationService;
+    private gitService;
+    private quickOpenService;
+    private state;
+    private element;
+    private branchElement;
+    private publishElement;
+    private syncElement;
+    private syncLabelElement;
+    private disablementDelayer;
+    private syncAction;
+    private publishAction;
+    private toDispose;
+    constructor(instantiationService: IInstantiationService, gitService: IGitService, quickOpenService: IQuickOpenService, messageService: IMessageService, telemetryService: ITelemetryService);
+    render(container: HTMLElement): IDisposable;
+    private onGitServiceChange();
+    private setState(state);
+    private onBranchClick();
+    private onPublishClick();
+    private onSyncClick();
+    private runAction(action);
+}
