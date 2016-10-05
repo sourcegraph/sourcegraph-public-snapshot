@@ -9,10 +9,8 @@ import (
 )
 
 // New creates and signs a new OAuth2 access token that grants the
-// actor's access to the holder of the token. The given scopes are
-// applied as well. The retuned token is assumed to be
-// public and must not include any secret data.
-func NewAccessToken(actor *Actor, scopes []string, expiryDuration time.Duration) (string, error) {
+// actor's access to the holder of the token.
+func NewAccessToken(actor *Actor, expiryDuration time.Duration) (string, error) {
 	tok := jwt.New(jwt.SigningMethod(jwt.SigningMethodHS256))
 
 	if actor != nil {
@@ -25,10 +23,8 @@ func NewAccessToken(actor *Actor, scopes []string, expiryDuration time.Duration)
 		tok.Claims["GitHubConnected"] = actor.GitHubConnected
 		tok.Claims["GitHubScopes"] = strings.Join(actor.GitHubScopes, ",")
 		tok.Claims["GitHubToken"] = actor.GitHubToken // FIXME: It is not nice to store this here, but currently our codebase expects it to be quickly avaialble everywhere.
-		scopes = append(scopes, marshalScope(actor.Scope)...)
+		tok.Claims["Scope"] = strings.Join(marshalScope(actor.Scope), " ")
 	}
-
-	tok.Claims["Scope"] = strings.Join(scopes, " ")
 
 	if expiryDuration != 0 {
 		expiry := time.Now().Add(expiryDuration)

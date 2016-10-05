@@ -5,7 +5,7 @@ import (
 )
 
 func TestToken(t *testing.T) {
-	tok, err := NewAccessToken(nil, nil, 0)
+	tok, err := NewAccessToken(nil, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

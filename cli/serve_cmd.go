@@ -443,7 +443,7 @@ func authenticateScopedContext(ctx context.Context, scopes []string) (context.Co
 	a := &auth.Actor{
 		Scope: scopeMap,
 	}
-	tok, err := auth.NewAccessToken(a, nil, 0)
+	tok, err := auth.NewAccessToken(a, 0)
 	if err != nil {
 		return nil, err
 	}

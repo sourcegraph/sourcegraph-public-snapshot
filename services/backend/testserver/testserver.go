@@ -136,7 +136,7 @@ func (s *Server) Cmd(env []string, args []string) *exec.Cmd {
 }
 
 func (s *Server) AsUIDWithAccess(ctx context.Context, uid string) context.Context {
-	token, err := auth.NewAccessToken(&auth.Actor{UID: uid}, nil, 10*time.Minute)
+	token, err := auth.NewAccessToken(&auth.Actor{UID: uid}, 10*time.Minute)
 	if err != nil {
 		panic(err)
 	}
