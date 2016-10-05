@@ -14,7 +14,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 func TestAsyncService_RefreshIndexes(t *testing.T) {
@@ -44,7 +43,7 @@ func TestAsyncService_RefreshIndexes(t *testing.T) {
 		}),
 	}
 	calledEnqueue := localstore.Mocks.Queue.MockEnqueue(t, job)
-	_, err := s.RefreshIndexes(ctx, op)
+	err := s.RefreshIndexes(ctx, op)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,12 +134,12 @@ func TestAsyncWorker_mutex(t *testing.T) {
 	called2 := false
 	wait1 := make(chan interface{})
 	done1 := make(chan interface{})
-	Mocks.Defs.RefreshIndex = func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
+	Mocks.Defs.RefreshIndex = func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error {
 		switch ctx.Value("source").(int) {
 		case 1:
 			close(called1)
 			<-wait1
-			return nil, nil
+			return nil
 		case 2:
 			called2 = true
 			wantOp := &sourcegraph.DefsRefreshIndexOp{
@@ -150,11 +149,11 @@ func TestAsyncWorker_mutex(t *testing.T) {
 			if !reflect.DeepEqual(op, wantOp) {
 				t.Fatalf("unexpected DefsRefreshIndexOp, got %+v != %+v", op, wantOp)
 			}
-			return &pbtypes.Void{}, nil
+			return nil
 		default:
 			t.Fatal("unexpected ctx")
 		}
-		return nil, errors.New("unreachable")
+		return errors.New("unreachable")
 	}
 	go func() {
 		err := w.refreshIndexes(ctx1, op)

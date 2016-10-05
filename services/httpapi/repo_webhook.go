@@ -20,7 +20,7 @@ func serveRepoWebhookEnable(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("empty URI")
 	}
 
-	_, err := backend.Repos.EnableWebhook(r.Context(), &opt)
+	err := backend.Repos.EnableWebhook(r.Context(), &opt)
 	if err != nil {
 		return err
 	}

@@ -17,7 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 // emptyGitCommitID is used in githttp.Event objects in the Last (or
@@ -28,7 +27,7 @@ var MirrorRepos = &mirrorRepos{}
 
 type mirrorRepos struct{}
 
-func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) (res *pbtypes.Void, err error) {
+func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) (err error) {
 	if Mocks.MirrorRepos.RefreshVCS != nil {
 		return Mocks.MirrorRepos.RefreshVCS(ctx, op)
 	}
@@ -66,26 +65,26 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	repo, err := localstore.Repos.Get(ctx, op.Repo)
 	if err != nil {
 		log15.Error("RefreshVCS: failed to get repo", "error", err, "repo", op.Repo)
-		return nil, err
+		return err
 	}
 
 	vcsRepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
 	if err != nil {
 		log15.Error("RefreshVCS: failed to open VCS", "error", err, "URI", repo.URI)
-		return nil, err
+		return err
 	}
 	if err := s.updateRepo(ctx, repo, vcsRepo, remoteOpts); err != nil {
 		if !vcs.IsRepoNotExist(err) {
 			log15.Error("RefreshVCS: update repo failed unexpectedly", "error", err, "repo", repo.URI)
-			return nil, err
+			return err
 		}
 		if err.(vcs.RepoNotExistError).CloneInProgress {
 			log15.Info("RefreshVCS: clone in progress, not updating", "repo", repo.URI)
-			return &pbtypes.Void{}, nil
+			return nil
 		}
 		if err := s.cloneRepo(ctx, repo, remoteOpts); err != nil {
 			log15.Info("RefreshVCS: cloneRepo failed", "error", err, "repo", repo.URI)
-			return nil, err
+			return err
 		}
 	}
 
@@ -94,11 +93,11 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		ctx2 := authpkg.WithActor(ctx, &authpkg.Actor{Scope: map[string]bool{"internal:repo-internal-update": true}})
 		if err := localstore.Repos.InternalUpdate(ctx2, repo.ID, localstore.InternalRepoUpdate{VCSSyncedAt: &now}); err != nil {
 			log15.Info("RefreshVCS: updating repo internal VCSSyncedAt failed", "err", err, "repo", repo.URI)
-			return nil, err
+			return err
 		}
 	}
 
-	return &pbtypes.Void{}, nil
+	return nil
 }
 
 var skipCloneRepoAsyncSteps = false
@@ -141,7 +140,7 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 				Commit: res.CommitID,
 			})
 
-			_, _ = Async.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
+			_ = Async.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
 				Repo:   repo.ID,
 				Source: "clone",
 			})
@@ -263,5 +262,5 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 }
 
 type MockMirrorRepos struct {
-	RefreshVCS func(v0 context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
+	RefreshVCS func(v0 context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) error
 }

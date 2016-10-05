@@ -67,7 +67,7 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 
 		// If we have updated the DefaultBranch, trigger a refresh of the indexes
 		if event.Branch == repo.DefaultBranch {
-			_, _ = backend.Async.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
+			_ = backend.Async.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
 				Repo:   repoID,
 				Source: fmt.Sprintf("pushhook %s", event.Commit),
 			})

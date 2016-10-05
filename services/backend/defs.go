@@ -20,7 +20,6 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/unit"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 var Defs = &defs{}
@@ -358,7 +357,7 @@ type MockDefs struct {
 	ListRefs         func(v0 context.Context, v1 *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
 	ListRefLocations func(v0 context.Context, v1 *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
 	ListAuthors      func(v0 context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error)
-	RefreshIndex     func(v0 context.Context, v1 *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error)
+	RefreshIndex     func(v0 context.Context, v1 *sourcegraph.DefsRefreshIndexOp) error
 }
 
 func (s *MockDefs) MockGet(t *testing.T, wantDef sourcegraph.DefSpec) (called *bool) {
@@ -400,12 +399,12 @@ func (s *MockDefs) MockList(t *testing.T, wantDefs ...*sourcegraph.Def) (called 
 
 func (s *MockDefs) MockRefreshIndex(t *testing.T, wantOp *sourcegraph.DefsRefreshIndexOp) (called *bool) {
 	called = new(bool)
-	s.RefreshIndex = func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
+	s.RefreshIndex = func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error {
 		*called = true
 		if !reflect.DeepEqual(op, wantOp) {
 			t.Fatalf("unexpected DefsRefreshIndexOp, got %+v != %+v", op, wantOp)
 		}
-		return &pbtypes.Void{}, nil
+		return nil
 	}
 	return
 }

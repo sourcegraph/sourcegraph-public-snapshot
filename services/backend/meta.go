@@ -6,14 +6,13 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 var Meta = &meta{}
 
 type meta struct{}
 
-func (s *meta) Config(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.ServerConfig, error) {
+func (s *meta) Config(ctx context.Context) (*sourcegraph.ServerConfig, error) {
 	c := &sourcegraph.ServerConfig{
 		Version: buildvar.Version,
 		AppURL:  conf.AppURL.String(),
@@ -23,5 +22,5 @@ func (s *meta) Config(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Server
 }
 
 type MockMeta struct {
-	Config func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerConfig, error)
+	Config func(v0 context.Context) (*sourcegraph.ServerConfig, error)
 }

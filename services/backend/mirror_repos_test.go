@@ -9,7 +9,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 func TestRefreshVCS(t *testing.T) {
@@ -27,7 +26,7 @@ func TestRefreshVCS(t *testing.T) {
 	})
 	calledInternalUpdate := localstore.Mocks.Repos.MockInternalUpdate(t)
 
-	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
+	err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
 	if !updatedEverything {
 		t.Error("Did not call UpdateEverything")
 	}
@@ -54,12 +53,12 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 		cloned = true
 		return nil
 	}
-	Mocks.Async.RefreshIndexes = func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
-		return &pbtypes.Void{}, nil
+	Mocks.Async.RefreshIndexes = func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) error {
+		return nil
 	}
 	calledInternalUpdate := localstore.Mocks.Repos.MockInternalUpdate(t)
 
-	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
+	err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
 	if !cloned {
 		t.Error("RefreshVCS did not clone missing repo")
 	}
@@ -84,12 +83,12 @@ func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 	localstore.Mocks.RepoVCS.Clone = func(_ context.Context, _ int32, _ *localstore.CloneInfo) error {
 		return vcs.ErrRepoExist
 	}
-	Mocks.Async.RefreshIndexes = func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
-		return &pbtypes.Void{}, nil
+	Mocks.Async.RefreshIndexes = func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) error {
+		return nil
 	}
 	calledInternalUpdate := localstore.Mocks.Repos.MockInternalUpdate(t)
 
-	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
+	err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
 	if err != nil {
 		t.Fatalf("RefreshVCS call failed: %s", err)
 	}

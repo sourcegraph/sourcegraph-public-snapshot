@@ -25,13 +25,13 @@ func serveRefreshIndexes(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if opt.Blocking {
-		_, err = backend.Defs.RefreshIndex(r.Context(), &sourcegraph.DefsRefreshIndexOp{
+		err = backend.Defs.RefreshIndex(r.Context(), &sourcegraph.DefsRefreshIndexOp{
 			Repo:                repo,
 			RefreshRefLocations: true,
 			Force:               true,
 		})
 	} else {
-		_, err = backend.Async.RefreshIndexes(r.Context(), &sourcegraph.AsyncRefreshIndexesOp{
+		err = backend.Async.RefreshIndexes(r.Context(), &sourcegraph.AsyncRefreshIndexesOp{
 			Repo:   repo,
 			Source: "httpapi",
 			Force:  true,

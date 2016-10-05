@@ -5,7 +5,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 var RepoStatuses = &repoStatuses{}
@@ -23,9 +22,9 @@ func (s *repoStatuses) GetCombined(ctx context.Context, repoRev *sourcegraph.Rep
 	return localstore.RepoStatuses.GetCombined(ctx, repoRev.Repo, repoRev.CommitID)
 }
 
-func (s *repoStatuses) GetCoverage(ctx context.Context, _ *pbtypes.Void) (res *sourcegraph.RepoStatusList, err error) {
+func (s *repoStatuses) GetCoverage(ctx context.Context) (res *sourcegraph.RepoStatusList, err error) {
 	if Mocks.RepoStatuses.GetCoverage != nil {
-		return Mocks.RepoStatuses.GetCoverage(ctx, &pbtypes.Void{})
+		return Mocks.RepoStatuses.GetCoverage(ctx)
 	}
 
 	ctx, done := trace(ctx, "RepoStatuses", "GetCoverage", nil, &err)
@@ -53,6 +52,6 @@ func (s *repoStatuses) Create(ctx context.Context, op *sourcegraph.RepoStatusesC
 
 type MockRepoStatuses struct {
 	GetCombined func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error)
-	GetCoverage func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.RepoStatusList, error)
+	GetCoverage func(v0 context.Context) (*sourcegraph.RepoStatusList, error)
 	Create      func(v0 context.Context, v1 *sourcegraph.RepoStatusesCreateOp) (*sourcegraph.RepoStatus, error)
 }

@@ -15,7 +15,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (res *sourcegraph.RefList, err error) {
@@ -119,7 +118,7 @@ func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRef
 	return localstore.GlobalRefs.Get(ctx, op)
 }
 
-func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (res *pbtypes.Void, err error) {
+func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (err error) {
 	if Mocks.Defs.RefreshIndex != nil {
 		return Mocks.Defs.RefreshIndex(ctx, op)
 	}
@@ -130,7 +129,7 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: op.Repo})
 	if err != nil {
 		log15.Warn("Defs.RefreshIndex (Repos.ResolveRev) failed", "error", err)
-		return nil, err
+		return err
 	}
 
 	// rev.CommitID will be the latest commit on the DefaultBranch
@@ -151,12 +150,12 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	// specific gRPC meaning.
 	if defsErr != nil {
 		log15.Warn("Defs.RefreshIndex (Defs.Update) failed", "error", defsErr)
-		return nil, defsErr
+		return defsErr
 	}
 	if refsErr != nil {
 		log15.Warn("Defs.RefreshIndex (GlobalRefs.Update) failed", "error", refsErr)
-		return nil, refsErr
+		return refsErr
 	}
 
-	return &pbtypes.Void{}, nil
+	return nil
 }

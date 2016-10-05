@@ -7,7 +7,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 // NOTE: Only the importer part of the graph service is available over
@@ -20,9 +19,9 @@ var Graph = &graph_{}
 // this package import.
 type graph_ struct{}
 
-func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, error) {
+func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Graph.Import", op.Repo); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Update global deps
@@ -42,7 +41,7 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 		},
 	}
 	if err := dstore.Upsert(ctx, []*unit.Resolution{resolution}); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Resolve ref dependency info
@@ -53,7 +52,7 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 			if _, isResolved := resolveCache[raw]; !isResolved {
 				resolved, err := dstore.Resolve(ctx, &raw)
 				if err != nil {
-					return nil, err
+					return err
 				}
 				if len(resolved) >= 1 {
 					r := resolved[0]
@@ -71,22 +70,24 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 
 	gstore := localstore.Graph
 	if _, err := pb.Server(gstore).Import(ctx, op); err != nil {
-		return nil, err
+		return err
 	}
 
-	return &pbtypes.Void{}, nil
+	return nil
 }
 
-func (s *graph_) Index(ctx context.Context, op *pb.IndexOp) (*pbtypes.Void, error) {
+func (s *graph_) Index(ctx context.Context, op *pb.IndexOp) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Graph.Index", op.Repo); err != nil {
-		return nil, err
+		return err
 	}
-	return pb.Server(localstore.Graph).Index(ctx, op)
+	_, err := pb.Server(localstore.Graph).Index(ctx, op)
+	return err
 }
 
-func (s *graph_) CreateVersion(ctx context.Context, op *pb.CreateVersionOp) (*pbtypes.Void, error) {
+func (s *graph_) CreateVersion(ctx context.Context, op *pb.CreateVersionOp) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Graph.CreateVersion", op.Repo); err != nil {
-		return nil, err
+		return err
 	}
-	return pb.Server(localstore.Graph).CreateVersion(ctx, op)
+	_, err := pb.Server(localstore.Graph).CreateVersion(ctx, op)
+	return err
 }

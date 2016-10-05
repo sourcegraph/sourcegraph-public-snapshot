@@ -19,7 +19,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 var Async = &async{}
@@ -43,7 +42,7 @@ func StartAsyncWorkers(ctx context.Context) {
 	}
 }
 
-func (s *async) RefreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefreshIndexesOp) (res *pbtypes.Void, err error) {
+func (s *async) RefreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefreshIndexesOp) (err error) {
 	if Mocks.Async.RefreshIndexes != nil {
 		return Mocks.Async.RefreshIndexes(ctx, op)
 	}
@@ -56,10 +55,10 @@ func (s *async) RefreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefresh
 	// not support.
 	ok, err := s.shouldRefreshIndex(ctx, op)
 	if err != nil {
-		return nil, err
+		return err
 	} else if !ok {
 		asyncRefreshIndexesUnsupported.Inc()
-		return &pbtypes.Void{}, nil
+		return nil
 	}
 
 	// Keep track of who triggered a refresh
@@ -69,16 +68,16 @@ func (s *async) RefreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefresh
 
 	args, err := json.Marshal(op)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	err = localstore.Queue.Enqueue(ctx, &localstore.Job{
 		Type: "RefreshIndexes",
 		Args: args,
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &pbtypes.Void{}, nil
+	return nil
 }
 
 func (s *async) shouldRefreshIndex(ctx context.Context, op *sourcegraph.AsyncRefreshIndexesOp) (bool, error) {
@@ -173,7 +172,7 @@ func (s *asyncWorker) refreshIndexes(ctx context.Context, op *sourcegraph.AsyncR
 	}
 	defer release()
 
-	_, err := Defs.RefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
+	err := Defs.RefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
 		Repo:                op.Repo,
 		RefreshRefLocations: true,
 		Force:               op.Force,
@@ -197,17 +196,17 @@ func init() {
 }
 
 type MockAsync struct {
-	RefreshIndexes func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error)
+	RefreshIndexes func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) error
 }
 
 func (s *MockAsync) MockRefreshIndexes(t *testing.T, want *sourcegraph.AsyncRefreshIndexesOp) (called *bool) {
 	called = new(bool)
-	s.RefreshIndexes = func(ctx context.Context, got *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
+	s.RefreshIndexes = func(ctx context.Context, got *sourcegraph.AsyncRefreshIndexesOp) error {
 		*called = true
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("got AsyncRefeshIndexesOp %+v, want %+v", got, want)
 		}
-		return &pbtypes.Void{}, nil
+		return nil
 	}
 	return
 }

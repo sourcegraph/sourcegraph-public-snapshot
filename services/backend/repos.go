@@ -520,7 +520,7 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (res 
 	return s.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
 }
 
-func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (res *pbtypes.Void, err error) {
+func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (err error) {
 	if Mocks.Repos.Delete != nil {
 		return Mocks.Repos.Delete(ctx, repo)
 	}
@@ -529,9 +529,9 @@ func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (res *pb
 	defer done()
 
 	if err := localstore.Repos.Delete(ctx, repo.ID); err != nil {
-		return nil, err
+		return err
 	}
-	return &pbtypes.Void{}, nil
+	return nil
 }
 
 func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (res *sourcegraph.RepoConfig, err error) {
@@ -663,7 +663,7 @@ func sendCreateRepoSlackMsg(ctx context.Context, uri, language string, mirror, p
 	notif.PostOnboardingNotif(msg)
 }
 
-func (s *repos) EnableWebhook(ctx context.Context, op *sourcegraph.RepoWebhookOptions) (res *pbtypes.Void, err error) {
+func (s *repos) EnableWebhook(ctx context.Context, op *sourcegraph.RepoWebhookOptions) (err error) {
 	if Mocks.Repos.EnableWebhook != nil {
 		return Mocks.Repos.EnableWebhook(ctx, op)
 	}
@@ -672,7 +672,7 @@ func (s *repos) EnableWebhook(ctx context.Context, op *sourcegraph.RepoWebhookOp
 	defer done()
 
 	if !github.HasAuthedUser(ctx) {
-		return nil, errors.New("Unauthed user")
+		return errors.New("Unauthed user")
 	}
 
 	ctx = github.NewContextWithAuthedClient(ctx)
@@ -685,8 +685,8 @@ func (s *repos) EnableWebhook(ctx context.Context, op *sourcegraph.RepoWebhookOp
 		},
 		Active: gogithub.Bool(true),
 	}); err != nil {
-		return nil, err
+		return err
 	}
 
-	return &pbtypes.Void{}, nil
+	return nil
 }

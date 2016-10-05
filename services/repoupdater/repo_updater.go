@@ -11,12 +11,11 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 // FIXME this dependency injection should be removed
 var MirrorRepos interface {
-	RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
+	RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) error
 }
 
 const (
@@ -164,7 +163,7 @@ func (ru *repoUpdater) run(ctx context.Context) {
 			} else {
 				log15.Debug("repoUpdater: RefreshVCS:", "repo", updateOp.Repo)
 			}
-			if _, err := MirrorRepos.RefreshVCS(ctx, op); err != nil {
+			if err := MirrorRepos.RefreshVCS(ctx, op); err != nil {
 				log15.Warn("repoUpdater: RefreshVCS:", "error", err)
 				continue
 			}
