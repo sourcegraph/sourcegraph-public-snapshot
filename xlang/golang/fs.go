@@ -85,11 +85,13 @@ func (h *handlerShared) filePath(uri string) string {
 
 func (h *handlerShared) readFile(ctx context.Context, uri string) ([]byte, error) {
 	h.mu.Lock()
-	defer h.mu.Unlock()
-	contents, err := ctxvfs.ReadFile(ctx, h.fs, h.filePath(uri))
+	fs := h.fs
+	path := h.filePath(uri)
+	h.mu.Unlock()
+	contents, err := ctxvfs.ReadFile(ctx, fs, path)
 	if os.IsNotExist(err) {
 		if _, ok := err.(*os.PathError); !ok {
-			err = &os.PathError{Op: "Open", Path: h.filePath(uri), Err: err}
+			err = &os.PathError{Op: "Open", Path: path, Err: err}
 		}
 	}
 	return contents, err
@@ -98,6 +100,8 @@ func (h *handlerShared) readFile(ctx context.Context, uri string) ([]byte, error
 func (h *handlerShared) addOverlayFile(uri string, contents []byte) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	h.overlayFSMu.Lock()
+	defer h.overlayFSMu.Unlock()
 	path := h.filePath(uri)
 	path = pathTrimPrefix(path, h.overlayMountPath)
 	h.overlayFS[path] = contents
@@ -106,12 +110,16 @@ func (h *handlerShared) addOverlayFile(uri string, contents []byte) {
 func (h *handlerShared) removeOverlayFile(uri string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	h.overlayFSMu.Lock()
+	defer h.overlayFSMu.Unlock()
 	delete(h.overlayFS, h.filePath(uri))
 }
 
 func (h *handlerShared) readOverlayFile(uri string) (contents []byte, found bool) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	h.overlayFSMu.Lock()
+	defer h.overlayFSMu.Unlock()
 	contents, found = h.overlayFS[h.filePath(uri)]
 	return
 }
