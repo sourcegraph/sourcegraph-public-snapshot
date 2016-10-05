@@ -130,11 +130,11 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	// one error (instead of a errList or something) since it may have a
 	// specific gRPC meaning.
 	if defsErr != nil {
-		log15.Warn("Defs.RefreshIndex (Defs.Update) failed", "error", err)
+		log15.Warn("Defs.RefreshIndex (Defs.Update) failed", "error", defsErr)
 		return nil, defsErr
 	}
 	if refsErr != nil {
-		log15.Warn("Defs.RefreshIndex (GlobalRefs.Update) failed", "error", err)
+		log15.Warn("Defs.RefreshIndex (GlobalRefs.Update) failed", "error", refsErr)
 		return nil, refsErr
 	}
 
