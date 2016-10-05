@@ -115,7 +115,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	// Check consistency against the URL. The URL route params are for
 	// ease of debugging only, but it'd be confusing if they could
 	// diverge from the actual jsonrpc2 request.
-	if v := mux.Vars(r); v["LSPMethod"] != reqs[1].Method {
+	if v := mux.Vars(r); v["LSPMethod"] != strings.TrimSuffix(reqs[1].Method, "?prepare") {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: fmt.Errorf("LSP method param in URL %q != %q method in LSP message params", v["LSPMethod"], reqs[1].Method)}
 	}
 
@@ -183,6 +183,10 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	// the client needs.
 	resps := make([]*jsonrpc2.Response, len(reqs))
 	for i, req := range reqs {
+		// ?prepare indicates we are only doing the request to warm up
+		// the LSP servers. Only the HTTP gateway understands this, so
+		// we do not pass it on.
+		req.Method = strings.TrimSuffix(req.Method, "?prepare")
 		if req.Notif {
 			if err := c.Notify(ctx, req.Method, req.Params, addMeta); err != nil {
 				return err

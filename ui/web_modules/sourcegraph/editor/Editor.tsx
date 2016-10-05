@@ -104,7 +104,9 @@ export class Editor implements monaco.IDisposable {
 			if (this._editor.getModel().getModeId() !== "go") {
 				return;
 			}
-			lsp.send(this._editor.getModel(), "textDocument/definition", {
+			// We modify the name to indicate to our HTTP gateway that this
+			// should not be measured as a user triggered action.
+			lsp.send(this._editor.getModel(), "textDocument/definition?prepare", {
 				textDocument: {uri: e.newModelUrl.toString(true)},
 				position: new monaco.Position(0, 0),
 			});
