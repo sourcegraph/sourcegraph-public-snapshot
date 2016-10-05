@@ -439,13 +439,14 @@ func authenticateScopedContext(ctx context.Context, scopes []string) (context.Co
 	for _, s := range scopes {
 		scopeMap[s] = true
 	}
-	tok, err := auth.NewAccessToken(&auth.Actor{
+	a := &auth.Actor{
 		Scope: scopeMap,
-	}, nil, 0)
+	}
+	tok, err := auth.NewAccessToken(a, nil, 0)
 	if err != nil {
 		return nil, err
 	}
-	return sourcegraph.WithAccessToken(ctx, tok), nil
+	return auth.WithActor(sourcegraph.WithAccessToken(ctx, tok), a), nil
 }
 
 // initializeEventListeners creates special scoped contexts and passes them to
