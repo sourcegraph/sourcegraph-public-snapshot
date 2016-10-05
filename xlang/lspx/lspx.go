@@ -1,4 +1,16 @@
 // Package lspx contains extensions to the LSP protocol.
+//
+// An overview of the different protocol variants:
+//
+// 	// vanilla LSP
+// 	sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp
+//
+// 	// proxy (http gateway) server LSP extensions
+// 	sourcegraph.com/sourcegraph/sourcegraph/xlang
+//
+// 	// (this package) gbuild/lang server LSP extensions
+// 	sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx
+//
 package lspx
 
 import (
