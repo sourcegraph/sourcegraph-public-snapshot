@@ -8,7 +8,6 @@ import {GlobalNavStore, SetQuickOpenVisible} from "sourcegraph/app/GlobalNav/Glo
 import {SearchCTA} from "sourcegraph/app/GlobalNav/SearchCTA";
 import {SignupOrLogin} from "sourcegraph/app/GlobalNav/SignupOrLogin";
 import {UserMenu} from "sourcegraph/app/GlobalNav/UserMenu";
-import {LocationState} from "sourcegraph/app/locationState";
 import {BetaSignup, Integrations, Login, Signup} from "sourcegraph/app/modals/index";
 import {isRootRoute} from "sourcegraph/app/routePatterns";
 import * as styles from "sourcegraph/app/styles/GlobalNav.css";
@@ -23,7 +22,7 @@ import {Store} from "sourcegraph/Store";
 
 interface Props {
 	navContext?: JSX.Element;
-	location: Location & {state: LocationState};
+	location: Location & {state: {modal?: string}};
 	params: any;
 	role?: string;
 }
