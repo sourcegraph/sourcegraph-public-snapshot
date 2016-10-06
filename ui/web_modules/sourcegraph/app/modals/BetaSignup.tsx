@@ -21,14 +21,12 @@ export const BetaSignup = (props: Props): JSX.Element => {
 		marginRight: "auto",
 	};
 
-	return(
-		<LocationStateModal modalName="menuBeta" location={props.location}>
-			<div className={styles.modal} style={sx}>
-				<Heading level={4} mb={3} align="center">Join our beta program</Heading>
-				<BetaInterestForm
-					loginReturnTo="/beta"
-					onSubmit={dismissModal("menuBeta", props.location, props.router)} />
-			</div>
-		</LocationStateModal>
-	);
+	return <LocationStateModal modalName="menuBeta" location={props.location} router={props.router}>
+		<div className={styles.modal} style={sx}>
+			<Heading level={4} mb={3} align="center">Join our beta program</Heading>
+			<BetaInterestForm
+				loginReturnTo="/beta"
+				onSubmit={dismissModal("menuBeta", props.location, props.router)} />
+		</div>
+	</LocationStateModal>;
 };

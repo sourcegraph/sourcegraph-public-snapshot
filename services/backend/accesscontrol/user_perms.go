@@ -100,6 +100,8 @@ func VerifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, meth
 			_, err := github.ReposFromContext(ctx).Get(ctx, repoURI)
 			if _, ok := err.(*gogithub.RateLimitError); ok {
 				return grpc.Errorf(codes.ResourceExhausted, "GitHub API rate limit exceeded, try again later")
+			} else if _, ok := err.(*gogithub.AbuseRateLimitError); ok {
+				return grpc.Errorf(codes.ResourceExhausted, "GitHub API rate limit exceeded, try again later")
 			} else if err != nil {
 				// TODO: We don't support git clients anymore, get rid of this.
 				// We don't know if the error is unauthenticated or unauthorized, so return unauthenticated

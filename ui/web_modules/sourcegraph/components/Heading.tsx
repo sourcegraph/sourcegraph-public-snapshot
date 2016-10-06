@@ -53,6 +53,7 @@ export const Heading = (props: Props): any => {
 			textTransform: props.level === 7 ? "uppercase" : "auto",
 			textAlign: props.align,
 		},
+		props.style,
 	);
 
 	const underlineSx = {

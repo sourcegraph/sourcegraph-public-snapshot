@@ -602,10 +602,10 @@
 			"revisionTime": "2016-01-23T01:39:49Z"
 		},
 		{
-			"checksumSHA1": "DbJ/6B8bxFeRh6jI4+MLARJOkBo=",
+			"checksumSHA1": "CPp/qhvtiXAMDO5WTHeH7ykyLgU=",
 			"path": "github.com/sourcegraph/go-github/github",
-			"revision": "6c0472a7690bdb983189bb16aa31512ae1928e6e",
-			"revisionTime": "2016-09-14T16:45:29Z"
+			"revision": "222690b1844c222da8de820e6d6056812102f039",
+			"revisionTime": "2016-10-05T21:35:20Z"
 		},
 		{
 			"path": "github.com/sourcegraph/go-papertrail/papertrail",

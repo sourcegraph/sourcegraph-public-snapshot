@@ -24,7 +24,7 @@ export class LoginForm extends Component<Props, State> {
 		return (
 			<div className={styles.form}>
 				<Heading level="3" align="center" underline="orange">Sign in to Sourcegraph</Heading>
-				<GitHubAuthButton returnTo={this.state.returnTo || this.props.location} tabIndex={1} block={true}>Continue with GitHub</GitHubAuthButton>
+				<GitHubAuthButton returnTo={this.props.returnTo || this.props.location} tabIndex={1} block={true}>Continue with GitHub</GitHubAuthButton>
 				<p className={styles.sub_text}>
 					No account yet? <Link tabIndex={5} to="/join">Sign up.</Link>
 				</p>
