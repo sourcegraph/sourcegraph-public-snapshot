@@ -24,7 +24,7 @@ export const Integrations = (props: Props): JSX.Element => {
 	};
 
 	return (
-		<LocationStateModal modalName="menuIntegrations" location={props.location} style={sx}>
+		<LocationStateModal modalName="menuIntegrations" location={props.location} router={props.router} style={sx}>
 			<div className={styles.modal} style={sx}>
 				<a className={styles.modal_dismiss} onClick={dismissModal("menuIntegrations", props.location, props.router)}>
 					<CloseIcon className={base.pt2} />

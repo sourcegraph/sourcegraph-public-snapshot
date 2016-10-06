@@ -25,7 +25,7 @@ export const Signup = (props: Props): JSX.Element => {
 	};
 
 	return(
-		<LocationStateModal modalName="join" location={props.location}
+		<LocationStateModal modalName="join" location={props.location} router={props.router}
 			onDismiss={(v) => EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissJoinModal", {page_name: props.location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 			<div className={styles.modal} style={sx}>
 				<SignupForm

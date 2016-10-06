@@ -96,11 +96,11 @@ export class GlobalNav extends Container<Props, State> {
 		if (location.state) {
 			const m = location.state.modal;
 			modal = <div>
-				{m === "login" && !context.user && <Login location={location}/>}
-				{m === "join" && <Signup location={location} router={this.context.router} shouldHide={shouldHide}/>}
+				{m === "login" && !context.user && <Login location={location} router={this.context.router} />}
+				{m === "join" && <Signup location={location} router={this.context.router} shouldHide={shouldHide} />}
 				{m === "menuBeta" && <BetaSignup location={location} router={this.context.router} />}
 				{m === "menuIntegrations" && <Integrations location={location} router={this.context.router} />}
-				{m === "demo_video" && <DemoVideo location={location} />}
+				{m === "demo_video" && <DemoVideo location={location} router={this.context.router} />}
 			</div>;
 		}
 		return <Base

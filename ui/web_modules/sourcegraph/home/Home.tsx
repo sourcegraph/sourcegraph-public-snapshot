@@ -1,20 +1,17 @@
-// tslint:disable
-
+import * as classNames from "classnames";
 import * as React from "react";
 import {Link} from "react-router";
-
-import * as classNames from "classnames";
-import {Container} from "sourcegraph/Container";
+import {InjectedRouter} from "react-router";
+import {context} from "sourcegraph/app/context";
+import {Button, FlexContainer, Heading, Logo, Panel} from "sourcegraph/components";
+import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
+import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
-import * as styles from "sourcegraph/home/styles/home.css";
+import {Container} from "sourcegraph/Container";
 import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
-import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
-
-import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
-import {Button, Heading, Logo, FlexContainer, Panel} from "sourcegraph/components";
-import {context} from "sourcegraph/app/context";
+import * as styles from "sourcegraph/home/styles/home.css";
 
 interface HomeProps {
 	location: any;
@@ -26,6 +23,8 @@ export class Home extends Container<HomeProps, HomeState> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
+
+	context: { router: InjectedRouter };
 
 	constructor(props: HomeProps) {
 		super(props);
@@ -205,7 +204,7 @@ export class Home extends Container<HomeProps, HomeState> {
 					</FlexContainer>
 				</div>
 				{this.props.location.state && this.props.location.state.modal === "beta" &&
-					<LocationStateModal modalName="beta" location={this.props.location}>
+					<LocationStateModal modalName="beta" location={this.props.location} router={this.context.router}>
 						<div className={styles.modal}>
 							<h2 className={typography.tc}>Join the Sourcegraph beta</h2>
 							<BetaInterestForm
@@ -264,7 +263,6 @@ export class Home extends Container<HomeProps, HomeState> {
 						<Button type="button" color="purple" className={base.ph4}>Sign up for free</Button>
 					</LocationStateToggleLink>
 				</div>
-
 
 			<div className={classNames(base.center, base.mv5, base.ph3, styles.footer)}>
 				<a href="/about">About</a>
