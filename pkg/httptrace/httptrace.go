@@ -65,7 +65,6 @@ func Middleware(next http.Handler) http.Handler {
 		defer span.Finish()
 		rw.Header().Set("X-Trace", traceutil.SpanURL(span))
 		ctx = opentracing.ContextWithSpan(ctx, span)
-		ctx = traceutil.InjectGRPCMetadata(ctx, span.Context()) // this assumes that the span does not change until any GRPC call, which is a bit bad
 
 		routeName := "unknown"
 		ctx = context.WithValue(ctx, routeNameKey, &routeName)

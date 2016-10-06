@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"reflect"
@@ -12,11 +11,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
-	"google.golang.org/grpc"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/csp"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
@@ -108,15 +104,6 @@ func handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 	}
 }
 
-// grpcErrorHandler is a wrapper func for API handlers that gives special
-// treatment to gRPC errors using handleErrorWithGRPC
-func grpcErrorHandler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
-	return handlerutil.HandlerWithErrorReturn{
-		Handler: h,
-		Error:   handleErrorWithGRPC,
-	}
-}
-
 // cspConfig is the Content Security Policy config for API handlers.
 var cspConfig = csp.Config{
 	// Strict because API responses should never be treated as page
@@ -152,48 +139,6 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 
 	// Never cache error responses.
 	w.Header().Set("cache-control", "no-cache, max-age=0")
-
-	errBody := err.Error()
-
-	var displayErrBody string
-	if handlerutil.DebugMode {
-		// Only display error message to admins when in debug mode, since it may
-		// contain sensitive info (like API keys in net/http error messages).
-		displayErrBody = string(errBody)
-	}
-	http.Error(w, displayErrBody, status)
-	if status < 200 || status >= 500 {
-		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err)
-	}
-}
-
-// handleErrorWithGRPC is the error handler put on user-form APIs like login and signup. It
-// packages gRPC errors so the errors can be parsed in the frontend and displayed to users.
-func handleErrorWithGRPC(w http.ResponseWriter, r *http.Request, status int, err error) {
-	// Handle custom errors
-	if ee, ok := err.(*handlerutil.URLMovedError); ok {
-		err := handlerutil.RedirectToNewRepoURI(w, r, ee.NewURL)
-		if err != nil {
-			log15.Error("error redirecting to new URI", "err", err, "new_url", ee.NewURL)
-		}
-		return
-	}
-
-	// Never cache error responses.
-	w.Header().Set("cache-control", "no-cache, max-age=0")
-
-	if code := legacyerr.ErrCode(err); code != legacyerr.Unknown {
-
-		type errorMessage struct {
-			Code    legacyerr.Code `json:"code"`
-			Message string         `json:"message"`
-		}
-
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(errcode.HTTP(err))
-		json.NewEncoder(w).Encode(errorMessage{Code: code, Message: grpc.ErrorDesc(err)})
-		return
-	}
 
 	errBody := err.Error()
 
