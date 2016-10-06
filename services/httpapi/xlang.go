@@ -20,7 +20,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
@@ -57,7 +56,7 @@ var xlangRequestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Help:      "The xlang request latencies in seconds.",
 	// Buckets are similar to statsutil.UserLatencyBuckets, but with more granularity for apdex measurements.
 	Buckets: []float64{0.1, 0.2, 0.5, 0.8, 1, 1.5, 2, 5, 10, 15, 20, 30},
-}, []string{"success", "method"})
+}, []string{"success", "method", "mode"})
 
 func init() {
 	prometheus.MustRegister(xlangRequestDuration)
@@ -66,6 +65,7 @@ func init() {
 func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	start := time.Now()
 	success := true
+	mode := "unknown"
 	defer func() {
 		duration := time.Now().Sub(start)
 		v := mux.Vars(r)
@@ -73,6 +73,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 		labels := prometheus.Labels{
 			"success": fmt.Sprintf("%t", err == nil && success),
 			"method":  method,
+			"mode":    mode,
 		}
 		xlangRequestDuration.With(labels).Observe(duration.Seconds())
 	}()
@@ -100,7 +101,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	if reqs[0].Params == nil {
 		return errors.New("invalid jsonrpc2 initialize request: empty params")
 	}
-	var initParams lsp.InitializeParams
+	var initParams xlang.ClientProxyInitializeParams
 	if err := json.Unmarshal(*reqs[0].Params, &initParams); err != nil {
 		return fmt.Errorf("invalid jsonrpc2 initialize params: %s", err)
 	}
@@ -110,6 +111,9 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	rootPathURI, err := uri.Parse(initParams.RootPath)
 	if err != nil {
 		return fmt.Errorf("invalid LSP root path %q: %s", initParams.RootPath, err)
+	}
+	if initParams.Mode != "" {
+		mode = initParams.Mode
 	}
 
 	// Check consistency against the URL. The URL route params are for
