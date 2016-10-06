@@ -16,7 +16,6 @@ const (
 	Annotations              = "annotations"
 	Commit                   = "commit"
 	Coverage                 = "coverage"
-	DefLocalRefLocations     = "def.local.ref.locations"
 	DeltaFiles               = "delta.files"
 	GitHubToken              = "github-token"
 	GlobalSearch             = "global.search"
@@ -101,10 +100,6 @@ func New(base *mux.Router) *mux.Router {
 	repo.Path("/tags").Methods("GET").Name(RepoTags)
 
 	repo.Path("/async-refresh-indexes").Methods("POST").Name(AsyncRefreshIndexes)
-
-	defPath := "/def/" + routevar.Def
-	def := repoRev.PathPrefix(defPath + "/-/").Subrouter()
-	def.Path("/local-refs").Methods("GET").Name(DefLocalRefLocations)
 
 	base.Path("/resolve-custom-import/info").Methods("GET").Name(ResolveCustomImportsInfo)
 	base.Path("/resolve-custom-import/tree").Methods("GET").Name(ResolveCustomImportsTree)

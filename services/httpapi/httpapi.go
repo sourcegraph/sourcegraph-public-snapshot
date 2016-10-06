@@ -55,7 +55,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.GitHubToken).Handler(httptrace.TraceRoute(handler(serveGitHubToken)))
 	m.Get(apirouter.Commit).Handler(httptrace.TraceRoute(handler(serveCommit)))
 	m.Get(apirouter.Coverage).Handler(httptrace.TraceRoute(handler(serveCoverage)))
-	m.Get(apirouter.DefLocalRefLocations).Handler(httptrace.TraceRoute(handler(serveDefLocalRefLocations)))
 	m.Get(apirouter.GlobalSearch).Handler(httptrace.TraceRoute(handler(serveGlobalSearch)))
 	m.Get(apirouter.Repo).Handler(httptrace.TraceRoute(handler(serveRepo)))
 	m.Get(apirouter.RepoResolve).Handler(httptrace.TraceRoute(handler(serveRepoResolve)))
