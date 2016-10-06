@@ -52,7 +52,6 @@ func NewHandler(m *mux.Router) http.Handler {
 
 	// Set handlers for the installed routes.
 	m.Get(apirouter.Annotations).Handler(httptrace.TraceRoute(handler(serveAnnotations)))
-	m.Get(apirouter.AuthInfo).Handler(httptrace.TraceRoute(handler(serveAuthInfo)))
 	m.Get(apirouter.GitHubToken).Handler(httptrace.TraceRoute(handler(serveGitHubToken)))
 	m.Get(apirouter.Commit).Handler(httptrace.TraceRoute(handler(serveCommit)))
 	m.Get(apirouter.Coverage).Handler(httptrace.TraceRoute(handler(serveCoverage)))
