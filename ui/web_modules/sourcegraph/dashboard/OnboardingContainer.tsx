@@ -85,7 +85,7 @@ export class OnboardingContainer extends Container<Props, State> {
 			const returnUrl = new URL(decodeUrl);
 
 			if (returnUrl.origin.match(/https:\/\/(www.)?github.com/)) {
-				window.location.href = _.unescape(returnToGithub);
+				window.location.href = decodeUrl;
 			}
 		}
 
