@@ -15,12 +15,6 @@
 			"revisionTime": "2016-04-19T20:25:41Z"
 		},
 		{
-			"checksumSHA1": "XD32TFkwUQg4C0yJs40A8f2xSeA=",
-			"path": "github.com/Sirupsen/logrus",
-			"revision": "6d9ae300aaf85d6acd2e5424081c7fcddb21dab8",
-			"revisionTime": "2016-05-24T13:24:53Z"
-		},
-		{
 			"path": "github.com/alecthomas/binary",
 			"revision": "8b2a3aa0ba1c1e495274f8e63f57dc7f76107753",
 			"revisionTime": "2015-11-26T09:02:09+11:00"
@@ -64,12 +58,6 @@
 			"revisionTime": "2016-06-03T23:54:19Z"
 		},
 		{
-			"checksumSHA1": "r1CX8/M/ipvntOfH0rT9jOQ6fdM=",
-			"path": "github.com/cloudfoundry-incubator/candiedyaml",
-			"revision": "99c3df83b51532e3615f851d8c2dbb638f5313bf",
-			"revisionTime": "2016-04-29T08:01:25Z"
-		},
-		{
 			"path": "github.com/cznic/mathutil",
 			"revision": "38a5fe05cd94d69433fd1c928417834c604f281d",
 			"revisionTime": "2016-01-19T17:31:16+01:00"
@@ -79,17 +67,6 @@
 			"path": "github.com/dgrijalva/jwt-go",
 			"revision": "40bd0f3b4891a9d7f121bfb7b8e8b0525625e262",
 			"revisionTime": "2016-05-04T17:25:48Z"
-		},
-		{
-			"checksumSHA1": "MJk8bN15e/nKHGetO8GSfYIOKxE=",
-			"path": "github.com/dgryski/go-discreterand",
-			"revision": "57fa96b59f2a453d7341c5ba85cb02c1088beb89",
-			"revisionTime": "2015-04-23T09:39:09Z"
-		},
-		{
-			"path": "github.com/docker/go-units",
-			"revision": "954fed01cc617c55d838fa2230073f2cb17386c8",
-			"revisionTime": "2015-12-15T14:00:59-08:00"
 		},
 		{
 			"checksumSHA1": "6E32dTaYC6MpKiO/JFRZWHOPSH0=",
@@ -192,12 +169,6 @@
 			"revisionTime": "2016-05-18T20:47:10Z"
 		},
 		{
-			"checksumSHA1": "Ui9H0YkChVQ+0nIbA79qdgwvVfY=",
-			"path": "github.com/ghodss/yaml",
-			"revision": "e8e0db9016175449df0e9c4b6e6995a9433a395c",
-			"revisionTime": "2016-05-03T19:07:39Z"
-		},
-		{
 			"checksumSHA1": "6k/gMuK0WPQssFIMHlRHm1eIv7Y=",
 			"path": "github.com/gogo/protobuf",
 			"revision": "4f262e4b0f3a6cea646e15798109335551e21756",
@@ -275,12 +246,6 @@
 			"path": "github.com/gorilla/sessions",
 			"revision": "7ab2742f1e374be6675e9a4eca54fe529221ae3a",
 			"revisionTime": "2016-09-01T06:18:54Z"
-		},
-		{
-			"checksumSHA1": "je7UCb5T2ncPtX3RlEev0T1Smqs=",
-			"path": "github.com/gorilla/websocket",
-			"revision": "8b209f63177a963547dc3cee89350a327ead0412",
-			"revisionTime": "2016-05-26T21:07:24Z"
 		},
 		{
 			"checksumSHA1": "PLhZQY4sT1QkHySO7pDaLSGmCGM=",
@@ -519,11 +484,6 @@
 			"revisionTime": "2016-05-10T19:09:22Z"
 		},
 		{
-			"path": "github.com/samalba/dockerclient",
-			"revision": "ccb0d5a7b8a7278f3f57de0135d4c5cc6921fcac",
-			"revisionTime": "2016-02-03T07:44:56-05:00"
-		},
-		{
 			"checksumSHA1": "EsfIKo3y9MYHEstEGww8j5syZF8=",
 			"path": "github.com/shurcooL/go-goon",
 			"revision": "7013555098e0efb77afd1b0c5d3e64de1e7f4265",
@@ -590,12 +550,6 @@
 			"revisionTime": "2016-03-22T21:56:34Z"
 		},
 		{
-			"checksumSHA1": "3cnnaeXj3Zuf32A1VSlmWFOWTh0=",
-			"path": "github.com/soheilhy/cmux",
-			"revision": "9d1e2a64dd342de32c8542912f6923ccec0b184d",
-			"revisionTime": "2016-05-04T02:33:52Z"
-		},
-		{
 			"checksumSHA1": "hg5j4kdVPNACc4G8nsb1MX/U7KE=",
 			"path": "github.com/sourcegraph/annotate",
 			"revision": "f4cad6c6324d3f584e1743d8b3e0e017a5f3a636",
@@ -606,11 +560,6 @@
 			"path": "github.com/sourcegraph/go-github/github",
 			"revision": "222690b1844c222da8de820e6d6056812102f039",
 			"revisionTime": "2016-10-05T21:35:20Z"
-		},
-		{
-			"path": "github.com/sourcegraph/go-papertrail/papertrail",
-			"revision": "175a8be170fffcc1046d95bbd20fc2ef28eab01c",
-			"revisionTime": "2015-07-26T08:41:08-07:00"
 		},
 		{
 			"checksumSHA1": "OIaAIaprbQzo/X4L70+ancPk+jM=",
@@ -655,49 +604,10 @@
 			"revisionTime": "2015-02-03T03:00:30-08:00"
 		},
 		{
-			"path": "github.com/square/go-jose",
-			"revision": "eebdfd0eb1ce4783c8fbe22b305eef7cda0b6c7e",
-			"revisionTime": "2015-05-20T08:14:43-07:00"
-		},
-		{
-			"path": "github.com/square/go-jose/cipher",
-			"revision": "eebdfd0eb1ce4783c8fbe22b305eef7cda0b6c7e",
-			"revisionTime": "2015-05-20T08:14:43-07:00"
-		},
-		{
-			"checksumSHA1": "78S6SvW7AQCb4Eihmm6mPGqtkmE=",
-			"path": "github.com/streadway/quantile",
-			"revision": "b0c588724d25ae13f5afb3d90efec0edc636432b",
-			"revisionTime": "2015-09-17T12:39:42+02:00"
-		},
-		{
 			"checksumSHA1": "EXXAM9hs2jsOgED5aJBfAe5HWvI=",
 			"path": "github.com/temoto/robotstxt-go",
 			"revision": "b8a039be43ce65409fe54b4bc09f2ae8a3925a54",
 			"revisionTime": "2015-06-26T09:08:21Z"
-		},
-		{
-			"checksumSHA1": "B/fgM+aJcQX6XX9Zz7VFs41vBLE=",
-			"path": "github.com/tsenart/vegeta/lib",
-			"revision": "166e3050f5a8b2f6d3d2cb03e7baa430f019395d",
-			"revisionTime": "2016-02-13T00:06:32+01:00"
-		},
-		{
-			"path": "github.com/whilp/git-urls",
-			"revision": "e4bd4b1ee3861df27451acebbe81d7a5d67991fe",
-			"revisionTime": "2016-01-12T21:55:23Z"
-		},
-		{
-			"checksumSHA1": "vE43s37+4CJ2CDU6TlOUOYE0K9c=",
-			"path": "golang.org/x/crypto/bcrypt",
-			"revision": "5bcd134fee4dd1475da17714aac19c0aa0142e2f",
-			"revisionTime": "2016-05-16T23:05:56Z"
-		},
-		{
-			"checksumSHA1": "udD2DzUPFZbMVXP0VNADhef4zKk=",
-			"path": "golang.org/x/crypto/blowfish",
-			"revision": "5bcd134fee4dd1475da17714aac19c0aa0142e2f",
-			"revisionTime": "2016-05-16T23:05:56Z"
 		},
 		{
 			"checksumSHA1": "kALxprn17Sk/x2InsoTApX6bo50=",
@@ -958,12 +868,6 @@
 		{
 			"checksumSHA1": "a+C+FoyX7Tc4iNFhBndt/y/iPEg=",
 			"path": "google.golang.org/grpc/credentials",
-			"revision": "9ac074585f926c8506b6351bfdc396d2b19b1cb1",
-			"revisionTime": "2016-04-13T17:35:15Z"
-		},
-		{
-			"checksumSHA1": "aKQ51Peys87Nx4MPmO7yLYWPliM=",
-			"path": "google.golang.org/grpc/credentials/oauth",
 			"revision": "9ac074585f926c8506b6351bfdc396d2b19b1cb1",
 			"revisionTime": "2016-04-13T17:35:15Z"
 		},
