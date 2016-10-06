@@ -17,7 +17,6 @@ import {context} from "sourcegraph/app/context";
 interface Props {
 	location?: any;
 	privateCodeAuthed?: any;
-	repos: any[];
 	completeStep?: any;
 }
 
@@ -32,7 +31,6 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 		super(props);
 
 		this.state = {
-			showAll: false,
 			isLoading: this.props.location.search.includes("CompletedGitHubOAuth2Flow"),
 		};
 	}

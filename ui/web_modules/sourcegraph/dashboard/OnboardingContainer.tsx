@@ -70,7 +70,7 @@ export class OnboardingContainer extends Container<Props, State> {
 		}
 
 		if (this.props.currentStep === "github") {
-			return <GitHubPrivateAuthOnboarding completeStep={this._completeStep.bind(this)} repos={this.state.repos ? this.state.repos.Repos : []} privateCodeAuthed={this._isPrivateCodeUser()} location={this.props.location}/>;
+			return <GitHubPrivateAuthOnboarding completeStep={this._completeStep.bind(this)} privateCodeAuthed={this._isPrivateCodeUser()} location={this.props.location}/>;
 		}
 
 		// This should be right after the Github onboarding step

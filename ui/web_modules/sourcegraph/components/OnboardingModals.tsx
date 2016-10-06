@@ -34,7 +34,7 @@ export class OnboardingModals extends React.Component<Props, {}>  {
 				</LocationStateModal>
 				<LocationStateModal modalName="github" location={this.props.location} router={this.context.router}>
 					<div style={{maxWidth: "800px", marginLeft: "auto", marginRight: "auto"}}>
-						<GitHubPrivateAuthOnboarding completeStep={this._completeGitHubStep.bind(this)} repos={[]} location={this.props.location}/>
+						<GitHubPrivateAuthOnboarding completeStep={this._completeGitHubStep.bind(this)} location={this.props.location}/>
 					</div>
 				</LocationStateModal>
 			</div>
