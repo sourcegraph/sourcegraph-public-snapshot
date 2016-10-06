@@ -50,6 +50,7 @@ export class OnboardingContainer extends Container<Props, State> {
 	_completeStep() {
 		let nextStep = {};
 
+		// TODO: update analytics to count only if chrome extension wasn't installed or Github not auth'd 
 		if (this.props.currentStep === "chrome") {
 			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionStepCompleted", {page_name: "ChromeExtensionOnboarding"});
 			nextStep = {ob: "github"};
@@ -77,8 +78,6 @@ export class OnboardingContainer extends Container<Props, State> {
 		// bring the user to /join?ob=github&rtg=${encodeURIComponent(window.location.href)}
 		// Once the user has completed the github onboarding step (enabling private repos),
 		// they should be taken back to Github if rtg was provided and is to a github URL
-		//
-		// TODO: if the user has auth'd already, skip ob=github and redirect back if necessary
 		const returnToGithub = this.props.location.query["rtg"] || null;
 		if (returnToGithub) {
 			const decodeUrl = decodeURIComponent(returnToGithub);
