@@ -1,0 +1,2 @@
+selenium==2.53.6
+ansicolors==1.0.2
