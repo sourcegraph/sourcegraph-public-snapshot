@@ -36,12 +36,6 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 	defer s.Close() // This will kill the started src process. It's important that this func runs before os.Exit, otherwise there will be a runaway zombie process.
-	var err error
-	h, err = url.Parse(s.Config.Endpoint.URL)
-	if err != nil {
-		panic(err)
-	}
-
 	code = m.Run()
 }
 
