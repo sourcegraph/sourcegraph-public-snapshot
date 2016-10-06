@@ -37,8 +37,8 @@ type dbDefKey struct {
 func init() {
 	GraphSchema.Map.AddTableWithName(dbDefKey{}, "def_keys").SetKeys(true, "id").SetUniqueTogether("repo", "unit_type", "unit", "path")
 
-	// dbGlobalRef DB-maps a GlobalRef object.
-	type dbGlobalRef struct {
+	// deprecatedDBGlobalRef DB-maps a GlobalRef object.
+	type deprecatedDBGlobalRef struct {
 		DefKeyID  int64 `db:"def_key_id"`
 		Repo      string
 		File      string
@@ -46,7 +46,7 @@ func init() {
 		Count     int
 		UpdatedAt *time.Time `db:"updated_at"`
 	}
-	GraphSchema.Map.AddTableWithName(dbGlobalRef{}, "global_refs_new")
+	GraphSchema.Map.AddTableWithName(deprecatedDBGlobalRef{}, "global_refs_new")
 	GraphSchema.CreateSQL = append(GraphSchema.CreateSQL,
 		`ALTER TABLE global_refs_new ALTER COLUMN positions TYPE integer[] USING positions::integer[];`,
 		`CREATE INDEX global_refs_new_def_key_id ON global_refs_new USING btree (def_key_id);`,
@@ -58,22 +58,22 @@ func init() {
 		`DROP MATERIALIZED VIEW IF EXISTS global_refs_stats;`,
 	)
 
-	type dbGlobalRefVersion struct {
+	type deprecatedDBGlobalRefVersion struct {
 		Repo      string     `db:"repo"`
 		CommitID  string     `db:"commit_id"`
 		UpdatedAt *time.Time `db:"updated_at"`
 	}
-	GraphSchema.Map.AddTableWithName(dbGlobalRefVersion{}, "global_refs_version").SetKeys(false, "repo")
+	GraphSchema.Map.AddTableWithName(deprecatedDBGlobalRefVersion{}, "global_refs_version").SetKeys(false, "repo")
 }
 
-// globalRefs is a DB-backed implementation of the GlobalRefs
-type globalRefs struct{}
+// deprecatedGlobalRefs is a DB-backed implementation of the GlobalRefs
+type deprecatedGlobalRefs struct{}
 
 // Get returns the names and ref counts of all repos and files within those repos
 // that refer the given def.
-func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
-	if Mocks.GlobalRefs.Get != nil {
-		return Mocks.GlobalRefs.Get(ctx, op)
+func (g *deprecatedGlobalRefs) DeprecatedGet(ctx context.Context, op *sourcegraph.DeprecatedDefsListRefLocationsOp) (*sourcegraph.DeprecatedRefLocationsList, error) {
+	if Mocks.DeprecatedGlobalRefs.DeprecatedGet != nil {
+		return Mocks.DeprecatedGlobalRefs.DeprecatedGet(ctx, op)
 	}
 
 	defRepo, err := (&repos{}).Get(ctx, op.Def.Repo)
@@ -84,13 +84,13 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 
 	trackedRepo := repotrackutil.GetTrackedRepo(defRepoPath)
 	observe := func(part string, start time.Time) {
-		globalRefsDuration.WithLabelValues(trackedRepo, part).Observe(time.Since(start).Seconds())
+		deprecatedGlobalRefsDuration.WithLabelValues(trackedRepo, part).Observe(time.Since(start).Seconds())
 	}
 	defer observe("total", time.Now())
 
 	opt := op.Opt
 	if opt == nil {
-		opt = &sourcegraph.DefListRefLocationsOptions{}
+		opt = &sourcegraph.DeprecatedDefListRefLocationsOptions{}
 	}
 
 	// Optimization: All our SQL operations rely on the defKeyID. Fetch
@@ -105,7 +105,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		return nil, err
 	} else if defKeyID == 0 {
 		// DefKey was not found
-		return &sourcegraph.RefLocationsList{RepoRefs: []*sourcegraph.DefRepoRef{}}, nil
+		return &sourcegraph.DeprecatedRefLocationsList{RepoRefs: []*sourcegraph.DeprecatedDefRepoRef{}}, nil
 	}
 
 	// Optimization: fetch ref stats in parallel to fetching ref locations.
@@ -160,10 +160,10 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	// repoRefs holds the ordered list of repos referencing this def. The list is sorted by
 	// decreasing ref counts per repo, and the file list in each individual DefRepoRef is
 	// also sorted by descending ref counts.
-	var repoRefs []*sourcegraph.DefRepoRef
+	var repoRefs []*sourcegraph.DeprecatedDefRepoRef
 	defRepoIdx := -1
 	// refsByRepo groups each referencing file by repo.
-	refsByRepo := make(map[string]*sourcegraph.DefRepoRef)
+	refsByRepo := make(map[string]*sourcegraph.DeprecatedDefRepoRef)
 	missingRepos := make(map[string]struct{})
 	for _, r := range dbRefResult {
 		if _, ok := missingRepos[r.Repo]; ok {
@@ -182,7 +182,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 				continue
 			}
 
-			refsByRepo[r.Repo] = &sourcegraph.DefRepoRef{
+			refsByRepo[r.Repo] = &sourcegraph.DeprecatedDefRepoRef{
 				Repo:  r.Repo,
 				Count: int32(r.RepoCount),
 			}
@@ -197,9 +197,9 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 			if r.Positions != nil {
 				pos = []int64(*r.Positions)
 			}
-			refsByRepo[r.Repo].Files = append(refsByRepo[r.Repo].Files, &sourcegraph.DefFileRef{
+			refsByRepo[r.Repo].Files = append(refsByRepo[r.Repo].Files, &sourcegraph.DeprecatedDefFileRef{
 				Path:      r.File,
-				Positions: deinterlacePositions(pos),
+				Positions: deprecatedDeinterlacePositions(pos),
 				Count:     int32(r.Count),
 			})
 		}
@@ -223,7 +223,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 
 	// Return Files in a consistent order
 	for _, r := range repoRefs {
-		sort.Sort(defFileRefByScore(r.Files))
+		sort.Sort(deprecatedDefFileRefByScore(r.Files))
 	}
 
 	select {
@@ -233,25 +233,25 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		}
 	}
 
-	return &sourcegraph.RefLocationsList{
+	return &sourcegraph.DeprecatedRefLocationsList{
 		RepoRefs:   repoRefs,
 		TotalRepos: int32(totalRepos),
 	}, nil
 }
 
-// deinterlacePositions deinterlaces the interlaced [line, column] slice p into
+// deprecatedDeinterlacePositions deinterlaces the interlaced [line, column] slice p into
 // their non-interlaced form. We store the positions in the DB interlaced
 // because github.com/lib/pq does not support multidimensional array types
 // (and implementing this is tedious). Thus they are stored interlaced, i.e.
 //
 //  [line0, col0, line1, col1, line2, col2]
 //
-func deinterlacePositions(p []int64) (out []*sourcegraph.FilePosition) {
+func deprecatedDeinterlacePositions(p []int64) (out []*sourcegraph.DeprecatedFilePosition) {
 	if len(p)%2 != 0 {
-		panic("deinterlacePositions: unequal length array (bad data?)")
+		panic("deprecatedDeinterlacePositions: unequal length array (bad data?)")
 	}
 	for i := 0; i < len(p); i += 2 {
-		out = append(out, &sourcegraph.FilePosition{
+		out = append(out, &sourcegraph.DeprecatedFilePosition{
 			Line:   int32(p[i]),
 			Column: int32(p[i+1]),
 		})
@@ -259,11 +259,11 @@ func deinterlacePositions(p []int64) (out []*sourcegraph.FilePosition) {
 	return
 }
 
-type defFileRefByScore []*sourcegraph.DefFileRef
+type deprecatedDefFileRefByScore []*sourcegraph.DeprecatedDefFileRef
 
-func (v defFileRefByScore) Len() int      { return len(v) }
-func (v defFileRefByScore) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
-func (v defFileRefByScore) Less(i, j int) bool {
+func (v deprecatedDefFileRefByScore) Len() int      { return len(v) }
+func (v deprecatedDefFileRefByScore) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
+func (v deprecatedDefFileRefByScore) Less(i, j int) bool {
 	if v[i].Score != v[j].Score {
 		return v[i].Score > v[j].Score
 	}
@@ -275,7 +275,7 @@ func (v defFileRefByScore) Less(i, j int) bool {
 
 // getRefStats fetches global ref aggregation stats pagination and display
 // purposes.
-func (g *globalRefs) getRefStats(ctx context.Context, defKeyID int64) (int64, error) {
+func (g *deprecatedGlobalRefs) getRefStats(ctx context.Context, defKeyID int64) (int64, error) {
 	// Our strategy is to defer to the potentially stale materialized view
 	// if there are a large number of distinct repos. Otherwise we can
 	// calculate the exact value since it should be fast to do
@@ -290,12 +290,12 @@ func (g *globalRefs) getRefStats(ctx context.Context, defKeyID int64) (int64, er
 	return graphDBH(ctx).SelectInt("SELECT COUNT(DISTINCT repo) AS Repos FROM global_refs_new WHERE def_key_id=$1", defKeyID)
 }
 
-// Update takes the graph output of a repo at the latest commit and
+// DeprecatedUpdate takes the graph output of a repo at the latest commit and
 // updates the set of refs in the global ref store that originate from
 // it.
-func (g *globalRefs) Update(ctx context.Context, op RefreshIndexOp) error {
-	if Mocks.GlobalRefs.Update != nil {
-		return Mocks.GlobalRefs.Update(ctx, op)
+func (g *deprecatedGlobalRefs) DeprecatedUpdate(ctx context.Context, op DeprecatedRefreshIndexOp) error {
+	if Mocks.DeprecatedGlobalRefs.DeprecatedUpdate != nil {
+		return Mocks.DeprecatedGlobalRefs.DeprecatedUpdate(ctx, op)
 	}
 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", op.Repo); err != nil {
@@ -316,7 +316,7 @@ func (g *globalRefs) Update(ctx context.Context, op RefreshIndexOp) error {
 		// slow and low volume compared to queries
 		d := time.Since(start)
 		log15.Debug("TRACE GlobalRefs.Update", "repo", repo, "part", part, "duration", d)
-		globalRefsUpdateDuration.WithLabelValues(trackedRepo, part).Observe(d.Seconds())
+		deprecatedGlobalRefsUpdateDuration.WithLabelValues(trackedRepo, part).Observe(d.Seconds())
 	}
 	defer observe("total", time.Now())
 
@@ -338,7 +338,7 @@ func (g *globalRefs) Update(ctx context.Context, op RefreshIndexOp) error {
 	}
 	refs := make([]*langp.Ref, 0, len(external.Refs))
 	for _, r := range external.Refs {
-		if shouldIndexRef(r) {
+		if deprecatedShouldIndexRef(r) {
 			refs = append(refs, r)
 		}
 	}
@@ -449,7 +449,7 @@ ON COMMIT DROP;`
 }
 
 // version returns the commit_id that global_refs has indexed for repo
-func (g *globalRefs) version(tx gorp.SqlExecutor, repoPath string) (string, error) {
+func (g *deprecatedGlobalRefs) version(tx gorp.SqlExecutor, repoPath string) (string, error) {
 	commitID, err := tx.SelectNullStr("SELECT commit_id FROM global_refs_version WHERE repo=$1 FOR UPDATE", repoPath)
 	if err != nil {
 		return "", err
@@ -465,19 +465,19 @@ func (g *globalRefs) version(tx gorp.SqlExecutor, repoPath string) (string, erro
 }
 
 // versionUpdate will update the version for repo to commitID in the transaction tx
-func (g *globalRefs) versionUpdate(tx gorp.SqlExecutor, repoPath string, commitID string) error {
+func (g *deprecatedGlobalRefs) versionUpdate(tx gorp.SqlExecutor, repoPath string, commitID string) error {
 	_, err := tx.Exec("UPDATE global_refs_version SET commit_id=$1, updated_at=now() WHERE repo=$2;", commitID, repoPath)
 	return err
 }
 
-// StatRefresh refreshes the global_refs_stats tables. This should ONLY be called from test code.
-func (g *globalRefs) StatRefresh(ctx context.Context) error {
+// DeprecatedStatRefresh refreshes the global_refs_stats tables. This should ONLY be called from test code.
+func (g *deprecatedGlobalRefs) DeprecatedStatRefresh(ctx context.Context) error {
 	_, err := graphDBH(ctx).Exec("REFRESH MATERIALIZED VIEW CONCURRENTLY global_refs_stats;")
 	return err
 }
 
-// shouldIndexRef helps filter out refs we do not want in the index.
-func shouldIndexRef(r *langp.Ref) bool {
+// deprecatedShouldIndexRef helps filter out refs we do not want in the index.
+func deprecatedShouldIndexRef(r *langp.Ref) bool {
 	// Ignore vendored refs.
 	if filelang.IsVendored(r.File, false) {
 		return false
@@ -491,14 +491,14 @@ func shouldIndexRef(r *langp.Ref) bool {
 	return true
 }
 
-var globalRefsDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+var deprecatedGlobalRefsDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Namespace: "src",
 	Subsystem: "global_refs",
 	Name:      "duration_seconds",
 	Help:      "Duration for querying global_refs_new",
 	MaxAge:    time.Hour,
 }, []string{"repo", "part"})
-var globalRefsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+var deprecatedGlobalRefsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Namespace: "src",
 	Subsystem: "global_refs",
 	Name:      "update_duration_seconds",
@@ -507,11 +507,11 @@ var globalRefsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 }, []string{"repo", "part"})
 
 func init() {
-	prometheus.MustRegister(globalRefsDuration)
-	prometheus.MustRegister(globalRefsUpdateDuration)
+	prometheus.MustRegister(deprecatedGlobalRefsDuration)
+	prometheus.MustRegister(deprecatedGlobalRefsUpdateDuration)
 }
 
-type MockGlobalRefs struct {
-	Get    func(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
-	Update func(ctx context.Context, op RefreshIndexOp) error
+type DeprecatedMockGlobalRefs struct {
+	DeprecatedGet    func(ctx context.Context, op *sourcegraph.DeprecatedDefsListRefLocationsOp) (*sourcegraph.DeprecatedRefLocationsList, error)
+	DeprecatedUpdate func(ctx context.Context, op DeprecatedRefreshIndexOp) error
 }

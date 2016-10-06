@@ -783,8 +783,8 @@ type DefListOptions struct {
 	ListOptions `json:""`
 }
 
-// DefListRefsOptions configures the scope of ref search for a def.
-type DefListRefsOptions struct {
+// DeprecatedDefListRefsOptions configures the scope of ref search for a def.
+type DeprecatedDefListRefsOptions struct {
 	Repo        int32    `json:"Repo,omitempty" url:",omitempty"`
 	CommitID    string   `json:"CommitID,omitempty" url:",omitempty"`
 	Files       []string `json:"Files,omitempty" url:",omitempty"`
@@ -810,9 +810,9 @@ type DefList struct {
 	ListResponse `json:""`
 }
 
-type DefsListRefsOp struct {
-	Def DefSpec             `json:"Def"`
-	Opt *DefListRefsOptions `json:"Opt,omitempty"`
+type DeprecatedDefsListRefsOp struct {
+	Def DefSpec                       `json:"Def"`
+	Opt *DeprecatedDefListRefsOptions `json:"Opt,omitempty"`
 }
 
 type RefList struct {
@@ -820,9 +820,9 @@ type RefList struct {
 	StreamResponse `json:""`
 }
 
-// DefListRefLocationsOptions holds the options for fetching
+// DeprecatedDefListRefLocationsOptions holds the options for fetching
 // all locations referencing a def.
-type DefListRefLocationsOptions struct {
+type DeprecatedDefListRefLocationsOptions struct {
 	// Repos is the list of repos to restrict the results to.
 	// If empty, all repos are searched for references.
 	Repos []string `json:"Repos,omitempty" url:",omitempty"`
@@ -831,27 +831,27 @@ type DefListRefLocationsOptions struct {
 	ListOptions `json:""`
 }
 
-// DefListRefLocationsOptions holds the options for fetching
+// DeprecatedDefListRefLocationsOptions holds the options for fetching
 // all locations referencing the specified def.
-type DefsListRefLocationsOp struct {
+type DeprecatedDefsListRefLocationsOp struct {
 	// Def identifies the definition whose locations are requested.
 	Def DefSpec `json:"Def"`
 	// Opt controls the scope of the search for ref locations of this def.
-	Opt *DefListRefLocationsOptions `json:"Opt,omitempty"`
+	Opt *DeprecatedDefListRefLocationsOptions `json:"Opt,omitempty"`
 }
 
-// RefLocationsList lists the repos and files that reference a def.
-type RefLocationsList struct {
+// DeprecatedRefLocationsList lists the repos and files that reference a def.
+type DeprecatedRefLocationsList struct {
 	// RepoRefs holds the repos and files referencing the def.
-	RepoRefs []*DefRepoRef `json:"RepoRefs,omitempty"`
+	RepoRefs []*DeprecatedDefRepoRef `json:"RepoRefs,omitempty"`
 	// StreamResponse specifies if more results are available.
 	StreamResponse `json:""`
 	// TotalRepos is the total number of repos which reference the def.
 	TotalRepos int32 `json:"TotalRepos,omitempty"`
 }
 
-// DefRepoRef identifies a repo and its files that reference a def.
-type DefRepoRef struct {
+// DeprecatedDefRepoRef identifies a repo and its files that reference a def.
+type DeprecatedDefRepoRef struct {
 	// Repo is the name of repo that references the def.
 	Repo string `json:"Repo,omitempty"`
 	// Count is the number of references to the def in the repo.
@@ -859,23 +859,23 @@ type DefRepoRef struct {
 	// Score is the importance score of this repo for the def.
 	Score float32 `json:"Score,omitempty"`
 	// Files is the list of files in this repo referencing the def.
-	Files []*DefFileRef `json:"Files,omitempty"`
+	Files []*DeprecatedDefFileRef `json:"Files,omitempty"`
 }
 
-// FilePosition represents a line:column in a file.
-type FilePosition struct {
+// DeprecatedFilePosition represents a line:column in a file.
+type DeprecatedFilePosition struct {
 	Line   int32 `json:"Line,omitempty"`
 	Column int32 `json:"Column,omitempty"`
 }
 
-// DefFileRef identifies a file that references a def.
-type DefFileRef struct {
+// DeprecatedDefFileRef identifies a file that references a def.
+type DeprecatedDefFileRef struct {
 	// Path is the path of this file.
 	Path string `json:"Path,omitempty"`
 	// Count is the number of references to the def in this file.
 	Count int32 `json:"Count,omitempty"`
 	// Positions is the locations in the file that the def is referenced.
-	Positions []*FilePosition `json:"Positions,omitempty"`
+	Positions []*DeprecatedFilePosition `json:"Positions,omitempty"`
 	// Score is the importance score of this file for the def.
 	Score float32 `json:"Score,omitempty"`
 }

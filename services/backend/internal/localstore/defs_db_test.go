@@ -155,7 +155,7 @@ func testDefs(t *testing.T, outerTest outerCase) {
 	}
 
 	for _, repo := range rps {
-		op := RefreshIndexOp{Repo: repo.ID, CommitID: commitID}
+		op := DeprecatedRefreshIndexOp{Repo: repo.ID, CommitID: commitID}
 		err := g.Update(ctx, op)
 		if err != nil {
 			t.Fatal(err)

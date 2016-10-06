@@ -65,12 +65,12 @@ func TestDefLanding_OK(t *testing.T) {
 			DocHTML: &htmlutil.HTML{HTML: "<p><b>hello</b> world!</p>"},
 		})
 		var calledDefsListRefLocations bool
-		backend.Mocks.Defs.ListRefLocations = func(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
+		backend.Mocks.Defs.ListRefLocations = func(ctx context.Context, op *sourcegraph.DeprecatedDefsListRefLocationsOp) (*sourcegraph.DeprecatedRefLocationsList, error) {
 			calledDefsListRefLocations = true
-			return &sourcegraph.RefLocationsList{}, nil
+			return &sourcegraph.DeprecatedRefLocationsList{}, nil
 		}
 		var calledDefsListRefs bool
-		backend.Mocks.Defs.ListRefs = func(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error) {
+		backend.Mocks.Defs.ListRefs = func(ctx context.Context, op *sourcegraph.DeprecatedDefsListRefsOp) (*sourcegraph.RefList, error) {
 			calledDefsListRefs = true
 			return &sourcegraph.RefList{}, nil
 		}

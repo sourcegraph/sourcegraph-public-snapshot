@@ -408,13 +408,13 @@ func (s *defs) Search(ctx context.Context, op DefSearchOp) (*sourcegraph.SearchR
 	return &sourcegraph.SearchResultsList{DefResults: results}, nil
 }
 
-type RefreshIndexOp struct {
+type DeprecatedRefreshIndexOp struct {
 	Repo     int32
 	CommitID string
 }
 
 // Update syncs data from universe into the defs2 table
-func (s *defs) Update(ctx context.Context, op RefreshIndexOp) error {
+func (s *defs) Update(ctx context.Context, op DeprecatedRefreshIndexOp) error {
 	if Mocks.Defs.Update != nil {
 		return Mocks.Defs.Update(ctx, op)
 	}
@@ -923,5 +923,5 @@ func init() {
 
 type MockDefs struct {
 	Search func(ctx context.Context, op DefSearchOp) (*sourcegraph.SearchResultsList, error)
-	Update func(ctx context.Context, op RefreshIndexOp) error
+	Update func(ctx context.Context, op DeprecatedRefreshIndexOp) error
 }
