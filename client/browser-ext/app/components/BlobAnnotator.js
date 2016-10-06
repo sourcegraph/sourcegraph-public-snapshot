@@ -36,7 +36,7 @@ export default class BlobAnnotator extends Component {
 		super(props);
 
 		this._clickRefresh = this._clickRefresh.bind(this);
-		this.onclick_signIn = this.onclick_signIn.bind(this);
+		this.onclick_authPriv = this.onclick_authPriv.bind(this);
 		this.onclick_fileView = this.onclick_fileView.bind(this);
 
 		this.state = utils.parseURL();
