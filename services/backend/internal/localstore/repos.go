@@ -478,7 +478,6 @@ func reposListSQL(opt *RepoListOp) (string, []interface{}, error) {
 		var conds []string
 
 		conds = append(conds, "(NOT blocked)")
-		conds = append(conds, "uri NOT ILIKE 'github.com/orgs%'") // kludge: filter out repos that are actually orgs
 
 		if opt.NoFork {
 			conds = append(conds, "(NOT fork)")
@@ -543,6 +542,11 @@ func reposListSQL(opt *RepoListOp) (string, []interface{}, error) {
 	}
 	if len(queryTerms) >= 2 {
 		orderByTerms = append(orderByTerms, "owner="+arg(queryTerms[len(queryTerms)-2])+" DESC")
+	}
+	if len(queryTerms) >= 2 {
+		// Prefix matching for repo name.
+		last := queryTerms[len(queryTerms)-1]
+		orderByTerms = append(orderByTerms, "name ILIKE "+arg(last+"%")+" DESC")
 	}
 	orderByTerms = append(orderByTerms, "private DESC", "name ASC")
 

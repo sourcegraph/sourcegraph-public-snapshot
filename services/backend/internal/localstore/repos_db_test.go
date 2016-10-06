@@ -236,7 +236,6 @@ func TestRepos_List_query(t *testing.T) {
 			{URI: "def/ghi", Owner: "def", Name: "ghi", DefaultBranch: "master"},
 			{URI: "jkl/mno/pqr", Owner: "mno", Name: "pqr", DefaultBranch: "master"},
 			{URI: "github.com/abc/xyz", Owner: "abc", Name: "xyz", DefaultBranch: "master", Mirror: true},
-			{URI: "github.com/orgs/xyz", Name: "pqr", DefaultBranch: "master", Mirror: true}, // this is an org!
 		}
 		for _, repo := range createdRepos {
 			if created, err := s.Create(ctx, repo); err != nil {
