@@ -18,20 +18,12 @@ for cmd in "${cmds[@]}"; do
 	((i=i+1))
 done
 
-echo "Directories changed relative to master:"
-changed=$(git diff --dirstat=files,0 origin/master..$CIRCLE_SHA1 | grep -v /node_modules/; echo -n) # echo to suppress nonzero exit code
-echo "$changed"
-
-# Build a list of all pkgs for this node. If not master, exclude packages
-# based on changed files.
+# Build a list of all pkgs for this node.
 pkgs=()
 for pkg in $(go list ./... | grep -v /vendor/ | grep -v test/e2e | sort); do
 	if (( i % CIRCLE_NODE_TOTAL == CIRCLE_NODE_INDEX ))
 	then
-		if [ "$CIRCLE_BRANCH" == 'master' ] || echo "$changed" | awk -v D="$(pwd)" '{ print D "/" $2 }' | egrep "$pkg/$"
-		then
-			pkgs+=("$pkg")
-		fi
+		pkgs+=("$pkg")
 	fi
 	((i=i+1))
 done
