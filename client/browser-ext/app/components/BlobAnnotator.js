@@ -36,8 +36,8 @@ export default class BlobAnnotator extends Component {
 		super(props);
 
 		this._clickRefresh = this._clickRefresh.bind(this);
-		this.onclick_authPriv = this.onclick_authPriv.bind(this);
-		this.onclick_fileView = this.onclick_fileView.bind(this);
+		this.onClickAuthPriv = this.onClickAuthPriv.bind(this);
+		this.onClickFileView = this.onClickFileView.bind(this);
 
 		this.state = utils.parseURL();
 		this.state.path = props.path;
@@ -241,12 +241,12 @@ export default class BlobAnnotator extends Component {
 		return el.length > 0
 	}
 
-	onclick_authPriv(ev) {
+	onClickAuthPriv(ev) {
 		EventLogger.logEventForCategory("Auth", "Redirect", "ChromeExtensionSgButtonClicked", {repo: this.state.repoURI, path: window.location.href, is_private_repo: this.isPrivateRepo()});
 		location.href = `https://sourcegraph.com/join?ob=github&rtg=${encodeURIComponent(window.location.href)}`;
 	}
 
-	onclick_fileView(ev) {
+	onClickFileView(ev) {
 		EventLogger.logEventForCategory("File", "Click", "ChromeExtensionSgButtonClicked", {repo: this.state.repoURI, path: window.location.href, is_private_repo: this.isPrivateRepo()});
 		location.href = `https://sourcegraph.com/${this.state.repoURI}@${this.state.rev || this.state.headCommitID}/-/blob/${this.state.path}`;
 	}
@@ -259,11 +259,11 @@ export default class BlobAnnotator extends Component {
 			// Not signed in or not auth'd for private repos
 			this.state.selfElement.removeAttribute("disabled");
 			this.state.selfElement.setAttribute("aria-label", `Authorize Sourcegraph for ${this.state.repoURI.split("github.com/")[1]}`);
-			this.state.selfElement.onclick = this.onclick_authPriv;
+			this.state.selfElement.onclick = this.onClickAuthPriv;
 		} else {
 			if (utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
 				this.state.selfElement.setAttribute("aria-label", "View on Sourcegraph");
-				this.state.selfElement.onclick = this.onclick_fileView;
+				this.state.selfElement.onclick = this.onClickFileView;
 
 				return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</span>;
 			} else {
