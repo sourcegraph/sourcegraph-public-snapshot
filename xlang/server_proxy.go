@@ -332,16 +332,20 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// Forward to all clients.
 		//
 		// TODO(sqs): some clients will have already received these
+
 		c.proxy.mu.Lock()
-		defer c.proxy.mu.Unlock()
 		for cc := range c.proxy.clients {
 			// TODO(sqs): equality match omits pathPrefix
 			if cc.context == c.id.contextID {
-				if _, err := cc.handleFromServer(ctx, cc.conn, req); err != nil {
-					return nil, err
-				}
+				go func(cc *clientProxyConn) {
+					if _, err := cc.handleFromServer(ctx, cc.conn, req); err != nil {
+						log.Printf("server proxy handler: error forwarding textDocument/publishDiagnostics to client: %s.", err)
+					}
+				}(cc)
 			}
 		}
+		c.proxy.mu.Unlock()
+
 		return nil, nil
 	}
 
