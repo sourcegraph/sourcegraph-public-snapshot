@@ -178,7 +178,7 @@ type ByAuthorDate []*Branch
 
 func (p ByAuthorDate) Len() int { return len(p) }
 func (p ByAuthorDate) Less(i, j int) bool {
-	return p[i].Commit.Author.Date.Time().Before(p[j].Commit.Author.Date.Time())
+	return p[i].Commit.Author.Date.Before(p[j].Commit.Author.Date)
 }
 func (p ByAuthorDate) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 

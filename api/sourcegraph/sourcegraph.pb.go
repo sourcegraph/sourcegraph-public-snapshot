@@ -1,6 +1,8 @@
 package sourcegraph
 
 import (
+	"time"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sqs/pbtypes"
@@ -182,16 +184,16 @@ type Repo struct {
 	// CreatedAt is when this repository was created. If it represents an externally
 	// hosted (e.g., GitHub) repository, the creation date is when it was created at
 	// that origin.
-	CreatedAt *pbtypes.Timestamp `json:"CreatedAt,omitempty"`
+	CreatedAt *time.Time `json:"CreatedAt,omitempty"`
 	// UpdatedAt is when this repository's metadata was last updated (on its origin if
 	// it's an externally hosted repository).
-	UpdatedAt *pbtypes.Timestamp `json:"UpdatedAt,omitempty"`
+	UpdatedAt *time.Time `json:"UpdatedAt,omitempty"`
 	// PushedAt is when this repository's was last (VCS-)pushed to.
-	PushedAt *pbtypes.Timestamp `json:"PushedAt,omitempty"`
+	PushedAt *time.Time `json:"PushedAt,omitempty"`
 	// VCSSyncedAt is when this repository's VCS data was last synced
 	// with the upstream. This field is only populated for mirror
 	// repositories.
-	VCSSyncedAt *pbtypes.Timestamp `json:"VCSSyncedAt,omitempty"`
+	VCSSyncedAt *time.Time `json:"VCSSyncedAt,omitempty"`
 	// Origin describes the repo's canonical location. It is only
 	// populated for mirror repos; for non-mirror repos, it is null.
 	Origin *Origin `json:"Origin,omitempty"`
@@ -289,9 +291,9 @@ type RepoStatus struct {
 	// Description is a short, high-level summary of the status.
 	Description string `json:"Description,omitempty"`
 	// A string label to differentiate this status from the statuses of other systems.
-	Context   string            `json:"Context,omitempty"`
-	CreatedAt pbtypes.Timestamp `json:"CreatedAt"`
-	UpdatedAt pbtypes.Timestamp `json:"UpdatedAt"`
+	Context   string    `json:"Context,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt"`
+	UpdatedAt time.Time `json:"UpdatedAt"`
 }
 
 type RepoStatusList struct {
@@ -568,9 +570,9 @@ type RemoteRepo struct {
 	Language string `json:"Language,omitempty"`
 	// UpdatedAt is the date of the most recent update (push or
 	// metadata edit) to the repo on GitHub.
-	UpdatedAt *pbtypes.Timestamp `json:"UpdatedAt,omitempty"`
+	UpdatedAt *time.Time `json:"UpdatedAt,omitempty"`
 	// PushedAt is the date of the most recent git push to the repo.
-	PushedAt *pbtypes.Timestamp `json:"PushedAt,omitempty"`
+	PushedAt *time.Time `json:"PushedAt,omitempty"`
 	// Private is true for private repos.
 	Private bool `json:"Private,omitempty"`
 	// Fork is true for repos that were forked from another repo using
@@ -642,7 +644,7 @@ type User struct {
 	// RegisteredAt is the date that the user registered. If the user has not
 	// registered (i.e., we have processed their repos but they haven't signed into
 	// Sourcegraph), it is null.
-	RegisteredAt *pbtypes.Timestamp `json:"RegisteredAt,omitempty"`
+	RegisteredAt *time.Time `json:"RegisteredAt,omitempty"`
 }
 
 // UserSpec specifies a user. At least one of Login and UID must be
@@ -986,7 +988,7 @@ type AsyncRefreshIndexesOp struct {
 }
 
 type AuthorshipInfo struct {
-	LastCommitDate pbtypes.Timestamp `json:"LastCommitDate"`
+	LastCommitDate time.Time `json:"LastCommitDate"`
 	// LastCommitID is the commit ID of the last commit that this author made to the
 	// thing that this info describes.
 	LastCommitID string `json:"LastCommitID,omitempty"`
@@ -1044,8 +1046,8 @@ type UserEvent struct {
 	Method  string `json:"Method,omitempty"`
 	Result  string `json:"Result,omitempty"`
 	// CreatedAt holds the time when this event was logged.
-	CreatedAt *pbtypes.Timestamp `json:"CreatedAt,omitempty"`
-	Message   string             `json:"Message,omitempty"`
+	CreatedAt *time.Time `json:"CreatedAt,omitempty"`
+	Message   string     `json:"Message,omitempty"`
 	// Version holds the release version of the Sourcegraph binary.
 	Version string `json:"Version,omitempty"`
 	// URL holds the http request url.
@@ -1065,7 +1067,7 @@ type Event struct {
 	// instance.
 	DeviceID string `json:"DeviceID,omitempty"`
 	// Timestamp records the instant when this event was logged.
-	Timestamp *pbtypes.Timestamp `json:"Timestamp,omitempty"`
+	Timestamp *time.Time `json:"Timestamp,omitempty"`
 	// UserProperties holds metadata relating to user who performed this
 	// action, eg. "Email".
 	UserProperties map[string]string `json:"UserProperties,omitempty"`

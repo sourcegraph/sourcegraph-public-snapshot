@@ -31,7 +31,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/test/e2e/e2etestuser"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 var Repos = &repos{}
@@ -203,14 +202,14 @@ func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.R
 	return nil
 }
 
-func timestampEqual(a, b *pbtypes.Timestamp) bool {
+func timestampEqual(a, b *time.Time) bool {
 	if a == b {
 		return true
 	}
 	if a == nil || b == nil {
 		return false
 	}
-	return a.Seconds == b.Seconds && a.Nanos == b.Nanos
+	return a.Equal(*b)
 }
 
 // repoSetFromRemote updates repo with fields from ghrepo that are
@@ -317,18 +316,12 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *locals
 
 	if !timestampEqual(repo.UpdatedAt, ghrepo.UpdatedAt) {
 		repo.UpdatedAt = ghrepo.UpdatedAt
-		if ghrepo.UpdatedAt != nil {
-			t := ghrepo.UpdatedAt.Time()
-			updateOp.UpdatedAt = &t
-		}
+		updateOp.UpdatedAt = ghrepo.UpdatedAt
 		updated = true
 	}
 	if !timestampEqual(repo.PushedAt, ghrepo.PushedAt) {
 		repo.PushedAt = ghrepo.PushedAt
-		if ghrepo.PushedAt != nil {
-			t := ghrepo.PushedAt.Time()
-			updateOp.PushedAt = &t
-		}
+		updateOp.PushedAt = ghrepo.PushedAt
 		updated = true
 	}
 
@@ -490,7 +483,7 @@ func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRe
 		op.DefaultBranch = "master"
 	}
 
-	ts := pbtypes.NewTimestamp(time.Now())
+	ts := time.Now()
 	return &sourcegraph.Repo{
 		Name:          pathpkg.Base(op.URI),
 		URI:           op.URI,

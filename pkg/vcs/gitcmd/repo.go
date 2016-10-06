@@ -22,7 +22,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 var (
@@ -399,8 +398,8 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 
 		commits[i] = &vcs.Commit{
 			ID:        vcs.CommitID(parts[0]),
-			Author:    vcs.Signature{Name: string(parts[1]), Email: string(parts[2]), Date: pbtypes.NewTimestamp(time.Unix(authorTime, 0))},
-			Committer: &vcs.Signature{Name: string(parts[4]), Email: string(parts[5]), Date: pbtypes.NewTimestamp(time.Unix(committerTime, 0))},
+			Author:    vcs.Signature{Name: string(parts[1]), Email: string(parts[2]), Date: time.Unix(authorTime, 0).UTC()},
+			Committer: &vcs.Signature{Name: string(parts[4]), Email: string(parts[5]), Date: time.Unix(committerTime, 0).UTC()},
 			Message:   string(bytes.TrimSuffix(parts[7], []byte{'\n'})),
 			Parents:   parents,
 		}
@@ -623,7 +622,7 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameO
 				Author: vcs.Signature{
 					Name:  author,
 					Email: email,
-					Date:  pbtypes.NewTimestamp(time.Unix(authorTime, 0).In(time.UTC)),
+					Date:  time.Unix(authorTime, 0).UTC(),
 				},
 			}
 

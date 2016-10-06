@@ -17,7 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 var (
@@ -216,12 +215,10 @@ func toRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 		repo.Owner = strv(ghrepo.Owner.Login)
 	}
 	if ghrepo.UpdatedAt != nil {
-		ts := pbtypes.NewTimestamp(ghrepo.UpdatedAt.Time)
-		repo.UpdatedAt = &ts
+		repo.UpdatedAt = &ghrepo.UpdatedAt.Time
 	}
 	if ghrepo.PushedAt != nil {
-		ts := pbtypes.NewTimestamp(ghrepo.PushedAt.Time)
-		repo.PushedAt = &ts
+		repo.PushedAt = &ghrepo.PushedAt.Time
 	}
 	if pp := ghrepo.Permissions; pp != nil {
 		p := *pp

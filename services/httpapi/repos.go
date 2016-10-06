@@ -33,7 +33,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 
 	var lastMod time.Time
 	if repo.UpdatedAt != nil {
-		lastMod = repo.UpdatedAt.Time()
+		lastMod = *repo.UpdatedAt
 	}
 	if clientCached, err := writeCacheHeaders(w, r, lastMod, defaultCacheMaxAge); clientCached || err != nil {
 		return err

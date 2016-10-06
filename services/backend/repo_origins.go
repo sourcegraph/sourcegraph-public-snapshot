@@ -9,7 +9,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 // newRepoFromOrigin creates a new repo from origin o. o must not be nil.
@@ -44,7 +43,7 @@ func (s *repos) newRepoFromGitHubOrigin(ctx context.Context, o *sourcegraph.Orig
 	// Purposefully set very few fields. We don't want to cache
 	// metadata, because it'll get stale, and fetching online from
 	// GitHub is quite easy and (with HTTP caching) performant.
-	ts := pbtypes.NewTimestamp(time.Now())
+	ts := time.Now()
 	return &sourcegraph.Repo{
 		Owner:        ghRepo.Owner,
 		Name:         ghRepo.Name,

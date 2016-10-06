@@ -22,7 +22,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 // TODO remove skipFS by decoupling packages
@@ -97,22 +96,10 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 		Private:       r.Private,
 	}
 
-	{
-		ts := pbtypes.NewTimestamp(r.CreatedAt)
-		r2.CreatedAt = &ts
-	}
-	if r.UpdatedAt != nil {
-		ts := pbtypes.NewTimestamp(*r.UpdatedAt)
-		r2.UpdatedAt = &ts
-	}
-	if r.PushedAt != nil {
-		ts := pbtypes.NewTimestamp(*r.PushedAt)
-		r2.PushedAt = &ts
-	}
-	if r.VCSSyncedAt != nil {
-		ts := pbtypes.NewTimestamp(*r.VCSSyncedAt)
-		r2.VCSSyncedAt = &ts
-	}
+	r2.CreatedAt = &r.CreatedAt
+	r2.UpdatedAt = r.UpdatedAt
+	r2.PushedAt = r.PushedAt
+	r2.VCSSyncedAt = r.VCSSyncedAt
 	if r.OriginRepoID != nil && r.OriginService != nil && r.OriginAPIBaseURL != nil {
 		r2.Origin = &sourcegraph.Origin{
 			ID:         *r.OriginRepoID,
@@ -139,22 +126,12 @@ func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	r.Fork = r2.Fork
 	r.Mirror = r2.Mirror
 	r.Private = r2.Private
-
 	if r2.CreatedAt != nil {
-		r.CreatedAt = r2.CreatedAt.Time()
+		r.CreatedAt = *r2.CreatedAt
 	}
-	if r2.UpdatedAt != nil {
-		ts := r2.UpdatedAt.Time()
-		r.UpdatedAt = &ts
-	}
-	if r2.PushedAt != nil {
-		ts := r2.PushedAt.Time()
-		r.PushedAt = &ts
-	}
-	if r2.VCSSyncedAt != nil {
-		ts := r2.VCSSyncedAt.Time()
-		r.VCSSyncedAt = &ts
-	}
+	r.UpdatedAt = r2.UpdatedAt
+	r.PushedAt = r2.PushedAt
+	r.VCSSyncedAt = r2.VCSSyncedAt
 	if o := r2.Origin; o != nil {
 		r.OriginRepoID = gogithub.String(o.ID)
 		service := int32(o.Service)

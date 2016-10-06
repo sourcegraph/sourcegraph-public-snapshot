@@ -13,7 +13,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	githubmock "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/mocks"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 /*
@@ -562,10 +561,9 @@ func TestRepos_Create(t *testing.T) {
 	s := repos{}
 
 	tm := time.Now().Round(time.Second)
-	ts := pbtypes.NewTimestamp(tm)
 
 	// Add a repo.
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, DefaultBranch: "master"}); err != nil {
+	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &tm, DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -576,8 +574,8 @@ func TestRepos_Create(t *testing.T) {
 	if repo.CreatedAt == nil {
 		t.Fatal("got CreatedAt nil")
 	}
-	if want := ts.Time(); !repo.CreatedAt.Time().Equal(want) {
-		t.Errorf("got CreatedAt %q, want %q", repo.CreatedAt.Time(), want)
+	if want := tm; !repo.CreatedAt.Equal(want) {
+		t.Errorf("got CreatedAt %q, want %q", repo.CreatedAt, want)
 	}
 }
 
@@ -592,15 +590,14 @@ func TestRepos_Create_dupe(t *testing.T) {
 	s := repos{}
 
 	tm := time.Now().Round(time.Second)
-	ts := pbtypes.NewTimestamp(tm)
 
 	// Add a repo.
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, DefaultBranch: "master"}); err != nil {
+	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &tm, DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
 	// Add another repo with the same name.
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, DefaultBranch: "master"}); err == nil {
+	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &tm, DefaultBranch: "master"}); err == nil {
 		t.Fatalf("got err == nil, want an error when creating a duplicate repo")
 	}
 }
@@ -702,7 +699,7 @@ func TestRepos_Update_UpdatedAt(t *testing.T) {
 		t.Fatal(err)
 	}
 	if repo.UpdatedAt != nil {
-		t.Errorf("got UpdatedAt %v, want nil", repo.UpdatedAt.Time())
+		t.Errorf("got UpdatedAt %v, want nil", repo.UpdatedAt)
 	}
 
 	// Perform any update.
@@ -718,8 +715,8 @@ func TestRepos_Update_UpdatedAt(t *testing.T) {
 	if repo.UpdatedAt == nil {
 		t.Fatal("got UpdatedAt nil, want non-nil")
 	}
-	if want := newTime; !repo.UpdatedAt.Time().Equal(want) {
-		t.Errorf("got UpdatedAt %q, want %q", repo.UpdatedAt.Time(), want)
+	if want := newTime; !repo.UpdatedAt.Equal(want) {
+		t.Errorf("got UpdatedAt %q, want %q", repo.UpdatedAt, want)
 	}
 }
 
@@ -743,7 +740,7 @@ func TestRepos_Update_PushedAt(t *testing.T) {
 		t.Fatal(err)
 	}
 	if repo.PushedAt != nil {
-		t.Errorf("got PushedAt %v, want nil", repo.PushedAt.Time())
+		t.Errorf("got PushedAt %v, want nil", repo.PushedAt)
 	}
 
 	newTime := time.Unix(123456, 0)
@@ -761,7 +758,7 @@ func TestRepos_Update_PushedAt(t *testing.T) {
 	if repo.UpdatedAt != nil {
 		t.Fatal("got UpdatedAt non-nil, want nil")
 	}
-	if want := newTime; !repo.PushedAt.Time().Equal(want) {
-		t.Errorf("got PushedAt %q, want %q", repo.PushedAt.Time(), want)
+	if want := newTime; !repo.PushedAt.Equal(want) {
+		t.Errorf("got PushedAt %q, want %q", repo.PushedAt, want)
 	}
 }

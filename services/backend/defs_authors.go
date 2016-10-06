@@ -70,7 +70,7 @@ func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsO
 		totalBytes += bytes
 		if da, present := authorMap[hunk.Author.Email]; present {
 			da.Bytes += bytes
-			if da.LastCommitDate.Time().Before(hunk.Author.Date.Time()) {
+			if da.LastCommitDate.Before(hunk.Author.Date) {
 				da.LastCommitDate = hunk.Author.Date
 				da.LastCommitID = string(hunk.CommitID)
 			}

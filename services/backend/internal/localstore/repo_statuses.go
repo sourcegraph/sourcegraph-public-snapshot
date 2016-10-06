@@ -11,7 +11,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/slack"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 func init() {
@@ -59,11 +58,11 @@ func (r *dbRepoStatus) toRepoStatus() *sourcegraph.RepoStatus {
 		TargetURL:   r.TargetURL,
 		Description: r.Description,
 		Context:     r.Context,
-		CreatedAt:   pbtypes.NewTimestamp(r.CreatedAt),
+		CreatedAt:   r.CreatedAt,
 	}
 
 	if r.UpdatedAt != nil {
-		r2.UpdatedAt = pbtypes.NewTimestamp(*r.UpdatedAt)
+		r2.UpdatedAt = *r.UpdatedAt
 	}
 
 	return r2
@@ -76,9 +75,9 @@ func (r *dbRepoStatus) fromRepoStatus(repo int32, commitID string, r2 *sourcegra
 	r.TargetURL = r2.TargetURL
 	r.Description = r2.Description
 	r.Context = r2.Context
-	r.CreatedAt = r2.CreatedAt.Time()
-	if !r2.UpdatedAt.Time().IsZero() {
-		ts := r2.UpdatedAt.Time()
+	r.CreatedAt = r2.CreatedAt
+	if !r2.UpdatedAt.IsZero() {
+		ts := r2.UpdatedAt
 		r.UpdatedAt = &ts
 	}
 }

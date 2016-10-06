@@ -13,7 +13,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 func TestRepo(t *testing.T) {
@@ -138,13 +137,12 @@ func TestRepo_caching_notModified(t *testing.T) {
 	c := newTest()
 
 	mtime := time.Now().UTC()
-	ts := pbtypes.NewTimestamp(mtime)
 
 	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r/r", 1)
 	calledGet := backend.Mocks.Repos.MockGet_Return(t, &sourcegraph.Repo{
 		ID:        1,
 		URI:       "r/r",
-		UpdatedAt: &ts,
+		UpdatedAt: &mtime,
 	})
 
 	req, _ := http.NewRequest("GET", "/repos/r/r", nil)
@@ -171,13 +169,12 @@ func TestRepo_caching_modifiedSince(t *testing.T) {
 	c := newTest()
 
 	mtime := time.Now().UTC()
-	ts := pbtypes.NewTimestamp(mtime)
 
 	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r/r", 1)
 	calledGet := backend.Mocks.Repos.MockGet_Return(t, &sourcegraph.Repo{
 		ID:        1,
 		URI:       "r/r",
-		UpdatedAt: &ts,
+		UpdatedAt: &mtime,
 	})
 
 	req, _ := http.NewRequest("GET", "/repos/r/r", nil)

@@ -19,7 +19,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 var times = []string{
@@ -1387,12 +1386,12 @@ func commitsEqual(a, b *vcs.Commit) bool {
 	return reflect.DeepEqual(a, b)
 }
 
-func mustParseTime(layout, value string) pbtypes.Timestamp {
+func mustParseTime(layout, value string) time.Time {
 	tm, err := time.Parse(layout, value)
 	if err != nil {
 		panic(err.Error())
 	}
-	return pbtypes.NewTimestamp(tm)
+	return tm
 }
 
 func appleTime(t string) string {

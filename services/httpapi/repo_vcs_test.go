@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
 	"context"
 
@@ -66,7 +67,7 @@ func TestRepoResolveRev_notFound(t *testing.T) {
 func TestCommit_ok(t *testing.T) {
 	c := newTest()
 
-	want := &vcs.Commit{ID: "c"}
+	want := &vcs.Commit{ID: "c", Author: vcs.Signature{Date: time.Now().UTC()}}
 
 	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
 	calledResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "c")

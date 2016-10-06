@@ -13,7 +13,6 @@ import (
 	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 func TestDefsService_ListAuthors(t *testing.T) {
@@ -26,7 +25,7 @@ func TestDefsService_ListAuthors(t *testing.T) {
 	var s defs
 	ctx := testContext()
 
-	t1 := pbtypes.NewTimestamp(time.Unix(12345, 0))
+	t1 := time.Unix(12345, 0)
 
 	want := []*sourcegraph.DefAuthor{
 		{

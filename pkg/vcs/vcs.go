@@ -1,6 +1,6 @@
 package vcs
 
-import "sourcegraph.com/sqs/pbtypes"
+import "time"
 
 type Commit struct {
 	ID        CommitID   `json:"ID,omitempty"`
@@ -12,9 +12,9 @@ type Commit struct {
 }
 
 type Signature struct {
-	Name  string            `json:"Name,omitempty"`
-	Email string            `json:"Email,omitempty"`
-	Date  pbtypes.Timestamp `json:"Date"`
+	Name  string    `json:"Name,omitempty"`
+	Email string    `json:"Email,omitempty"`
+	Date  time.Time `json:"Date"`
 }
 
 // A Branch is a VCS branch.
