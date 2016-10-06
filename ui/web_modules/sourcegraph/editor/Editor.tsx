@@ -1,16 +1,11 @@
-import * as BlobActions from "sourcegraph/blob/BlobActions";
 import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 import {URIUtils} from "sourcegraph/core/uri";
-import {urlToDefInfo} from "sourcegraph/def/routes";
-import * as Dispatcher from "sourcegraph/Dispatcher";
 import {EditorService, IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
 import * as lsp from "sourcegraph/editor/lsp";
-import { makeRepoRev } from "sourcegraph/repo";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
-import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
-import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
+import "sourcegraph/editor/FindExternalReferencesAction";
 import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
 import "sourcegraph/editor/vscode";
 
@@ -18,7 +13,6 @@ import {CancellationToken} from "vs/base/common/cancellation";
 import {KeyCode, KeyMod} from "vs/base/common/keyCodes";
 import {IDisposable} from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
-import {TPromise} from "vs/base/common/winjs.base";
 import {IStandaloneCodeEditor} from "vs/editor/browser/standalone/standaloneCodeEditor";
 import {create as createStandaloneEditor, createModel, onDidCreateModel} from "vs/editor/browser/standalone/standaloneEditor";
 import {registerDefinitionProvider, registerHoverProvider, registerReferenceProvider} from "vs/editor/browser/standalone/standaloneLanguages";
@@ -27,8 +21,6 @@ import {Range} from "vs/editor/common/core/range";
 import {IModelChangedEvent, IPosition, IRange, IReadOnlyModel} from "vs/editor/common/editorCommon";
 import {Definition, Hover, Location, ReferenceContext} from "vs/editor/common/modes";
 import {HoverOperation} from "vs/editor/contrib/hover/browser/hoverOperation";
-
-const fetch = singleflightFetch(defaultFetch);
 
 function cacheKey(model: IReadOnlyModel, position: IPosition): string | null {
 	const word = model.getWordAtPosition(position);
@@ -139,16 +131,6 @@ export class Editor implements IDisposable {
 			if (!ident || peekWidget || unsupportedLang || isOnboarding) {
 				(this._editor as any)._contextViewService.hideContextView();
 			}
-		});
-
-		// Add the "Find External References" item to the context menu.
-		//
-		// TODO(sqs!vscode): this is not showing up
-		this._editor.addAction({
-			id: "findExternalReferences",
-			label: "Find External References",
-			// contextMenuGroupId: "1_goto", // TODO(sqs!vscode): this is broken
-			run: (e) => this._findExternalReferences(e.getModel(), e.getPosition()),
 		});
 
 		// Rename the "Find All References" action to "Find Local References".
@@ -319,35 +301,6 @@ export class Editor implements IDisposable {
 				});
 				return locs.map(lsp.toMonacoLocation);
 			});
-	}
-
-	private	_findExternalReferences(model: IReadOnlyModel, pos: IPosition): TPromise<void> {
-		const {repo, rev, path} = URIUtils.repoParams(model.uri);
-		EventLogger.logEventForCategory(
-			AnalyticsConstants.CATEGORY_REFERENCES,
-			AnalyticsConstants.ACTION_CLICK,
-			"ClickedViewReferences",
-			{ repo, rev: rev || "", path }
-		);
-
-		const line = pos.lineNumber - 1;
-		const col = pos.column - 1;
-		return TPromise.wrap<void>(fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/hover-info?file=${path}&line=${line}&character=${col}`)
-			.then(checkStatus)
-			.then(resp => resp.json())
-			.catch(err => null)
-			.then((resp) => {
-				if (resp && (resp as any).def) {
-					// TODO(uforic): Remove this when we remove srclib dependency. Fix a special case for golang/go. 
-					const def = resp.def;
-					if (def.Repo === "github.com/golang/go" && def.Unit && def.Unit.startsWith("github.com/golang/go/src/")) {
-						def.Unit = def.Unit.replace("github.com/golang/go/src/", "");
-					}
-					window.location.href = urlToDefInfo((resp as any).def);
-				} else {
-					Dispatcher.Stores.dispatch(new BlobActions.Toast("No external references found"));
-				}
-			}));
 	}
 
 	public layout(): void {
