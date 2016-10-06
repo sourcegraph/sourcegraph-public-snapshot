@@ -103,7 +103,7 @@ interface LocationStateModalProps {
 // to determine whether it is displayed. Use LocationStateModal with
 // LocationStateToggleLink.
 export function LocationStateModal({location, modalName, children, onDismiss, style, router}: LocationStateModalProps): JSX.Element {
-	if (!(location.state || (location as Location & {state: {modal?: string}}).state.modal !== modalName)) {
+	if (!location.state || !(location.state as any).modal || (location.state as any).modal  !== modalName) {
 		return <span />;
 	}
 
