@@ -1350,7 +1350,7 @@ public class AmazonEC2AsyncClient extends AmazonEC2Client
      * CIDR range or a source group. For the TCP and UDP protocols, you must
      * also specify the destination port or port range. For the ICMP
      * protocol, you must also specify the ICMP type and code. You can use -1
-     * for the type or code to mean all types or all sourcegraph.
+     * for the type or code to mean all types or all codes.
      * </p>
      * <p>
      * Rule changes are propagated to affected instances as quickly as
@@ -1406,7 +1406,7 @@ public class AmazonEC2AsyncClient extends AmazonEC2Client
      * CIDR range or a source group. For the TCP and UDP protocols, you must
      * also specify the destination port or port range. For the ICMP
      * protocol, you must also specify the ICMP type and code. You can use -1
-     * for the type or code to mean all types or all sourcegraph.
+     * for the type or code to mean all types or all codes.
      * </p>
      * <p>
      * Rule changes are propagated to affected instances as quickly as
@@ -16430,7 +16430,7 @@ public class AmazonEC2AsyncClient extends AmazonEC2Client
      * </p>
      * <p>
      * <b>NOTE:</b> You can't register an image where a secondary (non-root)
-     * snapshot has AWS Marketplace product sourcegraph.
+     * snapshot has AWS Marketplace product codes.
      * </p>
      *
      * @param registerImageRequest Container for the necessary parameters to
@@ -16488,7 +16488,7 @@ public class AmazonEC2AsyncClient extends AmazonEC2Client
      * </p>
      * <p>
      * <b>NOTE:</b> You can't register an image where a secondary (non-root)
-     * snapshot has AWS Marketplace product sourcegraph.
+     * snapshot has AWS Marketplace product codes.
      * </p>
      *
      * @param registerImageRequest Container for the necessary parameters to
