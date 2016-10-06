@@ -241,9 +241,9 @@ export default class BlobAnnotator extends Component {
 		return el.length > 0
 	}
 
-	onclick_signIn(ev) {
+	onclick_authPriv(ev) {
 		EventLogger.logEventForCategory("Auth", "Redirect", "ChromeExtensionSgButtonClicked", {repo: this.state.repoURI, path: window.location.href, is_private_repo: this.isPrivateRepo()});
-		location.href = `https://sourcegraph.com/login`;
+		location.href = `https://sourcegraph.com/join?ob=github&rtg=${encodeURIComponent(window.location.href)}`;
 	}
 
 	onclick_fileView(ev) {
@@ -258,14 +258,16 @@ export default class BlobAnnotator extends Component {
 			(typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)] !== 'undefined') &&
 			(typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)].authRequired !== 'undefined')) {
 
-			// Not signed in
+			// Not signed in or not auth'd for private repos
 			this.state.selfElement.removeAttribute("disabled");
 			this.state.selfElement.setAttribute("aria-label", `Authorize Sourcegraph for ${this.state.repoURI.split("github.com/")[1]}`);
-			this.state.selfElement.onclick = this.onclick_signIn;
+			this.state.selfElement.onclick = this.onclick_authPriv;
 		} else {
 			if (utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
 				this.state.selfElement.setAttribute("aria-label", "View on Sourcegraph");
 				this.state.selfElement.onclick = this.onclick_fileView;
+
+				return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</span>;
 			} else {
 				// TODO: Only set style to disabled and log the click event for statistics on unsupported languages?
 				this.state.selfElement.setAttribute("disabled", true);
@@ -275,11 +277,9 @@ export default class BlobAnnotator extends Component {
 				} else {
 					this.state.selfElement.setAttribute("aria-label", "File not supported");
 				}
-
-				return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</span>;
 			}
 		}
 
-		return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</span>;
+		return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</span>;
 	}
 }

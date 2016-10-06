@@ -35,16 +35,15 @@ export class SignupForm extends Component<Props, State> {
 		);
 	}
 }
-let StyledSignupForm = SignupForm;
 
 function SignupComp(props: {location: any}): JSX.Element {
 	return (
 		<div className={styles.full_page}>
 			<Helmet title="Sign Up" />
-			<StyledSignupForm {...props}
-				returnTo="/" />
+			<SignupForm {...props}
+				returnTo="/?ob=chrome" />
 		</div>
 	);
 }
 
-export const Signup = redirectIfLoggedIn("/", SignupComp);
+export const Signup = redirectIfLoggedIn("/?ob=chrome", SignupComp);

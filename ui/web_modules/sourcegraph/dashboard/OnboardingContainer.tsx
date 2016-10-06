@@ -72,6 +72,23 @@ export class OnboardingContainer extends Container<Props, State> {
 			return <GitHubPrivateAuthOnboarding completeStep={this._completeStep.bind(this)} repos={this.state.repos ? this.state.repos.Repos : []} privateCodeAuthed={this._isPrivateCodeUser()} location={this.props.location}/>;
 		}
 
+		// This should be right after the Github onboarding step
+		// Chrome extension will on receiving 401 from /rev endpoint
+		// bring the user to /join?ob=github&rtg=${encodeURIComponent(window.location.href)}
+		// Once the user has completed the github onboarding step (enabling private repos),
+		// they should be taken back to Github if rtg was provided and is to a github URL
+		//
+		// TODO: if the user has auth'd already, skip ob=github and redirect back if necessary
+		const returnToGithub = this.props.location.query["rtg"] || null;
+		if (returnToGithub) {
+			const decodeUrl = decodeURIComponent(returnToGithub);
+			const returnUrl = new URL(decodeUrl);
+
+			if (returnUrl.origin.match(/https:\/\/(www.)?github.com/)) {
+				window.location.href = _.unescape(returnToGithub);
+			}
+		}
+
 		return <Dashboard location={this.props.location} completedBanner={true}/>;
 	}
 

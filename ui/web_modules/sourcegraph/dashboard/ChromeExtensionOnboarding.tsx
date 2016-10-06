@@ -70,7 +70,29 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 		return <EditorDemo repo="github.com/gorilla/mux" rev="master" path="mux.go" startLine={211} />;
 	}
 
+	_isBrowserSupported(): boolean {
+		const isChrome = navigator.userAgent.includes("Chrome");
+		const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
+		if (isMobile || !isChrome) {
+			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_ERROR, "BrowserDoesNotSupportChromeExtension", {page_name: "ChromeExtensionOnboarding"});
+			return false;
+		}
+
+		return true;
+	}
+
+	_isChromeExtensionInstalled(): boolean {
+		// Check for a cookie injected by the extension on https://(www.)?sourcegraph.com/*
+		return document.cookie.replace(/(?:(?:^|.*;\s*)sgExtensionInstalled\s*\=\s*([^;]*).*$)|^.*$/, "$1") === "true";
+	}
+
 	render(): JSX.Element | null {
+		if (!this._isBrowserSupported() || this._isChromeExtensionInstalled()) {
+			this._continueOnboarding();
+			return null;
+		}
+
 		return (
 			<div>
 				<Helmet title="Home" />
