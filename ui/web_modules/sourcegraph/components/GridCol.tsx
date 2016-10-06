@@ -33,9 +33,9 @@ interface Props {
 export function GridCol(props: Props): JSX.Element {
 
 	// Generate column sizes
-	const colSize: number = 8.333333;
+	const colSize: number = 100 / 12;
 	const unit = "%";
-	const colSizes = Array.from(Array(12), (_, i) => colSize * i);
+	const colSizes = Array.from(Array(13), (_, i) => colSize * i);
 	const column = colSizes.map((val) => val + unit );
 
 	const sx = merge(

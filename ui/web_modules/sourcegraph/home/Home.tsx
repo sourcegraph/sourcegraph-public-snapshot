@@ -9,6 +9,7 @@ import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
+import {whitespace} from "sourcegraph/components/utils/whitespace";
 import {Container} from "sourcegraph/Container";
 import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
 import * as styles from "sourcegraph/home/styles/home.css";
@@ -87,7 +88,7 @@ export class Home extends Container<HomeProps, HomeState> {
 
 						{/* column with welcome message, short description, and sign up button */}
 						<div style={{maxWidth: "400px", flex: "1 1 400px"}}>
-							<Heading align="left" level="2" underline="purple">
+							<Heading align="left" level={2} underline="purple">
 								Welcome to the global graph of code
 							</Heading>
 
@@ -118,7 +119,7 @@ export class Home extends Container<HomeProps, HomeState> {
 				<div className={classNames(base.center, base.ph3, base.pv5)} style={{maxWidth: "990px"}}>
 					{/* section showing questions */}
 					<div className={base.center} style={{maxWidth: "600px"}}>
-						<Heading align="center" level="4" underline="blue">
+						<Heading align="center" level={4} underline="blue">
 							How do I use this function? Who can I ask about this code? <em>What does this code even do?</em>
 						</Heading>
 
@@ -131,46 +132,45 @@ export class Home extends Container<HomeProps, HomeState> {
 					{/* section showing feature descriptions */}
 					<FlexContainer justify="between" wrap={true} className={base.center}>
 
-						{/* column describing examples */}
-						<div style={{maxWidth: "300px", flex: "1 1 300px"}} className={classNames(base.ph3, base.mt4)}>
+						<div style={{maxWidth: "300px", flex: "1 1 220px"}} className={classNames(base.ph3, base.mt4)}>
 							<img src={`${context.assetsRoot}/img/Homepage/illo-docs.svg`} width="100%" />
-
-							<Heading level="5" className={base.mt3}>
+							<Heading level={5} style={{
+								marginTop: whitespace[2],
+								marginBottom: whitespace[0],
+							}}>
 								Usage examples and instant documentation
 							</Heading>
-
-							<p>
+							<p style={{marginTop: whitespace[2]}}>
 								Quickly understand new libraries instead of reinventing the wheel.
 							</p>
 						</div>
 
-						{/* column describing search */}
-						<div style={{maxWidth: "300px", flex: "1 1 300px"}} className={classNames(base.ph3, base.mt4)}>
+						<div style={{maxWidth: "300px", flex: "1 1 220px"}} className={classNames(base.ph3, base.mt4)}>
 							<img src={`${context.assetsRoot}/img/Homepage/illo-search.svg`} width="100%" />
-
-							<Heading level="5" className={base.mt3}>
+							<Heading level={5} style={{
+								marginTop: whitespace[2],
+								marginBottom: whitespace[0],
+							}}>
 								Search by function, package, or symbol name
 							</Heading>
-
-							<p>
+							<p style={{marginTop: whitespace[2]}}>
 								Find exactly the function you&rsquo;re looking for.
 								Search your private code and thousands of open-source repositories.
 							</p>
 						</div>
 
-						{/* column describing team features */}
-						<div style={{maxWidth: "300px", flex: "1 1 300px"}} className={classNames(base.ph3, base.mt4)}>
-							<img src={`${context.assetsRoot}/img/Homepage/illo-team.svg`} width="100%" />
-
-							<Heading level="5" className={base.mt3}>
-								Designed with teams in mind
+						<div style={{maxWidth: "300px", flex: "1 1 220px"}} className={classNames(base.ph3, base.mt4)}>
+							<img src={`${context.assetsRoot}/img/Homepage/illo-jump.svg`} width="100%" />
+							<Heading level={5} style={{
+								marginTop: whitespace[2],
+								marginBottom: whitespace[0],
+							}}>
+								Jump to definition across repositories
 							</Heading>
-
-							<p>
-								Jump to definition in a code review and instantly see who you should ask about a piece of code.
+							<p style={{marginTop: whitespace[2]}}>
+								Trace bugs, understand dependencies, and learn everything you need to know about a codebase.
 							</p>
 						</div>
-
 					</FlexContainer>
 				</div>
 
@@ -220,11 +220,11 @@ export class Home extends Container<HomeProps, HomeState> {
 						{/* section showing clients */}
 						<div className={classNames(base.center, base.pa4)}>
 							<FlexContainer wrap={true}>
-								<Heading align="left" level="4" underline="purple" style={{flex: "0 0 240px"}} className="full_sm">
+								<Heading align="left" level={4} underline="purple" style={{flex: "0 0 240px"}} className="full_sm">
 									Used by developers everywhere
 								</Heading>
 
-								<FlexContainer justify="end" style={{flex: "1 1"}}>
+								<FlexContainer justify="end" style={{flex: "1 1 60%"}} wrap={true}>
 									<img className={base.mr4} style={{marginBottom: "10px"}} src={`${context.assetsRoot}/img/Homepage/logo/twitter.svg`} />
 									<img className={base.mr4} style={{marginBottom: "9px"}} src={`${context.assetsRoot}/img/Homepage/logo/red-hat.svg`} />
 									<img className={base.mr4} style={{marginBottom: "7px"}} src={`${context.assetsRoot}/img/Homepage/logo/daily-motion.svg`} />
@@ -234,7 +234,7 @@ export class Home extends Container<HomeProps, HomeState> {
 
 							{/* section showing favorable user feedback */}
 							<FlexContainer justify="between" wrap={true}>
-								<div className={classNames(styles.tweet_container, base.pr4, base.mb3)} >
+								<div className={classNames(styles.tweet_container, base.pr4, base.mb3)}>
 									<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">Just found out <a href="https://twitter.com/srcgraph">@srcgraph</a> ! HUGE productivity gain. Great work ! Waiting for more language support.</p>&mdash; Dharmesh Kakadia (@dharmeshkakadia) <a href="https://twitter.com/dharmeshkakadia/status/738874411437035520">June 3, 2016</a></blockquote>
 								</div>
 								<div className={classNames(styles.tweet_container, base.mb3)}>
@@ -255,7 +255,7 @@ export class Home extends Container<HomeProps, HomeState> {
 
 				{/* section showing tagline with a CTA to sign up */}
 				<div style={{maxWidth: "660px"}} className={classNames(base.center, base.mv5, base.ph3)}>
-					<Heading align="center" level="3">
+					<Heading align="center" level={3}>
 						Programming should be about building architectures and algorithms, not struggling with how to use a library or function
 					</Heading>
 
