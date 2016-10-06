@@ -237,7 +237,7 @@ export default class BlobAnnotator extends Component {
 	}
 
 	isPrivateRepo() {
-		let el = document.getElementsByClassName("label label-private v-align-middle");
+		const el = document.getElementsByClassName("label label-private v-align-middle");
 		return el.length > 0
 	}
 
@@ -252,9 +252,7 @@ export default class BlobAnnotator extends Component {
 	}
 
 	render() {
-		let isPrivate = this.isPrivateRepo();
-
-		if (isPrivate &&
+		if (this.isPrivateRepo() &&
 			(typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)] !== 'undefined') &&
 			(typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)].authRequired !== 'undefined')) {
 
