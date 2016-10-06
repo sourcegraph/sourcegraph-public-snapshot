@@ -1,7 +1,6 @@
 import {Location} from "history";
 import * as React from "react";
 import {InjectedRouter} from "react-router";
-import {LocationState} from "sourcegraph/app/locationState";
 import {EventListener} from "sourcegraph/Component";
 import * as styles from "sourcegraph/components/styles/modal.css";
 import {renderedOnBody} from "sourcegraph/util/renderedOnBody";
@@ -103,7 +102,7 @@ interface LocationStateModalProps {
 // to determine whether it is displayed. Use LocationStateModal with
 // LocationStateToggleLink.
 export function LocationStateModal({location, modalName, children, onDismiss, style, router}: LocationStateModalProps): JSX.Element {
-	if (!(location.state as LocationState) || (location.state as LocationState).modal !== modalName) {
+	if (!location.state || (location.state as {modal: string}).modal !== modalName) {
 		return <span />;
 	}
 
