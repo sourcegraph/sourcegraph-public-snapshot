@@ -53,9 +53,9 @@ func (s *defs) Get(ctx context.Context, op *sourcegraph.DefsGetOp) (res *sourceg
 		op.Opt = &sourcegraph.DefGetOptions{}
 	}
 	if op.Opt.Doc {
-		def.DocHTML = htmlutil.EmptyForPB()
+		def.DocHTML = htmlutil.EmptyHTML()
 		if len(def.Docs) > 0 {
-			def.DocHTML = htmlutil.SanitizeForPB(def.Docs[0].Data)
+			def.DocHTML = htmlutil.Sanitize(def.Docs[0].Data)
 		}
 	}
 	if op.Opt.ComputeLineRange {
@@ -216,9 +216,9 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (res *
 
 	if opt.Doc {
 		for _, def := range defs {
-			def.DocHTML = htmlutil.EmptyForPB()
+			def.DocHTML = htmlutil.EmptyHTML()
 			if len(def.Docs) > 0 {
-				def.DocHTML = htmlutil.SanitizeForPB(def.Docs[0].Data)
+				def.DocHTML = htmlutil.Sanitize(def.Docs[0].Data)
 			}
 		}
 	}

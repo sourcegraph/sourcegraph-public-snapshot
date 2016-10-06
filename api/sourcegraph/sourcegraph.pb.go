@@ -3,9 +3,9 @@ package sourcegraph
 import (
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 type TreeEntryType int32
@@ -720,7 +720,7 @@ type ExternalToken struct {
 // Def is a code def returned by the Sourcegraph API.
 type Def struct {
 	graph.Def  `json:""`
-	DocHTML    *pbtypes.HTML           `json:"DocHTML,omitempty"`
+	DocHTML    *htmlutil.HTML          `json:"DocHTML,omitempty"`
 	FmtStrings *graph.DefFormatStrings `json:"FmtStrings,omitempty"`
 	// StartLine and EndLine are populated if
 	// DefGetOptions.ComputeLineRange is true.

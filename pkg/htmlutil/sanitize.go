@@ -1,47 +1,26 @@
 package htmlutil
 
-import (
-	"bytes"
-	"go/doc"
+import "github.com/microcosm-cc/bluemonday"
 
-	"github.com/microcosm-cc/bluemonday"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sqs/pbtypes"
-)
+// HTML is a type which marshals into {__html: "html code here"} to designate
+// that this value is sanitized HTML code, see
+// https://facebook.github.io/react/tips/dangerously-set-inner-html.html
+type HTML struct {
+	HTML string `json:"__html"`
+}
 
 var sanitizePolicy = bluemonday.UGCPolicy().AllowAttrs("class").Matching(bluemonday.SpaceSeparatedTokens).Globally()
 
-// EmptyForPB returns the type *pbtypes.HTML with an empty HTML string.
-func EmptyForPB() *pbtypes.HTML {
-	return &pbtypes.HTML{}
+// EmptyHTML returns the type *HTML with an empty HTML string.
+func EmptyHTML() *HTML {
+	return &HTML{}
 }
 
-// SanitizeForPB makes sure that the given HTML code is safe against XSS attacks
-// and returns it wrapped in the *pbtypes.HTML type to designate that this is
-// safe HTML. *pbtypes.HTML should always be created via this package.
-func SanitizeForPB(html string) *pbtypes.HTML {
-	return &pbtypes.HTML{
+// Sanitize makes sure that the given HTML code is safe against XSS attacks
+// and returns it wrapped in the *HTML type to designate that this is
+// safe HTML. *HTML should always be created via this package.
+func Sanitize(html string) *HTML {
+	return &HTML{
 		HTML: sanitizePolicy.Sanitize(html),
 	}
-}
-
-// ComputeDocHTML computes the DocHTML field of the Def
-// from its internal Docs field, and sanitizes it.
-func ComputeDocHTML(dc *sourcegraph.Def) {
-	if len(dc.Docs) < 1 {
-		return
-	}
-	defDoc := dc.Docs[0]
-	var docHTML string
-	switch defDoc.Format {
-	case "text/html":
-		docHTML = defDoc.Data
-	// TODO "text/x-markdown"
-	// TODO "text/x-rst"
-	default: // including "text/plain"
-		var buf bytes.Buffer
-		doc.ToHTML(&buf, defDoc.Data, nil)
-		docHTML = buf.String()
-	}
-	dc.DocHTML = SanitizeForPB(docHTML)
 }

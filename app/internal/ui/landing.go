@@ -20,7 +20,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 type defDescr struct {
@@ -118,7 +117,7 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 	var defDescrs []defDescr
 	for _, defResult := range results.DefResults {
 		def := &defResult.Def
-		htmlutil.ComputeDocHTML(def)
+		handlerutil.ComputeDocHTML(def)
 		defDescrs = append(defDescrs, defDescr{
 			Def:       def,
 			RefCount:  defResult.RefCount,
@@ -307,7 +306,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, &struct {
 		tmpl.Common
 		Meta                meta
-		Description         *pbtypes.HTML
+		Description         *htmlutil.HTML
 		RefSnippets         []*snippet.Snippet
 		ViewDefURL          string
 		DefName             string // e.g. "func NewRouter"

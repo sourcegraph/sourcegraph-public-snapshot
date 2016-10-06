@@ -73,7 +73,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 			Def: graph.Def{
 				DefKey: defKey,
 			},
-			DocHTML: htmlutil.SanitizeForPB(hover.DocHTML),
+			DocHTML: htmlutil.Sanitize(hover.DocHTML),
 		}
 		w.Header().Set("cache-control", "private, max-age=60")
 		return writeJSON(w, resp)

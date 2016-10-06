@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 func TestDefLanding_OK(t *testing.T) {
@@ -63,7 +63,7 @@ func TestDefLanding_OK(t *testing.T) {
 				DefKeyword: "func",
 				Name:       graph.QualFormatStrings{ScopeQualified: "NewRouter"},
 			},
-			DocHTML: &pbtypes.HTML{HTML: "<p><b>hello</b> world!</p>"},
+			DocHTML: &htmlutil.HTML{HTML: "<p><b>hello</b> world!</p>"},
 		})
 		var calledDefsListRefLocations bool
 		backend.Mocks.Defs.ListRefLocations = func(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {

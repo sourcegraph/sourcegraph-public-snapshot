@@ -1,7 +1,9 @@
 package handlerutil
 
 import (
+	"bytes"
 	"fmt"
+	"go/doc"
 	"net/http"
 	"strconv"
 	"strings"
@@ -296,6 +298,27 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 	// this can not be moved to svc/local, because HTML sanitation needs to
 	// happen on the local sourcegraph instance, not on an untrusted
 	// server
-	htmlutil.ComputeDocHTML(dc)
+	ComputeDocHTML(dc)
 	return
+}
+
+// ComputeDocHTML computes the DocHTML field of the Def
+// from its internal Docs field, and sanitizes it.
+func ComputeDocHTML(dc *sourcegraph.Def) {
+	if len(dc.Docs) < 1 {
+		return
+	}
+	defDoc := dc.Docs[0]
+	var docHTML string
+	switch defDoc.Format {
+	case "text/html":
+		docHTML = defDoc.Data
+	// TODO "text/x-markdown"
+	// TODO "text/x-rst"
+	default: // including "text/plain"
+		var buf bytes.Buffer
+		doc.ToHTML(&buf, defDoc.Data, nil)
+		docHTML = buf.String()
+	}
+	dc.DocHTML = htmlutil.Sanitize(docHTML)
 }
