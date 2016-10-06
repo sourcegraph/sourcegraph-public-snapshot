@@ -5,7 +5,7 @@ import "vs/editor/browser/widget/codeEditorWidget";
 import "vs/editor/contrib/clipboard/browser/clipboard";
 import "vs/editor/contrib/contextmenu/browser/contextmenu";
 import "vs/editor/contrib/find/browser/find";
-import "vs/editor/contrib/goToDeclaration/browser/goToDeclaration"; // TODO(sqs!vscode): disable ctrl-hover
+import "vs/editor/contrib/goToDeclaration/browser/goToDeclaration";
 import "vs/editor/contrib/hover/browser/hover";
 import "vs/editor/contrib/links/browser/links";
 import "vs/editor/contrib/referenceSearch/browser/referenceSearch";
