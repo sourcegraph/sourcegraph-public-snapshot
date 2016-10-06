@@ -84,7 +84,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 
 	_isChromeExtensionInstalled(): boolean {
 		// Check for a cookie injected by the extension on https://(www.)?sourcegraph.com/*
-		return document.cookie.replace(/(?:(?:^|.*;\s*)sgExtensionInstalled\s*\=\s*([^;]*).*$)|^.*$/, "$1") === "true";
+		return document.getElementById("sourcegraph-app-bootstrap") !== null;
 	}
 
 	render(): JSX.Element | null {
