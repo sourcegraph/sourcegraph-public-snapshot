@@ -22,6 +22,8 @@ import {IModelChangedEvent, IPosition, IRange, IReadOnlyModel} from "vs/editor/c
 import {Definition, Hover, Location, ReferenceContext} from "vs/editor/common/modes";
 import {HoverOperation} from "vs/editor/contrib/hover/browser/hoverOperation";
 
+import {MenuId, MenuRegistry} from "vs/platform/actions/common/actions";
+
 function cacheKey(model: IReadOnlyModel, position: IPosition): string | null {
 	const word = model.getWordAtPosition(position);
 	if (!word) {
@@ -157,6 +159,17 @@ export class Editor implements IDisposable {
 				this._editor.getModel().getLineCount()
 			);
 		}, "");
+
+		// HACK: VSCode doesn't have a clean API for removing context menu items we don't want. The Copy action shows up always so remove it manually.
+		let editorMenuItems = MenuRegistry.getMenuItems(MenuId.EditorContext);
+		for (let item of editorMenuItems) {
+			if (item.command.id === "editor.action.clipboardCopyAction") {
+				const idx = editorMenuItems.indexOf(item);
+				if (idx >= 0) {
+					editorMenuItems.splice(idx, 1);
+				}
+			}
+		}
 	}
 
 	setInput(uri: URI, range?: IRange): Promise<void> {
