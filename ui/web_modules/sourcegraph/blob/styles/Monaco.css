@@ -45,6 +45,7 @@
 }
 
 :global .monaco-menu-container .monaco-menu .monaco-action-bar.vertical li.action-item {
+	color: c_cool_dark_gray;
 	padding: 3px 6px;
 }
 
@@ -69,6 +70,10 @@
 
 :global .monaco-menu-container .monaco-menu .monaco-action-bar.vertical li.action-item:hover .keybinding,
 :global .monaco-menu-container .monaco-menu .monaco-action-bar.vertical li.action-item:hover:not(.disabled) .action-label  {
+	color: inherit;
+}
+
+:global .monaco-menu-container .monaco-menu .monaco-action-bar.vertical li.action-item [tabindex="0"]:focus {
 	color: inherit;
 }
 
