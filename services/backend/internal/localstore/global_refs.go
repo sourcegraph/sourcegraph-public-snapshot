@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/lib/pq"
-	"github.com/neelance/parallel"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"gopkg.in/gorp.v1"
@@ -200,7 +198,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	start = time.Now()
 
 	// SECURITY: filter private repos user doesn't have access to.
-	repoRefs, err = filterVisibleRepos(ctx, repoRefs)
+	repoRefs, err = accesscontrol.VerifyUserHasReadAccessToDefRepoRefs(ctx, "GlobalRefs.Get", repoRefs)
 	if err != nil {
 		return nil, err
 	}
@@ -242,44 +240,6 @@ func deinterlacePositions(p []int64) (out []*sourcegraph.FilePosition) {
 		})
 	}
 	return
-}
-
-// filterVisibleRepos ensures all the defs we return we have access to
-func filterVisibleRepos(ctx context.Context, repoRefs []*sourcegraph.DefRepoRef) ([]*sourcegraph.DefRepoRef, error) {
-	// HACK: set hard limit on # of repos returned for one def, to avoid making excessive number
-	// of GitHub Repos.Get calls in the accesscontrol check below.
-	// TODO: remove this limit once we properly cache GitHub API responses.
-	if len(repoRefs) > 100 {
-		repoRefs = repoRefs[:100]
-	}
-
-	// Filter out repos that the user does not have access to.
-	hasAccess := make([]bool, len(repoRefs))
-	par := parallel.NewRun(30)
-	var mu sync.Mutex
-	for i, r := range repoRefs {
-		i, r := i, r
-		par.Acquire()
-		go func() {
-			defer par.Release()
-			if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GlobalRefs.Get", r.Repo); err == nil {
-				mu.Lock()
-				hasAccess[i] = true
-				mu.Unlock()
-			}
-		}()
-	}
-	if err := par.Wait(); err != nil {
-		return nil, err
-	}
-
-	filtered := make([]*sourcegraph.DefRepoRef, 0, len(repoRefs))
-	for i, r := range repoRefs {
-		if hasAccess[i] {
-			filtered = append(filtered, r)
-		}
-	}
-	return filtered, nil
 }
 
 type defFileRefByScore []*sourcegraph.DefFileRef

@@ -216,6 +216,13 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	return repo, nil
 }
 
+// SECURITY: DO NOT USE THIS METHOD! It does not verify access to the repo with
+// GitHub and thus is very dangerous. It should only be called by permission
+// checking functions in the accesscontrol package.
+func (s *repos) UnsafeDangerousGetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+	return s.getByURI(ctx, uri)
+}
+
 func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 	repo, err := s.getBySQL(ctx, "uri=$1", uri)
 	if err != nil {
@@ -296,6 +303,9 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 		return nil, err
 	}
 
+	// SECURITY: It is very important that the input list of repos (rawRepos)
+	// comes directly from the DB as VerifyUserHasReadAccessAll relies directly
+	// on the accuracy of the Repo.Private field.
 	repos, err := accesscontrol.VerifyUserHasReadAccessAll(ctx, "Repos.List", rawRepos)
 	if err != nil {
 		return nil, err
