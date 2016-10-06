@@ -303,6 +303,9 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 		return nil, err
 	}
 
+	// SECURITY: It is very important that the input list of repos (rawRepos)
+	// comes directly from the DB as VerifyUserHasReadAccessAll relies directly
+	// on the accuracy of the Repo.Private field.
 	repos, err := accesscontrol.VerifyUserHasReadAccessAll(ctx, "Repos.List", rawRepos)
 	if err != nil {
 		return nil, err
