@@ -220,7 +220,9 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: initialize",
 		opentracing.Tags{"mode": c.id.mode, "rootPath": c.id.rootPath.String()},
 	)
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(30)*time.Second)
 	defer span.Finish()
+	defer cancel()
 	return c.conn.Call(ctx, "initialize", lspx.InitializeParams{
 		InitializeParams: lsp.InitializeParams{RootPath: "file:///"},
 		OriginalRootPath: c.id.rootPath.String(),
