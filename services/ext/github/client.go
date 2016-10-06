@@ -12,16 +12,25 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
-var rateLimitRemainingGauge = prometheus.NewGauge(prometheus.GaugeOpts{
-	Namespace: "src",
-	Subsystem: "github",
-	Name:      "rate_limit_remaining",
-	Help:      "Number of calls to GitHub's API remaining before hitting the rate limit.",
-})
+var (
+	rateLimitRemainingGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "github",
+		Name:      "rate_limit_remaining",
+		Help:      "Number of calls to GitHub's API remaining before hitting the rate limit.",
+	})
+	abuseDetectionMechanismCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "github",
+		Name:      "abuse_detection_mechanism",
+		Help:      "Times that a response from GitHub indicated that abuse detection mechanism was triggered.",
+	})
+)
 
 func init() {
 	rateLimitRemainingGauge.Set(5000)
 	prometheus.MustRegister(rateLimitRemainingGauge)
+	prometheus.MustRegister(abuseDetectionMechanismCounter)
 }
 
 // minimalClient contains the minimal set of GitHub API methods needed
@@ -75,9 +84,14 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 
 	rateLimitRemainingGauge.Set(float64(resp.Remaining))
 
-	if _, ok := err.(*github.RateLimitError); ok {
+	switch err.(type) {
+	case *github.RateLimitError:
 		log15.Debug("exceeded github rate limit", "error", err, "op", op)
 		return grpc.Errorf(codes.ResourceExhausted, "exceeded GitHub API rate limit: %s: %v", op, err)
+	case *github.AbuseRateLimitError:
+		log15.Debug("triggered GitHub abuse detection mechanism", "error", err, "op", op)
+		abuseDetectionMechanismCounter.Inc()
+		return grpc.Errorf(codes.ResourceExhausted, "triggered GitHub abuse detection mechanism: %s: %v", op, err)
 	}
 
 	log15.Debug("unexpected error from github", "error", err, "statusCode", resp.StatusCode, "op", op)
