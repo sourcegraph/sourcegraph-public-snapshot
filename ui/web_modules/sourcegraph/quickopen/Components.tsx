@@ -20,7 +20,7 @@ const ViewMore = ({expandCategory, type}) => <a style={{
 export const ResultRow = ({title, description, index, length}, categoryIndex, itemIndex, selected, delegate, scrollIntoView) => {
 	const oflow = {textOverflow: "ellipsis", overflow: "hidden"};
 	return (
-		<a key={itemIndex} className={modal_result}
+		<a key={itemIndex} data-class-name={selected ? "modal-result-selected" : undefined} className={modal_result}
 			ref={node => { if (scrollIntoView && node && selected) {
 			// Nonstandard, but improves experience in Chrome.
 			if ((node as any).scrollIntoViewIfNeeded) {
