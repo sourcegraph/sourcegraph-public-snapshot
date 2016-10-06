@@ -7,11 +7,9 @@ import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import Helmet from "react-helmet";
-import {Button, Heading, Panel, RepoLink, ToggleSwitch, Loader} from "sourcegraph/components";
+import {Heading, Panel, Loader} from "sourcegraph/components";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
-import * as Dispatcher from "sourcegraph/Dispatcher";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
 import {context} from "sourcegraph/app/context";
@@ -39,7 +37,17 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 		};
 	}
 
-	_renderPrivateAuthCTA(): JSX.Element | null {
+	_skipClicked() {
+		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "SkipGitHubPrivateAuth", {page_name: "GitHubPrivateCodeOnboarding"});
+		this.props.completeStep();
+	}
+
+	render(): JSX.Element | null {
+		if (this.props.privateCodeAuthed) {
+			this.props.completeStep();
+			return null;
+		}
+
 		return (
 			<div>
 				<Helmet title="Home" />
@@ -65,104 +73,5 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 				</div>
 			</div>
 		);
-	}
-
-	// _repoSort is a comparison function that sorts more recently
-	// pushed repos first.
-	_repoSort(a: any, b: any): number {
-		if (a.PushedAt < b.PushedAt) {
-			return 1;
-		}
-		if (a.PushedAt > b.PushedAt) {
-			return -1;
-		}
-
-		return 0;
-	}
-
-	_qualifiedName(repo: any): string {
-		return (`${repo.Owner}/${repo.Name}`).toLowerCase();
-	}
-
-	_toggleRepo(remoteRepo: any): void {
-		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_TOGGLE, "IndexRepoToggleClicked", {page_name: "GitHubPrivateCodeOnboarding"});
-		Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(remoteRepo.URI, remoteRepo, true));
-	}
-
-	_skipClicked() {
-		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "SkipGitHubPrivateAuth", {page_name: "GitHubPrivateCodeOnboarding"});
-		this.props.completeStep();
-	}
-
-	_showAllReposClicked() {
-		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ShowAllGitHubRepositories", {page_name: "GitHubPrivateCodeOnboarding"});
-		this.setState({
-			showAll: true,
-		});
-	}
-
-	_renderIndexRepoCTA(): JSX.Element | null {
-		let repos: any[] = [];
-		if (this.props.repos) {
-			if (this.state.showAll) {
-				repos = this.props.repos.slice(0).sort(this._repoSort);
-			} else {
-				repos = this.props.repos.slice(0).sort(this._repoSort).slice(0, 5);
-			}
-		}
-
-		return (
-			<div>
-				<Helmet title="Home" />
-				<div className={styles.onboarding_container}>
-					<Panel className={classNames(base.pb3, base.ph4, base.ba, base.br2, colors.b__cool_pale_gray)}>
-						<Heading pt={4} align="center" level="">
-							Browse your private code with Sourcegraph
-						</Heading>
-						<div className={styles.user_actions} style={{maxWidth: "380px"}}>
-							<p className={classNames(typography.tc, base.mt3, base.mb2, typography.f6, colors.cool_gray_8)} >
-								Enable Sourcegraph on any private GitHub repositories for a better coding experience
-							</p>
-						</div>
-						<div className={classNames(styles.user_actions, base.pt2)} style={{maxWidth: "380px"}}>
-							<span className={styles.list_label_right}>ENABLE</span>
-							<div className={styles.repos_list}>
-								{(repos && repos.length > 0) && repos.map((repo, i) =>
-									<div className={styles.row} key={i}>
-										<div className={styles.info}>
-											{repo.ID ?
-												<RepoLink repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} /> :
-												(repo.URI && repo.URI.replace("github.com/", "").replace("/", " / ", 1)) || `${repo.Owner} / ${repo.Name}`
-											}
-										{repo.Description && <p className={styles.repo_description}>
-											{repo.Description.length > 40 ? `${repo.Description.substring(0, 40)}...` : repo.Description}
-										</p>}
-										</div>
-										<div className={styles.toggle}>
-											<ToggleSwitch defaultChecked={Boolean(repo.ID)} onChange={(checked) => {
-												this._toggleRepo(repo);
-											}}/>
-										</div>
-									</div>
-								)}
-								{(!this.state.showAll && repos.length > 5) && <div className={classNames(styles.info, base.pt2)}>
-									<a onClick={this._showAllReposClicked.bind(this)}>Show more</a>
-								</div>}
-							</div>
-							<p>
-								<Button onClick={this.props.completeStep.bind(this)} className={styles.action_link} type="button" color="blue">Save and continue</Button>
-							</p>
-						</div>
-					</Panel>
-				</div>
-			</div>
-		);
-	}
-
-	render(): JSX.Element | null {
-		let conditionalRender = this.props.privateCodeAuthed ? this._renderIndexRepoCTA() : this._renderPrivateAuthCTA();
-		return (<div>
-			{conditionalRender}
-		</div>);
 	}
 }
