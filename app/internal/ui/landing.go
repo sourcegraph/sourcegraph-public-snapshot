@@ -9,8 +9,8 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday"
 
-	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/snippet"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui/toprepos"
@@ -108,7 +108,7 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 			Path:    "README.md",
 		},
 	})
-	if err != nil && errcode.GRPC(err) != codes.NotFound {
+	if err != nil && errcode.Code(err) != legacyerr.NotFound {
 		return err
 	} else if err == nil {
 		sanitizedREADME = bluemonday.UGCPolicy().SanitizeBytes(blackfriday.MarkdownCommon(readmeEntry.Contents))

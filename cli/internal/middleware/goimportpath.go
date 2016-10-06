@@ -10,10 +10,8 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
@@ -74,7 +72,7 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 			repoPath := strings.Join(pathElements[:i], "/")
 
 			res, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
-			if grpc.Code(err) == codes.NotFound {
+			if legacyerr.ErrCode(err) == legacyerr.NotFound {
 				continue
 			} else if err != nil {
 				log15.Error("Error resolving repository for 'go get' handler.", "repoPath", repoPath, "err", err)

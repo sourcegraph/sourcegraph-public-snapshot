@@ -5,9 +5,8 @@ import (
 
 	"context"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 )
 
 type MockRepos struct {
@@ -27,7 +26,7 @@ func (s *MockRepos) MockGet(t *testing.T, wantRepo int32) (called *bool) {
 		*called = true
 		if repo != wantRepo {
 			t.Errorf("got repo %d, want %d", repo, wantRepo)
-			return nil, grpc.Errorf(codes.NotFound, "repo %v not found", wantRepo)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %v not found", wantRepo)
 		}
 		return &sourcegraph.Repo{ID: repo}, nil
 	}
@@ -40,7 +39,7 @@ func (s *MockRepos) MockGet_Path(t *testing.T, wantRepo int32, repoPath string) 
 		*called = true
 		if repo != wantRepo {
 			t.Errorf("got repo %d, want %d", repo, wantRepo)
-			return nil, grpc.Errorf(codes.NotFound, "repo %v not found", wantRepo)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %v not found", wantRepo)
 		}
 		return &sourcegraph.Repo{ID: repo, URI: repoPath}, nil
 	}
@@ -53,7 +52,7 @@ func (s *MockRepos) MockUpdate(t *testing.T, wantRepo int32) (called *bool) {
 		*called = true
 		if repoUpdate.ReposUpdateOp.Repo != wantRepo {
 			t.Errorf("got repo %q, want %q", repoUpdate.ReposUpdateOp.Repo, wantRepo)
-			return grpc.Errorf(codes.NotFound, "repo %v not found", wantRepo)
+			return legacyerr.Errorf(legacyerr.NotFound, "repo %v not found", wantRepo)
 		}
 		return nil
 	}
@@ -66,7 +65,7 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *sourcegraph.Repo) (cal
 		*called = true
 		if repo != returns.ID {
 			t.Errorf("got repo %d, want %d", repo, returns.ID)
-			return nil, grpc.Errorf(codes.NotFound, "repo %v (%d) not found", returns.URI, returns.ID)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %v (%d) not found", returns.URI, returns.ID)
 		}
 		return returns, nil
 	}
@@ -79,7 +78,7 @@ func (s *MockRepos) MockGetByURI(t *testing.T, wantURI string, repoID int32) (ca
 		*called = true
 		if uri != wantURI {
 			t.Errorf("got repo URI %q, want %q", uri, wantURI)
-			return nil, grpc.Errorf(codes.NotFound, "repo %v not found", uri)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %v not found", uri)
 		}
 		return &sourcegraph.Repo{ID: repoID, URI: uri}, nil
 	}

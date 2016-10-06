@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -182,11 +182,11 @@ func handleErrorWithGRPC(w http.ResponseWriter, r *http.Request, status int, err
 	// Never cache error responses.
 	w.Header().Set("cache-control", "no-cache, max-age=0")
 
-	if code := grpc.Code(err); code != codes.Unknown {
+	if code := legacyerr.ErrCode(err); code != legacyerr.Unknown {
 
 		type errorMessage struct {
-			Code    codes.Code `json:"code"`
-			Message string     `json:"message"`
+			Code    legacyerr.Code `json:"code"`
+			Message string         `json:"message"`
 		}
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")

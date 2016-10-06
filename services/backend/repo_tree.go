@@ -5,12 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 )
@@ -179,7 +177,7 @@ func (s *MockRepoTree) MockGet_Return_FileContents(t *testing.T, path, contents 
 	s.Get = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
 		if op.Entry.Path != path {
 			t.Errorf("got path %q, want %q", op.Entry.Path, path)
-			return nil, grpc.Errorf(codes.NotFound, "path %q not found", op.Entry.Path)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "path %q not found", op.Entry.Path)
 		}
 		*called = true
 		return &sourcegraph.TreeEntry{BasicTreeEntry: &sourcegraph.BasicTreeEntry{
@@ -195,7 +193,7 @@ func (s *MockRepoTree) MockGet_NotFound(t *testing.T) (called *bool) {
 	called = new(bool)
 	s.Get = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
 		*called = true
-		return nil, grpc.Errorf(codes.NotFound, "path %q not found", op.Entry.Path)
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "path %q not found", op.Entry.Path)
 	}
 	return
 }

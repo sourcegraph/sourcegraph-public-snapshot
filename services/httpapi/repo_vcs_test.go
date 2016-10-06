@@ -8,10 +8,8 @@ import (
 
 	"context"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
@@ -46,7 +44,7 @@ func TestRepoResolveRev_notFound(t *testing.T) {
 	var calledResolveRev bool
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
 		calledResolveRev = true
-		return nil, grpc.Errorf(codes.NotFound, "")
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "")
 	}
 
 	resp, err := c.Get("/repos/r@doesntexist/-/rev")

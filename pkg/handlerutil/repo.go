@@ -11,10 +11,9 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
@@ -54,8 +53,8 @@ func GetRepoAndRevCommon(ctx context.Context, vars map[string]string) (rc *RepoC
 
 	vc.RepoRevSpec, err = getRepoRev(ctx, vars, rc.Repo.ID, rc.Repo.DefaultBranch)
 	if err != nil {
-		cloneInProgress := grpc.Code(err) == codes.Unavailable && grpc.ErrorDesc(err) == vcs.RepoNotExistError{CloneInProgress: true}.Error()
-		if noVCSData := grpc.Code(err) == codes.NotFound ||
+		cloneInProgress := legacyerr.ErrCode(err) == legacyerr.Unavailable && legacyerr.ErrorDesc(err) == vcs.RepoNotExistError{CloneInProgress: true}.Error()
+		if noVCSData := legacyerr.ErrCode(err) == legacyerr.NotFound ||
 			cloneInProgress ||
 			strings.Contains(err.Error(), "has no default branch"); noVCSData {
 

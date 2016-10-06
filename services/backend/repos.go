@@ -13,10 +13,9 @@ import (
 	"time"
 
 	gogithub "github.com/sourcegraph/go-github/github"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -55,7 +54,7 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 	}
 
 	if repo.Blocked {
-		return nil, grpc.Errorf(codes.FailedPrecondition, "repo %s is blocked", repo)
+		return nil, legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %s is blocked", repo)
 	}
 
 	return repo, nil
@@ -387,11 +386,11 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (res 
 	case op.GetNew() != nil && strings.HasPrefix(strings.ToLower(op.GetNew().URI), "github.com/"):
 		op := op.GetNew()
 		if !op.Mirror {
-			return nil, grpc.Errorf(codes.InvalidArgument, "github.com/ repos can only be mirrors")
+			return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "github.com/ repos can only be mirrors")
 		}
 		if !(op.CloneURL == fmt.Sprintf("https://%s", op.URI) || op.CloneURL == fmt.Sprintf("https://%s.git", op.URI)) {
 			// Disallow creating GitHub mirrors via repo URI and clone URL unless they match.
-			return nil, grpc.Errorf(codes.InvalidArgument, "github.com/ mirrors repos can only be created if the clone URL matches the repo URI")
+			return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "github.com/ mirrors repos can only be created if the clone URL matches the repo URI")
 		}
 
 		// TODO: This is gross, but the current sourcegraph.Origin struct does not easily
@@ -433,7 +432,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (res 
 		}
 
 	default:
-		return nil, grpc.Errorf(codes.Unimplemented, "repo creation operation not supported")
+		return nil, legacyerr.Errorf(legacyerr.Unimplemented, "repo creation operation not supported")
 	}
 
 	repoID, err := localstore.Repos.Create(ctx, repo)
@@ -468,15 +467,15 @@ func repoMaybeEnqueueUpdate(ctx context.Context, repo *sourcegraph.Repo) {
 
 func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRepo) (*sourcegraph.Repo, error) {
 	if op.URI == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "repo URI must have at least one path component")
+		return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "repo URI must have at least one path component")
 	}
 	if op.Mirror {
 		if op.CloneURL == "" {
-			return nil, grpc.Errorf(codes.InvalidArgument, "creating a mirror repo requires a clone URL to be set")
+			return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "creating a mirror repo requires a clone URL to be set")
 		}
 	}
 	if strings.HasPrefix(strings.ToLower(op.URI), "github.com/") {
-		return nil, grpc.Errorf(codes.InvalidArgument, "newRepo is not allowed to create github.com/ repos")
+		return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "newRepo is not allowed to create github.com/ repos")
 	}
 
 	if op.DefaultBranch == "" {
@@ -558,7 +557,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	defer cancel()
 
 	if localcli.Flags.DisableRepoInventory {
-		return nil, grpc.Errorf(codes.Unimplemented, "repo inventory listing is disabled by the configuration (DisableRepoInventory/--local.disable-repo-inventory)")
+		return nil, legacyerr.Errorf(legacyerr.Unimplemented, "repo inventory listing is disabled by the configuration (DisableRepoInventory/--local.disable-repo-inventory)")
 	}
 
 	if !isAbsCommitID(repoRev.CommitID) {

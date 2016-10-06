@@ -5,12 +5,10 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -39,10 +37,10 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (re
 		opt.CommitID = defSpec.CommitID
 	}
 	if opt.Repo == 0 {
-		return nil, grpc.Errorf(codes.InvalidArgument, "ListRefs: Repo must be specified")
+		return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "ListRefs: Repo must be specified")
 	}
 	if opt.CommitID == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "ListRefs: CommitID must be specified")
+		return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "ListRefs: CommitID must be specified")
 	}
 
 	defRepoObj, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: defSpec.Repo})

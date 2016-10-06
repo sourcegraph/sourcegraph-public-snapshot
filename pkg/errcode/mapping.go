@@ -3,49 +3,43 @@ package errcode
 import (
 	"net/http"
 
-	"google.golang.org/grpc/codes"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 )
 
-// grpcToHTTP maps gRPC codes to HTTP status codes.
-func grpcToHTTP(code codes.Code) int {
-	if h, present := grpcToHTTPMap[code]; present {
+// codeToHTTP maps error codes to HTTP status codes.
+func codeToHTTP(code legacyerr.Code) int {
+	if h, present := codeToHTTPMap[code]; present {
 		return h
 	}
 	return http.StatusInternalServerError
 }
 
-// HTTPToGRPC returns the most appropriate gRPC error code for the
+// HTTPToCode returns the most appropriate gRPC error code for the
 // HTTP status. For example, HTTP 404 is mapped to codes.NotFound.
-func HTTPToGRPC(statusCode int) codes.Code {
-	if statusCode < 400 {
-		return codes.OK
-	}
-	for g, h := range grpcToHTTPMap {
+func HTTPToCode(statusCode int) legacyerr.Code {
+	for g, h := range codeToHTTPMap {
 		if h == statusCode {
 			return g
 		}
 	}
-	return codes.Unknown
+	return legacyerr.Unknown
 }
 
-// grpcToHTTPMap is a 1-to-1 mapping of gRPC error codes to HTTP
+// codeToHTTPMap is a 1-to-1 mapping of gRPC error codes to HTTP
 // status codes. NOTE: If you change this so it's not 1-to-1, you will
 // need to update the way that HTTP codes are mapped to gRPC error
 // codes in code that uses this mapping, to ensure determinism.
 //
-// Callers should use the funcs grpcToHTTP or httpToGRPC to map error
+// Callers should use the funcs grpcToHTTP or httpToCode to map error
 // values. Those funcs properly handle the default and zero cases.
-var grpcToHTTPMap = map[codes.Code]int{
-	codes.OK:                 http.StatusOK,
-	codes.Unknown:            http.StatusInternalServerError,
-	codes.InvalidArgument:    http.StatusBadRequest,
-	codes.DeadlineExceeded:   http.StatusRequestTimeout,
-	codes.NotFound:           http.StatusNotFound,
-	codes.AlreadyExists:      http.StatusConflict,
-	codes.PermissionDenied:   http.StatusForbidden,
-	codes.Unauthenticated:    http.StatusUnauthorized,
-	codes.FailedPrecondition: http.StatusPreconditionFailed,
-	codes.OutOfRange:         http.StatusRequestedRangeNotSatisfiable,
-	codes.Unimplemented:      http.StatusNotImplemented,
-	codes.ResourceExhausted:  http.StatusTooManyRequests,
+var codeToHTTPMap = map[legacyerr.Code]int{
+	legacyerr.Unknown:            http.StatusInternalServerError,
+	legacyerr.InvalidArgument:    http.StatusBadRequest,
+	legacyerr.NotFound:           http.StatusNotFound,
+	legacyerr.AlreadyExists:      http.StatusConflict,
+	legacyerr.PermissionDenied:   http.StatusForbidden,
+	legacyerr.Unauthenticated:    http.StatusUnauthorized,
+	legacyerr.FailedPrecondition: http.StatusPreconditionFailed,
+	legacyerr.Unimplemented:      http.StatusNotImplemented,
+	legacyerr.ResourceExhausted:  http.StatusTooManyRequests,
 }

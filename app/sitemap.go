@@ -7,10 +7,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sitemap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
@@ -101,7 +100,7 @@ func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 
 	// Add defs if there is a valid srclib version.
 	dataVer, err := backend.Repos.GetSrclibDataVersionForPath(r.Context(), &sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec})
-	if err != nil && grpc.Code(err) != codes.NotFound {
+	if err != nil && legacyerr.ErrCode(err) != legacyerr.NotFound {
 		return err
 	}
 	if dataVer != nil {

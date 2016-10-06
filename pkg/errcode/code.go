@@ -9,13 +9,12 @@ import (
 
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
 	"github.com/gorilla/schema"
 	"github.com/sourcegraph/go-github/github"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 )
 
 // HTTP returns the most appropriate HTTP status code that describes
@@ -57,6 +56,8 @@ func HTTP(err error) int {
 		return http.StatusBadRequest
 	case schema.MultiError:
 		return http.StatusBadRequest
+	case legacyerr.Error:
+		return codeToHTTP(e.Code)
 	}
 
 	if os.IsNotExist(err) {
@@ -65,18 +66,14 @@ func HTTP(err error) int {
 		return http.StatusForbidden
 	}
 
-	if code := grpc.Code(err); code != codes.Unknown {
-		return grpcToHTTP(code)
-	}
-
 	return http.StatusInternalServerError
 }
 
-// GRPC returns the most appropriate gRPC error code that describes
+// Code returns the most appropriate error code that describes
 // err.
-func GRPC(err error) codes.Code {
+func Code(err error) legacyerr.Code {
 	// Piggyback on the HTTP func to reduce code duplication.
-	return HTTPToGRPC(HTTP(err))
+	return HTTPToCode(HTTP(err))
 }
 
 type HTTPErr struct {

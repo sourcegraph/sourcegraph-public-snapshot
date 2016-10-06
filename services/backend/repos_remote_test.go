@@ -6,10 +6,8 @@ import (
 
 	"context"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	githubmock "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/mocks"
@@ -42,17 +40,17 @@ func TestRepos_Resolve_local_otherError(t *testing.T) {
 	var calledReposGet bool
 	localstore.Mocks.Repos.GetByURI = func(context.Context, string) (*sourcegraph.Repo, error) {
 		calledReposGet = true
-		return nil, grpc.Errorf(codes.Internal, "")
+		return nil, legacyerr.Errorf(legacyerr.Internal, "")
 	}
 
 	var calledGetGitHubRepo bool
 	githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		calledGetGitHubRepo = true
-		return nil, grpc.Errorf(codes.Internal, "")
+		return nil, legacyerr.Errorf(legacyerr.Internal, "")
 	}
 
 	_, err := (&repos{}).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: "r"})
-	if grpc.Code(err) != codes.Internal {
+	if legacyerr.ErrCode(err) != legacyerr.Internal {
 		t.Errorf("got error %v, want Internal", err)
 	}
 	if !calledReposGet {
@@ -71,7 +69,7 @@ func TestRepos_Resolve_GitHub_NonRemote(t *testing.T) {
 	var calledReposGet bool
 	localstore.Mocks.Repos.GetByURI = func(context.Context, string) (*sourcegraph.Repo, error) {
 		calledReposGet = true
-		return nil, grpc.Errorf(codes.NotFound, "")
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "")
 	}
 
 	var calledGetGitHubRepo bool
@@ -80,7 +78,7 @@ func TestRepos_Resolve_GitHub_NonRemote(t *testing.T) {
 		return &sourcegraph.Repo{Origin: &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub}}, nil
 	}
 
-	if _, err := (&repos{}).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: "r", Remote: false}); grpc.Code(err) != codes.NotFound {
+	if _, err := (&repos{}).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: "r", Remote: false}); legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Errorf("got error %v, want NotFound", err)
 	}
 	if !calledReposGet {
@@ -99,7 +97,7 @@ func TestRepos_Resolve_GitHub_Remote(t *testing.T) {
 	var calledReposGet bool
 	localstore.Mocks.Repos.GetByURI = func(context.Context, string) (*sourcegraph.Repo, error) {
 		calledReposGet = true
-		return nil, grpc.Errorf(codes.NotFound, "")
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "")
 	}
 
 	var calledGetGitHubRepo bool
@@ -133,17 +131,17 @@ func TestRepos_Resolve_GitHub_otherError(t *testing.T) {
 	var calledReposGet bool
 	localstore.Mocks.Repos.GetByURI = func(context.Context, string) (*sourcegraph.Repo, error) {
 		calledReposGet = true
-		return nil, grpc.Errorf(codes.NotFound, "")
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "")
 	}
 
 	var calledGetGitHubRepo bool
 	githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		calledGetGitHubRepo = true
-		return nil, grpc.Errorf(codes.Internal, "")
+		return nil, legacyerr.Errorf(legacyerr.Internal, "")
 	}
 
 	_, err := (&repos{}).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: "r"})
-	if grpc.Code(err) != codes.Internal {
+	if legacyerr.ErrCode(err) != legacyerr.Internal {
 		t.Errorf("got error %v, want Internal", err)
 	}
 	if !calledReposGet {
@@ -162,17 +160,17 @@ func TestRepos_Resolve_notFound(t *testing.T) {
 	var calledReposGet bool
 	localstore.Mocks.Repos.GetByURI = func(context.Context, string) (*sourcegraph.Repo, error) {
 		calledReposGet = true
-		return nil, grpc.Errorf(codes.NotFound, "")
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "")
 	}
 
 	var calledGetGitHubRepo bool
 	githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		calledGetGitHubRepo = true
-		return nil, grpc.Errorf(codes.NotFound, "")
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "")
 	}
 
 	_, err := (&repos{}).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: "r"})
-	if grpc.Code(err) != codes.NotFound {
+	if legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Errorf("got error %v, want NotFound", err)
 	}
 	if !calledReposGet {

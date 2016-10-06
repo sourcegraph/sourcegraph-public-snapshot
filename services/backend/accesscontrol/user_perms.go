@@ -8,9 +8,8 @@ import (
 	"context"
 
 	gogithub "github.com/sourcegraph/go-github/github"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
@@ -105,15 +104,15 @@ func VerifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, meth
 		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
 			_, err := github.ReposFromContext(ctx).Get(ctx, repoURI)
 			if _, ok := err.(*gogithub.RateLimitError); ok {
-				return grpc.Errorf(codes.ResourceExhausted, "GitHub API rate limit exceeded, try again later")
+				return legacyerr.Errorf(legacyerr.ResourceExhausted, "GitHub API rate limit exceeded, try again later")
 			} else if _, ok := err.(*gogithub.AbuseRateLimitError); ok {
-				return grpc.Errorf(codes.ResourceExhausted, "GitHub API rate limit exceeded, try again later")
+				return legacyerr.Errorf(legacyerr.ResourceExhausted, "GitHub API rate limit exceeded, try again later")
 			} else if err != nil {
 				// TODO: We don't support git clients anymore, get rid of this.
 				// We don't know if the error is unauthenticated or unauthorized, so return unauthenticated
 				// so that git clients will try again, providing authentication information.
-				// If we return codes.PermissionDenied here, then git clients won't even try to supply authentication info.
-				return grpc.Errorf(codes.Unauthenticated, "operation (%s) denied: not authenticated/authorized by GitHub API (repo %q)", method, repoURI)
+				// If we return legacyerr.PermissionDenied here, then git clients won't even try to supply authentication info.
+				return legacyerr.Errorf(legacyerr.Unauthenticated, "operation (%s) denied: not authenticated/authorized by GitHub API (repo %q)", method, repoURI)
 			}
 		}
 	}
@@ -290,11 +289,11 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor *auth.Actor, method st
 		if VerifyScopeHasAccess(ctx, actor.Scope, method, repoID) {
 			return nil
 		}
-		return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: not authenticated", method)
+		return legacyerr.Errorf(legacyerr.Unauthenticated, "write operation (%s) denied: not authenticated", method)
 	}
 
 	if !inAuthenticatedWriteWhitelist(method) {
-		return grpc.Errorf(codes.PermissionDenied, "write operation (%s) denied: user does not have write access", method)
+		return legacyerr.Errorf(legacyerr.PermissionDenied, "write operation (%s) denied: user does not have write access", method)
 	}
 
 	if repoID != 0 && repoURI != "" {
@@ -323,10 +322,10 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor *auth.Actor, method st
 		if VerifyScopeHasAccess(ctx, actor.Scope, method, 0) {
 			return nil
 		}
-		return grpc.Errorf(codes.Unauthenticated, "admin operation (%s) denied: not authenticated", method)
+		return legacyerr.Errorf(legacyerr.Unauthenticated, "admin operation (%s) denied: not authenticated", method)
 	}
 
-	return grpc.Errorf(codes.PermissionDenied, "admin operation (%s) denied: not authorized", method)
+	return legacyerr.Errorf(legacyerr.PermissionDenied, "admin operation (%s) denied: not authorized", method)
 }
 
 // Check if the actor is authorized with an access token

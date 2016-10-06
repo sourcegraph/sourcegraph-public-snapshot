@@ -7,12 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
@@ -25,7 +23,7 @@ func TestGoImportPath(t *testing.T) {
 		if id := ids[op.Path]; id != 0 {
 			return &sourcegraph.RepoResolution{Repo: id}, nil
 		}
-		return nil, grpc.Errorf(codes.NotFound, "")
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "")
 	}
 	backend.Mocks.Repos.Get = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		switch repo.ID {
@@ -34,7 +32,7 @@ func TestGoImportPath(t *testing.T) {
 		case 2: // "sourcegraph/srclib-go" mirror repo.
 			return &sourcegraph.Repo{Mirror: true}, nil
 		default:
-			return nil, grpc.Errorf(codes.NotFound, "repo not found: %d", repo.ID)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo not found: %d", repo.ID)
 		}
 	}
 
@@ -105,7 +103,7 @@ func TestGoImportPath_repoCheckSequence(t *testing.T) {
 	var attemptedRepoPaths []string
 	backend.Mocks.Repos.Resolve = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
 		attemptedRepoPaths = append(attemptedRepoPaths, op.Path)
-		return nil, grpc.Errorf(codes.NotFound, "")
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "")
 	}
 
 	rw := httptest.NewRecorder()

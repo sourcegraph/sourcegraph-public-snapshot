@@ -13,11 +13,10 @@ import (
 
 	"github.com/lib/pq"
 	gogithub "github.com/sourcegraph/go-github/github"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -203,9 +202,9 @@ func (s *repos) UnsafeDangerousGetByURI(ctx context.Context, uri string) (*sourc
 func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 	repo, err := s.getBySQL(ctx, "uri=$1", uri)
 	if err != nil {
-		if grpc.Code(err) == codes.NotFound {
+		if legacyerr.ErrCode(err) == legacyerr.NotFound {
 			// Overwrite with error message containing repo URI.
-			err = grpc.Errorf(codes.NotFound, "%s: %s", err, uri)
+			err = legacyerr.Errorf(legacyerr.NotFound, "%s: %s", err, uri)
 		}
 	}
 	return repo, err
@@ -217,7 +216,7 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.Repo, error) {
 	var repo dbRepo
 	if err := appDBH(ctx).SelectOne(&repo, "SELECT * FROM repo WHERE ("+query+") LIMIT 1", args...); err == sql.ErrNoRows {
-		return nil, grpc.Errorf(codes.NotFound, "repo not found") // can't nicely serialize args
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "repo not found") // can't nicely serialize args
 	} else if err != nil {
 		return nil, err
 	}
@@ -500,7 +499,7 @@ func reposListSQL(opt *RepoListOp) (string, []interface{}, error) {
 			conds = append(conds, `NOT private`)
 		case "", "all":
 		default:
-			return "", nil, grpc.Errorf(codes.InvalidArgument, "invalid state")
+			return "", nil, legacyerr.Errorf(legacyerr.InvalidArgument, "invalid state")
 		}
 		if opt.Owner != "" {
 			conds = append(conds, `lower(owner)=`+arg(strings.ToLower(opt.Owner)))
@@ -554,7 +553,7 @@ func reposListSQL(opt *RepoListOp) (string, []interface{}, error) {
 	if sortCol, valid := sortKeyToCol[sort]; valid {
 		sort = sortCol
 	} else {
-		return "", nil, grpc.Errorf(codes.InvalidArgument, "invalid sort: "+sort)
+		return "", nil, legacyerr.Errorf(legacyerr.InvalidArgument, "invalid sort: "+sort)
 	}
 
 	direction := opt.Direction
@@ -562,7 +561,7 @@ func reposListSQL(opt *RepoListOp) (string, []interface{}, error) {
 		direction = "asc"
 	}
 	if direction != "asc" && direction != "desc" {
-		return "", nil, grpc.Errorf(codes.InvalidArgument, "invalid direction: "+direction)
+		return "", nil, legacyerr.Errorf(legacyerr.InvalidArgument, "invalid direction: "+direction)
 	}
 	orderByTerms = append(orderByTerms, fmt.Sprintf("%s %s NULLS LAST", sort, direction))
 	orderBySQL = strings.Join(orderByTerms, ", ")
@@ -591,7 +590,7 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (int32, e
 
 	if strings.HasPrefix(newRepo.URI, "github.com/") {
 		if !newRepo.Mirror {
-			return 0, grpc.Errorf(codes.InvalidArgument, "cannot create hosted repo with URI prefix: 'github.com/'")
+			return 0, legacyerr.Errorf(legacyerr.InvalidArgument, "cannot create hosted repo with URI prefix: 'github.com/'")
 		}
 		// Anyone can create GitHub mirrors.
 	} else if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err != nil {
@@ -599,7 +598,7 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (int32, e
 	}
 
 	if repo, err := s.getByURI(ctx, newRepo.URI); err == nil {
-		return 0, grpc.Errorf(codes.AlreadyExists, "repo already exists: %s", repo.URI)
+		return 0, legacyerr.Errorf(legacyerr.AlreadyExists, "repo already exists: %s", repo.URI)
 	}
 
 	// Create the filesystem repo where the git data lives. (The repo
@@ -619,7 +618,7 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (int32, e
 		if c := err.(*pq.Error).Constraint; c != "repo_uri_unique" {
 			log15.Warn("Expected unique_violation of repo_uri_unique constraint, but it was something else; did it change?", "constraint", c, "err", err)
 		}
-		return 0, grpc.Errorf(codes.AlreadyExists, "repo already exists: %s", newRepo.URI)
+		return 0, legacyerr.Errorf(legacyerr.AlreadyExists, "repo already exists: %s", newRepo.URI)
 	}
 	return r.ID, err
 }

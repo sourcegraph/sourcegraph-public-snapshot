@@ -7,11 +7,9 @@ import (
 	"reflect"
 	"testing"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
 )
@@ -127,7 +125,7 @@ func TestRepos_Get_nonexistent(t *testing.T) {
 	s := &repos{}
 	nonexistentRepo := "github.com/owner/repo"
 	repo, err := s.Get(ctx, nonexistentRepo)
-	if grpc.Code(err) != codes.NotFound {
+	if legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
 	}
 	if repo != nil {
@@ -183,7 +181,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	mock.isAuthedUser = false
 	mock.repos = mockGetMissing
 	repo, err := s.Get(ctx, privateRepo)
-	if grpc.Code(err) != codes.NotFound {
+	if legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
 	}
 	if !calledGetMissing {
@@ -193,7 +191,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	// If we repeat the call, we should hit the cache
 	calledGetMissing = false
 	repo, err = s.Get(ctx, privateRepo)
-	if grpc.Code(err) != codes.NotFound {
+	if legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
 	}
 	if calledGetMissing {
@@ -217,7 +215,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	mock.isAuthedUser = false
 	mock.repos = mockGetMissing
 	repo, err = s.Get(ctx, privateRepo)
-	if grpc.Code(err) != codes.NotFound {
+	if legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
 	}
 	if calledGetMissing {
@@ -231,7 +229,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 		mock.isAuthedUser = true
 		mock.repos = mockGetMissing // Pretend that privateRepo is deleted now, so even authed user can't see it. Do this to ensure cached 404 value isn't used by authed user.
 		repo, err = s.Get(ctx, privateRepo)
-		if grpc.Code(err) != codes.NotFound {
+		if legacyerr.ErrCode(err) != legacyerr.NotFound {
 			t.Fatal(err)
 		}
 		if !calledGetMissing {
@@ -376,7 +374,7 @@ func TestRepos_GetByID_nonexistent(t *testing.T) {
 
 	s := &repos{}
 	repo, err := s.GetByID(ctx, 456)
-	if grpc.Code(err) != codes.NotFound {
+	if legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
 	}
 	if repo != nil {

@@ -5,15 +5,13 @@ import (
 	"fmt"
 	"strconv"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"context"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
 	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -72,7 +70,7 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 	owner, repoName, err := githubutil.SplitRepoURI(repo)
 	if err != nil {
 		reposGithubPublicCacheCounter.WithLabelValues("local-error").Inc()
-		return nil, grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repo)
 	}
 
 	if cached := getFromPublicCache(ctx, repo); cached != nil {
@@ -84,13 +82,13 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 				reposGithubPublicCacheCounter.WithLabelValues("authed").Inc()
 				return getFromAPI(ctx, owner, repoName)
 			}
-			return nil, grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repo)
 		}
 		return &cached.Repo, nil
 	}
 
 	remoteRepo, err := getFromAPI(ctx, owner, repoName)
-	if grpc.Code(err) == codes.NotFound {
+	if legacyerr.ErrCode(err) == legacyerr.NotFound {
 		// Before we do anything, ensure we cache NotFound responses.
 		// Do this if client is unauthed or authed, it's okay since we're only caching not found responses here.
 		addToPublicCache(repo, &cachedRepo{NotFound: true})
@@ -256,7 +254,7 @@ func (s *repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOp
 func (s *repos) CreateHook(ctx context.Context, repo string, hook *github.Hook) error {
 	owner, repoName, err := githubutil.SplitRepoURI(repo)
 	if err != nil {
-		return grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
+		return legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repo)
 	}
 	_, resp, err := client(ctx).repos.CreateHook(owner, repoName, hook)
 	if err != nil {

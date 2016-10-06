@@ -6,9 +6,8 @@ import (
 
 	"context"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -39,7 +38,7 @@ func (s *MockRepos) MockGet(t *testing.T, wantRepo int32) (called *bool) {
 		*called = true
 		if repo.ID != wantRepo {
 			t.Errorf("got repo %d, want %d", repo.ID, wantRepo)
-			return nil, grpc.Errorf(codes.NotFound, "repo %d not found", wantRepo)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %d not found", wantRepo)
 		}
 		return &sourcegraph.Repo{ID: repo.ID}, nil
 	}
@@ -52,7 +51,7 @@ func (s *MockRepos) MockGet_Path(t *testing.T, wantRepo int32, repoPath string) 
 		*called = true
 		if repo.ID != wantRepo {
 			t.Errorf("got repo %d, want %d", repo.ID, wantRepo)
-			return nil, grpc.Errorf(codes.NotFound, "repo %d not found", wantRepo)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %d not found", wantRepo)
 		}
 		return &sourcegraph.Repo{ID: repo.ID, URI: repoPath}, nil
 	}
@@ -65,7 +64,7 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *sourcegraph.Repo) (cal
 		*called = true
 		if repo.ID != returns.ID {
 			t.Errorf("got repo %d, want %d", repo.ID, returns.ID)
-			return nil, grpc.Errorf(codes.NotFound, "repo %d not found", returns.ID)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %d not found", returns.ID)
 		}
 		return returns, nil
 	}
@@ -78,7 +77,7 @@ func (s *MockRepos) MockResolve_Local(t *testing.T, wantPath string, repoID int3
 		*called = true
 		if op.Path != wantPath {
 			t.Errorf("got repo %q, want %q", op.Path, wantPath)
-			return nil, grpc.Errorf(codes.NotFound, "repo path %s resolution failed", wantPath)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo path %s resolution failed", wantPath)
 		}
 		return &sourcegraph.RepoResolution{Repo: repoID, CanonicalPath: wantPath}, nil
 	}
@@ -91,7 +90,7 @@ func (s *MockRepos) MockResolve_Remote(t *testing.T, wantPath string, resolved *
 		*called = true
 		if op.Path != wantPath {
 			t.Errorf("got repo %q, want %q", op.Path, wantPath)
-			return nil, grpc.Errorf(codes.NotFound, "repo path %s resolution failed", wantPath)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo path %s resolution failed", wantPath)
 		}
 		return &sourcegraph.RepoResolution{RemoteRepo: resolved}, nil
 	}
@@ -105,7 +104,7 @@ func (s *MockRepos) MockResolve_NotFound(t *testing.T, wantPath string) (called 
 		if op.Path != wantPath {
 			t.Errorf("got repo %q, want %q", op.Path, wantPath)
 		}
-		return nil, grpc.Errorf(codes.NotFound, "repo path %s resolution failed", wantPath)
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "repo path %s resolution failed", wantPath)
 	}
 	return
 }
@@ -155,7 +154,7 @@ func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, repo int32, rev string
 		if op.Repo != repo || op.Rev != rev {
 			t.Errorf("got %+v, want %+v", op, &sourcegraph.ReposResolveRevOp{Repo: repo, Rev: rev})
 		}
-		return nil, grpc.Errorf(codes.NotFound, "revision not found")
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "revision not found")
 	}
 	return
 }

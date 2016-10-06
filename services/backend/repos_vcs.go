@@ -3,10 +3,9 @@ package backend
 import (
 	"context"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
@@ -39,7 +38,7 @@ func resolveRepoRev(ctx context.Context, repo int32, rev string) (vcs.CommitID, 
 
 	if rev == "" {
 		if repoObj.DefaultBranch == "" {
-			return "", grpc.Errorf(codes.FailedPrecondition, "repo %d has no default branch", repo)
+			return "", legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %d has no default branch", repo)
 		}
 		rev = repoObj.DefaultBranch
 	}
@@ -114,7 +113,7 @@ func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommit
 		op.Opt.PerPage = 20
 	}
 	if op.Opt.Head == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Head (revision specifier) is required")
+		return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "Head (revision specifier) is required")
 	}
 
 	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
@@ -256,7 +255,7 @@ func makeErrNotAbsCommitID(prefix string) error {
 	if prefix != "" {
 		str = prefix + ": " + str
 	}
-	return grpc.Errorf(codes.InvalidArgument, str)
+	return legacyerr.Errorf(legacyerr.InvalidArgument, str)
 }
 
 var errNotAbsCommitID = makeErrNotAbsCommitID("")

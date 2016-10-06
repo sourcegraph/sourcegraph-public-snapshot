@@ -7,12 +7,10 @@ import (
 	"io"
 	"strings"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"sort"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
@@ -28,7 +26,7 @@ func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsO
 	defer done()
 
 	if !feature.Features.Authors {
-		return nil, grpc.Errorf(codes.Unimplemented, "Defs.ListAuthors is disabled")
+		return nil, legacyerr.Errorf(legacyerr.Unimplemented, "Defs.ListAuthors is disabled")
 	}
 
 	defSpec := op.Def
@@ -38,7 +36,7 @@ func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsO
 	}
 
 	if !isAbsCommitID(defSpec.CommitID) {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Defs.ListAuthors must be called with an absolute commit ID (got %q)", defSpec.CommitID)
+		return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "Defs.ListAuthors must be called with an absolute commit ID (got %q)", defSpec.CommitID)
 	}
 
 	def, err := Defs.Get(ctx, &sourcegraph.DefsGetOp{Def: defSpec, Opt: nil})

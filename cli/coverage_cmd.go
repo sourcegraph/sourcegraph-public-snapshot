@@ -17,10 +17,8 @@ import (
 
 	"context"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/coverage"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/coverage/tokenizer"
@@ -613,7 +611,7 @@ func (c *coverageCmd) getRepoRevSpec(ctx context.Context, repoURI string) (*sour
 // is consulted to clone the repository.
 func (c *coverageCmd) ensureLocalRepoExists(ctx context.Context, repo string) error {
 	res, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo, Remote: true})
-	if grpc.Code(err) == codes.NotFound {
+	if legacyerr.ErrCode(err) == legacyerr.NotFound {
 		// Repo doesn't exist on the remote, but maybe we have it locally
 		// already.
 		return nil

@@ -5,10 +5,9 @@ import (
 
 	"context"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -61,13 +60,13 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 		// All commits affect the root, so there is no hope of finding
 		// an earlier srclib-built commit that we can use.
 		log15.Debug("svc.local.repos.GetSrclibDataVersionForPath", "entry", entry, "result", "no version for root")
-		return nil, grpc.Errorf(codes.NotFound, "no srclib data version found for head commit %v (can't look-back because path is root)", entry.RepoRev)
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "no srclib data version found for head commit %v (can't look-back because path is root)", entry.RepoRev)
 	}
 
 	// Do expensive search backwards through history.
 	info, err := s.getSrclibDataVersionForPathLookback(ctx, entry, repo.URI)
 	if err != nil {
-		if errcode.GRPC(err) == codes.NotFound {
+		if errcode.Code(err) == legacyerr.NotFound {
 			log15.Debug("svc.local.repos.GetSrclibDataVersionForPath", "entry", entry, "result", "not found: "+err.Error())
 		}
 		return nil, err
@@ -104,7 +103,7 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 			return nil, err
 		}
 		if len(lastPathCommit.Commits) != 1 {
-			return nil, grpc.Errorf(codes.NotFound, "no commits found for path %q in repo %v", entry.Path, entry.RepoRev)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "no commits found for path %q in repo %v", entry.Path, entry.RepoRev)
 		}
 		lastPathCommitID := string(lastPathCommit.Commits[0].ID)
 		if entry.RepoRev.CommitID == lastPathCommitID {
@@ -112,7 +111,7 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 			// for entry.RepoRev.CommitID, so there is no hope to
 			// finding an earlier srclib-built commit that we can
 			// use.
-			return nil, grpc.Errorf(codes.NotFound, "no srclib data version found for head commit %v (can't look-back because path  was last modified by head commit)", entry.RepoRev)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "no srclib data version found for head commit %v (can't look-back because path  was last modified by head commit)", entry.RepoRev)
 
 		}
 		base = lastPathCommitID
@@ -172,5 +171,5 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 		}
 	}
 
-	return nil, grpc.Errorf(codes.NotFound, "no srclib data versions found for %v (%d candidate commits, %d srclib data versions)", entry, len(candidateCommits.Commits), len(vers))
+	return nil, legacyerr.Errorf(legacyerr.NotFound, "no srclib data versions found for %v (%d candidate commits, %d srclib data versions)", entry, len(candidateCommits.Commits), len(vers))
 }

@@ -12,10 +12,8 @@ import (
 
 	"context"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil/srclibtest"
@@ -166,7 +164,7 @@ func TestRepo_Error_Get(t *testing.T) {
 		var calledGet bool
 		backend.Mocks.Repos.Get = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 			calledGet = true
-			return nil, grpc.Errorf(codes.NotFound, "")
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "")
 		}
 
 		if _, err := getForTest(c, url, http.StatusNotFound); err != nil {
@@ -235,7 +233,7 @@ func TestRepoRev_Error(t *testing.T) {
 		var calledReposResolveRev bool
 		backend.Mocks.Repos.ResolveRev = func(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
 			calledReposResolveRev = true
-			return nil, grpc.Errorf(codes.NotFound, "")
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "")
 		}
 
 		if _, err := getForTest(c, url, http.StatusNotFound); err != nil {
@@ -347,7 +345,7 @@ func TestBlob_Error(t *testing.T) {
 		var calledRepoTreeGet bool
 		backend.Mocks.RepoTree.Get = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
 			calledRepoTreeGet = true
-			return nil, grpc.Errorf(codes.NotFound, "")
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "")
 		}
 
 		if _, err := getForTest(c, url, http.StatusNotFound); err != nil {
@@ -484,7 +482,7 @@ func TestTree_Error(t *testing.T) {
 		var calledRepoTreeGet bool
 		backend.Mocks.RepoTree.Get = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
 			calledRepoTreeGet = true
-			return nil, grpc.Errorf(codes.NotFound, "")
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "")
 		}
 
 		if _, err := getForTest(c, url, http.StatusNotFound); err != nil {

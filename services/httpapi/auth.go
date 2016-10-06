@@ -4,10 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 )
 
@@ -18,7 +16,7 @@ func serveAuthInfo(w http.ResponseWriter, r *http.Request) error {
 func serveGitHubToken(w http.ResponseWriter, r *http.Request) error {
 	actor := auth.ActorFromContext(r.Context())
 	if actor.UID == "" {
-		return grpc.Errorf(codes.Unauthenticated, "not logged in")
+		return legacyerr.Errorf(legacyerr.Unauthenticated, "not logged in")
 	}
 
 	if actor.GitHubToken == "" {

@@ -9,10 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
@@ -29,10 +27,10 @@ func TestXLang(t *testing.T) {
 			return &sourcegraph.RepoResolution{Repo: 1, CanonicalPath: "my/repo"}, nil
 		case "your/repo":
 			calledUnauthed = true
-			return nil, grpc.Errorf(codes.Unauthenticated, "nope")
+			return nil, legacyerr.Errorf(legacyerr.Unauthenticated, "nope")
 		default:
 			t.Errorf("got unexpected repo %q", op.Path)
-			return nil, grpc.Errorf(codes.NotFound, "404")
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "404")
 		}
 	}
 

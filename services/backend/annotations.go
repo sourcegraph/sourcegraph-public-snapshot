@@ -8,14 +8,12 @@ import (
 	"sync"
 	"testing"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"github.com/neelance/parallel"
 
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	annotationspkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/annotations"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/syntaxhighlight"
@@ -276,7 +274,7 @@ func (s *annotations) GetDefAtPos(ctx context.Context, opt *sourcegraph.Annotati
 	}
 
 	if len(refs) == 0 {
-		return nil, grpc.Errorf(codes.NotFound, "no ref found")
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "no ref found")
 	}
 
 	r := refs[0]

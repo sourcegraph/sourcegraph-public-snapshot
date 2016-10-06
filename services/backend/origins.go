@@ -1,16 +1,15 @@
 package backend
 
 import (
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 )
 
 var originDefaultAPIBaseURLs = map[sourcegraph.Origin_ServiceType]string{
 	sourcegraph.Origin_GitHub: "https://api.github.com",
 }
 
-var errInvalidOriginService = grpc.Errorf(codes.InvalidArgument, "Origin.Service value is not recognized")
+var errInvalidOriginService = legacyerr.Errorf(legacyerr.InvalidArgument, "Origin.Service value is not recognized")
 
 // checkValidOriginAndSetDefaultURL returns an error if o refers to an
 // unsupported origin service or base API URL. Otherwise, it modifies
@@ -33,11 +32,11 @@ func checkValidOriginAndSetDefaultURL(o *sourcegraph.Origin) error {
 		o.APIBaseURL = defaultURL
 	}
 	if o.APIBaseURL != defaultURL {
-		return grpc.Errorf(codes.InvalidArgument, "Origin.APIBaseURL value of %q is not allowed (only %q or empty, which defaults to that URL, are allowed)", o.APIBaseURL, defaultURL)
+		return legacyerr.Errorf(legacyerr.InvalidArgument, "Origin.APIBaseURL value of %q is not allowed (only %q or empty, which defaults to that URL, are allowed)", o.APIBaseURL, defaultURL)
 	}
 
 	if o.ID == "" {
-		return grpc.Errorf(codes.InvalidArgument, "Origin.ID must be set (provide a null origin if the resource's canonical location is this server)")
+		return legacyerr.Errorf(legacyerr.InvalidArgument, "Origin.ID must be set (provide a null origin if the resource's canonical location is this server)")
 	}
 
 	return nil

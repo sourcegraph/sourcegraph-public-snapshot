@@ -6,12 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
@@ -75,7 +73,7 @@ func TestRepoResolve_IncludedRepo_ignoreErr(t *testing.T) {
 	var calledReposGet bool
 	backend.Mocks.Repos.Get = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		calledReposGet = true
-		return nil, grpc.Errorf(codes.Unknown, "error")
+		return nil, legacyerr.Errorf(legacyerr.Unknown, "error")
 	}
 
 	var res *repoResolution

@@ -11,9 +11,8 @@ import (
 
 	"context"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
@@ -41,7 +40,7 @@ func (s *defs) Get(ctx context.Context, op *sourcegraph.DefsGetOp) (res *sourceg
 	}
 
 	if !isAbsCommitID(defSpec.CommitID) {
-		return nil, grpc.Errorf(codes.InvalidArgument, "absolute commit ID required (got %q)", defSpec.CommitID)
+		return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "absolute commit ID required (got %q)", defSpec.CommitID)
 	}
 
 	rawDef, err := s.get(ctx, defSpec)
@@ -116,7 +115,7 @@ func (s *defs) get(ctx context.Context, def sourcegraph.DefSpec) (*graph.Def, er
 		return nil, err
 	}
 	if len(d) == 0 {
-		return nil, grpc.Errorf(codes.NotFound, "def %v not found", def)
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "def %v not found", def)
 	}
 	return d[0], nil
 }
@@ -165,7 +164,7 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (res *
 		// Determine the commit ID to use, if it wasn't specified or
 		// if it's a non-commit-ID revspec.
 		if !isAbsCommitID(commitID) {
-			return nil, grpc.Errorf(codes.InvalidArgument, "absolute commit ID required for repo %q to list defs (got %q)", repoPath, commitID)
+			return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "absolute commit ID required for repo %q to list defs (got %q)", repoPath, commitID)
 		}
 
 		// The repo exists and the commit ID is valid, so include it
@@ -367,7 +366,7 @@ func (s *MockDefs) MockGet(t *testing.T, wantDef sourcegraph.DefSpec) (called *b
 		def := op.Def
 		if def != wantDef {
 			t.Errorf("got def %+v, want %+v", def, wantDef)
-			return nil, grpc.Errorf(codes.NotFound, "def %v not found", wantDef)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "def %v not found", wantDef)
 		}
 		return &sourcegraph.Def{Def: graph.Def{DefKey: def.DefKey("r")}}, nil
 	}
@@ -381,7 +380,7 @@ func (s *MockDefs) MockGet_Return(t *testing.T, wantDef *sourcegraph.Def) (calle
 		def := op.Def
 		if def != wantDef.DefSpec(def.Repo) {
 			t.Errorf("got def %+v, want %+v", def, wantDef.DefSpec(def.Repo))
-			return nil, grpc.Errorf(codes.NotFound, "def %v not found", wantDef.DefKey)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "def %v not found", wantDef.DefKey)
 		}
 		return wantDef, nil
 	}

@@ -7,9 +7,8 @@ import (
 	"reflect"
 	"testing"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -140,7 +139,7 @@ func TestDefLanding_Error(t *testing.T) {
 		var calledDefsGet bool
 		backend.Mocks.Defs.Get = func(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
 			calledDefsGet = true
-			return nil, grpc.Errorf(codes.NotFound, "")
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "")
 		}
 
 		if _, err := getForTest(c, url, http.StatusNotFound); err != nil {

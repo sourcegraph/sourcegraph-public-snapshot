@@ -4,8 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
@@ -25,7 +24,7 @@ func getRepoDir(ctx context.Context, repo int32) (string, error) {
 		return "", err
 	}
 	if dir == "" {
-		return "", grpc.Errorf(codes.NotFound, "repo not found (looking up dir): %d", repo)
+		return "", legacyerr.Errorf(legacyerr.NotFound, "repo not found (looking up dir): %d", repo)
 	}
 	return dir, nil
 }
@@ -83,7 +82,7 @@ func (s *MockRepoVCS) MockOpen(t *testing.T, wantRepo int32, mockVCSRepo vcstest
 		*called = true
 		if repo != wantRepo {
 			t.Errorf("got repo %d, want %d", repo, wantRepo)
-			return nil, grpc.Errorf(codes.NotFound, "repo %v not found", wantRepo)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %v not found", wantRepo)
 		}
 		return mockVCSRepo, nil
 	}

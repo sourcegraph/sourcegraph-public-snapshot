@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"reflect"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
@@ -43,7 +42,7 @@ func RegisterErrorHandlerForType(errorVal interface{}, handler ErrorHandler) {
 
 // UnauthorizedErrorHandler is the error handler that is called when
 // an app handler returns an "unauthenticated" error (i.e.,
-// grpc.Code(err) == codes.Unauthenticated).
+// legacyerr.ErrCode(err) == legacyerr.Unauthenticated).
 //
 // Currently it is set at init time by package authutil; this is
 // necessary to avoid an import cycle.
@@ -61,7 +60,7 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 		if err == nil {
 			return
 		}
-	} else if UnauthorizedErrorHandler != nil && (grpc.Code(err) == codes.Unauthenticated || status == http.StatusUnauthorized) {
+	} else if UnauthorizedErrorHandler != nil && (legacyerr.ErrCode(err) == legacyerr.Unauthenticated || status == http.StatusUnauthorized) {
 		log15.Debug("redirecting to login", "from", req.URL, "error", err, "error_id", errorID)
 		err = UnauthorizedErrorHandler(resp, req, err)
 		if err == nil {
@@ -98,8 +97,8 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 	}()
 
 	// Display internal grpc error descriptions with full text (so it's not escaped).
-	if grpc.Code(err) == codes.Internal {
-		err = fmt.Errorf("internal error:\n\n%s", grpc.ErrorDesc(err))
+	if legacyerr.ErrCode(err) == legacyerr.Internal {
+		err = fmt.Errorf("internal error:\n\n%s", legacyerr.ErrorDesc(err))
 	}
 
 	errHeader := http.Header{"cache-control": []string{"no-cache"}}

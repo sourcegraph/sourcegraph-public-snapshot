@@ -6,10 +6,8 @@ import (
 
 	"context"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	srclibstore "sourcegraph.com/sourcegraph/srclib/store"
@@ -108,7 +106,7 @@ func TestReposService_GetSrclibDataVersionForPath_notFoundNoVersionsNoCommits(t 
 		RepoRev: sourcegraph.RepoRevSpec{Repo: 1, CommitID: strings.Repeat("c", 40)},
 		Path:    "p",
 	})
-	if grpc.Code(err) != codes.NotFound {
+	if legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatalf("got error %v, want NotFound", err)
 	}
 	if !*calledReposGet {
@@ -134,7 +132,7 @@ func TestReposService_GetSrclibDataVersionForPath_notFoundWrongVersionsNoCommits
 		RepoRev: sourcegraph.RepoRevSpec{Repo: 1, CommitID: strings.Repeat("c", 40)},
 		Path:    "p",
 	})
-	if grpc.Code(err) != codes.NotFound {
+	if legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatalf("got error %v, want NotFound", err)
 	}
 	if !*calledReposGet {
@@ -160,7 +158,7 @@ func TestReposService_GetSrclibDataVersionForPath_notFoundNoVersionsWrongCommits
 		RepoRev: sourcegraph.RepoRevSpec{Repo: 1, CommitID: strings.Repeat("c", 40)},
 		Path:    "p",
 	})
-	if grpc.Code(err) != codes.NotFound {
+	if legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatalf("got error %v, want NotFound", err)
 	}
 	if !*calledReposGet {

@@ -5,13 +5,11 @@ import (
 	"reflect"
 	"testing"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"context"
 
 	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
@@ -119,7 +117,7 @@ func TestReposService_Get_UnauthedUpdateMeta(t *testing.T) {
 		calledUpdate = true
 		if op.ReposUpdateOp.Repo != wantRepo.ID {
 			t.Errorf("got repo %q, want %q", op.ReposUpdateOp.Repo, wantRepo.ID)
-			return grpc.Errorf(codes.NotFound, "repo %v not found", wantRepo.ID)
+			return legacyerr.Errorf(legacyerr.NotFound, "repo %v not found", wantRepo.ID)
 		}
 		return nil
 	}

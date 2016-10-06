@@ -13,8 +13,8 @@ import (
 
 	"context"
 
-	"google.golang.org/grpc"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
@@ -178,7 +178,7 @@ func (s *asyncWorker) refreshIndexes(ctx context.Context, op *sourcegraph.AsyncR
 		Force:               op.Force,
 	})
 	if err != nil {
-		return grpc.Errorf(grpc.Code(err), "Def.RefreshIndex failed on repo %d from source %s: %s", op.Repo, op.Source, err)
+		return legacyerr.Errorf(legacyerr.ErrCode(err), "Def.RefreshIndex failed on repo %d from source %s: %s", op.Repo, op.Source, err)
 	}
 
 	return nil

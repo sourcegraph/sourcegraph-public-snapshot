@@ -5,9 +5,8 @@ import (
 
 	"context"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
@@ -28,7 +27,7 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (res
 	// First, look up locally.
 	if repo, err := localstore.Repos.GetByURI(ctx, op.Path); err == nil {
 		return &sourcegraph.RepoResolution{Repo: repo.ID, CanonicalPath: op.Path}, nil
-	} else if errcode.GRPC(err) != codes.NotFound {
+	} else if errcode.Code(err) != legacyerr.NotFound {
 		return nil, err
 	}
 
@@ -44,8 +43,8 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (res
 		if op.Remote {
 			return &sourcegraph.RepoResolution{RemoteRepo: repo}, nil
 		}
-		return nil, grpc.Errorf(codes.NotFound, "resolved repo not found locally: %s", op.Path)
-	} else if errcode.GRPC(err) != codes.NotFound {
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "resolved repo not found locally: %s", op.Path)
+	} else if errcode.Code(err) != legacyerr.NotFound {
 		return nil, err
 	}
 
@@ -60,5 +59,5 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (res
 	}
 
 	// Not found anywhere.
-	return nil, grpc.Errorf(codes.NotFound, "repo %q not found locally or remotely", op.Path)
+	return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %q not found locally or remotely", op.Path)
 }

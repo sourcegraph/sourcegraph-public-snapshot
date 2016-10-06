@@ -4,12 +4,10 @@ import (
 	"database/sql"
 	"testing"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 )
 
@@ -83,7 +81,7 @@ func (s *MockRepoConfigs) MockGet_Return(t *testing.T, wantRepo int32, returns *
 		*called = true
 		if repo != wantRepo {
 			t.Errorf("got repo %d, want %d", repo, wantRepo)
-			return nil, grpc.Errorf(codes.NotFound, "config for repo %v not found", repo)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "config for repo %v not found", repo)
 		}
 		return returns, nil
 	}

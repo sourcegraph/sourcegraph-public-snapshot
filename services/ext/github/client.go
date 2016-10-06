@@ -7,8 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -87,26 +86,26 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 	switch err.(type) {
 	case *github.RateLimitError:
 		log15.Debug("exceeded github rate limit", "error", err, "op", op)
-		return grpc.Errorf(codes.ResourceExhausted, "exceeded GitHub API rate limit: %s: %v", op, err)
+		return legacyerr.Errorf(legacyerr.ResourceExhausted, "exceeded GitHub API rate limit: %s: %v", op, err)
 	case *github.AbuseRateLimitError:
 		log15.Debug("triggered GitHub abuse detection mechanism", "error", err, "op", op)
 		abuseDetectionMechanismCounter.Inc()
-		return grpc.Errorf(codes.ResourceExhausted, "triggered GitHub abuse detection mechanism: %s: %v", op, err)
+		return legacyerr.Errorf(legacyerr.ResourceExhausted, "triggered GitHub abuse detection mechanism: %s: %v", op, err)
 	}
 
 	log15.Debug("unexpected error from github", "error", err, "statusCode", resp.StatusCode, "op", op)
 
-	statusCode := errcode.HTTPToGRPC(resp.StatusCode)
+	statusCode := errcode.HTTPToCode(resp.StatusCode)
 
 	// Calling out to github could result in some HTTP status codes that don't directly map to
-	// gRPC status codes. If github returns anything in the 400 range that isn't known to us,
+	// gRPC status sourcegraph. If github returns anything in the 400 range that isn't known to us,
 	// we don't want to indicate a server-side error (which would happen if we don't convert
 	// to 404 here).
-	if statusCode == codes.Unknown && resp.StatusCode >= 400 && resp.StatusCode < 500 {
-		statusCode = codes.NotFound
+	if statusCode == legacyerr.Unknown && resp.StatusCode >= 400 && resp.StatusCode < 500 {
+		statusCode = legacyerr.NotFound
 	}
 
-	return grpc.Errorf(statusCode, "%s", op)
+	return legacyerr.Errorf(statusCode, "%s", op)
 }
 
 // HasAuthedUser reports whether the context has an authenticated
