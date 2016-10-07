@@ -987,44 +987,6 @@ type AsyncRefreshIndexesOp struct {
 	Force bool `json:"Force,omitempty"`
 }
 
-type AuthorshipInfo struct {
-	LastCommitDate time.Time `json:"LastCommitDate"`
-	// LastCommitID is the commit ID of the last commit that this author made to the
-	// thing that this info describes.
-	LastCommitID string `json:"LastCommitID,omitempty"`
-}
-
-type DefAuthor struct {
-	// Email is the author's email. It may be obfuscated or truncated
-	// to prevent spam.
-	Email string `json:"Email,omitempty"`
-	// AvatarURL is the URL to the author's avatar image, if any.
-	AvatarURL string `json:"AvatarURL,omitempty"`
-	// DefAuthorship contains statistics about the author's contributions
-	// to the def.
-	DefAuthorship `json:""`
-}
-
-type DefAuthorship struct {
-	AuthorshipInfo  `json:""`
-	Bytes           int32   `json:"Bytes,omitempty"`
-	BytesProportion float64 `json:"BytesProportion,omitempty"`
-}
-
-// DefListAuthorsOptions specifies options for DefsService.ListAuthors.
-type DefListAuthorsOptions struct {
-	ListOptions `json:""`
-}
-
-type DefsListAuthorsOp struct {
-	Def DefSpec                `json:"Def"`
-	Opt *DefListAuthorsOptions `json:"Opt,omitempty"`
-}
-
-type DefAuthorList struct {
-	DefAuthors []*DefAuthor `json:"DefAuthors,omitempty"`
-}
-
 // ServerConfig describes the server's configuration.
 //
 // DEV NOTE: There is some overlap with Go CLI flag structs. In the
