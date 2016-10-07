@@ -178,12 +178,15 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		// get all caller repositories with counts (global refs)
-		const reflocRepoLimit = 5
+		const (
+			refLocRepoLimit = 3 // max 3 separate repos
+			refLocFileLimit = 5 // max 5 files per repo
+		)
 		refLocs, err = backend.Defs.ListRefLocations(r.Context(), &sourcegraph.DefsListRefLocationsOp{
 			Def: defSpec,
 			Opt: &sourcegraph.DefListRefLocationsOptions{
 				// NOTE(mate): this has no effect at the moment
-				ListOptions: sourcegraph.ListOptions{PerPage: reflocRepoLimit},
+				ListOptions: sourcegraph.ListOptions{PerPage: refLocRepoLimit},
 			},
 		})
 		if err != nil {
@@ -191,10 +194,15 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		}
 		// WORKAROUND(mate): because ListRefLocations ignores pagination options
 		truncLen := len(refLocs.RepoRefs)
-		if truncLen > reflocRepoLimit {
-			truncLen = reflocRepoLimit
+		if truncLen > refLocRepoLimit {
+			truncLen = refLocRepoLimit
 		}
 		refLocs.RepoRefs = refLocs.RepoRefs[:truncLen]
+		for _, repoRef := range refLocs.RepoRefs {
+			if len(repoRef.Files) > refLocFileLimit {
+				repoRef.Files = repoRef.Files[:refLocFileLimit]
+			}
+		}
 
 		// fetch definition
 		entrySpec := sourcegraph.TreeEntrySpec{
