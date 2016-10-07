@@ -248,7 +248,13 @@ export default class BlobAnnotator extends Component {
 
 	onClickFileView(ev) {
 		EventLogger.logEventForCategory("File", "Click", "ChromeExtensionSgButtonClicked", {repo: this.state.repoURI, path: window.location.href, is_private_repo: this.isPrivateRepo()});
-		location.href = `https://sourcegraph.com/${this.state.repoURI}@${this.state.rev || this.state.headCommitID}/-/blob/${this.state.path}`;
+
+		const targetURL = `https://sourcegraph.com/${this.state.repoURI}@${this.state.rev || this.state.headCommitID}/-/blob/${this.state.path}`;
+		if (ev.ctrlKey || (navigator.platform.toLowerCase().indexOf('mac') >= 0 && ev.metaKey)) {
+			window.open(targetURL, "_blank");
+		} else {
+			location.href = targetURL;
+		}
 	}
 
 	render() {
