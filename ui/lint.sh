@@ -28,4 +28,9 @@ fi
 
 # check for TypeScript errors before tslint
 ./node_modules/.bin/tsc
+# We're importing vscode, which is not ready for non-nullable types, but we
+# want to do strict null checking in out codebase. Workaround this by skipping
+# declaration files and checking for strict null errors here so we don't
+# regress.
+./node_modules/.bin/tsc --noEmit --skipLibCheck --strictNullChecks
 find ./web_modules -name '*.ts' -or -name '*.tsx' | xargs ./node_modules/.bin/tslint
