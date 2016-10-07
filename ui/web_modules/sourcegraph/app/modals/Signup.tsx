@@ -29,7 +29,8 @@ export const Signup = (props: Props): JSX.Element => {
 			onDismiss={(v) => EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissJoinModal", {page_name: props.location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 			<div className={styles.modal} style={sx}>
 				<SignupForm
-					returnTo={props.shouldHide ? "/?ob=chrome" : props.location}
+					returnTo={props.shouldHide ? "/" : props.location.pathname}
+					queryObj={props.shouldHide ? {ob: "chrome"} : Object.assign({}, props.location.query)}
 					location={props.location} />
 			</div>
 		</LocationStateModal>

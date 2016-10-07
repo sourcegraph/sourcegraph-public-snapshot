@@ -7,7 +7,7 @@ import {context} from "sourcegraph/app/context";
 // redirectIfLoggedIn wraps a component and issues a redirect
 // if there is an authenticated user. It is useful for wrapping
 // login, signup, etc., route components.
-export function redirectIfLoggedIn(url: Location | string, Component) {
+export function redirectIfLoggedIn(url: Location | string, queryObj: History.Query, Component) {
 	type Props = any;
 
 	type State = any;
@@ -22,8 +22,12 @@ export function redirectIfLoggedIn(url: Location | string, Component) {
 		};
 
 		componentWillMount(): void {
+			const redirQueryObj = Object.assign({}, this.props.location.query || null, this.props.queryObj);
+			const redirRouteObj = typeof this.props.returnTo === "string" ? {pathname: url} : url;
+			const redirLocation = Object.assign({}, this.props.location || null, redirRouteObj, {query: redirQueryObj});
+
 			if (context.user) {
-				this.context.router.replace(url);
+				this.context.router.replace(redirLocation);
 			}
 		}
 

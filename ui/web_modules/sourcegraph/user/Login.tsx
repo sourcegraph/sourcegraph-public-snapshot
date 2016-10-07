@@ -46,4 +46,4 @@ function LoginComp(props: {location: any}): JSX.Element | null {
 	);
 }
 
-export const Login = redirectIfLoggedIn("/", LoginComp);
+export const Login = redirectIfLoggedIn("/", {}, LoginComp);

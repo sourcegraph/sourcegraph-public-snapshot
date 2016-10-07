@@ -57,6 +57,22 @@ export class OnboardingContainer extends Container<Props, State> {
 		} else if (this.props.currentStep === "github") {
 			nextStep = {ob: "search"};
 			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "GitHubStepCompleted", {page_name: "GitHubPrivateCodeOnboarding"});
+
+			// This should be right after the Github onboarding step
+			// Chrome extension will on receiving 401 from /rev endpoint
+			// bring the user to /join?ob=github&rtg=${encodeURIComponent(window.location.href)}
+			// Once the user has completed the github onboarding step (enabling private repos),
+			// they should be taken back to Github if rtg was provided and is to a github URL
+			const returnToGithub = this.props.location.query["rtg"] || null;
+			if (returnToGithub) {
+				const decodeUrl = decodeURIComponent(returnToGithub);
+				const returnUrl = new URL(decodeUrl);
+
+				if (returnUrl.origin.match(/https:\/\/(www\.)?github.com/)) {
+					window.location.href = decodeUrl;
+					return;
+				}
+			}
 		}
 
 		// Grab the current location and figure out where to go next.
@@ -71,21 +87,6 @@ export class OnboardingContainer extends Container<Props, State> {
 
 		if (this.props.currentStep === "github") {
 			return <GitHubPrivateAuthOnboarding completeStep={this._completeStep.bind(this)} privateCodeAuthed={this._isPrivateCodeUser()} location={this.props.location}/>;
-		}
-
-		// This should be right after the Github onboarding step
-		// Chrome extension will on receiving 401 from /rev endpoint
-		// bring the user to /join?ob=github&rtg=${encodeURIComponent(window.location.href)}
-		// Once the user has completed the github onboarding step (enabling private repos),
-		// they should be taken back to Github if rtg was provided and is to a github URL
-		const returnToGithub = this.props.location.query["rtg"] || null;
-		if (returnToGithub) {
-			const decodeUrl = decodeURIComponent(returnToGithub);
-			const returnUrl = new URL(decodeUrl);
-
-			if (returnUrl.origin.match(/https:\/\/(www.)?github.com/)) {
-				window.location.href = decodeUrl;
-			}
 		}
 
 		return <Dashboard location={this.props.location} completedBanner={true}/>;
