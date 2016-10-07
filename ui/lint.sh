@@ -27,10 +27,12 @@ if grep -qr --include="*.tsx" ' from "\.' web_modules/; then
 fi
 
 # check for TypeScript errors before tslint
-./node_modules/.bin/tsc
+#
 # We're importing vscode, which is not ready for non-nullable types, but we
-# want to do strict null checking in out codebase. Workaround this by skipping
-# declaration files and checking for strict null errors here so we don't
-# regress.
-./node_modules/.bin/tsc --noEmit --skipLibCheck --strictNullChecks
+# want to do strict null checking in out codebase. Workaround this by running
+# the type checker using a config file that does not do strict null checks
+# first. Then to another type check with strict null checks turned on but skip
+# *.d.ts files, which are the source of the null issues in the vscode project.
+./node_modules/.bin/tsc -p tsconfig.lint.json
+./node_modules/.bin/tsc --noEmit -p tsconfig.lint.json --skipLibCheck --strictNullChecks
 find ./web_modules -name '*.ts' -or -name '*.tsx' | xargs ./node_modules/.bin/tslint

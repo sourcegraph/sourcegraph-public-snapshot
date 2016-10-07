@@ -12,7 +12,6 @@
     "types": ["mocha", "lodash"],
     "jsx": "react",
     "sourceMap": true,
-    "strictNullChecks": true,
     "experimentalDecorators": true,
     "noEmit": true
   },
