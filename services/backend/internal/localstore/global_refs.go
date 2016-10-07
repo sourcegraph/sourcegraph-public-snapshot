@@ -150,6 +150,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	sql = "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, positions, count FROM (" + innerSelectSQL + ") res"
 	orderBySQL := " ORDER BY repo=" + arg(defRepoPath) + " DESC, repo_count DESC, count DESC"
 	sql += orderBySQL
+	sql += " LIMIT 512"
 
 	var dbRefResult []*dbRefLocationsResult
 	if _, err := graphDBH(ctx).Select(&dbRefResult, sql, args...); err != nil {
