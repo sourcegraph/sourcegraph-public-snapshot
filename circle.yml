@@ -15,7 +15,6 @@ machine:
     PGDATABASE: circle_test
     PGSSLMODE: disable
     REDIS_MASTER_ENDPOINT: ":6379"
-    CLOUDSDK_CORE_DISABLE_PROMPTS: 1
     LONG_VERSION: $(printf %05d $CIRCLE_BUILD_NUM)_$(date +%Y-%m-%d)_${CIRCLE_SHA1:0:7}
 
     # Don't block on `git diff` invocations of `less`.
@@ -26,12 +25,11 @@ machine:
 dependencies:
   cache_directories:
     - ~/cache
+    - ~/bin
 
   override:
     - ./dev/ci/install-go.sh
     - ./dev/ci/install-test-tools.sh
-    - ./dev/ci/patch-exec-latency.sh
-    - ./dev/ci/versions.sh
     - ./dev/ci/install-checkup.sh
 
     - git config --global user.email "ci@example.com"
@@ -42,7 +40,7 @@ dependencies:
 
 test:
   override:
-    - ./dev/circle-ci-run-tests.sh:
+    - ./dev/ci/run-tests.sh:
         pwd: $REPO
         parallel: true
 
@@ -63,19 +61,6 @@ deployment:
       - ./dev/circle-build-docker-image.sh $LONG_VERSION:
           pwd: $REPO
       - curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=$CIRCLE_BRANCH" -F "version=$LONG_VERSION" -F "user=$CIRCLE_USERNAME"
-
-  release-tag:
-    tag: /[0-9]+\.[0-9]+\.[0-9]+/
-    commands:
-      - ./dev/circle-build-docker-image.sh $CIRCLE_TAG:
-          pwd: $REPO
-
-      # push to Docker Hub
-      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
-      - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_TAG sourcegraph/sourcegraph:$CIRCLE_TAG
-      - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_TAG sourcegraph/sourcegraph:latest
-      - docker push sourcegraph/sourcegraph:$CIRCLE_TAG
-      - docker push sourcegraph/sourcegraph:latest
 
   docker-images:
     branch: /docker-images\/.*/
