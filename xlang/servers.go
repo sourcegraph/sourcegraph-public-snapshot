@@ -55,7 +55,7 @@ func RegisterServersFromEnv() error {
 			case strings.HasPrefix(val, "tcp://"):
 				log15.Info("Registering language server listener.", "mode", mode, "listener", val)
 				ServersByMode[mode] = func() (io.ReadWriteCloser, error) {
-					return net.DialTimeout("tcp", strings.TrimPrefix(val, "tcp://"), time.Duration(30)*time.Second)
+					return net.DialTimeout("tcp", strings.TrimPrefix(val, "tcp://"), 5*time.Second)
 				}
 			case strings.Contains(val, ":"):
 				return fmt.Errorf(`invalid language server URL %q (you probably mean "tcp://%s")`, val, val)
