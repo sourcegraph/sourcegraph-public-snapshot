@@ -8,6 +8,9 @@
 
 @value font_size_7 from vars;
 
+:global .monaco-editor {
+	font-family: inherit;
+}
 
 /* Make cursor look less like a text insertion cursor. */
 :global .monaco-editor .cursor {
@@ -18,6 +21,10 @@
 :global .monaco-editor .monaco-editor-hover {
 	z-index: calc(navbarZIndex + 1);
 	box-sizing: content-box;
+}
+
+:global .monaco-editor.vs-dark .monaco-editor-hover {
+	background-color: c_cool_dark_gray;
 }
 
 :global .monaco-editor .context-view {
