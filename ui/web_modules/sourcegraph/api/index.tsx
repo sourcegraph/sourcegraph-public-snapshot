@@ -40,11 +40,6 @@ export interface AuthInfo {
 	Admin?: boolean;
 }
 
-export interface AuthorshipInfo {
-	LastCommitDate: any;
-	LastCommitID?: string;
-}
-
 export interface BasicTreeEntry {
 	Name?: string;
 	Type?: any;
@@ -211,26 +206,6 @@ export interface Def {
 	EndLine?: number;
 }
 
-export interface DefAuthor {
-	Email?: string;
-	AvatarURL?: string;
-	LastCommitDate: any;
-	LastCommitID?: string;
-	Bytes?: number;
-	BytesProportion?: number;
-}
-
-export interface DefAuthorList {
-	DefAuthors?: DefAuthor[];
-}
-
-export interface DefAuthorship {
-	LastCommitDate: any;
-	LastCommitID?: string;
-	Bytes?: number;
-	BytesProportion?: number;
-}
-
 export interface DefDoc {
 	Format: string;
 	Data: string;
@@ -268,11 +243,6 @@ export interface DefKey {
 export interface DefList {
 	Defs?: Def[];
 	Total?: number;
-}
-
-export interface DefListAuthorsOptions {
-	PerPage?: number;
-	Page?: number;
 }
 
 export interface DefListOptions {
@@ -356,11 +326,6 @@ export interface DefSpec {
 export interface DefsGetOp {
 	Def: DefSpec;
 	Opt?: DefGetOptions;
-}
-
-export interface DefsListAuthorsOp {
-	Def: DefSpec;
-	Opt?: DefListAuthorsOptions;
 }
 
 export interface DefsListRefLocationsOp {
