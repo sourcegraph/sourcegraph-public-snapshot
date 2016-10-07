@@ -1,0 +1,35 @@
+import { OverviewRulerLane, OverviewRulerZone, ColorZone } from 'vs/editor/common/editorCommon';
+export declare class OverviewZoneManager {
+    private _getVerticalOffsetForLine;
+    private _zones;
+    private _colorZonesInvalid;
+    private _lineHeight;
+    private _domWidth;
+    private _domHeight;
+    private _outerHeight;
+    private _maximumHeight;
+    private _minimumHeight;
+    private _useDarkColor;
+    private _pixelRatio;
+    private _lastAssignedId;
+    private _color2Id;
+    private _id2Color;
+    constructor(getVerticalOffsetForLine: (lineNumber: number) => number);
+    getId2Color(): string[];
+    setZones(newZones: OverviewRulerZone[]): void;
+    setLineHeight(lineHeight: number): boolean;
+    setPixelRatio(pixelRatio: number): void;
+    getDOMWidth(): number;
+    getCanvasWidth(): number;
+    setDOMWidth(width: number): boolean;
+    getDOMHeight(): number;
+    getCanvasHeight(): number;
+    setDOMHeight(height: number): boolean;
+    getOuterHeight(): number;
+    setOuterHeight(outerHeight: number): boolean;
+    setMaximumHeight(maximumHeight: number): boolean;
+    setMinimumHeight(minimumHeight: number): boolean;
+    setUseDarkColor(useDarkColor: boolean): boolean;
+    resolveColorZones(): ColorZone[];
+    createZone(totalHeight: number, y1: number, y2: number, minimumHeight: number, maximumHeight: number, color: string, position: OverviewRulerLane): ColorZone;
+}
