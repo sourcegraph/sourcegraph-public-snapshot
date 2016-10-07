@@ -1,3 +1,5 @@
+import {IPosition, IRange} from "vs/editor/common/editorCommon";
+
 // RangeOrPosition represents a range or position.
 export class RangeOrPosition {
 	static fromZeroIndexed(startLine: number, startCol?: number, endLine?: number, endCol?: number): RangeOrPosition {
@@ -29,11 +31,11 @@ export class RangeOrPosition {
 		);
 	}
 
-	static fromMonacoPosition(r: monaco.IPosition): RangeOrPosition {
+	static fromMonacoPosition(r: IPosition): RangeOrPosition {
 		return RangeOrPosition.fromOneIndexed(r.lineNumber, r.column);
 	}
 
-	static fromMonacoRange(r: monaco.IRange): RangeOrPosition {
+	static fromMonacoRange(r: IRange): RangeOrPosition {
 		return RangeOrPosition.fromOneIndexed(r.startLineNumber, r.startColumn, r.endLineNumber, r.endColumn);
 	}
 
@@ -76,7 +78,7 @@ export class RangeOrPosition {
 		});
 	}
 
-	toMonacoPosition(): monaco.IPosition {
+	toMonacoPosition(): IPosition {
 		if (this.startCol === undefined) {
 			throw new Error("converting to monaco position requires start column");
 		}
@@ -89,7 +91,7 @@ export class RangeOrPosition {
 		};
 	}
 
-	toMonacoRange(): monaco.IRange {
+	toMonacoRange(): IRange {
 		if (this.startCol === undefined) {
 			throw new Error("converting to monaco range requires start column");
 		}
@@ -103,7 +105,7 @@ export class RangeOrPosition {
 		return this.toMonacoRangeAllowEmpty();
 	}
 
-	toMonacoRangeAllowEmpty(): monaco.IRange {
+	toMonacoRangeAllowEmpty(): IRange {
 		const startColumn = typeof this.startCol === "number" ? this.startCol + 1 : 1;
 		let endColumn: number | undefined;
 		if (typeof this.endCol === "number") {

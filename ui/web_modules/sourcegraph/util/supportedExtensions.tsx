@@ -2,7 +2,7 @@ export function typescriptSupported(): boolean {
 	if (typeof global.window === "undefined") {
 		return false;
 	}
-	return Boolean(window.localStorage["xlangTypescript"]);
+	return Boolean(window && window.localStorage["xlangTypescript"]);
 }
 
 let _exts = ["go"];

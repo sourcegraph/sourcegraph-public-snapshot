@@ -16,6 +16,7 @@ export function urlToGitHubOAuth(scopes: string | null, returnTo: string | Locat
 	if (returnTo && typeof returnTo !== "string") {
 		returnTo = `${returnTo.pathname}${returnTo.search}${returnTo.hash}`;
 	}
+	returnTo = returnTo && returnTo.toString();
 	returnTo = returnTo ? `return-to=${encodeURIComponent(returnTo)}` : null;
 
 	let q;

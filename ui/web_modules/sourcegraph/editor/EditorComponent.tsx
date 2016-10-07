@@ -1,10 +1,8 @@
 // tslint:disable typedef ordered-imports
 import * as React from "react";
 import * as invariant from "invariant";
-import {loadMonaco} from "sourcegraph/editor/loader";
 import {Editor} from "sourcegraph/editor/Editor";
 import "sourcegraph/blob/styles/Monaco.css";
-import {context} from "sourcegraph/app/context";
 
 type Props = {
 	editorRef?: (editor: Editor | null) => void;
@@ -21,20 +19,7 @@ interface State {
 export class EditorComponent extends React.Component<Props, State> {
 
 	private _container: HTMLElement;
-	private _editor?: Editor;
-
-	componentWillMount(): void {
-		loadMonaco(context.assetsRoot).then(() => {
-			invariant(!this._editor, "editor is already initialized");
-			invariant(this._container, "container element ref is not available");
-
-			this._editor = new Editor(this._container);
-
-			if (this.props.editorRef) {
-				this.props.editorRef(this._editor);
-			}
-		});
-	}
+	private _editor: Editor | null = null;
 
 	componentWillUnmount(): void {
 		if (this.props.editorRef) {
@@ -48,6 +33,22 @@ export class EditorComponent extends React.Component<Props, State> {
 	render(): JSX.Element {
 		const otherProps = Object.assign({}, this.props);
 		delete otherProps.editorRef;
-		return <div ref={(e) => this._container = e} {...otherProps} />;
+		return <div ref={(e) => this.setContainer(e)} {...otherProps} />;
+	}
+
+	private setContainer(e: HTMLElement): void {
+		this._container = e;
+
+		if (e) {
+			invariant(!this._editor, "editor is already initialized");
+			this._editor = new Editor(this._container);
+		} else if (this._editor) {
+			this._editor.dispose();
+			this._editor = null;
+		}
+
+		if (this.props.editorRef) {
+			this.props.editorRef(this._editor || null);
+		}
 	}
 }

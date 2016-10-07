@@ -9,6 +9,7 @@ import "sourcegraph/blob/BlobBackend";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import { EditorComponent } from "sourcegraph/editor/EditorComponent";
 import {URIUtils} from "sourcegraph/core/uri";
+import {Range} from "vs/editor/common/core/range";
 
 type Props = {
 	repo: string;
@@ -49,7 +50,7 @@ export class EditorDemo extends Container<Props, State> {
 
 	private _setEditor(editor: Editor) {
 		if (editor) {
-			const range = new monaco.Range(this.props.startLine, 1, this.props.startLine, 1);
+			const range = new Range(this.props.startLine, 1, this.props.startLine, 1);
 			const uri = URIUtils.pathInRepo(this.props.repo, this.props.rev, this.props.path);
 			editor.setInput(uri, range);
 		}
