@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -54,7 +55,7 @@ func RegisterServersFromEnv() error {
 			case strings.HasPrefix(val, "tcp://"):
 				log15.Info("Registering language server listener.", "mode", mode, "listener", val)
 				ServersByMode[mode] = func() (io.ReadWriteCloser, error) {
-					return net.Dial("tcp", strings.TrimPrefix(val, "tcp://"))
+					return net.DialTimeout("tcp", strings.TrimPrefix(val, "tcp://"), 5*time.Second)
 				}
 			case strings.Contains(val, ":"):
 				return fmt.Errorf(`invalid language server URL %q (you probably mean "tcp://%s")`, val, val)
