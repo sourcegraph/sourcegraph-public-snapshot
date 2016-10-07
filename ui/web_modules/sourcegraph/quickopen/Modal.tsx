@@ -49,14 +49,14 @@ export class QuickOpenModal extends React.Component<Props, null> {
 
 	searchModalShortcuts(event: KeyboardEvent & Node): void {
 		if (event.keyCode === 27) { // Escape.
-			this.dismissModal();
+			this.dismissModal(false);
 		}
 		if (event.target.nodeName === "INPUT" || event.metaKey || event.ctrlKey) {
 			return;
 		}
 		if (event.keyCode === 191) { // Slash key ('/').
 			if (!this.props.showModal) {
-				this.dismissModal();
+				this.dismissModal(false);
 			}
 			this.props.activateSearch();
 			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_QUICK_OPEN, AnalyticsConstants.ACTION_TOGGLE, "QuickOpenInitiated", this._getEventProps());
@@ -64,8 +64,8 @@ export class QuickOpenModal extends React.Component<Props, null> {
 		event.preventDefault();
 	}
 
-	dismissModal(resultSelected: boolean = false): void {
-		if (!resultSelected) {
+	dismissModal(shouldLog: boolean): void {
+		if (shouldLog) {
 			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_QUICK_OPEN, AnalyticsConstants.ACTION_TOGGLE, "QuickOpenDismissed", this._getEventProps());
 		}
 		this.props.onDismiss();
@@ -76,7 +76,7 @@ export class QuickOpenModal extends React.Component<Props, null> {
 			return <div />;
 		}
 		const r = this.props.repo ? {URI: this.props.repo, rev: this.props.rev} : null;
-		return <ModalComp onDismiss={this.dismissModal}>
+		return <ModalComp onDismiss={() => this.dismissModal(true)}>
 			<Container
 				ref="searchContainer"
 				repo={r}

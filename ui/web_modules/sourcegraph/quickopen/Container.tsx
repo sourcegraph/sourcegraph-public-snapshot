@@ -285,7 +285,7 @@ export class Container extends React.Component<Props, State> {
 			};
 			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_QUICK_OPEN, AnalyticsConstants.ACTION_CLICK, "QuickOpenItemSelected", eventProps);
 			const url = result.URLPath;
-			this.props.dismissModal(true);
+			this.props.dismissModal(false);
 			this.context.router.push(url);
 		}
 	}
