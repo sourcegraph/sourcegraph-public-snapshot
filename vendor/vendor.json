@@ -754,6 +754,18 @@
 			"revisionTime": "2016-05-12T04:39:32Z"
 		},
 		{
+			"checksumSHA1": "AVET+5jDH2MEvtFi1I22DFHJswI=",
+			"path": "golang.org/x/tools/go/buildutil",
+			"revision": "fc2b74b64ef08c618146ebc92062f6499db5314c",
+			"revisionTime": "2016-09-27T13:58:56Z"
+		},
+		{
+			"checksumSHA1": "oP1vuCE1PtUjnt+HMX+SvIUG4II=",
+			"path": "golang.org/x/tools/go/loader",
+			"revision": "fc2b74b64ef08c618146ebc92062f6499db5314c",
+			"revisionTime": "2016-09-27T13:58:56Z"
+		},
+		{
 			"checksumSHA1": "uwKP1AVzd+lrTMlXVFjZXXHzB7U=",
 			"path": "golang.org/x/tools/go/vcs",
 			"revision": "ba484b064f228462fd5d8e41dcbbf4004636bbfe",
@@ -782,6 +794,12 @@
 			"path": "golang.org/x/tools/imports",
 			"revision": "ba484b064f228462fd5d8e41dcbbf4004636bbfe",
 			"revisionTime": "2016-05-12T04:39:32Z"
+		},
+		{
+			"checksumSHA1": "94Wj08Ycja9h/u9eMifhqsmz4aw=",
+			"path": "golang.org/x/tools/refactor/importgraph",
+			"revision": "fc2b74b64ef08c618146ebc92062f6499db5314c",
+			"revisionTime": "2016-09-27T13:58:56Z"
 		},
 		{
 			"path": "google.golang.org/api/gensupport",
