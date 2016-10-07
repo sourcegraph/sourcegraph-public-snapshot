@@ -36,12 +36,16 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 	defer s.Close() // This will kill the started src process. It's important that this func runs before os.Exit, otherwise there will be a runaway zombie process.
+	var err error
+	h, err = url.Parse(s.Config.Serve.AppURL)
+	if err != nil {
+		panic(err)
+	}
+
 	code = m.Run()
 }
 
 func TestRobotsTxt(t *testing.T) {
-	t.Skip() // See https://github.com/sourcegraph/sourcegraph/issues/1649
-
 	if testing.Short() {
 		t.Skip()
 	}
@@ -73,7 +77,6 @@ func TestRobotsTxt(t *testing.T) {
 }
 
 func TestFavicon(t *testing.T) {
-	t.Skip() // See https://github.com/sourcegraph/sourcegraph/issues/1649
 	if testing.Short() {
 		t.Skip()
 	}
