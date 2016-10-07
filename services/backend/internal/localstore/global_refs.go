@@ -163,8 +163,24 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	defRepoIdx := -1
 	// refsByRepo groups each referencing file by repo.
 	refsByRepo := make(map[string]*sourcegraph.DefRepoRef)
+	missingRepos := make(map[string]struct{})
 	for _, r := range dbRefResult {
+		if _, ok := missingRepos[r.Repo]; ok {
+			continue
+		}
+
 		if _, ok := refsByRepo[r.Repo]; !ok {
+			// HACK: check if the repo really exists in the DB or not. This is
+			// because some number of repos in the table do not exist in the DB
+			// (are Go import paths accidently inserted somehow), so the later
+			// VerifyUserHasReadAccessToDefRepoRefs will outright fail due to the
+			// repos not existing
+			if _, err := Repos.getByURI(ctx, r.Repo); err != nil {
+				log15.Warn("GlobalRefs.Get found missing repo", "repo", r.Repo)
+				missingRepos[r.Repo] = struct{}{}
+				continue
+			}
+
 			refsByRepo[r.Repo] = &sourcegraph.DefRepoRef{
 				Repo:  r.Repo,
 				Count: int32(r.RepoCount),
