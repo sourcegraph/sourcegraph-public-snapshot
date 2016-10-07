@@ -40,6 +40,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestRobotsTxt(t *testing.T) {
+	t.Skip() // See https://github.com/sourcegraph/sourcegraph/issues/1649
+	return
+
 	if testing.Short() {
 		t.Skip()
 	}
@@ -71,6 +74,8 @@ func TestRobotsTxt(t *testing.T) {
 }
 
 func TestFavicon(t *testing.T) {
+	t.Skip() // See https://github.com/sourcegraph/sourcegraph/issues/1649
+	return
 	if testing.Short() {
 		t.Skip()
 	}
