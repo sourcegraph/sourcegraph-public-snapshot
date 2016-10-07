@@ -11,7 +11,6 @@
     "lib": ["es2016", "dom"],
     "types": ["mocha", "lodash"],
     "jsx": "react",
-    "strictNullChecks": true,
     "sourceMap": true,
     "experimentalDecorators": true,
     "noEmit": true

@@ -19,7 +19,7 @@ module.exports = {
 	],
 	module: {
 		loaders: [
-			{test: /\.tsx?$/, loader: 'ts-loader', query: {compilerOptions: {"skipLibCheck": true}}},
+			{test: /\.tsx?$/, loader: 'ts-loader', query: {compilerOptions: {"strictNullChecks": false, noEmit: false}}},
 			{test: /\.json$/, exclude: /node_modules/, loader: "json-loader"},
 			{test: /\.svg$/, loader: "null"},
 			{test: /\.css$/, loader: "null"},
