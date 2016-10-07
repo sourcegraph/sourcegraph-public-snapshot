@@ -355,7 +355,6 @@ type MockDefs struct {
 	List             func(v0 context.Context, v1 *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
 	ListRefs         func(v0 context.Context, v1 *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
 	ListRefLocations func(v0 context.Context, v1 *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
-	ListAuthors      func(v0 context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error)
 	RefreshIndex     func(v0 context.Context, v1 *sourcegraph.DefsRefreshIndexOp) error
 }
 
