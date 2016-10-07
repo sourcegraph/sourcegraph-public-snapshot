@@ -160,9 +160,16 @@ export class Editor implements IDisposable {
 			);
 		}, "");
 
-		// HACK: VSCode doesn't have a clean API for removing context menu items we don't want. The Copy action shows up always so remove it manually.
 		let editorMenuItems = MenuRegistry.getMenuItems(MenuId.EditorContext);
+		let commandOrder = {
+			"editor.action.referenceSearch.trigger": 1.1,
+			"editor.action.previewDeclaration": 1.2,
+			"editor.action.goToDeclaration": 1.3,
+		};
 		for (let item of editorMenuItems) {
+			item.order = commandOrder[item.command.id] || item.order;
+			// HACK: VSCode doesn't have a clean API for removing context menu items
+			// we don't want. The Copy action shows up always so remove it manually.
 			if (item.command.id === "editor.action.clipboardCopyAction") {
 				const idx = editorMenuItems.indexOf(item);
 				if (idx >= 0) {
