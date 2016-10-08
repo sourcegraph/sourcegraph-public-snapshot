@@ -15,11 +15,14 @@ import {colors} from "sourcegraph/components/utils/colors";
 import {Container} from "sourcegraph/Container";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import {URIUtils} from "sourcegraph/core/uri";
-import { Editor } from "sourcegraph/editor/Editor";
-import { EditorComponent } from "sourcegraph/editor/EditorComponent";
-import {IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
 import { trimRepo } from "sourcegraph/repo";
 import {Store} from "sourcegraph/Store";
+
+// Don't load too much from vscode, because this file is loaded in the
+// initial bundle and we want to keep the initial bundle small.
+import {Editor} from "sourcegraph/editor/Editor";
+import {EditorComponent} from "sourcegraph/editor/EditorComponent";
+import {IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
 import {IRange} from "vs/editor/common/editorCommon";
 
 interface Props {

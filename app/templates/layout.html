@@ -62,7 +62,7 @@
 		{{end}}
 
 		{{if not .Meta.SEO}}
-			<script src="{{assetURL "/main.browser.js"}}"></script>
+			<script src="{{mainJavaScriptBundleURL}}"></script>
 		{{end}}
 
 		{{appconf.ExtraBodyHTML}}

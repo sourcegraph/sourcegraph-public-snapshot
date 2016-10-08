@@ -6,6 +6,10 @@ const ProgressBarPlugin = require("progress-bar-webpack-plugin");
 
 const production = (process.env.NODE_ENV === "production");
 
+// 'http' scheme is just used to be able to parse the URL.
+const devServerAddr = url.parse(`http://${process.env.WEBPACK_DEV_SERVER_ADDR || "localhost:8080"}`)
+const publicURL = url.parse(process.env.PUBLIC_WEBPACK_DEV_SERVER_URL || process.env.WEBPACK_DEV_SERVER_URL || "http://localhost:8080");
+
 // Check dev dependencies.
 if (!production) {
 	if (process.platform === "darwin") {
@@ -40,7 +44,6 @@ if (production) {
 	plugins.push(
 		new webpack.optimize.OccurrenceOrderPlugin(),
 		new webpack.optimize.DedupePlugin(),
-		new webpack.optimize.LimitChunkCountPlugin({maxChunks: 1}),
 		new webpack.optimize.UglifyJsPlugin({
 			compress: {
 				warnings: false,
@@ -54,20 +57,6 @@ if (useHot) {
 	plugins.push(
 		new webpack.HotModuleReplacementPlugin()
 	);
-}
-
-// port to listen
-var webpackDevServerPort = 8080;
-if (process.env.WEBPACK_DEV_SERVER_URL) {
-	webpackDevServerPort = url.parse(process.env.WEBPACK_DEV_SERVER_URL).port;
-}
-// address to listen on
-const webpackDevServerAddr = process.env.WEBPACK_DEV_SERVER_ADDR || "127.0.0.1";
-// public address of webpack dev server
-var publicWebpackDevServer = "localhost:8080";
-if (process.env.PUBLIC_WEBPACK_DEV_SERVER_URL) {
-	var uStruct = url.parse(process.env.PUBLIC_WEBPACK_DEV_SERVER_URL);
-	publicWebpackDevServer = uStruct.host;
 }
 
 plugins.push(new UnusedFilesWebpackPlugin({
@@ -108,7 +97,8 @@ module.exports = {
 	devtool: devtool,
 	output: {
 		path: `${__dirname}/assets`,
-		filename: "[name].browser.js",
+		filename: production ? "[name].[hash].js" : "[name].js",
+		chunkFilename: "c-[chunkhash].js",
 		sourceMapFilename: "[file].map",
 	},
 	plugins: plugins,
@@ -131,9 +121,10 @@ module.exports = {
   },
 	postcss: [require("postcss-modules-values"), autoprefixer({remove: false})],
 	devServer: {
-		host: webpackDevServerAddr,
-		public: publicWebpackDevServer,
-		port: webpackDevServerPort,
+		contentBase: `${__dirname}/assets`,
+		host: devServerAddr.hostname,
+		public: `${publicURL.hostname}:${publicURL.port}`,
+		port: devServerAddr.port,
 		headers: {"Access-Control-Allow-Origin": "*"},
 		noInfo: true,
 		quiet: true,
@@ -146,5 +137,5 @@ if (useHot) {
 	module.exports.entry.unshift("react-hot-loader/patch");
 }
 if (!production) {
-	module.exports.entry.unshift(`webpack-dev-server/client?http://${publicWebpackDevServer}`);
+	module.exports.entry.unshift(`webpack-dev-server/client?${publicURL.format()}`);
 }

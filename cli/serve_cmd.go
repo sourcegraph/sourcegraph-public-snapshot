@@ -257,7 +257,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(subRouter(newRouter().PathPrefix("/.api/"))))))
 	sm.Handle("/", gziphandler.GzipHandler(handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New(newRouter())))))
-	sm.Handle(assets.URLPathPrefix+"/", http.StripPrefix(assets.URLPathPrefix, assets.NewHandler(newRouter())))
+	assets.Mount(sm)
 
 	if (c.CertFile != "" || c.KeyFile != "") && c.HTTPSAddr == "" {
 		return errors.New("HTTPS listen address (--https-addr) must be specified if TLS cert and key are set")

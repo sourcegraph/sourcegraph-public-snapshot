@@ -61,6 +61,12 @@ func (c *PackageCmd) Execute(args []string) error {
 	}
 
 	if !c.SkipWebpack {
+		// Remove old bundle.
+		rmCmd := exec.Command("git", "clean", "-fdx", "ui/assets")
+		if err := execCmd(rmCmd); err != nil {
+			return err
+		}
+
 		webpackCmd := exec.Command("npm", "run", "build")
 		webpackCmd.Dir = "./ui"
 		if err := execCmd(webpackCmd); err != nil {
