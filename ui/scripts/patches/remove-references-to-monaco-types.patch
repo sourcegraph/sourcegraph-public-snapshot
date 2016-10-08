@@ -1,0 +1,24 @@
+diff a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.d.ts b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.d.ts
+--- a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.d.ts
++++ b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.d.ts
+@@ -97,4 +97,3 @@ export declare function colorizeModelLine(model: IModel, lineNumber: number, tab
+ /**
+  * @internal
+  */
+-export declare function createMonacoEditorAPI(): typeof monaco.editor;
+diff a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.d.ts b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.d.ts
+--- a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.d.ts
++++ b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.d.ts
+@@ -229,4 +229,3 @@ export interface CompletionItemProvider {
+ /**
+  * @internal
+  */
+-export declare function createMonacoLanguagesAPI(): typeof monaco.languages;
+diff a/ui/node_modules/vscode/src/vs/editor/common/standalone/standaloneBase.d.ts b/ui/node_modules/vscode/src/vs/editor/common/standalone/standaloneBase.d.ts
+--- a/ui/node_modules/vscode/src/vs/editor/common/standalone/standaloneBase.d.ts
++++ b/ui/node_modules/vscode/src/vs/editor/common/standalone/standaloneBase.d.ts
+@@ -185,4 +185,3 @@ export declare enum KeyCode {
+      */
+     MAX_VALUE = 109,
+ }
+-export declare function createMonacoBaseAPI(): typeof monaco;

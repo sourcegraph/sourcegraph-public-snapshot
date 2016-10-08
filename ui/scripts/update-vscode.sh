@@ -37,6 +37,12 @@ find "$VENDOR_DIR" -name '*.ts' \
 	 -exec $sedi 's/import '"'"'vs'$'\\''/css!\([^'"'"']*\)'"'"';/import '"'"'\1.css'"'"';/g' \{\} \;
 echo OK
 
+# Remove dependency on Monaco, to avoid people accidentally using
+# monaco.d.ts types (which virtually all are aliases to types defined
+# elsewhere in vscode, and having two names for the same type can be
+# confusing).
+rm "$VENDOR_DIR"/src/vs/monaco.d.ts
+
 echo -n Applying Sourcegraph-specific patches...
 patch --no-backup-if-mismatch --quiet --directory "$REPO_DIR" -p1 < "$REPO_DIR"/ui/scripts/vscode.patch
 echo OK

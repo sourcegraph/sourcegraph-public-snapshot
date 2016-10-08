@@ -37,8 +37,192 @@ index 87d36dd..d44027f 100644
  }
  var getWorkerUrl = flags.getCrossOriginWorkerScriptUrl || defaultGetWorkerUrl;
  
+diff --git a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
+index d71ab64..2cd1d05 100644
+--- a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
++++ b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
+@@ -236,65 +236,3 @@ export function colorize(text:string, languageId:string, options:IColorizerOptio
+ export function colorizeModelLine(model:IModel, lineNumber:number, tabSize:number = 4): string {
+ 	return Colorizer.colorizeModelLine(model, lineNumber, tabSize);
+ }
+-
+-/**
+- * @internal
+- */
+-export function createMonacoEditorAPI(): typeof monaco.editor {
+-	return {
+-		// methods
+-		create: <any>create,
+-		createDiffEditor: createDiffEditor,
+-		createDiffNavigator: createDiffNavigator,
+-
+-		createModel: createModel,
+-		setModelLanguage: setModelLanguage,
+-		setModelMarkers: setModelMarkers,
+-		getModels: getModels,
+-		getModel: getModel,
+-		onDidCreateModel: onDidCreateModel,
+-		onWillDisposeModel: onWillDisposeModel,
+-		onDidChangeModelLanguage: onDidChangeModelLanguage,
+-
+-
+-		createWebWorker: createWebWorker,
+-		colorizeElement: colorizeElement,
+-		colorize: colorize,
+-		colorizeModelLine: colorizeModelLine,
+-
+-		// enums
+-		ScrollbarVisibility: ScrollbarVisibility,
+-		WrappingIndent: editorCommon.WrappingIndent,
+-		OverviewRulerLane: editorCommon.OverviewRulerLane,
+-		EndOfLinePreference: editorCommon.EndOfLinePreference,
+-		DefaultEndOfLine: editorCommon.DefaultEndOfLine,
+-		EndOfLineSequence: editorCommon.EndOfLineSequence,
+-		TrackedRangeStickiness: editorCommon.TrackedRangeStickiness,
+-		CursorChangeReason: editorCommon.CursorChangeReason,
+-		MouseTargetType: editorCommon.MouseTargetType,
+-		TextEditorCursorStyle: editorCommon.TextEditorCursorStyle,
+-		TextEditorCursorBlinkingStyle: editorCommon.TextEditorCursorBlinkingStyle,
+-		ContentWidgetPositionPreference: ContentWidgetPositionPreference,
+-		OverlayWidgetPositionPreference: OverlayWidgetPositionPreference,
+-
+-		// classes
+-		InternalEditorScrollbarOptions: <any>editorCommon.InternalEditorScrollbarOptions,
+-		EditorWrappingInfo: <any>editorCommon.EditorWrappingInfo,
+-		InternalEditorViewOptions: <any>editorCommon.InternalEditorViewOptions,
+-		EditorContribOptions: <any>editorCommon.EditorContribOptions,
+-		InternalEditorOptions: <any>editorCommon.InternalEditorOptions,
+-		OverviewRulerPosition: <any>editorCommon.OverviewRulerPosition,
+-		EditorLayoutInfo: <any>editorCommon.EditorLayoutInfo,
+-		BareFontInfo: <any>editorCommon.BareFontInfo,
+-		FontInfo: <any>editorCommon.FontInfo,
+-
+-		// vars
+-		EditorType: editorCommon.EditorType,
+-		CursorMoveByUnit: editorCommon.CursorMoveByUnit,
+-		CursorMovePosition: editorCommon.CursorMovePosition,
+-		EditorScrollDirection: editorCommon.EditorScrollDirection,
+-		EditorScrollByUnit: editorCommon.EditorScrollByUnit,
+-		RevealLineAtArgument: editorCommon.RevealLineAtArgument,
+-		Handler: editorCommon.Handler,
+-	};
+-}
+diff --git a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts
+index 1dd1702..db4e99f 100644
+--- a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts
++++ b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts
+@@ -479,39 +479,3 @@ class SuggestAdapter {
+ 		});
+ 	}
+ }
+-
+-/**
+- * @internal
+- */
+-export function createMonacoLanguagesAPI(): typeof monaco.languages {
+-	return {
+-		register: register,
+-		getLanguages: getLanguages,
+-		onLanguage: onLanguage,
+-
+-		// provider methods
+-		setLanguageConfiguration: setLanguageConfiguration,
+-		setTokensProvider: setTokensProvider,
+-		setMonarchTokensProvider: setMonarchTokensProvider,
+-		registerReferenceProvider: registerReferenceProvider,
+-		registerRenameProvider: registerRenameProvider,
+-		registerCompletionItemProvider: registerCompletionItemProvider,
+-		registerSignatureHelpProvider: registerSignatureHelpProvider,
+-		registerHoverProvider: registerHoverProvider,
+-		registerDocumentSymbolProvider: registerDocumentSymbolProvider,
+-		registerDocumentHighlightProvider: registerDocumentHighlightProvider,
+-		registerDefinitionProvider: registerDefinitionProvider,
+-		registerCodeLensProvider: registerCodeLensProvider,
+-		registerCodeActionProvider: registerCodeActionProvider,
+-		registerDocumentFormattingEditProvider: registerDocumentFormattingEditProvider,
+-		registerDocumentRangeFormattingEditProvider: registerDocumentRangeFormattingEditProvider,
+-		registerOnTypeFormattingEditProvider: registerOnTypeFormattingEditProvider,
+-		registerLinkProvider: registerLinkProvider,
+-
+-		// enums
+-		DocumentHighlightKind: modes.DocumentHighlightKind,
+-		CompletionItemKind: CompletionItemKind,
+-		SymbolKind: modes.SymbolKind,
+-		IndentAction: modes.IndentAction
+-	};
+-}
+diff --git a/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts b/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
+index b4e8ec5..9413c47 100644
+--- a/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
++++ b/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
+@@ -19,7 +19,6 @@ import {computeLinks} from 'vs/editor/common/modes/linkComputer';
+ import {BasicInplaceReplace} from 'vs/editor/common/modes/supports/inplaceReplaceSupport';
+ import {IRawModelData} from 'vs/editor/common/services/editorSimpleWorkerCommon';
+ import {getWordAtText, ensureValidWordDefinition} from 'vs/editor/common/model/wordHelper';
+-import {createMonacoBaseAPI} from 'vs/editor/common/standalone/standaloneBase';
+ 
+ export interface IMirrorModel {
+ 	uri: URI;
+@@ -397,9 +396,3 @@ export class EditorSimpleWorkerImpl extends BaseEditorSimpleWorker implements IR
+ export function create(): IRequestHandler {
+ 	return new EditorSimpleWorkerImpl();
+ }
+-
+-var global:any = self;
+-let isWebWorker = (typeof global.importScripts === 'function');
+-if (isWebWorker) {
+-	global.monaco = createMonacoBaseAPI();
+-}
+diff --git a/ui/node_modules/vscode/src/vs/editor/common/standalone/standaloneBase.ts b/ui/node_modules/vscode/src/vs/editor/common/standalone/standaloneBase.ts
+index 463339e..af17265 100644
+--- a/ui/node_modules/vscode/src/vs/editor/common/standalone/standaloneBase.ts
++++ b/ui/node_modules/vscode/src/vs/editor/common/standalone/standaloneBase.ts
+@@ -214,21 +214,3 @@ export enum KeyCode {
+ 	 */
+ 	MAX_VALUE
+ }
+-
+-export function createMonacoBaseAPI(): typeof monaco {
+-	return {
+-		editor: undefined,
+-		languages: undefined,
+-		CancellationTokenSource: CancellationTokenSource,
+-		Emitter: Emitter,
+-		KeyCode: KeyCode,
+-		KeyMod: KeyMod,
+-		Position: Position,
+-		Range: Range,
+-		Selection: Selection,
+-		SelectionDirection: SelectionDirection,
+-		Severity: Severity,
+-		Promise: TPromise,
+-		Uri: URI
+-	};
+-}
+diff --git a/ui/node_modules/vscode/src/vs/editor/editor.main.ts b/ui/node_modules/vscode/src/vs/editor/editor.main.ts
+index db23f0e..21ea072 100644
+--- a/ui/node_modules/vscode/src/vs/editor/editor.main.ts
++++ b/ui/node_modules/vscode/src/vs/editor/editor.main.ts
+@@ -10,16 +10,8 @@ import 'vs/editor/contrib/quickOpen/browser/quickOutline';
+ import 'vs/editor/contrib/quickOpen/browser/gotoLine';
+ import 'vs/editor/contrib/quickOpen/browser/quickCommand';
+ 
+-import {createMonacoBaseAPI} from 'vs/editor/common/standalone/standaloneBase';
+-import {createMonacoEditorAPI} from 'vs/editor/browser/standalone/standaloneEditor';
+-import {createMonacoLanguagesAPI} from 'vs/editor/browser/standalone/standaloneLanguages';
+ import {DefaultConfig} from 'vs/editor/common/config/defaultConfig';
+ 
+ // Set defaults for standalone editor
+ DefaultConfig.editor.wrappingIndent = 'none';
+ DefaultConfig.editor.folding = false;
+-
+-var global:any = self;
+-global.monaco = createMonacoBaseAPI();
+-global.monaco.editor = createMonacoEditorAPI();
+-global.monaco.languages = createMonacoLanguagesAPI();
+\ No newline at end of file
 diff --git a/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts b/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
-index 2f23db4..a5650e9 100644
+index 2f23db4..33fedfb 100644
 --- a/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
 +++ b/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
 @@ -83,37 +83,9 @@ export class InstantiationService implements IInstantiationService {
