@@ -45,6 +45,9 @@ const (
 
 	InternalAppdashRecordSpan = "internal.appdash.record-span"
 	BetaSubscription          = "beta-subscription"
+	Orgs                      = "orgs"
+	OrgMembers                = "org-members"
+	OrgInvites                = "org-invites"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -57,6 +60,9 @@ func New(base *mux.Router) *mux.Router {
 	base.StrictSlash(true)
 
 	base.Path("/beta-subscription").Methods("POST").Name(BetaSubscription)
+	base.Path("/orgs").Methods("POST").Name(Orgs)
+	base.Path("/org-members").Methods("POST").Name(OrgMembers)
+	base.Path("/org-invites").Methods("POST").Name(OrgInvites)
 
 	base.Path("/annotations").Methods("GET").Name(Annotations)
 

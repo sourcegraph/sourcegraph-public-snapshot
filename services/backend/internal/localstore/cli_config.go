@@ -12,4 +12,5 @@ var (
 	RepoStatuses = &repoStatuses{}
 	RepoVCS      = &repoVCS{}
 	Repos        = &repos{}
+	UserInvites  = &userInvites{}
 )

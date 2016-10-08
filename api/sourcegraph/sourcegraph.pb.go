@@ -1192,3 +1192,58 @@ type SearchResultsList struct {
 	// SearchOptions is a list of options to a global search query.
 	SearchQueryOptions []*SearchOptions `json:"SearchQueryOptions,omitempty"`
 }
+
+// OrgListOptions holds the options for listing organization details
+type OrgListOptions struct {
+	OrgName  string `json:"OrgName,omitempty"`
+	Username string `json:"Username,omitempty"`
+	OrgID    string `json:"OrgID,omitempty"`
+}
+
+// OrgsList is a list of GitHub organizations for a given user
+type OrgsList struct {
+	Orgs []*Org `json:"Orgs,omitempty"`
+}
+
+// Org holds the result of an org for Orgs.ListOrgs
+type Org struct {
+	Login       string `json:"Login"`
+	ID          int32  `json:"ID"`
+	AvatarURL   string `json:"AvatarURL,omitempty"`
+	Name        string `json:"Name,omitempty"`
+	Blog        string `json:"Blog,omitempty"`
+	Location    string `json:"Location,omitempty"`
+	Email       string `json:"Email,omitempty"`
+	Description string `json:"Description,omitempty"`
+}
+
+// OrgMembersList is a list of GitHub organization members for an organization
+type OrgMembersList struct {
+	OrgMembers []*OrgMember `json:"OrgMembers,omitempty"`
+}
+
+// OrgMember holds the result of an org member for Orgs.ListOrgMembers
+type OrgMember struct {
+	Login           string      `json:"Login"`
+	ID              int32       `json:"ID"`
+	AvatarURL       string      `json:"AvatarURL,omitempty"`
+	Email           string      `json:"Email,omitempty"`
+	SourcegraphUser bool        `json:"SourcegraphUser,omitempty"`
+	CanInvite       bool        `json:"CanInvite,omitempty"`
+	Invite          *UserInvite `json:"Invite,omitempty"`
+}
+
+// UserInvite holds the result of an invite for Orgs.InviteUser
+type UserInvite struct {
+	UserID    string     `json:"UserID,omitempty"`
+	UserEmail string     `json:"UserEmail,omitempty"`
+	OrgID     string     `json:"OrgID,omitempty"`
+	OrgName   string     `json:"OrgName,omitempty"`
+	SentAt    *time.Time `json:"SentAt,omitempty"`
+	URI       string     `json:"URI,omitempty"`
+}
+
+type UserInviteResponse struct {
+	OrgName string `json:"OrgName,omitempty"`
+	OrgID   string `json:"OrgID,omitempty"`
+}

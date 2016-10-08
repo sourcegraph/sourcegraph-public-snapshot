@@ -17,7 +17,7 @@ export class TableComponent extends React.Component<{}, State> {
 	render(): JSX.Element | null {
 		return (
 			<div className={base.mv4}>
-				<Heading level="3" className={base.mb2}>Table</Heading>
+				<Heading level={3} className={base.mb2}>Table</Heading>
 
 				<Tabs color="purple">
 					<TabItem
@@ -44,7 +44,7 @@ export class TableComponent extends React.Component<{}, State> {
 					<TabPanels active={this.state.activeExample}>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="7" className={base.mb3} color="cool_mid_gray">Default table style</Heading>
+								<Heading level={7} className={base.mb3} color="cool_mid_gray">Default table style</Heading>
 								<Table style={{width: "100%"}}>
 									<thead>
 										<tr>
@@ -120,7 +120,7 @@ export class TableComponent extends React.Component<{}, State> {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="7" className={base.mb3} color="cool_mid_gray">Default table style</Heading>
+								<Heading level={7} className={base.mb3} color="cool_mid_gray">Default table style</Heading>
 								<Table style={{width: "100%"}} bordered={true}>
 									<thead>
 										<tr>
@@ -196,7 +196,7 @@ export class TableComponent extends React.Component<{}, State> {
 						</TabPanel>
 					</TabPanels>
 				</Panel>
-				<Heading level="4" className={classNames(base.mt5, base.mb3)}>Properties</Heading>
+				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{width: "100%"}}>
 						<thead>

@@ -3,7 +3,7 @@
 import * as React from "react";
 import * as styles from "sourcegraph/user/settings/styles/Repos.css";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {Input, Heading, Button, ToggleSwitch} from "sourcegraph/components";
+import {Input, Heading, Button} from "sourcegraph/components";
 import {RepoLink} from "sourcegraph/components/RepoLink";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
@@ -78,7 +78,7 @@ export class Repos extends React.Component<Props, State> {
 			<div className={base.pb6}>
 				<header className={styles.header}>
 					<Heading level={7} color="gray">Your repositories</Heading>
-					<p>To get jump-to-definition, search, and code examples, enable indexing on your repositories using the toggle. Private code indexed on Sourcegraph is only available to you and those with permissions to the underlying GitHub repository.</p>
+					{!context.hasPrivateGitHubToken() && <p>Private code indexed on Sourcegraph is only available to you and those with permissions to the underlying GitHub repository.</p>}
 					<div className={styles.input_bar}>
 						{!context.gitHubToken && <GitHubAuthButton returnTo={this.props.location} className={styles.github_button}>Add public repositories</GitHubAuthButton>}
 						{!context.hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>}
@@ -94,25 +94,16 @@ export class Repos extends React.Component<Props, State> {
 							spellCheck={false}
 							className={styles.filter_input}
 							onChange={this._handleFilter} />
-						<span className={styles.list_label}>Enable Indexing</span>
 					</div>}
 					<div className={styles.repos_list}>
 						{repos.length > 0 && repos.map((repo, i) =>
 							<div className={styles.row} key={i}>
 								<div className={styles.info}>
-									{repo.ID ?
-										<RepoLink repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} /> :
-										(repo.URI && repo.URI.replace("github.com/", "").replace("/", " / ", 1)) || `${repo.Owner} / ${repo.Name}`
-									}
+									<RepoLink repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} />
 									{repo.Description && <p className={styles.description}>
 									{context.hasHookGitHubToken() && <button onClick={() => this._enableWebhook(repo.URI || `github.com/${repo.Owner}/${repo.Name}`)}>Enable Webhook</button>}
 										{repo.Description.length > 100 ? `${repo.Description.substring(0, 100)}...` : repo.Description}
 									</p>}
-								</div>
-								<div className={styles.toggle}>
-									<ToggleSwitch defaultChecked={Boolean(repo.ID)} onChange={(checked) => {
-										this._toggleRepo(repo);
-									}}/>
 								</div>
 							</div>
 						)}

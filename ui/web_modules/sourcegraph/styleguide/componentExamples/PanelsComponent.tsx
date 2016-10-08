@@ -17,7 +17,7 @@ export class PanelsComponent extends React.Component<{}, State> {
 	render(): JSX.Element | null {
 		return (
 			<div className={base.mv4}>
-				<Heading level="3" className={base.mb2}>Panels</Heading>
+				<Heading level={3} className={base.mb2}>Panels</Heading>
 
 				<Tabs color="purple">
 					<TabItem
@@ -44,7 +44,7 @@ export class PanelsComponent extends React.Component<{}, State> {
 					<TabPanels active={this.state.activeExample}>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="7" className={base.mb3} color="cool_mid_gray">Outlined panels</Heading>
+								<Heading level={7} className={base.mv3} color="cool_mid_gray">Solid panels</Heading>
 								<Panel className={classNames(base.mb3, base.pa3)} color="blue">
 									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
 								</Panel>
@@ -57,20 +57,7 @@ export class PanelsComponent extends React.Component<{}, State> {
 								<Panel className={classNames(base.mb3, base.pa3)} color="orange">
 									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
 								</Panel>
-								<Heading level="7" className={base.mv3} color="cool_mid_gray">Solid panels</Heading>
-								<Panel className={classNames(base.mb3, base.pa3)} inverse={true} color="blue">
-									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
-								</Panel>
-								<Panel className={classNames(base.mb3, base.pa3)} inverse={true} color="purple">
-									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
-								</Panel>
-								<Panel className={classNames(base.mb3, base.pa3)} inverse={true} color="green">
-									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
-								</Panel>
-								<Panel className={classNames(base.mb3, base.pa3)} inverse={true} color="orange">
-									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
-								</Panel>
-								<Heading level="7" className={base.mv3} color="cool_mid_gray">Shadowed Panels</Heading>
+								<Heading level={7} className={base.mv3} color="cool_mid_gray">Shadowed Panels</Heading>
 								<Panel className={classNames(base.mb3, base.pa3)} hoverLevel="low">
 									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
 								</Panel>
@@ -95,18 +82,6 @@ export class PanelsComponent extends React.Component<{}, State> {
 <Panel color="orange">
 	For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
 </Panel>
-<Panel inverse={true} color="blue">
-	For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
-</Panel>
-<Panel inverse={true} color="purple">
-	For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
-</Panel>
-<Panel inverse={true} color="green">
-	For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
-</Panel>
-<Panel inverse={true} color="orange">
-	For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
-</Panel>
 <Panel hoverLevel="low">
 	For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
 </Panel>
@@ -120,7 +95,7 @@ export class PanelsComponent extends React.Component<{}, State> {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Panel hoverLevel="low" className={classNames(base.mb3, base.pa3)} hover={true}>
+								<Panel hoverLevel="high" className={classNames(base.mb3, base.pa3)} hover={true}>
 									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
 								</Panel>
 							</div>
@@ -139,7 +114,7 @@ export class PanelsComponent extends React.Component<{}, State> {
 						</TabPanel>
 					</TabPanels>
 				</Panel>
-				<Heading level="4" className={classNames(base.mt5, base.mb3)}>Properties</Heading>
+				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{width: "100%"}}>
 						<thead>

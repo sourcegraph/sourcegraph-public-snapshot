@@ -13,7 +13,7 @@ export function UnsupportedLanguageAlert({ext}: Props): JSX.Element {
 		marginRight: whitespace[2],
 	};
 
-	return <Panel color="orange" inverse={true} style={{margin: whitespace[2]}}>
+	return <Panel color="orange" style={{margin: whitespace[2]}}>
 		<Base px={3} py={1}>
 			<Alert width={14} style={iconSx} />
 			{ext

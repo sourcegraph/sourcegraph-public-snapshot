@@ -78,6 +78,9 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.AsyncRefreshIndexes).Handler(httptrace.TraceRoute(handler(serveRefreshIndexes)))
 
 	m.Get(apirouter.SourcegraphDesktop).Handler(httptrace.TraceRoute(handler(serveSourcegraphDesktopUpdateURL)))
+	m.Get(apirouter.Orgs).Handler(httptrace.TraceRoute(handler(serveOrgs)))
+	m.Get(apirouter.OrgMembers).Handler(httptrace.TraceRoute(handler(serveOrgMembers)))
+	m.Get(apirouter.OrgInvites).Handler(httptrace.TraceRoute(handler(serveOrgInvites)))
 
 	m.Get(apirouter.BetaSubscription).Handler(httptrace.TraceRoute(handler(serveBetaSubscription)))
 

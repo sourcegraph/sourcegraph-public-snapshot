@@ -216,7 +216,7 @@ export class Home extends Container<HomeProps, HomeState> {
 				}
 
 				<div className={colors.bg_purple} style={{paddingTop: "50px", paddingBottom: "50px"}}>
-					<Panel className={base.center} style={{maxWidth: "930px"}}>
+					<Panel style={{maxWidth: "930px", margin: "auto"}}>
 						{/* section showing clients */}
 						<div className={classNames(base.center, base.pa4)}>
 							<FlexContainer wrap={true}>

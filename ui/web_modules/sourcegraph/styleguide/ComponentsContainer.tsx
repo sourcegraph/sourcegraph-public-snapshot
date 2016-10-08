@@ -17,6 +17,7 @@ import {
 	FormsComponent,
 	ListComponent,
 	Symbols,
+	UserComponent,
 } from "sourcegraph/styleguide/componentExamples";
 
 export class ComponentsContainer extends React.Component<{}, any> {
@@ -73,24 +74,24 @@ export class ComponentsContainer extends React.Component<{}, any> {
 
 				<Heading level="2" underline="purple" className={base.mt5}>UI Components</Heading>
 				<div className={base.mv5}>
-					<a id="components-headings"></a>
-					<HeadingsComponent />
-				</div>
-				<div className={base.mv5}>
-					<a id="components-symbols"></a>
-					<Symbols />
-				</div>
-				<div className={base.mv5}>
 					<a id="components-buttons"></a>
 					<ButtonsComponent />
+				</div>
+				<div className={base.mv5}>
+					<a id="components-checklists"></a>
+					<ChecklistsComponent />
 				</div>
 				<div className={base.mv5}>
 					<a id="components-forms"></a>
 					<FormsComponent />
 				</div>
 				<div className={base.mv5}>
-					<a id="components-tabs"></a>
-					<TabsComponent />
+					<a id="components-headings"></a>
+					<HeadingsComponent />
+				</div>
+				<div className={base.mv5}>
+					<a id="components-list"></a>
+					<ListComponent />
 				</div>
 				<div className={base.mv5}>
 					<a id="components-panels"></a>
@@ -101,16 +102,20 @@ export class ComponentsContainer extends React.Component<{}, any> {
 					<StepperComponent />
 				</div>
 				<div className={base.mv5}>
-					<a id="components-checklists"></a>
-					<ChecklistsComponent />
+					<a id="components-symbols"></a>
+					<Symbols />
 				</div>
 				<div className={base.mv5}>
 					<a id="components-table"></a>
 					<TableComponent />
 				</div>
 				<div className={base.mv5}>
-					<a id="components-list"></a>
-					<ListComponent />
+					<a id="components-tabs"></a>
+					<TabsComponent />
+				</div>
+				<div className={base.mv5}>
+					<a id="components-user"></a>
+					<UserComponent />
 				</div>
 			</div>
 		);

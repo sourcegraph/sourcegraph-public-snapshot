@@ -17,17 +17,17 @@ export class StepperComponent extends React.Component<{}, State> {
 	render(): JSX.Element | null {
 		return (
 			<div className={base.mv4}>
-				<Heading level="3" className={base.mb2}>Stepper</Heading>
+				<Heading level={3} className={base.mb2}>Stepper</Heading>
 
 				<Panel hoverLevel="low">
 					<div className={base.pa4}>
-						<Heading level="7" className={base.mb3} color="cool_mid_gray">Colors</Heading>
+						<Heading level={7} className={base.mb3} color="cool_mid_gray">Colors</Heading>
 						<Stepper steps={[null, null, null, null]} stepsComplete={0} color="blue" />
 						<Stepper steps={[null, null, null, null]} stepsComplete={1} color="purple" />
 						<Stepper steps={[null, null, null, null]} stepsComplete={2} color="green" />
 						<Stepper steps={[null, null, null, null]} stepsComplete={3} color="orange" />
 
-						<Heading level="7" className={base.mv3} color="cool_mid_gray">With Labels</Heading>
+						<Heading level={7} className={base.mv3} color="cool_mid_gray">With Labels</Heading>
 						<Stepper steps={["Step 1", "Step 2", "Step 3", "Step 4"]} stepsComplete={4} color="green" />
 
 					</div>
@@ -47,7 +47,7 @@ export class StepperComponent extends React.Component<{}, State> {
 						</pre>
 					</code>
 				</Panel>
-				<Heading level="4" className={classNames(base.mt5, base.mb3)}>Properties</Heading>
+				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{width: "100%"}}>
 						<thead>

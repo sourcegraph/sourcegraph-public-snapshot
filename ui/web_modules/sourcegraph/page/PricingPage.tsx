@@ -25,7 +25,7 @@ export function PricingPage(props: {}) {
 				<div className={styles.plans}>
 					<div className={styles.plan}>
 						<div className={styles.plan_box}>
-							<Panel color="purple" inverse={true} hover={false} className={styles.plan_panel || ""}>
+							<Panel color="purple" hover={false} className={styles.plan_panel || ""}>
 								<Heading level="3" color="white" align="center">Free</Heading>
 								<p>for individuals and teams, for public and private code</p>
 							</Panel>
@@ -52,7 +52,7 @@ export function PricingPage(props: {}) {
 
 					<div className={styles.plan}>
 						<div className={styles.plan_box}>
-							<Panel color="blue" inverse={true} hover={false} className={styles.plan_panel || ""}>
+							<Panel color="blue" hover={false} className={styles.plan_panel || ""}>
 								<Heading level="3" color="white" align="center">Enterprise</Heading>
 								<p>for large teams and <br/>enterprises</p>
 							</Panel>

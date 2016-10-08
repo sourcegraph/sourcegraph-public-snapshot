@@ -53,13 +53,13 @@ export class TabsComponent extends React.Component<{}, State> {
 					<TabPanels active={this.state.activeExample}>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="7" className={base.mb3} color="cool_mid_gray">Default (Blue)</Heading>
+								<Heading level={7} className={base.mb3} color="cool_mid_gray">Default (Blue)</Heading>
 								<Tabs>
 									<TabItem active={true}>Tab 1</TabItem>
 									<TabItem>Tab 2</TabItem>
 									<TabItem>Tab 3</TabItem>
 								</Tabs>
-								<Heading level="7" className={base.mv3} color="cool_mid_gray">Purple</Heading>
+								<Heading level={7} className={base.mv3} color="cool_mid_gray">Purple</Heading>
 								<Tabs color="purple">
 									<TabItem active={true}>Tab 1</TabItem>
 									<TabItem>Tab 2</TabItem>
@@ -88,19 +88,19 @@ export class TabsComponent extends React.Component<{}, State> {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="7" className={base.mb3} color="cool_mid_gray">Small</Heading>
+								<Heading level={7} className={base.mb3} color="cool_mid_gray">Small</Heading>
 								<Tabs size="small">
 									<TabItem active={true}>Tab 1</TabItem>
 									<TabItem>Tab 2</TabItem>
 									<TabItem>Tab 3</TabItem>
 								</Tabs>
-								<Heading level="7" className={base.mv3} color="cool_mid_gray">Default</Heading>
+								<Heading level={7} className={base.mv3} color="cool_mid_gray">Default</Heading>
 								<Tabs>
 									<TabItem active={true}>Tab 1</TabItem>
 									<TabItem>Tab 2</TabItem>
 									<TabItem>Tab 3</TabItem>
 								</Tabs>
-								<Heading level="7" className={base.mv3} color="cool_mid_gray">Large</Heading>
+								<Heading level={7} className={base.mv3} color="cool_mid_gray">Large</Heading>
 								<Tabs size="large">
 									<TabItem active={true}>Tab 1</TabItem>
 									<TabItem>Tab 2</TabItem>
@@ -135,13 +135,13 @@ export class TabsComponent extends React.Component<{}, State> {
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<Heading level="7" className={base.mb3} color="cool_mid_gray">Horizontal (default)</Heading>
+								<Heading level={7} className={base.mb3} color="cool_mid_gray">Horizontal (default)</Heading>
 								<Tabs direction="horizontal">
 									<TabItem active={true}>Tab 1</TabItem>
 									<TabItem>Tab 2</TabItem>
 									<TabItem>Tab 3</TabItem>
 								</Tabs>
-								<Heading level="7" className={base.mv3} color="cool_mid_gray">Vertical</Heading>
+								<Heading level={7} className={base.mv3} color="cool_mid_gray">Vertical</Heading>
 								<Tabs direction="vertical">
 									<TabItem active={true}>Tab 1</TabItem>
 									<TabItem>Tab 2</TabItem>
@@ -170,7 +170,7 @@ export class TabsComponent extends React.Component<{}, State> {
 						</TabPanel>
 					</TabPanels>
 				</Panel>
-				<Heading level="4" className={classNames(base.mt5, base.mb3)}>Tabs Properties</Heading>
+				<Heading level={4} className={classNames(base.mt5, base.mb3)}>Tabs Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{width: "100%"}}>
 						<thead>
@@ -205,7 +205,7 @@ export class TabsComponent extends React.Component<{}, State> {
 						</tbody>
 					</Table>
 				</Panel>
-				<Heading level="4" className={classNames(base.mt5, base.mb3)}>TabItem Properties</Heading>
+				<Heading level={4} className={classNames(base.mt5, base.mb3)}>TabItem Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{width: "100%"}}>
 						<thead>

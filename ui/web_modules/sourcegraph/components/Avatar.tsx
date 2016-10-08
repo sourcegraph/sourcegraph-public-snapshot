@@ -1,26 +1,38 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
-import * as styles from "sourcegraph/components/styles/avatar.css";
-import * as classNames from "classnames";
 
 const PLACEHOLDER_IMAGE = "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
 
 interface Props {
 	img?: string;
-	size: string;
-	className?: string;
+	size: "tiny" | "small" | "medium" | "large";
 }
 
-export function Avatar({className, size, img}: Props) {
-	return (
-		<img className={classNames(className, sizeClasses[size] || styles.small)} src={img || PLACEHOLDER_IMAGE} />
-	);
-}
+export function Avatar({size, img}: Props): JSX.Element {
 
-const sizeClasses = {
-	"tiny": styles.tiny,
-	"small": styles.small,
-	"medium": styles.medium,
-	"large": styles.large,
+	let avatarSize;
+
+	switch (size) {
+		case "tiny":
+			avatarSize = "1.58rem";
+			break;
+		case "small":
+			avatarSize = "2rem";
+			break;
+		case "medium":
+			avatarSize = "3rem";
+			break;
+		case "large":
+			avatarSize = "4rem";
+			break;
+	}
+
+	const sx = {
+		borderRadius: "50%",
+		display: "inline-block",
+		width: avatarSize,
+		height: avatarSize,
+	};
+
+	return <img style={sx} src={img || PLACEHOLDER_IMAGE} />;
+
 };

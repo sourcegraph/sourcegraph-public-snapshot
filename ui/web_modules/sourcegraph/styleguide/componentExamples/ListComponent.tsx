@@ -10,12 +10,12 @@ export class ListComponent extends React.Component<{}, any> {
 	render(): JSX.Element | null {
 		return (
 			<div className={base.mv4}>
-				<Heading level="3" className={base.mb2}>Lists</Heading>
+				<Heading level={3} className={base.mb2}>Lists</Heading>
 
 				<Panel hoverLevel="low">
 					<div className={base.pa4}>
 
-						<Heading level="7" className={base.mb3} color="cool_mid_gray">Normal</Heading>
+						<Heading level={7} className={base.mb3} color="cool_mid_gray">Normal</Heading>
 
 						<List>
 							<li>Item 1</li>
@@ -23,7 +23,7 @@ export class ListComponent extends React.Component<{}, any> {
 							<li>Item 3</li>
 						</List>
 
-						<Heading level="7" className={base.mb3} color="cool_mid_gray">Node style</Heading>
+						<Heading level={7} className={base.mb3} color="cool_mid_gray">Node style</Heading>
 
 						<List listStyle="node">
 							<li>Item 1</li>
@@ -54,7 +54,7 @@ export class ListComponent extends React.Component<{}, any> {
 						</pre>
 					</code>
 				</Panel>
-				<Heading level="4" className={classNames(base.mt5, base.mb3)}>Properties</Heading>
+				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{width: "100%"}}>
 						<thead>

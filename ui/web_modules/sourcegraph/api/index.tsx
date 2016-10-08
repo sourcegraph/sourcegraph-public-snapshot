@@ -577,6 +577,41 @@ export interface MirrorReposRefreshVCSOp {
 export interface None {
 }
 
+export interface Org {
+	Login: string;
+	ID: number;
+	AvatarURL?: string;
+	Name?: string;
+	Blog?: string;
+	Location?: string;
+	Email?: string;
+	Description?: string;
+}
+
+export interface OrgListOptions {
+	OrgName?: string;
+	Username?: string;
+	OrgID?: string;
+}
+
+export interface OrgMember {
+	Login: string;
+	ID: number;
+	AvatarURL?: string;
+	Email?: string;
+	SourcegraphUser?: boolean;
+	CanInvite?: boolean;
+	Invite?: UserInvite;
+}
+
+export interface OrgMembersList {
+	OrgMembers?: OrgMember[];
+}
+
+export interface OrgsList {
+	Orgs?: Org[];
+}
+
 export interface Origin {
 	ID?: string;
 	APIBaseURL?: string;
@@ -1107,6 +1142,20 @@ export interface UserEvent {
 	Message?: string;
 	Version?: string;
 	URL?: string;
+}
+
+export interface UserInvite {
+	UserID?: string;
+	UserEmail?: string;
+	OrgID?: string;
+	OrgName?: string;
+	SentAt?: any;
+	URI?: string;
+}
+
+export interface UserInviteResponse {
+	OrgName?: string;
+	OrgID?: string;
 }
 
 export interface UserList {

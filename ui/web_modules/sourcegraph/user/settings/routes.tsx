@@ -2,13 +2,13 @@
 
 import {PlainRoute} from "react-router";
 import {rel} from "sourcegraph/app/routePatterns";
-import {UserSettingsReposMain} from "sourcegraph/user/settings/UserSettingsReposMain";
+import {SettingsMain} from "sourcegraph/user/settings/SettingsMain";
 
 export const routes: PlainRoute[] = [
 	{
 		path: rel.settings,
 		getComponent: (location, callback) => {
-			callback(null, {navContext: null, main: UserSettingsReposMain} as any);
+			callback(null, {navContext: null, main: SettingsMain} as any);
 		},
 	},
 ];

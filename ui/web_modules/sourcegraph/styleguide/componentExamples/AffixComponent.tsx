@@ -10,7 +10,7 @@ export class AffixComponent extends React.Component<{}, any> {
 	render(): JSX.Element | null {
 		return (
 			<div className={base.mv4}>
-				<Heading level="3" className={base.mb3}>Affix</Heading>
+				<Heading level={3} className={base.mb3}>Affix</Heading>
 
 				<Panel hoverLevel="low">
 					<div className={base.pa4}>
@@ -31,7 +31,7 @@ export class AffixComponent extends React.Component<{}, any> {
 						</pre>
 					</code>
 				</Panel>
-				<Heading level="4" className={classNames(base.mt5, base.mb3)}>Properties</Heading>
+				<Heading level={4} className={classNames(base.mt5, base.mb3)}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{width: "100%"}}>
 						<thead>

@@ -1,37 +1,19 @@
 import * as React from "react";
-
-import {Base} from "sourcegraph/components/Base";
 import {breakpoints} from "sourcegraph/components/utils/layout";
 
 import {media, merge} from "glamor";
 
 interface Props {
-	m?: number;
-	mt?: number;
-	mb?: number;
-	ml?: number;
-	mr?: number;
-	my?: number;
-	mx?: number;
-	p?: number;
-	pt?: number;
-	pb?: number;
-	pl?: number;
-	pr?: number;
-	py?: number;
-	px?: number;
 	align?: "left" | "right";
 	col: number;
 	colSm?: number;
 	colMd?: number;
 	colLg?: number;
-	children?: Array<JSX.Element>;
-	className?: string;
-	style?: Object;
+	children?: JSX.Element[];
+	style?: React.CSSProperties;
 }
 
 export function GridCol(props: Props): JSX.Element {
-
 	// Generate column sizes
 	const colSize: number = 100 / 12;
 	const unit = "%";
@@ -45,14 +27,13 @@ export function GridCol(props: Props): JSX.Element {
 		{
 			boxSizing: "border-box",
 			width: column[props.col],
+			float: props.align,
 		},
 		props.style || {},
 	);
 
-	return <Base
-		{...sx}
-		align={props.align}
-		className={props.className}>
-			{props.children}
-	</Base>;
+	return <div style={props.style}
+		{...sx}>
+		{props.children}
+	</div>;
 }

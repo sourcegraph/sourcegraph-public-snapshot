@@ -4,6 +4,7 @@ import { InjectedRouter, Route } from "react-router";
 import { context } from "sourcegraph/app/context";
 import { getRouteParams, getRoutePattern, getViewName } from "sourcegraph/app/routePatterns";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -341,7 +342,13 @@ class EventLoggerClass {
 					this.logEventForCategory(AnalyticsConstants.CATEGORY_ENGAGEMENT, AnalyticsConstants.ACTION_SUCCESS, action.eventName);
 				}
 				break;
-
+			case OrgActions.OrgsFetched:
+				let orgNames: Array<string> = [];
+				for (let orgs of action.data) {
+					orgNames.push(orgs.Login);
+				}
+				this.setUserProperty("authed_orgs", orgNames);
+				break;
 			default:
 				// All dispatched actions to stores will automatically be tracked by the eventName
 				// of the action (if set). Override this behavior by including another case above.
@@ -424,15 +431,25 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_EXTERNAL, AnalyticsConstants.ACTION_REDIRECT, this.props.location.query["_event"], eventProperties);
 				}
 
+				if (this.props.location.query["_invited_by_user"]) {
+					EventLogger.setUserProperty("invited_by_user", this.props.location.query["_invited_by_user"]);
+					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ORGS, AnalyticsConstants.ACTION_SUCCESS, this.props.location.query["_event"], eventProperties);
+				}
+				if (this.props.location.query["_org_invite"]) {
+					EventLogger.setUserProperty("org_invite", this.props.location.query["_org_invite"]);
+				}
+
 				// Won't take effect until we call replace below, but prevents this
 				// from being called 2x before the setTimeout block runs.
 				delete this.props.location.query["_event"];
 				delete this.props.location.query["_githubAuthed"];
+				delete this.props.location.query["_org_invite"];
+				delete this.props.location.query["_invited_by_user"];
 
 				// Remove _event from the URL to canonicalize the URL and make it
 				// less ugly.
 				const locWithoutEvent = Object.assign({}, this.props.location, {
-					query: Object.assign({}, this.props.location.query, { _event: undefined, _signupChannel: undefined, _onboarding: undefined, _githubAuthed: undefined }), // eslint-disable-line no-undefined
+					query: Object.assign({}, this.props.location.query, { _event: undefined, _signupChannel: undefined, _onboarding: undefined, _githubAuthed: undefined, invited_by_user: undefined, org_invite: undefined }), // eslint-disable-line no-undefined
 					state: Object.assign({}, this.props.location.state, { _onboarding: this.props.location.query["_onboarding"] }),
 				});
 

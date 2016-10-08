@@ -1,13 +1,12 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
+import Helmet from "react-helmet";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
 import "sourcegraph/repo/RepoBackend"; // for side effects
 import {RepoStore} from "sourcegraph/repo/RepoStore";
-import {Repos} from "sourcegraph/user/settings/Repos";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {Store} from "sourcegraph/Store";
+import {Repos} from "sourcegraph/user/settings/Repos";
 
 const reposQuerystring = "RemoteOnly=true";
 
@@ -35,6 +34,11 @@ export class UserSettingsReposMain extends Container<Props, State> {
 	}
 
 	render(): JSX.Element | null {
-		return <Repos repos={this.state.repos ? this.state.repos.Repos : null} location={this.props.location} />;
+		return (
+			<div>
+				<Helmet title="Repositories" />
+				<Repos repos={this.state.repos ? this.state.repos.Repos : null} location={this.props.location} />
+			</div>
+		);
 	}
 }

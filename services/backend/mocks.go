@@ -21,6 +21,7 @@ type MockServices struct {
 	RepoTree     MockRepoTree
 	Repos        MockRepos
 	Search       MockSearch
+	Orgs         MockOrgs
 }
 
 // testContext creates a new context.Context for use by tests

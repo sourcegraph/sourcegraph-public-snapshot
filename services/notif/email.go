@@ -56,8 +56,8 @@ func SendMandrillTemplateBlocking(template, name, email, subject string, templat
 		FromEmail:   "noreply@sourcegraph.com",
 		FromName:    "Sourcegraph",
 		Subject:     subject,
-		TrackOpens:  false,
-		TrackClicks: false,
+		TrackOpens:  true,
+		TrackClicks: true,
 	}, false)
 }
 

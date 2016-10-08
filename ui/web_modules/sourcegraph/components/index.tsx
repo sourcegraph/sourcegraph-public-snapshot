@@ -35,3 +35,5 @@ export {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 export {Base} from "sourcegraph/components/Base";
 export {GridCol} from "sourcegraph/components/GridCol";
 export {GridRow} from "sourcegraph/components/GridRow";
+export {User} from "sourcegraph/components/User";
+export {OrgLogo} from "sourcegraph/components/OrgLogo";

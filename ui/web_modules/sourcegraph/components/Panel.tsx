@@ -1,66 +1,48 @@
-// tslint:disable: typedef ordered-imports
-
+import {hover as gHover} from "glamor";
 import * as React from "react";
-import * as styles from "sourcegraph/components/styles/panel.css";
-import * as classNames from "classnames";
+import {colors} from "sourcegraph/components/utils/index";
 
 interface Props {
 	className?: string;
 	children?: any;
-	color?: string; // blue, white, purple, green, orange, (empty)
-	inverse?: boolean; // light text on color background
-	hoverLevel?: string; // high, low, (empty)
+	color?: "blue" | "purple" | "green" | "orange" | "white" | "coolGray3";
+	hoverLevel?: "high" | "low";
 	hover?: boolean;
 	style?: React.CSSProperties;
 }
 
-type State = any;
+export function Panel(props: Props): JSX.Element {
+	const {
+		className,
+		children,
+		color = "white",
+		hoverLevel,
+		hover,
+		style,
+	} = props;
 
-export class Panel extends React.Component<Props, State> {
-	static defaultProps = {
-		hover: false,
-	};
+	const sx = Object.assign({},
+		{
+			backgroundColor: colors[color](),
+			borderRadius: "3px",
+			color: color !== "white" ? "white" : "inherit",
+		},
+		hoverLevel ? {
+			boxShadow: `0 ${hoverLevel === "high" ? "2px 25px" : "2px 5px"} 2px ${colors.black(0.05)}`,
+		} : null,
+		style,
+	);
 
-	render(): JSX.Element | null {
-		const {children, color, inverse, hover, hoverLevel, className, style} = this.props;
-		return (
-			<div className={classNames(styles.panel, colorClass(color || "", inverse || false), hoverClass(hoverLevel || "", hover || false), className)} style={style}>
-				{children}
-			</div>
-		);
-	}
-}
-
-function colorClass(color: string, inverse: boolean): string {
-	switch (color) {
-	case "blue":
-		return `${styles.color} ${inverse ? styles.inverse_blue : styles.blue}`;
-	case "white":
-		return `${styles.color} ${inverse ? styles.inverse_white : styles.white}`;
-	case "purple":
-		return `${styles.color} ${inverse ? styles.inverse_purple : styles.purple}`;
-	case "green":
-		return `${styles.color} ${inverse ? styles.inverse_green : styles.green}`;
-	case "orange":
-		return `${styles.color} ${inverse ? styles.inverse_orange : styles.orange}`;
-	default:
-		return styles.no_color;
-	}
-}
-
-function hoverClass(hoverLevel: string, hover: boolean): string {
-	switch (hoverLevel) {
-	case "high":
-		if (hover) {
-			return `${styles.high} ${styles.high_hover} ${styles.hover}`;
+	const hoverSx = gHover(
+		{
+			transition: "all 550ms cubic-bezier(0.175, 0.885, 0.320, 1)",
+			boxShadow: `0 ${hoverLevel === "high" ? "10px 35px" : "2px 6px"} 3px ${colors.black(0.05)}`,
 		}
-		return `${styles.high}`;
-	case "low":
-		if (hover) {
-			return `${styles.low} ${styles.low_hover} ${styles.hover}`;
-		}
-		return `${styles.low}`;
-	default:
-		return "";
-	}
-}
+	);
+
+	return <div className={className}
+		{...hoverSx}
+		style={sx}>
+			{children}
+		</div>;
+};

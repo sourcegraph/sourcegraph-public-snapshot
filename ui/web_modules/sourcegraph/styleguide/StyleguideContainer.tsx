@@ -51,19 +51,19 @@ export class StyleguideContainer extends React.Component<{}, any> {
 
 							<Heading level="6" mt={4} ml={3}>UI Components</Heading>
 							<TabItem>
-								<Link to={{pathname: "styleguide", search: "#components-headings"}}>Headings</Link>
+								<Link to={{pathname: "styleguide", search: "#components-buttons"}}>Buttons</Link>
 							</TabItem>
 							<TabItem>
-								<Link to={{pathname: "styleguide", search: "#components-symbols"}}>Symbols</Link>
+								<Link to={{pathname: "styleguide", search: "#components-checklists"}}>Checklist Items</Link>
 							</TabItem>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#components-forms"}}>Forms</Link>
 							</TabItem>
 							<TabItem>
-								<Link to={{pathname: "styleguide", search: "#components-buttons"}}>Buttons</Link>
+								<Link to={{pathname: "styleguide", search: "#components-headings"}}>Headings</Link>
 							</TabItem>
 							<TabItem>
-								<Link to={{pathname: "styleguide", search: "#components-tabs"}}>Tabs</Link>
+								<Link to={{pathname: "styleguide", search: "#components-list"}}>Lists</Link>
 							</TabItem>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#components-panels"}}>Panels</Link>
@@ -72,10 +72,16 @@ export class StyleguideContainer extends React.Component<{}, any> {
 								<Link to={{pathname: "styleguide", search: "#components-stepper"}}>Stepper</Link>
 							</TabItem>
 							<TabItem>
-								<Link to={{pathname: "styleguide", search: "#components-checklists"}}>Checklist Items</Link>
+								<Link to={{pathname: "styleguide", search: "#components-symbols"}}>Symbols</Link>
 							</TabItem>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#components-table"}}>Table</Link>
+							</TabItem>
+							<TabItem>
+								<Link to={{pathname: "styleguide", search: "#components-tabs"}}>Tabs</Link>
+							</TabItem>
+							<TabItem>
+								<Link to={{pathname: "styleguide", search: "#components-user"}}>User</Link>
 							</TabItem>
 						</Tabs>
 					</Affix>
