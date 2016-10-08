@@ -53,3 +53,15 @@ The end-to-end tests use the [Selenium Docker images](https://github.com/Seleniu
 They use the Selenium Remote Driver, which means the Selenium driver and web browser run as a separate service from the test runner.
 
 When running in dev, the Selenium Docker image includes a VNC server, which lets you, the developer, connect a VNC client to the see exactly which actions the tests are running in the browser.
+
+
+## Why are they written in Python?
+
+The Python Selenium client is well-documented and widely used. This also gives us the chance to dogfood Sourcegraph on Python.
+
+
+## What additional docs / references should I refer to?
+
+If you need to look up something in the Selenium API, the official docs are here: http://selenium-python.readthedocs.io/api.html.
+
+There are also 3rd party docs here that are easier to use, but not as comprehensive: https://seleniumhq.github.io/selenium/docs/api/py/api.html.
