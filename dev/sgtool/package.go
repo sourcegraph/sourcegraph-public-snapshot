@@ -68,13 +68,7 @@ func (c *PackageCmd) Execute(args []string) error {
 		}
 	}
 
-	gopath := strings.Join([]string{
-		filepath.Join(os.Getenv("PWD"), "Godeps", "_workspace"),
-		os.Getenv("GOPATH"),
-	}, string(filepath.ListSeparator))
-
 	genCmd := exec.Command("go", "generate", "./app/assets", "./app/templates")
-	overrideEnv(genCmd, "GOPATH", gopath)
 	if err := execCmd(genCmd); err != nil {
 		return err
 	}
@@ -102,7 +96,7 @@ func (c *PackageCmd) Execute(args []string) error {
 			env := []string{
 				"GOOS=" + osName,
 				"GOARCH=amd64",
-				"GOPATH=" + gopath,
+				"GOPATH=" + os.Getenv("GOPATH"),
 				"PATH=" + os.Getenv("PATH"),
 				"CGO_ENABLED=0",
 			}
