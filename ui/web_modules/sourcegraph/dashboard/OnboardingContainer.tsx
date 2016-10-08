@@ -69,7 +69,7 @@ export class OnboardingContainer extends Container<Props, State> {
 				const returnUrl = new URL(decodeUrl);
 
 				if (returnUrl.origin.match(/https:\/\/(www\.)?github.com/)) {
-					window.location.href = decodeUrl;
+					setTimeout(() => { window.location.href = decodeUrl; }, 500);
 					return;
 				}
 			}
