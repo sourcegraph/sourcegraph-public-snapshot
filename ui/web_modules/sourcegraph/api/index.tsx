@@ -211,13 +211,6 @@ export interface DefDoc {
 	Data: string;
 }
 
-export interface DefFileRef {
-	Path?: string;
-	Count?: number;
-	Positions?: FilePosition[];
-	Score?: number;
-}
-
 export interface DefFormatStrings {
 	Name: any;
 	Type: any;
@@ -269,27 +262,6 @@ export interface DefListOptions {
 	Page?: number;
 }
 
-export interface DefListRefLocationsOptions {
-	Repos?: string[];
-	PerPage?: number;
-	Page?: number;
-}
-
-export interface DefListRefsOptions {
-	Repo?: number;
-	CommitID?: string;
-	Files?: string[];
-	PerPage?: number;
-	Page?: number;
-}
-
-export interface DefRepoRef {
-	Repo?: string;
-	Count?: number;
-	Score?: number;
-	Files?: DefFileRef[];
-}
-
 export interface DefSearchResult {
 	Repo?: string;
 	CommitID?: string;
@@ -328,20 +300,59 @@ export interface DefsGetOp {
 	Opt?: DefGetOptions;
 }
 
-export interface DefsListRefLocationsOp {
-	Def: DefSpec;
-	Opt?: DefListRefLocationsOptions;
-}
-
-export interface DefsListRefsOp {
-	Def: DefSpec;
-	Opt?: DefListRefsOptions;
-}
-
 export interface DefsRefreshIndexOp {
 	Repo?: number;
 	RefreshRefLocations?: boolean;
 	Force?: boolean;
+}
+
+export interface DeprecatedDefFileRef {
+	Path?: string;
+	Count?: number;
+	Positions?: DeprecatedFilePosition[];
+	Score?: number;
+}
+
+export interface DeprecatedDefListRefLocationsOptions {
+	Repos?: string[];
+	PerPage?: number;
+	Page?: number;
+}
+
+export interface DeprecatedDefListRefsOptions {
+	Repo?: number;
+	CommitID?: string;
+	Files?: string[];
+	PerPage?: number;
+	Page?: number;
+}
+
+export interface DeprecatedDefRepoRef {
+	Repo?: string;
+	Count?: number;
+	Score?: number;
+	Files?: DeprecatedDefFileRef[];
+}
+
+export interface DeprecatedDefsListRefLocationsOp {
+	Def: DefSpec;
+	Opt?: DeprecatedDefListRefLocationsOptions;
+}
+
+export interface DeprecatedDefsListRefsOp {
+	Def: DefSpec;
+	Opt?: DeprecatedDefListRefsOptions;
+}
+
+export interface DeprecatedFilePosition {
+	Line?: number;
+	Column?: number;
+}
+
+export interface DeprecatedRefLocationsList {
+	RepoRefs?: DeprecatedDefRepoRef[];
+	HasMore?: boolean;
+	TotalRepos?: number;
 }
 
 export interface Diagnostic {
@@ -477,11 +488,6 @@ export interface FileData {
 export interface FileEvent {
 	uri: string;
 	type: number;
-}
-
-export interface FilePosition {
-	Line?: number;
-	Column?: number;
 }
 
 export interface FileRange {
@@ -681,12 +687,6 @@ export interface RefKey {
 export interface RefList {
 	Refs?: any[];
 	HasMore?: boolean;
-}
-
-export interface RefLocationsList {
-	RepoRefs?: DefRepoRef[];
-	HasMore?: boolean;
-	TotalRepos?: number;
 }
 
 export interface RefSet {
