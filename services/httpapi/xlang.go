@@ -31,23 +31,6 @@ import (
 // request. Subsequent requests to the xlang HTTP endpoint with the
 // same session key will reuse the same connection.
 
-type xlangClient interface {
-	Call(ctx context.Context, method string, params, result interface{}, opt ...jsonrpc2.CallOption) error
-	Notify(ctx context.Context, method string, params interface{}, opt ...jsonrpc2.CallOption) error
-	Close() error
-}
-
-var xlangCreateConnection = func() (xlangClient, error) {
-	addr := os.Getenv("LSP_PROXY")
-	if addr == "" {
-		return nil, errors.New("no LSP_PROXY env var set (need address to LSP proxy)")
-	}
-
-	dialCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	return xlang.DialProxy(dialCtx, addr, nil)
-}
-
 var xlangRequestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
 	Subsystem: "xlang",
@@ -59,6 +42,14 @@ var xlangRequestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 
 func init() {
 	prometheus.MustRegister(xlangRequestDuration)
+}
+
+var xlangNewClient = func() (xlangClient, error) { return xlang.NewDefaultClient() }
+
+type xlangClient interface {
+	Call(ctx context.Context, method string, params, result interface{}, opt ...jsonrpc2.CallOption) error
+	Notify(ctx context.Context, method string, params interface{}, opt ...jsonrpc2.CallOption) error
+	Close() error
 }
 
 func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
@@ -161,7 +152,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	// Use a one-shot connection to the LSP proxy. This is cheap,
 	// since the LSP proxy will reuse an already running server for
 	// the given workspace if available.
-	c, err := xlangCreateConnection()
+	c, err := xlangNewClient()
 	if err != nil {
 		return err
 	}
