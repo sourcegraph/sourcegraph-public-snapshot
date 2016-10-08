@@ -24,6 +24,7 @@ if (!production) {
 const plugins = [
 	new webpack.NormalModuleReplacementPlugin(/\/iconv-loader$/, "node-noop"),
 	new webpack.DefinePlugin({
+		"process.browser": "true",
 		"process.env": {
 			NODE_ENV: JSON.stringify(process.env.NODE_ENV || "development"),
 		},
@@ -111,7 +112,10 @@ module.exports = {
 			{test: /\.css$/, exclude: `${__dirname}/node_modules/vscode`, loader: "style!css?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss"},
 			{test: /\.css$/, include: `${__dirname}/node_modules/vscode`, loader: "style!css"}, // TODO(sqs): add ?sourceMap
 		],
-		noParse: /\.min\.js$/,
+		noParse: [
+			/\.min\.js$/,
+			/typescriptServices\.js$/,
+		],
 	},
 	ts: {
 		compilerOptions: {
