@@ -3,9 +3,10 @@ package localstore
 import srcstore "sourcegraph.com/sourcegraph/srclib/store"
 
 var (
-	Defs                 = &defs{}
+	Defs                 = &defs{} // TODO: remove defs service (replaced by new xlang based globalDefs service)
 	GlobalDeps           = &globalDeps{}
 	DeprecatedGlobalRefs = &deprecatedGlobalRefs{}
+	GlobalRefs           = &globalRefs{}
 	Graph                srcstore.MultiRepoStoreImporterIndexer
 	Queue                = &instrumentedQueue{}
 	RepoConfigs          = &repoConfigs{}

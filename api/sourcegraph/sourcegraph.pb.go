@@ -969,9 +969,6 @@ type DefsRefreshIndexOp struct {
 	// Repo is the repo whose graph data is to be re-indexed
 	// for global ref locations.
 	Repo int32 `json:"Repo,omitempty"`
-	// RefreshRefLocations refreshes the global ref locations index for
-	// the specified repository.
-	RefreshRefLocations bool `json:"RefreshRefLocations,omitempty"`
 	// Force ensures we reindex, even if we have already indexed the latest
 	// commit for repo
 	Force bool `json:"Force,omitempty"`

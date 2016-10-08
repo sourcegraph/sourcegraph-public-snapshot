@@ -17,6 +17,13 @@ import (
 )
 
 var (
+	// Note: the reason why DB table creation is done here (using the
+	// CreateTable / DropTable pattern) is because tables often rely on the
+	// table creation order and we should encourage our DB to be relational
+	// (i.e. tables referencing eachother). This is hard to do inside of
+	// multiple package init's, so we register all table creators/destructors
+	// here.
+
 	// AppSchema is the DB Schema for the app database used by this package.
 	// Currently, all db stores except GlobalRefs are grouped under AppSchema.
 	AppSchema = dbutil2.Schema{
@@ -33,6 +40,25 @@ var (
 		CreateSQL: []string{
 			`CREATE EXTENSION IF NOT EXISTS citext;`,
 			`CREATE EXTENSION IF NOT EXISTS hstore;`,
+
+			// global_ref_* table creation.
+			new(dbGlobalRefSource).CreateTable(),
+			new(dbGlobalRefVersion).CreateTable(),
+			new(dbGlobalRefFile).CreateTable(),
+			new(dbGlobalRefName).CreateTable(),
+			new(dbGlobalRefContainer).CreateTable(),
+			new(dbGlobalRefBySource).CreateTable(),
+			new(dbGlobalRefByFile).CreateTable(),
+		},
+		DropSQL: []string{
+			// global_ref_* table deletion.
+			new(dbGlobalRefSource).DropTable(),
+			new(dbGlobalRefVersion).DropTable(),
+			new(dbGlobalRefFile).DropTable(),
+			new(dbGlobalRefName).DropTable(),
+			new(dbGlobalRefContainer).DropTable(),
+			new(dbGlobalRefBySource).DropTable(),
+			new(dbGlobalRefByFile).DropTable(),
 		},
 		Map: &gorp.DbMap{Dialect: gorp.PostgresDialect{}},
 	}

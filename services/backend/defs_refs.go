@@ -122,7 +122,11 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	ctx, done := trace(ctx, "Defs", "RefreshIndex", op, &err)
 	defer done()
 
-	// TODO we currently do not update any global indexes. However, we
-	// should be updating global refs soon, then this TODO can be removed.
-	return nil
+	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: op.Repo})
+	if err != nil {
+		return err
+	}
+
+	// Refresh global references indexes.
+	return localstore.GlobalRefs.RefreshIndex(ctx, op.Repo, rev.CommitID)
 }

@@ -14,7 +14,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
@@ -173,14 +172,12 @@ func (s *asyncWorker) refreshIndexes(ctx context.Context, op *sourcegraph.AsyncR
 	defer release()
 
 	err := Defs.RefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
-		Repo:                op.Repo,
-		RefreshRefLocations: true,
-		Force:               op.Force,
+		Repo:  op.Repo,
+		Force: op.Force,
 	})
 	if err != nil {
-		return legacyerr.Errorf(legacyerr.ErrCode(err), "Def.RefreshIndex failed on repo %d from source %s: %s", op.Repo, op.Source, err)
+		log15.Crit("Defs.RefreshIndex failed", "repo", op.Repo, "source", op.Source, "error", err)
 	}
-
 	return nil
 }
 

@@ -302,7 +302,6 @@ export interface DefsGetOp {
 
 export interface DefsRefreshIndexOp {
 	Repo?: number;
-	RefreshRefLocations?: boolean;
 	Force?: boolean;
 }
 
