@@ -1,17 +1,23 @@
 var List = require('../utils/list');
+var clone = require('../utils/clone');
 var usageUtils = require('./usage');
 var clean = require('./clean');
 var compress = require('./compress');
 var restructureBlock = require('./restructure');
 var walkRules = require('../utils/walk').rules;
 
-function readBlock(stylesheet) {
+function readRulesChunk(rules, specialComments) {
     var buffer = new List();
     var nonSpaceTokenInBuffer = false;
     var protectedComment;
 
-    stylesheet.rules.nextUntil(stylesheet.rules.head, function(node, item, list) {
-        if (node.type === 'Comment' && node.value.charAt(0) === '!') {
+    rules.nextUntil(rules.head, function(node, item, list) {
+        if (node.type === 'Comment') {
+            if (!specialComments || node.value.charAt(0) !== '!') {
+                list.remove(item);
+                return;
+            }
+
             if (nonSpaceTokenInBuffer || protectedComment) {
                 return true;
             }
@@ -32,18 +38,19 @@ function readBlock(stylesheet) {
         comment: protectedComment,
         stylesheet: {
             type: 'StyleSheet',
+            info: null,
             rules: buffer
         }
     };
 }
 
-function compressBlock(ast, usageData, num, logger) {
+function compressChunk(ast, firstAtrulesAllowed, usageData, num, logger) {
     logger('Compress block #' + num, null, true);
 
     var seed = 1;
-    ast.firstAtrulesAllowed = ast.firstAtrulesAllowed;
-    walkRules(ast, function() {
-        if (!this.stylesheet.id) {
+    walkRules(ast, function markStylesheets() {
+        if ('id' in this.stylesheet === false) {
+            this.stylesheet.firstAtrulesAllowed = firstAtrulesAllowed;
             this.stylesheet.id = seed++;
         }
     });
@@ -60,43 +67,65 @@ function compressBlock(ast, usageData, num, logger) {
     return ast;
 }
 
+function getCommentsOption(options) {
+    var comments = 'comments' in options ? options.comments : 'exclamation';
+
+    if (typeof comments === 'boolean') {
+        comments = comments ? 'exclamation' : false;
+    } else if (comments !== 'exclamation' && comments !== 'first-exclamation') {
+        comments = false;
+    }
+
+    return comments;
+}
+
+function getRestructureOption(options) {
+    return 'restructure' in options ? options.restructure :
+           'restructuring' in options ? options.restructuring :
+           true;
+}
+
+function wrapBlock(block) {
+    return new List([{
+        type: 'Ruleset',
+        selector: {
+            type: 'Selector',
+            selectors: new List([{
+                type: 'SimpleSelector',
+                sequence: new List([{
+                    type: 'Identifier',
+                    name: 'x'
+                }])
+            }])
+        },
+        block: block
+    }]);
+}
+
 module.exports = function compress(ast, options) {
+    ast = ast || { type: 'StyleSheet', info: null, rules: new List() };
     options = options || {};
-    ast = ast || { type: 'StyleSheet', rules: new List() };
 
     var logger = typeof options.logger === 'function' ? options.logger : Function();
-    var restructuring =
-        'restructure' in options ? options.restructure :
-        'restructuring' in options ? options.restructuring :
-        true;
-    var result = new List();
-    var block;
+    var specialComments = getCommentsOption(options);
+    var restructuring = getRestructureOption(options);
     var firstAtrulesAllowed = true;
-    var blockNum = 1;
-    var blockRules;
-    var blockMode = false;
     var usageData = false;
-    var info = ast.info || null;
+    var inputRules;
+    var outputRules = new List();
+    var chunk;
+    var chunkNum = 1;
+    var chunkRules;
 
-    if (ast.type !== 'StyleSheet') {
-        blockMode = true;
-        ast = {
-            type: 'StyleSheet',
-            rules: new List([{
-                type: 'Ruleset',
-                selector: {
-                    type: 'Selector',
-                    selectors: new List([{
-                        type: 'SimpleSelector',
-                        sequence: new List([{
-                            type: 'Identifier',
-                            name: 'x'
-                        }])
-                    }])
-                },
-                block: ast
-            }])
-        };
+    if (options.clone) {
+        ast = clone(ast);
+    }
+
+    if (ast.type === 'StyleSheet') {
+        inputRules = ast.rules;
+        ast.rules = outputRules;
+    } else {
+        inputRules = wrapBlock(ast);
     }
 
     if (options.usage) {
@@ -104,40 +133,39 @@ module.exports = function compress(ast, options) {
     }
 
     do {
-        block = readBlock(ast);
-        // console.log(JSON.stringify(block.stylesheet, null, 2));
-        block.stylesheet.firstAtrulesAllowed = firstAtrulesAllowed;
-        block.stylesheet = compressBlock(block.stylesheet, usageData, blockNum++, logger);
+        chunk = readRulesChunk(inputRules, Boolean(specialComments));
+
+        compressChunk(chunk.stylesheet, firstAtrulesAllowed, usageData, chunkNum++, logger);
 
         // structure optimisations
         if (restructuring) {
-            restructureBlock(block.stylesheet, usageData, logger);
+            restructureBlock(chunk.stylesheet, usageData, logger);
         }
 
-        blockRules = block.stylesheet.rules;
+        chunkRules = chunk.stylesheet.rules;
 
-        if (block.comment) {
-            // add \n before comment if there is another content in result
-            if (!result.isEmpty()) {
-                result.insert(List.createItem({
+        if (chunk.comment) {
+            // add \n before comment if there is another content in outputRules
+            if (!outputRules.isEmpty()) {
+                outputRules.insert(List.createItem({
                     type: 'Raw',
                     value: '\n'
                 }));
             }
 
-            result.insert(List.createItem(block.comment));
+            outputRules.insert(List.createItem(chunk.comment));
 
-            // add \n after comment if block is not empty
-            if (!blockRules.isEmpty()) {
-                result.insert(List.createItem({
+            // add \n after comment if chunk is not empty
+            if (!chunkRules.isEmpty()) {
+                outputRules.insert(List.createItem({
                     type: 'Raw',
                     value: '\n'
                 }));
             }
         }
 
-        if (firstAtrulesAllowed && !blockRules.isEmpty()) {
-            var lastRule = blockRules.last();
+        if (firstAtrulesAllowed && !chunkRules.isEmpty()) {
+            var lastRule = chunkRules.last();
 
             if (lastRule.type !== 'Atrule' ||
                (lastRule.name !== 'import' && lastRule.name !== 'charset')) {
@@ -145,24 +173,14 @@ module.exports = function compress(ast, options) {
             }
         }
 
-        result.appendList(blockRules);
-    } while (!ast.rules.isEmpty());
+        if (specialComments !== 'exclamation') {
+            specialComments = false;
+        }
 
-    if (blockMode) {
-        result = !result.isEmpty() ? result.first().block : {
-            type: 'Block',
-            info: info,
-            declarations: new List()
-        };
-    } else {
-        result = {
-            type: 'StyleSheet',
-            info: info,
-            rules: result
-        };
-    }
+        outputRules.appendList(chunkRules);
+    } while (!inputRules.isEmpty());
 
     return {
-        ast: result
+        ast: ast
     };
 };

@@ -1,3 +1,7 @@
+# 2.1.5
+
+* Bump svgo to v0.7.x.
+
 # 2.1.4
 
 * Fixes an issue where postcss-svgo would throw with some SVGs that were

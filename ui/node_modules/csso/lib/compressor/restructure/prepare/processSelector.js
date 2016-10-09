@@ -68,6 +68,13 @@ module.exports = function freeze(node, usageData) {
                     tagName = node.name;
                     break;
 
+                case 'Attribute':
+                    if (node.flags) {
+                        pseudos['[' + node.flags + ']'] = true;
+                        hasPseudo = true;
+                    }
+                    break;
+
                 case 'Combinator':
                     tagName = '*';
                     break;

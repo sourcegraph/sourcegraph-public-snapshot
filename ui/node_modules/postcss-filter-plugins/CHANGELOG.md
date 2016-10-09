@@ -1,3 +1,7 @@
+# 2.0.2
+
+* Bumped uniqid to `4.0.0`.
+
 # 2.0.1
 
 * Bumped uniqid to `3.0.0` (thanks to @papandreou).

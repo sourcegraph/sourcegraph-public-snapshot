@@ -20,6 +20,7 @@ plugins:
   - removeXMLProcInst
   - removeComments
   - removeMetadata
+  - removeXMLNS
   - removeEditorsNSData
   - cleanupAttrs
   - minifyStyles
@@ -53,8 +54,10 @@ plugins:
   - removeDesc
   - removeDimensions
   - removeAttrs
+  - removeElementsByAttr
   - addClassesToSVGElement
   - removeStyleElement
+  - addAttributesToSVGElement
 
 # configure the indent (default 4 spaces) used by `--pretty` here:
 #

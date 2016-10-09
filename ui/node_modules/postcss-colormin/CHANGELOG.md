@@ -1,3 +1,9 @@
+# 2.2.1
+
+* Resolves an issue where converting an rgb/hsl function next to another token,
+  such as `linear-gradient(rgb(10, 10, 10)0%, blue)` would result in a
+  mangled value.
+
 # 2.2.0
 
 * Adds support for legacy IE versions (< 10).

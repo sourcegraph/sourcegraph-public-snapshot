@@ -91,7 +91,7 @@ Remove query parameters that matches any of the provided strings or regexes.
 
 ```js
 normalizeUrl('www.sindresorhus.com?foo=bar&ref=test_ref', {
-	ignoredQueryParameters: ['ref']
+	removeQueryParameters: ['ref']
 });
 //=> 'http://sindresorhus.com/?foo=bar'
 ```

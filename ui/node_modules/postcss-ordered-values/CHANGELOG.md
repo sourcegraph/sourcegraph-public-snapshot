@@ -1,3 +1,7 @@
+# 2.2.2
+
+* Now will not re-order box-shadow values containing `calc()` definitions.
+
 # 2.2.1
 
 * Now will not re-order values that contain any `var()` definitions. 

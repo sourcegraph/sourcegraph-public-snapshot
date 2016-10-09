@@ -25,15 +25,13 @@ function calcDeclarationsLength(tokens) {
     );
 }
 
-function inList(selector) {
-    return selector.compareMarker in this;
-}
-
 function processRuleset(node, item, list) {
     var avoidRulesMerge = this.stylesheet.avoidRulesMerge;
     var selectors = node.selector.selectors;
     var block = node.block;
-    var skippedCompareMarkers = Object.create(null);
+    var disallowDownMarkers = Object.create(null);
+    var allowMergeUp = true;
+    var allowMergeDown = true;
 
     list.prevUntil(item.prev, function(prev, prevItem) {
         // skip non-ruleset node if safe
@@ -48,13 +46,17 @@ function processRuleset(node, item, list) {
             return true;
         }
 
+        allowMergeDown = !prevSelectors.some(function(selector) {
+            return selector.compareMarker in disallowDownMarkers;
+        });
+
         // try prev ruleset if simpleselectors has no equal specifity and element selector
-        if (prevSelectors.some(inList, skippedCompareMarkers)) {
+        if (!allowMergeDown && !allowMergeUp) {
             return true;
         }
 
         // try to join by selectors
-        if (utils.isEqualLists(prevSelectors, selectors)) {
+        if (allowMergeUp && utils.isEqualLists(prevSelectors, selectors)) {
             prevBlock.declarations.appendList(block.declarations);
             list.remove(item);
             return true;
@@ -68,8 +70,11 @@ function processRuleset(node, item, list) {
         if (diff.eq.length) {
             if (!diff.ne1.length && !diff.ne2.length) {
                 // equal blocks
-                utils.addSelectors(selectors, prevSelectors);
-                list.remove(prevItem);
+                if (allowMergeDown) {
+                    utils.addSelectors(selectors, prevSelectors);
+                    list.remove(prevItem);
+                }
+
                 return true;
             } else if (!avoidRulesMerge) { /* probably we don't need to prevent those merges for @keyframes
                                               TODO: need to be checked */
@@ -79,7 +84,7 @@ function processRuleset(node, item, list) {
                     var selectorLength = calcSelectorLength(selectors);
                     var blockLength = calcDeclarationsLength(diff.eq); // declarations length
 
-                    if (selectorLength < blockLength) {
+                    if (allowMergeUp && selectorLength < blockLength) {
                         utils.addSelectors(prevSelectors, selectors);
                         block.declarations = new List(diff.ne1);
                     }
@@ -88,7 +93,7 @@ function processRuleset(node, item, list) {
                     var selectorLength = calcSelectorLength(prevSelectors);
                     var blockLength = calcDeclarationsLength(diff.eq); // declarations length
 
-                    if (selectorLength < blockLength) {
+                    if (allowMergeDown && selectorLength < blockLength) {
                         utils.addSelectors(selectors, prevSelectors);
                         prevBlock.declarations = new List(diff.ne2);
                     }
@@ -105,7 +110,7 @@ function processRuleset(node, item, list) {
 
                     // create new ruleset if declarations length greater than
                     // ruleset description overhead
-                    if (blockLength >= newBlockLength) {
+                    if (allowMergeDown && blockLength >= newBlockLength) {
                         var newRuleset = {
                             type: 'Ruleset',
                             info: {},
@@ -127,8 +132,18 @@ function processRuleset(node, item, list) {
             }
         }
 
+        if (allowMergeUp) {
+            // TODO: disallow up merge only if any property interception only (i.e. diff.ne2overrided.length > 0);
+            // await property families to find property interception correctly
+            allowMergeUp = !prevSelectors.some(function(prevSelector) {
+                return selectors.some(function(selector) {
+                    return selector.compareMarker === prevSelector.compareMarker;
+                });
+            });
+        }
+
         prevSelectors.each(function(data) {
-            skippedCompareMarkers[data.compareMarker] = true;
+            disallowDownMarkers[data.compareMarker] = true;
         });
     });
 };

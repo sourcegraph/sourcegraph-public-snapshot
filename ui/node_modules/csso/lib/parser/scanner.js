@@ -20,8 +20,7 @@ var RIGHT_CURLY_BRACE = 125;
 var WHITESPACE = 1;
 var PUNCTUATOR = 2;
 var DIGIT = 3;
-var STRING_SQ = 4;
-var STRING_DQ = 5;
+var STRING = 4;
 
 var PUNCTUATION = {
     9:  TokenType.Tab,                // '\t'
@@ -82,8 +81,8 @@ SYMBOL_CATEGORY[N] = WHITESPACE;
 SYMBOL_CATEGORY[R] = WHITESPACE;
 SYMBOL_CATEGORY[F] = WHITESPACE;
 
-SYMBOL_CATEGORY[QUOTE] = STRING_SQ;
-SYMBOL_CATEGORY[DOUBLE_QUOTE] = STRING_DQ;
+SYMBOL_CATEGORY[QUOTE] = STRING;
+SYMBOL_CATEGORY[DOUBLE_QUOTE] = STRING;
 
 //
 // scanner
@@ -94,7 +93,6 @@ var Scanner = function(source, initBlockMode, initLine, initColumn) {
 
     this.pos = source.charCodeAt(0) === 0xFEFF ? 1 : 0;
     this.eof = this.pos === this.source.length;
-    this.lastPos = this.pos;
     this.line = typeof initLine === 'undefined' ? 1 : initLine;
     this.lineStartPos = typeof initColumn === 'undefined' ? -1 : -initColumn;
 
@@ -125,17 +123,18 @@ Scanner.prototype = {
         return token !== null && token.type === type;
     },
     next: function() {
-        this.prevToken = this.token;
+        var newToken = null;
 
         if (this.buffer.length !== 0) {
-            this.token = this.buffer.shift();
+            newToken = this.buffer.shift();
         } else if (!this.eof) {
-            this.token = this.getToken();
-        } else {
-            this.token = null;
+            newToken = this.getToken();
         }
 
-        return this.token;
+        this.prevToken = this.token;
+        this.token = newToken;
+
+        return newToken;
     },
 
     tokenize: function() {
@@ -152,7 +151,7 @@ Scanner.prototype = {
         var code = this.source.charCodeAt(this.pos);
         var line = this.line;
         var column = this.pos - this.lineStartPos;
-        var lastPos;
+        var offset = this.pos;
         var next;
         var type;
         var value;
@@ -163,8 +162,7 @@ Scanner.prototype = {
                 value = this.readDecimalNumber();
                 break;
 
-            case STRING_SQ:
-            case STRING_DQ:
+            case STRING:
                 type = TokenType.String;
                 value = this.readString(code);
                 break;
@@ -176,7 +174,7 @@ Scanner.prototype = {
 
             case PUNCTUATOR:
                 if (code === SLASH) {
-                    next = this.source.charCodeAt(this.pos + 1);
+                    next = this.pos + 1 < this.source.length ? this.source.charCodeAt(this.pos + 1) : 0;
 
                     if (next === STAR) { // /*
                         type = TokenType.Comment;
@@ -225,15 +223,13 @@ Scanner.prototype = {
                 this.urlMode = this.urlMode || value === 'url';
         }
 
-        lastPos = this.lastPos === 0 ? this.lastPos : this.lastPos - 1;
-        this.lastPos = this.pos;
         this.eof = this.pos === this.source.length;
 
         return {
             type: type,
             value: value,
 
-            offset: lastPos,
+            offset: offset,
             line: line,
             column: column
         };
@@ -376,5 +372,9 @@ Scanner.prototype = {
         return this.source.substring(start, this.pos);
     }
 };
+
+// warm up tokenizer to elimitate code branches that never execute
+// fix soft deoptimizations (insufficient type feedback)
+new Scanner('\n\r\r\n\f//""\'\'/**/1a;.{url(a)}').lookup(1e3);
 
 module.exports = Scanner;
