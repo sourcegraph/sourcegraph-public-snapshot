@@ -9,7 +9,7 @@ module.exports = {
 			"node_modules",
 			`${__dirname}/node_modules/vscode/src`,
 		],
-		extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
+		extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
 	},
 	devtool: "cheap-module-source-map",
 	plugins: [
@@ -18,8 +18,18 @@ module.exports = {
 		new webpack.IgnorePlugin(/\/monaco\.contribution\.js$/),
 	],
 	module: {
-		loaders: [
-			{test: /\.tsx?$/, loader: 'ts-loader', query: {compilerOptions: {"strictNullChecks": false, noEmit: false}}},
+		rules: [
+			{
+				test: /\.tsx?$/,
+				use: [
+					'ts-loader?'+JSON.stringify({
+						compilerOptions: {
+							noEmit: false,
+							strictNullChecks: false,
+						},
+					}),
+				],
+			},
 			{test: /\.json$/, exclude: /node_modules/, loader: "json-loader"},
 			{test: /\.svg$/, loader: "null"},
 			{test: /\.css$/, loader: "null"},
@@ -29,9 +39,4 @@ module.exports = {
 			/typescriptServices\.js$/,
 		],
 	},
-	ts: {
-		compilerOptions: {
-			noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
-		},
-  },
 };

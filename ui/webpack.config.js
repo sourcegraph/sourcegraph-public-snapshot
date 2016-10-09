@@ -79,6 +79,13 @@ if (!production) {
 	devtool = process.env.WEBPACK_SOURCEMAPS ? "eval-source-map" : "eval";
 }
 
+plugins.push(new webpack.LoaderOptionsPlugin({
+	options: {
+		context: __dirname,
+		postcss: [require("postcss-modules-values"), autoprefixer({remove: false})],
+	},
+}));
+
 module.exports = {
 	name: "browser",
 	target: "web",
@@ -92,7 +99,7 @@ module.exports = {
 			"node_modules",
 			`${__dirname}/node_modules/vscode/src`,
 		],
-		extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
+		extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
 	},
 	devtool: devtool,
 	output: {
@@ -103,26 +110,43 @@ module.exports = {
 	},
 	plugins: plugins,
 	module: {
-		loaders: [
-			{test: /\.tsx?$/, loader: 'ts'},
-			{test: /\.json$/, loader: "json"},
-			{test: /\.(woff|eot|ttf)$/, loader: "url?name=fonts/[name].[ext]"},
+		rules: [
+			{
+				test: /\.tsx?$/,
+				loader: 'ts?'+JSON.stringify({
+					compilerOptions: {
+						noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
+					},
+					transpileOnly: true, // type checking is only done as part of linting or testing
+				}),
+			},
 			{test: /\.(svg|png)$/, loader: "url"},
-			{test: /\.css$/, exclude: `${__dirname}/node_modules/vscode`, loader: "style!css?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss"},
+			{test: /\.(woff|eot|ttf)$/, loader: "url?name=fonts/[name].[ext]"},
+			{test: /\.json$/, loader: "json"},
 			{test: /\.css$/, include: `${__dirname}/node_modules/vscode`, loader: "style!css"}, // TODO(sqs): add ?sourceMap
+			{
+				test: /\.css$/,
+				exclude: `${__dirname}/node_modules/vscode`,
+				use: [
+					'style-loader',
+					{
+						loader: 'css-loader',
+						options: {
+							sourceMap: true,
+							modules: true,
+							importLoaders: 1,
+							localIdentName: "[name]__[local]___[hash:base64:5]",
+						}
+					},
+					'postcss-loader',
+				]
+			}
 		],
 		noParse: [
 			/\.min\.js$/,
 			/typescriptServices\.js$/,
 		],
 	},
-	ts: {
-		compilerOptions: {
-			noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
-		},
-		transpileOnly: true, // type checking is only done as part of linting or testing
-  },
-	postcss: [require("postcss-modules-values"), autoprefixer({remove: false})],
 	devServer: {
 		contentBase: `${__dirname}/assets`,
 		host: devServerAddr.hostname,
