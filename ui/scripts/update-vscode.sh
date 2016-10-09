@@ -51,10 +51,10 @@ git --git-dir="$CLONE_DIR" archive --format=tar "$REV" \
 #   typings/mocha.d.ts(8,18): error TS2300: Duplicate identifier 'suite'.
 #   typings/mocha.d.ts(9,18): error TS2300: Duplicate identifier 'test'.
 rm "$VENDOR_DIR"/src/typings/mocha.d.ts
-		
-# Cross-platform sed (Linux and macOS).
+
+# gsed is required on OS X (brew install gnu-sed)
 case $(uname) in
-	Darwin*) sedi='sed -i ""';;
+	Darwin*) sedi='gsed -i';;
 	*) sedi='sed -i' ;;
 esac
 
