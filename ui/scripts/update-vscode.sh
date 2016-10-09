@@ -2,7 +2,7 @@
 
 CLONE_URL=https://github.com/Microsoft/vscode.git
 CLONE_DIR=/tmp/sourcegraph-vscode
-REV=${1:-6e52a9f082ab01dfcb0b4cdbaa5100903aa59a78} # pin to commit ID, bump as needed
+REV=${1:-46df55c9925517091a51f83487effbdeda29822d} # pin to commit ID, bump as needed
 REPO_DIR=$(git rev-parse --show-toplevel)
 VENDOR_DIR="$REPO_DIR"/ui/node_modules/vscode
 
@@ -33,8 +33,7 @@ rm "$VENDOR_DIR"/src/typings/mocha.d.ts
 # Standardize CSS module import path syntax. There's no way to get
 # Webpack to work with vscode's custom "vs/css!" syntax.
 echo -n Munging imports...
-find "$VENDOR_DIR" -name '*.ts' \
-	 -exec $sedi 's/import '"'"'vs'$'\\''/css!\([^'"'"']*\)'"'"';/import '"'"'\1.css'"'"';/g' \{\} \;
+grep -rl 'css!' "$VENDOR_DIR" | xargs -n 1 $sedi 's|import '"'"'vs/css!\([^'"'"']*\)'"'"';|import '"'"'\1.css'"'"';|g'
 echo OK
 
 # Remove dependency on Monaco, to avoid people accidentally using

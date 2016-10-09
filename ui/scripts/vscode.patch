@@ -5,14 +5,14 @@ index 013d00a..026d2fe 100644
 @@ -167,7 +167,12 @@ export class SimpleWorkerClient<T> extends Disposable {
  		super();
  
- 		let lazyProxyFulfill : (v:T)=>void = null;
--		let lazyProxyReject: (err:any)=>void = null;
+ 		let lazyProxyFulfill: (v: T) => void = null;
+-		let lazyProxyReject: (err: any) => void = null;
 +
 +		// HACK: lazyProxyReject doesn't SEEM to do anything, but the
 +		// call to it fails with 'Uncaught TypeError: lazyProxyReject
 +		// is not a function' because the assignment to it doesn't get
 +		// called for some reason. So, just make it a no-op.
-+		let lazyProxyReject: (err:any)=>void = () => (void 0);
++		let lazyProxyReject: (err: any) => void = () => (void 0);
  
  		this._worker = this._register(workerFactory.create(
  			'vs/base/common/worker/simpleWorker',
@@ -20,10 +20,10 @@ diff --git a/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts b
 index 87d36dd..d44027f 100644
 --- a/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts
 +++ b/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts
-@@ -10,7 +10,15 @@ import {logOnceWebWorkerWarning, IWorker, IWorkerCallback, IWorkerFactory} from
- import * as dom from 'vs/base/browser/dom';
+@@ -10,7 +10,15 @@ import * as flags from 'vs/base/common/flags';
+ import { logOnceWebWorkerWarning, IWorker, IWorkerCallback, IWorkerFactory } from 'vs/base/common/worker/simpleWorker';
  
- function defaultGetWorkerUrl(workerId:string, label:string): string {
+ function defaultGetWorkerUrl(workerId: string, label: string): string {
 -	return require.toUrl('./' + workerId) + '#' + label;
 +	// HACK: Run the web worker from a webpack script that is in the
 +	// bundle but that doesn't have its own separate URL. We must
@@ -41,8 +41,8 @@ diff --git a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneE
 index d71ab64..2cd1d05 100644
 --- a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
 +++ b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
-@@ -236,65 +236,3 @@ export function colorize(text:string, languageId:string, options:IColorizerOptio
- export function colorizeModelLine(model:IModel, lineNumber:number, tabSize:number = 4): string {
+@@ -236,65 +236,3 @@ export function colorize(text: string, languageId: string, options: IColorizerOptio
+ export function colorizeModelLine(model: IModel, lineNumber: number, tabSize: number = 4): string {
  	return Colorizer.colorizeModelLine(model, lineNumber, tabSize);
  }
 -
@@ -155,11 +155,11 @@ diff --git a/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWo
 index b4e8ec5..9413c47 100644
 --- a/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
 +++ b/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
-@@ -19,7 +19,6 @@ import {computeLinks} from 'vs/editor/common/modes/linkComputer';
- import {BasicInplaceReplace} from 'vs/editor/common/modes/supports/inplaceReplaceSupport';
- import {IRawModelData} from 'vs/editor/common/services/editorSimpleWorkerCommon';
- import {getWordAtText, ensureValidWordDefinition} from 'vs/editor/common/model/wordHelper';
--import {createMonacoBaseAPI} from 'vs/editor/common/standalone/standaloneBase';
+@@ -19,7 +19,6 @@ import { computeLinks } from 'vs/editor/common/modes/linkComputer';
+ import { BasicInplaceReplace } from 'vs/editor/common/modes/supports/inplaceReplaceSupport';
+ import { IRawModelData } from 'vs/editor/common/services/editorSimpleWorkerCommon';
+ import { getWordAtText, ensureValidWordDefinition } from 'vs/editor/common/model/wordHelper';
+-import { createMonacoBaseAPI } from 'vs/editor/common/standalone/standaloneBase';
  
  export interface IMirrorModel {
  	uri: URI;
@@ -168,7 +168,7 @@ index b4e8ec5..9413c47 100644
  	return new EditorSimpleWorkerImpl();
  }
 -
--var global:any = self;
+-var global: any = self;
 -let isWebWorker = (typeof global.importScripts === 'function');
 -if (isWebWorker) {
 -	global.monaco = createMonacoBaseAPI();
@@ -207,16 +207,16 @@ index db23f0e..21ea072 100644
  import 'vs/editor/contrib/quickOpen/browser/gotoLine';
  import 'vs/editor/contrib/quickOpen/browser/quickCommand';
  
--import {createMonacoBaseAPI} from 'vs/editor/common/standalone/standaloneBase';
--import {createMonacoEditorAPI} from 'vs/editor/browser/standalone/standaloneEditor';
--import {createMonacoLanguagesAPI} from 'vs/editor/browser/standalone/standaloneLanguages';
- import {DefaultConfig} from 'vs/editor/common/config/defaultConfig';
+-import { createMonacoBaseAPI } from 'vs/editor/common/standalone/standaloneBase';
+-import { createMonacoEditorAPI } from 'vs/editor/browser/standalone/standaloneEditor';
+-import { createMonacoLanguagesAPI } from 'vs/editor/browser/standalone/standaloneLanguages';
+ import { DefaultConfig } from 'vs/editor/common/config/defaultConfig';
  
  // Set defaults for standalone editor
  DefaultConfig.editor.wrappingIndent = 'none';
  DefaultConfig.editor.folding = false;
 -
--var global:any = self;
+-var global: any = self;
 -global.monaco = createMonacoBaseAPI();
 -global.monaco.editor = createMonacoEditorAPI();
 -global.monaco.languages = createMonacoLanguagesAPI();
