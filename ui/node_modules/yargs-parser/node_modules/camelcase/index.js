@@ -30,7 +30,7 @@ module.exports = function () {
 	}
 
 	if (str.length === 1) {
-		return str;
+		return str.toLowerCase();
 	}
 
 	if (!(/[_.\- ]+/).test(str)) {

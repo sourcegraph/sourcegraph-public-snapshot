@@ -138,13 +138,6 @@ function expand(pattern, options) {
     glob.pattern = globstar(opts.dot);
 
   } else {
-    // '/*/*/*' => '(?:/*){3}'
-    glob._replace(/(\/\*)+/g, function(match) {
-      var len = match.length / 2;
-      if (len === 1) { return match; }
-      return '(?:\\/*){' + len + '}';
-    });
-
     glob.pattern = balance(glob.pattern, '[', ']');
     glob.escape(glob.pattern);
 

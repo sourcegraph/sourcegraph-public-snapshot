@@ -7,8 +7,6 @@ const path = require('path')
 const Usage = require('./lib/usage')
 const Validation = require('./lib/validation')
 const Y18n = require('y18n')
-const readPkgUp = require('read-pkg-up')
-const pkgConf = require('pkg-conf')
 const requireMainFilename = require('require-main-filename')
 const objFilter = require('./lib/obj-filter')
 const setBlocking = require('set-blocking')
@@ -24,6 +22,7 @@ function Yargs (processArgs, cwd, parentRequire) {
   var preservedGroups = {}
   var usage = null
   var validation = null
+
   const y18n = Y18n({
     directory: path.resolve(__dirname, './locales'),
     updateFiles: false
@@ -50,7 +49,7 @@ function Yargs (processArgs, cwd, parentRequire) {
 
   // use context object to keep track of resets, subcommand execution, etc
   // submodules should modify and check the state of context as necessary
-  const context = { resets: -1, commands: [] }
+  const context = { resets: -1, commands: [], files: [] }
   self.getContext = function () {
     return context
   }
@@ -206,6 +205,12 @@ function Yargs (processArgs, cwd, parentRequire) {
     return self
   }
 
+  self.commandDir = function (dir, opts) {
+    const req = parentRequire || require
+    command.addDirectory(dir, self.getContext(), req, require('get-caller-file')(), opts)
+    return self
+  }
+
   self.string = function (strings) {
     options.string.push.apply(options.string, [].concat(strings))
     return self
@@ -339,20 +344,36 @@ function Yargs (processArgs, cwd, parentRequire) {
   self.pkgConf = function (key, path) {
     var conf = null
 
-    var obj = readPkgUp.sync({
-      cwd: path || requireMainFilename(parentRequire || require)
-    })
+    var obj = pkgUp(path)
 
     // If an object exists in the key, add it to options.configObjects
-    if (obj.pkg && obj.pkg[key] && typeof obj.pkg[key] === 'object') {
-      conf = obj.pkg[key]
+    if (obj[key] && typeof obj[key] === 'object') {
+      conf = obj[key]
       options.configObjects = (options.configObjects || []).concat(conf)
     }
 
     return self
   }
 
+  var pkgs = {}
+  function pkgUp (path) {
+    var npath = path || '*'
+    if (pkgs[npath]) return pkgs[npath]
+    const readPkgUp = require('read-pkg-up')
+
+    var obj = {}
+    try {
+      obj = readPkgUp.sync({
+        cwd: path || requireMainFilename(parentRequire || require)
+      })
+    } catch (noop) {}
+
+    pkgs[npath] = obj.pkg || {}
+    return pkgs[npath]
+  }
+
   self.parse = function (args, shortCircuit) {
+    if (!shortCircuit) processArgs = args
     return parseArgs(args, shortCircuit)
   }
 
@@ -493,11 +514,9 @@ function Yargs (processArgs, cwd, parentRequire) {
   }
 
   function guessVersion () {
-    var obj = readPkgUp.sync({
-      cwd: requireMainFilename(parentRequire || require)
-    })
+    var obj = pkgUp()
 
-    return obj.pkg ? obj.pkg.version : 'unknown'
+    return obj.version || 'unknown'
   }
 
   var helpOpt = null
@@ -618,10 +637,7 @@ function Yargs (processArgs, cwd, parentRequire) {
 
   function parseArgs (args, shortCircuit) {
     options.__ = y18n.__
-    options.configuration = pkgConf.sync('yargs', {
-      defaults: {},
-      cwd: requireMainFilename(require)
-    })
+    options.configuration = pkgUp(cwd)['yargs'] || {}
     const parsed = Parser.detailed(args, options)
     const argv = parsed.argv
     var aliases = parsed.aliases
@@ -641,8 +657,8 @@ function Yargs (processArgs, cwd, parentRequire) {
     // if there's a handler associated with a
     // command defer processing to it.
     var handlerKeys = command.getCommands()
-    for (var i = 0, cmd; (cmd = handlerKeys[i]) !== undefined; i++) {
-      if (~argv._.indexOf(cmd) && cmd !== completionCommand) {
+    for (var i = 0, cmd; (cmd = argv._[i]) !== undefined; i++) {
+      if (~handlerKeys.indexOf(cmd) && cmd !== completionCommand) {
         setPlaceholderKeys(argv)
         return command.runCommand(cmd, self, parsed)
       }

@@ -9,6 +9,7 @@ runLoaders({
 
 	loaders: ["/abs/path/to/loader.js?query"],
 	// String[]: Absolute paths to the loaders (optionally including query string)
+	// {loader, options}[]: Absolute paths to the loaders with options object
 
 	context: { minimize: true },
 	// Additional loader context which is used as base context

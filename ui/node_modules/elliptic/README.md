@@ -119,6 +119,9 @@ console.log(key.verify(msg, signature));
 ### ECDH
 
 ```javascript
+var ECDH = require('elliptic').ec;
+var ec = new ECDH('curve25519');
+
 // Generate keys
 var key1 = ec.genKeyPair();
 var key2 = ec.genKeyPair();

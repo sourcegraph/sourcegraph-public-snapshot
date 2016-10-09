@@ -10,7 +10,7 @@ if (!process.browser) {
   vmtest();
 }
 function test (ourProcess) {
-    describe('test arguments', function (t) {
+    describe('test arguments', function () {
         it ('works', function (done) {
           var order = 0;
 
@@ -76,9 +76,7 @@ if (!process.browser) {
           ok = false;
         }
         var ran = false;
-        console.log('clear timeout start');
         function cleanup() {
-          console.log('seccond');
           clearTimeout = oldClear;
           var err;
           try {
@@ -91,7 +89,6 @@ if (!process.browser) {
         }
         setTimeout(cleanup, 1000);
         ourProcess.nextTick(function () {
-          console.log('first');
           ran = true;
         });
       });
@@ -145,6 +142,58 @@ function vmtest() {
       script.runInNewContext(context);
       assert.ok(context.works);
       done();
+    });
+    it('should generally work', function (done) {
+      var str = '"use strict";var module = {exports:{}};';
+      str += process;
+      str += 'process.nextTick(function () {assert.ok(true);done();})';
+      var script = new vm.Script(str);
+      var context = {
+        clearTimeout: clearTimeout,
+        setTimeout: setTimeout,
+        done: done,
+        assert: assert
+      };
+      script.runInNewContext(context);
+    });
+    it('late defs setTimeout', function (done) {
+      var str = '"use strict";var module = {exports:{}};';
+      str += process;
+      str += 'var setTimeout = hiddenSetTimeout;process.nextTick(function () {assert.ok(true);done();})';
+      var script = new vm.Script(str);
+      var context = {
+        clearTimeout: clearTimeout,
+        hiddenSetTimeout: setTimeout,
+        done: done,
+        assert: assert
+      };
+      script.runInNewContext(context);
+    });
+    it('late defs clearTimeout', function (done) {
+      var str = '"use strict";var module = {exports:{}};';
+      str += process;
+      str += 'var clearTimeout = hiddenClearTimeout;process.nextTick(function () {assert.ok(true);done();})';
+      var script = new vm.Script(str);
+      var context = {
+        hiddenClearTimeout: clearTimeout,
+        setTimeout: setTimeout,
+        done: done,
+        assert: assert
+      };
+      script.runInNewContext(context);
+    });
+    it('late defs setTimeout and then redefine', function (done) {
+      var str = '"use strict";var module = {exports:{}};';
+      str += process;
+      str += 'var setTimeout = hiddenSetTimeout;process.nextTick(function () {setTimeout = function (){throw new Error("foo")};hiddenSetTimeout(function(){process.nextTick(function (){assert.ok(true);done();});});});';
+      var script = new vm.Script(str);
+      var context = {
+        clearTimeout: clearTimeout,
+        hiddenSetTimeout: setTimeout,
+        done: done,
+        assert: assert
+      };
+      script.runInNewContext(context);
     });
   });
 }

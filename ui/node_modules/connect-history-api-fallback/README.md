@@ -20,7 +20,7 @@ message to the user.
 
 This tiny middleware addresses some of the issues. Specifically, it will change
 the requested location to the index you specify (default being `/index.html`)
-whenever there is a request which fulfils the following criteria:
+whenever there is a request which fulfills the following criteria:
 
  1. The request is a GET request
  2. which accepts `text/html`,
@@ -132,5 +132,16 @@ Override the default `Accepts:` headers that are queried when matching HTML cont
 ```javascript
 history({
   htmlAcceptHeaders: ['text/html', 'application/xhtml+xml']
+})
+```
+
+### disableDotRule
+Disables the dot rule mentioned above:
+
+> […] is not a direct file request, i.e. the requested path does not contain a `.` (DOT) character […]
+
+```javascript
+history({
+  disableDotRule: true
 })
 ```

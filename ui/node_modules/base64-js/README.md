@@ -21,8 +21,9 @@ With [npm](https://npmjs.org) do:
 
 `var base64 = require('base64-js')`
 
-`base64` has two exposed functions, `toByteArray` and `fromByteArray`, which both take a single argument.
+`base64` has three exposed functions, `byteLength`, `toByteArray` and `fromByteArray`, which both take a single argument.
 
+* `byteLength` - Takes a base64 string and returns length of byte array
 * `toByteArray` - Takes a base64 string and returns a byte array
 * `fromByteArray` - Takes a byte array and returns a base64 string
 

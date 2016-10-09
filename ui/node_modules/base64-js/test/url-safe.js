@@ -1,5 +1,5 @@
 var test = require('tape')
-var b64 = require('../lib/b64')
+var b64 = require('../')
 
 test('decode url-safe style base64 strings', function (t) {
   var expected = [0xff, 0xff, 0xbe, 0xff, 0xef, 0xbf, 0xfb, 0xef, 0xff]

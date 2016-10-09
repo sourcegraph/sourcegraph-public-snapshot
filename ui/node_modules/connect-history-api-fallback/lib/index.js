@@ -56,7 +56,8 @@ exports = module.exports = function historyApiFallback(options) {
       }
     }
 
-    if (parsedUrl.pathname.indexOf('.') !== -1) {
+    if (parsedUrl.pathname.indexOf('.') !== -1 &&
+        options.disableDotRule !== true) {
       logger(
         'Not rewriting',
         req.method,
