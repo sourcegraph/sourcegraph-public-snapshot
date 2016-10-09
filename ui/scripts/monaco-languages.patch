@@ -1,0 +1,35 @@
+diff --git a/ui/node_modules/monaco-languages/src/monaco.contribution.ts b/ui/node_modules/monaco-languages/src/monaco.contribution.ts
+index d1ad9d8..538b1b5 100644
+--- a/ui/node_modules/monaco-languages/src/monaco.contribution.ts
++++ b/ui/node_modules/monaco-languages/src/monaco.contribution.ts
+@@ -24,9 +24,9 @@ let languageDefinitions:{[languageId:string]:ILang} = {};
+ function _loadLanguage(languageId:string): TPromise<void> {
+ 	let module = languageDefinitions[languageId].module;
+ 	return new TPromise<void>((c, e, p) => {
+-		require<ILangImpl>([module], (mod) => {
++		(require as any)([`monaco-languages/out/${module.slice(2)}.js`], (mod: ILangImpl) => {
+ 			setMonarchTokensProvider(languageId, mod.language);
+ 			setLanguageConfiguration(languageId, mod.conf);
+ 			c(void 0);
+-		}, e);
++		});
+ 	});
+diff --git a/ui/node_modules/monaco-languages/tsconfig.json b/ui/node_modules/monaco-languages/tsconfig.json
+index 3534ffb..bdae2a2 100644
+--- a/ui/node_modules/monaco-languages/tsconfig.json
++++ b/ui/node_modules/monaco-languages/tsconfig.json
+@@ -1,5 +1,7 @@
+ {
+   "compilerOptions": {
++    "baseUrl": ".",
++    "paths": {"vs/*": ["../vscode/src/vs/*"]},
+     "module": "amd",
+     "outDir": "out",
+     "target": "es5"
+@@ -9,6 +11,5 @@
+     "test/*.ts"
+   ],
+   "files": [
+-    "node_modules/monaco-editor-core/monaco.d.ts"
+   ]
+ }

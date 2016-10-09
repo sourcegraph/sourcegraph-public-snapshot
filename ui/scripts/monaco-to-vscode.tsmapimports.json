@@ -1,0 +1,324 @@
+{
+	"CancellationToken": {
+		"module": "vs/base/common/cancellation",
+		"name": "CancellationToken"
+	},
+	"monaco.Promise": {
+		"module": "vs/base/common/winjs.base",
+		"name": "TPromise"
+	},
+	"Promise": {
+		"module": "vs/base/common/winjs.base",
+		"name": "TPromise"
+	},
+	"Uri": {
+		"module": "vs/base/common/uri",
+		"fromName": "default",
+		"name": "URI"
+	},
+	"IRichLanguageConfiguration": {
+		"module": "vs/editor/common/modes/languageConfigurationRegistry",
+		"name": "LanguageConfiguration"
+	},
+	"LanguageConfiguration": {
+		"module": "vs/editor/common/modes/languageConfigurationRegistry",
+		"name": "LanguageConfiguration"
+	},
+	"monaco.languages.register": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "register"
+	},
+	"monaco.languages.onLanguage": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "onLanguage"
+	},
+	"monaco.languages.setLanguageConfiguration": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "setLanguageConfiguration"
+	},
+	"monaco.languages.setTokensProvider": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "setTokensProvider"
+	},
+	"monaco.languages.setMonarchTokensProvider": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "setMonarchTokensProvider"
+	},
+	"monaco.languages.IndentAction": {
+		"module": "vs/editor/common/modes",
+		"name": "IndentAction"
+	},
+	"monaco.languages.ILanguageExtensionPoint": {
+		"module": "vs/editor/common/services/modeService",
+		"name": "ILanguageExtensionPoint"
+	},
+	"monaco.languages.IMonarchLanguage": {
+		"module": "vs/editor/common/modes/monarch/monarchTypes",
+		"name": "IMonarchLanguage"
+	},
+	"IMonarchLanguage": {
+		"module": "vs/editor/common/modes/monarch/monarchTypes",
+		"name": "IMonarchLanguage"
+	},
+	"ILanguage": {
+		"module": "vs/editor/common/modes/monarch/monarchTypes",
+		"name": "IMonarchLanguage"
+	},
+	"monaco.IDisposable": {
+		"module": "vs/base/common/lifecycle",
+		"name": "IDisposable"
+	},
+	"IDisposable": {
+		"module": "vs/base/common/lifecycle",
+		"name": "IDisposable"
+	},
+	"monaco.IEvent": {
+		"module": "vs/base/common/event",
+		"fromName": "default",
+		"name": "IEvent"
+	},
+	"IEvent": {
+		"module": "vs/base/common/event",
+		"fromName": "default",
+		"name": "IEvent"
+	},
+	"monaco.Emitter": {
+		"module": "vs/base/common/event",
+		"name": "Emitter"
+	},
+	"Emitter": {
+		"module": "vs/base/common/event",
+		"name": "Emitter"
+	},
+	"monaco.editor.IReadOnlyModel": {
+		"module": "vs/editor/common/editorCommon",
+		"name": "IReadOnlyModel"
+	},
+	"monaco.IPosition": {
+		"module": "vs/editor/common/editorCommon",
+		"name": "IPosition"
+	},
+	"Position": {
+		"module": "vs/editor/common/core/position",
+		"name": "Position"
+	},
+	"monaco.Severity": {
+		"module": "vs/base/common/severity",
+		"fromName": "default",
+		"name": "Severity"
+	},
+	"monaco.editor.ISingleEditOperation": {
+		"module": "vs/editor/common/editorCommon",
+		"name": "ISingleEditOperation"
+	},
+	"monaco.IRange": {
+		"module": "vs/editor/common/editorCommon",
+		"name": "IRange"
+	},
+	"Range": {
+		"module": "vs/editor/common/core/range",
+		"name": "Range"
+	},
+	"monaco.editor.IModel": {
+		"module": "vs/editor/common/editorCommon",
+		"name": "IModel"
+	},
+	"monaco.languages.IToken": {
+		"module": "vs/editor/common/modes",
+		"fromName": "IToken2",
+		"name": "IToken"
+	},
+	"monaco.languages.ILineTokens": {
+		"module": "vs/editor/common/modes",
+		"fromName": "ILineTokens2",
+		"name": "ILineTokens"
+	},
+	"monaco.languages.LanguageConfiguration": {
+		"module": "vs/editor/common/modes/languageConfigurationRegistry",
+		"name": "LanguageConfiguration"
+	},
+	"monaco.languages.IState": {
+		"module": "vs/editor/common/modes",
+		"name": "IState2"
+	},
+	"monaco.languages.Definition": {
+		"module": "vs/editor/common/modes",
+		"name": "Definition"
+	},
+	"monaco.languages.DocumentHighlightKind": {
+		"module": "vs/editor/common/modes",
+		"name": "DocumentHighlightKind"
+	},
+	"monaco.languages.Hover": {
+		"module": "vs/editor/common/modes",
+		"name": "Hover"
+	},
+	"monaco.languages.SymbolKind": {
+		"module": "vs/editor/common/modes",
+		"name": "SymbolKind"
+	},
+	"monaco.languages.Location": {
+		"module": "vs/editor/common/modes",
+		"name": "Location"
+	},
+	"monaco.languages.FormattingOptions": {
+		"module": "vs/editor/common/modes",
+		"name": "FormattingOptions"
+	},
+	"monaco.languages.SignatureHelp": {
+		"module": "vs/editor/common/modes",
+		"name": "SignatureHelp"
+	},
+	"IWorkerContext": {
+		"module": "vs/editor/common/services/editorSimpleWorker",
+		"name": "IWorkerContext"
+	},
+	"monaco.worker.IMirrorModel": {
+		"module": "vs/editor/common/services/editorSimpleWorker",
+		"name": "IMirrorModel"
+	},
+	"monaco.languages.DocumentHighlight": {
+		"module": "vs/editor/common/modes",
+		"name": "DocumentHighlight"
+	},
+	"monaco.editor.getModel": {
+		"module": "vs/editor/browser/standalone/standaloneEditor",
+		"name": "getModel"
+	},
+	"monaco.editor.setModelMarkers": {
+		"module": "vs/editor/browser/standalone/standaloneEditor",
+		"name": "setModelMarkers"
+	},
+	"monaco.editor.getModel": {
+		"module": "vs/editor/browser/standalone/standaloneEditor",
+		"name": "getModel"
+	},
+	"monaco.editor.getModels": {
+		"module": "vs/editor/browser/standalone/standaloneEditor",
+		"name": "getModels"
+	},
+	"monaco.editor.createWebWorker": {
+		"module": "vs/editor/browser/standalone/standaloneEditor",
+		"name": "createWebWorker"
+	},
+	"monaco.editor.MonacoWebWorker": {
+		"module": "vs/editor/common/services/webWorker",
+		"name": "MonacoWebWorker"
+	},
+	"monaco.editor.onWillDisposeModel": {
+		"module": "vs/editor/browser/standalone/standaloneEditor",
+		"name": "onWillDisposeModel"
+	},
+	"monaco.editor.onDidChangeModelLanguage": {
+		"module": "vs/editor/browser/standalone/standaloneEditor",
+		"name": "onDidChangeModelLanguage"
+	},
+	"monaco.editor.onDidCreateModel": {
+		"module": "vs/editor/browser/standalone/standaloneEditor",
+		"name": "onDidCreateModel"
+	},
+	"monaco.languages.typescript.CompilerOptions": {
+		"module": "typescript",
+		"name": "CompilerOptions"
+	},
+	"monaco.editor.IMarkerData": {
+		"module": "vs/platform/markers/common/markers",
+		"name": "IMarkerData"
+	},
+	"monaco.languages.SymbolInformation": {
+		"module": "vs/editor/common/modes",
+		"name": "SymbolInformation"
+	},
+	"monaco.languages.ReferenceContext": {
+		"module": "vs/editor/common/modes",
+		"name": "ReferenceContext"
+	},
+	"monaco.languages.SignatureInformation": {
+		"module": "vs/editor/common/modes",
+		"name": "SignatureInformation"
+	},
+	"monaco.languages.ParameterInformation": {
+		"module": "vs/editor/common/modes",
+		"name": "ParameterInformation"
+	},
+	"monaco.languages.CompletionItem": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "CompletionItem"
+	},
+	"monaco.languages.CompletionItemKind": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "CompletionItemKind"
+	},
+	"monaco.languages.HoverProvider": {
+		"module": "vs/editor/common/modes",
+		"name": "HoverProvider"
+	},
+	"monaco.languages.CompletionItemProvider": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "CompletionItemProvider"
+	},
+	"monaco.languages.DocumentHighlightProvider": {
+		"module": "vs/editor/common/modes",
+		"name": "DocumentHighlightProvider"
+	},
+	"monaco.languages.DocumentRangeFormattingEditProvider": {
+		"module": "vs/editor/common/modes",
+		"name": "DocumentRangeFormattingEditProvider"
+	},
+	"monaco.languages.DocumentSymbolProvider": {
+		"module": "vs/editor/common/modes",
+		"name": "DocumentSymbolProvider"
+	},
+	"monaco.languages.OnTypeFormattingEditProvider": {
+		"module": "vs/editor/common/modes",
+		"name": "OnTypeFormattingEditProvider"
+	},
+	"monaco.languages.ReferenceProvider": {
+		"module": "vs/editor/common/modes",
+		"name": "ReferenceProvider"
+	},
+	"monaco.languages.SignatureHelpProvider": {
+		"module": "vs/editor/common/modes",
+		"name": "SignatureHelpProvider"
+	},
+	"monaco.languages.TokensProvider": {
+		"module": "vs/editor/common/modes",
+		"name": "TokensProvider"
+	},
+	"monaco.languages.registerCompletionItemProvider": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "registerCompletionItemProvider"
+	},
+	"monaco.languages.registerDefinitionProvider": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "registerDefinitionProvider"
+	},
+	"monaco.languages.registerDocumentHighlightProvider": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "registerDocumentHighlightProvider"
+	},
+	"monaco.languages.registerDocumentRangeFormattingEditProvider": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "registerDocumentRangeFormattingEditProvider"
+	},
+	"monaco.languages.registerDocumentSymbolProvider": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "registerDocumentSymbolProvider"
+	},
+	"monaco.languages.registerHoverProvider": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "registerHoverProvider"
+	},
+	"monaco.languages.registerOnTypeFormattingEditProvider": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "registerOnTypeFormattingEditProvider"
+	},
+	"monaco.languages.registerReferenceProvider": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "registerReferenceProvider"
+	},
+	"monaco.languages.registerSignatureHelpProvider": {
+		"module": "vs/editor/browser/standalone/standaloneLanguages",
+		"name": "registerSignatureHelpProvider"
+	}
+}
