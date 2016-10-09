@@ -101,6 +101,7 @@ PGUSER ?= $(USER)
 TESTPKGS ?= $(shell go list ./... | grep -v /vendor/)
 test: check src app/assets/bundle.js
 	cd ui && npm test
+	CDPATH= cd ui/scripts/tsmapimports && PATH=$$PATH:../../node_modules/.bin npm test
 	go test -race ${TESTPKGS}
 
 check: ${GOBIN}/go-template-lint
