@@ -24,7 +24,10 @@ module.exports = {
 			{test: /\.svg$/, loader: "null"},
 			{test: /\.css$/, loader: "null"},
 		],
-		noParse: /\.min\.js$/,
+		noParse: [
+			/\.min\.js$/,
+			/typescriptServices\.js$/,
+		],
 	},
 	ts: {
 		compilerOptions: {
