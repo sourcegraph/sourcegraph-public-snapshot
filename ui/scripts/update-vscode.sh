@@ -3,7 +3,8 @@
 set -euf -o pipefail
 
 REV=${1:-6e52a9f082ab01dfcb0b4cdbaa5100903aa59a78} # pin to commit ID, bump as needed
-VENDOR_DIR=$(git rev-parse --show-toplevel)/ui/node_modules/vscode
+REPO_DIR=$(git rev-parse --show-toplevel)
+VENDOR_DIR="$REPO_DIR"/ui/node_modules/vscode
 
 # Use a bare repo so we don't have to worry about checking for a dirty
 # working tree.
@@ -58,52 +59,21 @@ case $(uname) in
 	*) sedi='sed -i' ;;
 esac
 
-# Standardize CSS module import path syntax.
+# Standardize CSS module import path syntax. There's no way to get
+# Webpack to work with vscode's custom "vs/css!" syntax.
 echo -n Munging imports...
 find "$VENDOR_DIR" -name '*.ts' \
 	 -exec $sedi 's/import '"'"'vs'$'\\''/css!\([^'"'"']*\)'"'"';/import '"'"'\1.css'"'"';/g' \{\} \;
 echo OK
 
-# TODO(sqs): add --sourceMap
+echo -n Applying Sourcegraph-specific patches...
+patch --no-backup-if-mismatch --quiet --directory "$REPO_DIR" -p1 < "$REPO_DIR"/ui/scripts/vscode.patch
+echo OK
+
 echo -n Compiling TypeScript...
 tsc --skipLibCheck -p "$VENDOR_DIR"/src --module commonjs --declaration
 cleanupSourceFiles
 echo OK
-
-################################################################################
-################################################################################
-# BEGIN HACKS
-#
-# These might break if vscode changes its code. If any of them break,
-# Webpack should emit a warning to the browser JS console.
-echo -n Applying hacks to make vscode work in the browser...
-
-# Run the web worker from a webpack script that is in the bundle but that
-# doesn't have its own separate URL. We must assign this before anything
-# in vscode gets run, which is why we set it in Webpack instead of in our
-# own code.
-#
-# See http://stackoverflow.com/questions/10343913/how-to-create-a-web-worker-from-a-string and
-# http://stackoverflow.com/questions/5408406/web-workers-without-a-separate-javascript-file
-# for more information about (and limitations of) this technique.
-$sedi 's|require.toUrl.*workerId.*|require\("worker\?inline!vs/base/worker/workerMain"\);|' "$VENDOR_DIR"/src/vs/base/worker/defaultWorkerFactory.js
-
-# Remove another unnecessary and unused require.toUrl.
-$sedi 's|this.iframe.src = require.toUrl.*workerMainCompatibility.*|throw new Exception\("invalid require.toUrl call"\);|' "$VENDOR_DIR"/src/vs/base/worker/defaultWorkerFactory.js
-
-# lazyProxyReject doesn't SEEM to do anything, but the call to it
-# fails with 'Uncaught TypeError: lazyProxyReject is not a function'
-# because the assignment to it doesn't get called for some reason. So, just make
-# it a no-op.
-$sedi 's|lazyProxyReject = null|lazyProxyReject = function() {}|' "$VENDOR_DIR"/src/vs/base/common/worker/simpleWorker.js
-
-# An unused dynamic import that Webpack complains about.
-$sedi 's|require.*descriptor.moduleName.*|throw new Error\("invalid require call"\);xxx\(function\(\) {|' "$VENDOR_DIR"/src/vs/platform/instantiation/common/instantiationService.js
-
-echo OK
-# END HACKS
-################################################################################
-################################################################################
 
 echo
 echo 'Done! Updated vscode in' "$VENDOR_DIR"
