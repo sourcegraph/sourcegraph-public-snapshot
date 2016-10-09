@@ -29,7 +29,6 @@ const plugins = [
 			NODE_ENV: JSON.stringify(process.env.NODE_ENV || "development"),
 		},
 		"process.getuid": "function() { return 0; }",
-		lazyProxyReject: `function() { }`,
 	}),
 	new webpack.IgnorePlugin(/testdata\//),
 	new webpack.IgnorePlugin(/\.json$/),
