@@ -76,34 +76,6 @@ func TestRobotsTxt(t *testing.T) {
 	}
 }
 
-func TestFavicon(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	resp, err := http.Get(u("/favicon.ico"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	n, err := io.Copy(ioutil.Discard, resp.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = resp.Body.Close()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := http.StatusOK; resp.StatusCode != want {
-		t.Errorf("got HTTP status %v, want %v\n", resp.Status, want)
-	}
-	if got, want := resp.Header.Get("Content-Type"), "image/png"; got != want {
-		t.Errorf("got Content-Type %v, want %v\n", got, want)
-	}
-	if n == 0 {
-		t.Error("got empty body, want non-empty")
-	}
-}
-
 // u converts an absolute path to a full url, including scheme, host and port of test server.
 // For example, "/robots.txt" will become "http://localhost:10001/robots.txt".
 func u(path string) string {
