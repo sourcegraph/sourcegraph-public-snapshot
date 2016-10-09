@@ -1,8 +1,8 @@
 diff --git a/ui/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts b/ui/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts
-index 013d00a..026d2fe 100644
+index 38a4fcd..58820f9 100644
 --- a/ui/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts
 +++ b/ui/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts
-@@ -167,7 +167,12 @@ export class SimpleWorkerClient<T> extends Disposable {
+@@ -194,7 +194,12 @@ export class SimpleWorkerClient<T> extends Disposable {
  		super();
  
  		let lazyProxyFulfill: (v: T) => void = null;
@@ -17,10 +17,10 @@ index 013d00a..026d2fe 100644
  		this._worker = this._register(workerFactory.create(
  			'vs/base/common/worker/simpleWorker',
 diff --git a/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts b/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts
-index 87d36dd..d44027f 100644
+index c9ba5ea..8ae2336 100644
 --- a/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts
 +++ b/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts
-@@ -10,7 +10,15 @@ import * as flags from 'vs/base/common/flags';
+@@ -8,7 +8,15 @@ import * as flags from 'vs/base/common/flags';
  import { logOnceWebWorkerWarning, IWorker, IWorkerCallback, IWorkerFactory } from 'vs/base/common/worker/simpleWorker';
  
  function defaultGetWorkerUrl(workerId: string, label: string): string {
@@ -37,11 +37,38 @@ index 87d36dd..d44027f 100644
  }
  var getWorkerUrl = flags.getCrossOriginWorkerScriptUrl || defaultGetWorkerUrl;
  
+diff --git a/ui/node_modules/vscode/src/vs/base/worker/workerMain.ts b/ui/node_modules/vscode/src/vs/base/worker/workerMain.ts
+index f80f9d4..62cab87 100644
+--- a/ui/node_modules/vscode/src/vs/base/worker/workerMain.ts
++++ b/ui/node_modules/vscode/src/vs/base/worker/workerMain.ts
+@@ -9,17 +9,12 @@
+ 	let MonacoEnvironment = (<any>self).MonacoEnvironment;
+ 	let monacoBaseUrl = MonacoEnvironment && MonacoEnvironment.baseUrl ? MonacoEnvironment.baseUrl : '../../../';
+ 
+-	if (typeof (<any>self).define !== 'function' || !(<any>self).define.amd) {
+-		importScripts(monacoBaseUrl + 'vs/loader.js');
+-	}
+-
+-	require.config({
+-		baseUrl: monacoBaseUrl,
+-		catchError: true
+-	});
+-
+ 	let loadCode = function (moduleId) {
+-		require([moduleId], function (ws) {
++		// HACK: webpack doesn't support completely dynamic requires, so constrain this and make it be known if anything else is ever passed to it.
++		if (moduleId !== 'vs/base/common/worker/simpleWorker') {
++			throw new Error('can\'t dynamically load module ' + moduleId);
++		}
++		require(['vs/base/common/worker/simpleWorker'], function (ws) {
+ 			setTimeout(function () {
+ 				let messageHandler = ws.create((msg: any) => {
+ 					(<any>self).postMessage(msg);
 diff --git a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
-index d71ab64..2cd1d05 100644
+index 0e70b5a..44175c0 100644
 --- a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
 +++ b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
-@@ -236,65 +236,3 @@ export function colorize(text: string, languageId: string, options: IColorizerOptio
+@@ -236,65 +236,3 @@ export function colorize(text: string, languageId: string, options: IColorizerOp
  export function colorizeModelLine(model: IModel, lineNumber: number, tabSize: number = 4): string {
  	return Colorizer.colorizeModelLine(model, lineNumber, tabSize);
  }
@@ -108,10 +135,10 @@ index d71ab64..2cd1d05 100644
 -	};
 -}
 diff --git a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts
-index 1dd1702..db4e99f 100644
+index 808d6df..79f1905 100644
 --- a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts
 +++ b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts
-@@ -479,39 +479,3 @@ class SuggestAdapter {
+@@ -478,39 +478,3 @@ class SuggestAdapter {
  		});
  	}
  }
@@ -152,7 +179,7 @@ index 1dd1702..db4e99f 100644
 -	};
 -}
 diff --git a/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts b/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
-index b4e8ec5..9413c47 100644
+index 527609a..9041aa3 100644
 --- a/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
 +++ b/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
 @@ -19,7 +19,6 @@ import { computeLinks } from 'vs/editor/common/modes/linkComputer';
@@ -174,7 +201,7 @@ index b4e8ec5..9413c47 100644
 -	global.monaco = createMonacoBaseAPI();
 -}
 diff --git a/ui/node_modules/vscode/src/vs/editor/common/standalone/standaloneBase.ts b/ui/node_modules/vscode/src/vs/editor/common/standalone/standaloneBase.ts
-index 463339e..af17265 100644
+index 287c98b..28c418c 100644
 --- a/ui/node_modules/vscode/src/vs/editor/common/standalone/standaloneBase.ts
 +++ b/ui/node_modules/vscode/src/vs/editor/common/standalone/standaloneBase.ts
 @@ -214,21 +214,3 @@ export enum KeyCode {
@@ -200,7 +227,7 @@ index 463339e..af17265 100644
 -	};
 -}
 diff --git a/ui/node_modules/vscode/src/vs/editor/editor.main.ts b/ui/node_modules/vscode/src/vs/editor/editor.main.ts
-index db23f0e..21ea072 100644
+index 7634a8e..abd19c1 100644
 --- a/ui/node_modules/vscode/src/vs/editor/editor.main.ts
 +++ b/ui/node_modules/vscode/src/vs/editor/editor.main.ts
 @@ -10,16 +10,8 @@ import 'vs/editor/contrib/quickOpen/browser/quickOutline';
@@ -222,7 +249,7 @@ index db23f0e..21ea072 100644
 -global.monaco.languages = createMonacoLanguagesAPI();
 \ No newline at end of file
 diff --git a/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts b/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
-index 2f23db4..33fedfb 100644
+index f4fb6eb..5a00427 100644
 --- a/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
 +++ b/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
 @@ -83,37 +83,9 @@ export class InstantiationService implements IInstantiationService {
