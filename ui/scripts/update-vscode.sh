@@ -2,7 +2,7 @@
 
 set -euf -o pipefail
 
-REV=${1:-master}
+REV=${1:-6e52a9f082ab01dfcb0b4cdbaa5100903aa59a78} # pin to commit ID, bump as needed
 VENDOR_DIR=$(git rev-parse --show-toplevel)/ui/node_modules/vscode
 
 # Use a bare repo so we don't have to worry about checking for a dirty
