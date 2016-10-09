@@ -40,8 +40,8 @@ var FuncMap = htmpl.FuncMap{
 		return s[:maxLen]
 	},
 
-	"assetURL":    assets.URL,
-	"absAssetURL": assets.AbsURL,
+	"assetURL":                assets.URL,
+	"mainJavaScriptBundleURL": assets.MainJavaScriptBundleURL,
 
 	"googleAnalyticsTrackingID": func() string { return appconf.Flags.GoogleAnalyticsTrackingID },
 

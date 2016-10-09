@@ -41,8 +41,7 @@ app-dep:
 	cd ui && npm run dep
 
 WEBPACK_DEV_SERVER_URL ?= http://localhost:8080
-PUBLIC_WEBPACK_DEV_SERVER_URL ?= $(WEBPACK_DEV_SERVER_URL)
-WEBPACK_DEV_SERVER_ADDR ?= 127.0.0.1
+WEBPACK_DEV_SERVER_ADDR ?= 127.0.0.1:8080
 SERVEFLAGS ?=
 
 # non-critical credentials for dev environment
@@ -58,7 +57,7 @@ export LIGHTSTEP_ACCESS_TOKEN ?= d60b0b2477a7ccb05d7783917f648816
 serve-dev: serve-dep
 	@echo Starting server\; will recompile and restart when source files change
 	@echo
-	DEBUG=t rego -installenv=GOGC=off,GODEBUG=sbrk=1 -tags="$(GOTAGS)" sourcegraph.com/sourcegraph/sourcegraph/cmd/src $(SRCFLAGS) serve --reload --app.webpack-dev-server=$(WEBPACK_DEV_SERVER_URL) --app.disable-support-services $(SERVEFLAGS)
+	WEBPACK_DEV_SERVER_URL=$(WEBPACK_DEV_SERVER_URL) DEBUG=t rego -installenv=GOGC=off,GODEBUG=sbrk=1 -tags="$(GOTAGS)" sourcegraph.com/sourcegraph/sourcegraph/cmd/src $(SRCFLAGS) serve --reload --app.disable-support-services $(SERVEFLAGS)
 
 serve-dep:
 	go get sourcegraph.com/sqs/rego
@@ -68,7 +67,7 @@ serve-dep:
 # the app itself).
 	@[ "$(SGXOS)" = "windows" ] || [ `ulimit -n` -ge 10000 ] || (echo "Error: Please increase the open file limit by running\n\n  ulimit -n 10000\n" 1>&2; exit 1)
 
-	@[ -n "$(WEBPACK_DEV_SERVER_URL)" ] && [ "$(WEBPACK_DEV_SERVER_URL)" != " " ] && (curl -Ss -o /dev/null "$(WEBPACK_DEV_SERVER_URL)" || (cd ui && WEBPACK_DEV_SERVER_URL="$(WEBPACK_DEV_SERVER_URL)" PUBLIC_WEBPACK_DEV_SERVER_URL="$(PUBLIC_WEBPACK_DEV_SERVER_URL)" WEBPACK_DEV_SERVER_ADDR="$(WEBPACK_DEV_SERVER_ADDR)" npm start &)) || echo Serving bundled assets, not using Webpack.
+	@[ -n "$(WEBPACK_DEV_SERVER_URL)" ] && [ "$(WEBPACK_DEV_SERVER_URL)" != " " ] && (curl -Ss -o /dev/null "$(WEBPACK_DEV_SERVER_URL)" || (cd ui && WEBPACK_DEV_SERVER_URL="$(WEBPACK_DEV_SERVER_URL)" WEBPACK_DEV_SERVER_ADDR="$(WEBPACK_DEV_SERVER_ADDR)" npm start &)) || echo Serving bundled assets, not using Webpack.
 
 libvfsgen:
 	go get github.com/shurcooL/vfsgen
@@ -85,7 +84,8 @@ dist: dist-dep app-dep
 	${GOBIN}/sgtool -v package $(PACKAGEFLAGS)
 
 generate:
-	go list ./... | grep -v /vendor/ | xargs go generate
+# Ignore app/assets because its output is not checked into Git.
+	go list ./... | grep -v /vendor/ | grep -v app/assets | xargs go generate
 	cd ui && npm run generate
 
 db-reset: src
@@ -101,6 +101,7 @@ PGUSER ?= $(USER)
 TESTPKGS ?= $(shell go list ./... | grep -v /vendor/)
 test: check src app/assets/bundle.js
 	cd ui && npm test
+	CDPATH= cd ui/scripts/tsmapimports && PATH=$$PATH:../../node_modules/.bin npm test
 	go test -race ${TESTPKGS}
 
 check: ${GOBIN}/go-template-lint

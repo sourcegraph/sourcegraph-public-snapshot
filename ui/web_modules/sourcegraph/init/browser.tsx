@@ -20,7 +20,9 @@ import "sourcegraph/init/Sentry";
 import "autotrack/lib/plugins/url-change-tracker";
 
 context.reset(global.window.__sourcegraphJSContext);
-global.__webpack_public_path__ = document.head.dataset["webpackPublicPath"]; // eslint-disable-line no-undef
+
+declare var __webpack_public_path__: any;
+__webpack_public_path__ = document.head.dataset["webpackPublicPath"]; // tslint-disable-line no-undef
 
 const rootEl = document.getElementById("main") as HTMLElement;
 

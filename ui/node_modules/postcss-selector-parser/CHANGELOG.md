@@ -1,3 +1,8 @@
+# 2.2.1
+
+* Allows a consumer to specify whitespace tokens when creating a new Node
+  (thanks to @Semigradsky).
+
 # 2.2.0
 
 * Added a new option to normalize whitespace when parsing the selector string

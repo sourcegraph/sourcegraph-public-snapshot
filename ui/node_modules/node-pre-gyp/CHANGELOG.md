@@ -1,5 +1,10 @@
 # node-pre-gyp changelog
 
+## 0.6.30
+
+ - Update to npmlog@4.x and semver@5.3.x
+ - Add known node version for v6.5.0
+
 ## 0.6.29
 
  - Add known node versions for v0.10.45, v0.12.14, v4.4.4, v5.11.1, and v6.1.0

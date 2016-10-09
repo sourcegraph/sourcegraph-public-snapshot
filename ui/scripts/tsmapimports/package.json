@@ -1,0 +1,12 @@
+{
+  "name": "tsmapimports",
+  "version": "0.0.1",
+  "description": "TypeScript import remapper: replaces all instances of a selector with something else and adds an import",
+  "main": "index.js",
+  "devDependencies": {
+    "@types/node": "^6.0.45"
+  },
+  "scripts": {
+    "test": "tsc && TEST=1 node index.js"
+  }
+}

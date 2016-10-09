@@ -61,6 +61,12 @@ func (c *PackageCmd) Execute(args []string) error {
 	}
 
 	if !c.SkipWebpack {
+		// Remove old bundle.
+		rmCmd := exec.Command("git", "clean", "-fdx", "ui/assets")
+		if err := execCmd(rmCmd); err != nil {
+			return err
+		}
+
 		webpackCmd := exec.Command("npm", "run", "build")
 		webpackCmd.Dir = "./ui"
 		if err := execCmd(webpackCmd); err != nil {
@@ -68,13 +74,7 @@ func (c *PackageCmd) Execute(args []string) error {
 		}
 	}
 
-	gopath := strings.Join([]string{
-		filepath.Join(os.Getenv("PWD"), "Godeps", "_workspace"),
-		os.Getenv("GOPATH"),
-	}, string(filepath.ListSeparator))
-
 	genCmd := exec.Command("go", "generate", "./app/assets", "./app/templates")
-	overrideEnv(genCmd, "GOPATH", gopath)
 	if err := execCmd(genCmd); err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (c *PackageCmd) Execute(args []string) error {
 			env := []string{
 				"GOOS=" + osName,
 				"GOARCH=amd64",
-				"GOPATH=" + gopath,
+				"GOPATH=" + os.Getenv("GOPATH"),
 				"PATH=" + os.Getenv("PATH"),
 				"CGO_ENABLED=0",
 			}

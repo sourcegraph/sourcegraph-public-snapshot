@@ -93,7 +93,7 @@ proxy.web(req, res, { target: 'http://mytarget.com:8080' }, function(e) { ... })
 
 When a request is proxied it follows two different pipelines ([available here](lib/http-proxy/passes))
 which apply transformations to both the `req` and `res` object.
-The first pipeline (ingoing) is responsible for the creation and manipulation of the stream that connects your client to the target.
+The first pipeline (incoming) is responsible for the creation and manipulation of the stream that connects your client to the target.
 The second pipeline (outgoing) is responsible for the creation and manipulation of the stream that, from your target, returns data
 to the client.
 
@@ -334,9 +334,21 @@ proxyServer.listen(8015);
 *  **localAddress**: Local interface string to bind for outgoing connections
 *  **changeOrigin**: true/false, Default: false - changes the origin of the host header to the target URL
 *  **auth**: Basic authentication i.e. 'user:password' to compute an Authorization header.
-*  **hostRewrite**: rewrites the location hostname on (301/302/307/308) redirects.
-*  **autoRewrite**: rewrites the location host/port on (301/302/307/308) redirects based on requested host/port. Default: false.
-*  **protocolRewrite**: rewrites the location protocol on (301/302/307/308) redirects to 'http' or 'https'. Default: null.
+*  **hostRewrite**: rewrites the location hostname on (201/301/302/307/308) redirects.
+*  **autoRewrite**: rewrites the location host/port on (201/301/302/307/308) redirects based on requested host/port. Default: false.
+*  **protocolRewrite**: rewrites the location protocol on (201/301/302/307/308) redirects to 'http' or 'https'. Default: null.
+*  **cookieDomainRewrite**: rewrites domain of `set-cookie` headers. Possible values:
+   * `false` (default): disable cookie rewriting
+   * String: new domain, for example `cookieDomainRewrite: "new.domain"`. To remove the domain, use `cookieDomainRewrite: ""`.
+   * Object: mapping of domains to new domains, use `"*"` to match all domains.  
+     For example keep one domain unchanged, rewrite one domain and remove other domains:
+     ```
+     cookieDomainRewrite: {
+       "unchanged.domain": "unchanged.domain",
+       "old.domain": "new.domain",
+       "*": ""
+     }
+     ```
 *  **headers**: object with extra headers to be added to target requests.
 
 **NOTE:**

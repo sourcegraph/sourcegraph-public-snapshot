@@ -1,3 +1,8 @@
+# 2.4.1
+
+* Resolves an issue where the units would be stripped from zero values in
+  custom properties (thanks to @jgerigmeyer).
+
 # 2.4.0
 
 * Added a `precision` option to enable rounding of decimal places for

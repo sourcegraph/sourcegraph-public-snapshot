@@ -72,6 +72,9 @@ exports.createResolver = function(options) {
 	// A list of module alias configurations or an object which maps key to value
 	var alias = options.alias || [];
 
+	// Resolve symlinks to their symlinked location
+	var symlinks = typeof options.symlinks !== "undefined" ? options.symlinks : true;
+
 	// Resolve to a context instead of a file
 	var resolveToContext = options.resolveToContext || false;
 
@@ -227,7 +230,8 @@ exports.createResolver = function(options) {
 		aliasFields.forEach(function(item) {
 			plugins.push(new AliasFieldPlugin("file", item, "resolve"));
 		});
-		plugins.push(new SymlinkPlugin("file", "relative"));
+		if(symlinks)
+			plugins.push(new SymlinkPlugin("file", "relative"));
 		plugins.push(new FileExistsPlugin("file", "existing-file"));
 
 		// existing-file

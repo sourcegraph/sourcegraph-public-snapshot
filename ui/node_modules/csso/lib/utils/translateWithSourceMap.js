@@ -72,30 +72,6 @@ function generateSourceMap(root) {
         css: css,
         map: map
     };
-};
-
-function each(list) {
-    if (list.head === null) {
-        return '';
-    }
-
-    if (list.head === list.tail) {
-        return translate(list.head.data);
-    }
-
-    return list.map(translate).join('');
-}
-
-function eachDelim(list, delimeter) {
-    if (list.head === null) {
-        return '';
-    }
-
-    if (list.head === list.tail) {
-        return translate(list.head.data);
-    }
-
-    return list.map(translate).join(delimeter);
 }
 
 function createAnonymousSourceNode(children) {
@@ -124,6 +100,30 @@ function createSourceNode(info, children) {
         info.source,
         children
     );
+}
+
+function each(list) {
+    if (list.head === null) {
+        return '';
+    }
+
+    if (list.head === list.tail) {
+        return translate(list.head.data);
+    }
+
+    return list.map(translate).join('');
+}
+
+function eachDelim(list, delimeter) {
+    if (list.head === null) {
+        return '';
+    }
+
+    if (list.head === list.tail) {
+        return translate(list.head.data);
+    }
+
+    return list.map(translate).join(delimeter);
 }
 
 function translate(node) {
@@ -155,14 +155,16 @@ function translate(node) {
             return createAnonymousSourceNode(node.selectors.map(translate)).join(',');
 
         case 'SimpleSelector':
-            return createSourceNode(node.info, node.sequence.map(function(node) {
+            var nodes = node.sequence.map(function(node) {
                 // add extra spaces around /deep/ combinator since comment beginning/ending may to be produced
                 if (node.type === 'Combinator' && node.name === '/deep/') {
                     return ' ' + translate(node) + ' ';
                 }
 
                 return translate(node);
-            }));
+            });
+
+            return createSourceNode(node.info, nodes);
 
         case 'Block':
             return createAnonymousSourceNode(node.declarations.map(translate)).join(';');
@@ -173,6 +175,9 @@ function translate(node) {
                 [translate(node.property), ':', translate(node.value)]
             );
 
+        case 'Property':
+            return node.name;
+
         case 'Value':
             return node.important
                 ? each(node.sequence) + '!important'
@@ -180,6 +185,7 @@ function translate(node) {
 
         case 'Attribute':
             var result = translate(node.name);
+            var flagsPrefix = ' ';
 
             if (node.operator !== null) {
                 result += node.operator;
@@ -187,10 +193,15 @@ function translate(node) {
                 if (node.value !== null) {
                     result += translate(node.value);
 
-                    if (node.flags !== null) {
-                        result += (node.value.type !== 'String' ? ' ' : '') + node.flags;
+                    // space between string and flags is not required
+                    if (node.value.type === 'String') {
+                        flagsPrefix = '';
                     }
                 }
+            }
+
+            if (node.flags !== null) {
+                result += flagsPrefix + node.flags;
             }
 
             return '[' + result + ']';
@@ -216,9 +227,6 @@ function translate(node) {
 
         case 'Progid':
             return translate(node.value);
-
-        case 'Property':
-            return node.name;
 
         case 'Combinator':
             return node.name;
@@ -281,4 +289,3 @@ module.exports = function(node) {
         createAnonymousSourceNode(translate(node))
     );
 };
-

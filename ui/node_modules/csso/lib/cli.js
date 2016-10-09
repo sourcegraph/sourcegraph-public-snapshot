@@ -173,6 +173,18 @@ function resolveSourceMap(source, inputMap, map, inputFile, outputFile) {
     };
 }
 
+function processCommentsOption(value) {
+    switch (value) {
+        case 'exclamation':
+        case 'first-exclamation':
+        case 'none':
+            return value;
+    }
+
+    console.error('Wrong value for `comments` option: %s', value);
+    process.exit(2);
+}
+
 var command = cli.create('csso', '[input] [output]')
     .version(require('../package.json').version)
     .option('-i, --input <filename>', 'Input file')
@@ -181,6 +193,7 @@ var command = cli.create('csso', '[input] [output]')
     .option('-u, --usage <filenane>', 'Usage data file')
     .option('--input-map <source>', 'Input source map: none, auto (default) or <filename>', 'auto')
     .option('--restructure-off', 'Turns structure minimization off')
+    .option('--comments <value>', 'Comments to keep: exclamation (default), first-exclamation or none', 'exclamation')
     .option('--stat', 'Output statistics in stderr')
     .option('--debug [level]', 'Output intermediate state of CSS during compression', debugLevel, 0)
     .action(function(args) {
@@ -192,6 +205,7 @@ var command = cli.create('csso', '[input] [output]')
         var map = options.map;
         var inputMap = options.inputMap;
         var structureOptimisationOff = options.restructureOff;
+        var comments = processCommentsOption(options.comments);
         var debug = options.debug;
         var statistics = options.stat;
         var inputStream;
@@ -243,6 +257,7 @@ var command = cli.create('csso', '[input] [output]')
                     sourceMap: sourceMap.output,
                     usage: usageData,
                     restructure: !structureOptimisationOff,
+                    comments: comments,
                     debug: debug
                 });
 

@@ -273,8 +273,9 @@ function parse (args, opts) {
   applyEnvVars(argv, false)
   applyDefaultsAndAliases(argv, flags.aliases, defaults)
 
+  // for any counts either not in args or without an explicit default, set to 0
   Object.keys(flags.counts).forEach(function (key) {
-    setArg(key, defaults[key])
+    if (!hasKey(argv, key.split('.'))) setArg(key, 0)
   })
 
   notFlags.forEach(function (key) {
@@ -334,7 +335,8 @@ function parse (args, opts) {
       if (!isUndefined(val) && !isNumber(val) && checkAllAliases(key, flags.numbers)) value = NaN
     }
 
-    if (checkAllAliases(key, flags.counts)) {
+    // increment a count given as arg (either no value or value parsed as boolean)
+    if (checkAllAliases(key, flags.counts) && (isUndefined(value) || typeof value === 'boolean')) {
       value = increment
     }
 
@@ -514,7 +516,7 @@ function parse (args, opts) {
       o[key] = increment(o[key])
     } else if (o[key] === undefined && checkAllAliases(key, flags.arrays)) {
       o[key] = Array.isArray(value) ? value : [value]
-    } else if (o[key] === undefined || checkAllAliases(key, flags.bools)) {
+    } else if (o[key] === undefined || checkAllAliases(key, flags.bools) || checkAllAliases(key, flags.counts)) {
       o[key] = value
     } else if (Array.isArray(o[key])) {
       o[key].push(value)
@@ -665,8 +667,11 @@ function combineAliases (aliases) {
   return combined
 }
 
+// this function should only be called when a count is given as an arg
+// it is NOT called to set a default value
+// thus we can start the count at 1 instead of 0
 function increment (orig) {
-  return orig !== undefined ? orig + 1 : 0
+  return orig !== undefined ? orig + 1 : 1
 }
 
 function Parser (args, opts) {

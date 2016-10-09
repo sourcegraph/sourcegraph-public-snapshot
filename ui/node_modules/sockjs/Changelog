@@ -1,3 +1,9 @@
+0.3.18
+======
+
+  * Change to using `res.statusCode` instead of manual parsing of `res._header` #213
+  * Update sockjs-protocol filename in README #203
+
 0.3.17
 ======
 

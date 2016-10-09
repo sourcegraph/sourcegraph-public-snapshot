@@ -3,5 +3,5 @@ module.exports = function(source) {
 	this.addDependency("a");
 	this.addDependency("b");
 	this.addContextDependency("c");
-	return source;
+	return source + "\n" + JSON.stringify(this.getDependencies()) + JSON.stringify(this.getContextDependencies());
 };

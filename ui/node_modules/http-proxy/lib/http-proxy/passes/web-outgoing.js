@@ -1,7 +1,8 @@
 var url    = require('url'),
+    common = require('../common'),
     passes = exports;
 
-var redirectRegex = /^30(1|2|7|8)$/;
+var redirectRegex = /^201|30(1|2|7|8)$/;
 
 /*!
  * Array of passes.
@@ -77,13 +78,22 @@ var redirectRegex = /^30(1|2|7|8)$/;
    * @param {ClientRequest} Req Request object
    * @param {IncomingMessage} Res Response object
    * @param {proxyResponse} Res Response object from the proxy request
+   * @param {Object} Options options.cookieDomainRewrite: Config to rewrite cookie domain
    *
    * @api private
    */
-  function writeHeaders(req, res, proxyRes) {
+  function writeHeaders(req, res, proxyRes, options) {
+    var rewriteCookieDomainConfig = options.cookieDomainRewrite;
+    if (typeof rewriteCookieDomainConfig === 'string') { //also test for ''
+      rewriteCookieDomainConfig = { '*': rewriteCookieDomainConfig };
+    }
     Object.keys(proxyRes.headers).forEach(function(key) {
-      if(proxyRes.headers[key] != undefined){
-        res.setHeader(String(key).trim(), proxyRes.headers[key]);
+      var header = proxyRes.headers[key];
+      if (header != undefined) {
+        if (rewriteCookieDomainConfig && key.toLowerCase() === 'set-cookie') {
+          header = common.rewriteCookieDomain(header, rewriteCookieDomainConfig);
+        }
+        res.setHeader(String(key).trim(), header);
       }
     });
   },
@@ -98,7 +108,12 @@ var redirectRegex = /^30(1|2|7|8)$/;
    * @api private
    */
   function writeStatusCode(req, res, proxyRes) {
-    res.writeHead(proxyRes.statusCode);
+    // From Node.js docs: response.writeHead(statusCode[, statusMessage][, headers])
+    if(proxyRes.statusMessage) {
+      res.writeHead(proxyRes.statusCode, proxyRes.statusMessage);
+    } else {
+      res.writeHead(proxyRes.statusCode);
+    }
   }
 
 ] // <--

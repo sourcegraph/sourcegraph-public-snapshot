@@ -58,21 +58,21 @@
 
 @font-face {
   font-family: 'circular-std';
-  src: url('{{absAssetURL .Ctx "/fonts/circular-std-subsetted/lineto-circular-book.woff"}}') format('woff');
+  src: url('{{assetURL "/fonts/circular-std-subsetted/lineto-circular-book.woff"}}') format('woff');
 }
 @font-face {
   font-family: 'circular-std';
-  src: url('{{absAssetURL .Ctx "/fonts/circular-std-subsetted/lineto-circular-bookItalic.woff"}}') format('woff');
+  src: url('{{assetURL "/fonts/circular-std-subsetted/lineto-circular-bookItalic.woff"}}') format('woff');
 	font-style: oblique;
 }
 @font-face {
   font-family: 'circular-std';
-  src: url('{{absAssetURL .Ctx "/fonts/circular-std-subsetted/lineto-circular-bold.woff"}}') format('woff');
+  src: url('{{assetURL "/fonts/circular-std-subsetted/lineto-circular-bold.woff"}}') format('woff');
 	font-weight: bold;
 }
 @font-face {
   font-family: 'circular-std';
-  src: url('{{absAssetURL .Ctx "/fonts/circular-std-subsetted/lineto-circular-boldItalic.woff"}}') format('woff');
+  src: url('{{assetURL "/fonts/circular-std-subsetted/lineto-circular-boldItalic.woff"}}') format('woff');
 	font-weight: bold;
 	font-style: oblique;
 }

@@ -25,15 +25,8 @@ marked.marked.Renderer = (marked as any).marked.marked.Renderer;
 Object.assign(marked, marked.marked); // make it callable
 // END HACK
 
-import {createMonacoEditorAPI} from "vs/editor/browser/standalone/standaloneEditor";
-import {createMonacoLanguagesAPI} from "vs/editor/browser/standalone/standaloneLanguages";
 import {DefaultConfig} from "vs/editor/common/config/defaultConfig";
-import {createMonacoBaseAPI} from "vs/editor/common/standalone/standaloneBase";
 
 // Set defaults for standalone editor
 DefaultConfig.editor.wrappingIndent = "none";
 DefaultConfig.editor.folding = false;
-
-export const monaco = Object.assign({}, createMonacoBaseAPI());
-monaco.editor = createMonacoEditorAPI();
-monaco.languages = createMonacoLanguagesAPI();

@@ -1,3 +1,8 @@
+const path = require('path')
+const inspect = require('util').inspect
+const requireDirectory = require('require-directory')
+const whichModule = require('which-module')
+
 // handles parsing positional arguments,
 // and populating argv with said positional
 // arguments.
@@ -6,9 +11,9 @@ module.exports = function (yargs, usage, validation) {
 
   var handlers = {}
   self.addHandler = function (cmd, description, builder, handler) {
-    // allow a module to define all properties
-    if (typeof cmd === 'object' && typeof cmd.command === 'string' && cmd.builder && typeof cmd.handler === 'function') {
-      self.addHandler(cmd.command, extractDesc(cmd), cmd.builder, cmd.handler)
+    if (typeof cmd === 'object') {
+      const commandString = typeof cmd.command === 'string' ? cmd.command : moduleName(cmd)
+      self.addHandler(commandString, extractDesc(cmd), cmd.builder, cmd.handler)
       return
     }
 
@@ -29,10 +34,50 @@ module.exports = function (yargs, usage, validation) {
     handlers[parsedCommand.cmd] = {
       original: cmd,
       handler: handler,
+      // TODO: default to a noop builder in
+      // yargs@5.x
       builder: builder,
       demanded: parsedCommand.demanded,
       optional: parsedCommand.optional
     }
+  }
+
+  self.addDirectory = function (dir, context, req, callerFile, opts) {
+    opts = opts || {}
+    // disable recursion to support nested directories of subcommands
+    if (typeof opts.recurse !== 'boolean') opts.recurse = false
+    // exclude 'json', 'coffee' from require-directory defaults
+    if (!Array.isArray(opts.extensions)) opts.extensions = ['js']
+    // allow consumer to define their own visitor function
+    const parentVisit = typeof opts.visit === 'function' ? opts.visit : function (o) { return o }
+    // call addHandler via visitor function
+    opts.visit = function (obj, joined, filename) {
+      const visited = parentVisit(obj, joined, filename)
+      // allow consumer to skip modules with their own visitor
+      if (visited) {
+        // check for cyclic reference
+        // each command file path should only be seen once per execution
+        if (~context.files.indexOf(joined)) return visited
+        // keep track of visited files in context.files
+        context.files.push(joined)
+        self.addHandler(visited)
+      }
+      return visited
+    }
+    requireDirectory({ require: req, filename: callerFile }, dir, opts)
+  }
+
+  // lookup module object from require()d command and derive name
+  // if module was not require()d and no name given, throw error
+  function moduleName (obj) {
+    const mod = whichModule(obj)
+    if (!mod) throw new Error('No command name given for module: ' + inspect(obj))
+    return commandFromFilename(mod.filename)
+  }
+
+  // derive command name from filename
+  function commandFromFilename (filename) {
+    return path.basename(filename, path.extname(filename))
   }
 
   function extractDesc (obj) {

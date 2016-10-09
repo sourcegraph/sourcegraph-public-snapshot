@@ -121,27 +121,27 @@ exports.fn = function(data, params) {
         return data;
     }
 
+    var idKey;
     for (var k in referencesIDs) {
         if (IDs[k]) {
-
+            idKey = k;
+            k = k.replace(idPrefix, '');
             // replace referenced IDs with the minified ones
             if (params.minify) {
-
                 currentIDstring = getIDstring(currentID = generateID(currentID), params);
-                IDs[k].attr('id').value = currentIDstring;
+                IDs[idKey].attr('id').value = currentIDstring;
 
-                referencesIDs[k].forEach(function(attr) {
-                    k = k.replace(idPrefix, '');
+                referencesIDs[idKey].forEach(function(attr) {
                     attr.value = attr.value
                         .replace('#' + k, '#' + currentIDstring)
                         .replace(k + '.', currentIDstring + '.');
                 });
 
+                idKey = idPrefix + k;
             }
 
             // don't remove referenced IDs
-            delete IDs[idPrefix + k];
-
+            delete IDs[idKey];
         }
     }
 

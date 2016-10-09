@@ -28,17 +28,19 @@ function translate(node) {
             return each(node.rules);
 
         case 'Atrule':
-            var result = '@' + node.name;
+            var nodes = ['@', node.name];
 
             if (node.expression && !node.expression.sequence.isEmpty()) {
-                result += ' ' + translate(node.expression);
+                nodes.push(' ', translate(node.expression));
             }
 
             if (node.block) {
-                return result + '{' + translate(node.block) + '}';
+                nodes.push('{', translate(node.block), '}');
             } else {
-                return result + ';';
+                nodes.push(';');
             }
+
+            return nodes.join('');
 
         case 'Ruleset':
             return translate(node.selector) + '{' + translate(node.block) + '}';
@@ -47,14 +49,19 @@ function translate(node) {
             return eachDelim(node.selectors, ',');
 
         case 'SimpleSelector':
-            return node.sequence.map(function(node) {
+            var nodes = node.sequence.map(function(node) {
                 // add extra spaces around /deep/ combinator since comment beginning/ending may to be produced
                 if (node.type === 'Combinator' && node.name === '/deep/') {
                     return ' ' + translate(node) + ' ';
                 }
 
                 return translate(node);
-            }).join('');
+            });
+
+            return nodes.join('');
+
+        case 'Block':
+            return eachDelim(node.declarations, ';');
 
         case 'Declaration':
             return translate(node.property) + ':' + translate(node.value);
@@ -69,6 +76,7 @@ function translate(node) {
 
         case 'Attribute':
             var result = translate(node.name);
+            var flagsPrefix = ' ';
 
             if (node.operator !== null) {
                 result += node.operator;
@@ -76,10 +84,15 @@ function translate(node) {
                 if (node.value !== null) {
                     result += translate(node.value);
 
-                    if (node.flags !== null) {
-                        result += (node.value.type !== 'String' ? ' ' : '') + node.flags;
+                    // space between string and flags is not required
+                    if (node.value.type === 'String') {
+                        flagsPrefix = '';
                     }
                 }
+            }
+
+            if (node.flags !== null) {
+                result += flagsPrefix + node.flags;
             }
 
             return '[' + result + ']';
@@ -89,9 +102,6 @@ function translate(node) {
 
         case 'Function':
             return node.name + '(' + eachDelim(node.arguments, ',') + ')';
-
-        case 'Block':
-            return eachDelim(node.declarations, ';');
 
         case 'Negation':
             return ':not(' + eachDelim(node.sequence, ',') + ')';

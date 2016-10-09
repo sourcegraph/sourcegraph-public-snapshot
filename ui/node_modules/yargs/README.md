@@ -481,6 +481,14 @@ yargs.command('get', 'make a get HTTP request', {
   .argv
 ```
 
+Note that commands will not automatically inherit configuration _or_ options
+of their parent context. This means you'll have to re-apply configuration
+if necessary, and make options global manually using the [global](#global) method.
+
+Additionally, the [`help`](#help) and [`version`](#version)
+options (if used) **always** apply globally, just like the
+[`.wrap()`](#wrap) configuration.
+
 `builder` can also be a function. This function is executed
 with a `yargs` instance, and can be used to provide _advanced_ command specific help:
 
@@ -587,8 +595,138 @@ yargs.command('get <source> [proxy]', 'make a get HTTP request', require('my-mod
   .argv
 ```
 
-.completion([cmd], [description], [fn]);
-----------------------------------------
+.commandDir(directory, [opts])
+------------------------------
+
+Apply command modules from a directory relative to the module calling this method.
+
+This allows you to organize multiple commands into their own modules under a
+single directory and apply all of them at once instead of calling
+`.command(require('./dir/module'))` multiple times.
+
+By default, it ignores subdirectories. This is so you can use a directory
+structure to represent your command hierarchy, where each command applies its
+subcommands using this method in its builder function. See the example below.
+
+Note that yargs assumes all modules in the given directory are command modules
+and will error if non-command modules are encountered. In this scenario, you
+can either move your module to a different directory or use the `exclude` or
+`visit` option to manually filter it out. More on that below.
+
+`directory` is a relative directory path as a string (required).
+
+`opts` is an options object (optional). The following options are valid:
+
+- `recurse`: boolean, default `false`
+
+    Look for command modules in all subdirectories and apply them as a flattened
+    (non-hierarchical) list.
+
+- `extensions`: array of strings, default `['js']`
+
+    The types of files to look for when requiring command modules.
+
+- `visit`: function
+
+    A synchronous function called for each command module encountered. Accepts
+    `commandObject`, `pathToFile`, and `filename` as arguments. Returns
+    `commandObject` to include the command; any falsy value to exclude/skip it.
+
+- `include`: RegExp or function
+
+    Whitelist certain modules. See [`require-directory` whitelisting](https://www.npmjs.com/package/require-directory#whitelisting) for details.
+
+- `exclude`: RegExp or function
+
+    Blacklist certain modules. See [`require-directory` blacklisting](https://www.npmjs.com/package/require-directory#blacklisting) for details.
+
+### Example command hierarchy using `.commandDir()`
+
+Desired CLI:
+
+```sh
+$ myapp --help
+$ myapp init
+$ myapp remote --help
+$ myapp remote add base http://yargs.js.org
+$ myapp remote prune base
+$ myapp remote prune base fork whatever
+```
+
+Directory structure:
+
+```
+myapp/
+├─ cli.js
+└─ cmds/
+   ├─ init.js
+   ├─ remote.js
+   └─ remote_cmds/
+      ├─ add.js
+      └─ prune.js
+```
+
+cli.js:
+
+```js
+#!/usr/bin/env node
+require('yargs')
+  .commandDir('cmds')
+  .demand(1)
+  .help()
+  .argv
+```
+
+cmds/init.js:
+
+```js
+exports.command = 'init [dir]'
+exports.desc = 'Create an empty repo'
+exports.builder = {
+  dir: {
+    default: '.'
+  }
+}
+exports.handler = function (argv) {
+  console.log('init called for dir', argv.dir)
+}
+```
+
+cmds/remote.js:
+
+```js
+exports.command = 'remote <command>'
+exports.desc = 'Manage set of tracked repos'
+exports.builder = function (yargs) {
+  return yargs.commandDir('remote_cmds')
+}
+exports.handler = function (argv) {}
+```
+
+cmds/remote_cmds/add.js:
+
+```js
+exports.command = 'add <name> <url>'
+exports.desc = 'Add remote named <name> for repo at url <url>'
+exports.builder = {}
+exports.handler = function (argv) {
+  console.log('adding remote %s at url %s', argv.name, argv.url)
+}
+```
+
+cmds/remote_cmds/prune.js:
+
+```js
+exports.command = 'prune <name> [names..]'
+exports.desc = 'Delete tracked branches gone stale for remotes'
+exports.builder = {}
+exports.handler = function (argv) {
+  console.log('pruning remotes %s', [].concat(argv.name).concat(argv.names).join(', '))
+}
+```
+
+.completion([cmd], [description], [fn])
+---------------------------------------
 
 Enable bash-completion shortcuts for commands and options.
 
@@ -675,16 +813,16 @@ var argv = require('yargs')
   .argv
 ```
 
-You can also pass an explicit configuration `object`, it will be parsed 
+You can also pass an explicit configuration `object`, it will be parsed
 and its properties will be set as arguments.
-             
+
 ```js
 var argv = require('yargs')
   .config({foo: 1, bar: 2})
   .argv
 console.log(argv)
 ```
- 
+
 ```
 $ node test.js
 { _: [],
@@ -704,7 +842,7 @@ flag occurrences rather than `true` or `false`. Default value is thus `0`.
 .defaults(key, value, [description])
 ------------------------------------
 
-**Note:** The `.defaults()` alias is deprecated. It will be 
+**Note:** The `.defaults()` alias is deprecated. It will be
 removed in the next major version.
 
 Set `argv[key]` to `value` if no option was specified in `process.argv`.
@@ -962,7 +1100,7 @@ var yargs = require('yargs')(['--help'])
     Options:
       --help  Show help  [boolean]
 
-.help([option, [description]])
+<a name="help"></a>.help([option, [description]])
 ------------------------------
 
 Add an option (e.g. `--help`) that displays the usage string and exits the
@@ -1390,7 +1528,7 @@ present script similar to how `$0` works in bash or perl.
 
 `opts` is optional and acts like calling `.options(opts)`.
 
-.version([option], [description], [version])
+<a name="version"></a>.version([option], [description], [version])
 ----------------------------------------
 
 Add an option (e.g. `--version`) that displays the version number (given by the
@@ -1410,7 +1548,7 @@ var argv = require('yargs')
   .argv;
 ```
 
-.wrap(columns)
+<a name="wrap"></a>.wrap(columns)
 --------------
 
 Format usage output to wrap at `columns` many columns.
@@ -1521,15 +1659,15 @@ This module is loosely inspired by Perl's
 [Getopt::Casual](http://search.cpan.org/~photo/Getopt-Casual-0.13.1/Casual.pm).
 
 [travis-url]: https://travis-ci.org/yargs/yargs
-[travis-image]: https://img.shields.io/travis/yargs/yargs.svg
+[travis-image]: https://img.shields.io/travis/yargs/yargs/master.svg
 [gemnasium-url]: https://gemnasium.com/yargs/yargs
 [gemnasium-image]: https://img.shields.io/gemnasium/yargs/yargs.svg
 [coveralls-url]: https://coveralls.io/github/yargs/yargs
 [coveralls-image]: https://img.shields.io/coveralls/yargs/yargs.svg
 [npm-url]: https://www.npmjs.com/package/yargs
 [npm-image]: https://img.shields.io/npm/v/yargs.svg
-[windows-url]: https://ci.appveyor.com/project/bcoe/yargs
-[windows-image]: https://img.shields.io/appveyor/ci/bcoe/yargs/master.svg?label=Windows%20Tests
+[windows-url]: https://ci.appveyor.com/project/bcoe/yargs-ljwvf
+[windows-image]: https://img.shields.io/appveyor/ci/bcoe/yargs-ljwvf/master.svg?label=Windows%20Tests
 [standard-image]: https://img.shields.io/badge/code%20style-standard-brightgreen.svg
 [standard-url]: http://standardjs.com/
 [standard-version-image]: https://img.shields.io/badge/release-standard%20version-brightgreen.svg

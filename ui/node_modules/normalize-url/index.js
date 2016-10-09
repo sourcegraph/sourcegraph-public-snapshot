@@ -73,7 +73,7 @@ module.exports = function (str, opts) {
 
 	// remove duplicate slashes
 	if (urlObj.pathname) {
-		urlObj.pathname = urlObj.pathname.replace(/\/{2,}/, '/');
+		urlObj.pathname = urlObj.pathname.replace(/\/{2,}/g, '/');
 	}
 
 	// resolve relative paths, but only for slashed protocols

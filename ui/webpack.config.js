@@ -6,6 +6,10 @@ const ProgressBarPlugin = require("progress-bar-webpack-plugin");
 
 const production = (process.env.NODE_ENV === "production");
 
+// 'http' scheme is just used to be able to parse the URL.
+const devServerAddr = url.parse(`http://${process.env.WEBPACK_DEV_SERVER_ADDR || "localhost:8080"}`)
+const publicURL = url.parse(process.env.PUBLIC_WEBPACK_DEV_SERVER_URL || process.env.WEBPACK_DEV_SERVER_URL || "http://localhost:8080");
+
 // Check dev dependencies.
 if (!production) {
 	if (process.platform === "darwin") {
@@ -20,11 +24,11 @@ if (!production) {
 const plugins = [
 	new webpack.NormalModuleReplacementPlugin(/\/iconv-loader$/, "node-noop"),
 	new webpack.DefinePlugin({
+		"process.browser": "true",
 		"process.env": {
 			NODE_ENV: JSON.stringify(process.env.NODE_ENV || "development"),
 		},
 		"process.getuid": "function() { return 0; }",
-		lazyProxyReject: `function() { }`,
 	}),
 	new webpack.IgnorePlugin(/testdata\//),
 	new webpack.IgnorePlugin(/\.json$/),
@@ -40,7 +44,6 @@ if (production) {
 	plugins.push(
 		new webpack.optimize.OccurrenceOrderPlugin(),
 		new webpack.optimize.DedupePlugin(),
-		new webpack.optimize.LimitChunkCountPlugin({maxChunks: 1}),
 		new webpack.optimize.UglifyJsPlugin({
 			compress: {
 				warnings: false,
@@ -54,20 +57,6 @@ if (useHot) {
 	plugins.push(
 		new webpack.HotModuleReplacementPlugin()
 	);
-}
-
-// port to listen
-var webpackDevServerPort = 8080;
-if (process.env.WEBPACK_DEV_SERVER_URL) {
-	webpackDevServerPort = url.parse(process.env.WEBPACK_DEV_SERVER_URL).port;
-}
-// address to listen on
-const webpackDevServerAddr = process.env.WEBPACK_DEV_SERVER_ADDR || "127.0.0.1";
-// public address of webpack dev server
-var publicWebpackDevServer = "localhost:8080";
-if (process.env.PUBLIC_WEBPACK_DEV_SERVER_URL) {
-	var uStruct = url.parse(process.env.PUBLIC_WEBPACK_DEV_SERVER_URL);
-	publicWebpackDevServer = uStruct.host;
 }
 
 plugins.push(new UnusedFilesWebpackPlugin({
@@ -90,6 +79,13 @@ if (!production) {
 	devtool = process.env.WEBPACK_SOURCEMAPS ? "eval-source-map" : "eval";
 }
 
+plugins.push(new webpack.LoaderOptionsPlugin({
+	options: {
+		context: __dirname,
+		postcss: [require("postcss-modules-values"), autoprefixer({remove: false})],
+	},
+}));
+
 module.exports = {
 	name: "browser",
 	target: "web",
@@ -103,37 +99,59 @@ module.exports = {
 			"node_modules",
 			`${__dirname}/node_modules/vscode/src`,
 		],
-		extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
+		extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
 	},
 	devtool: devtool,
 	output: {
 		path: `${__dirname}/assets`,
-		filename: "[name].browser.js",
+		filename: production ? "[name].[hash].js" : "[name].js",
+		chunkFilename: "c-[chunkhash].js",
 		sourceMapFilename: "[file].map",
 	},
 	plugins: plugins,
 	module: {
-		loaders: [
-			{test: /\.tsx?$/, loader: 'ts'},
-			{test: /\.json$/, loader: "json"},
-			{test: /\.(woff|eot|ttf)$/, loader: "url?name=fonts/[name].[ext]"},
+		rules: [
+			{
+				test: /\.tsx?$/,
+				loader: 'ts?'+JSON.stringify({
+					compilerOptions: {
+						noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
+					},
+					transpileOnly: true, // type checking is only done as part of linting or testing
+				}),
+			},
 			{test: /\.(svg|png)$/, loader: "url"},
-			{test: /\.css$/, exclude: `${__dirname}/node_modules/vscode`, loader: "style!css?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss"},
+			{test: /\.(woff|eot|ttf)$/, loader: "url?name=fonts/[name].[ext]"},
+			{test: /\.json$/, loader: "json"},
 			{test: /\.css$/, include: `${__dirname}/node_modules/vscode`, loader: "style!css"}, // TODO(sqs): add ?sourceMap
+			{
+				test: /\.css$/,
+				exclude: `${__dirname}/node_modules/vscode`,
+				use: [
+					'style-loader',
+					{
+						loader: 'css-loader',
+						options: {
+							sourceMap: true,
+							modules: true,
+							importLoaders: 1,
+							localIdentName: "[name]__[local]___[hash:base64:5]",
+						}
+					},
+					'postcss-loader',
+				]
+			}
 		],
-		noParse: /\.min\.js$/,
+		noParse: [
+			/\.min\.js$/,
+			/typescriptServices\.js$/,
+		],
 	},
-	ts: {
-		compilerOptions: {
-			noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
-		},
-		transpileOnly: true, // type checking is only done as part of linting or testing
-  },
-	postcss: [require("postcss-modules-values"), autoprefixer({remove: false})],
 	devServer: {
-		host: webpackDevServerAddr,
-		public: publicWebpackDevServer,
-		port: webpackDevServerPort,
+		contentBase: `${__dirname}/assets`,
+		host: devServerAddr.hostname,
+		public: `${publicURL.hostname}:${publicURL.port}`,
+		port: devServerAddr.port,
 		headers: {"Access-Control-Allow-Origin": "*"},
 		noInfo: true,
 		quiet: true,
@@ -146,5 +164,5 @@ if (useHot) {
 	module.exports.entry.unshift("react-hot-loader/patch");
 }
 if (!production) {
-	module.exports.entry.unshift(`webpack-dev-server/client?http://${publicWebpackDevServer}`);
+	module.exports.entry.unshift(`webpack-dev-server/client?${publicURL.format()}`);
 }

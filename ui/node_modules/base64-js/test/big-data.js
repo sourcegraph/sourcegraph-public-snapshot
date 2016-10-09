@@ -1,5 +1,5 @@
 var test = require('tape')
-var b64 = require('../lib/b64')
+var b64 = require('../')
 
 test('convert big data to base64', function (t) {
   var b64str, arr, i, length

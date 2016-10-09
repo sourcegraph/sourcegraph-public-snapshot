@@ -383,7 +383,7 @@ To run it run something like:
 
     cd sockjs-protocol
     make test_deps
-    ./venv/bin/python sockjs-protocol-0.3.py
+    ./venv/bin/python sockjs-protocol.py
 
 For details see
 [SockJS-protocol README](https://github.com/sockjs/sockjs-protocol#readme).
