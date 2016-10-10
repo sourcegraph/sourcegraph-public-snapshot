@@ -1,9 +1,9 @@
-import {Location} from "history";
 import * as React from "react";
 import {InjectedRouter} from "react-router";
 import {LocationStateModal, setLocationModalState} from "sourcegraph/components/Modal";
 import {ChromeExtensionOnboarding} from "sourcegraph/dashboard/ChromeExtensionOnboarding";
 import {GitHubPrivateAuthOnboarding} from "sourcegraph/dashboard/GitHubPrivateAuthOnboarding";
+import {Location} from "sourcegraph/Location";
 
 interface Props {
 	location: Location;

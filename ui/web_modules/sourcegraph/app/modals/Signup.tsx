@@ -1,15 +1,12 @@
-import {Location} from "history";
 import * as React from "react";
 import {InjectedRouter} from "react-router";
 
-/* TODO(chexee): abstract the presentational component from Modal */
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
-
 import {LocationStateModal} from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
-
+import {Location} from "sourcegraph/Location";
 import {SignupForm} from "sourcegraph/user/Signup";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	location: Location;

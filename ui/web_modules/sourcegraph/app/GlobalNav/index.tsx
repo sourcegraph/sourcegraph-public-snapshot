@@ -1,4 +1,3 @@
-import {Location} from "history";
 import * as React from "react";
 import {Link} from "react-router";
 import {InjectedRouter} from "react-router";
@@ -16,6 +15,7 @@ import {colors, layout} from "sourcegraph/components/utils";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {DemoVideo} from "sourcegraph/home/modals/DemoVideo";
+import {Location} from "sourcegraph/Location";
 import {QuickOpenModal} from "sourcegraph/quickopen/Modal";
 import {repoParam, repoPath, repoRev} from "sourcegraph/repo";
 import {Store} from "sourcegraph/Store";

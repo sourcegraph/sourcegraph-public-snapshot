@@ -1,5 +1,4 @@
 import * as classNames from "classnames";
-import {Location} from "history";
 import * as React from "react";
 import {Link} from "react-router";
 import {context} from "sourcegraph/app/context";
@@ -13,6 +12,7 @@ import * as grid from "sourcegraph/components/styles/_grid.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import {Location} from "sourcegraph/Location";
 
 interface Props {
 	location: Location;

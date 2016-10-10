@@ -1,8 +1,8 @@
-import {Location} from "history";
 import * as React from "react";
 import {InjectedRouter} from "react-router";
 import {EventListener} from "sourcegraph/Component";
 import * as styles from "sourcegraph/components/styles/modal.css";
+import {Location} from "sourcegraph/Location";
 import {renderedOnBody} from "sourcegraph/util/renderedOnBody";
 
 interface Props {

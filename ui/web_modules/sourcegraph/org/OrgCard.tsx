@@ -1,11 +1,11 @@
 import {hover} from "glamor";
-import {Location} from "history";
 import * as React from "react";
 import {Org} from "sourcegraph/api";
 import {FlexContainer, OrgLogo} from "sourcegraph/components";
 import {GitHubLogo} from "sourcegraph/components/symbols";
 import {colors} from "sourcegraph/components/utils";
 import {whitespace} from "sourcegraph/components/utils/whitespace";
+import {Location} from "sourcegraph/Location";
 
 interface Props {
 	org: Org;

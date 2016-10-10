@@ -1,9 +1,9 @@
-import { Location } from "history";
 import * as React from "react";
 import { InjectedRouter, Route } from "react-router";
 import { context } from "sourcegraph/app/context";
 import { getRouteParams, getRoutePattern, getViewName } from "sourcegraph/app/routePatterns";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import { Location } from "sourcegraph/Location";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as UserActions from "sourcegraph/user/UserActions";
@@ -395,7 +395,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 			// values are updated.
 			if (this.props.location.pathname !== nextProps.location.pathname) {
 				this._logView(nextProps.routes, nextProps.location);
-				// Greedily update the event logging tracker identity 
+				// Greedily update the event logging tracker identity
 				EventLogger.updateTrackerWithIdentificationProps();
 			}
 
@@ -413,7 +413,8 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 		_checkEventQuery(): void {
 			// Allow tracking events that occurred externally and resulted in a redirect
 			// back to Sourcegraph. Pull the event name out of the URL.
-			if (this.props.location.query && this.props.location.query["_event"]) {
+			const eventName = this.props.location.query["_event"];
+			if (this.props.location.query && eventName) {
 				// For login signup related metrics a channel will be associated with the signup.
 				// This ensures we can track one metrics "SignupCompleted" and then query on the channel
 				// for more granular metrics.
@@ -426,14 +427,14 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 
 				if (this.props.location.query["_githubAuthed"]) {
 					EventLogger.setUserProperty("github_authed", this.props.location.query["_githubAuthed"]);
-					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SIGNUP, this.props.location.query["_event"], eventProperties);
+					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SIGNUP, eventName, eventProperties);
 				} else {
-					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_EXTERNAL, AnalyticsConstants.ACTION_REDIRECT, this.props.location.query["_event"], eventProperties);
+					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_EXTERNAL, AnalyticsConstants.ACTION_REDIRECT, eventName, eventProperties);
 				}
 
 				if (this.props.location.query["_invited_by_user"]) {
 					EventLogger.setUserProperty("invited_by_user", this.props.location.query["_invited_by_user"]);
-					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ORGS, AnalyticsConstants.ACTION_SUCCESS, this.props.location.query["_event"], eventProperties);
+					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ORGS, AnalyticsConstants.ACTION_SUCCESS, eventName, eventProperties);
 				}
 				if (this.props.location.query["_org_invite"]) {
 					EventLogger.setUserProperty("org_invite", this.props.location.query["_org_invite"]);

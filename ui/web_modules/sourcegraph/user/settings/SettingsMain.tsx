@@ -1,9 +1,9 @@
-import {Location} from "history";
 import * as React from "react";
 import {context} from "sourcegraph/app/context";
 import {GridCol, GridRow, Heading, Panel, TabItem, Tabs} from "sourcegraph/components";
 import {whitespace} from "sourcegraph/components/utils/whitespace";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import {Location} from "sourcegraph/Location";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import {OrgContainer} from "sourcegraph/org/OrgContainer";
 import {UserSettingsReposMain} from "sourcegraph/user/settings/UserSettingsReposMain";

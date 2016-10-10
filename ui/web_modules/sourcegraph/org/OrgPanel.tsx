@@ -1,4 +1,3 @@
-import {Location} from "history";
 import * as React from "react";
 import {InjectedRouter} from "react-router";
 import {Org, OrgMember} from "sourcegraph/api";
@@ -7,6 +6,7 @@ import {Loader} from "sourcegraph/components";
 import {setLocationModalState} from "sourcegraph/components/Modal";
 import {whitespace} from "sourcegraph/components/utils/whitespace";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import {Location} from "sourcegraph/Location";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import {OrgInviteModal} from "sourcegraph/org/OrgInviteModal";
 import {OrgMembersTable} from "sourcegraph/org/OrgMembersTable";

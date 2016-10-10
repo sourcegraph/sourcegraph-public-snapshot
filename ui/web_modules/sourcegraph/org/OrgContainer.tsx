@@ -1,4 +1,3 @@
-import {Location} from "history";
 import * as React from "react";
 import Helmet from "react-helmet";
 import {Org, OrgMember} from "sourcegraph/api";
@@ -8,6 +7,7 @@ import {colors} from "sourcegraph/components/utils";
 import {whitespace} from "sourcegraph/components/utils/whitespace";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import {Location} from "sourcegraph/Location";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import {OrgCard} from "sourcegraph/org/OrgCard";
 import {OrgPanel} from "sourcegraph/org/OrgPanel";
