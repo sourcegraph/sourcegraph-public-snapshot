@@ -4,7 +4,9 @@ The end-to-end tests are fast, reliable, and easy to write and run. They ensure 
 
 ## How do I run the end-to-end tests in dev?
 
-It's easy--just run `make`. (You need Docker, Python 2.7, and virtualenv installed first.) If the "Screen Sharing" application prompts you for a password, it is "secret".
+To run the end-to-end tests, you must run a production build of Sourcegraph. You can do this by running `make dist` from the root repository directory and then running the generated binary (`./release/snapshot/{linux-amd64,darwin-amd64} serve`).
+
+Then you just run `make` from this directory. (You need Docker, Python 2.7, and virtualenv installed first.) If the "Screen Sharing" application prompts you for a password, it is "secret".
 
 - If you want to watch the show, run `make TV=1`.
 - If you want to run a subset of tests that match some query string, run `make TEST=$query`.
@@ -53,6 +55,12 @@ The end-to-end tests use the [Selenium Docker images](https://github.com/Seleniu
 They use the Selenium Remote Driver, which means the Selenium driver and web browser run as a separate service from the test runner.
 
 When running in dev, the Selenium Docker image includes a VNC server, which lets you, the developer, connect a VNC client to the see exactly which actions the tests are running in the browser.
+
+## Why can't I run them against a development server?
+
+The end-to-end tests will not work against a development build because it relies on the existence of a webpack server running on localhost in the same machine as the browser. It's possible to rig this up, but it involves changing some environment variables to make it so the development server is running not on `localhost`, but on some other hostname, which will need to be mapped to the appropriate IP in the Selenium container.
+
+Anyway, we should be running the end-to-end tests in an environment as close to production as possible, so it's better to just run them against a production build.
 
 
 ## Why are they written in Python?
