@@ -270,7 +270,6 @@ func TestRepos_List_query(t *testing.T) {
 	}
 
 	{ // Test batch 2 (correct ranking)
-		// {URI: "github.com/org2/xyz", Name: "pqr", DefaultBranch: "master", Mirror: true, Fork: true},
 		createdRepos := []*sourcegraph.Repo{
 			{URI: "a/def", Owner: "a", Name: "def", DefaultBranch: "master"},
 			{URI: "b/def", Owner: "b", Name: "def", DefaultBranch: "master", Fork: true},
