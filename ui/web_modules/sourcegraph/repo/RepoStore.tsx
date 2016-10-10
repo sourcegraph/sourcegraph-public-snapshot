@@ -10,8 +10,8 @@ function keyFor(repo, rev?) {
 	return `${repo}@${rev || ""}`;
 }
 
-function keyForSymbols(repo, rev?, query?) {
-	return `${repo}@${rev || ""}${query ? "?" + query : ""}`;
+function keyForSymbols(mode, repo, rev?, query?) {
+	return `(mode:${mode})${repo}@${rev || ""}${query ? "?" + query : ""}`;
 }
 
 class RepoStoreClass extends Store<any> {
@@ -81,8 +81,8 @@ class RepoStoreClass extends Store<any> {
 		});
 		this.symbols = deepFreeze({
 			content: {},
-			list(repo, rev, query) {
-				return this.content[keyForSymbols(repo, rev, query)] || null;
+			list(mode, repo, rev, query) {
+				return this.content[keyForSymbols(mode, repo, rev, query)] || null;
 			},
 		});
 	}
@@ -201,7 +201,7 @@ class RepoStoreClass extends Store<any> {
 		case RepoActions.FetchedSymbols:
 			this.symbols = deepFreeze(Object.assign({}, this.symbols, {
 				content: Object.assign({}, this.symbols.content, {
-					[keyForSymbols(action.repo, action.rev, action.query)]: action.symbols,
+					[keyForSymbols(action.mode, action.repo, action.rev, action.query)]: action.symbols,
 				}),
 			}));
 			break;

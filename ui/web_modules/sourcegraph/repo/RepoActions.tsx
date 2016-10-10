@@ -203,13 +203,15 @@ export class WantSymbols {
 }
 
 export class FetchedSymbols {
+	mode: string;
 	repo: string;
 	rev: string;
 	query: string;
 
 	symbols: SymbolInformation[];
 
-	constructor(repo: string, rev: string, query: string, symbols: SymbolInformation[]) {
+	constructor(mode: string, repo: string, rev: string, query: string, symbols: SymbolInformation[]) {
+		this.mode = mode;
 		this.repo = repo;
 		this.rev = rev;
 		this.query = query;
