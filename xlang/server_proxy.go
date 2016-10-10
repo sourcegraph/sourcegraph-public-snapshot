@@ -339,11 +339,8 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		for cc := range c.proxy.clients {
 			// TODO(sqs): equality match omits pathPrefix
 			if cc.context == c.id.contextID {
-				go func(cc *clientProxyConn) {
-					if _, err := cc.handleFromServer(ctx, cc.conn, req); err != nil {
-						log.Printf("server proxy handler: error forwarding textDocument/publishDiagnostics to client: %s.", err)
-					}
-				}(cc)
+				// Ignore errors for forwarding diagnostics
+				go cc.handleFromServer(ctx, cc.conn, req)
 			}
 		}
 		c.proxy.mu.Unlock()
