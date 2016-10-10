@@ -7,26 +7,9 @@ from colors import green, red, bold
 from e2etypes import *
 from e2etests import *
 
-def main():
-    p = argparse.ArgumentParser()
-    p.add_argument("--slow", help="run tests more slowly", action="store_true", default=False)
-    p.add_argument("--interactive", help="wait for user to press ENTER after running each test", action="store_true", default=False)
-    p.add_argument("--pause-on-err", help="pause on failure, so you can click around to see what happened", action="store_true", default=False)
+user_agent = "Sourcegraph e2etest-bot"
 
-    p.add_argument("--url", help="the URL of the Sourcegraph instance to be tested. In dev, use http://172.17.0.1:3080", default="https://sourcegraph.com") # 172.17.0.1 is the default value of the docker bridge IP, 10.0.2.2 is the default network gateway in VirtualBox VMs
-
-    p.add_argument("--selenium", help="the address of the Selenium server instance to communicate with", default="http://localhost:4444")
-    p.add_argument("--browser", help="the browser type (firefox or chrome)", default="chrome")
-    p.add_argument("--filter", help="only run the tests matching this query", default="")
-
-    args = p.parse_args()
-    if args.browser.lower() not in ["chrome", "firefox"]:
-        sys.stderr.write("browser needs to be chrome or firefox, was %s\n" % args.browser)
-        return
-
-    user_agent = "Sourcegraph e2etest-bot"
-
-    tests = [t for t in all_tests if args.filter in t.func_name]
+def run_tests(args, tests):
     failed_tests = []
     def success(test_name):
         print '[%s](%s) %s' % (green("PASS"), args.browser, test_name)
@@ -34,6 +17,7 @@ def main():
         failed_tests.append(test_name)
         print '[%s](%s) %s' % (red("FAIL"), args.browser, test_name)
     print '\nTest plan:\n%s\n' % '\n'.join(['\t'+f.func_name for f in tests])
+
     for test in tests:
         print '[%s](%s) %s' % (bold("RUN "), args.browser, test.func_name)
         try:
@@ -81,13 +65,40 @@ def main():
         finally:
             if driver is not None:
                 driver.close()
-
     print
     if len(failed_tests) > 0:
         print '%s: %d / %d FAILED\n' % (red("FAILURE"), len(failed_tests), len(tests))
         sys.exit(1)
     else:
         print green('ALL SUCCESS\n')
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("--slow", help="run tests more slowly", action="store_true", default=False)
+    p.add_argument("--interactive", help="wait for user to press ENTER after running each test", action="store_true", default=False)
+    p.add_argument("--pause-on-err", help="pause on failure, so you can click around to see what happened", action="store_true", default=False)
+
+    p.add_argument("--url", help="the URL of the Sourcegraph instance to be tested. In dev, use http://172.17.0.1:3080", default="https://sourcegraph.com") # 172.17.0.1 is the default value of the docker bridge IP, 10.0.2.2 is the default network gateway in VirtualBox VMs
+
+    p.add_argument("--selenium", help="the address of the Selenium server instance to communicate with", default="http://localhost:4444")
+    p.add_argument("--browser", help="the browser type (firefox or chrome)", default="chrome")
+    p.add_argument("--filter", help="only run the tests matching this query", default="")
+    p.add_argument("--alert-on-err", help="send alert to OpsGenie and Slack on error. If this is true, the following environment variables should also be set: SLACK_API_TOKEN, SLACK_WARNING_CHANNEL, OPSGENIE_KEY", action="store_true", default=False)
+    p.add_argument("--loop", help="loop continuously", action="store_true", default=False)
+
+    args = p.parse_args()
+    if args.browser.lower() not in ["chrome", "firefox"]:
+        sys.stderr.write("browser needs to be chrome or firefox, was %s\n" % args.browser)
+        return
+
+    tests = [t for t in all_tests if args.filter in t.func_name]
+    if args.loop:
+        print "Looping forever..."
+        while True:
+            run_tests(args, tests)
+    else:
+        run_tests(args, tests)
 
 if __name__ == '__main__':
     main()
