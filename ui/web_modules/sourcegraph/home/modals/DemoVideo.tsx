@@ -1,8 +1,8 @@
-import {Location} from "history";
 import * as React from "react";
 import {InjectedRouter} from "react-router";
 import {LocationStateModal} from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
+import {Location} from "sourcegraph/Location";
 
 interface Props {
 	location: Location;

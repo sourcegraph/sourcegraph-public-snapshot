@@ -1,16 +1,20 @@
-// tslint:disable: typedef ordered-imports
-
-import {Location} from "history";
-import * as React from "react";
-
-import {Container} from "sourcegraph/Container";
-import {RepoStore} from "sourcegraph/repo/RepoStore";
-import "sourcegraph/repo/RepoBackend";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
-import * as Dispatcher from "sourcegraph/Dispatcher";
-import {repoPath, repoRev, repoParam} from "sourcegraph/repo";
 import * as cloneDeep from "lodash/cloneDeep";
+import * as React from "react";
+import {Container} from "sourcegraph/Container";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import {Location} from "sourcegraph/Location";
+import {repoParam, repoPath, repoRev} from "sourcegraph/repo";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
+import "sourcegraph/repo/RepoBackend";
+import {RepoStore} from "sourcegraph/repo/RepoStore";
 import {Store} from "sourcegraph/Store";
+
+interface Props {
+	params: any;
+	location: Location;
+}
+
+type State = any;
 
 // withResolvedRepoRev reads the repo, rev, repo resolution, etc.,
 // from the route params. If isMainComponent is true, then it also dispatches
@@ -19,13 +23,7 @@ import {Store} from "sourcegraph/Store";
 // or else duplicate WantResolveRepo, etc., actions will be dispatched
 // and could lead to multiple WantCreateRepo, etc., actions being sent
 // to the server).
-export function withResolvedRepoRev(Component, isMainComponent?: boolean) {
-	interface Props {
-		params: any;
-		location: Location;
-	}
-
-	type State = any;
+export function withResolvedRepoRev(Component: any, isMainComponent?: boolean): React.ComponentClass<Props> {
 
 	isMainComponent = Boolean(isMainComponent);
 	class WithResolvedRepoRev extends Container<Props, State> {

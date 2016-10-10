@@ -1,6 +1,6 @@
 import expect from "expect.js";
-import {Location} from "history";
 import * as React from "react";
+import {Location} from "sourcegraph/Location";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {RepoStore} from "sourcegraph/repo/RepoStore";
 import {withResolvedRepoRev} from "sourcegraph/repo/withResolvedRepoRev";

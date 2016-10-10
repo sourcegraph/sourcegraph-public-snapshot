@@ -1,6 +1,6 @@
-import {Location} from "history";
 import {PlainRoute} from "react-router";
 import {matchPattern} from "react-router/lib/PatternUtils";
+import {Location} from "sourcegraph/Location";
 
 export type RouteName = "styleguide" |
 	"home" |

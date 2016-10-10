@@ -1,4 +1,3 @@
-import { Location } from "history";
 import * as debounce from "lodash/debounce";
 import * as React from "react";
 import Helmet from "react-helmet";
@@ -15,6 +14,7 @@ import {colors} from "sourcegraph/components/utils/colors";
 import {Container} from "sourcegraph/Container";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import {URIUtils} from "sourcegraph/core/uri";
+import { Location } from "sourcegraph/Location";
 import { trimRepo } from "sourcegraph/repo";
 import {Store} from "sourcegraph/Store";
 

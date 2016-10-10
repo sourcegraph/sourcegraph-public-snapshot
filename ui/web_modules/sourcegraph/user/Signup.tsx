@@ -1,9 +1,9 @@
-import {Location} from "history";
 import * as React from "react";
 import Helmet from "react-helmet";
 import {Component} from "sourcegraph/Component";
 import {Heading} from "sourcegraph/components";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
+import {Location} from "sourcegraph/Location";
 import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 import "sourcegraph/user/UserBackend"; // for side effects

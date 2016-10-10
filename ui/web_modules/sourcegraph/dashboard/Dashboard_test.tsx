@@ -10,6 +10,7 @@ describe("Dashboard", () => {
 				pathname: "foo",
 				action: "bar",
 				search: "foo",
+				hash: "",
 				query:{},
 				state:{},
 				key: "foo",

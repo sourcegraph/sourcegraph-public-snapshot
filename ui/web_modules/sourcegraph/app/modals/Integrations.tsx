@@ -1,15 +1,12 @@
-import {Location} from "history";
 import * as React from "react";
 import {InjectedRouter} from "react-router";
 
 import {CloseIcon} from "sourcegraph/components/Icons";
-import {Integrations as IntegrationsContent} from "sourcegraph/home/Integrations";
-
-import * as base from "sourcegraph/components/styles/_base.css";
-
-/* TODO(chexee): abstract the presentational component from Modal */
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
+import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/components/styles/modal.css";
+import {Integrations as IntegrationsContent} from "sourcegraph/home/Integrations";
+import {Location} from "sourcegraph/Location";
 
 interface Props {
 	location: Location;

@@ -1,4 +1,3 @@
-import {Location} from "history";
 import * as React from "react";
 import {InjectedRouter} from "react-router";
 import {OrgMember} from "sourcegraph/api";
@@ -8,6 +7,7 @@ import {LocationStateModal} from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
 import {colors} from "sourcegraph/components/utils";
 import {whitespace} from "sourcegraph/components/utils/whitespace";
+import {Location} from "sourcegraph/Location";
 
 interface Props {
 	location: Location;

@@ -1,13 +1,11 @@
-import {Location} from "history";
 import * as React from "react";
 import {InjectedRouter} from "react-router";
 
 import {Heading} from "sourcegraph/components/index";
-import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
-
-/* TODO(chexee): abstract the presentational component from Modal */
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
+import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
+import {Location} from "sourcegraph/Location";
 
 interface Props {
 	location: Location;

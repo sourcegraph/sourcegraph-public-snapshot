@@ -1,10 +1,10 @@
 import * as classNames from "classnames";
-import {Location} from "history";
 import * as React from "react";
 import {CloseIcon} from "sourcegraph/components/Icons";
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {Toast} from "sourcegraph/components/Toast";
+import {Location} from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
 
