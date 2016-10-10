@@ -483,8 +483,15 @@ func reposListSQL(opt *RepoListOp) (string, []interface{}, error) {
 		if opt.Name != "" {
 			conds = append(conds, "lower(name)="+arg(strings.ToLower(opt.Name)))
 		}
-		if len(queryTerms) == 1 && strings.HasSuffix(opt.Query, "/") {
-			conds = append(conds, `owner=`+arg(queryTerms[0]))
+		if strings.Contains(opt.Query, "/") && len(queryTerms) >= 1 {
+			fields := queryTerms
+			if queryTerms[0] == "github.com" && len(fields) > 1 {
+				fields = queryTerms[1:]
+			}
+			conds = append(conds, `owner=`+arg(fields[0]))
+			if len(fields) > 1 {
+				conds = append(conds, "name ILIKE "+arg(fields[1]+"%"))
+			}
 		} else if len(queryTerms) >= 1 {
 			var queryConds []string
 			for _, queryTerm := range queryTerms {
