@@ -53,10 +53,10 @@ export class OnboardingContainer extends Container<Props, State> {
 		// TODO: update analytics to count only if chrome extension wasn't installed or Github not auth'd 
 		if (this.props.currentStep === "chrome") {
 			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionStepCompleted", {page_name: "ChromeExtensionOnboarding"});
-			nextStep =  Object.assign({}, this.props.location.query || null, {ob: "github"});
+			nextStep = Object.assign({}, this.props.location.query || null, {ob: "github"});
 		} else if (this.props.currentStep === "github") {
 			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "GitHubStepCompleted", {page_name: "GitHubPrivateCodeOnboarding"});
-			nextStep =  Object.assign({}, this.props.location.query || null, {ob: "search"});
+			nextStep = Object.assign({}, this.props.location.query || null, {ob: "search"});
 
 			// This should be right after the Github onboarding step
 			// Chrome extension will on receiving 401 from /rev endpoint
