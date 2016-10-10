@@ -12,7 +12,7 @@ container=""
 lbl="e2e-ff"
 
 function run {
-	BROWSER=$1
+    BROWSER=$1
     if [ "$BROWSER" = "firefox" ]; then
 		VNC_PORT=5901
 		SEL_PORT=4445
