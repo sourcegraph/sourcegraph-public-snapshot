@@ -209,14 +209,6 @@
 	text-decoration: none;
 }
 
-:global div.monaco-editor.vs-dark .selected-definition {
-	background-color: c_blue_8;
-	color: white !important;
-	font-weight: bold;
-	text-decoration: none;
-	border-radius: 1px;
-}
-
 :global div.monaco-editor.vs-dark .token.identifier {
 	cursor: pointer;
 }

@@ -30,7 +30,6 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 
 	private toUnhook: IDisposable[] = [];
 	private decorations: string[] = [];
-	private selectedDefDecoration: string[] = [];
 	private currentWordUnderMouse: IWordAtPositionWithLine | null;
 	private lastMouseMoveEvent: IEditorMouseEvent | null;
 	private findDefinitionDebounced: (target: IMouseTarget, word: editorCommon.IWordAtPosition) => void;
@@ -69,10 +68,6 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 		if (e.selection && e.selection.startColumn !== e.selection.endColumn) {
 			this.resetHandler(); // immediately stop this feature if the user starts to select (https://github.com/Microsoft/vscode/issues/7827)
 		}
-
-		// After the selection is changed check to see if the new current selection
-		// has landed on a definition. If so, highlight it.
-		this.highlightDefinitionAtSelection(e.selection);
 	}
 
 	private onEditorMouseMove(mouseEvent: IEditorMouseEvent): void {
@@ -138,41 +133,6 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 				},
 				results.length > 1 ? `Click to show the ${results.length} definitions found.` : undefined
 			);
-		});
-	}
-
-	private highlightDefinitionAtSelection(selection: Selection) {
-		let position = ({
-			lineNumber: selection.startLineNumber,
-			column: selection.startColumn,
-		});
-		this.findDefinition(position).then(results => {
-			if (!results || !results.length) {
-				this.selectedDefDecoration = this.editor.deltaDecorations(this.selectedDefDecoration, []);
-				return;
-			}
-			let range: editorCommon.IRange | null = null;
-			for (let def of results) {
-				if (def.range.startLineNumber === selection.startLineNumber && def.range.startColumn === selection.startColumn) {
-					range = new Range(
-						def.range.startLineNumber,
-						def.range.startColumn,
-						def.range.endLineNumber,
-						def.range.endColumn,
-					);
-				}
-			}
-			if (!range) {
-				return;
-			}
-
-			let decoration = {
-				range: range,
-				options: {
-					inlineClassName: "selected-definition",
-				},
-			};
-			this.selectedDefDecoration = this.editor.deltaDecorations(this.selectedDefDecoration, [decoration]);
 		});
 	}
 
