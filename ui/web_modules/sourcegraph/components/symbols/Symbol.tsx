@@ -12,7 +12,12 @@ interface Props {
 
 export const Symbol = (props: Props) => {
 	const sx = Object.assign({},
-		{ verticalAlign: "middle" },
+		{
+			display: "inline",
+			verticalAlign: "middle",
+			position: "relative",
+			top: -1,
+		},
 		props.style
 	);
 	return <svg

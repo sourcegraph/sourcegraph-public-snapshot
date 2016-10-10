@@ -13,6 +13,7 @@ export const SignupOrLogin = (props): JSX.Element => {
 		{
 			textAlign: "center",
 			display: "inline-block",
+			lineHeight: "calc(100% - 1px)",
 		},
 		props.style
 	);
