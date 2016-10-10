@@ -7,6 +7,8 @@ import {context} from "sourcegraph/app/context";
 // redirectIfLoggedIn wraps a component and issues a redirect
 // if there is an authenticated user. It is useful for wrapping
 // login, signup, etc., route components.
+//
+// TODO: remove queryObj overriding for onboarding step.
 export function redirectIfLoggedIn(url: Location | string, queryObj: History.Query, Component) {
 	type Props = any;
 
