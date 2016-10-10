@@ -197,6 +197,10 @@ func score(q query, s lsp.SymbolInformation) (scor int) {
 		// boost for non-vendor symbols
 		scor += 5
 	}
+	if scor > 0 && ast.IsExported(s.Name) {
+		// boost for exported symbols
+		scor++
+	}
 	return scor
 }
 
