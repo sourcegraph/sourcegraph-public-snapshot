@@ -3,12 +3,29 @@ package xlang
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
+	"os"
+	"time"
 
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
+
+// NewDefaultClient returns a new one-shot connection to the LSP proxy server at
+// $LSP_PROXY. This is quick (except TCP connection time) because the LSP proxy
+// server retains the same underlying connection.
+func NewDefaultClient() (*jsonrpc2.Conn, error) {
+	addr := os.Getenv("LSP_PROXY")
+	if addr == "" {
+		return nil, errors.New("no LSP_PROXY env var set (need address to LSP proxy)")
+	}
+
+	dialCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	return DialProxy(dialCtx, addr, nil)
+}
 
 // DialProxy creates a new JSON-RPC 2.0 connection to the LSP proxy
 // server at the given address.

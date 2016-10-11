@@ -34,12 +34,12 @@ func TestXLang(t *testing.T) {
 		}
 	}
 
-	orig := xlangCreateConnection
+	orig := xlangNewClient
 	defer func() {
-		xlangCreateConnection = orig
+		xlangNewClient = orig
 	}()
 	var xc xlangTestClient
-	xlangCreateConnection = func() (xlangClient, error) { return &xc, nil }
+	xlangNewClient = func() (xlangClient, error) { return &xc, nil }
 
 	postJSON := func(lspMethod string, h http.Header, reqBodyJSON string, respBody interface{}) error {
 		req, err := http.NewRequest("POST", "/xlang/"+lspMethod, strings.NewReader(reqBodyJSON))
