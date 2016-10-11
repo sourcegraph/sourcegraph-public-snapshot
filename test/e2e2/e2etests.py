@@ -36,6 +36,7 @@ def test_repo_jump_to(d):
         d.active_elem().send_keys("/")
         d.active_elem().send_keys(query)
         wait_for(d.all_network_indicators_are_invisible)
+        wait_for(lambda: len(d.find_search_modal_results(result_text)) > 0)
         select_search_result_using_arrow_keys(result_text)
         wait_for(lambda: wd.current_url == d.sg_url(url_path))
 
@@ -73,7 +74,7 @@ def test_golden_workflow(d):
     retry(rc)
 
     # Peek reference
-    wait_for(lambda: len(d.find_references_menu_options()) > 0, 5)
+    wait_for(lambda: len(d.find_references_menu_options()) > 0, 10)
     retry(lambda: d.find_references_menu_options()[0].click())
 
     # Jump to reference

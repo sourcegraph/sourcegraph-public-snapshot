@@ -122,4 +122,8 @@ class Driver(object):
         raise E2EError("no tooltips within 5px of element %s#%s, nearest was %d" % (tt.tag_name, tt.id, dist))
 
     def find_search_modal_selected_result(self):
-        return self.d.find_element_by_css_selector("[data-class-name=modal-result-selected]")
+        return self.d.find_element_by_css_selector("[data-class-name~=modal-result-selected]")
+
+    def find_search_modal_results(self, results_text):
+        results = self.d.find_elements_by_css_selector("[data-class-name~=modal-result]")
+        return [r for r in results if results_text in r.text]
