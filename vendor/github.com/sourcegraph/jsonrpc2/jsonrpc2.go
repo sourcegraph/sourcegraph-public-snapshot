@@ -17,23 +17,6 @@ import (
 	"sync"
 )
 
-type CallOption interface {
-	apply(r *Request) error
-}
-
-type callOptionFunc func(r *Request) error
-
-func (c callOptionFunc) apply(r *Request) error { return c(r) }
-
-// Meta returns a call option which attaches the given meta object to the JSON
-// RPC 2 request (this is a Sourcegraph extension to JSON RPC 2 for carrying
-// metadata).
-func Meta(meta interface{}) CallOption {
-	return callOptionFunc(func(r *Request) error {
-		return r.SetMeta(meta)
-	})
-}
-
 // Request represents a JSON-RPC request or
 // notification. See
 // http://www.jsonrpc.org/specification#request_object and
@@ -179,7 +162,8 @@ func (e *Error) Error() string {
 }
 
 const (
-	// Errors defined in the JSON-RPC spec. See http://www.jsonrpc.org/specification#error_object.
+	// Errors defined in the JSON-RPC spec. See
+	// http://www.jsonrpc.org/specification#error_object.
 	CodeParseError       = -32700
 	CodeInvalidRequest   = -32600
 	CodeMethodNotFound   = -32601

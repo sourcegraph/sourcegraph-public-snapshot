@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
+	"github.com/sourcegraph/jsonrpc2"
 )
 
 type Server struct {

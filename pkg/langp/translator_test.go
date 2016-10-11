@@ -14,8 +14,8 @@ import (
 	"strings"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2/jsonrpc2test"
+	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2test"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 

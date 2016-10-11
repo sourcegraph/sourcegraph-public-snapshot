@@ -5,7 +5,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
+	"github.com/sourcegraph/jsonrpc2"
 )
 
 func addTraceMeta(ctx context.Context) jsonrpc2.CallOption {

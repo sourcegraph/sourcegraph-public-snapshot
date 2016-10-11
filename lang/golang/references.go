@@ -12,9 +12,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/jsonrpc2"
 	"golang.org/x/net/context"
 	"golang.org/x/tools/cmd/guru/serial"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 

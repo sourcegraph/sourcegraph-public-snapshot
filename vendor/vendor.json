@@ -568,6 +568,12 @@
 			"revisionTime": "2016-05-24T18:55:40Z"
 		},
 		{
+			"checksumSHA1": "lwxr6aHeoWppHbC5BWRoI2gzk9s=",
+			"path": "github.com/sourcegraph/jsonrpc2",
+			"revision": "c04eec16002c7869b918711d3cf329b6d9deedd8",
+			"revisionTime": "2016-10-11T13:56:18Z"
+		},
+		{
 			"path": "github.com/sourcegraph/sitemap",
 			"revision": "5d2a42ccab8dc0079484263b326b9a3191d5bee8",
 			"revisionTime": "2013-09-12T23:55:21-07:00"

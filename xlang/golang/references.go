@@ -15,7 +15,7 @@ import (
 	"golang.org/x/tools/go/loader"
 	"golang.org/x/tools/refactor/importgraph"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
+	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 

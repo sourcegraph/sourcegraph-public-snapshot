@@ -6,7 +6,7 @@ import (
 	"net"
 	"os"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
+	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
