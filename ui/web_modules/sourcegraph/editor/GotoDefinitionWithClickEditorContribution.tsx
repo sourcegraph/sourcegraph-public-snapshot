@@ -10,12 +10,10 @@ import {editorContribution} from "vs/editor/browser/editorBrowserExtensions";
 import * as editorCommon from "vs/editor/common/editorCommon";
 import {ICodeEditor, IEditorMouseEvent, IMouseTarget} from "vs/editor/browser/editorBrowser";
 import {IDisposable} from "vs/base/common/lifecycle";
-import {Range} from "vs/editor/common/core/range";
 import {TPromise} from "vs/base/common/winjs.base";
 import {getDeclarationsAtPosition} from "vs/editor/contrib/goToDeclaration/common/goToDeclaration";
 import {IKeyboardEvent} from "vs/base/browser/keyboardEvent";
 import {Location} from "vs/editor/common/modes";
-import {Selection} from "vs/editor/common/core/selection";
 import {Position} from "vs/editor/common/core/position";
 
 // IWordAtPositionWithLine lets us distinguish between two of the same

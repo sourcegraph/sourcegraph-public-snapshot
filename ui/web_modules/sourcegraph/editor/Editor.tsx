@@ -110,6 +110,7 @@ export class Editor implements IDisposable {
 			fontSize: 15,
 			lineHeight: 21,
 			theme: "vs-dark",
+			renderLineHighlight: true,
 		}, {editorService: this._editorService});
 
 		this._editorService.setEditor(this._editor);
