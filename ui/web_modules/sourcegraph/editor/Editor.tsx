@@ -244,15 +244,6 @@ export class Editor implements IDisposable {
 			}
 		}
 
-		// We have minimal traffic for references. Boost the numbers by sending a small portion of hover traffic to refs.
-		// We don't shadow all traffic yet since we are not sure on the resource implications of references yet.
-		if (Math.random() < 0.25) {
-			lsp.send(model, "textDocument/references", {
-				textDocument: {uri: model.uri.toString(true)},
-				position: lsp.toPosition(position),
-			});
-		}
-
 		return lsp.send(model, "textDocument/hover", {
 			textDocument: {uri: URIUtils.fromRefsDisplayURIMaybe(model.uri).toString(true)},
 			position: lsp.toPosition(position),
