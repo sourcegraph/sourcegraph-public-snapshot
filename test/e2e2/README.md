@@ -29,6 +29,8 @@ To add a test:
 
 In `e2etypes.py`, you'll find utility functions and a `Driver` class that provides convenience methods for finding UI components and initiating user actions.
 
+After writing the test, run `make deploy` to regenerate the Docker image for the production end-to-end tests.
+
 
 ### Important tips
 
