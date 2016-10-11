@@ -33,7 +33,10 @@ def wait_for(condition, max_wait=2, wait_incr=0.1):
             pass
         time.sleep(max(0, min(wait_incr, max_wait - time_waited)))
         time_waited += wait_incr
-    if not condition():
+    try:
+        if not condition():
+            raise E2EError("timed out waiting for condition")
+    except (StaleElementReferenceException, NoSuchElementException, ElementNotVisibleException):
         raise E2EError("timed out waiting for condition")
 
 # retry calls fn a maximum of $attempts times, waiting $cooldown seconds in between invocations.
