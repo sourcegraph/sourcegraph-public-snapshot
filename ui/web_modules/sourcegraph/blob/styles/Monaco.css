@@ -8,7 +8,7 @@
 
 @value font_size_7 from vars;
 
-:global .monaco-editor {
+:global .monaco-editor.vs-dark {
 	font-family: inherit;
 }
 
