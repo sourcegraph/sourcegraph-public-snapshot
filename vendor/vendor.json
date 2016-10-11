@@ -400,6 +400,12 @@
 			"revisionTime": "2016-07-07T22:02:19Z"
 		},
 		{
+			"checksumSHA1": "/41rT8KIXX0R8mTl1XBJU0xhoDQ=",
+			"path": "github.com/neelance/godockerize",
+			"revision": "a41f62afee54012101876b5a3b1f489809e3ecb3",
+			"revisionTime": "2016-10-11T14:40:35Z"
+		},
+		{
 			"checksumSHA1": "K4L6qMn6mHxuWwEYhVBaCoDcSH0=",
 			"path": "github.com/neelance/parallel",
 			"revision": "4de9ce63d14c18517a79efe69e10e99d32c850c3",

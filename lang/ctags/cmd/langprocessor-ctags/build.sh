@@ -1,7 +1,6 @@
 #!/bin/bash
 set -ex
 
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o langprocessor-ctags .
-
-docker build -t us.gcr.io/sourcegraph-dev/langprocessor-ctags .
+env GOBIN=$PWD/../../../../vendor/.bin go install sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/neelance/godockerize
+../../../../vendor/.bin/godockerize build -t us.gcr.io/sourcegraph-dev/langprocessor-ctags .
 gcloud docker push us.gcr.io/sourcegraph-dev/langprocessor-ctags

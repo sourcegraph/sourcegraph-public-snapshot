@@ -1,5 +1,8 @@
 package main
 
+//docker:install go@edge git openssh-client btrfs-progs
+//docker:env SGPATH="/sourcegraph"
+
 import (
 	"context"
 	"encoding/json"

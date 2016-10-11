@@ -1,5 +1,7 @@
 package main
 
+//docker:install git openssh-client btrfs-progs
+
 import (
 	"context"
 	"flag"
