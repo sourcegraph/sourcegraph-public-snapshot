@@ -7,7 +7,7 @@ import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import Helmet from "react-helmet";
-import {Heading, Panel, Loader} from "sourcegraph/components";
+import {Heading, Panel} from "sourcegraph/components";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -26,14 +26,6 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
-
-	constructor(props) {
-		super(props);
-
-		this.state = {
-			isLoading: this.props.location.search.includes("CompletedGitHubOAuth2Flow"),
-		};
-	}
 
 	_skipClicked() {
 		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "SkipGitHubPrivateAuth", {page_name: "GitHubPrivateCodeOnboarding"});
@@ -60,8 +52,7 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 							</p>
 							<div className={classNames(base.pv5)}>
 								<img width={332} style={{marginBottom: "-95px"}} src={`${context.assetsRoot}/img/Dashboard/OnboardingRepos.png`}></img>
-								{this.state.isLoading && <div><Loader/></div>}
-								{!this.state.isLoading && <GitHubAuthButton pageName={"GitHubPrivateCodeOnboarding"} scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>}
+								<GitHubAuthButton pageName={"GitHubPrivateCodeOnboarding"} scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>
 							</div>
 							<p>
 								<a onClick={this._skipClicked.bind(this)}>Skip</a>

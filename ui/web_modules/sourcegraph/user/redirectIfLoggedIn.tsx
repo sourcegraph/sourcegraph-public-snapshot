@@ -24,7 +24,7 @@ export function redirectIfLoggedIn(url: Location | string, queryObj: History.Que
 		};
 
 		componentWillMount(): void {
-			const redirQueryObj = Object.assign({}, this.props.location.query || null, queryObj);
+			const redirQueryObj = Object.assign({}, queryObj, this.props.location.query || null);
 			const redirRouteObj = typeof url === "string" ? {pathname: url} : url;
 			const redirLocation = Object.assign({}, this.props.location || null, redirRouteObj, {query: redirQueryObj});
 
