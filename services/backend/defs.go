@@ -353,8 +353,8 @@ func populateDefFormatStrings(def *sourcegraph.Def) {
 type MockDefs struct {
 	Get              func(v0 context.Context, v1 *sourcegraph.DefsGetOp) (*sourcegraph.Def, error)
 	List             func(v0 context.Context, v1 *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
-	ListRefs         func(v0 context.Context, v1 *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
-	ListRefLocations func(v0 context.Context, v1 *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
+	ListRefs         func(v0 context.Context, v1 *sourcegraph.DeprecatedDefsListRefsOp) (*sourcegraph.RefList, error)
+	ListRefLocations func(v0 context.Context, v1 *sourcegraph.DeprecatedDefsListRefLocationsOp) (*sourcegraph.DeprecatedRefLocationsList, error)
 	RefreshIndex     func(v0 context.Context, v1 *sourcegraph.DefsRefreshIndexOp) error
 }
 

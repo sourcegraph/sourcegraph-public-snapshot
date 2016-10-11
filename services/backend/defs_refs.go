@@ -15,7 +15,7 @@ import (
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
-func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (res *sourcegraph.RefList, err error) {
+func (s *defs) DeprecatedListRefs(ctx context.Context, op *sourcegraph.DeprecatedDefsListRefsOp) (res *sourcegraph.RefList, err error) {
 	if Mocks.Defs.ListRefs != nil {
 		return Mocks.Defs.ListRefs(ctx, op)
 	}
@@ -26,7 +26,7 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (re
 	defSpec := op.Def
 	opt := op.Opt
 	if opt == nil {
-		opt = &sourcegraph.DefListRefsOptions{}
+		opt = &sourcegraph.DeprecatedDefListRefsOptions{}
 	}
 
 	// Restrict the ref search to a single repo and commit for performance.
@@ -105,7 +105,7 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (re
 	}, nil
 }
 
-func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (res *sourcegraph.RefLocationsList, err error) {
+func (s *defs) DeprecatedListRefLocations(ctx context.Context, op *sourcegraph.DeprecatedDefsListRefLocationsOp) (res *sourcegraph.DeprecatedRefLocationsList, err error) {
 	if Mocks.Defs.ListRefLocations != nil {
 		return Mocks.Defs.ListRefLocations(ctx, op)
 	}
@@ -113,7 +113,7 @@ func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRef
 	ctx, done := trace(ctx, "Defs", "ListRefLocations", op, &err)
 	defer done()
 
-	return localstore.GlobalRefs.Get(ctx, op)
+	return localstore.DeprecatedGlobalRefs.DeprecatedGet(ctx, op)
 }
 
 func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (err error) {
@@ -131,7 +131,7 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	}
 
 	// rev.CommitID will be the latest commit on the DefaultBranch
-	indexOp := localstore.RefreshIndexOp{
+	indexOp := localstore.DeprecatedRefreshIndexOp{
 		Repo:     op.Repo,
 		CommitID: rev.CommitID,
 	}
@@ -140,7 +140,7 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	defsErr := localstore.Defs.Update(ctx, indexOp)
 
 	// Update the references this repo makes to external repos
-	refsErr := localstore.GlobalRefs.Update(ctx, indexOp)
+	refsErr := localstore.DeprecatedGlobalRefs.DeprecatedUpdate(ctx, indexOp)
 
 	// We care more about defsErr, since it should be more stable. So lets
 	// lean on the side of reporting it instead of refsErr. We only return

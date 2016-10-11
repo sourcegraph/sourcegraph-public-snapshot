@@ -26,7 +26,7 @@ func TestGlobalRefs(t *testing.T) {
 		t.Skip()
 	}
 
-	g := &globalRefs{}
+	g := &deprecatedGlobalRefs{}
 
 	ctx, done := testContext()
 	defer done()
@@ -88,91 +88,91 @@ func TestGlobalRefs(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := g.Update(ctx, RefreshIndexOp{Repo: repoObj.ID, CommitID: "aaaaa"}); err != nil {
+		if err := g.DeprecatedUpdate(ctx, DeprecatedRefreshIndexOp{Repo: repoObj.ID, CommitID: "aaaaa"}); err != nil {
 			t.Fatalf("could not update %s: %s", repo, err)
 		}
 	}
 	// Updates should be idempotent.
-	err := g.Update(ctx, RefreshIndexOp{Repo: abRepoID, CommitID: "aaaaa"})
+	err := g.DeprecatedUpdate(ctx, DeprecatedRefreshIndexOp{Repo: abRepoID, CommitID: "aaaaa"})
 	if err != nil {
 		t.Fatalf("could not idempotent update a/b: %s", err)
 	}
 
 	testCases := map[string]struct {
-		Op     *sourcegraph.DefsListRefLocationsOp
-		Result []*sourcegraph.DefRepoRef
+		Op     *sourcegraph.DeprecatedDefsListRefLocationsOp
+		Result []*sourcegraph.DeprecatedDefRepoRef
 	}{
 		"simple1": {
-			&sourcegraph.DefsListRefLocationsOp{
+			&sourcegraph.DeprecatedDefsListRefLocationsOp{
 				Def: sourcegraph.DefSpec{Repo: abRepoID, Unit: "a/b/u", UnitType: "t", Path: "A/R"},
 			},
-			[]*sourcegraph.DefRepoRef{
-				{Repo: "a/b", Count: 3, Files: []*sourcegraph.DefFileRef{{Path: "a/b/u/s.go", Count: 2}, {Path: "a/b/p/t.go", Count: 1}}},
+			[]*sourcegraph.DeprecatedDefRepoRef{
+				{Repo: "a/b", Count: 3, Files: []*sourcegraph.DeprecatedDefFileRef{{Path: "a/b/u/s.go", Count: 2}, {Path: "a/b/p/t.go", Count: 1}}},
 			},
 		},
 		"simple2": {
-			&sourcegraph.DefsListRefLocationsOp{
+			&sourcegraph.DeprecatedDefsListRefLocationsOp{
 				Def: sourcegraph.DefSpec{Repo: xyRepoID, Unit: "x/y/c", UnitType: "t", Path: "A/R"},
 			},
-			[]*sourcegraph.DefRepoRef{
-				{Repo: "x/y", Count: 1, Files: []*sourcegraph.DefFileRef{{Path: "x/y/c/v.go", Count: 1}}},
-				{Repo: "a/b", Count: 1, Files: []*sourcegraph.DefFileRef{{Path: "a/b/u/s.go", Count: 1}}},
+			[]*sourcegraph.DeprecatedDefRepoRef{
+				{Repo: "x/y", Count: 1, Files: []*sourcegraph.DeprecatedDefFileRef{{Path: "x/y/c/v.go", Count: 1}}},
+				{Repo: "a/b", Count: 1, Files: []*sourcegraph.DeprecatedDefFileRef{{Path: "a/b/u/s.go", Count: 1}}},
 			},
 		},
 		"repo": {
-			&sourcegraph.DefsListRefLocationsOp{
+			&sourcegraph.DeprecatedDefsListRefLocationsOp{
 				Def: sourcegraph.DefSpec{Repo: xyRepoID, Unit: "x/y/c", UnitType: "t", Path: "A/R"},
-				Opt: &sourcegraph.DefListRefLocationsOptions{
+				Opt: &sourcegraph.DeprecatedDefListRefLocationsOptions{
 					Repos: []string{"a/b"},
 				},
 			},
-			[]*sourcegraph.DefRepoRef{
-				{Repo: "a/b", Count: 1, Files: []*sourcegraph.DefFileRef{{Path: "a/b/u/s.go", Count: 1}}},
+			[]*sourcegraph.DeprecatedDefRepoRef{
+				{Repo: "a/b", Count: 1, Files: []*sourcegraph.DeprecatedDefFileRef{{Path: "a/b/u/s.go", Count: 1}}},
 			},
 		},
 		"pagination_first": {
-			&sourcegraph.DefsListRefLocationsOp{
+			&sourcegraph.DeprecatedDefsListRefLocationsOp{
 				Def: sourcegraph.DefSpec{Repo: xyRepoID, Unit: "x/y/c", UnitType: "t", Path: "A/R"},
-				Opt: &sourcegraph.DefListRefLocationsOptions{
+				Opt: &sourcegraph.DeprecatedDefListRefLocationsOptions{
 					ListOptions: sourcegraph.ListOptions{
 						Page: 1,
 					},
 				},
 			},
-			[]*sourcegraph.DefRepoRef{
-				{Repo: "x/y", Count: 1, Files: []*sourcegraph.DefFileRef{{Path: "x/y/c/v.go", Count: 1}}},
-				{Repo: "a/b", Count: 1, Files: []*sourcegraph.DefFileRef{{Path: "a/b/u/s.go", Count: 1}}},
+			[]*sourcegraph.DeprecatedDefRepoRef{
+				{Repo: "x/y", Count: 1, Files: []*sourcegraph.DeprecatedDefFileRef{{Path: "x/y/c/v.go", Count: 1}}},
+				{Repo: "a/b", Count: 1, Files: []*sourcegraph.DeprecatedDefFileRef{{Path: "a/b/u/s.go", Count: 1}}},
 			},
 		},
 		"pagination_empty": {
-			&sourcegraph.DefsListRefLocationsOp{
+			&sourcegraph.DeprecatedDefsListRefLocationsOp{
 				Def: sourcegraph.DefSpec{Repo: xyRepoID, Unit: "x/y/c", UnitType: "t", Path: "A/R"},
-				Opt: &sourcegraph.DefListRefLocationsOptions{
+				Opt: &sourcegraph.DeprecatedDefListRefLocationsOptions{
 					ListOptions: sourcegraph.ListOptions{
 						Page: 100,
 					},
 				},
 			},
-			[]*sourcegraph.DefRepoRef{},
+			[]*sourcegraph.DeprecatedDefRepoRef{},
 		},
 		// Missing defspec should not return an error
 		"empty": {
-			&sourcegraph.DefsListRefLocationsOp{
+			&sourcegraph.DeprecatedDefsListRefLocationsOp{
 				Def: sourcegraph.DefSpec{Repo: xyRepoID, Unit: "x/y/c", UnitType: "t", Path: "A/R/D"},
 			},
-			[]*sourcegraph.DefRepoRef{},
+			[]*sourcegraph.DeprecatedDefRepoRef{},
 		},
 	}
 	for tn, test := range testCases {
 		if tn != "repo" {
 			continue
 		}
-		got, err := g.Get(ctx, test.Op)
+		got, err := g.DeprecatedGet(ctx, test.Op)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if got == nil {
-			t.Errorf("%s: got nil result from GlobalRefs.Get", tn)
+			t.Errorf("%s: got nil result from DeprecatedGlobalRefs.Get", tn)
 			continue
 		}
 		if !reflect.DeepEqual(got.RepoRefs, test.Result) {
@@ -187,7 +187,7 @@ func TestGlobalRefsUpdate(t *testing.T) {
 		t.Skip()
 	}
 
-	g := &globalRefs{}
+	g := &deprecatedGlobalRefs{}
 	ctx, done := testContext()
 	defer done()
 
@@ -217,29 +217,29 @@ func TestGlobalRefsUpdate(t *testing.T) {
 		allRefs["repo"] = refs
 	}
 
-	query := &sourcegraph.DefsListRefLocationsOp{Def: def}
+	query := &sourcegraph.DeprecatedDefsListRefLocationsOp{Def: def}
 	check := func(tn, dir string) {
-		got, err := g.Get(ctx, query)
+		got, err := g.DeprecatedGet(ctx, query)
 		if err != nil {
 			t.Fatalf("%s: %s", tn, err)
 		}
 		if len(got.RepoRefs) != 1 {
 			t.Fatalf("%s: expected only 1 repo, got %d", tn, len(got.RepoRefs))
 		}
-		expected := make([]*sourcegraph.DefFileRef, 0, nFiles)
+		expected := make([]*sourcegraph.DeprecatedDefFileRef, 0, nFiles)
 		for i := 0; i < nFiles; i++ {
-			expected = append(expected, &sourcegraph.DefFileRef{
+			expected = append(expected, &sourcegraph.DeprecatedDefFileRef{
 				Path:  fmt.Sprintf("%s/file%d.go", dir, i),
 				Count: 1,
 			})
 		}
 		if !reflect.DeepEqual(got.RepoRefs[0].Files, expected) {
-			t.Fatalf("%s: got unexpected DefFileRefs. got=%v expected=%v", tn, got.RepoRefs[0].Files, expected)
+			t.Fatalf("%s: got unexpected DeprecatedDefFileRefs. got=%v expected=%v", tn, got.RepoRefs[0].Files, expected)
 		}
 	}
 
 	// Initially we should have no refs
-	got, err := g.Get(ctx, query)
+	got, err := g.DeprecatedGet(ctx, query)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,7 +249,7 @@ func TestGlobalRefsUpdate(t *testing.T) {
 
 	// We should only have results for first
 	genRefs("first")
-	err = g.Update(ctx, RefreshIndexOp{Repo: repoID, CommitID: "aaaaa"})
+	err = g.DeprecatedUpdate(ctx, DeprecatedRefreshIndexOp{Repo: repoID, CommitID: "aaaaa"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,7 +257,7 @@ func TestGlobalRefsUpdate(t *testing.T) {
 
 	// We always reindex, even if we have indexed a commit.
 	genRefs("second")
-	err = g.Update(ctx, RefreshIndexOp{Repo: repoID, CommitID: "aaaaa"})
+	err = g.DeprecatedUpdate(ctx, DeprecatedRefreshIndexOp{Repo: repoID, CommitID: "aaaaa"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -265,7 +265,7 @@ func TestGlobalRefsUpdate(t *testing.T) {
 
 	// Update what the latest commit is, that should cause us to index third
 	genRefs("third")
-	err = g.Update(ctx, RefreshIndexOp{Repo: repoID, CommitID: "bbbbb"})
+	err = g.DeprecatedUpdate(ctx, DeprecatedRefreshIndexOp{Repo: repoID, CommitID: "bbbbb"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -279,7 +279,7 @@ func TestGlobalRefs_version(t *testing.T) {
 		t.Skip()
 	}
 
-	g := &globalRefs{}
+	g := &deprecatedGlobalRefs{}
 	ctx, done := testContext()
 	defer done()
 
@@ -343,16 +343,16 @@ func benchmarkGlobalRefsGet(b *testing.B) {
 		if err != nil {
 			return err
 		}
-		_, err = GlobalRefs.Get(ctx, &sourcegraph.DefsListRefLocationsOp{Def: sourcegraph.DefSpec{Repo: repo.ID, Unit: "fmt", UnitType: "GoPackage", Path: "Errorf"}})
+		_, err = DeprecatedGlobalRefs.DeprecatedGet(ctx, &sourcegraph.DeprecatedDefsListRefLocationsOp{Def: sourcegraph.DefSpec{Repo: repo.ID, Unit: "fmt", UnitType: "GoPackage", Path: "Errorf"}})
 		return err
 	}
 	if err := get(); err != nil {
 		b.Log("Loading data into GlobalRefs")
 		nRepos := 10000
 		nRefs := 10
-		globalRefsUpdate(b, ctx, nRepos, nRefs)
+		deprecatedGlobalRefsUpdate(b, ctx, nRepos, nRefs)
 		b.Log("Refreshing")
-		GlobalRefs.StatRefresh(ctx)
+		DeprecatedGlobalRefs.DeprecatedStatRefresh(ctx)
 	}
 
 	b.ResetTimer()
@@ -372,13 +372,13 @@ func benchmarkGlobalRefsUpdate(b *testing.B) {
 	defer done()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		globalRefsUpdate(b, ctx, 1, 100)
+		deprecatedGlobalRefsUpdate(b, ctx, 1, 100)
 	}
 	// defer done() can be expensive
 	b.StopTimer()
 }
 
-func globalRefsUpdate(b *testing.B, ctx context.Context, nRepos, nRefs int) {
+func deprecatedGlobalRefsUpdate(b *testing.B, ctx context.Context, nRepos, nRefs int) {
 	allRefs := map[string][]*graph.Ref{}
 	for i := 0; i < nRepos; i++ {
 		pkg := fmt.Sprintf("foo.com/foo/bar%d", i)
@@ -410,7 +410,7 @@ func globalRefsUpdate(b *testing.B, ctx context.Context, nRepos, nRefs int) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		if err := GlobalRefs.Update(ctx, RefreshIndexOp{Repo: repoObj.ID, CommitID: "aaaaa"}); err != nil {
+		if err := DeprecatedGlobalRefs.DeprecatedUpdate(ctx, DeprecatedRefreshIndexOp{Repo: repoObj.ID, CommitID: "aaaaa"}); err != nil {
 			b.Fatal(err)
 		}
 	}

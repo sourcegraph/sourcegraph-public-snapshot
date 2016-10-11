@@ -225,7 +225,7 @@ func VerifyUserHasReadAccessAll(ctx context.Context, method string, repos []*sou
 // consults with the Postgres DB (Repos.Get) and GitHub (via VerifyUserHasReadAccessAll)
 // in order to quickly filter the refs. The returned list is the ones the user
 // has access to.
-func VerifyUserHasReadAccessToDefRepoRefs(ctx context.Context, method string, repoRefs []*sourcegraph.DefRepoRef) ([]*sourcegraph.DefRepoRef, error) {
+func VerifyUserHasReadAccessToDefRepoRefs(ctx context.Context, method string, repoRefs []*sourcegraph.DeprecatedDefRepoRef) ([]*sourcegraph.DeprecatedDefRepoRef, error) {
 	// Build a list of repos that we must check for access.
 	repos := make([]*sourcegraph.Repo, 0, len(repoRefs))
 	for _, r := range repoRefs {
@@ -254,7 +254,7 @@ func VerifyUserHasReadAccessToDefRepoRefs(ctx context.Context, method string, re
 	}
 
 	// Formulate the final list of repoRefs the user can access.
-	final := make([]*sourcegraph.DefRepoRef, 0, len(repoRefs))
+	final := make([]*sourcegraph.DeprecatedDefRepoRef, 0, len(repoRefs))
 	for _, repoRef := range repoRefs {
 		if _, allowed := allowedURIs[repoRef.Repo]; !allowed {
 			continue

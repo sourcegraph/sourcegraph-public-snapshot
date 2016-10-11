@@ -157,7 +157,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var def *sourcegraph.Def
-	var refLocs *sourcegraph.RefLocationsList
+	var refLocs *sourcegraph.DeprecatedRefLocationsList
 	var defEntry *sourcegraph.TreeEntry
 	var defSnippet *snippet.Snippet
 	var refSnippets []*snippet.Snippet
@@ -182,9 +182,9 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 			refLocRepoLimit = 3 // max 3 separate repos
 			refLocFileLimit = 5 // max 5 files per repo
 		)
-		refLocs, err = backend.Defs.ListRefLocations(r.Context(), &sourcegraph.DefsListRefLocationsOp{
+		refLocs, err = backend.Defs.DeprecatedListRefLocations(r.Context(), &sourcegraph.DeprecatedDefsListRefLocationsOp{
 			Def: defSpec,
-			Opt: &sourcegraph.DefListRefLocationsOptions{
+			Opt: &sourcegraph.DeprecatedDefListRefLocationsOptions{
 				// NOTE(mate): this has no effect at the moment
 				ListOptions: sourcegraph.ListOptions{PerPage: refLocRepoLimit},
 			},
@@ -241,9 +241,9 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		defFileURL = approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0).String()
 
 		// fetch example
-		refs, err := backend.Defs.ListRefs(r.Context(), &sourcegraph.DefsListRefsOp{
+		refs, err := backend.Defs.DeprecatedListRefs(r.Context(), &sourcegraph.DeprecatedDefsListRefsOp{
 			Def: defSpec,
-			Opt: &sourcegraph.DefListRefsOptions{ListOptions: sourcegraph.ListOptions{PerPage: 3}},
+			Opt: &sourcegraph.DeprecatedDefListRefsOptions{ListOptions: sourcegraph.ListOptions{PerPage: 3}},
 		})
 		if err != nil {
 			return err
@@ -323,7 +323,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		DefFileName         string
 		TotalRepoReferences int32
 		DefSnippet          *snippet.Snippet
-		RefLocs             *sourcegraph.RefLocationsList
+		RefLocs             *sourcegraph.DeprecatedRefLocationsList
 		TruncatedRefLocs    bool
 	}{
 		Meta:                *m,
