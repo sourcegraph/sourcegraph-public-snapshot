@@ -1,2 +1,6 @@
-selenium==2.53.6
 ansicolors==1.0.2
+requests==2.11.1
+selenium==2.53.6
+six==1.10.0
+slackclient==1.0.2
+websocket-client==0.37.0

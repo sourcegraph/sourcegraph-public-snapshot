@@ -2,20 +2,67 @@ import os
 import sys
 import argparse
 import traceback
+from urlparse import urlparse
 from colors import green, red, bold
+from slackclient import SlackClient
 
 from e2etypes import *
 from e2etests import *
 
 user_agent = "Sourcegraph e2etest-bot"
 
+failure_msg_template = """:rotating_light: *TEST FAILED* :rotating_light:
+*Test name*: `%s`
+*Browser*: %s
+*URL*: %s
+*Error*:
+```
+%s: %s
+%s
+```
+*Repro*: `cd test/e2e2 && make TV=1 OPT="--pause-on-err" BROWSERS=%s TEST=%s SOURCEGRAPH_URL=%s`
+*Docs*: https://github.com/sourcegraph/sourcegraph/blob/master/test/e2e2/README.md
+"""
+
+def failure_msg(test_name, browser, url, error_name, error, stack_trace):
+    u = urlparse(url)
+    sgurl = "%s://%s" % (u.scheme, u.hostname)
+    if u.port:
+        sgurl += ":%d" % u.port
+    return failure_msg_template % (
+        test_name, browser, url, error_name, error, stack_trace,
+        browser.lower(), test_name, sgurl
+    )
+
 def run_tests(args, tests):
     failed_tests = []
+
+    slack_cli, slack_ch, opsgenie_key = None, None, None
+    if args.alert_on_err:
+        slack_tok, slack_ch, opsgenie_key = os.getenv("SLACK_API_TOKEN"), os.getenv("SLACK_WARNING_CHANNEL"), os.getenv("OPSGENIE_KEY")
+        if not slack_ch or not slack_tok or not opsgenie_key:
+            print "if --alert-on-err is specified, environment variables SLACK_API_TOKEN, SLACK_WARNING_CHANNEL, and OPSGENIE_KEY should be set"
+            sys.exit(1)
+        slack_cli = SlackClient(slack_tok)
+
     def success(test_name):
         print '[%s](%s) %s' % (green("PASS"), args.browser, test_name)
-    def fail(test_name):
-        failed_tests.append(test_name)
+        if args.alert_on_err:
+            msg = ":white_check_mark: Test `%s` passed in %s." % (test_name, args.browser.capitalize())
+            slack_cli.api_call("chat.postMessage", channel=slack_ch, text=msg, username="e2e-bot")
+
+    def fail(test_name, exception, driver):
         print '[%s](%s) %s' % (red("FAIL"), args.browser, test_name)
+        print "%s: %s" % (type(exception).__name__, str(exception))
+        traceback.print_exc()
+        if args.alert_on_err:
+            msg = failure_msg(test_name, args.browser.capitalize(), driver.d.current_url, type(exception).__name__, str(exception), traceback.format_exc())
+            screenshot = driver.d.get_screenshot_as_png()
+            slack_cli.api_call("files.upload", channels=slack_ch, initial_comment=msg, file=screenshot, filename="screenshot.png", username="e2e-bot")
+        if args.pause_on_err:
+            print "PAUSED on error. Hit ENTER to continue"
+            raw_input()
+
     print '\nTest plan:\n%s\n' % '\n'.join(['\t'+f.func_name for f in tests])
 
     for test in tests:
@@ -43,25 +90,10 @@ def run_tests(args, tests):
             if args.interactive:
                 print "ENTER to continue "
                 raw_input()
-        except E2EFatal as e:
-            print "E2EFatal: " + str(e)
-            fail(test.func_name)
-            if args.pause_on_err:
-                print "PAUSED on error. Hit ENTER to continue"
-                raw_input()
-        except E2EError as e:
-            print "E2EError: " + str(e)
-            fail(test.func_name)
-            if args.pause_on_err:
-                print "PAUSED on error. Hit ENTER to continue"
-                raw_input()
-        except Exception as e:
-            print "Uncaught exception when running test: "
-            traceback.print_exc()
-            fail(test.func_name)
-            if args.pause_on_err:
-                print "PAUSED on error. Hit ENTER to continue"
-                raw_input()
+        except (E2EError, E2EFatal, Exception) as e:
+            test_name = test.func_name
+            fail(test_name, e, driver)
+            failed_tests.append(test_name)
         finally:
             if driver is not None:
                 driver.close()

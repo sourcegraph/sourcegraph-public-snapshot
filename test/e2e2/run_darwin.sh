@@ -1,17 +1,19 @@
 #!/bin/bash
 
+DOCKER_BRIDGE=http://10.200.10.1
+SOURCEGRAPH_PORT=3080
+
 : ${BROWSERS:="chrome firefox"}
 : ${TEST:=""}
 : ${TV:=""}
 : ${ITERS:=1}
-: ${PAUSE_ON_ERR:=false}
+: ${SOURCEGRAPH_URL:="$DOCKER_BRIDGE:$SOURCEGRAPH_PORT"}
+: ${OPT:=""}
 
 # necessary to enable traffic from container to host (see https://docker.github.io/docker-for-mac/networking/#/use-cases-and-workarounds)
 echo "Attaching 10.200.10.1/24 to lo0 so that container can communicate with host (password may be required)"
 sudo ifconfig lo0 alias 10.200.10.1/24;
 
-DOCKER_BRIDGE=http://10.200.10.1
-SOURCEGRAPH_PORT=3080
 container=""
 lbl="e2e-ff"
 
@@ -50,7 +52,7 @@ function run {
 					  --selenium=http://localhost:$SEL_PORT \
 					  --browser=$BROWSER \
 					  --filter=$TEST \
-					  --url=$DOCKER_BRIDGE:$SOURCEGRAPH_PORT \
+					  --url=$SOURCEGRAPH_URL \
 					  $OPT";
 	$cmd;
 

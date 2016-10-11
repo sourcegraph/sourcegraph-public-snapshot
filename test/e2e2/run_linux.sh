@@ -1,13 +1,15 @@
 #!/bin/bash
 
+DOCKER_BRIDGE=http://172.17.0.1
+SOURCEGRAPH_PORT=3080
+
 : ${BROWSERS:="chrome firefox"}
 : ${TEST:=""}
 : ${TV:=""}
 : ${ITERS:=1}
+: ${SOURCEGRAPH_URL:="$DOCKER_BRIDGE:$SOURCEGRAPH_PORT"}
 : ${OPT:=""}
 
-DOCKER_BRIDGE=http://172.17.0.1
-SOURCEGRAPH_PORT=3080
 container=""
 lbl="e2e-ff"
 
@@ -46,7 +48,7 @@ function run {
 					  --selenium=http://localhost:$SEL_PORT \
 					  --browser=$BROWSER \
 					  --filter=$TEST \
-					  --url=$DOCKER_BRIDGE:$SOURCEGRAPH_PORT \
+					  --url=$SOURCEGRAPH_URL \
 					  $OPT";
 	$cmd;
 
