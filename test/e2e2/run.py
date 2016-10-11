@@ -48,9 +48,6 @@ def run_tests(args, tests):
 
     def success(test_name):
         print '[%s](%s) %s' % (green("PASS"), args.browser, test_name)
-        if args.alert_on_err:
-            msg = ":white_check_mark: Test `%s` passed in %s." % (test_name, args.browser.capitalize())
-            slack_cli.api_call("chat.postMessage", channel=slack_ch, text=msg, username="e2e-bot")
 
     def fail(test_name, exception, driver):
         print '[%s](%s) %s' % (red("FAIL"), args.browser, test_name)
