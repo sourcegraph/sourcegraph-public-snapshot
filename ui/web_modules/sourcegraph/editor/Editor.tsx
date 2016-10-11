@@ -119,8 +119,9 @@ export class Editor implements IDisposable {
 		// Warm up the LSP server immediately when the document loads
 		// instead of waiting until the user tries to hover.
 		this._editor.onDidChangeModel((e: IModelChangedEvent) => {
-			// HACK: only done for go, since we only registerModeProviders for go.
-			if (this._editor.getModel().getModeId() !== "go") {
+			// HACK: only done for go/typescript, since we only registerModeProviders for go/typescript.
+			const mode = this._editor.getModel().getModeId();
+			if (mode !== "go" && mode !== "typescript") {
 				return;
 			}
 			// We modify the name to indicate to our HTTP gateway that this
