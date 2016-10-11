@@ -2,7 +2,7 @@
 set -ex
 
 if [ ! -d "langserver" ]; then
-    git clone https://github.com/antonina-cherednichenko/poc-jslang-server langserver && cd langserver
+    git clone https://github.com/sourcegraph/langserver langserver && cd langserver
 else
     cd langserver && git pull
 fi
