@@ -15,14 +15,14 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 
 	"golang.org/x/tools/go/loader"
 )
 
 func (h *LangHandler) typecheck(ctx context.Context, conn JSONRPC2Conn, fileURI string, position lsp.Position) (*token.FileSet, *ast.Ident, *loader.PackageInfo, error) {
 	parentSpan := opentracing.SpanFromContext(ctx)
-	span := parentSpan.Tracer().StartSpan("xlang-go: load program",
+	span := parentSpan.Tracer().StartSpan("langserver-go: load program",
 		opentracing.Tags{"fileURI": fileURI},
 		opentracing.ChildOf(parentSpan.Context()),
 	)
@@ -197,7 +197,7 @@ func (h *LangHandler) typecheckMu(k typecheckKey) *sync.Mutex {
 
 func (h *LangHandler) cachedTypecheck(ctx context.Context, bctx *build.Context, bpkg *build.Package) (*token.FileSet, *loader.Program, diagnostics, error) {
 	parentSpan := opentracing.SpanFromContext(ctx)
-	span := parentSpan.Tracer().StartSpan("xlang-go: typecheck",
+	span := parentSpan.Tracer().StartSpan("langserver-go: typecheck",
 		opentracing.Tags{"pkg": bpkg.ImportPath},
 		opentracing.ChildOf(parentSpan.Context()),
 	)

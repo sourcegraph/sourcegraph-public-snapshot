@@ -591,6 +591,18 @@
 			"revisionTime": "2013-09-12T23:55:21-07:00"
 		},
 		{
+			"checksumSHA1": "g9SO5eZwZfRFdPejcpgerR4V/1I=",
+			"path": "github.com/sourcegraph/sourcegraph-go/langserver",
+			"revision": "a4c10aa83afe0dea68759090b96690ca633bec5b",
+			"revisionTime": "2016-10-12T06:29:13Z"
+		},
+		{
+			"checksumSHA1": "tFq74Iccgr8k2mO3rkk5M7NBsIc=",
+			"path": "github.com/sourcegraph/sourcegraph-go/pkg/lsp",
+			"revision": "d42b0a8eb0068dbe6d4e6d08ee2d9109ae4b9015",
+			"revisionTime": "2016-10-12T06:29:13Z"
+		},
+		{
 			"checksumSHA1": "lxZnbbPCOmaLq2c1g42Ww964hgk=",
 			"path": "github.com/sourcegraph/srclib-json",
 			"revision": "da879fdce0b22a422c9607f054a9f8f03b2c69f5",

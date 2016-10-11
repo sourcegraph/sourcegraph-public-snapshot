@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/tools/go/ast/astutil"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
 func offsetForPosition(contents []byte, p lsp.Position) (offset uint64, valid bool) {

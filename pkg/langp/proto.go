@@ -3,7 +3,7 @@ package langp
 import (
 	"fmt"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
 // Error is returned in the event of any request error, in addition to the HTTP

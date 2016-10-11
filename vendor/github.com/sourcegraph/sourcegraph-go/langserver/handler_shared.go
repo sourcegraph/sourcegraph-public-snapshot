@@ -24,7 +24,7 @@ type HandlerShared struct {
 	AugmentFileSystem func(fs ctxvfs.FileSystem) ctxvfs.FileSystem
 }
 
-func (h *HandlerShared) Reset(overlayRootURI string) error {
+func (h *HandlerShared) Reset(overlayRootURI string, useOSFS bool) error {
 	h.Mu.Lock()
 	defer h.Mu.Unlock()
 	h.overlayFSMu.Lock()
@@ -36,6 +36,11 @@ func (h *HandlerShared) Reset(overlayRootURI string) error {
 		return fmt.Errorf("invalid overlay root URI %q: must be file:///", overlayRootURI)
 	}
 	h.OverlayMountPath = strings.TrimPrefix(overlayRootURI, "file://")
-	h.FS.Bind(h.OverlayMountPath, ctxvfs.Sync(&h.overlayFSMu, ctxvfs.Map(h.overlayFS)), "/", ctxvfs.BindBefore)
+	if useOSFS {
+		// The overlay FS takes precedence, but we fall back to the OS
+		// file system.
+		h.FS.Bind("/", ctxvfs.OS("/"), "/", ctxvfs.BindAfter)
+	}
+	h.FS.Bind("/", ctxvfs.Sync(&h.overlayFSMu, ctxvfs.Map(h.overlayFS)), "/", ctxvfs.BindBefore)
 	return nil
 }

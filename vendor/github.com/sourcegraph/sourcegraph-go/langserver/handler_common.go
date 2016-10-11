@@ -29,7 +29,7 @@ func (h *HandlerCommon) Reset(rootURI string) error {
 		return errors.New("unable to reset a server that is shutting down")
 	}
 	if !strings.HasPrefix(rootURI, "file:///") {
-		return fmt.Errorf("invalid root path %q: must be file:///", rootURI)
+		return fmt.Errorf("invalid root path %q: must be file:/// URI", rootURI)
 	}
 	h.RootFSPath = strings.TrimPrefix(rootURI, "file://") // retain leading slash
 	return nil

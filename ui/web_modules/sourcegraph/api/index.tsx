@@ -939,9 +939,6 @@ export interface ResolvedRev {
 	CommitID?: string;
 }
 
-export interface ResponseError {
-}
-
 export interface SSHConfig {
 }
 

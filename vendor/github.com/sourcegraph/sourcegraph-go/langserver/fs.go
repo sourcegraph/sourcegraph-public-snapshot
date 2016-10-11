@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
 // IsFileSystemRequest returns if this is an LSP method whose sole
@@ -19,7 +19,8 @@ import (
 func IsFileSystemRequest(method string) bool {
 	return method == "textDocument/didOpen" ||
 		method == "textDocument/didChange" ||
-		method == "textDocument/didClose"
+		method == "textDocument/didClose" ||
+		method == "textDocument/didSave"
 }
 
 func (h *HandlerShared) HandleFileSystemRequest(ctx context.Context, req *jsonrpc2.Request) error {
@@ -64,6 +65,10 @@ func (h *HandlerShared) HandleFileSystemRequest(ctx context.Context, req *jsonrp
 		h.removeOverlayFile(params.TextDocument.URI)
 		return nil
 
+	case "textDocument/didSave":
+		// no-op
+		return nil
+
 	default:
 		panic("unexpected file system request method: " + req.Method)
 	}
@@ -97,14 +102,16 @@ func (h *HandlerShared) readFile(ctx context.Context, uri string) ([]byte, error
 	return contents, err
 }
 
+func uriToOverlayPath(uri string) string {
+	return strings.TrimPrefix(uri, "file:///")
+}
+
 func (h *HandlerShared) addOverlayFile(uri string, contents []byte) {
 	h.Mu.Lock()
 	defer h.Mu.Unlock()
 	h.overlayFSMu.Lock()
 	defer h.overlayFSMu.Unlock()
-	path := h.FilePath(uri)
-	path = PathTrimPrefix(path, h.OverlayMountPath)
-	h.overlayFS[path] = contents
+	h.overlayFS[uriToOverlayPath(uri)] = contents
 }
 
 func (h *HandlerShared) removeOverlayFile(uri string) {
@@ -112,7 +119,7 @@ func (h *HandlerShared) removeOverlayFile(uri string) {
 	defer h.Mu.Unlock()
 	h.overlayFSMu.Lock()
 	defer h.overlayFSMu.Unlock()
-	delete(h.overlayFS, h.FilePath(uri))
+	delete(h.overlayFS, uriToOverlayPath(uri))
 }
 
 func (h *HandlerShared) readOverlayFile(uri string) (contents []byte, found bool) {
@@ -120,6 +127,6 @@ func (h *HandlerShared) readOverlayFile(uri string) (contents []byte, found bool
 	defer h.Mu.Unlock()
 	h.overlayFSMu.Lock()
 	defer h.overlayFSMu.Unlock()
-	contents, found = h.overlayFS[h.FilePath(uri)]
+	contents, found = h.overlayFS[uriToOverlayPath(uri)]
 	return
 }

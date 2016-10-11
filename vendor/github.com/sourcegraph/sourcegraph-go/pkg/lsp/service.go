@@ -1,7 +1,5 @@
 package lsp
 
-// Refer to https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md for documentation.
-
 type None struct{}
 
 type InitializeParams struct {

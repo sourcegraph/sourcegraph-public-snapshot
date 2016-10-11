@@ -16,7 +16,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/ctxvfs"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/go-langserver/langserver"
+	"github.com/sourcegraph/sourcegraph-go/langserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 

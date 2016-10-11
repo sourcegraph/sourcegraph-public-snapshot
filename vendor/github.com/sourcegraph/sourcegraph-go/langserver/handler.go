@@ -6,20 +6,26 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os/exec"
 	"runtime"
+	"strings"
 	"sync"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
+// NewHandler creates a Go language server handler.
+func NewHandler() jsonrpc2.Handler {
+	return jsonrpc2.HandlerWithError((&LangHandler{
+		HandlerShared: &HandlerShared{},
+	}).handle)
+}
+
 // LangHandler is a Go language server LSP/JSON-RPC handler.
-//
-// It can operate as an LSP server 100% independently of the Go build
-// server (BuildHandler) for use on a local file system.
 type LangHandler struct {
 	mu sync.Mutex
 	HandlerCommon
@@ -45,18 +51,48 @@ func (h *LangHandler) reset(init *InitializeParams) error {
 	if !h.HandlerShared.Shared {
 		// Only reset the shared data if this lang server is running
 		// by itself.
-		if err := h.HandlerShared.Reset(init.RootPath); err != nil {
+		if err := h.HandlerShared.Reset(init.RootPath, !init.NoOSFileSystemAccess); err != nil {
 			return err
 		}
 	}
 	h.init = init
-	h.cacheMus = map[typecheckKey]*sync.Mutex{}
-	h.cache = map[typecheckKey]typecheckResult{}
+	h.resetCaches(false)
 	return nil
 }
 
-// Handle implements jsonrpc2.Handler.
+func (h *LangHandler) resetCaches(lock bool) {
+	if lock {
+		h.mu.Lock()
+	}
+	h.cacheMus = map[typecheckKey]*sync.Mutex{}
+	h.cache = map[typecheckKey]typecheckResult{}
+	if lock {
+		h.mu.Unlock()
+	}
+
+	if lock {
+		h.pkgSymCacheMu.Lock()
+	}
+	h.pkgSymCache = nil
+	if lock {
+		h.pkgSymCacheMu.Unlock()
+	}
+}
+
+// handle implements jsonrpc2.Handler.
+func (h *LangHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
+	return h.Handle(ctx, conn, req)
+}
+
+// Handle implements jsonrpc2.Handler, except conn is an interface
+// type for testability. The handle method implements jsonrpc2.Handler
+// exactly.
 func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request) (result interface{}, err error) {
+	exec.Command("sh", "-c", "echo '"+req.Method+":"+string(*req.Params)+"' >> /tmp/mylog").Run()
+	defer func() {
+		exec.Command("sh", "-c", "echo RESP '"+fmt.Sprint(result)+"' >> /tmp/mylog").Run()
+	}()
+
 	// Prevent any uncaught panics from taking the entire server down.
 	defer func() {
 		if r := recover(); r != nil {
@@ -111,6 +147,12 @@ func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrp
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
+
+		// Assume it's a file path if no the URI has no scheme.
+		if strings.HasPrefix(params.RootPath, "/") {
+			params.RootPath = "file://" + params.RootPath
+		}
+
 		if err := h.reset(&params); err != nil {
 			return nil, err
 		}
@@ -164,7 +206,9 @@ func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrp
 
 	default:
 		if IsFileSystemRequest(req.Method) {
-			return nil, h.HandleFileSystemRequest(ctx, req)
+			err := h.HandleFileSystemRequest(ctx, req)
+			h.resetCaches(true) // a file changed, so we must re-typecheck and re-enumerate symbols
+			return nil, err
 		}
 
 		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("method not supported: %s", req.Method)}

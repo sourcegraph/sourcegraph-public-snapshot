@@ -1,16 +1,12 @@
 package langserver
 
-import "sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+import "github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 
-// This file contains Go-specific extensions to LSP types for
-// communication between the build and language servers.
-//
-// All custom param types are for build -> language server
-// communication. All custom result types are for language -> build
-// server communication.
+// This file contains Go-specific extensions to LSP types.
 //
 // The Go language server MUST NOT rely on these extensions for
-// standalone operation on the local file system.
+// standalone operation on the local file system. (VSCode has no way
+// of including these fields.)
 
 type InitializeParams struct {
 	lsp.InitializeParams
@@ -26,9 +22,9 @@ type InitializeParams struct {
 
 	// RootImportPath is the root Go import path for this
 	// workspace. For example,
-	// "sourcegraph.com/sourcegraph/sourcegraph" is the root import
-	// path for "github.com/sourcegraph/sourcegraph".
-	RootImportPath string `json:"rootImportPath,omitempty"`
+	// "golang.org/x/tools" is the root import
+	// path for "github.com/golang/tools".
+	RootImportPath string
 }
 
 type InitializeBuildContextParams struct {

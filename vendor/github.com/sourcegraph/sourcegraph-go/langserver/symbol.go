@@ -18,7 +18,7 @@ import (
 	"golang.org/x/tools/go/buildutil"
 
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
 // query is a structured representation that is parsed from the user's

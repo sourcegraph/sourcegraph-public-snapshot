@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/jsonrpc2"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
 // jsonrpc2ConnImpl implements langserver.JSONRPC2Conn. See

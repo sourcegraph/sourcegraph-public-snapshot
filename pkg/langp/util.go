@@ -18,8 +18,8 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/slimsag/untargz"
 
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cmdutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
 var btrfsPresent bool

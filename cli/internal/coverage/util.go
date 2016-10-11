@@ -4,8 +4,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/coverage/tokenizer"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
 func AtLeastOne(x int) int {

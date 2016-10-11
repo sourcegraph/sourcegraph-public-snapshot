@@ -13,7 +13,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
 // Translator is an HTTP handler which translates from the Language Processor

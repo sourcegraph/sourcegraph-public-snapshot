@@ -20,8 +20,8 @@ import (
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/go-langserver/langserver"
+	"github.com/sourcegraph/sourcegraph-go/langserver"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
 )
 
@@ -89,7 +89,7 @@ func (h *BuildHandler) reset(init *lspx.InitializeParams, rootURI string) error 
 	if err := h.HandlerCommon.Reset(rootURI); err != nil {
 		return err
 	}
-	if err := h.HandlerShared.Reset(rootURI); err != nil {
+	if err := h.HandlerShared.Reset(rootURI, false); err != nil {
 		return err
 	}
 	h.init = init

@@ -30,24 +30,11 @@ func (h *LangHandler) defaultBuildContext() *build.Context {
 }
 
 func (h *HandlerShared) OverlayBuildContext(ctx context.Context, orig *build.Context, useOSFileSystem bool) *build.Context {
-	mfs := ctxvfs.Sync(&h.Mu, h.FS)
-
-	var fs ctxvfs.FileSystem
-	if useOSFileSystem {
-		ns := ctxvfs.NameSpace{}
-		// The overlay FS takes precedence, but we fall back to the OS
-		// file system.
-		ns.Bind("/", mfs, "/", ctxvfs.BindReplace)
-		ns.Bind("/", ctxvfs.OS("/"), "/", ctxvfs.BindAfter)
-		fs = ns
-	} else {
-		fs = mfs
-	}
-
+	fs := ctxvfs.FileSystem(h.FS)
 	if h.AugmentFileSystem != nil {
 		fs = h.AugmentFileSystem(fs)
 	}
-
+	fs = ctxvfs.Sync(&h.Mu, fs) // protect against race conditions when new binds are mounted
 	return fsBuildContext(ctx, orig, fs)
 }
 
