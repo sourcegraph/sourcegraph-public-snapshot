@@ -60,6 +60,26 @@ func Transact(dbh gorp.SqlExecutor, fn func(dbh gorp.SqlExecutor) error) (err er
 	return nil // don't commit the shared tx
 }
 
+// Transaction calls f within a transaction, rolling back if any error is
+// returned by the function.
+func Transaction(db *sql.DB, f func(tx *sql.Tx) error) (err error) {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			if err2 := tx.Rollback(); err2 != nil {
+				log.Println("dbutil.Transaction Rollback failed:", err2)
+			}
+		}
+	}()
+	if err := f(tx); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
 // UnbindQuery interpolates the bind variables and returns the SQL query.
 //
 // SECURITY NOTE: It should only be used for logging; it is not secure to
