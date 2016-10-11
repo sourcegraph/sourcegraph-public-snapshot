@@ -17,6 +17,12 @@
 	opacity: 0.4;
 }
 
+/* Highlight the line underneath the cursor. */
+:global .monaco-editor .current-line {
+	background-color: rgb(20, 41, 64);
+	border: none !important;
+}
+
 /* Display hover tooltips above global nav. */
 :global .monaco-editor .monaco-editor-hover {
 	z-index: calc(navbarZIndex + 1);
@@ -207,14 +213,6 @@
 	color: white !important;
 	font-weight: bold;
 	text-decoration: none;
-}
-
-:global div.monaco-editor.vs-dark .selected-definition {
-	background-color: c_blue_8;
-	color: white !important;
-	font-weight: bold;
-	text-decoration: none;
-	border-radius: 1px;
 }
 
 :global div.monaco-editor.vs-dark .token.identifier {
