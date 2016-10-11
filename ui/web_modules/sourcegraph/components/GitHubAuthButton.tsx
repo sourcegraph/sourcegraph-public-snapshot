@@ -33,7 +33,7 @@ export class GitHubAuthButton extends React.Component<Props, State> {
 
 	render(): JSX.Element | null {
 		const {scopes, returnTo, outline, color, block, children, size, pageName, className, tabIndex} = this.props;
-		const url = urlToGitHubOAuth(scopes || null, returnTo || null);
+		const url = urlToGitHubOAuth(scopes || "read:org,user:email", returnTo || null);
 		return (
 			<form method="POST" action={url}>
 				<input type="hidden" name="gorilla.csrf.Token" value={context.csrfToken} />
