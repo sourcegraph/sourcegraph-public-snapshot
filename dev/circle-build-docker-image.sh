@@ -11,4 +11,4 @@ docker build -t us.gcr.io/sourcegraph-dev/sourcegraph:$VERSION deploy/sourcegrap
 echo $GCLOUD_SERVICE_ACCOUNT | base64 --decode > gcloud-service-account.json
 gcloud auth activate-service-account --key-file gcloud-service-account.json
 gcloud config set project sourcegraph-dev
-gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:$VERSION
+gcloud docker -- push us.gcr.io/sourcegraph-dev/sourcegraph:$VERSION

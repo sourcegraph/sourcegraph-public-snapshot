@@ -10,4 +10,4 @@ go build -o gog sourcegraph.com/sourcegraph/srclib-go/gog/cmd/gog
 go build -o langserver-go .
 
 docker build -t us.gcr.io/sourcegraph-dev/langserver-go .
-gcloud docker push us.gcr.io/sourcegraph-dev/langserver-go
+gcloud docker -- push us.gcr.io/sourcegraph-dev/langserver-go

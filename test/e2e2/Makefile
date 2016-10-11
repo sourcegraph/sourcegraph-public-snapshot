@@ -25,5 +25,5 @@ dep: .env/bin/python .env/bin/pip
 
 deploy:
 	docker build -t us.gcr.io/sourcegraph-dev/e2e2 .
-	gcloud docker push us.gcr.io/sourcegraph-dev/e2e2
+	gcloud docker -- push us.gcr.io/sourcegraph-dev/e2e2
 	@echo "e2e client image uploaded. Kill the existing selenium clients to finish deploying."

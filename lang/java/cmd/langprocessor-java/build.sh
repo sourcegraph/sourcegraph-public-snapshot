@@ -9,4 +9,4 @@ fi
 ./gradlew assemble
 cd ..
 docker build -t us.gcr.io/sourcegraph-dev/langprocessor-java .
-gcloud docker push us.gcr.io/sourcegraph-dev/langprocessor-java
+gcloud docker -- push us.gcr.io/sourcegraph-dev/langprocessor-java
