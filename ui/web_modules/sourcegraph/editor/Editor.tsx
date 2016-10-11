@@ -19,7 +19,7 @@ import {create as createStandaloneEditor, createModel, onDidCreateModel} from "v
 import {registerDefinitionProvider, registerHoverProvider, registerReferenceProvider} from "vs/editor/browser/standalone/standaloneLanguages";
 import {Position} from "vs/editor/common/core/position";
 import {Range} from "vs/editor/common/core/range";
-import {IModelChangedEvent, IPosition, IRange, IReadOnlyModel} from "vs/editor/common/editorCommon";
+import {IPosition, IRange, IReadOnlyModel} from "vs/editor/common/editorCommon";
 import {Definition, Hover, Location, ReferenceContext} from "vs/editor/common/modes";
 import {HoverOperation} from "vs/editor/contrib/hover/browser/hoverOperation";
 
