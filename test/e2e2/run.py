@@ -18,13 +18,12 @@ failure_msg_template = """:rotating_light: *TEST FAILED* :rotating_light:
 *Repro*: `cd test/e2e2 && make TV=1 OPT="--pause-on-err" BROWSERS=%s TEST=%s SOURCEGRAPH_URL=%s`
 *Error*:
 ```
-%s: %s
 %s
 ```
 (For docs, see https://github.com/sourcegraph/sourcegraph/blob/master/test/e2e2/README.md)
 """
 
-def failure_msg(test_name, browser, url, error_name, error, stack_trace):
+def failure_msg(test_name, browser, url, stack_trace):
     u = urlparse(url)
     sgurl = "%s://%s" % (u.scheme, u.hostname)
     if u.port:
@@ -32,7 +31,7 @@ def failure_msg(test_name, browser, url, error_name, error, stack_trace):
     return failure_msg_template % (
         test_name, browser, url,
         browser.lower(), test_name, sgurl,
-        error_name, error, stack_trace,
+        stack_trace,
     )
 
 def run_tests(args, tests):
@@ -51,10 +50,9 @@ def run_tests(args, tests):
 
     def fail(test_name, exception, driver):
         print '[%s](%s) %s' % (red("FAIL"), args.browser, test_name)
-        print "%s: %s" % (type(exception).__name__, str(exception))
-        traceback.print_exc()
+        traceback.print_exc(30)
         if args.alert_on_err:
-            msg = failure_msg(test_name, args.browser.capitalize(), driver.d.current_url, type(exception).__name__, str(exception), traceback.format_exc())
+            msg = failure_msg(test_name, args.browser.capitalize(), driver.d.current_url, traceback.format_exc(30))
             screenshot = driver.d.get_screenshot_as_png()
             slack_cli.api_call("files.upload", channels=slack_ch, initial_comment=msg, file=screenshot, filename="screenshot.png", username="e2e-bot")
         if args.pause_on_err:

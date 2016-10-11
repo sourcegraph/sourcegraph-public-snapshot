@@ -34,7 +34,7 @@ def wait_for(condition, max_wait=2, wait_incr=0.1):
         time.sleep(max(0, min(wait_incr, max_wait - time_waited)))
         time_waited += wait_incr
     if not condition():
-        raise E2EError(("timed out waiting for condition, stack trace was:\n%s" % ''.join(traceback.format_stack())))
+        raise E2EError("timed out waiting for condition")
 
 # retry calls fn a maximum of $attempts times, waiting $cooldown seconds in between invocations.
 # It returns the return value of the first invocation of fn that does not raise an exception.
