@@ -96,10 +96,9 @@ def run_tests(args, tests):
     print
     if len(failed_tests) > 0:
         print '%s: %d / %d FAILED\n' % (red("FAILURE"), len(failed_tests), len(tests))
-        sys.exit(1)
     else:
         print green('ALL SUCCESS\n')
-
+    return failed_tests
 
 def main():
     p = argparse.ArgumentParser()
@@ -126,7 +125,9 @@ def main():
         while True:
             run_tests(args, tests)
     else:
-        run_tests(args, tests)
+        failed_tests = run_tests(args, tests)
+        if len(failed_tests) > 0:
+            sys.exit(1)
 
 if __name__ == '__main__':
     main()
