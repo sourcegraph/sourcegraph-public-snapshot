@@ -22,7 +22,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/golang"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
@@ -479,8 +479,8 @@ func yza() {}
 				}()
 			}
 			{
-				orig := golang.NewDepRepoVFS
-				golang.NewDepRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+				orig := buildserver.NewDepRepoVFS
+				buildserver.NewDepRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 					id := cloneURL.String() + "?" + rev
 					if fs, ok := test.depFS[id]; ok {
 						return mapFS(fs), nil
@@ -488,7 +488,7 @@ func yza() {}
 					return nil, fmt.Errorf("no file system found for dep at %s rev %q", cloneURL, rev)
 				}
 				defer func() {
-					golang.NewDepRepoVFS = orig
+					buildserver.NewDepRepoVFS = orig
 				}()
 			}
 

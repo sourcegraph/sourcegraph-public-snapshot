@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/golang"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
 )
 
 var (
@@ -57,12 +57,12 @@ func run() error {
 			if err != nil {
 				return err
 			}
-			jsonrpc2.NewConn(context.Background(), conn, golang.NewBuildHandler())
+			jsonrpc2.NewConn(context.Background(), conn, buildserver.NewHandler())
 		}
 
 	case "stdio":
 		log.Println("xlang-go: reading on stdin, writing on stdout")
-		<-jsonrpc2.NewConn(context.Background(), stdrwc{}, golang.NewBuildHandler()).DisconnectNotify()
+		<-jsonrpc2.NewConn(context.Background(), stdrwc{}, buildserver.NewHandler()).DisconnectNotify()
 		log.Println("connection closed")
 		return nil
 
