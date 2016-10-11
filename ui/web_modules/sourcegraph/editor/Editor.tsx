@@ -33,7 +33,9 @@ function cacheKey(model: IReadOnlyModel, position: IPosition): string | null {
 	return `${model.uri.toString(true)}:${position.lineNumber}:${word.startColumn}:${word.endColumn}`;
 }
 const hoverCache = new Map<string, any>();
+const hoverFlights = new Map<string, Thenable<Hover>>(); // "single-flight" on word boundaries
 const defCache = new Map<string, any>();
+const defFlights = new Map<string, Thenable<Definition | null>>(); // "single-flight" on word boundaries
 
 // HACK: don't show "Right-click to view references" on primitive types; if done properly, this
 // should be determined by a type property on the hover response.
@@ -198,16 +200,20 @@ export class Editor implements IDisposable {
 		return this._editorService.onDidOpenEditor(listener);
 	}
 
-	provideDefinition(model: IReadOnlyModel, position: Position, token: CancellationToken): Definition | Thenable<Definition | null> {
+	provideDefinition(model: IReadOnlyModel, position: Position, token: CancellationToken): Thenable<Definition | null> {
 		const key = cacheKey(model, position);
 		if (key) {
 			const cacheHit = defCache.get(key);
 			if (cacheHit) {
 				return Promise.resolve(cacheHit);
 			}
+			const inFlight = defFlights.get(key);
+			if (inFlight) {
+				return inFlight;
+			}
 		}
 
-		return lsp.send(model, "textDocument/definition", {
+		const flight = lsp.send(model, "textDocument/definition", {
 			textDocument: {uri: URIUtils.fromRefsDisplayURIMaybe(model.uri).toString(true)},
 			position: lsp.toPosition(position),
 		})
@@ -231,9 +237,16 @@ export class Editor implements IDisposable {
 					.map(lsp.toMonacoLocation);
 				if (key) {
 					defCache.set(key, translatedLocs);
+					defFlights.delete(key);
 				}
 				return translatedLocs;
 			});
+
+		if (key) {
+			defFlights.set(key, flight);
+		}
+
+		return flight;
 	}
 
 	provideHover(model: IReadOnlyModel, position: Position): Thenable<Hover> {
@@ -243,9 +256,13 @@ export class Editor implements IDisposable {
 			if (cacheHit) {
 				return Promise.resolve(cacheHit);
 			}
+			const inFlight = hoverFlights.get(key);
+			if (inFlight) {
+				return inFlight;
+			}
 		}
 
-		return lsp.send(model, "textDocument/hover", {
+		const flight = lsp.send(model, "textDocument/hover", {
 			textDocument: {uri: URIUtils.fromRefsDisplayURIMaybe(model.uri).toString(true)},
 			position: lsp.toPosition(position),
 		})
@@ -287,9 +304,16 @@ export class Editor implements IDisposable {
 				};
 				if (key) {
 					hoverCache.set(key, hover);
+					hoverFlights.delete(key);
 				}
 				return hover;
 			});
+
+		if (key) {
+			hoverFlights.set(key, flight);
+		}
+
+		return flight;
 	}
 
 	provideReferences(model: IReadOnlyModel, position: Position, context: ReferenceContext, token: CancellationToken): Location[] | Thenable<Location[]> {
