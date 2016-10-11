@@ -135,17 +135,22 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 	}
 
 	private addDecoration(range: editorCommon.IRange, text?: string): void {
-		let model = this.editor.getModel();
-		if (!model) {
-			return;
-		}
-		this.decorations = this.editor.deltaDecorations(this.decorations, [{
-			range: range,
-			options: {
-				inlineClassName: "goto-definition-link",
-				hoverMessage: text,
-			},
-		}]);
+		// TODO(john): this method has a race condition with the hover provider; if the hover
+		// tooltip is displayed first, then this decoration will override (and remove) the tooltip.
+		// This seems to be a problem with VSCode, since afaict we are using the API here correctly.
+		// see: https://github.com/sourcegraph/sourcegraph/issues/1690
+
+		// let model = this.editor.getModel();
+		// if (!model) {
+		// 	return;
+		// }
+		// this.decorations = this.editor.deltaDecorations(this.decorations, [{
+		// 	range: range,
+		// 	options: {
+		// 		inlineClassName: "goto-definition-link",
+		// 		hoverMessage: text,
+		// 	},
+		// }]);
 	}
 
 	private removeDecorations(): void {
