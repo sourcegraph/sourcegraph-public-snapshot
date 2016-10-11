@@ -15,13 +15,13 @@ failure_msg_template = """:rotating_light: *TEST FAILED* :rotating_light:
 *Test name*: `%s`
 *Browser*: %s
 *URL*: %s
+*Repro*: `cd test/e2e2 && make TV=1 OPT="--pause-on-err" BROWSERS=%s TEST=%s SOURCEGRAPH_URL=%s`
 *Error*:
 ```
 %s: %s
 %s
 ```
-*Repro*: `cd test/e2e2 && make TV=1 OPT="--pause-on-err" BROWSERS=%s TEST=%s SOURCEGRAPH_URL=%s`
-*Docs*: https://github.com/sourcegraph/sourcegraph/blob/master/test/e2e2/README.md
+(For docs, see https://github.com/sourcegraph/sourcegraph/blob/master/test/e2e2/README.md)
 """
 
 def failure_msg(test_name, browser, url, error_name, error, stack_trace):
@@ -30,8 +30,9 @@ def failure_msg(test_name, browser, url, error_name, error, stack_trace):
     if u.port:
         sgurl += ":%d" % u.port
     return failure_msg_template % (
-        test_name, browser, url, error_name, error, stack_trace,
-        browser.lower(), test_name, sgurl
+        test_name, browser, url,
+        browser.lower(), test_name, sgurl,
+        error_name, error, stack_trace,
     )
 
 def run_tests(args, tests):
