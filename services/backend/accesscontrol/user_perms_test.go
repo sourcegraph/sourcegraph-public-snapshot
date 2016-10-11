@@ -161,10 +161,10 @@ func TestVerifyUserHasReadAccessToDefRepoRefs(t *testing.T) {
 
 	type testcase struct {
 		title                     string
-		input                     []*sourcegraph.DefRepoRef
+		input                     []*sourcegraph.DeprecatedDefRepoRef
 		shouldCallGitHub          bool
 		mockGitHubAccessibleRepos []*sourcegraph.Repo
-		expected                  []*sourcegraph.DefRepoRef
+		expected                  []*sourcegraph.DeprecatedDefRepoRef
 	}
 	testRepos_ := map[string]*sourcegraph.Repo{
 		"a": {URI: "a"},
@@ -179,9 +179,9 @@ func TestVerifyUserHasReadAccessToDefRepoRefs(t *testing.T) {
 		}
 		return
 	}
-	testDefs := func(uris ...string) (d []*sourcegraph.DefRepoRef) {
+	testDefs := func(uris ...string) (d []*sourcegraph.DeprecatedDefRepoRef) {
 		for _, uri := range uris {
-			d = append(d, &sourcegraph.DefRepoRef{Repo: uri})
+			d = append(d, &sourcegraph.DeprecatedDefRepoRef{Repo: uri})
 		}
 		return
 	}
@@ -215,7 +215,7 @@ func TestVerifyUserHasReadAccessToDefRepoRefs(t *testing.T) {
 		input:                     testDefs("b"),
 		shouldCallGitHub:          true,
 		mockGitHubAccessibleRepos: nil,
-		expected:                  []*sourcegraph.DefRepoRef{},
+		expected:                  []*sourcegraph.DeprecatedDefRepoRef{},
 	}, {
 		title:                     "public repo access, selected private repo access, inaccessible private repo denied",
 		input:                     testDefs("a", "b", "c"),
@@ -227,13 +227,13 @@ func TestVerifyUserHasReadAccessToDefRepoRefs(t *testing.T) {
 		input:                     nil,
 		shouldCallGitHub:          false,
 		mockGitHubAccessibleRepos: nil,
-		expected:                  []*sourcegraph.DefRepoRef{},
+		expected:                  []*sourcegraph.DeprecatedDefRepoRef{},
 	}, {
 		title:                     "private not in list of accessible",
 		input:                     testDefs("b"),
 		shouldCallGitHub:          true,
 		mockGitHubAccessibleRepos: testRepos("c"),
-		expected:                  []*sourcegraph.DefRepoRef{},
+		expected:                  []*sourcegraph.DeprecatedDefRepoRef{},
 	}, {
 		title:                     "public not in list of accessible (still allowed)",
 		input:                     testDefs("a"),
