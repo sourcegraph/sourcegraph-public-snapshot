@@ -101,12 +101,12 @@ Next, build a reverse index of the abstract def locations to all of the concrete
 
 ```
 npm://react@15.1.0?file=lib/ReactMount.js&range=30:40-45&name=render&containerName=ReactMount
-  <- uri=git://github.com/sourcegraph/sourcegraph?master#ui/web_modules/sourcegraph/editor/Editor.tsx position=10:20
-  <- uri=git://github.com/sourcegraph/sourcegraph?master#ui/web_modules/sourcegraph/repo/RepoMain.tsx position=50:60
+  <- uri=git://github.com/sourcegraph/sourcegraph?bc8a34#ui/web_modules/sourcegraph/editor/Editor.tsx position=10:20
+  <- uri=git://github.com/sourcegraph/sourcegraph?bc8a34#ui/web_modules/sourcegraph/repo/RepoMain.tsx position=50:60
   ...
 
 npm://lodash@4.15.0/?file=partition.js&range=70:80-85&name=partition
-  <- uri=git://github.com/reactjs/redux?master#src/compose.js position=60:20
+  <- uri=git://github.com/reactjs/redux?cf3d7a3#src/compose.js position=60:20
   ...
 
 ...
