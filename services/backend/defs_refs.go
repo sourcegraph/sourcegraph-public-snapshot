@@ -3,8 +3,6 @@ package backend
 import (
 	"path"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -124,36 +122,7 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	ctx, done := trace(ctx, "Defs", "RefreshIndex", op, &err)
 	defer done()
 
-	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: op.Repo})
-	if err != nil {
-		log15.Warn("Defs.RefreshIndex (Repos.ResolveRev) failed", "error", err)
-		return err
-	}
-
-	// rev.CommitID will be the latest commit on the DefaultBranch
-	indexOp := localstore.DeprecatedRefreshIndexOp{
-		Repo:     op.Repo,
-		CommitID: rev.CommitID,
-	}
-
-	// Update defs table for the exported symbols in repo.
-	defsErr := localstore.Defs.Update(ctx, indexOp)
-
-	// Update the references this repo makes to external repos
-	refsErr := localstore.DeprecatedGlobalRefs.DeprecatedUpdate(ctx, indexOp)
-
-	// We care more about defsErr, since it should be more stable. So lets
-	// lean on the side of reporting it instead of refsErr. We only return
-	// one error (instead of a errList or something) since it may have a
-	// specific gRPC meaning.
-	if defsErr != nil {
-		log15.Warn("Defs.RefreshIndex (Defs.Update) failed", "error", defsErr)
-		return defsErr
-	}
-	if refsErr != nil {
-		log15.Warn("Defs.RefreshIndex (GlobalRefs.Update) failed", "error", refsErr)
-		return refsErr
-	}
-
+	// TODO we currently do not update any global indexes. However, we
+	// should be updating global refs soon, then this TODO can be removed.
 	return nil
 }

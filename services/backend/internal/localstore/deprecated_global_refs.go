@@ -1,7 +1,6 @@
 package localstore
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -15,12 +14,8 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 // dbDefKey DB-maps a DefKey (excluding commit-id) object. We keep
@@ -57,13 +52,6 @@ func init() {
 	GraphSchema.DropSQL = append(GraphSchema.DropSQL,
 		`DROP MATERIALIZED VIEW IF EXISTS global_refs_stats;`,
 	)
-
-	type deprecatedDBGlobalRefVersion struct {
-		Repo      string     `db:"repo"`
-		CommitID  string     `db:"commit_id"`
-		UpdatedAt *time.Time `db:"updated_at"`
-	}
-	GraphSchema.Map.AddTableWithName(deprecatedDBGlobalRefVersion{}, "global_refs_version").SetKeys(false, "repo")
 }
 
 // deprecatedGlobalRefs is a DB-backed implementation of the GlobalRefs
@@ -290,207 +278,6 @@ func (g *deprecatedGlobalRefs) getRefStats(ctx context.Context, defKeyID int64) 
 	return graphDBH(ctx).SelectInt("SELECT COUNT(DISTINCT repo) AS Repos FROM global_refs_new WHERE def_key_id=$1", defKeyID)
 }
 
-// DeprecatedUpdate takes the graph output of a repo at the latest commit and
-// updates the set of refs in the global ref store that originate from
-// it.
-func (g *deprecatedGlobalRefs) DeprecatedUpdate(ctx context.Context, op DeprecatedRefreshIndexOp) error {
-	if Mocks.DeprecatedGlobalRefs.DeprecatedUpdate != nil {
-		return Mocks.DeprecatedGlobalRefs.DeprecatedUpdate(ctx, op)
-	}
-
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", op.Repo); err != nil {
-		return err
-	}
-	dbh := graphDBH(ctx)
-
-	commitID := op.CommitID
-	repoObj, err := Repos.Get(ctx, op.Repo)
-	if err != nil {
-		return err
-	}
-
-	repo := repoObj.URI
-	trackedRepo := repotrackutil.GetTrackedRepo(repo)
-	observe := func(part string, start time.Time) {
-		// We also add logs because update operations are relatively
-		// slow and low volume compared to queries
-		d := time.Since(start)
-		log15.Debug("TRACE GlobalRefs.Update", "repo", repo, "part", part, "duration", d)
-		deprecatedGlobalRefsUpdateDuration.WithLabelValues(trackedRepo, part).Observe(d.Seconds())
-	}
-	defer observe("total", time.Now())
-
-	start := time.Now()
-	oldCommitID, err := g.version(dbh, repo)
-	observe("version", start)
-	if err != nil {
-		return err
-	}
-	if commitID == oldCommitID {
-		log15.Debug("GlobalRefs.Update re-indexing commit", "repo", repo, "commitID", commitID)
-	}
-
-	start = time.Now()
-	external, err := langp.DefaultClient.ExternalRefs(ctx, &langp.RepoRev{Repo: repo, Commit: commitID})
-	observe("langp", start)
-	if err != nil {
-		return err
-	}
-	refs := make([]*langp.Ref, 0, len(external.Refs))
-	for _, r := range external.Refs {
-		if deprecatedShouldIndexRef(r) {
-			refs = append(refs, r)
-		}
-	}
-
-	log15.Info("GlobalRefs.Update", "repo", repo, "commitID", commitID, "oldCommitID", oldCommitID, "numRefs", len(refs))
-
-	if len(refs) == 0 {
-		return fmt.Errorf("no indexable refs for %s %s", repo, commitID)
-	}
-
-	// Get all defKeyIDs outside of the transaction, since doing it inside
-	// of the transaction can lead to conflicts with other imports
-	start = time.Now()
-	defKeyIDs := map[graph.DefKey]int64{}
-	for _, r := range refs {
-		k := graph.DefKey{Repo: r.Def.Repo, UnitType: r.Def.UnitType, Unit: r.Def.Unit, Path: r.Def.Path}
-		defKeyIDs[k] = -1
-	}
-	getOrInsertDefKeys(ctx, dbh, defKeyIDs)
-	observe("defkeys", start)
-
-	// Create a list of ref positions by file.
-	type fileDefKey struct {
-		graph.DefKey
-		File string
-	}
-	posByFileDefKey := make(map[fileDefKey][]int)
-	for _, r := range refs {
-		k := fileDefKey{
-			DefKey: graph.DefKey{Repo: r.Def.Repo, UnitType: r.Def.UnitType, Unit: r.Def.Unit, Path: r.Def.Path},
-			File:   r.File,
-		}
-		if len(posByFileDefKey[k]) > 10 { // Only keep 10 ref positions to avoid pollution
-			continue
-		}
-		posByFileDefKey[k] = append(posByFileDefKey[k], r.Line)
-		posByFileDefKey[k] = append(posByFileDefKey[k], r.Column)
-	}
-
-	tmpCreateSQL := `CREATE TEMPORARY TABLE global_refs_tmp (
-	def_key_id bigint,
-	repo TEXT,
-	file TEXT,
-	positions integer[],
-	count integer default 1
-)
-ON COMMIT DROP;`
-	finalDeleteSQL := `DELETE FROM global_refs_new WHERE repo=$1;`
-	finalInsertSQL := `INSERT INTO global_refs_new(def_key_id, repo, file, positions, count, updated_at)
-	SELECT def_key_id, repo, file, positions, sum(count) as count, now() as updated_at
-	FROM global_refs_tmp
-	GROUP BY def_key_id, repo, file, positions;`
-
-	// Do actual update in one transaction, to ensure we don't have concurrent
-	// updates to repo
-	defer observe("transaction", time.Now())
-	return dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
-		// Create a temporary table to load all new ref data.
-		if _, err := tx.Exec(tmpCreateSQL); err != nil {
-			return err
-		}
-
-		stmt, err := dbutil.Prepare(tx, pq.CopyIn("global_refs_tmp", "def_key_id", "repo", "file", "positions"))
-		if err != nil {
-			return fmt.Errorf("global_refs_tmp prepare failed: %s", err)
-		}
-
-		// Insert refs into temporary table
-		start = time.Now()
-		for _, r := range refs {
-			defKey := graph.DefKey{Repo: r.Def.Repo, UnitType: r.Def.UnitType, Unit: r.Def.Unit, Path: r.Def.Path}
-			defKeyID := defKeyIDs[defKey]
-			pos := posByFileDefKey[fileDefKey{DefKey: defKey, File: r.File}]
-			if _, err := stmt.Exec(defKeyID, repo, r.File, pq.Array(pos)); err != nil {
-				return fmt.Errorf("global_refs_tmp stmt insert failed: %s", err)
-			}
-		}
-
-		// We need to do an empty Exec() to flush any remaining
-		// inserts that are in the drivers buffer
-		if _, err = stmt.Exec(); err != nil {
-			return fmt.Errorf("global_refs_tmp stmt final insert failed: %s", err)
-		}
-		observe("copyin", start)
-
-		// Purge all existing ref data for files in this source unit.
-		start = time.Now()
-		if _, err := tx.Exec(finalDeleteSQL, repo); err != nil {
-			return err
-		}
-		observe("purge", start)
-
-		// Insert refs into global refs table
-		start = time.Now()
-		if _, err := tx.Exec(finalInsertSQL); err != nil {
-			return err
-		}
-		observe("insert", start)
-
-		// Update version row again, to have a more relevant timestamp
-		start = time.Now()
-		if err := g.versionUpdate(tx, repo, commitID); err != nil {
-			return err
-		}
-		observe("versionupdate", start)
-		return nil
-	})
-}
-
-// version returns the commit_id that global_refs has indexed for repo
-func (g *deprecatedGlobalRefs) version(tx gorp.SqlExecutor, repoPath string) (string, error) {
-	commitID, err := tx.SelectNullStr("SELECT commit_id FROM global_refs_version WHERE repo=$1 FOR UPDATE", repoPath)
-	if err != nil {
-		return "", err
-	}
-	// Insert a value into the table so we just have to run an UPDATE + can lock the row.
-	if !commitID.Valid {
-		_, err = tx.Exec("INSERT INTO global_refs_version VALUES ($1, '', now())", repoPath)
-		if err != nil {
-			return "", err
-		}
-	}
-	return commitID.String, nil
-}
-
-// versionUpdate will update the version for repo to commitID in the transaction tx
-func (g *deprecatedGlobalRefs) versionUpdate(tx gorp.SqlExecutor, repoPath string, commitID string) error {
-	_, err := tx.Exec("UPDATE global_refs_version SET commit_id=$1, updated_at=now() WHERE repo=$2;", commitID, repoPath)
-	return err
-}
-
-// DeprecatedStatRefresh refreshes the global_refs_stats tables. This should ONLY be called from test code.
-func (g *deprecatedGlobalRefs) DeprecatedStatRefresh(ctx context.Context) error {
-	_, err := graphDBH(ctx).Exec("REFRESH MATERIALIZED VIEW CONCURRENTLY global_refs_stats;")
-	return err
-}
-
-// deprecatedShouldIndexRef helps filter out refs we do not want in the index.
-func deprecatedShouldIndexRef(r *langp.Ref) bool {
-	// Ignore vendored refs.
-	if filelang.IsVendored(r.File, false) {
-		return false
-	}
-	// Ignore ref to builtin defs of golang/go repo (string, int, bool, etc) as this
-	// doesn't add significant value; yet it adds up to a lot of space in the db,
-	// and queries for refs of builtin defs take long to finish.
-	if r.Def.UnitType == "GoPackage" && r.Def.Repo == "github.com/golang/go" && r.Def.Unit == "builtin" {
-		return false
-	}
-	return true
-}
-
 var deprecatedGlobalRefsDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Namespace: "src",
 	Subsystem: "global_refs",
@@ -498,20 +285,11 @@ var deprecatedGlobalRefsDuration = prometheus.NewSummaryVec(prometheus.SummaryOp
 	Help:      "Duration for querying global_refs_new",
 	MaxAge:    time.Hour,
 }, []string{"repo", "part"})
-var deprecatedGlobalRefsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
-	Namespace: "src",
-	Subsystem: "global_refs",
-	Name:      "update_duration_seconds",
-	Help:      "Duration for updating global_refs_new",
-	MaxAge:    time.Hour,
-}, []string{"repo", "part"})
 
 func init() {
 	prometheus.MustRegister(deprecatedGlobalRefsDuration)
-	prometheus.MustRegister(deprecatedGlobalRefsUpdateDuration)
 }
 
 type DeprecatedMockGlobalRefs struct {
-	DeprecatedGet    func(ctx context.Context, op *sourcegraph.DeprecatedDefsListRefLocationsOp) (*sourcegraph.DeprecatedRefLocationsList, error)
-	DeprecatedUpdate func(ctx context.Context, op DeprecatedRefreshIndexOp) error
+	DeprecatedGet func(ctx context.Context, op *sourcegraph.DeprecatedDefsListRefLocationsOp) (*sourcegraph.DeprecatedRefLocationsList, error)
 }

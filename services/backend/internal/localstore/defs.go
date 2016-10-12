@@ -3,14 +3,9 @@ package localstore
 import (
 	"errors"
 	"fmt"
-	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
-	"github.com/fatih/camelcase"
-	"github.com/lib/pq"
-	"github.com/microcosm-cc/bluemonday"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"gopkg.in/gorp.v1"
@@ -19,9 +14,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
@@ -76,15 +68,6 @@ type dbDef struct {
 	RefCount int `db:"ref_ct"`
 }
 
-type dbDefInsert struct {
-	dbDefShared
-
-	ToksD string `db:"toks_c"`
-	ToksC string `db:"toks_c"`
-	ToksB string `db:"toks_b"`
-	ToksA string `db:"toks_a"`
-}
-
 type dbDefShared struct {
 	// Rev is the foreign key to the repo_rev table
 	Rev int64 `db:"rid"`
@@ -101,53 +84,6 @@ type dbDefShared struct {
 
 	// UpdatedAt is the last time at which this row as updated in the DB.
 	UpdatedAt *time.Time `db:"updated_at"`
-}
-
-var dbDefCreateTmpSQL = `CREATE TEMPORARY TABLE defnew (
-rid bigint,
-defid bigint,
-name TEXT,
-kind TEXT,
-language smallint,
-updated_at timestamp with time zone,
-toks_a TEXT,
-toks_b TEXT,
-toks_c TEXT,
-toks_d TEXT)
-ON COMMIT DROP;`
-
-var dbDefDeleteSQL = `DELETE FROM defs2 WHERE rid=$1`
-
-var dbDefInsertSQL = `INSERT INTO defs2(rid, defid, name, kind, language, bow, updated_at, state, ref_ct)
-SELECT d.rid, d.defid, d.name, d.kind, d.language,
-	setweight(to_tsvector('english', d.toks_a), 'A') || setweight(to_tsvector('english', d.toks_b), 'B') || setweight(to_tsvector('english', d.toks_c), 'C') || setweight(to_tsvector('english', d.toks_d), 'D'), d.updated_at, 0, 0
-FROM defnew d;
-`
-
-func execDBDefInsert(tx gorp.SqlExecutor, repoRevID int64, dbDefs []*dbDefInsert) error {
-	if _, err := tx.Exec(dbDefCreateTmpSQL); err != nil {
-		return err
-	}
-	copy, err := dbutil.Prepare(tx, pq.CopyIn("defnew", "rid", "defid", "name", "kind", "language", "updated_at", "toks_a", "toks_b", "toks_c", "toks_d"))
-	if err != nil {
-		return fmt.Errorf("defnew copy prepare failed: %s", err)
-	}
-	for _, df := range dbDefs {
-		if _, err := copy.Exec(df.Rev, df.DefKey, df.Name, df.Kind, df.Language, df.UpdatedAt, df.ToksA, df.ToksB, df.ToksC, df.ToksD); err != nil {
-			return fmt.Errorf("defnew copy failed: %s", err)
-		}
-	}
-	if _, err := copy.Exec(); err != nil {
-		return fmt.Errorf("defnew final copy failed: %s", err)
-	}
-
-	if _, err := tx.Exec(dbDefDeleteSQL, repoRevID); err != nil {
-		return fmt.Errorf("defs2 delete failed: %s", err)
-	}
-	if _, err := tx.Exec(dbDefInsertSQL); err != nil {
-		return fmt.Errorf("defs2 insert failed: %s", err)
-	}
-	return nil
 }
 
 type dbDefSearchResult struct {
@@ -408,365 +344,6 @@ func (s *defs) Search(ctx context.Context, op DefSearchOp) (*sourcegraph.SearchR
 	return &sourcegraph.SearchResultsList{DefResults: results}, nil
 }
 
-type DeprecatedRefreshIndexOp struct {
-	Repo     int32
-	CommitID string
-}
-
-// Update syncs data from universe into the defs2 table
-func (s *defs) Update(ctx context.Context, op DeprecatedRefreshIndexOp) error {
-	if Mocks.Defs.Update != nil {
-		return Mocks.Defs.Update(ctx, op)
-	}
-
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.Update", op.Repo); err != nil {
-		return err
-	}
-
-	// Validate input
-	if op.Repo == 0 || op.CommitID == "" {
-		return fmt.Errorf("both op.Repo and op.CommitID must be non-empty")
-	}
-	if len(op.CommitID) != 40 {
-		return fmt.Errorf("commit ID must be 40 characters long, was: %q", op.CommitID)
-	}
-
-	repo, err := Repos.Get(ctx, op.Repo)
-	if err != nil {
-		return err
-	}
-	obs := newDefsUpdateObserver("defs2", repo.URI)
-	totalEnd := obs.start("update_total")
-	defer totalEnd()
-
-	var defs []*graph.Def
-	{
-		end := obs.start("langp")
-		r, err := langp.DefaultClient.ExportedSymbols(ctx, &langp.RepoRev{
-			Repo:   repo.URI,
-			Commit: op.CommitID,
-		})
-		end()
-		if err != nil {
-			return err
-		}
-		defs = make([]*graph.Def, 0, len(r.Symbols))
-		for _, s := range r.Symbols {
-			defs = append(defs, symbolToDef(s))
-		}
-	}
-
-	for _, def := range defs {
-		if def.Repo != "" && def.Repo != repo.URI {
-			return fmt.Errorf("cannot update def with non-matching repo (%s != %s)", def.Repo, repo.URI)
-		}
-		if def.CommitID != "" && def.CommitID != op.CommitID {
-			return fmt.Errorf("cannot update def with non-matching revision (%s != %s)", def.CommitID, op.CommitID)
-		}
-	}
-
-	// KLUDGE to improve search quality. This info ideally would be emitted by srclib toolchains.
-	chosenDefs := make([]*graph.Def, 0, len(defs))
-	for _, d := range defs {
-		if shouldIndex(d) {
-			chosenDefs = append(chosenDefs, d)
-		}
-	}
-
-	if len(chosenDefs) == 0 {
-		return fmt.Errorf("no indexable defs for %s %s", repo.URI, op.CommitID)
-	}
-
-	dbh := graphDBH(ctx)
-
-	// Update def_keys
-	end := obs.start("def_keys")
-	defKeyIDs := make(map[graph.DefKey]int64)
-	for _, def := range chosenDefs {
-		rp := def.Repo
-		if rp == "" {
-			rp = repo.URI
-		}
-		defKeyIDs[graph.DefKey{Repo: rp, UnitType: def.UnitType, Unit: def.Unit, Path: def.Path}] = -1
-	}
-	err = getOrInsertDefKeys(ctx, dbh, defKeyIDs)
-	end()
-	if err != nil {
-		return err
-	}
-
-	// Update repo_revs
-	repoRevsInsertSQL := `INSERT INTO repo_revs(repo, commit, state) (SELECT $1 AS repo, $2 AS commit, 0 AS state WHERE NOT EXISTS (SELECT 1 FROM repo_revs WHERE repo=$1 AND commit=$2))`
-	end = obs.start("update_repo_revs_update")
-	if _, err := dbh.Exec(repoRevsInsertSQL, repo.URI, op.CommitID); err != nil {
-		end()
-		return fmt.Errorf("repo_rev update failed: %s", err)
-	}
-	end()
-	end = obs.start("update_repo_revs_select")
-	repoRevID, err := dbh.SelectInt(`SELECT id FROM repo_revs WHERE repo=$1 AND commit=$2`, repo.URI, op.CommitID)
-	end()
-	if err != nil {
-		return fmt.Errorf("repo_rev id fetch failed: %s", err)
-	}
-
-	// Compute defs to insert
-	langWarnCount := 0
-	dbDefs := make([]*dbDefInsert, len(chosenDefs))
-	now := time.Now()
-	end = obs.start("compute_defs")
-	for i, def := range chosenDefs {
-		dk := def.DefKey
-		dk.Repo, dk.CommitID = repo.URI, ""
-
-		// TODO(beyang): kludge. Should not rely on def formatter for this information.
-		languageID, err := toDBLang(strings.ToLower(graph.PrintFormatter(def).Language()))
-		if err != nil {
-			langWarnCount++
-		}
-
-		aToks, bToks, cToks, dToks := toTextSearchTokens(def)
-
-		dbDefs[i] = &dbDefInsert{
-			dbDefShared: dbDefShared{
-				Rev:       repoRevID,
-				DefKey:    defKeyIDs[dk],
-				Name:      def.Name,
-				Kind:      def.Kind,
-				Language:  languageID,
-				UpdatedAt: &now,
-			},
-			ToksA: strings.Join(aToks, " "),
-			ToksB: strings.Join(bToks, " "),
-			ToksC: strings.Join(cToks, " "),
-			ToksD: strings.Join(dToks, " "),
-		}
-	}
-	if langWarnCount > 0 {
-		log15.Warn("could not determine language for all defs", "noLang", langWarnCount, "allDefs", len(chosenDefs))
-	}
-	end()
-
-	end = obs.start("update_insert")
-	if err := dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
-		return execDBDefInsert(tx, repoRevID, dbDefs)
-	}); err != nil {
-		end()
-		return err
-	}
-	end()
-
-	// Update state column
-	end = obs.start("update_state")
-	if err := dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
-		var repoRevs []*dbRepoRev
-		if _, err := tx.Select(&repoRevs, `SELECT * FROM repo_revs WHERE repo=$1 AND state=1`, repo.URI); err != nil {
-			return err
-		}
-		oldLatestRIDs := make([]int64, len(repoRevs))
-		for i, repoRev := range repoRevs {
-			oldLatestRIDs[i] = repoRev.ID
-		}
-
-		if _, err := tx.Exec(`UPDATE repo_revs SET state=2 WHERE repo=$1 AND state=1`, repo.URI); err != nil {
-			return err
-		}
-		if _, err := tx.Exec(`UPDATE repo_revs SET state=1 WHERE id=$1`, repoRevID); err != nil {
-			return err
-		}
-		if len(oldLatestRIDs) > 0 {
-			var params = make([]string, len(oldLatestRIDs))
-			var args []interface{}
-			arg := func(v interface{}) string {
-				args = append(args, v)
-				return gorp.PostgresDialect{}.BindVar(len(args) - 1)
-			}
-			for i, rid := range oldLatestRIDs {
-				params[i] = arg(rid)
-			}
-			s0 := selectForUpdateSQL(`rid IN (` + strings.Join(params, ",") + `)`)
-			s1 := `UPDATE defs2 SET state=2 WHERE rid IN (` + strings.Join(params, ",") + `)`
-			if _, err := tx.Exec(s0, args...); err != nil {
-				return err
-			}
-			if _, err := tx.Exec(s1, args...); err != nil {
-				return err
-			}
-		}
-		if _, err := tx.Exec(selectForUpdateSQL(`rid=$1`), repoRevID); err != nil {
-			return err
-		}
-		if _, err := tx.Exec(`UPDATE defs2 SET state=1 WHERE rid=$1`, repoRevID); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		end()
-		return err
-	}
-	end()
-
-	end = obs.start("update_ref_ct")
-	if err := s.UpdateRefCounts(ctx, repo.URI); err != nil {
-		end()
-		return err
-	}
-	end()
-
-	// Garbage-collect old def and repo_revs rows
-	end = obs.start("gc_get_revs")
-	rrOld, err := getRepoRevsOld(ctx, dbh, repo.URI)
-	end()
-	if err != nil {
-		return err
-	}
-	end = obs.start("gc_delete")
-	for _, rr := range rrOld {
-		// Delete defs before repo revs, so this gets retried on next update if this fails for some reason.
-		if _, err := dbh.Exec(`DELETE FROM defs2 WHERE rid=$1 and state=2`, rr.ID); err != nil {
-			return err
-		}
-		if _, err := dbh.Exec(`DELETE FROM repo_revs WHERE id=$1 and state=2`, rr.ID); err != nil {
-			return err
-		}
-	}
-	end()
-
-	return nil
-}
-
-var delims = regexp.MustCompile(`[/.:\$\(\)\*\%\#\@\[\]\{\}]+`)
-
-func toTextSearchTokens(def *graph.Def) (aToks []string, bToks []string, cToks []string, dToks []string) {
-	repoParts := strings.Split(def.Repo, "/")
-	if len(repoParts) >= 1 && (strings.HasSuffix(repoParts[0], ".com") || strings.HasSuffix(repoParts[0], ".org")) {
-		repoParts = repoParts[1:]
-	}
-	for _, w := range repoParts {
-		bToks = appendRepeated(bToks, w, 1)
-	}
-	bToks = appendRepeated(bToks, repoParts[len(repoParts)-1], 2) // the last path component tends to be the repository name
-
-	unitParts := strings.Split(def.Unit, "/")
-	for _, w := range unitParts {
-		bToks = appendRepeated(bToks, w, 1)
-	}
-	bToks = appendRepeated(bToks, unitParts[len(unitParts)-1], 2)
-
-	pathParts := delims.Split(def.Path, -1)
-	for _, w := range pathParts {
-		bToks = appendRepeated(bToks, w, 2)
-		for _, c := range boundedCombinations(splitCaseWords(w), 6) {
-			if c != "" {
-				cToks = appendRepeated(cToks, c, 1)
-			}
-		}
-	}
-	lastPathPart := pathParts[len(pathParts)-1]
-	aToks = appendRepeated(aToks, lastPathPart, 3) // mega extra points for matching the last component of the def path (typically the "name" of the def)
-	for _, c := range boundedCombinations(splitCaseWords(lastPathPart), 6) {
-		if c != "" {
-			aToks = appendRepeated(aToks, c, 1) // more points for matching last component of def path
-		}
-	}
-
-	fileParts := strings.Split(filepath.ToSlash(def.File), "/")
-	for _, w := range fileParts {
-		cToks = appendRepeated(cToks, w, 1)
-	}
-	cToks = appendRepeated(cToks, fileParts[len(fileParts)-1], 2)
-
-	aToks = appendRepeated(aToks, def.Name, 1)
-
-	for _, doc := range def.Docs {
-		docWithoutTags := bluemonday.StrictPolicy().Sanitize(doc.Data)
-		dToks = append(dToks, docWithoutTags) // no need to split because it is getting processed by PostgreSQL's to_tsvector
-	}
-
-	return
-}
-
-func splitCaseWords(w string) []string {
-	if strings.Contains(w, "_") {
-		return strings.Split(w, "_")
-	}
-	return camelcase.Split(w)
-}
-
-func boundedCombinations(s []string, bound int) []string {
-	if len(s) > bound {
-		return append(allCombinations(s[:bound]), s[bound:]...)
-	}
-	return allCombinations(s)
-}
-
-// allCombinations returns all strings that can be built by concatenating a subset of the given strings without reordering.
-func allCombinations(s []string) []string {
-	if len(s) == 0 {
-		return []string{""}
-	}
-	var permutations []string
-	for _, tail := range allCombinations(s[1:]) {
-		permutations = append(
-			permutations,
-			s[0]+tail,
-			tail,
-		)
-	}
-	return permutations
-}
-
-func appendRepeated(s []string, w string, count int) []string {
-	for i := 0; i < count; i++ {
-		s = append(s, w)
-	}
-	return s
-}
-
-func selectForUpdateSQL(whereClause string) string {
-	return fmt.Sprintf(`
-SELECT 1
-FROM defs2
-WHERE (%s)
-ORDER BY rid, defid
-FOR UPDATE;
-`, whereClause)
-}
-
-const updateRefCountSQL = `
-UPDATE defs2 SET ref_ct = ref_counts.ref_ct
-FROM (
-	SELECT d.defid defid, coalesce(sum(gr.count), 0) ref_ct
-	FROM defs2 d LEFT JOIN global_refs_new gr ON d.defid=gr.def_key_id
-	WHERE d.rid=$1 AND gr.repo != $2
-	GROUP BY defid
-) ref_counts WHERE defs2.defid=ref_counts.defid;
-`
-
-// UpdateRefCounts updates the ref_ct column to reflect the number of xrefs
-// referencing defs in the latest built revision of the specified repository
-// (repo).
-func (s *defs) UpdateRefCounts(ctx context.Context, repo string) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.UpdateRefCounts", repo); err != nil {
-		return err
-	}
-
-	rr, err := getRepoRevLatest(graphDBH(ctx), repo)
-	if err != nil {
-		return err
-	}
-
-	return dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
-		if _, err := tx.Exec(selectForUpdateSQL("rid=$1"), rr.ID); err != nil {
-			return err
-		}
-		if _, err := tx.Exec(updateRefCountSQL, rr.ID, rr.Repo); err != nil {
-			return err
-		}
-		return nil
-	})
-}
-
 func getDefKey(ctx context.Context, dbh gorp.SqlExecutor, id int64) (*dbDefKey, error) {
 	var d dbDefKey
 	if err := dbh.SelectOne(&d, `SELECT * FROM def_keys WHERE id=$1`, id); err != nil {
@@ -775,72 +352,12 @@ func getDefKey(ctx context.Context, dbh gorp.SqlExecutor, id int64) (*dbDefKey, 
 	return &d, nil
 }
 
-func getRID(ctx context.Context, dbh gorp.SqlExecutor, repo string, commit string) (int64, error) {
-	return dbh.SelectInt(`SELECT id FROM repo_revs WHERE repo=$1 AND commit=$2`, repo, commit)
-}
-
 func getRepoRev(ctx context.Context, dbh gorp.SqlExecutor, id int64) (*dbRepoRev, error) {
 	var d dbRepoRev
 	if err := dbh.SelectOne(&d, `SELECT * FROM repo_revs WHERE id=$1`, id); err != nil {
 		return nil, err
 	}
 	return &d, nil
-}
-
-func getRepoRevsOld(ctx context.Context, dbh gorp.SqlExecutor, repo string) ([]*dbRepoRev, error) {
-	var rr []*dbRepoRev
-	if _, err := dbh.Select(&rr, `SELECT * FROM repo_revs WHERE repo=$1 and state=2`, repo); err != nil {
-		return nil, err
-	}
-	return rr, nil
-}
-
-func getOrInsertDefKeys(ctx context.Context, dbh gorp.SqlExecutor, defKeys map[graph.DefKey]int64) error {
-	var dbDefKeys []*dbDefKey
-	createTmpSQL := `CREATE TEMPORARY TABLE def_keys_tmp (
-repo TEXT,
-unit_type TEXT,
-unit TEXT,
-path TEXT)
-ON COMMIT DROP;`
-	insertSQL := `INSERT INTO def_keys(repo, unit_type, unit, path)
-SELECT repo, unit_type, unit, path
-FROM def_keys_tmp dkt
-WHERE NOT EXISTS (
-	SELECT id FROM def_keys dk where dk.repo=dkt.repo AND dk.unit_type=dkt.unit_type AND dk.unit=dkt.unit AND dk.path=dkt.path
-);`
-	selectSQL := `SELECT * FROM def_keys WHERE (repo, unit_type, unit, path) IN (SELECT * from def_keys_tmp);`
-	err := dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
-		if _, err := tx.Exec(createTmpSQL); err != nil {
-			return err
-		}
-		copy, err := dbutil.Prepare(tx, pq.CopyIn("def_keys_tmp", "repo", "unit_type", "unit", "path"))
-		if err != nil {
-			return fmt.Errorf("def_keys_tmp copy prepare failed: %s", err)
-		}
-		for defKey := range defKeys {
-			if _, err := copy.Exec(defKey.Repo, defKey.UnitType, defKey.Unit, defKey.Path); err != nil {
-				return fmt.Errorf("def_keys_tmp copy failed: %s", err)
-			}
-		}
-		if _, err := copy.Exec(); err != nil {
-			return fmt.Errorf("def_keys_tmp final copy failed: %s", err)
-		}
-		if _, err := tx.Exec(insertSQL); err != nil {
-			return fmt.Errorf("def_keys insert failed: %s", err)
-		}
-		if _, err := tx.Select(&dbDefKeys, selectSQL); err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	for _, dk := range dbDefKeys {
-		defKeys[graph.DefKey{Repo: dk.Repo, UnitType: dk.UnitType, Unit: dk.Unit, Path: dk.Path}] = dk.ID
-	}
-	return nil
 }
 
 var repoRevUnindexedErr = errors.New("repository has not been indexed yet, so no latest revision exists")
@@ -856,50 +373,6 @@ func getRepoRevLatest(dbh gorp.SqlExecutor, repo string) (*dbRepoRev, error) {
 		return nil, fmt.Errorf("repo %s has more than one latest version", repo)
 	}
 	return rr[0], nil
-}
-
-func symbolToDef(s *langp.Symbol) *graph.Def {
-	return &graph.Def{
-		DefKey: graph.DefKey{
-			Repo:     s.DefSpec.Repo,
-			CommitID: s.DefSpec.Commit,
-			UnitType: s.DefSpec.UnitType,
-			Unit:     s.DefSpec.Unit,
-			Path:     s.DefSpec.Path,
-		},
-		Name:     s.Name,
-		Kind:     s.Kind,
-		File:     s.File,
-		Exported: true,
-		Local:    false,
-		Test:     false,
-		Docs: []*graph.DefDoc{{
-			Format: "text/html",
-			Data:   s.DocHTML,
-		}},
-	}
-}
-
-func shouldIndex(d *graph.Def) bool {
-	if !strings.HasSuffix(d.File, ".go") && !strings.HasSuffix(d.File, ".java") {
-		return true
-	}
-	if d.Path == "" {
-		return false
-	}
-	// Ignore local defs (KLUDGE)
-	if d.Local || strings.Contains(d.Path, "$") {
-		return false
-	}
-	// Ignore vendored defs
-	if filelang.IsVendored(d.File, false) {
-		return false
-	}
-	// Ignore defs in Go test files
-	if strings.HasSuffix(d.File, "_test.go") {
-		return false
-	}
-	return true
 }
 
 var defsSearchResultsLength = prometheus.NewSummary(prometheus.SummaryOpts{
@@ -923,5 +396,4 @@ func init() {
 
 type MockDefs struct {
 	Search func(ctx context.Context, op DefSearchOp) (*sourcegraph.SearchResultsList, error)
-	Update func(ctx context.Context, op DeprecatedRefreshIndexOp) error
 }
