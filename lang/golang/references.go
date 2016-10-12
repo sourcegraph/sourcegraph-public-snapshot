@@ -13,9 +13,9 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"golang.org/x/net/context"
 	"golang.org/x/tools/cmd/guru/serial"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
 func (h *Handler) handleReferences(ctx context.Context, req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {

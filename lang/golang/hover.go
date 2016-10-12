@@ -15,8 +15,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cmdutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
 func (h *Handler) handleHover(ctx context.Context, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) (*lsp.Hover, error) {

@@ -3,7 +3,7 @@
 // An overview of the different protocol variants:
 //
 // 	// vanilla LSP
-// 	sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp
+// 	github.com/sourcegraph/sourcegraph-go/pkg/lsp
 //
 // 	// proxy (http gateway) server LSP extensions
 // 	sourcegraph.com/sourcegraph/sourcegraph/xlang
@@ -16,7 +16,7 @@ package lspx
 import (
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
 // TelemetryEventParams is a telemetry/event message sent from a

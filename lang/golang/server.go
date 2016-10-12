@@ -17,8 +17,8 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cmdutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
 // cmdOutput is a helper around c.Output which logs the command, how long it

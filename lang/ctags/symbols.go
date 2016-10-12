@@ -12,8 +12,8 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/lang/ctags/parser"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
 var nameToSymbolKind = map[string]lsp.SymbolKind{

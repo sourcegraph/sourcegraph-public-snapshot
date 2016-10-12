@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/ctxvfs"
 	gogithub "github.com/sourcegraph/go-github/github"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -19,7 +20,6 @@ import (
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"

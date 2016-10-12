@@ -16,7 +16,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
 func vslog(out ...string) {

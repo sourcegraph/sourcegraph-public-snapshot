@@ -20,10 +20,10 @@ import (
 	"github.com/golang/groupcache/lru"
 
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/lang/golang/internal/refs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cmdutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
 var pkgVendorRe = regexp.MustCompile("(^|.*/)(vendor|Godeps)(/.*|$)")

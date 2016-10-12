@@ -5,11 +5,11 @@ import (
 	"strings"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
+	"github.com/sourcegraph/ctxvfs"
 )
 
 func testVFS(t *testing.T, fs ctxvfs.FileSystem, want map[string]string) {
-	tree, err := ReadAllFiles(context.Background(), fs, "", nil)
+	tree, err := ctxvfs.ReadAllFiles(context.Background(), fs, "", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

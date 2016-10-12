@@ -16,7 +16,7 @@ import (
 	"strings"
 	"sync"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
+	"github.com/sourcegraph/ctxvfs"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"

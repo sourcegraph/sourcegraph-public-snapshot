@@ -19,7 +19,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )

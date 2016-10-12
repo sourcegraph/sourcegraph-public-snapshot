@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
 var updateFixtures = flag.Bool("fixtures.update", false, "update the expected files with actual")

@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
+	"github.com/sourcegraph/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )

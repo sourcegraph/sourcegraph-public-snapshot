@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
 // NewDefaultClient returns a new one-shot connection to the LSP proxy server at

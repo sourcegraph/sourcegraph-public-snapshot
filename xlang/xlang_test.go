@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 

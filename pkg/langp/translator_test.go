@@ -15,8 +15,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2test"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
 func init() {

@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
+	"github.com/sourcegraph/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
 )
 
