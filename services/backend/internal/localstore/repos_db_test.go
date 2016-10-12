@@ -248,7 +248,7 @@ func TestRepos_List_query(t *testing.T) {
 			want  []string
 		}{
 			{"def", []string{"abc/def", "def/ghi"}},
-			{"ABC/DEF", []string{"abc/def", "github.com/abc/xyz", "def/ghi"}},
+			{"ABC/DEF", []string{"abc/def"}},
 			{"xyz", []string{"github.com/abc/xyz"}},
 			{"mno/p", []string{"jkl/mno/pqr"}},
 			{"jkl mno pqr", []string{"jkl/mno/pqr"}},
@@ -270,14 +270,14 @@ func TestRepos_List_query(t *testing.T) {
 	}
 
 	{ // Test batch 2 (correct ranking)
-		// {URI: "github.com/org2/xyz", Name: "pqr", DefaultBranch: "master", Mirror: true, Fork: true},
 		createdRepos := []*sourcegraph.Repo{
 			{URI: "a/def", Owner: "a", Name: "def", DefaultBranch: "master"},
 			{URI: "b/def", Owner: "b", Name: "def", DefaultBranch: "master", Fork: true},
 			{URI: "c/def", Owner: "c", Name: "def", DefaultBranch: "master", Private: true},
 			{URI: "def/ghi", Owner: "def", Name: "ghi", DefaultBranch: "master"},
-			{URI: "def/jkl", Owner: "def", Name: "ghi", DefaultBranch: "master", Fork: true},
-			{URI: "def/mno", Owner: "def", Name: "ghi", DefaultBranch: "master", Private: true},
+			{URI: "def/jkl", Owner: "def", Name: "jkl", DefaultBranch: "master", Fork: true},
+			{URI: "def/mno", Owner: "def", Name: "mno", DefaultBranch: "master", Private: true},
+			{URI: "abc/m", Owner: "abc", Name: "m", DefaultBranch: "master"},
 		}
 		for _, repo := range createdRepos {
 			if created, err := s.Create(ctx, repo); err != nil {
@@ -291,8 +291,9 @@ func TestRepos_List_query(t *testing.T) {
 			want  []string
 		}{
 			{"def", []string{"c/def", "a/def", "def/mno", "def/ghi", "b/def", "def/jkl"}},
-			{"b/def", []string{"b/def", "c/def", "a/def", "def/mno", "def/ghi", "def/jkl"}},
+			{"b/def", []string{"b/def"}},
 			{"def/", []string{"def/mno", "def/ghi", "def/jkl"}},
+			{"def/m", []string{"def/mno"}},
 		}
 		for _, test := range tests {
 			repos, err := s.List(ctx, &RepoListOp{Query: test.query})
