@@ -21,7 +21,6 @@ const (
 	GlobalSearch             = "global.search"
 	Repo                     = "repo"
 	RepoJumpDef              = "repo.jump-def"
-	RepoSymbols              = "repo.symbols"
 	RepoResolve              = "repo.resolve"
 	RepoCreate               = "repo.create"
 	RepoRefresh              = "repo.refresh"
@@ -102,7 +101,6 @@ func New(base *mux.Router) *mux.Router {
 	repoRev.Path("/tree{Path:.*}").Name(RepoTree)
 	repoRev.Path("/hover-info").Methods("GET").Name(RepoHoverInfo)
 	repoRev.Path("/jump-def").Methods("GET").Name(RepoJumpDef)
-	repoRev.Path("/symbols").Methods("GET").Name(RepoSymbols)
 	repo.Path("/tags").Methods("GET").Name(RepoTags)
 
 	repo.Path("/async-refresh-indexes").Methods("POST").Name(AsyncRefreshIndexes)
