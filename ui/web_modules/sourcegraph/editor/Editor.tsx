@@ -4,7 +4,7 @@ import {EditorService, IEditorOpenedEvent} from "sourcegraph/editor/EditorServic
 import * as lsp from "sourcegraph/editor/lsp";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
-import {isSupportedMode, typescriptSupported} from "sourcegraph/util/supportedExtensions";
+import {isSupportedMode} from "sourcegraph/util/supportedExtensions";
 
 import "sourcegraph/editor/FindExternalReferencesAction";
 import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
@@ -91,9 +91,7 @@ export class Editor implements IDisposable {
 			// of any state of the editor mode. This way context menu items
 			// will *always* appear for files with the extensions below.
 			registerModeProviders("go");
-			if (typescriptSupported()) {
-				registerModeProviders("typescript");
-			}
+			registerModeProviders("typescript");
 		}));
 
 		this._editorService = new EditorService();
