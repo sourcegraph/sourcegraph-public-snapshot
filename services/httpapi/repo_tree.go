@@ -12,7 +12,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
@@ -29,13 +28,6 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-
-	// Optimization: Ensure our language server is ready to start
-	// responding to requests
-	go langp.DefaultClient.Prepare(r.Context(), &langp.RepoRev{
-		Repo:   orig.RepoRev.Repo,
-		Commit: repoRev.CommitID,
-	})
 
 	entrySpec := sourcegraph.TreeEntrySpec{
 		RepoRev: *repoRev,
@@ -97,13 +89,6 @@ func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-
-	// Optimization: Ensure our language server is ready to start
-	// responding to requests
-	go langp.DefaultClient.Prepare(r.Context(), &langp.RepoRev{
-		Repo:   unresolvedRepoRev.Repo,
-		Commit: repoRev.CommitID,
-	})
 
 	treeList, err := backend.RepoTree.List(r.Context(), &sourcegraph.RepoTreeListOp{Rev: *repoRev})
 	if err != nil {

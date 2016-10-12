@@ -9,7 +9,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 )
@@ -47,7 +46,7 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 	}
 
 	go func() {
-		// Both of these are best effort, so we ignore the errors they
+		// Best effort, so we ignore the errors they
 		// return + kick them off in a goroutine to not block the
 		// clone
 
@@ -55,15 +54,6 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 		if err != nil {
 			return
 		}
-
-		// Ask the Language Processor to prepare the workspace.
-		_ = langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
-			// TODO(slimsag): URI is correct only where the repo URI and clone
-			// URI are directly equal.. but CloneURI is only correct (for Go)
-			// when it directly matches the package import path.
-			Repo:   repo.URI,
-			Commit: event.Commit,
-		})
 
 		// If we have updated the DefaultBranch, trigger a refresh of the indexes
 		if event.Branch == repo.DefaultBranch {

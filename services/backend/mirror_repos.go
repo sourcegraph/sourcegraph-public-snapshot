@@ -11,7 +11,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
@@ -117,7 +116,7 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 
 	// We've just cloned the repository, do a sanity check to ensure we
 	// can resolve the DefaultBranch.
-	res, err := Repos.ResolveRev(elevatedActor(ctx), &sourcegraph.ReposResolveRevOp{
+	_, err = Repos.ResolveRev(elevatedActor(ctx), &sourcegraph.ReposResolveRevOp{
 		Repo: repo.ID,
 		Rev:  repo.DefaultBranch,
 	})
@@ -127,19 +126,8 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 
 	if !skipCloneRepoAsyncSteps {
 		go func() {
-			// Both of these are best effort, so we ignore the errors they
-			// return + kick them off in a goroutine to not block the
-			// clone
-
-			// Ask the Language Processor to prepare the workspace. This is async
-			_ = langp.DefaultClient.Prepare(ctx, &langp.RepoRev{
-				// TODO(slimsag): URI is correct only where the repo URI and clone
-				// URI are directly equal.. but CloneURI is only correct (for Go)
-				// when it directly matches the package import path.
-				Repo:   repo.URI,
-				Commit: res.CommitID,
-			})
-
+			// Best effort, so we ignore the errors they return +
+			// kick them off in a goroutine to not block the clone
 			_ = Async.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
 				Repo:   repo.ID,
 				Source: "clone",
