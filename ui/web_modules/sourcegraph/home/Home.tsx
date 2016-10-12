@@ -70,7 +70,7 @@ export class Home extends Container<HomeProps, HomeState> {
 
 							{!(this.context as any).signedIn &&
 								<LocationStateToggleLink className={classNames(styles.link, base.mr2, base.ph2, base.pv1)} href="/login" modalName="login" location={this.props.location}>
-									Login
+									Log in
 								</LocationStateToggleLink>
 							}
 
