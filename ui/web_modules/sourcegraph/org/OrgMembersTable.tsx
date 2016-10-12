@@ -39,7 +39,7 @@ export class OrgMembersTable extends React.Component<Props, State> {
 	render(): JSX.Element {
 		let {members} = this.props;
 
-		if (!members || members.length === 0) {
+		if (members.length === 0) {
 			return <div style={{marginTop: whitespace[3], marginBottom: whitespace[3]}}>
 				<p>Looks like your organization is empty. Invite some of your users to join!</p>
 			</div>;

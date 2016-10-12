@@ -28,7 +28,7 @@ export class SettingsMain extends React.Component<Props, State>  {
 	}
 
 	componentDidMount(): void {
-		if (context.user) {
+		if (context.user && context.hasOrganizationGitHubToken()) {
 			Dispatcher.Backends.dispatch(new OrgActions.WantOrgs(context.user.Login));
 		}
 	}

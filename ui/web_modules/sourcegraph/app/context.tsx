@@ -27,6 +27,10 @@ class Context {
 	hasHookGitHubToken(): boolean {
 		return Boolean(this.gitHubToken && this.gitHubToken.scope.includes("admin:repo_hook"));
 	}
+
+	hasOrganizationGitHubToken(): boolean {
+		return Boolean(this.gitHubToken && this.gitHubToken.scope.includes("read:org"));
+	}
 }
 
 export const context = new Context();

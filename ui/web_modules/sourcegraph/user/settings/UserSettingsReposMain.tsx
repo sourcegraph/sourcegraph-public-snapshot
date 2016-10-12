@@ -34,10 +34,11 @@ export class UserSettingsReposMain extends Container<Props, State> {
 	}
 
 	render(): JSX.Element | null {
+		let repos = this.state.repos ? this.state.repos.Repos || [] : null;
 		return (
 			<div>
 				<Helmet title="Repositories" />
-				<Repos repos={this.state.repos ? this.state.repos.Repos : null} location={this.props.location} />
+				<Repos repos={repos} location={this.props.location} />
 			</div>
 		);
 	}

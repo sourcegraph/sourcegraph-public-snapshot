@@ -32,18 +32,6 @@
 										{
 											"type": "GitHubAuthButton",
 											"props": {
-												"children": [
-													"Add public repositories"
-												],
-												"scopes": "",
-												"color": "blue",
-												"outline": false,
-												"block": false
-											}
-										},
-										{
-											"type": "GitHubAuthButton",
-											"props": {
 												"scopes": "read:org,repo,user:email",
 												"children": [
 													"Add private repositories"
@@ -62,7 +50,29 @@
 				{
 					"type": "div",
 					"props": {
+						"style": {
+							"marginLeft": "2rem"
+						},
 						"children": [
+							{
+								"type": "div",
+								"props": {
+									"style": {
+										"marginTop": "2rem",
+										"marginBottom": "1rem"
+									},
+									"children": [
+										{
+											"type": "Input",
+											"props": {
+												"type": "text",
+												"placeholder": "Find a repository...",
+												"spellCheck": false
+											}
+										}
+									]
+								}
+							},
 							{
 								"type": "div",
 								"props": {
@@ -101,6 +111,10 @@
 							}
 						]
 					}
+				},
+				{
+					"type": "div",
+					"props": {}
 				}
 			]
 		}

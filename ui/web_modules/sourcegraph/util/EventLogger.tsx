@@ -344,10 +344,12 @@ class EventLoggerClass {
 				break;
 			case OrgActions.OrgsFetched:
 				let orgNames: Array<string> = [];
-				for (let orgs of action.data) {
-					orgNames.push(orgs.Login);
+				if (action.data) {
+					for (let orgs of action.data) {
+						orgNames.push(orgs.Login);
+					}
+					this.setUserProperty("authed_orgs", orgNames);
 				}
-				this.setUserProperty("authed_orgs", orgNames);
 				break;
 			default:
 				// All dispatched actions to stores will automatically be tracked by the eventName

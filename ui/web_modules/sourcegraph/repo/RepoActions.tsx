@@ -4,7 +4,6 @@ export type Action =
 	RepoCloning |
 	RefreshVCS |
 	WantBranches | FetchedBranches |
-	WantCreateRepoHook |
 	WantCreateRepo | RepoCreated |
 	WantCommit | FetchedCommit |
 	WantInventory | FetchedInventory |
@@ -170,14 +169,6 @@ export class RepoCreated {
 	constructor(repo: string, repoObj: Repo) {
 		this.repo = repo;
 		this.repoObj = repoObj;
-	}
-}
-
-export class WantCreateRepoHook {
-	repo: string;
-
-	constructor(repo: string) {
-		this.repo = repo;
 	}
 }
 

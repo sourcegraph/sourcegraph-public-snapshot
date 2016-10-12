@@ -3,6 +3,7 @@ import {context} from "sourcegraph/app/context";
 import {Button} from "sourcegraph/components";
 import {GitHubIcon} from "sourcegraph/components/Icons";
 import * as typography from "sourcegraph/components/styles/_typography.css";
+import {Location} from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
 import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";

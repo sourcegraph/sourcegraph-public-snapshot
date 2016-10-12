@@ -1,28 +1,24 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
-import * as styles from "sourcegraph/user/settings/styles/Repos.css";
-import * as base from "sourcegraph/components/styles/_base.css";
-import {Input, Heading, Button} from "sourcegraph/components";
-import {RepoLink} from "sourcegraph/components/RepoLink";
-import * as Dispatcher from "sourcegraph/Dispatcher";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as debounce from "lodash/debounce";
-import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
-import {privateGitHubOAuthScopes, adminRepoGitHubOAuthScopes} from "sourcegraph/util/urlTo";
+import * as React from "react";
+import {Repo} from "sourcegraph/api/index";
 import {context} from "sourcegraph/app/context";
+import {Button, Heading, Input} from "sourcegraph/components";
+import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
+import {RepoLink} from "sourcegraph/components/RepoLink";
+import * as base from "sourcegraph/components/styles/_base.css";
+import {whitespace} from "sourcegraph/components/utils/whitespace";
+import {Location} from "sourcegraph/Location";
+import * as styles from "sourcegraph/user/settings/styles/Repos.css";
+import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 
 interface Props {
-	repos: any[];
-	location?: any;
+	repos: Repo[] | null;
+	location?: Location;
 }
 
 type State = any;
 
 export class Repos extends React.Component<Props, State> {
-	static contextTypes: React.ValidationMap<any> = {
-	};
-
 	_filterInput: any;
 
 	constructor(props: Props) {
@@ -31,12 +27,11 @@ export class Repos extends React.Component<Props, State> {
 		this._handleFilter = this._handleFilter.bind(this);
 		this._handleFilter = debounce(this._handleFilter, 25);
 		this._showRepo = this._showRepo.bind(this);
-		this._enableWebhook = this._enableWebhook.bind(this);
 	}
 
 	// _repoSort is a comparison function that sorts more recently
 	// pushed repos first.
-	_repoSort(a, b) {
+	_repoSort(a: Repo, b: Repo): number {
 		if (a.PushedAt < b.PushedAt) {
 			return 1;
 		}
@@ -46,11 +41,11 @@ export class Repos extends React.Component<Props, State> {
 		return 0;
 	}
 
-	_handleFilter() {
+	_handleFilter(): void {
 		this.forceUpdate();
 	}
 
-	_showRepo(repo) {
+	_showRepo(repo: Repo): boolean {
 		if (this._filterInput && this._filterInput.value &&
 			this._qualifiedName(repo).indexOf(this._filterInput.value.trim().toLowerCase()) === -1) {
 			return false;
@@ -59,70 +54,79 @@ export class Repos extends React.Component<Props, State> {
 		return true; // no filter; return all
 	}
 
-	_qualifiedName(repo) {
+	_qualifiedName(repo: Repo): string {
 		return (`${repo.Owner}/${repo.Name}`).toLowerCase();
 	}
 
-	_toggleRepo(remoteRepo: any) {
-		Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(remoteRepo.URI, remoteRepo, true));
-	}
-
-	_enableWebhook(uri) {
-		Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepoHook(uri));
-	}
-
-	render(): JSX.Element | null {
-		let repos = (this.props.repos || []).filter(this._showRepo).sort(this._repoSort);
-
+	_header(): JSX.Element {
 		return (
-			<div className={base.pb6}>
-				<header className={styles.header}>
-					<Heading level={7} color="gray">Your repositories</Heading>
-					{!context.hasPrivateGitHubToken() && <p>Private code indexed on Sourcegraph is only available to you and those with permissions to the underlying GitHub repository.</p>}
-					<div className={styles.input_bar}>
-						{!context.gitHubToken && <GitHubAuthButton returnTo={this.props.location} className={styles.github_button}>Add public repositories</GitHubAuthButton>}
-						{!context.hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>}
-						{!context.hasHookGitHubToken() && false && <GitHubAuthButton scopes={adminRepoGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add webhook notification</GitHubAuthButton>}
-					</div>
-				</header>
-				<div className={styles.settings}>
-					{context.gitHubToken &&
-					<div className={styles.list_heading}>
+			<header className={styles.header}>
+				<Heading level={7} color="gray">Your repositories</Heading>
+				{!context.hasPrivateGitHubToken() && <p>Private code indexed on Sourcegraph is only available to you and those with permissions to the underlying GitHub repository.</p>}
+				<div className={styles.input_bar}>
+					{!context.hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>}
+				</div>
+			</header>);
+	}
+
+	_footer(): JSX.Element {
+		return (<div>
+			{this.props.location && this.props.location.query["onboarding"] &&
+				<footer className={styles.footer}>
+					<a className={styles.footer_link} href="/integrations?onboarding=t">
+						<Button color="green" className={styles.footer_btn}>Continue</Button>
+					</a>
+				</footer>
+			}
+		</div>);
+	}
+
+	_repoList(repos: Repo[]): JSX.Element {
+		return (
+			<div style={{marginLeft: whitespace[4]}}>
+				<div style={{marginTop: whitespace[4], marginBottom: whitespace[3]}}>
+				{context.gitHubToken && repos.length === 0 ?
+					<p className={styles.indicator}>Looks like you have no repositories.</p> :
+					<div>
 						<Input type="text"
 							placeholder="Find a repository..."
 							domRef={(e) => this._filterInput = e}
 							spellCheck={false}
-							className={styles.filter_input}
 							onChange={this._handleFilter} />
 					</div>}
-					<div className={styles.repos_list}>
-						{repos.length > 0 && repos.map((repo, i) =>
-							<div className={styles.row} key={i}>
-								<div className={styles.info}>
-									<RepoLink repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} />
-									{repo.Description && <p className={styles.description}>
-									{context.hasHookGitHubToken() && <button onClick={() => this._enableWebhook(repo.URI || `github.com/${repo.Owner}/${repo.Name}`)}>Enable Webhook</button>}
-										{repo.Description.length > 100 ? `${repo.Description.substring(0, 100)}...` : repo.Description}
-									</p>}
-								</div>
-							</div>
-						)}
-					</div>
-					{context.gitHubToken && repos.length === 0 && (!this._filterInput || !this._filterInput.value) &&
-						<p className={styles.indicator}>Loading...</p>
-					}
-
-					{context.gitHubToken && this._filterInput && this._filterInput.value && repos.length === 0 &&
-						<p className={styles.indicator}>No matching repositories</p>
-					}
 				</div>
-				{this.props.location && this.props.location.query.onboarding &&
-					<footer className={styles.footer}>
-						<a className={styles.footer_link} href="/integrations?onboarding=t">
-							<Button color="green" className={styles.footer_btn}>Continue</Button>
-						</a>
-					</footer>
-				}
+			<div className={styles.repos_list}>
+				{repos.length > 0 && repos.map((repo, i) =>
+					<div className={styles.row} key={i}>
+						<div className={styles.info}>
+							<RepoLink repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} />
+							{repo.Description && <p className={styles.description}>
+								{repo.Description.length > 100 ? `${repo.Description.substring(0, 100)}...` : repo.Description}
+							</p>}
+						</div>
+					</div>
+				)}
+			</div>
+			{context.gitHubToken && this._filterInput && this._filterInput.value && repos.length === 0 &&
+				<p className={styles.indicator}>No matching repositories</p>
+			}
+		</div>);
+	}
+
+	render(): JSX.Element | null {
+		let filteredRepos;
+		if (this.props.repos) {
+			filteredRepos = this.props.repos.filter(this._showRepo).sort(this._repoSort);
+		}
+
+		return (
+			<div className={base.pb6}>
+				{this._header()}
+				{!this.props.repos ?
+					<p style={{marginTop: whitespace[4], marginBottom: whitespace[4], marginLeft: whitespace[4]}}>
+						Loading...
+					</p> : this._repoList(filteredRepos)}
+				{this._footer()}
 			</div>
 		);
 	}

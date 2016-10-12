@@ -1,8 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
 import {formatPattern} from "react-router/lib/PatternUtils";
 import {abs} from "sourcegraph/app/routePatterns";
 import {RouteName} from "sourcegraph/app/routePatterns";
+import {Location} from "sourcegraph/Location";
 
 // urlTo produces the full URL, given a route and route parameters. The
 // route names are defined in sourcegraph/app/routePatterns.
@@ -29,5 +28,5 @@ export function urlToGitHubOAuth(scopes: string | null, returnTo: string | Locat
 	}
 	return `/-/github-oauth/initiate${q ? `?${q}` : ""}`;
 }
+
 export const privateGitHubOAuthScopes = "read:org,repo,user:email";
-export const adminRepoGitHubOAuthScopes = "admin:repo_hook";

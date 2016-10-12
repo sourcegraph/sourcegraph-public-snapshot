@@ -57,7 +57,7 @@ export class OrgContainer extends Container<Props, State> {
 	}
 
 	onStateTransition(prevState: State, nextState: State): void {
-		if (!context.user || !context.hasPrivateGitHubToken()) {
+		if (!context.user || !context.hasOrganizationGitHubToken()) {
 			return;
 		}
 
@@ -125,7 +125,7 @@ export class OrgContainer extends Container<Props, State> {
 				Choose an Org to the left to get started.
 			</div>;
 		} else if (this.state.selectedOrg) {
-			mainPanel = <OrgPanel location={this.props.location} org={this.state.selectedOrg} members={this.state.members || []} />;
+			mainPanel = <OrgPanel location={this.props.location} org={this.state.selectedOrg} members={this.state.members} />;
 		} else {
 			mainPanel = <div style={{marginTop: whitespace[4], paddingTop: whitespace[3]}}> Choose an Org to the left to get started.</div>;
 		}

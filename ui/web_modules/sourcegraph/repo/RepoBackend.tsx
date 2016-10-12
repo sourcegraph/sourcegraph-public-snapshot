@@ -1,6 +1,5 @@
-// tslint:disable typedef ordered-imports
-import * as lsp from "sourcegraph/editor/lsp";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import * as lsp from "sourcegraph/editor/lsp";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {RepoStore} from "sourcegraph/repo/RepoStore";
@@ -137,12 +136,6 @@ export const RepoBackend = {
 					}
 				}
 			});
-		}
-
-		if (payload instanceof RepoActions.WantCreateRepoHook) {
-			const action = payload;
-			RepoBackend.fetch(`/.api/webhook/enable?uri=${action.repo}`)
-			.then(checkStatus);
 		}
 
 		if (payload instanceof RepoActions.WantBranches) {

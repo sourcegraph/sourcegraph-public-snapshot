@@ -15,7 +15,7 @@ import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	org: Org;
-	members: OrgMember[];
+	members: OrgMember[] | null;
 	location: Location;
 }
 
@@ -50,13 +50,6 @@ export class OrgPanel extends React.Component<Props, {}> {
 	}
 
 	_orgMembersList(members: OrgMember[]): JSX.Element | null {
-		if (!members) {
-			return <div>
-				<p>Fetching organization members</p>
-				<span><Loader/></span>
-			</div>;
-		}
-
 		if (members.length === 0) {
 			return <div>
 				<p>Looks like your organization is empty. Invite some of your users to join!</p>
@@ -68,8 +61,11 @@ export class OrgPanel extends React.Component<Props, {}> {
 
 	render(): JSX.Element | null {
 		let {members} = this.props;
-		if (members === null) {
-			return null;
+		if (!members) {
+			return <div style={{padding: whitespace[4]}}>
+				<div>Loading organization members</div>
+				<span><Loader/></span>
+			</div>;
 		}
 
 		let inviteMembers = members.filter((member: OrgMember): boolean => {
