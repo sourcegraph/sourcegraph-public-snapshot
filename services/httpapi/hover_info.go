@@ -2,17 +2,17 @@ package httpapi
 
 import (
 	"net/http"
+	"net/url"
+	"path"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
@@ -39,66 +39,50 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		Unresolved bool
 	}{}
 
-	if universe.EnabledFile(file) {
-		hover, err := langp.DefaultClient.Hover(r.Context(), &langp.Position{
-			Repo:      repo.URI,
-			Commit:    repoRev.CommitID,
-			File:      file,
-			Line:      line,
-			Character: character,
-		})
-		universeObserve("Hover", err)
+	// TODO deprecate this endpoint. For now we send a request to our
+	// xlang endpoint.
+	var hover lsp.Hover
+	err = textDocumentPositionRequest{
+		Method:    "textDocument/hover",
+		Repo:      repo.URI,
+		Commit:    repoRev.CommitID,
+		File:      file,
+		Line:      line,
+		Character: character,
+	}.Serve(r.Context(), &hover)
+	if err != nil {
+		return err
+	}
+	resp.Unresolved = true
+	if len(hover.Contents) >= 1 {
+		resp.Unresolved = false
+		resp.Title = hover.Contents[0].Value
+		// Cleanup title to not be as long. Go specific
+		if i := strings.Index(resp.Title, "{"); i > 0 {
+			resp.Title = strings.TrimSpace(resp.Title[:i])
+		}
+	}
+
+	// We also need to do a definition so we can say which repo the def is
+	// defined in.
+	var locations []lsp.Location
+	err = textDocumentPositionRequest{
+		Method:    "textDocument/definition",
+		Repo:      repo.URI,
+		Commit:    repoRev.CommitID,
+		File:      file,
+		Line:      line,
+		Character: character,
+	}.Serve(r.Context(), &locations)
+	if err == nil && len(locations) >= 1 {
+		uri, err := url.Parse(locations[0].URI)
 		if err != nil {
 			return err
 		}
-
-		if hover.Unresolved {
-			resp.Unresolved = true
-			w.Header().Set("cache-control", "private, max-age=60")
-			return writeJSON(w, resp)
-		}
-
-		var defKey graph.DefKey
-		if hover.DefSpec != nil {
-			defKey = graph.DefKey{
-				Repo:     hover.DefSpec.Repo,
-				CommitID: hover.DefSpec.Commit,
-				UnitType: hover.DefSpec.UnitType,
-				Unit:     hover.DefSpec.Unit,
-				Path:     hover.DefSpec.Path,
-			}
-		}
-		resp.Title = hover.Title
-		resp.Def = &sourcegraph.Def{
-			Def: graph.Def{
-				DefKey: defKey,
-			},
-			DocHTML: htmlutil.Sanitize(hover.DocHTML),
-		}
-		w.Header().Set("cache-control", "private, max-age=60")
-		return writeJSON(w, resp)
-	}
-
-	defSpec, err := backend.Annotations.GetDefAtPos(r.Context(), &sourcegraph.AnnotationsGetDefAtPosOptions{
-		Entry: sourcegraph.TreeEntrySpec{
-			RepoRev: repoRev,
-			Path:    file,
-		},
-		Line:      uint32(line),
-		Character: uint32(character),
-	})
-	if err != nil {
-		return err
-	}
-
-	resp.Def, err = backend.Defs.Get(r.Context(), &sourcegraph.DefsGetOp{
-		Def: *defSpec,
-		Opt: &sourcegraph.DefGetOptions{
-			Doc: true,
-		},
-	})
-	if err != nil {
-		return err
+		resp.Def = &sourcegraph.Def{}
+		resp.Def.Repo = path.Join(uri.Host, uri.Path)
+		// TODO we currently do not set DocHTML
+		resp.Def.DocHTML = htmlutil.EmptyHTML()
 	}
 
 	w.Header().Set("cache-control", "private, max-age=60")

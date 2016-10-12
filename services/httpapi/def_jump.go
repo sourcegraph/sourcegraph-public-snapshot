@@ -1,19 +1,23 @@
 package httpapi
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 
+	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/universe"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
 
 func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
@@ -36,86 +40,102 @@ func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
 
 	var response lsp.Location
 
-	if universe.EnabledFile(file) {
-		defRange, err := langp.DefaultClient.Definition(r.Context(), &langp.Position{
-			Repo:      repo.URI,
-			Commit:    repoRev.CommitID,
-			File:      file,
-			Line:      line,
-			Character: character,
-		})
-		universeObserve("Definition", err)
-		if err != nil {
-			return err
-		}
-
-		// Don't add an ugly commit ID to the URL in the address bar if
-		// the user is on a named branch or default branch. Also, never
-		// add a rev if the jump is cross-repo.
-		var rev string
-		if v := routevar.ToRepoRev(mux.Vars(r)); defRange.Repo == v.Repo {
-			rev = v.Rev
-		}
-
-		if defRange.Empty() {
-			// Nothing to do.
-		} else if defRange.File == "." {
-			// Special case the top level directory
-			response.URI = makeLSPURI(defRange.Repo, rev, "")
-		} else {
-			// We increment the line number by 1 because the blob view is not zero-indexed.
-			response.URI = makeLSPURI(defRange.Repo, rev, defRange.File)
-			response.Range = lsp.Range{
-				Start: lsp.Position{Line: defRange.StartLine, Character: defRange.StartCharacter},
-				End:   lsp.Position{Line: defRange.EndLine, Character: defRange.EndCharacter},
-			}
-		}
-		w.Header().Set("cache-control", "private, max-age=60")
-		return writeJSON(w, response)
-	}
-
-	defSpec, err := backend.Annotations.GetDefAtPos(r.Context(), &sourcegraph.AnnotationsGetDefAtPosOptions{
-		Entry: sourcegraph.TreeEntrySpec{
-			RepoRev: repoRev,
-			Path:    file,
-		},
-		Line:      uint32(line),
-		Character: uint32(character),
-	})
-	if err != nil {
-		return err
-	}
-	def, err := backend.Defs.Get(r.Context(),
-		&sourcegraph.DefsGetOp{
-			Def: sourcegraph.DefSpec{
-				Repo:     defSpec.Repo,
-				CommitID: defSpec.CommitID,
-				UnitType: defSpec.UnitType,
-				Unit:     defSpec.Unit,
-				Path:     defSpec.Path},
-			Opt: &sourcegraph.DefGetOptions{ComputeLineRange: true}})
-	if err != nil {
-		return err
-	}
-
-	// Don't add an ugly commit ID to the URL in the address bar if
-	// the user is on a named branch or default branch. Also, never
-	// add a rev if the jump is cross-repo.
-	var rev string
-	if v := routevar.ToRepoRev(mux.Vars(r)); def.Repo == v.Repo {
-		rev = v.Rev
-	}
-
-	response.URI = makeLSPURI(def.Repo, rev, def.File)
-	response.Range = lsp.Range{
-		Start: lsp.Position{Line: int(def.StartLine) - 1},
+	// TODO deprecate this endpoint. For now we send a request to our
+	// xlang endpoint.
+	var locations []lsp.Location
+	err = textDocumentPositionRequest{
+		Method:    "textDocument/definition",
+		Repo:      repo.URI,
+		Commit:    repoRev.CommitID,
+		File:      file,
+		Line:      line,
+		Character: character,
+	}.Serve(r.Context(), &locations)
+	if err == nil && len(locations) >= 1 {
+		response = locations[0]
 	}
 	w.Header().Set("cache-control", "private, max-age=60")
 	return writeJSON(w, response)
 }
 
-// makeLSPURI returns a file URI for the LSP response that Monaco on
-// the frontend knows how to interpret.
-func makeLSPURI(repo, rev, file string) string {
-	return fmt.Sprintf("git://%s?%s#%s", repo, rev, file)
+type textDocumentPositionRequest struct {
+	Method string
+
+	Repo   string
+	Commit string
+	File   string
+	// Line is 0 based
+	Line int
+	// Character is 0 based
+	Character int
+}
+
+func (o textDocumentPositionRequest) Serve(ctx context.Context, result interface{}) error {
+	if !strings.HasSuffix(o.File, ".go") {
+		return &errcode.HTTPErr{
+			Status: http.StatusNotFound,
+			Err:    errors.New("currently only go is supported"),
+		}
+	}
+
+	mustMarshal := func(v interface{}) *json.RawMessage {
+		b, _ := json.Marshal(v)
+		m := json.RawMessage(b)
+		return &m
+	}
+	reqs := []jsonrpc2.Request{
+		{
+			ID:     0,
+			Method: "initialize",
+			Params: mustMarshal(&xlang.ClientProxyInitializeParams{
+				InitializeParams: lsp.InitializeParams{
+					RootPath: fmt.Sprintf("git://%s?%s", o.Repo, o.Commit),
+				},
+				Mode: "go",
+			}),
+		},
+		{
+			ID:     1,
+			Method: o.Method,
+			Params: mustMarshal(&lsp.TextDocumentPositionParams{
+				TextDocument: lsp.TextDocumentIdentifier{
+					URI: fmt.Sprintf("git://%s?%s#%s", o.Repo, o.Commit, o.File),
+				},
+				Position: lsp.Position{
+					Line:      o.Line,
+					Character: o.Character,
+				},
+			}),
+		},
+		{
+			ID:     2,
+			Method: "shutdown",
+		},
+		{
+			Method: "exit",
+			Notif:  true,
+		},
+	}
+	body, err := json.Marshal(reqs)
+	if err != nil {
+		return err
+	}
+	w := httptest.NewRecorder()
+	err = serveXLangMethod(ctx, w, o.Method, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+
+	resps := make([]*jsonrpc2.Response, len(reqs))
+	err = json.Unmarshal(w.Body.Bytes(), &resps)
+	if err != nil {
+		return err
+	}
+	if len(resps) < 2 {
+		return errors.New("not enough responses")
+	}
+	if resps[1].Result == nil {
+		return errors.New("nil result")
+	}
+	return json.Unmarshal([]byte(*resps[1].Result), result)
 }

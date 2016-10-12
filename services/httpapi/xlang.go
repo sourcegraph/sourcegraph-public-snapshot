@@ -53,13 +53,20 @@ type xlangClient interface {
 }
 
 func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
+	v := mux.Vars(r)
+	method := v["LSPMethod"]
+	return serveXLangMethod(r.Context(), w, method, r.Body)
+}
+
+// serveXLangMethod was split out from serveXLang to support the old
+// hover-info and jump-to-def httpapi endpoints. Once those are gone we
+// extract this back into serveXLang.
+func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string, body io.Reader) (err error) {
 	start := time.Now()
 	success := true
 	mode := "unknown"
 	defer func() {
 		duration := time.Now().Sub(start)
-		v := mux.Vars(r)
-		method := v["LSPMethod"]
 		labels := prometheus.Labels{
 			"success": fmt.Sprintf("%t", err == nil && success),
 			"method":  method,
@@ -76,7 +83,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 
 	// Decode this early so we can print more useful log messages.
 	var reqs []jsonrpc2.Request
-	if err := json.NewDecoder(r.Body).Decode(&reqs); err != nil {
+	if err := json.NewDecoder(body).Decode(&reqs); err != nil {
 		return err
 	}
 
@@ -109,13 +116,13 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	// Check consistency against the URL. The URL route params are for
 	// ease of debugging only, but it'd be confusing if they could
 	// diverge from the actual jsonrpc2 request.
-	if v := mux.Vars(r); v["LSPMethod"] != strings.TrimSuffix(reqs[1].Method, "?prepare") {
-		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: fmt.Errorf("LSP method param in URL %q != %q method in LSP message params", v["LSPMethod"], reqs[1].Method)}
+	if method != strings.TrimSuffix(reqs[1].Method, "?prepare") {
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: fmt.Errorf("LSP method param in URL %q != %q method in LSP message params", method, reqs[1].Method)}
 	}
 
 	// Inject tracing info.
 	opName := "LSP HTTP gateway: " + reqs[1].Method
-	span, ctx := opentracing.StartSpanFromContext(r.Context(), opName, opentracing.Tags{"rootPath": rootPathURI.String()})
+	span, ctx := opentracing.StartSpanFromContext(ctx, opName, opentracing.Tags{"rootPath": rootPathURI.String()})
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
