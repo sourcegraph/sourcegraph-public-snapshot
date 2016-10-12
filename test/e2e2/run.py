@@ -54,7 +54,7 @@ def run_tests(args, tests):
         if args.alert_on_err:
             msg = failure_msg(test_name, args.browser.capitalize(), driver.d.current_url, traceback.format_exc(30))
             screenshot = driver.d.get_screenshot_as_png()
-            slack_cli.api_call("files.upload", channels=slack_ch, initial_comment=msg, file=screenshot, filename="screenshot.png", username="e2e-bot")
+            slack_cli.api_call("files.upload", channels=slack_ch, initial_comment=msg, file=screenshot, filename="screenshot.png")
         if args.pause_on_err:
             print "PAUSED on error. Hit ENTER to continue"
             raw_input()
