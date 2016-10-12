@@ -1,2 +1,0 @@
-langp: SRC_ENDPOINT='dev' rego ./langprocessor-go
-lsp: rego ./langserver-go -mode tcp

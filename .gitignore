@@ -71,21 +71,6 @@ eb-bundle.zip
 /deploy/sourcegraph.com/src
 /deploy/sourcegraph/src
 
-/lang/golang/cmd/langserver-go/guru
-/lang/golang/cmd/langserver-go/godef
-/lang/golang/cmd/langserver-go/gog
-/lang/golang/cmd/langserver-go/langserver-go
-/lang/golang/cmd/langprocessor-go/langprocessor-go
-
-/lang/ctags/cmd/langprocessor-ctags/langprocessor-ctags
-/lang/ctags/cmd/langserver-ctags/langserver-ctags
-
-/lang/java/cmd/langprocessor-java/java-language-processor/
-/lang/java/cmd/langproxy-java/langproxy-java
-
-/lang/js/cmd/langprocessor-js/js-language-processor/
-/lang/js/cmd/langproxy-js/langproxy-js
-
 # Sublime
 *.sublime-project
 *.sublime-workspace
