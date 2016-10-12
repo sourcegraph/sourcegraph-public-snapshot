@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
+	"github.com/sourcegraph/ctxvfs"
 )
 
 // HandlerShared contains data structures that a build server and its

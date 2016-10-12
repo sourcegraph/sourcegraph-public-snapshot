@@ -1,19 +1,17 @@
-package vfsutil
+package ctxvfs
 
 import (
 	"context"
 	"os"
 	pathpkg "path"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 )
 
-func ReadAllFiles(ctx context.Context, fs ctxvfs.FileSystem, root string, filter func(os.FileInfo) bool) (map[string][]byte, error) {
+func ReadAllFiles(ctx context.Context, fs FileSystem, root string, filter func(os.FileInfo) bool) (map[string][]byte, error) {
 	if root == "" {
 		root = "/"
 	}
 	files := map[string][]byte{}
-	w := WalkFS(ctx, root, fs)
+	w := Walk(ctx, root, fs)
 	for w.Step() {
 		if err := w.Err(); err != nil {
 			return nil, err
@@ -24,7 +22,7 @@ func ReadAllFiles(ctx context.Context, fs ctxvfs.FileSystem, root string, filter
 			w.SkipDir()
 		case fi.Mode().IsRegular():
 			if filter == nil || filter(fi) {
-				contents, err := ctxvfs.ReadFile(ctx, fs, w.Path())
+				contents, err := ReadFile(ctx, fs, w.Path())
 				if err != nil {
 					return nil, err
 				}
@@ -35,15 +33,17 @@ func ReadAllFiles(ctx context.Context, fs ctxvfs.FileSystem, root string, filter
 	return files, nil
 }
 
+// Walker is adapted from github.com/kr/fs.
+
 // Walker provides a convenient interface for iterating over the
-// descendants of a filesystem path.
-// Successive calls to the Step method will step through each
-// file or directory in the tree, including the root. The files
-// are walked in lexical order, which makes the output deterministic
-// but means that for very large directories Walker can be inefficient.
-// Walker does not follow symbolic links.
+// descendants of a filesystem path. Successive calls to the Step
+// method will step through each file or directory in the tree,
+// including the root. The files are walked in lexical order, which
+// makes the output deterministic but means that for very large
+// directories Walker can be inefficient. Walker does not follow
+// symbolic links.
 type Walker struct {
-	fs      ctxvfs.FileSystem
+	fs      FileSystem
 	ctx     context.Context
 	cur     item
 	stack   []item
@@ -56,8 +56,8 @@ type item struct {
 	err  error
 }
 
-// WalkFS returns a new Walker rooted at root on the FileSystem fs.
-func WalkFS(ctx context.Context, root string, fs ctxvfs.FileSystem) *Walker {
+// Walk returns a new Walker rooted at root on the FileSystem fs.
+func Walk(ctx context.Context, root string, fs FileSystem) *Walker {
 	info, err := fs.Lstat(ctx, root)
 	return &Walker{
 		fs:    fs,

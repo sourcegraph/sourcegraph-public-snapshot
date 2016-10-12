@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
+	"github.com/sourcegraph/ctxvfs"
 )
 
 func (h *LangHandler) defaultBuildContext() *build.Context {

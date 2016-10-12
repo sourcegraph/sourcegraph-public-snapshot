@@ -562,6 +562,12 @@
 			"revisionTime": "2016-01-23T01:39:49Z"
 		},
 		{
+			"checksumSHA1": "y8AcXmhN61soEsJyqP+rT/DoL3E=",
+			"path": "github.com/sourcegraph/ctxvfs",
+			"revision": "9152556ed8f26bfb7ec50b90195c1cb3acf499f4",
+			"revisionTime": "2016-10-12T04:56:41Z"
+		},
+		{
 			"checksumSHA1": "CPp/qhvtiXAMDO5WTHeH7ykyLgU=",
 			"path": "github.com/sourcegraph/go-github/github",
 			"revision": "222690b1844c222da8de820e6d6056812102f039",

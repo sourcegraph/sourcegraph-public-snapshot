@@ -7,9 +7,9 @@ import (
 	"os"
 	"sync"
 
+	"github.com/sourcegraph/ctxvfs"
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/zipfs"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 )
 
 // An Archiver is a repository that can produce a .zip archive of

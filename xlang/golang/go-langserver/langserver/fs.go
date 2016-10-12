@@ -9,8 +9,8 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 
+	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 

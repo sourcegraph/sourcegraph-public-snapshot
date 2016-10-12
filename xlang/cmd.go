@@ -20,9 +20,9 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/jsonrpc2"
 	srccli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/ctxvfs"
+	"github.com/sourcegraph/ctxvfs"
 )
 
 // addSysZversionFile adds the zversion.go file, which is generated
