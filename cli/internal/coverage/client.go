@@ -8,28 +8,14 @@ import (
 
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 )
 
-// Client is a coverage client type, which is effectively either an LSP client
-// or a langp client.
+// Client is a coverage client type, which is effectively an LSP client.
 type Client interface {
-	Definition(ctx context.Context, p *langp.Position) (*langp.Range, error)
-	Hover(ctx context.Context, p *langp.Position) (*langp.Hover, error)
-	LocalRefs(ctx context.Context, p *langp.Position) (*langp.RefLocations, error)
+	Definition(ctx context.Context, p *Position) (*Range, error)
+	Hover(ctx context.Context, p *Position) (*Hover, error)
+	LocalRefs(ctx context.Context, p *Position) (*RefLocations, error)
 	Close() error
-}
-
-type noopCloser struct {
-	*langp.Client
-}
-
-func (c *noopCloser) Close() error {
-	return nil
-}
-
-func LangpClient(c *langp.Client) Client {
-	return &noopCloser{Client: c}
 }
 
 func LSPClient(addr, rootPath string, printCaps bool) (Client, error) {
@@ -55,7 +41,7 @@ type lspClient struct {
 	rootPath string
 }
 
-func (c *lspClient) Definition(ctx context.Context, p *langp.Position) (*langp.Range, error) {
+func (c *lspClient) Definition(ctx context.Context, p *Position) (*Range, error) {
 	if err := c.c.Call(ctx, "initialize", &lsp.InitializeParams{RootPath: c.rootPath}, nil); err != nil {
 		return nil, err
 	}
@@ -69,7 +55,7 @@ func (c *lspClient) Definition(ctx context.Context, p *langp.Position) (*langp.R
 	if len(locResp) != 1 {
 		return nil, fmt.Errorf("could not find definition")
 	}
-	return &langp.Range{
+	return &Range{
 		Repo:           p.Repo,
 		Commit:         p.Commit,
 		File:           p.File,
@@ -80,7 +66,7 @@ func (c *lspClient) Definition(ctx context.Context, p *langp.Position) (*langp.R
 	}, nil
 }
 
-func (c *lspClient) Hover(ctx context.Context, p *langp.Position) (*langp.Hover, error) {
+func (c *lspClient) Hover(ctx context.Context, p *Position) (*Hover, error) {
 	if err := c.c.Call(ctx, "initialize", &lsp.InitializeParams{RootPath: c.rootPath}, nil); err != nil {
 		return nil, err
 	}
@@ -91,10 +77,10 @@ func (c *lspClient) Hover(ctx context.Context, p *langp.Position) (*langp.Hover,
 	if err := c.c.Call(ctx, "shutdown", nil, nil); err != nil {
 		return nil, err
 	}
-	return langp.HoverFromLSP(&hoverResp), nil
+	return HoverFromLSP(&hoverResp), nil
 }
 
-func (c *lspClient) LocalRefs(ctx context.Context, p *langp.Position) (*langp.RefLocations, error) {
+func (c *lspClient) LocalRefs(ctx context.Context, p *Position) (*RefLocations, error) {
 	if err := c.c.Call(ctx, "initialize", &lsp.InitializeParams{RootPath: c.rootPath}, nil); err != nil {
 		return nil, err
 	}
@@ -111,7 +97,7 @@ func (c *lspClient) LocalRefs(ctx context.Context, p *langp.Position) (*langp.Re
 	if err := c.c.Call(ctx, "shutdown", nil, nil); err != nil {
 		return nil, err
 	}
-	panic("not fully implemented (translate refsResp to langp.LocalRefs")
+	panic("not fully implemented (translate refsResp to LocalRefs")
 }
 
 func (c *lspClient) Close() error {

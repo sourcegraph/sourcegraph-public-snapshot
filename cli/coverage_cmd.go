@@ -24,7 +24,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/coverage"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/coverage/tokenizer"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/langp"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/slack"
 )
@@ -45,7 +44,7 @@ func init() {
 }
 
 type coverageCmd struct {
-	LSPAddr       string `long:"lsp-addr" description:"Sourcegraph LSP server address, only used if -addr is not set"`
+	LSPAddr       string `long:"lsp-addr" description:"Sourcegraph LSP server address"`
 	LSPRootPath   string `long:"lsp-root" description:"Root directory location at which LSP server should read files"`
 	LSPCaps       bool   `long:"lsp-caps" description:"print the capabilities of the LSP server and exit"`
 	Methods       string `long:"methods" description:"API methods to test (definition,hover)" default:"definition,hover"`
@@ -192,12 +191,10 @@ func (c *coverageCmd) Execute(args []string) error {
 	// Create the connection to LSP server.
 	var err error
 	switch {
-	case langp.DefaultClient != nil:
-		c.backend = coverage.LangpClient(langp.DefaultClient)
 	case c.LSPAddr != "":
 		c.backend, err = coverage.LSPClient(c.LSPAddr, c.LSPRootPath, c.LSPCaps)
 	default:
-		return fmt.Errorf("must specify one of --addr or --lsp-addr")
+		return fmt.Errorf("must specify --lsp-addr")
 	}
 	if err != nil {
 		return err
@@ -528,7 +525,7 @@ func (c *coverageCmd) calcTokCoverage(ctx context.Context, lang, repoURI string,
 		Start: time.Now(),
 	}
 
-	p := &langp.Position{
+	p := &coverage.Position{
 		Repo:      repoURI,
 		Commit:    repoRev.CommitID,
 		File:      fileURI,
