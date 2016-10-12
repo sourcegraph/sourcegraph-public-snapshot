@@ -8,7 +8,7 @@
 // 	// proxy (http gateway) server LSP extensions
 // 	sourcegraph.com/sourcegraph/sourcegraph/xlang
 //
-// 	// (this package) gbuild/lang server LSP extensions
+// 	// (this package) build/lang server LSP extensions
 // 	sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx
 //
 package lspx
