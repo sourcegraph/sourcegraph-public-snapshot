@@ -1,12 +1,12 @@
-.PHONY: all cmd/lsp-proxy golang deploy
+.PHONY: all lsp-proxy xlang-go deploy
 
-all: cmd/lsp-proxy golang
+all: lsp-proxy xlang-go
 
-cmd/lsp-proxy:
-	$(MAKE) -C cmd/lsp-proxy
+lsp-proxy:
+	cmd/lsp-proxy/build.sh
 
-golang:
-	$(MAKE) -C golang/cmd/xlang-go
+xlang-go:
+	golang/cmd/xlang-go/build.sh
 
 # Update the Docker images used for lsp-proxy or xlang-go on all
 # deployment environments (including prod).
