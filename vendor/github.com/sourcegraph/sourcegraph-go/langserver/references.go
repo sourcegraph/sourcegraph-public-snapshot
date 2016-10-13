@@ -48,6 +48,9 @@ func (h *LangHandler) handleReferences(ctx context.Context, conn JSONRPC2Conn, r
 		return nil, errors.New("object not found")
 	}
 
+	if obj.Pkg() == nil {
+		return nil, fmt.Errorf("no package found for object %s", obj)
+	}
 	defpkg := obj.Pkg().Path()
 	objposn := fset.Position(obj.Pos())
 	_, pkgLevel := classify(obj)
