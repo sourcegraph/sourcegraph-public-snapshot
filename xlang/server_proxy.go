@@ -7,14 +7,12 @@ import (
 	"io"
 	"log"
 	"os"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	lightstep "github.com/lightstep/lightstep-tracer-go"
-	"github.com/neelance/parallel"
 	basictracer "github.com/opentracing/basictracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -85,24 +83,28 @@ func init() {
 // on p.MaxServerIdle.
 func (p *Proxy) ShutDownIdleServers(ctx context.Context, maxIdle time.Duration) error {
 	cutoff := time.Now().Add(-1 * maxIdle)
-	par := parallel.NewRun(runtime.GOMAXPROCS(0))
+	errs := &errorList{}
+	var wg sync.WaitGroup
 	p.mu.Lock()
 	for s := range p.servers {
 		s.mu.Lock()
 		idle := s.last.Before(cutoff)
 		s.mu.Unlock()
 		if idle {
-			par.Acquire()
+			wg.Add(1)
 			go func(s *serverProxyConn) {
-				defer par.Release()
+				defer wg.Done()
+				// removeServerConn attempts to acquire p.mu,
+				// take care not to deadlock with our for loop
+				// which also holds p.mu
 				p.removeServerConn(s)
 				shutdownOK := true
 				if err := s.shutdownAndExit(ctx); err != nil {
-					par.Error(err)
+					errs.add(err)
 					shutdownOK = false
 				}
 				if err := s.conn.Close(); err != nil && shutdownOK {
-					par.Error(err)
+					errs.add(err)
 				}
 			}(s)
 		}
@@ -112,7 +114,8 @@ func (p *Proxy) ShutDownIdleServers(ctx context.Context, maxIdle time.Duration) 
 	// block everything for a long time).
 	p.mu.Unlock()
 
-	return par.Wait()
+	wg.Wait()
+	return errs.error()
 }
 
 func (p *Proxy) removeServerConn(c *serverProxyConn) {
