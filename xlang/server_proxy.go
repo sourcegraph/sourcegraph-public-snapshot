@@ -206,7 +206,6 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 			delete(p.serverNewConnMus, c.id)
 			serverConnsGauge.Set(float64(len(p.servers)))
 			p.mu.Unlock()
-			serverConnsGauge.Dec()
 		}()
 	}
 
