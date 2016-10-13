@@ -8,4 +8,4 @@ This package is **experimental** until further notice.
 
 ## Known issues
 
-* Batch requests and responses are not yet supported. A handler will panic if it receives a batch request. Because of this, you should not expose any server using this package to external, untrusted traffic (yet).
+* Batch requests and responses are not yet supported.

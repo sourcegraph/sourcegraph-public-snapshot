@@ -562,10 +562,10 @@
 			"revisionTime": "2016-01-23T01:39:49Z"
 		},
 		{
-			"checksumSHA1": "y8AcXmhN61soEsJyqP+rT/DoL3E=",
+			"checksumSHA1": "s7NmPab6GppycZnlWfXqtyILmgY=",
 			"path": "github.com/sourcegraph/ctxvfs",
-			"revision": "9152556ed8f26bfb7ec50b90195c1cb3acf499f4",
-			"revisionTime": "2016-10-12T04:56:41Z"
+			"revision": "8e2bd62a565a647defd704af3d81fce05c5f190c",
+			"revisionTime": "2016-10-13T09:33:44Z"
 		},
 		{
 			"checksumSHA1": "bOxJoQEBxI70CzZgvfHEMftHtmE=",
@@ -580,10 +580,10 @@
 			"revisionTime": "2016-05-24T18:55:40Z"
 		},
 		{
-			"checksumSHA1": "lwxr6aHeoWppHbC5BWRoI2gzk9s=",
+			"checksumSHA1": "YHt4D9SELrSJu6gO9FYdKCEbYNM=",
 			"path": "github.com/sourcegraph/jsonrpc2",
-			"revision": "c04eec16002c7869b918711d3cf329b6d9deedd8",
-			"revisionTime": "2016-10-11T13:56:18Z"
+			"revision": "fe0196e385d6d450c84a87037defd0c5bda3dfb9",
+			"revisionTime": "2016-10-13T11:10:05Z"
 		},
 		{
 			"path": "github.com/sourcegraph/sitemap",
@@ -591,16 +591,16 @@
 			"revisionTime": "2013-09-12T23:55:21-07:00"
 		},
 		{
-			"checksumSHA1": "zTvsCb1kTAa64o60GA0/D6GS01I=",
+			"checksumSHA1": "c+B6xKfxO+POOMOUUy40ylwrdnM=",
 			"path": "github.com/sourcegraph/sourcegraph-go/langserver",
-			"revision": "5270ec42bdd24bc59d384b68e018429b95d79055",
-			"revisionTime": "2016-10-13T08:42:12Z"
+			"revision": "4c74a651acd7a0708a7cd4c79b3c86038d212c88",
+			"revisionTime": "2016-10-13T12:16:53Z"
 		},
 		{
 			"checksumSHA1": "tFq74Iccgr8k2mO3rkk5M7NBsIc=",
 			"path": "github.com/sourcegraph/sourcegraph-go/pkg/lsp",
-			"revision": "5270ec42bdd24bc59d384b68e018429b95d79055",
-			"revisionTime": "2016-10-13T08:42:12Z"
+			"revision": "4c74a651acd7a0708a7cd4c79b3c86038d212c88",
+			"revisionTime": "2016-10-13T12:16:53Z"
 		},
 		{
 			"checksumSHA1": "lxZnbbPCOmaLq2c1g42Ww964hgk=",

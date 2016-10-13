@@ -19,9 +19,8 @@ func NewProxy() *Proxy {
 
 		closed: make(chan struct{}),
 
-		clients:          map[*clientProxyConn]struct{}{},
-		servers:          map[*serverProxyConn]struct{}{},
-		serverNewConnMus: map[serverID]*sync.Mutex{},
+		clients: map[*clientProxyConn]struct{}{},
+		servers: map[*serverProxyConn]struct{}{},
 	}
 }
 
@@ -36,10 +35,9 @@ type Proxy struct {
 
 	closed chan struct{} // a channel that is closed when (*Proxy).Close is called
 
-	mu               sync.Mutex
-	clients          map[*clientProxyConn]struct{} // open connections from clients
-	servers          map[*serverProxyConn]struct{} // open connections to lang/build servers
-	serverNewConnMus map[serverID]*sync.Mutex      // new pending connections to lang/build servers
+	mu      sync.Mutex
+	clients map[*clientProxyConn]struct{} // open connections from clients
+	servers map[*serverProxyConn]struct{} // open connections to lang/build servers
 }
 
 // Serve accepts incoming client connections on the listener l.
@@ -96,10 +94,8 @@ func (p *Proxy) Serve(ctx context.Context, lis net.Listener) error {
 // TODO(sqs): consider returning from Serve or printing a log message
 // if this Close is called but there are still active listeners.
 func (p *Proxy) Close(ctx context.Context) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	par := parallel.NewRun(runtime.GOMAXPROCS(0))
+	p.mu.Lock()
 	for c := range p.clients {
 		par.Acquire()
 		go func(c *clientProxyConn) {
@@ -121,5 +117,17 @@ func (p *Proxy) Close(ctx context.Context) error {
 			}
 		}(s)
 	}
+
+	// Set to nil so that calls to DisconnectIdleClients and
+	// ShutDownIdleServers that are blocked on p.mu (which we hold) do
+	// not attempt to double-close any client/server conns (thereby
+	// causing a panic).
+	p.clients = nil
+	p.servers = nil
+
+	// Only hold lock during fast loop iter; no need to wait for the
+	// shutdowns/disconnects to complete.
+	p.mu.Unlock()
+
 	return par.Wait()
 }

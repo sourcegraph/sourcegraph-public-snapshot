@@ -54,7 +54,6 @@ type BuildHandler struct {
 	*langserver.HandlerShared
 	init           *lspx.InitializeParams // set by "initialize" request
 	rootImportPath string                 // root import path of the workspace (e.g., "github.com/foo/bar")
-	depsDone       bool                   // deps have been fetched and sent to the lang server
 }
 
 func (h *BuildHandler) fetchAndSendDepsOnce(fileURI string) *sync.Once {
@@ -93,7 +92,6 @@ func (h *BuildHandler) reset(init *lspx.InitializeParams, rootURI string) error 
 		return err
 	}
 	h.init = init
-	h.depsDone = false
 	return nil
 }
 
@@ -205,7 +203,6 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			return nil, err
 		}
 		h.FS.Bind(h.OverlayMountPath, &remoteProxyFS{conn: conn}, "/", ctxvfs.BindBefore)
-		h.HandlerShared.AugmentFileSystem = addSysZversionFile
 		var langInitResp lsp.InitializeResult
 		if err := h.callLangServer(ctx, conn, req.Method, req.Notif, langInitParams, &langInitResp); err != nil {
 			return nil, err

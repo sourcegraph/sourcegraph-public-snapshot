@@ -8,12 +8,10 @@ import (
 	"log"
 	"os"
 	"path"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
@@ -31,16 +29,12 @@ func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) 
 	}
 
 	c := &clientProxyConn{
-		proxy:            p,
-		last:             time.Now(),
-		disconnectedByUs: make(chan struct{}),
+		proxy: p,
+		last:  time.Now(),
 	}
 	c.conn = jsonrpc2.NewConn(ctx, rwc, jsonrpc2.HandlerWithError(c.handle), connOpt...)
 
 	p.mu.Lock()
-	if p.clients == nil {
-		p.clients = make(map[*clientProxyConn]struct{}, 1)
-	}
 	p.clients[c] = struct{}{}
 	clientConnsGauge.Set(float64(len(p.clients)))
 	clientConnsCounter.Inc()
@@ -48,12 +42,8 @@ func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) 
 	go func() {
 		select {
 		case <-c.conn.DisconnectNotify():
-		case <-c.disconnectedByUs:
 		}
-		p.mu.Lock()
-		delete(p.clients, c)
-		clientConnsGauge.Set(float64(len(p.clients)))
-		p.mu.Unlock()
+		p.removeClientConn(c)
 	}()
 }
 
@@ -77,30 +67,44 @@ func init() {
 	prometheus.MustRegister(clientConnsCounter)
 }
 
+func (p *Proxy) removeClientConn(c *clientProxyConn) {
+	p.mu.Lock()
+	delete(p.clients, c)
+	clientConnsGauge.Set(float64(len(p.clients)))
+	p.mu.Unlock()
+}
+
 // DisconnectIdleClients shuts down clients whose last communication
 // with the proxy (either a request or response) was longer than
 // maxIdle ago. The Proxy runs DisconnectIdleClients periodically
 // based on p.MaxClientIdle.
 func (p *Proxy) DisconnectIdleClients(maxIdle time.Duration) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
 	cutoff := time.Now().Add(-1 * maxIdle)
-	par := parallel.NewRun(runtime.GOMAXPROCS(0))
+	errs := &errorList{}
+	var wg sync.WaitGroup
+	p.mu.Lock()
 	for c := range p.clients {
-		par.Acquire()
-		go func(c *clientProxyConn) {
-			defer par.Release()
-			c.mu.Lock()
-			idle := c.last.Before(cutoff)
-			c.mu.Unlock()
-			if idle {
-				if err := c.close(); err != nil {
-					par.Error(err)
+		c.mu.Lock()
+		idle := c.last.Before(cutoff)
+		c.mu.Unlock()
+		if idle {
+			wg.Add(1)
+			go func(c *clientProxyConn) {
+				defer wg.Done()
+				p.removeClientConn(c)
+				if err := c.conn.Close(); err != nil {
+					errs.add(err)
 				}
-			}
-		}(c)
+			}(c)
+		}
 	}
-	return par.Wait()
+	// Only hold lock during fast loop iter, not while waiting to
+	// close each idle connection (otherwise we could block p.mu for a
+	// long time if closing blocks).
+	p.mu.Unlock()
+
+	wg.Wait()
+	return errs.error()
 }
 
 // contextID identifies a client's session by the minimal information
@@ -127,8 +131,6 @@ type clientProxyConn struct {
 	init     *ClientProxyInitializeParams
 	last     time.Time // max(last request received, last response sent), used to evict idle clients
 	shutdown bool      // whether this connection has received an LSP "shutdown"
-
-	disconnectedByUs chan struct{} // a channel that is closed when we disconnect the client (c.f. conn.DisconnectNotify() tells us when the client disconnects from us)
 }
 
 // ClientProxyInitializeParams are sent by the client to the proxy in
@@ -139,6 +141,10 @@ type ClientProxyInitializeParams struct {
 	lsp.InitializeParams
 	Mode string `json:"mode"`
 }
+
+// LogTrackedErrors, if true, causes errors to be logged if they are
+// related to language analysis.
+var LogTrackedErrors = true
 
 // handleFromClient receives requests from the client, modifies them,
 // sends them to the appropriate lang/build server(s), modifies the
@@ -155,23 +161,6 @@ type ClientProxyInitializeParams struct {
 func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
 	c.updateLastTime()
 	defer c.updateLastTime()
-
-	c.mu.Lock()
-	if c.shutdown {
-		c.mu.Unlock()
-		if req.Method == "exit" {
-			// Ignore error returned by close, since we want to exit
-			// anyways.
-			_ = c.close()
-			return nil, nil
-		}
-		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidRequest, Message: "client proxy handler is shutting down"}
-	}
-	if c.init == nil && req.Method != "initialize" {
-		c.mu.Unlock()
-		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidRequest, Message: "client proxy handler must be initialized"}
-	}
-	c.mu.Unlock()
 
 	// Try to get our parent span context from the JSON-RPC request
 	// from the LSP client.
@@ -199,6 +188,31 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		span.Finish()
 	}()
 
+	c.mu.Lock()
+	shutdown := c.shutdown
+	c.mu.Unlock()
+	if shutdown && req.Method != "exit" {
+		return nil, &jsonrpc2.Error{
+			Code:    jsonrpc2.CodeInvalidRequest,
+			Message: fmt.Sprintf("invalid LSP request %q received while client proxy is shutting down (only \"exit\" is allowed)", req.Method),
+		}
+	}
+
+	// ensureInitialized should be used below methods that require the
+	// client to have already sent an "initialize" request.
+	ensureInitialized := func() error {
+		c.mu.Lock()
+		initialized := c.init != nil
+		c.mu.Unlock()
+		if !initialized {
+			return &jsonrpc2.Error{
+				Code:    jsonrpc2.CodeInvalidRequest,
+				Message: fmt.Sprintf("LSP client must send \"initialize\" request before sending %q", req.Method),
+			}
+		}
+		return nil
+	}
+
 	switch req.Method {
 	case "initialize":
 		if req.Params == nil {
@@ -221,8 +235,8 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}
 
 		c.mu.Lock()
+		defer c.mu.Unlock()
 		if c.init != nil {
-			c.mu.Unlock()
 			// This would only happen if the client is misbehaving (if
 			// it sends 2 "initialize" requests).
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidRequest, Message: fmt.Sprintf("client proxy handler is already initialized")}
@@ -230,8 +244,6 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.init = &params
 		c.context.rootPath = *rootPathURI
 		c.context.mode = c.init.Mode
-		c.mu.Unlock()
-
 		return lsp.ServerCapabilities{
 			ReferencesProvider: true,
 			DefinitionProvider: true,
@@ -239,6 +251,9 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}, nil
 
 	case "textDocument/definition", "textDocument/hover", "textDocument/references", "workspace/symbol":
+		if err := ensureInitialized(); err != nil {
+			return nil, err
+		}
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
@@ -252,10 +267,23 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 				"Params":   req.Params,
 				"Error":    err.Error(),
 			})
-			log.Printf("tracked error: %s", string(msg))
+			if LogTrackedErrors {
+				log.Printf("tracked error: %s", string(msg))
+			}
 			return nil, err
 		}
 		return respObj, nil
+
+	case "textDocument/didOpen", "textDocument/didChange", "textDocument/didClose", "textDocument/didSave":
+		if err := ensureInitialized(); err != nil {
+			return nil, err
+		}
+
+		// Specifically forbid these methods so we don't accidentally
+		// allow them through. If we did, then any user of a shared
+		// workspace could modify the files used for analysis for all
+		// users.
+		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidRequest, Message: fmt.Sprintf("client proxy handler: text document modifications not allowed by client (%s)", req.Method)}
 
 	case "shutdown":
 		c.mu.Lock()
@@ -264,14 +292,11 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		return nil, nil
 
 	case "exit":
-		return nil, c.close()
-
-	case "textDocument/didOpen", "textDocument/didChange", "textDocument/didClose", "textDocument/didSave":
-		// Specifically forbid these methods so we don't accidentally
-		// allow them through. If we did, then any user of a shared
-		// workspace could modify the files used for analysis for all
-		// users.
-		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidRequest, Message: fmt.Sprintf("client proxy handler: text document modifications not allowed by client (%s)", req.Method)}
+		c.mu.Lock()
+		c.shutdown = true
+		c.mu.Unlock()
+		c.proxy.removeClientConn(c)
+		return nil, c.conn.Close()
 
 	default:
 		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("client proxy handler: method not found: %q", req.Method)}
@@ -283,6 +308,13 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
 	c.updateLastTime()
 	defer c.updateLastTime()
+
+	c.mu.Lock()
+	shutdown := c.shutdown
+	c.mu.Unlock()
+	if shutdown {
+		return nil, nil
+	}
 
 	switch req.Method {
 	case "textDocument/publishDiagnostics":
@@ -441,10 +473,4 @@ func (c *clientProxyConn) updateLastTime() {
 	c.mu.Lock()
 	c.last = time.Now()
 	c.mu.Unlock()
-}
-
-// close closes this connection.
-func (c *clientProxyConn) close() error {
-	close(c.disconnectedByUs)
-	return c.conn.Close()
 }
