@@ -54,7 +54,6 @@ type BuildHandler struct {
 	*langserver.HandlerShared
 	init           *lspx.InitializeParams // set by "initialize" request
 	rootImportPath string                 // root import path of the workspace (e.g., "github.com/foo/bar")
-	depsDone       bool                   // deps have been fetched and sent to the lang server
 }
 
 func (h *BuildHandler) fetchAndSendDepsOnce(fileURI string) *sync.Once {
@@ -93,7 +92,6 @@ func (h *BuildHandler) reset(init *lspx.InitializeParams, rootURI string) error 
 		return err
 	}
 	h.init = init
-	h.depsDone = false
 	return nil
 }
 
