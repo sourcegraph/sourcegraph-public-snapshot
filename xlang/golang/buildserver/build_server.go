@@ -267,10 +267,25 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		// is a language analysis request.
 		for _, uri := range urisInRequest {
 			h.fetchAndSendDepsOnce(uri).Do(func() {
-				if err := h.fetchTransitiveDepsOfFile(ctx, uri); err != nil {
+				if err := h.fetchTransitiveDepsOfFilepath(ctx, uri); err != nil {
 					log.Printf("Warning: fetching deps for Go file %q: %s.", uri, err)
 				}
 			})
+		}
+		if req.Method == "workspace/reference" {
+			// We need every transitive dependency, for every Go package in the
+			// repository.
+			w := ctxvfs.Walk(ctx, h.RootFSPath, h.FS)
+			for w.Step() {
+				if path.Ext(w.Path()) == ".go" {
+					d := path.Dir(w.Path())
+					h.fetchAndSendDepsOnce(d).Do(func() {
+						if err := h.fetchTransitiveDepsOfFilepath(ctx, d); err != nil {
+							log.Printf("Warning: fetching deps for dir %s: %s.", d, err)
+						}
+					})
+				}
+			}
 		}
 
 		var result interface{}
