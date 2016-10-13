@@ -16,7 +16,11 @@ const resolvedRev = function(state = {content: {}}, action) {
 	case ActionTypes.RESOLVED_REV:
 		if (!state.content[keyFor(action.repo, action.rev)]) {
 			if (!action.json) {
-				if (action.err && action.err.response.status === 401) {
+				// Assume any error is because the user is not
+				// signed in or hasn't auth'd us. We know the
+				// repo does exist because the user is viewing
+				// it on GitHub.
+				if (action.err) {
 					return {
 						...state,
 						content: {
