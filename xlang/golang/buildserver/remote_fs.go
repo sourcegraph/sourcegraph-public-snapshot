@@ -73,11 +73,13 @@ func (fs *remoteProxyFS) Open(ctx context.Context, path string) (ctxvfs.ReadSeek
 	fs.mu.Lock()
 	c := fs.getCache(path)
 	if c.readFile != nil {
+		readFile := c.readFile
 		fs.mu.Unlock()
-		return nopCloser{bytes.NewReader(c.readFile)}, nil
+		return nopCloser{bytes.NewReader(readFile)}, nil
 	} else if c.readFileErr != nil {
+		readFileErr := c.readFileErr
 		fs.mu.Unlock()
-		return nil, c.readFileErr
+		return nil, readFileErr
 	}
 	fs.mu.Unlock()
 
@@ -98,8 +100,10 @@ func (fs *remoteProxyFS) Stat(ctx context.Context, path string) (fi os.FileInfo,
 	fs.mu.Lock()
 	c := fs.getCache(path)
 	if c.stat != nil || c.statErr != nil {
+		stat := c.stat
+		statErr := c.statErr
 		fs.mu.Unlock()
-		return c.stat, c.statErr
+		return stat, statErr
 	}
 	fs.mu.Unlock()
 	defer func() {
@@ -117,8 +121,10 @@ func (fs *remoteProxyFS) Lstat(ctx context.Context, path string) (fi os.FileInfo
 	fs.mu.Lock()
 	c := fs.getCache(path)
 	if c.lstat != nil || c.lstatErr != nil {
+		lstat := c.lstat
+		lstatErr := c.lstatErr
 		fs.mu.Unlock()
-		return c.lstat, c.lstatErr
+		return lstat, lstatErr
 	}
 	fs.mu.Unlock()
 	defer func() {
@@ -136,8 +142,10 @@ func (fs *remoteProxyFS) ReadDir(ctx context.Context, path string) (fis []os.Fil
 	fs.mu.Lock()
 	c := fs.getCache(path)
 	if c.readDir != nil || c.readDirErr != nil {
+		readDir := c.readDir
+		readDirErr := c.readDirErr
 		fs.mu.Unlock()
-		return c.readDir, c.readDirErr
+		return readDir, readDirErr
 	}
 	fs.mu.Unlock()
 	defer func() {
