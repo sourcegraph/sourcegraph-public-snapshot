@@ -8,6 +8,7 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
+	"log"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -59,9 +60,11 @@ func (h *LangHandler) typecheck(ctx context.Context, conn JSONRPC2Conn, fileURI 
 	}
 
 	if len(diags) > 0 {
-		if err := h.publishDiagnostics(ctx, conn, diags); err != nil {
-			return nil, nil, nil, fmt.Errorf("sending diagnostics: %s", err)
-		}
+		go func() {
+			if err := h.publishDiagnostics(ctx, conn, diags); err != nil {
+				log.Printf("warning: failed to send diagnostics: %s.", err)
+			}
+		}()
 	}
 
 	start := posForFileOffset(fset, filename, offset)
@@ -178,10 +181,9 @@ type typecheckKey struct {
 }
 
 type typecheckResult struct {
-	fset  *token.FileSet
-	prog  *loader.Program
-	diags diagnostics
-	err   error
+	fset *token.FileSet
+	prog *loader.Program
+	err  error
 }
 
 func (h *LangHandler) typecheckMu(k typecheckKey) *sync.Mutex {
@@ -212,12 +214,13 @@ func (h *LangHandler) cachedTypecheck(ctx context.Context, bctx *build.Context, 
 
 	res, ok := h.cache[k]
 	span.SetTag("cached", ok)
+	var diags diagnostics
 	if !ok {
 		res.fset = token.NewFileSet()
-		res.prog, res.diags, res.err = typecheck(res.fset, bctx, bpkg)
+		res.prog, diags, res.err = typecheck(res.fset, bctx, bpkg)
 		h.cache[k] = res
 	}
-	return res.fset, res.prog, res.diags, res.err
+	return res.fset, res.prog, diags, res.err
 }
 
 // TODO(sqs): allow typechecking just a specific file not in a package, too
