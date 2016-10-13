@@ -980,6 +980,12 @@
 			"revisionTime": "2015-09-21T21:38:54Z"
 		},
 		{
+			"checksumSHA1": "J1irW4tyCsDzaVDu6olx5fG2Nrs=",
+			"path": "gopkg.in/urfave/cli.v2",
+			"revision": "c72728f42438425ffcd487986936357e17ebba3f",
+			"revisionTime": "2016-08-31T17:44:05Z"
+		},
+		{
 			"checksumSHA1": "+OgOXBoiQ+X+C2dsAeiOHwBIEH0=",
 			"path": "gopkg.in/yaml.v2",
 			"revision": "a83829b6f1293c91addabc89d0571c246397bbf4",
