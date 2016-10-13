@@ -231,8 +231,8 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}
 
 		c.mu.Lock()
+		defer c.mu.Unlock()
 		if c.init != nil {
-			c.mu.Unlock()
 			// This would only happen if the client is misbehaving (if
 			// it sends 2 "initialize" requests).
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidRequest, Message: fmt.Sprintf("client proxy handler is already initialized")}
@@ -240,8 +240,6 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.init = &params
 		c.context.rootPath = *rootPathURI
 		c.context.mode = c.init.Mode
-		c.mu.Unlock()
-
 		return lsp.ServerCapabilities{
 			ReferencesProvider: true,
 			DefinitionProvider: true,

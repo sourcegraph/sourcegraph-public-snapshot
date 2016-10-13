@@ -352,7 +352,7 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		for cc := range c.proxy.clients {
 			// TODO(sqs): equality match omits pathPrefix
 			if cc.context == c.id.contextID {
-				// Ignore errors for forwarding diagnostics
+				// Ignore errors for forwarding diagnostics.
 				go cc.handleFromServer(ctx, cc.conn, req)
 			}
 		}
