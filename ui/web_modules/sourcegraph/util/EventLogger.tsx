@@ -252,7 +252,7 @@ class EventLoggerClass {
 
 		this._logToConsole(eventAction, Object.assign(this._decorateEventProperties(eventProperties),  {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
 
-		if (global && global.window) {
+		if (global && global.window && global.window.ga) {
 			global.window.ga("send", {
 				hitType: "event",
 				eventCategory: eventCategory || "",
