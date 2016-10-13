@@ -96,10 +96,8 @@ func (p *Proxy) Serve(ctx context.Context, lis net.Listener) error {
 // TODO(sqs): consider returning from Serve or printing a log message
 // if this Close is called but there are still active listeners.
 func (p *Proxy) Close(ctx context.Context) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	par := parallel.NewRun(runtime.GOMAXPROCS(0))
+	p.mu.Lock()
 	for c := range p.clients {
 		par.Acquire()
 		go func(c *clientProxyConn) {
@@ -128,6 +126,10 @@ func (p *Proxy) Close(ctx context.Context) error {
 	// causing a panic).
 	p.clients = nil
 	p.servers = nil
+
+	// Only hold lock during fast loop iter; no need to wait for the
+	// shutdowns/disconnects to complete.
+	p.mu.Unlock()
 
 	return par.Wait()
 }
