@@ -562,10 +562,10 @@
 			"revisionTime": "2016-01-23T01:39:49Z"
 		},
 		{
-			"checksumSHA1": "y8AcXmhN61soEsJyqP+rT/DoL3E=",
+			"checksumSHA1": "s7NmPab6GppycZnlWfXqtyILmgY=",
 			"path": "github.com/sourcegraph/ctxvfs",
-			"revision": "9152556ed8f26bfb7ec50b90195c1cb3acf499f4",
-			"revisionTime": "2016-10-12T04:56:41Z"
+			"revision": "8e2bd62a565a647defd704af3d81fce05c5f190c",
+			"revisionTime": "2016-10-13T09:33:44Z"
 		},
 		{
 			"checksumSHA1": "bOxJoQEBxI70CzZgvfHEMftHtmE=",

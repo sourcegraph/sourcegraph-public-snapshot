@@ -24,26 +24,30 @@ type syncFS struct {
 
 func (fs *syncFS) Open(ctx context.Context, name string) (ReadSeekCloser, error) {
 	fs.mu.Lock()
-	defer fs.mu.Unlock()
-	return fs.fs.Open(ctx, name)
+	f, err := fs.fs.Open(ctx, name)
+	fs.mu.Unlock()
+	return f, err
 }
 
 func (fs *syncFS) Lstat(ctx context.Context, path string) (os.FileInfo, error) {
 	fs.mu.Lock()
-	defer fs.mu.Unlock()
-	return fs.fs.Lstat(ctx, path)
+	fi, err := fs.fs.Lstat(ctx, path)
+	fs.mu.Unlock()
+	return fi, err
 }
 
 func (fs *syncFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
 	fs.mu.Lock()
-	defer fs.mu.Unlock()
-	return fs.fs.Stat(ctx, path)
+	fi, err := fs.fs.Stat(ctx, path)
+	fs.mu.Unlock()
+	return fi, err
 }
 
 func (fs *syncFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, error) {
 	fs.mu.Lock()
-	defer fs.mu.Unlock()
-	return fs.fs.ReadDir(ctx, path)
+	fi, err := fs.fs.ReadDir(ctx, path)
+	fs.mu.Unlock()
+	return fi, err
 }
 
 func (fs *syncFS) String() string {
