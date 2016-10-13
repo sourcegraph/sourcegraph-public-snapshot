@@ -253,4 +253,8 @@ pre {
 	color: var(--green-3);
 }
 
+.wrap {
+	word-wrap: break-word;
+}
+
 {{end}}

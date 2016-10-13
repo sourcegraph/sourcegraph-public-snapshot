@@ -17,11 +17,11 @@
 	<div class="mb3">
 		<a href="{{.ViewDefURL}}" class="btn btn-blue right mt2">View definition</a>
 		<h1 class="mb0">
-			<span class="code">{{.DefName}}</span>
+			<span class="code wrap">{{.DefName}}</span>
 		</h1>
 
 		<p>
-			Defined in <a href="{{.DefFileURL}}">{{.DefFileName}}</a>
+			Defined in <a class="wrap" href="{{.DefFileURL}}">{{.DefFileName}}</a>
 		</p>
 	</div>
 
@@ -56,7 +56,7 @@
 			</a>
 			<ul>
 				{{range $file := $repo.Files}}
-				<li>{{$file.Count}} {{numberedNoun $file.Count "reference"}} in <a href="{{urlToBlob $repo.Repo $file.Path}}">{{$file.Path}}</a></li>
+				<li>{{$file.Count}} {{numberedNoun $file.Count "reference"}} in <a class="wrap" href="{{urlToBlob $repo.Repo $file.Path}}">{{$file.Path}}</a></li>
 				{{end}}
 			</ul>
 		{{end}}
