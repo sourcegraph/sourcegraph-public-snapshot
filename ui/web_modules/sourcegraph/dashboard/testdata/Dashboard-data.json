@@ -202,7 +202,7 @@
 																						{
 																							"type": "Constructor",
 																							"props": {
-																								"to": "https://sourcegraph.com/github.com/golang/go/-/blob/src/net/http/request.go",
+																								"to": "github.com/golang/go/-/blob/src/net/http/request.go",
 																								"children": [
 																									"golang / go"
 																								],
