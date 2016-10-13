@@ -142,6 +142,10 @@ type ClientProxyInitializeParams struct {
 	Mode string `json:"mode"`
 }
 
+// LogTrackedErrors, if true, causes errors to be logged if they are
+// related to language analysis.
+var LogTrackedErrors = true
+
 // handleFromClient receives requests from the client, modifies them,
 // sends them to the appropriate lang/build server(s), modifies the
 // responses, and returns them to the client.
@@ -263,7 +267,9 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 				"Params":   req.Params,
 				"Error":    err.Error(),
 			})
-			log.Printf("tracked error: %s", string(msg))
+			if LogTrackedErrors {
+				log.Printf("tracked error: %s", string(msg))
+			}
 			return nil, err
 		}
 		return respObj, nil
