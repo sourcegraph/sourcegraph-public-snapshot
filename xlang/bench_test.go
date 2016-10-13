@@ -26,6 +26,10 @@ import (
 // When no files are present and the build server accesses files over a VFS residing on the LSP proxy:
 //
 //   BenchmarkIntegration/github.com-gorilla-mux-8	2	 722473764 ns/op	309509740 B/op	 3114545 allocs/op
+//
+// As of ed4362e65f1f7ffa643d5af8faf63ceaaef979b0:
+//
+//   BenchmarkIntegration/github.com-golang-go-definition-12  1  4332188655 ns/op  689994240 B/op  2166801 allocs/op
 func BenchmarkIntegration(b *testing.B) {
 	if testing.Short() {
 		b.Skip("skip long integration test")
@@ -74,7 +78,20 @@ func BenchmarkIntegration(b *testing.B) {
 			},
 		},
 		"git://github.com/golang/go?go1.7.1": {
-			mode:         "go",
+			mode: "go",
+			definitionParams: &lsp.TextDocumentPositionParams{
+				TextDocument: lsp.TextDocumentIdentifier{URI: "src/fmt/print.go"},
+				Position:     lsp.Position{Line: 189, Character: 12}, // "Fprintf" call
+			},
+			wantDefinitions: locations{
+				{
+					URI: "git://github.com/golang/go?go1.7.1#src/fmt/print.go",
+					Range: lsp.Range{
+						Start: lsp.Position{Line: 178, Character: 5},
+						End:   lsp.Position{Line: 178, Character: 12},
+					},
+				},
+			},
 			symbolParams: &lsp.WorkspaceSymbolParams{Query: "NewUnstartedServer"},
 			wantSymbols: []lsp.SymbolInformation{
 				{
