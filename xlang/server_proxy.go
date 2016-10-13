@@ -52,8 +52,6 @@ type serverProxyConn struct {
 	mu     sync.Mutex
 	rootFS ctxvfs.FileSystem // the workspace's file system
 	last   time.Time         // max(last request sent, last response received), used to disconnect from unused servers
-
-	shutdown chan struct{} // a channel that is closed when the server is shut down by us
 }
 
 var (
@@ -182,9 +180,8 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		}
 
 		c = &serverProxyConn{
-			proxy:    p,
-			last:     time.Now(),
-			shutdown: make(chan struct{}),
+			proxy: p,
+			last:  time.Now(),
 		}
 		c.conn = jsonrpc2.NewConn(ctx, rwc, jsonrpc2.HandlerWithError(c.handle), connOpt...)
 		c.id = id
@@ -220,7 +217,6 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		go func() {
 			select {
 			case <-c.conn.DisconnectNotify():
-			case <-c.shutdown:
 			}
 			p.removeServerConn(c)
 		}()
@@ -406,6 +402,5 @@ func (c *serverProxyConn) shutdownAndExit(ctx context.Context) error {
 		}
 	}
 
-	close(c.shutdown)
 	return errs.error()
 }
