@@ -121,5 +121,13 @@ func (p *Proxy) Close(ctx context.Context) error {
 			}
 		}(s)
 	}
+
+	// Set to nil so that calls to DisconnectIdleClients and
+	// ShutDownIdleServers that are blocked on p.mu (which we hold) do
+	// not attempt to double-close any client/server conns (thereby
+	// causing a panic).
+	p.clients = nil
+	p.servers = nil
+
 	return par.Wait()
 }

@@ -362,7 +362,14 @@ func (c *serverProxyConn) updateLastTime() {
 	c.mu.Unlock()
 }
 
+// shutdownAndExit sends LSP "shutdown" and "exit" to the LSP server,
+// closes this connection, and removes it from the proxy's server
+// connection list. The caller must hold c.proxy.mu.
 func (c *serverProxyConn) shutdownAndExit(ctx context.Context) error {
+	// Remove from the server's connection list so we don't ever call
+	// shutdownAndExit twice on c.
+	delete(c.proxy.servers, c)
+
 	var errs errorList
 	done := make(chan struct{})
 	go func() {
