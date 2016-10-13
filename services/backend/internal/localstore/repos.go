@@ -166,8 +166,8 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 	}
 	// Check permissions against GitHub. The reason this does not call `VerifyUserHasReadAccess` is because
 	// VerifyUserHasReadAccess --calls-> getRepo --calls-> repos.Get
-	if err := accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.ID, repo.URI); err != nil {
-		return nil, err
+	if !accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.ID, repo.URI) {
+		return nil, accesscontrol.ErrRepoNotFound
 	}
 	return repo, nil
 }
@@ -186,8 +186,8 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	}
 	// Check permissions against GitHub. The reason this does not call `VerifyUserHasReadAccess` is because
 	// VerifyUserHasReadAccess --calls-> getRepo --calls-> repos.GetByURI
-	if err := accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.ID, repo.URI); err != nil {
-		return nil, err
+	if !accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.ID, repo.URI) {
+		return nil, accesscontrol.ErrRepoNotFound
 	}
 	return repo, nil
 }
@@ -216,7 +216,7 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.Repo, error) {
 	var repo dbRepo
 	if err := appDBH(ctx).SelectOne(&repo, "SELECT * FROM repo WHERE ("+query+") LIMIT 1", args...); err == sql.ErrNoRows {
-		return nil, legacyerr.Errorf(legacyerr.NotFound, "repo not found") // can't nicely serialize args
+		return nil, accesscontrol.ErrRepoNotFound
 	} else if err != nil {
 		return nil, err
 	}

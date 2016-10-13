@@ -14,6 +14,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
+// ErrRepoNotFound indicates that the repo does not exist or that the user has no access to that
+// repo. Those two cases are not differentiated to avoid leaking repo existence information.
+var ErrRepoNotFound = legacyerr.Errorf(legacyerr.NotFound, "repo not found")
+
 var Repos interface {
 	// Get a repository.
 	Get(ctx context.Context, repo int32) (*sourcegraph.Repo, error)
@@ -82,41 +86,33 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 // GitHub repository whose access permissions should be delegated to
 // GitHub.
 //
-// NOTE: Only (*localstore.repos).Get method should call this
+// NOTE: Only (*localstore.repos).Get/GetByURI method should call this
 // func. All other callers should use
 // Verify{User,Actor}Has{Read,Write}Access funcs. This func is
 // specially designed to avoid infinite loops with
-// (*localstore.repos).Get.
+// (*localstore.repos).Get/GetByURI.
 //
 // TODO: move to a security model that is more robust, readable, has
 // better separation when dealing with multiple configurations, actor
 // types, resource types and actions.
-func VerifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, method string, repo int32, repoURI string) error {
+func VerifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, method string, repo int32, repoURI string) bool {
 	if skip(ctx) {
-		return nil
+		return true
 	}
 
 	if repo == 0 || repoURI == "" {
 		panic("both repo and repoURI must be set")
 	}
 
-	if strings.HasPrefix(strings.ToLower(repoURI), "github.com/") {
-		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
-			_, err := github.ReposFromContext(ctx).Get(ctx, repoURI)
-			if _, ok := err.(*gogithub.RateLimitError); ok {
-				return legacyerr.Errorf(legacyerr.ResourceExhausted, "GitHub API rate limit exceeded, try again later")
-			} else if _, ok := err.(*gogithub.AbuseRateLimitError); ok {
-				return legacyerr.Errorf(legacyerr.ResourceExhausted, "GitHub API rate limit exceeded, try again later")
-			} else if err != nil {
-				// TODO: We don't support git clients anymore, get rid of this.
-				// We don't know if the error is unauthenticated or unauthorized, so return unauthenticated
-				// so that git clients will try again, providing authentication information.
-				// If we return legacyerr.PermissionDenied here, then git clients won't even try to supply authentication info.
-				return legacyerr.Errorf(legacyerr.Unauthenticated, "operation (%s) denied: not authenticated/authorized by GitHub API (repo %q)", method, repoURI)
-			}
-		}
+	if VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
+		return true
 	}
-	return nil
+
+	if _, err := github.ReposFromContext(ctx).Get(ctx, repoURI); err == nil {
+		return true
+	}
+
+	return false
 }
 
 func getRepo(ctx context.Context, repoIDOrURI interface{}) (repoID int32, repoURI string, err error) {
@@ -158,8 +154,8 @@ func VerifyActorHasReadAccess(ctx context.Context, actor *auth.Actor, method str
 		if err != nil {
 			return err
 		}
-		if err := VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI); err != nil {
-			return err
+		if !VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI) {
+			return ErrRepoNotFound
 		}
 	}
 	return nil
@@ -297,8 +293,8 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor *auth.Actor, method st
 	}
 
 	if repoID != 0 && repoURI != "" {
-		if err := VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI); err != nil {
-			return err
+		if !VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI) {
+			return ErrRepoNotFound
 		}
 	}
 
