@@ -25,6 +25,9 @@ import (
 // "textDocument/hover", and "textDocument/references" on many
 // character positions in many files (that match a specified glob) in
 // the workspace.
+//
+// See the doc comment on BenchmarkIntegration for how to compare
+// pre/post benchmark measurements.
 func BenchmarkStress(b *testing.B) {
 	if testing.Short() {
 		b.Skip("skip long integration test")
