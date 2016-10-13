@@ -32,25 +32,32 @@ def test_onboarding(d):
     wd = d.d
     username = os.getenv("NEW_USER_GITHUB")
     password = os.getenv("NEW_USER_GITHUB_PASSWORD", "")
+
+    # Delete user from Auth0 if currently exists
     if username is None:
         logf("[%s] skipping test_onboarding because $NEW_USER_GITHUB not set" % yellow("WARN"))
         return
     d.delete_user_if_exists(username)
 
+    # Go to home, click "Sign up"
     wd.get(d.sg_url("/"))
     retry(lambda: wd.find_element_by_link_text("Sign up").click())
     retry(lambda: d.find_button_by_partial_text("Continue with GitHub").click())
 
+    # Type in GitHub login creds
     wd.find_element_by_id("login_field").send_keys(username)
     wd.find_element_by_id("password").send_keys(password)
     d.active_elem().send_keys(Keys.ENTER)
 
+    # Re-authorize application in case GitHub thinks we're a bot (heh heh)
     if len(d.find_buttons_by_partial_text("Authorize application")) > 0:
         d.find_button_by_partial_text("Authorize application").click()
 
+    # Skip the Chrome extension install
     retry(lambda: wd.find_element_by_link_text("Skip").click())
     wait_for(lambda: d.find_elements_by_tag_name_and_partial_text("div", "Find a repository"))
 
+    # Log out
     Util.log_out(d)
 
 def test_login_logout(d):
