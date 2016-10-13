@@ -18,10 +18,6 @@ type HandlerShared struct {
 	overlayFSMu      sync.Mutex        // guards overlayFS map
 	overlayFS        map[string][]byte // files to overlay
 	OverlayMountPath string            // mount point of overlay on fs (usually /src/github.com/foo/bar)
-
-	// AugmentFileSystem, if set, is called on the prepared file
-	// system before use.
-	AugmentFileSystem func(fs ctxvfs.FileSystem) ctxvfs.FileSystem
 }
 
 func (h *HandlerShared) Reset(overlayRootURI string, useOSFS bool) error {

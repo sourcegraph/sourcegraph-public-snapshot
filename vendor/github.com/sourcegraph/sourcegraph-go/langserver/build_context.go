@@ -31,9 +31,6 @@ func (h *LangHandler) defaultBuildContext() *build.Context {
 
 func (h *HandlerShared) OverlayBuildContext(ctx context.Context, orig *build.Context, useOSFileSystem bool) *build.Context {
 	fs := ctxvfs.FileSystem(h.FS)
-	if h.AugmentFileSystem != nil {
-		fs = h.AugmentFileSystem(fs)
-	}
 	fs = ctxvfs.Sync(&h.Mu, fs) // protect against race conditions when new binds are mounted
 	return fsBuildContext(ctx, orig, fs)
 }
