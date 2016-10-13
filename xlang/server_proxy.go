@@ -66,18 +66,6 @@ var (
 		Name:      "open_lsp_server_connections",
 		Help:      "Open connections (initialized + uninitialized) to the LSP servers.",
 	})
-	serverConnsUninitedByIDGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "xlang",
-		Name:      "open_uninitialized_lsp_server_connections_by_id",
-		Help:      "Open, uninitialized (pre-LSP \"initialize\" response) connections to the LSP servers, by server ID.",
-	}, []string{"id"})
-	serverConnsInitedByIDGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "xlang",
-		Name:      "open_initialized_lsp_server_connections_by_id",
-		Help:      "Open, initialized connections to the LSP servers, by server ID.",
-	}, []string{"id"})
 	serverConnsCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "xlang",
@@ -88,8 +76,6 @@ var (
 
 func init() {
 	prometheus.MustRegister(serverConnsGauge)
-	prometheus.MustRegister(serverConnsUninitedByIDGauge)
-	prometheus.MustRegister(serverConnsInitedByIDGauge)
 	prometheus.MustRegister(serverConnsCounter)
 }
 
@@ -133,8 +119,6 @@ func (p *Proxy) removeServerConn(c *serverProxyConn) {
 	p.mu.Lock()
 	delete(p.servers, c)
 	serverConnsGauge.Set(float64(len(p.servers)))
-	serverConnsUninitedByIDGauge.DeleteLabelValues(c.id.String())
-	serverConnsInitedByIDGauge.DeleteLabelValues(c.id.String())
 	p.mu.Unlock()
 }
 
@@ -165,7 +149,6 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		}
 		p.servers[c] = struct{}{}
 		serverConnsGauge.Set(float64(len(p.servers)))
-		serverConnsUninitedByIDGauge.WithLabelValues(id.String()).Set(1)
 		serverConnsCounter.Inc()
 		p.mu.Unlock()
 	}
@@ -213,10 +196,6 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 			return
 		}
 		c.updateLastTime()
-
-		// Record that the server is now initialized.
-		serverConnsUninitedByIDGauge.DeleteLabelValues(c.id.String())
-		serverConnsInitedByIDGauge.WithLabelValues(c.id.String()).Set(1)
 
 		go func() {
 			select {
