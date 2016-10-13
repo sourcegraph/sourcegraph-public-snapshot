@@ -46,8 +46,6 @@ function run {
 
 	cmd="./.env/bin/python run.py \
 					  --selenium=http://localhost:$SEL_PORT \
-					  --browser=$BROWSER \
-					  --filter=$TEST \
 					  --url=$SOURCEGRAPH_URL \
 					  $OPT";
 	$cmd;

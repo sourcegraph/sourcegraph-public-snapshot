@@ -1,12 +1,20 @@
+import sys
 import time
 import math
 import traceback
+import urllib
+import subprocess
+import os
+import json
+
+from datetime import datetime
 
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException, ElementNotVisibleException, WebDriverException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.keys import Keys
 
 # E2EFatal should be raised on any error that should halt further test progress
 class E2EFatal(Exception):
@@ -18,11 +26,22 @@ class E2EError(Exception):
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
+# logf is a convenience logging function that wraps sys.stderr.write,
+# but prefixes each line with a timestamp.
+def logf(s, *args):
+    ts = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+    sf = s % args
+    sys.stderr.write("%s %s\n" % (ts, sf))
+
 # wait_for waits for condition to be true. If condition does not hold
 # immediately, it sleeps in increments of wait_incr until max_wait
 # seconds. Its behavior is similar to Selenium's WebDriverWait and it's
-# easier to use.
-def wait_for(condition, max_wait=2, wait_incr=0.1):
+# easier to use. This function should be called from e2etests, but NOT
+# by methods in the Driver class.
+def wait_for(condition, max_wait=2.0, wait_incr=0.1, text=""):
+    if len(text) > 0:
+        text = '"%s"' % text
+
     time_waited = 0.0
     while time_waited < max_wait:
         try:
@@ -35,12 +54,15 @@ def wait_for(condition, max_wait=2, wait_incr=0.1):
         time_waited += wait_incr
     try:
         if not condition():
-            raise E2EError("timed out waiting for condition")
+            raise E2EError("timed out waiting for condition %s" % text)
     except (StaleElementReferenceException, NoSuchElementException, ElementNotVisibleException):
-        raise E2EError("timed out waiting for condition")
+        raise E2EError("timed out waiting for condition %s" % text)
 
-# retry calls fn a maximum of $attempts times, waiting $cooldown seconds in between invocations.
-# It returns the return value of the first invocation of fn that does not raise an exception.
+# retry calls fn a maximum of $attempts times, waiting $cooldown
+# seconds in between invocations. It returns the return value of the
+# first invocation of fn that does not raise an exception. This
+# function should be called from e2etests, but NOT by methods in the
+# Driver class.
 def retry(fn, attempts=3, cooldown=0):
     for i in xrange(0, attempts):
         try:
@@ -58,9 +80,11 @@ def distance(e, f):
 
 # Driver is driver that tests should use to interact with the browser.
 # It provides convenience methods on top of the Selenium web driver.
-# Clients should prefer to use the convenience methods whenever
-# possible, but it is also acceptable to reference the underlying
-# Selenium web driver directly.
+#
+# Methods in this class should specify "atomic" actions and therefore
+# avoid calling wait_for and retry. If you find yourself using either
+# wait_for or retry in a Driver method, STOP and move the logic into a
+# method in the Util class.
 class Driver(object):
     def __init__(self, wd, sourcegraph_url):
         self.d = wd  # d is the Selenium WebDriver that Driver uses to interact with the browser
@@ -127,6 +151,57 @@ class Driver(object):
     def find_search_modal_selected_result(self):
         return self.d.find_element_by_css_selector("[data-class-name~=modal-result-selected]")
 
-    def find_search_modal_results(self, results_text):
+    def find_search_modal_results(self, results_text, exact_match=False):
         results = self.d.find_elements_by_css_selector("[data-class-name~=modal-result]")
+        if exact_match:
+            return [r for r in results if results_text == r.text]
         return [r for r in results if results_text in r.text]
+
+    def find_button_by_partial_text(self, text):
+        btns = self.find_buttons_by_partial_text(text)
+        if len(btns) == 0:
+            raise E2EError('expected, but didn\'t find button with text "%s"' % text)
+        return btns[0]
+
+    def find_buttons_by_partial_text(self, text):
+        return [e for e in self.d.find_elements_by_tag_name("button") if text in e.text]
+
+    def find_elements_by_tag_name_and_partial_text(self, tag_name, text):
+        return [e for e in self.d.find_elements_by_tag_name(tag_name) if text in e.text]
+
+    def delete_user_if_exists(self, username):
+        auth0_tok = os.getenv("AUTH0_TOKEN")
+        query = urllib.quote('nickname:"%s"' % username)
+        auth0_users_out = subprocess.check_output('curl -H "Authorization: Bearer %s" https://sourcegraph.auth0.com/api/v2/users?q=%s' % (auth0_tok, query), shell=True)
+        auth0_users = json.loads(auth0_users_out)
+        if isinstance(auth0_users, list) and len(auth0_users) == 0:
+            return
+        if not isinstance(auth0_users, list):
+            raise Exception("expected Auth0 result to be a list, but was %s", str(auth0_users))
+        if not (isinstance(auth0_users[0], dict) and 'user_id' in auth0_users[0]):
+            raise Exception("expected Auth0 result to contain user_id but did not, result was %s", str(auth0_users[0]))
+        if len(auth0_users) > 1:
+            raise Exception("expected at most 1 Auth0 user with username %s but found %d" % (username, len(auth0_users)))
+        auth0_user_id = auth0_users[0]['user_id']
+        subprocess.check_output('curl -H "Authorization: Bearer %s" -X DELETE  https://sourcegraph.auth0.com/api/v2/users/%s' % (auth0_tok, urllib.quote(auth0_user_id)), shell=True)
+
+# Util contains static methods that define more compound actions
+# than what are available in Driver methods.
+class Util(object):
+
+    @staticmethod
+    def log_in(d, username, password):
+        wd = d.d
+        wd.find_element_by_link_text("Log in").click()
+        d.find_button_by_partial_text("Continue with GitHub").click()
+        wd.find_element_by_id("login_field").send_keys(username)
+        wd.find_element_by_id("password").send_keys(password)
+        d.active_elem().send_keys(Keys.ENTER)
+        if len(d.find_buttons_by_partial_text("Authorize application")) > 0:
+            d.find_button_by_partial_text("Authorize application").click()
+
+    @staticmethod
+    def log_out(d):
+        wd = d.d
+        wd.find_element_by_id("global-nav").find_element_by_css_selector('[class*="popover"]').click()
+        wd.find_element_by_partial_link_text("Sign out").click()

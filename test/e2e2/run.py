@@ -2,6 +2,9 @@ import os
 import sys
 import argparse
 import traceback
+import atexit
+import random
+
 from urlparse import urlparse
 from colors import green, red, bold
 from slackclient import SlackClient
@@ -11,11 +14,29 @@ from e2etests import *
 
 user_agent = "Sourcegraph e2etest-bot"
 
+emoji = [
+    "dog",
+    "cat",
+    "mouse",
+    "hamster",
+    "rabbit",
+    "bear",
+    "koala",
+    "tiger",
+    "panda_face",
+    "lion_face",
+    "cow",
+    "pig",
+    "frog",
+    "octopus",
+    "monkey_face",
+]
+
 failure_msg_template = """:rotating_light: *TEST FAILED* :rotating_light:
 *Test name*: `%s`
 *Browser*: %s
 *URL*: %s
-*Repro*: `cd test/e2e2 && make TV=1 OPT="--pause-on-err" BROWSERS=%s TEST=%s SOURCEGRAPH_URL=%s`
+*Repro*: In directory `$sourcegraph-root/test/e2e2`, run `make test OPT="--pause-on-err --filter=%s" BROWSER=%s SOURCEGRAPH_URL=%s`
 *Error*:
 ```
 %s
@@ -29,63 +50,87 @@ def failure_msg(test_name, browser, url, stack_trace):
     if u.port:
         sgurl += ":%d" % u.port
     return failure_msg_template % (
-        test_name, browser, url,
-        browser.lower(), test_name, sgurl,
+        test_name, browser.capitalize(), url,
+        test_name, browser, sgurl,
         stack_trace,
     )
 
-def run_tests(args, tests):
-    failed_tests = []
-
+def slack_and_opsgenie(args):
     slack_cli, slack_ch, opsgenie_key = None, None, None
     if args.alert_on_err:
         slack_tok, slack_ch, opsgenie_key = os.getenv("SLACK_API_TOKEN"), os.getenv("SLACK_WARNING_CHANNEL"), os.getenv("OPSGENIE_KEY")
         if not slack_ch or not slack_tok or not opsgenie_key:
-            print "if --alert-on-err is specified, environment variables SLACK_API_TOKEN, SLACK_WARNING_CHANNEL, and OPSGENIE_KEY should be set"
+            logf("If --alert-on-err is specified, environment variables SLACK_API_TOKEN, SLACK_WARNING_CHANNEL, and OPSGENIE_KEY should be set. Exiting.")
             sys.exit(1)
         slack_cli = SlackClient(slack_tok)
+    return slack_cli, slack_ch, opsgenie_key
+
+def random_animal_emoji():
+    return random.choice([
+
+    ])
+
+def run_tests(args, tests):
+    failed_tests = []
+    slack_cli, slack_ch, opsgenie_key = slack_and_opsgenie(args)
 
     def success(test_name):
-        print '[%s](%s) %s' % (green("PASS"), args.browser, test_name)
+        logf('[%s](%s) %s' % (green("PASS"), args.browser, test_name))
 
     def fail(test_name, exception, driver):
-        print '[%s](%s) %s' % (red("FAIL"), args.browser, test_name)
+        logf('[%s](%s) %s' % (red("FAIL"), args.browser, test_name))
         traceback.print_exc(30)
         if args.alert_on_err:
-            msg = failure_msg(test_name, args.browser.capitalize(), driver.d.current_url, traceback.format_exc(30))
+            msg = failure_msg(test_name, args.browser, driver.d.current_url, traceback.format_exc(30))
             screenshot = driver.d.get_screenshot_as_png()
             slack_cli.api_call("files.upload", channels=slack_ch, initial_comment=msg, file=screenshot, filename="screenshot.png")
         if args.pause_on_err:
-            print "PAUSED on error. Hit ENTER to continue"
-            raw_input()
+            print("""
+#################################################################################################
+PAUSED on error. You are now in the Python debugger (https://docs.python.org/2/library/pdb.html).
+You can do things like `driver.d.find_element_by_id("my-id").click()`.
+Type "continue" to continue.
+#################################################################################################
+""")
+            import pdb; pdb.set_trace()
 
-    print '\nTest plan:\n%s\n' % '\n'.join(['\t'+f.func_name for f in tests])
+    logf('')
+    logf('Starting test run with test plan:\n%s' % '\n'.join(['\t'+f.func_name for f in tests]))
 
     for test in tests:
         for i in xrange(0, args.tries_before_err):
-            print '[%s](%s) %s (attempt %d/%d)' % (bold("RUN "), args.browser, test.func_name, i + 1, args.tries_before_err)
+            logf('[%s](%s) %s (attempt %d/%d)' % (bold("RUN "), args.browser, test.func_name, i + 1, args.tries_before_err))
             try:
-                driver = None
+                driver, wd = None, None
                 if args.browser == "chrome":
                     opt = DesiredCapabilities.CHROME.copy()
                     opt['chromeOptions'] = { "args": ["--user-agent=%s" % user_agent] }
+                    wd = webdriver.Remote(
+                        command_executor=('%s/wd/hub' % args.selenium),
+                        desired_capabilities=opt,
+                    )
                 elif args.browser == "firefox":
+                    profile = webdriver.FirefoxProfile()
+                    profile.set_preference('general.useragent.override', user_agent)
                     opt = DesiredCapabilities.FIREFOX.copy()
-                    opt['general.useragent.override'] = user_agent
-
-                wd = webdriver.Remote(
-                    command_executor=('%s/wd/hub' % args.selenium),
-                    desired_capabilities=opt,
-                )
+                    wd = webdriver.Remote(
+                        command_executor=('%s/wd/hub' % args.selenium),
+                        desired_capabilities=opt,
+                        browser_profile=profile,
+                    )
                 if args.slow:
                     wd.implicitly_wait(0.5)
+                actual_user_agent = wd.execute_script("return navigator.userAgent")
+                if actual_user_agent != user_agent:
+                    raise Exception('user agent should be "%s", but was "%s"' % (user_agent, actual_user_agent))
 
                 driver = Driver(wd, args.url)
                 driver.d.maximize_window()
+                driver.d.delete_all_cookies()
                 test(driver)
                 success(test.func_name)
                 if args.interactive:
-                    print "ENTER to continue "
+                    print("ENTER to continue ")
                     raw_input()
                 break # on success, don't retry
             except (E2EError, E2EFatal, Exception) as e:
@@ -96,11 +141,10 @@ def run_tests(args, tests):
             finally:
                 if driver is not None:
                     driver.close()
-    print
     if len(failed_tests) > 0:
-        print '%s: %d / %d FAILED\n' % (red("FAILURE"), len(failed_tests), len(tests))
+        logf('Test run results: %s' % red("%d / %d FAILED" % (len(failed_tests), len(tests))))
     else:
-        print green('ALL SUCCESS\n')
+        logf('Test run results: %s' % green('ALL SUCCESS'))
     return failed_tests
 
 def main():
@@ -123,9 +167,18 @@ def main():
         sys.stderr.write("browser needs to be chrome or firefox, was %s\n" % args.browser)
         return
 
+    if args.alert_on_err:
+        slack_cli, slack_ch, _ = slack_and_opsgenie(args)
+        animal_emoji = random.choice(emoji)
+        animal_name = animal_emoji.replace('_face', '')
+        slack_cli.api_call("chat.postMessage", channel=slack_ch, text=":%s: Hi, I'm the end-to-end test %s for %s! I'll post end-to-end test errors to this channel." % (animal_emoji, animal_name, args.browser.capitalize()))
+        def die_msg():
+            slack_cli.api_call("chat.postMessage", channel=slack_ch, text=":skull: The end-to-end test %s :%s: for %s has died." % (animal_name, animal_emoji, args.browser.capitalize()))
+        atexit.register(die_msg)
+
     tests = [t for t in all_tests if args.filter in t.func_name]
     if args.loop:
-        print "Looping forever..."
+        logf("Looping forever...")
         while True:
             run_tests(args, tests)
     else:
@@ -134,4 +187,5 @@ def main():
             sys.exit(1)
 
 if __name__ == '__main__':
+    random.seed()
     main()
