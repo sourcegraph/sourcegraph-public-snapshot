@@ -61,8 +61,14 @@ var (
 		Namespace: "src",
 		Subsystem: "xlang",
 		Name:      "open_lsp_server_connections",
-		Help:      "Number of open connections to the LSP servers.",
+		Help:      "Open connections to the LSP servers.",
 	})
+	serverConnsByIDGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "xlang",
+		Name:      "open_lsp_server_connections_by_id",
+		Help:      "Open connections to the LSP servers, by server ID.",
+	}, []string{"id"})
 	serverConnsCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "xlang",
@@ -73,6 +79,7 @@ var (
 
 func init() {
 	prometheus.MustRegister(serverConnsGauge)
+	prometheus.MustRegister(serverConnsByIDGauge)
 	prometheus.MustRegister(serverConnsCounter)
 }
 
@@ -194,6 +201,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		p.mu.Lock()
 		p.servers[c] = struct{}{}
 		serverConnsGauge.Set(float64(len(p.servers)))
+		serverConnsByIDGauge.WithLabelValues(id.String()).Set(1)
 		serverConnsCounter.Inc()
 		p.mu.Unlock()
 		go func() {
@@ -205,6 +213,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 			delete(p.servers, c)
 			delete(p.serverNewConnMus, c.id)
 			serverConnsGauge.Set(float64(len(p.servers)))
+			serverConnsByIDGauge.DeleteLabelValues(c.id.String())
 			p.mu.Unlock()
 		}()
 	}
