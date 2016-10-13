@@ -14,7 +14,7 @@ import (
 // package sys" when any packages import from the Go stdlib.
 func addSysZversionFile(fs ctxvfs.FileSystem) ctxvfs.FileSystem {
 	return ctxvfs.SingleFileOverlay(fs,
-		"/goroot/src/runtime/internal/sys/zversion.go",
+		"/src/runtime/internal/sys/zversion.go",
 		[]byte(fmt.Sprintf(`
 package sys
 
