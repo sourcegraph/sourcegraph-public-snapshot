@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os/exec"
 	"runtime"
 	"strings"
 	"sync"
@@ -88,11 +87,6 @@ func (h *LangHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *json
 // type for testability. The handle method implements jsonrpc2.Handler
 // exactly.
 func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request) (result interface{}, err error) {
-	exec.Command("sh", "-c", "echo '"+req.Method+":"+string(*req.Params)+"' >> /tmp/mylog").Run()
-	defer func() {
-		exec.Command("sh", "-c", "echo RESP '"+fmt.Sprint(result)+"' >> /tmp/mylog").Run()
-	}()
-
 	// Prevent any uncaught panics from taking the entire server down.
 	defer func() {
 		if r := recover(); r != nil {
