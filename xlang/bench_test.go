@@ -30,6 +30,11 @@ import (
 // As of ed4362e65f1f7ffa643d5af8faf63ceaaef979b0:
 //
 //   BenchmarkIntegration/github.com-golang-go-definition-12  1  4332188655 ns/op  689994240 B/op  2166801 allocs/op
+//
+// To compare old vs. new benchmark results:
+//
+//   go get -u golang.org/x/tools/cmd/benchcmp
+//   go test sourcegraph.com/sourcegraph/sourcegraph/xlang -bench=Integration -benchmem -run='^$' | tee /tmp/BenchmarkIntegration.new.txt && benchcmp /tmp/BenchmarkIntegration.{old,new}.txt
 func BenchmarkIntegration(b *testing.B) {
 	if testing.Short() {
 		b.Skip("skip long integration test")
