@@ -34,7 +34,11 @@ import (
 //
 // To compare old vs. new benchmark results:
 //
+//   # Run this before making the changes that you want to benchmark:
 //   go get -u golang.org/x/tools/cmd/benchcmp
+//   go test sourcegraph.com/sourcegraph/sourcegraph/xlang -bench=Integration -benchmem -run='^$' > /tmp/BenchmarkIntegration.old.txt
+//
+//   # Run this after you've made the changes that you want to benchmark:
 //   go test sourcegraph.com/sourcegraph/sourcegraph/xlang -bench=Integration -benchmem -run='^$' | tee /tmp/BenchmarkIntegration.new.txt && benchcmp /tmp/BenchmarkIntegration.{old,new}.txt
 func BenchmarkIntegration(b *testing.B) {
 	if testing.Short() {
