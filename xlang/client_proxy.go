@@ -8,12 +8,10 @@ import (
 	"log"
 	"os"
 	"path"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
@@ -82,19 +80,20 @@ func (p *Proxy) removeClientConn(c *clientProxyConn) {
 // based on p.MaxClientIdle.
 func (p *Proxy) DisconnectIdleClients(maxIdle time.Duration) error {
 	cutoff := time.Now().Add(-1 * maxIdle)
-	par := parallel.NewRun(runtime.GOMAXPROCS(0))
+	errs := &errorList{}
+	var wg sync.WaitGroup
 	p.mu.Lock()
 	for c := range p.clients {
 		c.mu.Lock()
 		idle := c.last.Before(cutoff)
 		c.mu.Unlock()
 		if idle {
-			par.Acquire()
+			wg.Add(1)
 			go func(c *clientProxyConn) {
-				defer par.Release()
+				defer wg.Done()
 				p.removeClientConn(c)
 				if err := c.conn.Close(); err != nil {
-					par.Error(err)
+					errs.add(err)
 				}
 			}(c)
 		}
@@ -104,7 +103,8 @@ func (p *Proxy) DisconnectIdleClients(maxIdle time.Duration) error {
 	// long time if closing blocks).
 	p.mu.Unlock()
 
-	return par.Wait()
+	wg.Wait()
+	return errs.error()
 }
 
 // contextID identifies a client's session by the minimal information
