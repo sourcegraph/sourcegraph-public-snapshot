@@ -156,6 +156,7 @@ def test_find_external_refs(d):
         wait_for(lambda: len(d.find_tokens(test['symbol_name'])) > 0)
         def rc():
             retry(lambda: d.active_elem().send_keys(Keys.ESCAPE)) # hide any tooltip that might steal the click
+            retry(lambda: d.active_elem().send_keys(Keys.UP)) # cursor might steal the click if we don't move it out of the way
             retry(lambda: d.right_click(d.find_token(test['symbol_name'])))
             retry(lambda: d.find_context_menu_option("Find External References").click())
         retry(rc)
