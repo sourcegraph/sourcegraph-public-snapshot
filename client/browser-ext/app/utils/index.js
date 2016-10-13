@@ -1,5 +1,6 @@
 export const supportedExtensions = [
-	"go" // Golang
+	"go", // Golang
+	"ts", "tsx" // TypeScript
 ];
 
 export const upcomingExtensions = [
@@ -11,7 +12,6 @@ export const upcomingExtensions = [
 	"m", "mm", // Obj-C ("h" and "C" overlap with C/C++)
 	"rb", "rbw", // Ruby
 	"js", "jsx", // JavaScript
-	"ts", "tsx", // TypeScript
 	"rs", "rlib", // Rust
 	"sc", "scala", // Scala
 	"htm", "html", // HTML
