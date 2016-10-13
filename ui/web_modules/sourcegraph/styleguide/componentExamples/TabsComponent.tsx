@@ -17,7 +17,7 @@ export class TabsComponent extends React.Component<{}, State> {
 	render(): JSX.Element | null {
 		return (
 			<div className={base.mv4}>
-				<Heading level="3" className={base.mb2}>Tabs</Heading>
+				<Heading level={3} className={base.mb2}>Tabs</Heading>
 
 				<Tabs color="purple">
 					<TabItem

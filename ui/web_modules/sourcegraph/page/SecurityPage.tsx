@@ -12,7 +12,7 @@ export function SecurityPage(props: {}, {}) {
 			<Helmet title="Security" />
 			<Hero pattern="objects" color="dark" className={base.pv1}>
 				<div className={styles.container}>
-					<Heading level="3" color="white">Sourcegraph Security</Heading>
+					<Heading level={3} color="white">Sourcegraph Security</Heading>
 				</div>
 			</Hero>
 			<div className={styles.content}>
@@ -24,9 +24,9 @@ export function SecurityPage(props: {}, {}) {
 
 				<p className={styles.p}>The security policy below details the steps we take to keep your code safe. Contact us at <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a> with questions and feedback.</p>
 
-				<Heading level="3" underline="blue" className={styles.h5}>Security measures</Heading>
+				<Heading level={3} underline="blue" className={styles.h5}>Security measures</Heading>
 
-				<Heading level="4" className={styles.h}>Site security</Heading>
+				<Heading level={4} className={styles.h}>Site security</Heading>
 
 				<ul>
 					<li>All data from Sourcegraph.com is transmitted strictly over HTTPS.</li>
@@ -36,7 +36,7 @@ export function SecurityPage(props: {}, {}) {
 					<li>Monitoring services alert our support team 24x7 of potential attacks.</li>
 				</ul>
 
-				<Heading level="4" className={styles.h}>Infrastructure</Heading>
+				<Heading level={4} className={styles.h}>Infrastructure</Heading>
 
 				<ul>
 					<li>All production systems are hosted on Google Cloud Platform. See <a href="https://cloud.google.com/security/">the Google Cloud Platform security policy</a> for more information.</li>
@@ -46,13 +46,13 @@ export function SecurityPage(props: {}, {}) {
 					<li>Two-factor authentication is required on all Google Cloud Platform accounts that have access to production systems.</li>
 				</ul>
 
-				<Heading level="4" className={styles.h}>System security</Heading>
+				<Heading level={4} className={styles.h}>System security</Heading>
 
 				<ul>
 					<li>The latest reported security vulnerabilities are tracked and patches are applied as soon as possible.</li>
 				</ul>
 
-				<Heading level="4" className={styles.h}>Application security</Heading>
+				<Heading level={4} className={styles.h}>Application security</Heading>
 
 				<ul>
 					<li>All language analysis is static.</li>
@@ -67,7 +67,7 @@ export function SecurityPage(props: {}, {}) {
 					<li>We employ static analysis safeguards to detect if any code path can access private user data while bypassing the necessary permissions checks.</li>
 				</ul>
 
-				<Heading level="4" className={styles.h}>Employee access</Heading>
+				<Heading level={4} className={styles.h}>Employee access</Heading>
 
 				<p className={styles.p}>All access to critical internal systems (e.g., VMs, cloud storage, email) is protected by 2-factor authentication.</p>
 
@@ -75,13 +75,13 @@ export function SecurityPage(props: {}, {}) {
 
 				<p className={styles.p}>All employee computers and devices are password-protected with full-disk encryption.</p>
 
-				<Heading level="3" underline="blue" className={styles.h5}>Bug bounty program</Heading>
+				<Heading level={3} underline="blue" className={styles.h5}>Bug bounty program</Heading>
 
 				<p className={styles.p}>Our bug bounty program is similar to ones offered by Google, Facebook, Mozilla, and GitHub, and offers a way for security researchers and engineers to report vulnerabilities in a responsible fashion and receive cash compensation for their efforts.</p>
 
 				<p className={styles.p}>If you’ve found a vulnerability, email <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a> to report it. Please refer to the rules below for more information.</p>
 
-				<Heading level="4" className={styles.h}>Rules</Heading>
+				<Heading level={4} className={styles.h}>Rules</Heading>
 
 				<ul>
 					<li>Don’t publicly disclose a bug before it’s fixed.</li>
@@ -100,7 +100,7 @@ export function SecurityPage(props: {}, {}) {
 					<li>Will credit you on this page, if you’d like us to.</li>
 				</ul>
 
-				<Heading level="4" className={styles.h}>Open bounties</Heading>
+				<Heading level={4} className={styles.h}>Open bounties</Heading>
 
 				<p className={styles.p}>Rewards for open bounties range from $10 to $4,000 and are determined at our discretion based on a variety of factors, including but not limited to the percentage of users impacted, the likelihood of encountering the vulnerability under normal use of the site, and the severity of potential service disruption or data leakage.</p>
 
@@ -109,7 +109,7 @@ export function SecurityPage(props: {}, {}) {
 					<li>Sourcegraph API: The Sourcegraph API is used by other applications to programatically interact with Sourcegraph. The API is rooted at <code>https://sourcegraph.com/.api</code>.</li>
 				</ul>
 
-				<Heading level="4" className={styles.h}>Bounty hunters</Heading>
+				<Heading level={4} className={styles.h}>Bounty hunters</Heading>
 
 				<table>
 					<tbody>
@@ -124,7 +124,7 @@ export function SecurityPage(props: {}, {}) {
 					</tbody>
 				</table>
 
-				<Heading level="3" underline="blue" className={styles.h5}>Contact us</Heading>
+				<Heading level={3} underline="blue" className={styles.h5}>Contact us</Heading>
 
 				<p className={styles.p}>
 					Questions, concerns, or comments about our security policy? Contact us at <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a>.

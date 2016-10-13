@@ -27,7 +27,7 @@ export class SignupForm extends Component<Props, State> {
 
 		return (
 			<div className={styles.form}>
-				<Heading level="3" align="center" underline="orange">Welcome to Sourcegraph</Heading>
+				<Heading level={3} align="center" underline="orange">Welcome to Sourcegraph</Heading>
 				<GitHubAuthButton returnTo={redirLocation} tabIndex={1} key="1" block={true}>Continue with GitHub</GitHubAuthButton>
 				<p className={styles.mid_text}>
 					By continuing with GitHub, you agree to our <a href="/privacy" target="_blank">privacy policy</a> and <a href="/terms" target="_blank">terms</a>.

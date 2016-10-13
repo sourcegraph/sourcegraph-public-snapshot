@@ -17,8 +17,8 @@ export function PricingPage(props: {}) {
 			<Helmet title="Pricing" />
 			<Hero color="transparent" className={base.pv5 || ""}>
 				<div className={styles.container}>
-					<Heading level="1">Pricing</Heading>
-					<Heading level="4" className={styles.subtitle || ""}>Sourcegraph is free to use for public and private code.</Heading>
+					<Heading level={1}>Pricing</Heading>
+					<Heading level={4} className={styles.subtitle || ""}>Sourcegraph is free to use for public and private code.</Heading>
 				</div>
 			</Hero>
 			<div className={styles.content}>
@@ -26,7 +26,7 @@ export function PricingPage(props: {}) {
 					<div className={styles.plan}>
 						<div className={styles.plan_box}>
 							<Panel color="purple" hover={false} className={styles.plan_panel || ""}>
-								<Heading level="3" color="white" align="center">Free</Heading>
+								<Heading level={3} color="white" align="center">Free</Heading>
 								<p>for individuals and teams, for public and private code</p>
 							</Panel>
 							{!context.user && <Link to="/join"
@@ -36,7 +36,7 @@ export function PricingPage(props: {}) {
 							{context.user && <Button block={true} outline={true} color="purple" className={styles.plan_cta_noop || ""}><CheckIcon className={styles.icon} /> Your current plan</Button>}
 						</div>
 						<div className={styles.details}>
-							<Heading level="4" color="purple" underline="purple">
+							<Heading level={4} color="purple" underline="purple">
 								Free includes<br/>
 								<span className={styles.details_cumulative}>Features every dev loves:</span>
 							</Heading>
@@ -53,7 +53,7 @@ export function PricingPage(props: {}) {
 					<div className={styles.plan}>
 						<div className={styles.plan_box}>
 							<Panel color="blue" hover={false} className={styles.plan_panel || ""}>
-								<Heading level="3" color="white" align="center">Enterprise</Heading>
+								<Heading level={3} color="white" align="center">Enterprise</Heading>
 								<p>for large teams and <br/>enterprises</p>
 							</Panel>
 							<Link to="/contact"
@@ -62,7 +62,7 @@ export function PricingPage(props: {}) {
 							</Link>
 						</div>
 						<div className={styles.details}>
-							<Heading level="4" color="blue" underline="blue">
+							<Heading level={4} color="blue" underline="blue">
 								Enterprise includes<br/>
 								<span className={styles.details_cumulative}>Everything in Free, <br/>and:</span>
 							</Heading>

@@ -1,5 +1,5 @@
 import * as React from "react";
-import {Base, Panel} from "sourcegraph/components";
+import {Panel} from "sourcegraph/components";
 import {Alert} from "sourcegraph/components/symbols";
 import {whitespace} from "sourcegraph/components/utils/index";
 
@@ -13,13 +13,16 @@ export function UnsupportedLanguageAlert({ext}: Props): JSX.Element {
 		marginRight: whitespace[2],
 	};
 
-	return <Panel color="orange" style={{margin: whitespace[2]}}>
-		<Base px={3} py={1}>
-			<Alert width={14} style={iconSx} />
-			{ext
-				? <span>.{ext} files are</span>
-				: "This language is"
-			} not fully supported
-		</Base>
+	const sx = {
+		margin: whitespace[2],
+		padding: `${whitespace[2]} ${whitespace[3]}`,
+	};
+
+	return <Panel color="orange" style={sx}>
+		<Alert width={14} style={iconSx} />
+		{ext
+			? <span>.{ext} files are</span>
+			: "This language is"
+		} not supported
 	</Panel>;
 };

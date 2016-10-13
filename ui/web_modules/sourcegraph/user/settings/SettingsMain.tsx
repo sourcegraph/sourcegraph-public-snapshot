@@ -55,7 +55,12 @@ export class SettingsMain extends React.Component<Props, State>  {
 		return <div>
 			<GridRow style={{marginTop: whitespace[5], maxWidth: 1080, marginLeft: "auto", marginRight: "auto"}}>
 				<GridCol col={2} colSm={11} align="left">
-					<Heading level={7} ml={3} pl={1} mb={4} color="gray">Settings</Heading>
+					<Heading level={7} color="gray"
+						style={{
+							marginLeft: whitespace[3],
+							marginBottom: whitespace[4],
+							paddingLeft: whitespace[1],
+						}}>Settings</Heading>
 					<Tabs direction="vertical">
 						<TabItem active={this.state.activePanel === 0}>
 							<a onClick={this.setActivePanel.bind(this, 0)}>Repositories</a>

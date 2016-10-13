@@ -18,6 +18,7 @@ import {Base, Heading, Panel} from "sourcegraph/components";
 import {typography} from "sourcegraph/components/utils";
 import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
 import * as styles from "sourcegraph/tree/styles/Tree.css";
+import {whitespace} from "sourcegraph/components/utils/index";
 
 const EMPTY_PATH = [];
 
@@ -209,7 +210,12 @@ export class TreeList extends Container<Props, State> {
 
 		return <Panel style={sx}>
 			<Base p={3} mb={3}>
-				<Heading level={7} color="gray" my={3} ml={3}>Files</Heading>
+				<Heading level={7} color="gray"
+					style={{
+						marginTop: whitespace[3],
+						marginBottom: whitespace[3],
+						marginLeft: whitespace[3],
+					}}>Files</Heading>
 				{listItems}
 			</Base>
 		</Panel>;

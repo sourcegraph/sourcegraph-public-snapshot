@@ -1,24 +1,8 @@
 import * as React from "react";
-
-import {Base} from "sourcegraph/components/Base";
 import {colors, typography, whitespace} from "sourcegraph/components/utils/index";
 
 interface Props {
-	m?: number;
-	mt?: number;
-	mb?: number;
-	ml?: number;
-	mr?: number;
-	my?: number;
-	mx?: number;
-	p?: number;
-	pt?: number;
-	pb?: number;
-	pl?: number;
-	pr?: number;
-	py?: number;
-	px?: number;
-	children?: any;
+	children?: React.ReactNode[];
 	level?: number; //  1 is the largest
 	underline?: Color;
 	color: Color;
@@ -46,13 +30,15 @@ export const Heading = (props: Props): any => {
 	};
 
 	const sx = Object.assign({},
-		typography.size[props.level ? props.level : 3],
 		{
 			color: headingColors[props.color],
 			fontWeight: typography.weight[2],
+			marginBottom: whitespace[2],
+			marginTop: whitespace[2],
 			textTransform: props.level === 7 ? "uppercase" : "auto",
 			textAlign: props.align,
 		},
+		typography.size[props.level ? props.level : 3],
 		props.style,
 	);
 
@@ -65,23 +51,8 @@ export const Heading = (props: Props): any => {
 		marginTop: whitespace[3],
 	};
 
-	return <Base
-		m={props.m}
-		mt={props.mt}
-		mb={props.mb || props.mb === 0 ? props.mb : 2}
-		ml={props.ml}
-		mr={props.mr}
-		my={props.my}
-		mx={props.mx}
-		p={props.p}
-		pt={props.pt}
-		pb={props.pb}
-		pl={props.pl}
-		pr={props.pr}
-		py={props.py}
-		px={props.px}
-		style={sx}>
-		{props.children} <br />
+	return <div style={sx}>
+		{props.children} {props.underline && <br /> }
 		{props.underline && <hr style={underlineSx} />}
-	</Base>;
+	</div>;
 };

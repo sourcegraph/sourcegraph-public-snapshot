@@ -291,9 +291,9 @@ export class RevSwitcher extends Component<Props, State> {
 								onChange={this._onChangeQuery}/>
 						</div>
 						{this.state.rev && !currentItem && !this.state.query && this._item(this.state.rev, this.state.commitID)}
-						<Heading level={7} color="gray" mt={3}>Branches</Heading>
+						<Heading level={7} color="gray" style={{marginTop: whitespace[3]}}>Branches</Heading>
 						{branches}
-						<Heading level={7} color="gray" mt={3}>Tags</Heading>
+						<Heading level={7} color="gray" style={{marginTop: whitespace[3]}}>Tags</Heading>
 						{tags}
 					</Menu>
 				</div>

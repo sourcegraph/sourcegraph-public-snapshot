@@ -18,8 +18,11 @@
 								"props": {
 									"level": 7,
 									"color": "gray",
-									"my": 3,
-									"ml": 3,
+									"style": {
+										"marginTop": "1rem",
+										"marginBottom": "1rem",
+										"marginLeft": "1rem"
+									},
 									"children": [
 										"Files"
 									]

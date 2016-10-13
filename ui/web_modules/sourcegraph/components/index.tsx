@@ -37,3 +37,5 @@ export {GridCol} from "sourcegraph/components/GridCol";
 export {GridRow} from "sourcegraph/components/GridRow";
 export {User} from "sourcegraph/components/User";
 export {OrgLogo} from "sourcegraph/components/OrgLogo";
+export {CoachMark} from "sourcegraph/components/CoachMark";
+export {Annotation} from "sourcegraph/components/Annotation";

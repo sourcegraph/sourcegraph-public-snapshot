@@ -2,6 +2,7 @@ import * as classNames from "classnames";
 import * as React from "react";
 import {Code, Heading, Panel, Table, User} from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
+import {whitespace} from "sourcegraph/components/utils/index";
 
 interface State {
 	activeExample: number;
@@ -23,7 +24,7 @@ export class UserComponent extends React.Component<{}, State> {
 						<Heading level={7} color="gray">User (detailed)</Heading>
 						<User nickname="Trillian" email="tmcmillan@gmail.com" avatar="https://placekitten.com/200/300" />
 
-						<Heading level={7} mt={3} color="gray">User (simple)</Heading>
+						<Heading level={7} style={{marginTop: whitespace[3]}} color="gray">User (simple)</Heading>
 						<User nickname="Trillian" email="tmcmillan@gmail.com" avatar="https://placekitten.com/200/300" simple={true} />
 
 					</div>
@@ -35,7 +36,7 @@ export class UserComponent extends React.Component<{}, State> {
 <Heading level={7} color="gray">User (detailed)</Heading>
 <User nickname="Trillian" email="tmcmillan@gmail.com" avatar="https://placekitten.com/200/300" />
 
-<Heading level={7} mt={3} color="gray">User (simple)</Heading>
+<Heading level={7} style={{marginTop: whitespace[3]}} color="gray">User (simple)</Heading>
 <User nickname="Trillian" email="tmcmillan@gmail.com" avatar="https://placekitten.com/200/300" simple={true} />
 	`
 }

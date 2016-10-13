@@ -1,11 +1,10 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
 import {Link} from "react-router";
-import {Hero, Heading, FlexContainer, Tabs, TabItem, Affix} from "sourcegraph/components";
+import {Affix, FlexContainer, Heading, Hero, TabItem, Tabs} from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
-import * as styles from "sourcegraph/styleguide/styles/StyleguideContainer.css";
+import {whitespace} from "sourcegraph/components/utils/index";
 import {ComponentsContainer} from "sourcegraph/styleguide/ComponentsContainer";
+import * as styles from "sourcegraph/styleguide/styles/StyleguideContainer.css";
 
 export class StyleguideContainer extends React.Component<{}, any> {
 
@@ -13,7 +12,7 @@ export class StyleguideContainer extends React.Component<{}, any> {
 		return (
 			<div className={styles.bg_near_white}>
 				<Hero color="purple" pattern="objects">
-					<Heading level="2" color="white">The Graph Guide</Heading>
+					<Heading level={2} color="white">The Graph Guide</Heading>
 					<p style={{maxWidth: "560px"}} className={base.center}>
 						Welcome to the Graph Guide – a living guide to Sourcegraph's brand identity, voice, visual style, and approach to user experience and user interfaces.
 					</p>
@@ -25,7 +24,7 @@ export class StyleguideContainer extends React.Component<{}, any> {
 								<Link to={{pathname: "styleguide", search: "#principles"}}>Principles</Link>
 							</TabItem>
 
-							<Heading level="6" mt={4} ml={3}>Brand</Heading>
+							<Heading level={6} style={{marginLeft: whitespace[3]}}>Brand</Heading>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#brand-voice"}}>Voice</Link>
 							</TabItem>
@@ -35,13 +34,13 @@ export class StyleguideContainer extends React.Component<{}, any> {
 							{/* <TabItem>Colors</TabItem>
 							<TabItem>Typography</TabItem>}
 
-							{/*  <Heading level="6" mt={4} ml={3}>Utilities</Heading>
+							{/*  <Heading level={6} style={{marginLeft: whitespace[3]}}>Utilities</Heading>
 							<TabItem>Padding</TabItem>
 							<TabItem>Margin</TabItem>
 							<TabItem>Colors</TabItem>
 							<TabItem>Layout</TabItem>*/}
 
-							<Heading level="6" mt={4} ml={3}>Layout Components</Heading>
+							<Heading level={6} style={{marginLeft: whitespace[3]}}>Layout Components</Heading>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#layout-flexcontainer"}}>FlexContainer</Link>
 							</TabItem>
@@ -49,7 +48,7 @@ export class StyleguideContainer extends React.Component<{}, any> {
 								<Link to={{pathname: "styleguide", search: "#layout-affix"}}>Affix</Link>
 							</TabItem>
 
-							<Heading level="6" mt={4} ml={3}>UI Components</Heading>
+							<Heading level={6} style={{marginLeft: whitespace[3]}}>UI Components</Heading>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#components-buttons"}}>Buttons</Link>
 							</TabItem>

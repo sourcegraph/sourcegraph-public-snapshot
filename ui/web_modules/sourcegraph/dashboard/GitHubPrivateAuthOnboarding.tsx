@@ -9,6 +9,7 @@ import * as typography from "sourcegraph/components/styles/_typography.css";
 import Helmet from "react-helmet";
 import {Heading, Panel} from "sourcegraph/components";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
+import {whitespace} from "sourcegraph/components/utils/index";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
@@ -43,7 +44,7 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 				<Helmet title="Home" />
 				<div className={styles.onboarding_container}>
 					<Panel className={classNames(base.pb3, base.ph4, base.ba, base.br2, colors.b__cool_pale_gray)}>
-						<Heading pt={4} align="center" level={3}>
+						<Heading style={{paddingTop: whitespace[4]}} align="center" level={3}>
 							Browse your private code with Sourcegraph
 						</Heading>
 						<div className={styles.user_actions} style={{maxWidth: "380px"}}>

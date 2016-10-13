@@ -1,19 +1,18 @@
-// tslint:disable: typedef ordered-imports
-
+// tslint:disable: typedef
+import * as classNames from "classnames";
 import * as React from "react";
 import Helmet from "react-helmet";
-import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
+import {context} from "sourcegraph/app/context";
 import {Button, Heading, Panel} from "sourcegraph/components";
-import {colors as jsColors} from "sourcegraph/components/utils/colors";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import * as classNames from "classnames";
-import * as typography from "sourcegraph/components/styles/_typography.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
+import * as typography from "sourcegraph/components/styles/_typography.css";
 import {GitHubLogo} from "sourcegraph/components/symbols";
-import {EventLogger} from "sourcegraph/util/EventLogger";
+import {colors as jsColors, whitespace} from "sourcegraph/components/utils";
 import {EditorDemo} from "sourcegraph/dashboard/EditorDemo";
-import {context} from "sourcegraph/app/context";
+import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	location?: any;
@@ -35,7 +34,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 	_successHandler() {
 		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionInstalled", {page_name: "ChromeExtensionOnboarding"});
 		EventLogger.setUserProperty("installed_chrome_extension", "true");
-		// Syncs the our site analytics tracking with the chrome extension tracker. 
+		// Syncs the our site analytics tracking with the chrome extension tracker.
 		EventLogger.updateTrackerWithIdentificationProps();
 		this._continueOnboarding();
 	}
@@ -98,7 +97,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 				<Helmet title="Home" />
 				<div className={styles.onboarding_container}>
 					<Panel className={classNames(base.pb3, base.ph4, base.ba, base.br2, colors.b__cool_pale_gray)}>
-						<Heading pt={4} align="center" level={3}>
+						<Heading style={{paddingTop: whitespace[4]}} align="center" level={3}>
 							Browse code smarter on Sourcegraph
 						</Heading>
 						<div className={styles.user_actions} style={{ maxWidth: "360px" }}>
@@ -113,7 +112,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 							<img width={70} className={classNames(base.hidden_s)} src={`${context.assetsRoot}/img/sourcegraph-mark.svg`}></img>
 						</div>
 						<div className={classNames(styles.inline_actions, base.pt2, base.pl3)} style={{maxWidth: "340px"}}>
-							<Heading align="left" level="6">
+							<Heading align="left" level={6}>
 								Want code intelligence while browsing GitHub?
 							</Heading>
 								<p className={classNames(typography.tl, base.mt3, typography.f6)}>

@@ -10,6 +10,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as grid from "sourcegraph/components/styles/_grid.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
+import {whitespace} from "sourcegraph/components/utils/index";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Location} from "sourcegraph/Location";
@@ -37,7 +38,7 @@ export function Dashboard(props: Props): JSX.Element {
 						</FlexContainer>
 					</div>
 				}
-				<Heading pt={5} align="center" level={3}>
+				<Heading style={{paddingTop: whitespace[4]}} align="center" level={3}>
 					Start exploring code
 				</Heading>
 				<p className={classNames(typography.tc, base.mt3, base.mb4, typography.f6, colors.cool_gray_8)} >
@@ -51,7 +52,7 @@ export function Dashboard(props: Props): JSX.Element {
 					docker/docker, golang/go, or sourcegraph/thyme
 				</div>
 				<div className={classNames(styles.user_actions, base.pt5)}>
-					<Heading className={base.pb4} level="5">Explore public repositories</Heading>
+					<Heading style={{paddingBottom: whitespace[4]}} level={5}>Explore public repositories</Heading>
 					<div style={{maxWidth: "675px"}} className={classNames(typography.tl, base.center, styles.repos_left_padding)}>
 						<div className={classNames(colors.cool_gray_8, base.center)}>
 							<div className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>

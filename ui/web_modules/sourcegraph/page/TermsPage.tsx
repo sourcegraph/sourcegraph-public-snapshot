@@ -1,18 +1,16 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
-import {Hero, Heading} from "sourcegraph/components";
-import * as styles from "sourcegraph/page/Page.css";
-import * as base from "sourcegraph/components/styles/_base.css";
 import Helmet from "react-helmet";
+import {Heading, Hero} from "sourcegraph/components";
+import * as base from "sourcegraph/components/styles/_base.css";
+import * as styles from "sourcegraph/page/Page.css";
 
-export function TermsPage(props: {}, {}) {
+export function TermsPage(): JSX.Element {
 	return (
 		<div>
 			<Helmet title="Terms" />
 			<Hero pattern="objects" color="dark" className={base.pv1}>
 				<div className={styles.container}>
-					<Heading level="3" color="white">Sourcegraph Terms of Service</Heading>
+					<Heading level={3} color="white">Sourcegraph Terms of Service</Heading>
 				</div>
 			</Hero>
 			<div className={styles.content}>

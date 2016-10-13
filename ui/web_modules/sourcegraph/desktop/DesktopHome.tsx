@@ -15,7 +15,7 @@ import {context} from "sourcegraph/app/context";
 
 export const NotInBeta = () => (
 	<div className={classNames(layout.containerFixed, base.pv5, base.ph4)} style={{maxWidth: "600px"}}>
-	<Heading align="center" level="4" underline="blue">
+	<Heading align="center" level={4} underline="blue">
 		It looks like you're not in the desktop beta right now.
 	</Heading>
 	</div>
@@ -26,7 +26,7 @@ export class DesktopHome extends React.Component<{}, any> {
 	render(): JSX.Element | null {
 		return (
 			<div className={classNames(layout.containerFixed, base.pv5, base.ph4)} style={{maxWidth: "560px"}}>
-				<Heading align="center" level="4" underline="blue">
+				<Heading align="center" level={4} underline="blue">
 					See live examples, search code, and view inline
 					<br className={base.hidden_s} />&nbsp;documentation to write better code, faster
 				</Heading>
@@ -34,25 +34,25 @@ export class DesktopHome extends React.Component<{}, any> {
 				<img src={`${context.assetsRoot}/img/sg-desktop.gif`} width="356" title="Usage examples right in your editor" alt="Usage examples right in your editor" style={{maxWidth: "100%", display: "block", imageRendering: "pixelated"}} className={base.center}/>
 
 				<div className={base.mv4}>
-					<Heading level="5">Go definitions and usages as you code</Heading>
+					<Heading level={5}>Go definitions and usages as you code</Heading>
 					<p>
 						Install one of our <a href="/integrations">editor integrations,</a> and as you write Go code, this pane will update with contextually relevant information.
 					</p>
 				</div>
 				<div className={base.mv4}>
-					<Heading level="5">Semantic, global code search</Heading>
+					<Heading level={5}>Semantic, global code search</Heading>
 					<p>
 						Just hit <span className={styles.label_blue}>⌘ or CTRL </span> + <span className={styles.label_blue}>SHIFT</span> + <span className={styles.label_blue}>;</span> or click the search box at the top of this page to semantically search for functions and symbols.
 					</p>
 				</div>
 				<div className={base.mv4}>
-					<Heading level="5">Powerful search for your private code</Heading>
+					<Heading level={5}>Powerful search for your private code</Heading>
 					<p>
 						To enable semantic search and usage examples for your private code, <Link to="/settings">authorize Sourcegraph</Link> to access your private repositories.
 					</p>
 				</div>
 				<div className={classNames(base.mt5, typography.f7)}>
-					<Heading level="6">
+					<Heading level={6}>
 						<Cone width={16} className={classNames(colors.fill_orange, base.mr2)} style={{
 							verticalAlign: "baseline",
 							position: "relative",

@@ -1,22 +1,20 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
-import * as base from "sourcegraph/components/styles/_base.css";
 import {Heading} from "sourcegraph/components";
+import * as base from "sourcegraph/components/styles/_base.css";
 import {
-	HeadingsComponent,
+	AffixComponent,
 	ButtonsComponent,
-	TabsComponent,
+	ChecklistsComponent,
+	FlexContainerComponent,
+	FormsComponent,
+	HeadingsComponent,
+	ListComponent,
+	LogoComponent,
 	PanelsComponent,
 	StepperComponent,
-	ChecklistsComponent,
-	LogoComponent,
-	TableComponent,
-	FlexContainerComponent,
-	AffixComponent,
-	FormsComponent,
-	ListComponent,
 	Symbols,
+	TableComponent,
+	TabsComponent,
 	UserComponent,
 } from "sourcegraph/styleguide/componentExamples";
 
@@ -25,7 +23,7 @@ export class ComponentsContainer extends React.Component<{}, any> {
 		return (
 			<div>
 				<a id="principles"></a>
-				<Heading level="2" underline="purple">Principles</Heading>
+				<Heading level={3} underline="purple">Principles</Heading>
 				<p>
 					This styleguide and component library is a living reference to building and designing the Sourcegraph user interface. This reference allows us to build and design conistently, efficiently, and quickly. It's not a definitive framework – but it should follow these main principles:
 				</p>
@@ -41,10 +39,10 @@ export class ComponentsContainer extends React.Component<{}, any> {
 				</ol>
 				<p>More work on this section TBD.</p>
 
-				<Heading level="2" underline="purple" className={base.mt5}>Brand</Heading>
+				<Heading level={2} underline="purple" className={base.mt5}>Brand</Heading>
 
 				<a id="brand-voice"></a>
-				<Heading level="3" className={base.mt3}>Voice and Tone</Heading>
+				<Heading level={3} className={base.mt3}>Voice and Tone</Heading>
 				<p>
 					All of our writing across the product, codebase, and marketing material should stem from these qualities. Tone is variable and contextual – quality of voice should be consistent.
 				</p>
@@ -62,7 +60,7 @@ export class ComponentsContainer extends React.Component<{}, any> {
 					<LogoComponent />
 				</div>
 
-				<Heading level="2" underline="purple" className={base.mt5}>Layout Components</Heading>
+				<Heading level={3} underline="purple" className={base.mt5}>Layout Components</Heading>
 				<div className={base.mv5}>
 					<a id="layout-flexcontainer"></a>
 					<FlexContainerComponent />
@@ -72,7 +70,7 @@ export class ComponentsContainer extends React.Component<{}, any> {
 					<AffixComponent />
 				</div>
 
-				<Heading level="2" underline="purple" className={base.mt5}>UI Components</Heading>
+				<Heading level={3} underline="purple" className={base.mt5}>UI Components</Heading>
 				<div className={base.mv5}>
 					<a id="components-buttons"></a>
 					<ButtonsComponent />

@@ -12,7 +12,7 @@ export function PrivacyPage(props: {}, {}) {
 			<Helmet title="Privacy" />
 			<Hero pattern="objects" color="dark" className={base.pv1}>
 				<div className={styles.container}>
-					<Heading level="3" color="white">Sourcegraph Privacy Policy</Heading>
+					<Heading level={3} color="white">Sourcegraph Privacy Policy</Heading>
 				</div>
 			</Hero>
 			<div className={styles.content}>

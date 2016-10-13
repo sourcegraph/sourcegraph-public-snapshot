@@ -18,7 +18,9 @@
 										{
 											"type": "Heading",
 											"props": {
-												"pt": 5,
+												"style": {
+													"paddingTop": "2rem"
+												},
 												"align": "center",
 												"level": 3,
 												"children": [
@@ -86,7 +88,10 @@
 													{
 														"type": "Heading",
 														"props": {
-															"level": "5",
+															"style": {
+																"paddingBottom": "2rem"
+															},
+															"level": 5,
 															"children": [
 																"Explore public repositories"
 															]

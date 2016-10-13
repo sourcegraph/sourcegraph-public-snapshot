@@ -1,7 +1,6 @@
 import {hover} from "glamor";
 import * as React from "react";
 import {Link} from "react-router";
-
 import {RouteParams} from "sourcegraph/app/routeParams";
 import {UnsupportedLanguageAlert} from "sourcegraph/blob/UnsupportedLanguageAlert";
 import {Base, FlexContainer, Heading} from "sourcegraph/components";
@@ -97,7 +96,7 @@ export function BlobTitle({
 	return <Base style={sx} px={3} py={2}>
 		<FlexContainer justify="between">
 			<div>
-				<Heading level={5} color="white" mb={0}>
+				<Heading level={5} color="white" style={{marginBottom: 0}}>
 					{basename(path)}
 					{commitID && <RevSwitcherContainer
 						repo={repo}
