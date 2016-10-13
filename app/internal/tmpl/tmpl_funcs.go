@@ -145,8 +145,8 @@ var FuncMap = htmpl.FuncMap{
 		return router.Rel.URLToRepoLanding(repo).String()
 	},
 
-	"urlToBlob": func(repo, path string) string {
-		return router.Rel.URLToBlob(repo, "", path, 0).String()
+	"urlToBlob": func(repo, path string, line int) string {
+		return router.Rel.URLToBlob(repo, "", path, line).String()
 	},
 
 	"urlToSitemap": func(lang string) string {

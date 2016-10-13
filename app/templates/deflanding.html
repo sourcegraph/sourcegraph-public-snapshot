@@ -56,7 +56,7 @@
 			</a>
 			<ul>
 				{{range $file := $repo.Files}}
-				<li>{{$file.Count}} {{numberedNoun $file.Count "reference"}} in <a class="wrap" href="{{urlToBlob $repo.Repo $file.Path}}">{{$file.Path}}</a></li>
+				<li>{{$file.Count}} {{numberedNoun $file.Count "reference"}} in <a class="wrap" href="{{urlToBlob $repo.Repo $file.Path 0}}">{{$file.Path}}</a></li>
 				{{end}}
 			</ul>
 		{{end}}
