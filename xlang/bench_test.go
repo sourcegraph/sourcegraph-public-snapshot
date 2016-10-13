@@ -141,6 +141,7 @@ func BenchmarkIntegration(b *testing.B) {
 					addr, done := startProxy(b, proxy)
 					defer done()
 
+					b.ResetTimer()
 					for i := 0; i < b.N; i++ {
 						b.StopTimer()
 						c := dialProxy(b, addr, nil)
