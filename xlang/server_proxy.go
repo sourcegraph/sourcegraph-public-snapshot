@@ -192,9 +192,6 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 
 		// Save connection.
 		p.mu.Lock()
-		if p.servers == nil {
-			p.servers = make(map[*serverProxyConn]struct{}, 1)
-		}
 		p.servers[c] = struct{}{}
 		serverConnsGauge.Set(float64(len(p.servers)))
 		serverConnsCounter.Inc()

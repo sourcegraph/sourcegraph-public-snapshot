@@ -38,9 +38,6 @@ func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) 
 	c.conn = jsonrpc2.NewConn(ctx, rwc, jsonrpc2.HandlerWithError(c.handle), connOpt...)
 
 	p.mu.Lock()
-	if p.clients == nil {
-		p.clients = make(map[*clientProxyConn]struct{}, 1)
-	}
 	p.clients[c] = struct{}{}
 	clientConnsGauge.Set(float64(len(p.clients)))
 	clientConnsCounter.Inc()
