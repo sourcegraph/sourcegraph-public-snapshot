@@ -21,7 +21,7 @@ If you're writing a test, you probably want to run the VNC viewer, the Selenium 
 
 ## How do I write an end-to-end test?
 
-The only file you should have to modify is `e2etests.py`. Each test is described in a `test_*` function.
+The only file you should have to modify is `e2etests.py` (and maybe the `Util` or `Driver` class in `e2etypes.py`). Each test is described in a `test_*` function.
 
 To add a test:
 1. Write a `test_*` function describing the desired set of user actions.
