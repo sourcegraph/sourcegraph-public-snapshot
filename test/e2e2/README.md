@@ -5,7 +5,12 @@ The end-to-end tests ensure that the overall Sourcegraph user experience just wo
 
 ## How do I run the end-to-end tests?
 
-First, check that you have Docker (Docker for Mac on macOS), Python 2.7, virtualenv, and cURL installed. Then, just run `make` in this directory. If you're on macOS and the "Screen Sharing" app prompts you for a password, it is "secret".
+First, check that you have Docker (Docker for Mac on macOS), Python 2.7, virtualenv, and cURL installed.
+
+Then, just run `make` in this directory. You should see the following happen:
+- In the terminal, a Docker image running a Selenium server and a VNC server will start up.
+- A VNC client will connect to the server and open a window.
+- The test runner script will connect to the Selenium server. You'll be able to view the actions taken in the VNC client window and additional information will be printed to the terminal.
 
 You can also run the tests for a specific browser, test case, or Sourcegraph instance. For example,
 - If you want to run the tests against Firefox without VNC, run `make test NOVNC=1 BROWSER=firefox`.

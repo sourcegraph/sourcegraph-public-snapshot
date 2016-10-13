@@ -13,7 +13,7 @@ if [ "$(uname)" = "Linux" ]; then
     echo "\$ $cmd";
     $cmd;
 elif [ "$(uname)" = "Darwin" ]; then
-    open "vnc://0.0.0.0:$VNC_PORT";
+    open "vnc://:secret@0.0.0.0:$VNC_PORT"
     sleep 5;
 else
     exit 1
