@@ -79,24 +79,28 @@ func init() {
 // maxIdle ago. The Proxy runs DisconnectIdleClients periodically
 // based on p.MaxClientIdle.
 func (p *Proxy) DisconnectIdleClients(maxIdle time.Duration) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
 	cutoff := time.Now().Add(-1 * maxIdle)
 	par := parallel.NewRun(runtime.GOMAXPROCS(0))
+	p.mu.Lock()
 	for c := range p.clients {
-		par.Acquire()
-		go func(c *clientProxyConn) {
-			defer par.Release()
-			c.mu.Lock()
-			idle := c.last.Before(cutoff)
-			c.mu.Unlock()
-			if idle {
+		c.mu.Lock()
+		idle := c.last.Before(cutoff)
+		c.mu.Unlock()
+		if idle {
+			par.Acquire()
+			go func(c *clientProxyConn) {
+				defer par.Release()
 				if err := c.close(); err != nil {
 					par.Error(err)
 				}
-			}
-		}(c)
+			}(c)
+		}
 	}
+	// Only hold lock during fast loop iter, not while waiting to
+	// close each idle connection (otherwise we could block p.mu for a
+	// long time if closing blocks).
+	p.mu.Unlock()
+
 	return par.Wait()
 }
 
