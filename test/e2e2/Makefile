@@ -11,11 +11,8 @@ test: dep
 dep: .env/bin/python .env/bin/pip
 	.env/bin/pip install -r requirements.txt
 
-.env/bin/python:
-	virtualenv -p python2 .env
-
-.env/bin/pip:
-	virtualenv -p python2 .env
+.env/bin/python .env/bin/pip:
+	virtualenv -p python2 .env || virtualenv -p python .env
 
 deploy:
 	./deploy.sh
