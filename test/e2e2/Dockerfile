@@ -10,11 +10,12 @@ RUN apk add --update \
   && pip install virtualenv \
   && rm -rf /var/cache/apk/*
 
-ADD ./*.py /e2e/
 ADD requirements.txt /e2e/requirements.txt
 ADD Makefile /e2e/Makefile
 
 WORKDIR /e2e
 RUN make dep
+
+ADD ./*.py /e2e/
 
 ENTRYPOINT ["/e2e/.env/bin/python", "run.py"]
