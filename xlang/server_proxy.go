@@ -49,6 +49,11 @@ type serverProxyConn struct {
 
 	id serverID
 
+	// initOnce ensures we only connect and initialize once, and other
+	// goroutines wait until the 1st goroutine completes those tasks.
+	initOnce sync.Once
+	initErr  error // only safe to write inside initOnce.Do(...), only safe to read after calling initOnce.Do(...)
+
 	mu     sync.Mutex
 	rootFS ctxvfs.FileSystem // the workspace's file system
 	last   time.Time         // max(last request sent, last response received), used to disconnect from unused servers
@@ -59,25 +64,32 @@ var (
 		Namespace: "src",
 		Subsystem: "xlang",
 		Name:      "open_lsp_server_connections",
-		Help:      "Open connections to the LSP servers.",
+		Help:      "Open connections (initialized + uninitialized) to the LSP servers.",
 	})
-	serverConnsByIDGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	serverConnsUninitedByIDGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "xlang",
-		Name:      "open_lsp_server_connections_by_id",
-		Help:      "Open connections to the LSP servers, by server ID.",
+		Name:      "open_uninitialized_lsp_server_connections_by_id",
+		Help:      "Open, uninitialized (pre-LSP \"initialize\" response) connections to the LSP servers, by server ID.",
+	}, []string{"id"})
+	serverConnsInitedByIDGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "xlang",
+		Name:      "open_initialized_lsp_server_connections_by_id",
+		Help:      "Open, initialized connections to the LSP servers, by server ID.",
 	}, []string{"id"})
 	serverConnsCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "xlang",
 		Name:      "cumu_lsp_server_connections",
-		Help:      "Cumulative number of connections to the LSP servers (total of open + previously closed since process startup).",
+		Help:      "Cumulative number of connections (initialized + uninitialized) to the LSP servers (total of open + previously closed since process startup).",
 	})
 )
 
 func init() {
 	prometheus.MustRegister(serverConnsGauge)
-	prometheus.MustRegister(serverConnsByIDGauge)
+	prometheus.MustRegister(serverConnsUninitedByIDGauge)
+	prometheus.MustRegister(serverConnsInitedByIDGauge)
 	prometheus.MustRegister(serverConnsCounter)
 }
 
@@ -120,9 +132,9 @@ func (p *Proxy) ShutDownIdleServers(ctx context.Context, maxIdle time.Duration) 
 func (p *Proxy) removeServerConn(c *serverProxyConn) {
 	p.mu.Lock()
 	delete(p.servers, c)
-	delete(p.serverNewConnMus, c.id)
 	serverConnsGauge.Set(float64(len(p.servers)))
-	serverConnsByIDGauge.WithLabelValues(c.id.String()).Set(0)
+	serverConnsUninitedByIDGauge.DeleteLabelValues(c.id.String())
+	serverConnsInitedByIDGauge.DeleteLabelValues(c.id.String())
 	p.mu.Unlock()
 }
 
@@ -131,60 +143,52 @@ func (p *Proxy) removeServerConn(c *serverProxyConn) {
 func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyConn, error) {
 	var c *serverProxyConn
 
-	{
-		p.mu.Lock()
-
-		// Check for an already established connection.
-		for sc := range p.servers {
-			if sc.id == id {
-				p.mu.Unlock()
-				return sc, nil
-			}
+	// Check for an already established connection.
+	p.mu.Lock()
+	for cc := range p.servers {
+		if cc.id == id {
+			p.mu.Unlock()
+			c = cc
+			break
 		}
-
-		// Acquire per-serverID mu so we don't initiate multiple
-		// unnecessary connections, and so that nobody else tries to
-		// send on this connection before we've initialized it.
-		mu, ok := p.serverNewConnMus[id]
-		if !ok {
-			mu = new(sync.Mutex)
-			p.serverNewConnMus[id] = mu
-		}
-		p.mu.Unlock()
-
-		mu.Lock()
-
-		// Check again if someone else established the connection
-		// while we were waiting for mu.
-		for sc := range p.servers {
-			if sc.id == id {
-				mu.Unlock()
-				return sc, nil
-			}
-		}
-
-		defer mu.Unlock()
 	}
 
-	// No connection found, so we need to open one.
+	// No connection found, so we need to create one.
 	if c == nil {
+		// We're still holding p.mu. Do the minimum work necessary
+		// here to be able to safely unlock it, so we don't block the entire
+		// proxy.
+		c = &serverProxyConn{
+			proxy: p,
+			id:    id,
+			last:  time.Now(),
+		}
+		p.servers[c] = struct{}{}
+		serverConnsGauge.Set(float64(len(p.servers)))
+		serverConnsUninitedByIDGauge.WithLabelValues(id.String()).Set(1)
+		serverConnsCounter.Inc()
+		p.mu.Unlock()
+	}
+
+	// No longer holding p.mu.
+
+	// Connect and initialize.
+	didWeInit := false // whether WE (not another goroutine) actually executed the c.initOnce.Do(...) func
+	c.initOnce.Do(func() {
+		didWeInit = true
+
 		rwc, err := connectToServer(ctx, id.mode)
 		if err != nil {
-			return nil, err
+			c.initErr = err
+			return
 		}
+		c.updateLastTime()
 
-		// Create connection.
 		var connOpt []jsonrpc2.ConnOpt
 		if p.Trace {
 			connOpt = append(connOpt, jsonrpc2.LogMessages(log.New(os.Stderr, "", 0)))
 		}
-
-		c = &serverProxyConn{
-			proxy: p,
-			last:  time.Now(),
-		}
 		c.conn = jsonrpc2.NewConn(ctx, rwc, jsonrpc2.HandlerWithError(c.handle), connOpt...)
-		c.id = id
 
 		// SECURITY NOTE: We assume that the caller to the LSP client
 		// proxy has already checked the user's permissions to read
@@ -194,35 +198,53 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		if err != nil {
 			_ = c.conn.Close()
 			_ = rwc.Close()
-			return nil, err
+			c.initErr = err
+			return
 		}
 
 		if err := c.lspInitialize(ctx); err != nil {
-			// ignore cleanup errors, best effort
+			// Ignore cleanup errors (best effort).
 			if fs, ok := c.rootFS.(io.Closer); ok && fs != nil {
 				_ = fs.Close()
 			}
 			_ = c.conn.Close()
 			_ = rwc.Close()
-			return nil, err
+			c.initErr = err
+			return
 		}
+		c.updateLastTime()
 
-		// Save connection.
-		p.mu.Lock()
-		p.servers[c] = struct{}{}
-		serverConnsGauge.Set(float64(len(p.servers)))
-		serverConnsByIDGauge.WithLabelValues(id.String()).Set(1)
-		serverConnsCounter.Inc()
-		p.mu.Unlock()
+		// Record that the server is now initialized.
+		serverConnsUninitedByIDGauge.DeleteLabelValues(c.id.String())
+		serverConnsInitedByIDGauge.WithLabelValues(c.id.String()).Set(1)
+
 		go func() {
 			select {
 			case <-c.conn.DisconnectNotify():
 			}
 			p.removeServerConn(c)
 		}()
+	})
+
+	err := c.initErr
+	if err != nil {
+		if didWeInit {
+			// If we encounter an error during initialization, fail every
+			// other goroutine that was waiting at the time (with the same
+			// error), but don't prevent future goroutines from retrying (in
+			// case of ephemeral errors).
+			p.removeServerConn(c)
+		} else {
+			// Make it clear that we're just passing along an error
+			// that another goroutine received, so it doesn't seem
+			// (from the error logs) that we performed the same
+			// network/etc. operation many times.
+			err = fmt.Errorf("other goroutine failed to connect and initialize LSP server: %s", err)
+		}
+		c = nil
 	}
 
-	return c, nil
+	return c, err
 }
 
 func (c *serverProxyConn) lspInitialize(ctx context.Context) error {

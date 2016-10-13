@@ -19,9 +19,8 @@ func NewProxy() *Proxy {
 
 		closed: make(chan struct{}),
 
-		clients:          map[*clientProxyConn]struct{}{},
-		servers:          map[*serverProxyConn]struct{}{},
-		serverNewConnMus: map[serverID]*sync.Mutex{},
+		clients: map[*clientProxyConn]struct{}{},
+		servers: map[*serverProxyConn]struct{}{},
 	}
 }
 
@@ -36,10 +35,9 @@ type Proxy struct {
 
 	closed chan struct{} // a channel that is closed when (*Proxy).Close is called
 
-	mu               sync.Mutex
-	clients          map[*clientProxyConn]struct{} // open connections from clients
-	servers          map[*serverProxyConn]struct{} // open connections to lang/build servers
-	serverNewConnMus map[serverID]*sync.Mutex      // new pending connections to lang/build servers
+	mu      sync.Mutex
+	clients map[*clientProxyConn]struct{} // open connections from clients
+	servers map[*serverProxyConn]struct{} // open connections to lang/build servers
 }
 
 // Serve accepts incoming client connections on the listener l.
