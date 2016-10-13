@@ -19,29 +19,13 @@ def test_repo_jump_to(d):
         ("pat", "github.com/gorilla/pat", "/github.com/gorilla/pat"),
     ]
 
-    def select_search_result_using_arrow_keys(result_text):
-        for i in xrange(0, 2):
-            for i in xrange(0, 20):
-                def f():
-                    selected = d.find_search_modal_selected_result()
-                    if result_text == selected.text:
-                        d.active_elem().send_keys(Keys.ENTER)
-                        return True
-                    return False
-                if retry(f):
-                    return
-                d.active_elem().send_keys(Keys.DOWN)
-            for i in xrange(0, 40): # network events might have changed the list, so try one more time from the top
-                d.active_elem().send_keys(Keys.UP)
-        raise E2EFatal("did not find search result '%s'" % result_text)
-
     wd.get(d.sg_url('/github.com/gorilla/mux')) # start on a page with the jump modal active
     for query, result_text, url_path in repo_queries:
         d.active_elem().send_keys("/")
         d.active_elem().send_keys(query)
         wait_for(d.all_network_indicators_are_invisible, max_wait=4)
         wait_for(lambda: len(d.find_search_modal_results(result_text, exact_match=True)) > 0)
-        select_search_result_using_arrow_keys(result_text)
+        Util.select_search_result_using_arrow_keys(d, result_text, exact_match=True)
         wait_for(lambda: wd.current_url == d.sg_url(url_path), text=('wd.current_url == "%s"' % d.sg_url(url_path)))
 
 def test_onboarding(d):
@@ -133,9 +117,58 @@ def test_golden_workflow(d):
     retry(lambda: d.active_elem().send_keys(Keys.ENTER))
     wait_for(lambda: "encryption_client.go" in wd.current_url and "/github.com/aws/aws-sdk-go" in wd.current_url)
 
+def test_find_external_refs(d):
+    wd = d.d
+
+    tests = [{
+        "repo": "github.com/go-gorp/gorp",
+        "symbol": "gorp.SqlExecutor",
+        "symbol_name": "SqlExecutor",
+    }, {
+        "repo": "github.com/gorilla/mux",
+        "symbol": "mux.Router",
+        "symbol_name": "Router",
+    }, {
+        "repo": "github.com/aws/aws-sdk-go",
+        "symbol": "s3crypto.NewKMSKeyGenerator",
+        "symbol_name": "NewKMSKeyGenerator",
+    }]
+    for test in tests:
+        # Go to repo page
+        wd.get(d.sg_url("/%s" % test['repo']))
+        wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("div", "FILES")) > 0)
+
+        # Jump to symbol
+        d.active_elem().send_keys("/")
+        d.active_elem().send_keys(test['symbol_name'])
+        wait_for(d.all_network_indicators_are_invisible, max_wait=4)
+        wait_for(lambda: len(d.find_search_modal_results(test['symbol'])) > 0)
+        Util.select_search_result_using_arrow_keys(d, test['symbol'])
+
+        # Right click, find external references
+        wait_for(lambda: len(d.find_tokens(test['symbol_name'])) > 0)
+        def rc():
+            retry(lambda: d.active_elem().send_keys(Keys.ESCAPE)) # hide any tooltip that might steal the click
+            retry(lambda: d.right_click(d.find_token(test['symbol_name'])))
+            retry(lambda: d.find_context_menu_option("Find External References").click())
+        retry(rc)
+
+        # Description header
+        wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("h2", "Description")) > 0)
+
+        # Examples header
+        wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("h2", "Examples")) > 0)
+
+        # External repository references header
+        wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("h2", "%s is referenced in" % test['symbol_name'])) > 0)
+
+        # Definition header
+        wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("h2", "Definition")) > 0)
+
 all_tests = [
     test_onboarding,
     test_login_logout,
     test_repo_jump_to,
     test_golden_workflow,
+    test_find_external_refs,
 ]

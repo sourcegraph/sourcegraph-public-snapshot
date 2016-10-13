@@ -2,7 +2,6 @@
 
 default: all-prod
 
-
 test: dep
 	BROWSER=${BROWSER} ./selenium.sh
 	BROWSER=${BROWSER} ./vnc.sh &

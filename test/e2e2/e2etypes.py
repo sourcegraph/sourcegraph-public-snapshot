@@ -205,3 +205,20 @@ class Util(object):
         wd = d.d
         wd.find_element_by_id("global-nav").find_element_by_css_selector('[class*="popover"]').click()
         wd.find_element_by_partial_link_text("Sign out").click()
+
+    @staticmethod
+    def select_search_result_using_arrow_keys(d, result_text, exact_match=False):
+        for i in xrange(0, 2):
+            for i in xrange(0, 20):
+                def f():
+                    selected = d.find_search_modal_selected_result()
+                    if (exact_match and result_text == selected.text) or (not exact_match and result_text in selected.text):
+                        d.active_elem().send_keys(Keys.ENTER)
+                        return True
+                    return False
+                if retry(f):
+                    return
+                d.active_elem().send_keys(Keys.DOWN)
+            for i in xrange(0, 40): # network events might have changed the list, so try one more time from the top
+                d.active_elem().send_keys(Keys.UP)
+        raise E2EError("did not find search result '%s'" % result_text)
