@@ -167,16 +167,21 @@ def main():
         sys.stderr.write("browser needs to be chrome or firefox, was %s\n" % args.browser)
         return
 
+    tests = [t for t in all_tests if args.filter in t.func_name]
+
     if args.alert_on_err:
         slack_cli, slack_ch, _ = slack_and_opsgenie(args)
         animal_emoji = random.choice(emoji)
         animal_name = animal_emoji.replace('_face', '')
-        slack_cli.api_call("chat.postMessage", channel=slack_ch, text=":%s: Hi, I'm the end-to-end test %s for %s! I'll post end-to-end test errors to this channel." % (animal_emoji, animal_name, args.browser.capitalize()))
+        slack_cli.api_call("chat.postMessage", channel=slack_ch, text=""":%s: Hi, I'm the end-to-end test %s for %s! I'll run the following tests in a loop and post errors to this channel until I die:
+```
+%s
+```
+""" % (animal_emoji, animal_name, args.browser.capitalize(), '\n'.join([t.func_name for t in tests])))
         def die_msg():
-            slack_cli.api_call("chat.postMessage", channel=slack_ch, text=":skull: The end-to-end test %s :%s: for %s has died." % (animal_name, animal_emoji, args.browser.capitalize()))
+            slack_cli.api_call("chat.postMessage", channel=slack_ch, text=":%s: *->* :skull: The end-to-end test %s for %s has died." % (animal_emoji, animal_name, args.browser.capitalize()))
         atexit.register(die_msg)
 
-    tests = [t for t in all_tests if args.filter in t.func_name]
     if args.loop:
         logf("Looping forever...")
         while True:
