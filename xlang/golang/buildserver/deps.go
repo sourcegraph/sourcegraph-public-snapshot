@@ -42,15 +42,25 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 		span.Finish()
 	}()
 
-	bctx := h.OverlayBuildContext(ctx, &build.Context{
-		GOOS:     goos,
-		GOARCH:   goarch,
-		GOPATH:   gopath,
-		GOROOT:   goroot,
-		Compiler: gocompiler,
-	}, false)
+	// getBuildContext returns a build context whose underlying VFS is
+	// immutable. This means that the VFS does not reflect any changes
+	// made to the HandlerShared's VFS (e.g., after a dep is
+	// fetched). As a result, callers should call getBuildContext to
+	// get a new build context whenever they need to access files/dirs
+	// that might've just been added. (Using immutability lets us
+	// avoid locking for every single VFS op, which yields much better
+	// perf.)
+	getBuildContext := func() *build.Context {
+		return h.OverlayBuildContext(ctx, &build.Context{
+			GOOS:     goos,
+			GOARCH:   goarch,
+			GOPATH:   gopath,
+			GOROOT:   goroot,
+			Compiler: gocompiler,
+		}, false)
+	}
 
-	bpkg, err := langserver.ContainingPackage(bctx, h.FilePath(fileURI))
+	bpkg, err := langserver.ContainingPackage(getBuildContext(), h.FilePath(fileURI))
 	if err != nil && !isMultiplePackageError(err) {
 		return err
 	}
@@ -72,7 +82,7 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 	err = doDeps(bpkg, 0, func(path, srcDir string, mode build.ImportMode) (*build.Package, error) {
 		// If the package exists in the repo, or is vendored, or has
 		// already been fetched, this will succeed.
-		pkg, err := bctx.Import(path, srcDir, mode)
+		pkg, err := getBuildContext().Import(path, srcDir, mode)
 		if isMultiplePackageError(err) {
 			err = nil
 		}
@@ -115,7 +125,7 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 		defer urlMu.Unlock()
 
 		// Check again after waiting.
-		pkg, err = bctx.Import(path, srcDir, mode)
+		pkg, err = getBuildContext().Import(path, srcDir, mode)
 		if err == nil {
 			return pkg, nil
 		}
@@ -125,7 +135,7 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 			return nil, err
 		}
 
-		pkg, err = bctx.Import(path, srcDir, mode)
+		pkg, err = getBuildContext().Import(path, srcDir, mode)
 		if isMultiplePackageError(err) {
 			err = nil
 		}

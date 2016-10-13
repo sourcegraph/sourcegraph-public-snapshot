@@ -30,8 +30,17 @@ func (h *LangHandler) defaultBuildContext() *build.Context {
 }
 
 func (h *HandlerShared) OverlayBuildContext(ctx context.Context, orig *build.Context, useOSFileSystem bool) *build.Context {
-	fs := ctxvfs.FileSystem(h.FS)
-	fs = ctxvfs.Sync(&h.Mu, fs) // protect against race conditions when new binds are mounted
+	// Copy to avoid a race condition if concurrent goroutines
+	// bind new mountpoints to the ctxvfs.NameSpace. This lets us lock
+	// once here, instead of once per call to any ctxvfs.FileSystem
+	// method.
+	h.Mu.Lock()
+	fs := make(ctxvfs.NameSpace, len(h.FS))
+	for path, mounts := range h.FS {
+		fs[path] = mounts
+	}
+	h.Mu.Unlock()
+
 	return fsBuildContext(ctx, orig, fs)
 }
 
