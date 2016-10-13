@@ -88,19 +88,18 @@ func init() {
 // maxIdle ago. The Proxy runs ShutDownIdleServers periodically based
 // on p.MaxServerIdle.
 func (p *Proxy) ShutDownIdleServers(ctx context.Context, maxIdle time.Duration) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	cutoff := time.Now().Add(-1 * maxIdle)
 	par := parallel.NewRun(runtime.GOMAXPROCS(0))
+	p.mu.Lock()
 	for s := range p.servers {
-		par.Acquire()
-		go func(s *serverProxyConn) {
-			defer par.Release()
-			s.mu.Lock()
-			idle := s.last.Before(cutoff)
-			s.mu.Unlock()
-			if idle {
+		s.mu.Lock()
+		idle := s.last.Before(cutoff)
+		s.mu.Unlock()
+		if idle {
+			par.Acquire()
+			go func(s *serverProxyConn) {
+				defer par.Release()
+				p.removeServerConn(s)
 				shutdownOK := true
 				if err := s.shutdownAndExit(ctx); err != nil {
 					par.Error(err)
@@ -109,10 +108,24 @@ func (p *Proxy) ShutDownIdleServers(ctx context.Context, maxIdle time.Duration) 
 				if err := s.conn.Close(); err != nil && shutdownOK {
 					par.Error(err)
 				}
-			}
-		}(s)
+			}(s)
+		}
 	}
+	// Only hold lock during fast loop iter, not while waiting to
+	// shutdown and exit each idle connection (otherwise we could
+	// block everything for a long time).
+	p.mu.Unlock()
+
 	return par.Wait()
+}
+
+func (p *Proxy) removeServerConn(c *serverProxyConn) {
+	p.mu.Lock()
+	delete(p.servers, c)
+	delete(p.serverNewConnMus, c.id)
+	serverConnsGauge.Set(float64(len(p.servers)))
+	serverConnsByIDGauge.WithLabelValues(c.id.String()).Set(0)
+	p.mu.Unlock()
 }
 
 // getServerConn returns an existing connection to the specified
@@ -209,12 +222,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 			case <-c.conn.DisconnectNotify():
 			case <-c.shutdown:
 			}
-			p.mu.Lock()
-			delete(p.servers, c)
-			delete(p.serverNewConnMus, c.id)
-			serverConnsGauge.Set(float64(len(p.servers)))
-			serverConnsByIDGauge.DeleteLabelValues(c.id.String())
-			p.mu.Unlock()
+			p.removeServerConn(c)
 		}()
 	}
 
@@ -362,14 +370,10 @@ func (c *serverProxyConn) updateLastTime() {
 	c.mu.Unlock()
 }
 
-// shutdownAndExit sends LSP "shutdown" and "exit" to the LSP server,
-// closes this connection, and removes it from the proxy's server
-// connection list. The caller must hold c.proxy.mu.
+// shutdownAndExit sends LSP "shutdown" and "exit" to the LSP server
+// and closes this connection. The caller must ensure c is removed
+// from proxy.servers.
 func (c *serverProxyConn) shutdownAndExit(ctx context.Context) error {
-	// Remove from the server's connection list so we don't ever call
-	// shutdownAndExit twice on c.
-	delete(c.proxy.servers, c)
-
 	var errs errorList
 	done := make(chan struct{})
 	go func() {
