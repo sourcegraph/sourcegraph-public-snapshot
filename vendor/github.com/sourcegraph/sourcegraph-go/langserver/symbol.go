@@ -17,6 +17,7 @@ import (
 
 	"golang.org/x/tools/go/buildutil"
 
+	"github.com/neelance/parallel"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
@@ -237,16 +238,16 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *
 			pkgPat = h.init.RootImportPath + "/..."
 		}
 
-		var wg sync.WaitGroup
+		par := parallel.NewRun(8)
 		pkgs := buildutil.ExpandPatterns(bctx, []string{pkgPat})
 		for pkg := range pkgs {
-			wg.Add(1)
+			par.Acquire()
 			go func(pkg string) {
-				defer wg.Done()
+				defer par.Release()
 				h.collectFromPkg(bctx, fs, pkg, rootPath, &results)
 			}(pkg)
 		}
-		wg.Wait()
+		_ = par.Wait()
 	}
 	sort.Sort(&results)
 	if len(results.results) > params.Limit && params.Limit > 0 {

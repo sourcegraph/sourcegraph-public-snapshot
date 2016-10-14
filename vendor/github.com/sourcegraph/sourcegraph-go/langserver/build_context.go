@@ -72,7 +72,7 @@ func fsBuildContext(ctx context.Context, orig *build.Context, fs ctxvfs.FileSyst
 }
 
 // ContainingPackage returns the package that contains the given
-// file. It is like buildutil.ContainingPackage, except that:
+// filename. It is like buildutil.ContainingPackage, except that:
 //
 // * it returns the whole package (i.e., it doesn't use build.FindOnly)
 // * it does not perform FS calls that are unnecessary for us (such
@@ -85,7 +85,10 @@ func ContainingPackage(bctx *build.Context, filename string) (*build.Package, er
 		panic("build context GOPATH must contain exactly 1 entry: " + bctx.GOPATH)
 	}
 
-	pkgDir := path.Dir(filename)
+	pkgDir := filename
+	if !bctx.IsDir(filename) {
+		pkgDir = path.Dir(filename)
+	}
 	var srcDir string
 	if PathHasPrefix(filename, bctx.GOROOT) {
 		srcDir = bctx.GOROOT // if workspace is Go stdlib

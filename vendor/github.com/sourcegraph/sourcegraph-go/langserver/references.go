@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
-func (h *LangHandler) handleReferences(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {
+func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {
 	fset, node, pkg, err := h.typecheck(ctx, conn, params.TextDocument.URI, params.Position)
 	if err != nil {
 		// Invalid nodes means we tried to click on something which is

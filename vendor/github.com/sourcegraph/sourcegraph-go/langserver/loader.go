@@ -186,17 +186,6 @@ type typecheckResult struct {
 	err  error
 }
 
-func (h *LangHandler) typecheckMu(k typecheckKey) *sync.Mutex {
-	h.mu.Lock()
-	mu, ok := h.cacheMus[k]
-	if !ok {
-		mu = new(sync.Mutex)
-		h.cacheMus[k] = mu
-	}
-	h.mu.Unlock()
-	return mu
-}
-
 func (h *LangHandler) cachedTypecheck(ctx context.Context, bctx *build.Context, bpkg *build.Package) (*token.FileSet, *loader.Program, diagnostics, error) {
 	parentSpan := opentracing.SpanFromContext(ctx)
 	span := parentSpan.Tracer().StartSpan("langserver-go: typecheck",
@@ -208,17 +197,31 @@ func (h *LangHandler) cachedTypecheck(ctx context.Context, bctx *build.Context, 
 
 	k := typecheckKey{bpkg.ImportPath, bpkg.Dir, bpkg.Name}
 
-	mu := h.typecheckMu(k)
-	mu.Lock()
-	defer mu.Unlock()
+	// Acquire a per-K mutex. This prevents us from doing duplicate work to
+	// prepare K. It does not, however, protect against concurrent writes by
+	// multiple K's to h.cache (we use h.mu for that).
+	h.mu.Lock()
+	kmu, ok := h.cacheMus[k]
+	if !ok {
+		kmu = new(sync.Mutex)
+		h.cacheMus[k] = kmu
+	}
+	h.mu.Unlock()
 
+	kmu.Lock()
+	defer kmu.Unlock()
+
+	h.mu.Lock()
 	res, ok := h.cache[k]
+	h.mu.Unlock()
 	span.SetTag("cached", ok)
 	var diags diagnostics
 	if !ok {
 		res.fset = token.NewFileSet()
 		res.prog, diags, res.err = typecheck(res.fset, bctx, bpkg)
+		h.mu.Lock()
 		h.cache[k] = res
+		h.mu.Unlock()
 	}
 	return res.fset, res.prog, diags, res.err
 }
