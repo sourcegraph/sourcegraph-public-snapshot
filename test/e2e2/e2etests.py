@@ -76,11 +76,9 @@ def test_login_logout(d):
 def test_golden_workflow(d):
     wd = d.d
 
-    # Search Google for "NewKMSKeyGenerator"
-    wd.get("https://www.google.com/search?q=NewKMSKeyGenerator")
-
-    # Click on Sourcegraph result
-    retry(lambda: wd.find_element_by_partial_link_text("Sourcegraph").click())
+    # Get to NewKMSKeyGenerator landing page (presumably after
+    # clicking on a Google search result).
+    wd.get(d.sg_url("/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/service/s3/s3crypto/-/NewKMSKeyGenerator"))
 
     # Click on first usage example
     retry(lambda: wd.find_element_by_partial_link_text("handler := s3crypto.NewKMSKeyGenerator").click())
