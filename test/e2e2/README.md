@@ -59,8 +59,6 @@ Check out the `Makefile`'s "Demo recipes" section for other ways you can run the
 
 If you're responding to a production issue, the error message in the Slack channel (#bot-e2e) will give you a one-liner to reproduce the issue.
 
-If you're writing a test, you probably want to run the VNC viewer, the Selenium server, and the test runner separately. See the section below on writing tests for further details.
-
 ### When should I write an end-to-end test?
 
 You should write an end-to-end test for any user workflow that is your responsibility to own. Ask yourself, "If I do not write this test, is there a non-trivial chance that someone on my team (probably me) will be woken up in the middle of the night over the next couple months by a frustrated user or customer reporting this functionality broken?" If the answer is yes, then write a test.
