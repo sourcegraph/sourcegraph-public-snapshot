@@ -1,7 +1,5 @@
 # Sourcegraph: fast, global, semantic code search & cross-reference engine
 
-[<img src="./app/assets/img/Homepage/screenshot-heros.png" align="center">](https://sourcegraph.com)
-
 Remember the last time you were in flow while coding? You got a ton done and felt great.
 
 But staying in flow is hard. While coding, you often waste minutes digging for examples in Q&A forums, finding documentation, deciphering code, or interrupting teammates.
