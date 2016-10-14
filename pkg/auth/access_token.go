@@ -8,7 +8,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-// New creates and signs a new OAuth2 access token that grants the
+// NewAccessToken creates and signs a new OAuth2 access token that grants the
 // actor's access to the holder of the token.
 func NewAccessToken(actor *Actor, expiryDuration time.Duration) string {
 	tok := jwt.New(jwt.SigningMethod(jwt.SigningMethodHS256))
@@ -63,8 +63,8 @@ func ParseAndVerify(accessToken string) (*Actor, error) {
 	a.UID, _ = tok.Claims["UID"].(string)
 	a.Login, _ = tok.Claims["Login"].(string)
 	a.GitHubConnected, _ = tok.Claims["GitHubConnected"].(bool)
-	if ghScope, ok := tok.Claims["GitHubScopes"].(string); ok {
-		a.GitHubScopes = strings.Split(ghScope, ",")
+	if scopes, ok := tok.Claims["GitHubScopes"].(string); ok {
+		a.GitHubScopes = strings.Split(scopes, ",")
 	}
 	a.GitHubToken, _ = tok.Claims["GitHubToken"].(string)
 

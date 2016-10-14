@@ -3,6 +3,7 @@ package oauth2client
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"sort"
@@ -11,7 +12,6 @@ import (
 
 	"golang.org/x/oauth2"
 	"gopkg.in/inconshreveable/log15.v2"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/canonicalurl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/returnto"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
@@ -24,7 +24,7 @@ import (
 
 var githubNonceCookiePath = router.Rel.URLTo(router.GitHubOAuth2Receive).Path
 
-func auth0ConfigWithRedirectURL() *oauth2.Config {
+func auth0GitHubConfigWithRedirectURL() *oauth2.Config {
 	config := *auth.Auth0Config
 	config.RedirectURL = conf.AppURL.ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String()
 	return &config
@@ -53,10 +53,10 @@ func ServeGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 		scopes = strings.Split(s, ",")
 	}
 
-	return oAuth2Initiate(w, r, scopes, returnTo.String())
+	return githubOAuth2Initiate(w, r, scopes, returnTo.String())
 }
 
-func oAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []string, returnTo string) error {
+func githubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []string, returnTo string) error {
 	nonce := randstring.NewLen(32)
 	http.SetCookie(w, &http.Cookie{
 		Name:    "nonce",
@@ -65,7 +65,7 @@ func oAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []string, ret
 		Expires: time.Now().Add(10 * time.Minute),
 	})
 
-	http.Redirect(w, r, auth0ConfigWithRedirectURL().AuthCodeURL(nonce+":"+returnTo,
+	http.Redirect(w, r, auth0GitHubConfigWithRedirectURL().AuthCodeURL(nonce+":"+returnTo,
 		oauth2.SetAuthURLParam("connection", "github"),
 		oauth2.SetAuthURLParam("connection_scope", strings.Join(scopes, ",")),
 	), http.StatusSeeOther)
@@ -93,7 +93,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	returnTo := parts[1]
 
 	code := r.URL.Query().Get("code")
-	token, err := auth0ConfigWithRedirectURL().Exchange(r.Context(), code)
+	token, err := auth0GitHubConfigWithRedirectURL().Exchange(r.Context(), code)
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 
 	githubToken, err := auth.FetchGitHubToken(r.Context(), info.UID)
 	if err != nil {
-		return err
+		return fmt.Errorf("auth.FetchGitHubToken: %v", err)
 	}
 
 	scopeOfToken := strings.Split(githubToken.Scope, ",")
@@ -149,7 +149,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	if len(scopeOfToken) < len(mergedScope) {
 		// The user has once granted us more permissions than we got with this token. Run oauth flow
 		// again to fetch token with all permissions. This should be non-interactive.
-		return oAuth2Initiate(w, r, mergedScope, returnTo)
+		return githubOAuth2Initiate(w, r, mergedScope, returnTo)
 	}
 	if len(scopeOfToken) > len(info.AppMetadata.GitHubScope) {
 		// Wohoo, we got more permissions. Remember in user database.

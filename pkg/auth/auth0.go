@@ -45,7 +45,10 @@ func SetAppMetadata(ctx context.Context, uid string, key string, value interface
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Do(req)
-	defer resp.Body.Close()
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return errors.New("failed to set app metadata")
 	}
