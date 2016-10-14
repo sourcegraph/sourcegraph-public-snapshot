@@ -41,18 +41,24 @@ failure_msg_template = """:rotating_light: *TEST FAILED* :rotating_light:
 ```
 %s
 ```
+%s
+```
+%s
+```
 (For docs, see https://github.com/sourcegraph/sourcegraph/blob/master/test/e2e2/README.md)
 """
 
-def failure_msg(test_name, browser, url, stack_trace):
+def failure_msg(test_name, browser, url, stack_trace, console_log):
     u = urlparse(url)
     sgurl = "%s://%s" % (u.scheme, u.hostname)
     if u.port:
         sgurl += ":%d" % u.port
+    console_log_header = "*Browser console*:" if browser == "chrome" else "*Browser console* (errors only):"
     return failure_msg_template % (
         test_name, browser.capitalize(), url,
         test_name, browser, sgurl,
         stack_trace,
+        console_log_header, console_log,
     )
 
 def slack_and_opsgenie(args):
@@ -80,8 +86,14 @@ def run_tests(args, tests):
     def fail(test_name, exception, driver):
         logf('[%s](%s) %s' % (red("FAIL"), args.browser, test_name))
         traceback.print_exc(30)
+        console_log_msgs = [e for e in driver.d.get_log('browser')]
+        if len(console_log_msgs) > 0:
+            console_log = '\n'.join([('[%s] %s' % (e['level'], e['message'])) for e in console_log_msgs])
+        else:
+            console_log = "(None)"
+        logf('Browser log:\n%s', console_log)
         if args.alert_on_err:
-            msg = failure_msg(test_name, args.browser, driver.d.current_url, traceback.format_exc(30))
+            msg = failure_msg(test_name, args.browser, driver.d.current_url, traceback.format_exc(30), console_log)
             screenshot = driver.d.get_screenshot_as_png()
             slack_cli.api_call("files.upload", channels=slack_ch, initial_comment=msg, file=screenshot, filename="screenshot.png")
         if args.pause_on_err:
@@ -105,6 +117,7 @@ Type "continue" to continue.
                 if args.browser == "chrome":
                     opt = DesiredCapabilities.CHROME.copy()
                     opt['chromeOptions'] = { "args": ["--user-agent=%s" % user_agent] }
+                    opt['loggingPrefs'] = { 'browser': 'ALL' }
                     wd = webdriver.Remote(
                         command_executor=('%s/wd/hub' % args.selenium),
                         desired_capabilities=opt,
@@ -113,6 +126,8 @@ Type "continue" to continue.
                     profile = webdriver.FirefoxProfile()
                     profile.set_preference('general.useragent.override', user_agent)
                     opt = DesiredCapabilities.FIREFOX.copy()
+                    # Firefox browser logs include non-JS-console messages and tend to be chatty, so we limit to error messages
+                    opt['loggingPrefs'] = { 'browser': 'SEVERE' }
                     wd = webdriver.Remote(
                         command_executor=('%s/wd/hub' % args.selenium),
                         desired_capabilities=opt,
