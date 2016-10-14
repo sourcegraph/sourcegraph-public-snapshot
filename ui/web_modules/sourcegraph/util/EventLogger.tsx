@@ -140,6 +140,7 @@ class EventLoggerClass {
 
 			if (user.Company) {
 				this.setUserProperty("company", user.Company);
+				this.setIntercomProperty("company", user.Company);
 			}
 
 			if (user.Location) {
@@ -315,13 +316,10 @@ class EventLoggerClass {
 					let languages: Array<string> = [];
 					let privateOrgs: Array<string> = [];
 					for (let repo of action.data.Repos) {
-						orgs[repo.Owner] = true;
-						if (repo["Language"]) {
-							languages.push(repo["Language"]);
-						}
-
 						if (repo.Private) {
 							privateOrgs.push(repo.Owner);
+							languages.push(repo["Language"]);
+							orgs[repo.Owner] = true;
 						}
 					}
 
@@ -330,7 +328,7 @@ class EventLoggerClass {
 					this.setUserProperty("orgs", Object.keys(orgs));
 					this.setUserProperty("num_github_repos", action.data.Repos.length);
 					this.setIntercomProperty("companies", Object.keys(orgs).map(org => ({ id: `github_${org}`, name: org })));
-					this.setUserProperty("companies", Object.keys(orgs).map(org => ({ id: `github_${org}`, name: org })));
+					this.setUserProperty("companies", privateOrgs);
 					if (orgs["sourcegraph"]) {
 						this.setUserProperty("is_sg_employee", "true");
 					}
@@ -348,6 +346,7 @@ class EventLoggerClass {
 					for (let orgs of action.data) {
 						orgNames.push(orgs.Login);
 					}
+					this.setIntercomProperty("authed_orgs", orgNames);
 					this.setUserProperty("authed_orgs", orgNames);
 				}
 				break;
