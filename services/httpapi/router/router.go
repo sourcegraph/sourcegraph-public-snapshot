@@ -17,7 +17,6 @@ const (
 	Commit                   = "commit"
 	Coverage                 = "coverage"
 	DeltaFiles               = "delta.files"
-	GitHubToken              = "github-token"
 	GlobalSearch             = "global.search"
 	Repo                     = "repo"
 	RepoJumpDef              = "repo.jump-def"
@@ -75,8 +74,6 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/global-search").Methods("GET").Name(GlobalSearch)
 
 	base.Path("/internal/appdash/record-span").Methods("POST").Name(InternalAppdashRecordSpan)
-
-	base.Path("/github-token").Methods("GET").Name(GitHubToken)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
