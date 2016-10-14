@@ -603,6 +603,12 @@
 			"revisionTime": "2016-10-13T23:43:59Z"
 		},
 		{
+			"checksumSHA1": "gPeox7+z+xVc8cEWDpKrRwZ4/oo=",
+			"path": "github.com/sourcegraph/sourcegraph-go/pkg/lspext",
+			"revision": "de96780aeb5cae24c12616d645e80e187217dc4e",
+			"revisionTime": "2016-10-13T23:43:59Z"
+		},
+		{
 			"checksumSHA1": "lxZnbbPCOmaLq2c1g42Ww964hgk=",
 			"path": "github.com/sourcegraph/srclib-json",
 			"revision": "da879fdce0b22a422c9607f054a9f8f03b2c69f5",
