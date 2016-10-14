@@ -5,6 +5,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import {colors, whitespace} from "sourcegraph/components/utils/index";
 import {Heading, Panel, Table, Code} from "sourcegraph/components";
 import {Alert, Cone, Dismiss, DownPointer, GitHubLogo, Search, Spinner} from "sourcegraph/components/symbols";
+import {Flag, Check, CheckCircle, Close, ChevronDown} from "sourcegraph/components/symbols/Zondicons";
 
 import * as classNames from "classnames";
 
@@ -25,6 +26,11 @@ export class Symbols extends React.Component<{}, any> {
 						<GitHubLogo color={colors.coolGray2()} style={{padding: whitespace[2]}} />
 						<Search color={colors.coolGray2()} style={{padding: whitespace[2]}} />
 						<Spinner color={colors.coolGray2()} style={{padding: whitespace[2]}} />
+						<Flag color={colors.coolGray2()} style={{padding: whitespace[2]}} />
+						<ChevronDown color={colors.coolGray2()} style={{padding: whitespace[2]}} />
+						<Close color={colors.coolGray2()} style={{padding: whitespace[2]}} />
+						<Check color={colors.coolGray2()} style={{padding: whitespace[2]}} />
+						<CheckCircle color={colors.coolGray2()} style={{padding: whitespace[2]}} />
 
 						<p>
 							These symbols are each individual components that share the same props api. See <Code>/components/symbols</Code> for component usage.
