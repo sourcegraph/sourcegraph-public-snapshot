@@ -22,6 +22,18 @@ export const upcomingExtensions = [
 	"php", "phtml", "php3", "php4", "php5", "php7", "phps", // PHP
 ];
 
+export function getModeFromExtension(ext) {
+	switch (ext) {
+		case "go":
+			return "go";
+		case "ts":
+		case "tsx":
+			return "typescript";
+		default:
+			return "unknown";
+	}
+}
+
 export function getPathExtension(path) {
 	const pathSplit = path.split(".");
 	if (pathSplit.length === 1) return null;

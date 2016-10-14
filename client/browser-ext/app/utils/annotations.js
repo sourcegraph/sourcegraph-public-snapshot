@@ -304,16 +304,13 @@ function addEventListeners(el, path, repoRevSpec, line) {
 	el.onclick = function(e) {
 		let t = getTarget(e.target);
 		if (!t) return;
-		let col = t.dataset.byteoffset;
-		let url = `https://sourcegraph.com/.api/repos/${repoRevSpec.repoURI}@${repoRevSpec.rev}/-/jump-def?file=${path}&line=${line - 1}&character=${col}`;
 
-		fetchJumpURL(url, function(defUrl, isCurrentPage) {
-			if (!defUrl) return;
+		fetchJumpURL(t.dataset.byteoffset, function(defObj) {
 			// Either move to a line on the same page, or refresh the page to a new blob view.
-			if (isCurrentPage && !repoRevSpec.isDelta) {
-				location.hash = defUrl.slice(defUrl.indexOf('#'));
+			if (defObj.defCurPage && !repoRevSpec.isDelta) {
+				location.hash = defObj.defUrl.slice(defObj.defUrl.indexOf('#'));
 			} else {
-				location.href = defUrl;
+				location.href = defObj.defUrl;
 			}
 		});
 	}
@@ -326,13 +323,11 @@ function addEventListeners(el, path, repoRevSpec, line) {
 	el.onmouseover = function(e) {
 		let t = getTarget(e.target);
 		if (!t) return;
+
 		if (activeTarget !== t) {
 			activeTarget = t;
 
-			let col = activeTarget.dataset.byteoffset;
-			let url = `https://sourcegraph.com/.api/repos/${repoRevSpec.repoURI}@${repoRevSpec.rev}/-/hover-info?file=${path}&line=${line - 1}&character=${col}`;
-
-			fetchPopoverData(url, function(html) {
+			fetchPopoverData(activeTarget.dataset.byteoffset, function(html) {
 				if (activeTarget && html) showPopover(html, e.pageX, e.pageY);
 			});
 		}
@@ -369,45 +364,105 @@ function addEventListeners(el, path, repoRevSpec, line) {
 		}
 	}
 
-	function fetchJumpURL(url, cb) {
-		if (typeof jumptodefcache[url] !== 'undefined') return cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
+	function fetchJumpURL(col, cb) {
+		if (typeof jumptodefcache[`${path}@${repoRevSpec.rev}:${line}@${col}`] !== 'undefined') {
+			return cb(jumptodefcache[`${path}@${repoRevSpec.rev}:${line}@${col}`]);
+		}
 
-		fetch(url)
+		const body = [
+			{
+				id: 0,
+				method: "initialize",
+				params: {
+					rootPath: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}`,
+					mode: `${utils.getModeFromExtension(utils.getPathExtension(path))}`,
+				},
+			},
+			{
+				id: 1,
+				method: "textDocument/definition",
+				params: {
+					textDocument: {
+						uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
+					},
+					position: {
+						character: parseInt(col, 10),
+						line: parseInt(line, 10) - 1,
+					},
+				},
+			},
+			{
+				id: 2,
+				method: "shutdown",
+			},
+			{
+				method: "exit",
+			},
+		];
+
+		return fetch("https://sourcegraph.com/.api/xlang/textDocument/definition", {method: "POST", body: JSON.stringify(body)})
 			.then((json) => {
-				try {
-					const jmpuri = json.uri.split("://");
-					const jmpFragment0 = jmpuri[1].split("?");
-					const jmpFragment1 = jmpFragment0[1].split("#");
+				const respUri = json[1].result[0].uri.split("git://")[1];
+				const prt0Uri = respUri.split("?");
+				const prt1Uri = prt0Uri[1].split("#");
 
-					const jmprep = jmpFragment0[0];
+				const repoUri = prt0Uri[0];
+				const frevUri = prt1Uri[0] || "master";
+				const pathUri = prt1Uri[1];
+				const lineUri = parseInt(json[1].result[0].range.start.line, 10) + 1;
 
-					// TODO: Fix this revision overriding, back-end is returning wrong jump-def line range
-					const jmprev = jmprep === 'github.com/golang/go' ? "go1.7.1" : jmpFragment1[0] ? jmpFragment1[0] : "master";
-					const jmppth = jmpFragment1[1];
-					const jmplin = (Array.isArray(json.range) ? json.range[0].start.line : json.range.start.line) + 1; // line is 0-index but Github uses 1-index
-					const jmp = `https://${jmprep}/blob/${jmprev}/${jmppth}#L${jmplin}`;
+				jumptodefcache[`${path}@${repoRevSpec.rev}:${line}@${col}`] = {
+					defUrl: `https://${repoUri}/blob/${frevUri}/${pathUri}${lineUri ? "#L" + lineUri : "" }`,
+					defCurPage: path === pathUri,
+				};
 
-					jumptodefcache[url] = {defUrl: jmp, defCurPage: jmprep === repoRevSpec.repoURI && jmppth === path};
-					cb(jumptodefcache[url].defUrl, jumptodefcache[url].defCurPage);
-				} catch (err) {
-					jumptodefcache[url] = {defUrl: "", defCurPage: false};
-				}
+				cb(jumptodefcache[`${path}@${repoRevSpec.rev}:${line}@${col}`]);
 			})
-			.catch((err) => cb(null));
+			.catch((err) => {});
 	}
 
-	function fetchPopoverData(url, cb) {
-		if (typeof popoverCache[url] !== 'undefined') return cb(popoverCache[url]);
+	function fetchPopoverData(col, cb) {
+		if (typeof popoverCache[`${path}@${repoRevSpec.rev}:${line}@${col}`] !== "undefined") {
+			return cb(popoverCache[`${path}@${repoRevSpec.rev}:${line}@${col}`]);
+		}
 
-		fetch(url)
+		const body = [
+			{
+				id: 0,
+				method: "initialize",
+				params: {
+					rootPath: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}`,
+					mode: `${utils.getModeFromExtension(utils.getPathExtension(path))}`,
+				},
+			},
+			{
+				id: 1,
+				method: "textDocument/hover",
+				params: {
+					textDocument: {
+						uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
+					},
+					position: {
+						character: parseInt(col, 10),
+						line: parseInt(line, 10) - 1,
+					},
+				},
+			},
+			{
+				id: 2,
+				method: "shutdown",
+			},
+			{
+				method: "exit",
+			},
+		];
+
+		return fetch("https://sourcegraph.com/.api/xlang/textDocument/hover", {method: "POST", body: JSON.stringify(body)})
 			.then((json) => {
-				if (json.Title === "" && !json.def) {
-					popoverCache[url] = "";
-				} else {
-					popoverCache[url] = `<div><div class=${styles.popoverTitle}>${json.Title || ""}</div><div>${json.def ? json.def.DocHTML.__html || "" : ""}</div><div class=${styles.popoverRepo}>${json.def ? json.def.Repo || "" : ""}</div></div>`;
-				}
-				cb(popoverCache[url]);
+				popoverCache[`${path}@${repoRevSpec.rev}:${line}@${col}`] = `<div><div class=${styles.popoverTitle}>${json[1].result.contents[0].value || ""}</div></div>`;
+
+				cb(popoverCache[`${path}@${repoRevSpec.rev}:${line}@${col}`]);
 			})
-			.catch((err) => cb(null));
+			.catch((err) => {});
 	}
 }

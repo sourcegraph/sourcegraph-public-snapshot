@@ -1,5 +1,4 @@
 import "./fetch";
-import btoa from "btoa";
 
 let token = null;
 export function useAccessToken(tok) {
@@ -13,8 +12,7 @@ const defaultOptions = function() {
 
 	const headers = new Headers();
 	if (token) {
-		let auth = `x-oauth-basic:${token}`;
-		headers.set("Authorization", `Basic ${btoa(auth)}`);
+		headers.set("Authorization", `session ${token}`);
 	}
 	return {headers};
 }
