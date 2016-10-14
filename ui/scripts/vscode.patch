@@ -20,20 +20,18 @@ diff --git a/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts b
 index c9ba5ea..8ae2336 100644
 --- a/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts
 +++ b/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts
-@@ -8,7 +8,15 @@ import * as flags from 'vs/base/common/flags';
+@@ -8,7 +8,13 @@ import * as flags from 'vs/base/common/flags';
  import { logOnceWebWorkerWarning, IWorker, IWorkerCallback, IWorkerFactory } from 'vs/base/common/worker/simpleWorker';
  
  function defaultGetWorkerUrl(workerId: string, label: string): string {
 -	return require.toUrl('./' + workerId) + '#' + label;
-+	// HACK: Run the web worker from a webpack script that is in the
-+	// bundle but that doesn't have its own separate URL. We must
-+	// assign this before anything in vscode gets run, which is why we
-+	// need to set it in here instead of in our own code.
-+	//
-+	// See http://stackoverflow.com/questions/10343913/how-to-create-a-web-worker-from-a-string and
-+	// http://stackoverflow.com/questions/5408406/web-workers-without-a-separate-javascript-file
-+	// for more information about (and limitations of) this technique.
-+	return require("worker?inline!vs/base/worker/workerMain");
++	// HACK: Disable the web worker, and remove the require call that would
++	// otherwise cause Webpack to process it. If we require using worker-loader,
++	// it tries to fetch the script from a URL "https://sourcegraph.com/myrepo/-/myfile.go function() { ..."
++	// for some reason. This is a bug in Webpack and/or worker-loader. But we
++	// can safely disable the web worker without loss of functionality, so
++	// we choose that approach instead of debugging it for now.
++	throw new Error('web worker disabled; this should be unreachable');
  }
  var getWorkerUrl = flags.getCrossOriginWorkerScriptUrl || defaultGetWorkerUrl;
  
