@@ -1,6 +1,7 @@
 package dbutil
 
 import (
+	"context"
 	"database/sql"
 	"database/sql/driver"
 	"errors"
@@ -8,6 +9,9 @@ import (
 	"log"
 	"strings"
 	"time"
+
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 
 	"gopkg.in/gorp.v1"
 )
@@ -62,7 +66,16 @@ func Transact(dbh gorp.SqlExecutor, fn func(dbh gorp.SqlExecutor) error) (err er
 
 // Transaction calls f within a transaction, rolling back if any error is
 // returned by the function.
-func Transaction(db *sql.DB, f func(tx *sql.Tx) error) (err error) {
+func Transaction(ctx context.Context, db *sql.DB, f func(tx *sql.Tx) error) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "dbutil.Transaction")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	tx, err := db.Begin()
 	if err != nil {
 		return err
