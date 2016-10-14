@@ -13,39 +13,30 @@ import (
 )
 
 const (
-	Annotations              = "annotations"
-	Commit                   = "commit"
-	Coverage                 = "coverage"
-	DeltaFiles               = "delta.files"
-	GlobalSearch             = "global.search"
-	Repo                     = "repo"
-	RepoJumpDef              = "repo.jump-def"
-	RepoResolve              = "repo.resolve"
-	RepoCreate               = "repo.create"
-	RepoRefresh              = "repo.refresh"
-	RepoInventory            = "repo.inventory"
-	RepoBranches             = "repo.branches"
-	RepoTree                 = "repo.tree"
-	RepoCommits              = "repo.commits"
-	RepoResolveRev           = "repo.resolve-rev"
-	RepoTags                 = "repo.tags"
-	RepoTreeList             = "repo.tree-list"
-	RepoHoverInfo            = "repo.hover-info"
-	RepoWebhookEnable        = "repo.webhook-enable"
-	RepoWebhookCallback      = "repo.webhook-callback"
-	Repos                    = "repos"
-	SourcegraphDesktop       = "sourcegraph-desktop"
-	AsyncRefreshIndexes      = "async.refresh-indexes"
-	ResolveCustomImportsInfo = "resolve-custom-import.info"
-	ResolveCustomImportsTree = "resolve-custom-import.tree"
+	Annotations         = "annotations"
+	GlobalSearch        = "global.search"
+	Repo                = "repo"
+	RepoJumpDef         = "repo.jump-def"
+	RepoResolve         = "repo.resolve"
+	RepoCreate          = "repo.create"
+	RepoRefresh         = "repo.refresh"
+	RepoInventory       = "repo.inventory"
+	RepoBranches        = "repo.branches"
+	RepoTree            = "repo.tree"
+	RepoResolveRev      = "repo.resolve-rev"
+	RepoTags            = "repo.tags"
+	RepoTreeList        = "repo.tree-list"
+	RepoHoverInfo       = "repo.hover-info"
+	Repos               = "repos"
+	SourcegraphDesktop  = "sourcegraph-desktop"
+	AsyncRefreshIndexes = "async.refresh-indexes"
 
 	XLang = "xlang"
 
-	InternalAppdashRecordSpan = "internal.appdash.record-span"
-	BetaSubscription          = "beta-subscription"
-	Orgs                      = "orgs"
-	OrgMembers                = "org-members"
-	OrgInvites                = "org-invites"
+	BetaSubscription = "beta-subscription"
+	Orgs             = "orgs"
+	OrgMembers       = "org-members"
+	OrgInvites       = "org-invites"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -64,16 +55,10 @@ func New(base *mux.Router) *mux.Router {
 
 	base.Path("/annotations").Methods("GET").Name(Annotations)
 
-	base.Path("/coverage").Methods("GET").Name(Coverage)
-
 	base.Path("/repos").Methods("GET").Name(Repos)
 	base.Path("/repos").Methods("POST").Name(RepoCreate)
-	base.Path("/webhook/enable").Methods("GET").Name(RepoWebhookEnable)
-	base.Path("/webhook/callback").Methods("POST").Name(RepoWebhookCallback)
 
 	base.Path("/global-search").Methods("GET").Name(GlobalSearch)
-
-	base.Path("/internal/appdash/record-span").Methods("POST").Name(InternalAppdashRecordSpan)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
@@ -89,11 +74,8 @@ func New(base *mux.Router) *mux.Router {
 	repo.Path("/resolve").Methods("GET").Name(RepoResolve)
 	repo.Path("/refresh").Methods("POST").Name(RepoRefresh)
 	repo.Path("/branches").Methods("GET").Name(RepoBranches)
-	repo.Path("/commits").Methods("GET").Name(RepoCommits) // uses Head/Base query params, not {Rev} route var
 	repoRev.Path("/tree-list").Methods("GET").Name(RepoTreeList)
 	repoRev.Path("/rev").Methods("GET").Name(RepoResolveRev)
-	repoRev.Path("/commit").Methods("GET").Name(Commit)
-	repoRev.Path("/delta/{DeltaBaseRev}/-/files").Methods("GET").Name(DeltaFiles)
 	repoRev.Path("/inventory").Methods("GET").Name(RepoInventory)
 	repoRev.Path("/tree{Path:.*}").Name(RepoTree)
 	repoRev.Path("/hover-info").Methods("GET").Name(RepoHoverInfo)
@@ -101,9 +83,6 @@ func New(base *mux.Router) *mux.Router {
 	repo.Path("/tags").Methods("GET").Name(RepoTags)
 
 	repo.Path("/async-refresh-indexes").Methods("POST").Name(AsyncRefreshIndexes)
-
-	base.Path("/resolve-custom-import/info").Methods("GET").Name(ResolveCustomImportsInfo)
-	base.Path("/resolve-custom-import/tree").Methods("GET").Name(ResolveCustomImportsTree)
 
 	return base
 }

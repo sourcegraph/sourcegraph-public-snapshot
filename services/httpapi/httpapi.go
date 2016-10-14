@@ -52,15 +52,12 @@ func NewHandler(m *mux.Router) http.Handler {
 
 	// Set handlers for the installed routes.
 	m.Get(apirouter.Annotations).Handler(httptrace.TraceRoute(handler(serveAnnotations)))
-	m.Get(apirouter.Commit).Handler(httptrace.TraceRoute(handler(serveCommit)))
-	m.Get(apirouter.Coverage).Handler(httptrace.TraceRoute(handler(serveCoverage)))
 	m.Get(apirouter.GlobalSearch).Handler(httptrace.TraceRoute(handler(serveGlobalSearch)))
 	m.Get(apirouter.Repo).Handler(httptrace.TraceRoute(handler(serveRepo)))
 	m.Get(apirouter.RepoResolve).Handler(httptrace.TraceRoute(handler(serveRepoResolve)))
 	m.Get(apirouter.RepoInventory).Handler(httptrace.TraceRoute(handler(serveRepoInventory)))
 	m.Get(apirouter.RepoCreate).Handler(httptrace.TraceRoute(handler(serveRepoCreate)))
 	m.Get(apirouter.RepoBranches).Handler(httptrace.TraceRoute(handler(serveRepoBranches)))
-	m.Get(apirouter.RepoCommits).Handler(httptrace.TraceRoute(handler(serveRepoCommits)))
 	m.Get(apirouter.RepoTree).Handler(httptrace.TraceRoute(handler(serveRepoTree)))
 	m.Get(apirouter.RepoTreeList).Handler(httptrace.TraceRoute(handler(serveRepoTreeList)))
 	m.Get(apirouter.RepoRefresh).Handler(httptrace.TraceRoute(handler(serveRepoRefresh)))
@@ -68,11 +65,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.RepoTags).Handler(httptrace.TraceRoute(handler(serveRepoTags)))
 	m.Get(apirouter.RepoHoverInfo).Handler(httptrace.TraceRoute(handler(serveRepoHoverInfo)))
 	m.Get(apirouter.RepoJumpDef).Handler(httptrace.TraceRoute(handler(serveJumpToDef)))
-	m.Get(apirouter.RepoWebhookEnable).Handler(httptrace.TraceRoute(handler(serveRepoWebhookEnable)))
-	m.Get(apirouter.RepoWebhookCallback).Handler(httptrace.TraceRoute(handler(serveRepoWebhookCallback)))
 	m.Get(apirouter.Repos).Handler(httptrace.TraceRoute(handler(serveRepos)))
-	m.Get(apirouter.ResolveCustomImportsInfo).Handler(httptrace.TraceRoute(handler(serveResolveCustomImportsInfo)))
-	m.Get(apirouter.ResolveCustomImportsTree).Handler(httptrace.TraceRoute(handler(serveResolveCustomImportsTree)))
 	m.Get(apirouter.AsyncRefreshIndexes).Handler(httptrace.TraceRoute(handler(serveRefreshIndexes)))
 
 	m.Get(apirouter.SourcegraphDesktop).Handler(httptrace.TraceRoute(handler(serveSourcegraphDesktopUpdateURL)))

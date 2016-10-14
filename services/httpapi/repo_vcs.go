@@ -30,55 +30,6 @@ func serveRepoResolveRev(w http.ResponseWriter, r *http.Request) error {
 	return writeJSON(w, res)
 }
 
-func serveCommit(w http.ResponseWriter, r *http.Request) error {
-	rawRepoRev := routevar.ToRepoRev(mux.Vars(r))
-	abs := len(rawRepoRev.Rev) == 40 // absolute commit ID?
-
-	repoRev, err := resolveLocalRepoRev(r.Context(), rawRepoRev)
-	if err != nil {
-		return err
-	}
-	commit, err := backend.Repos.GetCommit(r.Context(), repoRev)
-	if err != nil {
-		return err
-	}
-
-	var cacheControl string
-	if abs {
-		cacheControl = "private, max-age=3600"
-	} else {
-		cacheControl = "private, max-age=15"
-	}
-	w.Header().Set("cache-control", cacheControl)
-	return writeJSON(w, commit)
-}
-
-func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
-	repoID, err := resolveLocalRepo(r.Context(), routevar.ToRepo(mux.Vars(r)))
-	if err != nil {
-		return err
-	}
-
-	var opt sourcegraph.RepoListCommitsOptions
-	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
-		return err
-	}
-
-	commits, err := backend.Repos.ListCommits(r.Context(), &sourcegraph.ReposListCommitsOp{Repo: repoID, Opt: &opt})
-	if err != nil {
-		return err
-	}
-
-	var cacheControl string
-	if len(opt.Head) == 40 && (len(opt.Base) == 0 || len(opt.Base) == 40) {
-		cacheControl = "private, max-age=600"
-	} else {
-		cacheControl = "private, max-age=15"
-	}
-	w.Header().Set("cache-control", cacheControl)
-	return writeJSON(w, commits)
-}
-
 func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 	var opt sourcegraph.MirrorReposRefreshVCSOp
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
