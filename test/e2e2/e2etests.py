@@ -153,7 +153,7 @@ def test_find_external_refs(d):
         Util.select_search_result_using_arrow_keys(d, test['symbol'])
 
         # Right click, find external references
-        wait_for(lambda: len(d.find_tokens(test['symbol_name'])) > 0)
+        wait_for(lambda: len(d.find_tokens(test['symbol_name'])) > 0, 5) # wait a little longer, to rule out VSCode start-up time
         def rc():
             retry(lambda: d.active_elem().send_keys(Keys.ESCAPE)) # hide any tooltip that might steal the click
             retry(lambda: d.active_elem().send_keys(Keys.UP)) # cursor might steal the click if we don't move it out of the way
