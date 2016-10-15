@@ -63,7 +63,7 @@ export class Editor implements IDisposable {
 	private _editorService: EditorService;
 	private _toDispose: IDisposable[] = [];
 	private _initializedModes: Set<string> = new Set();
-	private _mouseIsOverIdentifier: boolean = false;
+	private _elementUnderMouse: Element;
 
 	constructor(
 		elem: HTMLElement
@@ -131,7 +131,7 @@ export class Editor implements IDisposable {
 		});
 
 		this._editor.onMouseMove(e => {
-			this._mouseIsOverIdentifier = Boolean(/.*identifier.*/.exec(e.target.element.className));
+			this._elementUnderMouse = e.target.element;
 		});
 
 		// Rename the "Find All References" action to "Find Local References".
@@ -265,13 +265,6 @@ export class Editor implements IDisposable {
 			}
 		}
 
-		// HACK(john): VSCode sends a hover request whenever your cursor moves over any token of
-		// buffer content. We should remove this and submit a patch to VSCode to short-circuit
-		// hover requests for certain tokens.
-		if (!this._mouseIsOverIdentifier) {
-			return Promise.resolve({contents: []});
-		}
-
 		const flight = lsp.send(model, "textDocument/hover", {
 			textDocument: {uri: URIUtils.fromRefsDisplayURIMaybe(model.uri).toString(true)},
 			position: lsp.toPosition(position),
@@ -316,6 +309,8 @@ export class Editor implements IDisposable {
 					hoverCache.set(key, hover);
 					hoverFlights.delete(key);
 				}
+				// Make sure tokens that don't identifier class but do have hover info get a pointer cursor.
+				(this._elementUnderMouse as any).style.cursor = "pointer";
 				return hover;
 			});
 
