@@ -6,11 +6,11 @@ import {deepFreeze} from "sourcegraph/util/deepFreeze";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import "sourcegraph/repo/RepoBackend";
 
-function keyFor(repo, rev?) {
+function keyFor(repo: string, rev?: string) {
 	return `${repo}@${rev || ""}`;
 }
 
-function keyForSymbols(mode, repo, rev?, query?) {
+function keyForSymbols(mode: string, repo: string, rev?: string, query?: string) {
 	return `(mode:${mode})${repo}@${rev || ""}${query ? "?" + query : ""}`;
 }
 
@@ -99,7 +99,7 @@ class RepoStoreClass extends Store<any> {
 		};
 	}
 
-	__onDispatch(action) {
+	__onDispatch(action: any) {
 		if (action instanceof RepoActions.ReposFetched) {
 			this.repos = deepFreeze(Object.assign({}, this.repos, {
 				listContent: Object.assign({}, this.repos.listContent, {
