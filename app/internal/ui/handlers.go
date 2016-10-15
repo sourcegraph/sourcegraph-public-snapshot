@@ -34,8 +34,9 @@ func init() {
 	router.Get(routeRepoLanding).Handler(httptrace.TraceRoute(internal.Handler(serveRepoLanding)))
 	router.Get(routeTree).Handler(httptrace.TraceRoute(handler(serveTree)))
 	router.Get(routeTopLevel).Handler(httptrace.TraceRoute(internal.Handler(serveAny)))
-	router.PathPrefix("/").Methods("GET").Handler(httptrace.TraceRoute(internal.Handler(serveAny)))
-	router.NotFoundHandler = internal.Handler(serveAny)
+	router.Get(routeHomePage).Handler(httptrace.TraceRoute(internal.Handler(serveAny)))
+	router.PathPrefix("/").Methods("GET").Handler(httptrace.TraceRouteFallback("app.serve-any", internal.Handler(serveAny)))
+	router.NotFoundHandler = httptrace.TraceRouteFallback("app.serve-any-404", internal.Handler(serveAny))
 }
 
 func Router() *mux.Router {
