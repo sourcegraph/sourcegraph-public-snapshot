@@ -56,7 +56,7 @@ func resolveRepoRev(ctx context.Context, repo int32, rev string) (vcs.CommitID, 
 			if !notExistError.CloneInProgress {
 				enqueueUpdate = true
 			}
-			return "", vcs.RepoNotExistError{CloneInProgress: true}
+			err = vcs.RepoNotExistError{CloneInProgress: true}
 		}
 		if err == vcs.ErrRevisionNotFound {
 			// Attempt to update the VCS repo if the revision wasn't
