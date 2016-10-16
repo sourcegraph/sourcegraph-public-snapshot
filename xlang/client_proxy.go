@@ -296,7 +296,10 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.shutdown = true
 		c.mu.Unlock()
 		c.proxy.removeClientConn(c)
-		return nil, c.conn.Close()
+		if err := c.conn.Close(); err != jsonrpc2.ErrClosed { // ignore if already closed
+			return nil, err
+		}
+		return nil, nil
 
 	default:
 		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("client proxy handler: method not found: %q", req.Method)}
