@@ -25,8 +25,6 @@ var Flags struct {
 
 	DisableExternalLinks bool `long:"app.disable-external-links" description:"Disable links to external websites" env:"SRC_APP_DISABLE_EXTERNAL_LINKS"`
 
-	ReloadAssets bool `long:"reload" description:"(development mode only) reload app templates and other assets on each request" env:"SRC_RELOAD"`
-
 	ExtraHeadHTML template.HTML `long:"app.extra-head-html" description:"extra HTML (<script> tags, etc.) to insert before the </head> tag" env:"SRC_APP_EXTRA_HEAD_HTML"`
 	ExtraBodyHTML template.HTML `long:"app.extra-body-html" description:"extra HTML (<script> tags, etc.) to insert before the </body> tag" env:"SRC_APP_EXTRA_BODY_HTML"`
 

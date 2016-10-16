@@ -151,6 +151,12 @@
 			"revisionTime": "2015-05-15T14:53:56Z"
 		},
 		{
+			"checksumSHA1": "nmc2qcdbg17Ny8tHeEDQuphV6jA=",
+			"path": "github.com/fsnotify/fsnotify",
+			"revision": "bd2828f9f176e52d7222e565abb2d338d3f3c103",
+			"revisionTime": "2016-10-13T01:22:19Z"
+		},
+		{
 			"checksumSHA1": "2UmMbNHc8FBr98mJFN1k8ISOIHk=",
 			"path": "github.com/garyburd/redigo/internal",
 			"revision": "b8dc90050f24c1a73a52f107f3f575be67b21b7c",
@@ -1211,6 +1217,12 @@
 			"path": "sourcegraph.com/sqs/pbtypes",
 			"revision": "4d1b9dc7ffc3f7b555de9b02055fa616f0ebcd18",
 			"revisionTime": "2016-01-07T01:09:29-08:00"
+		},
+		{
+			"checksumSHA1": "isIOkjAlG6NK3lSgsV8+lyvg0aE=",
+			"path": "sourcegraph.com/sqs/rego",
+			"revision": "b92b6c8b5fb8de564d5bdf5a8a61d06116971fd6",
+			"revisionTime": "2016-10-16T07:24:54Z"
 		}
 	],
 	"rootPath": "sourcegraph.com/sourcegraph/sourcegraph"

@@ -5,10 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/oauth2client"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
@@ -45,7 +43,7 @@ func NewHandler(r *router.Router) http.Handler {
 		mw = append(mw, cspHandler.Middleware)
 	}
 
-	m.Handle("/", handlerutil.WithMiddleware(r, tmplReloadMiddleware))
+	m.Handle("/", r)
 
 	r.Get(router.RobotsTxt).Handler(httptrace.TraceRoute(http.HandlerFunc(robotsTxt)))
 	r.Get(router.Favicon).Handler(httptrace.TraceRoute(http.HandlerFunc(favicon)))
@@ -84,15 +82,6 @@ var cspConfig = csp.Config{
 		StyleSrc:   []string{"*"},
 		ReportURI:  "/.csp-report",
 	},
-}
-
-func tmplReloadMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if appconf.Flags.ReloadAssets {
-			tmpl.Load()
-		}
-		next.ServeHTTP(w, r)
-	})
 }
 
 func serveLogout(w http.ResponseWriter, r *http.Request) error {
