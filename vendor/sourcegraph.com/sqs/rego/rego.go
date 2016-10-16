@@ -21,6 +21,7 @@ var (
 	timings   = flag.Bool("timings", false, "show timings")
 	race      = flag.Bool("race", false, "build with Go race detector")
 	ienv      = flag.String("installenv", "", "env vars to pass to `go install` (comma-separated: A=B,C=D)")
+	extra     = flag.String("extra-watches", "", "comma-separated path match patterns to also watch (in addition to transitive deps of Go pkg)")
 )
 
 func main() {
@@ -82,6 +83,23 @@ func main() {
 				}
 				pkgs = append(pkgs, impPkg)
 				seenPkgs[imp] = struct{}{}
+			}
+		}
+	}
+
+	if *extra != "" {
+		for _, pat := range strings.Split(*extra, ",") {
+			matches, err := filepath.Glob(pat)
+			if err != nil {
+				log.Fatal(err)
+			}
+			for _, path := range matches {
+				if *verbose {
+					log.Printf("Watch (extra) %s", path)
+				}
+				if err := w.Add(path); err != nil {
+					log.Fatal(err)
+				}
 			}
 		}
 	}

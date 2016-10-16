@@ -1219,10 +1219,10 @@
 			"revisionTime": "2016-01-07T01:09:29-08:00"
 		},
 		{
-			"checksumSHA1": "eSjeUuZJb4VzQV9NXrg02TQb5Yo=",
+			"checksumSHA1": "isIOkjAlG6NK3lSgsV8+lyvg0aE=",
 			"path": "sourcegraph.com/sqs/rego",
-			"revision": "b7df1942617802c01679efb9b9e4aeacaa218ba6",
-			"revisionTime": "2016-10-16T07:04:39Z"
+			"revision": "b92b6c8b5fb8de564d5bdf5a8a61d06116971fd6",
+			"revisionTime": "2016-10-16T07:24:54Z"
 		}
 	],
 	"rootPath": "sourcegraph.com/sourcegraph/sourcegraph"

@@ -17,4 +17,10 @@ export WEBPACK_DEV_SERVER_ADDR=127.0.0.1:8080
 export DEBUG=t
 
 type ulimit > /dev/null && ulimit -n 10000
-exec "$PWD"/vendor/bin/rego -installenv=GOGC=off,GODEBUG=sbrk=1 -tags="${GOTAGS-}" sourcegraph.com/sourcegraph/sourcegraph/cmd/src ${SRCFLAGS-} serve --reload --app.disable-support-services ${SERVEFLAGS-}
+exec "$PWD"/vendor/bin/rego \
+	 -installenv=GOGC=off,GODEBUG=sbrk=1 \
+	 -tags="${GOTAGS-}" \
+	 -extra-watches='app/templates/*' \
+	 sourcegraph.com/sourcegraph/sourcegraph/cmd/src ${SRCFLAGS-} \
+	 serve ${SERVEFLAGS-} \
+	 --app.disable-support-services
