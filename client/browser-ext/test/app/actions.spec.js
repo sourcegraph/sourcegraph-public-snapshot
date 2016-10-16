@@ -22,9 +22,6 @@ describe("actions", () => {
 	const query = "query";
 
 	const resolvedRev = "resolvedRev";
-	const dataVer = "dataVer";
-	const srclibDataVersionAPI = `https://sourcegraph.com/.api/repos/${repo}@${resolvedRev}/-/srclib-data-version?Path=${path}`;
-	const srclibDataVersion = {CommitID: dataVer};
 
 	function errorResponse(status, url) {
 		return {response: {status, url}};
@@ -55,44 +52,35 @@ describe("actions", () => {
 	});
 
 	describe("getAnnotations", () => {
-		const annotationsAPI = `https://sourcegraph.com/.api/annotations?Entry.RepoRev.Repo=${repo}&Entry.RepoRev.CommitID=${dataVer}&Entry.Path=${path}&Range.StartByte=0&Range.EndByte=0`;
+		const annotationsAPI = `https://sourcegraph.com/.api/repos/${repo}@${resolvedRev}/-/tree/${path}?ContentsAsString=false&NoSrclibAnns=true`;
 
 		it("200s", () => {
-			fetchMock.mock(srclibDataVersionAPI, "GET", srclibDataVersion).mock(annotationsAPI, "GET", {Annotations: []});
+			fetchMock.mock(annotationsAPI, "GET", {Annotations: []});
 
 		    return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
 		    	resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
 		    	annotations: {content: {}},
-		    	srclibDataVersion: {content: {}},
 		    }, [
-		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev: resolvedRev, path, json: srclibDataVersion},
-		    	{type: types.FETCHED_ANNOTATIONS, repo, rev: dataVer, path, json: {Annotations: []}},
+		    	{type: types.FETCHED_ANNOTATIONS, repo, rev: resolvedRev, path, json: {Annotations: []}},
 		    ]);
 		});
 
 		it("404s", () => {
-			fetchMock.mock(srclibDataVersionAPI, "GET", srclibDataVersion).mock(annotationsAPI, "GET", 404);
+			fetchMock.mock(annotationsAPI, "GET", 404);
 
 		    return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
 		    	resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
 		    	annotations: {content: {}},
-		    	srclibDataVersion: {content: {}},
 		    }, [
-		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev: resolvedRev, path, json: srclibDataVersion},
-		    	{type: types.FETCHED_ANNOTATIONS, repo, rev: dataVer, path, err: errorResponse(404, annotationsAPI)},
+		    	{type: types.FETCHED_ANNOTATIONS, repo, rev: resolvedRev, path, err: errorResponse(404, annotationsAPI)},
 		    ]);
 		});
 
 		it("noops when annotations are cached", () => {
-			fetchMock.mock(srclibDataVersionAPI, "GET", srclibDataVersion);
-
 			return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
 		    	resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
-				defs: {content: {[keyFor(repo, dataVer, path, query)]: {Annotations: []}}},
-		    	srclibDataVersion: {content: {}},
-			}, [
-		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev: resolvedRev, path, json: srclibDataVersion},
-			]);
+				defs: {content: {[keyFor(repo, resolvedRev, path, query)]: {Annotations: []}}},
+			}, []);
 		});
 	});
 });
