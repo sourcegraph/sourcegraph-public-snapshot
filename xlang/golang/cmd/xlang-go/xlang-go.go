@@ -8,9 +8,6 @@ import (
 	"net"
 	"os"
 
-	lightstep "github.com/lightstep/lightstep-tracer-go"
-	opentracing "github.com/opentracing/opentracing-go"
-
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
@@ -35,12 +32,6 @@ func main() {
 func run() error {
 	if *profbind != "" {
 		go debugserver.Start(*profbind)
-	}
-
-	if t := os.Getenv("LIGHTSTEP_ACCESS_TOKEN"); t != "" {
-		opentracing.InitGlobalTracer(lightstep.NewTracer(lightstep.Options{
-			AccessToken: t,
-		}))
 	}
 
 	switch *mode {
