@@ -21,7 +21,7 @@
 		sentryTags["Trace"] = "{{urlToTrace .Ctx}}";
 
 		window._sentryTags = sentryTags;
-		window._sentryRavenDSN = "{{if not appconf.DisableSupportServices}}{{if publicRavenDSN}}{{publicRavenDSN}}{{end}}{{end}}";
+		window._sentryRavenDSN = "{{publicRavenDSN}}";
 	})();
 </script>
 <!-- End of Sentry config -->
