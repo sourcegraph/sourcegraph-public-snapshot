@@ -1,6 +1,6 @@
 MAKEFLAGS+=--no-print-directory
 
-.PHONY: app-dep check dep dist dist-dep distclean drop-test-dbs generate install serve-dep src test libvfsgen
+.PHONY: app-dep check dep dist dist-dep distclean drop-test-dbs generate install src test libvfsgen
 
 SGX_OS_NAME := $(shell uname -o 2>/dev/null || uname -s)
 
@@ -40,10 +40,6 @@ dep: dist-dep app-dep
 app-dep:
 	cd ui && npm run dep
 
-WEBPACK_DEV_SERVER_URL ?= http://localhost:8080
-WEBPACK_DEV_SERVER_ADDR ?= 127.0.0.1:8080
-SERVEFLAGS ?=
-
 # non-critical credentials for dev environment
 export AUTH0_CLIENT_ID ?= onW9hT0c7biVUqqNNuggQtMLvxUWHWRC
 export AUTH0_CLIENT_SECRET ?= cpse5jYzcduFkQY79eDYXSwI6xVUO0bIvc4BP6WpojdSiEEG6MwGrt8hj_uX3p5a
@@ -54,20 +50,8 @@ export GITHUB_CLIENT_SECRET ?= c5ff37d80e3736924cbbdf2922a50cac31963e43
 export LIGHTSTEP_PROJECT ?= sourcegraph-dev
 export LIGHTSTEP_ACCESS_TOKEN ?= d60b0b2477a7ccb05d7783917f648816
 
-serve-dev: serve-dep
-	@echo Starting server\; will recompile and restart when source files change
-	@echo
-	WEBPACK_DEV_SERVER_URL=$(WEBPACK_DEV_SERVER_URL) DEBUG=t rego -installenv=GOGC=off,GODEBUG=sbrk=1 -tags="$(GOTAGS)" sourcegraph.com/sourcegraph/sourcegraph/cmd/src $(SRCFLAGS) serve --reload --app.disable-support-services $(SERVEFLAGS)
-
-serve-dep:
-	go get sourcegraph.com/sqs/rego
-
-# This ulimit check is for the large number of open files from rego; we need
-# this here even though the `src` sysreq package also checks for ulimit (for
-# the app itself).
-	@[ "$(SGXOS)" = "windows" ] || [ `ulimit -n` -ge 10000 ] || (echo "Error: Please increase the open file limit by running\n\n  ulimit -n 10000\n" 1>&2; exit 1)
-
-	@[ -n "$(WEBPACK_DEV_SERVER_URL)" ] && [ "$(WEBPACK_DEV_SERVER_URL)" != " " ] && (curl -Ss -o /dev/null "$(WEBPACK_DEV_SERVER_URL)" || (cd ui && WEBPACK_DEV_SERVER_URL="$(WEBPACK_DEV_SERVER_URL)" WEBPACK_DEV_SERVER_ADDR="$(WEBPACK_DEV_SERVER_ADDR)" npm start &)) || echo Serving bundled assets, not using Webpack.
+serve-dev:
+	@./dev/server.sh
 
 libvfsgen:
 	go get github.com/shurcooL/vfsgen
