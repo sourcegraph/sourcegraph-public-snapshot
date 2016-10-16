@@ -21,7 +21,6 @@ import (
 
 	// Misc.
 	_ "sourcegraph.com/sourcegraph/sourcegraph/xlang"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
 )
 
 func main() {

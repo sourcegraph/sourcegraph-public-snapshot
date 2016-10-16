@@ -22,10 +22,20 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
+	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
+
+func init() {
+	// Use in-process Go language server for tests.
+	xlang.ServersByMode["go"] = func() (io.ReadWriteCloser, error) {
+		// Run in-process for easy development (no recompiles, etc.).
+		a, b := xlang.InMemoryPeerConns()
+		jsonrpc2.NewConn(context.Background(), a, gobuildserver.NewHandler())
+		return b, nil
+	}
+}
 
 func TestProxy(t *testing.T) {
 	tests := map[string]struct {
@@ -479,8 +489,8 @@ func yza() {}
 				}()
 			}
 			{
-				orig := buildserver.NewDepRepoVFS
-				buildserver.NewDepRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+				orig := gobuildserver.NewDepRepoVFS
+				gobuildserver.NewDepRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 					id := cloneURL.String() + "?" + rev
 					if fs, ok := test.depFS[id]; ok {
 						return mapFS(fs), nil
@@ -488,7 +498,7 @@ func yza() {}
 					return nil, fmt.Errorf("no file system found for dep at %s rev %q", cloneURL, rev)
 				}
 				defer func() {
-					buildserver.NewDepRepoVFS = orig
+					gobuildserver.NewDepRepoVFS = orig
 				}()
 			}
 

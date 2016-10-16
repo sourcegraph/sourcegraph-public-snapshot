@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
+	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
@@ -146,8 +146,8 @@ func TestIntegration(t *testing.T) {
 				// need to use a pinned, hardcoded revision instead of
 				// "HEAD", or else any file:line:col expectations we
 				// have will break if the dep repo's files change.
-				orig := buildserver.NewDepRepoVFS
-				buildserver.NewDepRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+				orig := gobuildserver.NewDepRepoVFS
+				gobuildserver.NewDepRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 					if pinRev, ok := test.pinDepReposToRev[cloneURL.String()]; ok {
 						rev = pinRev
 					} else if len(rev) != 40 && rev != "go1.7.1" {
@@ -161,7 +161,7 @@ func TestIntegration(t *testing.T) {
 					return orig(cloneURL, rev)
 				}
 				defer func() {
-					buildserver.NewDepRepoVFS = orig
+					gobuildserver.NewDepRepoVFS = orig
 				}()
 			}
 
