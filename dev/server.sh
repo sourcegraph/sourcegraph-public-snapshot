@@ -6,12 +6,9 @@
 
 set -euf -o pipefail
 
-go get sourcegraph.com/sqs/rego
+cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
-# This ulimit check is for the large number of open files from rego; we need
-# this here even though the `src` sysreq package also checks for ulimit (for
-# the app itself).
-[ `ulimit -n` -ge 10000 ] || (echo "Error: Please increase the open file limit by running\n\n  ulimit -n 10000\n" 1>&2; exit 1)
+GOBIN="$PWD"/vendor/bin go get sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sqs/rego
 
 export WEBPACK_DEV_SERVER_URL=http://localhost:8080
 export WEBPACK_DEV_SERVER_ADDR=127.0.0.1:8080
@@ -19,4 +16,5 @@ export WEBPACK_DEV_SERVER_ADDR=127.0.0.1:8080
 
 export DEBUG=t
 
-exec rego -installenv=GOGC=off,GODEBUG=sbrk=1 -tags="${GOTAGS-}" sourcegraph.com/sourcegraph/sourcegraph/cmd/src ${SRCFLAGS-} serve --reload --app.disable-support-services ${SERVEFLAGS-}
+type ulimit > /dev/null && ulimit -n 10000
+exec "$PWD"/vendor/bin/rego -installenv=GOGC=off,GODEBUG=sbrk=1 -tags="${GOTAGS-}" sourcegraph.com/sourcegraph/sourcegraph/cmd/src ${SRCFLAGS-} serve --reload --app.disable-support-services ${SERVEFLAGS-}
