@@ -16,6 +16,7 @@ class Context {
 	assetsRoot: string; // URL path to image/font/etc. assets on server
 	buildVars: { // from the build process (sgtool)
 		Version: string;
+		Date: string;
 	};
 
 	features: Features;
