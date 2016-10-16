@@ -10,11 +10,10 @@ import (
 	"context"
 
 	"github.com/lib/pq"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 )
 
 func init() {
@@ -110,9 +109,9 @@ func (s *userInvites) GetByURI(ctx context.Context, uri string) (*sourcegraph.Us
 func (s *userInvites) getByURI(ctx context.Context, uri string) (*sourcegraph.UserInvite, error) {
 	invite, err := s.getBySQL(ctx, "uri=$1", uri)
 	if err != nil {
-		if grpc.Code(err) == codes.NotFound {
+		if legacyerr.ErrCode(err) == legacyerr.NotFound {
 			// Overwrite with error message containing UserInvite URI.
-			err = grpc.Errorf(codes.NotFound, "%s: %s", err, uri)
+			err = legacyerr.Errorf(legacyerr.NotFound, "%s: %s", err, uri)
 		}
 	}
 	return invite, err
@@ -124,7 +123,7 @@ func (s *userInvites) getByURI(ctx context.Context, uri string) (*sourcegraph.Us
 func (s *userInvites) getBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.UserInvite, error) {
 	var invite dbUserInvite
 	if err := appDBH(ctx).SelectOne(&invite, "SELECT * FROM user_invite WHERE ("+query+") LIMIT 1", args...); err == sql.ErrNoRows {
-		return nil, grpc.Errorf(codes.NotFound, "invite not found")
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "invite not found")
 	} else if err != nil {
 		return nil, err
 	}
@@ -233,12 +232,12 @@ func (s *userInvites) Create(ctx context.Context, newInvite *sourcegraph.UserInv
 		if newInvite.SentAt.Unix()-invite.SentAt.Unix() > 259200 {
 			err := s.RemindInvite(ctx, invite)
 			if err != nil {
-				return grpc.Errorf(codes.AlreadyExists, "invite failed to update exists: %s", invite.URI)
+				return legacyerr.Errorf(legacyerr.AlreadyExists, "invite failed to update exists: %s", invite.URI)
 			}
 			return nil
 		}
 
-		return grpc.Errorf(codes.AlreadyExists, "invite already exists: %s", newInvite.URI)
+		return legacyerr.Errorf(legacyerr.AlreadyExists, "invite already exists: %s", newInvite.URI)
 	}
 	var r dbUserInvite
 	r.fromUserInvite(newInvite)
@@ -247,7 +246,7 @@ func (s *userInvites) Create(ctx context.Context, newInvite *sourcegraph.UserInv
 		if c := err.(*pq.Error).Constraint; c != "user_invite_unique" {
 			log15.Warn("Expected unique_violation of user_invite_unique constraint, but it was something else; did it change?", "constraint", c, "err", err)
 		}
-		return grpc.Errorf(codes.AlreadyExists, "invite already exists: %s", newInvite.URI)
+		return legacyerr.Errorf(legacyerr.AlreadyExists, "invite already exists: %s", newInvite.URI)
 	}
 	return err
 }
