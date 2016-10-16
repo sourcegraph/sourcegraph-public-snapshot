@@ -26,30 +26,6 @@
 </script>
 <!-- End of Sentry config -->
 
-<!-- Splunk config -->
-<script ignore-csp>
-	(function(){
-		var splunkTags = {};
-
-		{{if buildvar.CommitID}}
-			splunkTags["Deployed commit"] = "{{buildvar.CommitID}}";
-		{{end}}
-		{{if .AuthInfo.UID}}
-			splunkTags["User"] = {
-				Authed: "{{.AuthInfo.Login}}" ? true : false,
-				UID: {{.AuthInfo.UID}},
-				Login: "{{.AuthInfo.Login}}",
-			};
-		{{end}}
-		splunkTags["Trace"] = "{{urlToTrace .Ctx}}";
-
-		// TODO(slimsag): bubble Splunk config down the stack from appconf in
-		// template here instead of hard-coding in Splunk.js
-		window._splunkTags = splunkTags;
-	})();
-</script>
-<!-- End of Splunk config -->
-
 <script ignore-csp>
 ;(function(t,r,a,c,k,e,d){if(!t[k]){t.GlobalTelligentNamespace=t.GlobalTelligentNamespace||[];t.GlobalTelligentNamespace.push(k);t[k]=function(){(t[k].q=t[k].q||[]).push(arguments)};t[k].q=t[k].q||[];e=r.createElement(a);d=r.getElementsByTagName(a)[0];e.async=1;e.src=c;d.parentNode.insertBefore(e,d)}}(window,document,"script","https://s3.amazonaws.com/telligent-data/tracker-binaries/js/latest/tel.js","telligent"));
 </script>
