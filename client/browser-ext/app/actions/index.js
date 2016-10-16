@@ -34,8 +34,11 @@ export function getAnnotations(repo, rev, path) {
 	}
 }
 
+const createdRepoOnce = new Map();
 export function ensureRepoExists(repo) {
 	return function () {
+		if (createdRepoOnce.has(repo)) return Promise.resolve(null);
+
 		const body = {
 			Op: {
 				New: {
@@ -47,8 +50,10 @@ export function ensureRepoExists(repo) {
 			},
 		};
 
-		return fetch(`https://sourcegraph.com/.api/repos`, {method: "POST", body: JSON.stringify(body)})
+		const p = fetch(`https://sourcegraph.com/.api/repos`, {method: "POST", body: JSON.stringify(body)})
 			.then((json) => {})
 			.catch((err) => {});
+		createdRepoOnce.set(repo, p);
+		return p;
 	}
 }

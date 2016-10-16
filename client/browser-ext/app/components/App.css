@@ -1,30 +1,21 @@
 .popover {
-	background-color: rgba(255, 255, 255, .93);
-	max-width: 360px;
-	width: 360px;
-	border: 1px solid rgba(13, 13, 13, .2);
-	border-radius: 4px;
+	background-color: #2D2D30;
+	max-width: 500px;
+	max-height: 250px;
+	overflow: hidden;
+	border: solid 1px #555;
 	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-	padding: 6px 12px;
-	font-size: 14px !important;
+	color: rgba(213, 229, 242, 1);
+	padding: 5px 6px;
+	font-size: 12px !important;
+	line-height: 19px;
 	z-index: 100;
 	position: absolute;
 	word-wrap: break-word;
 	overflow: auto;
 }
 .popoverTitle {
-	font-size: 12px;
-	font-family: monospace;
-	margin-bottom: 10px;
-	word-wrap: break-word;
-	color: black;
-}
-.popover code,
-.popover pre,
-.popover tt {
 	font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
-}
-.popoverRepo {
-	color: #888;
-	font-size: 10px;
+	white-space: pre-wrap;
+	word-wrap: break-all;
 }

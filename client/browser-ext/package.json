@@ -9,7 +9,7 @@
 		"build": "node scripts/build",
 		"compress": "node scripts/compress",
 		"compress-keygen": "crx keygen",
-		"clean": "rimraf build/ dev/ *.zip *.crx",
+		"clean": "rm -rf build/ dev/ *.zip *.crx",
 		"build-docker": "docker build -t sourcegraph/browser-ext-build scripts/build-env",
 		"dist": "npm run build-docker && docker run -e GIT_HASH=`git rev-parse HEAD` -v `pwd`:/browser-ext -i -t sourcegraph/browser-ext-build /bin/bash /browser-ext/scripts/build-env/dist.sh"
 	},
@@ -47,7 +47,6 @@
 		"postcss-modules-values": "^1.1.2",
 		"react-addons-test-utils": "^0.14.3",
 		"redux-mock-store": "^1.1.1",
-		"rimraf": "^2.4.3",
 		"selenium-webdriver": "^2.47.0",
 		"shelljs": "^0.6.0",
 		"style-loader": "^0.13.1",

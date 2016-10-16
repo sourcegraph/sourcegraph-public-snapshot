@@ -137,6 +137,19 @@ export default class BlobAnnotator extends Component {
 				this.state.baseRepoURI = this.state.repoURI;
 				this.state.headRepoURI = this.state.repoURI;
 			}
+
+			// Get first line number of the file's first head hunk. In a split diff, there
+			// is an extra element before the element containing the head data-line-number,
+			// which is why we use a different nth-child value.
+			let headLineNumberEl = props.blobElement.querySelector(`[data-line-number]:nth-child(${this.state.isSplitDiff ? 3 : 2})`);
+			if (headLineNumberEl) {
+				this.state.headLineNumber = headLineNumberEl.dataset.lineNumber;
+			}
+		}
+
+		if (this.state.baseRepoURI !== this.state.headRepoURI) {
+			// Ensure the head repo of a cross-repo PR is created.
+			props.actions.ensureRepoExists(this.state.headRepoURI);
 		}
 	}
 
@@ -249,8 +262,11 @@ export default class BlobAnnotator extends Component {
 	onClickFileView(ev) {
 		EventLogger.logEventForCategory("File", "Click", "ChromeExtensionSgButtonClicked", {repo: this.state.repoURI, path: window.location.href, is_private_repo: this.isPrivateRepo()});
 
-		const targetURL = `https://sourcegraph.com/${this.state.repoURI}@${this.state.rev || this.state.headCommitID}/-/blob/${this.state.path}`;
-		if (ev.ctrlKey || (navigator.platform.toLowerCase().indexOf('mac') >= 0 && ev.metaKey)) {
+		const repo = this.state.headRepoURI || this.state.repoURI;
+		const rev = this.state.headCommitID || this.state.rev;
+		const lineNumberFragment = this.state.headLineNumber ? `#L${this.state.headLineNumber}` : "";
+		const targetURL = `https://sourcegraph.com/${repo}@${rev}/-/blob/${this.state.path}${lineNumberFragment}`;
+		if (ev.ctrlKey || (navigator.platform.toLowerCase().indexOf('mac') >= 0 && ev.metaKey) || event.button !== 0) {
 			window.open(targetURL, "_blank");
 		} else {
 			location.href = targetURL;

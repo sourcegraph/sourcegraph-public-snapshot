@@ -9,8 +9,6 @@ import EventLogger from "../analytics/EventLogger";
 
 import * as utils from "../utils";
 
-let createdReposCache = {};
-
 @connect(
 	(state) => ({
 	}),
@@ -71,8 +69,7 @@ export default class Background extends React.Component {
 		if (!props) props = this.props;
 		let urlProps = utils.parseURL();
 
-		if (urlProps.repoURI && !createdReposCache[urlProps.repoURI]) {
-			createdReposCache[urlProps.repoURI] = true;
+		if (urlProps.repoURI) {
 			props.actions.ensureRepoExists(urlProps.repoURI);
 		}
 

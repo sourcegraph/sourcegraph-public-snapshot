@@ -49,22 +49,31 @@ func resolveRepoRev(ctx context.Context, repo int32, rev string) (vcs.CommitID, 
 	}
 	commitID, err := vcsrepo.ResolveRevision(ctx, rev)
 	if err != nil {
-		// Attempt to reclone repo if its VCS repository doesn't exist.
-		// Do it in the background, return 202 so that frontend can display cloning interstitual.
+		enqueueUpdate := false
 		if notExistError, ok := err.(vcs.RepoNotExistError); ok {
+			// Attempt to clone repo if its VCS repository doesn't exist.
+			// Do it in the background, return 202 so that frontend can display cloning interstitual.
 			if !notExistError.CloneInProgress {
-				var asUser *sourcegraph.UserSpec
-				if actor := authpkg.ActorFromContext(ctx); actor.UID != "" {
-					asUser = actor.UserSpec()
-				}
-				repoupdater.Enqueue(repo, asUser)
+				enqueueUpdate = true
 			}
 			return "", vcs.RepoNotExistError{CloneInProgress: true}
 		}
-		commitID, err = vcsrepo.ResolveRevision(ctx, rev)
-		if err != nil {
-			return "", err
+		if err == vcs.ErrRevisionNotFound {
+			// Attempt to update the VCS repo if the revision wasn't
+			// found, for the when (e.g.) a specific commit ID or
+			// branch is requested that we don't yet know about. This
+			// request will still fail, but subsequent requests for
+			// that rev will succeed after the update is complete.
+			enqueueUpdate = true
 		}
+		if enqueueUpdate {
+			var asUser *sourcegraph.UserSpec
+			if actor := authpkg.ActorFromContext(ctx); actor.UID != "" {
+				asUser = actor.UserSpec()
+			}
+			repoupdater.Enqueue(repo, asUser)
+		}
+		return "", err
 	}
 	return commitID, nil
 }

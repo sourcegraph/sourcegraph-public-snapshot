@@ -65,7 +65,7 @@ function injectBlobAnnotator() {
 		blobAnnotatorContainer.style.display = "inline-block";
 		blobAnnotatorContainer.style.verticalAlign = "middle";
 		blobAnnotatorContainer.style.marginTop = info.tagName === 'A' ? "2px" : "0px";
-		blobAnnotatorContainer.style.marginRight = info.tagName === 'A' ? "0px" : "5px";
+		blobAnnotatorContainer.style.marginRight = info.tagName === 'A' && !file.querySelector(".show-outdated-button") ? "0px" : "5px";
 
 		if (actn) {
 			if (btng) {

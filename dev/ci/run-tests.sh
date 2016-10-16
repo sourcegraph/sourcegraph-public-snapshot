@@ -9,7 +9,7 @@ set -o pipefail
 go install -race ./cmd/src
 
 i=0
-cmds=("./dev/gofmt.sh" "(cd ui; npm run dep && npm test)" "make check" "./dev/ci/run-checkup.sh" "(cd ui/scripts/tsmapimports; PATH=$PATH:../../node_modules/.bin npm test)")
+cmds=("./dev/gofmt.sh" "(cd ui; npm run dep && npm test)" "make check" "./dev/ci/run-checkup.sh" "(cd ui/scripts/tsmapimports; PATH=$PATH:../../node_modules/.bin npm test)" "(cd client/browser-ext; npm install && npm run build && npm run test)")
 for cmd in "${cmds[@]}"; do
 	if (( i % CIRCLE_NODE_TOTAL == CIRCLE_NODE_INDEX ))
 	then
