@@ -1,19 +1,30 @@
 package xlang
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	srccli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
 )
+
+// This file contains helper commands and server hooks for development.
 
 func init() {
 	srccli.ServeInit = append(srccli.ServeInit, func() {
@@ -85,4 +96,119 @@ func init() {
 			}
 		}()
 	})
+}
+
+func init() {
+	c, err := srccli.CLI.AddCommand("xlang", "xlang", "", &cmd{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = c.AddCommand("repro", "reproduce a tracked error", "", &reproCmd{})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+type cmd struct{}
+
+func (cmd) Execute(args []string) error { return nil }
+
+type reproCmd struct {
+	BaseURL string `long:"base-url" description:"base URL of Sourcegraph site to repro request against" default:"https://sourcegraph.com"`
+}
+
+func (c *reproCmd) Execute(args []string) error {
+	t := time.AfterFunc(250*time.Millisecond, func() {
+		fmt.Fprintln(os.Stderr, "Waiting for JSON input on stdin...")
+	})
+
+	var terr trackedError
+	if err := json.NewDecoder(os.Stdin).Decode(&terr); err != nil {
+		return err
+	}
+	t.Stop()
+
+	u, err := guessTrackedErrorURL(terr)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(os.Stderr, "Repro URLs:")
+	fmt.Fprintln(os.Stderr, " - https://sourcegraph.com/"+u)
+	fmt.Fprintln(os.Stderr, " - http://localhost:3080/"+u)
+	fmt.Fprintln(os.Stderr)
+
+	lspReqs := []jsonrpc2.Request{
+		{ID: 1, Method: "initialize"},
+		{ID: 2, Method: terr.Method},
+		{ID: 3, Method: "shutdown"},
+		{Notif: true, Method: "exit"},
+	}
+	if err := lspReqs[0].SetParams(lsp.InitializeParams{RootPath: terr.RootPath}); err != nil {
+		return err
+	}
+	if err := lspReqs[1].SetParams(terr.Params); err != nil {
+		return err
+	}
+	body, err := json.MarshalIndent(lspReqs, "   ", "  ")
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/.api/xlang/%s", c.BaseURL, terr.Method), bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("content-type", "application/json; charset=utf-8")
+
+	fmt.Fprintf(os.Stderr, "<<< Sending HTTP POST to %s with request body:\n", req.URL)
+	fmt.Fprintln(os.Stderr, "   "+string(body))
+	fmt.Fprintln(os.Stderr)
+
+	t0 := time.Now()
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode == http.StatusOK {
+		var out bytes.Buffer
+		if err := json.Indent(&out, respBody, "  ", "   "); err != nil {
+			return fmt.Errorf("%s (response body follows)\n\n%s", err, string(respBody))
+		}
+		respBody = out.Bytes()
+	}
+	if len(bytes.TrimSpace(respBody)) == 0 {
+		respBody = []byte("(empty body)")
+	}
+	fmt.Fprintf(os.Stderr, ">>> Received HTTP %s with response body:\n", resp.Status)
+	fmt.Fprintln(os.Stderr, "   "+string(respBody))
+	fmt.Fprintln(os.Stderr)
+
+	fmt.Fprintln(os.Stderr, " - Roundtrip:", time.Since(t0))
+	fmt.Fprintln(os.Stderr, " - Lightstep trace:", resp.Header.Get("x-trace"))
+
+	return nil
+}
+
+func guessTrackedErrorURL(lspReq interface{}) (string, error) {
+	b, err := json.Marshal(lspReq)
+	if err != nil {
+		return "", err
+	}
+	var p struct {
+		Params *lsp.TextDocumentPositionParams
+	}
+	if err := json.Unmarshal(b, &p); err != nil || p.Params == nil || p.Params.TextDocument.URI == "" {
+		return "", err
+	}
+	u, err := url.Parse(p.Params.TextDocument.URI)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s@%s/-/blob/%s#L%d:%d", path.Join(u.Host, u.Path), u.RawQuery, u.Fragment, p.Params.Position.Line+1, p.Params.Position.Character+1), nil
 }

@@ -146,6 +146,14 @@ type ClientProxyInitializeParams struct {
 // related to language analysis.
 var LogTrackedErrors = true
 
+type trackedError struct {
+	RootPath string
+	Mode     string
+	Method   string
+	Params   interface{}
+	Error    string
+}
+
 // handleFromClient receives requests from the client, modifies them,
 // sends them to the appropriate lang/build server(s), modifies the
 // responses, and returns them to the client.
@@ -260,12 +268,12 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		var respObj interface{}
 		if err := c.callServer(ctx, req.Method, req.Params, &respObj); err != nil {
 			// Machine parseable to assist us finding most common errors
-			msg, _ := json.Marshal(map[string]interface{}{
-				"RootPath": c.context.rootPath.String(),
-				"Mode":     c.context.mode,
-				"Method":   req.Method,
-				"Params":   req.Params,
-				"Error":    err.Error(),
+			msg, _ := json.Marshal(trackedError{
+				RootPath: c.context.rootPath.String(),
+				Mode:     c.context.mode,
+				Method:   req.Method,
+				Params:   req.Params,
+				Error:    err.Error(),
 			})
 			if LogTrackedErrors {
 				log.Printf("tracked error: %s", string(msg))
