@@ -16,7 +16,7 @@ export WEBPACK_DEV_SERVER_ADDR=127.0.0.1:8080
 
 export DEBUG=t
 
-export LANGSERVER_GO=:builtin:
+. dev/langservers.lib.bash
 
 type ulimit > /dev/null && ulimit -n 10000
 exec "$PWD"/vendor/bin/rego \
