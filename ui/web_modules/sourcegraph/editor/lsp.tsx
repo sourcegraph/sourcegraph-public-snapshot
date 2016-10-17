@@ -152,7 +152,7 @@ ${reproCmd}
 
 **Actual:**
 \`\`\`json
-${JSON.stringify(resp, null, 2)}
+${truncate(JSON.stringify(resp, null, 2), 300)}
 \`\`\`
 
 **Expected:** ______________________________
@@ -180,4 +180,11 @@ function describeRequest(method: string, params: any): string {
 		return `${method} with query ${JSON.stringify(params.query)}`;
 	}
 	return `${method} with ${JSON.stringify(params)}`;
+}
+
+function truncate(s: string, max: number): string {
+	if (s.length <= max) {
+		return s;
+	}
+	return `${s.slice(0, max)}... (truncated, ${s.length - max} characters remaining)`;
 }
