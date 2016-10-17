@@ -119,7 +119,8 @@ export class BlobMain extends Container<Props, State> {
 		if (!prevProps || (prevProps.repo !== nextProps.repo || prevProps.rev !== nextProps.rev || prevProps.commitID !== nextProps.commitID || prevProps.path !== nextProps.path || prevProps.startLine !== nextProps.startLine || prevProps.startCol !== nextProps.startCol || prevProps.endLine !== nextProps.endLine || prevProps.endCol !== nextProps.endCol)) {
 			if (nextProps.commitID) {
 				// Use absolute commit IDs for the editor model URI.
-				const uri = URIUtils.pathInRepo(nextProps.repo, nextProps.commitID, nextProps.path);
+				// Normalizing repo URI (for example github.com/HvyIndustries/Crane => github.com/HvyIndustries/crane)
+				const uri = URIUtils.pathInRepo(nextProps.repoObj && nextProps.repoObj.URI ?  nextProps.repoObj.URI : nextProps.repo, nextProps.commitID, nextProps.path);
 
 				let range: IRange;
 				if (typeof nextProps.startLine === "number") {
