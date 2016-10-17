@@ -267,6 +267,9 @@ export default class BlobAnnotator extends Component {
 		const lineNumberFragment = this.state.headLineNumber ? `#L${this.state.headLineNumber}` : "";
 		const targetURL = `https://sourcegraph.com/${repo}@${rev}/-/blob/${this.state.path}${lineNumberFragment}`;
 		if (ev.ctrlKey || (navigator.platform.toLowerCase().indexOf('mac') >= 0 && ev.metaKey) || event.button !== 0) {
+			// Remove :focus from target to remove the hover
+			// tooltip when opening target link in a new window.
+			ev.target.blur();
 			window.open(targetURL, "_blank");
 		} else {
 			location.href = targetURL;
