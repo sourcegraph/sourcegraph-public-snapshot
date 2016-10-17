@@ -37,7 +37,7 @@ go get sourcegraph.com/sourcegraph/sourcegraph
 ## PostgreSQL
 
 [Install PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) then run through the
-steps to [initialize and configure your database](https://sourcegraph.com/sourcegraph/sourcegraph@master/-/blob/docs/storage.md).
+steps to [initialize and configure your database](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@master/-/blob/docs/storage.md).
 
 Finally, issue the following commands to set up your database tables:
 
