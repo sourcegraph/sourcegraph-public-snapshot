@@ -10,9 +10,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 GOBIN="$PWD"/vendor/bin go get sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sqs/rego
 
-export WEBPACK_DEV_SERVER_URL=http://localhost:8080
-export WEBPACK_DEV_SERVER_ADDR=127.0.0.1:8080
-[ -n "${WEBPACK_DEV_SERVER_URL-}" ] && [ "${WEBPACK_DEV_SERVER_URL-}" != " " ] && (curl -Ss -o /dev/null "$WEBPACK_DEV_SERVER_URL" || (cd ui && npm start &))
+export WEBPACK_DEV_SERVER_URL=${WEBPACK_DEV_SERVER_URL:-http://localhost:8080}
+export WEBPACK_DEV_SERVER_ADDR=${WEBPACK_DEV_SERVER_ADDR:-127.0.0.1:8080}
+
+curl -Ss -o /dev/null "$WEBPACK_DEV_SERVER_URL" || (cd ui && npm start &)
 
 export DEBUG=t
 
