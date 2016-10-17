@@ -16,7 +16,7 @@ export LANGSERVER_GO=${LANGSERVER_GO-:builtin:}
 #
 # To use your own langserver-typescript, just symlink $TYPESCRIPT_DIR
 # to it.
-if type yarn > /dev/null && [[ -z "${LANGSERVER_TYPESCRIPT-}" ]]; then
+if type yarn > /dev/null 2>&1 && [[ -z "${LANGSERVER_TYPESCRIPT-}" ]]; then
 	TYPESCRIPT_DIR="${HOME}/.sourcegraph/lang/langserver-typescript"
 	if [[ ! -d "$TYPESCRIPT_DIR" ]]; then
 		mkdir -p "$TYPESCRIPT_DIR"/..
