@@ -20,7 +20,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
@@ -87,6 +86,15 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 		return err
 	}
 
+	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP HTTP gateway: "+reqs[1].Method)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	// Sanity check the request body. Be strict based on what we know
 	// the UI sends us.
 	if len(reqs) != 4 {
@@ -119,23 +127,6 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 	if method != strings.TrimSuffix(reqs[1].Method, "?prepare") {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: fmt.Errorf("LSP method param in URL %q != %q method in LSP message params", method, reqs[1].Method)}
 	}
-
-	// Inject tracing info.
-	opName := "LSP HTTP gateway: " + reqs[1].Method
-	span, ctx := opentracing.StartSpanFromContext(ctx, opName, opentracing.Tags{"rootPath": rootPathURI.String()})
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogEvent(fmt.Sprintf("error: %v", err))
-		}
-		span.Finish()
-	}()
-	span.LogEventWithPayload("requests", reqs)
-	carrier := opentracing.TextMapCarrier{}
-	if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.TextMap, carrier); err != nil {
-		return err
-	}
-	addMeta := jsonrpc2.Meta(carrier)
 
 	// Check that the user has permission to read this repo. Calling
 	// Repos.Resolve will fail if the user does not have access to the
@@ -186,12 +177,12 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 		// we do not pass it on.
 		req.Method = strings.TrimSuffix(req.Method, "?prepare")
 		if req.Notif {
-			if err := c.Notify(ctx, req.Method, req.Params, addMeta); err != nil {
+			if err := c.Notify(ctx, req.Method, req.Params); err != nil {
 				return err
 			}
 		} else {
 			resps[i] = &jsonrpc2.Response{}
-			err := c.Call(ctx, req.Method, req.Params, &resps[i].Result, addMeta)
+			err := c.Call(ctx, req.Method, req.Params, &resps[i].Result)
 			if e, ok := err.(*jsonrpc2.Error); ok {
 				// We do not mark the handler as failed, but
 				// we want to record that it failed in
@@ -208,22 +199,5 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 			}
 		}
 	}
-
-	// 1 KB is a good, safe choice for medium-to-high throughput traces.
-	saver := &prefixsuffixsaver.Writer{N: 1 * 1024}
-	defer func() {
-		if saver.Skipped() == 0 {
-			// We have returned a small object. Fine to let
-			// lightstep serialize it itself, which leads to nicer
-			// traces.
-			span.LogEventWithPayload("responses", resps)
-		} else {
-			span.LogEventWithPayload("response", string(saver.Bytes()))
-		}
-	}()
-
-	// We don't want to use writeJSON, since we want to log the response
-	// body to saver as well
-	w.Header().Set("content-type", "application/json; charset=utf-8")
-	return json.NewEncoder(io.MultiWriter(saver, w)).Encode(resps)
+	return writeJSON(w, resps)
 }
