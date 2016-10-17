@@ -171,10 +171,38 @@ def test_find_external_refs(d):
         # Definition header
         wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("h2", "Definition")) > 0)
 
+def test_beta_signup(d):
+    wd = d.d
+    username = os.getenv("USER_GITHUB")
+    password = os.getenv("USER_GITHUB_PASSWORD")
+
+    wd.get(d.sg_url("/"))
+    Util.log_in(d, username, password)
+
+    wd.get(d.sg_url("/beta"))
+    wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("div", "Register for beta access")) > 0)
+
+    retry(lambda: wd.execute_script("return arguments[0].scrollIntoView();", d.find_button_by_partial_text("Participate")))
+
+    retry(lambda: wd.find_element_by_css_selector('[class^="BetaInterestForm"] input').send_keys("Bobby Jones"))
+    wait_for(lambda: wd.find_element_by_css_selector('[class^="BetaInterestForm"] input').get_attribute("value") == "Bobby Jones")
+
+    def f():
+        checkboxes = wd.find_elements_by_css_selector('[class^="BetaInterestForm"] input[type="checkbox"]')
+        for checkbox in checkboxes:
+            checkbox.click()
+    retry(f)
+
+    retry(lambda: wd.find_element_by_css_selector('[class^="BetaInterestForm"] textarea').send_keys("Sourcegraph is great"))
+    wait_for(lambda: wd.find_element_by_css_selector('[class^="BetaInterestForm"] textarea').get_attribute("value") == "Sourcegraph is great")
+    retry(lambda: d.find_button_by_partial_text("Participate").click())
+    wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("p", "We'll contact you at %s" % username)) > 0)
+
 all_tests = [
     test_onboarding,
     test_login_logout,
     test_repo_jump_to,
     test_golden_workflow,
     test_find_external_refs,
+    test_beta_signup,
 ]
