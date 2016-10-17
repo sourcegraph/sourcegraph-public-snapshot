@@ -40,7 +40,7 @@ class FindExternalReferencesAction extends EditorAction {
 		EventLogger.logEventForCategory(
 			AnalyticsConstants.CATEGORY_REFERENCES,
 			AnalyticsConstants.ACTION_CLICK,
-			"ClickedViewReferences",
+			"ClickedViewExternalReferences",
 			{ repo, rev: rev || "", path }
 		);
 
