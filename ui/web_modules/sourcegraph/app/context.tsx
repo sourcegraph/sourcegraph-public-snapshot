@@ -37,7 +37,6 @@ class Context {
 export const context = new Context();
 
 export interface Features {
-	Authors: any;
 	GodocRefs: any;
 };
 
