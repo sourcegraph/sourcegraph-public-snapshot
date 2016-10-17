@@ -37,7 +37,6 @@ class Context {
 export const context = new Context();
 
 export interface Features {
-	GodocRefs: any;
 };
 
 // Sets the values of the context given a JSContext object from the server.

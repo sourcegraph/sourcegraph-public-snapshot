@@ -12,7 +12,6 @@ import (
 // Features is the source of truth for feature toggles. Use Features for
 // querying whether a feature is toggled or not
 var Features = struct {
-	GodocRefs bool // redirect from /-/godoc/refs (links constructed by github.com/sourcegraph/gddo fork) to ref pages
 }{}
 
 func init() {
