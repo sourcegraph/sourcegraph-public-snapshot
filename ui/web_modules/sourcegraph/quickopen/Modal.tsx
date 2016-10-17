@@ -51,7 +51,7 @@ export class QuickOpenModal extends React.Component<Props, null> {
 		if (event.keyCode === 27) { // Escape.
 			this.dismissModal(false);
 		}
-		if (event.target.nodeName === "INPUT" || event.target.nodeName === "TEXTAREA" || event.metaKey || event.ctrlKey) {
+		if (event.target.nodeName === "INPUT" || event.metaKey || event.ctrlKey) {
 			return;
 		}
 		if (event.keyCode === 191) { // Slash key ('/').
