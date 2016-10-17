@@ -19,7 +19,7 @@ import {create as createStandaloneEditor, createModel, onDidCreateModel} from "v
 import {registerDefinitionProvider, registerHoverProvider, registerReferenceProvider} from "vs/editor/browser/standalone/standaloneLanguages";
 import {Position} from "vs/editor/common/core/position";
 import {Range} from "vs/editor/common/core/range";
-import {IPosition, IRange, IReadOnlyModel} from "vs/editor/common/editorCommon";
+import {IPosition, IRange, IReadOnlyModel, IWordAtPosition} from "vs/editor/common/editorCommon";
 import {Definition, Hover, Location, ReferenceContext} from "vs/editor/common/modes";
 import {HoverOperation} from "vs/editor/contrib/hover/browser/hoverOperation";
 
@@ -123,15 +123,18 @@ export class Editor implements IDisposable {
 		this._editor.onContextMenu(e => {
 			// HACK: This method relies on Monaco private internals.
 			const isOnboarding = location.search.includes("ob=chrome");
-			const ident = /.*identifier.*/.exec(e.target.element.className);
 			const peekWidget = e.target.detail === "vs.editor.contrib.zoneWidget1";
-			if (!ident || peekWidget || !isSupportedMode(this._editor.getModel().getModeId()) || isOnboarding) {
+			const c = e.target.element.classList;
+			const ignoreToken = c.contains("delimeter") || c.contains("comment") || c.contains("view-line") || (c.length === 1 && c.contains("token"));
+			if (ignoreToken || peekWidget || !isSupportedMode(this._editor.getModel().getModeId()) || isOnboarding) {
 				(this._editor as any)._contextViewService.hideContextView();
 			}
 		});
 
 		this._editor.onMouseMove(e => {
-			this._elementUnderMouse = e.target.element;
+			if (e.target.element.classList.contains("token")) {
+				this._elementUnderMouse = e.target.element;
+			}
 		});
 
 		// Rename the "Find All References" action to "Find Local References".
@@ -253,10 +256,15 @@ export class Editor implements IDisposable {
 	}
 
 	provideHover(model: IReadOnlyModel, position: Position): Thenable<Hover> {
+		const word = model.getWordAtPosition(position);
 		const key = cacheKey(model, position);
 		if (key) {
 			const cacheHit = hoverCache.get(key);
 			if (cacheHit) {
+				// Make sure tokens that don't identifier class but do have hover info get a pointer cursor.
+				if (cacheHit.contents.length > 0) {
+					this.setTokenCursor(word);
+				}
 				return Promise.resolve(cacheHit);
 			}
 			const inFlight = hoverFlights.get(key);
@@ -291,7 +299,6 @@ export class Editor implements IDisposable {
 				if (resp.result.range) {
 					range = lsp.toMonacoRange(resp.result.range);
 				} else {
-					const word = model.getWordAtPosition(position);
 					range = new Range(position.lineNumber, word ? word.startColumn : position.column, position.lineNumber, word ? word.endColumn : position.column);
 				}
 				const contents = resp.result.contents instanceof Array ? resp.result.contents : [resp.result.contents];
@@ -309,8 +316,7 @@ export class Editor implements IDisposable {
 					hoverCache.set(key, hover);
 					hoverFlights.delete(key);
 				}
-				// Make sure tokens that don't identifier class but do have hover info get a pointer cursor.
-				(this._elementUnderMouse as any).style.cursor = "pointer";
+				this.setTokenCursor(word);
 				return hover;
 			});
 
@@ -347,6 +353,15 @@ export class Editor implements IDisposable {
 				});
 				return locs.map(lsp.toMonacoLocation);
 			});
+	}
+
+	private setTokenCursor(word: IWordAtPosition): void {
+		const el = (this._elementUnderMouse as any);
+		// Make sure the mouse is still under the target word.
+		if (el.textContent === word.word) {
+			// Ensure tokens that don't identifier class but do have hover info get a pointer cursor.
+			el.style.cursor = "pointer";
+		}
 	}
 
 	public layout(): void {
