@@ -41,7 +41,7 @@ failure_msg_template = """:rotating_light: *TEST FAILED* :rotating_light:
 ```
 %s
 ```
-%s
+*Browser console errors*:
 ```
 %s
 ```
@@ -53,12 +53,11 @@ def failure_msg(test_name, browser, url, stack_trace, console_log):
     sgurl = "%s://%s" % (u.scheme, u.hostname)
     if u.port:
         sgurl += ":%d" % u.port
-    console_log_header = "*Browser console*:" if browser == "chrome" else "*Browser console* (errors only):"
     return failure_msg_template % (
         test_name, browser.capitalize(), url,
         test_name, browser, sgurl,
         stack_trace,
-        console_log_header, console_log,
+        console_log,
     )
 
 def slack_and_opsgenie(args):
@@ -117,7 +116,7 @@ Type "continue" to continue.
                 if args.browser == "chrome":
                     opt = DesiredCapabilities.CHROME.copy()
                     opt['chromeOptions'] = { "args": ["--user-agent=%s" % user_agent] }
-                    opt['loggingPrefs'] = { 'browser': 'ALL' }
+                    opt['loggingPrefs'] = { 'browser': 'SEVERE' }
                     wd = webdriver.Remote(
                         command_executor=('%s/wd/hub' % args.selenium),
                         desired_capabilities=opt,
@@ -126,7 +125,6 @@ Type "continue" to continue.
                     profile = webdriver.FirefoxProfile()
                     profile.set_preference('general.useragent.override', user_agent)
                     opt = DesiredCapabilities.FIREFOX.copy()
-                    # Firefox browser logs include non-JS-console messages and tend to be chatty, so we limit to error messages
                     opt['loggingPrefs'] = { 'browser': 'SEVERE' }
                     wd = webdriver.Remote(
                         command_executor=('%s/wd/hub' % args.selenium),
