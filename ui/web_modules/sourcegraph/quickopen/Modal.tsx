@@ -6,9 +6,13 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Node {
-	target: {
-		nodeName: string;
-	};
+	nodeName: string;
+	parentNode: Node;
+	classList: DOMTokenList;
+};
+
+interface Event {
+	target: Node;
 };
 
 export type Props = {
@@ -47,11 +51,11 @@ export class QuickOpenModal extends React.Component<Props, null> {
 			};
 	}
 
-	searchModalShortcuts(event: KeyboardEvent & Node): void {
+	searchModalShortcuts(event: KeyboardEvent & Event): void {
 		if (event.keyCode === 27) { // Escape.
 			this.dismissModal(false);
 		}
-		if (event.target.nodeName === "INPUT" || event.metaKey || event.ctrlKey) {
+		if (event.target.nodeName === "INPUT" || isNonMonacoTextArea(event.target) || event.metaKey || event.ctrlKey) {
 			return;
 		}
 		if (event.keyCode === 191) { // Slash key ('/').
@@ -83,4 +87,17 @@ export class QuickOpenModal extends React.Component<Props, null> {
 				dismissModal={this.dismissModal} />
 		</ModalComp>;
 	}
+}
+
+function isNonMonacoTextArea(n: Node): boolean {
+	if (n.nodeName !== "TEXTAREA") {
+		return false;
+	}
+	let p = n.parentNode;
+	for (let i = 0; p && i < 20; p = p.parentNode, i++) {
+		if (p.classList.contains("monaco-editor")) {
+			return false;
+		}
+	}
+	return true;
 }
