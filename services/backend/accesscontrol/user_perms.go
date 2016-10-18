@@ -102,6 +102,9 @@ func VerifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, meth
 	if repo == 0 || repoURI == "" {
 		panic("both repo and repoURI must be set")
 	}
+	if !strings.HasPrefix(repoURI, "github.com/") {
+		panic(fmt.Errorf(`VerifyActorHasGitHubRepoAccess: precondition not satisfied, repoURI %q does not begin with "github.com/"`, repoURI))
+	}
 
 	if VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
 		return true
