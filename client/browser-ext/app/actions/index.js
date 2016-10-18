@@ -11,6 +11,8 @@ export function setAccessToken(token) {
 // Utility method to fetch the absolute commit id for a branch
 const resolveRevOnce = new Map();
 function _resolveRev(dispatch, state, repo, rev) {
+	const resolvedRev = state.resolvedRev.content[keyFor(repo, rev)];
+	if (resolvedRev) return Promise.resolve(resolvedRev);
 	if (resolveRevOnce.has(keyFor(repo, rev))) return resolveRevOnce.get(keyFor(repo, rev));
 
 	const revPromise = fetch(`https://sourcegraph.com/.api/repos/${repo}${rev ? `@${rev}` : ""}/-/rev`)
