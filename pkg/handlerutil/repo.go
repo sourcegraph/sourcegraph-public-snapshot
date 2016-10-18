@@ -86,13 +86,17 @@ func GetRepoCommon(ctx context.Context, vars map[string]string) (rc *RepoCommon,
 	return
 }
 
+// GetRepoID returns the Sourcegraph repository ID based on the route vars.
+// If the repo path string is a numeric ID, it is returned immediately.
+// Otherwise the repository ID is resolved via backend.Repos.Resolve.
+// If the canonical path differs, a URLMovedError error is returned.
 func GetRepoID(ctx context.Context, vars map[string]string) (int32, error) {
 	origRepo := routevar.ToRepo(vars)
 
 	// If the URL contains just a numeric ID, then just return that
 	// without incurring a lookup. This does not check for the
-	// existence of the repo, but the backend gRPC API will
-	// effectively perform that check.
+	// existence of the repo, but the backend API will effectively
+	// perform that check.
 	id, err := strconv.Atoi(origRepo)
 	if err == nil {
 		return int32(id), nil
