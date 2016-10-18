@@ -116,8 +116,7 @@ export class GlobalNav extends Container<Props, State> {
 				<Link to="/" style={{lineHeight: "0"}}>
 					<Base p={2}>
 						<Logo className={styles.logomark}
-						width="20px"
-						type="logomark"/>
+						width="20px" />
 					</Base>
 				</Link>
 

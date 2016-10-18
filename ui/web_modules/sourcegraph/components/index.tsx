@@ -39,3 +39,4 @@ export {User} from "sourcegraph/components/User";
 export {OrgLogo} from "sourcegraph/components/OrgLogo";
 export {CoachMark} from "sourcegraph/components/CoachMark";
 export {Annotation} from "sourcegraph/components/Annotation";
+export {BGContainer} from "sourcegraph/components/BGContainer";

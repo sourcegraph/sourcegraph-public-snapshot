@@ -73,12 +73,12 @@ export const colors = {
 	white,
 
 	// Nice names and aliases
-	blueText		: blue1,
-	blue				: blue3,
-	purple			: purple2,
-	orange			: orange2,
-	green			 : green3,
-	greenText	 : green2,
-	redText		 : red2,
-	text				: coolGray1,
+	blueText: blue2,
+	blue: blue3,
+	purple: purple2,
+	orange: orange2,
+	green: green3,
+	greenText: green2,
+	redText: red2,
+	text: coolGray1,
 };

@@ -1,6 +1,6 @@
 // font size in unit, line height
 const scale = [
-	[3.35, 1.45],
+	[3.35, 1.25],
 	[2.5, 1.45],
 	[2.0, 1.45],
 	[1.5, 1.45],

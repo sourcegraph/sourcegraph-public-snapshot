@@ -1,26 +1,22 @@
-import * as classNames from "classnames";
+import {hover, media, style} from "glamor";
 import * as React from "react";
 import {Link} from "react-router";
 import {InjectedRouter} from "react-router";
 import {context} from "sourcegraph/app/context";
-import {Button, FlexContainer, Heading, Logo, Panel} from "sourcegraph/components";
+import {Footer} from "sourcegraph/app/Footer";
+import {BGContainer, Button, FlexContainer, Heading, Panel} from "sourcegraph/components";
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
-import * as base from "sourcegraph/components/styles/_base.css";
-import * as colors from "sourcegraph/components/styles/_colors.css";
-import * as typography from "sourcegraph/components/styles/_typography.css";
-import {whitespace} from "sourcegraph/components/utils/whitespace";
-import {Container} from "sourcegraph/Container";
+import {ChevronRight} from "sourcegraph/components/symbols/Zondicons";
+import {colors, layout, whitespace} from "sourcegraph/components/utils";
 import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
-import * as styles from "sourcegraph/home/styles/home.css";
+import {FeatureCarousel} from "sourcegraph/home/FeatureCarousel";
+import {Nav} from "sourcegraph/home/Nav";
+import {Location} from "sourcegraph/Location";
 
-interface HomeProps {
-	location: any;
-}
+interface HomeProps { location: Location; }
 
-type HomeState = any;
-
-export class Home extends Container<HomeProps, HomeState> {
+export class Home extends React.Component<HomeProps, {}> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -41,243 +37,194 @@ export class Home extends Container<HomeProps, HomeState> {
 		document.body.appendChild(script);
 	}
 
-	reconcileState(state: HomeState, props: HomeProps): void {
-		Object.assign(state, props);
-	}
-
 	render(): JSX.Element | null {
-		return (
-			<div style={{width: "100%", marginRight: "auto", marginLeft: "auto"}}>
 
-				{/* section showing icon and links: about, pricing, login, signup */}
-				<div className={classNames(base.pt4, base.pb5, colors.bg_cool_mid_gray_1)}>
-					<FlexContainer items="center" wrap={true} style={{maxWidth: "960px"}} className={classNames(base.mt2, base.mb5, base.center, base.ph3)}>
-						<Logo width="32"/>
+		return <div style={{
+			backgroundColor: "white",
+			overflowX: "hidden",
+			"-webkit-overflow-scrolling": "touch",
+		}}>
 
-						<div className={typography.tr} style={{flex: "1"}} />
+			<BGContainer
+				img={`${context.assetsRoot}/img/Homepage/bg-circuit.svg`}
+				style={{boxShadow: "inset 0 -30px 100px white"}}>
 
-						<FlexContainer items="center" justify="between">
+				<Nav location={this.props.location} style={{padding: whitespace[4]}} context={this.context} />
 
-							<Link className={classNames(styles.link, base.mr2, base.ph2, base.pv1)} to="/about">
-								About
-							</Link>
+				<div style={layout.container}>
 
-							<Link className={classNames(styles.link, base.mr2, base.ph2, base.pv1)} to="/pricing">
-								Pricing
-							</Link>
+					<Heading
+						align="center" level={1} style={Object.assign({},
+						layout.container,
+						{
+							maxWidth: 640,
+							marginBottom: whitespace[5],
+							marginTop: whitespace[3],
+							padding: whitespace[3],
+						}
+					)}>Read code on the web with the power of an IDE</Heading>
 
-							<a className={classNames(styles.link, base.mr2, base.ph2, base.pv1)} href="/jobs">Jobs</a>
+					<p style={{textAlign: "center"}}>
+						<LocationStateToggleLink href="/join" modalName="join" location={this.props.location}>
+							<Button color="orange" style={{
+								margin: whitespace[3],
+								paddingLeft: whitespace[3],
+								paddingRight: whitespace[3],
+							}}>
+								Sign up for free
+							</Button>
+						</LocationStateToggleLink> or
+						<Link to="/about" style={{margin: whitespace[2]}}><strong>learn more</strong></Link>
+					</p>
+				</div>
+			</BGContainer>
 
-							{!(this.context as any).signedIn &&
-								<LocationStateToggleLink className={classNames(styles.link, base.mr2, base.ph2, base.pv1)} href="/login" modalName="login" location={this.props.location}>
-									Log in
-								</LocationStateToggleLink>
-							}
+			<div style={{marginBottom: whitespace[5], marginTop: whitespace[6]}}>
+				<Heading level={3} align="center" style={{fontWeight: "normal"}}>
+					Read code smarter and faster. Get more done.
+				</Heading>
+				<FeatureCarousel assetsURL={context.assetsRoot} />
+			</div>
 
-							{!(this.context as any).signedIn &&
-								<LocationStateToggleLink className={classNames(base.mr0, base.ml2, base.pv1, base.bb, base.bbw2, colors.purple, styles.hover_no_border, styles.hover_dark_purple)} href="/join" modalName="join" location={this.props.location}>
-									<strong>Sign up</strong>
-								</LocationStateToggleLink>
-							}
+			<BGContainer img={`${context.assetsRoot}/img/Homepage/bg-sourcesprinkles.svg`} position="center top" size="cover">
 
-						</FlexContainer>
+				<div style={{
+					margin: "auto",
+					marginBottom: whitespace[2],
+					maxWidth: 340,
+					textAlign: "center",
+				}}>
+
+					<img title="Go supported" width="40" src={`${context.assetsRoot}/img/Homepage/logo/go2.svg`} />
+					<FlexContainer justify="around" style={{
+						height: 100,
+						opacity: 0.5,
+						margin: "auto",
+						width: "100%",
+					}}>
+
+						<img title="Java coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/java.svg`} />
+						<img title="Typescript coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/typescript.svg`} />
+						<img title="JavaScript coming soon"width="24"  src={`${context.assetsRoot}/img/Homepage/logo/js.svg`} />
+						<img title="Python coming soon"width="24"  src={`${context.assetsRoot}/img/Homepage/logo/python.svg`} />
+						<img title="PHP coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/php.svg`} />
+						<img title="Scala coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/scala.svg`} />
 					</FlexContainer>
 
-					{/* section showing welcome message and examples */}
-					<FlexContainer justify="between" wrap={true} style={{maxWidth: "960px"}} className={classNames(base.center, base.ph3)}>
+					<Heading level={4} align="center" style={{fontWeight: "normal"}}>Support for Go</Heading>
 
-						{/* column with welcome message, short description, and sign up button */}
-						<div style={{maxWidth: "400px", flex: "1 1 400px"}}>
-							<Heading align="left" level={2} underline="purple">
-								Welcome to the global graph of code
-							</Heading>
+					<p style={{
+						color: colors.coolGray3(),
+						paddingLeft: whitespace[4],
+						paddingRight: whitespace[4],
+					}}>
+						TypeScript, JavaScript, Java, Python, Ruby, Scala, C, PHP, C++, and more coming soon...
+					</p>
+					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location}>
+						<strong>
+							Join the beta list
+							<ChevronRight color={colors.blueText()} width={7} style={{marginLeft: 4}} />
+						</strong>
+					</LocationStateToggleLink>
 
-							<p className={classNames(typography.f5, base.mt0)}>
-								<strong>Sourcegraph</strong> answers everyday programming questions in seconds
-							</p>
-
-							<p className={base.mt4}>
-								<LocationStateToggleLink href="/join" modalName="join" location={this.props.location}>
-									<Button type="button" color="purple" className={classNames(base.ph3, base.mr3)}>Sign up for free</Button>
-								</LocationStateToggleLink> or
-								<Link className={classNames(base.ml3, base.bb, base.bbw2, base.pv2, styles.hover_no_border)} to="/about"><strong>Learn more</strong></Link>
-							</p>
-						</div>
-
-						<div style={{maxWidth: "400px", maxHeight: "275px", flex: "1 1 400px", position: "relative"}}>
-							<LocationStateToggleLink modalName="demo_video" location={this.props.location}>
-								<FlexContainer direction="top_bottom" justify="center" style={{position: "absolute", top: "0px", bottom: "0px", right: "0px", left: "0px"}} className={classNames(colors.bg_dark_purple_8, base.br3, typography.tc)}>
-									<img src={`${context.assetsRoot}/img/Homepage/play.svg`} />
-								</FlexContainer>
-								<img src={`${context.assetsRoot}/img/Homepage/video-screenshot.png`} width="100%" height="auto%" className={base.br3} />
-							</LocationStateToggleLink>
-						</div>
-
-					</FlexContainer>
 				</div>
 
-				<div className={classNames(base.center, base.ph3, base.pv5)} style={{maxWidth: "990px"}}>
-					{/* section showing questions */}
-					<div className={base.center} style={{maxWidth: "600px"}}>
-						<Heading align="center" level={4} underline="blue">
-							How do I use this function? Who can I ask about this code? <em>What does this code even do?</em>
-						</Heading>
-
-						<p className={classNames(typography.tc, base.mt0, base.mb4)} >
-							These questions require you to constantly context-switch between your editor, terminal, and browser.
-							Sourcegraph can help you stop losing focus and wasting time.
-						</p>
-					</div>
-
-					{/* section showing feature descriptions */}
-					<FlexContainer justify="between" wrap={true} className={base.center}>
-
-						<div style={{maxWidth: "300px", flex: "1 1 220px"}} className={classNames(base.ph3, base.mt4)}>
-							<img src={`${context.assetsRoot}/img/Homepage/illo-docs.svg`} width="100%" />
-							<Heading level={5} style={{
-								marginTop: whitespace[2],
-								marginBottom: whitespace[0],
-							}}>
-								Usage examples and instant documentation
-							</Heading>
-							<p style={{marginTop: whitespace[2]}}>
-								Quickly understand new libraries instead of reinventing the wheel.
-							</p>
-						</div>
-
-						<div style={{maxWidth: "300px", flex: "1 1 220px"}} className={classNames(base.ph3, base.mt4)}>
-							<img src={`${context.assetsRoot}/img/Homepage/illo-search.svg`} width="100%" />
-							<Heading level={5} style={{
-								marginTop: whitespace[2],
-								marginBottom: whitespace[0],
-							}}>
-								Search by function, package, or symbol name
-							</Heading>
-							<p style={{marginTop: whitespace[2]}}>
-								Find exactly the function you&rsquo;re looking for.
-								Search your private code and thousands of open-source repositories.
-							</p>
-						</div>
-
-						<div style={{maxWidth: "300px", flex: "1 1 220px"}} className={classNames(base.ph3, base.mt4)}>
-							<img src={`${context.assetsRoot}/img/Homepage/illo-jump.svg`} width="100%" />
-							<Heading level={5} style={{
-								marginTop: whitespace[2],
-								marginBottom: whitespace[0],
-							}}>
-								Jump to definition across repositories
-							</Heading>
-							<p style={{marginTop: whitespace[2]}}>
-								Trace bugs, understand dependencies, and learn everything you need to know about a codebase.
-							</p>
-						</div>
-					</FlexContainer>
-				</div>
-
-				{/* section showing language icons */}
-				<div className={classNames(base.pv4, typography.tc, colors.bg_cool_mid_gray_1)}>
-					<Heading level={7} color="gray" pv={3}>
-						Growing language support
-					</Heading>
-
-					<FlexContainer justify="between" className={classNames(base.center, base.mt4)} style={{maxWidth: "440px"}}>
-						<img title="Go supported" className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/go2.svg`} />
-						<div style={{display: "inline-block", position: "relative", cursor: "pointer"}} onMouseOver={() => this.setState({langMouseover: true})} onMouseLeave={() => this.setState({langMouseover: false})}>
-							<img title="Java coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/java.svg`} />
-							<img title="JavaScript coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/js.svg`} />
-							<img title="Python coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/python.svg`} />
-							<img title="PHP coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/php.svg`} />
-							<img title="Scala coming soon" style={{opacity: this.state.langMouseover ? .1 : .3}} className={styles.lang_icon} src={`${context.assetsRoot}/img/Homepage/logo/scala.svg`} />
-							{this.state.langMouseover &&
-								<LocationStateToggleLink style={{display: "flex", alignItems: "center", justifyContent: "center", position: "absolute", left: 0, right: 0, top: 0, bottom: 0}} href="/beta" modalName="beta" location={this.props.location}>
-									<div>
-										<div className={colors.blue} style={{lineHeight: 1}}>
-											<strong>Notify me</strong>
-										</div>
-										<div className={typography.f7}>
-											when new languages are supported
-										</div>
-									</div>
-								</LocationStateToggleLink>
-							}
-						</div>
-					</FlexContainer>
-				</div>
-				{this.props.location.state && this.props.location.state.modal === "beta" &&
+				{this.props.location.state && (this.props.location.state as any).modal === "beta" &&
 					<LocationStateModal modalName="beta" location={this.props.location} router={this.context.router}>
-						<div className={styles.modal}>
-							<h2 className={typography.tc}>Join the Sourcegraph beta</h2>
+						<Panel style={{
+							maxWidth: 440,
+							minWidth: 320,
+							maxHeight: "85%",
+							padding: whitespace[4],
+							margin: "auto",
+							marginTop: "20vh",
+						}}>
+							<Heading level={4} align="center">Join the Sourcegraph beta</Heading>
 							<BetaInterestForm
-								className={styles.modalForm}
+								style={{width: "100%"}}
 								loginReturnTo="/"
 								onSubmit={dismissModal("beta", this.props.location, (this.context as any).router)} />
-						</div>
+						</Panel>
 					</LocationStateModal>
 				}
 
-				<div className={colors.bg_purple} style={{paddingTop: "50px", paddingBottom: "50px"}}>
-					<Panel style={{maxWidth: "930px", margin: "auto"}}>
-						{/* section showing clients */}
-						<div className={classNames(base.center, base.pa4)}>
+				<div style={{paddingTop: whitespace[5], paddingBottom: whitespace[4]}}>
+					<Panel hoverLevel="high" hover={false}
+						style={{
+							margin: "auto",
+							maxWidth: 960,
+							padding: whitespace[4],
+						}}>
 							<FlexContainer wrap={true}>
-								<Heading align="left" level={4} underline="purple" style={{flex: "0 0 240px"}} className="full_sm">
+								<Heading align="left" level={4} underline="purple" style={{flex: "0 0 240px"}} >
 									Used by developers everywhere
 								</Heading>
-
-								<FlexContainer justify="end" style={{flex: "1 1 60%"}} wrap={true}>
-									<img className={base.mr4} style={{marginBottom: "10px"}} src={`${context.assetsRoot}/img/Homepage/logo/twitter.svg`} />
-									<img className={base.mr4} style={{marginBottom: "9px"}} src={`${context.assetsRoot}/img/Homepage/logo/red-hat.svg`} />
-									<img className={base.mr4} style={{marginBottom: "7px"}} src={`${context.assetsRoot}/img/Homepage/logo/daily-motion.svg`} />
-									<img className={base.mr4} style={{marginBottom: "5px"}} src={`${context.assetsRoot}/img/Homepage/logo/progressly.svg`} />
+								<FlexContainer justify="end" style={{flex: "1 1 60%"}}>
+									<img style={{marginBottom: "10px", marginRight: whitespace[4]}} src={`${context.assetsRoot}/img/Homepage/logo/twitter.svg`} />
+									<img style={{marginBottom: "9px", marginRight: whitespace[4]}} src={`${context.assetsRoot}/img/Homepage/logo/red-hat.svg`} />
+									<img style={{marginBottom: "7px", marginRight: whitespace[4]}} src={`${context.assetsRoot}/img/Homepage/logo/daily-motion.svg`} />
+									<img style={{marginBottom: "5px"}} src={`${context.assetsRoot}/img/Homepage/logo/progressly.svg`} />
 								</FlexContainer>
 							</FlexContainer>
 
-							{/* section showing favorable user feedback */}
-							<FlexContainer justify="between" wrap={true}>
-								<div className={classNames(styles.tweet_container, base.pr4, base.mb3)}>
+							<FlexContainer wrap={true} justify="between">
+								<Tweet>
 									<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">Just found out <a href="https://twitter.com/srcgraph">@srcgraph</a> ! HUGE productivity gain. Great work ! Waiting for more language support.</p>&mdash; Dharmesh Kakadia (@dharmeshkakadia) <a href="https://twitter.com/dharmeshkakadia/status/738874411437035520">June 3, 2016</a></blockquote>
-								</div>
-								<div className={classNames(styles.tweet_container, base.mb3)}>
+								</Tweet>
+								<Tweet>
 									<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">The <a href="https://twitter.com/srcgraph">@srcgraph</a> Chrome extension for GitHub is the best! <a href="https://t.co/CKweAOfbsQ">https://t.co/CKweAOfbsQ</a></p>&mdash; Julius Volz (@juliusvolz) <a href="https://twitter.com/juliusvolz/status/748095329564778496">June 29, 2016</a></blockquote>
-								</div>
-							</FlexContainer>
-							<FlexContainer justify="between" wrap={true}>
-								<div className={classNames(styles.tweet_container, base.pr4)}>
+								</Tweet>
+								<Tweet>
 									<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">Used <a href="https://twitter.com/srcgraph">@srcgraph</a> jump-to-definition across 3 projects, 2 langs, finally landing deep in Golang src. Took &lt; 10 min to pin down the issue. 💪🏼</p>&mdash; Gabriel Monroy (@gabrtv) <a href="https://twitter.com/gabrtv/status/738861622882508801">June 3, 2016</a></blockquote>
-								</div>
-								<div className={styles.tweet_container}>
+								</Tweet>
+								<Tweet>
 									<blockquote className="twitter-tweet" lang="en"><p lang="en" dir="ltr">Sourcegraph is the cross reference to end all cross references</p>&mdash; Erik Hollensbe (@erikhollensbe) <a href="https://twitter.com/erikhollensbe/status/738880970909089793">June 3, 2016</a></blockquote>
-								</div>
+								</Tweet>
 							</FlexContainer>
-						</div>
 					</Panel>
 				</div>
 
-				{/* section showing tagline with a CTA to sign up */}
-				<div style={{maxWidth: "660px"}} className={classNames(base.center, base.mv5, base.ph3)}>
+				<div style={Object.assign({},
+					layout.container,
+					{
+						maxWidth: 600,
+						marginTop: whitespace[5],
+						padding: whitespace[3],
+						paddingBottom: whitespace[6],
+						textAlign: "center",
+					}
+				)}>
 					<Heading align="center" level={3}>
-						Programming should be about building architectures and algorithms, not struggling with how to use a library or function
+						Understand code smarter and faster with Sourcegraph
+					</Heading>
+					<Heading align="center" color="gray" level={4} style={{
+						fontWeight: "normal",
+						marginTop: whitespace[3],
+					}}>
+						Free for public and personal private code
 					</Heading>
 
-					<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} className={classNames(base.mb5, base.mt4, typography.tc)} style={{display: "block"}}>
-						<Button type="button" color="purple" className={base.ph4}>Sign up for free</Button>
+					<LocationStateToggleLink href="/join" modalName="join" location={this.props.location}>
+						<Button color="orange" style={{
+							marginTop: whitespace[4],
+							paddingLeft: whitespace[4],
+							paddingRight: whitespace[4],
+						}}>Sign up for free</Button>
 					</LocationStateToggleLink>
 				</div>
 
-			<div className={classNames(base.center, base.mv5, base.ph3, styles.footer)}>
-				<a href="/about">About</a>
-				<a href="https://text.sourcegraph.com">Blog</a>
-				<a href="/docs">Docs</a>
-				<a href="/jobs">Careers</a>
-				<a href="/contact">Contact</a>
-				<a href="/pricing">Pricing</a>
-				<a href="/privacy">Privacy</a>
-				<a href="/security">Security</a>
-				<a href="/sitemap">Sitemap</a>
-				<a href="/terms">Terms</a>
-			</div>
+				<Footer />
 
-			</div>
-		);
+			</BGContainer>
+
+		</div>;
 	}
+}
+
+interface TweetProps { children?: React.ReactNode[]; }
+
+function Tweet({children}: TweetProps): JSX.Element {
+	return <div
+		{...style({flex: "0 0 49%", maxWidth: "49%"})}
+		{...media(layout.breakpoints["sm"], {flex: "0 0 100%", maxWidth: "100%"})}>{children}</div>;
 }

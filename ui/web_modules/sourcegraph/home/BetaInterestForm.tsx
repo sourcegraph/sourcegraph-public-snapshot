@@ -16,6 +16,7 @@ interface Props {
 	className?: string;
 	language?: string;
 	loginReturnTo?: string;
+	style?: React.CSSProperties;
 }
 
 type State = any;
@@ -141,7 +142,7 @@ export class BetaInterestForm extends Component<Props, State> {
 		}
 
 		return (
-			<div>
+			<div style={this.props.style}>
 				{betaRegistered && <span>
 					<p>You've already registered. We'll contact you once a beta matching your interests has begun.</p>
 					<p>Feel free to update your favorite editors / languages using the form below.</p>

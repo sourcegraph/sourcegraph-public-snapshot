@@ -20,6 +20,10 @@ export function ChevronDown(props: Props): React.ReactElement<Props> {
 	return <Symbol {...props} viewBox="720 182 12 8"><path fillRule="evenodd" d="M725.293 188.95l.707.707 5.657-5.657-1.414-1.414-4.243 4.242-4.243-4.242-1.414 1.414"/></Symbol>;
 };
 
+export function ChevronRight(props: Props): React.ReactElement<Props> {
+	return <Symbol {...props} viewBox="92 5 6 9"><path fillRule="evenodd" d="M97 10l.7-.6-4-4-1 1 3 3-3 3 1 1"/></Symbol>;
+};
+
 export function Close(props: Props): React.ReactElement<Props> {
 	return <Symbol {...props} viewBox="410 232 18 18"><path fillRule="evenodd" d="M419 239.586l-7.07-7.07-1.415 1.413 7.07 7.07-7.07 7.07 1.414 1.415 7.07-7.07 7.07 7.07 1.415-1.414-7.07-7.07 7.07-7.07-1.414-1.415"/></Symbol>;
 };

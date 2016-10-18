@@ -5,25 +5,19 @@ import {context} from "sourcegraph/app/context";
 
 interface Props {
 	className?: string;
-	type?: string;
+	type?: "logotype-with-tag" | "logotype";
 	width?: string;
+	style?: React.CSSProperties;
 }
 
-type State = any;
-
-export class Logo extends React.Component<Props, State> {
-
-	render(): JSX.Element | null {
-		const {width, type, className} = this.props;
-
-		let logoImg = "sourcegraph-mark.svg";
-		if (type === "logotype") {
-			logoImg = "sourcegraph-logo.svg";
-		}
-		if (type === "logotype-with-tag") {
-			logoImg = "sourcegraph-logo-tagline.svg";
-		}
-
-		return <img src={`${context.assetsRoot}/img/${logoImg}`} width={width} className={className} title="Sourcegraph" alt="Sourcegraph Logo" />;
+export function Logo({width, type, className, style}: Props): JSX.Element {
+	let logoImg = "sourcegraph-mark.svg";
+	if (type === "logotype") {
+		logoImg = "sourcegraph-logo.svg";
 	}
+	if (type === "logotype-with-tag") {
+		logoImg = "sourcegraph-logo-tagline.svg";
+	}
+
+	return <img src={`${context.assetsRoot}/img/${logoImg}`} width={width} className={className} title="Sourcegraph" alt="Sourcegraph Logo" style={style} />;
 }

@@ -1,10 +1,9 @@
+import {media, merge} from "glamor";
 import * as React from "react";
 import {breakpoints} from "sourcegraph/components/utils/layout";
 
-import {media, merge} from "glamor";
-
 interface Props {
-	align?: "left" | "right";
+	align?: "left" | "right" | "none";
 	col: number;
 	colSm?: number;
 	colMd?: number;
@@ -13,7 +12,15 @@ interface Props {
 	style?: React.CSSProperties;
 }
 
-export function GridCol(props: Props): JSX.Element {
+export function GridCol({
+	align = "none",
+	col,
+	colSm,
+	colMd,
+	colLg,
+	children,
+	style,
+}: Props): JSX.Element {
 	// Generate column sizes
 	const colSize: number = 100 / 12;
 	const unit = "%";
@@ -21,19 +28,19 @@ export function GridCol(props: Props): JSX.Element {
 	const column = colSizes.map((val) => val + unit );
 
 	const sx = merge(
-		media(breakpoints["sm"], { width: props.colSm ? column[props.colSm] : "" }),
-		media(breakpoints["md"], { width: props.colMd ? column[props.colMd] : "" }),
-		media(breakpoints["lg"], { width: props.colLg ? column[props.colLg] : "" }),
+		media(breakpoints["sm"], { width: colSm ? column[colSm] : "" }),
+		media(breakpoints["md"], { width: colMd ? column[colMd] : "" }),
+		media(breakpoints["lg"], { width: colLg ? column[colLg] : "" }),
 		{
 			boxSizing: "border-box",
-			width: column[props.col],
-			float: props.align,
+			width: column[col],
+			float: align,
 		},
-		props.style || {},
+		style || {},
 	);
 
-	return <div style={props.style}
+	return <div style={style}
 		{...sx}>
-		{props.children}
+		{children}
 	</div>;
 }

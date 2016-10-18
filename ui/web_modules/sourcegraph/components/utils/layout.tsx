@@ -20,7 +20,13 @@ export const clearFix = merge(
 	})
 );
 
+export const container = {
+	margin: "auto",
+	maxWidth: 1280,
+};
+
 export const layout = {
 	breakpoints,
 	clearFix,
+	container,
 };
