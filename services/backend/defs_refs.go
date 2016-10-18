@@ -2,6 +2,9 @@ package backend
 
 import (
 	"path"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"context"
 
@@ -114,7 +117,22 @@ func (s *defs) DeprecatedListRefLocations(ctx context.Context, op *sourcegraph.D
 	return localstore.DeprecatedGlobalRefs.DeprecatedGet(ctx, op)
 }
 
+var indexDuration = prometheus.NewGauge(prometheus.GaugeOpts{
+	Namespace: "src",
+	Name:      "index_duration_seconds",
+	Help:      "Duration of time that indexing a repository takes.",
+})
+
+func init() {
+	prometheus.MustRegister(indexDuration)
+}
+
 func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (err error) {
+	start := time.Now()
+	defer func() {
+		indexDuration.Set(time.Since(start).Seconds())
+	}()
+
 	if Mocks.Defs.RefreshIndex != nil {
 		return Mocks.Defs.RefreshIndex(ctx, op)
 	}
