@@ -14,7 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
@@ -53,7 +53,7 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 			return
 		}
 
-		req = httpctx.WithRouteName(req, "go-get")
+		httptrace.SetRouteName(req, "middleware.go-get")
 		if !strings.HasPrefix(req.URL.Path, "/") {
 			err := fmt.Errorf("req.URL.Path doesn't have a leading /: %q", req.URL.Path)
 			log.Println(err)

@@ -125,6 +125,14 @@ func TraceRouteFallback(fallback string, next http.Handler) http.Handler {
 	})
 }
 
+// SetRouteName manually sets the name for the route. This should only be used
+// for non-mux routed routes (ie middlewares).
+func SetRouteName(r *http.Request, routeName string) {
+	if p, ok := r.Context().Value(routeNameKey).(*string); ok {
+		*p = routeName
+	}
+}
+
 // ResponseWriterStatusIntercept implements the http.ResponseWriter interface
 // so we can intercept the status that we can otherwise not access
 type ResponseWriterStatusIntercept struct {

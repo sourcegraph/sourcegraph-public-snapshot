@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 )
 
 // statusEndpoint is the endpoint used by AWS Elastic Load Balancers to check
@@ -38,6 +39,7 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 func HealthCheck(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == statusEndpoint {
+			httptrace.SetRouteName(r, "middleware.status")
 			statusHandler(w, r)
 			return
 		}

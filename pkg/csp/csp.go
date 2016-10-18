@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 )
 
 // Handler sets Content-Security-Policy{,-Report-Only} headers and
@@ -38,9 +40,11 @@ func (h *Handler) Middleware(next http.Handler) http.Handler {
 		if r.Method == "POST" {
 			requestURI := r.URL.RequestURI()
 			if h.cfg.Policy != nil && requestURI == h.cfg.Policy.ReportURI {
+				httptrace.SetRouteName(r, "middleware.csp")
 				h.logCSPReport("Content-Security-Policy", h.cfg.Policy, r.Body)
 				return
 			} else if h.cfg.PolicyReportOnly != nil && requestURI == h.cfg.PolicyReportOnly.ReportURI {
+				httptrace.SetRouteName(r, "middleware.csp")
 				h.logCSPReport("Content-Security-Policy-Report-Only", h.cfg.Policy, r.Body)
 				return
 			}

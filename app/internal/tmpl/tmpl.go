@@ -19,7 +19,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 )
 
 var (
@@ -80,8 +79,6 @@ func LoadOnce() {
 type Common struct {
 	AuthInfo *sourcegraph.AuthInfo
 
-	CurrentRoute string
-
 	// TemplateName is the filename of the template being rendered
 	// (e.g., "repo/main.html").
 	TemplateName string
@@ -124,7 +121,6 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 		field.Set(reflect.ValueOf(Common{
 			AuthInfo:             auth.ActorFromContext(req.Context()).AuthInfo(),
 			TemplateName:         name,
-			CurrentRoute:         httpctx.RouteName(req),
 			Ctx:                  req.Context(),
 			Debug:                handlerutil.DebugMode,
 			DisableExternalLinks: appconf.Flags.DisableExternalLinks,

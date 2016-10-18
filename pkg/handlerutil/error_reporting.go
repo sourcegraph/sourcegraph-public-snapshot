@@ -11,7 +11,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 
 	"github.com/getsentry/raven-go"
@@ -79,9 +78,6 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 		addTag("Authed user", actor.Login)
 	} else {
 		addTag("Authed", "no")
-	}
-	if routeName := httpctx.RouteName(r); routeName != "" {
-		addTag("Route", routeName)
 	}
 	if routeVars := mux.Vars(r); len(routeVars) > 0 {
 		pkt.Extra["Route vars"] = routeVars
