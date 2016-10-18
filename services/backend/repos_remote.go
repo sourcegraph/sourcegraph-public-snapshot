@@ -58,6 +58,6 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (res
 		}
 	}
 
-	// Not found anywhere.
-	return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %q not found locally or remotely", op.Path)
+	// Not found anywhere where looked.
+	return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %q not found", op.Path)
 }
