@@ -82,7 +82,7 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 
 // VerifyActorHasGitHubRepoAccess checks if the given actor is authorized to access
 // the given GitHub mirrored repository. repoURI MUST be of the form "github.com/USER/REPO",
-// it MUST begin with "github.com/" (case sensitive). The access check is performed
+// it MUST begin with "github.com/" (case insensitive). The access check is performed
 // by delegating the access check to GitHub.
 //
 // NOTE: Only (*localstore.repos).Get/GetByURI method should call this
@@ -102,8 +102,8 @@ func VerifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, meth
 	if repo == 0 || repoURI == "" {
 		panic("both repo and repoURI must be set")
 	}
-	if !strings.HasPrefix(repoURI, "github.com/") {
-		panic(fmt.Errorf(`VerifyActorHasGitHubRepoAccess: precondition not satisfied, repoURI %q does not begin with "github.com/"`, repoURI))
+	if !strings.HasPrefix(strings.ToLower(repoURI), "github.com/") {
+		panic(fmt.Errorf(`VerifyActorHasGitHubRepoAccess: precondition not satisfied, repoURI %q does not begin with "github.com/" (case insensitive)`, repoURI))
 	}
 
 	if VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
@@ -157,11 +157,6 @@ func VerifyActorHasReadAccess(ctx context.Context, actor *auth.Actor, method str
 			return err
 		}
 		if strings.HasPrefix(strings.ToLower(repoURI), "github.com/") {
-			if !strings.HasPrefix(repoURI, "github.com/") {
-				// "github.com/" prefix case doesn't match.
-				return legacyerr.Errorf(legacyerr.InvalidArgument, `invalid hostname case, "github.com/" must be all lower case`)
-			}
-
 			if !VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI) {
 				return ErrRepoNotFound
 			}
@@ -303,11 +298,6 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor *auth.Actor, method st
 
 	if repoID != 0 && repoURI != "" {
 		if strings.HasPrefix(strings.ToLower(repoURI), "github.com/") {
-			if !strings.HasPrefix(repoURI, "github.com/") {
-				// "github.com/" prefix case doesn't match.
-				return legacyerr.Errorf(legacyerr.InvalidArgument, `invalid hostname case, "github.com/" must be all lower case`)
-			}
-
 			if !VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI) {
 				return ErrRepoNotFound
 			}
