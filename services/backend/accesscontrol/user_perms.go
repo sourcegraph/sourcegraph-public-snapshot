@@ -80,11 +80,10 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 	return VerifyUserHasAdminAccess(ctx, method)
 }
 
-// VerifyActorHasGitHubRepoAccess delegate permissions check to GitHub
-// for GitHub mirrored repos. The repo string MUST be of the form
-// "github.com/USER/REPO"; it MUST begin with "github.com/" if it is a
-// GitHub repository whose access permissions should be delegated to
-// GitHub.
+// VerifyActorHasGitHubRepoAccess checks if the given actor is authorized to access
+// the given GitHub mirrored repository. repoURI MUST be of the form "github.com/USER/REPO",
+// it MUST begin with "github.com/" (case sensitive). The access check is performed
+// by delegating the access check to GitHub.
 //
 // NOTE: Only (*localstore.repos).Get/GetByURI method should call this
 // func. All other callers should use
