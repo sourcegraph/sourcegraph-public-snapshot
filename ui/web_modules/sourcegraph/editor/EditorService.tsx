@@ -87,6 +87,14 @@ export class EditorService implements IEditorService {
 					codeEditor.setPosition(pos);
 					codeEditor.revealPositionInCenter(pos);
 				}
+			} else {
+				// By default, set the selction of the cursor to be the end of the
+				// first line. Without this, the Ctrl+F search functionality will only
+				// search within the selected line, which is the first line by default.
+				// There's currently no API for unselecting a line so this is a workaround.
+				codeEditor.setSelection(
+					{startLineNumber: 1, startColumn: Infinity, endLineNumber: 1, endColumn: Infinity} as IRange
+				);
 			}
 
 			this.editor.focus();
