@@ -9,13 +9,15 @@ export function setAccessToken(token) {
 }
 
 // Utility method to fetch the absolute commit id for a branch
+const resolveRevOnce = new Map();
 function _resolveRev(dispatch, state, repo, rev) {
-	const resolvedRev = state.resolvedRev.content[keyFor(repo, rev)];
-	if (resolvedRev) return Promise.resolve(resolvedRev);
+	if (resolveRevOnce.has(keyFor(repo, rev))) return resolveRevOnce.get(keyFor(repo, rev));
 
-	return fetch(`https://sourcegraph.com/.api/repos/${repo}${rev ? `@${rev}` : ""}/-/rev`)
+	const revPromise = fetch(`https://sourcegraph.com/.api/repos/${repo}${rev ? `@${rev}` : ""}/-/rev`)
 		.then((json) => { dispatch({type: types.RESOLVED_REV, repo, rev, json}); return json; })
 		.catch((err) => { dispatch({type: types.RESOLVED_REV, repo, rev, err}); throw err; });
+	resolveRevOnce.set(keyFor(repo, rev), revPromise);
+	return revPromise;
 }
 
 // This is used to fetch the styling info, which we use to tokenize nodes in DOM
