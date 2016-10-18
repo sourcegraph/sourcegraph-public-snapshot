@@ -17,7 +17,7 @@ export function Footer(): JSX.Element {
 			<Item url="/pricing">Pricing</Item>
 			<Item url="/privacy">Privacy</Item>
 			<Item url="/security">Security</Item>
-			<Item url="/sitemap">Sitemap</Item>
+			<Item url="/sitemap" anchor>Sitemap</Item>
 			<Item url="/terms">Terms</Item>
 		</div>
 	</div>;
