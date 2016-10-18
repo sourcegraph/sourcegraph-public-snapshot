@@ -179,6 +179,12 @@ export class Editor implements IDisposable {
 				}
 			}
 		}
+
+		// This default go-to-def on click contribution creates unwanted UX (e.g.
+		// jumps to definition on ctrl-click). Disable this one in favor of our
+		// own.
+		let gotoContrib = this._editor.getContribution("editor.contrib.gotodefinitionwithmouse");
+		gotoContrib.dispose();
 	}
 
 	setInput(uri: URI, range?: IRange): Promise<void> {
