@@ -1,4 +1,4 @@
-package buildserver
+package vfsutil
 
 import (
 	"bytes"
@@ -15,14 +15,14 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
 )
 
-// remoteProxyFS is an implementation of ctxvfs.FileSystem that
+// RemoteProxyFS is an implementation of ctxvfs.FileSystem that
 // communicates with the LSP proxy server over JSON-RPC to access the
 // (virtual) file system.
 //
 // It caches the results of calls to avoid needless roundtrips. This
 // assumes that the file system is immutable.
-type remoteProxyFS struct {
-	conn *jsonrpc2.Conn
+type RemoteProxyFS struct {
+	Conn *jsonrpc2.Conn
 
 	mu    sync.Mutex
 	cache map[string]*fsPathCache
@@ -40,13 +40,13 @@ type fsPathCache struct {
 }
 
 // call sends a request to the LSP proxy with tracing information.
-func (fs *remoteProxyFS) call(ctx context.Context, method, path string, result interface{}) (err error) {
+func (fs *RemoteProxyFS) call(ctx context.Context, method, path string, result interface{}) (err error) {
 	t0 := time.Now()
 	span := opentracing.SpanFromContext(ctx)
 	defer func() {
 		span.LogEventWithPayload(method+": "+path, fmt.Sprintf("took %s, error: %v", time.Since(t0), err))
 	}()
-	return fs.conn.Call(ctx, method, path, result, addTraceMeta(span))
+	return fs.Conn.Call(ctx, method, path, result, addTraceMeta(span))
 }
 
 func addTraceMeta(span opentracing.Span) jsonrpc2.CallOption {
@@ -57,7 +57,7 @@ func addTraceMeta(span opentracing.Span) jsonrpc2.CallOption {
 	return jsonrpc2.Meta(carrier)
 }
 
-func (fs *remoteProxyFS) getCache(path string) *fsPathCache {
+func (fs *RemoteProxyFS) getCache(path string) *fsPathCache {
 	if fs.cache == nil {
 		fs.cache = map[string]*fsPathCache{}
 	}
@@ -69,7 +69,7 @@ func (fs *remoteProxyFS) getCache(path string) *fsPathCache {
 	return c
 }
 
-func (fs *remoteProxyFS) Open(ctx context.Context, path string) (ctxvfs.ReadSeekCloser, error) {
+func (fs *RemoteProxyFS) Open(ctx context.Context, path string) (ctxvfs.ReadSeekCloser, error) {
 	fs.mu.Lock()
 	c := fs.getCache(path)
 	if c.readFile != nil {
@@ -96,7 +96,7 @@ func (fs *remoteProxyFS) Open(ctx context.Context, path string) (ctxvfs.ReadSeek
 	return nopCloser{bytes.NewReader(contents)}, nil
 }
 
-func (fs *remoteProxyFS) Stat(ctx context.Context, path string) (fi os.FileInfo, err error) {
+func (fs *RemoteProxyFS) Stat(ctx context.Context, path string) (fi os.FileInfo, err error) {
 	fs.mu.Lock()
 	c := fs.getCache(path)
 	if c.stat != nil || c.statErr != nil {
@@ -117,7 +117,7 @@ func (fs *remoteProxyFS) Stat(ctx context.Context, path string) (fi os.FileInfo,
 	return fi, fs.call(ctx, "fs/stat", path, &fi)
 }
 
-func (fs *remoteProxyFS) Lstat(ctx context.Context, path string) (fi os.FileInfo, err error) {
+func (fs *RemoteProxyFS) Lstat(ctx context.Context, path string) (fi os.FileInfo, err error) {
 	fs.mu.Lock()
 	c := fs.getCache(path)
 	if c.lstat != nil || c.lstatErr != nil {
@@ -138,7 +138,7 @@ func (fs *remoteProxyFS) Lstat(ctx context.Context, path string) (fi os.FileInfo
 	return fi, fs.call(ctx, "fs/lstat", path, &fi)
 }
 
-func (fs *remoteProxyFS) ReadDir(ctx context.Context, path string) (fis []os.FileInfo, err error) {
+func (fs *RemoteProxyFS) ReadDir(ctx context.Context, path string) (fis []os.FileInfo, err error) {
 	fs.mu.Lock()
 	c := fs.getCache(path)
 	if c.readDir != nil || c.readDirErr != nil {
@@ -166,8 +166,8 @@ func (fs *remoteProxyFS) ReadDir(ctx context.Context, path string) (fis []os.Fil
 	return fis, nil
 }
 
-func (fs *remoteProxyFS) String() string {
-	return "remoteProxyFS"
+func (fs *RemoteProxyFS) String() string {
+	return "RemoteProxyFS"
 }
 
 type nopCloser struct {

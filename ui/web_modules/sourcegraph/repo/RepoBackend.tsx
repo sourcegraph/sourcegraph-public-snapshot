@@ -186,18 +186,19 @@ export const RepoBackend = {
 
 		if (payload instanceof RepoActions.WantSymbols) {
 			const action = payload;
-
+			let symbols = RepoStore.symbols.list(payload.repo, payload.rev, payload.query);
+			if (symbols.length > 0) {
+				return;
+			}
 			// TODO(john): make WantSymbols aware of project modes.
-			["go", "typescript"].forEach(mode => {
-				let symbols = RepoStore.symbols.list(mode, payload.repo, payload.rev, payload.query);
-				if (symbols !== null) {
-					return;
-				}
+			["go", "typescript", "ctags"].forEach(mode => {
 				lsp.sendExt(`git:\/\/${action.repo}?${action.rev}`, mode, "workspace/symbol", { query: action.query, limit: 100 })
 					.then((r) => {
-						let result = r.result;
-						if (!result || !result.length) {
+						let result;
+						if (r === null || !r.result || !r.result.length) {
 							result = [];
+						} else {
+							result = r.result;
 						}
 						Dispatcher.Stores.dispatch(
 							new RepoActions.FetchedSymbols(mode, action.repo, action.rev, action.query, result)

@@ -300,11 +300,8 @@ export class Container extends React.Component<Props, State> {
 
 		// Update symbols
 		if (repo && this.state.commitID) {
-			const updatedGoSymbols = RepoStore.symbols.list("go", repo.URI, commitID, query);
-			const updatedTypeScriptSymbols = RepoStore.symbols.list("typescript", repo.URI, commitID, query);
-
-			if (updatedGoSymbols || updatedTypeScriptSymbols) {
-				const updatedSymbols = (updatedGoSymbols || []).concat(updatedTypeScriptSymbols || []);
+			const updatedSymbols = RepoStore.symbols.list(repo.URI, commitID, query);
+			if (updatedSymbols.length > 0) {
 				const symbolResults: Result[] = [];
 				updatedSymbols.forEach(sym => {
 					let title = sym.name;
