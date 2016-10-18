@@ -156,8 +156,15 @@ func VerifyActorHasReadAccess(ctx context.Context, actor *auth.Actor, method str
 		if err != nil {
 			return err
 		}
-		if !VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI) {
-			return ErrRepoNotFound
+		if strings.HasPrefix(strings.ToLower(repoURI), "github.com/") {
+			if !strings.HasPrefix(repoURI, "github.com/") {
+				// "github.com/" prefix case doesn't match.
+				return legacyerr.Errorf(legacyerr.InvalidArgument, `invalid hostname case, "github.com/" must be all lower case`)
+			}
+
+			if !VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI) {
+				return ErrRepoNotFound
+			}
 		}
 	}
 	return nil
@@ -295,8 +302,15 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor *auth.Actor, method st
 	}
 
 	if repoID != 0 && repoURI != "" {
-		if !VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI) {
-			return ErrRepoNotFound
+		if strings.HasPrefix(strings.ToLower(repoURI), "github.com/") {
+			if !strings.HasPrefix(repoURI, "github.com/") {
+				// "github.com/" prefix case doesn't match.
+				return legacyerr.Errorf(legacyerr.InvalidArgument, `invalid hostname case, "github.com/" must be all lower case`)
+			}
+
+			if !VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI) {
+				return ErrRepoNotFound
+			}
 		}
 	}
 

@@ -164,10 +164,17 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Check permissions against GitHub. The reason this does not call `VerifyUserHasReadAccess` is because
-	// VerifyUserHasReadAccess --calls-> getRepo --calls-> repos.Get
-	if !accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.ID, repo.URI) {
-		return nil, accesscontrol.ErrRepoNotFound
+	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
+		if !strings.HasPrefix(repo.URI, "github.com/") {
+			// "github.com/" prefix case doesn't match.
+			return nil, legacyerr.Errorf(legacyerr.InvalidArgument, `invalid hostname case, "github.com/" must be all lower case`)
+		}
+
+		// Check permissions against GitHub. The reason this does not call `VerifyUserHasReadAccess` is because
+		// VerifyUserHasReadAccess --calls-> getRepo --calls-> repos.Get
+		if !accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.ID, repo.URI) {
+			return nil, accesscontrol.ErrRepoNotFound
+		}
 	}
 	return repo, nil
 }
@@ -184,10 +191,17 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	if err != nil {
 		return nil, err
 	}
-	// Check permissions against GitHub. The reason this does not call `VerifyUserHasReadAccess` is because
-	// VerifyUserHasReadAccess --calls-> getRepo --calls-> repos.GetByURI
-	if !accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.GetByURI", repo.ID, repo.URI) {
-		return nil, accesscontrol.ErrRepoNotFound
+	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
+		if !strings.HasPrefix(repo.URI, "github.com/") {
+			// "github.com/" prefix case doesn't match.
+			return nil, legacyerr.Errorf(legacyerr.InvalidArgument, `invalid hostname case, "github.com/" must be all lower case`)
+		}
+
+		// Check permissions against GitHub. The reason this does not call `VerifyUserHasReadAccess` is because
+		// VerifyUserHasReadAccess --calls-> getRepo --calls-> repos.GetByURI
+		if !accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.GetByURI", repo.ID, repo.URI) {
+			return nil, accesscontrol.ErrRepoNotFound
+		}
 	}
 	return repo, nil
 }
