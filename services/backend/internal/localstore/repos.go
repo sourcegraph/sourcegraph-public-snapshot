@@ -186,7 +186,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	}
 	// Check permissions against GitHub. The reason this does not call `VerifyUserHasReadAccess` is because
 	// VerifyUserHasReadAccess --calls-> getRepo --calls-> repos.GetByURI
-	if !accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.ID, repo.URI) {
+	if !accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.GetByURI", repo.ID, repo.URI) {
 		return nil, accesscontrol.ErrRepoNotFound
 	}
 	return repo, nil
