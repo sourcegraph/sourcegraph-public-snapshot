@@ -255,17 +255,15 @@ export default class BlobAnnotator extends Component {
 	}
 
 	onClickAuthPriv(ev) {
+		ev.preventDefault();
 		EventLogger.logEventForCategory("Auth", "Redirect", "ChromeExtensionSgButtonClicked", {repo: this.state.repoURI, path: window.location.href, is_private_repo: this.isPrivateRepo()});
 		location.href = `https://sourcegraph.com/join?ob=github&rtg=${encodeURIComponent(window.location.href)}`;
 	}
 
 	onClickFileView(ev) {
+		ev.preventDefault();
 		EventLogger.logEventForCategory("File", "Click", "ChromeExtensionSgButtonClicked", {repo: this.state.repoURI, path: window.location.href, is_private_repo: this.isPrivateRepo()});
-
-		const repo = this.state.headRepoURI || this.state.repoURI;
-		const rev = this.state.headCommitID || this.state.rev;
-		const lineNumberFragment = this.state.headLineNumber ? `#L${this.state.headLineNumber}` : "";
-		const targetURL = `https://sourcegraph.com/${repo}@${rev}/-/blob/${this.state.path}${lineNumberFragment}`;
+		const targetURL = this.getBlobUrl();
 		if (ev.ctrlKey || (navigator.platform.toLowerCase().indexOf('mac') >= 0 && ev.metaKey) || event.button !== 0) {
 			// Remove :focus from target to remove the hover
 			// tooltip when opening target link in a new window.
@@ -274,6 +272,14 @@ export default class BlobAnnotator extends Component {
 		} else {
 			location.href = targetURL;
 		}
+	}
+
+	getBlobUrl() {
+		const repo = this.state.headRepoURI || this.state.repoURI;
+		const rev = this.state.headCommitID || this.state.rev;
+		const lineNumberFragment = this.state.headLineNumber ? `#L${this.state.headLineNumber}` : "";
+
+		return `https://sourcegraph.com/${repo}@${rev}/-/blob/${this.state.path}${lineNumberFragment}`;
 	}
 
 	render() {
@@ -290,7 +296,7 @@ export default class BlobAnnotator extends Component {
 				this.state.selfElement.setAttribute("aria-label", "View on Sourcegraph");
 				this.state.selfElement.onclick = this.onClickFileView;
 
-				return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</span>;
+				return <span><a href={this.getBlobUrl()} onclick={this.onClickFileView} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</a></span>;
 			} else {
 				// TODO: Only set style to disabled and log the click event for statistics on unsupported languages?
 				this.state.selfElement.setAttribute("disabled", true);
@@ -303,6 +309,6 @@ export default class BlobAnnotator extends Component {
 			}
 		}
 
-		return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</span>;
+		return <span><a href={`https://sourcegraph.com/join?ob=github&rtg=${encodeURIComponent(window.location.href)}`} onclick={this.onClickAuthPriv} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</a></span>;
 	}
 }
