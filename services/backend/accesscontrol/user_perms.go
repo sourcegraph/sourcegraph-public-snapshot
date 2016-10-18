@@ -156,10 +156,13 @@ func VerifyActorHasReadAccess(ctx context.Context, actor *auth.Actor, method str
 		if err != nil {
 			return err
 		}
-		if strings.HasPrefix(strings.ToLower(repoURI), "github.com/") {
+		switch {
+		case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
 			if !VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI) {
 				return ErrRepoNotFound
 			}
+		default:
+			return ErrRepoNotFound
 		}
 	}
 	return nil
@@ -297,10 +300,13 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor *auth.Actor, method st
 	}
 
 	if repoID != 0 && repoURI != "" {
-		if strings.HasPrefix(strings.ToLower(repoURI), "github.com/") {
+		switch {
+		case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
 			if !VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI) {
 				return ErrRepoNotFound
 			}
+		default:
+			return ErrRepoNotFound
 		}
 	}
 

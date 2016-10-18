@@ -164,12 +164,15 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 	if err != nil {
 		return nil, err
 	}
-	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
+	switch {
+	case strings.HasPrefix(strings.ToLower(repo.URI), "github.com/"):
 		// Check permissions against GitHub. The reason this does not call `VerifyUserHasReadAccess` is because
 		// VerifyUserHasReadAccess --calls-> getRepo --calls-> repos.Get
 		if !accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.ID, repo.URI) {
 			return nil, accesscontrol.ErrRepoNotFound
 		}
+	default:
+		return nil, accesscontrol.ErrRepoNotFound
 	}
 	return repo, nil
 }
@@ -186,12 +189,15 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	if err != nil {
 		return nil, err
 	}
-	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
+	switch {
+	case strings.HasPrefix(strings.ToLower(repo.URI), "github.com/"):
 		// Check permissions against GitHub. The reason this does not call `VerifyUserHasReadAccess` is because
 		// VerifyUserHasReadAccess --calls-> getRepo --calls-> repos.GetByURI
 		if !accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.GetByURI", repo.ID, repo.URI) {
 			return nil, accesscontrol.ErrRepoNotFound
 		}
+	default:
+		return nil, accesscontrol.ErrRepoNotFound
 	}
 	return repo, nil
 }
