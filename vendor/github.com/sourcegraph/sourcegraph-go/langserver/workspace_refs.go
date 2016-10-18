@@ -83,6 +83,22 @@ func (h *LangHandler) externalRefsFromPkg(ctx context.Context, bctx *build.Conte
 		return nil
 	}
 
+	if strings.HasPrefix(buildPkg.Dir, "vendor/") || strings.Contains(buildPkg.Dir, "/vendor/") {
+		// Per the workspace/reference docs:
+		//
+		// 	- Excluding any `URI` which is located within the workspace.
+		// 	- Excluding any `Location` which is located in vendored code (e.g.
+		// 	  `vendor/...` for Go, `node_modules/...` for JS, .tgz NPM packages, or
+		// 	  .jar files for Java).
+		//
+		// This means that we do not need to consider vendor directories at all
+		// since we do not emit references that are inside the same workspace
+		// (vendor always is) and do not emit references to things that are
+		// vendored. Thus, we can skip typechecking the entire vendor directory
+		// which saves us a a lot of work.
+		return nil
+	}
+
 	pkgInWorkspace := func(path string) bool {
 		return PathHasPrefix(path, h.init.RootImportPath)
 	}
@@ -106,12 +122,6 @@ func (h *LangHandler) externalRefsFromPkg(ctx context.Context, bctx *build.Conte
 		Info:     &prog.Package(pkg).Info,
 	}
 	refsErr := cfg.Refs(func(r *refs.Ref) {
-		// If the reference itself is located in a vendor folder, exclude it.
-		locFilename := r.Position.Filename
-		if strings.HasPrefix(locFilename, "vendor/") || strings.Contains(locFilename, "/vendor/") {
-			return
-		}
-
 		var defName, defContainerName string
 		if fields := strings.Fields(r.Def.Path); len(fields) > 0 {
 			defName = fields[0]
@@ -152,7 +162,7 @@ func (h *LangHandler) externalRefsFromPkg(ctx context.Context, bctx *build.Conte
 		// the data, remember this is just external refs for one single
 		// package).
 		ext.Error.Set(span, true)
-		err := fmt.Errorf("externalRefsFromPkg: external refs failed: %v: %v", pkg, err)
+		err := fmt.Errorf("externalRefsFromPkg: external refs failed: %v: %v", pkg, refsErr)
 		log.Println(err)
 		span.SetTag("err", err.Error())
 	}

@@ -2,6 +2,7 @@ package langserver
 
 import (
 	"context"
+	"fmt"
 	"go/build"
 	"io"
 	"os"
@@ -81,8 +82,8 @@ func fsBuildContext(ctx context.Context, orig *build.Context, fs ctxvfs.FileSyst
 // * if the file is in the xtest package (package p_test not package p),
 //   it returns build.Package only representing that xtest package
 func ContainingPackage(bctx *build.Context, filename string) (*build.Package, error) {
-	if !strings.HasPrefix(bctx.GOPATH, "/") || strings.Contains(bctx.GOPATH, ":") {
-		panic("build context GOPATH must contain exactly 1 entry: " + bctx.GOPATH)
+	if !filepath.IsAbs(bctx.GOPATH) || strings.Contains(bctx.GOPATH, string(os.PathListSeparator)) {
+		return nil, fmt.Errorf("build context GOPATH must contain exactly 1 entry and it must be an absolute path (GOPATH=%q)", bctx.GOPATH)
 	}
 
 	pkgDir := filename
