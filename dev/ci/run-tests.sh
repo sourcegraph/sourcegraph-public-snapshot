@@ -20,7 +20,7 @@ done
 
 # Build a list of all pkgs for this node.
 pkgs=()
-for pkg in $(go list ./... | grep -v /vendor/ | grep -v test/e2e | sort); do
+for pkg in $(go list ./... | grep -v /vendor/ | sort); do
 	if (( i % CIRCLE_NODE_TOTAL == CIRCLE_NODE_INDEX ))
 	then
 		pkgs+=("$pkg")
