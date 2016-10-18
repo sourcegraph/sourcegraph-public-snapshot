@@ -28,13 +28,17 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
-	"sourcegraph.com/sourcegraph/sourcegraph/test/e2e/e2etestuser"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
 var Repos = &repos{}
 
 type repos struct{}
+
+// e2eUserPrefix is prefixed to all e2etest user account logins to
+// ensure they can be filtered out of different systems easily and do
+// not conflict with real user accounts.
+const e2eUserPrefix = "e2etestuserx4FF3"
 
 func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *sourcegraph.Repo, err error) {
 	if Mocks.Repos.Get != nil {
@@ -631,7 +635,7 @@ func (s *repos) verifyScopeHasPrivateRepoAccess(scope map[string]bool) bool {
 
 func sendCreateRepoSlackMsg(ctx context.Context, uri, language string, mirror, private bool) {
 	user := authpkg.ActorFromContext(ctx).Login
-	if strings.HasPrefix(user, e2etestuser.Prefix) {
+	if strings.HasPrefix(user, e2eUserPrefix) {
 		return
 	}
 
