@@ -8,55 +8,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"strings"
-
-	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
-
-func serveJumpToDef(w http.ResponseWriter, r *http.Request) error {
-	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
-	if err != nil {
-		return err
-	}
-
-	file := r.URL.Query().Get("file")
-
-	line, err := strconv.Atoi(r.URL.Query().Get("line"))
-	if err != nil {
-		return err
-	}
-
-	character, err := strconv.Atoi(r.URL.Query().Get("character"))
-	if err != nil {
-		return err
-	}
-
-	var response lsp.Location
-
-	// TODO deprecate this endpoint. For now we send a request to our
-	// xlang endpoint.
-	var locations []lsp.Location
-	err = textDocumentPositionRequest{
-		Method:    "textDocument/definition",
-		Repo:      repo.URI,
-		Commit:    repoRev.CommitID,
-		File:      file,
-		Line:      line,
-		Character: character,
-	}.Serve(r.Context(), &locations)
-	if err == nil && len(locations) >= 1 {
-		response = locations[0]
-	}
-	w.Header().Set("cache-control", "private, max-age=60")
-	return writeJSON(w, response)
-}
 
 type textDocumentPositionRequest struct {
 	Method string
