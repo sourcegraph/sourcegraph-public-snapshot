@@ -171,7 +171,7 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 		if !accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.ID, repo.URI) {
 			return nil, accesscontrol.ErrRepoNotFound
 		}
-	default:
+	case accesscontrol.RemoteRepoURI(repo.URI):
 		return nil, accesscontrol.ErrRepoNotFound
 	}
 	return repo, nil
@@ -196,7 +196,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 		if !accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.GetByURI", repo.ID, repo.URI) {
 			return nil, accesscontrol.ErrRepoNotFound
 		}
-	default:
+	case accesscontrol.RemoteRepoURI(repo.URI):
 		return nil, accesscontrol.ErrRepoNotFound
 	}
 	return repo, nil

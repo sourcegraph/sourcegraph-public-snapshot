@@ -359,6 +359,26 @@ func TestVerifyAccess(t *testing.T) {
 	}
 }
 
+func TestRemoteRepoURI(t *testing.T) {
+	tests := []struct {
+		repoURI string
+		want    bool
+	}{
+		{repoURI: "github.com/user/repo", want: true},
+		{repoURI: "example.com", want: true},
+		{repoURI: "user/repo", want: false},
+		{repoURI: "a/b/c", want: false},
+		{repoURI: "a/b", want: false},
+		{repoURI: "a", want: false},
+		{repoURI: "", want: false},
+	}
+	for _, test := range tests {
+		if got, want := RemoteRepoURI(test.repoURI), test.want; got != want {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	}
+}
+
 func asUID(uid string) context.Context {
 	return auth.WithActor(context.Background(), &auth.Actor{
 		UID: uid,

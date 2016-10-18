@@ -161,7 +161,7 @@ func VerifyActorHasReadAccess(ctx context.Context, actor *auth.Actor, method str
 			if !VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI) {
 				return ErrRepoNotFound
 			}
-		default:
+		case RemoteRepoURI(repoURI):
 			return ErrRepoNotFound
 		}
 	}
@@ -305,7 +305,7 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor *auth.Actor, method st
 			if !VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI) {
 				return ErrRepoNotFound
 			}
-		default:
+		case RemoteRepoURI(repoURI):
 			return ErrRepoNotFound
 		}
 	}
@@ -376,6 +376,15 @@ func VerifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method st
 		}
 	}
 	return false
+}
+
+// RemoteRepoURI reports if the repoURI is considered a remote repository URI.
+// This is determined by checking if its first slash-separated element contains a dot.
+// E.g., "example.com/user/repo" is considered remote because "example.com" has a dot,
+// but "user/repo" is not since "user" has no dot.
+func RemoteRepoURI(repoURI string) bool {
+	parts := strings.SplitN(repoURI, "/", 2)
+	return strings.Contains(parts[0], ".")
 }
 
 // inAuthenticatedWriteWhitelist reports if we always allow write access
