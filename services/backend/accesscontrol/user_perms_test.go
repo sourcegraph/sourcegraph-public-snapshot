@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	opentracing "github.com/opentracing/opentracing-go"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
@@ -356,6 +358,73 @@ func TestVerifyAccess(t *testing.T) {
 
 	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err == nil {
 		t.Fatalf("user %v should not have write access; got access\n", uid)
+	}
+}
+
+func TestVerifyActorHasGitHubRepoAccess(t *testing.T) {
+	ctx, mock := testContext()
+
+	tests := []struct {
+		title                string
+		repoURI              string
+		authorizedForPrivate bool // True here simulates that the actor has access to private repos when asking GitHub API. False simulates that they don't.
+		want                 bool
+	}{
+		{
+			title:                `private repo URI begins with "github.com/", actor unauthorized for private repo access`,
+			repoURI:              "github.com/user/privaterepo",
+			authorizedForPrivate: false,
+			want:                 false,
+		},
+		{
+			title:                `private repo URI begins with "GitHub.com/", actor unauthorized for private repo access`,
+			repoURI:              "GitHub.com/User/PrivateRepo",
+			authorizedForPrivate: false,
+			want:                 false,
+		},
+		{
+			title:                `private repo URI begins with "github.com/", actor authorized for private repo access`,
+			repoURI:              "github.com/user/privaterepo",
+			authorizedForPrivate: true,
+			want:                 true,
+		},
+		{
+			title:                `private repo URI begins with "GitHub.com/", actor authorized for private repo access`,
+			repoURI:              "GitHub.com/User/PrivateRepo",
+			authorizedForPrivate: true,
+			want:                 true,
+		},
+		{
+			title:   `public repo URI begins with "github.com/"`,
+			repoURI: "github.com/user/publicrepo",
+			want:    true,
+		},
+		{
+			title:   `public repo URI begins with "GitHub.com/"`,
+			repoURI: "GitHub.com/User/PublicRepo",
+			want:    true,
+		},
+	}
+	for _, test := range tests {
+		// Mocked GitHub API responses differ depending on value of test.authorizedForPrivate.
+		// If true, then "github.com/user/privaterepo" repo exists, otherwise it's not found.
+		mock.Get_ = func(_ context.Context, uri string) (*sourcegraph.Repo, error) {
+			switch uri := strings.ToLower(uri); {
+			case uri == "github.com/user/privaterepo" && test.authorizedForPrivate:
+				return &sourcegraph.Repo{URI: "github.com/User/PrivateRepo"}, nil
+			case uri == "github.com/user/publicrepo":
+				return &sourcegraph.Repo{URI: "github.com/User/PublicRepo"}, nil
+			default:
+				return nil, legacyerr.Errorf(legacyerr.NotFound, "repo not found")
+			}
+		}
+
+		actor := &auth.Actor{UID: "1"}
+		const repoID = 1
+		got := VerifyActorHasGitHubRepoAccess(ctx, actor, "Repos.GetByURI", repoID, test.repoURI)
+		if want := test.want; got != want {
+			t.Errorf("%s: got %v, want %v", test.title, got, want)
+		}
 	}
 }
 
