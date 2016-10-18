@@ -8,5 +8,5 @@ else
 fi
 
 npm install
-tsc -p .
+./node_modules/.bin/tsc -p .
 cd ..
