@@ -191,7 +191,7 @@ export const RepoBackend = {
 				return;
 			}
 			// TODO(john): make WantSymbols aware of project modes.
-			["go", "typescript", "ctags"].forEach(mode => {
+			["go", "ctags"].forEach(mode => {
 				lsp.sendExt(`git:\/\/${action.repo}?${action.rev}`, mode, "workspace/symbol", { query: action.query, limit: 100 })
 					.then((r) => {
 						let result;
