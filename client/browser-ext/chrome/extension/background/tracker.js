@@ -25,7 +25,7 @@ chrome.runtime.onMessage.addListener(
 		if (request.type === "trackEvent") {
 			window.telligent("track", request.payload.eventAction, request.payload);
 		} else if (request.type === "setTrackerUserId") {
-			window.telligent("setTrackerUserId", request.payload);
+			window.telligent("setUserId", request.payload);
 		} else if (request.type === "setTrackerDeviceId") {
 			window.telligent("addStaticMetadataObject", {deviceInfo: {TelligentWebDeviceId: request.payload}});
 		} else if (request.type === "setTrackerGAClientId") {
