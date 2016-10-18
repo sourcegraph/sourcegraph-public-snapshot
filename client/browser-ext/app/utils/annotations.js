@@ -327,7 +327,9 @@ function addEventListeners(el, path, repoRevSpec, line) {
 		if (activeTarget !== t) {
 			activeTarget = t;
 
+			showPopover(`<div><div class=${styles.popoverTitle}>Loading..</div></div>`, e.pageX, e.pageY)
 			fetchPopoverData(activeTarget.dataset.byteoffset, function(html) {
+				hidePopover();
 				if (activeTarget && html) showPopover(html, e.pageX, e.pageY);
 			});
 		}
@@ -459,10 +461,15 @@ function addEventListeners(el, path, repoRevSpec, line) {
 
 		return fetch("https://sourcegraph.com/.api/xlang/textDocument/hover", {method: "POST", body: JSON.stringify(body)})
 			.then((json) => {
-				popoverCache[`${path}@${repoRevSpec.rev}:${line}@${col}`] = `<div><div class=${styles.popoverTitle}>${json[1].result.contents[0].value || ""}</div></div>`;
-
-				cb(popoverCache[`${path}@${repoRevSpec.rev}:${line}@${col}`]);
+				const keyCache = `${path}@${repoRevSpec.rev}:${line}@${col}`;
+				try {
+					popoverCache[keyCache] = `<div><div class=${styles.popoverTitle}>${json[1].result.contents[0].value}</div></div>`;
+				} catch(err) {
+					popoverCache[keyCache] = null;
+				} finally {
+					cb(popoverCache[keyCache]);
+				}
 			})
-			.catch((err) => {});
+			.catch((err) => {cb(null)});
 	}
 }
