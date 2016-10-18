@@ -128,7 +128,12 @@ export class BlobMain extends Container<Props, State> {
 					range = rop.toMonacoRangeAllowEmpty();
 				} else {
 					// Without a start line, set the cursor to start at the beginning of the document.
-					range = RangeOrPosition.fromOneIndexed(1).toMonacoRangeAllowEmpty();
+					//
+					// By default, set the selction of the cursor to be the end of the
+					// first line. Without this, the Ctrl+F search functionality will only
+					// search within the selected line, which is the first line by default.
+					// There's currently no API for unselecting a line so this is a workaround.
+					range = {startLineNumber: 1, startColumn: Infinity, endLineNumber: 1, endColumn: Infinity} as IRange;
 				}
 
 				// If you are new to this code, you may be confused how this method interacts with _onEditorOpened.
