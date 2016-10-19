@@ -7,14 +7,14 @@ import EventLogger from "../../app/analytics/EventLogger";
 import * as Actions from "../../app/actions";
 
 import Background from "../../app/components/Background";
-import {SearchIcon} from "../../app/components/Icons";
+import {SourcegraphIcon} from "../../app/components/Icons";
 import BlobAnnotator from "../../app/components/BlobAnnotator";
 import createStore from "../../app/store/configureStore";
 
-import {parseURL, isGitHubURL, isSourcegraphURL} from "../../app/utils";
+import {parseURL, isGitHubURL, isSourcegraphURL, readableGitHubView, getGitHubView, getLinesOfCode} from "../../app/utils";
 
-let isSearchAppShown = false; // global state indicating whether the search app is visible
 let store = createStore({});
+const isTooBigThreshold = 5000;
 
 function getFileName(info, {isDelta, path}) {
 	if (isDelta) {
@@ -34,20 +34,20 @@ function getFileName(info, {isDelta, path}) {
 }
 
 function injectBackgroundApp() {
-	if (!document.getElementById("sourcegraph-app-background")) {
-		let backgroundContainer = document.createElement("div");
-		backgroundContainer.id = "sourcegraph-app-background";
-		backgroundContainer.style.display = "none";
-		document.body.appendChild(backgroundContainer);
-		injectComponent(<Background />, backgroundContainer);
-	}
+	let backgroundContainer = document.createElement("div");
+	backgroundContainer.id = "sourcegraph-app-background";
+	backgroundContainer.style.display = "none";
+	document.body.appendChild(backgroundContainer);
+	injectComponent(<Background />, backgroundContainer);
 }
 
 function injectBlobAnnotator() {
 	if (!isGitHubURL()) return;
 
+	const nTotalLines = getLinesOfCode();
 	const {user, repo, rev, path, isDelta} = parseURL();
-	const files = document.querySelectorAll(".file");
+	const files = document.getElementsByClassName("file");
+
 	for (let i = 0; i < files.length; ++i) {
 		const file = files[i];
 		const info = file.querySelector(".file-info");
@@ -55,6 +55,7 @@ function injectBlobAnnotator() {
 		const actn = file.querySelector(".file-actions");
 		const note = file.querySelector(".show-file-notes");
 		const btng = actn ? actn.querySelector(".BtnGroup") : null;
+
 		if (!blob) continue;
 
 		const infoFilePath = getFileName(info, {isDelta, path});
@@ -90,7 +91,19 @@ function injectBlobAnnotator() {
 			}
 		}
 
-		injectComponent(<BlobAnnotator path={infoFilePath} blobElement={blob} infoElement={info} selfElement={blobAnnotatorContainer} />, blobAnnotatorContainer);
+		if (nTotalLines >= isTooBigThreshold) {
+			let iconLabelNode = document.createElement("span");
+			let textLabelNode = document.createTextNode("Sourcegraph");
+
+			blobAnnotatorContainer.appendChild(iconLabelNode);
+			blobAnnotatorContainer.appendChild(textLabelNode);
+			blobAnnotatorContainer.setAttribute("aria-label", readableGitHubView[getGitHubView()] + " too big!");
+			blobAnnotatorContainer.setAttribute("disabled", true);
+
+			injectComponent(<SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />, iconLabelNode);
+		} else {
+			injectComponent(<BlobAnnotator path={infoFilePath} blobElement={blob} infoElement={info} selfElement={blobAnnotatorContainer} />, blobAnnotatorContainer);
+		}
 	}
 }
 
@@ -120,11 +133,11 @@ function ejectModules() {
 }
 
 function injectModules() {
-	// Add invisible div to the page to indicate injection has completed.
-	if (!document.getElementById("sourcegraph-app-bootstrap")) {
+	if (!document.getElementById('sourcegraph-app-bootstrap')) {
 		injectBackgroundApp();
 		injectBlobAnnotator();
 
+		// Add invisible div to the page to indicate injection has completed.
 		let el = document.createElement("div");
 		el.id = "sourcegraph-app-bootstrap";
 		el.style.display = "none";

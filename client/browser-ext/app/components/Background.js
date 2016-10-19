@@ -45,9 +45,9 @@ export default class Background extends React.Component {
 	}
 
 	removePopovers() {
-		const popovers = document.querySelectorAll(".sg-popover")
-		for (let i = 0; i < popovers.length; ++i) {
-			popovers[i].remove();
+		const popovers = document.getElementsByClassName("sg-popover");
+		for (let i = popovers.length; i > 0;) {
+			popovers[--i].remove();
 		}
 	}
 

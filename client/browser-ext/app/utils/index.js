@@ -22,6 +22,12 @@ export const upcomingExtensions = [
 	"php", "phtml", "php3", "php4", "php5", "php7", "phps", // PHP
 ];
 
+export const readableGitHubView = {
+	"blob": "File",
+	"pull": "Pull request",
+	"commit": "Commit",
+}
+
 export function getModeFromExtension(ext) {
 	switch (ext) {
 		case "go":
@@ -32,6 +38,33 @@ export function getModeFromExtension(ext) {
 		default:
 			return "unknown";
 	}
+}
+
+export function getGitHubView(loc = window.location) {
+	return loc.pathname.split("/")[3];
+}
+
+export function getLinesOfCode() {
+	let nTotalLines = 0;
+	const view = getGitHubView();
+
+	switch (view)  {
+		case "blob":
+			nTotalLines = parseInt(document.getElementsByClassName("file-info")[0].textContent.match(/([0-9]+) line/), 10);
+			break;
+		case "pull":
+			if (window.location.pathname.endsWith("files")) {
+				nTotalLines = parseInt(document.getElementsByClassName("diffbar-item diffstat")[0].querySelector(".tooltipped").getAttribute("aria-label").replace(/[^\d]/g, ''), 10);
+			}
+			break;
+		case "commit":
+			[].map.call(document.getElementsByClassName("toc-diff-stats")[0].getElementsByTagName("strong"), (node) => {
+				nTotalLines += parseInt(node.textContent.replace(/[^\d]/g, ''), 10);
+			});
+			break;
+	}
+
+	return nTotalLines;
 }
 
 export function getPathExtension(path) {
