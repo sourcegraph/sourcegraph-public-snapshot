@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph-go/langserver"
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
@@ -53,8 +53,8 @@ type BuildHandler struct {
 	fetchAndSendDepsOnces map[string]*sync.Once // key is file URI
 	langserver.HandlerCommon
 	*langserver.HandlerShared
-	init           *lspx.InitializeParams // set by "initialize" request
-	rootImportPath string                 // root import path of the workspace (e.g., "github.com/foo/bar")
+	init           *lspext.InitializeParams // set by "initialize" request
+	rootImportPath string                   // root import path of the workspace (e.g., "github.com/foo/bar")
 }
 
 func (h *BuildHandler) fetchAndSendDepsOnce(fileURI string) *sync.Once {
@@ -83,7 +83,7 @@ const (
 )
 
 // reset clears all internal state in h.
-func (h *BuildHandler) reset(init *lspx.InitializeParams, rootURI string) error {
+func (h *BuildHandler) reset(init *lspext.InitializeParams, rootURI string) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if err := h.HandlerCommon.Reset(rootURI); err != nil {
@@ -145,7 +145,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
-		var params lspx.InitializeParams
+		var params lspext.InitializeParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
@@ -232,7 +232,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 				return nil, err
 			}
 		}
-		lspx.WalkURIFields(params, nil, func(uri string) string {
+		lspext.WalkURIFields(params, nil, func(uri string) string {
 			if !strings.HasPrefix(uri, "file:///") {
 				panic("URI in LSP request must be a file:/// URI, got " + uri)
 			}
@@ -282,7 +282,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		//
 		//   file:///src/github.com/user/repo/dir/file.go -> file:///dir/file.go
 		var walkErr error
-		lspx.WalkURIFields(result, nil, func(uri string) string {
+		lspext.WalkURIFields(result, nil, func(uri string) string {
 			newURI, err := h.rewriteURIFromLangServer(uri)
 			if err != nil {
 				walkErr = err

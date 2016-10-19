@@ -1,4 +1,4 @@
-package lspx
+package lspext
 
 import (
 	"encoding/json"

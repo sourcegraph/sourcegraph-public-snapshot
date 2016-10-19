@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
@@ -690,7 +690,7 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 		t.Fatal(err)
 	}
 	want := []testRequest{
-		{"initialize", lspx.InitializeParams{
+		{"initialize", lspext.InitializeParams{
 			InitializeParams: lsp.InitializeParams{RootPath: "file:///"},
 			OriginalRootPath: "test://test?v"}},
 		{"textDocument/definition", lsp.TextDocumentPositionParams{
@@ -742,7 +742,7 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 	want = []testRequest{
 		{"shutdown", nil},
 		{"exit", nil},
-		{"initialize", lspx.InitializeParams{
+		{"initialize", lspext.InitializeParams{
 			InitializeParams: lsp.InitializeParams{RootPath: "file:///"},
 			OriginalRootPath: "test://test?v"}},
 		{"textDocument/definition", lsp.TextDocumentPositionParams{

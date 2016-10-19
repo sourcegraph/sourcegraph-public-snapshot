@@ -18,7 +18,7 @@ import (
 
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
@@ -340,7 +340,7 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 		// Rewrite paths from server->client and send rewritten
 		// notification to client.
 		var walkErr error
-		lspx.WalkURIFields(paramsObj, nil, func(uriStr string) string {
+		lspext.WalkURIFields(paramsObj, nil, func(uriStr string) string {
 			newURI, err := c.rewritePathFromServer(uriStr)
 			if err != nil {
 				walkErr = err
@@ -425,7 +425,7 @@ func (c *clientProxyConn) callServer(ctx context.Context, method string, params,
 		return err
 	}
 	var uris []string
-	lspx.WalkURIFields(params, func(uri string) {
+	lspext.WalkURIFields(params, func(uri string) {
 		uris = append(uris, uri)
 	}, nil)
 	if len(uris) != 1 && method != "workspace/symbol" {
@@ -435,7 +435,7 @@ func (c *clientProxyConn) callServer(ctx context.Context, method string, params,
 	// Now that we know the prefix of the workspace, rewrite the paths
 	// in the LSP params object.
 	var walkErr error
-	lspx.WalkURIFields(params, nil, func(uriStr string) string {
+	lspext.WalkURIFields(params, nil, func(uriStr string) string {
 		newURI, err := c.rewritePathFromClient(uriStr)
 		if err != nil {
 			walkErr = err
@@ -460,7 +460,7 @@ func (c *clientProxyConn) callServer(ctx context.Context, method string, params,
 	if err := json.Unmarshal(result2, &resultObj); err != nil {
 		return err
 	}
-	lspx.WalkURIFields(resultObj, nil, func(uriStr string) string {
+	lspext.WalkURIFields(resultObj, nil, func(uriStr string) string {
 		newURI, err := c.rewritePathFromServer(uriStr)
 		if err != nil {
 			walkErr = err

@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // serverID identifies a lang/build server by the minimal state
@@ -236,7 +236,7 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 	defer span.Finish()
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	return c.conn.Call(ctx, "initialize", lspx.InitializeParams{
+	return c.conn.Call(ctx, "initialize", lspext.InitializeParams{
 		InitializeParams: lsp.InitializeParams{RootPath: "file:///"},
 		OriginalRootPath: c.id.rootPath.String(),
 	}, nil, addTraceMeta(ctx))

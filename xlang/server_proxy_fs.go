@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/ctxvfs"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 var simulateFSLatency, _ = time.ParseDuration(os.Getenv("LSP_PROXY_SIMULATED_LATENCY"))
@@ -36,9 +36,9 @@ func (c *serverProxyConn) handleFS(ctx context.Context, method, path string) (re
 		if err != nil {
 			return nil, err
 		}
-		fis2 := make([]lspx.FileInfo, len(fis))
+		fis2 := make([]lspext.FileInfo, len(fis))
 		for i, fi := range fis {
-			fis2[i] = lspx.FileInfo{Name_: fi.Name(), Size_: fi.Size(), Dir_: fi.Mode().IsDir()}
+			fis2[i] = lspext.FileInfo{Name_: fi.Name(), Size_: fi.Size(), Dir_: fi.Mode().IsDir()}
 		}
 		return fis2, nil
 
@@ -53,7 +53,7 @@ func (c *serverProxyConn) handleFS(ctx context.Context, method, path string) (re
 		if err != nil {
 			return nil, err
 		}
-		return lspx.FileInfo{Name_: fi.Name(), Size_: fi.Size(), Dir_: fi.Mode().IsDir()}, nil
+		return lspext.FileInfo{Name_: fi.Name(), Size_: fi.Size(), Dir_: fi.Mode().IsDir()}, nil
 
 	default:
 		panic("unreachable")

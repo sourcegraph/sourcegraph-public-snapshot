@@ -12,7 +12,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // RemoteProxyFS is an implementation of ctxvfs.FileSystem that
@@ -113,7 +113,7 @@ func (fs *RemoteProxyFS) Stat(ctx context.Context, path string) (fi os.FileInfo,
 		fs.mu.Unlock()
 	}()
 
-	fi = &lspx.FileInfo{}
+	fi = &lspext.FileInfo{}
 	return fi, fs.call(ctx, "fs/stat", path, &fi)
 }
 
@@ -134,7 +134,7 @@ func (fs *RemoteProxyFS) Lstat(ctx context.Context, path string) (fi os.FileInfo
 		fs.mu.Unlock()
 	}()
 
-	fi = &lspx.FileInfo{}
+	fi = &lspext.FileInfo{}
 	return fi, fs.call(ctx, "fs/lstat", path, &fi)
 }
 
@@ -155,7 +155,7 @@ func (fs *RemoteProxyFS) ReadDir(ctx context.Context, path string) (fis []os.Fil
 		fs.mu.Unlock()
 	}()
 
-	var fis2 []lspx.FileInfo
+	var fis2 []lspext.FileInfo
 	if err := fs.call(ctx, "fs/readDir", path, &fis2); err != nil {
 		return nil, err
 	}

@@ -11,7 +11,7 @@
 // 	// (this package) build/lang server LSP extensions
 // 	sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx
 //
-package lspx
+package lspext
 
 import (
 	"time"
