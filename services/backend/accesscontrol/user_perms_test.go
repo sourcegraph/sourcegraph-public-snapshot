@@ -421,7 +421,7 @@ func TestVerifyActorHasRepoURIAccess(t *testing.T) {
 			title:            `repo URI that is local (neither GitHub nor a remote URI)`,
 			repoURI:          "sourcegraph/sourcegraph",
 			shouldCallGitHub: false,
-			want:             true,
+			want:             false,
 		},
 	}
 	for _, test := range tests {
@@ -453,26 +453,6 @@ func TestVerifyActorHasRepoURIAccess(t *testing.T) {
 		}
 		if want := test.want; got != want {
 			t.Errorf("%s: got %v, want %v", test.title, got, want)
-		}
-	}
-}
-
-func TestLocalRepoURI(t *testing.T) {
-	tests := []struct {
-		repoURI string
-		want    bool
-	}{
-		{repoURI: "github.com/user/repo", want: false},
-		{repoURI: "example.com", want: false},
-		{repoURI: "user/repo", want: true},
-		{repoURI: "a/b/c", want: true},
-		{repoURI: "a/b", want: true},
-		{repoURI: "a", want: true},
-		{repoURI: "", want: true},
-	}
-	for _, test := range tests {
-		if got, want := localRepoURI(test.repoURI), test.want; got != want {
-			t.Errorf("got %v, want %v", got, want)
 		}
 	}
 }

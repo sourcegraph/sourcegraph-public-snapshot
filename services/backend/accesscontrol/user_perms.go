@@ -92,29 +92,20 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 // specially designed to avoid infinite loops with
 // (*localstore.repos).Get/GetByURI.
 func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method string, repoID int32, repoURI string) bool {
+	if skip(ctx) {
+		return true
+	}
+
 	switch {
 	case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
 		// Perform GitHub repository authorization check by delegating to GitHub API.
 		return verifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI)
-
-	case localRepoURI(repoURI):
-		// Local repositories are allowed; this is primarily needed for existing tests to pass.
-		return true
 
 	default:
 		// Unless something above explicitly grants access, by default, access is denied.
 		// This is a safer default.
 		return false
 	}
-}
-
-// localRepoURI reports if the repoURI is considered a local repository URI.
-// This is determined by checking if its first slash-separated element contains no dot.
-// E.g., "example.com/user/repo" is not considered local because "example.com" has a dot,
-// but "user/repo" is local since "user" has no dot.
-func localRepoURI(repoURI string) bool {
-	parts := strings.SplitN(repoURI, "/", 2)
-	return !strings.Contains(parts[0], ".")
 }
 
 // verifyActorHasGitHubRepoAccess checks if the given actor is authorized to access
