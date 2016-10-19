@@ -123,10 +123,6 @@ func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method 
 // better separation when dealing with multiple configurations, actor
 // types, resource types and actions.
 func verifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, method string, repo int32, repoURI string) bool {
-	if skip(ctx) {
-		return true
-	}
-
 	if repo == 0 || repoURI == "" {
 		panic("both repo and repoURI must be set")
 	}
