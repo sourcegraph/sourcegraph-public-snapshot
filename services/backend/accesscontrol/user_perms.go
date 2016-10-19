@@ -80,14 +80,41 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 	return VerifyUserHasAdminAccess(ctx, method)
 }
 
-// VerifyActorHasGitHubRepoAccess delegate permissions check to GitHub
-// for GitHub mirrored repos. The repo string MUST be of the form
-// "github.com/USER/REPO"; it MUST begin with "github.com/" if it is a
-// GitHub repository whose access permissions should be delegated to
-// GitHub.
+// VerifyActorHasRepoURIAccess checks if the given actor is authorized to access
+// the given repository with repoURI. The access check is performed by delegating
+// the access check to external providers as necessary, based on the host of repoURI.
+// repoURI MUST begin with the hostname and not include schema. E.g., its value is
+// like "github.com/user/repo" or "bitbucket.com/user/repo".
 //
 // NOTE: Only (*localstore.repos).Get/GetByURI method should call this
 // func. All other callers should use
+// Verify{User,Actor}Has{Read,Write}Access funcs. This func is
+// specially designed to avoid infinite loops with
+// (*localstore.repos).Get/GetByURI.
+func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method string, repoID int32, repoURI string) bool {
+	if skip(ctx) {
+		return true
+	}
+
+	switch {
+	case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
+		// Perform GitHub repository authorization check by delegating to GitHub API.
+		return verifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI)
+
+	default:
+		// Unless something above explicitly grants access, by default, access is denied.
+		// This is a safer default.
+		return false
+	}
+}
+
+// verifyActorHasGitHubRepoAccess checks if the given actor is authorized to access
+// the given GitHub mirrored repository. repoURI MUST be of the form "github.com/user/repo",
+// it MUST begin with "github.com/" (case insensitive). The access check is performed
+// by delegating the access check to GitHub.
+//
+// NOTE: Only (*localstore.repos).Get/GetByURI method should call this
+// func (indirectly, via VerifyActorHasRepoURIAccess). All other callers should use
 // Verify{User,Actor}Has{Read,Write}Access funcs. This func is
 // specially designed to avoid infinite loops with
 // (*localstore.repos).Get/GetByURI.
@@ -95,13 +122,12 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 // TODO: move to a security model that is more robust, readable, has
 // better separation when dealing with multiple configurations, actor
 // types, resource types and actions.
-func VerifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, method string, repo int32, repoURI string) bool {
-	if skip(ctx) {
-		return true
-	}
-
+func verifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, method string, repo int32, repoURI string) bool {
 	if repo == 0 || repoURI == "" {
 		panic("both repo and repoURI must be set")
+	}
+	if !strings.HasPrefix(strings.ToLower(repoURI), "github.com/") {
+		panic(fmt.Errorf(`verifyActorHasGitHubRepoAccess: precondition not satisfied, repoURI %q does not begin with "github.com/" (case insensitive)`, repoURI))
 	}
 
 	if VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
@@ -154,7 +180,10 @@ func VerifyActorHasReadAccess(ctx context.Context, actor *auth.Actor, method str
 		if err != nil {
 			return err
 		}
-		if !VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI) {
+		// TODO: getRepo above already indirectly performs this access check, but outside of
+		//       accesscontrol package, so it can't be relied on. Still, this is an opportunity
+		//       to optimize, just need to refactor this in a better way.
+		if !VerifyActorHasRepoURIAccess(ctx, actor, method, repoID, repoURI) {
 			return ErrRepoNotFound
 		}
 	}
@@ -293,7 +322,10 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor *auth.Actor, method st
 	}
 
 	if repoID != 0 && repoURI != "" {
-		if !VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI) {
+		// TODO: getRepo above already indirectly performs this access check, but outside of
+		//       accesscontrol package, so it can't be relied on. Still, this is an opportunity
+		//       to optimize, just need to refactor this in a better way.
+		if !VerifyActorHasRepoURIAccess(ctx, actor, method, repoID, repoURI) {
 			return ErrRepoNotFound
 		}
 	}
