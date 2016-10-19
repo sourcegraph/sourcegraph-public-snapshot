@@ -57,7 +57,7 @@ libvfsgen:
 	go get github.com/shurcooL/vfsgen
 
 ${GOBIN}/go-template-lint:
-	go get sourcegraph.com/sourcegraph/go-template-lint
+	go install ./vendor/sourcegraph.com/sourcegraph/go-template-lint
 
 ${GOBIN}/sgtool: $(wildcard dev/sgtool/*.go)
 	go install ./dev/sgtool
