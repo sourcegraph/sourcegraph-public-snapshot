@@ -8,15 +8,15 @@
 
 export LANGSERVER_GO=${LANGSERVER_GO-:builtin:}
 
-# TypeScript
+# TypeScript and JavaScript
 #
-# Install and use the TypeScript lang server if yarn is installed
-# (which is a good indicator of whether they care about
-# TypeScript/JavaScript at all).
+# Install and use the TypeScript/JavaScript lang server (which are the
+# same server) if yarn is installed (which is a good indicator of
+# whether they care about TypeScript/JavaScript at all).
 #
-# To use your own langserver-typescript, just symlink $TYPESCRIPT_DIR
-# to it.
-if type yarn > /dev/null 2>&1 && [[ -z "${LANGSERVER_TYPESCRIPT-}" ]]; then
+# To use your own langserver-{type,java}script, just symlink
+# $TYPESCRIPT_DIR to it.
+if type yarn > /dev/null 2>&1 && ([[ -z "${LANGSERVER_TYPESCRIPT-}" ]] || [[ -z "${LANGSERVER_JAVASCRIPT-}" ]]); then
 	TYPESCRIPT_DIR="${HOME}/.sourcegraph/lang/langserver-typescript"
 	if [[ ! -d "$TYPESCRIPT_DIR" ]]; then
 		mkdir -p "$TYPESCRIPT_DIR"/..
@@ -28,5 +28,6 @@ if type yarn > /dev/null 2>&1 && [[ -z "${LANGSERVER_TYPESCRIPT-}" ]]; then
 	if [[ ! -d "$TYPESCRIPT_DIR"/build ]]; then
 		(cd "$TYPESCRIPT_DIR" && node_modules/.bin/tsc)
 	fi
-	export LANGSERVER_TYPESCRIPT="$TYPESCRIPT_DIR"/bin/langserver-jsts
+	export LANGSERVER_TYPESCRIPT=${LANGSERVER_TYPESCRIPT-"$TYPESCRIPT_DIR"/bin/langserver-jsts}
+	export LANGSERVER_JAVASCRIPT=${LANGSERVER_JAVASCRIPT-"$TYPESCRIPT_DIR"/bin/langserver-jsts}
 fi
