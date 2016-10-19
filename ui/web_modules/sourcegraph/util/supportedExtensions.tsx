@@ -1,11 +1,11 @@
-export const supportedExtensions = ["go", "ts", "tsx"];
+export const supportedExtensions = ["go", "js", "jsx", "ts", "tsx"];
 
 export function isSupportedExtension(ext: string): boolean {
 	return supportedExtensions.indexOf(ext) !== -1;
 }
 
 export function isSupportedMode(modeId: string): boolean {
-	return modeId === "go" || modeId === "typescript";
+	return modeId === "go" || modeId === "typescript" || modeId === "javascript";
 }
 
 export function getPathExtension(path: string): string | null {

@@ -92,6 +92,7 @@ export class Editor implements IDisposable {
 			// will *always* appear for files with the extensions below.
 			registerModeProviders("go");
 			registerModeProviders("typescript");
+			registerModeProviders("javascript");
 		}));
 
 		this._editorService = new EditorService();
