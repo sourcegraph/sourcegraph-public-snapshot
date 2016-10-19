@@ -334,10 +334,11 @@ function addEventListeners(el, path, repoRevSpec, line) {
 		if (activeTarget !== t) {
 			activeTarget = t;
 
-			showPopover(`<div><div class=${styles.popoverTitle}>Loading..</div></div>`, e.pageX, e.pageY);
+			hidePopover();
+			showPopover(`<div><div class=${styles.popoverTitle}>Loading..</div></div>`, true);
 			fetchPopoverData(activeTarget.dataset.byteoffset, function(html) {
 				hidePopover();
-				if (activeTarget && html) showPopover(html, e.pageX, e.pageY);
+				showPopover(html, false);
 			});
 		}
 	}
@@ -347,15 +348,35 @@ function addEventListeners(el, path, repoRevSpec, line) {
 		if (t && t.tagName === "SPAN" && t.dataset && t.dataset.byteoffset) return t;
 	}
 
-	function showPopover(html, x, y) {
-		if (!popover) {
-			EventLogger.logEventForCategory("Def", "Hover", "HighlightDef", {isDelta: repoRevSpec.isDelta, language: utils.getPathExtension(path)});
+	function showPopover(html, isLoading) {
+		if (!popover && activeTarget && html) {
+			// Log event only when displaying a fetched tooltip
+			if (!isLoading) {
+				EventLogger.logEventForCategory("Def", "Hover", "HighlightDef", {isDelta: repoRevSpec.isDelta, language: utils.getPathExtension(path)});
+			}
+
+			// Create and style the element
 			popover = document.createElement("div");
 			popover.classList.add(styles.popover);
 			popover.classList.add("sg-popover");
 			popover.innerHTML = html;
-			positionPopover(x, y);
+
+			// Hide the popover initially while we add it to DOM to render and generate
+			// bounding rectangle but hide as we haven't anchored it to a position yet.
+			popover.style.visibility = "hidden";
+
+			// Attach the node to DOM so the bounding rectangle is generated.
 			document.body.appendChild(popover);
+
+			// Anchor the popover above the symbol.
+			const popoverBound = popover.getBoundingClientRect();
+			const activeTargetBound = activeTarget.getBoundingClientRect();
+
+			popover.style.top = (activeTargetBound.top - (popoverBound.height + 5) + window.scrollY) + "px";
+			popover.style.left = (activeTargetBound.left + window.scrollX) + "px";
+
+			// Make it all visible to the user.
+			popover.style.visibility = "visible";
 		}
 	}
 
@@ -363,13 +384,6 @@ function addEventListeners(el, path, repoRevSpec, line) {
 		if (popover) {
 			popover.remove();
 			popover = null;
-		}
-	}
-
-	function positionPopover(x, y) {
-		if (popover) {
-			popover.style.top = (y + 15) + "px";
-			popover.style.left = (x + 15) + "px";
 		}
 	}
 
