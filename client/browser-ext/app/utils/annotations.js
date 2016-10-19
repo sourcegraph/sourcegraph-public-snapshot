@@ -305,12 +305,19 @@ function addEventListeners(el, path, repoRevSpec, line) {
 		let t = getTarget(e.target);
 		if (!t) return;
 
+		let openInNewTab = e.ctrlKey || (navigator.platform.toLowerCase().indexOf('mac') >= 0 && e.metaKey) || e.button === 1;
+
 		fetchJumpURL(t.dataset.byteoffset, function(defObj) {
-			// Either move to a line on the same page, or refresh the page to a new blob view.
+			// If cmd/ctrl+clicked or middle button clicked, open in new tab/page otherwise
+			// either move to a line on the same page, or refresh the page to a new blob view.
 			if (defObj.defCurPage && !repoRevSpec.isDelta) {
 				location.hash = defObj.defUrl.slice(defObj.defUrl.indexOf('#'));
 			} else {
-				location.href = defObj.defUrl;
+				if (openInNewTab) {
+					window.open(defObj.defUrl, "_blank");
+				} else {
+					location.href = defObj.defUrl;
+				}
 			}
 		});
 	}

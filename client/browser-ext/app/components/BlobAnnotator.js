@@ -264,7 +264,7 @@ export default class BlobAnnotator extends Component {
 		ev.preventDefault();
 		EventLogger.logEventForCategory("File", "Click", "ChromeExtensionSgButtonClicked", {repo: this.state.repoURI, path: window.location.href, is_private_repo: this.isPrivateRepo()});
 		const targetURL = this.getBlobUrl();
-		if (ev.ctrlKey || (navigator.platform.toLowerCase().indexOf('mac') >= 0 && ev.metaKey) || event.button !== 0) {
+		if (ev.ctrlKey || (navigator.platform.toLowerCase().indexOf('mac') >= 0 && ev.metaKey) || ev.button === 1) {
 			// Remove :focus from target to remove the hover
 			// tooltip when opening target link in a new window.
 			ev.target.blur();
