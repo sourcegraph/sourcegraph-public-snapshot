@@ -80,13 +80,44 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 	return VerifyUserHasAdminAccess(ctx, method)
 }
 
-// VerifyActorHasGitHubRepoAccess checks if the given actor is authorized to access
-// the given GitHub mirrored repository. repoURI MUST be of the form "github.com/USER/REPO",
+// VerifyActorHasRepoURIAccess checks if the given actor is authorized to access
+// the given repository with repoURI. The access check is performed by delegating
+// the access check to external providers as necessary, based on the host of repoURI.
+// repoURI MUST begin with the hostname and not include schema. E.g., its value is
+// like "github.com/user/repo" or "bitbucket.com/user/repo".
+//
+// NOTE: Only (*localstore.repos).Get/GetByURI method should call this
+// func. All other callers should use
+// Verify{User,Actor}Has{Read,Write}Access funcs. This func is
+// specially designed to avoid infinite loops with
+// (*localstore.repos).Get/GetByURI.
+func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method string, repoID int32, repoURI string) bool {
+	switch {
+	case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
+		return verifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI)
+	case !remoteRepoURI(repoURI):
+		return true
+	default:
+		return false
+	}
+}
+
+// remoteRepoURI reports if the repoURI is considered a remote repository URI.
+// This is determined by checking if its first slash-separated element contains a dot.
+// E.g., "example.com/user/repo" is considered remote because "example.com" has a dot,
+// but "user/repo" is not since "user" has no dot.
+func remoteRepoURI(repoURI string) bool {
+	parts := strings.SplitN(repoURI, "/", 2)
+	return strings.Contains(parts[0], ".")
+}
+
+// verifyActorHasGitHubRepoAccess checks if the given actor is authorized to access
+// the given GitHub mirrored repository. repoURI MUST be of the form "github.com/user/repo",
 // it MUST begin with "github.com/" (case insensitive). The access check is performed
 // by delegating the access check to GitHub.
 //
 // NOTE: Only (*localstore.repos).Get/GetByURI method should call this
-// func. All other callers should use
+// func (indirectly, via VerifyActorHasRepoURIAccess). All other callers should use
 // Verify{User,Actor}Has{Read,Write}Access funcs. This func is
 // specially designed to avoid infinite loops with
 // (*localstore.repos).Get/GetByURI.
@@ -94,7 +125,7 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 // TODO: move to a security model that is more robust, readable, has
 // better separation when dealing with multiple configurations, actor
 // types, resource types and actions.
-func VerifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, method string, repo int32, repoURI string) bool {
+func verifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, method string, repo int32, repoURI string) bool {
 	if skip(ctx) {
 		return true
 	}
@@ -103,7 +134,7 @@ func VerifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, meth
 		panic("both repo and repoURI must be set")
 	}
 	if !strings.HasPrefix(strings.ToLower(repoURI), "github.com/") {
-		panic(fmt.Errorf(`VerifyActorHasGitHubRepoAccess: precondition not satisfied, repoURI %q does not begin with "github.com/" (case insensitive)`, repoURI))
+		panic(fmt.Errorf(`verifyActorHasGitHubRepoAccess: precondition not satisfied, repoURI %q does not begin with "github.com/" (case insensitive)`, repoURI))
 	}
 
 	if VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
@@ -156,12 +187,7 @@ func VerifyActorHasReadAccess(ctx context.Context, actor *auth.Actor, method str
 		if err != nil {
 			return err
 		}
-		switch {
-		case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
-			if !VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI) {
-				return ErrRepoNotFound
-			}
-		case RemoteRepoURI(repoURI):
+		if !VerifyActorHasRepoURIAccess(ctx, actor, method, repoID, repoURI) {
 			return ErrRepoNotFound
 		}
 	}
@@ -300,12 +326,7 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor *auth.Actor, method st
 	}
 
 	if repoID != 0 && repoURI != "" {
-		switch {
-		case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
-			if !VerifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI) {
-				return ErrRepoNotFound
-			}
-		case RemoteRepoURI(repoURI):
+		if !VerifyActorHasRepoURIAccess(ctx, actor, method, repoID, repoURI) {
 			return ErrRepoNotFound
 		}
 	}
@@ -376,15 +397,6 @@ func VerifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method st
 		}
 	}
 	return false
-}
-
-// RemoteRepoURI reports if the repoURI is considered a remote repository URI.
-// This is determined by checking if its first slash-separated element contains a dot.
-// E.g., "example.com/user/repo" is considered remote because "example.com" has a dot,
-// but "user/repo" is not since "user" has no dot.
-func RemoteRepoURI(repoURI string) bool {
-	parts := strings.SplitN(repoURI, "/", 2)
-	return strings.Contains(parts[0], ".")
 }
 
 // inAuthenticatedWriteWhitelist reports if we always allow write access

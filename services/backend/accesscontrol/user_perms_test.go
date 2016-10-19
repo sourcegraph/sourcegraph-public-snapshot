@@ -361,7 +361,7 @@ func TestVerifyAccess(t *testing.T) {
 	}
 }
 
-func TestVerifyActorHasGitHubRepoAccess(t *testing.T) {
+func TestVerifyActorHasRepoURIAccess(t *testing.T) {
 	ctx, mock := testContext()
 
 	tests := []struct {
@@ -404,6 +404,16 @@ func TestVerifyActorHasGitHubRepoAccess(t *testing.T) {
 			repoURI: "GitHub.com/User/PublicRepo",
 			want:    true,
 		},
+		{
+			title:   `repo URI begins with "bitbucket.org/"; not supported at this time, so permission denied`,
+			repoURI: "bitbucket.org/foo/bar",
+			want:    false,
+		},
+		{
+			title:   `repo URI that is local (neither GitHub nor a remote URI)`,
+			repoURI: "sourcegraph/sourcegraph",
+			want:    true,
+		},
 	}
 	for _, test := range tests {
 		// Mocked GitHub API responses differ depending on value of test.authorizedForPrivate.
@@ -421,7 +431,7 @@ func TestVerifyActorHasGitHubRepoAccess(t *testing.T) {
 
 		actor := &auth.Actor{UID: "1"}
 		const repoID = 1
-		got := VerifyActorHasGitHubRepoAccess(ctx, actor, "Repos.GetByURI", repoID, test.repoURI)
+		got := VerifyActorHasRepoURIAccess(ctx, actor, "Repos.GetByURI", repoID, test.repoURI)
 		if want := test.want; got != want {
 			t.Errorf("%s: got %v, want %v", test.title, got, want)
 		}
@@ -442,7 +452,7 @@ func TestRemoteRepoURI(t *testing.T) {
 		{repoURI: "", want: false},
 	}
 	for _, test := range tests {
-		if got, want := RemoteRepoURI(test.repoURI), test.want; got != want {
+		if got, want := remoteRepoURI(test.repoURI), test.want; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 	}
