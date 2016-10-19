@@ -368,57 +368,69 @@ func TestVerifyActorHasRepoURIAccess(t *testing.T) {
 		title                string
 		repoURI              string
 		authorizedForPrivate bool // True here simulates that the actor has access to private repos when asking GitHub API. False simulates that they don't.
+		shouldCallGitHub     bool
 		want                 bool
 	}{
 		{
 			title:                `private repo URI begins with "github.com/", actor unauthorized for private repo access`,
 			repoURI:              "github.com/user/privaterepo",
 			authorizedForPrivate: false,
+			shouldCallGitHub:     true,
 			want:                 false,
 		},
 		{
 			title:                `private repo URI begins with "GitHub.com/", actor unauthorized for private repo access`,
 			repoURI:              "GitHub.com/User/PrivateRepo",
 			authorizedForPrivate: false,
+			shouldCallGitHub:     true,
 			want:                 false,
 		},
 		{
 			title:                `private repo URI begins with "github.com/", actor authorized for private repo access`,
 			repoURI:              "github.com/user/privaterepo",
 			authorizedForPrivate: true,
+			shouldCallGitHub:     true,
 			want:                 true,
 		},
 		{
 			title:                `private repo URI begins with "GitHub.com/", actor authorized for private repo access`,
 			repoURI:              "GitHub.com/User/PrivateRepo",
 			authorizedForPrivate: true,
+			shouldCallGitHub:     true,
 			want:                 true,
 		},
 		{
-			title:   `public repo URI begins with "github.com/"`,
-			repoURI: "github.com/user/publicrepo",
-			want:    true,
+			title:            `public repo URI begins with "github.com/"`,
+			repoURI:          "github.com/user/publicrepo",
+			shouldCallGitHub: true,
+			want:             true,
 		},
 		{
-			title:   `public repo URI begins with "GitHub.com/"`,
-			repoURI: "GitHub.com/User/PublicRepo",
-			want:    true,
+			title:            `public repo URI begins with "GitHub.com/"`,
+			repoURI:          "GitHub.com/User/PublicRepo",
+			shouldCallGitHub: true,
+			want:             true,
 		},
 		{
-			title:   `repo URI begins with "bitbucket.org/"; not supported at this time, so permission denied`,
-			repoURI: "bitbucket.org/foo/bar",
-			want:    false,
+			title:            `repo URI begins with "bitbucket.org/"; not supported at this time, so permission denied`,
+			repoURI:          "bitbucket.org/foo/bar",
+			shouldCallGitHub: false,
+			want:             false,
 		},
 		{
-			title:   `repo URI that is local (neither GitHub nor a remote URI)`,
-			repoURI: "sourcegraph/sourcegraph",
-			want:    true,
+			title:            `repo URI that is local (neither GitHub nor a remote URI)`,
+			repoURI:          "sourcegraph/sourcegraph",
+			shouldCallGitHub: false,
+			want:             true,
 		},
 	}
 	for _, test := range tests {
+		var calledGitHub = false
+
 		// Mocked GitHub API responses differ depending on value of test.authorizedForPrivate.
 		// If true, then "github.com/user/privaterepo" repo exists, otherwise it's not found.
 		mock.Get_ = func(_ context.Context, uri string) (*sourcegraph.Repo, error) {
+			calledGitHub = true
 			switch uri := strings.ToLower(uri); {
 			case uri == "github.com/user/privaterepo" && test.authorizedForPrivate:
 				return &sourcegraph.Repo{URI: "github.com/User/PrivateRepo"}, nil
@@ -432,6 +444,13 @@ func TestVerifyActorHasRepoURIAccess(t *testing.T) {
 		actor := &auth.Actor{UID: "1"}
 		const repoID = 1
 		got := VerifyActorHasRepoURIAccess(ctx, actor, "Repos.GetByURI", repoID, test.repoURI)
+		if calledGitHub != test.shouldCallGitHub {
+			if test.shouldCallGitHub {
+				t.Errorf("expected GitHub API to be called for permissions check, but it wasn't")
+			} else {
+				t.Errorf("did not expect GitHub API to be called for permissions check, but it was")
+			}
+		}
 		if want := test.want; got != want {
 			t.Errorf("%s: got %v, want %v", test.title, got, want)
 		}
