@@ -388,7 +388,7 @@ function addEventListeners(el, path, repoRevSpec, line) {
 						uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
 					},
 					position: {
-						character: parseInt(col, 10),
+						character: parseInt(col, 10) - 1,
 						line: parseInt(line, 10) - 1,
 					},
 				},
@@ -445,7 +445,7 @@ function addEventListeners(el, path, repoRevSpec, line) {
 						uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
 					},
 					position: {
-						character: parseInt(col, 10),
+						character: parseInt(col, 10) - 1,
 						line: parseInt(line, 10) - 1,
 					},
 				},
