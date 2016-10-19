@@ -850,6 +850,18 @@ type DeprecatedRefLocationsList struct {
 	TotalRepos int32 `json:"TotalRepos,omitempty"`
 }
 
+func (d *DeprecatedRefLocationsList) Convert() *RefLocations {
+	repoRefs := make([]*RepoRef, len(d.RepoRefs))
+	for i, r := range d.RepoRefs {
+		repoRefs[i] = r.Convert()
+	}
+	return &RefLocations{
+		RepoRefs:       repoRefs,
+		StreamResponse: d.StreamResponse,
+		TotalRepos:     int(d.TotalRepos),
+	}
+}
+
 // DeprecatedDefRepoRef identifies a repo and its files that reference a def.
 type DeprecatedDefRepoRef struct {
 	// Repo is the name of repo that references the def.
@@ -862,10 +874,22 @@ type DeprecatedDefRepoRef struct {
 	Files []*DeprecatedDefFileRef `json:"Files,omitempty"`
 }
 
+func (d *DeprecatedDefRepoRef) Convert() *RepoRef {
+	files := make([]*FileRef, len(d.Files))
+	for i, f := range d.Files {
+		files[i] = f.Convert()
+	}
+	return &RepoRef{Repo: d.Repo, Count: int(d.Count), Score: int16(d.Score), Files: files}
+}
+
 // DeprecatedFilePosition represents a line:column in a file.
 type DeprecatedFilePosition struct {
 	Line   int32 `json:"Line,omitempty"`
 	Column int32 `json:"Column,omitempty"`
+}
+
+func (d *DeprecatedFilePosition) Convert() FilePosition {
+	return FilePosition{Line: int(d.Line), Character: int(d.Column)}
 }
 
 // DeprecatedDefFileRef identifies a file that references a def.
@@ -878,6 +902,53 @@ type DeprecatedDefFileRef struct {
 	Positions []*DeprecatedFilePosition `json:"Positions,omitempty"`
 	// Score is the importance score of this file for the def.
 	Score float32 `json:"Score,omitempty"`
+}
+
+func (d *DeprecatedDefFileRef) Convert() *FileRef {
+	positions := make([]FilePosition, len(d.Positions))
+	for i, p := range d.Positions {
+		positions[i] = p.Convert()
+	}
+	return &FileRef{Path: d.Path, Count: int(d.Count), Positions: positions, Score: int16(d.Score)}
+}
+
+// RefLocations lists the repos and files that reference a def.
+type RefLocations struct {
+	// RepoRefs holds the repos and files referencing the def.
+	RepoRefs []*RepoRef
+	// StreamResponse specifies if more results are available.
+	StreamResponse
+	// TotalRepos is the total number of repos which reference the def.
+	TotalRepos int
+}
+
+// RepoRef identifies a repo and its files that reference a def.
+type RepoRef struct {
+	// Repo is the URI of the repo that references the def.
+	Repo string
+	// Count is the number of references to the def in the repo.
+	Count int
+	// Score is the importance score of this repo for the def.
+	Score int16
+	// Files is the list of files in this repo referencing the def.
+	Files []*FileRef
+}
+
+// FilePosition represents a line:column in a file.
+type FilePosition struct {
+	Line, Character int
+}
+
+// FileRef identifies a file that references a def.
+type FileRef struct {
+	// Path is the path of this file.
+	Path string
+	// Count is the number of references to the def in this file.
+	Count int
+	// Positions is the locations in the file that the def is referenced.
+	Positions []FilePosition
+	// Score is the importance score of this file for the def.
+	Score int16
 }
 
 // RepoTreeGetOptions specifies options for (RepoTreeService).Get.

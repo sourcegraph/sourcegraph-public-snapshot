@@ -149,106 +149,124 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
-	vars := mux.Vars(r)
+type snippet struct {
+	Code      htmpl.HTML
+	SourceURL string
+}
 
-	repo, _, err := handlerutil.GetRepoAndRev(r.Context(), vars)
+type defLandingData struct {
+	tmpl.Common
+	Meta                meta
+	Description         *htmlutil.HTML
+	RefSnippets         []*snippet
+	ViewDefURL          string
+	DefName             string // e.g. "func NewRouter"
+	ShortDefName        string // e.g. "NewRouter"
+	DefFileURL          string
+	DefFileName         string
+	TotalRepoReferences int32
+	RefLocs             *sourcegraph.RefLocations
+	TruncatedRefLocs    bool
+}
+
+func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
+	legacyDefLandingData, err := queryLegacyDefLandingData(r)
 	if err != nil {
 		return err
 	}
 
-	type snippet struct {
-		Code      htmpl.HTML
-		SourceURL string
+	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, legacyDefLandingData)
+}
+
+func queryLegacyDefLandingData(r *http.Request) (*defLandingData, error) {
+	vars := mux.Vars(r)
+
+	repo, _, err := handlerutil.GetRepoAndRev(r.Context(), vars)
+	if err != nil {
+		return nil, err
 	}
 
-	var def *sourcegraph.Def
-	var refLocs *sourcegraph.DeprecatedRefLocationsList
+	def, _, err := handlerutil.GetDefCommon(r.Context(), vars, &sourcegraph.DefGetOptions{Doc: true, ComputeLineRange: true})
+	if err != nil {
+		return nil, err
+	}
+
+	defSpec := sourcegraph.DefSpec{
+		Repo:     repo.ID,
+		CommitID: def.DefKey.CommitID,
+		UnitType: def.DefKey.UnitType,
+		Unit:     def.DefKey.Unit,
+		Path:     def.DefKey.Path,
+	}
+
+	// get all caller repositories with counts (global refs)
+	const (
+		refLocRepoLimit = 3 // max 3 separate repos
+		refLocFileLimit = 5 // max 5 files per repo
+	)
+	refLocs, err := backend.Defs.DeprecatedListRefLocations(r.Context(), &sourcegraph.DeprecatedDefsListRefLocationsOp{
+		Def: defSpec,
+		Opt: &sourcegraph.DeprecatedDefListRefLocationsOptions{
+			// NOTE(mate): this has no effect at the moment
+			ListOptions: sourcegraph.ListOptions{PerPage: refLocRepoLimit},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	// WORKAROUND(mate): because ListRefLocations ignores pagination options
+	truncLen := len(refLocs.RepoRefs)
+	if truncLen > refLocRepoLimit {
+		truncLen = refLocRepoLimit
+	}
+	refLocs.RepoRefs = refLocs.RepoRefs[:truncLen]
+	for _, repoRef := range refLocs.RepoRefs {
+		if len(repoRef.Files) > refLocFileLimit {
+			repoRef.Files = repoRef.Files[:refLocFileLimit]
+		}
+	}
+
+	// fetch definition
+	viewDefURL := approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine)).String()
+	defFileURL := approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0).String()
+
+	// fetch example
+	refs, err := backend.Defs.DeprecatedListRefs(r.Context(), &sourcegraph.DeprecatedDefsListRefsOp{
+		Def: defSpec,
+		Opt: &sourcegraph.DeprecatedDefListRefsOptions{ListOptions: sourcegraph.ListOptions{PerPage: 3}},
+	})
+	if err != nil {
+		return nil, err
+	}
 	var refSnippets []*snippet
-	var viewDefURL, defFileURL string
-
-	if def == nil {
-		def, _, err = handlerutil.GetDefCommon(r.Context(), vars, &sourcegraph.DefGetOptions{Doc: true, ComputeLineRange: true})
-		if err != nil {
-			return err
-		}
-
-		defSpec := sourcegraph.DefSpec{
-			Repo:     repo.ID,
-			CommitID: def.DefKey.CommitID,
-			UnitType: def.DefKey.UnitType,
-			Unit:     def.DefKey.Unit,
-			Path:     def.DefKey.Path,
-		}
-
-		// get all caller repositories with counts (global refs)
-		const (
-			refLocRepoLimit = 3 // max 3 separate repos
-			refLocFileLimit = 5 // max 5 files per repo
-		)
-		refLocs, err = backend.Defs.DeprecatedListRefLocations(r.Context(), &sourcegraph.DeprecatedDefsListRefLocationsOp{
-			Def: defSpec,
-			Opt: &sourcegraph.DeprecatedDefListRefLocationsOptions{
-				// NOTE(mate): this has no effect at the moment
-				ListOptions: sourcegraph.ListOptions{PerPage: refLocRepoLimit},
-			},
-		})
-		if err != nil {
-			return err
-		}
-		// WORKAROUND(mate): because ListRefLocations ignores pagination options
-		truncLen := len(refLocs.RepoRefs)
-		if truncLen > refLocRepoLimit {
-			truncLen = refLocRepoLimit
-		}
-		refLocs.RepoRefs = refLocs.RepoRefs[:truncLen]
-		for _, repoRef := range refLocs.RepoRefs {
-			if len(repoRef.Files) > refLocFileLimit {
-				repoRef.Files = repoRef.Files[:refLocFileLimit]
-			}
-		}
-
-		// fetch definition
-		viewDefURL = approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine)).String()
-		defFileURL = approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0).String()
-
-		// fetch example
-		refs, err := backend.Defs.DeprecatedListRefs(r.Context(), &sourcegraph.DeprecatedDefsListRefsOp{
-			Def: defSpec,
-			Opt: &sourcegraph.DeprecatedDefListRefsOptions{ListOptions: sourcegraph.ListOptions{PerPage: 3}},
-		})
-		if err != nil {
-			return err
-		}
-		for _, ref := range refs.Refs {
-			opt := &sourcegraph.RepoTreeGetOptions{
-				ContentsAsString: true,
-				GetFileOptions: sourcegraph.GetFileOptions{
-					FileRange: sourcegraph.FileRange{
-						StartByte: int64(ref.Start),
-						EndByte:   int64(ref.End),
-					},
-					ExpandContextLines: 2,
+	for _, ref := range refs.Refs {
+		opt := &sourcegraph.RepoTreeGetOptions{
+			ContentsAsString: true,
+			GetFileOptions: sourcegraph.GetFileOptions{
+				FileRange: sourcegraph.FileRange{
+					StartByte: int64(ref.Start),
+					EndByte:   int64(ref.End),
 				},
-				NoSrclibAnns: false,
-			}
-			refRepo, err := backend.Repos.Resolve(r.Context(), &sourcegraph.RepoResolveOp{Path: ref.Repo})
-			if err != nil {
-				return err
-			}
-			refEntrySpec := sourcegraph.TreeEntrySpec{
-				RepoRev: sourcegraph.RepoRevSpec{Repo: refRepo.Repo, CommitID: ref.CommitID},
-				Path:    ref.File,
-			}
-			refEntry, err := backend.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{Entry: refEntrySpec, Opt: opt})
-			if err != nil {
-				return fmt.Errorf("could not get ref tree: %s", err)
-			}
-			refSnippets = append(refSnippets, &snippet{
-				Code:      htmpl.HTML(refEntry.ContentsString),
-				SourceURL: approuter.Rel.URLToBlob(ref.Repo, ref.CommitID, ref.File, int(refEntry.FileRange.StartLine+1)).String(),
-			})
+				ExpandContextLines: 2,
+			},
+			NoSrclibAnns: false,
 		}
+		refRepo, err := backend.Repos.Resolve(r.Context(), &sourcegraph.RepoResolveOp{Path: ref.Repo})
+		if err != nil {
+			return nil, err
+		}
+		refEntrySpec := sourcegraph.TreeEntrySpec{
+			RepoRev: sourcegraph.RepoRevSpec{Repo: refRepo.Repo, CommitID: ref.CommitID},
+			Path:    ref.File,
+		}
+		refEntry, err := backend.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{Entry: refEntrySpec, Opt: opt})
+		if err != nil {
+			return nil, fmt.Errorf("could not get ref tree: %s", err)
+		}
+		refSnippets = append(refSnippets, &snippet{
+			Code:      htmpl.HTML(refEntry.ContentsString),
+			SourceURL: approuter.Rel.URLToBlob(ref.Repo, ref.CommitID, ref.File, int(refEntry.FileRange.StartLine+1)).String(),
+		})
 	}
 
 	m := defMeta(def, trimRepo(repo.URI), false)
@@ -266,20 +284,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	canonRev := isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
 	m.Index = allowRobots(repo) && shouldIndexDef(def) && canonRev
 
-	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, &struct {
-		tmpl.Common
-		Meta                meta
-		Description         *htmlutil.HTML
-		RefSnippets         []*snippet
-		ViewDefURL          string
-		DefName             string // e.g. "func NewRouter"
-		ShortDefName        string // e.g. "NewRouter"
-		DefFileURL          string
-		DefFileName         string
-		TotalRepoReferences int32
-		RefLocs             *sourcegraph.DeprecatedRefLocationsList
-		TruncatedRefLocs    bool
-	}{
+	return &defLandingData{
 		Meta:                *m,
 		Description:         def.DocHTML,
 		RefSnippets:         refSnippets,
@@ -289,7 +294,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		DefFileURL:          defFileURL,
 		DefFileName:         repo.URI + "/" + def.Def.File,
 		TotalRepoReferences: refLocs.TotalRepos,
-		RefLocs:             refLocs,
+		RefLocs:             refLocs.Convert(),
 		TruncatedRefLocs:    refLocs.TotalRepos > int32(len(refLocs.RepoRefs)),
-	})
+	}, nil
 }
