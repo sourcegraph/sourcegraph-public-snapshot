@@ -1033,6 +1033,12 @@
 			"revisionTime": "2015-08-28T08:55:01Z"
 		},
 		{
+			"checksumSHA1": "X/uzanbPB0I0gVLJzcDRUaPOQno=",
+			"path": "sourcegraph.com/sourcegraph/go-template-lint/tmplwalk",
+			"revision": "17cde5e36859a47336e707acd943627178ab4349",
+			"revisionTime": "2015-08-28T08:55:01Z"
+		},
+		{
 			"checksumSHA1": "fCcJmxZyw+abt3nm6ZQd9h2KMVc=",
 			"path": "sourcegraph.com/sourcegraph/makex",
 			"revision": "3f62e8d29c0ff8c517a78ced8318b03110c3f532",
