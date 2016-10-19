@@ -95,20 +95,20 @@ func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method 
 	switch {
 	case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
 		return verifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI)
-	case !remoteRepoURI(repoURI):
+	case localRepoURI(repoURI):
 		return true
 	default:
 		return false
 	}
 }
 
-// remoteRepoURI reports if the repoURI is considered a remote repository URI.
-// This is determined by checking if its first slash-separated element contains a dot.
-// E.g., "example.com/user/repo" is considered remote because "example.com" has a dot,
-// but "user/repo" is not since "user" has no dot.
-func remoteRepoURI(repoURI string) bool {
+// localRepoURI reports if the repoURI is considered a local repository URI.
+// This is determined by checking if its first slash-separated element contains no dot.
+// E.g., "example.com/user/repo" is not considered local because "example.com" has a dot,
+// but "user/repo" is local since "user" has no dot.
+func localRepoURI(repoURI string) bool {
 	parts := strings.SplitN(repoURI, "/", 2)
-	return strings.Contains(parts[0], ".")
+	return !strings.Contains(parts[0], ".")
 }
 
 // verifyActorHasGitHubRepoAccess checks if the given actor is authorized to access

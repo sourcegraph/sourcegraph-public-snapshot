@@ -438,21 +438,21 @@ func TestVerifyActorHasRepoURIAccess(t *testing.T) {
 	}
 }
 
-func TestRemoteRepoURI(t *testing.T) {
+func TestLocalRepoURI(t *testing.T) {
 	tests := []struct {
 		repoURI string
 		want    bool
 	}{
-		{repoURI: "github.com/user/repo", want: true},
-		{repoURI: "example.com", want: true},
-		{repoURI: "user/repo", want: false},
-		{repoURI: "a/b/c", want: false},
-		{repoURI: "a/b", want: false},
-		{repoURI: "a", want: false},
-		{repoURI: "", want: false},
+		{repoURI: "github.com/user/repo", want: false},
+		{repoURI: "example.com", want: false},
+		{repoURI: "user/repo", want: true},
+		{repoURI: "a/b/c", want: true},
+		{repoURI: "a/b", want: true},
+		{repoURI: "a", want: true},
+		{repoURI: "", want: true},
 	}
 	for _, test := range tests {
-		if got, want := remoteRepoURI(test.repoURI), test.want; got != want {
+		if got, want := localRepoURI(test.repoURI), test.want; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 	}
