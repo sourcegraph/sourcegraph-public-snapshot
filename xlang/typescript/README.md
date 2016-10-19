@@ -1,19 +1,20 @@
-# typescript langserver
+# JavaScript and TypeScript langserver
 
-To build & update the typescript langserver:
+To build & update the JavaScript/TypeScript langserver:
 
 ```
 make
 ```
 
-To run the typescript langserver with a Sourcegraph development server:
+To run the JavaScript/TypeScript langserver with a Sourcegraph development server:
 
 ```
+export LANGSERVER_JAVASCRIPT=tcp://localhost:2088
 export LANGSERVER_TYPESCRIPT=tcp://localhost:2088
 make serve-dev
 ```
 
-And in another terminal, start the typescript langserver process:
+And in another terminal, start the JavaScript/TypeScript langserver process:
 
 ```
 node ./langserver/build/language-server.js -p 2088 --strict
