@@ -94,10 +94,16 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method string, repoID int32, repoURI string) bool {
 	switch {
 	case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
+		// Perform GitHub repository authorization check by delegating to GitHub API.
 		return verifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI)
+
 	case localRepoURI(repoURI):
+		// Local repositories are allowed; this is primarily needed for existing tests to pass.
 		return true
+
 	default:
+		// Unless something above explicitly grants access, by default, access is denied.
+		// This is a safer default.
 		return false
 	}
 }
