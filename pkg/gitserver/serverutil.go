@@ -1,12 +1,14 @@
 package gitserver
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
@@ -33,15 +35,17 @@ func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) error {
 	}
 
 	if opt != nil && opt.HTTPS != nil {
-		gitPassHelper, gitPassHelperDir, err := s.makeGitPassHelper(opt.HTTPS.Pass)
+		gitPassHelperDir, err := s.makeGitPassHelper(opt.HTTPS.User, opt.HTTPS.Pass)
 		if err != nil {
 			return err
 		}
-		defer os.Remove(gitPassHelper)
 		if gitPassHelperDir != "" {
 			defer os.RemoveAll(gitPassHelperDir)
 		}
-		cmd.Env = append(cmd.Env, "GIT_ASKPASS="+gitPassHelper)
+		cmd.Args = append(cmd.Args[:1], append([]string{"-c", "credential.helper=gitserver-helper"}, cmd.Args[1:]...)...)
+		env := environ(os.Environ())
+		env.Set("PATH", gitPassHelperDir+string(filepath.ListSeparator)+os.Getenv("PATH"))
+		cmd.Env = env
 	}
 
 	return cmd.Run()
@@ -99,33 +103,49 @@ func (*Server) gitSSHWrapper(keyFile string, otherOpt string) (sshWrapperFile st
 	return sshWrapperName, tempDir, err
 }
 
-// makeGitPassHelper writes a GIT_ASKPASS helper that supplies password over stdout.
-// You should remove the passHelper (and tempDir if any) after using it.
-func (*Server) makeGitPassHelper(pass string) (passHelper string, tempDir string, err error) {
-	tmpFile, dir, err := util.ScriptFile("go-vcs-gitcmd-ask")
+// makeGitPassHelper writes a git credential helper that supplies username and password over stdout.
+// Its name is "git-credential-gitserver-helper" and it's located inside gitPassHelperDir.
+// If err is nil, the caller is responsible for removing gitPassHelperDir after it's done using it.
+func (*Server) makeGitPassHelper(user, pass string) (gitPassHelperDir string, err error) {
+	tempDir, err := ioutil.TempDir("", "gitserver_")
 	if err != nil {
-		return tmpFile, dir, err
+		return "", err
 	}
 
-	passPath := filepath.Join(dir, "password")
-	err = util.WriteFileWithPermissions(passPath, []byte(pass), 0600)
-	if err != nil {
-		return tmpFile, dir, err
+	// Write the credentials content to credentialsFile file.
+	// This is done to avoid code injection attacks.
+	// Usernames and passwords are untrusted arbitrary user data. It's hard to escape
+	// strings in shell scripts, so we opt to `cat` this non-executable credentials file instead.
+	credentialsFile := filepath.Join(tempDir, "credentials-content")
+	{
+		content := fmt.Sprintf("password=%s\n", pass)
+		if user != "" {
+			content += fmt.Sprintf("username=%s\n", user)
+		}
+
+		err := util.WriteFileWithPermissions(credentialsFile, []byte(content), 0600)
+		if err != nil {
+			os.RemoveAll(tempDir)
+			return "", err
+		}
 	}
 
-	var script string
+	// Write the credential helper executable that uses credentialsFile.
+	{
+		// We assume credentialsFile can be escaped with a simple wrapping of single
+		// quotes. The path is not user controlled so this assumption should
+		// not be violated.
+		content := fmt.Sprintf("#!/bin/sh\ncat '%s'\n", credentialsFile)
 
-	// We assume passPath can be escaped with a simple wrapping of single
-	// quotes. The path is not user controlled so this assumption should
-	// not be violated.
-	if runtime.GOOS == "windows" {
-		script = "@echo off\ntype " + passPath + "\n"
-	} else {
-		script = "#!/bin/sh\ncat '" + passPath + "'\n"
+		path := filepath.Join(tempDir, "git-credential-gitserver-helper")
+		err := util.WriteFileWithPermissions(path, []byte(content), 0500)
+		if err != nil {
+			os.RemoveAll(tempDir)
+			return "", err
+		}
 	}
 
-	err = util.WriteFileWithPermissions(tmpFile, []byte(script), 0500)
-	return tmpFile, dir, err
+	return tempDir, nil
 }
 
 // repoExists checks if dir is a valid GIT_DIR.
@@ -137,5 +157,31 @@ func repoExists(dir string) bool {
 func recoverAndLog() {
 	if err := recover(); err != nil {
 		log.Print(err)
+	}
+}
+
+// environ is a slice of strings representing the environment, in the form "key=value".
+type environ []string
+
+// Set environment variable key to value.
+func (e *environ) Set(key, value string) {
+	for i := range *e {
+		if strings.HasPrefix((*e)[i], key+"=") {
+			(*e)[i] = key + "=" + value
+			return
+		}
+	}
+	// If we get here, it's because the key isn't already present, so add a new one.
+	*e = append(*e, key+"="+value)
+}
+
+// Unset environment variable key.
+func (e *environ) Unset(key string) {
+	for i := range *e {
+		if strings.HasPrefix((*e)[i], key+"=") {
+			(*e)[i] = (*e)[len(*e)-1]
+			*e = (*e)[:len(*e)-1]
+			return
+		}
 	}
 }

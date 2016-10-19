@@ -15,6 +15,7 @@ type SSHConfig struct {
 
 // HTTPSConfig configures HTTPS for communication with remotes.
 type HTTPSConfig struct {
+	User string // User is the username provided to the vcs.
 	Pass string // Pass is the password provided to the vcs.
 }
 
