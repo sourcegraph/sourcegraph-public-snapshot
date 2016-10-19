@@ -1,6 +1,5 @@
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {URIUtils} from "sourcegraph/core/uri";
-import {urlToDefInfo} from "sourcegraph/def/routes";
 
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import { makeRepoRev } from "sourcegraph/repo";
@@ -46,18 +45,13 @@ class FindExternalReferencesAction extends EditorAction {
 
 		const line = pos.lineNumber - 1;
 		const col = pos.column - 1;
-		return TPromise.wrap<void>(fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/hover-info?file=${path}&line=${line}&character=${col}`)
+		return TPromise.wrap<void>(fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/def-landing?file=${path}&line=${line}&character=${col}`)
 			.then(checkStatus)
 			.then(resp => resp.json())
 			.catch(err => null)
 			.then((resp) => {
-				if (resp && (resp as any).def) {
-					// TODO(uforic): Remove this when we remove srclib dependency. Fix a special case for golang/go. 
-					const def = resp.def;
-					if (def.Repo === "github.com/golang/go" && def.Unit && def.Unit.startsWith("github.com/golang/go/src/")) {
-						def.Unit = def.Unit.replace("github.com/golang/go/src/", "");
-					}
-					window.location.href = urlToDefInfo((resp as any).def);
+				if (resp && (resp as any).URL) {
+					window.location.href = (resp as any).URL;
 				} else {
 					Dispatcher.Stores.dispatch(new BlobActions.Toast("No external references found"));
 				}
