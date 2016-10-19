@@ -180,6 +180,9 @@ func VerifyActorHasReadAccess(ctx context.Context, actor *auth.Actor, method str
 		if err != nil {
 			return err
 		}
+		// TODO: getRepo above already indirectly performs this access check, but outside of
+		//       accesscontrol package, so it can't be relied on. Still, this is an opportunity
+		//       to optimize, just need to refactor this in a better way.
 		if !VerifyActorHasRepoURIAccess(ctx, actor, method, repoID, repoURI) {
 			return ErrRepoNotFound
 		}
@@ -319,6 +322,9 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor *auth.Actor, method st
 	}
 
 	if repoID != 0 && repoURI != "" {
+		// TODO: getRepo above already indirectly performs this access check, but outside of
+		//       accesscontrol package, so it can't be relied on. Still, this is an opportunity
+		//       to optimize, just need to refactor this in a better way.
 		if !VerifyActorHasRepoURIAccess(ctx, actor, method, repoID, repoURI) {
 			return ErrRepoNotFound
 		}
