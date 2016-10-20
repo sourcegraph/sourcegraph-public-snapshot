@@ -33,21 +33,16 @@ describe("actions", () => {
 
 	function assertAsyncActionsDispatched(action, initStore, expectedActions) {
 		let store = mockStore(initStore);
-	    return store.dispatch(action)
-	    	.then(() => expect(store.getActions()).to.eql(expectedActions));
+		return store.dispatch(action)
+			.then(() => expect(store.getActions()).to.eql(expectedActions));
 	}
 
 	describe("ensureRepoExists", () => {
-		const repoCreateAPI = `https://sourcegraph.com/.api/repos`;
+		const repoCreateAPI = `https://sourcegraph.com/.api/repos?AcceptAlreadyExists=true`;
 
 		it("200s", () => {
 			fetchMock.mock(repoCreateAPI, "POST", 200);
-		    return assertAsyncActionsDispatched(actions.ensureRepoExists(repo), {}, []);
-		});
-
-		it("409s", () => {
-			fetchMock.mock(repoCreateAPI, "POST", 409);
-		    return assertAsyncActionsDispatched(actions.ensureRepoExists(repo), {}, []);
+			return assertAsyncActionsDispatched(actions.ensureRepoExists(repo), {}, []);
 		});
 	});
 
@@ -57,28 +52,28 @@ describe("actions", () => {
 		it("200s", () => {
 			fetchMock.mock(annotationsAPI, "GET", {Annotations: []});
 
-		    return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
-		    	resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
-		    	annotations: {content: {}},
-		    }, [
-		    	{type: types.FETCHED_ANNOTATIONS, repo, rev: resolvedRev, path, json: {Annotations: []}},
-		    ]);
+			return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
+				resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
+				annotations: {content: {}},
+			}, [
+				{type: types.FETCHED_ANNOTATIONS, repo, rev: resolvedRev, path, json: {Annotations: []}},
+			]);
 		});
 
 		it("404s", () => {
 			fetchMock.mock(annotationsAPI, "GET", 404);
 
-		    return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
-		    	resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
-		    	annotations: {content: {}},
-		    }, [
-		    	{type: types.FETCHED_ANNOTATIONS, repo, rev: resolvedRev, path, err: errorResponse(404, annotationsAPI)},
-		    ]);
+			return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
+				resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
+				annotations: {content: {}},
+			}, [
+				{type: types.FETCHED_ANNOTATIONS, repo, rev: resolvedRev, path, err: errorResponse(404, annotationsAPI)},
+			]);
 		});
 
 		it("noops when annotations are cached", () => {
 			return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
-		    	resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
+				resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
 				defs: {content: {[keyFor(repo, resolvedRev, path, query)]: {Annotations: []}}},
 			}, []);
 		});

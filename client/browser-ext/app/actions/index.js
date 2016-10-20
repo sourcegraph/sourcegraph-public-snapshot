@@ -54,7 +54,7 @@ export function ensureRepoExists(repo) {
 			},
 		};
 
-		const p = fetch(`https://sourcegraph.com/.api/repos`, {method: "POST", body: JSON.stringify(body)})
+		const p = fetch(`https://sourcegraph.com/.api/repos?AcceptAlreadyExists=true`, {method: "POST", body: JSON.stringify(body)})
 			.then((json) => {})
 			.catch((err) => {});
 		createdRepoOnce.set(repo, p);

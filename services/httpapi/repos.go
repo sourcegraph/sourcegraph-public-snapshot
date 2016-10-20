@@ -21,6 +21,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
@@ -112,9 +113,9 @@ func init() {
 	prometheus.MustRegister(repoSearchDuration)
 }
 
-func serveRepos(w http.ResponseWriter, r *http.Request) (err error) {
+func serveRepos(w http.ResponseWriter, r *http.Request) error {
 	var opt sourcegraph.RepoListOptions
-	err = schemaDecoder.Decode(&opt, r.URL.Query())
+	err := schemaDecoder.Decode(&opt, r.URL.Query())
 	if err != nil {
 		return err
 	}
@@ -144,6 +145,15 @@ func serveRepos(w http.ResponseWriter, r *http.Request) (err error) {
 }
 
 func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
+	var opt struct {
+		// If true, then if the repo already exists, that's accepted as a success status rather than a conflict.
+		AcceptAlreadyExists bool
+	}
+	err := schemaDecoder.Decode(&opt, r.URL.Query())
+	if err != nil {
+		return err
+	}
+
 	var op sourcegraph.ReposCreateOp
 	if err := json.NewDecoder(r.Body).Decode(&op); err != nil {
 		if err == io.EOF {
@@ -153,7 +163,11 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	repo, err := backend.Repos.Create(r.Context(), &op)
-	if err != nil {
+	if legacyerr.ErrCode(err) == legacyerr.AlreadyExists && opt.AcceptAlreadyExists {
+		// Write a success state empty object. Currently assuming caller
+		// doesn't need actual repo, it just wants to ensure it exists.
+		return writeJSON(w, struct{}{})
+	} else if err != nil {
 		return err
 	}
 	return writeJSON(w, &repo)
