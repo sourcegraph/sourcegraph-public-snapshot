@@ -1,7 +1,13 @@
 #!/bin/bash
-set -ex
+set -e
 cd $(dirname "${BASH_SOURCE[0]}")
 
-env GOBIN=$PWD/../../../../vendor/.bin go install sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/neelance/godockerize
-../../../../vendor/.bin/godockerize build -t us.gcr.io/sourcegraph-dev/xlang-go .
-gcloud docker -- push us.gcr.io/sourcegraph-dev/xlang-go
+export IMAGE=us.gcr.io/sourcegraph-dev/xlang-go
+export TAG=${TAG-latest}
+export GOBIN="$PWD/../../../../vendor/.bin"
+export PATH="$GOBIN:$PATH"
+
+set -x
+go install sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/neelance/godockerize
+godockerize build -t $IMAGE:$TAG .
+gcloud docker -- push $IMAGE:$TAG

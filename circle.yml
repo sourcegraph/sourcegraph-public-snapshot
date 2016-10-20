@@ -65,5 +65,6 @@ deployment:
   docker-images:
     branch: /docker-images\/.*/
     commands:
-      - make -f dev/ci/Makefile.docker ${CIRCLE_BRANCH:14}:
+      - make -f dev/ci/Makefile.docker ${CIRCLE_BRANCH:14} TAG=$LONG_VERSION:
           pwd: $REPO
+      - curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=$CIRCLE_BRANCH" -F "version=$LONG_VERSION" -F "user=$CIRCLE_USERNAME"
