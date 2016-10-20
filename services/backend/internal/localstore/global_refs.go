@@ -282,13 +282,6 @@ func (g *globalRefs) RefreshIndex(ctx context.Context, repoID int32, commit stri
 	// post-query to ensure they do not include results for private repos.
 	// e.g. psuedo-code: `SELECT ... WHERE repo != private OR repo.URI in (my private repos)`
 
-	// Connect to the xlang proxy.
-	c, err := xlang.NewDefaultClient() // TODO(slimsag): before merge, trace connection times
-	if err != nil {
-		return errors.Wrap(err, "new xlang client")
-	}
-	defer c.Close()
-
 	// Determine the repo's URI.
 	repo, err := Repos.Get(ctx, repoID)
 	if err != nil {
@@ -299,7 +292,7 @@ func (g *globalRefs) RefreshIndex(ctx context.Context, repoID int32, commit stri
 	languages := []string{"go"}
 	var errs []string
 	for _, language := range languages {
-		if err := g.refreshIndexForLanguage(ctx, c, language, repo.URI, commit); err != nil {
+		if err := g.refreshIndexForLanguage(ctx, language, repo.URI, commit); err != nil {
 			log15.Crit("refreshing index failed", "language", language, "error", err)
 			errs = append(errs, fmt.Sprintf("refreshing index failed language=%s error=%v", language, err))
 		}
@@ -312,9 +305,11 @@ func (g *globalRefs) RefreshIndex(ctx context.Context, repoID int32, commit stri
 	return nil
 }
 
-func (g *globalRefs) refreshIndexForLanguage(ctx context.Context, c *xlang.Client, language, repoURI, commit string) error {
+func (g *globalRefs) refreshIndexForLanguage(ctx context.Context, language, repoURI, commit string) error {
 	// Query all external references for the repository.
-	refs, err := workspaceReference(ctx, c, language, repoURI, commit)
+	var refs []lspext.ReferenceInformation
+	rootPath := "git://" + repoURI + "?" + commit
+	err := xlang.OneShotClientRequest(ctx, language, rootPath, "workspace/reference", lspext.WorkspaceReferenceParams{}, &refs)
 	if err != nil {
 		return errors.Wrap(err, "workspaceReference")
 	}
@@ -807,35 +802,6 @@ WHERE NOT EXISTS(
 	}
 	span.SetTag("RowsAffected", n)
 	return nil
-}
-
-// workspaceReference performs the LSP workspace/reference request and returns the
-// results.
-func workspaceReference(ctx context.Context, c *xlang.Client, mode, repo, rev string) ([]lspext.ReferenceInformation, error) {
-	// Initialize the connection.
-	err := c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
-		InitializeParams: lsp.InitializeParams{
-			RootPath: "git://" + repo + "?" + rev,
-		},
-		Mode: mode,
-	}, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "lsp initialize")
-	}
-
-	// Query exported workspace symbols.
-	var symbols []lspext.ReferenceInformation
-	err = c.Call(ctx, "workspace/reference", lspext.WorkspaceReferenceParams{}, &symbols)
-	if err != nil {
-		return nil, errors.Wrap(err, "lsp workspace/reference")
-	}
-
-	// Shutdown the connection.
-	err = c.Call(ctx, "shutdown", nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "shutdown")
-	}
-	return symbols, nil
 }
 
 // interlaceRange is a small helper to convert an LSP range into its interlaced

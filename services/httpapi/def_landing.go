@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -43,7 +42,7 @@ func serveRepoDefLanding(w http.ResponseWriter, r *http.Request) error {
 	// and then looking through workspace/symbol results for the definition.
 	rootPath := "git://" + repo.URI + "?" + repoRev.CommitID
 	var locations []lsp.Location
-	err = lspClientRequest(r.Context(), language, rootPath, "textDocument/definition", lsp.TextDocumentPositionParams{
+	err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "textDocument/definition", lsp.TextDocumentPositionParams{
 		TextDocument: lsp.TextDocumentIdentifier{URI: rootPath + "#" + file},
 		Position:     lsp.Position{Line: line, Character: character},
 	}, &locations)
@@ -59,7 +58,7 @@ func serveRepoDefLanding(w http.ResponseWriter, r *http.Request) error {
 	withoutFile := *uri
 	withoutFile.Fragment = ""
 	var symbols []lsp.SymbolInformation
-	err = lspClientRequest(r.Context(), language, withoutFile.String(), "workspace/symbol", lsp.WorkspaceSymbolParams{
+	err = xlang.OneShotClientRequest(r.Context(), language, withoutFile.String(), "workspace/symbol", lsp.WorkspaceSymbolParams{
 		// TODO(slimsag): before merge, performance for golang/go here is not
 		// good. Allow specifying file URIs as a query filter. Sucks a bit that
 		// textDocument/definition won't give us the Name/ContainerName that we
@@ -130,44 +129,4 @@ func legacyDefLandingURL(s lsp.SymbolInformation) (string, error) {
 		Unit:     unit,
 		Path:     defPath,
 	}).String(), nil
-}
-
-// lspClientRequest performs a one-shot LSP client request for the specified
-// method (e.g. "textDocument/definition") and stores the results in the given
-// pointer value.
-func lspClientRequest(ctx context.Context, mode, rootPath, method string, params, results interface{}) error {
-	// Connect to the xlang proxy.
-	c, err := xlang.NewDefaultClient()
-	if err != nil {
-		return errors.Wrap(err, "new xlang client")
-	}
-	defer c.Close()
-
-	// Initialize the connection.
-	err = c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
-		InitializeParams: lsp.InitializeParams{
-			RootPath: rootPath,
-		},
-		Mode: mode,
-	}, nil)
-	if err != nil {
-		return errors.Wrap(err, "lsp initialize")
-	}
-
-	// Perform the request.
-	err = c.Call(ctx, method, params, results)
-	if err != nil {
-		return errors.Wrap(err, "lsp textDocument/definition")
-	}
-
-	// Shutdown the connection.
-	err = c.Call(ctx, "shutdown", nil, nil)
-	if err != nil {
-		return errors.Wrap(err, "shutdown")
-	}
-	err = c.Notify(ctx, "exit", nil)
-	if err != nil {
-		return errors.Wrap(err, "exit")
-	}
-	return nil
 }
