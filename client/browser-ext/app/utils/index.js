@@ -1,6 +1,7 @@
 export const supportedExtensions = [
 	"go", // Golang
-	"ts", "tsx" // TypeScript
+	"ts", "tsx", // TypeScript
+	"js", "jsx" // JavaScript
 ];
 
 export const upcomingExtensions = [
@@ -11,7 +12,6 @@ export const upcomingExtensions = [
 	"c", "h", // C
 	"m", "mm", // Obj-C ("h" and "C" overlap with C/C++)
 	"rb", "rbw", // Ruby
-	"js", "jsx", // JavaScript
 	"rs", "rlib", // Rust
 	"sc", "scala", // Scala
 	"htm", "html", // HTML
@@ -35,6 +35,9 @@ export function getModeFromExtension(ext) {
 		case "ts":
 		case "tsx":
 			return "typescript";
+		case "js":
+		case "jsx":
+			return "javascript";
 		default:
 			return "unknown";
 	}
