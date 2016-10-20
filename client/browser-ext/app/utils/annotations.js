@@ -335,7 +335,7 @@ function addEventListeners(el, path, repoRevSpec, line) {
 			activeTarget = t;
 
 			hidePopover();
-			showPopover(`<div><div class=${styles.popoverTitle}>Loading..</div></div>`, true);
+			showPopover(`<div><div class=${styles.popoverTitle}>Loading...</div></div>`, true);
 			fetchPopoverData(activeTarget.dataset.byteoffset, function(html) {
 				hidePopover();
 				showPopover(html, false);
