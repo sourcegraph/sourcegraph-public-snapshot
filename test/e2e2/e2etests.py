@@ -198,6 +198,11 @@ def test_beta_signup(d):
     retry(lambda: d.find_button_by_partial_text("Participate").click())
     wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("p", "We'll contact you at %s" % username)) > 0)
 
+def test_first_open_jump_to_line(d):
+    wd = d.d
+    wd.get(d.sg_url("/github.com/gorilla/pat/-/blob/pat.go#L65:18"))
+    wait_for(lambda: len([e for e in wd.find_elements_by_css_selector(".line-numbers") if e.text == "65"]) == 1)
+
 all_tests = [
     test_onboarding,
     test_login_logout,
@@ -205,4 +210,5 @@ all_tests = [
     test_golden_workflow,
     test_find_external_refs,
     test_beta_signup,
+    test_first_open_jump_to_line,
 ]
