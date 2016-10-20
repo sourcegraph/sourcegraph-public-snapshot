@@ -496,6 +496,9 @@ export interface FileRange {
 	EndByte?: number;
 }
 
+export interface FileRef {
+}
+
 export interface FileWithRange {
 	StartLine?: number;
 	EndLine?: number;
@@ -686,6 +689,13 @@ export interface RefKey {
 export interface RefList {
 	Refs?: any[];
 	HasMore?: boolean;
+}
+
+export interface RefLocations {
+	HasMore?: boolean;
+}
+
+export interface RefLocationsOptions {
 }
 
 export interface RefSet {
@@ -1033,6 +1043,9 @@ export interface SignatureInformation {
 	label: string;
 	documentation?: string;
 	paramaters?: any[];
+}
+
+export interface SourceRef {
 }
 
 export interface SrclibDataVersion {
