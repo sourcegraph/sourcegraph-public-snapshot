@@ -39,7 +39,7 @@ func (h *Handler) handleReferences(ctx context.Context, params lsp.ReferencePara
 
 func locationsOfWordInFile(file, filename, word string) []lsp.Location {
 	var locs []lsp.Location
-	re := regexp.MustCompile(".*" + word + ".*")
+	re := regexp.MustCompile(word)
 	for lineNumber, line := range strings.Split(file, "\n") {
 		ranges := re.FindAllStringIndex(line, -1)
 		for _, wordIndices := range ranges {

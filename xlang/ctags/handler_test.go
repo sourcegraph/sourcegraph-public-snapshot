@@ -107,3 +107,55 @@ func TestWordAtPoint(t *testing.T) {
 	assert(wordAtPoint(line, 7) == "bar")
 	assert(wordAtPoint(line, 8) == "")
 }
+
+func TestReferences(t *testing.T) {
+	h, ctx := setupHandler()
+	params := lsp.ReferenceParams{
+		TextDocumentPositionParams: lsp.TextDocumentPositionParams{
+			Position: lsp.Position{
+				Line:      1,
+				Character: 5,
+			},
+			TextDocument: lsp.TextDocumentIdentifier{
+				URI: "file:///hello.rb",
+			},
+		},
+	}
+	refs, err := h.handleReferences(ctx, params)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectedRefs := []lsp.Location{
+		lsp.Location{
+			URI: "/hello.rb",
+			Range: lsp.Range{
+				Start: lsp.Position{
+					Line:      1,
+					Character: 4,
+				},
+				End: lsp.Position{
+					Line:      1,
+					Character: 7,
+				},
+			},
+		},
+		lsp.Location{
+			URI: "/hello.rb",
+			Range: lsp.Range{
+				Start: lsp.Position{
+					Line:      4,
+					Character: 1,
+				},
+				End: lsp.Position{
+					Line:      4,
+					Character: 4,
+				},
+			},
+		},
+	}
+	for i, e := range expectedRefs {
+		if refs[i] != e {
+			t.Errorf("expected %v, but got %v", e, refs[i])
+		}
+	}
+}
