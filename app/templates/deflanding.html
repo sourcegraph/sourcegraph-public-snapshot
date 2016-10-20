@@ -14,7 +14,7 @@
 
 <div ignore-csp style="max-width: 680px" class="mx-auto mx2">
 
-	<div class="mb3">
+	<div class="mb3" id="title">
 		<a href="{{.ViewDefURL}}" class="btn btn-blue right mt2">View definition</a>
 		<h1 class="mb0">
 			<span class="code wrap">{{.DefName}}</span>
@@ -26,14 +26,14 @@
 	</div>
 
 	{{with .Description}}
-	<div class="mt3 mb4">
+	<div class="mt3 mb4" id="description">
 		<h2>Description</h2>
 		<p>{{dangerouslySetHTML .HTML}}</p>
 	</div>
 	{{end}}
 
 	{{with .RefSnippets}}
-		<div class="my4">
+		<div class="my4" id="examples">
 
 			<h2>Examples</h2>
 
@@ -45,7 +45,7 @@
 		</div>
 	{{end}}
 
-	<div class="my4">
+	<div class="my4" id="references">
 		<h2>
 			<span class="code">{{.ShortDefName}}</span> is referenced in {{.TotalRepoReferences}} {{numberedNoun .TotalRepoReferences "repository"}}
 		</h2>
@@ -66,7 +66,7 @@
 		{{end}}
 	</div>
 
-	<div class="my3">
+	<div class="my3" id="definition">
 		<h2>Definition</h2>
 		<a href="{{.ViewDefURL}}" class="plainlink">
 			<pre class="bg-white code border rounded border-cool-gray-4 p2 snippet">{{renderSnippet .DefSnippet}}</pre>
