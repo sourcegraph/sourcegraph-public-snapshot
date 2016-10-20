@@ -2,6 +2,7 @@ package ctags
 
 import (
 	"testing"
+	"time"
 
 	"context"
 
@@ -67,6 +68,7 @@ func TestDefinition(t *testing.T) {
 		test{4, []lsp.Location{defLoc}},
 		test{8, []lsp.Location{}},
 	}
+	time.Sleep(100 * time.Millisecond)
 	for _, test := range tests {
 		locs := defAtPoint(t, test.col, h, ctx)
 		if len(locs) > 1 {
@@ -74,6 +76,7 @@ func TestDefinition(t *testing.T) {
 		}
 		if len(test.result) != len(locs) {
 			t.Errorf("expected to get %d locations, got %d", len(test.result), len(locs))
+			t.FailNow()
 		}
 		if len(test.result) == 0 && len(locs) == 0 {
 			continue
