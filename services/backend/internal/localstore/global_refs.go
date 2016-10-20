@@ -314,6 +314,18 @@ func (g *globalRefs) RefreshIndex(ctx context.Context, repoID int32, commit stri
 	return nil
 }
 
+func (g *globalRefs) HasMigrated(ctx context.Context, repo string) (bool, error) {
+	res, err := globalGraphDBH.Db.Exec(`SELECT TRUE FROM global_ref_by_source WHERE source IN (SELECT id FROM global_ref_source WHERE source=$1);`, repo)
+	if err != nil {
+		return false, err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return rowsAffected > 0, nil
+}
+
 func (g *globalRefs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOptions) (*sourcegraph.RefLocations, error) {
 	refLocations := &sourcegraph.RefLocations{}
 

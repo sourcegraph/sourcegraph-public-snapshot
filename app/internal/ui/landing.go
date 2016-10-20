@@ -7,6 +7,8 @@ import (
 	"path"
 	"strings"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/gorilla/mux"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pkg/errors"
@@ -177,15 +179,42 @@ type defLandingData struct {
 func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
+		if errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
+			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
+		}
 		return errors.Wrap(err, "GetRepoAndRev")
 	}
+
+	migrated, err := backend.Defs.HasMigrated(r.Context(), repo.URI)
+	if err != nil {
+		// Just log, so we fallback to legacy.
+		log15.Crit("Defs.HasMigrated", err)
+	}
+
+	var data *defLandingData
+	if migrated {
+		data, err = queryDefLandingData(r, repo, repoRev)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Fallback to legacy / srclib data.
+		data, err = queryLegacyDefLandingData(r, repo)
+		if err != nil {
+			return err
+		}
+	}
+	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, data)
+}
+
+func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev sourcegraph.RepoRevSpec) (*defLandingData, error) {
 	defSpec := routevar.ToDefAtRev(mux.Vars(r))
 	language := "go" // TODO(slimsag): long term, add to route
 
 	// Lookup the definition based on the legacy srclib defkey in the page URL.
 	rootPath := "git://" + defSpec.Repo + "?" + repoRev.CommitID
 	var symbols []lsp.SymbolInformation
-	err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
+	err := xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
 		// TODO(slimsag): before merge, performance for golang/go here is not
 		// good. Allow specifying file URIs as a query filter. Sucks a bit that
 		// textDocument/definition won't give us the Name/ContainerName that we
@@ -198,7 +227,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	for _, sym := range symbols {
 		withoutFile, err := url.Parse(sym.Location.URI)
 		if err != nil {
-			return errors.Wrap(err, "parsing symbol location URI")
+			return nil, errors.Wrap(err, "parsing symbol location URI")
 		}
 		withoutFile.Fragment = ""
 		if withoutFile.String() != "git://"+defSpec.Repo+"?"+repoRev.CommitID {
@@ -224,13 +253,13 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		break
 	}
 	if symbol == nil {
-		return fmt.Errorf("could not finding matching symbol info")
+		return nil, fmt.Errorf("could not finding matching symbol info")
 	}
 
 	// Create links to the definition.
 	symURI, err := url.Parse(symbol.Location.URI)
 	if err != nil {
-		return errors.Wrap(err, "parsing symbol location URI")
+		return nil, errors.Wrap(err, "parsing symbol location URI")
 	}
 	defFileURL := "/" + symURI.Host + symURI.Path + "/-/blob/" + path.Clean(symURI.Fragment)
 	defFileName := symURI.Host + path.Join(symURI.Path, symURI.Fragment)
@@ -273,7 +302,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		ContainerName: symbol.ContainerName,
 	})
 	if err != nil {
-		return errors.Wrap(err, "Defs.RefLocations")
+		return nil, errors.Wrap(err, "Defs.RefLocations")
 	}
 
 	var (
@@ -292,7 +321,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 			}
 			refRepo, err := backend.Repos.Resolve(r.Context(), &sourcegraph.RepoResolveOp{Path: ref.Source})
 			if err != nil {
-				return errors.Wrap(err, "Repos.Resolve")
+				return nil, errors.Wrap(err, "Repos.Resolve")
 			}
 			refEntry, err := backend.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{
 				Entry: sourcegraph.TreeEntrySpec{
@@ -315,7 +344,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 				},
 			})
 			if err != nil {
-				return errors.Wrap(err, "RepoTree.Get")
+				return nil, errors.Wrap(err, "RepoTree.Get")
 			}
 			refSnippets = append(refSnippets, &snippet{
 				Code:      htmpl.HTML(refEntry.ContentsString),
@@ -324,7 +353,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	data := &defLandingData{
+	return &defLandingData{
 		Meta: meta{
 			SEO:        true,
 			Title:      title,
@@ -349,26 +378,11 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		DefFileName:      defFileName,
 		RefLocs:          refLocs,
 		TruncatedRefLocs: refLocs.TotalSources > len(refLocs.SourceRefs),
-	}
-
-	if data == nil {
-		// Fallback to legacy / srclib data.
-		data, err = queryLegacyDefLandingData(r)
-		if err != nil {
-			return err
-		}
-	}
-	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, data)
+	}, nil
 }
 
-func queryLegacyDefLandingData(r *http.Request) (*defLandingData, error) {
+func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (*defLandingData, error) {
 	vars := mux.Vars(r)
-
-	repo, _, err := handlerutil.GetRepoAndRev(r.Context(), vars)
-	if err != nil {
-		return nil, err
-	}
-
 	def, _, err := handlerutil.GetDefCommon(r.Context(), vars, &sourcegraph.DefGetOptions{Doc: true, ComputeLineRange: true})
 	if err != nil {
 		return nil, err

@@ -117,6 +117,12 @@ func (s *defs) DeprecatedListRefLocations(ctx context.Context, op *sourcegraph.D
 	return localstore.DeprecatedGlobalRefs.DeprecatedGet(ctx, op)
 }
 
+func (s *defs) HasMigrated(ctx context.Context, repo string) (migrated bool, err error) {
+	ctx, done := trace(ctx, "Defs", "HasMigrated", repo, &err)
+	defer done()
+	return localstore.GlobalRefs.HasMigrated(ctx, repo)
+}
+
 func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOptions) (res *sourcegraph.RefLocations, err error) {
 	ctx, done := trace(ctx, "Defs", "RefLocations", op, &err)
 	defer done()
