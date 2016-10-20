@@ -1,6 +1,16 @@
 import React from "react";
 
 export class EventLogger {
+    constructor() {
+        chrome.runtime.sendMessage(null, {type: "getIdentity"}, {}, (identity) => {
+            if (identity.userId) {
+                chrome.runtime.sendMessage({ type: "setTrackerUserId", payload: identity.userId });
+            }
+            if (identity.deviceId) {
+                chrome.runtime.sendMessage({ type: "setTrackerDeviceId", payload: identity.deviceId });
+            }
+        });
+    }
 
     updatePropsForUser(identity) {
         if (identity) {
@@ -12,26 +22,27 @@ export class EventLogger {
         }
     }
 
-	_decorateEventProperties(eventProperties: any) {
+	_decorateEventProperties(eventProperties) {
 		return Object.assign({}, eventProperties, {path_name: global.window && global.window.location && global.window.location.pathname ? global.window.location.pathname.slice(1) : ""});
 	}
 
-	_logToConsole(eventAction: string, object?: any) {
+	_logToConsole(eventAction, object) {
 		if (global.window && global.window.localStorage && global.window.localStorage["log_debug"]) {
 			console.debug("%cEVENT %s", "color: #aaa", eventAction, object);
 		}
 	}
 
-    logEventForCategory(eventCategory: string, eventAction: string, eventLabel: string, eventProperties ? : any) {
+    logEventForCategory(eventCategory, eventAction, eventLabel, eventProperties) {
         if (process.env.NODE_ENV === "test") return;
 
         eventProperties = eventProperties ? eventProperties : {};
         eventProperties["Platform"] = window.navigator.userAgent.indexOf("Firefox") !== -1 ? "FirefoxExtension" : "ChromeExtension";
 
-        const eventCtxt = this._decorateEventProperties(eventProperties, { eventLabel, eventCategory, eventAction });
+        let props = Object.assign({}, eventProperties, { eventLabel, eventCategory, eventAction });
+        const decoratedEventProps = this._decorateEventProperties(props);
 
-        this._logToConsole(eventAction, Object.assign(eventCtxt));
-        chrome.runtime.sendMessage({ type: "trackEvent", payload: Object.assign(eventCtxt) });
+        this._logToConsole(eventAction, decoratedEventProps);
+        chrome.runtime.sendMessage({ type: "trackEvent", payload: decoratedEventProps});
     }
 }
 
