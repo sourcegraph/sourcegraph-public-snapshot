@@ -60,7 +60,7 @@ export class BlobMain extends Container<Props, State> {
 	};
 
 	private _editor?: Editor;
-	private _shortCircuitURLNavigationOnEditorOpened: boolean = false;
+	private _shortCircuitURLNavigationOnEditorOpened: number = 0;
 
 	constructor(props: Props) {
 		super(props);
@@ -146,20 +146,31 @@ export class BlobMain extends Container<Props, State> {
 				//
 				// We have the following cases to handle:
 				// - initial page load: starts with _editorPropsChanged, we tell monaco where to move the cursor,
-				///  (the second argument to this._editor.setInput below) and do not need to update the URL
+				//   (the second argument to this._editor.setInput below) and must not update the URL (doing so
+				//   could make "official" a URL derived from an intermediate set of property values).
 				// - jump-to-def: starts with _onEditorOpened, which calls router.push(url) and eventually invokes this
 				//   method (at which point, we've already updated the URL and don't need to do so again)
 				// - browser "back": starts with _editorPropsChanged (since props.location is updated), we simply
 				//   tell monaco which uri to open and at what range. This is determined entirely by nextProps.location
-				//   and we don't need _onEditorOpened to update the URL (the browser already did so)
+				//   and we don't need _onEditorOpened to update the URL (the browser already did so).
 				//
-				// Therefore, whenever we invoke _onEditorOpened from _editorPropsChanged, we NEVER update URL.
 				// Jump-to-def starts with _onEditorOpened, and starting from that code path we ALWAYS update URL.
+				// Therefore, whenever we invoke _onEditorOpened from _editorPropsChanged, we NEVER update URL.
+				//
+				// The reason that this._shortCircuitURLNavigationOnEditorOpened is an integer and not a boolean is
+				// we might have more than one concurrent call to _editorPropsChanged. If we only stored a boolean,
+				// there is a race condition where we treat one of the _onEditorOpened calls as being initiated by
+				// a jump-to-def and change the URL as a result (this in causes a subtle bug where initial page loads
+				// of links to blob lines redirect to the naked file URL instead of jumping to the correct line).
+				// Note that to be pedantically correct, we should go even further to determine whether _onEditorOpened
+				// calls originated from this code path or the jump-to-def path (we could use a stack of (uri, range)
+				// tuples), but in practice, it's unlikely that any 2 of the above actions (initial page load,
+				// jump-to-def, back button) would occur concurrently. So an integer is good enough.
 
-				this._shortCircuitURLNavigationOnEditorOpened = true;
+				this._shortCircuitURLNavigationOnEditorOpened++; // when > 0, _onEditorOpened will not change the URL
 				this._editor.setInput(uri, range).then(() => {
-					// Always reset this bit after opening the editor.
-					this._shortCircuitURLNavigationOnEditorOpened = false;
+					// Always decrement this value after opening the editor.
+					this._shortCircuitURLNavigationOnEditorOpened--;
 				});
 			}
 		}
@@ -186,7 +197,7 @@ export class BlobMain extends Container<Props, State> {
 	}
 
 	_onEditorOpened(e: IEditorOpenedEvent): void {
-		if (this._shortCircuitURLNavigationOnEditorOpened) {
+		if (this._shortCircuitURLNavigationOnEditorOpened > 0) {
 			return;
 		}
 
