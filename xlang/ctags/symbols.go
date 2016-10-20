@@ -9,7 +9,6 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 
-	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/ctags/parser"
 )
@@ -36,7 +35,7 @@ var nameToSymbolKind = map[string]lsp.SymbolKind{
 	"func":        lsp.SKFunction,
 }
 
-func (h *Handler) handleSymbol(ctx context.Context, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) (symbols []lsp.SymbolInformation, err error) {
+func (h *Handler) handleSymbol(ctx context.Context, params lsp.WorkspaceSymbolParams) (symbols []lsp.SymbolInformation, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "ctags.handleSymbol")
 	if params.Query != "" {
 		span.SetTag("query", params.Query)

@@ -75,6 +75,7 @@ func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
 				WorkspaceSymbolProvider: true,
+				DefinitionProvider:      true,
 			},
 		}, nil
 
@@ -87,7 +88,7 @@ func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 			vslog(err.Error())
 			return
 		}
-		s, err := h.handleSymbol(ctx, req, params)
+		s, err := h.handleSymbol(ctx, params)
 		if err != nil {
 			vslog(err.Error())
 			return nil, err
@@ -96,6 +97,36 @@ func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 			return emptyArray, nil
 		}
 		return s, nil
+
+	case "textDocument/definition":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		var params lsp.TextDocumentPositionParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
+		}
+		return h.handleDefinition(ctx, params)
+
+	case "textDocument/references":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		var params lsp.TextDocumentPositionParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
+		}
+		return h.handleDefinition(ctx, params)
+
+	case "textDocument/hover":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		var params lsp.TextDocumentPositionParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
+		}
+		return h.handleHover(ctx, params)
 	}
 
 	return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("method not supported: %s", req.Method)}
