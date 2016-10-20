@@ -38,7 +38,8 @@
 												],
 												"color": "blue",
 												"outline": false,
-												"block": false
+												"block": false,
+												"img": true
 											}
 										}
 									]

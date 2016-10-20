@@ -186,6 +186,11 @@
     border-color: c_blue_text;
 }
 
+.solid_dark_blue {
+    composes: solid;
+    background: c_dark_blue;
+}
+
 .solid_purple {
     composes: solid;
     composes: bg_purple b__purple from colors;
@@ -225,11 +230,11 @@
 .solid_white {
     composes: solid;
     composes: bg_white b__white from colors;
-    color: c_purple;
+    color: c_blue;
 }
 .solid_white:hover {
     background: white;
-    color: c_dark_purple;
+    color: c_dark_blue;
 }
 .button_image{
     height: 1.5em;

@@ -3,6 +3,7 @@ import {context} from "sourcegraph/app/context";
 import {Button} from "sourcegraph/components";
 import {GitHubIcon} from "sourcegraph/components/Icons";
 import * as typography from "sourcegraph/components/styles/_typography.css";
+import {whitespace} from "sourcegraph/components/utils";
 import {Location} from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
@@ -19,6 +20,7 @@ interface Props {
 	className?: string;
 	tabIndex?: number;
 	pageName?: string;
+	img?: boolean;
 }
 
 type State = any;
@@ -30,6 +32,7 @@ export class GitHubAuthButton extends React.Component<Props, State> {
 		color: "blue",
 		outline: false,
 		block: false,
+		img: true,
 	};
 
 	render(): JSX.Element | null {
@@ -50,7 +53,8 @@ export class GitHubAuthButton extends React.Component<Props, State> {
 						onClick={() => {
 							EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow", {page_name: pageName});
 						}}>
-					<GitHubIcon className={size === "small" ? typography.f5 : typography.f4} />&nbsp; {children}
+					{this.props.img && <span style={{marginRight: whitespace[2]}}><GitHubIcon className={size === "small" ? typography.f5 : typography.f4}/></span>}
+					{children}
 				</Button>
 			</form>
 		);

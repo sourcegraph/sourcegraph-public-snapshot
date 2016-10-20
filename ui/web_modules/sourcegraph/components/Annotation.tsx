@@ -1,7 +1,6 @@
 import {style as gStyle} from "glamor";
 import * as React from "react";
 import {CoachMark, Panel} from "sourcegraph/components/index";
-import {whitespace} from "sourcegraph/components/utils";
 
 interface Props {
 	color?: "blue" | "purple" | "orange" | "green";
@@ -10,6 +9,7 @@ interface Props {
 	open: boolean;
 	containerStyle?: React.CSSProperties;
 	tooltipStyle?: React.CSSProperties;
+	annotationPosition?: "left" | "right";
 	active: boolean;
 }
 
@@ -21,6 +21,7 @@ export function Annotation ({
 	children,
 	containerStyle,
 	tooltipStyle,
+	annotationPosition = "right",
 }: Props): JSX.Element {
 
 	const sx = gStyle(Object.assign({},
@@ -28,13 +29,17 @@ export function Annotation ({
 		containerStyle,
 	));
 
+	let leftOffset = "22.5px";
+	if (annotationPosition === "left") {
+		leftOffset = (tooltipStyle && tooltipStyle["width"]) ? "-" + tooltipStyle["width"] : "-350px";
+	}
+
 	const tooltipSx = Object.assign({},
 		{
-			padding: whitespace[3],
 			position: "absolute",
 			top: 22.5,
-			left: 22.5,
-			maxWidth: "250px",
+			left: leftOffset,
+			maxWidth: 350,
 		},
 		tooltipStyle,
 	);

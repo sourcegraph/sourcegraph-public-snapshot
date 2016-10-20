@@ -38,6 +38,7 @@ export const solid: string;
 export const solid_normal: string;
 export const solid_disabled: string;
 export const solid_blue: string;
+export const solid_dark_blue: string;
 export const solid_purple: string;
 export const solid_green: string;
 export const solid_red: string;

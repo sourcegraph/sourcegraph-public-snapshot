@@ -75,6 +75,8 @@ function colorClass(color: string, outline: boolean): string {
 		return outline ? styles.outline_orange : styles.solid_orange;
 	case "white":
 		return outline ? "" : styles.solid_white;
+	case "darkBlue":
+		return outline ? styles.outline_blue : styles.solid_dark_blue;
 	default:
 		return outline ? styles.outline_normal : styles.solid_normal;
 	}

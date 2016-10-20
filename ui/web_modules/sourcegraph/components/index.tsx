@@ -1,5 +1,3 @@
-// tslint:disable: typedef ordered-imports
-
 export {Button} from "sourcegraph/components/Button";
 export {Input} from "sourcegraph/components/Input";
 export {Avatar} from "sourcegraph/components/Avatar";
@@ -40,3 +38,4 @@ export {OrgLogo} from "sourcegraph/components/OrgLogo";
 export {CoachMark} from "sourcegraph/components/CoachMark";
 export {Annotation} from "sourcegraph/components/Annotation";
 export {BGContainer} from "sourcegraph/components/BGContainer";
+export {TourOverlay} from "sourcegraph/components/TourOverlay";

@@ -7,7 +7,7 @@ import "sourcegraph/blob/BlobBackend";
 import { BlobStore } from "sourcegraph/blob/BlobStore";
 import { BlobTitle } from "sourcegraph/blob/BlobTitle";
 import { urlToBlob } from "sourcegraph/blob/routes";
-import {FlexContainer} from "sourcegraph/components";
+import {FlexContainer, TourOverlay} from "sourcegraph/components";
 import {ChromeExtensionToast} from "sourcegraph/components/ChromeExtensionToast";
 import {OnboardingModals} from "sourcegraph/components/OnboardingModals";
 import {colors} from "sourcegraph/components/utils/colors";
@@ -200,7 +200,7 @@ export class BlobMain extends Container<Props, State> {
 			rev = this.props.rev;
 		}
 
-		let url = urlToBlob(repo, rev, path);
+		let url = urlToBlob(repo, rev, path) + (this.props.location.search ? this.props.location.search : "");
 
 		const sel = e.editor.getSelection();
 		if (sel && (!sel.isEmpty() || sel.startLineNumber !== 1)) {
@@ -236,6 +236,7 @@ export class BlobMain extends Container<Props, State> {
 				<Helmet title={title} />
 				<ChromeExtensionToast location={this.props.location}/>
 				<OnboardingModals location={this.props.location}/>
+				{this.props.location.query["tour"] && <TourOverlay location={this.props.location}/>}
 				<BlobTitle
 					repo={this.props.repo}
 					path={this.props.path}
