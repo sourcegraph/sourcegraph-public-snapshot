@@ -68,7 +68,7 @@ export class Editor implements IDisposable {
 	constructor(
 		elem: HTMLElement
 	) {
-		HoverOperation.HOVER_TIME = 50;
+		HoverOperation.HOVER_TIME = 200;
 
 		// Register services for modes (languages) when new models are added.
 		const registerModeProviders = (mode: string) => {
