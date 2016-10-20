@@ -298,6 +298,9 @@ export function convertStringNode(node, annsByStartByte, offset, lineStart) {
 let popoverCache = {};
 let jumptodefcache = {};
 
+const HOVER_TIME = 200;
+let hoverTimeout;
+
 function addEventListeners(el, path, repoRevSpec, line) {
 	let activeTarget, popover;
 
@@ -335,10 +338,23 @@ function addEventListeners(el, path, repoRevSpec, line) {
 			activeTarget = t;
 
 			hidePopover();
-			showPopover(`<div><div class=${styles.popoverTitle}>Loading...</div></div>`, true);
+			hoverTimeout = setTimeout(() => {
+				// Only show "Loading..." if it has been loading for a while. If we
+				// show "Loading..." immediately, there will be a visible flash if
+				// the actual hover text loads quickly thereafter.
+				if (!popover) {
+					showPopover(`<div><div class=${styles.popoverTitle}>Loading...</div></div>`, true);
+				}
+			}, 3 * HOVER_TIME);
+			const hoverShowTime = Date.now() + HOVER_TIME;
 			fetchPopoverData(activeTarget.dataset.byteoffset, function(html) {
+				// Always wait at least HOVER_TIME before showing hover, to avoid
+				// it obscuring text when you move your mouse rapidly across a code file.
+				const hoverTimerRemaining = Math.max(0, hoverShowTime - Date.now());
 				hidePopover();
-				showPopover(html, false);
+				hoverTimeout = setTimeout(() => {
+					showPopover(html, false);
+				}, hoverTimerRemaining);
 			});
 		}
 	}
@@ -381,6 +397,9 @@ function addEventListeners(el, path, repoRevSpec, line) {
 	}
 
 	function hidePopover() {
+		if (hoverTimeout) {
+			clearTimeout(hoverTimeout);
+		}
 		if (popover) {
 			popover.remove();
 			popover = null;
