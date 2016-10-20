@@ -381,15 +381,17 @@ function addEventListeners(el, path, repoRevSpec, line) {
 			// bounding rectangle but hide as we haven't anchored it to a position yet.
 			popover.style.visibility = "hidden";
 
+			// Anchor it horizontally, prior to rendering to account for wrapping
+			// changes to vertical height if the popover is at the edge of the viewport.
+			const activeTargetBound = activeTarget.getBoundingClientRect();
+			popover.style.left = (activeTargetBound.left + window.scrollX) + "px";
+
 			// Attach the node to DOM so the bounding rectangle is generated.
 			document.body.appendChild(popover);
 
-			// Anchor the popover above the symbol.
+			// Anchor the popover vertically.
 			const popoverBound = popover.getBoundingClientRect();
-			const activeTargetBound = activeTarget.getBoundingClientRect();
-
 			popover.style.top = (activeTargetBound.top - (popoverBound.height + 5) + window.scrollY) + "px";
-			popover.style.left = (activeTargetBound.left + window.scrollX) + "px";
 
 			// Make it all visible to the user.
 			popover.style.visibility = "visible";
