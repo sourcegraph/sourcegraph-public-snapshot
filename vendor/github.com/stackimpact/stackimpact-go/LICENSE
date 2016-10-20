@@ -1,0 +1,74 @@
+Copyright (c) 2016 Breachsignal GmbH d.b.a. StackImpact
+
+
+Subject to the terms of this notice, StackImpact grants you a
+nonexclusive, nontransferable license, without the right to
+sublicense, to (a) install and execute one copy of these files on any
+number of workstations owned or controlled by you and (b) distribute
+verbatim copies of these files to third parties and (c) install and
+execute these files only in conjunction with the direct use of
+StackImpact software. As a condition to the foregoing grant,
+you must provide this notice along with each copy you distribute
+and you must not remove, alter, or obscure this notice. All other use,
+reproduction, modification, distribution, or other exploitation
+of these files is strictly prohibited, except as may be set forth in
+a separate written license agreement between you and StackImpact.
+The terms of any such license agreement will control over this
+notice. The license stated above will be automatically terminated and
+revoked if you exceed its scope or violate any of the terms of this
+notice.
+
+This License does not grant permission to use the trade names,
+trademarks, service marks, or product names of StackImpact, except as
+required for reasonable and customary use in describing the origin of
+this file and reproducing the content of this notice. You may not
+mark or brand this file with any trade name, trademarks, service
+marks, or product names other than the original brand (if any)
+provided by StackImpact.
+
+Unless otherwise expressly agreed by StackImpact in a separate written
+license agreement, these files are provided AS IS, WITHOUT WARRANTY OF
+ANY KIND, including without any implied warranties of MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE, or NON-INFRINGEMENT. As a
+condition to your use of these files, you are solely responsible for
+such use. StackImpact will have no liability to you for direct,
+indirect, consequential, incidental, special, or punitive damages or
+for lost profits or data.
+
+
+
+The Agent also uses code from the following open source
+projects under the following licenses:
+
+
+
+Golang
+======
+
+Copyright (c) 2012 The Go Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

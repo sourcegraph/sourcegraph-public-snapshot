@@ -652,6 +652,24 @@
 			"revisionTime": "2015-02-03T03:00:30-08:00"
 		},
 		{
+			"checksumSHA1": "9gUzRE6HEAfc0yWIXWHwEDVJCOg=",
+			"path": "github.com/stackimpact/stackimpact-go",
+			"revision": "4623d3a143e1e27955fafe5481ffdca42afe6f80",
+			"revisionTime": "2016-10-17T20:21:51Z"
+		},
+		{
+			"checksumSHA1": "D1nkjx9GhqtD85lxWCpIpxN05bQ=",
+			"path": "github.com/stackimpact/stackimpact-go/pprof/profile",
+			"revision": "4623d3a143e1e27955fafe5481ffdca42afe6f80",
+			"revisionTime": "2016-10-17T20:21:51Z"
+		},
+		{
+			"checksumSHA1": "EkUPuc5jrDoDcH3jZrLb5VcRgXA=",
+			"path": "github.com/stackimpact/stackimpact-go/pprof/trace",
+			"revision": "4623d3a143e1e27955fafe5481ffdca42afe6f80",
+			"revisionTime": "2016-10-17T20:21:51Z"
+		},
+		{
 			"checksumSHA1": "EXXAM9hs2jsOgED5aJBfAe5HWvI=",
 			"path": "github.com/temoto/robotstxt-go",
 			"revision": "b8a039be43ce65409fe54b4bc09f2ae8a3925a54",
