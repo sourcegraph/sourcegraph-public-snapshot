@@ -99,7 +99,7 @@ var FuncMap = htmpl.FuncMap{
 
 	"dangerouslySetHTML": func(s string) htmpl.HTML { return htmpl.HTML(s) },
 
-	"numberedNoun": func(count int32, word string) string {
+	"numberedNoun": func(count int, word string) string {
 		if count == 1 {
 			return word
 		}

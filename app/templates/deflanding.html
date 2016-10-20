@@ -39,7 +39,7 @@
 
 			{{range .}}
 				<a href="{{.SourceURL}}" class="plainlink">
-					<p><pre class="snippet rounded">{{.}}</pre></p>
+					<p><pre class="snippet rounded">{{.Code}}</pre></p>
 				</a>
 			{{end}}
 		</div>
@@ -47,16 +47,17 @@
 
 	<div class="my4" id="references">
 		<h2>
-			<span class="code">{{.ShortDefName}}</span> is referenced in {{.TotalRepoReferences}} {{numberedNoun .TotalRepoReferences "repository"}}
+			<span class="code">{{.ShortDefName}}</span> is referenced in {{.RefLocs.TotalSources}} {{numberedNoun .RefLocs.TotalSources "repository"}}
 		</h2>
 
-		{{range $repo := .RefLocs.RepoRefs}}
-			<a href="{{urlToRepo $repo.Repo}}">
-				<strong>{{$repo.Repo}}</strong>
+		{{range $sourceRefs := .RefLocs.SourceRefs}}
+			<a href="{{urlToRepo $sourceRefs.Source}}">
+				<strong>{{$sourceRefs.Source}}</strong>
 			</a>
 			<ul>
-				{{range $file := $repo.Files}}
-				<li>{{$file.Count}} {{numberedNoun $file.Count "reference"}} in <a class="wrap" href="{{urlToBlob $repo.Repo $file.Path 0}}">{{$file.Path}}</a></li>
+				{{range $file := $sourceRefs.FileRefs}}
+				{{$pos := index $file.Positions 0}}
+				<li>{{len $file.Positions}} {{numberedNoun (len $file.Positions) "reference"}} in <a class="wrap" href="{{urlToBlob $sourceRefs.Source $file.File $pos.Start.Line}}">{{$file.File}}</a></li>
 				{{end}}
 			</ul>
 		{{end}}

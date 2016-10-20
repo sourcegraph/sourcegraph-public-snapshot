@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph-go/pkg/lspext"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
@@ -100,6 +101,14 @@ import (
 // you can rest assured these are all that can be in the DB.
 var uriSchemeID = map[string]int16{
 	"git": 1, // 0 reserved for detecting zero-value errors.
+}
+
+var uriSchemeIDLookup = make(map[int16]string, len(uriSchemeID))
+
+func init() {
+	for scheme, id := range uriSchemeID {
+		uriSchemeIDLookup[id] = scheme
+	}
 }
 
 // dbGlobalRefSource represents the 'global_ref_source' table.
@@ -303,6 +312,125 @@ func (g *globalRefs) RefreshIndex(ctx context.Context, repoID int32, commit stri
 		return errors.New(strings.Join(errs, "\n"))
 	}
 	return nil
+}
+
+func (g *globalRefs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOptions) (*sourcegraph.RefLocations, error) {
+	refLocations := &sourcegraph.RefLocations{}
+
+	// Note: It's impossible to run these queries in a transaction because we
+	// are running two queries: https://github.com/lib/pq/issues/81
+	var err error
+	refLocations.TotalSources, err = g.queryTotalReposReferencing(globalGraphDBH.Db, op)
+	if err != nil {
+		return nil, errors.Wrap(err, "queryTotalReposReferencing")
+	}
+	if refLocations.TotalSources == 0 {
+		// In the case of no references, abort early to avoid doing more work
+		// than we have to.
+		return refLocations, nil
+	}
+
+	refLocations.SourceRefs, err = g.queryRefsBySource(globalGraphDBH.Db, op)
+	if err != nil {
+		return nil, errors.Wrap(err, "queryRefsBySource")
+	}
+	return refLocations, nil
+}
+
+func (g *globalRefs) queryTotalReposReferencing(db *sql.DB, op sourcegraph.RefLocationsOptions) (int, error) {
+	row := db.QueryRow(`SELECT count(source)
+		FROM global_ref_by_source
+		WHERE def_source IN (SELECT id FROM global_ref_source WHERE source=$1)
+		AND def_name IN (SELECT id FROM global_ref_name WHERE name=$2)
+		AND def_container IN (SELECT id FROM global_ref_container WHERE container=$3);
+	`, op.Source, op.Name, op.ContainerName)
+	var totalRepos int
+	return totalRepos, row.Scan(&totalRepos)
+}
+
+func (g *globalRefs) queryRefsBySource(db *sql.DB, op sourcegraph.RefLocationsOptions) ([]*sourcegraph.SourceRef, error) {
+	rows, err := db.Query(`SELECT scheme, global_ref_source.source, global_ref_version.version, files, refs, score
+		FROM global_ref_by_source
+		JOIN global_ref_source ON (global_ref_source.id = global_ref_by_source.source)
+		JOIN global_ref_version ON (global_ref_version.id = global_ref_by_source.version)
+		WHERE def_source IN (SELECT id FROM global_ref_source WHERE source=$1)
+		AND def_name IN (SELECT id FROM global_ref_name WHERE name=$2)
+		AND def_container IN (SELECT id FROM global_ref_container WHERE container=$3)
+		ORDER BY refs DESC, score DESC LIMIT $4;
+	`, op.Source, op.Name, op.ContainerName, op.Sources)
+	if err != nil {
+		return nil, errors.Wrap(err, "Query")
+	}
+	defer rows.Close()
+	var refsBySource []*sourcegraph.SourceRef
+	for rows.Next() {
+		var (
+			scheme, score   int16
+			source, version string
+			files, refs     int
+		)
+		if err := rows.Scan(&scheme, &source, &version, &files, &refs, &score); err != nil {
+			return nil, errors.Wrap(err, "Scan")
+		}
+		fileRefs, err := g.queryRefsByFile(db, source, op)
+		if err != nil {
+			return nil, errors.Wrap(err, "queryRefsByFile")
+		}
+		refsBySource = append(refsBySource, &sourcegraph.SourceRef{
+			Scheme:   uriSchemeIDLookup[scheme],
+			Source:   source,
+			Version:  version,
+			Files:    files,
+			Refs:     refs,
+			Score:    score,
+			FileRefs: fileRefs,
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "rows error")
+	}
+	return refsBySource, nil
+}
+
+func (g *globalRefs) queryRefsByFile(db *sql.DB, source string, op sourcegraph.RefLocationsOptions) ([]*sourcegraph.FileRef, error) {
+	rows, err := db.Query(`SELECT scheme, global_ref_source.source, global_ref_version.version, global_ref_file.file, positions, score
+		FROM global_ref_by_file
+		JOIN global_ref_source ON (global_ref_source.id = global_ref_by_file.source)
+		JOIN global_ref_version ON (global_ref_version.id = global_ref_by_file.version)
+		JOIN global_ref_file ON (global_ref_file.id = global_ref_by_file.file)
+		WHERE def_source IN (SELECT id FROM global_ref_source WHERE source=$1)
+		AND def_name IN (SELECT id FROM global_ref_name WHERE name=$2)
+		AND def_container IN (SELECT id FROM global_ref_container WHERE container=$3)
+		AND global_ref_source.source = $4
+		ORDER BY score DESC, global_ref_by_file.source LIMIT $5;
+	`, op.Source, op.Name, op.ContainerName, source, op.Files)
+	if err != nil {
+		return nil, errors.Wrap(err, "Query")
+	}
+	defer rows.Close()
+	var refsByFile []*sourcegraph.FileRef
+	for rows.Next() {
+		var (
+			scheme, score         int16
+			source, version, file string
+			positions             = make(pq.Int64Array, op.Files)
+		)
+		if err := rows.Scan(&scheme, &source, &version, &file, &positions, &score); err != nil {
+			return nil, err
+		}
+		refsByFile = append(refsByFile, &sourcegraph.FileRef{
+			Scheme:    uriSchemeIDLookup[scheme],
+			Source:    source,
+			Version:   version,
+			File:      file,
+			Positions: deinterlacePositions(positions),
+			Score:     score,
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "rows error")
+	}
+	return refsByFile, nil
 }
 
 func (g *globalRefs) refreshIndexForLanguage(ctx context.Context, language, repoURI, commit string) error {

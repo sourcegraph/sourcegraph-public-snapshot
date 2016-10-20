@@ -3,6 +3,8 @@ package sourcegraph
 import (
 	"time"
 
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -851,14 +853,14 @@ type DeprecatedRefLocationsList struct {
 }
 
 func (d *DeprecatedRefLocationsList) Convert() *RefLocations {
-	repoRefs := make([]*RepoRef, len(d.RepoRefs))
+	sourceRefs := make([]*SourceRef, len(d.RepoRefs))
 	for i, r := range d.RepoRefs {
-		repoRefs[i] = r.Convert()
+		sourceRefs[i] = r.Convert()
 	}
 	return &RefLocations{
-		RepoRefs:       repoRefs,
+		SourceRefs:     sourceRefs,
 		StreamResponse: d.StreamResponse,
-		TotalRepos:     int(d.TotalRepos),
+		TotalSources:   int(d.TotalRepos),
 	}
 }
 
@@ -874,22 +876,18 @@ type DeprecatedDefRepoRef struct {
 	Files []*DeprecatedDefFileRef `json:"Files,omitempty"`
 }
 
-func (d *DeprecatedDefRepoRef) Convert() *RepoRef {
+func (d *DeprecatedDefRepoRef) Convert() *SourceRef {
 	files := make([]*FileRef, len(d.Files))
 	for i, f := range d.Files {
 		files[i] = f.Convert()
 	}
-	return &RepoRef{Repo: d.Repo, Count: int(d.Count), Score: int16(d.Score), Files: files}
+	return &SourceRef{Source: d.Repo, Refs: int(d.Count), Score: int16(d.Score), FileRefs: files}
 }
 
 // DeprecatedFilePosition represents a line:column in a file.
 type DeprecatedFilePosition struct {
 	Line   int32 `json:"Line,omitempty"`
 	Column int32 `json:"Column,omitempty"`
-}
-
-func (d *DeprecatedFilePosition) Convert() FilePosition {
-	return FilePosition{Line: int(d.Line), Character: int(d.Column)}
 }
 
 // DeprecatedDefFileRef identifies a file that references a def.
@@ -905,48 +903,82 @@ type DeprecatedDefFileRef struct {
 }
 
 func (d *DeprecatedDefFileRef) Convert() *FileRef {
-	positions := make([]FilePosition, len(d.Positions))
-	for i, p := range d.Positions {
-		positions[i] = p.Convert()
-	}
-	return &FileRef{Path: d.Path, Count: int(d.Count), Positions: positions, Score: int16(d.Score)}
+	// Use d.Count since d.Positions is not actually populated today. This at
+	// least gives us valid "N times in file X" counts.
+	positions := make([]lsp.Range, d.Count)
+	return &FileRef{File: d.Path, Positions: positions, Score: int16(d.Score)}
+}
+
+// RefLocationsOptions specifies options for querying locations that reference
+// a definition.
+type RefLocationsOptions struct {
+	// Sources is the maximum number of source (e.g. repo) references to return.
+	Sources int
+
+	// Files is the maximum number of file references per repository to return.
+	Files int
+
+	// Source is the source of the definition whose references are being
+	// queried. e.g. the git repository URI ("github.com/gorilla/mux").
+	Source string
+
+	// Name and ContainerName of the definition whose references are being
+	// queried.
+	Name, ContainerName string
 }
 
 // RefLocations lists the repos and files that reference a def.
 type RefLocations struct {
-	// RepoRefs holds the repos and files referencing the def.
-	RepoRefs []*RepoRef
+	// SourceRefs holds the sources and files referencing the def.
+	SourceRefs []*SourceRef
 	// StreamResponse specifies if more results are available.
 	StreamResponse
-	// TotalRepos is the total number of repos which reference the def.
-	TotalRepos int
+	// TotalSources is the total number of repos which reference the def.
+	TotalSources int
 }
 
-// RepoRef identifies a repo and its files that reference a def.
-type RepoRef struct {
-	// Repo is the URI of the repo that references the def.
-	Repo string
-	// Count is the number of references to the def in the repo.
-	Count int
+// SourceRef identifies a source (e.g. a repo) and its files that reference a
+// def.
+type SourceRef struct {
+	// Scheme is the URI scheme for the source, e.g. "git"
+	Scheme string
+
+	// Source is the source that references the def (e.g. a repo URI).
+	Source string
+
+	// Version is the version of the source that references the def.
+	Version string
+
+	// Files is the number of files in the repository that reference the def.
+	Files int
+
+	// Refs is the total number of references to the def in the source.
+	Refs int
+
 	// Score is the importance score of this repo for the def.
 	Score int16
-	// Files is the list of files in this repo referencing the def.
-	Files []*FileRef
-}
 
-// FilePosition represents a line:column in a file.
-type FilePosition struct {
-	Line, Character int
+	// FileRefs is the list of files in this repo referencing the def.
+	FileRefs []*FileRef
 }
 
 // FileRef identifies a file that references a def.
 type FileRef struct {
-	// Path is the path of this file.
-	Path string
-	// Count is the number of references to the def in this file.
-	Count int
+	// Scheme is the URI scheme for the source, e.g. "git"
+	Scheme string
+
+	// Source is the source that references the def (e.g. a repo URI).
+	Source string
+
+	// Version is the version of the source that references the def.
+	Version string
+
+	// File is the filepath that references the def.
+	File string
+
 	// Positions is the locations in the file that the def is referenced.
-	Positions []FilePosition
+	Positions []lsp.Range
+
 	// Score is the importance score of this file for the def.
 	Score int16
 }

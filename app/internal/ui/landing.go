@@ -3,11 +3,15 @@ package ui
 import (
 	"fmt"
 	"net/http"
+	"net/url"
+	"path"
 	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/pkg/errors"
 	"github.com/russross/blackfriday"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 
 	htmpl "html/template"
 
@@ -20,7 +24,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
 
 type defDescr struct {
@@ -156,26 +162,203 @@ type snippet struct {
 
 type defLandingData struct {
 	tmpl.Common
-	Meta                meta
-	Description         *htmlutil.HTML
-	RefSnippets         []*snippet
-	ViewDefURL          string
-	DefName             string // e.g. "func NewRouter"
-	ShortDefName        string // e.g. "NewRouter"
-	DefFileURL          string
-	DefFileName         string
-	TotalRepoReferences int32
-	RefLocs             *sourcegraph.RefLocations
-	TruncatedRefLocs    bool
+	Meta             meta
+	Description      *htmlutil.HTML
+	RefSnippets      []*snippet
+	ViewDefURL       string
+	DefName          string // e.g. "func NewRouter"
+	ShortDefName     string // e.g. "NewRouter"
+	DefFileURL       string
+	DefFileName      string
+	RefLocs          *sourcegraph.RefLocations
+	TruncatedRefLocs bool
 }
 
 func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
-	legacyDefLandingData, err := queryLegacyDefLandingData(r)
+	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "GetRepoAndRev")
+	}
+	defSpec := routevar.ToDefAtRev(mux.Vars(r))
+	language := "go" // TODO(slimsag): long term, add to route
+
+	// Lookup the definition based on the legacy srclib defkey in the page URL.
+	rootPath := "git://" + defSpec.Repo + "?" + repoRev.CommitID
+	var symbols []lsp.SymbolInformation
+	err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
+		// TODO(slimsag): before merge, performance for golang/go here is not
+		// good. Allow specifying file URIs as a query filter. Sucks a bit that
+		// textDocument/definition won't give us the Name/ContainerName that we
+		// need!
+		Query: "", // all symbols
+	}, &symbols)
+
+	// Find the matching symbol.
+	var symbol *lsp.SymbolInformation
+	for _, sym := range symbols {
+		withoutFile, err := url.Parse(sym.Location.URI)
+		if err != nil {
+			return errors.Wrap(err, "parsing symbol location URI")
+		}
+		withoutFile.Fragment = ""
+		if withoutFile.String() != "git://"+defSpec.Repo+"?"+repoRev.CommitID {
+			continue
+		}
+		var (
+			defContainerName string
+			split            = strings.Split(defSpec.Path, "/")
+			defName          = split[0]
+		)
+		if len(split) == 2 {
+			defContainerName, defName = split[0], split[1]
+		}
+		// Note: We must check defContainerName is empty because xlang sets the
+		// container name to the package name if there is none, in contrast
+		// srclib would leave it empty. This is a sort of fuzzy matching, but
+		// always works.
+		containersEqual := defContainerName == "" || (sym.ContainerName == defContainerName)
+		if !containersEqual || sym.Name != defName {
+			continue
+		}
+		symbol = &sym
+		break
+	}
+	if symbol == nil {
+		return fmt.Errorf("could not finding matching symbol info")
 	}
 
-	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, legacyDefLandingData)
+	// Create links to the definition.
+	symURI, err := url.Parse(symbol.Location.URI)
+	if err != nil {
+		return errors.Wrap(err, "parsing symbol location URI")
+	}
+	defFileURL := "/" + symURI.Host + symURI.Path + "/-/blob/" + path.Clean(symURI.Fragment)
+	defFileName := symURI.Host + path.Join(symURI.Path, symURI.Fragment)
+	viewDefURL := fmt.Sprintf("%s#L%d", defFileURL, symbol.Location.Range.Start.Line+1)
+
+	// Create metadata titles.
+	shortTitle := strings.Join([]string{symbol.ContainerName, symbol.Name}, ".")
+	title := repoPageTitle(trimRepo(symURI.Host+symURI.Path), shortTitle)
+
+	// Determine the definition title.
+	var hover lsp.Hover
+	err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "textDocument/hover", lsp.TextDocumentPositionParams{
+		TextDocument: lsp.TextDocumentIdentifier{URI: symbol.Location.URI},
+		Position: lsp.Position{
+			Line:      symbol.Location.Range.Start.Line,
+			Character: symbol.Location.Range.Start.Character,
+		},
+	}, &hover)
+	hoverTitle := hover.Contents[0].Value
+
+	// Determine canonical URL and whether the symbol shold be indexed.
+	canonicalURL := canonicalRepoURL(
+		conf.AppURL,
+		getRouteName(r),
+		mux.Vars(r),
+		r.URL.Query(),
+		repo.DefaultBranch,
+		repoRev.CommitID,
+	)
+	canonRev := isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
+	shouldIndexSymbol := len(symbol.Name) >= 3 && (symbol.Kind == lsp.SKClass || symbol.Kind == lsp.SKConstructor || symbol.Kind == lsp.SKFunction || symbol.Kind == lsp.SKInterface || symbol.Kind == lsp.SKMethod)
+
+	// Request up to 5 files for up to 3 sources (e.g. repos) that reference
+	// the definition.
+	refLocs, err := backend.Defs.RefLocations(r.Context(), sourcegraph.RefLocationsOptions{
+		Sources:       3,
+		Files:         5,
+		Source:        symURI.Host + symURI.Path,
+		Name:          symbol.Name,
+		ContainerName: symbol.ContainerName,
+	})
+	if err != nil {
+		return errors.Wrap(err, "Defs.RefLocations")
+	}
+
+	var (
+		maxUsageExamples = 3
+		exampleIndex     = 0
+		refSnippets      []*snippet
+	)
+	for _, sourceRef := range refLocs.SourceRefs {
+		if exampleIndex > maxUsageExamples {
+			break
+		}
+		for _, ref := range sourceRef.FileRefs {
+			exampleIndex++
+			if exampleIndex > maxUsageExamples {
+				break
+			}
+			refRepo, err := backend.Repos.Resolve(r.Context(), &sourcegraph.RepoResolveOp{Path: ref.Source})
+			if err != nil {
+				return errors.Wrap(err, "Repos.Resolve")
+			}
+			refEntry, err := backend.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{
+				Entry: sourcegraph.TreeEntrySpec{
+					// TODO: does ref.Version need resolving?
+					RepoRev: sourcegraph.RepoRevSpec{Repo: refRepo.Repo, CommitID: ref.Version},
+					Path:    ref.File,
+				},
+				Opt: &sourcegraph.RepoTreeGetOptions{
+					ContentsAsString: true,
+					GetFileOptions: sourcegraph.GetFileOptions{
+						FileRange: sourcegraph.FileRange{
+							// Note: we can expand the lines without bounds
+							// checking because RepoTree.Get is smart.
+							StartLine: int64(ref.Positions[0].Start.Line+1) - 2,
+							EndLine:   int64(ref.Positions[0].End.Line+1) + 2,
+						},
+						ExpandContextLines: 2,
+					},
+					NoSrclibAnns: true,
+				},
+			})
+			if err != nil {
+				return errors.Wrap(err, "RepoTree.Get")
+			}
+			refSnippets = append(refSnippets, &snippet{
+				Code:      htmpl.HTML(refEntry.ContentsString),
+				SourceURL: approuter.Rel.URLToBlob(ref.Source, ref.Version, ref.File, ref.Positions[0].Start.Line+1).String(),
+			})
+		}
+	}
+
+	data := &defLandingData{
+		Meta: meta{
+			SEO:        true,
+			Title:      title,
+			ShortTitle: shortTitle,
+
+			// TODO(slimsag): Gather additional description information from
+			// hover once docs are available.
+			Description: "Go usage examples and docs for " + hoverTitle,
+
+			// Don't noindex pages with a canonical URL. See
+			// https://www.seroundtable.com/archives/020151.html.
+			CanonicalURL: canonicalURL,
+			Index:        allowRobots(repo) && shouldIndexSymbol && canonRev,
+		},
+		// TODO(slimsag): before merge, get descriptions from LSP hover
+		//Description: htmlutil.Sanitize("description"),
+		RefSnippets:      refSnippets,
+		ViewDefURL:       viewDefURL,
+		DefName:          hoverTitle,
+		ShortDefName:     symbol.Name,
+		DefFileURL:       defFileURL,
+		DefFileName:      defFileName,
+		RefLocs:          refLocs,
+		TruncatedRefLocs: refLocs.TotalSources > len(refLocs.SourceRefs),
+	}
+
+	if data == nil {
+		// Fallback to legacy / srclib data.
+		data, err = queryLegacyDefLandingData(r)
+		if err != nil {
+			return err
+		}
+	}
+	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, data)
 }
 
 func queryLegacyDefLandingData(r *http.Request) (*defLandingData, error) {
@@ -249,7 +432,7 @@ func queryLegacyDefLandingData(r *http.Request) (*defLandingData, error) {
 				},
 				ExpandContextLines: 2,
 			},
-			NoSrclibAnns: false,
+			NoSrclibAnns: true,
 		}
 		refRepo, err := backend.Repos.Resolve(r.Context(), &sourcegraph.RepoResolveOp{Path: ref.Repo})
 		if err != nil {
@@ -285,16 +468,15 @@ func queryLegacyDefLandingData(r *http.Request) (*defLandingData, error) {
 	m.Index = allowRobots(repo) && shouldIndexDef(def) && canonRev
 
 	return &defLandingData{
-		Meta:                *m,
-		Description:         def.DocHTML,
-		RefSnippets:         refSnippets,
-		ViewDefURL:          viewDefURL,
-		DefName:             def.FmtStrings.DefKeyword + " " + def.FmtStrings.Name.ScopeQualified,
-		ShortDefName:        def.Name,
-		DefFileURL:          defFileURL,
-		DefFileName:         repo.URI + "/" + def.Def.File,
-		TotalRepoReferences: refLocs.TotalRepos,
-		RefLocs:             refLocs.Convert(),
-		TruncatedRefLocs:    refLocs.TotalRepos > int32(len(refLocs.RepoRefs)),
+		Meta:             *m,
+		Description:      def.DocHTML,
+		RefSnippets:      refSnippets,
+		ViewDefURL:       viewDefURL,
+		DefName:          def.FmtStrings.DefKeyword + " " + def.FmtStrings.Name.ScopeQualified,
+		ShortDefName:     def.Name,
+		DefFileURL:       defFileURL,
+		DefFileName:      repo.URI + "/" + def.Def.File,
+		RefLocs:          refLocs.Convert(),
+		TruncatedRefLocs: refLocs.TotalRepos > int32(len(refLocs.RepoRefs)),
 	}, nil
 }
