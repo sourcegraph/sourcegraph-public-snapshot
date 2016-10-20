@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
-func (h Handler) handleReferences(ctx context.Context, params lsp.ReferenceParams) ([]lsp.Location, error) {
+func (h *Handler) handleReferences(ctx context.Context, params lsp.ReferenceParams) ([]lsp.Location, error) {
 	// Filter for interesting files.
 	var filter = func(info os.FileInfo) bool {
 		ext := filepath.Ext(params.TextDocument.URI)

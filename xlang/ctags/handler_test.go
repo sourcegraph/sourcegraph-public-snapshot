@@ -23,12 +23,12 @@ var defLoc = lsp.Location{
 	},
 }
 
-func setupHandler() (Handler, context.Context) {
+func setupHandler() (*Handler, context.Context) {
 	ctx := context.Background()
 	fs := ctxvfs.Map(map[string][]byte{"hello.rb": rubyFile})
 	h := Handler{}
 	h.fs = fs
-	return h, ctx
+	return &h, ctx
 }
 
 func TestSymbols(t *testing.T) {
@@ -84,7 +84,7 @@ func TestDefinition(t *testing.T) {
 	}
 }
 
-func defAtPoint(t *testing.T, col int, h Handler, ctx context.Context) []lsp.Location {
+func defAtPoint(t *testing.T, col int, h *Handler, ctx context.Context) []lsp.Location {
 	params := lsp.TextDocumentPositionParams{
 		Position: lsp.Position{Line: 4, Character: col},
 		TextDocument: lsp.TextDocumentIdentifier{
