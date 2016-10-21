@@ -2,14 +2,18 @@ import React from "react";
 
 export class EventLogger {
     constructor() {
-        chrome.runtime.sendMessage(null, {type: "getIdentity"}, {}, (identity) => {
-            if (identity.userId) {
-                chrome.runtime.sendMessage({ type: "setTrackerUserId", payload: identity.userId });
-            }
-            if (identity.deviceId) {
-                chrome.runtime.sendMessage({ type: "setTrackerDeviceId", payload: identity.deviceId });
-            }
-        });
+        if (process.env.NODE_ENV === "test") return;
+
+        if (global.window && global.window.chrome && chrome) {
+            chrome.runtime.sendMessage(null, {type: "getIdentity"}, {}, (identity) => {
+                if (identity.userId) {
+                    chrome.runtime.sendMessage({ type: "setTrackerUserId", payload: identity.userId });
+                }
+                if (identity.deviceId) {
+                    chrome.runtime.sendMessage({ type: "setTrackerDeviceId", payload: identity.deviceId });
+                }
+            });
+        }
     }
 
     updatePropsForUser(identity) {
