@@ -188,7 +188,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	migrated, err := backend.Defs.HasMigrated(r.Context(), repo.URI)
 	if err != nil {
 		// Just log, so we fallback to legacy.
-		log15.Crit("Defs.HasMigrated", err)
+		log15.Crit("Defs.HasMigrated", "error", err)
 	}
 
 	var data *defLandingData
