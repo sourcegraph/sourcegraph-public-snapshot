@@ -17,7 +17,10 @@ var (
 )
 
 func FetchGitHubToken(ctx context.Context, uid string) (*sourcegraph.ExternalToken, error) {
-	ts := oauth2.ReuseTokenSource(nil, &gitHubTokenSource{uid})
+	ts := oauth2.ReuseTokenSource(nil, &auth0TokenSource{
+		connection: "github",
+		uid:        uid,
+	})
 
 	token, err := ts.Token()
 	if err != nil {
@@ -47,12 +50,19 @@ func getGitHubScopes(ctx context.Context, ts oauth2.TokenSource) ([]string, erro
 	return strings.Split(resp.Header.Get("X-OAuth-Scopes"), ", "), nil
 }
 
-type gitHubTokenSource struct {
-	uid string
+// auth0TokenSource fetches an external token (e.g. for GitHub) for the given user from Auth0.
+type auth0TokenSource struct {
+	ctx        context.Context // If nil, context.Background() is used.
+	connection string
+	uid        string
 }
 
-func (ts *gitHubTokenSource) Token() (*oauth2.Token, error) {
-	resp, err := oauth2.NewClient(oauth2.NoContext, auth0ManagementTokenSource).Get("https://" + Auth0Domain + "/api/v2/users/" + ts.uid)
+func (ts *auth0TokenSource) Token() (*oauth2.Token, error) {
+	ctx := ts.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Get("https://" + Auth0Domain + "/api/v2/users/" + ts.uid)
 	if err != nil {
 		return nil, err
 	}
@@ -60,8 +70,9 @@ func (ts *gitHubTokenSource) Token() (*oauth2.Token, error) {
 
 	var payload struct {
 		Identities []struct {
-			Connection  string `json:"connection"`
-			AccessToken string `json:"access_token"`
+			Connection   string `json:"connection"`
+			AccessToken  string `json:"access_token"`
+			RefreshToken string `json:"refresh_token"`
 		} `json:"identities"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
@@ -69,8 +80,12 @@ func (ts *gitHubTokenSource) Token() (*oauth2.Token, error) {
 	}
 
 	for _, identity := range payload.Identities {
-		if identity.Connection == "github" {
-			return &oauth2.Token{TokenType: "token", AccessToken: identity.AccessToken}, nil
+		if identity.Connection == ts.connection {
+			return &oauth2.Token{
+				TokenType:    "token",
+				AccessToken:  identity.AccessToken,
+				RefreshToken: identity.RefreshToken,
+			}, nil
 		}
 	}
 
