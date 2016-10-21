@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"golang.org/x/oauth2"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 
@@ -25,7 +24,7 @@ func FetchGitHubToken(ctx context.Context, uid string) (*sourcegraph.ExternalTok
 		return nil, err
 	}
 
-	scopes, err := getScopes(ctx, ts)
+	scopes, err := getGitHubScopes(ctx, ts)
 	if err != nil {
 		return nil, err
 	}
@@ -38,11 +37,7 @@ func FetchGitHubToken(ctx context.Context, uid string) (*sourcegraph.ExternalTok
 	}, nil
 }
 
-func GetScopes(ctx context.Context, uid string) ([]string, error) {
-	return getScopes(ctx, oauth2.ReuseTokenSource(nil, &gitHubTokenSource{uid}))
-}
-
-func getScopes(ctx context.Context, ts oauth2.TokenSource) ([]string, error) {
+func getGitHubScopes(ctx context.Context, ts oauth2.TokenSource) ([]string, error) {
 	resp, err := oauth2.NewClient(ctx, ts).Get("https://api.github.com/rate_limit")
 	if err != nil {
 		return nil, err
