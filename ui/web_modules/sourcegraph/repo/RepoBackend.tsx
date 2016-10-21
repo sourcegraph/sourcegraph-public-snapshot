@@ -1,13 +1,13 @@
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as lsp from "sourcegraph/editor/lsp";
-import {updateRepoCloning} from "sourcegraph/repo/cloning";
+import { updateRepoCloning } from "sourcegraph/repo/cloning";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
-import {RepoStore} from "sourcegraph/repo/RepoStore";
-import {sortBranches, sortTags} from "sourcegraph/repo/vcs";
+import { RepoStore } from "sourcegraph/repo/RepoStore";
+import { sortBranches, sortTags } from "sourcegraph/repo/vcs";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
-import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
-import {checkStatus, defaultFetch} from "sourcegraph/util/xhr";
+import { EventLogger } from "sourcegraph/util/EventLogger";
+import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
+import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
 export const OriginGitHub = 0; // Origin.ServiceType enum value for GitHub origin
 
@@ -23,7 +23,7 @@ export const RepoBackend = {
 				RepoBackend.fetch(url)
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
+					.catch((err) => ({ Error: err }))
 					.then((data) => {
 						Dispatcher.Stores.dispatch(new RepoActions.ReposFetched(action.querystring, data, action.isUserRepos || false));
 					});
@@ -37,7 +37,7 @@ export const RepoBackend = {
 				RepoBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/commit`)
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
+					.catch((err) => ({ Error: err }))
 					.then((data) => {
 						Dispatcher.Stores.dispatch(new RepoActions.FetchedCommit(action.repo, action.rev, data));
 					});
@@ -51,7 +51,7 @@ export const RepoBackend = {
 				RepoBackend.fetch(`/.api/repos/${action.repo}`)
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
+					.catch((err) => ({ Error: err }))
 					.then((data) => {
 						Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data));
 					});
@@ -65,7 +65,7 @@ export const RepoBackend = {
 				RepoBackend.fetch(`/.api/repos/${action.repo}/-/resolve?Remote=true`)
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
+					.catch((err) => ({ Error: err }))
 					.then((data) => {
 						if (data.IncludedRepo) {
 							// Optimistically included by httpapi.serveRepoResolve.
@@ -85,7 +85,7 @@ export const RepoBackend = {
 					.then(updateRepoCloning(action.repo))
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
+					.catch((err) => ({ Error: err }))
 					.then((data) => {
 						Dispatcher.Stores.dispatch(new RepoActions.ResolvedRev(action.repo, action.rev, data));
 					});
@@ -97,11 +97,11 @@ export const RepoBackend = {
 			let body;
 			if (action.remoteRepo.GitHubID) {
 				body = {
-					Op: {Origin: {ID: action.remoteRepo.GitHubID.toString(), Service: OriginGitHub}},
+					Op: { Origin: { ID: action.remoteRepo.GitHubID.toString(), Service: OriginGitHub } },
 				};
 			} else if (action.remoteRepo.Origin) {
 				body = {
-					Op: {Origin: action.remoteRepo.Origin},
+					Op: { Origin: action.remoteRepo.Origin },
 				};
 			} else {
 				// Non-GitHub repositories.
@@ -121,21 +121,21 @@ export const RepoBackend = {
 				method: "POST",
 				body: JSON.stringify(body),
 			})
-			.then(checkStatus)
-			.then((resp) => resp.json())
-			.catch((err) => ({Error: err}))
-			.then((data) => {
-				Dispatcher.Stores.dispatch(new RepoActions.RepoCreated(action.repo, data));
-				if (!data.Error) {
-					const eventProps = {language: action.remoteRepo.Language, private: Boolean(action.remoteRepo.Private)};
-					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_SUCCESS, "AddRepo", eventProps);
-					EventLogger.logIntercomEvent("add-repo", eventProps);
-					if (action.refreshVCS) {
-						RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, {method: "POST"})
-							.then(checkStatus);
+				.then(checkStatus)
+				.then((resp) => resp.json())
+				.catch((err) => ({ Error: err }))
+				.then((data) => {
+					Dispatcher.Stores.dispatch(new RepoActions.RepoCreated(action.repo, data));
+					if (!data.Error) {
+						const eventProps = { language: action.remoteRepo.Language, private: Boolean(action.remoteRepo.Private) };
+						EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_SUCCESS, "AddRepo", eventProps);
+						EventLogger.logIntercomEvent("add-repo", eventProps);
+						if (action.refreshVCS) {
+							RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, { method: "POST" })
+								.then(checkStatus);
+						}
 					}
-				}
-			});
+				});
 		}
 
 		if (payload instanceof RepoActions.WantBranches) {
@@ -173,14 +173,14 @@ export const RepoBackend = {
 				RepoBackend.fetch(`/.api/repos/${action.repo}@${action.commitID}/-/inventory`)
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
+					.catch((err) => ({ Error: err }))
 					.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedInventory(action.repo, action.commitID, data)));
 			}
 		}
 
 		if (payload instanceof RepoActions.RefreshVCS) {
 			const action = payload;
-			RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, {method: "POST"})
+			RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, { method: "POST" })
 				.then(checkStatus);
 		}
 
