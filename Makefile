@@ -68,8 +68,8 @@ dist: dist-dep app-dep
 	${GOBIN}/sgtool -v package $(PACKAGEFLAGS)
 
 generate:
-# Ignore app/assets because its output is not checked into Git.
-	go list ./... | grep -v /vendor/ | grep -v app/assets | xargs go generate
+	# Ignore app/assets because its output is not checked into Git.
+	go list ./... | grep -v /vendor/ | grep -v app/assets | grep -v sourcegraph.com/sourcegraph/sourcegraph/pkg/google.golang.org/api/source/v1 | xargs go generate
 	cd ui && npm run generate
 
 db-reset: src
