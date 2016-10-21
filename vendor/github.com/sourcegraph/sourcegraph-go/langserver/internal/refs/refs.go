@@ -17,7 +17,10 @@ type Def struct {
 	// ImportPath is the import path at which the definition is located.
 	ImportPath string
 
-	// Path is the path of the definition (e.g. ["Router", "Route"] for a
+	// PackageName is the name the package is imported under.
+	PackageName string
+
+	// Path is the path of the definition (e.g. "Router Route" for a
 	// method named "Route" with receiver type "Router").
 	Path string
 }
@@ -32,7 +35,7 @@ type Ref struct {
 }
 
 func (r *Ref) String() string {
-	return fmt.Sprintf("&Ref{Def.ImportPath: %q, Def.Path: %q, Position: \"%s:%d:%d:%d\"}", r.Def.ImportPath, r.Def.Path, r.Position.Filename, r.Position.Line, r.Position.Column, r.Position.Offset)
+	return fmt.Sprintf("&Ref{Def.ImportPath: %q, Def.PackageName: %q, Def.Path: %q, Position: \"%s:%d:%d:%d\"}", r.Def.ImportPath, r.Def.PackageName, r.Def.Path, r.Position.Filename, r.Position.Line, r.Position.Column, r.Position.Offset)
 }
 
 type Config struct {
@@ -134,7 +137,22 @@ func (c *Config) defInfo(pkg *types.Package, info *types.Info, rootFile *ast.Fil
 			if err != nil {
 				return nil, err
 			}
-			return &Def{ImportPath: pkgPath}, nil
+
+			var impPkg *types.Package
+			for _, p := range pkg.Imports() {
+				path := p.Path()
+				if strings.Contains(path, "vendor/") {
+					path = path[strings.LastIndex(path, "vendor/")+len("vendor/"):]
+				}
+				if path == pkgPath {
+					impPkg = p
+					break
+				}
+			}
+			if impPkg == nil {
+				return nil, fmt.Errorf("could not find package %q in imports", pkgPath)
+			}
+			return &Def{ImportPath: impPkg.Path(), PackageName: impPkg.Name()}, nil
 		}
 	}
 
@@ -162,8 +180,9 @@ func (c *Config) defInfo(pkg *types.Package, info *types.Info, rootFile *ast.Fil
 			}
 			// Method or interface method.
 			return &Def{
-				ImportPath: obj.Pkg().Path(),
-				Path:       fmt.Sprintf("%v %v", dereferenceType(t.Recv().Type()).(*types.Named).Obj().Name(), identX.Name),
+				ImportPath:  obj.Pkg().Path(),
+				PackageName: obj.Pkg().Name(),
+				Path:        fmt.Sprintf("%v %v", dereferenceType(t.Recv().Type()).(*types.Named).Obj().Name(), identX.Name),
 			}, nil
 		}
 
@@ -176,14 +195,15 @@ func (c *Config) defInfo(pkg *types.Package, info *types.Info, rootFile *ast.Fil
 		if _, ok := nodes[1].(*ast.Field); ok {
 			if typ, ok := nodes[4].(*ast.TypeSpec); ok {
 				return &Def{
-					ImportPath: obj.Pkg().Path(),
-					Path:       fmt.Sprintf("%v %v", typ.Name.Name, obj.Name()),
+					ImportPath:  obj.Pkg().Path(),
+					PackageName: obj.Pkg().Name(),
+					Path:        fmt.Sprintf("%v %v", typ.Name.Name, obj.Name()),
 				}, nil
 			}
 		}
 
-		if pkg, name, ok := typeName(dereferenceType(obj.Type())); ok {
-			return &Def{ImportPath: pkg, Path: name}, nil
+		if pkg, pkgName, name, ok := typeName(dereferenceType(obj.Type())); ok {
+			return &Def{ImportPath: pkg, PackageName: pkgName, Path: name}, nil
 		}
 		return nil, fmt.Errorf("unable to identify def (ident: %v, object: %v)", identX, obj)
 	}
@@ -198,29 +218,31 @@ func (c *Config) defInfo(pkg *types.Package, info *types.Info, rootFile *ast.Fil
 		if lit, ok := nodes[2].(*ast.CompositeLit); ok {
 			if parent, ok := lit.Type.(*ast.SelectorExpr); ok {
 				return &Def{
-					ImportPath: obj.Pkg().Path(),
-					Path:       fmt.Sprintf("%v %v", parent.Sel, obj.Id()),
+					ImportPath:  obj.Pkg().Path(),
+					PackageName: obj.Pkg().Name(),
+					Path:        fmt.Sprintf("%v %v", parent.Sel, obj.Id()),
 				}, nil
 			} else if parent, ok := lit.Type.(*ast.Ident); ok {
 				return &Def{
-					ImportPath: obj.Pkg().Path(),
-					Path:       fmt.Sprintf("%v %v", parent, obj.Id()),
+					ImportPath:  obj.Pkg().Path(),
+					PackageName: obj.Pkg().Name(),
+					Path:        fmt.Sprintf("%v %v", parent, obj.Id()),
 				}, nil
 			}
 		}
 	}
 
 	if pkgName, ok := obj.(*types.PkgName); ok {
-		return &Def{ImportPath: pkgName.Imported().Path()}, nil
+		return &Def{ImportPath: pkgName.Imported().Path(), PackageName: pkgName.Imported().Name()}, nil
 	} else if selX == nil {
 		if pkg.Scope().Lookup(identX.Name) == obj {
 			return objectString(obj), nil
 		} else if types.Universe.Lookup(identX.Name) == obj {
-			return &Def{ImportPath: "builtin", Path: obj.Name()}, nil
+			return &Def{ImportPath: "builtin", PackageName: "builtin", Path: obj.Name()}, nil
 		}
 		t := dereferenceType(obj.Type())
-		if pkg, name, ok := typeName(t); ok {
-			return &Def{ImportPath: pkg, Path: name}, nil
+		if pkg, pkgName, name, ok := typeName(t); ok {
+			return &Def{ImportPath: pkg, PackageName: pkgName, Path: name}, nil
 		}
 		return nil, &notPackageLevelDef{
 			ident: identX,
@@ -237,8 +259,8 @@ func (c *Config) defInfo(pkg *types.Package, info *types.Info, rootFile *ast.Fil
 		if field == nil {
 			// field invoked, but object is selected
 			t := dereferenceType(obj.Type())
-			if pkg, name, ok := typeName(t); ok {
-				return &Def{ImportPath: pkg, Path: name}, nil
+			if pkg, pkgName, name, ok := typeName(t); ok {
+				return &Def{ImportPath: pkg, PackageName: pkgName, Path: name}, nil
 			}
 			return nil, fmt.Errorf("method or field not found")
 		}
@@ -286,17 +308,18 @@ func dereferenceType(typ types.Type) types.Type {
 	return typ
 }
 
-func typeName(typ types.Type) (pkg, name string, ok bool) {
+func typeName(typ types.Type) (pkg, pkgName, name string, ok bool) {
 	switch typ := typ.(type) {
 	case *types.Named:
-		if typ.Obj().Pkg() == nil {
-			return "", "", false
+		p := typ.Obj().Pkg()
+		if p == nil {
+			return
 		}
-		return typ.Obj().Pkg().Path(), typ.Obj().Name(), true
+		return p.Path(), p.Name(), typ.Obj().Name(), true
 	case *types.Basic:
-		return "builtin", typ.Name(), true
+		return "builtin", "builtin", typ.Name(), true
 	}
-	return "", "", false
+	return
 }
 
 func getMethod(typ types.Type, idx int, final bool, method bool) (obj types.Object) {
@@ -331,7 +354,7 @@ func getMethod(typ types.Type, idx int, final bool, method bool) (obj types.Obje
 
 func objectString(obj types.Object) *Def {
 	if obj.Pkg() != nil {
-		return &Def{ImportPath: obj.Pkg().Path(), Path: obj.Name()}
+		return &Def{ImportPath: obj.Pkg().Path(), PackageName: obj.Pkg().Name(), Path: obj.Name()}
 	}
 	return &Def{Path: obj.Name()}
 }

@@ -597,28 +597,28 @@
 			"revisionTime": "2013-09-12T23:55:21-07:00"
 		},
 		{
-			"checksumSHA1": "r8FXf+BL9cLDpQP5LwGHpbNOP1A=",
+			"checksumSHA1": "TZ1eF11uT6//dO8oXpBfSinnZVw=",
 			"path": "github.com/sourcegraph/sourcegraph-go/langserver",
-			"revision": "a5f4f5d2a132fec0d0473f55552bcbe778ad8d31",
-			"revisionTime": "2016-10-17T21:55:16Z"
+			"revision": "07c28b41433b3d2937d84685ac2ed1b5d19ef61d",
+			"revisionTime": "2016-10-21T02:20:34Z"
 		},
 		{
-			"checksumSHA1": "YaPrRijVTL+ve0zwyllXkFCJfh4=",
+			"checksumSHA1": "ja9OCtPgz3Qo9bMzi0S+/mK//40=",
 			"path": "github.com/sourcegraph/sourcegraph-go/langserver/internal/refs",
-			"revision": "a5f4f5d2a132fec0d0473f55552bcbe778ad8d31",
-			"revisionTime": "2016-10-17T21:55:16Z"
+			"revision": "07c28b41433b3d2937d84685ac2ed1b5d19ef61d",
+			"revisionTime": "2016-10-21T02:20:34Z"
 		},
 		{
 			"checksumSHA1": "tFq74Iccgr8k2mO3rkk5M7NBsIc=",
 			"path": "github.com/sourcegraph/sourcegraph-go/pkg/lsp",
-			"revision": "a5f4f5d2a132fec0d0473f55552bcbe778ad8d31",
-			"revisionTime": "2016-10-17T21:55:16Z"
+			"revision": "07c28b41433b3d2937d84685ac2ed1b5d19ef61d",
+			"revisionTime": "2016-10-21T02:20:34Z"
 		},
 		{
 			"checksumSHA1": "gPeox7+z+xVc8cEWDpKrRwZ4/oo=",
 			"path": "github.com/sourcegraph/sourcegraph-go/pkg/lspext",
-			"revision": "a5f4f5d2a132fec0d0473f55552bcbe778ad8d31",
-			"revisionTime": "2016-10-17T21:55:16Z"
+			"revision": "07c28b41433b3d2937d84685ac2ed1b5d19ef61d",
+			"revisionTime": "2016-10-21T02:20:34Z"
 		},
 		{
 			"checksumSHA1": "lxZnbbPCOmaLq2c1g42Ww964hgk=",

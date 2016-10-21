@@ -127,6 +127,9 @@ func (h *LangHandler) externalRefsFromPkg(ctx context.Context, bctx *build.Conte
 			defName = fields[0]
 			defContainerName = strings.Join(fields[1:], " ")
 		}
+		if defContainerName == "" {
+			defContainerName = r.Def.PackageName
+		}
 
 		defPkg, err := bctx.Import(r.Def.ImportPath, rootPath, build.FindOnly)
 		if err != nil {

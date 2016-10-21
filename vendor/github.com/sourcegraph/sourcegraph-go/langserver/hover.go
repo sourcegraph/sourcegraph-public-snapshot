@@ -44,7 +44,15 @@ func (h *LangHandler) handleHover(ctx context.Context, conn JSONRPC2Conn, req *j
 		// TODO(sqs): make this be like (T).F not "struct field F string".
 		s = "struct " + o.String()
 	} else if o != nil {
-		s = types.ObjectString(o, qf)
+		if obj, ok := o.(*types.TypeName); ok {
+			typ := obj.Type().Underlying()
+			if _, ok := typ.(*types.Struct); ok {
+				s = "type " + obj.Name() + " struct"
+			}
+		}
+		if s == "" {
+			s = types.ObjectString(o, qf)
+		}
 	} else if t != nil {
 		s = types.TypeString(t, qf)
 	}
