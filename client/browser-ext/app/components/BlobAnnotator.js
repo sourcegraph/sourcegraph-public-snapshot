@@ -35,6 +35,9 @@ export default class BlobAnnotator extends Component {
 	constructor(props) {
 		super(props);
 
+		this.getBlobUrl = this.getBlobUrl.bind(this);
+		this._lineRefresh = this._lineRefresh.bind(this);
+		this._hashRefresh = this._hashRefresh.bind(this);
 		this._clickRefresh = this._clickRefresh.bind(this);
 		this.onClickAuthPriv = this.onClickAuthPriv.bind(this);
 		this.onClickFileView = this.onClickFileView.bind(this);
@@ -138,13 +141,7 @@ export default class BlobAnnotator extends Component {
 				this.state.headRepoURI = this.state.repoURI;
 			}
 
-			// Get first line number of the file's first head hunk. In a split diff, there
-			// is an extra element before the element containing the head data-line-number,
-			// which is why we use a different nth-child value.
-			let headLineNumberEl = props.blobElement.querySelector(`[data-line-number]:nth-child(${this.state.isSplitDiff ? 3 : 2})`);
-			if (headLineNumberEl) {
-				this.state.headLineNumber = headLineNumberEl.dataset.lineNumber;
-			}
+			this._lineRefresh();
 		}
 
 		if (this.state.baseRepoURI !== this.state.headRepoURI) {
@@ -163,6 +160,8 @@ export default class BlobAnnotator extends Component {
 				diffExpanders[idx].addEventListener("click", this._clickRefresh);
 			}
 		}
+
+		window.addEventListener("hashchange", this._hashRefresh);
 	}
 
 	componentWillUnmount() {
@@ -172,13 +171,54 @@ export default class BlobAnnotator extends Component {
 				diffExpanders[idx].removeEventListener("click", this._clickRefresh);
 			}
 		}
+
+		window.removeEventListener("hashchange", this._hashRefresh);
 	}
 
 	_clickRefresh() {
 		// Diff expansion is not synchronous, so we must wait for
 		// elements to get added to the DOM before calling into the
 		// annotations code. 500ms is arbitrary but seems to work well.
-		setTimeout(() => this._addAnnotations(this.state), 500);
+		setTimeout(() => {
+			this._lineRefresh();
+			this._hashRefresh();
+			this._addAnnotations(this.state);
+
+			// Attach to the new diff expander;
+			// TODO: Only attach to the new diff-expander
+			let diffExpanders = document.getElementsByClassName("diff-expander");
+			if (diffExpanders) {
+				for (let idx = 0; idx < diffExpanders.length; idx++) {
+					diffExpanders[idx].addEventListener("click", this._clickRefresh);
+				}
+			}
+		}, 500);
+	}
+
+	_lineRefresh() {
+		// Get first line number of the file's first head hunk. In a split diff, there
+		// is an extra element before the element containing the head data-line-number,
+		// which is why we use a different nth-child value.
+		if (!this.state.isDelta) return;
+
+		let headLineNumberEl = this.props.blobElement.querySelector(`[data-line-number]:nth-child(${this.state.isSplitDiff ? 3 : 2})`);
+		if (headLineNumberEl) {
+			this.state.headLineNumber = headLineNumberEl.dataset.lineNumber;
+		}
+	}
+
+	_hashRefresh() {
+		// Do not modify the URL if not auth'd or if not supported
+		if ((this.isPrivateRepo() &&
+			(typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)] !== 'undefined') &&
+			(typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)].authRequired === 'undefined')) ||
+			(utils.supportedExtensions.includes(utils.getPathExtension(this.state.path)))) {
+	
+			const selfElementA = this.state.selfElement.getElementsByTagName("A");
+			if (selfElementA) {
+				selfElementA.href = this.getBlobUrl();
+			}
+		}
 	}
 
 	_isSplitDiff() {
@@ -275,11 +315,42 @@ export default class BlobAnnotator extends Component {
 	}
 
 	getBlobUrl() {
-		const repo = this.state.headRepoURI || this.state.repoURI;
-		const rev = this.state.headCommitID || this.state.rev;
-		const lineNumberFragment = this.state.headLineNumber ? `#L${this.state.headLineNumber}` : "";
+		let rev;
+		let repo;
+		let selectedLineNumber = "";
 
-		return `https://sourcegraph.com/${repo}@${rev}/-/blob/${this.state.path}${lineNumberFragment}`;
+		switch(utils.getGitHubRoute()) {
+			case "blob":
+				rev = this.state.rev;
+				repo = this.state.repoURI;
+				selectedLineNumber = `${window.location.hash.match(/^(#L[1-9][0-9]*$)/g) || ""}`;
+				break;
+			case "pull":
+			case "commit":
+				const selectedLine = this.state.blobElement.getElementsByClassName("js-linkable-line-number selected-line")[0];
+				const jumpToSide = selectedLine ? `${selectedLine.id.match(/([LR])[\d]+$/g) || "R"}` : "R";
+
+				// If no line is selected, jump to first line in the condensed blob
+				selectedLineNumber = selectedLine && selectedLine.dataset ? `#L${selectedLine.dataset.lineNumber}` : "";
+				if (!selectedLineNumber && this.state.headLineNumber) {
+					selectedLineNumber = `#L${this.state.headLineNumber}`;
+				}
+
+				if (jumpToSide.charAt(0) === "L") {
+					rev = this.state.baseCommitID;
+					repo = this.state.baseRepoURI;
+				} else {
+					rev = this.state.headCommitID;
+					repo = this.state.headRepoURI;
+				}
+
+				break;
+			default:
+				console.debug("Could not generate blob URL");
+				return window.location;
+		}
+
+		return `https://sourcegraph.com/${repo}@${rev}/-/blob/${this.state.path}${selectedLineNumber}`;
 	}
 
 	render() {
@@ -291,12 +362,14 @@ export default class BlobAnnotator extends Component {
 			this.state.selfElement.removeAttribute("disabled");
 			this.state.selfElement.setAttribute("aria-label", `Authorize Sourcegraph for ${this.state.repoURI.split("github.com/")[1]}`);
 			this.state.selfElement.onclick = this.onClickAuthPriv;
+
+			return <span><a href={`https://sourcegraph.com/join?ob=github&rtg=${encodeURIComponent(window.location.href)}`} onclick={this.onClickAuthPriv} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</a></span>;
 		} else {
 			if (utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
 				this.state.selfElement.setAttribute("aria-label", "View on Sourcegraph");
 				this.state.selfElement.onclick = this.onClickFileView;
 
-				return <span><a href={this.getBlobUrl()} onclick={this.onClickFileView} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</a></span>;
+				return <span><a id="SourcegraphFileViewAnchor" href={this.getBlobUrl()} onclick={this.onClickFileView} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</a></span>;
 			} else {
 				// TODO: Only set style to disabled and log the click event for statistics on unsupported languages?
 				this.state.selfElement.setAttribute("disabled", true);
@@ -306,9 +379,9 @@ export default class BlobAnnotator extends Component {
 				} else {
 					this.state.selfElement.setAttribute("aria-label", "File not supported");
 				}
+
+				return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</span>;
 			}
 		}
-
-		return <span><a href={`https://sourcegraph.com/join?ob=github&rtg=${encodeURIComponent(window.location.href)}`} onclick={this.onClickAuthPriv} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</a></span>;
 	}
 }

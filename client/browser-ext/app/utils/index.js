@@ -22,7 +22,7 @@ export const upcomingExtensions = [
 	"php", "phtml", "php3", "php4", "php5", "php7", "phps", // PHP
 ];
 
-export const readableGitHubView = {
+export const readableGitHubRoute = {
 	"blob": "File",
 	"pull": "Pull request",
 	"commit": "Commit",
@@ -43,13 +43,13 @@ export function getModeFromExtension(ext) {
 	}
 }
 
-export function getGitHubView(loc = window.location) {
+export function getGitHubRoute(loc = window.location) {
 	return loc.pathname.split("/")[3];
 }
 
 export function getLinesOfCode() {
 	let nTotalLines = 0;
-	const view = getGitHubView();
+	const view = getGitHubRoute();
 
 	switch (view)  {
 		case "blob":

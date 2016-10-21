@@ -11,7 +11,7 @@ import {SourcegraphIcon} from "../../app/components/Icons";
 import BlobAnnotator from "../../app/components/BlobAnnotator";
 import createStore from "../../app/store/configureStore";
 
-import {parseURL, isGitHubURL, isSourcegraphURL, readableGitHubView, getGitHubView, getLinesOfCode} from "../../app/utils";
+import {parseURL, isGitHubURL, isSourcegraphURL, readableGitHubView, getGitHubRoute, getLinesOfCode} from "../../app/utils";
 
 let store = createStore({});
 const isTooBigThreshold = 5000;
@@ -97,7 +97,7 @@ function injectBlobAnnotator() {
 
 			blobAnnotatorContainer.appendChild(iconLabelNode);
 			blobAnnotatorContainer.appendChild(textLabelNode);
-			blobAnnotatorContainer.setAttribute("aria-label", readableGitHubView[getGitHubView()] + " too big!");
+			blobAnnotatorContainer.setAttribute("aria-label", readableGitHubRoute[getGitHubRoute()] + " too big!");
 			blobAnnotatorContainer.setAttribute("disabled", true);
 
 			injectComponent(<SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />, iconLabelNode);
@@ -160,6 +160,20 @@ window.addEventListener("load", () => {
 	chrome.runtime.sendMessage(null, {type: "getIdentity"}, {}, (identity) => {
 		if (identity) EventLogger.updatePropsForUser(identity);
 	});
+});
+
+document.addEventListener("keydown", (e) => {
+	if (getGitHubRoute() !== "blob") return;
+
+	if (e.keyCode === 85) {
+		const annButtons = document.getElementsByClassName("sourcegraph-app-annotator");
+		if (annButtons.length === 1) {
+			const annButtonA = annButtons[0].getElementsByTagName("A");
+			if (annButtonA.length === 1 && annButtonA[0].href) {
+				window.open(annButtonA[0].href, "_blank");
+			}
+		}
+	}
 });
 
 document.addEventListener("pjax:end", () => {
