@@ -1,6 +1,7 @@
 package oauth2client
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -101,14 +102,6 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("exchanging auth code yielded invalid OAuth2 token")}
 	}
 
-	auth0Client := oauth2.NewClient(r.Context(), oauth2.StaticTokenSource(token))
-
-	resp, err := auth0Client.Get("https://" + auth.Auth0Domain + "/userinfo")
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
 	var info struct {
 		UID         string `json:"user_id"`
 		Nickname    string `json:"nickname"`
@@ -122,7 +115,8 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 			UserID     int    `json:"user_id"`
 		} `json:"identities"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+	err = fetchAuth0UserInfo(r.Context(), token, &info)
+	if err != nil {
 		return err
 	}
 
@@ -158,8 +152,8 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		}
 	}
 
-	// Write cookie.
-	if err := auth.StartNewSession(w, r, &auth.Actor{
+	// Create actor and write session cookie.
+	actor := &auth.Actor{
 		UID:             info.UID,
 		Login:           info.Nickname,
 		Email:           info.Email,
@@ -167,7 +161,8 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		GitHubConnected: true,
 		GitHubScopes:    scopeOfToken,
 		GitHubToken:     githubToken.Token,
-	}); err != nil {
+	}
+	if err := auth.StartNewSession(w, r, actor); err != nil {
 		return err
 	}
 
@@ -195,6 +190,17 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 
 	http.Redirect(w, r, returnToURL.String(), http.StatusSeeOther)
 	return nil
+}
+
+// fetchAuth0UserInfo fetches Auth0 user info for token into v.
+func fetchAuth0UserInfo(ctx context.Context, token *oauth2.Token, v interface{}) error {
+	auth0Client := oauth2.NewClient(ctx, oauth2.StaticTokenSource(token))
+	resp, err := auth0Client.Get("https://" + auth.Auth0Domain + "/userinfo")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return json.NewDecoder(resp.Body).Decode(&v)
 }
 
 func mergeScopes(a, b []string) []string {
