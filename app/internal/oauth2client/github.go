@@ -168,6 +168,23 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		GitHubScopes:    scopeOfToken,
 		GitHubToken:     githubToken.Token,
 	}
+	var googleConnected bool
+	for _, identity := range info.Identities {
+		if identity.Connection == "google-oauth2" {
+			googleConnected = true
+			break
+		}
+	}
+	if googleConnected {
+		googleRefreshToken, err := auth.FetchGoogleRefreshToken(r.Context(), info.UID)
+		if err != nil {
+			return fmt.Errorf("auth.FetchGoogleRefreshToken: %v", err)
+		}
+
+		actor.GoogleConnected = true
+		actor.GoogleScopes = strings.Split(googleRefreshToken.Scope, ",")
+		actor.GoogleRefreshToken = googleRefreshToken.Token
+	}
 	if err := auth.StartNewSession(w, r, actor); err != nil {
 		return err
 	}
