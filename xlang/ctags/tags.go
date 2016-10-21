@@ -51,7 +51,7 @@ func generateTags(ctx context.Context, fs ctxvfs.FileSystem) ([]parser.Tag, erro
 		return nil, err
 	}
 
-	args := []string{"-f", "-", "--fields=*", "--excmd=pattern", "--languages=Ruby,C"}
+	args := []string{"-f", "-", "--fields=*", "--excmd=pattern", "--languages=Ruby,C,C++"}
 	args = append(args, "-R", filesDir)
 	excludeArgs := make([]string, 0, len(ignoreFiles))
 	for _, ignoreFile := range ignoreFiles {
