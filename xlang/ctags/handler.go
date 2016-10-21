@@ -31,7 +31,7 @@ type InitParams struct {
 	OriginalRootPath string
 }
 
-// Handler represents an LSP handler for one user.
+// Handler handlers LSP requests for one repository
 type Handler struct {
 	// fs is the virtual filesystem backed by xlang infrastrucuture.
 	fs ctxvfs.FileSystem

@@ -1,38 +1,75 @@
 package ctags
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
+	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/ctxvfs"
 	"golang.org/x/net/context"
 )
 
 func copyRepoArchive(ctx context.Context, fs ctxvfs.FileSystem, destination string) error {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "read files from network")
-	files, err := ctxvfs.ReadAllFiles(ctx, fs, "", nil)
+	filter := func(f os.FileInfo) bool {
+		if ext := filepath.Ext(f.Name()); ext == ".c" || ext == ".h" || ext == ".rb" {
+			return true
+		}
+		return false
+	}
+
+	par := parallel.NewRun(10)
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "copy files from VFS to disk")
+	w := ctxvfs.Walk(ctx, "/", fs)
+	for w.Step() {
+		if err := w.Err(); err != nil {
+			return err
+		}
+		fiPath := w.Path()
+		fi := w.Stat()
+		switch {
+		case fi.Name() == ".git" && fi.Mode().IsDir():
+			w.SkipDir()
+		case fi.Mode().IsRegular():
+			if filter == nil || filter(fi) {
+				par.Acquire()
+				go func() {
+					defer par.Release()
+
+					outfile := filepath.Join(destination, fiPath)
+					if err := os.MkdirAll(filepath.Dir(outfile), os.ModePerm); err != nil {
+						par.Error(err)
+						return
+					}
+
+					in, err := fs.Open(ctx, fiPath)
+					if err != nil {
+						par.Error(err)
+						return
+					}
+
+					out, err := os.Create(outfile)
+					if err != nil {
+						par.Error(err)
+						return
+					}
+					defer out.Close()
+
+					if _, err := io.Copy(out, in); err != nil {
+						par.Error(err)
+						return
+					}
+				}()
+			}
+		}
+	}
+	err := par.Wait()
 	span.Finish()
 	if err != nil {
 		return err
 	}
 
-	span, ctx = opentracing.StartSpanFromContext(ctx, "write files to disk")
-	defer span.Finish()
-	for relpath, contents := range files {
-		filename := filepath.Clean(filepath.Join(destination, relpath))
-		dirname := strings.TrimSuffix(filename, filepath.Base(filename))
-
-		if err := os.MkdirAll(dirname, os.ModePerm); err != nil {
-			return err
-		}
-
-		err := ioutil.WriteFile(filename, contents, os.ModePerm)
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }

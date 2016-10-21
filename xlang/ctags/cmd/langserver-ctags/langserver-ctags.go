@@ -20,7 +20,7 @@ var (
 	mode     = flag.String("mode", "stdio", "communication mode (stdio|tcp)")
 	addr     = flag.String("addr", ":2088", "server listen address (tcp)")
 	profbind = flag.String("prof-http", ":6060", "net/http/pprof http bind address")
-	logfile  = flag.String("log", "/tmp/langserver-ctags.log", "write log output to this file (and stderr)")
+	logfile  = flag.String("log", "", "write log output to this file (and stderr)")
 )
 
 func main() {
