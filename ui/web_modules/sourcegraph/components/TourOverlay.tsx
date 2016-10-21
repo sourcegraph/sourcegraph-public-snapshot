@@ -163,7 +163,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 				let refRandom = x[Math.floor(refrandom + 1)];
 
 				// Build custom fields for coachmark.
-				let defSubtitle = <p style={p}>Click on any reference to an identifier and jump to it's definition – even if it's in another repository.</p>;
+				let defSubtitle = <p style={p}>Click on any reference to an identifier and jump to its definition – even if it's in another repository.</p>;
 				let defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{marginLeft: whitespace[4], fontSize: 14}} color="darkBlue" size="small">Install the Chrome extension</Button>;
 
 				let refSubtitle = <p style={p}>Right click this or any other identifier to access <strong>references, peek definitions</strong>, and other useful actions.</p>;
