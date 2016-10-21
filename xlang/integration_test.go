@@ -34,7 +34,7 @@ func TestIntegration(t *testing.T) {
 				"https://github.com/gorilla/context": "08b5f424b9271eedf6f9f0ce86cb9396ed337a42",
 			},
 			wantHover: map[string]string{
-				"mux.go:61:38": "type Request struct{Method string; URL *URL; Proto string...", // stdlib
+				"mux.go:61:38": "type Request struct", // stdlib
 			},
 			wantDefinition: map[string]string{
 				"mux.go:61:38": "git://github.com/golang/go?go1.7.1#src/net/http/request.go:76:6", // stdlib
@@ -61,7 +61,7 @@ func TestIntegration(t *testing.T) {
 				"https://github.com/golang/tools": "73d2e795b859a48cba2d70040c384dd1cea7e113",
 			},
 			wantHover: map[string]string{
-				"golint/golint.go:91:18": "type Linter struct{}", // diff pkg, same repo
+				"golint/golint.go:91:18": "type Linter struct", // diff pkg, same repo
 			},
 			wantDefinition: map[string]string{
 				"golint/golint.go:91:18": "git://github.com/golang/lint?c7bacac2b21ca01afa1dee0acf64df3ce047c28f#lint.go:31:6", // diff pkg, same repo
@@ -75,7 +75,7 @@ func TestIntegration(t *testing.T) {
 				"https://github.com/pkg/errors":           "839d9e913e063e28dfd0e6c7b7512793e0a48be9",
 			},
 			wantHover: map[string]string{
-				"csrf.go:57:28": "type SecureCookie struct{...", // diff repo
+				"csrf.go:57:28": "type SecureCookie struct", // diff repo
 			},
 			wantDefinition: map[string]string{
 				"csrf.go:57:28": "git://github.com/gorilla/securecookie?HEAD#securecookie.go:154:6", // diff repo
@@ -87,8 +87,8 @@ func TestIntegration(t *testing.T) {
 			mode: "go",
 			wantHover: map[string]string{
 				"src/encoding/hex/hex.go:70:12":  "func fromHexChar(c byte) (byte, bool)", // func decl
-				"src/encoding/hex/hex.go:104:18": "type Buffer struct{...",                // bytes.Buffer
-				"src/net/http/server.go:78:32":   "type Request struct{...",
+				"src/encoding/hex/hex.go:104:18": "type Buffer struct",                    // bytes.Buffer
+				"src/net/http/server.go:78:32":   "type Request struct",
 			},
 			wantDefinition: map[string]string{
 				"src/encoding/hex/hex.go:70:12":  "git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/encoding/hex/hex.go:70:6", // func decl
