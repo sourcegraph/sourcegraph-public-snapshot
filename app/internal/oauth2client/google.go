@@ -33,6 +33,14 @@ func auth0GoogleConfigWithRedirectURL() *oauth2.Config {
 // (including a nonce state value, also stored in a cookie) and
 // redirects the client to that URL.
 func ServeGoogleOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
+	// We don't support logging in via Google at this time. So ensure user is already logged in
+	// to their primary account.
+	actor := auth.ActorFromContext(r.Context())
+	if !actor.IsAuthenticated() {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return nil
+	}
+
 	returnTo, err := returnto.URLFromRequest(r)
 	if err != nil {
 		log15.Warn("Invalid return-to URL provided to OAuth2 flow initiation; ignoring.", "err", err)
@@ -71,7 +79,15 @@ func googleOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []strin
 	return nil
 }
 
-func ServeGoogleOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error) {
+func ServeGoogleOAuth2Receive(w http.ResponseWriter, r *http.Request) error {
+	// We don't support logging in via Google at this time. So ensure user is already logged in
+	// to their primary account.
+	actor := auth.ActorFromContext(r.Context())
+	if !actor.IsAuthenticated() {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return nil
+	}
+
 	parts := strings.SplitN(r.URL.Query().Get("state"), ":", 2)
 	if len(parts) != 2 {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("invalid OAuth2 authorize client state")}
@@ -114,7 +130,6 @@ func ServeGoogleOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	}
 
 	// Link Google account to main account.
-	actor := auth.ActorFromContext(r.Context())
 	if err := auth.LinkAccount(r.Context(), actor.UID, "google-oauth2", googleInfo.UID); err != nil {
 		return err
 	}
