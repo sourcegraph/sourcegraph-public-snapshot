@@ -219,6 +219,13 @@ func (c *Client) Clone(ctx context.Context, repo string, remote string, opt *vcs
 // is returned if there was already an existing repository in its place, causing create to be noop.
 // If the repository is in process of being cloned, vcs.RepoNotExistError{CloneInProgress: true} is returned.
 func (c *Client) create(ctx context.Context, repo string, mirrorRemote string, opt *vcs.RemoteOpts) error {
+	// "github.com/sourcegraphtest/AlwaysCloningTest" is a special repository for triggering
+	// an infinite "Cloning this repository" response. It exists to aid development and testing
+	// of various features that need to handle the case of repositories being cloned.
+	if repo == "github.com/sourcegraphtest/AlwaysCloningTest" {
+		return vcs.RepoNotExistError{CloneInProgress: true}
+	}
+
 	// We check if repo already exists by executing `git remote`. It may seem redundant since the
 	// create request also checks that, but the purpose is to first do a broadcast and check if _any_
 	// server already has the repo available.
