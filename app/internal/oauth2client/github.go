@@ -111,8 +111,8 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 			GitHubScope []string `json:"github_scope"`
 		} `json:"app_metadata"`
 		Identities []struct {
-			Connection string `json:"connection"`
-			UserID     int    `json:"user_id"`
+			Connection string          `json:"connection"`
+			UserID     json.RawMessage `json:"user_id"` // Defer decoding because the type is int for GitHub, but string for Google.
 		} `json:"identities"`
 	}
 	err = fetchAuth0UserInfo(r.Context(), token, &info)
@@ -133,7 +133,13 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		// try copying legacy scope
 		for _, identity := range info.Identities {
 			if identity.Connection == "github" {
-				if legacyScope := backend.LegacyGitHubScope(identity.UserID); len(legacyScope) > 0 {
+				var githubUserID int
+				err := json.Unmarshal(identity.UserID, &githubUserID)
+				if err != nil {
+					log15.Warn(`Connection is "github", but UserID type isn't int; ignoring.`, "UserID", identity.UserID, "err", err)
+					continue
+				}
+				if legacyScope := backend.LegacyGitHubScope(githubUserID); len(legacyScope) > 0 {
 					firstTime = false
 					mergedScope = mergeScopes(mergedScope, legacyScope)
 				}
