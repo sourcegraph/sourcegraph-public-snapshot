@@ -39,3 +39,4 @@ export {CoachMark} from "sourcegraph/components/CoachMark";
 export {Annotation} from "sourcegraph/components/Annotation";
 export {BGContainer} from "sourcegraph/components/BGContainer";
 export {TourOverlay} from "sourcegraph/components/TourOverlay";
+export {Boom} from "sourcegraph/components/Boom";

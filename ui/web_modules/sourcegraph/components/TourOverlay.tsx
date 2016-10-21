@@ -2,7 +2,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import {InjectedRouter} from "react-router";
 import {context} from "sourcegraph/app/context";
-import {Annotation, Button, Heading} from "sourcegraph/components";
+import {Annotation, Boom, Button, Heading} from "sourcegraph/components";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {Close, Flag} from "sourcegraph/components/symbols/Zondicons";
 import {colors, typography, whitespace} from "sourcegraph/components/utils";
@@ -19,9 +19,9 @@ interface State {
 	visibleAnnotation: number | null;
 }
 
-const _searchCoachmarkIndex: number = 0;
+const _defCoachmarkIndex: number = 0;
 const _refCoachmarkIndex: number = 1;
-const _defCoachmarkIndex: number = 2;
+const _searchCoachmarkIndex: number = 2;
 
 interface Coachmark {
 	markIndex: number;
@@ -93,6 +93,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 	};
 
 	_coachmarks: Array<Coachmark>;
+	_searchCoachmarkRef: any;
 
 	context: { router: InjectedRouter };
 
@@ -141,7 +142,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 		}
 	}
 
-	// Render the coachmarks at a random location upon the component mounting 
+	// Render the coachmarks at a random location upon the component mounting
 	// OR a location change in the same file triggered by jump to def.
 	_tryForRenderedTokenIdentifier(): void {
 		// "token identifier go"" is subject to change based on the language. For now, since we are hardcoding the endpoint we can assume this will always be true.
@@ -209,6 +210,22 @@ export class TourOverlay extends React.Component<Props, State>  {
 		return topElement;
 	}
 
+	_playBoomAnimation(elementToRemove: HTMLElement): void {
+		// Play animation
+		const boomEl = document.createElement("div");
+		const position = elementToRemove.getClientRects()[0];
+		document.body.appendChild(boomEl);
+		ReactDOM.render(<Boom style={{
+			position: "absolute",
+			left: position.left,
+			top: position.top,
+			zIndex: 200,
+		}} />, boomEl);
+
+		// Remove animation
+		setTimeout(() => { boomEl.remove(); }, 2000);
+	}
+
 	_coachmarksShouldUpdate(): void {
 		let {visibleMarks} = this.state;
 		this._coachmarks.map((coachmark, index) => {
@@ -218,6 +235,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 				setTimeout(() => {
 					let elementToRemove = document.getElementById(coachmark.markId);
 					if (elementToRemove !== null) {
+						// Remove element
 						elementToRemove.remove();
 					}
 				}, 10);
@@ -312,7 +330,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 	// The search coachmark annotation is different because it does not live inside of the editor therefore we can render it like a standard react component.
 	_renderSearchCoachmarkAnnotation(visibleAnnotation: number | null, markIndex: number): JSX.Element | null {
 		return (
-			<div onClick={this._handleCoachmarkClicked.bind(this, markIndex)} style={{ position: "fixed", right: 160, top: 40}}>
+			<div ref={(c) => this._searchCoachmarkRef = c} onClick={this._handleCoachmarkClicked.bind(this, markIndex)} style={{ position: "fixed", right: 160, top: 40}}>
 				<Annotation color="purple" pulseColor="white" open={visibleAnnotation === markIndex} active={true} annotationPosition="left">
 					<span style={closeSx}><Close width={12}/></span>
 					<div style={Object.assign({},
@@ -358,6 +376,15 @@ export class TourOverlay extends React.Component<Props, State>  {
 			visibleMarks = this.state.visibleMarks.filter((mark: number) => {
 				return mark !== this.state.visibleAnnotation;
 			});
+
+			if (index === _searchCoachmarkIndex) {
+				this._playBoomAnimation(this._searchCoachmarkRef);
+			} else {
+				let elementToRemove = document.getElementById(this._coachmarks[index].markId);
+				if (elementToRemove) {
+					this._playBoomAnimation(elementToRemove);
+				}
+			}
 
 			this.setState({
 				visibleAnnotation: index !== this.state.visibleAnnotation ? index : null,
