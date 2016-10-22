@@ -133,10 +133,7 @@ func LinkAccount(ctx context.Context, uid string, linkWithProvider, linkWithUID 
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	// TODO: Needed `update:users` scope, but AUTH0_MANAGEMENT_API_TOKEN didn't have it. Made this one for temporary testing.
-	var auth0ManagementTokenSourceWithUpdateUsersScope = oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJSYW1KekRwRmN6SFZZNTBpcmFSb0JMdTNRVmFHTE1VRiIsInNjb3BlcyI6eyJ1c2VycyI6eyJhY3Rpb25zIjpbInVwZGF0ZSIsInJlYWQiXX0sInVzZXJzX2FwcF9tZXRhZGF0YSI6eyJhY3Rpb25zIjpbInVwZGF0ZSJdfX0sImlhdCI6MTQ3NTEwOTc1MCwianRpIjoiOWJhODAzYTQwNmVhN2RjNWE0ZDU5NTExOTUzZWZhMTQifQ.C180naLiYSftn8SiYCIFQ-g7aDibiGaLSaNFkk8YbTc"})
-
-	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSourceWithUpdateUsersScope).Do(req)
+	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Do(req)
 	if err != nil {
 		return err
 	}
