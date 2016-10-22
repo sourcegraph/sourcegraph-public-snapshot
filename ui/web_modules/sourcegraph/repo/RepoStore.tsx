@@ -2,9 +2,9 @@
 
 import * as flatMap from "lodash/flatMap";
 
-import {Store} from "sourcegraph/Store";
+import { Store } from "sourcegraph/Store";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {deepFreeze} from "sourcegraph/util/deepFreeze";
+import { deepFreeze } from "sourcegraph/util/deepFreeze";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import "sourcegraph/repo/RepoBackend";
 
@@ -130,87 +130,87 @@ class RepoStoreClass extends Store<any> {
 		}
 
 		switch (action.constructor) {
-		case RepoActions.FetchedRepo:
-			this.repos = deepFreeze(Object.assign({}, this.repos, {
-				content: Object.assign({}, this.repos.content, {
-					[keyFor(action.repo)]: action.repoObj,
-				}),
-			}));
-			break;
-
-		case RepoActions.FetchedInventory:
-			this.inventory = deepFreeze(Object.assign({}, this.inventory, {
-				content: Object.assign({}, this.inventory.content, {
-					[keyFor(action.repo, action.commitID)]: action.inventory,
-				}),
-			}));
-			break;
-
-		case RepoActions.RepoCloning:
-			this.repos = deepFreeze(Object.assign({}, this.repos, {
-				cloning: Object.assign({}, this.repos.cloning, {
-					[keyFor(action.repo)]: action.isCloning,
-				}),
-			}));
-			break;
-
-		case RepoActions.RepoResolved:
-			this.resolutions = deepFreeze(Object.assign({}, this.resolutions, {
-				content: Object.assign({}, this.resolutions.content, {
-					[keyFor(action.repo)]: action.resolution,
-				}),
-			}));
-			break;
-
-		case RepoActions.RepoCreated:
-			this.repos = deepFreeze(Object.assign({}, this.repos, {
-				content: Object.assign({}, this.repos.content, {
-					[keyFor(action.repo)]: action.repoObj,
-				}),
-			}));
-
-			if (!action.repoObj.Error) {
-				// Update resolution to reflect the newly created repo.
-				this.resolutions = deepFreeze(Object.assign({}, this.resolutions, {
-					content: Object.assign({}, this.resolutions.content, {
-						[keyFor(action.repo)]: {Result: {Repo: action.repoObj.URI}},
+			case RepoActions.FetchedRepo:
+				this.repos = deepFreeze(Object.assign({}, this.repos, {
+					content: Object.assign({}, this.repos.content, {
+						[keyFor(action.repo)]: action.repoObj,
 					}),
 				}));
-			}
-			break;
+				break;
 
-		case RepoActions.FetchedBranches:
-			this.branches = deepFreeze(Object.assign({}, this.branches, {
-				content: Object.assign({}, this.branches.content, {
-					[keyFor(action.repo)]: action.branches,
-				}),
-				errors: Object.assign({}, this.branches.errors, {
-					[keyFor(action.repo)]: action.err,
-				}),
-			}));
-			break;
+			case RepoActions.FetchedInventory:
+				this.inventory = deepFreeze(Object.assign({}, this.inventory, {
+					content: Object.assign({}, this.inventory.content, {
+						[keyFor(action.repo, action.commitID)]: action.inventory,
+					}),
+				}));
+				break;
 
-		case RepoActions.FetchedTags:
-			this.tags = deepFreeze(Object.assign({}, this.tags, {
-				content: Object.assign({}, this.tags.content, {
-					[keyFor(action.repo)]: action.tags,
-				}),
-				errors: Object.assign({}, this.tags.errors, {
-					[keyFor(action.repo)]: action.err,
-				}),
-			}));
-			break;
+			case RepoActions.RepoCloning:
+				this.repos = deepFreeze(Object.assign({}, this.repos, {
+					cloning: Object.assign({}, this.repos.cloning, {
+						[keyFor(action.repo)]: action.isCloning,
+					}),
+				}));
+				break;
 
-		case RepoActions.FetchedSymbols:
-			this.symbols = deepFreeze(Object.assign({}, this.symbols, {
-				content: Object.assign({}, this.symbols.content, {
-					[keyForSymbols(action.mode, action.repo, action.rev, action.query)]: action.symbols,
-				}),
-			}));
-			break;
+			case RepoActions.RepoResolved:
+				this.resolutions = deepFreeze(Object.assign({}, this.resolutions, {
+					content: Object.assign({}, this.resolutions.content, {
+						[keyFor(action.repo)]: action.resolution,
+					}),
+				}));
+				break;
 
-		default:
-			return; // don't emit change
+			case RepoActions.RepoCreated:
+				this.repos = deepFreeze(Object.assign({}, this.repos, {
+					content: Object.assign({}, this.repos.content, {
+						[keyFor(action.repo)]: action.repoObj,
+					}),
+				}));
+
+				if (!action.repoObj.Error) {
+					// Update resolution to reflect the newly created repo.
+					this.resolutions = deepFreeze(Object.assign({}, this.resolutions, {
+						content: Object.assign({}, this.resolutions.content, {
+							[keyFor(action.repo)]: { Result: { Repo: action.repoObj.URI } },
+						}),
+					}));
+				}
+				break;
+
+			case RepoActions.FetchedBranches:
+				this.branches = deepFreeze(Object.assign({}, this.branches, {
+					content: Object.assign({}, this.branches.content, {
+						[keyFor(action.repo)]: action.branches,
+					}),
+					errors: Object.assign({}, this.branches.errors, {
+						[keyFor(action.repo)]: action.err,
+					}),
+				}));
+				break;
+
+			case RepoActions.FetchedTags:
+				this.tags = deepFreeze(Object.assign({}, this.tags, {
+					content: Object.assign({}, this.tags.content, {
+						[keyFor(action.repo)]: action.tags,
+					}),
+					errors: Object.assign({}, this.tags.errors, {
+						[keyFor(action.repo)]: action.err,
+					}),
+				}));
+				break;
+
+			case RepoActions.FetchedSymbols:
+				this.symbols = deepFreeze(Object.assign({}, this.symbols, {
+					content: Object.assign({}, this.symbols.content, {
+						[keyForSymbols(action.mode, action.repo, action.rev, action.query)]: action.symbols,
+					}),
+				}));
+				break;
+
+			default:
+				return; // don't emit change
 		}
 
 		this.__emitChange();

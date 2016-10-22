@@ -1,29 +1,29 @@
 import { code_font_face } from "sourcegraph/components/styles/_vars.css";
-import {URIUtils} from "sourcegraph/core/uri";
-import {EditorService, IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
+import { URIUtils } from "sourcegraph/core/uri";
+import { EditorService, IEditorOpenedEvent } from "sourcegraph/editor/EditorService";
 import * as lsp from "sourcegraph/editor/lsp";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
-import {isSupportedMode} from "sourcegraph/util/supportedExtensions";
+import { EventLogger } from "sourcegraph/util/EventLogger";
+import { isSupportedMode } from "sourcegraph/util/supportedExtensions";
 
 import "sourcegraph/editor/FindExternalReferencesAction";
 import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
 import "sourcegraph/editor/vscode";
 
-import {CancellationToken} from "vs/base/common/cancellation";
-import {KeyCode, KeyMod} from "vs/base/common/keyCodes";
-import {IDisposable} from "vs/base/common/lifecycle";
+import { CancellationToken } from "vs/base/common/cancellation";
+import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
+import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
-import {IStandaloneCodeEditor} from "vs/editor/browser/standalone/standaloneCodeEditor";
-import {create as createStandaloneEditor, createModel, onDidCreateModel} from "vs/editor/browser/standalone/standaloneEditor";
-import {registerDefinitionProvider, registerHoverProvider, registerReferenceProvider} from "vs/editor/browser/standalone/standaloneLanguages";
-import {Position} from "vs/editor/common/core/position";
-import {Range} from "vs/editor/common/core/range";
-import {IPosition, IRange, IReadOnlyModel, IWordAtPosition} from "vs/editor/common/editorCommon";
-import {Definition, Hover, Location, ReferenceContext} from "vs/editor/common/modes";
-import {HoverOperation} from "vs/editor/contrib/hover/browser/hoverOperation";
+import { IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
+import { create as createStandaloneEditor, createModel, onDidCreateModel } from "vs/editor/browser/standalone/standaloneEditor";
+import { registerDefinitionProvider, registerHoverProvider, registerReferenceProvider } from "vs/editor/browser/standalone/standaloneLanguages";
+import { Position } from "vs/editor/common/core/position";
+import { Range } from "vs/editor/common/core/range";
+import { IPosition, IRange, IReadOnlyModel, IWordAtPosition } from "vs/editor/common/editorCommon";
+import { Definition, Hover, Location, ReferenceContext } from "vs/editor/common/modes";
+import { HoverOperation } from "vs/editor/contrib/hover/browser/hoverOperation";
 
-import {MenuId, MenuRegistry} from "vs/platform/actions/common/actions";
+import { MenuId, MenuRegistry } from "vs/platform/actions/common/actions";
 
 function cacheKey(model: IReadOnlyModel, position: IPosition): string | null {
 	const word = model.getWordAtPosition(position);
@@ -113,7 +113,7 @@ export class Editor implements IDisposable {
 			lineHeight: 21,
 			theme: "vs-dark",
 			renderLineHighlight: true,
-		}, {editorService: this._editorService});
+		}, { editorService: this._editorService });
 
 		this._editorService.setEditor(this._editor);
 
@@ -192,7 +192,7 @@ export class Editor implements IDisposable {
 		return new Promise((resolve, reject) => {
 			this._editorService.openEditor({
 				resource: uri,
-				options: range ? {selection: range} : undefined,
+				options: range ? { selection: range } : undefined,
 			}).done(resolve);
 		});
 	}
@@ -227,7 +227,7 @@ export class Editor implements IDisposable {
 		}
 
 		const flight = lsp.send(model, "textDocument/definition", {
-			textDocument: {uri: URIUtils.fromRefsDisplayURIMaybe(model.uri).toString(true)},
+			textDocument: { uri: URIUtils.fromRefsDisplayURIMaybe(model.uri).toString(true) },
 			position: lsp.toPosition(position),
 		})
 			.then((resp) => resp ? resp.result : null)
@@ -281,12 +281,12 @@ export class Editor implements IDisposable {
 		}
 
 		const flight = lsp.send(model, "textDocument/hover", {
-			textDocument: {uri: URIUtils.fromRefsDisplayURIMaybe(model.uri).toString(true)},
+			textDocument: { uri: URIUtils.fromRefsDisplayURIMaybe(model.uri).toString(true) },
 			position: lsp.toPosition(position),
 		})
 			.then(resp => {
 				if (!resp || !resp.result || !resp.result.contents || resp.result.contents.length === 0) {
-					return {contents: []}; // if null, strings, whitespace, etc. will show a perpetu-"Loading..." tooltip
+					return { contents: [] }; // if null, strings, whitespace, etc. will show a perpetu-"Loading..." tooltip
 				}
 
 				const {repo, rev, path} = URIUtils.repoParams(model.uri);
@@ -336,9 +336,9 @@ export class Editor implements IDisposable {
 
 	provideReferences(model: IReadOnlyModel, position: Position, context: ReferenceContext, token: CancellationToken): Location[] | Thenable<Location[]> {
 		return lsp.send(model, "textDocument/references", {
-			textDocument: {uri: model.uri.toString(true)},
+			textDocument: { uri: model.uri.toString(true) },
 			position: lsp.toPosition(position),
-			context: {includeDeclaration: false},
+			context: { includeDeclaration: false },
 		})
 			.then((resp) => resp ? resp.result : null)
 			.then((resp: lsp.Location | lsp.Location[] | null) => {

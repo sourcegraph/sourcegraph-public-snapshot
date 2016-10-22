@@ -1,18 +1,18 @@
 // tslint:disable typedef ordered-imports
-import {TreeEntry} from "sourcegraph/api";
+import { TreeEntry } from "sourcegraph/api";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
-import {URIUtils} from "sourcegraph/core/uri";
+import { URIUtils } from "sourcegraph/core/uri";
 import { makeRepoRev } from "sourcegraph/repo";
-import {IDisposable} from "vs/base/common/lifecycle";
+import { IDisposable } from "vs/base/common/lifecycle";
 import * as editorCommon from "vs/editor/common/editorCommon";
-import {IRange} from "vs/editor/common/editorCommon";
-import {IEditor, IEditorService, IResourceInput, ITextEditorModel} from "vs/platform/editor/common/editor";
-import {IEditorViewState} from "vs/editor/common/editorCommon";
-import {createModel, getModel} from "vs/editor/browser/standalone/standaloneEditor";
-import {TPromise} from "vs/base/common/winjs.base";
-import {SimpleEditor, SimpleModel} from "vs/editor/browser/standalone/simpleServices";
-import {getCodeEditor} from "vs/editor/common/services/codeEditorService";
+import { IRange } from "vs/editor/common/editorCommon";
+import { IEditor, IEditorService, IResourceInput, ITextEditorModel } from "vs/platform/editor/common/editor";
+import { IEditorViewState } from "vs/editor/common/editorCommon";
+import { createModel, getModel } from "vs/editor/browser/standalone/standaloneEditor";
+import { TPromise } from "vs/base/common/winjs.base";
+import { SimpleEditor, SimpleModel } from "vs/editor/browser/standalone/simpleServices";
+import { getCodeEditor } from "vs/editor/common/services/codeEditorService";
 
 const fetch = singleflightFetch(defaultFetch);
 
@@ -42,7 +42,7 @@ export class EditorService implements IEditorService {
 			throw new Error("onDidOpenEditor listener already set");
 		}
 		this._onDidOpenEditor = listener;
-		return {dispose(): void { this._onDidOpenEditor = null; }};
+		return { dispose(): void { this._onDidOpenEditor = null; } };
 	}
 
 	public openEditor(data: IResourceInput, sideBySide?: boolean): TPromise<IEditor> {
@@ -92,7 +92,7 @@ export class EditorService implements IEditorService {
 			this.editor.focus();
 
 			if (this._onDidOpenEditor) {
-				this._onDidOpenEditor({model: model, editor: this.editor._widget});
+				this._onDidOpenEditor({ model: model, editor: this.editor._widget });
 			}
 
 			return this.editor;
