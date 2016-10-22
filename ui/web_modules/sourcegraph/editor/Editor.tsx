@@ -93,6 +93,7 @@ export class Editor implements IDisposable {
 			registerModeProviders("go");
 			registerModeProviders("typescript");
 			registerModeProviders("javascript");
+			registerModeProviders("c");
 		}));
 
 		this._editorService = new EditorService();

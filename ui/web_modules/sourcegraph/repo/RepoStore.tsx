@@ -84,7 +84,7 @@ class RepoStoreClass extends Store<any> {
 		this.symbols = deepFreeze({
 			content: {},
 			list(repo, rev, query) {
-				return flatMap(["typescript", "go", "ctags"], mode =>
+				return flatMap(["typescript", "go", "c"], mode =>
 					this.content[keyForSymbols(mode, repo, rev, query)] || []);
 			},
 		});

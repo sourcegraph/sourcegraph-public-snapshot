@@ -161,7 +161,7 @@ function getModeByFilename(path: string): string {
 	if (path.endsWith(".rb")) {
 		return "ruby";
 	}
-	if (path.endsWith(".c")) {
+	if (path.endsWith(".c") || path.endsWith(".h")) {
 		return "c";
 	}
 	if (path.endsWith(".cpp")) {
