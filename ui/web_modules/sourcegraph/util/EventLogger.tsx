@@ -147,8 +147,8 @@ class EventLoggerClass {
 				this.setUserProperty("location", user.Location);
 			}
 
-			let allowedPrivateAuth = context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("repo") && context.gitHubToken.scope.includes("read:org");
-			this.setUserProperty("is_private_code_user", allowedPrivateAuth ? allowedPrivateAuth.toString() : "false");
+			this.setUserProperty("is_private_code_user", context.hasPrivateGitHubToken() ? "true" : "false");
+			this.setUserProperty("is_github_organization_authed", context.hasOrganizationGitHubToken() ? "true" : "false");
 		}
 
 		if (primaryEmail) {
@@ -311,26 +311,15 @@ class EventLoggerClass {
 	__onDispatch(action: any): void {
 		switch (action.constructor) {
 			case RepoActions.ReposFetched:
-				if (action.data.Repos) {
-					let orgs = {};
-					let languages: Array<string> = [];
-					let privateOrgs: Array<string> = [];
-					for (let repo of action.data.Repos) {
-						if (repo.Private) {
-							privateOrgs.push(repo.Owner);
-							languages.push(repo["Language"]);
-							orgs[repo.Owner] = true;
+				if (action.isUserRepos) {
+					if (action.data.Repos) {
+						let languages: Array<string> = [];
+						for (let repo of action.data.Repos) {
+								languages.push(repo["Language"]);
 						}
-					}
 
-					this.setUserProperty("private_orgs", this._dedupedArray(privateOrgs));
-					this.setUserProperty("github_languages", this._dedupedArray(languages));
-					this.setUserProperty("orgs", Object.keys(orgs));
-					this.setUserProperty("num_github_repos", action.data.Repos.length);
-					this.setIntercomProperty("companies", Object.keys(orgs).map(org => ({ id: `github_${org}`, name: org })));
-					this.setUserProperty("companies", privateOrgs);
-					if (orgs["sourcegraph"]) {
-						this.setUserProperty("is_sg_employee", "true");
+						this.setUserProperty("authed_languages_github", this._dedupedArray(languages));
+						this.setUserProperty("num_repos_github", action.data.Repos.length);
 					}
 				}
 				break;
@@ -345,9 +334,12 @@ class EventLoggerClass {
 				if (action.data) {
 					for (let orgs of action.data) {
 						orgNames.push(orgs.Login);
+						if (orgs.Login === "sourcegraph") {
+							this.setUserProperty("is_employee", true);
+						}
 					}
-					this.setIntercomProperty("authed_orgs", orgNames);
-					this.setUserProperty("authed_orgs", orgNames);
+					this.setIntercomProperty("authed_orgs_github", orgNames);
+					this.setUserProperty("authed_orgs_github", orgNames);
 				}
 				break;
 			default:

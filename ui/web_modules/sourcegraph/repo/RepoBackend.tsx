@@ -25,7 +25,7 @@ export const RepoBackend = {
 					.then((resp) => resp.json())
 					.catch((err) => ({Error: err}))
 					.then((data) => {
-						Dispatcher.Stores.dispatch(new RepoActions.ReposFetched(action.querystring, data));
+						Dispatcher.Stores.dispatch(new RepoActions.ReposFetched(action.querystring, data, action.isUserRepos || false));
 					});
 			}
 		}

@@ -25,7 +25,7 @@ export class UserSettingsReposMain extends Container<Props, State> {
 
 	onStateTransition(prevState: State, nextState: State): void {
 		if (nextState.repos !== prevState.repos) {
-			Dispatcher.Backends.dispatch(new RepoActions.WantRepos(reposQuerystring));
+			Dispatcher.Backends.dispatch(new RepoActions.WantRepos(reposQuerystring, true));
 		}
 	}
 

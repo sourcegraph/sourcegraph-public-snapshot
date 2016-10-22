@@ -34,19 +34,23 @@ export class FetchedRepo {
 
 export class WantRepos {
 	querystring: string;
+	isUserRepos?: boolean;
 
-	constructor(querystring: string) {
+	constructor(querystring: string, isUserRepos?: boolean) {
 		this.querystring = querystring;
+		this.isUserRepos = isUserRepos;
 	}
 }
 
 export class ReposFetched {
 	querystring: string;
+	isUserRepos: boolean;
 	data: RepoList;
 
-	constructor(querystring: string, data: RepoList) {
+	constructor(querystring: string, data: RepoList, isUserRepos: boolean) {
 		this.querystring = querystring;
 		this.data = data;
+		this.isUserRepos = isUserRepos;
 	}
 }
 

@@ -6,6 +6,7 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 import "sourcegraph/repo/RepoBackend"; // for side effects
 import {RepoStore} from "sourcegraph/repo/RepoStore";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
+import * as OrgActions from "sourcegraph/org/OrgActions";
 import {ChromeExtensionOnboarding} from "sourcegraph/dashboard/ChromeExtensionOnboarding";
 import {GitHubPrivateAuthOnboarding} from "sourcegraph/dashboard/GitHubPrivateAuthOnboarding";
 import {Store} from "sourcegraph/Store";
@@ -35,16 +36,15 @@ export class OnboardingContainer extends Container<Props, State> {
 
 	onStateTransition(prevState: State, nextState: State): void {
 		if (nextState.repos !== prevState.repos) {
-			Dispatcher.Backends.dispatch(new RepoActions.WantRepos(reposQuerystring));
+			Dispatcher.Backends.dispatch(new RepoActions.WantRepos(reposQuerystring, true));
+			if (context.hasOrganizationGitHubToken() && context.user) {
+				Dispatcher.Backends.dispatch(new OrgActions.WantOrgs(context.user.Login));
+			}
 		}
 	}
 
 	stores(): Store<any>[] {
 		return [RepoStore];
-	}
-
-	_isPrivateCodeUser() {
-		return context.gitHubToken && context.gitHubToken.scope && context.gitHubToken.scope.includes("repo") && context.gitHubToken.scope.includes("read:org");
 	}
 
 	_completeStep() {
@@ -86,7 +86,7 @@ export class OnboardingContainer extends Container<Props, State> {
 		}
 
 		if (this.props.currentStep === "github") {
-			return <GitHubPrivateAuthOnboarding completeStep={this._completeStep.bind(this)} privateCodeAuthed={this._isPrivateCodeUser()} location={this.props.location}/>;
+			return <GitHubPrivateAuthOnboarding completeStep={this._completeStep.bind(this)} privateCodeAuthed={context.hasPrivateGitHubToken()} location={this.props.location}/>;
 		}
 
 		return <Dashboard location={this.props.location} completedBanner={true}/>;
