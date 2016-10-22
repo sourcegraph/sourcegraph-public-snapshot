@@ -46,11 +46,6 @@ type Actor struct {
 
 	// GoogleScopes is the list of allowed Google API scopes we currently have for the actor.
 	GoogleScopes []string
-
-	// GoogleRefreshToken is the refresh token for the Google API for this actor.
-	// FIXME: It is not nice to store this here, but currently our codebase expects it to be quickly
-	// avaialble everywhere.
-	GoogleRefreshToken string
 }
 
 func (a *Actor) String() string {

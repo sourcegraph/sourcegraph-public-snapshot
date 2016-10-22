@@ -137,7 +137,6 @@ func ServeGoogleOAuth2Receive(w http.ResponseWriter, r *http.Request) error {
 	// Modify actor and write session cookie.
 	actor.GoogleConnected = true
 	actor.GoogleScopes = strings.Split(googleRefreshToken.Scope, ",")
-	actor.GoogleRefreshToken = googleRefreshToken.Token
 	if err := auth.StartNewSession(w, r, actor); err != nil {
 		return err
 	}

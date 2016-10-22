@@ -183,7 +183,6 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 
 		actor.GoogleConnected = true
 		actor.GoogleScopes = strings.Split(googleRefreshToken.Scope, ",")
-		actor.GoogleRefreshToken = googleRefreshToken.Token
 	}
 	if err := auth.StartNewSession(w, r, actor); err != nil {
 		return err
