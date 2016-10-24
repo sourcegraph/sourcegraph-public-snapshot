@@ -1,7 +1,5 @@
 // tslint:disable: typedef ordered-imports
 
-import * as flatMap from "lodash/flatMap";
-
 import { Store } from "sourcegraph/Store";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import { deepFreeze } from "sourcegraph/util/deepFreeze";
@@ -84,8 +82,23 @@ class RepoStoreClass extends Store<any> {
 		this.symbols = deepFreeze({
 			content: {},
 			list(repo, rev, query) {
-				return flatMap(["typescript", "go", "c"], mode =>
-					this.content[keyForSymbols(mode, repo, rev, query)] || []);
+				let results = [];
+				const goSymbols = this.content[keyForSymbols("go", repo, rev, query)];
+				if (goSymbols) {
+					results = results.concat(goSymbols);
+				}
+				const cSymbols = this.content[keyForSymbols("c", repo, rev, query)];
+				if (cSymbols) {
+					results = results.concat(cSymbols);
+				}
+				let loading = true;
+				if (goSymbols && cSymbols) {
+					loading = false;
+				}
+				return {
+					results: results,
+					loading: loading,
+				};
 			},
 		});
 	}

@@ -3,28 +3,28 @@ import * as debounce from "lodash/debounce";
 import * as findIndex from "lodash/findIndex";
 import * as throttle from "lodash/throttle";
 import * as React from "react";
-import {InjectedRouter} from "react-router";
+import { InjectedRouter } from "react-router";
 
-import {EventListener} from "sourcegraph/Component";
-import {Input} from "sourcegraph/components/Input";
-import {Search as SearchIcon} from "sourcegraph/components/symbols";
-import {Spinner as LoadingIcon} from "sourcegraph/components/symbols";
-import {colors} from "sourcegraph/components/utils/index";
+import { EventListener } from "sourcegraph/Component";
+import { Input } from "sourcegraph/components/Input";
+import { Search as SearchIcon } from "sourcegraph/components/symbols";
+import { Spinner as LoadingIcon } from "sourcegraph/components/symbols";
+import { colors } from "sourcegraph/components/utils/index";
 
-import {URIUtils} from "sourcegraph/core/uri";
+import { URIUtils } from "sourcegraph/core/uri";
 
-import {urlToBlob, urlToBlobLineCol} from "sourcegraph/blob/routes";
+import { urlToBlob, urlToBlobLineCol } from "sourcegraph/blob/routes";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
-import {RepoStore} from "sourcegraph/repo/RepoStore";
+import { RepoStore } from "sourcegraph/repo/RepoStore";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
-import {TreeStore} from "sourcegraph/tree/TreeStore";
+import { TreeStore } from "sourcegraph/tree/TreeStore";
 import "string_score";
 
-import {Hint, ResultCategories} from "sourcegraph/quickopen/Components";
+import { Hint, ResultCategories } from "sourcegraph/quickopen/Components";
 
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
+import { EventLogger } from "sourcegraph/util/EventLogger";
 
 const modalStyle = {
 	position: "fixed",
@@ -117,7 +117,7 @@ export class Container extends React.Component<Props, State> {
 	context: { router: InjectedRouter };
 	searchInput: HTMLElement;
 	delegate: SearchDelegate;
-	listeners: {remove: () => void}[];
+	listeners: { remove: () => void }[];
 
 	// fetchRepoResults fetches repository search results, augmented
 	// with results from a GitHub search API request. Due to the
@@ -130,16 +130,16 @@ export class Container extends React.Component<Props, State> {
 		this.keyListener = this.keyListener.bind(this);
 		this.bindSearchInput = this.bindSearchInput.bind(this);
 		this.updateInput = this.updateInput.bind(this);
-		this.updateResults = throttle(this.updateResults.bind(this), 150, {leading: true, trailing: true});
-		this.fetchResults = throttle(this.fetchResults, 150, {leading: true, trailing: true});
+		this.updateResults = throttle(this.updateResults.bind(this), 150, { leading: true, trailing: true });
+		this.fetchResults = throttle(this.fetchResults, 150, { leading: true, trailing: true });
 		this.state = {
 			input: "",
-			selected: {category: 0, row: 0},
+			selected: { category: 0, row: 0 },
 			limitForCategory: [3, 3, 3],
 			results: {
-				symbols: {Title: "Definitions", IsLoading: false, Results: []},
-				files: {Title: "Files", IsLoading: false, Results: []},
-				repos: {Title: "Repositories", IsLoading: false, Results: []},
+				symbols: { Title: "Definitions", IsLoading: false, Results: [] },
+				files: { Title: "Files", IsLoading: false, Results: [] },
+				repos: { Title: "Repositories", IsLoading: false, Results: [] },
 			},
 			allowScroll: true,
 			commitID: null,
@@ -162,10 +162,10 @@ export class Container extends React.Component<Props, State> {
 		if (this.props.repo) {
 			const r = RepoStore.resolvedRevs.get(this.props.repo.URI, this.props.repo.rev);
 			if (r !== null) {
-				this.setState(Object.assign({}, this.state, {commitID: r.CommitID}));
+				this.setState(Object.assign({}, this.state, { commitID: r.CommitID }));
 			}
 		}
-		setTimeout(() =>  {
+		setTimeout(() => {
 			this.fetchResults();
 			this.updateResults();
 		});
@@ -178,7 +178,7 @@ export class Container extends React.Component<Props, State> {
 	componentWillUpdate(_: Props, nextState: State): void {
 		if (nextState.input !== this.state.input) {
 			nextState.limitForCategory = [3, 3, 3];
-			nextState.selected = {category: 0, row: 0};
+			nextState.selected = { category: 0, row: 0 };
 		}
 	}
 
@@ -232,7 +232,7 @@ export class Container extends React.Component<Props, State> {
 			return;
 		}
 		let state = Object.assign(this.state, {
-			selected: {category: category, row: row},
+			selected: { category: category, row: row },
 			allowScroll: true,
 		});
 		this.setState(state);
@@ -301,9 +301,9 @@ export class Container extends React.Component<Props, State> {
 		// Update symbols
 		if (repo && this.state.commitID) {
 			const updatedSymbols = RepoStore.symbols.list(repo.URI, commitID, query);
-			if (updatedSymbols.length > 0) {
+			if (updatedSymbols.results.length > 0) {
 				const symbolResults: Result[] = [];
-				updatedSymbols.forEach(sym => {
+				updatedSymbols.results.forEach(sym => {
 					let title = sym.name;
 					if (sym.containerName) {
 						title = `${sym.containerName}.${sym.name}`;
@@ -322,11 +322,10 @@ export class Container extends React.Component<Props, State> {
 						URLPath: urlToBlobLineCol(repo.URI, repo.rev, path, line + 1, col + 1),
 					});
 				});
-				symbols.IsLoading = false;
+
 				symbols.Results = symbolResults;
-			} else {
-				symbols.IsLoading = true;
 			}
+			symbols.IsLoading = updatedSymbols.loading;
 
 			// Update files
 			const commit = this.state.commitID || "";
@@ -355,7 +354,7 @@ export class Container extends React.Component<Props, State> {
 		}
 		if (updatedRepos) {
 			if (updatedRepos.Repos) {
-				const repoResults = updatedRepos.Repos.map(({URI}) => ({title: URI, URLPath: `/${URI}`}));
+				const repoResults = updatedRepos.Repos.map(({URI}) => ({ title: URI, URLPath: `/${URI}` }));
 				repos.IsLoading = false;
 				repos.Results = repoResults;
 			} else {
@@ -368,7 +367,7 @@ export class Container extends React.Component<Props, State> {
 
 		// Update selection (don't want to leave the selection on a category
 		// that doesn't exist anymore!)
-		const results = {symbols: symbols, repos: repos, files: files};
+		const results = { symbols: symbols, repos: repos, files: files };
 		const resultsArray = resultsToArray(results);
 		const sel = this.state.selected;
 		if (resultsArray[sel.category].Results.length - 1 < sel.row) {
@@ -377,7 +376,7 @@ export class Container extends React.Component<Props, State> {
 			sel.category = firstVisibleCategory;
 		}
 
-		this.setState(Object.assign({}, this.state, {results: results}));
+		this.setState(Object.assign({}, this.state, { results: results }));
 	}
 
 	expand(category: number): () => void {
@@ -398,7 +397,7 @@ export class Container extends React.Component<Props, State> {
 	}
 
 	render(): JSX.Element {
-		const icon = this.loading() ? <LoadingIcon /> : <SearchIcon style={{fill: colors.coolGray2()}} />;
+		const icon = this.loading() ? <LoadingIcon /> : <SearchIcon style={{ fill: colors.coolGray2() }} />;
 		const categories = resultsToArray(this.state.results);
 		return (
 			<div style={modalStyle}>
@@ -417,7 +416,7 @@ export class Container extends React.Component<Props, State> {
 					{icon}
 					<Input
 						id="SearchInput-e2e-test"
-						style={{boxSizing: "border-box", border: "none", flex: "1 0 auto"}}
+						style={{ boxSizing: "border-box", border: "none", flex: "1 0 auto" }}
 						placeholder={this.props.repo ? "Search for repositories, files or definitions" : "Search for repositories"}
 						value={this.state.input}
 						block={true}
@@ -442,44 +441,44 @@ export class Container extends React.Component<Props, State> {
 // pkg/lsp/service.go.
 function symbolKindName(kind: number): string {
 	switch (kind) {
-	case 1:
-		return "file";
-	case 2:
-		return "module";
-	case 3:
-		return "namespace";
-	case 4:
-		return "package";
-	case 5:
-		return "class";
-	case 6:
-		return "method";
-	case 7:
-		return "property";
-	case 8:
-		return "field";
-	case 9:
-		return "constructor";
-	case 10:
-		return "enum";
-	case 11:
-		return "interface";
-	case 12:
-		return "function";
-	case 13:
-		return "variable";
-	case 14:
-		return "constant";
-	case 15:
-		return "string";
-	case 16:
-		return "number";
-	case 17:
-		return "boolean";
-	case 18:
-		return "array";
-	default:
-		return "";
+		case 1:
+			return "file";
+		case 2:
+			return "module";
+		case 3:
+			return "namespace";
+		case 4:
+			return "package";
+		case 5:
+			return "class";
+		case 6:
+			return "method";
+		case 7:
+			return "property";
+		case 8:
+			return "field";
+		case 9:
+			return "constructor";
+		case 10:
+			return "enum";
+		case 11:
+			return "interface";
+		case 12:
+			return "function";
+		case 13:
+			return "variable";
+		case 14:
+			return "constant";
+		case 15:
+			return "string";
+		case 16:
+			return "number";
+		case 17:
+			return "boolean";
+		case 18:
+			return "array";
+		default:
+			return "";
 	}
 }
 
@@ -491,7 +490,7 @@ export const rankFile = (fileResults, file, query) => {
 	}
 	if (query === "") {
 		// If we don't have a query, no sense scoring anything.
-		fileResults.push({ title: file, description: "", index: -1, length: undefined,  score: 0 });
+		fileResults.push({ title: file, description: "", index: -1, length: undefined, score: 0 });
 		return fileResults;
 	}
 
@@ -522,6 +521,6 @@ export const rankFile = (fileResults, file, query) => {
 	}
 
 	const l = index > -1 ? query.length : undefined;
-	fileResults.push({ title: file, description: "", index: index, length: l,  score: score});
+	fileResults.push({ title: file, description: "", index: index, length: l, score: score });
 	return fileResults;
 };
