@@ -7,7 +7,7 @@ RUN apk add --update alpine-sdk autoconf automake ca-certificates
 RUN git clone https://github.com/universal-ctags/ctags /ctags
 WORKDIR /ctags
 RUN ./autogen.sh
-RUN ./configure
+RUN ./configure LDFLAGS="-static"
 RUN make
 RUN make install
 

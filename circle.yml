@@ -31,6 +31,7 @@ dependencies:
     - ./dev/ci/install-go.sh
     - ./dev/ci/install-test-tools.sh
     - ./dev/ci/install-checkup.sh
+    - ./dev/ci/install-ctags.sh
 
     - git config --global user.email "ci@example.com"
     - git config --global user.name "CI User"
