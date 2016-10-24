@@ -32,6 +32,6 @@ export const FaThumbsDown = iconWrapper(require("react-icons/lib/fa/thumbs-down"
 // iconWrapper lets you pass a style directly to any of the exported components, e.g.
 // <RepoIcon className={styles.foo} />
 function iconWrapper(Component): any {
-	const C = ({className, title}) => <div className={classNames(className, styles.icon)} title={title}><Component /></div>; // eslint-disable-line react/jsx-key
+	const C = ({className, style, title}) => <div className={classNames(className, styles.icon)} style={style} title={title}><Component /></div>; // eslint-disable-line react/jsx-key
 	return C;
 }

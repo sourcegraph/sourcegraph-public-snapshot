@@ -35,11 +35,7 @@
 												"scopes": "read:org,repo,user:email",
 												"children": [
 													"Add private repositories"
-												],
-												"color": "blue",
-												"outline": false,
-												"block": false,
-												"img": true
+												]
 											}
 										}
 									]

@@ -9,7 +9,7 @@ export function urlTo(name: RouteName, params: {}): string {
 	return formatPattern(`/${abs[name]}`, params);
 }
 
-type oauthProvider = "github";
+export type oauthProvider = "github";
 
 // urlToOAuth returns an OAuth initiate URL for given provider, scopes, returnTo.
 export function urlToOAuth(provider: oauthProvider, scopes: string | null, returnTo: string | Location | null): string {
