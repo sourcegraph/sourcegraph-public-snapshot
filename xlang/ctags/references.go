@@ -2,10 +2,10 @@ package ctags
 
 import (
 	"context"
+	"go/scanner"
+	"go/token"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strings"
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
@@ -30,33 +30,29 @@ func (h *Handler) handleReferences(ctx context.Context, params lsp.ReferencePara
 
 	var locs []lsp.Location
 	for filename, fileBytes := range files {
-		file := string(fileBytes)
-		locs = append(locs, locationsOfWordInFile(file, filename, word)...)
+		locs = append(locs, locationsOfWordInFile(fileBytes, filename, word)...)
 	}
 
 	return locs, nil
 }
 
-func locationsOfWordInFile(file, filename, word string) []lsp.Location {
-	var locs []lsp.Location
-	re := regexp.MustCompile(word)
-	for lineNumber, line := range strings.Split(file, "\n") {
-		ranges := re.FindAllStringIndex(line, -1)
-		for _, wordIndices := range ranges {
+func locationsOfWordInFile(b []byte, filename, word string) (locs []lsp.Location) {
+	fs := token.NewFileSet()
+	f := fs.AddFile(filename, fs.Base(), len(b))
+	var sc scanner.Scanner
+	var eh scanner.ErrorHandler
+	sc.Init(f, b, eh, scanner.ScanComments)
+	for pos, tok, lit := sc.Scan(); tok != token.EOF; pos, tok, lit = sc.Scan() {
+		if tok == token.IDENT && lit == word {
+			position := f.Position(pos)
 			locs = append(locs, lsp.Location{
+				URI: "file://" + filename,
 				Range: lsp.Range{
-					Start: lsp.Position{
-						Line:      lineNumber,
-						Character: wordIndices[0],
-					},
-					End: lsp.Position{
-						Line:      lineNumber,
-						Character: wordIndices[1],
-					},
+					Start: lsp.Position{Line: position.Line - 1, Character: position.Column - 1},
+					End:   lsp.Position{Line: position.Line - 1, Character: position.Column - 1 + len(word)},
 				},
-				URI: filename, // TODO ADD URI STUFF
 			})
 		}
 	}
-	return locs
+	return
 }

@@ -112,11 +112,11 @@ func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
-		var params lsp.TextDocumentPositionParams
+		var params lsp.ReferenceParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
-		return h.handleDefinition(ctx, params)
+		return h.handleReferences(ctx, params)
 
 	case "textDocument/hover":
 		if req.Params == nil {
