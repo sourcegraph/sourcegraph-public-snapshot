@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/russross/blackfriday"
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 
@@ -199,6 +200,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		}
 	} else {
 		// Fallback to legacy / srclib data.
+		legacyDefLandingCounter.Inc()
 		data, err = queryLegacyDefLandingData(r, repo)
 		if err != nil {
 			return err
@@ -504,4 +506,14 @@ func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (*defLan
 		RefLocs:          refLocs.Convert(),
 		TruncatedRefLocs: refLocs.TotalRepos > int32(len(refLocs.RepoRefs)),
 	}, nil
+}
+
+var legacyDefLandingCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "src",
+	Name:      "legacy_def_landing",
+	Help:      "Number of times a legacy def landing page has been served.",
+})
+
+func init() {
+	prometheus.MustRegister(legacyDefLandingCounter)
 }
