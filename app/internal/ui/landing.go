@@ -280,6 +280,14 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 	}, &hover)
 	hoverTitle := hover.Contents[0].Value
 
+	var hoverDesc string
+	for _, s := range hover.Contents {
+		if s.Language == "text/html" {
+			hoverDesc = s.Value
+			break
+		}
+	}
+
 	// Determine canonical URL and whether the symbol shold be indexed.
 	canonicalURL := canonicalRepoURL(
 		conf.AppURL,
@@ -323,6 +331,10 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 			if err != nil {
 				return nil, errors.Wrap(err, "Repos.Resolve")
 			}
+			startLine := int64(ref.Positions[0].Start.Line+1) - 2
+			if startLine < 0 {
+				startLine = 0
+			}
 			refEntry, err := backend.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{
 				Entry: sourcegraph.TreeEntrySpec{
 					// TODO: does ref.Version need resolving?
@@ -333,9 +345,9 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 					ContentsAsString: true,
 					GetFileOptions: sourcegraph.GetFileOptions{
 						FileRange: sourcegraph.FileRange{
-							// Note: we can expand the lines without bounds
+							// Note: we can expand the end line without bounds
 							// checking because RepoTree.Get is smart.
-							StartLine: int64(ref.Positions[0].Start.Line+1) - 2,
+							StartLine: startLine,
 							EndLine:   int64(ref.Positions[0].End.Line+1) + 2,
 						},
 						ExpandContextLines: 2,
@@ -368,8 +380,7 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 			CanonicalURL: canonicalURL,
 			Index:        allowRobots(repo) && shouldIndexSymbol && canonRev,
 		},
-		// TODO(slimsag): before merge, get descriptions from LSP hover
-		//Description: htmlutil.Sanitize("description"),
+		Description:      htmlutil.Sanitize(hoverDesc),
 		RefSnippets:      refSnippets,
 		ViewDefURL:       viewDefURL,
 		DefName:          hoverTitle,
