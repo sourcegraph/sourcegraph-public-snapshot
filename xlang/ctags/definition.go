@@ -33,7 +33,7 @@ func (h *Handler) handleDefinition(ctx context.Context, params lsp.TextDocumentP
 
 var ErrBadRequest = fmt.Errorf("invalid position argument")
 
-// Find the word and start character of the word at the given position
+// wordAtPosition finds the word and start character of the word at the given position.
 func wordAtPosition(ctx context.Context, fs ctxvfs.FileSystem, params lsp.TextDocumentPositionParams) (string, int, error) {
 	path := strings.TrimPrefix(params.TextDocument.URI, "file://")
 	rsk, err := fs.Open(ctx, path)
