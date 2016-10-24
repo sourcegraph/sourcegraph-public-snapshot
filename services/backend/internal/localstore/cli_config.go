@@ -3,7 +3,7 @@ package localstore
 import srcstore "sourcegraph.com/sourcegraph/srclib/store"
 
 var (
-	Defs                 = &defs{} // TODO: remove defs service (replaced by new xlang based globalDefs service)
+	Defs                 = &defs{}
 	GlobalDeps           = &globalDeps{}
 	DeprecatedGlobalRefs = &deprecatedGlobalRefs{}
 	GlobalRefs           = &globalRefs{}
