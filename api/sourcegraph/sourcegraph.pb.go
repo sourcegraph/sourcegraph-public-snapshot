@@ -915,7 +915,7 @@ type RefLocationsOptions struct {
 	// Sources is the maximum number of source (e.g. repo) references to return.
 	Sources int
 
-	// Files is the maximum number of file references per repository to return.
+	// Files is the maximum number of file references per source to return.
 	Files int
 
 	// Source is the source of the definition whose references are being
@@ -927,13 +927,13 @@ type RefLocationsOptions struct {
 	Name, ContainerName string
 }
 
-// RefLocations lists the repos and files that reference a def.
+// RefLocations lists the sources and files that reference a def.
 type RefLocations struct {
 	// SourceRefs holds the sources and files referencing the def.
 	SourceRefs []*SourceRef
 	// StreamResponse specifies if more results are available.
 	StreamResponse
-	// TotalSources is the total number of repos which reference the def.
+	// TotalSources is the total number of sources which reference the def.
 	TotalSources int
 }
 
@@ -949,16 +949,16 @@ type SourceRef struct {
 	// Version is the version of the source that references the def.
 	Version string
 
-	// Files is the number of files in the repository that reference the def.
+	// Files is the number of files in the source that reference the def.
 	Files int
 
 	// Refs is the total number of references to the def in the source.
 	Refs int
 
-	// Score is the importance score of this repo for the def.
+	// Score is the importance score of this source for the def.
 	Score int16
 
-	// FileRefs is the list of files in this repo referencing the def.
+	// FileRefs is the list of files in this source referencing the def.
 	FileRefs []*FileRef
 }
 
