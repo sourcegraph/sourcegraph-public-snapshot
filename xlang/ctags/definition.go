@@ -61,8 +61,7 @@ func wordAtPosition(ctx context.Context, fs ctxvfs.FileSystem, params lsp.TextDo
 	if col >= len(line) {
 		return "", 0, ErrBadRequest
 	}
-	word := wordAtPoint(line, col)
-	wordStart := strings.Index(line, word) + 1
+	word, wordStart := wordAtPoint(line, col)
 	return word, wordStart, nil
 }
 
@@ -72,14 +71,14 @@ var wordRE = regexp.MustCompile(`\w+`)
 
 // wordAtPoint finds something that looks like an identifier, that is located at
 // the one indexed column.
-func wordAtPoint(line string, col int) string {
+func wordAtPoint(line string, col int) (string, int) {
 	indicies := wordRE.FindAllStringIndex(line, -1)
 
 	col = col - 1 // LSP is one indexed
 	for _, v := range indicies {
 		if v[0] <= col && v[1] > col {
-			return line[v[0]:v[1]]
+			return line[v[0]:v[1]], v[0]
 		}
 	}
-	return ""
+	return "", 0
 }
