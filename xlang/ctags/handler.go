@@ -72,6 +72,8 @@ func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 
 	switch req.Method {
 	case "initialize":
+		// Asynchronously download and process the repository.
+		go h.getTags(ctx)
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
 				WorkspaceSymbolProvider: true,
