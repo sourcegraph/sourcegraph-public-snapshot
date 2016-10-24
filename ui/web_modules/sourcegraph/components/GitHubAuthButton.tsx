@@ -7,7 +7,7 @@ import {whitespace} from "sourcegraph/components/utils";
 import {Location} from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
-import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
+import {urlToOAuth} from "sourcegraph/util/urlTo";
 
 interface Props {
 	scopes?: string;
@@ -37,7 +37,7 @@ export class GitHubAuthButton extends React.Component<Props, State> {
 
 	render(): JSX.Element | null {
 		const {scopes, returnTo, outline, color, block, children, size, pageName, className, tabIndex} = this.props;
-		const url = urlToGitHubOAuth(scopes || "read:org,user:email", returnTo || null);
+		const url = urlToOAuth("github", scopes || "read:org,user:email", returnTo || null);
 		return (
 			<form method="POST" action={url}>
 				<input type="hidden" name="gorilla.csrf.Token" value={context.csrfToken} />

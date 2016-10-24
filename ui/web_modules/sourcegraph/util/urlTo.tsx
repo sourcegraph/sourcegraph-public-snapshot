@@ -9,8 +9,10 @@ export function urlTo(name: RouteName, params: {}): string {
 	return formatPattern(`/${abs[name]}`, params);
 }
 
-// urlToGitHubOAuth
-export function urlToGitHubOAuth(scopes: string | null, returnTo: string | Location | null): string {
+type oauthProvider = "github";
+
+// urlToOAuth returns an OAuth initiate URL for given provider, scopes, returnTo.
+export function urlToOAuth(provider: oauthProvider, scopes: string | null, returnTo: string | Location | null): string {
 	scopes = scopes ? `scopes=${encodeURIComponent(scopes)}` : null;
 	if (returnTo && typeof returnTo !== "string") {
 		returnTo = `${returnTo.pathname}${returnTo.search}${returnTo.hash}`;
@@ -26,7 +28,7 @@ export function urlToGitHubOAuth(scopes: string | null, returnTo: string | Locat
 	} else if (returnTo) {
 		q = returnTo;
 	}
-	return `/-/github-oauth/initiate${q ? `?${q}` : ""}`;
+	return `/-/${provider}-oauth/initiate${q ? `?${q}` : ""}`;
 }
 
 export const privateGitHubOAuthScopes = "read:org,repo,user:email";
