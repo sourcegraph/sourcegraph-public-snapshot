@@ -92,6 +92,9 @@
 .github_button {
 	composes: mr3 mb2 from base;
 }
+.google_button {
+	composes: mr3 mb2 from base;
+}
 
 .footer {
 	composes: bt center pv3 ph3 from base;

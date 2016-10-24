@@ -9,7 +9,7 @@ export function urlTo(name: RouteName, params: {}): string {
 	return formatPattern(`/${abs[name]}`, params);
 }
 
-export type oauthProvider = "github";
+export type oauthProvider = "github" | "google";
 
 // urlToOAuth returns an OAuth initiate URL for given provider, scopes, returnTo.
 export function urlToOAuth(provider: oauthProvider, scopes: string | null, returnTo: string | Location | null): string {
@@ -32,3 +32,5 @@ export function urlToOAuth(provider: oauthProvider, scopes: string | null, retur
 }
 
 export const privateGitHubOAuthScopes = "read:org,repo,user:email";
+
+export const privateGoogleOAuthScopes = "https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/userinfo.profile";

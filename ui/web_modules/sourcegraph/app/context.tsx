@@ -10,6 +10,7 @@ class Context {
 	user: User | null;
 	emails: EmailAddrList | null;
 	gitHubToken: ExternalToken | null;
+	googleToken: ExternalToken | null;
 	intercomHash: string;
 
 	appURL: string; // base URL for app (e.g., https://sourcegraph.com or http://localhost:3080)
@@ -31,6 +32,10 @@ class Context {
 
 	hasOrganizationGitHubToken(): boolean {
 		return Boolean(this.gitHubToken && this.gitHubToken.scope.includes("read:org"));
+	}
+
+	hasPrivateGoogleToken(): boolean {
+		return Boolean(this.googleToken && this.googleToken.scope.includes("https://www.googleapis.com/auth/cloud-platform") && this.googleToken.scope.includes("https://www.googleapis.com/auth/userinfo.email") && this.googleToken.scope.includes("https://www.googleapis.com/auth/userinfo.profile"));
 	}
 }
 

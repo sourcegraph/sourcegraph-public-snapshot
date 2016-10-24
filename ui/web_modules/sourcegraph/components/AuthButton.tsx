@@ -1,7 +1,7 @@
 import * as React from "react";
 import {context} from "sourcegraph/app/context";
 import {Button} from "sourcegraph/components";
-import {GitHubIcon} from "sourcegraph/components/Icons";
+import {GitHubIcon, GoogleIcon} from "sourcegraph/components/Icons";
 import {typography, whitespace} from "sourcegraph/components/utils";
 import {Location} from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -10,8 +10,8 @@ import {oauthProvider, urlToOAuth} from "sourcegraph/util/urlTo";
 
 interface Props {
 	provider: oauthProvider;
-	iconType: "github";
-	eventLabel: "InitiateGitHubOAuth2Flow";
+	iconType: "github" | "google";
+	eventLabel: "InitiateGitHubOAuth2Flow" | "InitiateGoogleOAuth2Flow";
 
 	scopes?: string;
 	returnTo?: string | Location;
@@ -72,6 +72,7 @@ export function AuthButton(props: Props): JSX.Element {
 				{img &&
 					<span style={{marginRight: whitespace[2]}}>
 						{iconType === "github" && <GitHubIcon style={iconSx}/>}
+						{iconType === "google" && <GoogleIcon style={iconSx}/>}
 					</span>
 				}
 				{children}

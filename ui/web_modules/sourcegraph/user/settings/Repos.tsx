@@ -4,12 +4,13 @@ import {Repo} from "sourcegraph/api/index";
 import {context} from "sourcegraph/app/context";
 import {Button, Heading, Input} from "sourcegraph/components";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
+import {GoogleAuthButton} from "sourcegraph/components/GoogleAuthButton";
 import {RepoLink} from "sourcegraph/components/RepoLink";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {whitespace} from "sourcegraph/components/utils/whitespace";
 import {Location} from "sourcegraph/Location";
 import * as styles from "sourcegraph/user/settings/styles/Repos.css";
-import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
+import {privateGitHubOAuthScopes, privateGoogleOAuthScopes} from "sourcegraph/util/urlTo";
 
 interface Props {
 	repos: Repo[] | null;
@@ -65,6 +66,7 @@ export class Repos extends React.Component<Props, State> {
 				{!context.hasPrivateGitHubToken() && <p>Private code indexed on Sourcegraph is only available to you and those with permissions to the underlying GitHub repository.</p>}
 				<div className={styles.input_bar}>
 					{!context.hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>}
+					{window.localStorage["google"] === "true" && !context.hasPrivateGoogleToken() && <GoogleAuthButton scopes={privateGoogleOAuthScopes} returnTo={this.props.location} className={styles.google_button}>Add GCP repositories</GoogleAuthButton>}
 				</div>
 			</header>);
 	}

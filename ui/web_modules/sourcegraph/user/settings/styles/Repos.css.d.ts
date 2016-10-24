@@ -26,6 +26,7 @@ export const input_bar: string;
 export const list_heading: string;
 export const list_label: string;
 export const github_button: string;
+export const google_button: string;
 export const footer: string;
 export const footer_link: string;
 export const footer_btn: string;
