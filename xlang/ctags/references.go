@@ -5,7 +5,6 @@ import (
 	"go/scanner"
 	"go/token"
 	"os"
-	"path/filepath"
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
@@ -14,8 +13,7 @@ import (
 func (h *Handler) handleReferences(ctx context.Context, params lsp.ReferenceParams) ([]lsp.Location, error) {
 	// Filter for interesting files.
 	var filter = func(info os.FileInfo) bool {
-		ext := filepath.Ext(params.TextDocument.URI)
-		return filepath.Ext(info.Name()) == ext
+		return isSupportedFile(info.Name())
 	}
 
 	files, err := ctxvfs.ReadAllFiles(ctx, h.fs, "", filter)

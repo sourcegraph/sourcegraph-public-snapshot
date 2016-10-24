@@ -13,10 +13,7 @@ import (
 
 func copyRepoArchive(ctx context.Context, fs ctxvfs.FileSystem, destination string) error {
 	filter := func(f os.FileInfo) bool {
-		if ext := filepath.Ext(f.Name()); ext == ".c" || ext == ".h" || ext == ".rb" {
-			return true
-		}
-		return false
+		return isSupportedFile(f.Name())
 	}
 
 	par := parallel.NewRun(10)
