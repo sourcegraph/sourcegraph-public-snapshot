@@ -303,3 +303,29 @@ index 54937e8..2f1926a 100644
 +		return this._renderLineHighlight && this._selectionIsEmpty && this._primaryCursorIsInEditableRange;
  	}
  }
+diff --git a/ui/node_modules/vscode/src/vs/editor/common/editorCommon.ts b/ui/node_modules/vscode/src/vs/editor/common/editorCommon.ts
+index 8395226..ca000ad 100644
+--- a/ui/node_modules/vscode/src/vs/editor/common/editorCommon.ts
++++ b/ui/node_modules/vscode/src/vs/editor/common/editorCommon.ts
+@@ -3746,7 +3746,7 @@ export interface IEditor {
+ 	 * will not be destroyed.
+ 	 * It is safe to call setModel(null) to simply detach the current model from the editor.
+ 	 */
+-	setModel(model: IEditorModel): void;
++	setModel(model: IEditorModel | undefined): void;
+ 
+ 	/**
+ 	 * Change the decorations. All decorations added through this changeAccessor
+diff --git a/ui/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts b/ui/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts
+index 71ba748..f05d17a 100644
+--- a/ui/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts
++++ b/ui/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts
+@@ -451,7 +451,7 @@ export interface IContextKeyServiceTarget {
+ 	setAttribute(attr: string, value: string): void;
+ 	removeAttribute(attr: string): void;
+ 	hasAttribute(attr: string): boolean;
+-	getAttribute(attr: string): string;
++	getAttribute(attr: string): string | null;
+ }
+ 
+ export let IContextKeyService = createDecorator<IContextKeyService>('contextKeyService');
