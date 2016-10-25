@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jaytaylor/html2text"
 	"github.com/microcosm-cc/bluemonday"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/russross/blackfriday"
@@ -29,6 +30,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
@@ -117,19 +119,15 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		sanitizedREADME = bluemonday.UGCPolicy().SanitizeBytes(blackfriday.MarkdownCommon(readmeEntry.Contents))
 	}
 
-	migrated, err := backend.Defs.HasMigrated(r.Context(), repo.URI)
+	data, err := queryRepoLandingData(r, repo)
 	if err != nil {
-		// Just log, so we fallback to legacy.
-		log15.Crit("Defs.HasMigrated", "error", err)
+		// Just log, so we fallback to legacy in the event of catastrophic failure.
+		log15.Crit("queryRepoLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
 	}
 
-	var data []defDescr
-	if migrated {
-		data, err = queryRepoLandingData(r, repo)
-		if err != nil {
-			return err
-		}
-	} else {
+	// If the new system failed for some reason OR if we don't have 5 top
+	// definitions, then fallback to the legacy srclib data.
+	if err != nil || len(data) < 5 {
 		// Fallback to legacy / srclib data.
 		legacyRepoLandingCounter.Inc()
 		data, err = queryLegacyRepoLandingData(r, repo)
@@ -176,12 +174,11 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) ([]defDescr, 
 	for _, d := range topDefs.SourceDefs {
 		// Lookup the definition based on the source / definition (Name, ContainerName)
 		// pair.
-		rootPath := d.DefScheme + "://" + d.DefSource + "?" + d.DefVersion
+		rootPath := "git://" + repo.URI + "?" + repo.DefaultBranch
 		var symbols []lsp.SymbolInformation
-		err := xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
-			// TODO(slimsag): before merge, performance for golang/go here is not
-			// good. And we don't have a file URI? What to do?
-			Query: "", // all symbols
+		err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
+			Query: d.DefName,
+			Limit: 100,
 		}, &symbols)
 		if err != nil {
 			return nil, errors.Wrap(err, "LSP workspace/symbol")
@@ -205,19 +202,23 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) ([]defDescr, 
 			break
 		}
 		if symbol == nil {
-			return nil, fmt.Errorf("could not finding matching symbol info")
+			log15.Warn("queryRepoLandingData: no symbol info matching top def from global references", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+			continue
 		}
 
 		// Determine the definition title.
-		//fmt.Println(symbol.Location.URI, symbol.Location.Range.Start, symbol)
 		var hover lsp.Hover
 		err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "textDocument/hover", lsp.TextDocumentPositionParams{
 			TextDocument: lsp.TextDocumentIdentifier{URI: symbol.Location.URI},
 			Position: lsp.Position{
-				Line:      symbol.Location.Range.End.Line,
-				Character: symbol.Location.Range.End.Character,
+				Line:      symbol.Location.Range.Start.Line,
+				Character: symbol.Location.Range.Start.Character,
 			},
 		}, &hover)
+		if len(hover.Contents) == 0 {
+			log15.Warn("queryRepoLandingData: LSP textDocument/hover returned no contents", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+			continue
+		}
 
 		hoverTitle := hover.Contents[0].Value
 		var hoverDesc string
@@ -227,15 +228,22 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) ([]defDescr, 
 				break
 			}
 		}
+		if hoverDesc == "" {
+			log15.Warn("queryRepoLandingData: no markdown in hover response", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+			continue
+		}
 
-		//s := d.DefScheme + "://" + d.DefSource + "?" + d.DefVersion
+		u, err := approuter.Rel.URLToLegacyDefLanding(*symbol)
+		if err != nil {
+			return nil, err
+		}
 		desc = append(desc, defDescr{
-			Title:        hoverTitle, //fmt.Sprintf("%s %s %s (%d refs, %d files, %d sources)", d.DefName, d.DefContainerName, s, d.Refs, d.Files, d.Sources),
+			Title:        hoverTitle,
 			DocText:      hoverDesc,
 			RefCount:     d.Refs,
 			FileCount:    d.Files,
 			SourcesCount: d.Sources,
-			//URL:   approuter.Rel.URLToDefLanding(def.DefKey).String(),
+			URL:          u,
 		})
 	}
 	return desc, nil
@@ -317,20 +325,16 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "GetRepoAndRev")
 	}
 
-	migrated, err := backend.Defs.HasMigrated(r.Context(), repo.URI)
+	data, err := queryDefLandingData(r, repo, repoRev)
 	if err != nil {
-		// Just log, so we fallback to legacy.
-		log15.Crit("Defs.HasMigrated", "error", err)
+		// Just log, so we fallback to legacy in the event of catastrophic failure.
+		log15.Crit("queryDefLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
 	}
 
-	var data *defLandingData
-	if migrated {
-		data, err = queryDefLandingData(r, repo, repoRev)
-		if err != nil {
-			return err
-		}
-	} else {
-		// Fallback to legacy / srclib data.
+	// If the new system failed for some reason OR if we don't have 3 sources
+	// referencing this page's definition, then fallback to the legacy srclib
+	// data.
+	if err != nil || len(data.RefLocs.SourceRefs) < 3 {
 		legacyDefLandingCounter.Inc()
 		data, err = queryLegacyDefLandingData(r, repo)
 		if err != nil {
@@ -411,14 +415,22 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 			Character: symbol.Location.Range.Start.Character,
 		},
 	}, &hover)
-	hoverTitle := hover.Contents[0].Value
+	if len(hover.Contents) == 0 {
+		log15.Crit("queryDefLandingData: LSP textDocument/hover returned no contents", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		return nil, errors.New("LSP textDocument/hover returned no contents")
+	}
 
+	hoverTitle := hover.Contents[0].Value
 	var hoverDesc string
 	for _, s := range hover.Contents {
 		if s.Language == "markdown" {
 			hoverDesc = string(blackfriday.MarkdownCommon([]byte(s.Value)))
 			break
 		}
+	}
+	if hoverDesc == "" {
+		log15.Crit("queryDefLandingData: no markdown in hover response", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		return nil, errors.New("no markdown in hover response")
 	}
 
 	// Determine canonical URL and whether the symbol shold be indexed.

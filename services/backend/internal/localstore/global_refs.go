@@ -314,18 +314,6 @@ func (g *globalRefs) RefreshIndex(ctx context.Context, repoID int32, commit stri
 	return nil
 }
 
-func (g *globalRefs) HasMigrated(ctx context.Context, repo string) (bool, error) {
-	res, err := globalGraphDBH.Db.Exec(`SELECT TRUE FROM global_ref_by_source WHERE source IN (SELECT id FROM global_ref_source WHERE source=$1);`, repo)
-	if err != nil {
-		return false, err
-	}
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		return false, err
-	}
-	return rowsAffected > 0, nil
-}
-
 func (g *globalRefs) TopDefs(ctx context.Context, op sourcegraph.TopDefsOptions) (*sourcegraph.TopDefs, error) {
 	// There is one row entry for every source referencing a def. i.e. there
 	// will be multiple rows for the same (def_name, def_container) pair: one
