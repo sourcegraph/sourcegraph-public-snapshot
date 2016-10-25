@@ -5,6 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -109,4 +112,37 @@ type User struct {
 	Nickname string `json:"nickname"`
 	Picture  string `json:"picture"`
 	UserID   string `json:"user_id"`
+}
+
+// LinkAccount links account with uid with linkWithProvider provider and linkWithUID uid.
+func LinkAccount(ctx context.Context, uid string, linkWithProvider, linkWithUID string) error {
+	body, err := json.Marshal(struct {
+		Provider string `json:"provider"`
+		UserID   string `json:"user_id"`
+	}{
+		Provider: linkWithProvider,
+		UserID:   linkWithUID,
+	})
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", "https://"+Auth0Domain+"/api/v2/users/"+uid+"/identities", bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return fmt.Errorf("did not get acceptable status code: %v body: %q", resp.Status, body)
+	}
+	io.Copy(ioutil.Discard, resp.Body)
+
+	return nil
 }

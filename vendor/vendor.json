@@ -883,6 +883,12 @@
 			"revisionTime": "2016-03-02T01:48:40Z"
 		},
 		{
+			"checksumSHA1": "R9990tmYWEd0xolbHJuD1uVV4Yw=",
+			"path": "google.golang.org/api/oauth2/v2",
+			"revision": "9dd147171c9080fd31fe304a6d852aaac845f9f6",
+			"revisionTime": "2016-03-02T01:48:40Z"
+		},
+		{
 			"path": "google.golang.org/api/storage/v1",
 			"revision": "9dd147171c9080fd31fe304a6d852aaac845f9f6",
 			"revisionTime": "2016-03-02T01:48:40Z"

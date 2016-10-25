@@ -23,6 +23,8 @@ func NewAccessToken(actor *Actor, expiryDuration time.Duration) string {
 		tok.Claims["GitHubConnected"] = actor.GitHubConnected
 		tok.Claims["GitHubScopes"] = strings.Join(actor.GitHubScopes, ",")
 		tok.Claims["GitHubToken"] = actor.GitHubToken // FIXME: It is not nice to store this here, but currently our codebase expects it to be quickly avaialble everywhere.
+		tok.Claims["GoogleConnected"] = actor.GoogleConnected
+		tok.Claims["GoogleScopes"] = strings.Join(actor.GoogleScopes, ",")
 		tok.Claims["Scope"] = strings.Join(marshalScope(actor.Scope), " ")
 	}
 
@@ -67,6 +69,10 @@ func ParseAndVerify(accessToken string) (*Actor, error) {
 		a.GitHubScopes = strings.Split(scopes, ",")
 	}
 	a.GitHubToken, _ = tok.Claims["GitHubToken"].(string)
+	a.GoogleConnected, _ = tok.Claims["GoogleConnected"].(bool)
+	if scopes, ok := tok.Claims["GoogleScopes"].(string); ok {
+		a.GoogleScopes = strings.Split(scopes, ",")
+	}
 
 	scopeStr, _ := tok.Claims["Scope"].(string)
 	scopes := strings.Fields(scopeStr)

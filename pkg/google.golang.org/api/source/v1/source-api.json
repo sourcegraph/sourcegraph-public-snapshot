@@ -1,0 +1,3594 @@
+{
+  "kind": "discovery#restDescription",
+  "discoveryVersion": "v1",
+  "id": "source:v1",
+  "name": "source",
+  "version": "v1",
+  "revision": "0",
+  "title": "Cloud Source Repositories API",
+  "description": "Access source code repositories hosted by Google.",
+  "ownerDomain": "google.com",
+  "ownerName": "Google",
+  "icons": {
+    "x16": "http://www.google.com/images/icons/product/search-16.gif",
+    "x32": "http://www.google.com/images/icons/product/search-32.gif"
+   },
+  "documentationLink": "https://cloud.google.com/eap/cloud-repositories/cloud-source-api",
+  "protocol": "rest",
+  "rootUrl": "https://source.googleapis.com/",
+  "servicePath": "",
+  "baseUrl": "https://source.googleapis.com/",
+  "batchPath": "batch",
+  "parameters": {
+    "access_token": {
+      "type": "string",
+      "description": "OAuth access token.",
+      "location": "query"
+    },
+    "alt": {
+      "type": "string",
+      "description": "Data format for response.",
+      "default": "json",
+      "enum": [
+        "json",
+        "media",
+        "proto"
+      ],
+      "enumDescriptions": [
+        "Responses with Content-Type of application/json",
+        "Media download with context-dependent Content-Type",
+        "Responses with Content-Type of application/x-protobuf"
+      ],
+      "location": "query"
+    },
+    "bearer_token": {
+      "type": "string",
+      "description": "OAuth bearer token.",
+      "location": "query"
+    },
+    "callback": {
+      "type": "string",
+      "description": "JSONP",
+      "location": "query"
+    },
+    "fields": {
+      "type": "string",
+      "description": "Selector specifying which fields to include in a partial response.",
+      "location": "query"
+    },
+    "key": {
+      "type": "string",
+      "description": "API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token.",
+      "location": "query"
+    },
+    "oauth_token": {
+      "type": "string",
+      "description": "OAuth 2.0 token for the current user.",
+      "location": "query"
+    },
+    "pp": {
+      "type": "boolean",
+      "description": "Pretty-print response.",
+      "default": "true",
+      "location": "query"
+    },
+    "prettyPrint": {
+      "type": "boolean",
+      "description": "Returns response with indentations and line breaks.",
+      "default": "true",
+      "location": "query"
+    },
+    "quotaUser": {
+      "type": "string",
+      "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters.",
+      "location": "query"
+    },
+    "upload_protocol": {
+      "type": "string",
+      "description": "Upload protocol for media (e.g. \"raw\", \"multipart\").",
+      "location": "query"
+    },
+    "uploadType": {
+      "type": "string",
+      "description": "Legacy upload protocol for media (e.g. \"media\", \"multipart\").",
+      "location": "query"
+    },
+    "$.xgafv": {
+      "type": "string",
+      "description": "V1 error format.",
+      "enum": [
+        "1",
+        "2"
+      ],
+      "enumDescriptions": [
+        "v1 error format",
+        "v2 error format"
+      ],
+      "location": "query"
+    }
+  },
+  "auth": {
+    "oauth2": {
+      "scopes": {
+        "https://www.googleapis.com/auth/cloud-platform": {
+          "description": "View and manage your data across Google Cloud Platform services"
+        }
+      }
+    }
+  },
+  "schemas": {
+    "Repo": {
+      "id": "Repo",
+      "description": "A repository (or repo) stores files for a version-control system.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "Randomly generated ID that uniquely identifies a repo.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Human-readable, user-defined name of the repository. Names must be\nalphanumeric, lowercase, begin with a letter, and be between 3 and 63\ncharacters long. The - character can appear in the middle positions.\n(Names must satisfy the regular expression\na-z{1,61}[a-z0-9].)",
+          "type": "string"
+        },
+        "projectId": {
+          "description": "Immutable, globally unique, DNS-compatible textual identifier.\nExamples: user-chosen-project-id, yellow-banana-33.",
+          "type": "string"
+        },
+        "vcs": {
+          "description": "The version control system of the repo.",
+          "enumDescriptions": [
+            "No version control system was specified.",
+            "The Git version control system."
+          ],
+          "type": "string",
+          "enum": [
+            "VCS_UNSPECIFIED",
+            "GIT"
+          ]
+        },
+        "state": {
+          "description": "The state the repo is in.",
+          "enumDescriptions": [
+            "No state was specified.",
+            "The repo is live and available for use.",
+            "The repo has been deleted."
+          ],
+          "type": "string",
+          "enum": [
+            "STATE_UNSPECIFIED",
+            "LIVE",
+            "DELETED"
+          ]
+        },
+        "createTime": {
+          "description": "Timestamp when the repo was created.",
+          "type": "string",
+          "format": "google-datetime"
+        },
+        "repoSyncConfig": {
+          "description": "How RepoSync is configured for this repo. If missing, this\nrepo is not set up for RepoSync.",
+          "$ref": "RepoSyncConfig"
+        }
+      }
+    },
+    "RepoSyncConfig": {
+      "id": "RepoSyncConfig",
+      "description": "RepoSync configuration information.",
+      "type": "object",
+      "properties": {
+        "externalRepoUrl": {
+          "description": "If this repo is enabled for RepoSync, this will be the URL of the\nexternal repo that this repo should sync with.",
+          "type": "string"
+        },
+        "status": {
+          "description": "The status of RepoSync.",
+          "enumDescriptions": [
+            "No RepoSync status was specified.",
+            "RepoSync is working.",
+            "RepoSync failed because of authorization\/authentication.",
+            "RepoSync failed for a reason other than auth.",
+            "RepoSync failed because the repository was not found."
+          ],
+          "type": "string",
+          "enum": [
+            "REPO_SYNC_STATUS_UNSPECIFIED",
+            "OK",
+            "FAILED_AUTH",
+            "FAILED_OTHER",
+            "FAILED_NOT_FOUND"
+          ]
+        }
+      }
+    },
+    "ListReposResponse": {
+      "id": "ListReposResponse",
+      "description": "Response for ListRepos.",
+      "type": "object",
+      "properties": {
+        "repos": {
+          "description": "The listed repos.",
+          "type": "array",
+          "items": {
+            "$ref": "Repo"
+          }
+        }
+      }
+    },
+    "UpdateRepoRequest": {
+      "id": "UpdateRepoRequest",
+      "description": "Request for UpdateRepo.",
+      "type": "object",
+      "properties": {
+        "repoId": {
+          "description": "The ID of the repo to be updated.",
+          "$ref": "RepoId"
+        },
+        "repoSyncConfig": {
+          "description": "Sets or updates the RepoSync config. When the repo_sync_config field is not\nset it actually clears the repo sync config.",
+          "$ref": "RepoSyncConfig"
+        },
+        "repoName": {
+          "description": "Renames the repo. repo_name cannot already be in use by a LIVE repo\nwithin the project. This field is ignored if left blank or set to the empty\nstring. If you want to rename a repo to \"default,\" you need to explicitly\nset that value here.",
+          "type": "string"
+        }
+      }
+    },
+    "RepoId": {
+      "id": "RepoId",
+      "description": "A unique identifier for a cloud repo.",
+      "type": "object",
+      "properties": {
+        "projectRepoId": {
+          "description": "A combination of a project ID and a repo name.",
+          "$ref": "ProjectRepoId"
+        },
+        "uid": {
+          "description": "A server-assigned, globally unique identifier.",
+          "type": "string"
+        }
+      }
+    },
+    "ProjectRepoId": {
+      "id": "ProjectRepoId",
+      "description": "Selects a repo using a Google Cloud Platform project ID\n(e.g. winged-cargo-31) and a repo name within that project.",
+      "type": "object",
+      "properties": {
+      }
+    },
+    "Empty": {
+      "id": "Empty",
+      "description": "A generic empty message that you can re-use to avoid defining duplicated\nempty messages in your APIs. A typical example is to use it as the request\nor the response type of an API method. For instance:\n\n    service Foo {\n      rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty);\n    }\n\nThe JSON representation for `Empty` is empty JSON object `{}`.",
+      "type": "object",
+      "properties": {
+      }
+    },
+    "Alias": {
+      "id": "Alias",
+      "description": "An alias is a named reference to a revision. Examples include git\nbranches and tags.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "description": "The alias kind.",
+          "enumDescriptions": [
+            "ANY is used to indicate to ListAliases to return aliases of all kinds,\nand when used with GetAlias, the GetAlias function will return a FIXED,\nor MOVABLE, in that priority order. Using ANY\nwith CreateAlias or DeleteAlias will result in an error.",
+            "Git tag",
+            "Git branch",
+            "",
+            "OTHER is used to fetch non-standard aliases, which are none\nof the kinds above or below. For example, if a git repo\nhas a ref named \"refs\/foo\/bar\", it is considered to be OTHER.",
+            "DO NOT USE."
+          ],
+          "type": "string",
+          "enum": [
+            "ANY",
+            "FIXED",
+            "MOVABLE",
+            "MERCURIAL_BRANCH_DEPRECATED",
+            "OTHER",
+            "SPECIAL_DEPRECATED"
+          ]
+        },
+        "name": {
+          "description": "The alias name.",
+          "type": "string"
+        },
+        "revisionId": {
+          "description": "The revision referred to by this alias.\nFor git tags and branches, this is the corresponding hash.",
+          "type": "string"
+        },
+        "workspaceNames": {
+          "description": "The list of workspace names whose alias is this one.\nNOT YET IMPLEMENTED (b\/16943429).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ListAliasesResponse": {
+      "id": "ListAliasesResponse",
+      "description": "Response for ListAliases.",
+      "type": "object",
+      "properties": {
+        "aliases": {
+          "description": "The list of aliases.",
+          "type": "array",
+          "items": {
+            "$ref": "Alias"
+          }
+        },
+        "totalAliases": {
+          "description": "The total number of aliases in the repo of the kind specified in the\nrequest.",
+          "type": "integer",
+          "format": "int32"
+        },
+        "nextPageToken": {
+          "description": "Use as the value of page_token in the next\ncall to obtain the next page of results.\nIf empty, there are no more results.",
+          "type": "string"
+        }
+      }
+    },
+    "Revision": {
+      "id": "Revision",
+      "description": "A revision is a snapshot of a file tree, with associated metadata. This\nmessage contains metadata only. Use the Read or ReadFromWorkspaceOrAlias\nrpcs to read the contents of the revision's file tree.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The unique ID of the revision. For many version control systems, this\nwill be string of hex digits representing a hash value.",
+          "type": "string"
+        },
+        "parentIds": {
+          "description": "The revision IDs of this revision's parents.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "commitMessage": {
+          "description": "The message added by the committer.",
+          "type": "string"
+        },
+        "committer": {
+          "description": "The name of the user who committed the revision.",
+          "type": "string"
+        },
+        "author": {
+          "description": "The name of the user who wrote the revision. (In Git, this can\ndiffer from committer.)",
+          "type": "string"
+        },
+        "branchName": {
+          "description": "Mercurial branch name.",
+          "type": "string"
+        },
+        "createTime": {
+          "description": "When the revision was made. This may or may not be reliable, depending on\nthe version control system being used.",
+          "type": "string",
+          "format": "google-datetime"
+        },
+        "commitTime": {
+          "description": "When the revision was committed.",
+          "type": "string",
+          "format": "google-datetime"
+        },
+        "changedFiles": {
+          "description": "Files changed in this revision.",
+          "type": "array",
+          "items": {
+            "$ref": "ChangedFileInfo"
+          }
+        },
+        "changedFilesUnknown": {
+          "description": "In some cases changed-file\ninformation is generated asynchronously. So there is a period\nof time when it is not available. This field encodes that fact.\n(An empty changed_files field is not sufficient, since it is\npossible for a revision to have no changed files.)",
+          "type": "boolean"
+        }
+      }
+    },
+    "ChangedFileInfo": {
+      "id": "ChangedFileInfo",
+      "description": "Represents file information.",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "The path of the file.",
+          "type": "string"
+        },
+        "operation": {
+          "description": "The operation type for the file.",
+          "enumDescriptions": [
+            "No operation was specified.",
+            "The file was added.",
+            "The file was deleted.",
+            "The file was modified.",
+            "The result of merging the file is a conflict.\nThe CONFLICTED type only appears in Workspace.changed_files or\nSnapshot.changed_files when the workspace is in a merge state."
+          ],
+          "type": "string",
+          "enum": [
+            "OPERATION_UNSPECIFIED",
+            "ADDED",
+            "DELETED",
+            "MODIFIED",
+            "CONFLICTED"
+          ]
+        },
+        "fromPath": {
+          "description": "Related file path for copies or renames.\n\nFor copies, the type will be ADDED and the from_path will point to the\nsource of the copy. For renames, the type will be ADDED, the from_path\nwill point to the source of the rename, and another ChangedFileInfo record\nwith that path will appear with type DELETED. In other words, a rename is\nrepresented as a copy plus a delete of the old path.",
+          "type": "string"
+        },
+        "hash": {
+          "description": "A hex-encoded hash for the file.\nNot necessarily a hash of the file's contents. Two paths in the same\nrevision with the same hash have the same contents with high probability.\nEmpty if the operation is CONFLICTED.",
+          "type": "string"
+        }
+      }
+    },
+    "GetRevisionsResponse": {
+      "id": "GetRevisionsResponse",
+      "description": "Response for GetRevisions.",
+      "type": "object",
+      "properties": {
+        "revisions": {
+          "description": "The revisions.",
+          "type": "array",
+          "items": {
+            "$ref": "Revision"
+          }
+        }
+      }
+    },
+    "ListRevisionsResponse": {
+      "id": "ListRevisionsResponse",
+      "description": "Response for ListRevisions.",
+      "type": "object",
+      "properties": {
+        "revisions": {
+          "description": "The list of revisions.",
+          "type": "array",
+          "items": {
+            "$ref": "Revision"
+          }
+        },
+        "nextPageToken": {
+          "description": "Use as the value of page_token in the next\ncall to obtain the next page of results.\nIf empty, there are no more results.",
+          "type": "string"
+        }
+      }
+    },
+    "ReadResponse": {
+      "id": "ReadResponse",
+      "description": "Response to read request. Exactly one of entries, file or external_reference\nwill be populated, depending on what the path in the request denotes.",
+      "type": "object",
+      "properties": {
+        "entries": {
+          "description": "Contains the directory entries if the request specifies a directory.",
+          "type": "array",
+          "items": {
+            "$ref": "DirectoryEntry"
+          }
+        },
+        "file": {
+          "description": "Contains file metadata and contents if the request specifies a file.",
+          "$ref": "File"
+        },
+        "externalReference": {
+          "description": "The read path denotes a Git submodule.",
+          "$ref": "ExternalReference"
+        },
+        "sourceContext": {
+          "description": "Returns the SourceContext actually used, resolving any alias in the input\nSourceContext into its revision ID and returning the actual current\nsnapshot ID if the read was from a workspace with an unspecified snapshot\nID.",
+          "$ref": "SourceContext"
+        },
+        "nextPageToken": {
+          "description": "Use as the value of page_token in the next\ncall to obtain the next page of results.\nIf empty, there are no more results.",
+          "type": "string"
+        }
+      }
+    },
+    "DirectoryEntry": {
+      "id": "DirectoryEntry",
+      "description": "Information about a directory.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name of the entry relative to the directory.",
+          "type": "string"
+        },
+        "isDir": {
+          "description": "Whether the entry is a file or directory.",
+          "type": "boolean"
+        },
+        "info": {
+          "description": "Information about the entry.",
+          "$ref": "FileInfo"
+        },
+        "lastModifiedRevisionId": {
+          "description": "ID of the revision that most recently modified this file.",
+          "type": "string"
+        }
+      }
+    },
+    "FileInfo": {
+      "id": "FileInfo",
+      "description": "File metadata, including a hash of the file contents.",
+      "type": "object",
+      "properties": {
+        "size": {
+          "description": "The size of the file in bytes.",
+          "type": "string",
+          "format": "int64"
+        },
+        "mode": {
+          "description": "The mode of the file: an executable, a symbolic link, or neither.",
+          "enumDescriptions": [
+            "No file mode was specified.",
+            "Neither a symbolic link nor executable.",
+            "A symbolic link.",
+            "An executable."
+          ],
+          "type": "string",
+          "enum": [
+            "FILE_MODE_UNSPECIFIED",
+            "NORMAL",
+            "SYMLINK",
+            "EXECUTABLE"
+          ]
+        },
+        "hash": {
+          "description": "A hex-encoded cryptographic hash of the file's contents, possibly with other data.",
+          "type": "string"
+        },
+        "isText": {
+          "description": "An educated guess as to whether the file is human-readable text, or\nbinary. Typically available only when file contents are retrieved (since\nthe guess depends on examining a prefix of the contents), but some systems\nmight store this metadata for every file.",
+          "type": "boolean"
+        }
+      }
+    },
+    "File": {
+      "id": "File",
+      "description": "A file, with contents and metadata.\n\nPagination can be used to limit the size of the file. Otherwise, there is a\ndefault max size for the contents. Whether the file has been truncated can\nbe determined by comparing len(contents) to info.Size.",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "The path to the file starting from the root of the revision.",
+          "type": "string"
+        },
+        "info": {
+          "description": "Information about the file.",
+          "$ref": "FileInfo"
+        },
+        "contents": {
+          "description": "The contents of the file.",
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "ExternalReference": {
+      "id": "ExternalReference",
+      "description": "A submodule or subrepository.",
+      "type": "object",
+      "properties": {
+      }
+    },
+    "SourceContext": {
+      "id": "SourceContext",
+      "description": "A SourceContext is a reference to a tree of files. A SourceContext together\nwith a path point to a unique revision of a single file or directory.",
+      "type": "object",
+      "properties": {
+        "cloudRepo": {
+          "description": "A SourceContext referring to a revision in a cloud repo.",
+          "$ref": "CloudRepoSourceContext"
+        },
+        "cloudWorkspace": {
+          "description": "A SourceContext referring to a snapshot in a cloud workspace.",
+          "$ref": "CloudWorkspaceSourceContext"
+        },
+        "gerrit": {
+          "description": "A SourceContext referring to a Gerrit project.",
+          "$ref": "GerritSourceContext"
+        },
+        "git": {
+          "description": "A SourceContext referring to any third party Git repo (e.g. GitHub).",
+          "$ref": "GitSourceContext"
+        }
+      }
+    },
+    "CloudRepoSourceContext": {
+      "id": "CloudRepoSourceContext",
+      "description": "A CloudRepoSourceContext denotes a particular revision in a cloud\nrepo (a repo hosted by the Google Cloud Platform).",
+      "type": "object",
+      "properties": {
+        "repoId": {
+          "description": "The ID of the repo.",
+          "$ref": "RepoId"
+        },
+        "revisionId": {
+          "description": "A revision ID.",
+          "type": "string"
+        },
+        "aliasName": {
+          "description": "The name of an alias (branch, tag, etc.).",
+          "type": "string"
+        },
+        "aliasContext": {
+          "description": "An alias, which may be a branch or tag.",
+          "$ref": "AliasContext"
+        }
+      }
+    },
+    "AliasContext": {
+      "id": "AliasContext",
+      "description": "An alias to a repo revision.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "description": "The alias kind.",
+          "enumDescriptions": [
+            "Do not use.",
+            "Git tag",
+            "Git branch",
+            "OTHER is used to specify non-standard aliases, those not of the kinds\nabove. For example, if a Git repo has a ref named \"refs\/foo\/bar\", it\nis considered to be of kind OTHER."
+          ],
+          "type": "string",
+          "enum": [
+            "ANY",
+            "FIXED",
+            "MOVABLE",
+            "OTHER"
+          ]
+        },
+        "name": {
+          "description": "The alias name.",
+          "type": "string"
+        }
+      }
+    },
+    "CloudWorkspaceSourceContext": {
+      "id": "CloudWorkspaceSourceContext",
+      "description": "A CloudWorkspaceSourceContext denotes a workspace at a particular snapshot.",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "description": "The ID of the workspace.",
+          "$ref": "CloudWorkspaceId"
+        },
+        "snapshotId": {
+          "description": "The ID of the snapshot.\nAn empty snapshot_id refers to the most recent snapshot.",
+          "type": "string"
+        }
+      }
+    },
+    "CloudWorkspaceId": {
+      "id": "CloudWorkspaceId",
+      "description": "A CloudWorkspaceId is a unique identifier for a cloud workspace.\nA cloud workspace is a place associated with a repo where modified files\ncan be stored before they are committed.",
+      "type": "object",
+      "properties": {
+        "repoId": {
+          "description": "The ID of the repo containing the workspace.",
+          "$ref": "RepoId"
+        },
+        "name": {
+          "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+          "type": "string"
+        }
+      }
+    },
+    "GerritSourceContext": {
+      "id": "GerritSourceContext",
+      "description": "A SourceContext referring to a Gerrit project.",
+      "type": "object",
+      "properties": {
+        "hostUri": {
+          "description": "The URI of a running Gerrit instance.",
+          "type": "string"
+        },
+        "gerritProject": {
+          "description": "The full project name within the host. Projects may be nested, so\n\"project\/subproject\" is a valid project name.\nThe \"repo name\" is hostURI\/project.",
+          "type": "string"
+        },
+        "revisionId": {
+          "description": "A revision (commit) ID.",
+          "type": "string"
+        },
+        "aliasName": {
+          "description": "The name of an alias (branch, tag, etc.).",
+          "type": "string"
+        },
+        "aliasContext": {
+          "description": "An alias, which may be a branch or tag.",
+          "$ref": "AliasContext"
+        }
+      }
+    },
+    "GitSourceContext": {
+      "id": "GitSourceContext",
+      "description": "A GitSourceContext denotes a particular revision in a third party Git\nrepository (e.g. GitHub).",
+      "type": "object",
+      "properties": {
+        "url": {
+          "description": "Git repository URL.",
+          "type": "string"
+        },
+        "revisionId": {
+          "description": "Git commit hash.\nrequired.",
+          "type": "string"
+        }
+      }
+    },
+    "ListFilesResponse": {
+      "id": "ListFilesResponse",
+      "description": "Response for ListFiles.",
+      "type": "object",
+      "properties": {
+        "files": {
+          "description": "The contents field is empty.",
+          "type": "array",
+          "items": {
+            "$ref": "File"
+          }
+        },
+        "nextPageToken": {
+          "description": "Use as the value of page_token in the next\ncall to obtain the next page of results.\nIf empty, there are no more results.",
+          "type": "string"
+        }
+      }
+    },
+    "ListChangedFilesRequest": {
+      "id": "ListChangedFilesRequest",
+      "description": "Request for ListChangedFiles.",
+      "type": "object",
+      "properties": {
+        "sourceContext1": {
+          "description": "The starting source context to compare.",
+          "$ref": "SourceContext"
+        },
+        "sourceContext2": {
+          "description": "The ending source context to compare.",
+          "$ref": "SourceContext"
+        },
+        "pageToken": {
+          "description": "The value of next_page_token from the previous call.\nOmit for the first page.",
+          "type": "string"
+        },
+        "pageSize": {
+          "description": "The maximum number of ChangedFileInfo values to return.",
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "ListChangedFilesResponse": {
+      "id": "ListChangedFilesResponse",
+      "description": "Response for ListChangedFiles.",
+      "type": "object",
+      "properties": {
+        "changedFiles": {
+          "description": "Note: ChangedFileInfo.from_path is not set here. ListChangedFiles does not\nperform rename\/copy detection.\n\nThe ChangedFileInfo.Type describes the changes from source_context1 to\nsource_context2. Thus ADDED would mean a file is not present in\nsource_context1 but is present in source_context2.",
+          "type": "array",
+          "items": {
+            "$ref": "ChangedFileInfo"
+          }
+        },
+        "nextPageToken": {
+          "description": "Use as the value of page_token in the next\ncall to obtain the next page of results.\nIf empty, there are no more results.",
+          "type": "string"
+        }
+      }
+    },
+    "CreateWorkspaceRequest": {
+      "id": "CreateWorkspaceRequest",
+      "description": "Request for CreateWorkspace.",
+      "type": "object",
+      "properties": {
+        "repoId": {
+          "description": "The repo within which to create the workspace.",
+          "$ref": "RepoId"
+        },
+        "workspace": {
+          "description": "The following fields of workspace, with the allowable exception of\nbaseline, must be set. No other fields of workspace should be set.\n\nid.name\nProvides the name of the workspace and must be unique within the repo.\nNote: Do not set field id.repo_id.  The repo_id is provided above as a\nCreateWorkspaceRequest field.\n\nalias:\nIf alias names an existing movable alias, the workspace's baseline\nis set to the alias's revision.\n\nIf alias does not name an existing movable alias, then the workspace is\ncreated with no baseline. When the workspace is committed, a new root\nrevision is created with no parents. The new revision becomes the\nworkspace's baseline and the alias name is used to create a movable alias\nreferring to the revision.\n\nbaseline:\nA revision ID (hexadecimal string) for sequencing. If non-empty, alias\nmust name an existing movable alias and baseline must match the alias's\nrevision ID.",
+          "$ref": "Workspace"
+        },
+        "actions": {
+          "description": "An ordered sequence of actions to perform in the workspace. Can be empty.\nSpecifying actions here instead of using ModifyWorkspace saves one RPC.",
+          "type": "array",
+          "items": {
+            "$ref": "Action"
+          }
+        }
+      }
+    },
+    "Workspace": {
+      "id": "Workspace",
+      "description": "A Cloud Workspace stores modified files before they are committed to\na repo. This message contains metadata. Use the Read or\nReadFromWorkspaceOrAlias methods to read files from the workspace,\nand use ModifyWorkspace to change files.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The ID of the workspace.",
+          "$ref": "CloudWorkspaceId"
+        },
+        "baseline": {
+          "description": "The revision of the workspace's alias when the workspace was\ncreated.",
+          "type": "string"
+        },
+        "alias": {
+          "description": "The alias associated with the workspace. When the workspace is committed,\nthis alias will be moved to point to the new revision.",
+          "type": "string"
+        },
+        "currentSnapshotId": {
+          "description": "If non-empty, current_snapshot_id refers to the most recent update to the\nworkspace.",
+          "type": "string"
+        },
+        "changedFiles": {
+          "description": "The set of files modified in this workspace.",
+          "type": "array",
+          "items": {
+            "$ref": "ChangedFileInfo"
+          }
+        },
+        "mergeInfo": {
+          "description": "Information needed to manage a refresh or merge operation. Present only\nduring a merge (i.e. after a call to Merge) or a call to\nRefreshWorkspace which results in conflicts.",
+          "$ref": "MergeInfo"
+        }
+      }
+    },
+    "MergeInfo": {
+      "id": "MergeInfo",
+      "description": "MergeInfo holds information needed while resolving\nmerges, and\nrefreshes that\ninvolve conflicts.",
+      "type": "object",
+      "properties": {
+        "workspaceBeforeSnapshotId": {
+          "description": "During a refresh, the snapshot ID of the latest change to the workspace\nbefore the refresh.  During a merge, the workspace's baseline, which is\nidentical to the commit hash of the workspace's alias before initiating\nthe merge.",
+          "type": "string"
+        },
+        "workspaceAfterSnapshotId": {
+          "description": "The workspace snapshot immediately after the refresh or merge RPC\ncompletes.  If a file has conflicts, this snapshot contains the\nversion of the file with conflict markers.",
+          "type": "string"
+        },
+        "commonAncestorRevisionId": {
+          "description": "Revision ID of the closest common ancestor of the file trees that are\nparticipating in a refresh or merge.  During a refresh, the common\nancestor is the baseline of the workspace.  During a merge of two\nbranches, the common ancestor is derived from the workspace baseline and\nthe alias of the branch being merged in.  The repository state at the\ncommon ancestor provides the base version for a three-way merge.",
+          "type": "string"
+        },
+        "otherRevisionId": {
+          "description": "During a refresh, the ID of the revision with which the workspace is being\nrefreshed. This is the revision ID to which the workspace's alias refers\nat the time of the RefreshWorkspace call. During a merge, the ID of the\nrevision that's being merged into the workspace's alias. This is the\nrevision_id field of the MergeRequest.",
+          "type": "string"
+        },
+        "isRefresh": {
+          "description": "If true, a refresh operation is in progress.  If false, a merge is in\nprogress.",
+          "type": "boolean"
+        }
+      }
+    },
+    "Action": {
+      "id": "Action",
+      "description": "An action to perform on a path in a workspace.",
+      "type": "object",
+      "properties": {
+        "writeAction": {
+          "description": "Create or modify a file.",
+          "$ref": "WriteAction"
+        },
+        "deleteAction": {
+          "description": "Delete a file or directory.",
+          "$ref": "DeleteAction"
+        },
+        "copyAction": {
+          "description": "Copy the contents of one path to another.",
+          "$ref": "CopyAction"
+        }
+      }
+    },
+    "WriteAction": {
+      "id": "WriteAction",
+      "description": "Create or modify a file.",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "The path of the file to write.",
+          "type": "string"
+        },
+        "contents": {
+          "description": "The new contents of the file.",
+          "type": "string",
+          "format": "byte"
+        },
+        "mode": {
+          "description": "The new mode of the file.",
+          "enumDescriptions": [
+            "No file mode was specified.",
+            "Neither a symbolic link nor executable.",
+            "A symbolic link.",
+            "An executable."
+          ],
+          "type": "string",
+          "enum": [
+            "FILE_MODE_UNSPECIFIED",
+            "NORMAL",
+            "SYMLINK",
+            "EXECUTABLE"
+          ]
+        }
+      }
+    },
+    "DeleteAction": {
+      "id": "DeleteAction",
+      "description": "Delete a file or directory.",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "The path of the file or directory. If path refers to a\ndirectory, the directory and its contents are deleted.",
+          "type": "string"
+        }
+      }
+    },
+    "CopyAction": {
+      "id": "CopyAction",
+      "description": "Copy the contents of a file or directory at from_path in the specified\nrevision or snapshot to to_path.\n\nTo rename a file, copy it to the new path and delete the old.",
+      "type": "object",
+      "properties": {
+        "fromSnapshotId": {
+          "description": "The snapshot ID from which to copy the file.",
+          "type": "string"
+        },
+        "fromRevisionId": {
+          "description": "The revision ID from which to copy the file.",
+          "type": "string"
+        },
+        "fromPath": {
+          "description": "The path to copy from.",
+          "type": "string"
+        },
+        "toPath": {
+          "description": "The path to copy to.",
+          "type": "string"
+        }
+      }
+    },
+    "ListWorkspacesResponse": {
+      "id": "ListWorkspacesResponse",
+      "description": "Response for ListWorkspaces.",
+      "type": "object",
+      "properties": {
+        "workspaces": {
+          "description": "The listed workspaces.",
+          "type": "array",
+          "items": {
+            "$ref": "Workspace"
+          }
+        }
+      }
+    },
+    "ModifyWorkspaceRequest": {
+      "id": "ModifyWorkspaceRequest",
+      "description": "Request for ModifyWorkspace.",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "description": "The ID of the workspace.",
+          "$ref": "CloudWorkspaceId"
+        },
+        "actions": {
+          "description": "An ordered sequence of actions to perform in the workspace.  May not be\nempty.",
+          "type": "array",
+          "items": {
+            "$ref": "Action"
+          }
+        },
+        "currentSnapshotId": {
+          "description": "If non-empty, current_snapshot_id must refer to the most recent update to\nthe workspace, or ABORTED is returned.",
+          "type": "string"
+        }
+      }
+    },
+    "CommitWorkspaceRequest": {
+      "id": "CommitWorkspaceRequest",
+      "description": "Request for CommitWorkspace.",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "description": "The ID of the workspace.",
+          "$ref": "CloudWorkspaceId"
+        },
+        "author": {
+          "description": "Author of the commit in the format: \"Author Name <author@example.com>\"\nrequired",
+          "type": "string"
+        },
+        "message": {
+          "description": "The commit message.\nrequired",
+          "type": "string"
+        },
+        "paths": {
+          "description": "The subset of modified paths to commit. If empty, then commit all\nmodified paths.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "currentSnapshotId": {
+          "description": "If non-empty, current_snapshot_id must refer to the most recent update to\nthe workspace, or ABORTED is returned.",
+          "type": "string"
+        }
+      }
+    },
+    "Snapshot": {
+      "id": "Snapshot",
+      "description": "A snapshot is a version of a workspace. Each change to a workspace's files\ncreates a new snapshot. A workspace consists of a sequence of snapshots.",
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "description": "The ID of the snapshot.",
+          "type": "string"
+        },
+        "createTime": {
+          "description": "Timestamp when the snapshot was created.",
+          "type": "string",
+          "format": "google-datetime"
+        },
+        "changedFiles": {
+          "description": "The set of files modified in this snapshot, relative to the workspace\nbaseline. ChangedFileInfo.from_path is not set.",
+          "type": "array",
+          "items": {
+            "$ref": "ChangedFileInfo"
+          }
+        }
+      }
+    },
+    "ListSnapshotsResponse": {
+      "id": "ListSnapshotsResponse",
+      "description": "Response for ListSnapshots.",
+      "type": "object",
+      "properties": {
+        "snapshots": {
+          "description": "The list of snapshots.",
+          "type": "array",
+          "items": {
+            "$ref": "Snapshot"
+          }
+        },
+        "nextPageToken": {
+          "description": "Use as the value of page_token in the next\ncall to obtain the next page of results.\nIf empty, there are no more results.",
+          "type": "string"
+        }
+      }
+    },
+    "MergeRequest": {
+      "id": "MergeRequest",
+      "description": "Request for Merge.",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "description": "The workspace to use for the merge. The revision referred to\nby the workspace's alias will be one of the revisions merged.",
+          "$ref": "CloudWorkspaceId"
+        },
+        "revisionId": {
+          "description": "The other revision to be merged.",
+          "type": "string"
+        }
+      }
+    },
+    "ResolveFilesRequest": {
+      "id": "ResolveFilesRequest",
+      "description": "Request for ResolveFiles.",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "description": "The ID of the workspace.",
+          "$ref": "CloudWorkspaceId"
+        },
+        "resolvedPaths": {
+          "description": "Files that should be marked as resolved in the workspace.  All files in\nresolved_paths must currently be in the CONFLICTED state in\nWorkspace.changed_files.  NOTE: Changing a file's contents to match the\ncontents in the workspace baseline, then calling ResolveFiles on it, will\ncause the file to be removed from the changed_files list entirely.\nIf resolved_paths is empty, INVALID_ARGUMENT is returned.\nIf resolved_paths contains duplicates, INVALID_ARGUMENT is returned.\nIf resolved_paths contains a path that was never unresolved,\nor has already been resolved, FAILED_PRECONDITION is returned.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "RefreshWorkspaceRequest": {
+      "id": "RefreshWorkspaceRequest",
+      "description": "Request for RefreshWorkspace.",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "description": "The ID of the workspace.",
+          "$ref": "CloudWorkspaceId"
+        }
+      }
+    },
+    "RevertRefreshRequest": {
+      "id": "RevertRefreshRequest",
+      "description": "Request for RevertRefresh.",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "description": "The ID of the workspace.",
+          "$ref": "CloudWorkspaceId"
+        }
+      }
+    }
+  },
+  "resources": {
+    "projects": {
+      "resources": {
+        "repos": {
+          "methods": {
+            "create": {
+              "id": "source.projects.repos.create",
+              "path": "v1/projects/{projectId}/repos",
+              "flatPath": "v1/projects/{projectId}/repos",
+              "httpMethod": "POST",
+              "description": "Creates a repo in the given project. The provided repo message should have\nits name field set to the desired repo name. No other repo fields should\nbe set. Omitting the name is the same as specifying \"default\"\n\nRepo names must satisfy the regular expression\n`a-z{1,61}[a-z0-9]`. (Note that repo names must contain at\nleast three characters and may not contain underscores.) The special name\n\"default\" is the default repo for the project; this is the repo shown when\nvisiting the Cloud Developers Console, and can be accessed via git's HTTP\nprotocol at `https:\/\/source.developers.google.com\/p\/PROJECT_ID`. You may\ncreate other repos with this API and access them at\n`https:\/\/source.developers.google.com\/p\/PROJECT_ID\/r\/NAME`.",
+              "parameters": {
+                "projectId": {
+                  "description": "The project in which to create the repo.",
+                  "location": "path",
+                  "required": true,
+                  "type": "string"
+                }
+              },
+              "parameterOrder": [
+                "projectId"
+              ],
+              "request": {
+                "$ref": "Repo"
+              },
+              "response": {
+                "$ref": "Repo"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            },
+            "get": {
+              "id": "source.projects.repos.get",
+              "path": "v1/projects/{projectId}/repos/{repoName}",
+              "flatPath": "v1/projects/{projectId}/repos/{repoName}",
+              "httpMethod": "GET",
+              "description": "Returns information about a repo.",
+              "parameters": {
+                "projectId": {
+                  "description": "The ID of the project.",
+                  "location": "path",
+                  "required": true,
+                  "type": "string"
+                },
+                "repoName": {
+                  "description": "The name of the repo. Leave empty for the default repo.",
+                  "location": "path",
+                  "required": true,
+                  "type": "string"
+                },
+                "repoId.uid": {
+                  "description": "A server-assigned, globally unique identifier.",
+                  "location": "query",
+                  "type": "string"
+                }
+              },
+              "parameterOrder": [
+                "projectId",
+                "repoName"
+              ],
+              "response": {
+                "$ref": "Repo"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            },
+            "list": {
+              "id": "source.projects.repos.list",
+              "path": "v1/projects/{projectId}/repos",
+              "flatPath": "v1/projects/{projectId}/repos",
+              "httpMethod": "GET",
+              "description": "Returns all repos belonging to a project, specified by its project ID. The\nresponse list is sorted by name with the default repo listed first.",
+              "parameters": {
+                "projectId": {
+                  "description": "The project ID whose repos should be listed.",
+                  "location": "path",
+                  "required": true,
+                  "type": "string"
+                }
+              },
+              "parameterOrder": [
+                "projectId"
+              ],
+              "response": {
+                "$ref": "ListReposResponse"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            },
+            "update": {
+              "id": "source.projects.repos.update",
+              "path": "v1/projects/{projectId}/repos/{repoName}",
+              "flatPath": "v1/projects/{projectId}/repos/{repoName}",
+              "httpMethod": "PUT",
+              "description": "Updates an existing repo. The only things you can change about a repo are:\n  1) its repo_sync_config (and then only to add one that is not present);\n  2) its last-updated time; and\n  3) its name.",
+              "parameters": {
+                "projectId": {
+                  "description": "The ID of the project.",
+                  "location": "path",
+                  "required": true,
+                  "type": "string"
+                },
+                "repoName": {
+                  "description": "The name of the repo. Leave empty for the default repo.",
+                  "location": "path",
+                  "required": true,
+                  "type": "string"
+                }
+              },
+              "parameterOrder": [
+                "projectId",
+                "repoName"
+              ],
+              "request": {
+                "$ref": "UpdateRepoRequest"
+              },
+              "response": {
+                "$ref": "Repo"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            },
+            "delete": {
+              "id": "source.projects.repos.delete",
+              "path": "v1/projects/{projectId}/repos/{repoName}",
+              "flatPath": "v1/projects/{projectId}/repos/{repoName}",
+              "httpMethod": "DELETE",
+              "description": "Deletes a repo.",
+              "parameters": {
+                "projectId": {
+                  "description": "The ID of the project.",
+                  "location": "path",
+                  "required": true,
+                  "type": "string"
+                },
+                "repoName": {
+                  "description": "The name of the repo. Leave empty for the default repo.",
+                  "location": "path",
+                  "required": true,
+                  "type": "string"
+                },
+                "repoId.uid": {
+                  "description": "A server-assigned, globally unique identifier.",
+                  "location": "query",
+                  "type": "string"
+                }
+              },
+              "parameterOrder": [
+                "projectId",
+                "repoName"
+              ],
+              "response": {
+                "$ref": "Empty"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            },
+            "merge": {
+              "id": "source.projects.repos.merge",
+              "path": "v1/projects/{projectId}/repos/{repoName}:merge",
+              "flatPath": "v1/projects/{projectId}/repos/{repoName}:merge",
+              "httpMethod": "POST",
+              "description": "Merges a revision into a movable alias, using a workspace associated with\nthat alias to store modified files. The workspace must not have any\nmodified files. Note that Merge neither creates the workspace nor commits\nit; those actions must be done separately. Returns ABORTED when the\nworkspace is simultaneously modified by another client.",
+              "parameters": {
+                "projectId": {
+                  "description": "The ID of the project.",
+                  "location": "path",
+                  "required": true,
+                  "type": "string"
+                },
+                "repoName": {
+                  "description": "The name of the repo. Leave empty for the default repo.",
+                  "location": "path",
+                  "required": true,
+                  "type": "string"
+                }
+              },
+              "parameterOrder": [
+                "projectId",
+                "repoName"
+              ],
+              "request": {
+                "$ref": "MergeRequest"
+              },
+              "response": {
+                "$ref": "Workspace"
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ]
+            }
+          }
+          ,
+          "resources": {
+            "aliases": {
+              "methods": {
+                "create": {
+                  "id": "source.projects.repos.aliases.create",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/aliases",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/aliases",
+                  "httpMethod": "POST",
+                  "description": "Creates a new alias. It is an ALREADY_EXISTS error if an alias with that\nname and kind already exists.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName"
+                  ],
+                  "request": {
+                    "$ref": "Alias"
+                  },
+                  "response": {
+                    "$ref": "Alias"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "get": {
+                  "id": "source.projects.repos.aliases.get",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/aliases/{kind}/{name}",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/aliases/{kind}/{name}",
+                  "httpMethod": "GET",
+                  "description": "Returns information about an alias. Kind ANY returns a FIXED or\nMOVABLE alias, in that order, and ignores all other kinds.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "kind": {
+                      "description": "The kind of the alias.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string",
+                      "enum": [
+                        "ANY",
+                        "FIXED",
+                        "MOVABLE",
+                        "MERCURIAL_BRANCH_DEPRECATED",
+                        "OTHER",
+                        "SPECIAL_DEPRECATED"
+                      ]
+                    },
+                    "name": {
+                      "description": "The alias name.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName",
+                    "kind",
+                    "name"
+                  ],
+                  "response": {
+                    "$ref": "Alias"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "list": {
+                  "id": "source.projects.repos.aliases.list",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/aliases",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/aliases",
+                  "httpMethod": "GET",
+                  "description": "Returns a list of aliases of the given kind. Kind ANY returns all aliases\nin the repo. The order in which the aliases are returned is undefined.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "kind": {
+                      "description": "Return only aliases of this kind.",
+                      "location": "query",
+                      "type": "string",
+                      "enum": [
+                        "ANY",
+                        "FIXED",
+                        "MOVABLE",
+                        "MERCURIAL_BRANCH_DEPRECATED",
+                        "OTHER",
+                        "SPECIAL_DEPRECATED"
+                      ]
+                    },
+                    "pageToken": {
+                      "description": "The value of next_page_token from the previous call.\nOmit for the first page.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "pageSize": {
+                      "description": "The maximum number of values to return.",
+                      "location": "query",
+                      "type": "integer",
+                      "format": "int32"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName"
+                  ],
+                  "response": {
+                    "$ref": "ListAliasesResponse"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "update": {
+                  "id": "source.projects.repos.aliases.update",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/aliases/{aliasesId}",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/aliases/{aliasesId}",
+                  "httpMethod": "PUT",
+                  "description": "Updates the alias with the given name and kind. Kind cannot be ANY.  If\nthe alias does not exist, NOT_FOUND is returned. If the request provides\nan old revision ID and the alias does not refer to that revision, ABORTED\nis returned.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "aliasesId": {
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "oldRevisionId": {
+                      "description": "If non-empty, must match the revision that the alias refers to.",
+                      "location": "query",
+                      "type": "string"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName",
+                    "aliasesId"
+                  ],
+                  "request": {
+                    "$ref": "Alias"
+                  },
+                  "response": {
+                    "$ref": "Alias"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "delete": {
+                  "id": "source.projects.repos.aliases.delete",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/aliases/{kind}/{name}",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/aliases/{kind}/{name}",
+                  "httpMethod": "DELETE",
+                  "description": "Deletes the alias with the given name and kind. Kind cannot be ANY.  If\nthe alias does not exist, NOT_FOUND is returned.  If the request provides\na revision ID and the alias does not refer to that revision, ABORTED is\nreturned.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "kind": {
+                      "description": "The kind of the alias to delete.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string",
+                      "enum": [
+                        "ANY",
+                        "FIXED",
+                        "MOVABLE",
+                        "MERCURIAL_BRANCH_DEPRECATED",
+                        "OTHER",
+                        "SPECIAL_DEPRECATED"
+                      ]
+                    },
+                    "name": {
+                      "description": "The name of the alias to delete.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "revisionId": {
+                      "description": "If non-empty, must match the revision that the alias refers to.",
+                      "location": "query",
+                      "type": "string"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName",
+                    "kind",
+                    "name"
+                  ],
+                  "response": {
+                    "$ref": "Empty"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "listFiles": {
+                  "id": "source.projects.repos.aliases.listFiles",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/aliases/{kind}/{name}:listFiles",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/aliases/{kind}/{name}:listFiles",
+                  "httpMethod": "GET",
+                  "description": "ListFiles returns a list of all files in a SourceContext. The\ninformation about each file includes its path and its hash.\nThe result is ordered by path. Pagination is supported.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "kind": {
+                      "description": "The alias kind.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string",
+                      "enum": [
+                        "ANY",
+                        "FIXED",
+                        "MOVABLE",
+                        "OTHER"
+                      ]
+                    },
+                    "name": {
+                      "description": "The alias name.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "sourceContext.cloudRepo.repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudRepo.revisionId": {
+                      "description": "A revision ID.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudRepo.aliasName": {
+                      "description": "The name of an alias (branch, tag, etc.).",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudWorkspace.workspaceId.repoId.projectRepoId.projectId": {
+                      "description": "The ID of the project.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudWorkspace.workspaceId.repoId.projectRepoId.repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudWorkspace.workspaceId.repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudWorkspace.workspaceId.name": {
+                      "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudWorkspace.snapshotId": {
+                      "description": "The ID of the snapshot.\nAn empty snapshot_id refers to the most recent snapshot.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.gerrit.hostUri": {
+                      "description": "The URI of a running Gerrit instance.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.gerrit.gerritProject": {
+                      "description": "The full project name within the host. Projects may be nested, so\n\"project\/subproject\" is a valid project name.\nThe \"repo name\" is hostURI\/project.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.gerrit.revisionId": {
+                      "description": "A revision (commit) ID.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.gerrit.aliasName": {
+                      "description": "The name of an alias (branch, tag, etc.).",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.gerrit.aliasContext.kind": {
+                      "description": "The alias kind.",
+                      "location": "query",
+                      "type": "string",
+                      "enum": [
+                        "ANY",
+                        "FIXED",
+                        "MOVABLE",
+                        "OTHER"
+                      ]
+                    },
+                    "sourceContext.gerrit.aliasContext.name": {
+                      "description": "The alias name.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.git.url": {
+                      "description": "Git repository URL.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.git.revisionId": {
+                      "description": "Git commit hash.\nrequired.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "pageToken": {
+                      "description": "The value of next_page_token from the previous call.\nOmit for the first page.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "pageSize": {
+                      "description": "The maximum number of values to return.",
+                      "location": "query",
+                      "type": "integer",
+                      "format": "int32"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName",
+                    "kind",
+                    "name"
+                  ],
+                  "response": {
+                    "$ref": "ListFilesResponse"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                }
+              }
+              ,
+              "resources": {
+                "files": {
+                  "methods": {
+                    "get": {
+                      "id": "source.projects.repos.aliases.files.get",
+                      "path": "v1/projects/{projectId}/repos/{repoName}/aliases/{kind}/{name}/files/{+path}",
+                      "flatPath": "v1/projects/{projectId}/repos/{repoName}/aliases/{kind}/{name}/files/{filesId}",
+                      "httpMethod": "GET",
+                      "description": "Read is given a SourceContext and path, and returns\nfile or directory information about that path.",
+                      "parameters": {
+                        "projectId": {
+                          "description": "The ID of the project.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "repoName": {
+                          "description": "The name of the repo. Leave empty for the default repo.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "kind": {
+                          "description": "The alias kind.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string",
+                          "enum": [
+                            "ANY",
+                            "FIXED",
+                            "MOVABLE",
+                            "OTHER"
+                          ]
+                        },
+                        "name": {
+                          "description": "The alias name.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "path": {
+                          "description": "Path to the file or directory from the root directory of the source\ncontext. It must not have leading or trailing slashes.",
+                          "location": "path",
+                          "required": true,
+                          "pattern": "^.*$",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.repoId.uid": {
+                          "description": "A server-assigned, globally unique identifier.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.revisionId": {
+                          "description": "A revision ID.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.aliasName": {
+                          "description": "The name of an alias (branch, tag, etc.).",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudWorkspace.workspaceId.repoId.projectRepoId.projectId": {
+                          "description": "The ID of the project.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudWorkspace.workspaceId.repoId.projectRepoId.repoName": {
+                          "description": "The name of the repo. Leave empty for the default repo.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudWorkspace.workspaceId.repoId.uid": {
+                          "description": "A server-assigned, globally unique identifier.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudWorkspace.workspaceId.name": {
+                          "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudWorkspace.snapshotId": {
+                          "description": "The ID of the snapshot.\nAn empty snapshot_id refers to the most recent snapshot.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.hostUri": {
+                          "description": "The URI of a running Gerrit instance.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.gerritProject": {
+                          "description": "The full project name within the host. Projects may be nested, so\n\"project\/subproject\" is a valid project name.\nThe \"repo name\" is hostURI\/project.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.revisionId": {
+                          "description": "A revision (commit) ID.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.aliasName": {
+                          "description": "The name of an alias (branch, tag, etc.).",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.aliasContext.kind": {
+                          "description": "The alias kind.",
+                          "location": "query",
+                          "type": "string",
+                          "enum": [
+                            "ANY",
+                            "FIXED",
+                            "MOVABLE",
+                            "OTHER"
+                          ]
+                        },
+                        "sourceContext.gerrit.aliasContext.name": {
+                          "description": "The alias name.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.git.url": {
+                          "description": "Git repository URL.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.git.revisionId": {
+                          "description": "Git commit hash.\nrequired.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "startPosition": {
+                          "description": "If path refers to a file, the position of the first byte of its contents\nto return. If path refers to a directory, the position of the first entry\nin the listing. If page_token is specified, this field is ignored.",
+                          "location": "query",
+                          "type": "string",
+                          "format": "int64"
+                        },
+                        "pageToken": {
+                          "description": "The value of next_page_token from the previous call.\nOmit for the first page, or if using start_index.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "pageSize": {
+                          "description": "The maximum number of values to return.",
+                          "location": "query",
+                          "type": "string",
+                          "format": "int64"
+                        }
+                      },
+                      "parameterOrder": [
+                        "projectId",
+                        "repoName",
+                        "kind",
+                        "name",
+                        "path"
+                      ],
+                      "response": {
+                        "$ref": "ReadResponse"
+                      },
+                      "scopes": [
+                        "https://www.googleapis.com/auth/cloud-platform"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "revisions": {
+              "methods": {
+                "get": {
+                  "id": "source.projects.repos.revisions.get",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/revisions/{revisionId}",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/revisions/{revisionId}",
+                  "httpMethod": "GET",
+                  "description": "Retrieves revision metadata for a single revision.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "revisionId": {
+                      "description": "The ID of the revision.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName",
+                    "revisionId"
+                  ],
+                  "response": {
+                    "$ref": "Revision"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "getBatchGet": {
+                  "id": "source.projects.repos.revisions.getBatchGet",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/revisions:batchGet",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/revisions:batchGet",
+                  "httpMethod": "GET",
+                  "description": "Retrieves revision metadata for several revisions at once. It returns an\nerror if any retrieval fails.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "revisionIds": {
+                      "description": "The revision IDs to retrieve.",
+                      "location": "query",
+                      "repeated": true,
+                      "type": "string"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName"
+                  ],
+                  "response": {
+                    "$ref": "GetRevisionsResponse"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "list": {
+                  "id": "source.projects.repos.revisions.list",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/revisions",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/revisions",
+                  "httpMethod": "GET",
+                  "description": "Retrieves all revisions topologically between the starts and ends.\nUses the commit date to break ties in the topology (e.g. when a revision\nhas two parents).",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "starts": {
+                      "description": "Revision IDs (hexadecimal strings) that specify where the listing\nbegins. If empty, the repo heads (revisions with no children) are used.",
+                      "location": "query",
+                      "repeated": true,
+                      "type": "string"
+                    },
+                    "ends": {
+                      "description": "Revision IDs (hexadecimal strings) that specify where the listing ends. If\nthis field is present, the listing will contain only revisions that are\ntopologically between starts and ends, inclusive.",
+                      "location": "query",
+                      "repeated": true,
+                      "type": "string"
+                    },
+                    "path": {
+                      "description": "List only those revisions that modify path.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "walkDirection": {
+                      "description": "The direction to walk the graph.",
+                      "location": "query",
+                      "type": "string",
+                      "enum": [
+                        "BACKWARD",
+                        "FORWARD"
+                      ]
+                    },
+                    "pageToken": {
+                      "description": "The value of next_page_token from the previous call.\nOmit for the first page.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "pageSize": {
+                      "description": "The maximum number of values to return.",
+                      "location": "query",
+                      "type": "integer",
+                      "format": "int32"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName"
+                  ],
+                  "response": {
+                    "$ref": "ListRevisionsResponse"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "listFiles": {
+                  "id": "source.projects.repos.revisions.listFiles",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/revisions/{revisionId}:listFiles",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/revisions/{revisionId}:listFiles",
+                  "httpMethod": "GET",
+                  "description": "ListFiles returns a list of all files in a SourceContext. The\ninformation about each file includes its path and its hash.\nThe result is ordered by path. Pagination is supported.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "revisionId": {
+                      "description": "A revision ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "sourceContext.cloudRepo.repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudRepo.aliasName": {
+                      "description": "The name of an alias (branch, tag, etc.).",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudRepo.aliasContext.kind": {
+                      "description": "The alias kind.",
+                      "location": "query",
+                      "type": "string",
+                      "enum": [
+                        "ANY",
+                        "FIXED",
+                        "MOVABLE",
+                        "OTHER"
+                      ]
+                    },
+                    "sourceContext.cloudRepo.aliasContext.name": {
+                      "description": "The alias name.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudWorkspace.workspaceId.repoId.projectRepoId.projectId": {
+                      "description": "The ID of the project.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudWorkspace.workspaceId.repoId.projectRepoId.repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudWorkspace.workspaceId.repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudWorkspace.workspaceId.name": {
+                      "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudWorkspace.snapshotId": {
+                      "description": "The ID of the snapshot.\nAn empty snapshot_id refers to the most recent snapshot.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.gerrit.hostUri": {
+                      "description": "The URI of a running Gerrit instance.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.gerrit.gerritProject": {
+                      "description": "The full project name within the host. Projects may be nested, so\n\"project\/subproject\" is a valid project name.\nThe \"repo name\" is hostURI\/project.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.gerrit.revisionId": {
+                      "description": "A revision (commit) ID.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.gerrit.aliasName": {
+                      "description": "The name of an alias (branch, tag, etc.).",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.gerrit.aliasContext.kind": {
+                      "description": "The alias kind.",
+                      "location": "query",
+                      "type": "string",
+                      "enum": [
+                        "ANY",
+                        "FIXED",
+                        "MOVABLE",
+                        "OTHER"
+                      ]
+                    },
+                    "sourceContext.gerrit.aliasContext.name": {
+                      "description": "The alias name.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.git.url": {
+                      "description": "Git repository URL.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.git.revisionId": {
+                      "description": "Git commit hash.\nrequired.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "pageToken": {
+                      "description": "The value of next_page_token from the previous call.\nOmit for the first page.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "pageSize": {
+                      "description": "The maximum number of values to return.",
+                      "location": "query",
+                      "type": "integer",
+                      "format": "int32"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName",
+                    "revisionId"
+                  ],
+                  "response": {
+                    "$ref": "ListFilesResponse"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                }
+              }
+              ,
+              "resources": {
+                "files": {
+                  "methods": {
+                    "get": {
+                      "id": "source.projects.repos.revisions.files.get",
+                      "path": "v1/projects/{projectId}/repos/{repoName}/revisions/{revisionId}/files/{+path}",
+                      "flatPath": "v1/projects/{projectId}/repos/{repoName}/revisions/{revisionId}/files/{filesId}",
+                      "httpMethod": "GET",
+                      "description": "Read is given a SourceContext and path, and returns\nfile or directory information about that path.",
+                      "parameters": {
+                        "projectId": {
+                          "description": "The ID of the project.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "repoName": {
+                          "description": "The name of the repo. Leave empty for the default repo.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "revisionId": {
+                          "description": "A revision ID.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "path": {
+                          "description": "Path to the file or directory from the root directory of the source\ncontext. It must not have leading or trailing slashes.",
+                          "location": "path",
+                          "required": true,
+                          "pattern": "^.*$",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.repoId.uid": {
+                          "description": "A server-assigned, globally unique identifier.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.aliasName": {
+                          "description": "The name of an alias (branch, tag, etc.).",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.aliasContext.kind": {
+                          "description": "The alias kind.",
+                          "location": "query",
+                          "type": "string",
+                          "enum": [
+                            "ANY",
+                            "FIXED",
+                            "MOVABLE",
+                            "OTHER"
+                          ]
+                        },
+                        "sourceContext.cloudRepo.aliasContext.name": {
+                          "description": "The alias name.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudWorkspace.workspaceId.repoId.projectRepoId.projectId": {
+                          "description": "The ID of the project.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudWorkspace.workspaceId.repoId.projectRepoId.repoName": {
+                          "description": "The name of the repo. Leave empty for the default repo.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudWorkspace.workspaceId.repoId.uid": {
+                          "description": "A server-assigned, globally unique identifier.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudWorkspace.workspaceId.name": {
+                          "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudWorkspace.snapshotId": {
+                          "description": "The ID of the snapshot.\nAn empty snapshot_id refers to the most recent snapshot.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.hostUri": {
+                          "description": "The URI of a running Gerrit instance.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.gerritProject": {
+                          "description": "The full project name within the host. Projects may be nested, so\n\"project\/subproject\" is a valid project name.\nThe \"repo name\" is hostURI\/project.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.revisionId": {
+                          "description": "A revision (commit) ID.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.aliasName": {
+                          "description": "The name of an alias (branch, tag, etc.).",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.aliasContext.kind": {
+                          "description": "The alias kind.",
+                          "location": "query",
+                          "type": "string",
+                          "enum": [
+                            "ANY",
+                            "FIXED",
+                            "MOVABLE",
+                            "OTHER"
+                          ]
+                        },
+                        "sourceContext.gerrit.aliasContext.name": {
+                          "description": "The alias name.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.git.url": {
+                          "description": "Git repository URL.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.git.revisionId": {
+                          "description": "Git commit hash.\nrequired.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "startPosition": {
+                          "description": "If path refers to a file, the position of the first byte of its contents\nto return. If path refers to a directory, the position of the first entry\nin the listing. If page_token is specified, this field is ignored.",
+                          "location": "query",
+                          "type": "string",
+                          "format": "int64"
+                        },
+                        "pageToken": {
+                          "description": "The value of next_page_token from the previous call.\nOmit for the first page, or if using start_index.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "pageSize": {
+                          "description": "The maximum number of values to return.",
+                          "location": "query",
+                          "type": "string",
+                          "format": "int64"
+                        }
+                      },
+                      "parameterOrder": [
+                        "projectId",
+                        "repoName",
+                        "revisionId",
+                        "path"
+                      ],
+                      "response": {
+                        "$ref": "ReadResponse"
+                      },
+                      "scopes": [
+                        "https://www.googleapis.com/auth/cloud-platform"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "files": {
+              "methods": {
+                "readFromWorkspaceOrAlias": {
+                  "id": "source.projects.repos.files.readFromWorkspaceOrAlias",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/files/{+path}:readFromWorkspaceOrAlias",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/files/{filesId}:readFromWorkspaceOrAlias",
+                  "httpMethod": "GET",
+                  "description": "ReadFromWorkspaceOrAlias performs a Read using either the most recent\nsnapshot of the given workspace, if the workspace exists, or the\nrevision referred to by the given alias if the workspace does not exist.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "path": {
+                      "description": "Path to the file or directory from the root directory of the source\ncontext. It must not have leading or trailing slashes.",
+                      "location": "path",
+                      "required": true,
+                      "pattern": "^.*$",
+                      "type": "string"
+                    },
+                    "repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "workspaceName": {
+                      "description": "Workspace to read from, if it exists.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "alias": {
+                      "description": "MOVABLE alias to read from, if the workspace doesn't exist.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "startPosition": {
+                      "description": "If path refers to a file, the position of the first byte of its contents\nto return. If path refers to a directory, the position of the first entry\nin the listing. If page_token is specified, this field is ignored.",
+                      "location": "query",
+                      "type": "string",
+                      "format": "int64"
+                    },
+                    "pageToken": {
+                      "description": "The value of next_page_token from the previous call.\nOmit for the first page.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "pageSize": {
+                      "description": "The maximum number of values to return.",
+                      "location": "query",
+                      "type": "string",
+                      "format": "int64"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName",
+                    "path"
+                  ],
+                  "response": {
+                    "$ref": "ReadResponse"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                }
+              }
+            },
+            "workspaces": {
+              "methods": {
+                "listFiles": {
+                  "id": "source.projects.repos.workspaces.listFiles",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}:listFiles",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}:listFiles",
+                  "httpMethod": "GET",
+                  "description": "ListFiles returns a list of all files in a SourceContext. The\ninformation about each file includes its path and its hash.\nThe result is ordered by path. Pagination is supported.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "sourceContext.cloudRepo.repoId.projectRepoId.projectId": {
+                      "description": "The ID of the project.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudRepo.repoId.projectRepoId.repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudRepo.repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudRepo.revisionId": {
+                      "description": "A revision ID.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudRepo.aliasName": {
+                      "description": "The name of an alias (branch, tag, etc.).",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudRepo.aliasContext.kind": {
+                      "description": "The alias kind.",
+                      "location": "query",
+                      "type": "string",
+                      "enum": [
+                        "ANY",
+                        "FIXED",
+                        "MOVABLE",
+                        "OTHER"
+                      ]
+                    },
+                    "sourceContext.cloudRepo.aliasContext.name": {
+                      "description": "The alias name.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudWorkspace.workspaceId.repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.cloudWorkspace.snapshotId": {
+                      "description": "The ID of the snapshot.\nAn empty snapshot_id refers to the most recent snapshot.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.gerrit.hostUri": {
+                      "description": "The URI of a running Gerrit instance.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.gerrit.gerritProject": {
+                      "description": "The full project name within the host. Projects may be nested, so\n\"project\/subproject\" is a valid project name.\nThe \"repo name\" is hostURI\/project.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.gerrit.revisionId": {
+                      "description": "A revision (commit) ID.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.gerrit.aliasName": {
+                      "description": "The name of an alias (branch, tag, etc.).",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.gerrit.aliasContext.kind": {
+                      "description": "The alias kind.",
+                      "location": "query",
+                      "type": "string",
+                      "enum": [
+                        "ANY",
+                        "FIXED",
+                        "MOVABLE",
+                        "OTHER"
+                      ]
+                    },
+                    "sourceContext.gerrit.aliasContext.name": {
+                      "description": "The alias name.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.git.url": {
+                      "description": "Git repository URL.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "sourceContext.git.revisionId": {
+                      "description": "Git commit hash.\nrequired.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "pageToken": {
+                      "description": "The value of next_page_token from the previous call.\nOmit for the first page.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "pageSize": {
+                      "description": "The maximum number of values to return.",
+                      "location": "query",
+                      "type": "integer",
+                      "format": "int32"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName",
+                    "name"
+                  ],
+                  "response": {
+                    "$ref": "ListFilesResponse"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "create": {
+                  "id": "source.projects.repos.workspaces.create",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/workspaces",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/workspaces",
+                  "httpMethod": "POST",
+                  "description": "Creates a workspace.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName"
+                  ],
+                  "request": {
+                    "$ref": "CreateWorkspaceRequest"
+                  },
+                  "response": {
+                    "$ref": "Workspace"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "get": {
+                  "id": "source.projects.repos.workspaces.get",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}",
+                  "httpMethod": "GET",
+                  "description": "Returns workspace metadata.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "workspaceId.repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName",
+                    "name"
+                  ],
+                  "response": {
+                    "$ref": "Workspace"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "list": {
+                  "id": "source.projects.repos.workspaces.list",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/workspaces",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/workspaces",
+                  "httpMethod": "GET",
+                  "description": "Returns all workspaces belonging to a repo.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "view": {
+                      "description": "Specifies which parts of the Workspace resource should be returned in the\nresponse.",
+                      "location": "query",
+                      "type": "string",
+                      "enum": [
+                        "STANDARD",
+                        "MINIMAL",
+                        "FULL"
+                      ]
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName"
+                  ],
+                  "response": {
+                    "$ref": "ListWorkspacesResponse"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "modifyWorkspace": {
+                  "id": "source.projects.repos.workspaces.modifyWorkspace",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}:modifyWorkspace",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}:modifyWorkspace",
+                  "httpMethod": "POST",
+                  "description": "Applies an ordered sequence of file modification actions to a workspace.\nReturns ABORTED if current_snapshot_id in the request does not refer to\nthe most recent update to the workspace or if the workspace is\nsimultaneously modified by another client.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName",
+                    "name"
+                  ],
+                  "request": {
+                    "$ref": "ModifyWorkspaceRequest"
+                  },
+                  "response": {
+                    "$ref": "Workspace"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "commitWorkspace": {
+                  "id": "source.projects.repos.workspaces.commitWorkspace",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}:commitWorkspace",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}:commitWorkspace",
+                  "httpMethod": "POST",
+                  "description": "Commits some or all of the modified files in a workspace. This creates a\nnew revision in the repo with the workspace's contents. Returns ABORTED if the workspace ID\nin the request contains a snapshot ID and it is not the same as the\nworkspace's current snapshot ID or if the workspace is simultaneously\nmodified by another client.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName",
+                    "name"
+                  ],
+                  "request": {
+                    "$ref": "CommitWorkspaceRequest"
+                  },
+                  "response": {
+                    "$ref": "Workspace"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "delete": {
+                  "id": "source.projects.repos.workspaces.delete",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}",
+                  "httpMethod": "DELETE",
+                  "description": "Deletes a workspace. Uncommitted changes are lost. If the workspace does\nnot exist, NOT_FOUND is returned. Returns ABORTED when the workspace is\nsimultaneously modified by another client.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "workspaceId.repoId.uid": {
+                      "description": "A server-assigned, globally unique identifier.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "currentSnapshotId": {
+                      "description": "If non-empty, current_snapshot_id must refer to the most recent update to\nthe workspace, or ABORTED is returned.",
+                      "location": "query",
+                      "type": "string"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName",
+                    "name"
+                  ],
+                  "response": {
+                    "$ref": "Empty"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "resolveFiles": {
+                  "id": "source.projects.repos.workspaces.resolveFiles",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}:resolveFiles",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}:resolveFiles",
+                  "httpMethod": "POST",
+                  "description": "Marks files modified as part of a merge as having been resolved. Returns\nABORTED when the workspace is simultaneously modified by another client.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName",
+                    "name"
+                  ],
+                  "request": {
+                    "$ref": "ResolveFilesRequest"
+                  },
+                  "response": {
+                    "$ref": "Workspace"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "refreshWorkspace": {
+                  "id": "source.projects.repos.workspaces.refreshWorkspace",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}:refreshWorkspace",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}:refreshWorkspace",
+                  "httpMethod": "POST",
+                  "description": "Brings a workspace up to date by merging in the changes made between its\nbaseline and the revision to which its alias currently refers.\nFAILED_PRECONDITION is returned if the alias refers to a revision that is\nnot a descendant of the workspace baseline, or if the workspace has no\nbaseline. Returns ABORTED when the workspace is simultaneously modified by\nanother client.\n\nA refresh may involve merging files in the workspace with files in the\ncurrent alias revision. If this merge results in conflicts, then the\nworkspace is in a merge state: the merge_info field of Workspace will be\npopulated, and conflicting files in the workspace will contain conflict\nmarkers.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName",
+                    "name"
+                  ],
+                  "request": {
+                    "$ref": "RefreshWorkspaceRequest"
+                  },
+                  "response": {
+                    "$ref": "Workspace"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "revertRefresh": {
+                  "id": "source.projects.repos.workspaces.revertRefresh",
+                  "path": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}:revertRefresh",
+                  "flatPath": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}:revertRefresh",
+                  "httpMethod": "POST",
+                  "description": "If a call to RefreshWorkspace results in conflicts, use RevertRefresh to\nrestore the workspace to the state it was in before the refresh.  Returns\nFAILED_PRECONDITION if not preceded by a call to RefreshWorkspace, or if\nthere are no unresolved conflicts remaining. Returns ABORTED when the\nworkspace is simultaneously modified by another client.",
+                  "parameters": {
+                    "projectId": {
+                      "description": "The ID of the project.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "repoName": {
+                      "description": "The name of the repo. Leave empty for the default repo.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "parameterOrder": [
+                    "projectId",
+                    "repoName",
+                    "name"
+                  ],
+                  "request": {
+                    "$ref": "RevertRefreshRequest"
+                  },
+                  "response": {
+                    "$ref": "Workspace"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                }
+              }
+              ,
+              "resources": {
+                "files": {
+                  "methods": {
+                    "get": {
+                      "id": "source.projects.repos.workspaces.files.get",
+                      "path": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}/files/{+path}",
+                      "flatPath": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}/files/{filesId}",
+                      "httpMethod": "GET",
+                      "description": "Read is given a SourceContext and path, and returns\nfile or directory information about that path.",
+                      "parameters": {
+                        "projectId": {
+                          "description": "The ID of the project.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "repoName": {
+                          "description": "The name of the repo. Leave empty for the default repo.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "name": {
+                          "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "path": {
+                          "description": "Path to the file or directory from the root directory of the source\ncontext. It must not have leading or trailing slashes.",
+                          "location": "path",
+                          "required": true,
+                          "pattern": "^.*$",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.repoId.projectRepoId.projectId": {
+                          "description": "The ID of the project.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.repoId.projectRepoId.repoName": {
+                          "description": "The name of the repo. Leave empty for the default repo.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.repoId.uid": {
+                          "description": "A server-assigned, globally unique identifier.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.revisionId": {
+                          "description": "A revision ID.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.aliasName": {
+                          "description": "The name of an alias (branch, tag, etc.).",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.aliasContext.kind": {
+                          "description": "The alias kind.",
+                          "location": "query",
+                          "type": "string",
+                          "enum": [
+                            "ANY",
+                            "FIXED",
+                            "MOVABLE",
+                            "OTHER"
+                          ]
+                        },
+                        "sourceContext.cloudRepo.aliasContext.name": {
+                          "description": "The alias name.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudWorkspace.workspaceId.repoId.uid": {
+                          "description": "A server-assigned, globally unique identifier.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudWorkspace.snapshotId": {
+                          "description": "The ID of the snapshot.\nAn empty snapshot_id refers to the most recent snapshot.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.hostUri": {
+                          "description": "The URI of a running Gerrit instance.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.gerritProject": {
+                          "description": "The full project name within the host. Projects may be nested, so\n\"project\/subproject\" is a valid project name.\nThe \"repo name\" is hostURI\/project.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.revisionId": {
+                          "description": "A revision (commit) ID.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.aliasName": {
+                          "description": "The name of an alias (branch, tag, etc.).",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.aliasContext.kind": {
+                          "description": "The alias kind.",
+                          "location": "query",
+                          "type": "string",
+                          "enum": [
+                            "ANY",
+                            "FIXED",
+                            "MOVABLE",
+                            "OTHER"
+                          ]
+                        },
+                        "sourceContext.gerrit.aliasContext.name": {
+                          "description": "The alias name.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.git.url": {
+                          "description": "Git repository URL.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.git.revisionId": {
+                          "description": "Git commit hash.\nrequired.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "startPosition": {
+                          "description": "If path refers to a file, the position of the first byte of its contents\nto return. If path refers to a directory, the position of the first entry\nin the listing. If page_token is specified, this field is ignored.",
+                          "location": "query",
+                          "type": "string",
+                          "format": "int64"
+                        },
+                        "pageToken": {
+                          "description": "The value of next_page_token from the previous call.\nOmit for the first page, or if using start_index.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "pageSize": {
+                          "description": "The maximum number of values to return.",
+                          "location": "query",
+                          "type": "string",
+                          "format": "int64"
+                        }
+                      },
+                      "parameterOrder": [
+                        "projectId",
+                        "repoName",
+                        "name",
+                        "path"
+                      ],
+                      "response": {
+                        "$ref": "ReadResponse"
+                      },
+                      "scopes": [
+                        "https://www.googleapis.com/auth/cloud-platform"
+                      ]
+                    }
+                  }
+                },
+                "snapshots": {
+                  "methods": {
+                    "listFiles": {
+                      "id": "source.projects.repos.workspaces.snapshots.listFiles",
+                      "path": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}/snapshots/{snapshotId}:listFiles",
+                      "flatPath": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}/snapshots/{snapshotId}:listFiles",
+                      "httpMethod": "GET",
+                      "description": "ListFiles returns a list of all files in a SourceContext. The\ninformation about each file includes its path and its hash.\nThe result is ordered by path. Pagination is supported.",
+                      "parameters": {
+                        "projectId": {
+                          "description": "The ID of the project.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "repoName": {
+                          "description": "The name of the repo. Leave empty for the default repo.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "name": {
+                          "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "snapshotId": {
+                          "description": "The ID of the snapshot.\nAn empty snapshot_id refers to the most recent snapshot.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.repoId.projectRepoId.projectId": {
+                          "description": "The ID of the project.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.repoId.projectRepoId.repoName": {
+                          "description": "The name of the repo. Leave empty for the default repo.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.repoId.uid": {
+                          "description": "A server-assigned, globally unique identifier.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.revisionId": {
+                          "description": "A revision ID.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.aliasName": {
+                          "description": "The name of an alias (branch, tag, etc.).",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudRepo.aliasContext.kind": {
+                          "description": "The alias kind.",
+                          "location": "query",
+                          "type": "string",
+                          "enum": [
+                            "ANY",
+                            "FIXED",
+                            "MOVABLE",
+                            "OTHER"
+                          ]
+                        },
+                        "sourceContext.cloudRepo.aliasContext.name": {
+                          "description": "The alias name.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.cloudWorkspace.workspaceId.repoId.uid": {
+                          "description": "A server-assigned, globally unique identifier.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.hostUri": {
+                          "description": "The URI of a running Gerrit instance.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.gerritProject": {
+                          "description": "The full project name within the host. Projects may be nested, so\n\"project\/subproject\" is a valid project name.\nThe \"repo name\" is hostURI\/project.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.revisionId": {
+                          "description": "A revision (commit) ID.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.aliasName": {
+                          "description": "The name of an alias (branch, tag, etc.).",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.gerrit.aliasContext.kind": {
+                          "description": "The alias kind.",
+                          "location": "query",
+                          "type": "string",
+                          "enum": [
+                            "ANY",
+                            "FIXED",
+                            "MOVABLE",
+                            "OTHER"
+                          ]
+                        },
+                        "sourceContext.gerrit.aliasContext.name": {
+                          "description": "The alias name.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.git.url": {
+                          "description": "Git repository URL.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "sourceContext.git.revisionId": {
+                          "description": "Git commit hash.\nrequired.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "pageToken": {
+                          "description": "The value of next_page_token from the previous call.\nOmit for the first page.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "pageSize": {
+                          "description": "The maximum number of values to return.",
+                          "location": "query",
+                          "type": "integer",
+                          "format": "int32"
+                        }
+                      },
+                      "parameterOrder": [
+                        "projectId",
+                        "repoName",
+                        "name",
+                        "snapshotId"
+                      ],
+                      "response": {
+                        "$ref": "ListFilesResponse"
+                      },
+                      "scopes": [
+                        "https://www.googleapis.com/auth/cloud-platform"
+                      ]
+                    },
+                    "get": {
+                      "id": "source.projects.repos.workspaces.snapshots.get",
+                      "path": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}/snapshots/{snapshotId}",
+                      "flatPath": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}/snapshots/{snapshotId}",
+                      "httpMethod": "GET",
+                      "description": "Gets a workspace snapshot.",
+                      "parameters": {
+                        "projectId": {
+                          "description": "The ID of the project.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "repoName": {
+                          "description": "The name of the repo. Leave empty for the default repo.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "name": {
+                          "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "snapshotId": {
+                          "description": "The ID of the snapshot to get. If empty, the most recent snapshot is\nretrieved.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "workspaceId.repoId.uid": {
+                          "description": "A server-assigned, globally unique identifier.",
+                          "location": "query",
+                          "type": "string"
+                        }
+                      },
+                      "parameterOrder": [
+                        "projectId",
+                        "repoName",
+                        "name",
+                        "snapshotId"
+                      ],
+                      "response": {
+                        "$ref": "Snapshot"
+                      },
+                      "scopes": [
+                        "https://www.googleapis.com/auth/cloud-platform"
+                      ]
+                    },
+                    "list": {
+                      "id": "source.projects.repos.workspaces.snapshots.list",
+                      "path": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}/snapshots",
+                      "flatPath": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}/snapshots",
+                      "httpMethod": "GET",
+                      "description": "Lists all the snapshots made to a workspace, sorted from most recent to\nleast recent.",
+                      "parameters": {
+                        "projectId": {
+                          "description": "The ID of the project.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "repoName": {
+                          "description": "The name of the repo. Leave empty for the default repo.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "name": {
+                          "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                          "location": "path",
+                          "required": true,
+                          "type": "string"
+                        },
+                        "workspaceId.repoId.uid": {
+                          "description": "A server-assigned, globally unique identifier.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "pageToken": {
+                          "description": "The value of next_page_token from the previous call.\nOmit for the first page.",
+                          "location": "query",
+                          "type": "string"
+                        },
+                        "pageSize": {
+                          "description": "The maximum number of values to return.",
+                          "location": "query",
+                          "type": "integer",
+                          "format": "int32"
+                        }
+                      },
+                      "parameterOrder": [
+                        "projectId",
+                        "repoName",
+                        "name"
+                      ],
+                      "response": {
+                        "$ref": "ListSnapshotsResponse"
+                      },
+                      "scopes": [
+                        "https://www.googleapis.com/auth/cloud-platform"
+                      ]
+                    }
+                  }
+                  ,
+                  "resources": {
+                    "files": {
+                      "methods": {
+                        "get": {
+                          "id": "source.projects.repos.workspaces.snapshots.files.get",
+                          "path": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}/snapshots/{snapshotId}/files/{+path}",
+                          "flatPath": "v1/projects/{projectId}/repos/{repoName}/workspaces/{name}/snapshots/{snapshotId}/files/{filesId}",
+                          "httpMethod": "GET",
+                          "description": "Read is given a SourceContext and path, and returns\nfile or directory information about that path.",
+                          "parameters": {
+                            "projectId": {
+                              "description": "The ID of the project.",
+                              "location": "path",
+                              "required": true,
+                              "type": "string"
+                            },
+                            "repoName": {
+                              "description": "The name of the repo. Leave empty for the default repo.",
+                              "location": "path",
+                              "required": true,
+                              "type": "string"
+                            },
+                            "name": {
+                              "description": "The unique name of the workspace within the repo.  This is the name\nchosen by the client in the Source API's CreateWorkspace method.",
+                              "location": "path",
+                              "required": true,
+                              "type": "string"
+                            },
+                            "snapshotId": {
+                              "description": "The ID of the snapshot.\nAn empty snapshot_id refers to the most recent snapshot.",
+                              "location": "path",
+                              "required": true,
+                              "type": "string"
+                            },
+                            "path": {
+                              "description": "Path to the file or directory from the root directory of the source\ncontext. It must not have leading or trailing slashes.",
+                              "location": "path",
+                              "required": true,
+                              "pattern": "^.*$",
+                              "type": "string"
+                            },
+                            "sourceContext.cloudRepo.repoId.projectRepoId.projectId": {
+                              "description": "The ID of the project.",
+                              "location": "query",
+                              "type": "string"
+                            },
+                            "sourceContext.cloudRepo.repoId.projectRepoId.repoName": {
+                              "description": "The name of the repo. Leave empty for the default repo.",
+                              "location": "query",
+                              "type": "string"
+                            },
+                            "sourceContext.cloudRepo.repoId.uid": {
+                              "description": "A server-assigned, globally unique identifier.",
+                              "location": "query",
+                              "type": "string"
+                            },
+                            "sourceContext.cloudRepo.revisionId": {
+                              "description": "A revision ID.",
+                              "location": "query",
+                              "type": "string"
+                            },
+                            "sourceContext.cloudRepo.aliasName": {
+                              "description": "The name of an alias (branch, tag, etc.).",
+                              "location": "query",
+                              "type": "string"
+                            },
+                            "sourceContext.cloudRepo.aliasContext.kind": {
+                              "description": "The alias kind.",
+                              "location": "query",
+                              "type": "string",
+                              "enum": [
+                                "ANY",
+                                "FIXED",
+                                "MOVABLE",
+                                "OTHER"
+                              ]
+                            },
+                            "sourceContext.cloudRepo.aliasContext.name": {
+                              "description": "The alias name.",
+                              "location": "query",
+                              "type": "string"
+                            },
+                            "sourceContext.cloudWorkspace.workspaceId.repoId.uid": {
+                              "description": "A server-assigned, globally unique identifier.",
+                              "location": "query",
+                              "type": "string"
+                            },
+                            "sourceContext.gerrit.hostUri": {
+                              "description": "The URI of a running Gerrit instance.",
+                              "location": "query",
+                              "type": "string"
+                            },
+                            "sourceContext.gerrit.gerritProject": {
+                              "description": "The full project name within the host. Projects may be nested, so\n\"project\/subproject\" is a valid project name.\nThe \"repo name\" is hostURI\/project.",
+                              "location": "query",
+                              "type": "string"
+                            },
+                            "sourceContext.gerrit.revisionId": {
+                              "description": "A revision (commit) ID.",
+                              "location": "query",
+                              "type": "string"
+                            },
+                            "sourceContext.gerrit.aliasName": {
+                              "description": "The name of an alias (branch, tag, etc.).",
+                              "location": "query",
+                              "type": "string"
+                            },
+                            "sourceContext.gerrit.aliasContext.kind": {
+                              "description": "The alias kind.",
+                              "location": "query",
+                              "type": "string",
+                              "enum": [
+                                "ANY",
+                                "FIXED",
+                                "MOVABLE",
+                                "OTHER"
+                              ]
+                            },
+                            "sourceContext.gerrit.aliasContext.name": {
+                              "description": "The alias name.",
+                              "location": "query",
+                              "type": "string"
+                            },
+                            "sourceContext.git.url": {
+                              "description": "Git repository URL.",
+                              "location": "query",
+                              "type": "string"
+                            },
+                            "sourceContext.git.revisionId": {
+                              "description": "Git commit hash.\nrequired.",
+                              "location": "query",
+                              "type": "string"
+                            },
+                            "startPosition": {
+                              "description": "If path refers to a file, the position of the first byte of its contents\nto return. If path refers to a directory, the position of the first entry\nin the listing. If page_token is specified, this field is ignored.",
+                              "location": "query",
+                              "type": "string",
+                              "format": "int64"
+                            },
+                            "pageToken": {
+                              "description": "The value of next_page_token from the previous call.\nOmit for the first page, or if using start_index.",
+                              "location": "query",
+                              "type": "string"
+                            },
+                            "pageSize": {
+                              "description": "The maximum number of values to return.",
+                              "location": "query",
+                              "type": "string",
+                              "format": "int64"
+                            }
+                          },
+                          "parameterOrder": [
+                            "projectId",
+                            "repoName",
+                            "name",
+                            "snapshotId",
+                            "path"
+                          ],
+                          "response": {
+                            "$ref": "ReadResponse"
+                          },
+                          "scopes": [
+                            "https://www.googleapis.com/auth/cloud-platform"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "v1": {
+      "methods": {
+        "listChangedFiles": {
+          "id": "source.listChangedFiles",
+          "path": "v1:listChangedFiles",
+          "flatPath": "v1:listChangedFiles",
+          "httpMethod": "POST",
+          "description": "ListChangedFiles computes the files that have changed between two revisions\nor workspace snapshots in the same repo. It returns a list of\nChangeFileInfos.\n\nListChangedFiles does not perform copy\/rename detection, so the from_path of\nChangeFileInfo is unset. Examine the changed_files field of the Revision\nresource to determine copy\/rename information.\n\nThe result is ordered by path. Pagination is supported.",
+          "parameters": {
+          },
+          "parameterOrder": [
+          ],
+          "request": {
+            "$ref": "ListChangedFilesRequest"
+          },
+          "response": {
+            "$ref": "ListChangedFilesResponse"
+          },
+          "scopes": [
+            "https://www.googleapis.com/auth/cloud-platform"
+          ]
+        }
+      }
+    }
+  },
+  "basePath": ""
+}

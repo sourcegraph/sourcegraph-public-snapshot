@@ -40,6 +40,12 @@ type Actor struct {
 	// FIXME: It is not nice to store this here, but currently our codebase expects it to be quickly
 	// avaialble everywhere.
 	GitHubToken string
+
+	// GoogleConnected indicates if the actor has a Google account connected.
+	GoogleConnected bool
+
+	// GoogleScopes is the list of allowed Google API scopes we currently have for the actor.
+	GoogleScopes []string
 }
 
 func (a *Actor) String() string {

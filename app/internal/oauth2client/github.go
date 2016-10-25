@@ -1,6 +1,7 @@
 package oauth2client
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -101,14 +102,6 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("exchanging auth code yielded invalid OAuth2 token")}
 	}
 
-	auth0Client := oauth2.NewClient(r.Context(), oauth2.StaticTokenSource(token))
-
-	resp, err := auth0Client.Get("https://" + auth.Auth0Domain + "/userinfo")
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
 	var info struct {
 		UID         string `json:"user_id"`
 		Nickname    string `json:"nickname"`
@@ -118,11 +111,12 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 			GitHubScope []string `json:"github_scope"`
 		} `json:"app_metadata"`
 		Identities []struct {
-			Connection string `json:"connection"`
-			UserID     int    `json:"user_id"`
+			Connection string          `json:"connection"`
+			UserID     json.RawMessage `json:"user_id"` // Defer decoding because the type is int for GitHub, but string for Google.
 		} `json:"identities"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+	err = fetchAuth0UserInfo(r.Context(), token, &info)
+	if err != nil {
 		return err
 	}
 
@@ -139,7 +133,13 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		// try copying legacy scope
 		for _, identity := range info.Identities {
 			if identity.Connection == "github" {
-				if legacyScope := backend.LegacyGitHubScope(identity.UserID); len(legacyScope) > 0 {
+				var githubUserID int
+				err := json.Unmarshal(identity.UserID, &githubUserID)
+				if err != nil {
+					log15.Warn(`Connection is "github", but UserID type isn't int; ignoring.`, "UserID", identity.UserID, "err", err)
+					continue
+				}
+				if legacyScope := backend.LegacyGitHubScope(githubUserID); len(legacyScope) > 0 {
 					firstTime = false
 					mergedScope = mergeScopes(mergedScope, legacyScope)
 				}
@@ -158,8 +158,8 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		}
 	}
 
-	// Write cookie.
-	if err := auth.StartNewSession(w, r, &auth.Actor{
+	// Create actor and write session cookie.
+	actor := &auth.Actor{
 		UID:             info.UID,
 		Login:           info.Nickname,
 		Email:           info.Email,
@@ -167,7 +167,24 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		GitHubConnected: true,
 		GitHubScopes:    scopeOfToken,
 		GitHubToken:     githubToken.Token,
-	}); err != nil {
+	}
+	var googleConnected bool
+	for _, identity := range info.Identities {
+		if identity.Connection == "google-oauth2" {
+			googleConnected = true
+			break
+		}
+	}
+	if googleConnected {
+		googleRefreshToken, err := auth.FetchGoogleRefreshToken(r.Context(), info.UID)
+		if err != nil {
+			return fmt.Errorf("auth.FetchGoogleRefreshToken: %v", err)
+		}
+
+		actor.GoogleConnected = true
+		actor.GoogleScopes = strings.Split(googleRefreshToken.Scope, ",")
+	}
+	if err := auth.StartNewSession(w, r, actor); err != nil {
 		return err
 	}
 
@@ -195,6 +212,17 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 
 	http.Redirect(w, r, returnToURL.String(), http.StatusSeeOther)
 	return nil
+}
+
+// fetchAuth0UserInfo fetches Auth0 user info for token into v.
+func fetchAuth0UserInfo(ctx context.Context, token *oauth2.Token, v interface{}) error {
+	auth0Client := oauth2.NewClient(ctx, oauth2.StaticTokenSource(token))
+	resp, err := auth0Client.Get("https://" + auth.Auth0Domain + "/userinfo")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return json.NewDecoder(resp.Body).Decode(&v)
 }
 
 func mergeScopes(a, b []string) []string {

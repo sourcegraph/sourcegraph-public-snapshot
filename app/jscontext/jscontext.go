@@ -35,6 +35,7 @@ type JSContext struct {
 	User              *sourcegraph.User          `json:"user"`
 	Emails            *sourcegraph.EmailAddrList `json:"emails"`
 	GitHubToken       *sourcegraph.ExternalToken `json:"gitHubToken"`
+	GoogleToken       *sourcegraph.ExternalToken `json:"googleToken"`
 	IntercomHash      string                     `json:"intercomHash"`
 }
 
@@ -73,6 +74,13 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		}
 	}
 
+	var googleToken *sourcegraph.ExternalToken
+	if actor.GoogleConnected {
+		googleToken = &sourcegraph.ExternalToken{
+			Scope: strings.Join(actor.GoogleScopes, ","), // the UI only cares about the scope
+		}
+	}
+
 	return JSContext{
 		AppURL:            conf.AppURL.String(),
 		LegacyAccessToken: sessionCookie, // Legacy support for Chrome extension.
@@ -87,6 +95,7 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 			EmailAddrs: []*sourcegraph.EmailAddr{{Email: actor.Email, Primary: true}},
 		},
 		GitHubToken:  gitHubToken,
+		GoogleToken:  googleToken,
 		IntercomHash: intercomHMAC(actor.UID),
 	}, nil
 }
