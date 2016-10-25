@@ -53,9 +53,9 @@ def test_onboarding(d):
     if len(d.find_buttons_by_partial_text("Authorize application")) > 0:
         d.find_button_by_partial_text("Authorize application").click()
 
-    # Skip the Chrome extension install
-    retry(lambda: wd.find_element_by_link_text("Skip").click())
-    wait_for(lambda: d.find_elements_by_tag_name_and_partial_text("div", "Find a repository"))
+    wait_for(lambda: len(d.find_tokens("Checkers")) > 0)
+    wait_for(lambda: wd.find_element_by_id("def-coachmark"))
+    wait_for(lambda: wd.find_element_by_id("ref-coachmark"))
 
     # Log out
     Util.log_out(d)
