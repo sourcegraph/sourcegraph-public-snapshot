@@ -1045,6 +1045,9 @@ export interface SignatureInformation {
 	paramaters?: any[];
 }
 
+export interface SourceDef {
+}
+
 export interface SourceRef {
 }
 
@@ -1102,6 +1105,13 @@ export interface TextDocumentPositionParams {
 export interface TextEdit {
 	range: any;
 	newText: string;
+}
+
+export interface TopDefs {
+	HasMore?: boolean;
+}
+
+export interface TopDefsOptions {
 }
 
 export interface TreeEntry {
