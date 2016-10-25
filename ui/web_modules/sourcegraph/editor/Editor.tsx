@@ -310,8 +310,10 @@ export class Editor implements IDisposable {
 					range = new Range(position.lineNumber, word ? word.startColumn : position.column, position.lineNumber, word ? word.endColumn : position.column);
 				}
 				const contents = resp.result.contents instanceof Array ? resp.result.contents : [resp.result.contents];
-				if (contents[0].value && contents[0].value.length > 400) {
-					contents[0].value = contents[0].value.slice(0, 390) + "...";
+				for (const c of contents) {
+					if (c.value && c.value.length > 300) {
+						c.value = c.value.slice(0, 300) + "...";
+					}
 				}
 				if (!isPrimitive(contents)) {
 					contents.push("*Right-click to view references*");
