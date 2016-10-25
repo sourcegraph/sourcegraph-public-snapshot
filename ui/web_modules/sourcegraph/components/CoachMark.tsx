@@ -4,6 +4,7 @@ import {colors} from "sourcegraph/components/utils";
 
 interface Props {
 	color?: "blue" | "purple" | "orange" | "green";
+	onClick?: any;
 	pulseColor?: "blue" | "purple" | "orange" | "green" | "white";
 	style?: React.CSSProperties;
 	active: boolean;
@@ -15,6 +16,7 @@ const hoverSx = hover({
 
 export function CoachMark ({
 	color = "blue",
+	onClick,
 	pulseColor = "blue",
 	active = false,
 	style,
@@ -43,5 +45,5 @@ export function CoachMark ({
 		style,
 	));
 
-	return <div {...sx} {...hoverSx}></div>;
+	return <div onClick={onClick} {...sx} {...hoverSx}></div>;
 };

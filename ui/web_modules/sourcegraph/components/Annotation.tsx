@@ -7,6 +7,7 @@ interface Props {
 	children?: React.ReactNode[];
 	pulseColor?: "blue" | "purple" | "orange" | "green" | "white";
 	open: boolean;
+	markOnClick?: () => void;
 	containerStyle?: React.CSSProperties;
 	tooltipStyle?: React.CSSProperties;
 	annotationPosition?: "left" | "right";
@@ -18,6 +19,7 @@ export function Annotation ({
 	pulseColor = "blue",
 	active = false,
 	open = true,
+	markOnClick,
 	children,
 	containerStyle,
 	tooltipStyle,
@@ -37,15 +39,20 @@ export function Annotation ({
 	const tooltipSx = Object.assign({},
 		{
 			position: "absolute",
+			opacity: open ? 1 : 0,
+			display: open ? "hidden" : "block",
+			transform: `scale(${ open ? 1 : 0})`,
+			transformOrigin: `${annotationPosition === "right" ? "left" : "right"} top`,
 			top: 22.5,
 			left: leftOffset,
 			maxWidth: 350,
+			transition: "all 300ms cubic-bezier(0.500, -0.405, 0.205, 1.345)",
 		},
 		tooltipStyle,
 	);
 
 	return <div {...sx}>
-		<CoachMark color={color} pulseColor={pulseColor} active={active} />
-		{open && <Panel hoverLevel="low" style={tooltipSx}>{children}</Panel>}
+		<CoachMark color={color} pulseColor={pulseColor} active={active} onClick={markOnClick} />
+		<Panel hoverLevel="low" style={tooltipSx}>{children}</Panel>
 	</div>;
 };

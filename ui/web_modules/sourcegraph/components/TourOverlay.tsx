@@ -15,8 +15,9 @@ import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 interface Props { location: Location; }
 
 interface State {
-	visibleMarks: Array<Number>;
+	visibleMarks: number[];
 	visibleAnnotation: number | null;
+	viewedAnnotations: number[];
 }
 
 const _defCoachmarkIndex: number = 0;
@@ -116,6 +117,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 		this.state = {
 			visibleAnnotation: null,
 			visibleMarks: visibleMarks,
+			viewedAnnotations: [],
 		};
 	}
 
@@ -275,64 +277,84 @@ export class TourOverlay extends React.Component<Props, State>  {
 
 	_renderCoachmarkAnnotationForContainer(coachmark: Coachmark, containerNode: any): void {
 		let {visibleAnnotation} = this.state;
-		let refs =
-			<div id={coachmark.markId} onClick={this._handleCoachmarkClicked.bind(this, coachmark.markIndex)} style={{whitespace: "normal", lineHeight: "1.4"}}>
-				<Annotation color="purple" pulseColor="white" open={visibleAnnotation === coachmark.markIndex} active={true} tooltipStyle={{whitespace: "normal !important", zIndex: 102, backgroundColor: colors.blue()}}>
-					<span style={closeSx}><Close width={12} color={colors.coolGray2(0.9)}/></span>
-					<div style={headerSx}>
-						<Heading color="blue" level={6} style={{marginTop: 0}}>{coachmark.headingTitle}</Heading>
-						{coachmark.headingSubtitle}
-					</div>
-					<div style={{padding: whitespace[4]}}>
-						<Flag width={15} style={flagSx} color={colors.blue2(0.9)}/>
-						<strong style={actionSx}>{coachmark.actionTitle}</strong>
-						{coachmark.actionCTA}
-					</div>
-				</Annotation>
-			</div>;
+		let refs = <div id={coachmark.markId} style={{whitespace: "normal"}}>
+			<Annotation
+				color="purple"
+				pulseColor="white"
+				open={visibleAnnotation === coachmark.markIndex}
+				active={!this.state.viewedAnnotations.includes(coachmark.markIndex)}
+				markOnClick={() => this._handleCoachmarkClicked(coachmark.markIndex)}
+				tooltipStyle={{whitespace: "normal !important", zIndex: 102, backgroundColor: colors.blue()}}>
+
+				<span style={closeSx} onClick={() => this.setState(Object.assign({}, this.state, { visibleAnnotation: null }))}>
+					<Close width={12} color={colors.coolGray2(0.5)} />
+				</span>
+				<div style={headerSx}>
+					<Heading color="blue" level={6} style={{marginTop: 0}}>{coachmark.headingTitle}</Heading>
+					{coachmark.headingSubtitle}
+				</div>
+				<div style={{padding: whitespace[4]}}>
+					<Flag width={15} style={flagSx} color={colors.blue2(0.9)}/>
+					<strong style={actionSx}>{coachmark.actionTitle}</strong>
+					{coachmark.actionCTA}
+				</div>
+
+			</Annotation>
+		</div>;
 
 		ReactDOM.render(refs, containerNode);
 	}
 
 	_handleCoachmarkClicked(markIndex: number): void {
+		// Only toggle whether or not the annotation is visible. This should not completely remove coachmarks.
+		this.setState(Object.assign({}, this.state,
+			{
+				visibleAnnotation: this.state.visibleAnnotation === markIndex ? null : markIndex,
+				viewedAnnotations:
+					this.state.viewedAnnotations.includes(markIndex)
+						? this.state.viewedAnnotations
+						: this.state.viewedAnnotations.concat([markIndex]),
+			}
+		));
+
 		switch (markIndex) {
 			case _refCoachmarkIndex: {
-				if (markIndex === this.state.visibleAnnotation) {
-					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLOSE, "ReferencesAnnotationCloseClicked",  {page_name: "BlobViewOnboarding"});
-				} else {
-					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ReferencesCoachmarkCTAClicked",  {page_name: "BlobViewOnboarding"});
-				}
+				EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLOSE, "ReferencesAnnotationToggled",  {page_name: "BlobViewOnboarding"});
 			}
 			break;
 			case _defCoachmarkIndex: {
-				if (markIndex === this.state.visibleAnnotation) {
-					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLOSE, "JumpToDefAnnotationCloseClicked",  {page_name: "BlobViewOnboarding"});
-				} else {
-					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "JumpToDefCoachmarkCTAClicked",  {page_name: "BlobViewOnboarding"});
-				}
+				EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "JumpToDefCoachmarkCTAClicked",  {page_name: "BlobViewOnboarding"});
 			}
 			break;
 			case _searchCoachmarkIndex: {
-				if (markIndex === this.state.visibleAnnotation) {
-					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLOSE, "SearchAnnotationCloseClicked", {page_name: "BlobViewOnboarding"});
-				} else {
-					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "SearchCoachmarkCTAClicked", {page_name: "BlobViewOnboarding"});
-				}
+				EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLOSE, "SearchAnnotationToggled", {page_name: "BlobViewOnboarding"});
 			}
 			break;
 			default:
 				return;
 		}
 
-		this._updateVisibleCoachmarks(markIndex);
 	}
 
 	// The search coachmark annotation is different because it does not live inside of the editor therefore we can render it like a standard react component.
 	_renderSearchCoachmarkAnnotation(visibleAnnotation: number | null, markIndex: number): JSX.Element | null {
 		return (
-			<div ref={(c) => this._searchCoachmarkRef = c} onClick={this._handleCoachmarkClicked.bind(this, markIndex)} style={{ position: "fixed", right: 160, top: 40}}>
-				<Annotation color="purple" pulseColor="white" open={visibleAnnotation === markIndex} active={true} annotationPosition="left">
-					<span style={closeSx}><Close width={12}/></span>
+			<div
+				ref={(c) => this._searchCoachmarkRef = c}
+				style={{ position: "fixed", right: 160, top: 40}}>
+				<Annotation
+					color="purple"
+					pulseColor="white"
+					annotationPosition="left"
+					open={visibleAnnotation === markIndex}
+					active={!this.state.viewedAnnotations.includes(markIndex)}
+					markOnClick={() => this._handleCoachmarkClicked(markIndex)}>
+
+					<span style={closeSx} onClick={
+						() => this.setState(Object.assign({}, this.state, { visibleAnnotation: null}))
+					}>
+						<Close width={12}  color={colors.coolGray2(0.5)} />
+					</span>
 					<div style={Object.assign({},
 						headerSx,
 						{ borderRadius: 3 },
@@ -369,48 +391,10 @@ export class TourOverlay extends React.Component<Props, State>  {
 		}
 	}
 
-	_updateVisibleCoachmarks(index: number): void {
-		let visibleMarks;
-		// Update the visible coachmarks upon dismissal of the annotation.
-		if (this.state.visibleAnnotation !== null) {
-			visibleMarks = this.state.visibleMarks.filter((mark: number) => {
-				return mark !== this.state.visibleAnnotation;
-			});
-
-			if (index === _searchCoachmarkIndex) {
-				this._playBoomAnimation(this._searchCoachmarkRef);
-			} else {
-				let elementToRemove = document.getElementById(this._coachmarks[index].markId);
-				if (elementToRemove) {
-					this._playBoomAnimation(elementToRemove);
-				}
-			}
-
-			this.setState({
-				visibleAnnotation: index !== this.state.visibleAnnotation ? index : null,
-				visibleMarks: visibleMarks,
-			});
-		// else update the visible annotation.
-		} else {
-			visibleMarks = this.state.visibleMarks;
-
-			this.setState({
-				visibleAnnotation: index,
-				visibleMarks: visibleMarks,
-			});
-		}
-
-		window.sessionStorage.setItem("tour", String(visibleMarks));
-		if (visibleMarks.length === 0) {
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "OnboardingTourCompleted", {page_name: "BlobViewOnboarding"});
-			this._endTour();
-		}
-	}
-
 	_renderDismissButton(): JSX.Element | null {
 		return (
 			<div style={{ position: "fixed", right: 42, bottom: 36}}>
-				<Button onClick={this._dismissTour.bind(this)} size="small" color="white" outline={false}>Dismiss pointers</Button>
+				<Button onClick={() => this._dismissTour()} size="small" color="white" outline={false}>Dismiss tour</Button>
 			</div>
 		);
 	}
@@ -421,6 +405,16 @@ export class TourOverlay extends React.Component<Props, State>  {
 	}
 
 	_endTour(): void {
+
+		// Animate dismissal of all coachmarks
+		this._playBoomAnimation(this._searchCoachmarkRef);
+		this._coachmarks.map((mark) => {
+			if (mark) {
+				const el = document.getElementById(mark.markId);
+				if (el) { this._playBoomAnimation(el); }
+			}
+		});
+
 		window.sessionStorage.setItem("tour", "");
 		delete this.props.location.query["tour"];
 		const newLoc = Object.assign({}, this.props.location, {query: this.props.location.query});

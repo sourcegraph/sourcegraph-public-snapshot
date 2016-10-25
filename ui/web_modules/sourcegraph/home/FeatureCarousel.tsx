@@ -59,7 +59,7 @@ interface SliderNavItemProps {
 	title: string;
 	subtitle: string;
 	active: boolean;
-	onClick: any;
+	onClick: () => void;
 }
 
 function SliderNavItem({title, subtitle, active, onClick}: SliderNavItemProps): JSX.Element {
