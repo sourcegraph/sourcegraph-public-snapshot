@@ -315,6 +315,23 @@ export class Editor implements IDisposable {
 						c.value = c.value.slice(0, 300) + "...";
 					}
 				}
+
+				// HACK: temporarily render Markdown hover strings as
+				// sans-serif plain text to work around the Markdown
+				// rendering issue in
+				// https://github.com/sourcegraph/sourcegraph/issues/1947
+				// where prose is rendered as monospace. For some
+				// reason, this actually renders Markdown correctly
+				// (code is monospace, prose is sans-serif), whereas
+				// without this, those are rendered in the opposite
+				// ways (code is sans-serif, prose is monospace).
+				for (let i = 0; i < contents.length; i++) {
+					if (contents[i].language === "markdown") {
+						contents[i] = contents[i].value;
+					}
+				}
+				// END HACK
+
 				if (!isPrimitive(contents)) {
 					contents.push("*Right-click to view references*");
 				}
