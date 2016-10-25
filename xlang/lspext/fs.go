@@ -8,9 +8,9 @@ import (
 
 // FileInfo is the map-based implementation of FileInfo.
 type FileInfo struct {
-	Name_ string
-	Size_ int64
-	Dir_  bool
+	Name_ string `json:"name"`
+	Size_ int64  `json:"size"`
+	Dir_  bool   `json:"dir"`
 }
 
 func (fi FileInfo) IsDir() bool        { return fi.Dir_ }
