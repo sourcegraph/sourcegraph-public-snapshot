@@ -18,8 +18,8 @@ import (
 	"golang.org/x/tools/go/buildutil"
 
 	"github.com/neelance/parallel"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
 // query is a structured representation that is parsed from the user's

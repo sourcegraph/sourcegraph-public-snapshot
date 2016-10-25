@@ -15,9 +15,9 @@ import (
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/sourcegraph/go-langserver/langserver/internal/refs"
+	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph-go/langserver/internal/refs"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lspext"
 )
 
 func (h *LangHandler) handleWorkspaceReference(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lspext.WorkspaceReferenceParams) ([]lspext.ReferenceInformation, error) {

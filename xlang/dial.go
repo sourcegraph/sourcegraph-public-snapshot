@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
 // DialProxy creates a new JSON-RPC 2.0 connection to the LSP proxy

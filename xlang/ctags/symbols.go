@@ -9,7 +9,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/ctags/parser"
 )
 

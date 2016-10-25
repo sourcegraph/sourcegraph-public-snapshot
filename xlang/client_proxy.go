@@ -16,8 +16,8 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )

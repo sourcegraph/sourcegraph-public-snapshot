@@ -16,7 +16,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
 	"golang.org/x/tools/go/loader"
 )

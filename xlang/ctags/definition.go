@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/ctxvfs"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
 func (h *Handler) handleDefinition(ctx context.Context, params lsp.TextDocumentPositionParams) ([]lsp.Location, error) {

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
 type diagnostics map[string][]*lsp.Diagnostic // map of URI to diagnostics (for PublishDiagnosticParams)

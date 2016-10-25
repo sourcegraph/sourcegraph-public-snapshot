@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/ctxvfs"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"

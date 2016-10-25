@@ -13,9 +13,9 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lspext"
 )
 
 // NewHandler creates a Go language server handler.

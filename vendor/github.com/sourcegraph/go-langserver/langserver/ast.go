@@ -5,7 +5,7 @@ import (
 	"go/ast"
 	"go/token"
 
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
 func offsetForPosition(contents []byte, p lsp.Position) (offset int, valid bool, whyInvalid string) {

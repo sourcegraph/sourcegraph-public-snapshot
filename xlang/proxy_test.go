@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/ctxvfs"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"

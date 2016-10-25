@@ -11,7 +11,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"

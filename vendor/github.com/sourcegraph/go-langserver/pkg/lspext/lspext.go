@@ -1,6 +1,6 @@
 package lspext
 
-import "github.com/sourcegraph/sourcegraph-go/pkg/lsp"
+import "github.com/sourcegraph/go-langserver/pkg/lsp"
 
 // WorkspaceReferenceParams is a parameter literal used in `workspace/reference`
 // requests. This is a Sourcegraph extension method to LSP. It is sent from the

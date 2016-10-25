@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/ctxvfs"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
 var rubyFile = []byte(`# a comment

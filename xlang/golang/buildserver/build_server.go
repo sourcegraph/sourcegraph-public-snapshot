@@ -19,9 +19,9 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/ctxvfs"
+	"github.com/sourcegraph/go-langserver/langserver"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph-go/langserver"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )

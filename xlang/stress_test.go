@@ -14,8 +14,8 @@ import (
 
 	"github.com/neelance/parallel"
 	"github.com/sourcegraph/ctxvfs"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"

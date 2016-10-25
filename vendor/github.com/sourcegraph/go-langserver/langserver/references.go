@@ -15,8 +15,8 @@ import (
 	"golang.org/x/tools/go/loader"
 	"golang.org/x/tools/refactor/importgraph"
 
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
 func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {

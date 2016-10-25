@@ -3,7 +3,7 @@ package xlang
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
 func TestGuessTrackedErrorURL(t *testing.T) {

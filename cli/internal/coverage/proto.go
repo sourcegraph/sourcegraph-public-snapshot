@@ -3,7 +3,7 @@ package coverage
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
 // Hover represents a message for when a user "hovers" over a definition. It is

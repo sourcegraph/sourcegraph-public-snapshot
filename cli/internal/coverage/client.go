@@ -6,8 +6,8 @@ import (
 	"net"
 	"os"
 
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
 // Client is a coverage client type, which is effectively an LSP client.

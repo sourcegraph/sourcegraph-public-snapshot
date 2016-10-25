@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/ctxvfs"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
 func (h *Handler) handleReferences(ctx context.Context, params lsp.ReferenceParams) ([]lsp.Location, error) {

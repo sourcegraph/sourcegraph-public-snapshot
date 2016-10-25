@@ -9,9 +9,9 @@ import (
 	"go/types"
 	"strings"
 
-	"github.com/slimsag/godocmd"
+	doc "github.com/slimsag/godocmd"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
 func (h *LangHandler) handleHover(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) (*lsp.Hover, error) {

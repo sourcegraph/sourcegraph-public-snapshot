@@ -5,7 +5,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/ctags/parser"
 
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"golang.org/x/net/context"
 )
 

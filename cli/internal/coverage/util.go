@@ -4,7 +4,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/coverage/tokenizer"
 )
 

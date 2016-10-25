@@ -10,8 +10,8 @@ import (
 	"net/http/httptest"
 	"strings"
 
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )

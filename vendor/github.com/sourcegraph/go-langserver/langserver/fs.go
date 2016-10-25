@@ -10,8 +10,8 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/ctxvfs"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 )
 
 // IsFileSystemRequest returns if this is an LSP method whose sole

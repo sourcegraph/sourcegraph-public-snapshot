@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
