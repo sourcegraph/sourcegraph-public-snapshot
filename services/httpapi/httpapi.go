@@ -11,11 +11,13 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
+	opentracing "github.com/opentracing/opentracing-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 	apirouter "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
 )
@@ -143,6 +145,6 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	}
 	http.Error(w, displayErrBody, status)
 	if status < 200 || status >= 500 {
-		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err)
+		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
 	}
 }
