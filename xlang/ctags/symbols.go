@@ -3,7 +3,6 @@ package ctags
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -55,7 +54,6 @@ func (h *Handler) handleSymbol(ctx context.Context, params lsp.WorkspaceSymbolPa
 	}
 
 	span.SetTag("tags count", len(tags))
-	vslog("Total definitions found: ", strconv.Itoa(len(tags)))
 
 	tags = filterRankTags(ctx, params.Query, tags, params.Limit)
 	span.SetTag("filtered tags count", len(tags))
@@ -66,7 +64,6 @@ func (h *Handler) handleSymbol(ctx context.Context, params lsp.WorkspaceSymbolPa
 			symbols = append(symbols, *symbol)
 		}
 	}
-	vslog("Returning definitions: ", strconv.Itoa(len(symbols)))
 
 	return symbols, nil
 }

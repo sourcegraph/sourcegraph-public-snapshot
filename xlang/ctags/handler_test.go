@@ -166,3 +166,29 @@ func TestReferences(t *testing.T) {
 		}
 	}
 }
+
+func TestHover(t *testing.T) {
+	h, ctx := setupHandler()
+	params := lsp.TextDocumentPositionParams{
+		Position: lsp.Position{
+			Line:      1,
+			Character: 5,
+		},
+		TextDocument: lsp.TextDocumentIdentifier{
+			URI: "file:///hello.rb",
+		},
+	}
+	hover, err := h.handleHover(ctx, params)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert := func(b bool) {
+		if !b {
+			t.Errorf("expected true but got false")
+		}
+	}
+
+	assert(len(hover.Contents) == 1)
+	assert(hover.Contents[0] == lsp.MarkedString{Language: "Markdown", Value: "Type: method"})
+	assert(hover.Range == defLoc.Range)
+}
