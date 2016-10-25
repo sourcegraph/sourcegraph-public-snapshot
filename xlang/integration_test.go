@@ -121,8 +121,8 @@ func TestIntegration(t *testing.T) {
 	for rootPath, test := range tests {
 		label := strings.TrimPrefix(strings.Replace(strings.Replace(rootPath, "//", "", 1), "/", "-", -1), "git:") // abbreviated label
 		t.Run(label, func(t *testing.T) {
-			if os.Getenv("CI") != "" && strings.Contains(rootPath, "github.com/golang/go") {
-				t.Skip("Skipping the Go stdlib integration test in CI; it exceeds the available memory (4 GB) and fails the whole build.")
+			if os.Getenv("CI") != "" && (strings.Contains(rootPath, "github.com/golang/go") || strings.Contains(rootPath, "github.com/docker/machine")) {
+				t.Skipf("Skipping the %s integration test in CI; it sometimes exceeds the available memory (4 GB) and fails the whole build.", rootPath)
 			}
 
 			{
