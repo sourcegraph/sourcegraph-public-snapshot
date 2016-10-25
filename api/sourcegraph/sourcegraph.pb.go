@@ -983,6 +983,51 @@ type FileRef struct {
 	Score int16
 }
 
+// TopDefsOptions specifies options for querying the top definitions inside a
+// source (e.g. a repo).
+type TopDefsOptions struct {
+	// Source is the source of the definition whose references are being
+	// queried. e.g. the git repository URI ("github.com/gorilla/mux").
+	Source string
+
+	// Limit is the maximum number of definitions to return.
+	Limit int
+}
+
+// TopDefs lists the top definitions inside of a source (e.g. a repo).
+type TopDefs struct {
+	// SourceDefs holds the definitions for the source.
+	SourceDefs []*SourceDef
+	// StreamResponse specifies if more results are available.
+	StreamResponse
+}
+
+// SourceDef identifies a definition inside a source (e.g. a repo) and provides
+// statistics like the number of other sources and files that reference the def.
+type SourceDef struct {
+	// DefScheme is the URI scheme for the def's source, e.g. "git"
+	DefScheme string
+
+	// DefSource is the source of the def (e.g. a repo URI).
+	DefSource string
+
+	// DefVersion is the version of the source that references the def.
+	DefVersion string
+
+	// DefName and DefContainerName of the definition whose references are
+	// being described.
+	DefName, DefContainerName string
+
+	// Sources is the number of sources that reference this def.
+	Sources int
+
+	// Files is the number of files in all sources that reference this def.
+	Files int
+
+	// Refs is the number of references to this def across all sources.
+	Refs int
+}
+
 // RepoTreeGetOptions specifies options for (RepoTreeService).Get.
 type RepoTreeGetOptions struct {
 	ContentsAsString bool `json:"ContentsAsString,omitempty" url:",omitempty"`

@@ -29,24 +29,20 @@
 	</h2>
 	<div class="my3">
 	{{range $def := .Defs}}
-		{{with $def.Def.FmtStrings}}
 		<div class="bg-white border rounded border-cool-gray-3-2 my2 p3">
 			<h3 class="mt0">
-				<a href="{{$def.LandURL}}" class="code">
-					{{.DefKeyword}} {{.Name.ScopeQualified}} {{.NameAndTypeSeparator}}{{.Type.Unqualified}}
-				</a>
+				<a href="{{$def.URL}}" class="code">{{$def.Title}}</a>
 				<span>
 					{{if $def.RefCount}}
-						<a href="{{$def.SourceURL}}" class="defssrclink">[{{$def.RefCount}} {{numberedNoun $def.RefCount "ref"}}, view source]</a>
+						<a href="{{$def.URL}}" class="defssrclink">[{{$def.RefCount}} {{numberedNoun $def.RefCount "ref"}}, view source]</a>
 					{{else}}
-						<a href="{{$def.SourceURL}}">[view source]</a>
+						<a href="{{$def.URL}}">[view source]</a>
 					{{end}}
 				</span>
 			</h3>
 
-			<p class="mb0">{{shortDoc (defDocText $def.Def)}}</p>
+			<p class="mb0">{{shortDoc ($def.DocText)}}</p>
 		</div>
-		{{end}}
 	{{end}}
 	</div>
 	{{end}}

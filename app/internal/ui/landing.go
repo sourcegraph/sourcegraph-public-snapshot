@@ -10,6 +10,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
+	"github.com/jaytaylor/html2text"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -33,10 +34,15 @@ import (
 )
 
 type defDescr struct {
-	Def       *sourcegraph.Def
-	RefCount  int32
-	LandURL   string
-	SourceURL string
+	Title    string
+	DocText  string
+	RefCount int
+	URL      string
+
+	// These two fields are unused today, but specify the number of files
+	// (across all sources/repos) and the number of sources (repos) that
+	// reference the definition.
+	FileCount, SourcesCount int
 }
 
 func serveRepoIndex(w http.ResponseWriter, r *http.Request) error {
@@ -98,19 +104,6 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 
 	repoURL := approuter.Rel.URLToRepo(repo.URI).String()
 
-	results, err := backend.Search.Search(r.Context(), &sourcegraph.SearchOp{
-		Opt: &sourcegraph.SearchOptions{
-			Repos:        []int32{repo.ID},
-			Languages:    []string{"Go"},
-			NotKinds:     []string{"package"},
-			IncludeRepos: false,
-			ListOptions:  sourcegraph.ListOptions{PerPage: 20},
-		},
-	})
-	if err != nil {
-		return err
-	}
-
 	var sanitizedREADME []byte
 	readmeEntry, err := backend.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{
 		Entry: sourcegraph.TreeEntrySpec{
@@ -124,16 +117,25 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		sanitizedREADME = bluemonday.UGCPolicy().SanitizeBytes(blackfriday.MarkdownCommon(readmeEntry.Contents))
 	}
 
-	var defDescrs []defDescr
-	for _, defResult := range results.DefResults {
-		def := &defResult.Def
-		handlerutil.ComputeDocHTML(def)
-		defDescrs = append(defDescrs, defDescr{
-			Def:       def,
-			RefCount:  defResult.RefCount,
-			LandURL:   approuter.Rel.URLToDefLanding(def.DefKey).String(),
-			SourceURL: approuter.Rel.URLToDefKey(def.DefKey).String(),
-		})
+	migrated, err := backend.Defs.HasMigrated(r.Context(), repo.URI)
+	if err != nil {
+		// Just log, so we fallback to legacy.
+		log15.Crit("Defs.HasMigrated", "error", err)
+	}
+
+	var data []defDescr
+	if migrated {
+		data, err = queryRepoLandingData(r, repo)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Fallback to legacy / srclib data.
+		legacyRepoLandingCounter.Inc()
+		data, err = queryLegacyRepoLandingData(r, repo)
+		if err != nil {
+			return err
+		}
 	}
 
 	m := repoMeta(repo)
@@ -154,8 +156,137 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		Repo:            repo,
 		RepoRev:         repoRev,
 		RepoURL:         repoURL,
-		Defs:            defDescrs,
+		Defs:            data,
 	})
+}
+
+func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) ([]defDescr, error) {
+	language := "go" // TODO(slimsag): long term, add to route
+
+	// Query information about the top definitions in the repo.
+	topDefs, err := backend.Defs.TopDefs(r.Context(), sourcegraph.TopDefsOptions{
+		Source: repo.URI,
+		Limit:  20,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "Defs.TopDefs")
+	}
+
+	var desc []defDescr
+	for _, d := range topDefs.SourceDefs {
+		// Lookup the definition based on the source / definition (Name, ContainerName)
+		// pair.
+		rootPath := d.DefScheme + "://" + d.DefSource + "?" + d.DefVersion
+		var symbols []lsp.SymbolInformation
+		err := xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
+			// TODO(slimsag): before merge, performance for golang/go here is not
+			// good. And we don't have a file URI? What to do?
+			Query: "", // all symbols
+		}, &symbols)
+		if err != nil {
+			return nil, errors.Wrap(err, "LSP workspace/symbol")
+		}
+
+		// Find the matching symbol.
+		var symbol *lsp.SymbolInformation
+		for _, sym := range symbols {
+			if sym.Name != d.DefName || sym.ContainerName != d.DefContainerName {
+				continue
+			}
+			withoutFile, err := url.Parse(sym.Location.URI)
+			if err != nil {
+				return nil, errors.Wrap(err, "parsing symbol location URI")
+			}
+			withoutFile.Fragment = ""
+			if withoutFile.String() != rootPath {
+				continue
+			}
+			symbol = &sym
+			break
+		}
+		if symbol == nil {
+			return nil, fmt.Errorf("could not finding matching symbol info")
+		}
+
+		// Determine the definition title.
+		//fmt.Println(symbol.Location.URI, symbol.Location.Range.Start, symbol)
+		var hover lsp.Hover
+		err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "textDocument/hover", lsp.TextDocumentPositionParams{
+			TextDocument: lsp.TextDocumentIdentifier{URI: symbol.Location.URI},
+			Position: lsp.Position{
+				Line:      symbol.Location.Range.End.Line,
+				Character: symbol.Location.Range.End.Character,
+			},
+		}, &hover)
+
+		hoverTitle := hover.Contents[0].Value
+		var hoverDesc string
+		for _, s := range hover.Contents {
+			if s.Language == "markdown" {
+				hoverDesc = s.Value
+				break
+			}
+		}
+
+		//s := d.DefScheme + "://" + d.DefSource + "?" + d.DefVersion
+		desc = append(desc, defDescr{
+			Title:        hoverTitle, //fmt.Sprintf("%s %s %s (%d refs, %d files, %d sources)", d.DefName, d.DefContainerName, s, d.Refs, d.Files, d.Sources),
+			DocText:      hoverDesc,
+			RefCount:     d.Refs,
+			FileCount:    d.Files,
+			SourcesCount: d.Sources,
+			//URL:   approuter.Rel.URLToDefLanding(def.DefKey).String(),
+		})
+	}
+	return desc, nil
+}
+
+func defDocText(def *sourcegraph.Def) string {
+	for _, doc := range def.Docs {
+		if doc.Format == "text/plain" {
+			return doc.Data
+		}
+	}
+	if plain, err := html2text.FromString(def.DocHTML.HTML); err == nil {
+		return plain
+	}
+	for _, doc := range def.Docs {
+		if doc.Format == "markdown" {
+			if plain, err := html2text.FromString(doc.Data); err == nil {
+				return plain
+			}
+		}
+	}
+	return ""
+}
+
+func queryLegacyRepoLandingData(r *http.Request, repo *sourcegraph.Repo) ([]defDescr, error) {
+	results, err := backend.Search.Search(r.Context(), &sourcegraph.SearchOp{
+		Opt: &sourcegraph.SearchOptions{
+			Repos:        []int32{repo.ID},
+			Languages:    []string{"Go"},
+			NotKinds:     []string{"package"},
+			IncludeRepos: false,
+			ListOptions:  sourcegraph.ListOptions{PerPage: 20},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var defDescrs []defDescr
+	for _, defResult := range results.DefResults {
+		def := &defResult.Def
+		handlerutil.ComputeDocHTML(def)
+		f := def.FmtStrings
+		defDescrs = append(defDescrs, defDescr{
+			Title:    fmt.Sprintf("%s %s %s%s", f.DefKeyword, f.Name.ScopeQualified, f.NameAndTypeSeparator, f.Type.Unqualified),
+			DocText:  defDocText(def),
+			RefCount: int(defResult.RefCount),
+			URL:      approuter.Rel.URLToDefLanding(def.DefKey).String(),
+		})
+	}
+	return defDescrs, nil
 }
 
 type snippet struct {
@@ -284,8 +415,8 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 
 	var hoverDesc string
 	for _, s := range hover.Contents {
-		if s.Language == "text/html" {
-			hoverDesc = s.Value
+		if s.Language == "markdown" {
+			hoverDesc = string(blackfriday.MarkdownCommon([]byte(s.Value)))
 			break
 		}
 	}
@@ -514,6 +645,13 @@ var legacyDefLandingCounter = prometheus.NewCounter(prometheus.CounterOpts{
 	Help:      "Number of times a legacy def landing page has been served.",
 })
 
+var legacyRepoLandingCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "src",
+	Name:      "legacy_repo_landing",
+	Help:      "Number of times a legacy repo landing page has been served.",
+})
+
 func init() {
 	prometheus.MustRegister(legacyDefLandingCounter)
+	prometheus.MustRegister(legacyRepoLandingCounter)
 }

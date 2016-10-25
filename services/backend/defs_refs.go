@@ -123,6 +123,12 @@ func (s *defs) HasMigrated(ctx context.Context, repo string) (migrated bool, err
 	return localstore.GlobalRefs.HasMigrated(ctx, repo)
 }
 
+func (s *defs) TopDefs(ctx context.Context, op sourcegraph.TopDefsOptions) (res *sourcegraph.TopDefs, err error) {
+	ctx, done := trace(ctx, "Defs", "TopDefs", op, &err)
+	defer done()
+	return localstore.GlobalRefs.TopDefs(ctx, op)
+}
+
 func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOptions) (res *sourcegraph.RefLocations, err error) {
 	ctx, done := trace(ctx, "Defs", "RefLocations", op, &err)
 	defer done()

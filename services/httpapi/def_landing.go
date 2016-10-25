@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"path"
 	"strconv"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -15,7 +13,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 func serveRepoDefLanding(w http.ResponseWriter, r *http.Request) error {
@@ -85,7 +82,7 @@ func serveRepoDefLanding(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("could not finding matching symbol info")
 	}
 
-	legacyURL, err := legacyDefLandingURL(*symbol)
+	legacyURL, err := router.Rel.URLToLegacyDefLanding(*symbol)
 	if err != nil {
 		return errors.Wrap(err, "legacyDefLandingURL")
 	}
@@ -96,37 +93,4 @@ func serveRepoDefLanding(w http.ResponseWriter, r *http.Request) error {
 	}{
 		URL: legacyURL,
 	})
-}
-
-// legacyDefLandingURL creates a relative URL to the legacy def landing page
-// route. For example:
-//
-//  /github.com/gorilla/mux/-/info/GoPackage/NewRouter/mux/-/github.com/gorilla/mux
-//  /github.com/golang/go/-/info/GoPackage/Encode/Encoder/-/encoding/gob
-//
-func legacyDefLandingURL(s lsp.SymbolInformation) (string, error) {
-	uri, err := url.Parse(s.Location.URI)
-	if err != nil {
-		return "", err
-	}
-
-	defPath := s.Name
-	if s.ContainerName != "" {
-		defPath = s.ContainerName + "/" + s.Name
-	}
-
-	repo := uri.Host + uri.Path
-	unit := uri.Host + path.Join(uri.Path, path.Dir(uri.Fragment))
-	if repo == "github.com/golang/go" {
-		// Special case golang/go to emit just "encoding/json" for the path "github.com/golang/go/src/encoding/json"
-		unit = strings.TrimPrefix(path.Dir(uri.Fragment), "src/")
-	}
-
-	return router.Rel.URLToDefLanding(graph.DefKey{
-		Repo:     repo,
-		CommitID: "",
-		UnitType: "GoPackage",
-		Unit:     unit,
-		Path:     defPath,
-	}).String(), nil
 }
