@@ -53,10 +53,10 @@ describe("actions", () => {
 			fetchMock.mock(annotationsAPI, "GET", {Annotations: []});
 
 			return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
-				resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
+				resolvedRev: {content: {[keyFor(repo)]: {authRequired: false, cloneInProgress: false, respCode: 200}, [keyFor(repo, rev)]: {json: {CommitID: resolvedRev}}}},
 				annotations: {content: {}},
 			}, [
-				{type: types.FETCHED_ANNOTATIONS, repo, rev: resolvedRev, path, json: {Annotations: []}},
+				{type: types.FETCHED_ANNOTATIONS, repo, rev: resolvedRev, path, xhrResponse: {body: {Annotations: []}, head: undefined, status: 200}},
 			]);
 		});
 
@@ -64,16 +64,16 @@ describe("actions", () => {
 			fetchMock.mock(annotationsAPI, "GET", 404);
 
 			return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
-				resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
+				resolvedRev: {content: {[keyFor(repo)]: {authRequired: false, cloneInProgress: false, respCode: 200}, [keyFor(repo, rev)]: {json: {CommitID: resolvedRev}}}},
 				annotations: {content: {}},
 			}, [
-				{type: types.FETCHED_ANNOTATIONS, repo, rev: resolvedRev, path, err: errorResponse(404, annotationsAPI)},
+				{type: types.FETCHED_ANNOTATIONS, repo, rev: resolvedRev, path, xhrResponse: {body: null, head: undefined, status: 404}},
 			]);
 		});
 
 		it("noops when annotations are cached", () => {
 			return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
-				resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
+				resolvedRev: {content: {[keyFor(repo)]: {authRequired: false, cloneInProgress: false, respCode: 200}, [keyFor(repo, rev)]: {json: {CommitID: resolvedRev}}}},
 				defs: {content: {[keyFor(repo, resolvedRev, path, query)]: {Annotations: []}}},
 			}, []);
 		});

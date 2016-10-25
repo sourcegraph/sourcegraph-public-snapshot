@@ -286,7 +286,7 @@ export default class BlobAnnotator extends Component {
 			if (state.headCommitID) apply(state.headRepoURI, state.headCommitID, state.head, false);
 		} else {
 			const resolvedRev = state.resolvedRev.content[keyFor(state.repoURI, state.rev)];
-			if (resolvedRev && resolvedRev.CommitID) apply(state.repoURI, resolvedRev.CommitID, state.rev, false);
+			if (resolvedRev && resolvedRev.json && resolvedRev.json.CommitID) apply(state.repoURI, resolvedRev.json.CommitID, state.rev, false);
 		}
 	}
 

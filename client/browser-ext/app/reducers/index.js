@@ -24,7 +24,7 @@ const resolvedRev = function(state = {content: {}}, action) {
 						authRequired: action.xhrResponse.status === 404,
 						cloneInProgress: action.xhrResponse.status === 202,
 					},
-					[keyFor(action.repo, action.rev)]: action.xhrResponse.status === 200 ? action.xhrResponse.body : null,
+					[keyFor(action.repo, action.rev)]: {json: action.xhrResponse.status === 200 ? action.xhrResponse.json : null},
 				}
 			};
 		}

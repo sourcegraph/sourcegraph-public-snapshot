@@ -27,12 +27,12 @@ function _resolveRev(dispatch, state, repo, rev) {
 
 			return resp.json()
 				.then((json) => {
-					const xhrResponse = Object.assign({status: resp.status}, {head: resp.headers.map}, {body: json});
+					const xhrResponse = Object.assign({status: resp.status}, {head: resp.headers.map}, {json: json});
 					dispatch({type: types.RESOLVED_REV, repo, rev, xhrResponse});
 					return xhrResponse;
 				})
 				.catch((err) => {
-					const xhrResponse = Object.assign({status: resp.status}, {head: resp.headers.map}, {body: null});
+					const xhrResponse = Object.assign({status: resp.status}, {head: resp.headers.map}, {json: null});
 					dispatch({type: types.RESOLVED_REV, repo, rev, xhrResponse});
 					return xhrResponse;
 				});
@@ -47,8 +47,8 @@ function _resolveRev(dispatch, state, repo, rev) {
 export function getAnnotations(repo, rev, path) {
 	return function (dispatch, getState) {
 		const state = getState();
-		return _resolveRev(dispatch, state, repo, rev).then((xhrResponse) => {
-			const resolvedRepoRev = xhrResponse.body.CommitID;
+		return _resolveRev(dispatch, state, repo, rev).then((resolvedRevResp) => {
+			const resolvedRepoRev = resolvedRevResp.json.CommitID;
 
 			if (state.annotations.content[keyFor(repo, resolvedRepoRev, path)]) return Promise.resolve(); // nothing to do; already have annotations
 
