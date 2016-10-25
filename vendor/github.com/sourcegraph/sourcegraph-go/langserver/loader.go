@@ -21,7 +21,7 @@ import (
 	"golang.org/x/tools/go/loader"
 )
 
-func (h *LangHandler) typecheck(ctx context.Context, conn JSONRPC2Conn, fileURI string, position lsp.Position) (*token.FileSet, *ast.Ident, *loader.PackageInfo, error) {
+func (h *LangHandler) typecheck(ctx context.Context, conn JSONRPC2Conn, fileURI string, position lsp.Position) (*token.FileSet, *ast.Ident, *loader.Program, *loader.PackageInfo, error) {
 	parentSpan := opentracing.SpanFromContext(ctx)
 	span := parentSpan.Tracer().StartSpan("langserver-go: load program",
 		opentracing.Tags{"fileURI": fileURI},
@@ -34,11 +34,11 @@ func (h *LangHandler) typecheck(ctx context.Context, conn JSONRPC2Conn, fileURI 
 
 	contents, err := h.readFile(ctx, fileURI)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 	offset, valid, why := offsetForPosition(contents, position)
 	if !valid {
-		return nil, nil, nil, fmt.Errorf("invalid position: %s:%d:%d (%s)", filename, position.Line, position.Character, why)
+		return nil, nil, nil, nil, fmt.Errorf("invalid position: %s:%d:%d (%s)", filename, position.Line, position.Character, why)
 	}
 
 	bctx := h.OverlayBuildContext(ctx, h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
@@ -47,16 +47,16 @@ func (h *LangHandler) typecheck(ctx context.Context, conn JSONRPC2Conn, fileURI 
 	if mpErr, ok := err.(*build.MultiplePackageError); ok {
 		bpkg, err = buildPackageForNamedFileInMultiPackageDir(bpkg, mpErr, filepath.Base(filename))
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 	} else if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	// TODO(sqs): do all pkgs in workspace together?
 	fset, prog, diags, err := h.cachedTypecheck(ctx, bctx, bpkg)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	if len(diags) > 0 {
@@ -69,12 +69,12 @@ func (h *LangHandler) typecheck(ctx context.Context, conn JSONRPC2Conn, fileURI 
 
 	start := posForFileOffset(fset, filename, offset)
 	if start == token.NoPos {
-		return nil, nil, nil, fmt.Errorf("invalid location: %s:#%d", filename, offset)
+		return nil, nil, nil, nil, fmt.Errorf("invalid location: %s:#%d", filename, offset)
 	}
 
 	pkg, nodes, _ := prog.PathEnclosingInterval(start, start)
 	if len(nodes) == 0 {
-		return nil, nil, nil, fmt.Errorf("no node found at %s offset %d", fset.Position(start), offset)
+		return nil, nil, nil, nil, fmt.Errorf("no node found at %s offset %d", fset.Position(start), offset)
 	}
 	node, ok := nodes[0].(*ast.Ident)
 	if !ok {
@@ -82,12 +82,12 @@ func (h *LangHandler) typecheck(ctx context.Context, conn JSONRPC2Conn, fileURI 
 			pp := fset.Position(p)
 			return fmt.Sprintf("%d:%d", pp.Line, pp.Column)
 		}
-		return nil, nil, nil, &invalidNodeError{
+		return nil, nil, nil, nil, &invalidNodeError{
 			Node: nodes[0],
 			msg:  fmt.Sprintf("invalid node: %s (%s-%s)", reflect.TypeOf(nodes[0]).Elem(), lineCol(nodes[0].Pos()), lineCol(nodes[0].End())),
 		}
 	}
-	return fset, node, pkg, nil
+	return fset, node, prog, pkg, nil
 }
 
 type invalidNodeError struct {
@@ -244,7 +244,7 @@ func typecheck(fset *token.FileSet, bctx *build.Context, bpkg *build.Package) (*
 		TypeCheckFuncBodies: func(p string) bool {
 			return bpkg.ImportPath == p
 		},
-		ParserMode: parser.AllErrors, // prevent parser from bailing out
+		ParserMode: parser.AllErrors | parser.ParseComments, // prevent parser from bailing out
 		FindPackage: func(bctx *build.Context, importPath, fromDir string, mode build.ImportMode) (*build.Package, error) {
 			// When importing a package, ignore any
 			// MultipleGoErrors. This occurs, e.g., when you have a
@@ -258,17 +258,19 @@ func typecheck(fset *token.FileSet, bctx *build.Context, bpkg *build.Package) (*
 		},
 	}
 
-	// For efficiency, we zero out unnecessary
+	// Hover needs this info, otherwise we could zero out the unnecessary
 	// results to save memory.
 	//
 	// TODO(sqs): investigate other ways to speed this up using
 	// AfterTypeCheck; see
 	// https://sourcegraph.com/github.com/golang/tools@5ffc3249d341c947aa65178abbf2253ed49c9e03/-/blob/cmd/guru/referrers.go#L148.
-	conf.AfterTypeCheck = func(info *loader.PackageInfo, files []*ast.File) {
-		if !conf.TypeCheckFuncBodies(info.Pkg.Path()) {
-			clearInfoFields(info)
-		}
-	}
+	//
+	// 	conf.AfterTypeCheck = func(info *loader.PackageInfo, files []*ast.File) {
+	// 		if !conf.TypeCheckFuncBodies(info.Pkg.Path()) {
+	// 			clearInfoFields(info)
+	// 		}
+	// 	}
+	//
 
 	var goFiles []string
 	goFiles = append(goFiles, bpkg.GoFiles...)
