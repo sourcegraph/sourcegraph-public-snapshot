@@ -59,17 +59,7 @@ export class Integrations extends Component<Props, State> {
 		return (
 			<div className={this.props.location.state && this.props.location.state.modal === "integrations" ? "" : styles.container}>
 				<div className={styles.menu}>
-					<Heading level={7} color="gray">Install an editor plugin</Heading>
-					<p>Choose your editor to download the right plugin and get instructions on installation.</p>
-					<div className={styles.tool_list}>
-						{plugins.map((tool, i) => (
-							<a key={i} href={tool.url} target="_blank" className={styles.tool}>
-								<img className={styles.img} src={`${context.assetsRoot}${tool.img}`}></img>
-								<div className={styles.caption}>{tool.name}</div>
-							</a>
-						))}
-					</div>
-					<Heading level={7} color="gray">Other tools</Heading>
+					<Heading level={7} color="gray">Browser extensions</Heading>
 					<div className={styles.tool_list}>
 						{otherTools.map((tool, i) => (
 							<a key={i} href={tool.url} target="_blank" className={styles.tool}>
