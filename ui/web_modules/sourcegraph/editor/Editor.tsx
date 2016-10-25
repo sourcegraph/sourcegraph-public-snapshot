@@ -2,6 +2,7 @@ import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 import { URIUtils } from "sourcegraph/core/uri";
 import { EditorService, IEditorOpenedEvent } from "sourcegraph/editor/EditorService";
 import * as lsp from "sourcegraph/editor/lsp";
+import { modes } from "sourcegraph/editor/modes";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/util/EventLogger";
 import { isSupportedMode } from "sourcegraph/util/supportedExtensions";
@@ -90,10 +91,9 @@ export class Editor implements IDisposable {
 			// This hack hardcodes mode providers only for Go, regardless
 			// of any state of the editor mode. This way context menu items
 			// will *always* appear for files with the extensions below.
-			registerModeProviders("go");
-			registerModeProviders("typescript");
-			registerModeProviders("javascript");
-			registerModeProviders("c");
+			modes.forEach(mode => {
+				registerModeProviders(mode);
+			});
 		}));
 
 		this._editorService = new EditorService();

@@ -1,10 +1,16 @@
-// tslint:disable: typedef ordered-imports
+// tslint:disable: typedef
 
-import { Store } from "sourcegraph/Store";
+import * as filter from "lodash/filter";
+import * as flatten from "lodash/flatten";
+import * as map from "lodash/map";
+import * as some from "lodash/some";
+
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import { deepFreeze } from "sourcegraph/util/deepFreeze";
+import { modes } from "sourcegraph/editor/modes";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import "sourcegraph/repo/RepoBackend";
+import { Store } from "sourcegraph/Store";
+import { deepFreeze } from "sourcegraph/util/deepFreeze";
 
 function keyFor(repo: string, rev?: string) {
 	return `${repo}@${rev || ""}`;
@@ -22,7 +28,13 @@ class RepoStoreClass extends Store<any> {
 	inventory: any;
 	branches: any;
 	tags: any;
-	symbols: any;
+	symbols: {
+		content: any;
+		list(repo: string, rev: string | null, query: string): {
+			loading: boolean;
+			results: any[];
+		};
+	};
 
 	reset() {
 		this.repos = deepFreeze({
@@ -82,19 +94,11 @@ class RepoStoreClass extends Store<any> {
 		this.symbols = deepFreeze({
 			content: {},
 			list(repo, rev, query) {
-				let results = [];
-				const goSymbols = this.content[keyForSymbols("go", repo, rev, query)];
-				if (goSymbols) {
-					results = results.concat(goSymbols);
-				}
-				const cSymbols = this.content[keyForSymbols("c", repo, rev, query)];
-				if (cSymbols) {
-					results = results.concat(cSymbols);
-				}
-				let loading = true;
-				if (goSymbols && cSymbols) {
-					loading = false;
-				}
+				const langResults = map(modes, mode =>
+					this.content[keyForSymbols(mode, repo, rev, query)]);
+				const results = flatten(filter(langResults));
+				const loading = some(langResults, r => r === undefined);
+
 				return {
 					results: results,
 					loading: loading,

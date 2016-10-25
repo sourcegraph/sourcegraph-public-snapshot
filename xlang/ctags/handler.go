@@ -86,6 +86,9 @@ func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 	case "shutdown":
 		return nil, nil
 
+	case "exit":
+		return nil, nil
+
 	case "workspace/symbol":
 		var params lsp.WorkspaceSymbolParams
 		if err = json.Unmarshal(*req.Params, &params); err != nil {

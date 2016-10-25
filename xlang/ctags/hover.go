@@ -28,11 +28,17 @@ func (h *Handler) handleHover(ctx context.Context, params lsp.TextDocumentPositi
 	}
 
 	start := lsp.Position{Line: params.Position.Line, Character: wordStart}
+	var typeInfo string
+	if tag.Signature != "" {
+		typeInfo = tag.Kind + tag.Signature
+	} else {
+		typeInfo = tag.Kind
+	}
 	hoverInfo := &lsp.Hover{
 		Contents: []lsp.MarkedString{
 			lsp.MarkedString{
-				Language: "",
-				Value:    "Type: " + tag.Kind,
+				Language: "Markdown",
+				Value:    "Type: " + typeInfo,
 			},
 		},
 		Range: lsp.Range{

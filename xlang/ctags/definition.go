@@ -24,8 +24,9 @@ func (h *Handler) handleDefinition(ctx context.Context, params lsp.TextDocumentP
 	var locations []lsp.Location
 	for _, tag := range tags {
 		if tag.Name == word {
-			loc := *tagToLocation(&tag)
-			locations = append(locations, loc)
+			if loc := tagToLocation(&tag); loc != nil {
+				locations = append(locations, *loc)
+			}
 		}
 	}
 	return locations, nil

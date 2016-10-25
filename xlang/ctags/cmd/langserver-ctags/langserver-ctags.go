@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -56,6 +57,8 @@ func run() error {
 		}))
 	}
 
+	setOOMScore(logger)
+
 	newHandler := func() jsonrpc2.Handler {
 		return jsonrpc2.HandlerWithError((&ctags.Handler{}).Handle)
 	}
@@ -103,4 +106,22 @@ func (stdrwc) Close() error {
 		return err
 	}
 	return os.Stdout.Close()
+}
+
+// setOOMScore sets the oom score for the process. This tells Linux to kill the
+// ctags process when possible, instead of the language server. If we're not
+// able to write to the file (ie we're on a non-Linux machine), that's OK, we
+// just log the message and continue.
+func setOOMScore(logger *log.Logger) {
+	pid := os.Getpid()
+	_, err := os.Stat("/proc")
+	if err != nil {
+		logger.Output(0, err.Error())
+		return
+	}
+	oomScoreFile := "proc/" + string(pid) + "/oom_score_adj"
+	err = ioutil.WriteFile(oomScoreFile, []byte("-999"), os.ModePerm)
+	if err != nil {
+		logger.Output(0, err.Error())
+	}
 }

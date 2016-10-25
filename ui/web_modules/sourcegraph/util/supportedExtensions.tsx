@@ -1,3 +1,5 @@
+import { modes } from "sourcegraph/editor/modes";
+
 export const supportedExtensions = ["go", "js", "jsx", "ts", "tsx", "c", "h"];
 
 export function isSupportedExtension(ext: string): boolean {
@@ -5,7 +7,7 @@ export function isSupportedExtension(ext: string): boolean {
 }
 
 export function isSupportedMode(modeId: string): boolean {
-	return modeId === "go" || modeId === "typescript" || modeId === "javascript" || modeId === "c";
+	return modes.includes(modeId);
 }
 
 export function getPathExtension(path: string): string | null {

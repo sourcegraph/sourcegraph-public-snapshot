@@ -1,5 +1,6 @@
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as lsp from "sourcegraph/editor/lsp";
+import { modes } from "sourcegraph/editor/modes";
 import { updateRepoCloning } from "sourcegraph/repo/cloning";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import { RepoStore } from "sourcegraph/repo/RepoStore";
@@ -187,11 +188,10 @@ export const RepoBackend = {
 		if (payload instanceof RepoActions.WantSymbols) {
 			const action = payload;
 			let symbols = RepoStore.symbols.list(payload.repo, payload.rev, payload.query);
-			if (symbols.length > 0) {
+			if (symbols.results.length > 0) {
 				return;
 			}
-			// TODO(john): make WantSymbols aware of project modes.
-			["go", "c"].forEach(mode => {
+			modes.forEach(mode => {
 				lsp.sendExt(`git:\/\/${action.repo}?${action.rev}`, mode, "workspace/symbol", { query: action.query, limit: 100 })
 					.then((r) => {
 						let result;

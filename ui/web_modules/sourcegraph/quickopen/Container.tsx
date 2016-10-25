@@ -301,7 +301,7 @@ export class Container extends React.Component<Props, State> {
 		// Update symbols
 		if (repo && this.state.commitID) {
 			const updatedSymbols = RepoStore.symbols.list(repo.URI, commitID, query);
-			if (updatedSymbols.results.length > 0) {
+			if (updatedSymbols.results.length > 0 || !updatedSymbols.loading) {
 				const symbolResults: Result[] = [];
 				updatedSymbols.results.forEach(sym => {
 					let title = sym.name;

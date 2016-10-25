@@ -31,6 +31,9 @@ type Tag struct {
 
 	// Kind can be class, func, etc. and varies by language.
 	Kind string
+
+	// Signature is the static type of the identifier
+	Signature string
 }
 
 type TagsParser struct {
@@ -85,14 +88,14 @@ func (p *TagsParser) parseLine(line string) error {
 	}
 	findCmd := line[t2+1 : t3]
 
-	extFields_ := strings.Split(line[t3+1:], "\t")
-	extFields := make(map[string]string)
-	for _, extField := range extFields_ {
-		s := strings.Index(extField, ":")
-		key, val := extField[0:s], extField[s+1:]
-		extFields[key] = val
+	extensionFields := strings.Split(line[t3+1:], "\t")
+	fields := make(map[string]string)
+	for _, field := range extensionFields {
+		s := strings.Index(field, ":")
+		key, val := field[0:s], field[s+1:]
+		fields[key] = val
 	}
-	lineno, err := strconv.Atoi(extFields["line"])
+	lineno, err := strconv.Atoi(fields["line"])
 	if err != nil {
 		return fmt.Errorf("could not parse line number, line was %q", line)
 	}
@@ -101,7 +104,8 @@ func (p *TagsParser) parseLine(line string) error {
 		Name:          name,
 		File:          file,
 		DefLinePrefix: findCmdToDefLinePrefix(findCmd),
-		Kind:          extFields["kind"],
+		Kind:          fields["kind"],
+		Signature:     fields["signature"],
 		LineNumber:    lineno,
 	})
 	return nil
