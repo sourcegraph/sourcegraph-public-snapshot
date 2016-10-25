@@ -1,6 +1,6 @@
-.PHONY: all lsp-proxy xlang-go xlang-typescript xlang-ctags deploy
+.PHONY: all lsp-proxy xlang-go xlang-javascript-typescript xlang-ctags deploy
 
-all: lsp-proxy xlang-go xlang-typescript xlang-ctags
+all: lsp-proxy xlang-go xlang-javascript-typescript xlang-ctags
 
 lsp-proxy:
 	cmd/lsp-proxy/build.sh
@@ -8,8 +8,8 @@ lsp-proxy:
 xlang-go:
 	golang/cmd/xlang-go/build.sh
 
-xlang-typescript:
-	typescript/build.sh
+xlang-javascript-typescript:
+	javascript-typescript/build.sh
 
 xlang-ctags:
 	ctags/cmd/langserver-ctags/build.sh
