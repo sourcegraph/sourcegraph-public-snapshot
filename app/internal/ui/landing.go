@@ -348,15 +348,21 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 	defSpec := routevar.ToDefAtRev(mux.Vars(r))
 	language := "go" // TODO(slimsag): long term, add to route
 
+	var (
+		defContainerName string
+		split            = strings.Split(defSpec.Path, "/")
+		defName          = split[0]
+	)
+	if len(split) == 2 {
+		defContainerName, defName = split[0], split[1]
+	}
+
 	// Lookup the definition based on the legacy srclib defkey in the page URL.
 	rootPath := "git://" + defSpec.Repo + "?" + repoRev.CommitID
 	var symbols []lsp.SymbolInformation
 	err := xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
-		// TODO(slimsag): before merge, performance for golang/go here is not
-		// good. Allow specifying file URIs as a query filter. Sucks a bit that
-		// textDocument/definition won't give us the Name/ContainerName that we
-		// need!
-		Query: "", // all symbols
+		Query: defName,
+		Limit: 100,
 	}, &symbols)
 
 	// Find the matching symbol.
@@ -369,14 +375,6 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 		withoutFile.Fragment = ""
 		if withoutFile.String() != "git://"+defSpec.Repo+"?"+repoRev.CommitID {
 			continue
-		}
-		var (
-			defContainerName string
-			split            = strings.Split(defSpec.Path, "/")
-			defName          = split[0]
-		)
-		if len(split) == 2 {
-			defContainerName, defName = split[0], split[1]
 		}
 		// Note: We must check defContainerName is empty because xlang sets the
 		// container name to the package name if there is none, in contrast
