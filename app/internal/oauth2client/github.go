@@ -188,26 +188,26 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		return err
 	}
 
+	// First time sign up route to blob view onboarding tour.
+	if firstTime {
+		var eventProps = "tour=signup&_event=SignupCompleted&_signupChannel=GitHubOAuth&_githubAuthed=true"
+		var returnString = "/github.com/sourcegraph/checkup/-/blob/checkup.go?" + eventProps + "#L67"
+		http.Redirect(w, r, returnString, http.StatusSeeOther)
+		return nil
+	}
 	// Add tracking info to return-to URL.
 	returnToURL, err := url.Parse(returnTo)
 	if err != nil {
 		return err
 	}
 	q := returnToURL.Query()
-	if firstTime {
-		q.Set("ob", "chrome")
-		q.Set("_event", "SignupCompleted")
-		q.Set("_signupChannel", "GitHubOAuth")
-		q.Set("_githubAuthed", "true")
-	} else {
-		// Do not redirect a user while inside the onboarding flow.
-		// This is accomplished by not removing the onboarding query params.
-		if q.Get("ob") != "github" {
-			q.Del("ob")
-		}
-		q.Set("_event", "CompletedGitHubOAuth2Flow")
-		q.Set("_githubAuthed", "true")
+	// Do not redirect a user while inside the onboarding flow.
+	// This is accomplished by not removing the onboarding query params.
+	if q.Get("ob") != "github" {
+		q.Del("ob")
 	}
+	q.Set("_event", "CompletedGitHubOAuth2Flow")
+	q.Set("_githubAuthed", "true")
 	returnToURL.RawQuery = q.Encode()
 
 	http.Redirect(w, r, returnToURL.String(), http.StatusSeeOther)
