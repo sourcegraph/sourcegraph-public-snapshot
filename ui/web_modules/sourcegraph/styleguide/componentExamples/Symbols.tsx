@@ -1,13 +1,10 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
-import * as base from "sourcegraph/components/styles/_base.css";
-import {colors, whitespace} from "sourcegraph/components/utils/index";
-import {Heading, Panel, Table, Code} from "sourcegraph/components";
-import {Alert, Cone, Dismiss, DownPointer, GitHubLogo, Search, Spinner} from "sourcegraph/components/symbols";
-import {Flag, Check, CheckCircle, Close, ChevronDown} from "sourcegraph/components/symbols/Zondicons";
-
 import * as classNames from "classnames";
+import * as React from "react";
+import {Code, Heading, Panel, Table} from "sourcegraph/components";
+import * as base from "sourcegraph/components/styles/_base.css";
+import {Alert, Cone, Dismiss, GitHubLogo, Search, Spinner} from "sourcegraph/components/symbols";
+import {Check, CheckCircle,  ChevronDown, Close, Flag, Link, UserAdd} from "sourcegraph/components/symbols/Zondicons";
+import {colors, whitespace} from "sourcegraph/components/utils/index";
 
 export class Symbols extends React.Component<{}, any> {
 
@@ -22,7 +19,6 @@ export class Symbols extends React.Component<{}, any> {
 						<Alert color={colors.coolGray2()} style={{padding: whitespace[2]}} />
 						<Cone color={colors.coolGray2()} style={{padding: whitespace[2]}} />
 						<Dismiss color={colors.coolGray2()} style={{padding: whitespace[2]}} />
-						<DownPointer color={colors.coolGray2()} style={{padding: whitespace[2]}} />
 						<GitHubLogo color={colors.coolGray2()} style={{padding: whitespace[2]}} />
 						<Search color={colors.coolGray2()} style={{padding: whitespace[2]}} />
 						<Spinner color={colors.coolGray2()} style={{padding: whitespace[2]}} />
@@ -31,7 +27,8 @@ export class Symbols extends React.Component<{}, any> {
 						<Close color={colors.coolGray2()} style={{padding: whitespace[2]}} />
 						<Check color={colors.coolGray2()} style={{padding: whitespace[2]}} />
 						<CheckCircle color={colors.coolGray2()} style={{padding: whitespace[2]}} />
-
+						<Link color={colors.coolGray2()} style={{padding: whitespace[2]}} />
+						<UserAdd color={colors.coolGray2()} style={{padding: whitespace[2]}} />
 						<p>
 							These symbols are each individual components that share the same props api. See <Code>/components/symbols</Code> for component usage.
 						</p>
@@ -45,10 +42,16 @@ export class Symbols extends React.Component<{}, any> {
 <Alert color={colors.coolGray2()} style={{padding: whitespace[2]}} />
 <Cone color={colors.coolGray2()} style={{padding: whitespace[2]}} />
 <Dismiss color={colors.coolGray2()} style={{padding: whitespace[2]}} />
-<DownPointer color={colors.coolGray2()} style={{padding: whitespace[2]}} />
 <GitHubLogo color={colors.coolGray2()} style={{padding: whitespace[2]}} />
 <Search color={colors.coolGray2()} style={{padding: whitespace[2]}} />
-
+<Spinner color={colors.coolGray2()} style={{padding: whitespace[2]}} />
+<Flag color={colors.coolGray2()} style={{padding: whitespace[2]}} />
+<ChevronDown color={colors.coolGray2()} style={{padding: whitespace[2]}} />
+<Close color={colors.coolGray2()} style={{padding: whitespace[2]}} />
+<Check color={colors.coolGray2()} style={{padding: whitespace[2]}} />
+<CheckCircle color={colors.coolGray2()} style={{padding: whitespace[2]}} />
+<Link color={colors.coolGray2()} style={{padding: whitespace[2]}} />
+<UserAdd color={colors.coolGray2()} style={{padding: whitespace[2]}} />
 `
 }
 						</pre>

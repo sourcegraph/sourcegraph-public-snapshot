@@ -1,11 +1,9 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
 import * as classNames from "classnames";
-
+import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/components/styles/select.css";
-import {DownPointer, Alert} from "sourcegraph/components/symbols";
+import {Alert} from "sourcegraph/components/symbols";
+import {ChevronDown} from "sourcegraph/components/symbols/Zondicons";
 
 interface Props {
 	block?: boolean;
@@ -23,7 +21,7 @@ interface Props {
 type State = any;
 
 export class Select extends React.Component<Props, State> {
-	static defaultProps = {
+	static defaultProps: any = {
 		block: true,
 	};
 
@@ -40,7 +38,7 @@ export class Select extends React.Component<Props, State> {
 					placeholder={placeholder ? placeholder : ""}>
 					{children}
 				</select>
-				<DownPointer style={{marginLeft: "-28px"}} width={11} className={styles.icon} />
+				<ChevronDown style={{marginLeft: "-28px"}} width={11} className={styles.icon} />
 				{helperText && <em className={classNames(styles.small, styles.block, base.mt2)}>{helperText}</em>}
 				{errorText &&
 					<div className={classNames(styles.red, base.mv2)}>

@@ -42,7 +42,7 @@ export class Home extends React.Component<HomeProps, {}> {
 		return <div style={{
 			backgroundColor: "white",
 			overflowX: "hidden",
-			"-webkit-overflow-scrolling": "touch",
+			WebkitOverflowScrolling: "touch",
 		}}>
 
 			<BGContainer

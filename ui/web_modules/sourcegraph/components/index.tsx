@@ -20,7 +20,6 @@ export {Emoji} from "sourcegraph/components/Emoji";
 export {Tabs} from "sourcegraph/components/Tabs";
 export {TabItem} from "sourcegraph/components/TabItem";
 export {ToggleSwitch} from "sourcegraph/components/ToggleSwitch";
-export {Dropdown} from "sourcegraph/components/Dropdown";
 export {FlexContainer} from "sourcegraph/components/FlexContainer";
 export {Affix} from "sourcegraph/components/Affix";
 export {TabPanels} from "sourcegraph/components/TabPanels";

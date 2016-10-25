@@ -1,18 +1,14 @@
+import * as classNames from "classnames";
 import * as React from "react";
 import {Link} from "react-router";
-import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
-
 import {Avatar, Base, FlexContainer, Heading, Menu, Popover} from "sourcegraph/components";
-import {DownPointer} from "sourcegraph/components/symbols";
-import {colors} from "sourcegraph/components/utils";
-
+import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
-
+import {ChevronDown} from "sourcegraph/components/symbols/Zondicons";
+import {colors} from "sourcegraph/components/utils";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
-
-import * as classNames from "classnames";
 
 export const UserMenu = (props): JSX.Element => {
 	//@TODO: Check if this works in staging
@@ -32,7 +28,7 @@ export const UserMenu = (props): JSX.Element => {
 			<Popover left={true}>
 				<FlexContainer items="center" style={{lineHeight: "0", height: 29}}>
 					{props.user.AvatarURL ? <Avatar size="small" img={props.user.AvatarURL} /> : <div>{props.user.Login}</div>}
-					<DownPointer width={12} color={colors.coolGray3()} style={{marginLeft: "8px"}}/>
+					<ChevronDown width={12} color={colors.coolGray3()} style={{marginLeft: "8px"}}/>
 				</FlexContainer>
 				<Menu className={classNames(base.pa0, base.mr2)} style={{width: "220px"}}>
 					<div className={classNames(base.pa0, base.mb2, base.mt3)}>

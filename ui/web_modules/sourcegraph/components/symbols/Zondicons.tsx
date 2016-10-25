@@ -31,3 +31,11 @@ export function Close(props: Props): React.ReactElement<Props> {
 export function Flag(props: Props): React.ReactElement<Props> {
 	return <Symbol {...props} viewBox="484 332 20 20"><path d="M491.667 344H486v8h-2v-20h12l.333 2H504l-3 6 3 6h-12" fillRule="evenodd"/></Symbol>;
 };
+
+export function UserAdd(props: Props): React.ReactElement<Props> {
+	return <Symbol {...props} viewBox="0 0 20 20"><path fillRule="evenodd" d="M2 6H0v2h2v2h2V8h2V6H4V4H2v2zm7 0c0-1.7 1.3-3 3-3s3 1.3 3 3v2c0 1.7-1.3 3-3 3S9 9.7 9 8V6zm11 9c-2.4-1.2-5-2-8-2s-5.6.8-8 2v3h16v-3z"/></Symbol>;
+};
+
+export function Link(props: Props): React.ReactElement<Props> {
+	return <Symbol {...props} viewBox="0 0 20 20"><path fillRule="evenodd" d="M14 11v-1c0-2.8-2.2-5-5-5H5c-2.8 0-5 2.2-5 5s2.2 5 5 5h1c-.5-.6-1-1.3-1.3-2-1.5-.2-2.7-1.5-2.7-3 0-1.7 1.3-3 3-3h4c1.7 0 3 1.3 3 3 0 .4 0 .7-.2 1h2zM6 9v1c0 2.8 2.2 5 5 5h4c2.8 0 5-2.2 5-5s-2.2-5-5-5h-1c.5.6 1 1.3 1.3 2 1.5.2 2.7 1.5 2.7 3 0 1.7-1.3 3-3 3h-4c-1.7 0-3-1.3-3-3 0-.4 0-.7.2-1h-2z"/></Symbol>;
+};

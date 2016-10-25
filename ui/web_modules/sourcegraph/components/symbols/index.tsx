@@ -1,6 +1,3 @@
-// tslint:disable: typedef ordered-imports
-
-export {DownPointer} from "sourcegraph/components/symbols/DownPointer";
 export {Repository} from "sourcegraph/components/symbols/Repository";
 export {Alert} from "sourcegraph/components/symbols/Alert";
 export {Search} from "sourcegraph/components/symbols/Search";
